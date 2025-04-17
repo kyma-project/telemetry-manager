@@ -47,6 +47,8 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 
 	queueSize := maxQueueSize / len(pipelines)
 
+	inputDropFilterConfigs := buildPipelinesDropFilterConfigs(pipelines)
+
 	for i := range pipelines {
 		pipeline := pipelines[i]
 		if pipeline.DeletionTimestamp != nil {
@@ -60,7 +62,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			queueSize,
 			otlpexporter.SignalTypeMetric,
 		)
-		if err := declareComponentsForMetricPipeline(ctx, otlpExporterBuilder, &pipeline, cfg, envVars, opts); err != nil {
+		if err := declareComponentsForMetricPipeline(ctx, otlpExporterBuilder, &pipeline, inputDropFilterConfigs[pipeline.Name], cfg, envVars, opts); err != nil {
 			return nil, nil, err
 		}
 
@@ -69,7 +71,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 		outputPipelineID := formatOutputPipelineID(pipeline.Name)
 		cfg.Service.Pipelines[inputPipelineID] = makeInputPipelineServiceConfig(&pipeline)
 		cfg.Service.Pipelines[attributesEnrichmentPipelineID] = makeAttributesEnrichmentPipelineServiceConfig(pipeline.Name)
-		cfg.Service.Pipelines[outputPipelineID] = makeOutputPipelineServiceConfig(&pipeline)
+		cfg.Service.Pipelines[outputPipelineID] = makeOutputPipelineServiceConfig(&pipeline, inputDropFilterConfigs[pipeline.Name])
 	}
 
 	return cfg, envVars, nil
@@ -80,13 +82,14 @@ func declareComponentsForMetricPipeline(
 	ctx context.Context,
 	otlpExporterBuilder *otlpexporter.ConfigBuilder,
 	pipeline *telemetryv1alpha1.MetricPipeline,
+	dropFilterConf pipelineDropFilterConfig,
 	cfg *Config,
 	envVars otlpexporter.EnvVars,
 	opts BuildOptions,
 ) error {
 	declareSingletonKymaStatsReceiverCreator(cfg, opts)
 	declareDiagnosticMetricsDropFilters(pipeline, cfg)
-	declareInputSourceFilters(pipeline, cfg)
+	declareInputSourceFilters(dropFilterConf, cfg)
 	declareRuntimeResourcesFilters(pipeline, cfg)
 	declareNamespaceFilters(pipeline, cfg)
 	declareInstrumentationScopeTransform(cfg, opts)
@@ -111,26 +114,24 @@ func declareDiagnosticMetricsDropFilters(pipeline *telemetryv1alpha1.MetricPipel
 	}
 }
 
-func declareInputSourceFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {
-	input := pipeline.Spec.Input
-
-	if !metricpipelineutils.IsRuntimeInputEnabled(input) {
+func declareInputSourceFilters(dropFilterConf pipelineDropFilterConfig, cfg *Config) {
+	if dropFilterConf.requireRuntimeInputFilter {
 		cfg.Processors.DropIfInputSourceRuntime = makeDropIfInputSourceRuntimeConfig()
 	}
 
-	if !metricpipelineutils.IsPrometheusInputEnabled(input) {
+	if dropFilterConf.requirePrometheusInputFilter {
 		cfg.Processors.DropIfInputSourcePrometheus = makeDropIfInputSourcePrometheusConfig()
 	}
 
-	if !metricpipelineutils.IsIstioInputEnabled(input) {
+	if dropFilterConf.requireIstioInputFilter {
 		cfg.Processors.DropIfInputSourceIstio = makeDropIfInputSourceIstioConfig()
 	}
 
-	if !metricpipelineutils.IsOTLPInputEnabled(input) {
+	if dropFilterConf.requireOTLPInputFilter {
 		cfg.Processors.DropIfInputSourceOTLP = makeDropIfInputSourceOTLPConfig()
 	}
 
-	if !metricpipelineutils.IsIstioInputEnabled(input) || !metricpipelineutils.IsEnvoyMetricsEnabled(input) {
+	if dropFilterConf.requireEnvoyMetricsFilter {
 		cfg.Processors.DropIfEnvoyMetricsDisabled = makeDropIfEnvoyMetricsDisabledConfig()
 	}
 }

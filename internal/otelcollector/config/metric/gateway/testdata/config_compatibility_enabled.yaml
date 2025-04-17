@@ -27,10 +27,6 @@ service:
                 - forward/test
             processors:
                 - transform/set-instrumentation-scope-kyma
-                - filter/drop-if-input-source-runtime
-                - filter/drop-if-input-source-prometheus
-                - filter/drop-if-input-source-istio
-                - filter/drop-envoy-metrics-if-disabled
                 - resource/insert-cluster-attributes
                 - resource/delete-skip-enrichment-attribute
                 - resource/drop-kyma-attributes
@@ -141,22 +137,6 @@ processors:
             - action: insert
               key: cloud.provider
               value: test-cloud-provider
-    filter/drop-if-input-source-runtime:
-        metrics:
-            metric:
-                - instrumentation_scope.name == "io.kyma-project.telemetry/runtime"
-    filter/drop-if-input-source-prometheus:
-        metrics:
-            metric:
-                - resource.attributes["kyma.input.name"] == "prometheus"
-    filter/drop-if-input-source-istio:
-        metrics:
-            metric:
-                - instrumentation_scope.name == "io.kyma-project.telemetry/istio"
-    filter/drop-envoy-metrics-if-disabled:
-        metrics:
-            metric:
-                - IsMatch(name, "^envoy_.*") and instrumentation_scope.name == "io.kyma-project.telemetry/istio"
     service_enrichment:
         resource_attributes:
             - kyma.kubernetes_io_app_name
