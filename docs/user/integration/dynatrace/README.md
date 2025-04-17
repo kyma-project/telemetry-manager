@@ -267,7 +267,6 @@ For easier access from the Kyma dashboard, add links to new navigation under **D
 
 1. To view metrics in Dynatrace dashboards, import the file [Telemetry Module Status](./telemetry-resource-metrics.json) as a Dynatrace dashboard. For details, see [Importing Dashboards](https://docs.dynatrace.com/docs/analyze-explore-automate/dashboards-classic/dashboards/dashboard-json#import-dashboard).
 
-- To view the status of the Dynatrace integration with the Kyma Telemetry module, import the file [Telemetry Module Status](./telemetry-resource-metrics.json) as a Dynatrace dashboard. For details on how to import a dashboard, see [Importing Dashboards](https://docs.dynatrace.com/docs/analyze-explore-automate/dashboards-classic/dashboards/dashboard-json#import-dashboard).
 2. Add the following attributes to the allow list of OpenTelemetry metrics resource attributes:
    - `k8s.resource.name`
    - `k8s.resource.group`
@@ -278,20 +277,15 @@ For easier access from the Kyma dashboard, add links to new navigation under **D
 
 ## Use Dynatrace Alerts
 
-To send alerts about the Kyma Telemetry module status to your preferred backend system, create Dynatrace Alerts based on certain metric events:
+To send alerts about the Kyma Telemetry module status to your preferred backend system, create Dynatrace alerts based on certain metric events:
 
-1. Create a problem alerting profile. 
-   Define how and when alerts should trigger. For details, see [Create an alerting profile](https://docs.dynatrace.com/docs/analyze-explore-automate/notifications-and-alerting/alerting-profiles#create-an-alerting-profile).
-2. Set up alert integration with your backend system.
-   Configure Dynatrace to send problem notifications to your system. For details, see [Problem notifications](https://docs.dynatrace.com/docs/analyze-explore-automate/notifications-and-alerting/problem-notifications).
-3. Create a metric event.
-   Define a metric event with a metric selector or a metric key that reflects the event you want to monitor. For details, see [Metric events](https://docs.dynatrace.com/docs/discover-dynatrace/platform/davis-ai/anomaly-detection/set-up-a-customized-anomaly-detector/how-to-set-up/metric-events).
- For example, trigger an alert when the Kyma Telemetry module enters a non-ready state:
-   ```text
-   kyma.resource.status.state:filter(not(eq("state","Ready")))
-   ```
-4. Filter for the event in your alerting profile.
-   To target the metric event you just created, add a custom event filter. For details, see [event filters](https://docs.dynatrace.com/docs/analyze-explore-automate/notifications-and-alerting/alerting-profiles#event-filters).
-5. Test the integration.
-   Trigger the metric event and confirm that the target system receives the alert.
+1. To define how and when alerts are triggered, create a problem alerting profile. For details, see [Create an alerting profile](https://docs.dynatrace.com/docs/analyze-explore-automate/notifications-and-alerting/alerting-profiles#create-an-alerting-profile).
+2. To push alerts to your backend system, set up problem notifications in Dynatrace. For details, see [Problem notifications](https://docs.dynatrace.com/docs/analyze-explore-automate/notifications-and-alerting/problem-notifications).
+3. Create a metric event with a metric selector or a metric key that reflects the event you want to monitor. For details, see [Metric events](https://docs.dynatrace.com/docs/discover-dynatrace/platform/davis-ai/anomaly-detection/set-up-a-customized-anomaly-detector/how-to-set-up/metric-events).
+   For example, trigger an alert when the Kyma Telemetry module enters a non-ready state:
+     ```text
+     kyma.resource.status.state:filter(not(eq("state","Ready")))
+     ```
+4. To target the metric event you just created, add a custom event filter in your alerting profile. For details, see [event filters](https://docs.dynatrace.com/docs/analyze-explore-automate/notifications-and-alerting/alerting-profiles#event-filters).
+5. To test the integration, trigger the metric event and confirm that the target system receives the alert.
 
