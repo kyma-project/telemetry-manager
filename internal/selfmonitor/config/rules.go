@@ -17,7 +17,7 @@ const (
 	RuleNameGatewayQueueAlmostFull = "GatewayQueueAlmostFull"
 	RuleNameGatewayThrottling      = "GatewayThrottling"
 
-	// Fluent Bit rule names. Note that the actual full names will be prefixed with FluentBit
+	// Fluent Bit rule names. Note that the actual full names will be prefixed with Log
 	RuleNameLogFluentBitAllDataDropped  = "FluentBitAllDataDropped"
 	RuleNameLogFluentBitSomeDataDropped = "FluentBitSomeDataDropped"
 	RuleNameLogFluentBitBufferInUse     = "FluentBitBufferInUse"
