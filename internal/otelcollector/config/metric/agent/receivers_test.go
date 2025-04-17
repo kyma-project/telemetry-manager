@@ -303,7 +303,6 @@ func getExpectedK8sClusterMetricsToDrop(disabledMetricResource metricResource) K
 		K8sContainerStorageLimit:            MetricConfig{Enabled: false},
 		K8sContainerEphemeralStorageRequest: MetricConfig{Enabled: false},
 		K8sContainerEphemeralStorageLimit:   MetricConfig{Enabled: false},
-		K8sContainerRestarts:                MetricConfig{Enabled: false},
 		K8sContainerReady:                   MetricConfig{Enabled: false},
 		K8sNamespacePhase:                   MetricConfig{Enabled: false},
 		K8sHPACurrentReplicas:               MetricConfig{Enabled: false},
@@ -325,6 +324,7 @@ func getExpectedK8sClusterMetricsToDrop(disabledMetricResource metricResource) K
 		K8sContainerCPULimit:      MetricConfig{false},
 		K8sContainerMemoryRequest: MetricConfig{false},
 		K8sContainerMemoryLimit:   MetricConfig{false},
+		K8sContainerRestarts:      MetricConfig{false},
 	}
 	statefulMetricsToDrop := &K8sClusterStatefulSetMetricsToDrop{
 		K8sStatefulSetCurrentPods: MetricConfig{false},

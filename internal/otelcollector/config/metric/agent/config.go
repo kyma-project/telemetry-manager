@@ -76,7 +76,6 @@ type K8sClusterDefaultMetricsToDrop struct {
 	K8sContainerStorageLimit            MetricConfig `yaml:"k8s.container.storage_limit"`
 	K8sContainerEphemeralStorageRequest MetricConfig `yaml:"k8s.container.ephemeralstorage_request"`
 	K8sContainerEphemeralStorageLimit   MetricConfig `yaml:"k8s.container.ephemeralstorage_limit"`
-	K8sContainerRestarts                MetricConfig `yaml:"k8s.container.restarts"`
 	K8sContainerReady                   MetricConfig `yaml:"k8s.container.ready"`
 	// Disable Namespace metrics by default
 	K8sNamespacePhase MetricConfig `yaml:"k8s.namespace.phase"`
@@ -134,6 +133,7 @@ type K8sClusterContainerMetricsToDrop struct {
 	K8sContainerCPULimit      MetricConfig `yaml:"k8s.container.cpu_limit"`
 	K8sContainerMemoryRequest MetricConfig `yaml:"k8s.container.memory_request"`
 	K8sContainerMemoryLimit   MetricConfig `yaml:"k8s.container.memory_limit"`
+	K8sContainerRestarts      MetricConfig `yaml:"k8s.container.restarts"`
 }
 
 type K8sClusterReceiver struct {
