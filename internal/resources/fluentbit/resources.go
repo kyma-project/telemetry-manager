@@ -519,7 +519,6 @@ func makeMetricsService(name types.NamespacedName) *corev1.Service {
 
 func makeExporterMetricsService(name types.NamespacedName) *corev1.Service {
 	serviceLabels := Labels()
-	serviceLabels[commonresources.LabelKeyTelemetrySelfMonitor] = commonresources.LabelValueTelemetrySelfMonitor
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
