@@ -173,11 +173,13 @@ type InputOptions func(selector *telemetryv1alpha1.NamespaceSelector)
 func IncludeNamespaces(namespaces ...string) InputOptions {
 	return func(selector *telemetryv1alpha1.NamespaceSelector) {
 		selector.Include = namespaces
+		selector.Exclude = nil
 	}
 }
 
 func ExcludeNamespaces(namespaces ...string) InputOptions {
 	return func(selector *telemetryv1alpha1.NamespaceSelector) {
+		selector.Include = nil
 		selector.Exclude = namespaces
 	}
 }

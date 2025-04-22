@@ -34,11 +34,13 @@ type LogPipelineInputOptions func(selector *telemetryv1alpha1.LogPipelineNamespa
 func IncludeLogNamespaces(namespaces ...string) LogPipelineInputOptions {
 	return func(selector *telemetryv1alpha1.LogPipelineNamespaceSelector) {
 		selector.Include = namespaces
+		selector.Exclude = nil
 	}
 }
 
 func ExcludeLogNamespaces(namespaces ...string) LogPipelineInputOptions {
 	return func(selector *telemetryv1alpha1.LogPipelineNamespaceSelector) {
+		selector.Include = nil
 		selector.Exclude = namespaces
 	}
 }
@@ -107,11 +109,6 @@ func (b *LogPipelineBuilder) WithOTLPInput(enabled bool, opts ...InputOptions) *
 		opt(b.input.OTLP.Namespaces)
 	}
 
-	return b
-}
-
-func (b *LogPipelineBuilder) WithInput(input telemetryv1alpha1.LogPipelineInput) *LogPipelineBuilder {
-	b.input = input
 	return b
 }
 
