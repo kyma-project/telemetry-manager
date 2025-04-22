@@ -26,6 +26,9 @@ With the Kyma Telemetry module, you gain even more visibility by adding custom s
     - [Create Secret](#create-secret)
     - [Ingest Traces](#ingest-traces)
     - [Ingest Metrics](#ingest-metrics)
+  - [Set Up Kyma Dashboard Integration](#set-up-kyma-dashboard-integration)
+  - [Use Dynatrace Dashboards](#use-dynatrace-dashboards)
+  - [Use Dynatrace Alerts](#use-dynatrace-alerts)
 
 ## Prerequisites
 
@@ -259,3 +262,30 @@ For easier access from the Kyma dashboard, add links to new navigation under **D
     ```
 
 2. If your Secret has a different name or namespace, then download the file first and adjust the namespace and name accordingly in the 'dataSources' section of the file.
+
+## Use Dynatrace Dashboards
+
+1. To see the health of the Kyma Telemetry module and its related pipelines, import the file [Telemetry Module Status](./telemetry-resource-metrics.json) as a Dynatrace dashboard. For details, see [Importing Dashboards](https://docs.dynatrace.com/docs/analyze-explore-automate/dashboards-classic/dashboards/dashboard-json#import-dashboard).
+
+2. Add the following custom resource attributes to the allow list of OpenTelemetry metrics resource attributes:
+   - `k8s.resource.name`
+   - `k8s.resource.group`
+   - `k8s.resource.kind`
+   - `k8s.resource.version`
+
+   For details about adding attributes to the allow list, see [Configure resource and scope attributes to be added as dimensions](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/getting-started/metrics/configuration#allow-list).
+
+## Use Dynatrace Alerts
+
+To send alerts about the Kyma Telemetry module status to your preferred backend system, create Dynatrace alerts based on certain metric events:
+
+1. To define how and when alerts are triggered, create a problem alerting profile. For details, see [Create an alerting profile](https://docs.dynatrace.com/docs/analyze-explore-automate/notifications-and-alerting/alerting-profiles#create-an-alerting-profile).
+2. To push alerts to your backend system, set up problem notifications in Dynatrace. For details, see [Problem notifications](https://docs.dynatrace.com/docs/analyze-explore-automate/notifications-and-alerting/problem-notifications).
+3. Create a metric event with a metric selector or a metric key that reflects the event you want to monitor. For details, see [Metric events](https://docs.dynatrace.com/docs/discover-dynatrace/platform/davis-ai/anomaly-detection/set-up-a-customized-anomaly-detector/how-to-set-up/metric-events).
+   For example, trigger an alert when the Kyma Telemetry module enters a non-ready state:
+     ```text
+     kyma.resource.status.state:filter(not(eq("state","Ready")))
+     ```
+4. To target the metric event you just created, add a custom event filter in your alerting profile. For details, see [event filters](https://docs.dynatrace.com/docs/analyze-explore-automate/notifications-and-alerting/alerting-profiles#event-filters).
+5. To test the integration, trigger the metric event and confirm that the target system receives the alert.
+
