@@ -83,7 +83,6 @@ func makeK8sClusterMetricsToDrop(runtimeResources runtimeResourcesEnabled) K8sCl
 		K8sContainerStorageLimit:            MetricConfig{Enabled: false},
 		K8sContainerEphemeralStorageRequest: MetricConfig{Enabled: false},
 		K8sContainerEphemeralStorageLimit:   MetricConfig{Enabled: false},
-		K8sContainerRestarts:                MetricConfig{Enabled: false},
 		K8sContainerReady:                   MetricConfig{Enabled: false},
 		K8sNamespacePhase:                   MetricConfig{Enabled: false},
 		K8sHPACurrentReplicas:               MetricConfig{Enabled: false},
@@ -113,6 +112,7 @@ func makeK8sClusterMetricsToDrop(runtimeResources runtimeResourcesEnabled) K8sCl
 			K8sContainerCPULimit:      MetricConfig{false},
 			K8sContainerMemoryRequest: MetricConfig{false},
 			K8sContainerMemoryLimit:   MetricConfig{false},
+			K8sContainerRestarts:      MetricConfig{false},
 		}
 	}
 
