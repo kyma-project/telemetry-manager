@@ -73,7 +73,7 @@ func TestReceiverCreator(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			fileLogReceiver := makeFileLogReceiver(tc.pipeline, BuildOptions{AgentNamespace: "kyma-system"})
+			fileLogReceiver := makeFileLogReceiver(tc.pipeline)
 			require.Equal(t, expectedExcludePaths, fileLogReceiver.Exclude)
 			require.Equal(t, expectedIncludePaths, fileLogReceiver.Include)
 			require.Equal(t, ptr.To(false), fileLogReceiver.IncludeFileName)
@@ -376,11 +376,14 @@ func getExcludePaths(system bool, paths ...string) []string {
 
 	excludePaths := []string{}
 	excludePaths = append(excludePaths, defaultExcludePaths...)
+
 	if system {
 		excludePaths = append(excludePaths, systemExcludePaths...)
 	}
+
 	if len(paths) == 0 {
 		return excludePaths
 	}
+
 	return append(excludePaths, paths...)
 }
