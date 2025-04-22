@@ -110,6 +110,11 @@ func (b *LogPipelineBuilder) WithOTLPInput(enabled bool, opts ...InputOptions) *
 	return b
 }
 
+func (b *LogPipelineBuilder) WithInput(input telemetryv1alpha1.LogPipelineInput) *LogPipelineBuilder {
+	b.input = input
+	return b
+}
+
 func (b *LogPipelineBuilder) WithIncludeContainers(containers ...string) *LogPipelineBuilder {
 	if b.input.Application == nil {
 		b.input.Application = &telemetryv1alpha1.LogPipelineApplicationInput{}

@@ -42,6 +42,11 @@ func New(namespace string) *LogProducer {
 	}
 }
 
+func (lp *LogProducer) WithName(name string) *LogProducer {
+	lp.name = name
+	return lp
+}
+
 func (lp *LogProducer) WithAnnotations(annotations map[string]string) *LogProducer {
 	lp.annotations = annotations
 	return lp
