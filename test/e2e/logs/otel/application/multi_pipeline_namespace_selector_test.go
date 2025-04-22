@@ -97,20 +97,20 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 
 		// verify logs from apps1Ns delivered to backend1
 		It("Should deliver Runtime logs from app1Ns to backend1", func() {
-			assert.LogsFromNamespaceDelivered(suite.ProxyClient, backend1ExportURL, app1Ns)
+			assert.OtelLogsFromNamespaceDelivered(suite.ProxyClient, backend1ExportURL, app1Ns)
 		})
 
 		It("Should not deliver logs from app2Ns to backend1", func() {
-			assert.LogsFromNamespaceNotDelivered(suite.ProxyClient, backend1ExportURL, app2Ns)
+			assert.OtelLogsFromNamespaceNotDelivered(suite.ProxyClient, backend1ExportURL, app2Ns)
 		})
 
 		// verify logs from apps2Ns delivered to backend2
 		It("Should deliver Runtime logs from app2Ns to backend2", func() {
-			assert.LogsFromNamespaceDelivered(suite.ProxyClient, backend2ExportURL, app2Ns)
+			assert.OtelLogsFromNamespaceDelivered(suite.ProxyClient, backend2ExportURL, app2Ns)
 		})
 
 		It("Should not deliver logs from app1Ns to backend2", func() {
-			assert.LogsFromNamespaceNotDelivered(suite.ProxyClient, backend2ExportURL, app1Ns)
+			assert.OtelLogsFromNamespaceNotDelivered(suite.ProxyClient, backend2ExportURL, app1Ns)
 		})
 	})
 })

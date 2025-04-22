@@ -5,17 +5,15 @@ import (
 )
 
 const (
-	fluentBitMetricsServiceName        = "telemetry-fluent-bit-metrics"
-	fluentBitSidecarMetricsServiceName = "telemetry-fluent-bit-exporter-metrics"
+	fluentBitMetricsServiceName = "telemetry-fluent-bit-metrics"
 
 	// Fluent Bit metrics
 	fluentBitOutputProcBytesTotal      = "fluentbit_output_proc_bytes_total"
 	fluentBitInputBytesTotal           = "fluentbit_input_bytes_total"
 	fluentBitOutputDroppedRecordsTotal = "fluentbit_output_dropped_records_total"
-	fluentBitBufferUsageBytes          = "telemetry_fsbuffer_usage_bytes"
+	fluentBitInputStorageChunksDown    = "fluentbit_input_storage_chunks_down"
 
-	bufferUsage300MB = 300000000
-	bufferUsage900MB = 900000000
+	inputStorageChunksDown300Chunks = 300
 
 	// alertWaitTime is the time the alert have a pending state before firing
 	alertWaitTime = 1 * time.Minute
@@ -26,11 +24,10 @@ type fluentBitRuleBuilder struct {
 
 func (rb fluentBitRuleBuilder) rules() []Rule {
 	return []Rule{
-		rb.makeRule(RuleNameLogAgentAllDataDropped, rb.allDataDroppedExpr()),
-		rb.makeRule(RuleNameLogAgentSomeDataDropped, rb.someDataDroppedExpr()),
-		rb.makeRule(RuleNameLogAgentBufferInUse, rb.bufferInUseExpr()),
-		rb.makeRule(RuleNameLogAgentBufferFull, rb.bufferFullExpr()),
-		rb.makeRule(RuleNameLogAgentNoLogsDelivered, rb.noLogsDeliveredExpr()),
+		rb.makeRule(RuleNameLogFluentBitAllDataDropped, rb.allDataDroppedExpr()),
+		rb.makeRule(RuleNameLogFluentBitSomeDataDropped, rb.someDataDroppedExpr()),
+		rb.makeRule(RuleNameLogFluentBitBufferInUse, rb.bufferInUseExpr()),
+		rb.makeRule(RuleNameLogFluentBitNoLogsDelivered, rb.noLogsDeliveredExpr()),
 	}
 }
 
@@ -62,15 +59,9 @@ func (rb fluentBitRuleBuilder) exporterSentExpr() string {
 
 // Check if the buffer usage is significant.
 func (rb fluentBitRuleBuilder) bufferInUseExpr() string {
-	return instant(fluentBitBufferUsageBytes, selectService(fluentBitSidecarMetricsServiceName)).
-		greaterThan(bufferUsage300MB).
-		build()
-}
-
-// Check if the buffer usage is approaching the limit (1GB).
-func (rb fluentBitRuleBuilder) bufferFullExpr() string {
-	return instant(fluentBitBufferUsageBytes, selectService(fluentBitSidecarMetricsServiceName)).
-		greaterThan(bufferUsage900MB).
+	return instant(fluentBitInputStorageChunksDown, selectService(fluentBitMetricsServiceName)).
+		maxBy(labelPipelineName).
+		greaterThan(inputStorageChunksDown300Chunks).
 		build()
 }
 
