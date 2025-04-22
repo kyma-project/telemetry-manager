@@ -126,9 +126,9 @@ func TestHandler(t *testing.T) {
 			expectedStatus: http.StatusOK,
 		},
 		{
-			name:          "alert matches all metric pipelines",
+			name:          "alert without pipeline name matches all metric pipelines",
 			requestMethod: http.MethodPost,
-			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"MetricGatewayReceiverRefusedData"}}]`)),
+			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"MetricGatewayThrottling"}}]`)),
 			resources: []client.Object{
 				ptr.To(testutils.NewMetricPipelineBuilder().WithName("cls").Build()),
 				ptr.To(testutils.NewMetricPipelineBuilder().WithName("dynatrace").Build()),
@@ -137,9 +137,9 @@ func TestHandler(t *testing.T) {
 			metricPipelinesToReconcile: []string{"cls", "dynatrace"},
 		},
 		{
-			name:          "alert matches all trace pipelines",
+			name:          "alert without pipeline name matches all trace pipelines",
 			requestMethod: http.MethodPost,
-			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"TraceGatewayReceiverRefusedData"}}]`)),
+			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"TraceGatewayThrottling"}}]`)),
 			resources: []client.Object{
 				ptr.To(testutils.NewTracePipelineBuilder().WithName("cls").Build()),
 				ptr.To(testutils.NewTracePipelineBuilder().WithName("dynatrace").Build()),
@@ -148,9 +148,9 @@ func TestHandler(t *testing.T) {
 			tracePipelinesToReconcile: []string{"cls", "dynatrace"},
 		},
 		{
-			name:          "alert matches all log pipelines",
+			name:          "alert without pipeline name matches all log pipelines",
 			requestMethod: http.MethodPost,
-			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"LogAgentBufferFull"}}]`)),
+			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"LogGatewayThrottling"}}]`)),
 			resources: []client.Object{
 				ptr.To(testutils.NewLogPipelineBuilder().WithName("cls").Build()),
 				ptr.To(testutils.NewLogPipelineBuilder().WithName("dynatrace").Build()),
