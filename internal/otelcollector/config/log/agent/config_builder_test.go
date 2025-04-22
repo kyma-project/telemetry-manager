@@ -38,17 +38,17 @@ func TestBuildAgentConfig(t *testing.T) {
 
 			fileLogReceiver := collectorConfig.Receivers["filelog/test"]
 			expectedExcludeFilePath := []string{
+				"/var/log/pods/kyma-system_*system-logs-agent*/*/*.log",
+				"/var/log/pods/kyma-system_*system-logs-collector*/*/*.log",
+				"/var/log/pods/kyma-system_telemetry-log-agent*/*/*.log",
+				"/var/log/pods/kyma-system_telemetry-fluent-bit*/*/*.log",
 				"/var/log/pods/kyma-system_*/*/*.log",
 				"/var/log/pods/kube-system_*/*/*.log",
 				"/var/log/pods/istio-system_*/*/*.log",
 				"/var/log/pods/compass-system_*/*/*.log",
-				"/var/log/pods/kyma-system_telemetry-log-agent*/*/*.log",
-				"/var/log/pods/kyma-system_telemetry-fluent-bit*/*/*.log",
-				"/var/log/pods/kyma-system_*system-logs-collector*/*/*.log",
-				"/var/log/pods/kyma-system_*system-logs-agent*/*/*.log",
 			}
 			require.Equal(t, expectedExcludeFilePath, fileLogReceiver.FileLog.Exclude)
-			require.Equal(t, []string{"/var/log/pods/*/*/*.log"}, fileLogReceiver.FileLog.Include)
+			require.Equal(t, []string{"/var/log/pods/*_*/*/*.log"}, fileLogReceiver.FileLog.Include)
 			require.Equal(t, ptr.To(false), fileLogReceiver.FileLog.IncludeFileName)
 			require.Equal(t, ptr.To(true), fileLogReceiver.FileLog.IncludeFilePath)
 			require.Equal(t, "beginning", fileLogReceiver.FileLog.StartAt)

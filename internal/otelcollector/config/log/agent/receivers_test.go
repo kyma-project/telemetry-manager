@@ -12,18 +12,14 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
+const (
+	systemNamespacesIncluded = true
+	systemNamespacesExcluded = false
+)
+
 func TestReceiverCreator(t *testing.T) {
-	expectedExcludePaths := []string{
-		"/var/log/pods/kyma-system_*/*/*.log",
-		"/var/log/pods/kube-system_*/*/*.log",
-		"/var/log/pods/istio-system_*/*/*.log",
-		"/var/log/pods/compass-system_*/*/*.log",
-		"/var/log/pods/kyma-system_telemetry-log-agent*/*/*.log",
-		"/var/log/pods/kyma-system_telemetry-fluent-bit*/*/*.log",
-		"/var/log/pods/kyma-system_*system-logs-collector*/*/*.log",
-		"/var/log/pods/kyma-system_*system-logs-agent*/*/*.log",
-	}
-	expectedIncludePaths := []string{"/var/log/pods/*/*/*.log"}
+	expectedExcludePaths := getExcludePaths(systemNamespacesIncluded)
+	expectedIncludePaths := []string{"/var/log/pods/*_*/*/*.log"}
 
 	tt := []struct {
 		name              string
@@ -187,25 +183,23 @@ func TestExcludePath(t *testing.T) {
 	}{
 		{
 			name:     "should return excluded path if namespace is present",
-			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(true).WithExcludeNamespaces("foo", "bar").Build(),
-			expected: []string{
-				"/var/log/pods/kyma-system_*/*/*.log",
-				"/var/log/pods/kube-system_*/*/*.log",
-				"/var/log/pods/istio-system_*/*/*.log",
-				"/var/log/pods/compass-system_*/*/*.log",
-				"/var/log/pods/foo_*/*/*.log",
-				"/var/log/pods/bar_*/*/*.log",
-			},
+			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithExcludeNamespaces("foo", "bar").Build(),
+			expected: getExcludePaths(systemNamespacesIncluded, "/var/log/pods/foo_*/*/*.log", "/var/log/pods/bar_*/*/*.log"),
 		},
 		{
-			name:     "should return empty excluded path if namespace is not present",
+			name:     "should return default excluded path if namespace is not present",
 			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(false).Build(),
-			expected: []string{
-				"/var/log/pods/kyma-system_*/*/*.log",
-				"/var/log/pods/kube-system_*/*/*.log",
-				"/var/log/pods/istio-system_*/*/*.log",
-				"/var/log/pods/compass-system_*/*/*.log",
-			},
+			expected: getExcludePaths(systemNamespacesIncluded),
+		},
+		{
+			name:     "Should include excluded container if present",
+			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithExcludeContainers("foo", "bar").Build(),
+			expected: getExcludePaths(systemNamespacesIncluded, "/var/log/pods/*_*/foo/*.log", "/var/log/pods/*_*/bar/*.log"),
+		},
+		{
+			name:     "Should exclude system path if system is true",
+			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithSystemNamespaces(true).Build(),
+			expected: getExcludePaths(systemNamespacesExcluded),
 		},
 	}
 
@@ -234,17 +228,12 @@ func TestIncludePath(t *testing.T) {
 		{
 			name:     "should return default included path if namespace is not present",
 			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(false).Build(),
-			expected: []string{"/var/log/pods/*/*/*.log"},
+			expected: []string{"/var/log/pods/*_*/*/*.log"},
 		},
 		{
 			name:     "should return system namespaces included path if system is true",
 			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(false).WithSystemNamespaces(true).Build(),
-			expected: []string{
-				"/var/log/pods/kyma-system_*/*/*.log",
-				"/var/log/pods/kube-system_*/*/*.log",
-				"/var/log/pods/istio-system_*/*/*.log",
-				"/var/log/pods/compass-system_*/*/*.log",
-			},
+			expected: []string{"/var/log/pods/*_*/*/*.log"},
 		},
 	}
 
@@ -368,4 +357,30 @@ func TestMakeTraceRouter(t *testing.T) {
 		},
 	}
 	assert.Equal(t, expectedSP, sp)
+}
+
+func getExcludePaths(system bool, paths ...string) []string {
+	var defaultExcludePaths = []string{
+		"/var/log/pods/kyma-system_*system-logs-agent*/*/*.log",
+		"/var/log/pods/kyma-system_*system-logs-collector*/*/*.log",
+		"/var/log/pods/kyma-system_telemetry-log-agent*/*/*.log",
+		"/var/log/pods/kyma-system_telemetry-fluent-bit*/*/*.log",
+	}
+
+	var systemExcludePaths = []string{
+		"/var/log/pods/kyma-system_*/*/*.log",
+		"/var/log/pods/kube-system_*/*/*.log",
+		"/var/log/pods/istio-system_*/*/*.log",
+		"/var/log/pods/compass-system_*/*/*.log",
+	}
+
+	excludePaths := []string{}
+	excludePaths = append(excludePaths, defaultExcludePaths...)
+	if system {
+		excludePaths = append(excludePaths, systemExcludePaths...)
+	}
+	if len(paths) == 0 {
+		return excludePaths
+	}
+	return append(excludePaths, paths...)
 }
