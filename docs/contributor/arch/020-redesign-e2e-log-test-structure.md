@@ -88,7 +88,7 @@ e2e
 │   │   ├── otlp_push_test.go
 │   │   └── manual_scaling_test.go
 │   │
-│   └── conversion/
+│   └── misc/
 │   │   └── version_conversion_test.go
 ```
 
@@ -107,5 +107,5 @@ Because we are going to rewrite our e2e tests, we decided to migrate from Ginkgo
 
 Technical details are described in [Migrate Ginkgo Tests to Go Testing PoC](../pocs/ginkgo-to-go-testing/ginkgo-to-go-testing.md).
 
-> **NOTE:** 
+> **NOTE:**
 > Changing all of the tests at once is not feasible. We will migrate the tests incrementally as we rewrite them. This means we will need two different Github Action jobs for Ginkgo and vanilla Go tests. When all tests are migrated, we will remove the Ginkgo job.
