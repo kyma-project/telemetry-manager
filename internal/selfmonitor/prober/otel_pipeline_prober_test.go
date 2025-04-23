@@ -95,6 +95,7 @@ func TestOTelPipelineProber(t *testing.T) {
 			expected: OTelPipelineProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					AllDataDropped: true,
+					Healthy:        false,
 				},
 			},
 		},
@@ -152,7 +153,7 @@ func TestOTelPipelineProber(t *testing.T) {
 					},
 					{
 						Labels: model.LabelSet{
-							"alertname":     "LogAgentBufferFull",
+							"alertname":     "LogFluentBitBufferInUse",
 							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,

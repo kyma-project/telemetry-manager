@@ -176,7 +176,6 @@ metadata:
     app.kubernetes.io/name: fluent-bit
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-    telemetry.kyma-project.io/self-monitor: enabled
   name: telemetry-fluent-bit-exporter-metrics
   namespace: kyma-system
 spec:
