@@ -13,7 +13,7 @@ Proposed
 Our current E2E test landscape suffers from the following issues:
 
 - Sporadic test coverage: Only a subset of configurations are tested.
-- No feature parity: Different pipeline configurations (e.g., FluentBit vs. OpenTelemetry) are not tested against the same feature set. In the absence of comprehensive test cases, certain features have been inconsistently implemented.
+- No feature parity: Different pipeline configurations (like FluentBit vs. OpenTelemetry) are not tested against the same feature set. In the absence of comprehensive test cases, certain features have been inconsistently implemented.
 
 It makes it hard to assert confidence across the key software components backing up LogPipelines.
 
@@ -61,7 +61,7 @@ To ensure comprehensive, maintainable, and scalable test coverage, we will categ
   - Manual gateway scaling
 
 #### Miscellaneous
-- Version conversion tests (e.g., v1alpha1 → v1beta1)
+- Version conversion tests (for example, v1alpha1 → v1beta1)
 
 Here’s a suggested file structure:
 
@@ -92,11 +92,11 @@ Here’s a suggested file structure:
 │   │   └── version_conversion_test.go
 ```
 
-Shared tests will be implemented as table-driven tests, which will allow us to easily add new test cases and configurations without duplicating code.
+Shared tests will be implemented as table-driven tests, so we can easily add new test cases and configurations without duplicating code.
 
 ### Ginkgo to Built-in Go Testing Migration
 
-Since we are going to rewrite our e2e tests, we decided to migrate from Ginkgo to the built-in Go testing framework. This will simplify the tests and make them easier to maintain. Ginkgo is a powerful testing framework, but it adds complexity and we don't really benefit from tests writte in the BDD style. By using the built-in Go testing framework, we can write simpler and more straightforward tests that are easier to understand and maintain.
+Because we are going to rewrite our e2e tests, we decided to migrate from Ginkgo to the built-in Go testing framework. This will simplify the tests and make them easier to maintain. Ginkgo is a powerful testing framework, but it adds complexity and we don't really benefit from tests written in the BDD style. By using the built-in Go testing framework, we can write simpler and more straightforward tests that are easier to understand and maintain.
 
 ### Advantages of Built-in Go Testing:
 
@@ -105,6 +105,7 @@ Since we are going to rewrite our e2e tests, we decided to migrate from Ginkgo t
 * Better support of table-driven tests
 * No need to wrap tests in Ginkgo's `Describe` and `It` blocks, the descriptions are usually just blindly copy-pasted and have no value
 
-Technical details are described in [this PoC](../pocs/ginkgo-to-go-testing/ginkgo-to-go-testing.md).
+Technical details are described in [Migrate Ginkgo Tests to Go Testing PoC](../pocs/ginkgo-to-go-testing/ginkgo-to-go-testing.md).
 
-Note that changing all of the tests at once is not feasible. We will migrate the tests incrementally as we rewrite them. It means we will need to different Github Action jobs for Ginkgo and vanilla Go tests. We will remove the Ginkgo job once all tests are migrated.
+> **NOTE:** 
+> Changing all of the tests at once is not feasible. We will migrate the tests incrementally as we rewrite them. This means we will need two different Github Action jobs for Ginkgo and vanilla Go tests. When all tests are migrated, we will remove the Ginkgo job.
