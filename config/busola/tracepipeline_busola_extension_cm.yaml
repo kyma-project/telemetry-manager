@@ -17,6 +17,58 @@ data:
         name: Type
         isSelected: true
         widget: Text
+    status:
+      body:
+        - name: Condition details
+          widget: ConditionList
+          source: status.conditions
+          highlights:
+            - type: GatewayHealthy
+              positive:
+                - 'True'
+              critical:
+                - 'False'
+              warning:
+                - 'Unknown'
+            - type: ConfigurationGenerated
+              positive:
+                - 'True'
+              critical:
+                - 'False'
+              warning:
+                - 'Unknown'
+            - type: TelemetryFlowHealthy
+              positive:
+                - 'True'
+              critical:
+                - 'False'
+              warning:
+                - 'Unknown'
+          customContent:
+            - value:
+                widget: Badge
+                source: $filter(status.conditions, function($c){$c.type = 'GatewayHealthy'}).reason
+              header: Reason
+              type: GatewayHealthy
+            - value: $readableTimestamp($filter(status.conditions, function($c){$c.type = 'GatewayHealthy'}).lastTransitionTime)
+              header: Last transition time
+              type: GatewayHealthy
+            - value:
+                widget: Badge
+                source: $filter(status.conditions, function($c){$c.type = 'ConfigurationGenerated'}).reason
+              header: Reason
+              type: ConfigurationGenerated
+            - value: $readableTimestamp($filter(status.conditions, function($c){$c.type = 'ConfigurationGenerated'}).lastTransitionTime)
+              header: Last transition time
+              type: ConfigurationGenerated
+            - value:
+                widget: Badge
+                source: $filter(status.conditions, function($c){$c.type = 'TelemetryFlowHealthy'}).reason
+              header: Reason
+              type: TelemetryFlowHealthy
+            - value: $readableTimestamp($filter(status.conditions, function($c){$c.type = 'TelemetryFlowHealthy'}).lastTransitionTime)
+              header: Last transition time
+              type: TelemetryFlowHealthy
     body:
       - source: status.conditions
         widget: Table

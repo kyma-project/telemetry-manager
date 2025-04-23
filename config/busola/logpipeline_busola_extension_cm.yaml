@@ -31,12 +31,53 @@ data:
         - name: Condition details
           widget: ConditionList
           source: status.conditions
+          highlights:
+            - type: AgentHealthy
+              positive:
+                - 'True'
+              critical:
+                - 'False'
+              warning:
+                - 'Unknown'
+            - type: ConfigurationGenerated
+              positive:
+                - 'True'
+              critical:
+                - 'False'
+              warning:
+                - 'Unknown'
+            - type: TelemetryFlowHealthy
+              positive:
+                - 'True'
+              critical:
+                - 'False'
+              warning:
+                - 'Unknown'
           customContent:
             - value:
                 widget: Badge
                 source: $filter(status.conditions, function($c){$c.type = 'AgentHealthy'}).reason
-                header: Reason
-                type: AgentHealthy
+              header: Reason
+              type: AgentHealthy
+            - value: $readableTimestamp($filter(status.conditions, function($c){$c.type = 'AgentHealthy'}).lastTransitionTime)
+              header: Last transition time
+              type: AgentHealthy
+            - value:
+                widget: Badge
+                source: $filter(status.conditions, function($c){$c.type = 'ConfigurationGenerated'}).reason
+              header: Reason
+              type: ConfigurationGenerated
+            - value: $readableTimestamp($filter(status.conditions, function($c){$c.type = 'ConfigurationGenerated'}).lastTransitionTime)
+              header: Last transition time
+              type: ConfigurationGenerated
+            - value:
+                widget: Badge
+                source: $filter(status.conditions, function($c){$c.type = 'TelemetryFlowHealthy'}).reason
+              header: Reason
+              type: TelemetryFlowHealthy
+            - value: $readableTimestamp($filter(status.conditions, function($c){$c.type = 'TelemetryFlowHealthy'}).lastTransitionTime)
+              header: Last transition time
+              type: TelemetryFlowHealthy
     body:
       - source: status.conditions
         widget: Table
