@@ -21,3 +21,5 @@ Built-in testing cleanup has a function `t.Cleanup()` that registers a function 
 ## BeforeSuite / AfterSuite
 
 In Ginkgo, `BeforeSuite` and `AfterSuite` are used to set up and tear down resources that are shared across all tests. In the Go testing framework, we can use `TestMain` to achieve similar functionality. The `TestMain` function is called before any tests are run, and we can use it to set up any necessary resources. After all tests have run, we can clean up those resources.Exit` call. We could also repeat the logic in each test.
+
+Note that the `testkit/suite` package has to be adapted: no Gomega matchers, no `testenv` dependency. It has to be usable by both Ginkgo and Go testing during the migration phase.
