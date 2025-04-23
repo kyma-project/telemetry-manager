@@ -101,8 +101,6 @@ receivers:
                         enabled: false
                     k8s.container.ephemeralstorage_limit:
                         enabled: false
-                    k8s.container.restarts:
-                        enabled: false
                     k8s.container.ready:
                         enabled: false
                     k8s.namespace.phase:
