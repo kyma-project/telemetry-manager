@@ -96,6 +96,6 @@ Here’s a suggested file structure:
 
 Since we are going to rewrite our e2e tests, we decided to migrate from Ginkgo to the built-in Go testing framework. This will simplify the tests and make them easier to maintain. Ginkgo is a powerful testing framework, but it adds complexity and we don't really benefit from tests writte in the BDD style. By using the built-in Go testing framework, we can write simpler and more straightforward tests that are easier to understand and maintain.
 
-Technical details are described in [this PoC](../pocs/ginkgo-to-go-testing/ginkgo-to-go-testing.go)
+Technical details are described in [this PoC](../pocs/ginkgo-to-go-testing/ginkgo-to-go-testing.md).
 
 Note that changing all of the tests at once is not feasible. We will migrate the tests incrementally as we rewrite them. It means we will need to different Github Action jobs for Ginkgo and vanilla Go tests. We will remove the Ginkgo job once all tests are migrated.
