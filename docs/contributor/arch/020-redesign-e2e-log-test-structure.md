@@ -66,8 +66,8 @@ To ensure comprehensive, maintainable, and scalable test coverage, we will categ
 Here’s a suggested file structure:
 
 ```bash
-/test
-├── e2e
+e2e
+├── logs
 │   ├── shared/ # Shared tests (all 3 components, FluentBit/LogAgent, LogGateway/LogAgent) implemented as table-driven
 │   │   ├── namespace_selector_test.go # all 3 components
 │   │   ├── container_selector_test.go # FluentBit/LogAgent (LogGateway does not support this)
