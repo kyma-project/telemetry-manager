@@ -1,4 +1,4 @@
-# Migrate Ginkgo tests to Go testing PoC
+# Migrate Ginkgo Tests to Go Testing PoC
 
 This proof of concept demonstrates how to migrate Ginkgo tests to Go's built-in testing framework. The goal is to convert Ginkgo-style tests into the plain Go testing style while maintaining the same functionality and structure.
 
@@ -8,7 +8,7 @@ This proof of concept demonstrates how to migrate Ginkgo tests to Go's built-in 
 
 ## Gomega
 
-Gomega is a matcher library for Go that provides expressive assertions. Even though it is often used together with Ginkgo, it can be also used with the built-in `testing` package to write tests in a more readable way. It means that we can keep our Gomega matchers while migrating from Ginkgo to Go's testing framework. Note that in every test func we must call `gomega.RegisterTestingT(t)` to register the testing.T instance with Gomega.
+Gomega is a matcher library for Go that provides expressive assertions. Even though it is often used together with Ginkgo, it can be also used with the built-in `testing` package to write tests in a more readable way. It means that we can keep our Gomega matchers while migrating from Ginkgo to Go's testing framework. Note that in every test func, we must call `gomega.RegisterTestingT(t)` to register the testing.T instance with Gomega.
 
 ## Labels
 
