@@ -8,7 +8,7 @@ This proof of concept demonstrates how to migrate Ginkgo tests to Go's built-in 
 
 ## Gomega
 
-Gomega is a matcher library for Go that provides expressive assertions. Even though it is often used together with Ginkgo, it can be also used with the built-in `testing` package to write tests in a more readable way. It means that we can keep our Gomega matchers while migrating from Ginkgo to Go's testing framework. Note that in every test func, we must call `gomega.RegisterTestingT(t)` to register the testing.T instance with Gomega.
+Gomega is a matcher library for Go that provides expressive assertions. Even though it is often used together with Ginkgo, it can be also used with the built-in `testing` package to write tests in a more readable way. It means that we can keep our Gomega matchers while migrating from Ginkgo to Go's testing framework. Note that in every test function, we must call `gomega.RegisterTestingT(t)` to register the testing.T instance with Gomega.
 
 ## Labels
 
@@ -20,6 +20,6 @@ Built-in testing cleanup has a function `t.Cleanup()` that registers a function 
 
 ## BeforeSuite / AfterSuite
 
-In Ginkgo, `BeforeSuite` and `AfterSuite` are used to set up and tear down resources that are shared across all tests. In the Go testing framework, we can use `TestMain` to achieve similar functionality. The `TestMain` function is called before any tests are run, and we can use it to set up any necessary resources. After all tests have run, we can clean up those resources.Exit` call. We could also repeat the logic in each test.
+In Ginkgo, `BeforeSuite` and `AfterSuite` are used to set up and tear down resources that are shared across all tests. In the Go testing framework, we can use `TestMain` to achieve similar functionality. The `TestMain` function is called before any tests are run, and we can use it to set up any necessary resources. After all tests have run, we can clean up those resources.
 
 Note that the `testkit/suite` package has to be adapted: no Gomega matchers, no `testenv` dependency. It has to be usable by both Ginkgo and Go testing during the migration phase.
