@@ -17,3 +17,7 @@ In Ginkgo, labels are often used to group tests together. In the Go testing fram
 ## Cleanup
 
 Built-in testing cleanup has a function `t.Cleanup()` that registers a function to be called when the test completes. We can use it similarly to `ginkgo.DeferCleanup()` to clean up resources after a test has run or failed.
+
+## BeforeSuite / AfterSuite
+
+In Ginkgo, `BeforeSuite` and `AfterSuite` are used to set up and tear down resources that are shared across all tests. In the Go testing framework, we can use `TestMain` to achieve similar functionality. The `TestMain` function is called before any tests are run, and we can use it to set up any necessary resources. After all tests have run, we can clean up those resources.Exit` call. We could also repeat the logic in each test.
