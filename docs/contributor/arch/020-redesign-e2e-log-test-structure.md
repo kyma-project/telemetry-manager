@@ -92,9 +92,18 @@ Here’s a suggested file structure:
 │   │   └── version_conversion_test.go
 ```
 
+Shared tests will be implemented as table-driven tests, which will allow us to easily add new test cases and configurations without duplicating code.
+
 ### Ginkgo to Built-in Go Testing Migration
 
 Since we are going to rewrite our e2e tests, we decided to migrate from Ginkgo to the built-in Go testing framework. This will simplify the tests and make them easier to maintain. Ginkgo is a powerful testing framework, but it adds complexity and we don't really benefit from tests writte in the BDD style. By using the built-in Go testing framework, we can write simpler and more straightforward tests that are easier to understand and maintain.
+
+### Advantages of Built-in Go Testing:
+
+* Simplicity
+* No external dependencies or binaries needed
+* Better support of table-driven tests
+* No need to wrap tests in Ginkgo's `Describe` and `It` blocks, the descriptions are usually just blindly copy-pasted and have no value
 
 Technical details are described in [this PoC](../pocs/ginkgo-to-go-testing/ginkgo-to-go-testing.md).
 
