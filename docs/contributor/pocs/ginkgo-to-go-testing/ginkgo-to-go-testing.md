@@ -4,7 +4,7 @@ This proof of concept demonstrates how to migrate Ginkgo tests to Go's built-in 
 
 ## Built-in testing E2E test example
 
-[Service Name Enrichment](./service_name_test.go)
+[Service Name Enrichment](./_service_name_enrichment_test.go)
 
 ## Gomega
 
@@ -12,7 +12,7 @@ Gomega is a matcher library for Go that provides expressive assertions. Even tho
 
 ## Labels
 
-Labels are used to categorize tests. In Ginkgo, labels are often used to group tests together. In the Go testing framework, we can use go test args to achieve a similar effect.
+In Ginkgo, labels are often used to group tests together. In the Go testing framework, we can use go test args to achieve a similar effect. It's a little bit less convenient, but it works.
 
 ## Cleanup
 
