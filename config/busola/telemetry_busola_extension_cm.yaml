@@ -7,12 +7,79 @@ metadata:
     busola.io/extension-version: "0.5"
   name: module
 data:
-  details: |
+  dataSources: |-
+    logPipelines:
+      resource:
+        group: telemetry.kyma-project.io
+        version: v1alpha1
+        kind: LogPipeline
+    metricPipelines:
+      resource:
+        group: telemetry.kyma-project.io
+        version: v1alpha1
+        kind: MetricPipeline
+    tracePipelines:
+      resource:
+        group: telemetry.kyma-project.io
+        version: v1alpha1
+        kind: TracePipeline
+  details: |-
     header:
       - name: State
         source: status.state
         widget: Badge
-
+    status:
+      body:
+        - name: Condition details
+          widget: ConditionList
+          source: status.conditions
+          highlights:
+            - type: LogComponentsHealthy
+              positive:
+                - 'True'
+              critical:
+                - 'False'
+              warning:
+                - 'Unknown'
+            - type: MetricComponentsHealthy
+              positive:
+                - 'True'
+              critical:
+                - 'False'
+              warning:
+                - 'Unknown'
+            - type: TraceComponentsHealthy
+              positive:
+                - 'True'
+              critical:
+                - 'False'
+              warning:
+                - 'Unknown'
+          customContent:
+            - value:
+                widget: Badge
+                source: $filter(status.conditions, function($c){$c.type = 'LogComponentsHealthy'}).reason
+              header: Reason
+              type: LogComponentsHealthy
+            - value: $readableTimestamp($filter(status.conditions, function($c){$c.type = 'LogComponentsHealthy'}).lastTransitionTime)
+              header: Last transition time
+              type: LogComponentsHealthy
+            - value:
+                widget: Badge
+                source: $filter(status.conditions, function($c){$c.type = 'MetricComponentsHealthy'}).reason
+              header: Reason
+              type: MetricComponentsHealthy
+            - value: $readableTimestamp($filter(status.conditions, function($c){$c.type = 'MetricComponentsHealthy'}).lastTransitionTime)
+              header: Last transition time
+              type: MetricComponentsHealthy
+            - value:
+                widget: Badge
+                source: $filter(status.conditions, function($c){$c.type = 'TraceComponentsHealthy'}).reason
+              header: Reason
+              type: TraceComponentsHealthy
+            - value: $readableTimestamp($filter(status.conditions, function($c){$c.type = 'TraceComponentsHealthy'}).lastTransitionTime)
+              header: Last transition time
+              type: TraceComponentsHealthy
     body:
       - name: Traces
         widget: Panel
@@ -41,6 +108,12 @@ data:
           name: OTLP GRPC Metric Endpoint
         - source: status.endpoints.metrics.http
           name: OTLP HTTP Metric Endpoint
+    resourceGraph:
+      colorVariant: 2
+      dataSources:
+        - source: logPipelines
+        - source: metricPipelines
+        - source: tracePipelines
   form: |
     - advanced: true
       defaultExpanded: false
