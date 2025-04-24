@@ -27,8 +27,11 @@ var (
 	K8sClient   client.Client
 	ProxyClient *apiserverproxy.Client
 
-	cancel            context.CancelFunc
-	defaultK8sObjects []client.Object
+	cancel                   context.CancelFunc
+	preProvisionedK8sObjects = []client.Object{
+		// deny all network policy to simulate a typical kyma installation
+		kitk8s.NewNetworkPolicy("deny-all-ingress-and-egress", kitkyma.SystemNamespaceName).K8sObject(),
+	}
 )
 
 // BeforeSuiteFuncErr is designed to return an error instead of relying on Gomega matchers.
@@ -38,6 +41,7 @@ func BeforeSuiteFuncErr() error {
 	Ctx, cancel = context.WithCancel(context.Background()) //nolint:fatcontext // context is used in tests
 
 	kubeconfigPath := clientcmd.NewDefaultClientConfigLoadingRules().GetDefaultFilename()
+
 	restConfig, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
 	if err != nil {
 		return fmt.Errorf("failed to load kubeconfig: %w", err)
@@ -49,13 +53,11 @@ func BeforeSuiteFuncErr() error {
 	}
 
 	ProxyClient, err = apiserverproxy.NewClient(restConfig)
-
-	denyAllNetworkPolicyK8sObject := kitk8s.NewNetworkPolicy("deny-all-ingress-and-egress", kitkyma.SystemNamespaceName).K8sObject()
-	defaultK8sObjects = []client.Object{
-		denyAllNetworkPolicyK8sObject,
+	if err != nil {
+		return fmt.Errorf("failed to create apiserver proxy client: %w", err)
 	}
 
-	if err := kitk8s.CreateObjects(Ctx, K8sClient, defaultK8sObjects...); err != nil {
+	if err := kitk8s.CreateObjects(Ctx, K8sClient, preProvisionedK8sObjects...); err != nil {
 		return fmt.Errorf("failed to create default k8s objects: %w", err)
 	}
 
@@ -71,7 +73,7 @@ func BeforeSuiteFunc() {
 // This function is intended for use in a vanilla TestMain function within new e2e test suites.
 // Note that Gomega matchers cannot be utilized in the TestMain function.
 func AfterSuiteFuncErr() error {
-	if err := kitk8s.DeleteObjects(Ctx, K8sClient, defaultK8sObjects...); err != nil {
+	if err := kitk8s.DeleteObjects(Ctx, K8sClient, preProvisionedK8sObjects...); err != nil {
 		return fmt.Errorf("failed to delete default k8s objects: %w", err)
 	}
 
