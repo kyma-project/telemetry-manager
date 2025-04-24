@@ -2,16 +2,15 @@ package suite
 
 import (
 	"context"
+	"fmt"
 	"path"
 	"runtime"
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	logzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -25,54 +24,67 @@ const (
 
 var (
 	Ctx         context.Context
-	Cancel      context.CancelFunc
 	K8sClient   client.Client
 	ProxyClient *apiserverproxy.Client
-	TestEnv     *envtest.Environment
-	k8sObjects  []client.Object
+
+	cancel                   context.CancelFunc
+	preProvisionedK8sObjects = []client.Object{
+		// deny all network policy to simulate a typical kyma installation
+		kitk8s.NewNetworkPolicy("deny-all-ingress-and-egress", kitkyma.SystemNamespaceName).K8sObject(),
+	}
 )
 
-// Function to be executed before each Ginkgo test suite
-func BeforeSuiteFunc() {
-	var err error
+// BeforeSuiteFuncErr is designed to return an error instead of relying on Gomega matchers.
+// This function is intended for use in a vanilla TestMain function within new e2e test suites.
+// Note that Gomega matchers cannot be utilized in the TestMain function.
+func BeforeSuiteFuncErr() error {
+	Ctx, cancel = context.WithCancel(context.Background()) //nolint:fatcontext // context is used in tests
 
-	logf.SetLogger(logzap.New(logzap.WriteTo(GinkgoWriter), logzap.UseDevMode(true)))
-	useExistingCluster := true
-	TestEnv = &envtest.Environment{
-		UseExistingCluster: &useExistingCluster,
+	kubeconfigPath := clientcmd.NewDefaultClientConfigLoadingRules().GetDefaultFilename()
+
+	restConfig, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
+	if err != nil {
+		return fmt.Errorf("failed to load kubeconfig: %w", err)
 	}
 
-	_, err = TestEnv.Start()
-	Expect(err).NotTo(HaveOccurred())
-
-	Ctx, Cancel = context.WithCancel(context.Background()) //nolint:fatcontext // context is used in tests
-
-	By("bootstrapping test environment")
-
-	K8sClient, err = client.New(TestEnv.Config, client.Options{Scheme: scheme})
-	Expect(err).NotTo(HaveOccurred())
-	Expect(K8sClient).NotTo(BeNil())
-
-	denyAllNetworkPolicyK8sObject := kitk8s.NewNetworkPolicy("deny-all-ingress-and-egress", kitkyma.SystemNamespaceName).K8sObject()
-	k8sObjects = []client.Object{
-		denyAllNetworkPolicyK8sObject,
+	K8sClient, err = client.New(restConfig, client.Options{Scheme: scheme})
+	if err != nil {
+		return fmt.Errorf("failed to create k8s client: %w", err)
 	}
 
-	Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjects...)).To(Succeed())
+	ProxyClient, err = apiserverproxy.NewClient(restConfig)
+	if err != nil {
+		return fmt.Errorf("failed to create apiserver proxy client: %w", err)
+	}
 
-	ProxyClient, err = apiserverproxy.NewClient(TestEnv.Config)
-	Expect(err).NotTo(HaveOccurred())
+	if err := kitk8s.CreateObjects(Ctx, K8sClient, preProvisionedK8sObjects...); err != nil {
+		return fmt.Errorf("failed to create default k8s objects: %w", err)
+	}
+
+	return nil
 }
 
-// Function to be executed after each Ginkgo test suite
+// BeforeSuiteFunc is executed before each Ginkgo test suite
+func BeforeSuiteFunc() {
+	Expect(BeforeSuiteFuncErr()).Should(Succeed())
+}
+
+// AfterSuiteFuncErr is designed to return an error instead of relying on Gomega matchers.
+// This function is intended for use in a vanilla TestMain function within new e2e test suites.
+// Note that Gomega matchers cannot be utilized in the TestMain function.
+func AfterSuiteFuncErr() error {
+	if err := kitk8s.DeleteObjects(Ctx, K8sClient, preProvisionedK8sObjects...); err != nil {
+		return fmt.Errorf("failed to delete default k8s objects: %w", err)
+	}
+
+	cancel()
+
+	return nil
+}
+
+// AfterSuiteFunc is executed after each Ginkgo test suite
 func AfterSuiteFunc() {
-	Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
-
-	Cancel()
-	By("tearing down the test environment")
-
-	err := TestEnv.Stop()
-	Expect(err).NotTo(HaveOccurred())
+	Expect(AfterSuiteFuncErr()).Should(Succeed())
 }
 
 // ID returns the current test suite ID.
