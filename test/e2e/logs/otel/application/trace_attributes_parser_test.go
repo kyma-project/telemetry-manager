@@ -87,7 +87,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 		})
 
 		It("Should deliver loggen logs", func() {
-			assert.LogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, mockNs)
+			assert.OtelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, mockNs)
 		})
 
 		It("Should have trace and span ids in logs", func() {

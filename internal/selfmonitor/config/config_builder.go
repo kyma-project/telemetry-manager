@@ -131,7 +131,7 @@ func scrapableMetricsRegex() string {
 		fluentBitOutputProcBytesTotal,
 		fluentBitOutputDroppedRecordsTotal,
 		fluentBitInputBytesTotal,
-		fluentBitBufferUsageBytes,
+		fluentBitInputStorageChunksDown,
 	}
 
 	otelCollectorMetrics := []string{

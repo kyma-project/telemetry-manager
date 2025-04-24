@@ -59,7 +59,7 @@ func (b *Builder) Build(ctx context.Context, logPipelines []telemetryv1alpha1.Lo
 			queueSize,
 			otlpexporter.SignalTypeLog,
 		)
-		if err := addComponentsForLogPipeline(ctx, opts, otlpExporterBuilder, &pipeline, cfg, envVars); err != nil {
+		if err := addComponentsForLogPipeline(ctx, otlpExporterBuilder, &pipeline, cfg, envVars); err != nil {
 			return nil, nil, err
 		}
 	}
@@ -68,13 +68,13 @@ func (b *Builder) Build(ctx context.Context, logPipelines []telemetryv1alpha1.Lo
 }
 
 // addComponentsForLogPipeline enriches a Config (exporters, processors, etc.) with components for a given telemetryv1alpha1.LogPipeline.
-func addComponentsForLogPipeline(ctx context.Context, opts BuildOptions, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.LogPipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
+func addComponentsForLogPipeline(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.LogPipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
 	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.MakeConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to make otlp exporter config: %w", err)
 	}
 
-	receiver := makeFileLogReceiver(*pipeline, opts)
+	receiver := makeFileLogReceiver(*pipeline)
 
 	maps.Copy(envVars, otlpExporterEnvVars)
 

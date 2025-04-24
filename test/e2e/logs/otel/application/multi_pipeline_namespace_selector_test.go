@@ -20,8 +20,8 @@ import (
 var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, suite.LabelExperimental), Ordered, func() {
 	var (
 		mockNs            = suite.ID()
-		app1Ns            = "app-1"
-		app2Ns            = "app-2"
+		app1Ns            = suite.IDWithSuffix("app-1")
+		app2Ns            = suite.IDWithSuffix("app-2")
 		backend1Name      = "backend-1"
 		backend1ExportURL string
 		backend2Name      = "backend-2"
@@ -40,6 +40,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 
 		pipelineIncludeApp1Ns := testutils.NewLogPipelineBuilder().
 			WithName("include-"+app1Ns).
+			WithOTLPInput(false).
 			WithApplicationInput(true, testutils.IncludeLogNamespaces(app1Ns)).
 			WithOTLPOutput(testutils.OTLPEndpoint(backend1.Endpoint())).
 			Build()
@@ -51,6 +52,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 
 		pipelineExcludeApp1Ns := testutils.NewLogPipelineBuilder().
 			WithName("exclude-"+app1Ns).
+			WithOTLPInput(false).
 			WithApplicationInput(true, testutils.ExcludeLogNamespaces(app1Ns)).
 			WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
 			Build()
@@ -95,20 +97,20 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 
 		// verify logs from apps1Ns delivered to backend1
 		It("Should deliver Runtime logs from app1Ns to backend1", func() {
-			assert.LogsFromNamespaceDelivered(suite.ProxyClient, backend1ExportURL, app1Ns)
+			assert.OtelLogsFromNamespaceDelivered(suite.ProxyClient, backend1ExportURL, app1Ns)
 		})
 
 		It("Should not deliver logs from app2Ns to backend1", func() {
-			assert.LogsFromNamespaceNotDelivered(suite.ProxyClient, backend1ExportURL, app2Ns)
+			assert.OtelLogsFromNamespaceNotDelivered(suite.ProxyClient, backend1ExportURL, app2Ns)
 		})
 
 		// verify logs from apps2Ns delivered to backend2
 		It("Should deliver Runtime logs from app2Ns to backend2", func() {
-			assert.LogsFromNamespaceDelivered(suite.ProxyClient, backend2ExportURL, app2Ns)
+			assert.OtelLogsFromNamespaceDelivered(suite.ProxyClient, backend2ExportURL, app2Ns)
 		})
 
 		It("Should not deliver logs from app1Ns to backend2", func() {
-			assert.LogsFromNamespaceNotDelivered(suite.ProxyClient, backend2ExportURL, app1Ns)
+			assert.OtelLogsFromNamespaceNotDelivered(suite.ProxyClient, backend2ExportURL, app1Ns)
 		})
 	})
 })

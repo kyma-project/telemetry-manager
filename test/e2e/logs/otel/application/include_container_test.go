@@ -3,7 +3,6 @@
 package otel
 
 import (
-	"io"
 	"net/http"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -11,7 +10,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/agent"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -24,6 +22,7 @@ import (
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, suite.LabelExperimental), Ordered, func() {
+
 	var (
 		mockNs           = suite.ID()
 		pipelineName     = suite.ID()
@@ -34,38 +33,25 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		backend := backend.New(mockNs, backend.SignalTypeLogsOtel, backend.WithPersistentHostSecret(suite.IsUpgrade()))
+		backend := backend.New(mockNs, backend.SignalTypeLogsOtel)
 		logProducer := loggen.New(mockNs)
 		objs = append(objs, backend.K8sObjects()...)
 		objs = append(objs, logProducer.K8sObject())
 		backendExportURL = backend.ExportURL(suite.ProxyClient)
 
-		hostSecretRef := backend.HostSecretRefV1Alpha1()
-		pipelineBuilder := testutils.NewLogPipelineBuilder().
+		logPipeline := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
-			WithApplicationInput(true).
-			WithOTLPOutput(
-				testutils.OTLPEndpointFromSecret(
-					hostSecretRef.Name,
-					hostSecretRef.Namespace,
-					hostSecretRef.Key,
-				),
-			)
-		if suite.IsUpgrade() {
-			pipelineBuilder.WithLabels(kitk8s.PersistentLabel)
-		}
-		logPipeline := pipelineBuilder.Build()
+			WithIncludeContainers(loggen.DefaultContainerName).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+			Build()
+		objs = append(objs, &logPipeline)
 
-		objs = append(objs,
-			&logPipeline,
-		)
 		return objs
 	}
 
-	Context("When a log pipeline with runtime input exists", Ordered, func() {
+	Context("When a logpipeline with log agent and  included container exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
-
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 			})
@@ -80,53 +66,34 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.LogAgentName)
 		})
 
-		It("Should have a log backend running", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+		It("Should have a logs backend running", func() {
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
+			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
 		})
 
-		It("Should have a running pipeline", func() {
-			assert.LogPipelineOtelHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+		It("Should have a log producer running", func() {
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 		})
 
-		It("Should deliver loggen logs", func() {
-			assert.LogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, mockNs)
-		})
-
-		It("Ensures logs have expected scope name and scope version", func() {
+		It("Should have some logs in the backend", func() {
 			Eventually(func(g Gomega) {
 				resp, err := suite.ProxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-
-				g.Expect(resp).To(HaveHTTPBody(HaveFlatOtelLogs(
-					ContainElement(SatisfyAll(
-						HaveScopeName(Equal(agent.InstrumentationScopeRuntime)),
-						HaveScopeVersion(SatisfyAny(
-							Equal("main"),
-							MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
-						)),
-					)),
-				)))
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatOtelLogs(Not(BeEmpty()))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Should have Observed timestamp in the logs", func() {
+		It("Should only have logs from included container in the backend", func() {
 			Consistently(func(g Gomega) {
 				resp, err := suite.ProxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-
-				bodyContent, err := io.ReadAll(resp.Body)
-				defer resp.Body.Close()
-				g.Expect(err).NotTo(HaveOccurred())
-
-				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
-					HaveOtelTimestamp(Not(BeEmpty())),
-					HaveObservedTimestamp(Not(BeEmpty())),
-					HaveLogRecordBody(BeEmpty()),
-					HaveAttributes(HaveKey("log.original")),
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatOtelLogs(ContainElement(
+					HaveResourceAttributes(HaveKeyWithValue("k8s.container.name", Equal(loggen.DefaultContainerName))),
 				))))
-			}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
+
 })

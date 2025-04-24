@@ -99,7 +99,7 @@ func New(
 		},
 		overridesHandler:          overridesHandler,
 		selfMonitorApplierDeleter: selfMonitorApplierDeleter,
-		metricsEmitter:            NewTelemetryMetricsEmitter(),
+		metricsEmitter:            newTelemetryMetricsEmitter(),
 	}
 }
 

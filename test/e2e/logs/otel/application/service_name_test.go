@@ -48,6 +48,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelExperimental)
 		hostSecretRef := backend.HostSecretRefV1Alpha1()
 		pipelineBuilder := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
+			WithOTLPInput(false).
 			WithApplicationInput(true).
 			WithOTLPOutput(
 				testutils.OTLPEndpointFromSecret(
@@ -102,7 +103,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelExperimental)
 		})
 
 		It("Should deliver loggen logs", func() {
-			assert.LogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, mockNs)
+			assert.OtelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, mockNs)
 		})
 
 		verifyServiceNameAttr := func(givenPodPrefix, expectedServiceName string) {

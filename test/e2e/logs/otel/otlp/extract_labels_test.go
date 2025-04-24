@@ -47,7 +47,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPush, s
 		hostSecretRef := backend.HostSecretRefV1Alpha1()
 		pipelineBuilder := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
-			WithApplicationInputDisabled().
+			WithApplicationInput(false).
 			WithOTLPOutput(
 				testutils.OTLPEndpointFromSecret(
 					hostSecretRef.Name,
@@ -116,7 +116,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPush, s
 		})
 
 		It("Should deliver telemetrygen logs", func() {
-			assert.LogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, mockNs)
+			assert.OtelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, mockNs)
 		})
 
 		It("Should have a right labels attached to the logs", func() {

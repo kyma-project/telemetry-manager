@@ -477,6 +477,7 @@ If container metrics are enabled, the following metrics are collected:
   - `k8s.container.cpu_limit`
   - `k8s.container.memory_request`
   - `k8s.container.memory_limit`
+  - `k8s.container.restarts`
 
 If Node metrics are enabled, the following metrics are collected:
 

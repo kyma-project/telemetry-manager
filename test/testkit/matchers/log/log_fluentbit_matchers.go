@@ -8,6 +8,8 @@ import (
 	"github.com/onsi/gomega/types"
 )
 
+const iso8601 = "2006-01-02T15:04:05.999Z"
+
 func HaveFlatFluentBitLogs(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(jsonLogs []byte) ([]FlatLogFluentBit, error) {
 		lds, err := unmarshalFluentBitLogs(jsonLogs)
@@ -79,5 +81,14 @@ func HaveKubernetesLabels(matcher types.GomegaMatcher) types.GomegaMatcher {
 func HaveLogBody(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(fl FlatLogFluentBit) string {
 		return fl.LogRecordBody
+	}, matcher)
+}
+
+func HaveDateISO8601Format(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(fl FlatLogFluentBit) bool {
+		date := fl.LogRecordAttributes["date"]
+		_, err := time.Parse(iso8601, date)
+
+		return err == nil
 	}, matcher)
 }

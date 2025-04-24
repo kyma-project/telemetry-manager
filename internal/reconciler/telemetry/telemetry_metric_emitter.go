@@ -12,10 +12,12 @@ var compatibilityModeGauge = prometheus.NewGauge(prometheus.GaugeOpts{
 
 type telemetryMetricsEmitter struct{}
 
-func NewTelemetryMetricsEmitter() telemetryMetricsEmitter {
+//nolint:unparam // No good explanation why this linter is firing here
+func newTelemetryMetricsEmitter() telemetryMetricsEmitter {
 	metrics.Registry.MustRegister(compatibilityModeGauge)
 	return telemetryMetricsEmitter{}
 }
+
 func (e telemetryMetricsEmitter) updateCompatibilityModeMetric(compatibilityMode bool) {
 	if compatibilityMode {
 		compatibilityModeGauge.Set(1)

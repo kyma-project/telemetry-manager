@@ -39,6 +39,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 
 			logPipeline1 := testutils.NewLogPipelineBuilder().
 				WithName(pipeline1Name).
+				WithOTLPInput(false).
 				WithApplicationInput(true).
 				WithOTLPOutput(testutils.OTLPEndpoint(backend1.Endpoint())).
 				Build()
@@ -50,6 +51,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 
 			logPipeline2 := testutils.NewLogPipelineBuilder().
 				WithName(pipeline2Name).
+				WithOTLPInput(false).
 				WithApplicationInput(true).
 				WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
 				Build()
@@ -91,8 +93,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 		})
 
 		It("Should verify logs from loggen are delivered", func() {
-			assert.LogsFromNamespaceDelivered(suite.ProxyClient, backend1ExportURL, mockNs)
-			assert.LogsFromNamespaceDelivered(suite.ProxyClient, backend2ExportURL, mockNs)
+			assert.OtelLogsFromNamespaceDelivered(suite.ProxyClient, backend1ExportURL, mockNs)
+			assert.OtelLogsFromNamespaceDelivered(suite.ProxyClient, backend2ExportURL, mockNs)
 		})
 	})
 })
