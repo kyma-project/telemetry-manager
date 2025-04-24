@@ -70,27 +70,6 @@ data:
               header: Last transition time
               type: TelemetryFlowHealthy
     body:
-      - source: status.conditions
-        widget: Table
-        name: Reconciliation Conditions
-        children:
-          - source: type
-            name: Type
-          - source: status
-            name: Status
-            widget: Badge
-            highlights:
-              positive:
-                - 'True'
-              critical:
-                - 'False'
-          - source: reason
-            name: Reason
-          - source: message
-            name: Message
-          - source: '$readableTimestamp(lastTransitionTime)'
-            name: Last transition
-            sort: true
       - widget: Panel
         name: Output
         children:

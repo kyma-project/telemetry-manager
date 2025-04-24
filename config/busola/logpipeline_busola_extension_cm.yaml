@@ -79,27 +79,6 @@ data:
               header: Last transition time
               type: TelemetryFlowHealthy
     body:
-      - source: status.conditions
-        widget: Table
-        name: Reconciliation Conditions
-        children:
-          - source: type
-            name: Type
-          - source: status
-            name: Status
-            widget: Badge
-            highlights:
-              positive:
-                - 'True'
-              critical:
-                - 'False'
-          - source: reason
-            name: Reason
-          - source: message
-            name: Message
-          - source: '$readableTimestamp(lastTransitionTime)'
-            name: Last transition
-            sort: true
       - widget: Panel
         name: Applications
         children:
@@ -495,4 +474,4 @@ data:
               - 'True'
             critical:
               - 'False'
-  dataSources: "relatedSecrets:\n  resource:\n    kind: Secret\n    version: v1\n  filter: |-\n      $item.metadata.name =  $root.spec.output.http.user.valueFrom.secretKeyRef.name or \n      $item.metadata.name = $root.spec.output.http.password.valueFrom.secretKeyRef.name or \n      $item.metadata.name = $root.spec.output.http.host.valueFrom.secretKeyRef.name or\n      $item.metadata.name = $root.spec.output.http.url.valueFrom.secretKeyRef.name or\n      $item.metadata.name = $root.spec.output.http.tls.ca.valueFrom.secretKeyRef.name or\n      $item.metadata.name = $root.spec.output.http.tls.cert.valueFrom.secretKeyRef.name or\n      $item.metadata.name = $root.spec.output.http.tls.key.valueFrom.secretKeyRef.name\n                      #magic___^_^___line\n                      #magic___^_^___line\n                      #magic___^_^___line"
+  dataSources: "relatedSecrets:\n  resource:\n    kind: Secret\n    version: v1\n  filter: |-\n      $item.metadata.name =  $root.spec.output.http.user.valueFrom.secretKeyRef.name or \n      $item.metadata.name = $root.spec.output.http.password.valueFrom.secretKeyRef.name or \n      $item.metadata.name = $root.spec.output.http.host.valueFrom.secretKeyRef.name or\n      $item.metadata.name = $root.spec.output.http.url.valueFrom.secretKeyRef.name or\n      $item.metadata.name = $root.spec.output.http.tls.ca.valueFrom.secretKeyRef.name or\n      $item.metadata.name = $root.spec.output.http.tls.cert.valueFrom.secretKeyRef.name or\n      $item.metadata.name = $root.spec.output.http.tls.key.valueFrom.secretKeyRef.name\n"
