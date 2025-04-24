@@ -9,7 +9,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/namespaces"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
-	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 )
 
@@ -25,18 +24,8 @@ const (
 	attributeTraceParent  = "attributes.traceparent"
 )
 
-func makeFileLogReceiver(logpipeline telemetryv1alpha1.LogPipeline, opts BuildOptions) *FileLog {
-	excludeLogAgentLogs := fmt.Sprintf("/var/log/pods/%s_%s*/*/*.log", opts.AgentNamespace, otelcollector.LogAgentName)
-	excludeFluentBitLogs := fmt.Sprintf("/var/log/pods/%s_%s*/*/*.log", opts.AgentNamespace, fluentbit.LogAgentName)
-	excludeSystemLogCollectorLogs := fmt.Sprintf("/var/log/pods/%s_*%s*/*/*.log", opts.AgentNamespace, commonresources.SystemLogCollectorName)
-	excludeSystemLogAgentLogs := fmt.Sprintf("/var/log/pods/%s_*%s*/*/*.log", opts.AgentNamespace, commonresources.SystemLogAgentName)
-
+func makeFileLogReceiver(logpipeline telemetryv1alpha1.LogPipeline) *FileLog {
 	excludePath := createExcludePath(logpipeline.Spec.Input.Application)
-	excludePath = append(excludePath,
-		excludeLogAgentLogs,
-		excludeFluentBitLogs,
-		excludeSystemLogCollectorLogs,
-		excludeSystemLogAgentLogs)
 
 	includePath := createIncludePath(logpipeline.Spec.Input.Application)
 
@@ -58,46 +47,77 @@ func makeFileLogReceiver(logpipeline telemetryv1alpha1.LogPipeline, opts BuildOp
 }
 
 func createIncludePath(application *telemetryv1alpha1.LogPipelineApplicationInput) []string {
-	if application == nil || application.Namespaces.Include == nil && !application.Namespaces.System {
-		return []string{"/var/log/pods/*/*/*.log"}
+	var includePath []string
+
+	includeNamespaces := []string{"*"}
+	includeContainers := []string{"*"}
+
+	if application != nil {
+		if len(application.Namespaces.Include) > 0 {
+			includeNamespaces = application.Namespaces.Include
+		}
+
+		if len(application.Containers.Include) > 0 {
+			includeContainers = application.Containers.Include
+		}
 	}
 
-	includeNamespacePath := []string{}
-	for _, ns := range application.Namespaces.Include {
-		includeNamespacePath = append(includeNamespacePath, fmt.Sprintf("/var/log/pods/%s_*/*/*.log", ns))
+	for _, ns := range includeNamespaces {
+		for _, container := range includeContainers {
+			includePath = append(includePath, makePath(ns, "*", container))
+		}
 	}
 
-	if application.Namespaces.System {
-		return makeSystemLogPath()
-	}
-
-	return includeNamespacePath
+	return includePath
 }
 
 func createExcludePath(application *telemetryv1alpha1.LogPipelineApplicationInput) []string {
-	if application == nil || application.Namespaces.Exclude == nil && !application.Namespaces.System {
-		return makeSystemLogPath()
+	var excludePath []string
+
+	var excludeContainers []string
+
+	var excludeNamespaces []string
+
+	excludeSystemLogAgentPath := makePath("kyma-system", fmt.Sprintf("*%s*", commonresources.SystemLogAgentName), "*")
+	excludeSystemLogCollectorPath := makePath("kyma-system", fmt.Sprintf("*%s*", commonresources.SystemLogCollectorName), "*")
+	excludeOtlpLogAgentPath := makePath("kyma-system", fmt.Sprintf("%s*", otelcollector.LogAgentName), "*")
+	excludeFluentBitPath := makePath("kyma-system", "telemetry-fluent-bit*", "*")
+
+	excludePath = append(excludePath, excludeSystemLogAgentPath, excludeSystemLogCollectorPath, excludeOtlpLogAgentPath, excludeFluentBitPath)
+
+	if application == nil || !application.Namespaces.System {
+		systemLogPath := []string{}
+		for _, ns := range namespaces.System() {
+			systemLogPath = append(systemLogPath, fmt.Sprintf("/var/log/pods/%s_*/*/*.log", ns))
+		}
+
+		excludePath = append(excludePath, systemLogPath...)
 	}
 
-	excludeNamespacePath := []string{}
-	if !application.Namespaces.System {
-		excludeNamespacePath = append(excludeNamespacePath, makeSystemLogPath()...)
+	if application != nil {
+		if len(application.Namespaces.Exclude) > 0 {
+			excludeNamespaces = append(excludeNamespaces, application.Namespaces.Exclude...)
+		}
+
+		if len(application.Containers.Exclude) > 0 {
+			excludeContainers = append(excludeContainers, application.Containers.Exclude...)
+		}
 	}
 
-	for _, ns := range application.Namespaces.Exclude {
-		excludeNamespacePath = append(excludeNamespacePath, fmt.Sprintf("/var/log/pods/%s_*/*/*.log", ns))
+	for _, ns := range excludeNamespaces {
+		excludePath = append(excludePath, fmt.Sprintf("/var/log/pods/%s_*/*/*.log", ns))
 	}
 
-	return excludeNamespacePath
+	for _, container := range excludeContainers {
+		excludePath = append(excludePath, fmt.Sprintf("/var/log/pods/*_*/%s/*.log", container))
+	}
+
+	return excludePath
 }
 
-func makeSystemLogPath() []string {
-	systemLogPath := []string{}
-	for _, ns := range namespaces.System() {
-		systemLogPath = append(systemLogPath, fmt.Sprintf("/var/log/pods/%s_*/*/*.log", ns))
-	}
-
-	return systemLogPath
+func makePath(namespace, pod, container string) string {
+	pathPattern := "/var/log/pods/%s_%s/%s/*.log"
+	return fmt.Sprintf(pathPattern, namespace, pod, container)
 }
 
 func makeOperators(logPipeline telemetryv1alpha1.LogPipeline) []Operator {
