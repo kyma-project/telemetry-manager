@@ -52,9 +52,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 	Context("When a logpipeline with log agent and  excluded container exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
-			//DeferCleanup(func() {
-			//	Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
-			//})
+			DeferCleanup(func() {
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+			})
 			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
