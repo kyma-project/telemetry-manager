@@ -49,7 +49,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 		return objs
 	}
 
-	Context("When a logpipeline with log agent and  excluded container exists", Ordered, func() {
+	Context("When a logpipeline with log agent and  included container exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
