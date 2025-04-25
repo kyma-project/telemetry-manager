@@ -31,7 +31,7 @@ const (
 func TestApplySelfMonitorResources(t *testing.T) {
 	var objects []client.Object
 
-	ctx := context.Background()
+	ctx := t.Context()
 	scheme := runtime.NewScheme()
 	client := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
 		Create: func(_ context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
@@ -96,15 +96,15 @@ func TestDeleteSelfMonitorResources(t *testing.T) {
 		PrometheusConfigPath:     configPath,
 		PrometheusConfigYAML:     prometheusConfigYAML,
 	}
-	err := sut.ApplyResources(context.Background(), fakeClient, opts)
+	err := sut.ApplyResources(t.Context(), fakeClient, opts)
 	require.NoError(t, err)
 
-	err = sut.DeleteResources(context.Background(), fakeClient)
+	err = sut.DeleteResources(t.Context(), fakeClient)
 	require.NoError(t, err)
 
 	for i := range created {
 		// an update operation on a non-existent object should return a NotFound error
-		err = fakeClient.Get(context.Background(), client.ObjectKeyFromObject(created[i]), created[i])
+		err = fakeClient.Get(t.Context(), client.ObjectKeyFromObject(created[i]), created[i])
 		require.True(t, apierrors.IsNotFound(err), "want not found, got %v: %#v", err, created[i])
 	}
 }

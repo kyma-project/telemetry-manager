@@ -8,12 +8,12 @@ on:
       - "main"
       - "release-[0-9]+.[0-9]+"
     paths-ignore:
-      - 'docs/**'
-      - 'dependencies/**'
-      - '**/*.md'
-      - 'OWNERS'
-      - 'CODEOWNERS'
-      - 'external-images.yaml'
+      - "docs/**"
+      - "dependencies/**"
+      - "**/*.md"
+      - "OWNERS"
+      - "CODEOWNERS"
+      - "external-images.yaml"
   push:
     branches:
       - "main"
@@ -21,12 +21,17 @@ on:
     tags:
       - "[0-9]+.[0-9]+.[0-9]+"
     paths-ignore:
-      - 'docs/**'
-      - 'dependencies/**'
-      - '**/*.md'
-      - 'OWNERS'
-      - 'CODEOWNERS'
-      - 'external-images.yaml'
+      - "docs/**"
+      - "dependencies/**"
+      - "**/*.md"
+      - "OWNERS"
+      - "CODEOWNERS"
+      - "external-images.yaml"
+
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   envs:
     runs-on: ubuntu-latest
@@ -65,11 +70,21 @@ jobs:
     if: ${{ always() && (needs.build-image.result == 'failure') }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
       - name: Send slack message on failure
-        uses: slackapi/slack-github-action@e28cf165c92ffef168d23c5c9000cffc8a25e117
+        uses: slackapi/slack-github-action@485a9d42d3a73031f12ec201c457e2162c45d02d # v2.0.0
         with:
-          payload-file-path: ".github/workflows/slack-message.json"
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: ""
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "Workflow <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|*${{ github.workflow }}*> has status *${{ job.status }}*"
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "See related <${{ github.event.pull_request.html_url || github.event.head_commit.url }}|commit>"

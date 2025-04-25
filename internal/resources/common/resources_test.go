@@ -33,17 +33,12 @@ func TestMakeClusterRoleBinding(t *testing.T) {
 
 func TestWithGoMemLimitEnvVar(t *testing.T) {
 	memLimit := resource.NewQuantity(1000, resource.BinarySI)
-	pod := corev1.PodSpec{
-		Containers: []corev1.Container{
-			{
-				Name: "test",
-			},
-		},
-	}
-	podSpec := WithGoMemLimitEnvVar(*memLimit)
-	podSpec(&pod)
 
-	require.NotNil(t, pod.Containers[0].Env)
-	require.Equal(t, pod.Containers[0].Env[0].Name, "GOMEMLIMIT")
-	require.Equal(t, pod.Containers[0].Env[0].Value, "800")
+	var container corev1.Container
+
+	WithGoMemLimitEnvVar(*memLimit)(&container)
+
+	require.NotNil(t, container.Env)
+	require.Equal(t, container.Env[0].Name, "GOMEMLIMIT")
+	require.Equal(t, container.Env[0].Value, "800")
 }

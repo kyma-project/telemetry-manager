@@ -1,7 +1,6 @@
 package k8s
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -12,7 +11,7 @@ import (
 )
 
 func TestNewOwnerReferenceSetter(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	interceptedClient := fake.NewClientBuilder().Build()
 	owner := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "owner"}}
 	ownerRefSetter := NewOwnerReferenceSetter(interceptedClient, owner)

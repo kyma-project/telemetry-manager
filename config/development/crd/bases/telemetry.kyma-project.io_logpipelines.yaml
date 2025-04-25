@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.1
+    controller-gen.kubebuilder.io/version: v0.17.3
   name: logpipelines.telemetry.kyma-project.io
 spec:
   group: telemetry.kyma-project.io
@@ -20,9 +20,6 @@ spec:
   - additionalPrinterColumns:
     - jsonPath: .status.conditions[?(@.type=="ConfigurationGenerated")].status
       name: Configuration Generated
-      type: string
-    - jsonPath: .status.conditions[?(@.type=="GatewayHealthy")].status
-      name: Gateway Healthy
       type: string
     - jsonPath: .status.conditions[?(@.type=="AgentHealthy")].status
       name: Agent Healthy
@@ -654,6 +651,10 @@ spec:
             x-kubernetes-validations:
             - message: otlp input is only supported with otlp output
               rule: '!((has(self.output.http) || has(self.output.custom))  && has(self.input.otlp))'
+            - message: input.application.dropLabels is not supported with otlp output
+              rule: '!(has(self.output.otlp) && has(self.input.application.dropLabels))'
+            - message: input.application.keepAnnotations is not supported with otlp output
+              rule: '!(has(self.output.otlp) && has(self.input.application.keepAnnotations))'
           status:
             description: Shows the observed state of the LogPipeline
             properties:
@@ -725,6 +726,9 @@ spec:
   - additionalPrinterColumns:
     - jsonPath: .status.conditions[?(@.type=="ConfigurationGenerated")].status
       name: Configuration Generated
+      type: string
+    - jsonPath: .status.conditions[?(@.type=="GatewayHealthy")].status
+      name: Gateway Healthy
       type: string
     - jsonPath: .status.conditions[?(@.type=="AgentHealthy")].status
       name: Agent Healthy
@@ -1352,6 +1356,11 @@ spec:
                   type: object
                 type: array
             type: object
+            x-kubernetes-validations:
+            - message: input.runtime.dropLabels is not supported with otlp output
+              rule: '!(has(self.output.otlp) && has(self.input.runtime.dropLabels))'
+            - message: input.runtime.keepAnnotations is not supported with otlp output
+              rule: '!(has(self.output.otlp) && has(self.input.runtime.keepAnnotations))'
           status:
             description: Shows the observed state of the LogPipeline
             properties:

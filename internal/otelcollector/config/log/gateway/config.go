@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log"
 )
 
 type Config struct {
@@ -19,9 +20,24 @@ type Receivers struct {
 type Processors struct {
 	config.BaseProcessors `yaml:",inline"`
 
-	K8sAttributes           *config.K8sAttributesProcessor `yaml:"k8sattributes,omitempty"`
-	InsertClusterAttributes *config.ResourceProcessor      `yaml:"resource/insert-cluster-attributes,omitempty"`
-	DropKymaAttributes      *config.ResourceProcessor      `yaml:"resource/drop-kyma-attributes,omitempty"`
+	SetObsTimeIfZero        *log.TransformProcessor            `yaml:"transform/set-observed-time-if-zero,omitempty"`
+	K8sAttributes           *config.K8sAttributesProcessor     `yaml:"k8sattributes,omitempty"`
+	InsertClusterAttributes *config.ResourceProcessor          `yaml:"resource/insert-cluster-attributes,omitempty"`
+	ResolveServiceName      *config.ServiceEnrichmentProcessor `yaml:"service_enrichment,omitempty"`
+	DropKymaAttributes      *config.ResourceProcessor          `yaml:"resource/drop-kyma-attributes,omitempty"`
+
+	// NamespaceFilters contains filter processors, which need different configurations per pipeline
+	NamespaceFilters NamespaceFilters `yaml:",inline,omitempty"`
+}
+
+type NamespaceFilters map[string]*FilterProcessor
+
+type FilterProcessor struct {
+	Logs FilterProcessorLogs `yaml:"logs"`
+}
+
+type FilterProcessorLogs struct {
+	Log []string `yaml:"log_record,omitempty"`
 }
 
 type Exporters map[string]Exporter

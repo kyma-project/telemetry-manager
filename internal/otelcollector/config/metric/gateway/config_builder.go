@@ -11,6 +11,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/ottlexpr"
 	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 )
 
@@ -23,16 +24,17 @@ type Builder struct {
 }
 
 type BuildOptions struct {
-	GatewayNamespace            string
-	InstrumentationScopeVersion string
-	ClusterName                 string
-	CloudProvider               string
+	GatewayNamespace                string
+	InstrumentationScopeVersion     string
+	ClusterName                     string
+	CloudProvider                   string
+	InternalMetricCompatibilityMode bool
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {
 	cfg := &Config{
 		Base: config.Base{
-			Service:    config.DefaultService(make(config.Pipelines)),
+			Service:    config.DefaultService(make(config.Pipelines), opts.InternalMetricCompatibilityMode),
 			Extensions: config.DefaultExtensions(),
 		},
 		Receivers:  makeReceiversConfig(),
@@ -127,6 +129,10 @@ func declareInputSourceFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *
 	if !metricpipelineutils.IsOTLPInputEnabled(input) {
 		cfg.Processors.DropIfInputSourceOTLP = makeDropIfInputSourceOTLPConfig()
 	}
+
+	if !metricpipelineutils.IsIstioInputEnabled(input) || !metricpipelineutils.IsEnvoyMetricsEnabled(input) {
+		cfg.Processors.DropIfEnvoyMetricsDisabled = makeDropIfEnvoyMetricsDisabledConfig()
+	}
 }
 
 func declareRuntimeResourcesFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {
@@ -178,7 +184,7 @@ func declareNamespaceFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Co
 
 	if metricpipelineutils.IsPrometheusInputEnabled(input) && shouldFilterByNamespace(input.Prometheus.Namespaces) {
 		processorID := formatNamespaceFilterID(pipeline.Name, metric.InputSourcePrometheus)
-		cfg.Processors.NamespaceFilters[processorID] = makeFilterByNamespaceConfig(pipeline.Spec.Input.Prometheus.Namespaces, inputSourceEquals(metric.InputSourcePrometheus))
+		cfg.Processors.NamespaceFilters[processorID] = makeFilterByNamespaceConfig(pipeline.Spec.Input.Prometheus.Namespaces, ottlexpr.ResourceAttributeEquals(metric.KymaInputNameAttribute, metric.KymaInputPrometheus))
 	}
 
 	if metricpipelineutils.IsIstioInputEnabled(input) && shouldFilterByNamespace(input.Istio.Namespaces) {

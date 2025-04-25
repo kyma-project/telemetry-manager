@@ -21,6 +21,10 @@ type LogPipelineProbeResult struct {
 	BufferFillingUp bool
 }
 
+func NewOtelLogPipelineProber(selfMonitorName types.NamespacedName) (*OTelPipelineProber, error) {
+	return newOTelPipelineProber(selfMonitorName, config.MatchesLogPipelineRule)
+}
+
 func NewLogPipelineProber(selfMonitorName types.NamespacedName) (*LogPipelineProber, error) {
 	promClient, err := newPrometheusClient(selfMonitorName)
 	if err != nil {
@@ -39,11 +43,11 @@ func (p *LogPipelineProber) Probe(ctx context.Context, pipelineName string) (Log
 		return LogPipelineProbeResult{}, fmt.Errorf("failed to retrieve alerts: %w", err)
 	}
 
-	allDropped := p.isFiring(alerts, config.RuleNameLogAgentAllDataDropped, pipelineName)
-	someDropped := p.isFiring(alerts, config.RuleNameLogAgentSomeDataDropped, pipelineName)
-	bufferFillingUp := p.isFiring(alerts, config.RuleNameLogAgentBufferInUse, pipelineName)
-	noLogs := p.isFiring(alerts, config.RuleNameLogAgentNoLogsDelivered, pipelineName)
-	healthy := !(allDropped || someDropped || bufferFillingUp || noLogs)
+	allDropped := p.isFiring(alerts, config.RuleNameLogFluentBitAllDataDropped, pipelineName)
+	someDropped := p.isFiring(alerts, config.RuleNameLogFluentBitSomeDataDropped, pipelineName)
+	bufferFillingUp := p.isFiring(alerts, config.RuleNameLogFluentBitBufferInUse, pipelineName)
+	noLogs := p.isFiring(alerts, config.RuleNameLogFluentBitNoLogsDelivered, pipelineName)
+	healthy := !allDropped && !someDropped && !bufferFillingUp && !noLogs
 
 	return LogPipelineProbeResult{
 		PipelineProbeResult: PipelineProbeResult{
@@ -57,5 +61,5 @@ func (p *LogPipelineProber) Probe(ctx context.Context, pipelineName string) (Log
 }
 
 func (p *LogPipelineProber) isFiring(alerts []promv1.Alert, ruleName, pipelineName string) bool {
-	return isFiringWithMatcher(alerts, ruleName, pipelineName, config.MatchesLogPipelineRule)
+	return isFiringWithMatcher(alerts, ruleName, pipelineName, config.MatchesFluentBitLogPipelineRule)
 }

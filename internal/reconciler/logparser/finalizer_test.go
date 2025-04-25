@@ -1,7 +1,6 @@
 package logparser
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -16,7 +15,7 @@ import (
 
 func TestEnsureFinalizer(t *testing.T) {
 	t.Run("without DeletionTimestamp", func(t *testing.T) {
-		ctx := context.Background()
+		ctx := t.Context()
 		scheme := runtime.NewScheme()
 		_ = telemetryv1alpha1.AddToScheme(scheme)
 		parser := &telemetryv1alpha1.LogParser{ObjectMeta: metav1.ObjectMeta{Name: "parser"}}
@@ -32,7 +31,7 @@ func TestEnsureFinalizer(t *testing.T) {
 	})
 
 	t.Run("with DeletionTimestamp", func(t *testing.T) {
-		ctx := context.Background()
+		ctx := t.Context()
 		client := fake.NewClientBuilder().Build()
 		timestamp := metav1.Now()
 		parser := &telemetryv1alpha1.LogParser{
@@ -47,7 +46,7 @@ func TestEnsureFinalizer(t *testing.T) {
 
 func TestCleanupFinalizer(t *testing.T) {
 	t.Run("without DeletionTimestamp", func(t *testing.T) {
-		ctx := context.Background()
+		ctx := t.Context()
 		parser := &telemetryv1alpha1.LogParser{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:       "parser",
@@ -61,7 +60,7 @@ func TestCleanupFinalizer(t *testing.T) {
 	})
 
 	t.Run("with DeletionTimestamp", func(t *testing.T) {
-		ctx := context.Background()
+		ctx := t.Context()
 		scheme := runtime.NewScheme()
 		_ = telemetryv1alpha1.AddToScheme(scheme)
 		timestamp := metav1.Now()

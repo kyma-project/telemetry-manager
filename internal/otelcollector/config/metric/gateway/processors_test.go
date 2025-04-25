@@ -1,7 +1,6 @@
 package gateway
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -12,7 +11,7 @@ import (
 )
 
 func TestProcessors(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	fakeClient := fake.NewClientBuilder().Build()
 	sut := Builder{Reader: fakeClient}
 
@@ -133,7 +132,7 @@ func TestProcessors(t *testing.T) {
 
 		require.NotNil(t, collectorConfig.Processors.DropIfInputSourcePrometheus)
 		require.Len(t, collectorConfig.Processors.DropIfInputSourcePrometheus.Metrics.Metric, 1)
-		require.Equal(t, "instrumentation_scope.name == \"io.kyma-project.telemetry/prometheus\"", collectorConfig.Processors.DropIfInputSourcePrometheus.Metrics.Metric[0])
+		require.Equal(t, "resource.attributes[\"kyma.input.name\"] == \"prometheus\"", collectorConfig.Processors.DropIfInputSourcePrometheus.Metrics.Metric[0])
 
 		require.NotNil(t, collectorConfig.Processors.DropIfInputSourceIstio)
 		require.Len(t, collectorConfig.Processors.DropIfInputSourceIstio.Metrics.Metric, 1)
@@ -143,7 +142,7 @@ func TestProcessors(t *testing.T) {
 		require.Len(t, collectorConfig.Processors.DropIfInputSourceOTLP.Metrics.Metric, 1)
 		require.Equal(t,
 			"not(instrumentation_scope.name == \"io.kyma-project.telemetry/runtime\" or "+
-				"instrumentation_scope.name == \"io.kyma-project.telemetry/prometheus\" or "+
+				"resource.attributes[\"kyma.input.name\"] == \"prometheus\" or "+
 				"instrumentation_scope.name == \"io.kyma-project.telemetry/istio\" or "+
 				"instrumentation_scope.name == \"io.kyma-project.telemetry/kyma\")",
 			collectorConfig.Processors.DropIfInputSourceOTLP.Metrics.Metric[0],
@@ -171,30 +170,30 @@ func TestProcessors(t *testing.T) {
 		require.Contains(t, namespaceFilters, "filter/test-filter-by-namespace-runtime-input")
 		require.Len(t, namespaceFilters["filter/test-filter-by-namespace-runtime-input"].Metrics.Metric, 1)
 
-		expectedCondition := "instrumentation_scope.name == \"io.kyma-project.telemetry/runtime\" and resource.attributes[\"k8s.namespace.name\"] != nil and not((resource.attributes[\"k8s.namespace.name\"] == \"ns-1\" or resource.attributes[\"k8s.namespace.name\"] == \"ns-2\"))"
+		expectedCondition := "instrumentation_scope.name == \"io.kyma-project.telemetry/runtime\" and resource.attributes[\"k8s.namespace.name\"] != nil and not(resource.attributes[\"k8s.namespace.name\"] == \"ns-1\" or resource.attributes[\"k8s.namespace.name\"] == \"ns-2\")"
 		require.Equal(t, expectedCondition, namespaceFilters["filter/test-filter-by-namespace-runtime-input"].Metrics.Metric[0])
 
 		require.Contains(t, namespaceFilters, "filter/test-filter-by-namespace-prometheus-input")
 		require.Len(t, namespaceFilters["filter/test-filter-by-namespace-prometheus-input"].Metrics.Metric, 1)
 
-		expectedCondition = "instrumentation_scope.name == \"io.kyma-project.telemetry/prometheus\" and resource.attributes[\"k8s.namespace.name\"] != nil and not((resource.attributes[\"k8s.namespace.name\"] == \"ns-1\" or resource.attributes[\"k8s.namespace.name\"] == \"ns-2\"))"
+		expectedCondition = "resource.attributes[\"kyma.input.name\"] == \"prometheus\" and resource.attributes[\"k8s.namespace.name\"] != nil and not(resource.attributes[\"k8s.namespace.name\"] == \"ns-1\" or resource.attributes[\"k8s.namespace.name\"] == \"ns-2\")"
 		require.Equal(t, expectedCondition, namespaceFilters["filter/test-filter-by-namespace-prometheus-input"].Metrics.Metric[0])
 
 		require.Contains(t, namespaceFilters, "filter/test-filter-by-namespace-istio-input")
 		require.Len(t, namespaceFilters["filter/test-filter-by-namespace-istio-input"].Metrics.Metric, 1)
 
-		expectedCondition = "instrumentation_scope.name == \"io.kyma-project.telemetry/istio\" and resource.attributes[\"k8s.namespace.name\"] != nil and not((resource.attributes[\"k8s.namespace.name\"] == \"ns-1\" or resource.attributes[\"k8s.namespace.name\"] == \"ns-2\"))"
+		expectedCondition = "instrumentation_scope.name == \"io.kyma-project.telemetry/istio\" and resource.attributes[\"k8s.namespace.name\"] != nil and not(resource.attributes[\"k8s.namespace.name\"] == \"ns-1\" or resource.attributes[\"k8s.namespace.name\"] == \"ns-2\")"
 		require.Equal(t, expectedCondition, namespaceFilters["filter/test-filter-by-namespace-istio-input"].Metrics.Metric[0])
 
 		require.Contains(t, namespaceFilters, "filter/test-filter-by-namespace-otlp-input")
 		require.Len(t, namespaceFilters["filter/test-filter-by-namespace-otlp-input"].Metrics.Metric, 1)
 
 		expectedCondition = "not(instrumentation_scope.name == \"io.kyma-project.telemetry/runtime\" or " +
-			"instrumentation_scope.name == \"io.kyma-project.telemetry/prometheus\" or " +
+			"resource.attributes[\"kyma.input.name\"] == \"prometheus\" or " +
 			"instrumentation_scope.name == \"io.kyma-project.telemetry/istio\" or " +
 			"instrumentation_scope.name == \"io.kyma-project.telemetry/kyma\") and " +
 			"resource.attributes[\"k8s.namespace.name\"] != nil and " +
-			"not((resource.attributes[\"k8s.namespace.name\"] == \"ns-1\" or resource.attributes[\"k8s.namespace.name\"] == \"ns-2\"))"
+			"not(resource.attributes[\"k8s.namespace.name\"] == \"ns-1\" or resource.attributes[\"k8s.namespace.name\"] == \"ns-2\")"
 		require.Equal(t, expectedCondition, namespaceFilters["filter/test-filter-by-namespace-otlp-input"].Metrics.Metric[0])
 	})
 
@@ -225,7 +224,7 @@ func TestProcessors(t *testing.T) {
 		require.Contains(t, namespaceFilters, "filter/test-filter-by-namespace-prometheus-input")
 		require.Len(t, namespaceFilters["filter/test-filter-by-namespace-prometheus-input"].Metrics.Metric, 1)
 
-		expectedCondition = "instrumentation_scope.name == \"io.kyma-project.telemetry/prometheus\" and (resource.attributes[\"k8s.namespace.name\"] == \"ns-1\" or resource.attributes[\"k8s.namespace.name\"] == \"ns-2\")"
+		expectedCondition = "resource.attributes[\"kyma.input.name\"] == \"prometheus\" and (resource.attributes[\"k8s.namespace.name\"] == \"ns-1\" or resource.attributes[\"k8s.namespace.name\"] == \"ns-2\")"
 		require.Equal(t, expectedCondition, namespaceFilters["filter/test-filter-by-namespace-prometheus-input"].Metrics.Metric[0])
 
 		require.Contains(t, namespaceFilters, "filter/test-filter-by-namespace-istio-input")
@@ -238,7 +237,7 @@ func TestProcessors(t *testing.T) {
 		require.Len(t, namespaceFilters["filter/test-filter-by-namespace-otlp-input"].Metrics.Metric, 1)
 
 		expectedCondition = "not(instrumentation_scope.name == \"io.kyma-project.telemetry/runtime\" or " +
-			"instrumentation_scope.name == \"io.kyma-project.telemetry/prometheus\" or " +
+			"resource.attributes[\"kyma.input.name\"] == \"prometheus\" or " +
 			"instrumentation_scope.name == \"io.kyma-project.telemetry/istio\" or " +
 			"instrumentation_scope.name == \"io.kyma-project.telemetry/kyma\") and " +
 			"(resource.attributes[\"k8s.namespace.name\"] == \"ns-1\" or resource.attributes[\"k8s.namespace.name\"] == \"ns-2\")"
@@ -487,9 +486,23 @@ func TestProcessors(t *testing.T) {
 		require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeKyma)
 		require.Equal(t, "ignore", collectorConfig.Processors.SetInstrumentationScopeKyma.ErrorMode)
 		require.Len(t, collectorConfig.Processors.SetInstrumentationScopeKyma.MetricStatements, 1)
-		require.Equal(t, "scope", collectorConfig.Processors.SetInstrumentationScopeKyma.MetricStatements[0].Context)
 		require.Len(t, collectorConfig.Processors.SetInstrumentationScopeKyma.MetricStatements[0].Statements, 2)
-		require.Equal(t, "set(version, \"main\") where name == \"github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver\"", collectorConfig.Processors.SetInstrumentationScopeKyma.MetricStatements[0].Statements[0])
-		require.Equal(t, "set(name, \"io.kyma-project.telemetry/kyma\") where name == \"github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver\"", collectorConfig.Processors.SetInstrumentationScopeKyma.MetricStatements[0].Statements[1])
+		require.Equal(t, "set(scope.version, \"main\") where scope.name == \"github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver\"", collectorConfig.Processors.SetInstrumentationScopeKyma.MetricStatements[0].Statements[0])
+		require.Equal(t, "set(scope.name, \"io.kyma-project.telemetry/kyma\") where scope.name == \"github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver\"", collectorConfig.Processors.SetInstrumentationScopeKyma.MetricStatements[0].Statements[1])
+	})
+
+	t.Run("drop envoy filter processor", func(t *testing.T) {
+		collectorConfig, _, err := sut.Build(
+			ctx,
+			[]telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().Build(),
+			},
+			BuildOptions{},
+		)
+		require.NoError(t, err)
+
+		require.NotNil(t, collectorConfig.Processors.DropIfEnvoyMetricsDisabled)
+		require.Equal(t, 1, len(collectorConfig.Processors.DropIfEnvoyMetricsDisabled.Metrics.Metric))
+		require.Equal(t, "IsMatch(name, \"^envoy_.*\") and instrumentation_scope.name == \"io.kyma-project.telemetry/istio\"", collectorConfig.Processors.DropIfEnvoyMetricsDisabled.Metrics.Metric[0])
 	})
 }

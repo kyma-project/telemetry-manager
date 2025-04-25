@@ -5,24 +5,21 @@ package istio
 import (
 	"net/http"
 
-	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
+	"github.com/kyma-project/telemetry-manager/test/testkit/istio"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-
-	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
-	"github.com/kyma-project/telemetry-manager/test/testkit/istio"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
@@ -45,7 +42,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 
 		backend := backend.New(mockNs, backend.SignalTypeLogs)
 		objs = append(objs, backend.K8sObjects()...)
-		backendExportURL = backend.ExportURL(proxyClient)
+		backendExportURL = backend.ExportURL(suite.ProxyClient)
 
 		logPipeline := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
@@ -58,7 +55,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		// Abusing metrics provider for istio access logs
 		sampleApp := prommetricgen.New(sampleAppNs, prommetricgen.WithName("access-log-emitter"))
 		objs = append(objs, sampleApp.Pod().K8sObject())
-		metricPodURL = proxyClient.ProxyURLForPod(sampleAppNs, sampleApp.Name(), sampleApp.MetricsEndpoint(), sampleApp.MetricsPort())
+		metricPodURL = suite.ProxyClient.ProxyURLForPod(sampleAppNs, sampleApp.Name(), sampleApp.MetricsEndpoint(), sampleApp.MetricsPort())
 
 		return objs
 	}
@@ -67,13 +64,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have a log backend running", func() {
-			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have sample app running", func() {
@@ -82,20 +79,20 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 				Namespace:     sampleAppNs,
 			}
 
-			assert.PodsReady(ctx, k8sClient, listOptions)
+			assert.PodsReady(suite.Ctx, suite.K8sClient, listOptions)
 		})
 
 		It("Should have the log pipeline running", func() {
-			assert.LogPipelineHealthy(ctx, k8sClient, pipelineName)
+			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 		})
 
 		It("Should have a running log agent daemonset", func() {
-			assert.DaemonSetReady(ctx, k8sClient, kitkyma.FluentBitDaemonSetName)
+			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 		})
 
 		It("Should invoke the metrics endpoint to generate access logs", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(metricPodURL)
+				resp, err := suite.ProxyClient.Get(metricPodURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
@@ -103,7 +100,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 
 		It("Should verify istio logs are present", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(backendExportURL)
+				resp, err := suite.ProxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(HaveFlatFluentBitLogs(ContainElement(

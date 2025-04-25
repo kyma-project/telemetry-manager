@@ -37,7 +37,6 @@ type LogPipelineList struct {
 // +kubebuilder:resource:scope=Cluster,categories={kyma-telemetry,kyma-telemetry-pipelines}
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Configuration Generated",type=string,JSONPath=`.status.conditions[?(@.type=="ConfigurationGenerated")].status`
-// +kubebuilder:printcolumn:name="Gateway Healthy",type=string,JSONPath=`.status.conditions[?(@.type=="GatewayHealthy")].status`
 // +kubebuilder:printcolumn:name="Agent Healthy",type=string,JSONPath=`.status.conditions[?(@.type=="AgentHealthy")].status`
 // +kubebuilder:printcolumn:name="Flow Healthy",type=string,JSONPath=`.status.conditions[?(@.type=="TelemetryFlowHealthy")].status`
 // +kubebuilder:printcolumn:name="Unsupported Mode",type=boolean,JSONPath=`.status.unsupportedMode`
@@ -55,6 +54,8 @@ type LogPipeline struct {
 
 // LogPipelineSpec defines the desired state of LogPipeline
 // +kubebuilder:validation:XValidation:rule="!((has(self.output.http) || has(self.output.custom))  && has(self.input.otlp))", message="otlp input is only supported with otlp output"
+// +kubebuilder:validation:XValidation:rule="!(has(self.output.otlp) && has(self.input.application.dropLabels))", message="input.application.dropLabels is not supported with otlp output"
+// +kubebuilder:validation:XValidation:rule="!(has(self.output.otlp) && has(self.input.application.keepAnnotations))", message="input.application.keepAnnotations is not supported with otlp output"
 type LogPipelineSpec struct {
 	// Defines where to collect logs, including selector mechanisms.
 	Input   LogPipelineInput    `json:"input,omitempty"`
@@ -84,9 +85,11 @@ type LogPipelineApplicationInput struct {
 	// Describes whether application logs from specific containers are selected. The options are mutually exclusive.
 	Containers LogPipelineContainerSelector `json:"containers,omitempty"`
 	// Defines whether to keep all Kubernetes annotations. The default is `false`.
-	KeepAnnotations bool `json:"keepAnnotations,omitempty"`
+	// +optional
+	KeepAnnotations *bool `json:"keepAnnotations,omitempty"`
 	// Defines whether to drop all Kubernetes labels. The default is `false`.
-	DropLabels bool `json:"dropLabels,omitempty"`
+	// +optional
+	DropLabels *bool `json:"dropLabels,omitempty"`
 	// If the `log` attribute contains a JSON payload and it is successfully parsed, the `log` attribute will be retained if `KeepOriginalBody` is set to `true`. Otherwise, the log attribute will be removed from the log record. The default is `true`.
 	// +optional
 	KeepOriginalBody *bool `json:"keepOriginalBody,omitempty"`

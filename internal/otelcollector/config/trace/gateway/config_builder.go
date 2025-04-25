@@ -23,14 +23,15 @@ type Builder struct {
 }
 
 type BuildOptions struct {
-	ClusterName   string
-	CloudProvider string
+	ClusterName                     string
+	CloudProvider                   string
+	InternalMetricCompatibilityMode bool
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.TracePipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {
 	cfg := &Config{
 		Base: config.Base{
-			Service:    config.DefaultService(make(config.Pipelines)),
+			Service:    config.DefaultService(make(config.Pipelines), opts.InternalMetricCompatibilityMode),
 			Extensions: config.DefaultExtensions(),
 		},
 		Receivers:  makeReceiversConfig(),
@@ -106,7 +107,7 @@ func makePipelineConfig(exporterIDs ...string) config.Pipeline {
 			"k8sattributes",
 			"filter/drop-noisy-spans",
 			"resource/insert-cluster-attributes",
-			"transform/resolve-service-name",
+			"service_enrichment",
 			"resource/drop-kyma-attributes",
 			"batch",
 		},

@@ -1,7 +1,6 @@
 package gateway
 
 import (
-	"context"
 	"encoding/base64"
 	"fmt"
 	"os"
@@ -19,7 +18,7 @@ import (
 )
 
 func TestMakeConfig(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	fakeClient := fake.NewClientBuilder().Build()
 	sut := Builder{Reader: fakeClient}
 
@@ -267,25 +266,34 @@ func TestMakeConfig(t *testing.T) {
 
 	t.Run("marshaling", func(t *testing.T) {
 		tests := []struct {
-			name           string
-			goldenFileName string
-			withOTLPInput  bool
+			name              string
+			goldenFileName    string
+			withOTLPInput     bool
+			compatibilityMode bool
 		}{
 			{
-				name:           "OTLP Endpoint enabled",
-				goldenFileName: "config.yaml",
-				withOTLPInput:  true,
+				name:              "OTLP Endpoint enabled",
+				goldenFileName:    "config.yaml",
+				withOTLPInput:     true,
+				compatibilityMode: false,
 			},
 			{
-				name:           "OTLP Endpoint disabled",
-				goldenFileName: "config_otlp_disabled.yaml",
-				withOTLPInput:  false,
+				name:              "OTLP Endpoint disabled",
+				goldenFileName:    "config_otlp_disabled.yaml",
+				withOTLPInput:     false,
+				compatibilityMode: false,
+			},
+			{
+				name:              "Compatibility mode enabled",
+				goldenFileName:    "config_compatibility_enabled.yaml",
+				withOTLPInput:     true,
+				compatibilityMode: true,
 			},
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				config, _, err := sut.Build(
-					context.Background(),
+					t.Context(),
 					[]telemetryv1alpha1.MetricPipeline{
 						testutils.NewMetricPipelineBuilder().
 							WithName("test").
@@ -293,8 +301,9 @@ func TestMakeConfig(t *testing.T) {
 							WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 					},
 					BuildOptions{
-						ClusterName:   "${KUBERNETES_SERVICE_HOST}",
-						CloudProvider: "test-cloud-provider",
+						ClusterName:                     "${KUBERNETES_SERVICE_HOST}",
+						CloudProvider:                   "test-cloud-provider",
+						InternalMetricCompatibilityMode: tt.compatibilityMode,
 					},
 				)
 				require.NoError(t, err)

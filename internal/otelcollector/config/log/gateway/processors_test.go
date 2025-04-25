@@ -1,7 +1,6 @@
 package gateway
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -12,7 +11,7 @@ import (
 )
 
 func TestProcessors(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	fakeClient := fake.NewClientBuilder().Build()
 	sut := Builder{Reader: fakeClient}
 
@@ -85,5 +84,65 @@ func TestProcessors(t *testing.T) {
 		require.Equal(t, "k8s.pod.uid", collectorConfig.Processors.K8sAttributes.PodAssociation[1].Sources[0].Name)
 
 		require.Equal(t, "connection", collectorConfig.Processors.K8sAttributes.PodAssociation[2].Sources[0].From)
+	})
+
+	t.Run("set observed time when not present", func(t *testing.T) {
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithOTLPOutput().Build()}, BuildOptions{
+			ClusterName:   "test-cluster",
+			CloudProvider: "test-cloud-provider",
+		})
+		require.NoError(t, err)
+
+		require.Len(t, collectorConfig.Processors.SetObsTimeIfZero.LogStatements[0].Conditions, 1)
+		require.Equal(t, "log.observed_time_unix_nano == 0", collectorConfig.Processors.SetObsTimeIfZero.LogStatements[0].Conditions[0])
+
+		require.Len(t, collectorConfig.Processors.SetObsTimeIfZero.LogStatements[0].Statements, 1)
+		require.Equal(t, "set(log.observed_time, Now())", collectorConfig.Processors.SetObsTimeIfZero.LogStatements[0].Statements[0])
+	})
+
+	t.Run("include namespaces", func(t *testing.T) {
+		pipeline := testutils.NewLogPipelineBuilder().
+			WithName("dummy").
+			WithOTLPInput(true, testutils.IncludeNamespaces("kyma-system", "default")).
+			WithOTLPOutput().
+			Build()
+
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{pipeline}, BuildOptions{})
+		require.NoError(t, err)
+
+		namespaceFilters := collectorConfig.Processors.NamespaceFilters
+		require.NotNil(t, namespaceFilters)
+
+		expectedFilterID := "filter/dummy-filter-by-namespace"
+		require.Contains(t, namespaceFilters, expectedFilterID)
+
+		actualStatements := namespaceFilters[expectedFilterID].Logs.Log
+		require.Len(t, actualStatements, 1)
+
+		expectedStatement := `resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "kyma-system" or resource.attributes["k8s.namespace.name"] == "default")`
+		require.Equal(t, expectedStatement, actualStatements[0])
+	})
+
+	t.Run("exclude namespaces", func(t *testing.T) {
+		pipeline := testutils.NewLogPipelineBuilder().
+			WithName("dummy").
+			WithOTLPInput(true, testutils.ExcludeNamespaces("kyma-system", "default")).
+			WithOTLPOutput().
+			Build()
+
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{pipeline}, BuildOptions{})
+		require.NoError(t, err)
+
+		namespaceFilters := collectorConfig.Processors.NamespaceFilters
+		require.NotNil(t, namespaceFilters)
+
+		expectedFilterID := "filter/dummy-filter-by-namespace"
+		require.Contains(t, namespaceFilters, expectedFilterID)
+
+		actualStatements := namespaceFilters[expectedFilterID].Logs.Log
+		require.Len(t, actualStatements, 1)
+
+		expectedStatement := `(resource.attributes["k8s.namespace.name"] == "kyma-system" or resource.attributes["k8s.namespace.name"] == "default")`
+		require.Equal(t, expectedStatement, actualStatements[0])
 	})
 }

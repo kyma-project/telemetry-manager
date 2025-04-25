@@ -1,7 +1,6 @@
 package istiostatus
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -55,7 +54,7 @@ func TestIsIstioActive(t *testing.T) {
 				},
 			}
 			checker := NewChecker(&discovery)
-			got := checker.IsIstioActive(context.Background())
+			got := checker.IsIstioActive(t.Context())
 
 			assert.Equal(t, tt.want, got)
 		})

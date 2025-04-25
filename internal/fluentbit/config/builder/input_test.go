@@ -57,6 +57,9 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			},
 			[]string{
 				"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
+				"/var/log/containers/*system-logs-agent*_kyma-system_collector-*.log",
+				"/var/log/containers/*system-logs-collector*_kyma-system_collector-*.log",
+				"/var/log/containers/telemetry-log-agent_kyma-system_collector-*.log",
 				"/var/log/containers/*_kyma-system_*-*.log",
 				"/var/log/containers/*_kube-system_*-*.log",
 				"/var/log/containers/*_istio-system_*-*.log",
@@ -73,6 +76,9 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 				"/var/log/containers/*_*_*-*.log",
 			},
 			[]string{
+				"/var/log/containers/*system-logs-agent*_kyma-system_collector-*.log",
+				"/var/log/containers/*system-logs-collector*_kyma-system_collector-*.log",
+				"/var/log/containers/telemetry-log-agent_kyma-system_collector-*.log",
 				"/var/log/containers/*_kyma-system_*-*.log",
 				"/var/log/containers/*_kube-system_*-*.log",
 				"/var/log/containers/*_istio-system_*-*.log",
@@ -98,6 +104,9 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			},
 			[]string{
 				"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
+				"/var/log/containers/*system-logs-agent*_kyma-system_collector-*.log",
+				"/var/log/containers/*system-logs-collector*_kyma-system_collector-*.log",
+				"/var/log/containers/telemetry-log-agent_kyma-system_collector-*.log",
 			},
 		},
 		{
@@ -121,6 +130,9 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			},
 			[]string{
 				"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
+				"/var/log/containers/*system-logs-agent*_kyma-system_collector-*.log",
+				"/var/log/containers/*system-logs-collector*_kyma-system_collector-*.log",
+				"/var/log/containers/telemetry-log-agent_kyma-system_collector-*.log",
 			},
 		},
 		{
@@ -144,6 +156,9 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			},
 			[]string{
 				"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
+				"/var/log/containers/*system-logs-agent*_kyma-system_collector-*.log",
+				"/var/log/containers/*system-logs-collector*_kyma-system_collector-*.log",
+				"/var/log/containers/telemetry-log-agent_kyma-system_collector-*.log",
 				"/var/log/containers/*_kyma-system_*-*.log",
 				"/var/log/containers/*_kube-system_*-*.log",
 				"/var/log/containers/*_istio-system_*-*.log",
@@ -176,6 +191,9 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			},
 			[]string{
 				"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
+				"/var/log/containers/*system-logs-agent*_kyma-system_collector-*.log",
+				"/var/log/containers/*system-logs-collector*_kyma-system_collector-*.log",
+				"/var/log/containers/telemetry-log-agent_kyma-system_collector-*.log",
 			},
 		},
 		{
@@ -206,6 +224,9 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			},
 			[]string{
 				"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
+				"/var/log/containers/*system-logs-agent*_kyma-system_collector-*.log",
+				"/var/log/containers/*system-logs-collector*_kyma-system_collector-*.log",
+				"/var/log/containers/telemetry-log-agent_kyma-system_collector-*.log",
 			},
 		},
 
@@ -230,6 +251,9 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			},
 			[]string{
 				"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
+				"/var/log/containers/*system-logs-agent*_kyma-system_collector-*.log",
+				"/var/log/containers/*system-logs-collector*_kyma-system_collector-*.log",
+				"/var/log/containers/telemetry-log-agent_kyma-system_collector-*.log",
 				"/var/log/containers/*_foo_*-*.log",
 			},
 		},
@@ -257,6 +281,9 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			},
 			[]string{
 				"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
+				"/var/log/containers/*system-logs-agent*_kyma-system_collector-*.log",
+				"/var/log/containers/*system-logs-collector*_kyma-system_collector-*.log",
+				"/var/log/containers/telemetry-log-agent_kyma-system_collector-*.log",
 				"/var/log/containers/*_*_foo-*.log",
 			},
 		},
@@ -281,6 +308,9 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			},
 			[]string{
 				"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
+				"/var/log/containers/*system-logs-agent*_kyma-system_collector-*.log",
+				"/var/log/containers/*system-logs-collector*_kyma-system_collector-*.log",
+				"/var/log/containers/telemetry-log-agent_kyma-system_collector-*.log",
 				"/var/log/containers/*_kyma-system_*-*.log",
 				"/var/log/containers/*_kube-system_*-*.log",
 				"/var/log/containers/*_istio-system_*-*.log",
@@ -314,6 +344,9 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			},
 			[]string{
 				"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
+				"/var/log/containers/*system-logs-agent*_kyma-system_collector-*.log",
+				"/var/log/containers/*system-logs-collector*_kyma-system_collector-*.log",
+				"/var/log/containers/telemetry-log-agent_kyma-system_collector-*.log",
 				"/var/log/containers/*_foo_*-*.log",
 				"/var/log/containers/*_*_bar-*.log",
 			},
@@ -347,6 +380,9 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			},
 			[]string{
 				"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
+				"/var/log/containers/*system-logs-agent*_kyma-system_collector-*.log",
+				"/var/log/containers/*system-logs-collector*_kyma-system_collector-*.log",
+				"/var/log/containers/telemetry-log-agent_kyma-system_collector-*.log",
 			},
 		},
 	}

@@ -1,7 +1,6 @@
 package v1alpha1
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -27,7 +26,7 @@ func TestDuplicateFileName(t *testing.T) {
 
 	newPipeline := testutils.NewLogPipelineBuilder().WithName("bar").WithFile("f1.json", "").Build()
 
-	response := sut.Handle(context.Background(), admissionRequestFrom(t, newPipeline))
+	response := sut.Handle(t.Context(), admissionRequestFrom(t, newPipeline))
 
 	require.False(t, response.Allowed)
 	require.EqualValues(t, response.Result.Code, http.StatusBadRequest)
@@ -45,7 +44,7 @@ func TestDuplicateFileNameInSamePipeline(t *testing.T) {
 
 	newPipeline := testutils.NewLogPipelineBuilder().WithName("foo").WithFile("f1.json", "").WithFile("f1.json", "").Build()
 
-	response := sut.Handle(context.Background(), admissionRequestFrom(t, newPipeline))
+	response := sut.Handle(t.Context(), admissionRequestFrom(t, newPipeline))
 
 	require.False(t, response.Allowed)
 	require.EqualValues(t, response.Result.Code, http.StatusBadRequest)
@@ -65,7 +64,7 @@ func TestValidateUpdatePipeline(t *testing.T) {
 
 	newPipeline := testutils.NewLogPipelineBuilder().WithName("foo").WithFile("f1.json", "").Build()
 
-	response := sut.Handle(context.Background(), admissionRequestFrom(t, newPipeline))
+	response := sut.Handle(t.Context(), admissionRequestFrom(t, newPipeline))
 
 	require.True(t, response.Allowed)
 }

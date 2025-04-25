@@ -1,13 +1,17 @@
 service:
     pipelines:
-        logs:
+        logs/test:
             receivers:
-                - filelog
+                - filelog/test
             processors:
                 - memory_limiter
                 - transform/set-instrumentation-scope-runtime
+                - k8sattributes
+                - resource/insert-cluster-attributes
+                - service_enrichment
+                - resource/drop-kyma-attributes
             exporters:
-                - otlp
+                - otlp/test
     telemetry:
         metrics:
             readers:
@@ -29,14 +33,21 @@ extensions:
     pprof:
         endpoint: 127.0.0.1:1777
     file_storage:
-        directory: /var/lib/otelcol
+        directory: /var/lib/telemetry-log-agent/file-log-receiver
 receivers:
-    filelog:
+    filelog/test:
         exclude:
+            - /var/log/pods/kyma-system_*system-logs-agent*/*/*.log
+            - /var/log/pods/kyma-system_*system-logs-collector*/*/*.log
             - /var/log/pods/kyma-system_telemetry-log-agent*/*/*.log
             - /var/log/pods/kyma-system_telemetry-fluent-bit*/*/*.log
+            - /var/log/pods/kyma-system_*/*/*.log
+            - /var/log/pods/kube-system_*/*/*.log
+            - /var/log/pods/istio-system_*/*/*.log
+            - /var/log/pods/compass-system_*/*/*.log
         include:
-            - /var/log/pods/*/*/*.log
+            - /var/log/pods/*_*/*/*.log
+        include_file_name: false
         include_file_path: true
         start_at: beginning
         storage: file_storage
@@ -55,15 +66,18 @@ receivers:
               from: attributes.stream
               to: attributes["log.iostream"]
               if: attributes.stream != nil
+            - id: drop-attribute-log-tag
+              type: remove
+              field: attributes["logtag"]
             - id: json-parser
               type: json_parser
               if: body matches '^{.*}$'
               parse_from: body
               parse_to: attributes
-            - id: copy-body-to-attributes-original
-              type: copy
+            - id: move-body-to-attributes-log-original
+              type: move
               from: body
-              to: attributes.original
+              to: attributes["log.original"]
             - id: move-message-to-body
               type: move
               from: attributes.message
@@ -78,6 +92,52 @@ receivers:
               type: severity_parser
               if: attributes.level != nil
               parse_from: attributes.level
+            - id: trace-router
+              type: router
+              routes:
+                - expr: attributes.trace_id != nil
+                  output: trace-parser
+                - expr: attributes.trace_id == nil and attributes.traceparent != nil and attributes.traceparent matches '^[0-9a-f]{2}-(?P<trace_id>[0-9a-f]{32})-(?P<span_id>[0-9a-f]{16})-(?P<trace_flags>[0-9a-f]{2})$'
+                  output: trace-parent-parser
+              default: noop
+            - id: trace-parent-parser
+              type: regex_parser
+              parse_from: attributes.traceparent
+              regex: ^[0-9a-f]{2}-(?P<trace_id>[0-9a-f]{32})-(?P<span_id>[0-9a-f]{16})-(?P<trace_flags>[0-9a-f]{2})$
+              trace:
+                trace_id:
+                    parse_from: attributes.trace_id
+                span_id:
+                    parse_from: attributes.span_id
+                trace_flags:
+                    parse_from: attributes.trace_flags
+              output: remove-trace-parent
+            - id: trace-parser
+              type: trace_parser
+              trace_id:
+                parse_from: attributes.trace_id
+              span_id:
+                parse_from: attributes.span_id
+              trace_flags:
+                parse_from: attributes.trace_flags
+              output: remove-trace-id
+            - id: remove-trace-parent
+              type: remove
+              field: attributes.traceparent
+              output: remove-trace-id
+            - id: remove-trace-id
+              type: remove
+              field: attributes.trace_id
+              output: remove-span-id
+            - id: remove-span-id
+              type: remove
+              field: attributes.span_id
+              output: remove-trace-flags
+            - id: remove-trace-flags
+              type: remove
+              field: attributes.trace_flags
+            - id: noop
+              type: noop
 processors:
     memory_limiter:
         check_interval: 5s
@@ -86,13 +146,69 @@ processors:
     transform/set-instrumentation-scope-runtime:
         error_mode: ignore
         log_statements:
-            - context: scope
-              statements:
-                - set(version, "main")
-                - set(name, "io.kyma-project.telemetry/runtime")
+            - statements:
+                - set(scope.version, "main")
+                - set(scope.name, "io.kyma-project.telemetry/runtime")
+    k8sattributes:
+        auth_type: serviceAccount
+        passthrough: false
+        extract:
+            metadata:
+                - k8s.pod.name
+                - k8s.node.name
+                - k8s.namespace.name
+                - k8s.deployment.name
+                - k8s.statefulset.name
+                - k8s.daemonset.name
+                - k8s.cronjob.name
+                - k8s.job.name
+            labels:
+                - from: pod
+                  key: app.kubernetes.io/name
+                  tag_name: kyma.kubernetes_io_app_name
+                - from: pod
+                  key: app
+                  tag_name: kyma.app_name
+                - from: node
+                  key: topology.kubernetes.io/region
+                  tag_name: cloud.region
+                - from: node
+                  key: topology.kubernetes.io/zone
+                  tag_name: cloud.availability_zone
+                - from: node
+                  key: node.kubernetes.io/instance-type
+                  tag_name: host.type
+                - from: node
+                  key: kubernetes.io/arch
+                  tag_name: host.arch
+        pod_association:
+            - sources:
+                - from: resource_attribute
+                  name: k8s.pod.ip
+            - sources:
+                - from: resource_attribute
+                  name: k8s.pod.uid
+            - sources:
+                - from: connection
+    resource/insert-cluster-attributes:
+        attributes:
+            - action: insert
+              key: k8s.cluster.name
+              value: test-cluster
+            - action: insert
+              key: cloud.provider
+              value: azure
+    service_enrichment:
+        resource_attributes:
+            - kyma.kubernetes_io_app_name
+            - kyma.app_name
+    resource/drop-kyma-attributes:
+        attributes:
+            - action: delete
+              pattern: kyma.*
 exporters:
-    otlp:
-        endpoint: logs.telemetry-system.svc.cluster.local:4317
+    otlp/test:
+        endpoint: ${OTLP_ENDPOINT_TEST}
         tls:
             insecure: true
         retry_on_failure:

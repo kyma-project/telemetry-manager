@@ -1,20 +1,23 @@
 package builder
 
 import (
-	"errors"
+	"context"
 	"fmt"
-	"strings"
+	"maps"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config"
-	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 )
 
-var (
-	ErrInvalidPipelineDefinition = errors.New("invalid pipeline definition")
+const (
+	defaultInputTag          = "tele"
+	defaultMemoryBufferLimit = "10M"
+	defaultStorageType       = "filesystem"
+	defaultFsBufferLimit     = "1G"
 )
 
-type PipelineDefaults struct {
+type pipelineDefaults struct {
 	InputTag          string
 	MemoryBufferLimit string
 	StorageType       string
@@ -22,108 +25,86 @@ type PipelineDefaults struct {
 }
 
 // FluentBit builder configuration
-type BuilderConfig struct {
-	PipelineDefaults
-	CollectAgentLogs bool
+type builderConfig struct {
+	pipelineDefaults
+	collectAgentLogs bool
 }
 
-// BuildFluentBitConfig merges Fluent Bit filters and outputs to a single Fluent Bit configuration.
-func BuildFluentBitConfig(pipeline *telemetryv1alpha1.LogPipeline, config BuilderConfig) (string, error) {
-	pm := logpipelineutils.PipelineMode(pipeline)
-	if pm != logpipelineutils.FluentBit {
-		return "", fmt.Errorf("%w: unsupported pipeline mode: %s", ErrInvalidPipelineDefinition, pm.String())
-	}
-
-	err := validateOutput(pipeline)
-	if err != nil {
-		return "", err
-	}
-
-	err = validateInput(pipeline)
-	if err != nil {
-		return "", err
-	}
-
-	err = validateCustomSections(pipeline)
-	if err != nil {
-		return "", err
-	}
-
-	includePath := createIncludePath(pipeline)
-	excludePath := createExcludePath(pipeline, config.CollectAgentLogs)
-
-	var sb strings.Builder
-
-	sb.WriteString(createInputSection(pipeline, includePath, excludePath))
-	// skip if the filter is a multiline filter, multiline filter should be first filter in the pipeline filter chain
-	// see for more details https://docs.fluentbit.io/manual/pipeline/filters/multiline-stacktrace
-	sb.WriteString(createCustomFilters(pipeline, multilineFilter))
-	sb.WriteString(createRecordModifierFilter(pipeline))
-	sb.WriteString(createKubernetesFilter(pipeline))
-	sb.WriteString(createCustomFilters(pipeline, nonMultilineFilter))
-	sb.WriteString(createLuaDedotFilter(pipeline))
-	sb.WriteString(createOutputSection(pipeline, config.PipelineDefaults))
-
-	return sb.String(), nil
+type FluentBitConfig struct {
+	SectionsConfig  map[string]string
+	FilesConfig     map[string]string
+	EnvConfigSecret map[string][]byte
+	TLSConfigSecret map[string][]byte
 }
 
-func createRecordModifierFilter(pipeline *telemetryv1alpha1.LogPipeline) string {
-	return NewFilterSectionBuilder().
-		AddConfigParam("name", "record_modifier").
-		AddConfigParam("match", fmt.Sprintf("%s.*", pipeline.Name)).
-		AddConfigParam("record", "cluster_identifier ${KUBERNETES_SERVICE_HOST}").
-		Build()
+func (f *FluentBitConfig) addSections(sections map[string]string) {
+	maps.Copy(f.SectionsConfig, sections)
 }
 
-func createLuaDedotFilter(logPipeline *telemetryv1alpha1.LogPipeline) string {
-	output := logPipeline.Spec.Output
-	if !logpipelineutils.IsHTTPDefined(&output) || !output.HTTP.Dedot {
-		return ""
+func (f *FluentBitConfig) addFiles(files map[string]string) {
+	maps.Copy(f.FilesConfig, files)
+}
+
+func (f *FluentBitConfig) addEnvConfigSecret(envConfigSecret map[string][]byte) {
+	maps.Copy(f.EnvConfigSecret, envConfigSecret)
+}
+
+func (f *FluentBitConfig) addTLSConfigSecret(tlsConfigSecret map[string][]byte) {
+	maps.Copy(f.TLSConfigSecret, tlsConfigSecret)
+}
+
+type ConfigBuilder struct {
+	reader client.Reader
+	cfg    builderConfig
+}
+
+func NewFluentBitConfigBuilder(client client.Reader) *ConfigBuilder {
+	return &ConfigBuilder{
+		reader: client,
+		cfg: builderConfig{
+			pipelineDefaults: pipelineDefaults{
+				InputTag:          defaultInputTag,
+				MemoryBufferLimit: defaultMemoryBufferLimit,
+				StorageType:       defaultStorageType,
+				FsBufferLimit:     defaultFsBufferLimit,
+			},
+		},
+	}
+}
+
+func (b *ConfigBuilder) Build(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline) (*FluentBitConfig, error) {
+	config := FluentBitConfig{
+		SectionsConfig:  make(map[string]string),
+		FilesConfig:     make(map[string]string),
+		EnvConfigSecret: make(map[string][]byte),
+		TLSConfigSecret: make(map[string][]byte),
 	}
 
-	return NewFilterSectionBuilder().
-		AddConfigParam("name", "lua").
-		AddConfigParam("match", fmt.Sprintf("%s.*", logPipeline.Name)).
-		AddConfigParam("script", "/fluent-bit/scripts/filter-script.lua").
-		AddConfigParam("call", "kubernetes_map_keys").
-		Build()
-}
+	for _, pipeline := range allPipelines {
+		sectionsConfigMapKey := pipeline.Name + ".conf"
 
-func validateCustomSections(pipeline *telemetryv1alpha1.LogPipeline) error {
-	customOutput := pipeline.Spec.Output.Custom
-	if customOutput != "" {
-		_, err := config.ParseCustomSection(customOutput)
+		sectionsConfigMapContent, err := buildFluentBitSectionsConfig(&pipeline, b.cfg)
 		if err != nil {
-			return err
+			return nil, fmt.Errorf("unable to build section: %w", err)
 		}
-	}
 
-	for _, filter := range pipeline.Spec.Filters {
-		_, err := config.ParseCustomSection(filter.Custom)
+		filesConfig := buildFluentBitFilesConfig(&pipeline)
+
+		envConfigSecret, err := b.buildEnvConfigSecret(ctx, allPipelines)
 		if err != nil {
-			return err
+			return nil, fmt.Errorf("unable to build env config: %w", err)
 		}
+
+		tlsConfigSecret, err := b.buildTLSFileConfigSecret(ctx, allPipelines)
+		if err != nil {
+			return nil, fmt.Errorf("unable to build tls secret: %w", err)
+		}
+
+		config.addSections(map[string]string{sectionsConfigMapKey: sectionsConfigMapContent})
+		config.addFiles(filesConfig)
+		config.addEnvConfigSecret(envConfigSecret)
+		config.addTLSConfigSecret(tlsConfigSecret)
 	}
 
-	return nil
-}
-
-func validateOutput(pipeline *telemetryv1alpha1.LogPipeline) error {
-	if !logpipelineutils.IsAnyDefined(&pipeline.Spec.Output) {
-		return fmt.Errorf("%w: No output plugin defined", ErrInvalidPipelineDefinition)
-	}
-
-	return nil
-}
-
-func validateInput(pipeline *telemetryv1alpha1.LogPipeline) error {
-	if pipeline.Spec.Input.OTLP != nil {
-		return fmt.Errorf("%w: cannot use OTLP input for pipeline in FluentBit mode", ErrInvalidPipelineDefinition)
-	}
-
-	if pipeline.Spec.Input.Application == nil {
-		return nil
-	}
-
-	return nil
+	return &config, nil
 }

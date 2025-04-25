@@ -29,55 +29,6 @@ func NewOutputSectionBuilder() *SectionBuilder {
 	return sb.createOutputSection()
 }
 
-func (sb *SectionBuilder) createInputSection() *SectionBuilder {
-	sb.builder.WriteString("[INPUT]")
-	sb.builder.WriteByte('\n')
-
-	return sb
-}
-
-func (sb *SectionBuilder) createFilterSection() *SectionBuilder {
-	sb.builder.WriteString("[FILTER]")
-	sb.builder.WriteByte('\n')
-
-	return sb
-}
-
-func (sb *SectionBuilder) createOutputSection() *SectionBuilder {
-	sb.builder.WriteString("[OUTPUT]")
-	sb.builder.WriteByte('\n')
-
-	return sb
-}
-
-func (sb *SectionBuilder) AddConfigParam(key string, value string) *SectionBuilder {
-	if sb.keyLen < len(key) {
-		sb.keyLen = len(key)
-	}
-
-	sb.params = append(sb.params, config.Parameter{Key: strings.ToLower(key), Value: value})
-
-	return sb
-}
-
-func (sb *SectionBuilder) AddIfNotEmpty(key string, value string) *SectionBuilder {
-	if value != "" {
-		sb.AddConfigParam(key, value)
-	}
-
-	return sb
-}
-
-func (sb *SectionBuilder) AddIfNotEmptyOrDefault(key string, value string, defaultValue string) *SectionBuilder {
-	if value == "" {
-		sb.AddConfigParam(key, defaultValue)
-	} else {
-		sb.AddConfigParam(key, value)
-	}
-
-	return sb
-}
-
 func (sb *SectionBuilder) Build() string {
 	sort.Slice(sb.params, func(i, j int) bool {
 		if sb.params[i].Key != sb.params[j].Key {
@@ -116,6 +67,55 @@ func (sb *SectionBuilder) Build() string {
 	sb.builder.WriteByte('\n')
 
 	return sb.builder.String()
+}
+
+func (sb *SectionBuilder) AddConfigParam(key string, value string) *SectionBuilder {
+	if sb.keyLen < len(key) {
+		sb.keyLen = len(key)
+	}
+
+	sb.params = append(sb.params, config.Parameter{Key: strings.ToLower(key), Value: value})
+
+	return sb
+}
+
+func (sb *SectionBuilder) AddIfNotEmpty(key string, value string) *SectionBuilder {
+	if value != "" {
+		sb.AddConfigParam(key, value)
+	}
+
+	return sb
+}
+
+func (sb *SectionBuilder) AddIfNotEmptyOrDefault(key string, value string, defaultValue string) *SectionBuilder {
+	if value == "" {
+		sb.AddConfigParam(key, defaultValue)
+	} else {
+		sb.AddConfigParam(key, value)
+	}
+
+	return sb
+}
+
+func (sb *SectionBuilder) createInputSection() *SectionBuilder {
+	sb.builder.WriteString("[INPUT]")
+	sb.builder.WriteByte('\n')
+
+	return sb
+}
+
+func (sb *SectionBuilder) createFilterSection() *SectionBuilder {
+	sb.builder.WriteString("[FILTER]")
+	sb.builder.WriteByte('\n')
+
+	return sb
+}
+
+func (sb *SectionBuilder) createOutputSection() *SectionBuilder {
+	sb.builder.WriteString("[OUTPUT]")
+	sb.builder.WriteByte('\n')
+
+	return sb
 }
 
 func parseMultiline(section string) config.ParameterList {

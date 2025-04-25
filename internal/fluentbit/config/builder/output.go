@@ -14,7 +14,7 @@ import (
 // that malformed logs stay in the buffer forever.
 var retryLimit = "300"
 
-func createOutputSection(pipeline *telemetryv1alpha1.LogPipeline, defaults PipelineDefaults) string {
+func createOutputSection(pipeline *telemetryv1alpha1.LogPipeline, defaults pipelineDefaults) string {
 	output := &pipeline.Spec.Output
 	if logpipelineutils.IsCustomDefined(output) {
 		return generateCustomOutput(output, defaults.FsBufferLimit, pipeline.Name)
@@ -59,6 +59,7 @@ func generateHTTPOutput(httpOutput *telemetryv1alpha1.LogPipelineHTTPOutput, fsB
 	sb.AddIfNotEmpty("compress", httpOutput.Compress)
 	sb.AddIfNotEmptyOrDefault("port", httpOutput.Port, "443")
 	sb.AddIfNotEmptyOrDefault("format", httpOutput.Format, "json")
+	sb.AddConfigParam("json_date_format", "iso8601")
 
 	if sharedtypesutils.IsValid(&httpOutput.Host) {
 		value := resolveValue(httpOutput.Host, name)
@@ -111,7 +112,7 @@ func resolveValue(value telemetryv1alpha1.ValueType, logPipeline string) string 
 
 	if value.ValueFrom != nil && sharedtypesutils.IsValid(&value) {
 		secretKeyRef := value.ValueFrom.SecretKeyRef
-		return fmt.Sprintf("${%s}", FormatEnvVarName(logPipeline, secretKeyRef.Namespace, secretKeyRef.Name, secretKeyRef.Key))
+		return fmt.Sprintf("${%s}", formatEnvVarName(logPipeline, secretKeyRef.Namespace, secretKeyRef.Name, secretKeyRef.Key))
 	}
 
 	return ""

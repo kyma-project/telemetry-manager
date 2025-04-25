@@ -1,7 +1,6 @@
 package gateway
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -12,7 +11,7 @@ import (
 )
 
 func TestProcessors(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	fakeClient := fake.NewClientBuilder().Build()
 	sut := Builder{Reader: fakeClient}
 

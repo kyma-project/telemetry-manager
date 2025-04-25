@@ -1,7 +1,6 @@
 package telemetry
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -395,7 +394,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				client: fakeClient,
 			}
 
-			condition, err := m.Check(context.Background(), test.telemetryInDeletion)
+			condition, err := m.Check(t.Context(), test.telemetryInDeletion)
 			require.NoError(t, err)
 			require.Equal(t, test.expectedCondition, condition)
 		})

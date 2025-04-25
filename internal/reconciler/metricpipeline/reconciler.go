@@ -24,6 +24,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
+	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
@@ -261,10 +262,11 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
 
 	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, gateway.BuildOptions{
-		GatewayNamespace:            r.telemetryNamespace,
-		InstrumentationScopeVersion: r.moduleVersion,
-		ClusterName:                 shootInfo.ClusterName,
-		CloudProvider:               shootInfo.CloudProvider,
+		GatewayNamespace:                r.telemetryNamespace,
+		InstrumentationScopeVersion:     r.moduleVersion,
+		ClusterName:                     shootInfo.ClusterName,
+		CloudProvider:                   shootInfo.CloudProvider,
+		InternalMetricCompatibilityMode: telemetryutils.GetCompatibilityModeFromTelemetry(ctx, r.Client, r.telemetryNamespace),
 	})
 
 	if err != nil {
@@ -307,10 +309,11 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
 	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
 	agentConfig := r.agentConfigBuilder.Build(allPipelines, agent.BuildOptions{
-		IstioEnabled:                isIstioActive,
-		IstioCertPath:               otelcollector.IstioCertPath,
-		InstrumentationScopeVersion: r.moduleVersion,
-		AgentNamespace:              r.telemetryNamespace,
+		IstioEnabled:                    isIstioActive,
+		IstioCertPath:                   otelcollector.IstioCertPath,
+		InstrumentationScopeVersion:     r.moduleVersion,
+		AgentNamespace:                  r.telemetryNamespace,
+		InternalMetricCompatibilityMode: telemetryutils.GetCompatibilityModeFromTelemetry(ctx, r.Client, r.telemetryNamespace),
 	})
 
 	agentConfigYAML, err := yaml.Marshal(agentConfig)
@@ -338,27 +341,17 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 }
 
 func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
-	var telemetries operatorv1alpha1.TelemetryList
-	if err := r.List(ctx, &telemetries); err != nil {
-		logf.FromContext(ctx).V(1).Error(err, "Failed to list telemetry: using default scaling")
+	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.telemetryNamespace)
+	if err != nil {
+		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: using default scaling")
 		return defaultReplicaCount
 	}
 
-	for i := range telemetries.Items {
-		telemetrySpec := telemetries.Items[i].Spec
-		if telemetrySpec.Metric == nil {
-			continue
-		}
-
-		scaling := telemetrySpec.Metric.Gateway.Scaling
-		if scaling.Type != operatorv1alpha1.StaticScalingStrategyType {
-			continue
-		}
-
-		static := scaling.Static
-		if static != nil && static.Replicas > 0 {
-			return static.Replicas
-		}
+	if telemetry.Spec.Metric != nil &&
+		telemetry.Spec.Metric.Gateway.Scaling.Type == operatorv1alpha1.StaticScalingStrategyType &&
+		telemetry.Spec.Metric.Gateway.Scaling.Static != nil &&
+		telemetry.Spec.Metric.Gateway.Scaling.Static.Replicas > 0 {
+		return telemetry.Spec.Metric.Gateway.Scaling.Static.Replicas
 	}
 
 	return defaultReplicaCount

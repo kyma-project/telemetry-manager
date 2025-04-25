@@ -4,7 +4,7 @@ on:
   pull_request_target:
     paths:
       - "docs/user/integration/sample-app/**"
-    types: [ opened, edited, synchronize, reopened, ready_for_review ]
+    types: [opened, edited, synchronize, reopened, ready_for_review]
   push:
     branches:
       - main
@@ -12,6 +12,10 @@ on:
     paths:
       - "docs/user/integration/sample-app/**"
   workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   envs:

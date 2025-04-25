@@ -1,7 +1,6 @@
 package logparser
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -47,11 +46,11 @@ func TestUpdateStatus(t *testing.T) {
 			errorConverter: errToMsgConverter,
 		}
 
-		err := sut.updateStatus(context.Background(), parser.Name)
+		err := sut.updateStatus(t.Context(), parser.Name)
 		require.NoError(t, err)
 
 		var updatedParser telemetryv1alpha1.LogParser
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: parserName}, &updatedParser)
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: parserName}, &updatedParser)
 
 		agentHealthyCond := meta.FindStatusCondition(updatedParser.Status.Conditions, conditions.TypeAgentHealthy)
 		require.NotNil(t, agentHealthyCond, "could not find condition of type %s", conditions.TypeAgentHealthy)
@@ -86,17 +85,17 @@ func TestUpdateStatus(t *testing.T) {
 			errorConverter: errToMsgConverter,
 		}
 
-		err := sut.updateStatus(context.Background(), parser.Name)
+		err := sut.updateStatus(t.Context(), parser.Name)
 		require.NoError(t, err)
 
 		var updatedParser telemetryv1alpha1.LogParser
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: parserName}, &updatedParser)
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: parserName}, &updatedParser)
 
 		agentHealthyCond := meta.FindStatusCondition(updatedParser.Status.Conditions, conditions.TypeAgentHealthy)
 		require.NotNil(t, agentHealthyCond, "could not find condition of type %s", conditions.TypeAgentHealthy)
 		require.Equal(t, metav1.ConditionTrue, agentHealthyCond.Status)
 		require.Equal(t, conditions.ReasonAgentReady, agentHealthyCond.Reason)
-		require.Equal(t, conditions.MessageForLogPipeline(conditions.ReasonAgentReady), agentHealthyCond.Message)
+		require.Equal(t, conditions.MessageForFluentBitLogPipeline(conditions.ReasonAgentReady), agentHealthyCond.Message)
 		require.Equal(t, updatedParser.Generation, agentHealthyCond.ObservedGeneration)
 		require.NotEmpty(t, agentHealthyCond.LastTransitionTime)
 	})

@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.1
+    controller-gen.kubebuilder.io/version: v0.17.3
   name: metricpipelines.telemetry.kyma-project.io
 spec:
   group: telemetry.kyma-project.io
@@ -65,7 +65,7 @@ spec:
                     description: Configures istio-proxy metrics scraping.
                     properties:
                       diagnosticMetrics:
-                        description: Configures diagnostic metrics scraping
+                        description: Configures diagnostic metrics scraping. The diagnostic metrics are disabled by default.
                         properties:
                           enabled:
                             description: If enabled, diagnostic metrics are scraped. The default is `false`.
@@ -74,6 +74,15 @@ spec:
                       enabled:
                         description: If enabled, istio-proxy metrics are scraped from Pods that have the istio-proxy sidecar injected. The default is `false`.
                         type: boolean
+                      envoyMetrics:
+                        description: |-
+                          EnvoyMetrics defines the configuration for scraping Envoy metrics.
+                          If enabled, Envoy metrics with prefix `envoy_` are scraped. The envoy metrics are disabled by default.
+                        properties:
+                          enabled:
+                            description: If enabled, Envoy metrics with prefix `envoy_` are scraped. The default is `false`.
+                            type: boolean
+                        type: object
                       namespaces:
                         description: Describes whether istio-proxy metrics from specific namespaces are selected. System namespaces are enabled by default.
                         properties:
@@ -120,7 +129,7 @@ spec:
                     description: Configures Prometheus scraping.
                     properties:
                       diagnosticMetrics:
-                        description: Configures diagnostic metrics scraping
+                        description: Configures diagnostic metrics scraping. The diagnostic metrics are disabled by default.
                         properties:
                           enabled:
                             description: If enabled, diagnostic metrics are scraped. The default is `false`.

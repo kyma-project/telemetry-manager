@@ -26,13 +26,14 @@ func LogsDelivered(proxyClient *apiserverproxy.Client, expectedPodNamePrefix str
 		g.Expect(err).NotTo(HaveOccurred())
 		defer resp.Body.Close()
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(HaveFlatFluentBitLogs(ContainElement(
-			HavePodName(ContainSubstring(expectedPodNamePrefix))),
-		)))
+		g.Expect(resp).To(HaveHTTPBody(
+			HaveFlatFluentBitLogs(ContainElement(
+				HavePodName(ContainSubstring(expectedPodNamePrefix))),
+			)))
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-func LogsFromNamespaceDelivered(proxyClient *apiserverproxy.Client, backendExportURL, namespace string) {
+func OtelLogsFromNamespaceDelivered(proxyClient *apiserverproxy.Client, backendExportURL, namespace string) {
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(backendExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
@@ -44,6 +45,18 @@ func LogsFromNamespaceDelivered(proxyClient *apiserverproxy.Client, backendExpor
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
+func OtelLogsFromNamespaceNotDelivered(proxyClient *apiserverproxy.Client, backendExportURL, namespace string) {
+	Consistently(func(g Gomega) {
+		resp, err := proxyClient.Get(backendExportURL)
+		g.Expect(err).NotTo(HaveOccurred())
+		defer resp.Body.Close()
+		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+		g.Expect(resp).To(HaveHTTPBody(
+			HaveFlatOtelLogs(Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace))))),
+		))
+	}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+}
+
 //nolint:dupl //LogPipelineHealthy and MetricPipelineHealthy have similarities, but they are not the same
 func LogPipelineHealthy(ctx context.Context, k8sClient client.Client, pipelineName string) {
 	Eventually(func(g Gomega) {
@@ -51,13 +64,8 @@ func LogPipelineHealthy(ctx context.Context, k8sClient client.Client, pipelineNa
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
 
-		agentHealthy := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeAgentHealthy)
-		g.Expect(agentHealthy).NotTo(BeNil())
-		g.Expect(agentHealthy.Status).To(Equal(metav1.ConditionTrue), "Agent not healthy. Reason: %s. Message: %s", agentHealthy.Reason, agentHealthy.Message)
-
-		configGenerated := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
-		g.Expect(configGenerated).NotTo(BeNil())
-		g.Expect(configGenerated.Status).To(Equal(metav1.ConditionTrue), "Configuration not generated. Reason: %s. Message: %s", configGenerated.Reason, configGenerated.Message)
+		statusConditionHealthy(g, pipeline, conditions.TypeAgentHealthy)
+		statusConditionHealthy(g, pipeline, conditions.TypeConfigurationGenerated)
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
@@ -68,14 +76,16 @@ func LogPipelineOtelHealthy(ctx context.Context, k8sClient client.Client, pipeli
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
 
-		gatewayHealthy := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeGatewayHealthy)
-		g.Expect(gatewayHealthy).NotTo(BeNil())
-		g.Expect(gatewayHealthy.Status).To(Equal(metav1.ConditionTrue), "Gateway not healthy. Reason: %s. Message: %s", gatewayHealthy.Reason, gatewayHealthy.Message)
-
-		configGenerated := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
-		g.Expect(configGenerated).NotTo(BeNil())
-		g.Expect(configGenerated.Status).To(Equal(metav1.ConditionTrue), "Configuration not generated. Reason: %s. Message: %s", configGenerated.Reason, configGenerated.Message)
+		statusConditionHealthy(g, pipeline, conditions.TypeAgentHealthy)
+		statusConditionHealthy(g, pipeline, conditions.TypeGatewayHealthy)
+		statusConditionHealthy(g, pipeline, conditions.TypeConfigurationGenerated)
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+}
+
+func statusConditionHealthy(g Gomega, pipeline telemetryv1alpha1.LogPipeline, condType string) {
+	condition := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
+	g.Expect(condition).NotTo(BeNil())
+	g.Expect(condition.Status).To(Equal(metav1.ConditionTrue), "Condition %s not healthy. Reason: %s. Message: %s", condType, condition.Reason, condition.Message)
 }
 
 //nolint:dupl // This provides a better readability for the test as we can test the TLS condition in a clear way

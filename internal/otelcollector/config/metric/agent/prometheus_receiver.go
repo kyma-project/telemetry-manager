@@ -3,6 +3,7 @@ package agent
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
@@ -93,6 +94,7 @@ func makePrometheusPodsRelabelConfigs() []RelabelConfig {
 		dropIfSchemeHTTPS(),
 		inferMetricsPathFromAnnotation(AnnotatedPod),
 		inferAddressFromAnnotation(AnnotatedPod),
+		inferURLParamFromAnnotation(AnnotatedPod),
 	}
 }
 
@@ -111,6 +113,7 @@ func makePrometheusEndpointsRelabelConfigs(requireHTTPS bool) []RelabelConfig {
 		dropIfIstioProxy(),
 		inferSchemeFromIstioInjectedLabel(),
 		inferSchemeFromAnnotation(AnnotatedService),
+		inferURLParamFromAnnotation(AnnotatedService),
 	}
 
 	if requireHTTPS {
@@ -138,7 +141,12 @@ func makeTLSConfig(istioCertPath string) *TLSConfig {
 	}
 }
 
-func makePrometheusIstioConfig() *PrometheusReceiver {
+func makePrometheusIstioConfig(envoyMetricsEnabled bool) *PrometheusReceiver {
+	metricNames := "istio_.*"
+	if envoyMetricsEnabled {
+		metricNames = strings.Join([]string{"envoy_.*", metricNames}, "|")
+	}
+
 	return &PrometheusReceiver{
 		Config: PrometheusConfig{
 			ScrapeConfigs: []ScrapeConfig{
@@ -157,7 +165,7 @@ func makePrometheusIstioConfig() *PrometheusReceiver {
 					MetricRelabelConfigs: []RelabelConfig{
 						{
 							SourceLabels: []string{"__name__"},
-							Regex:        "istio_.*",
+							Regex:        metricNames,
 							Action:       Keep,
 						},
 					},
@@ -290,6 +298,16 @@ func dropIfSchemeHTTPS() RelabelConfig {
 		SourceLabels: []string{"__scheme__"},
 		Action:       Drop,
 		Regex:        "(https)",
+	}
+}
+
+// inferURLParamFromAnnotation extracts and configures the URL parameter
+// for scraping based on annotations of the form prometheus.io/param_{name}: {value}.
+func inferURLParamFromAnnotation(annotated AnnotatedResource) RelabelConfig {
+	return RelabelConfig{
+		Regex:       fmt.Sprintf("__meta_kubernetes_%s_annotation_prometheus_io_param_(.+)", annotated),
+		Action:      LabelMap,
+		Replacement: "__param_$1",
 	}
 }
 

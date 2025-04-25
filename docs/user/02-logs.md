@@ -1,4 +1,4 @@
-# Application Logs
+# Application Logs (Fluent Bit)
 
 With application logs, you can debug an application and derive the internal state of an application. When logs are emitted with the correct severity level and context, they're essential for observing an application.
 
@@ -21,9 +21,9 @@ Your application must log to `stdout` or `stderr`, which ensures that the logs c
 
 In the Kyma cluster, the Telemetry module provides a DaemonSet of [Fluent Bit](https://fluentbit.io/) acting as a agent. The agent tails container logs from the Kubernetes container runtime and ships them to a backend.
 
-![Architecture](./assets/logs-arch.drawio.svg)
+![Architecture](./assets/logs-fluentbit-arch.drawio.svg)
 
-1. Container logs are stored by the Kubernetes container runtime under the `var/log` directory and its subdirectories.
+1. Application containers print logs to `stdout/stderr` and are stored by the Kubernetes container runtime under the `var/log` directory and its subdirectories on the related Node.
 2. Fluent Bit runs as a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) (one instance per Node), detects any new log files in the folder, and tails them using a filesystem buffer for reliability.
 3. Fluent Bit discovers additional Pod metadata, such as Pod annotations and labels.
 4. Telemetry Manager configures Fluent Bit with your output configuration, observes the log flow, and reports problems in the LogPipeline status.
@@ -34,7 +34,7 @@ In the Kyma cluster, the Telemetry module provides a DaemonSet of [Fluent Bit](h
 
 The LogPipeline resource is watched by Telemetry Manager, which is responsible for generating the custom parts of the Fluent Bit configuration.
 
-![Manager resources](./assets/logs-resources.drawio.svg)
+![Manager resources](./assets/logs-fluentbit-resources.drawio.svg)
 
 1. Telemetry Manager watches all LogPipeline resources and related Secrets.
 2. Furthermore, Telemetry Manager takes care of the full lifecycle of the Fluent Bit DaemonSet itself. Only if you defined a LogPipeline, the agent is deployed.
@@ -52,7 +52,7 @@ Kyma's Telemetry module brings a predefined setup of the Fluent Bit DaemonSet an
 
 This approach ensures reliable buffer management and isolation of pipelines, while keeping flexibility on customizations.
 
-![Pipeline Concept](./assets/logs-pipelines.drawio.svg)
+![Pipeline Concept](./assets/logs-fluentbit-pipelines.drawio.svg)
 
 1. A dedicated `tail` **input** plugin reads the application logs, which are selected in the input section of the `LogPipeline`. Each `tail` input uses a dedicated `tag` with the name `<logpipeline>.*`.
 
@@ -117,7 +117,7 @@ spec:
 
 ### 2. Filter Your Input
 
-By default, input is collected from all namespaces, except the system namespaces `kube-system`, `istio-system`, `kyma-system`, which are excluded by default.
+By default, input is collected from all namespaces, except the system namespaces (`kube-system`, `istio-system`, `kyma-system`), which are excluded by default.
 
 To filter your application logs by namespace or container, use an input spec to restrict or specify which resources you want to include. For example, you can define the namespaces to include in the input collection, exclude namespaces from the input collection, or choose that only system namespaces are included. Learn more about the available [parameters and attributes](resources/02-logpipeline.md).
 
@@ -141,19 +141,6 @@ spec:
     ...
 ```
 
-It might happen that Fluent Bit prints an error per processed log line, which is then collected and re-processed.
-To avoid problems with such recursive logs, it is recommended that you exclude the logs of the Fluent Bit container. The following example collects input from all namespaces including system namespaces, but excludes the Fluent Bit container:
-
-```yaml
-spec:
-  input:
-    application:
-      namespaces:
-        system: true
-      containers:
-        exclude:
-        - fluent-bit
-```
 <!--- custom filters/unsupported mode is not part of Help Portal docs --->
 
 If filtering by namespace and container is not enough, use [Fluent Bit filters](https://docs.fluentbit.io/manual/concepts/data-pipeline/filter) to enrich logs for filtering by attribute, or to drop whole lines.
@@ -339,7 +326,7 @@ Telemetry Manager continuously watches the Secret referenced with the **secretKe
 
 ### 5. Deploy the Pipeline
 
-To activate the constructed LogPipeline, apply the  `logpipeline.yaml` resource file in your cluster:
+To activate the LogPipeline, apply the  `logpipeline.yaml` resource file in your cluster:
 
 ```bash
 kubectl apply -f logpipeline.yaml
@@ -361,7 +348,7 @@ backend   True                      True            True
 
 After a log record has been read, it is preprocessed by configured plugins, like the `kubernetes` filter. Thus, when a record is ready to be processed by the sections defined in the LogPipeline definition, it has several attributes available for processing and shipment.
 
-![Flow](./assets/logs-flow.drawio.svg)
+![Flow](./assets/logs-fluentbit-flow.drawio.svg)
 
 Learn more about the flow of the log record through the general pipeline and the available log attributes in the following stages:
 
@@ -455,12 +442,23 @@ The record **after** applying the JSON parser:
   "traceID": "123"
 }
 ```
+### Log Time Fields
+
+SAP Cloud Logging service uses a dedicated attribute called **@timestamp** to represent the time of a log record. When processing a log, SAP Cloud Logging first checks whether the record contains a date field with a valid value in either Unix time (integer format) or ISO 8601 format. If the date field is missing or contains an invalid value, SAP Cloud Logging generates the **@timestamp** attribute based on the time the log record was received. This generated timestamp is usually later than the original log time and is not helpful in most scenarios.
+
+Fluent Bit's HTTP output plugin also uses a date field. This field represents the time when Fluent Bit observed the log and is formatted in ISO 8601 with millisecond precision. The field's value may slightly differ from the original log time because while the original log timestamp may have nanosecond precision, the Fluent Bit date field is limited to millisecond precision.
+
+Fluent Bit HTTP output uses an additional filter to improve log time precision. The filter allows copying the original **time** attribute to the **@timestamp** field. 
 
 ## Operations
 
 The Telemetry module ensures that the log agent instances are operational and healthy at any time, for example, with buffering and retries. However, there may be situations when the instances drop logs, or cannot handle the log load.
 
-To detect and fix such situations, check the pipeline status and check out [Troubleshooting](#troubleshooting).
+To detect and fix such situations, check the [pipeline status](./resources/02-logpipeline.md#logpipeline-status) and check out [Troubleshooting](#troubleshooting). If you have set up [pipeline health monitoring](./04-metrics.md#5-monitor-pipeline-health), check the alerts and reports in an integrated backend like [SAP Cloud Logging](./integration/sap-cloud-logging/README.md#use-sap-cloud-logging-alerts).
+
+> [! WARNING]
+> It's not recommended to access the metrics endpoint of the used FluentBit instances directly, because the exposed metrics are no official API of the Kyma Telemetry module. Breaking changes can happen if the underlying FluentBit version introduces such.
+> Instead, use the [pipeline status](./resources/02-logpipeline.md#logpipeline-status).
 
 ## Limitations
 

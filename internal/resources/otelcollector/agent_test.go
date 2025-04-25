@@ -57,7 +57,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 		}).Build()
 
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.sut.ApplyResources(context.Background(), fakeClient, AgentApplyOptions{
+			err := tt.sut.ApplyResources(t.Context(), fakeClient, AgentApplyOptions{
 				AllowedPorts:        []int32{5555, 6666},
 				CollectorConfigYAML: "dummy",
 			})
@@ -104,18 +104,18 @@ func TestAgent_DeleteResources(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.sut.ApplyResources(context.Background(), fakeClient, AgentApplyOptions{
+			err := tt.sut.ApplyResources(t.Context(), fakeClient, AgentApplyOptions{
 				AllowedPorts:        []int32{5555, 6666},
 				CollectorConfigYAML: "dummy",
 			})
 			require.NoError(t, err)
 
-			err = tt.sut.DeleteResources(context.Background(), fakeClient)
+			err = tt.sut.DeleteResources(t.Context(), fakeClient)
 			require.NoError(t, err)
 
 			for i := range created {
 				// an update operation on a non-existent object should return a NotFound error
-				err = fakeClient.Get(context.Background(), client.ObjectKeyFromObject(created[i]), created[i])
+				err = fakeClient.Get(t.Context(), client.ObjectKeyFromObject(created[i]), created[i])
 				require.True(t, apierrors.IsNotFound(err), "want not found, got %v: %#v", err, created[i])
 			}
 		})

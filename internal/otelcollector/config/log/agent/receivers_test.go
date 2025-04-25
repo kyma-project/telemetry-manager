@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,52 +12,73 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
+const (
+	systemNamespacesIncluded = true
+	systemNamespacesExcluded = false
+)
+
 func TestReceiverCreator(t *testing.T) {
-	expectedExcludePaths := []string{
-		"/var/log/pods/kyma-system_telemetry-log-agent*/*/*.log",
-		"/var/log/pods/kyma-system_telemetry-fluent-bit*/*/*.log",
-	}
-	expectedIncludePaths := []string{"/var/log/pods/*/*/*.log"}
+	expectedExcludePaths := getExcludePaths(systemNamespacesIncluded)
+	expectedIncludePaths := []string{"/var/log/pods/*_*/*/*.log"}
+
 	tt := []struct {
 		name              string
-		pipelines         []telemetryv1alpha1.LogPipeline
+		pipeline          telemetryv1alpha1.LogPipeline
 		expectedOperators []Operator
 	}{
 		{
-			name:      "should create receiver with keepOriginalBody true",
-			pipelines: []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(true).Build()},
+			name:     "should create receiver with keepOriginalBody true",
+			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(true).Build(),
 			expectedOperators: []Operator{
 				makeContainerParser(),
 				makeMoveToLogStream(),
+				makeDropAttributeLogTag(),
 				makeJSONParser(),
-				makeCopyBodyToOriginal(),
+				makeMoveBodyToLogOriginal(),
 				makeMoveMessageToBody(),
 				makeMoveMsgToBody(),
 				makeSeverityParser(),
+				makeTraceRouter(),
+				makeTraceParentParser(),
+				makeTraceParser(),
+				makeRemoveTraceParent(),
+				makeRemoveTraceID(),
+				makeRemoveSpanID(),
+				makeRemoveTraceFlags(),
+				makeNoop(),
 			},
 		},
 		{
-			name:      "should create receiver with keepOriginalBody false",
-			pipelines: []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(false).Build()},
+			name:     "should create receiver with keepOriginalBody false",
+			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(false).Build(),
 			expectedOperators: []Operator{
 				makeContainerParser(),
 				makeMoveToLogStream(),
+				makeDropAttributeLogTag(),
 				makeJSONParser(),
 				makeMoveMessageToBody(),
 				makeMoveMsgToBody(),
 				makeSeverityParser(),
+				makeTraceRouter(),
+				makeTraceParentParser(),
+				makeTraceParser(),
+				makeRemoveTraceParent(),
+				makeRemoveTraceID(),
+				makeRemoveSpanID(),
+				makeRemoveTraceFlags(),
+				makeNoop(),
 			},
 		},
 	}
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			receivers := makeReceivers(tc.pipelines, BuildOptions{AgentNamespace: "kyma-system"})
-			require.Equal(t, expectedExcludePaths, receivers.FileLog.Exclude)
-			require.Equal(t, expectedIncludePaths, receivers.FileLog.Include)
-			require.Equal(t, false, receivers.FileLog.IncludeFileName)
-			require.Equal(t, true, receivers.FileLog.IncludeFilePath)
-			require.Equal(t, tc.expectedOperators, receivers.FileLog.Operators)
+			fileLogReceiver := makeFileLogReceiver(tc.pipeline)
+			require.Equal(t, expectedExcludePaths, fileLogReceiver.Exclude)
+			require.Equal(t, expectedIncludePaths, fileLogReceiver.Include)
+			require.Equal(t, ptr.To(false), fileLogReceiver.IncludeFileName)
+			require.Equal(t, ptr.To(true), fileLogReceiver.IncludeFilePath)
+			require.Equal(t, tc.expectedOperators, fileLogReceiver.Operators)
 		})
 	}
 }
@@ -96,15 +118,25 @@ func TestExpectedMakeJSONParser(t *testing.T) {
 	assert.Equal(t, expectedJP, jp)
 }
 
-func TestMakeCopyBodyToOriginal(t *testing.T) {
-	cbto := makeCopyBodyToOriginal()
+func TestMakeMoveBodyToLogOriginal(t *testing.T) {
+	mbto := makeMoveBodyToLogOriginal()
 	expectedCBTO := Operator{
-		ID:   "copy-body-to-attributes-original",
-		Type: "copy",
+		ID:   "move-body-to-attributes-log-original",
+		Type: "move",
 		From: "body",
-		To:   "attributes.original",
+		To:   "attributes[\"log.original\"]",
 	}
-	assert.Equal(t, expectedCBTO, cbto)
+	assert.Equal(t, expectedCBTO, mbto)
+}
+
+func TestMakeDropAttributeLogTag(t *testing.T) {
+	dalt := makeDropAttributeLogTag()
+	expectedDALT := Operator{
+		ID:    "drop-attribute-log-tag",
+		Type:  "remove",
+		Field: "attributes[\"logtag\"]",
+	}
+	assert.Equal(t, expectedDALT, dalt)
 }
 
 func TestMakeMoveMessageToBody(t *testing.T) {
@@ -141,4 +173,217 @@ func TestMakeSeverityParser(t *testing.T) {
 		IfExpr:    "attributes.level != nil",
 	}
 	assert.Equal(t, expectedSP, sp)
+}
+
+func TestExcludePath(t *testing.T) {
+	tt := []struct {
+		name     string
+		pipeline telemetryv1alpha1.LogPipeline
+		expected []string
+	}{
+		{
+			name:     "should return excluded path if namespace is present",
+			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithExcludeNamespaces("foo", "bar").Build(),
+			expected: getExcludePaths(systemNamespacesIncluded, "/var/log/pods/foo_*/*/*.log", "/var/log/pods/bar_*/*/*.log"),
+		},
+		{
+			name:     "should return default excluded path if namespace is not present",
+			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(false).Build(),
+			expected: getExcludePaths(systemNamespacesIncluded),
+		},
+		{
+			name:     "Should include excluded container if present",
+			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithExcludeContainers("foo", "bar").Build(),
+			expected: getExcludePaths(systemNamespacesIncluded, "/var/log/pods/*_*/foo/*.log", "/var/log/pods/*_*/bar/*.log"),
+		},
+		{
+			name:     "Should exclude system path if system is true",
+			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithSystemNamespaces(true).Build(),
+			expected: getExcludePaths(systemNamespacesExcluded),
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			excludePaths := createExcludePath(tc.pipeline.Spec.Input.Application)
+			require.Equal(t, tc.expected, excludePaths)
+		})
+	}
+}
+
+func TestIncludePath(t *testing.T) {
+	tt := []struct {
+		name     string
+		pipeline telemetryv1alpha1.LogPipeline
+		expected []string
+	}{
+		{
+			name:     "should return included path if namespace is present",
+			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(true).WithIncludeNamespaces("foo", "bar").Build(),
+			expected: []string{
+				"/var/log/pods/foo_*/*/*.log",
+				"/var/log/pods/bar_*/*/*.log",
+			},
+		},
+		{
+			name:     "should return default included path if namespace is not present",
+			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(false).Build(),
+			expected: []string{"/var/log/pods/*_*/*/*.log"},
+		},
+		{
+			name:     "should return system namespaces included path if system is true",
+			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(false).WithSystemNamespaces(true).Build(),
+			expected: []string{"/var/log/pods/*_*/*/*.log"},
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			includePaths := createIncludePath(tc.pipeline.Spec.Input.Application)
+			require.Equal(t, tc.expected, includePaths)
+		})
+	}
+}
+
+func TestMakeTraceParser(t *testing.T) {
+	sp := makeTraceParser()
+	expectedSP := Operator{
+		ID:     "trace-parser",
+		Type:   "trace_parser",
+		Output: "remove-trace-id",
+		TraceID: OperatorAttribute{
+			ParseFrom: attributeTraceID,
+		},
+		SpanID: OperatorAttribute{
+			ParseFrom: attributeSpanID,
+		},
+		TraceFlags: OperatorAttribute{
+			ParseFrom: attributeTraceFlags,
+		},
+	}
+	assert.Equal(t, expectedSP, sp)
+}
+
+func TestMakeTraceParentParser(t *testing.T) {
+	sp := makeTraceParentParser()
+	expectedSP := Operator{
+		ID:        "trace-parent-parser",
+		Type:      "regex_parser",
+		Regex:     traceParentExpression,
+		ParseFrom: attributeTraceParent,
+		Output:    "remove-trace-parent",
+		Trace: TraceAttribute{
+			TraceID: OperatorAttribute{
+				ParseFrom: attributeTraceID,
+			},
+			SpanID: OperatorAttribute{
+				ParseFrom: attributeSpanID,
+			},
+			TraceFlags: OperatorAttribute{
+				ParseFrom: attributeTraceFlags,
+			},
+		},
+	}
+	assert.Equal(t, expectedSP, sp)
+}
+
+func TestMakeRemoveTraceParent(t *testing.T) {
+	sp := makeRemoveTraceParent()
+	expectedSP := Operator{
+		ID:     "remove-trace-parent",
+		Type:   "remove",
+		Field:  attributeTraceParent,
+		Output: "remove-trace-id",
+	}
+	assert.Equal(t, expectedSP, sp)
+}
+
+func TestMakeRemoveTraceID(t *testing.T) {
+	sp := makeRemoveTraceID()
+	expectedSP := Operator{
+		ID:     "remove-trace-id",
+		Type:   "remove",
+		Field:  attributeTraceID,
+		Output: "remove-span-id",
+	}
+	assert.Equal(t, expectedSP, sp)
+}
+
+func TestMakeRemoveSpanID(t *testing.T) {
+	sp := makeRemoveSpanID()
+	expectedSP := Operator{
+		ID:     "remove-span-id",
+		Type:   "remove",
+		Field:  attributeSpanID,
+		Output: "remove-trace-flags",
+	}
+	assert.Equal(t, expectedSP, sp)
+}
+
+func TestMakeRemoveTraceFlags(t *testing.T) {
+	sp := makeRemoveTraceFlags()
+	expectedSP := Operator{
+		ID:    "remove-trace-flags",
+		Type:  "remove",
+		Field: attributeTraceFlags,
+	}
+	assert.Equal(t, expectedSP, sp)
+}
+
+func TestMakeNoop(t *testing.T) {
+	sp := makeNoop()
+	expectedSP := Operator{
+		ID:   "noop",
+		Type: "noop",
+	}
+	assert.Equal(t, expectedSP, sp)
+}
+
+func TestMakeTraceRouter(t *testing.T) {
+	sp := makeTraceRouter()
+	expectedSP := Operator{
+		ID:      "trace-router",
+		Type:    "router",
+		Default: "noop",
+		Routes: []Router{
+			{
+				Expression: fmt.Sprintf("%s != nil", attributeTraceID),
+				Output:     "trace-parser",
+			},
+			{
+				Expression: fmt.Sprintf("%s == nil and %s != nil and attributes.traceparent matches '%s'", attributeTraceID, attributeTraceParent, traceParentExpression),
+				Output:     "trace-parent-parser",
+			},
+		},
+	}
+	assert.Equal(t, expectedSP, sp)
+}
+
+func getExcludePaths(system bool, paths ...string) []string {
+	var defaultExcludePaths = []string{
+		"/var/log/pods/kyma-system_*system-logs-agent*/*/*.log",
+		"/var/log/pods/kyma-system_*system-logs-collector*/*/*.log",
+		"/var/log/pods/kyma-system_telemetry-log-agent*/*/*.log",
+		"/var/log/pods/kyma-system_telemetry-fluent-bit*/*/*.log",
+	}
+
+	var systemExcludePaths = []string{
+		"/var/log/pods/kyma-system_*/*/*.log",
+		"/var/log/pods/kube-system_*/*/*.log",
+		"/var/log/pods/istio-system_*/*/*.log",
+		"/var/log/pods/compass-system_*/*/*.log",
+	}
+
+	excludePaths := []string{}
+	excludePaths = append(excludePaths, defaultExcludePaths...)
+
+	if system {
+		excludePaths = append(excludePaths, systemExcludePaths...)
+	}
+
+	if len(paths) == 0 {
+		return excludePaths
+	}
+
+	return append(excludePaths, paths...)
 }

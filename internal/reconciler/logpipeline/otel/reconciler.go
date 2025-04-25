@@ -15,6 +15,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/processors"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
@@ -22,6 +23,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
+	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
@@ -45,7 +47,7 @@ type IstioStatusChecker interface {
 }
 
 type AgentConfigBuilder interface {
-	Build(pipelines []telemetryv1alpha1.LogPipeline, options agent.BuildOptions) *agent.Config
+	Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPipeline, options agent.BuildOptions) (*agent.Config, otlpexporter.EnvVars, error)
 }
 
 type AgentApplierDeleter interface {
@@ -62,6 +64,7 @@ type Reconciler struct {
 	moduleVersion      string
 
 	// Dependencies
+	flowHealthProber      FlowHealthProber
 	agentConfigBuilder    AgentConfigBuilder
 	agentProber           commonstatus.Prober
 	agentApplierDeleter   AgentApplierDeleter
@@ -77,6 +80,7 @@ func New(
 	client client.Client,
 	telemetryNamespace string,
 	moduleVersion string,
+	flowHeathProber FlowHealthProber,
 	agentConfigBuilder AgentConfigBuilder,
 	agentApplierDeleter AgentApplierDeleter,
 	agentProber commonstatus.Prober,
@@ -91,6 +95,7 @@ func New(
 		Client:                client,
 		telemetryNamespace:    telemetryNamespace,
 		moduleVersion:         moduleVersion,
+		flowHealthProber:      flowHeathProber,
 		agentConfigBuilder:    agentConfigBuilder,
 		agentApplierDeleter:   agentApplierDeleter,
 		agentProber:           agentProber,
@@ -211,8 +216,10 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, allPipelines []telemetryv1alpha1.LogPipeline) error {
 	clusterInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
 	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, gateway.BuildOptions{
-		ClusterName:   clusterInfo.ClusterName,
-		CloudProvider: clusterInfo.CloudProvider,
+		ClusterName:                     clusterInfo.ClusterName,
+		CloudProvider:                   clusterInfo.CloudProvider,
+		Enrichments:                     r.getEnrichmentsFromTelemetry(ctx),
+		InternalMetricCompatibilityMode: telemetryutils.GetCompatibilityModeFromTelemetry(ctx, r.Client, r.telemetryNamespace),
 	})
 
 	if err != nil {
@@ -253,10 +260,18 @@ func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetr
 }
 
 func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, allPipelines []telemetryv1alpha1.LogPipeline) error {
-	agentConfig := r.agentConfigBuilder.Build(allPipelines, agent.BuildOptions{
+	agentConfig, envVars, err := r.agentConfigBuilder.Build(ctx, allPipelines, agent.BuildOptions{
 		InstrumentationScopeVersion: r.moduleVersion,
 		AgentNamespace:              r.telemetryNamespace,
+		ClusterName:                 k8sutils.GetGardenerShootInfo(ctx, r.Client).ClusterName,
+		CloudProvider:               k8sutils.GetGardenerShootInfo(ctx, r.Client).CloudProvider,
+		Enrichments:                 r.getEnrichmentsFromTelemetry(ctx),
+
+		InternalMetricCompatibilityMode: telemetryutils.GetCompatibilityModeFromTelemetry(ctx, r.Client, r.telemetryNamespace),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to build agent config: %w", err)
+	}
 
 	agentConfigYAML, err := yaml.Marshal(agentConfig)
 	if err != nil {
@@ -276,6 +291,7 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 		otelcollector.AgentApplyOptions{
 			AllowedPorts:        allowedPorts,
 			CollectorConfigYAML: string(agentConfigYAML),
+			CollectorEnvVars:    envVars,
 		},
 	); err != nil {
 		return fmt.Errorf("failed to apply agent resources: %w", err)
@@ -285,30 +301,51 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 }
 
 func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
-	var telemetries operatorv1alpha1.TelemetryList
-	if err := r.List(ctx, &telemetries); err != nil {
-		logf.FromContext(ctx).V(1).Error(err, "Failed to list telemetry: using default scaling")
+	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.telemetryNamespace)
+	if err != nil {
+		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: using default scaling")
 		return defaultReplicaCount
 	}
 
-	for i := range telemetries.Items {
-		telemetrySpec := telemetries.Items[i].Spec
-		if telemetrySpec.Log == nil {
-			continue
-		}
-
-		scaling := telemetrySpec.Log.Gateway.Scaling
-		if scaling.Type != operatorv1alpha1.StaticScalingStrategyType {
-			continue
-		}
-
-		static := scaling.Static
-		if static != nil && static.Replicas > 0 {
-			return static.Replicas
-		}
+	if telemetry.Spec.Log != nil &&
+		telemetry.Spec.Log.Gateway.Scaling.Type == operatorv1alpha1.StaticScalingStrategyType &&
+		telemetry.Spec.Log.Gateway.Scaling.Static != nil && telemetry.Spec.Log.Gateway.Scaling.Static.Replicas > 0 {
+		return telemetry.Spec.Log.Gateway.Scaling.Static.Replicas
 	}
 
 	return defaultReplicaCount
+}
+
+func (r *Reconciler) getEnrichmentsFromTelemetry(ctx context.Context) processors.Enrichments {
+	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.telemetryNamespace)
+	if err != nil {
+		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: using default enrichments configuration")
+		return processors.Enrichments{}
+	}
+
+	if telemetry.Spec.Log != nil &&
+		telemetry.Spec.Log.Enrichments != nil {
+		mapPodLabels := func(values []operatorv1alpha1.PodLabel, fn func(operatorv1alpha1.PodLabel) processors.PodLabel) []processors.PodLabel {
+			var result []processors.PodLabel
+			for i := range values {
+				result = append(result, fn(values[i]))
+			}
+
+			return result
+		}
+
+		return processors.Enrichments{
+			Enabled: telemetry.Spec.Log.Enrichments.Enabled,
+			PodLabels: mapPodLabels(telemetry.Spec.Log.Enrichments.ExtractPodLabels, func(value operatorv1alpha1.PodLabel) processors.PodLabel {
+				return processors.PodLabel{
+					Key:       value.Key,
+					KeyPrefix: value.KeyPrefix,
+				}
+			}),
+		}
+	}
+
+	return processors.Enrichments{}
 }
 
 func getGatewayPorts() []int32 {

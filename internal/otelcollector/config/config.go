@@ -56,8 +56,11 @@ type MetricExporter struct {
 }
 
 type PrometheusMetricExporter struct {
-	Host string `yaml:"host"`
-	Port int32  `yaml:"port"`
+	Host              string `yaml:"host"`
+	Port              int32  `yaml:"port"`
+	WithoutScopeInfo  bool   `yaml:"without_scope_info,omitempty"`
+	WithoutTypeSuffix bool   `yaml:"without_type_suffix,omitempty"`
+	WithoutUnits      bool   `yaml:"without_units,omitempty"`
 }
 
 type Logs struct {
@@ -65,7 +68,7 @@ type Logs struct {
 	Encoding string `yaml:"encoding"`
 }
 
-func DefaultService(pipelines Pipelines) Service {
+func DefaultService(pipelines Pipelines, compatibilityMode bool) Service {
 	telemetry := Telemetry{
 		Metrics: Metrics{
 			Readers: []MetricReader{
@@ -73,8 +76,11 @@ func DefaultService(pipelines Pipelines) Service {
 					Pull: PullMetricReader{
 						Exporter: MetricExporter{
 							Prometheus: PrometheusMetricExporter{
-								Host: fmt.Sprintf("${%s}", EnvVarCurrentPodIP),
-								Port: ports.Metrics,
+								Host:              fmt.Sprintf("${%s}", EnvVarCurrentPodIP),
+								Port:              ports.Metrics,
+								WithoutScopeInfo:  compatibilityMode,
+								WithoutTypeSuffix: compatibilityMode,
+								WithoutUnits:      compatibilityMode,
 							},
 						},
 					},
@@ -103,4 +109,8 @@ func DefaultExtensions() Extensions {
 			Endpoint: fmt.Sprintf("127.0.0.1:%d", ports.Pprof),
 		},
 	}
+}
+
+type ServiceEnrichmentProcessor struct {
+	ResourceAttributes []string `yaml:"resource_attributes"`
 }

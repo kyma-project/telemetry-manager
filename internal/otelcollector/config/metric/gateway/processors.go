@@ -5,9 +5,9 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/gatewayprocs"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/ottlexpr"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/processors"
 )
 
 func makeProcessorsConfig(opts BuildOptions) Processors {
@@ -16,10 +16,12 @@ func makeProcessorsConfig(opts BuildOptions) Processors {
 			Batch:         makeBatchProcessorConfig(),
 			MemoryLimiter: makeMemoryLimiterConfig(),
 		},
-		K8sAttributes:                 gatewayprocs.K8sAttributesProcessorConfig(),
-		InsertClusterAttributes:       gatewayprocs.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.CloudProvider),
-		ResolveServiceName:            makeResolveServiceNameConfig(),
-		DropKymaAttributes:            gatewayprocs.DropKymaAttributesProcessorConfig(),
+		K8sAttributes: processors.K8sAttributesProcessorConfig(processors.Enrichments{
+			Enabled: false,
+		}),
+		InsertClusterAttributes:       processors.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.CloudProvider),
+		ResolveServiceName:            processors.MakeResolveServiceNameConfig(),
+		DropKymaAttributes:            processors.DropKymaAttributesProcessorConfig(),
 		DeleteSkipEnrichmentAttribute: makeDeleteSkipEnrichmentAttributeConfig(),
 	}
 }
@@ -39,13 +41,6 @@ func makeMemoryLimiterConfig() *config.MemoryLimiter {
 		CheckInterval:        "1s",
 		LimitPercentage:      75,
 		SpikeLimitPercentage: 15,
-	}
-}
-
-func makeResolveServiceNameConfig() *metric.TransformProcessor {
-	return &metric.TransformProcessor{
-		ErrorMode:        "ignore",
-		MetricStatements: gatewayprocs.ResolveServiceNameStatements(),
 	}
 }
 
@@ -74,7 +69,7 @@ func makeDropIfInputSourcePrometheusConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			Metric: []string{
-				ottlexpr.ScopeNameEquals(metric.InstrumentationScopePrometheus),
+				ottlexpr.ResourceAttributeEquals(metric.KymaInputNameAttribute, metric.KymaInputPrometheus),
 			},
 		},
 	}
@@ -85,6 +80,16 @@ func makeDropIfInputSourceIstioConfig() *FilterProcessor {
 		Metrics: FilterProcessorMetrics{
 			Metric: []string{
 				ottlexpr.ScopeNameEquals(metric.InstrumentationScopeIstio),
+			},
+		},
+	}
+}
+
+func makeDropIfEnvoyMetricsDisabledConfig() *FilterProcessor {
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetrics{
+			Metric: []string{
+				ottlexpr.JoinWithAnd(ottlexpr.IsMatch("name", "^envoy_.*"), ottlexpr.ScopeNameEquals(metric.InstrumentationScopeIstio)),
 			},
 		},
 	}
@@ -208,14 +213,29 @@ func makeFilterByNamespaceConfig(namespaceSelector *telemetryv1alpha1.NamespaceS
 	var filterExpressions []string
 
 	if len(namespaceSelector.Exclude) > 0 {
-		namespacesConditions := createNamespacesConditions(namespaceSelector.Exclude)
+		namespacesConditions := makeNamespacesConditions(namespaceSelector.Exclude)
+
+		// Drop metrics if the excluded namespaces are matched
 		excludeNamespacesExpr := ottlexpr.JoinWithAnd(inputSourceCondition, ottlexpr.JoinWithOr(namespacesConditions...))
 		filterExpressions = append(filterExpressions, excludeNamespacesExpr)
 	}
 
 	if len(namespaceSelector.Include) > 0 {
-		namespacesConditions := createNamespacesConditions(namespaceSelector.Include)
-		includeNamespacesExpr := ottlexpr.JoinWithAnd(inputSourceCondition, ottlexpr.ResourceAttributeNotNil(ottlexpr.K8sNamespaceName), not(ottlexpr.JoinWithOr(namespacesConditions...)))
+		namespacesConditions := makeNamespacesConditions(namespaceSelector.Include)
+
+		// metrics are dropped if the statement is true, so you need to negate the expression
+		includeNamespacesExpr := ottlexpr.JoinWithAnd(
+			// Ensure we are filtering metrics from the correct input source
+			inputSourceCondition,
+
+			// Ensure the k8s.namespace.name resource attribute is not nil,
+			// so we don't drop logs without a namespace label
+			ottlexpr.ResourceAttributeNotNil(ottlexpr.K8sNamespaceName),
+
+			// Logs are dropped if the filter expression evaluates to true,
+			// so we negate the match against included namespaces to keep only those
+			ottlexpr.Not(ottlexpr.JoinWithOr(namespacesConditions...)),
+		)
 		filterExpressions = append(filterExpressions, includeNamespacesExpr)
 	}
 
@@ -226,7 +246,7 @@ func makeFilterByNamespaceConfig(namespaceSelector *telemetryv1alpha1.NamespaceS
 	}
 }
 
-func createNamespacesConditions(namespaces []string) []string {
+func makeNamespacesConditions(namespaces []string) []string {
 	var namespacesConditions []string
 	for _, ns := range namespaces {
 		namespacesConditions = append(namespacesConditions, ottlexpr.NamespaceEquals(ns))
@@ -245,12 +265,8 @@ func otlpInputSource() string {
 	// we assume the metric is being pushed directly to metrics gateway.
 	return fmt.Sprintf("not(%s or %s or %s or %s)",
 		ottlexpr.ScopeNameEquals(metric.InstrumentationScopeRuntime),
-		ottlexpr.ScopeNameEquals(metric.InstrumentationScopePrometheus),
+		ottlexpr.ResourceAttributeEquals(metric.KymaInputNameAttribute, metric.KymaInputPrometheus),
 		ottlexpr.ScopeNameEquals(metric.InstrumentationScopeIstio),
 		ottlexpr.ScopeNameEquals(metric.InstrumentationScopeKyma),
 	)
-}
-
-func not(expression string) string {
-	return fmt.Sprintf("not(%s)", expression)
 }

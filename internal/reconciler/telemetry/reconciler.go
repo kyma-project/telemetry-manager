@@ -19,6 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
+	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 )
 
@@ -77,6 +78,7 @@ type Reconciler struct {
 	healthCheckers            healthCheckers
 	overridesHandler          OverridesHandler
 	selfMonitorApplierDeleter SelfMonitorApplierDeleter
+	metricsEmitter            telemetryMetricsEmitter
 }
 
 func New(
@@ -97,6 +99,7 @@ func New(
 		},
 		overridesHandler:          overridesHandler,
 		selfMonitorApplierDeleter: selfMonitorApplierDeleter,
+		metricsEmitter:            newTelemetryMetricsEmitter(),
 	}
 }
 
@@ -114,8 +117,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	var telemetry operatorv1alpha1.Telemetry
-	if err := r.Client.Get(ctx, req.NamespacedName, &telemetry); err != nil {
-		logf.FromContext(ctx).Info(req.NamespacedName.String() + " got deleted!")
+	if err := r.Get(ctx, req.NamespacedName, &telemetry); err != nil {
+		logf.FromContext(ctx).Info(req.String() + " got deleted!")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
@@ -127,6 +130,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			err = fmt.Errorf("failed to update status: %w", statusErr)
 		}
 	}
+
+	r.metricsEmitter.updateCompatibilityModeMetric(telemetryutils.GetCompatibilityModeFromTelemetry(ctx, r.Client, telemetry.Namespace))
 
 	requeue := telemetry.Status.State == operatorv1alpha1.StateWarning
 
@@ -164,7 +169,7 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operat
 	}
 
 	prometheusConfig := config.MakeConfig(config.BuilderConfig{
-		ScrapeNamespace:   r.config.SelfMonitor.Config.Namespace,
+		ScrapeNamespace:   r.config.SelfMonitor.Namespace,
 		WebhookURL:        r.config.SelfMonitor.WebhookURL,
 		WebhookScheme:     r.config.SelfMonitor.WebhookScheme,
 		ConfigPath:        selfMonitorConfigPath,
@@ -176,7 +181,7 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operat
 		return fmt.Errorf("failed to marshal selfmonitor config: %w", err)
 	}
 
-	alertRules := config.MakeRules()
+	alertRules := config.MakeRules(telemetryutils.GetCompatibilityModeFromTelemetry(ctx, r.Client, telemetry.Namespace))
 
 	alertRulesYAML, err := yaml.Marshal(alertRules)
 	if err != nil {
@@ -232,7 +237,7 @@ func (r *Reconciler) checkPipelineExist(ctx context.Context) (bool, error) {
 }
 
 func (r *Reconciler) handleFinalizer(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
-	if telemetry.ObjectMeta.DeletionTimestamp.IsZero() {
+	if telemetry.DeletionTimestamp.IsZero() {
 		if !controllerutil.ContainsFinalizer(telemetry, finalizer) {
 			controllerutil.AddFinalizer(telemetry, finalizer)
 

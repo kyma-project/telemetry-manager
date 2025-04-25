@@ -1,9 +1,9 @@
 package otel
 
 import (
-	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -22,6 +22,7 @@ import (
 	logpipelinemocks "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/stubs"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
@@ -32,7 +33,7 @@ func TestReconcile(t *testing.T) {
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 
 	overridesHandlerStub := &logpipelinemocks.OverridesHandler{}
-	overridesHandlerStub.On("LoadOverrides", context.Background()).Return(&overrides.Config{}, nil)
+	overridesHandlerStub.On("LoadOverrides", t.Context()).Return(&overrides.Config{}, nil)
 
 	istioStatusCheckerStub := &stubs.IstioStatusChecker{IsActive: false}
 
@@ -58,6 +59,9 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(workloadstatus.ErrDeploymentFetching)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
 		pipelineValidatorWithStubs := &Validator{}
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
@@ -66,6 +70,7 @@ func TestReconcile(t *testing.T) {
 			fakeClient,
 			telemetryNamespace,
 			moduleVersion,
+			flowHealthProberStub,
 			agentConfigBuilderMock,
 			agentApplierDeleterMock,
 			agentProberStub,
@@ -75,11 +80,11 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			pipelineValidatorWithStubs,
 			errToMsg)
-		err := sut.Reconcile(context.Background(), &pipeline)
+		err := sut.Reconcile(t.Context(), &pipeline)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		err = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 		require.NoError(t, err)
 
 		requireHasStatusCondition(t, updatedPipeline,
@@ -111,6 +116,9 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(&workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"})
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
 		pipelineValidatorWithStubs := &Validator{}
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
@@ -119,6 +127,7 @@ func TestReconcile(t *testing.T) {
 			fakeClient,
 			telemetryNamespace,
 			moduleVersion,
+			flowHealthProberStub,
 			agentConfigBuilderMock,
 			agentApplierDeleterMock,
 			agentProberStub,
@@ -128,11 +137,11 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			pipelineValidatorWithStubs,
 			errToMsg)
-		err := sut.Reconcile(context.Background(), &pipeline)
+		err := sut.Reconcile(t.Context(), &pipeline)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		err = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 		require.NoError(t, err)
 
 		requireHasStatusCondition(t, updatedPipeline,
@@ -166,12 +175,16 @@ func TestReconcile(t *testing.T) {
 
 		pipelineValidatorWithStubs := &Validator{}
 
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
 			fakeClient,
 			telemetryNamespace,
 			moduleVersion,
+			flowHealthProberStub,
 			agentConfigBuilderMock,
 			agentApplierDeleterMock,
 			agentProberStub,
@@ -181,11 +194,11 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			pipelineValidatorWithStubs,
 			errToMsg)
-		err := sut.Reconcile(context.Background(), &pipeline)
+		err := sut.Reconcile(t.Context(), &pipeline)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeGatewayHealthy,
@@ -198,14 +211,14 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("log agent daemonset is not ready", func(t *testing.T) {
-		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().WithApplicationInput(true).Build()
+		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).WithApplicationInput(true).Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-		agentConfigBuilderMock.On("Build", containsPipeline(pipeline), mock.Anything).Return(&agent.Config{}, nil, nil).Times(1)
+		agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&agent.Config{}, nil, nil).Times(1)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&gateway.Config{}, nil, nil).Times(1)
@@ -218,12 +231,16 @@ func TestReconcile(t *testing.T) {
 
 		pipelineValidatorWithStubs := &Validator{}
 
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
 			fakeClient,
 			telemetryNamespace,
 			moduleVersion,
+			flowHealthProberStub,
 			agentConfigBuilderMock,
 			agentApplierDeleterMock,
 			agentProberStub,
@@ -233,11 +250,11 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			pipelineValidatorWithStubs,
 			errToMsg)
-		err := sut.Reconcile(context.Background(), &pipeline)
+		err := sut.Reconcile(t.Context(), &pipeline)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeAgentHealthy,
@@ -250,14 +267,14 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("log agent daemonset is ready", func(t *testing.T) {
-		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().WithApplicationInput(true).Build()
+		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).WithApplicationInput(true).Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-		agentConfigBuilderMock.On("Build", containsPipeline(pipeline), mock.Anything).Return(&agent.Config{}, nil, nil).Times(1)
+		agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&agent.Config{}, nil, nil).Times(1)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&gateway.Config{}, nil, nil).Times(1)
@@ -270,12 +287,16 @@ func TestReconcile(t *testing.T) {
 
 		pipelineValidatorWithStubs := &Validator{}
 
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
 			fakeClient,
 			telemetryNamespace,
 			moduleVersion,
+			flowHealthProberStub,
 			agentConfigBuilderMock,
 			agentApplierDeleterMock,
 			agentProberStub,
@@ -285,11 +306,11 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			pipelineValidatorWithStubs,
 			errToMsg)
-		err := sut.Reconcile(context.Background(), &pipeline)
+		err := sut.Reconcile(t.Context(), &pipeline)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeAgentHealthy,
@@ -299,6 +320,157 @@ func TestReconcile(t *testing.T) {
 
 		agentConfigBuilderMock.AssertExpectations(t)
 		gatewayConfigBuilderMock.AssertExpectations(t)
+	})
+
+	t.Run("flow healthy", func(t *testing.T) {
+		tests := []struct {
+			name            string
+			probe           prober.OTelPipelineProbeResult
+			probeErr        error
+			expectedStatus  metav1.ConditionStatus
+			expectedReason  string
+			expectedMessage string
+		}{
+			{
+				name:            "prober fails",
+				probeErr:        assert.AnError,
+				expectedStatus:  metav1.ConditionUnknown,
+				expectedReason:  conditions.ReasonSelfMonProbingFailed,
+				expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing failed",
+			},
+			{
+				name: "healthy",
+				probe: prober.OTelPipelineProbeResult{
+					PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
+				},
+				expectedStatus:  metav1.ConditionTrue,
+				expectedReason:  conditions.ReasonSelfMonFlowHealthy,
+				expectedMessage: "No problems detected in the telemetry flow",
+			},
+			{
+				name: "throttling",
+				probe: prober.OTelPipelineProbeResult{
+					Throttling: true,
+				},
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonSelfMonGatewayThrottling,
+				expectedMessage: "Log gateway is unable to receive logs at current rate.",
+			},
+			{
+				name: "buffer filling up",
+				probe: prober.OTelPipelineProbeResult{
+					QueueAlmostFull: true,
+				},
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonSelfMonBufferFillingUp,
+				expectedMessage: "Buffer nearing capacity. Incoming log rate exceeds export rate.",
+			},
+			{
+				name: "buffer filling up shadows other problems",
+				probe: prober.OTelPipelineProbeResult{
+					QueueAlmostFull: true,
+					Throttling:      true,
+				},
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonSelfMonBufferFillingUp,
+				expectedMessage: "Buffer nearing capacity. Incoming log rate exceeds export rate.",
+			},
+			{
+				name: "some data dropped",
+				probe: prober.OTelPipelineProbeResult{
+					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
+				},
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonSelfMonSomeDataDropped,
+				expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped.",
+			},
+			{
+				name: "some data dropped shadows other problems",
+				probe: prober.OTelPipelineProbeResult{
+					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
+					Throttling:          true,
+				},
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonSelfMonSomeDataDropped,
+				expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped.",
+			},
+			{
+				name: "all data dropped",
+				probe: prober.OTelPipelineProbeResult{
+					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
+				},
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonSelfMonAllDataDropped,
+				expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped.",
+			},
+			{
+				name: "all data dropped shadows other problems",
+				probe: prober.OTelPipelineProbeResult{
+					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
+					Throttling:          true,
+				},
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonSelfMonAllDataDropped,
+				expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped.",
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).WithApplicationInput(true).Build()
+				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+				gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+				gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&gateway.Config{}, nil, nil).Times(1)
+
+				agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+				agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Times(1)
+
+				agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
+				agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&agent.Config{}, nil, nil).Times(1)
+
+				gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+				gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+				gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+
+				agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
+
+				flowHealthProberStub := &mocks.FlowHealthProber{}
+				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
+
+				pipelineValidatorWithStubs := &Validator{}
+
+				errToMsg := &conditions.ErrorToMessageConverter{}
+				sut := New(
+					fakeClient,
+					telemetryNamespace,
+					moduleVersion,
+					flowHealthProberStub,
+					agentConfigBuilderMock,
+					agentApplierDeleterMock,
+					agentProberStub,
+					gatewayApplierDeleterMock,
+					gatewayConfigBuilderMock,
+					gatewayProberStub,
+					istioStatusCheckerStub,
+					pipelineValidatorWithStubs,
+					errToMsg)
+				err := sut.Reconcile(t.Context(), &pipeline)
+				require.NoError(t, err)
+
+				var updatedPipeline telemetryv1alpha1.LogPipeline
+				_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+				requireHasStatusCondition(t, updatedPipeline,
+					conditions.TypeFlowHealthy,
+					tt.expectedStatus,
+					tt.expectedReason,
+					tt.expectedMessage,
+				)
+				agentConfigBuilderMock.AssertExpectations(t)
+				gatewayConfigBuilderMock.AssertExpectations(t)
+			})
+		}
 	})
 
 	// TODO: "referenced secret missing" (requires SecretRefValidator to be implemented)
@@ -324,10 +496,14 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
 		sut := New(
 			fakeClient,
 			telemetryNamespace,
 			moduleVersion,
+			flowHealthProberStub,
 			&mocks.AgentConfigBuilder{},
 			agentApplierDeleterMock,
 			agentProberStub,
@@ -337,11 +513,11 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			&Validator{},
 			&conditions.ErrorToMessageConverter{})
-		err := sut.Reconcile(context.Background(), &pipeline)
+		err := sut.Reconcile(t.Context(), &pipeline)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeAgentHealthy,
@@ -359,7 +535,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline1, &pipeline2).WithStatusSubresource(&pipeline1, &pipeline2).Build()
 
 		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-		agentConfigBuilderMock.On("Build", containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline1, pipeline2}), mock.Anything).Return(&agent.Config{}, nil, nil).Times(1)
+		agentConfigBuilderMock.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline1, pipeline2}), mock.Anything).Return(&agent.Config{}, nil, nil).Times(1)
 
 		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Times(1)
@@ -373,10 +549,14 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, mock.Anything).Return(prober.OTelPipelineProbeResult{}, nil)
+
 		sut := New(
 			fakeClient,
 			telemetryNamespace,
 			moduleVersion,
+			flowHealthProberStub,
 			agentConfigBuilderMock,
 			agentApplierDeleterMock,
 			agentProberStub,
@@ -386,14 +566,14 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			&Validator{},
 			&conditions.ErrorToMessageConverter{})
-		err1 := sut.Reconcile(context.Background(), &pipeline1)
-		err2 := sut.Reconcile(context.Background(), &pipeline2)
+		err1 := sut.Reconcile(t.Context(), &pipeline1)
+		err2 := sut.Reconcile(t.Context(), &pipeline2)
 
 		require.NoError(t, err1)
 		require.NoError(t, err2)
 
 		var updatedPipeline1 telemetryv1alpha1.LogPipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline1.Name}, &updatedPipeline1)
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline1.Name}, &updatedPipeline1)
 
 		requireHasStatusCondition(t, updatedPipeline1,
 			conditions.TypeAgentHealthy,
@@ -423,10 +603,14 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, mock.Anything).Return(prober.OTelPipelineProbeResult{}, nil)
+
 		sut := New(
 			fakeClient,
 			telemetryNamespace,
 			moduleVersion,
+			flowHealthProberStub,
 			&mocks.AgentConfigBuilder{},
 			agentApplierDeleterMock,
 			agentProberStub,
@@ -436,8 +620,8 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			&Validator{},
 			&conditions.ErrorToMessageConverter{})
-		err1 := sut.Reconcile(context.Background(), &pipeline1)
-		err2 := sut.Reconcile(context.Background(), &pipeline2)
+		err1 := sut.Reconcile(t.Context(), &pipeline1)
+		err2 := sut.Reconcile(t.Context(), &pipeline2)
 
 		require.NoError(t, err1)
 		require.NoError(t, err2)
@@ -446,8 +630,8 @@ func TestReconcile(t *testing.T) {
 
 		var updatedPipeline2 telemetryv1alpha1.LogPipeline
 
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline1.Name}, &updatedPipeline1)
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline1.Name}, &updatedPipeline2)
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline1.Name}, &updatedPipeline1)
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline1.Name}, &updatedPipeline2)
 
 		requireHasStatusCondition(t, updatedPipeline1,
 			conditions.TypeAgentHealthy,
