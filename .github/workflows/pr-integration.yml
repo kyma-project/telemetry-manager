@@ -19,11 +19,13 @@ on:
     # exclude (go) files in the doc folder
     # include the workflow definition itself
     # include dependencies of the workflow definition
+    # exclude busola configmap files
     paths:
       - "**/go.mod"
       - "**/go.sum"
       - "**.go"
       - "config/**"
+      - "!config/busola/**"
       - "!**_test.go"
       - "!docs/**"
       - "test/e2e/*.go"
