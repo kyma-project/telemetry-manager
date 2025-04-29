@@ -77,6 +77,7 @@ var (
 	telemetryNamespace string
 	// TODO: replace with build version based on git revision
 	version = "main"
+	tag     = "latest"
 
 	// Operator flags
 	certDir                   string
@@ -157,7 +158,7 @@ func run() error {
 
 	ctrl.SetLogger(zapr.NewLogger(zapLogger))
 
-	setupLog.Info("Starting Telemetry Manager", "version", version)
+	setupLog.Info("Starting Telemetry Manager", "GitVersion", version, "GitTag", tag)
 
 	for _, flag := range featureflags.EnabledFlags() {
 		setupLog.Info("Enabled feature flag", "flag", flag)
