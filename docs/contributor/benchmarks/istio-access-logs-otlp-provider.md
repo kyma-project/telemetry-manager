@@ -1,7 +1,5 @@
 # Istio Access Logs OTLP Provider Load Test
-
-Goal: Assess the performance of Istio access logs enablement via OTLP, through the new Istio provider `kyma-logs`.
-
+Goal: Ensure that enabling Istio access logs via the new OTLP provider `kyma-logs` does not negatively impact Envoy's performance.
 
 ## Setup
 
@@ -59,9 +57,6 @@ kubectl apply -f ./assets/istio-access-logs/load-test.yaml
 
 ![Load Test Architecture](./assets/istio-access-logs/load_test_setup.drawio.svg)
 
-
-## Results
-
 ## Observed metrics
 Envoy: https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/statistics \
 Istio: https://istio.io/latest/docs/reference/config/metrics/
@@ -91,12 +86,12 @@ Envoy (Cluster):
 - `envoy_cluster_upstream_bytes` = Total sent/received connection bytes + Received/Sent connection bytes currently buffered
 
 Istio:
-- *(not documented)* Request Count (`istio_requests_total`): This is a COUNTER incremented for every request handled by an Istio proxy.
-- *(not documented)* Request Duration (`istio_request_duration_milliseconds`): This is a DISTRIBUTION which measures the duration of requests.
-- *(not documented)* Request Size (`istio_request_bytes`): This is a DISTRIBUTION which measures HTTP request body sizes.
-- *(not documented)* Response Size (`istio_response_bytes`): This is a DISTRIBUTION which measures HTTP response body sizes.
-- *(not documented)* gRPC Request Message Count (`istio_request_messages_total`): This is a COUNTER incremented for every gRPC message sent from a client.
-- *(not documented)* gRPC Response Message Count (`istio_response_messages_total`): This is a COUNTER incremented for every gRPC message sent from a server.
+- Request Count (`istio_requests_total`): This is a COUNTER incremented for every request handled by an Istio proxy.
+- Request Duration (`istio_request_duration_milliseconds`): This is a DISTRIBUTION which measures the duration of requests.
+- Request Size (`istio_request_bytes`): This is a DISTRIBUTION which measures HTTP request body sizes.
+- Response Size (`istio_response_bytes`): This is a DISTRIBUTION which measures HTTP response body sizes.
+- gRPC Request Message Count (`istio_request_messages_total`): This is a COUNTER incremented for every gRPC message sent from a client.
+- gRPC Response Message Count (`istio_response_messages_total`): This is a COUNTER incremented for every gRPC message sent from a server.
 
 ## Results
 
@@ -373,6 +368,36 @@ fortio logs:
 2025-04-23T09:47:31.271039Z    stream closed EOF for load-test/traffic-generator (fortio)
 ```
 
+### 📊 30 Apr. 2025 Runs - Specific / Filtered Results
+
+Load Generator (fortio): `["load", "-t", "0", "-qps", "0", "-nocatchup", "-uniform", "nginx.load-test.svc"]` (no catchup)
+
+Observed Timeranges (CEST/UTC+2):
+- R01: `{"from":"2025-04-30 15:13:00","to":"2025-04-30 15:23:00"}`
+- R02: `{"from":"2025-04-30 15:30:00","to":"2025-04-30 15:40:00"}`
+- R03: `{"from":"2025-04-30 15:45:00","to":"2025-04-30 15:55:00"}`
+- R04: `{"from":"2025-04-30 16:08:00","to":"2025-04-30 16:18:00"}`
+
+#### `nginx` Pod
+|  Run  |     Provider     |             Scenario              | [Istio] Requests Total | [Istio] Request Duration (ms) | [Istio] Request/Response Bytes | [K8S] Received/Transmitted Bandwidth (KB/s) | [K8S] Packets Rate (Received/Transmitted) | [K8S] Packets Dropped (Received + Transmitted) | [K8S] CPU Usage (istio-proxy, nginx) | [K8S] CPU Throttling (if any) | [K8S] Memory Usage (WSS) (istio-proxy, nginx) |
+| :---: | :--------------: | :-------------------------------: | :--------------------: | :---------------------------: | :----------------------------: | :-----------------------------------------: | :---------------------------------------: | :--------------------------------------------: | :----------------------------------: | :---------------------------: | :-------------------------------------------: |
+|  R01  |    kyma-logs     |            Functional             |          504           |             2.36              |           504 / 504            |                 439 / 1230                  |               566 / 665 p/s               |                     0 p/s                      |   istio-proxy: 0.249, nginx: 0.061   |       istio-proxy: 100%       |    istio-proxy: 44.8 MiB, nginx: 4.47 MiB     |
+|  R02  | telemetry-stdout |            Functional             |          564           |             1.95              |           564 / 564            |                  485 / 827                  |               566 / 649 p/s               |                     0 p/s                      |   istio-proxy: 0.250, nginx: 0.063   |       istio-proxy: 100%       |    istio-proxy: 49.8 MiB, nginx: 4.48 MiB     |
+|  R03  |    kyma-logs     |       Backend not reachable       |          490           |             2.01              |           486 / 486            |                  478 / 719                  |               493 / 563 p/s               |                     0 p/s                      |  istio-proxy: 0.251, nginx: 0.0626   |       istio-proxy: 100%       |    istio-proxy: 50.5 MiB, nginx: 4.47 MiB     |
+|  R04  |    kyma-logs     | Backend refusing some access logs |          522           |              2.2              |           522 / 522            |                 463 / 1280                  |               584 / 683 p/s               |                     0 p/s                      |   istio-proxy: 0.250, nginx: 0.058   |       istio-proxy: 100%       |    istio-proxy: 50.7 MiB, nginx: 4.47 MiB     |
+
+#### `fortio` Pod
+|  Run  |     Provider     |             Scenario              | [Istio] Requests Total | [Istio] Request Duration (ms) | [Istio] Request/Response Bytes | [K8S] Received/Transmitted Bandwidth (KB/s) | [K8S] Packets Rate (Received/Transmitted) | [K8S] Packets Dropped (Received + Transmitted) | [K8S] CPU Usage (istio-proxy, fortio) | [K8S] CPU Throttling (if any) | [K8S] Memory Usage (WSS) (istio-proxy, fortio) |
+| :---: | :--------------: | :-------------------------------: | :--------------------: | :---------------------------: | :----------------------------: | :-----------------------------------------: | :---------------------------------------: | :--------------------------------------------: | :-----------------------------------: | :---------------------------: | :--------------------------------------------: |
+|  R01  |    kyma-logs     |            Functional             |          504           |             7.04              |           504 / 504            |                  728 / 446                  |               589 / 509 p/s               |                     0 p/s                      |   istio-proxy: 0.17, fortio: 0.0497   |        istio-proxy: 0%        |    istio-proxy: 39.5 MiB, fortio: 10.6 MiB     |
+|  R02  | telemetry-stdout |            Functional             |          564           |             6.21              |           564 / 564            |                  795 / 496                  |               646 / 566 p/s               |                     0 p/s                      |  istio-proxy: 0.172, fortio: 0.0538   |        istio-proxy: 0%        |    istio-proxy: 40.6 MiB, fortio: 11.0 MiB     |
+|  R03  |    kyma-logs     |       Backend not reachable       |          466           |             6.34              |           466 / 466            |                  818 / 421                  |               548 / 480 p/s               |                     0 p/s                      |   istio-proxy: 0.17, fortio: 0.0528   |        istio-proxy: 0%        |    istio-proxy: 40.5 MiB, fortio: 10.7 MiB     |
+|  R04  |    kyma-logs     | Backend refusing some access logs |          522           |              6.8              |           522 / 522            |                  748 / 459                  |               605 / 525 p/s               |                     0 p/s                      |   istio-proxy: 0.17, fortio: 0.0509   |        istio-proxy: 0%        |    istio-proxy: 40.4 MiB, fortio: 11.4 MiB     |
+
+> Mentions:
+> - When not other specified, the observed metrics are reported as a rate (per second) over a 10 min timerange.
+> - "[Istio] Request Duration (ms)" is reported as sum/count (i.e. `istio_request_duration_milliseconds_sum` / `istio_request_duration_milliseconds_count`) over the 10 min timerange.
+
 ### Fault Injection Scenarios Results
 
 > Mention: For testing these edge-case scenarios, it was initially tried to use a `VirtualService` resource (see [./assets/istio-access-logs/fault-injection-config.yaml](./assets/istio-access-logs/fault-injection-config.yaml)), to alter the traffic between the istio-proxy and the backend (i.e. inducing delay and/or refusing data). However, this seemed to have no effect on the general load test setup. The assumption is that the traffic generated by the istio-proxy containers themselves is not affected by the `VirtualService` resource.
@@ -382,7 +407,8 @@ Achieved by scaling down the backend Deployment to 0 replicas.
 
 Observed behavior:
   - No hint of dropped access logs or any other erroneous behavior was observed.
-  - Access logs were not reaching the backend, but envoy/istio metrics did not report.
+  - Access logs were not reaching the backend, but most (see next point) of the envoy/istio metrics did not report this behavior.
+  - One of the places where a difference was still perceived, was in the `istio_request_messages_total / istio_response_messages_total` metric, where a value of `0 / 0` was reported.
   - Resource consumption did not change compared to the normal working scenario, signaling that access logs were still being processed.
 
 #### Backend backpressure
@@ -395,10 +421,10 @@ Observed behavior:
 memorylimiter@v0.123.0/memorylimiter.go:212    Memory usage is above soft limit. Refusing data.
 ```
 - Backpressure was not backpropagated, with the istio-proxy traffic being virtually unaffected.
+- One of the places where a difference was still perceived, was in the `istio_request_messages_total / istio_response_messages_total` metric, where a value of `29.5 / 5.15` was reported.
 - Resource consumption did not change compared to the normal working scenario.
 
-
 ## Conclusion
-Comparing the old provider (`envoy`) with the new provider (`kyma-logs`), no significant differences were observed in terms of resource consumption and performance. The new provider (`kyma-logs`) seems to be able to handle the same amount of traffic as the old provider (`envoy`), with similar CPU and memory usage and a slight increase in network bandwidth usage.
+Comparing the old provider (`envoy` and `telemetry-stdout`) with the new provider (`kyma-logs`), no significant differences were observed in terms of resource consumption and performance. The new provider (`kyma-logs`) seems to be able to handle the same amount of traffic as the old provider (`envoy` and `telemetry-stdout`), with similar CPU and memory usage and a slight increase in network bandwidth usage.
 
 Testing the new provider in edge-case fault injected scenarios did not show any signs of failure or performance degradation.
