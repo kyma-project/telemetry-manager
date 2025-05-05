@@ -418,7 +418,7 @@ Achieved by scaling down the backend Deployment to 0 replicas.
 
 Observed behavior:
   - No hint of dropped access logs or any other erroneous behavior was observed.
-  - Access logs were not reaching the backend, but most (see next point) of the envoy/istio metrics did not report this behavior.
+  - Access logs did not reach the backend, but most (see next point) of the Envoy/Istio metrics did not report this behavior.
   - One of the places where a difference was still perceived, was in the `istio_request_messages_total / istio_response_messages_total` metric, where a value of `0 / 0` was reported.
   - Resource consumption did not change compared to the normal working scenario, signaling that access logs were still being processed.
 
