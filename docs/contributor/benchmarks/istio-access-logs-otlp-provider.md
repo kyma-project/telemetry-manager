@@ -407,7 +407,7 @@ Observed Timeranges (CEST/UTC+2):
 > **NOTE:**
 > - Unless specified otherwise, the observed metrics are reported as a rate (per second) over a 10 min time range.
 > - "[Istio] ..." metrics are reported strictly in the context of the `fortio <-> nginx` traffic. The values reported in the `nginx` table refer to the `istio-proxy` instance of the `nginx` Pod, and the values in the `fortio` table refer to the one of the `fortio` Pod (because these are exported as separate metrics, with the `instance` attribute set accordingly).
-> - "[Istio] Request Duration (ms)" is reported as sum/count (i.e. `istio_request_duration_milliseconds_sum` / `istio_request_duration_milliseconds_count`) over the 10 min timerange.
+> - "[Istio] Request Duration (ms)" is reported as sum/count (that is, `istio_request_duration_milliseconds_sum` / `istio_request_duration_milliseconds_count`) over the 10 min time range.
 
 ### Fault Injection Scenarios Results
 
