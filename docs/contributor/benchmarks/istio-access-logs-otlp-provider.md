@@ -1,5 +1,5 @@
 # Istio Access Logs OTLP Provider Load Test
-Goal: Ensure that enabling Istio access logs via the new OTLP provider `kyma-logs` does not negatively impact Envoy's performance.
+Goal: Ensure that enabling Istio access logs with the new OTLP provider `kyma-logs` does not negatively impact Envoy's performance.
 
 ## Setup
 
