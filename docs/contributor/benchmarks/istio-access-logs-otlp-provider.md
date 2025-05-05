@@ -404,7 +404,7 @@ Observed Timeranges (CEST/UTC+2):
 |  R06  |  kyma-logs  |        Functional, no labels         |          736           |             4.54              |           737 / 737            |                 1080 / 647                  |               820 / 740 p/s               |                     0 p/s                      |  istio-proxy: 0.218, fortio: 0.0666   |      istio-proxy: 0.737%      |    istio-proxy: 40.2 MiB, fortio: 11.2 MiB     |
 |  R07  |  kyma-logs  | Functional, labels from old provider |          587           |             5.89              |           587 / 587            |                  854 / 517                  |               674 / 594 p/s               |                     0 p/s                      |   istio-proxy: 0.190, nginx: 0.0547   |        istio-proxy: 0%        |    istio-proxy: 37.9 MiB, fortio: 11.4 MiB     |
 
-> Mentions:
+> **NOTE:**
 > - When not other specified, the observed metrics are reported as a rate (per second) over a 10 min timerange.
 > - "[Istio] ..." metrics are reported strictly in the context of the `fortio <-> nginx` traffic. Where the values reported in the `nginx` table refer to the `istio-proxy` instance of the `nginx` Pod, and the ones in the `fortio` table refer to the one of the `fortio` Pod (since these are exported as separate metrics, with the `instance` attribute set accordingly).
 > - "[Istio] Request Duration (ms)" is reported as sum/count (i.e. `istio_request_duration_milliseconds_sum` / `istio_request_duration_milliseconds_count`) over the 10 min timerange.
