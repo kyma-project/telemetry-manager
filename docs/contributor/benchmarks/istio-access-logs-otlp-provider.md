@@ -5,7 +5,7 @@ Goal: Ensure that enabling Istio access logs via the new OTLP provider `kyma-log
 
 ### Base Setup
 1. `istio` module deployed
-2. Change `kyma-system/istio-controller-manager` Deployment image to: `europe-central2-docker.pkg.dev/sap-se-cx-kyma-goat/istio/istio-manager:PR-1374`
+2. Change `kyma-system/istio-controller-manager` Deployment image to: `europe-central2-docker.pkg.dev/sap-se-cx-kyma-goat/istio/istio-manager:PR-1374` (Alternatively, scale down the `istio-controller-manager` Deployment and apply [istio-config.yaml](./assets/istio-access-logs/istio-config.yaml) for additional, custom provider configurations)
 3. Create load-test namespace: `kubectl create ns load-test`
 
 ### Prometheus + Grafana Setup
@@ -380,6 +380,7 @@ Observed Timeranges (CEST/UTC+2):
 - R05: `{"from":"2025-05-05 12:20:00","to":"2025-05-05 12:30:00"}`
 - R06: `{"from":"2025-05-05 12:40:00","to":"2025-05-05 12:50:00"}`
 - R07: `{"from":"2025-05-05 14:45:00","to":"2025-05-05 14:55:00"}`
+- R08: `{"from":"2025-05-06 13:12:00","to":"2025-05-06 13:22:00"}`
 
 #### `nginx` Pod
 |  Run  |  Provider   |               Scenario               | [Istio] Requests Total | [Istio] Request Duration (ms) | [Istio] Request/Response Bytes | [K8S] Received/Transmitted Bandwidth (KB/s) | [K8S] Packets Rate (Received/Transmitted) | [K8S] Packets Dropped (Received + Transmitted) | [K8S] CPU Usage (istio-proxy, nginx) | [K8S] CPU Throttling (if any) | [K8S] Memory Usage (WSS) (istio-proxy, nginx) |
@@ -391,6 +392,7 @@ Observed Timeranges (CEST/UTC+2):
 |  R05  | no provider |       Access logs not exported       |          765           |             1.24              |           765 / 765            |                 704 / 1120                  |               768 / 848 p/s               |                     0 p/s                      |  istio-proxy: 0.250, nginx: 0.0842   |       istio-proxy: 100%       |    istio-proxy: 45.4 MiB, nginx: 4.52 MiB     |
 |  R06  |  kyma-logs  |        Functional, no labels         |          737           |             1.29              |           737 / 737            |                 644 / 1140                  |               751 / 835 p/s               |                     0 p/s                      |  istio-proxy: 0.250, nginx: 0.0827   |       istio-proxy: 100%       |    istio-proxy: 42.9 MiB, nginx: 4.52 MiB     |
 |  R07  |  kyma-logs  | Functional, labels from old provider |          587           |             1.86              |           587 / 587            |                 528 / 1430                  |               660 / 759 p/s               |                     0 p/s                      |  istio-proxy: 0.250, nginx: 0.0660   |       istio-proxy: 100%       |    istio-proxy: 46.0 MiB, nginx: 4.52 MiB     |
+|  R08  |  kyma-logs  |      Functional, reduced labels      |          571           |             1.98              |           572 / 572            |                 501 / 1250                  |               625 / 723 p/s               |                     0 p/s                      |  istio-proxy: 0.250, nginx: 0.0684   |       istio-proxy: 100%       |    istio-proxy: 51.6 MiB, nginx: 4.55 MiB     |
 
 
 #### `fortio` Pod
@@ -402,12 +404,14 @@ Observed Timeranges (CEST/UTC+2):
 |  R04  |  kyma-logs  |  Backend refusing some access logs   |          522           |              6.8              |           522 / 522            |                  748 / 459                  |               605 / 525 p/s               |                     0 p/s                      |   istio-proxy: 0.17, fortio: 0.0509   |        istio-proxy: 0%        |    istio-proxy: 40.4 MiB, fortio: 11.4 MiB     |
 |  R05  | no provider |       Access logs not exported       |          764           |             4.35              |           764 / 764            |                 1150 / 661                  |               834 / 756 p/s               |                     0 p/s                      |  istio-proxy: 0.225, fortio: 0.0681   |      istio-proxy: 1.86%       |    istio-proxy: 40.7 MiB, fortio: 10.7 MiB     |
 |  R06  |  kyma-logs  |        Functional, no labels         |          736           |             4.54              |           737 / 737            |                 1080 / 647                  |               820 / 740 p/s               |                     0 p/s                      |  istio-proxy: 0.218, fortio: 0.0666   |      istio-proxy: 0.737%      |    istio-proxy: 40.2 MiB, fortio: 11.2 MiB     |
-|  R07  |  kyma-logs  | Functional, labels from old provider |          587           |             5.89              |           587 / 587            |                  854 / 517                  |               674 / 594 p/s               |                     0 p/s                      |   istio-proxy: 0.190, nginx: 0.0547   |        istio-proxy: 0%        |    istio-proxy: 37.9 MiB, fortio: 11.4 MiB     |
+|  R07  |  kyma-logs  | Functional, labels from old provider |          587           |             5.89              |           587 / 587            |                  854 / 517                  |               674 / 594 p/s               |                     0 p/s                      |  istio-proxy: 0.190, fortio: 0.0547   |        istio-proxy: 0%        |    istio-proxy: 37.9 MiB, fortio: 11.4 MiB     |
+|  R08  |  kyma-logs  |      Functional, reduced labels      |          572           |             6.06              |           572 / 572            |                  801 / 503                  |               656 / 576 p/s               |                     0 p/s                      |  istio-proxy: 0.179, fortio: 0.0550   |        istio-proxy: 0%        |    istio-proxy: 36.8 MiB, fortio: 10.9 MiB     |
 
 > Mentions:
 > - When not other specified, the observed metrics are reported as a rate (per second) over a 10 min timerange.
 > - "[Istio] ..." metrics are reported strictly in the context of the `fortio <-> nginx` traffic. Where the values reported in the `nginx` table refer to the `istio-proxy` instance of the `nginx` Pod, and the ones in the `fortio` table refer to the one of the `fortio` Pod (since these are exported as separate metrics, with the `instance` attribute set accordingly).
 > - "[Istio] Request Duration (ms)" is reported as sum/count (i.e. `istio_request_duration_milliseconds_sum` / `istio_request_duration_milliseconds_count`) over the 10 min timerange.
+> - See [./assets/istio-access-logs/istio-config.yaml](./assets/istio-access-logs/istio-config.yaml) for custom provider configurations.
 
 ### Fault Injection Scenarios Results
 
