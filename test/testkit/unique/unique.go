@@ -7,7 +7,20 @@ import (
 	"strings"
 )
 
-func Prefix(suffixes ...string) func(...string) string {
+// Prefix generates a function that appends a unique prefix to a given string.
+// The prefix is constructed using the file path of the caller, an optional test category
+// (if the caller function name follows the "TestXxx_Category" pattern), and any additional
+// suffixes provided as arguments.
+//
+// The returned function takes a string `s` and returns a new string with the constructed
+// prefix and `s` joined by hyphens.
+//
+// Example usage:
+//
+//	prefixFunc := Prefix("suffix1", "suffix2")
+//	result := prefixFunc("myString")
+//	// result might be "caller-file-path-test-category-suffix1-suffix2-myString"
+func Prefix(suffixes ...string) func(s string) string {
 	pc, filePath, _, ok := runtime.Caller(1)
 	if !ok {
 		panic("failed to retrieve the current file path")
@@ -24,8 +37,8 @@ func Prefix(suffixes ...string) func(...string) string {
 
 	idSegments = append(idSegments, suffixes...)
 
-	return func(name ...string) string {
-		return strings.Join(append(idSegments, name...), "-")
+	return func(s string) string {
+		return strings.Join(append(idSegments, s), "-")
 	}
 }
 
