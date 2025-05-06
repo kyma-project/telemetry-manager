@@ -12,8 +12,8 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -43,11 +43,9 @@ var (
 func BeforeSuiteFuncErr() error {
 	Ctx, cancel = context.WithCancel(context.Background()) //nolint:fatcontext // context is used in tests
 
-	kubeconfigPath := clientcmd.NewDefaultClientConfigLoadingRules().GetDefaultFilename()
-
-	restConfig, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
+	restConfig, err := config.GetConfig()
 	if err != nil {
-		return fmt.Errorf("failed to load kubeconfig: %w", err)
+		return fmt.Errorf("failed to get k8s config: %w", err)
 	}
 
 	K8sClient, err = client.New(restConfig, client.Options{Scheme: scheme})
@@ -61,7 +59,7 @@ func BeforeSuiteFuncErr() error {
 	}
 
 	if err := kitk8s.CreateObjects(Ctx, K8sClient, preProvisionedK8sObjects...); err != nil {
-		return fmt.Errorf("failed to create default k8s objects: %w", err)
+		return fmt.Errorf("failed to create k8s objects: %w", err)
 	}
 
 	return nil
@@ -77,7 +75,7 @@ func BeforeSuiteFunc() {
 // Note that Gomega matchers cannot be utilized in the TestMain function.
 func AfterSuiteFuncErr() error {
 	if err := kitk8s.DeleteObjects(Ctx, K8sClient, preProvisionedK8sObjects...); err != nil {
-		return fmt.Errorf("failed to delete default k8s objects: %w", err)
+		return fmt.Errorf("failed to delete k8s objects: %w", err)
 	}
 
 	cancel()

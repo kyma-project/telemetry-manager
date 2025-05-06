@@ -1,20 +1,24 @@
 package shared
 
 import (
-	"fmt"
-	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	. "github.com/onsi/gomega"
-	
+	"log"
+	"os"
 	"testing"
+
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
 func TestMain(m *testing.M) {
-	RegisterFailHandler(func(message string, callerSkip ...int) {
-		// This will make Gomega assertions fail the test
-		// Here we just panic, but you could also hook into testing.T explicitly if needed
-		panic(fmt.Sprintf("Gomega assertion failed: %s", message))
-	})
-	suite.BeforeSuiteFunc()
+	const errorCode = 1
+	if err := suite.BeforeSuiteFuncErr(); err != nil {
+		log.Printf("Setup failed: %v", err)
+		os.Exit(errorCode)
+	}
+
 	m.Run()
-	suite.AfterSuiteFunc()
+
+	if err := suite.AfterSuiteFuncErr(); err != nil {
+		log.Printf("Teardown failed: %v", err)
+		os.Exit(errorCode)
+	}
 }
