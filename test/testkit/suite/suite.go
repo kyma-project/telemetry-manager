@@ -3,9 +3,12 @@ package suite
 import (
 	"context"
 	"fmt"
+	"os"
 	"path"
 	"runtime"
+	"slices"
 	"strings"
+	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -117,6 +120,25 @@ func sanitizeSpecID(filePath string) string {
 	specID = strings.ReplaceAll(specID, "_", "-")
 
 	return specID
+}
+
+func SkipIfDoesNotMatchLabel(t *testing.T, label string) {
+	args := os.Args
+	idx := slices.IndexFunc(args, func(arg string) bool {
+		return strings.HasPrefix(arg, "label")
+	})
+
+	if idx == -1 {
+		return
+	}
+
+	labelArg := args[idx]
+	if parts := strings.Split(labelArg, "="); len(parts) == 2 {
+		labelVal := parts[1]
+		if labelVal != label {
+			t.Skipf("Skipping test: label mismatch. Expected: %s, Got: %s", label, labelVal)
+		}
+	}
 }
 
 const (

@@ -40,7 +40,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 		objs = append(objs, logProducer.K8sObject())
 
 		// logPipeline1 ships logs without original body to backend1
-		backend1 := backend.New(mockNs, backend.SignalTypeLogs, backend.WithName(backend1Name))
+		backend1 := backend.New(mockNs, backend.SignalTypeLogsFluentBit, backend.WithName(backend1Name))
 		backend1ExportURL = backend1.ExportURL(suite.ProxyClient)
 		objs = append(objs, backend1.K8sObjects()...)
 		logPipeline1 := testutils.NewLogPipelineBuilder().
@@ -53,7 +53,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 		objs = append(objs, &logPipeline1)
 
 		// logPipeline2 ships logs with original body to backend2 (default behavior)
-		backend2 := backend.New(mockNs, backend.SignalTypeLogs, backend.WithName(backend2Name))
+		backend2 := backend.New(mockNs, backend.SignalTypeLogsFluentBit, backend.WithName(backend2Name))
 		backend2ExportURL = backend2.ExportURL(suite.ProxyClient)
 		objs = append(objs, backend2.K8sObjects()...)
 		logPipeline2 := testutils.NewLogPipelineBuilder().

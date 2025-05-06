@@ -36,7 +36,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 		logProducer := loggen.New(mockNs).WithUseJSON()
 		objs = append(objs, logProducer.K8sObject())
 
-		backend := backend.New(mockNs, backend.SignalTypeLogs, backend.WithName(backendName))
+		backend := backend.New(mockNs, backend.SignalTypeLogsFluentBit, backend.WithName(backendName))
 		backendExportURL = backend.ExportURL(suite.ProxyClient)
 		objs = append(objs, backend.K8sObjects()...)
 		logPipeline := testutils.NewLogPipelineBuilder().

@@ -96,7 +96,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 		var objs []client.Object
 
 		// backend
-		logBackend := backend.New(namespace, backend.SignalTypeLogs, backend.WithName(backendName))
+		logBackend := backend.New(namespace, backend.SignalTypeLogsFluentBit, backend.WithName(backendName))
 		logBackendURL = logBackend.ExportURL(suite.ProxyClient)
 		objs = append(objs, logBackend.K8sObjects()...)
 
@@ -115,7 +115,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 		var objs []client.Object
 
 		// backends
-		logBackend := backend.New(namespace, backend.SignalTypeLogs, backend.WithName(backendName))
+		logBackend := backend.New(namespace, backend.SignalTypeLogsFluentBit, backend.WithName(backendName))
 		backendURL := logBackend.ExportURL(suite.ProxyClient)
 		objs = append(objs, logBackend.K8sObjects()...)
 

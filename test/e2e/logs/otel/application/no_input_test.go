@@ -37,7 +37,7 @@ var _ = Describe(suite.ID(), Label(
 			var objs []client.Object
 			objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-			backend := backend.New(mockNs, backend.SignalTypeLogs)
+			backend := backend.New(mockNs, backend.SignalTypeLogsFluentBit)
 			objs = append(objs, backend.K8sObjects()...)
 
 			logPipelineNoInput := testutils.NewLogPipelineBuilder().

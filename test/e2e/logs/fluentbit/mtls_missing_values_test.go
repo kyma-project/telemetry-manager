@@ -42,7 +42,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 		serverCerts, clientCerts, err := testutils.NewCertBuilder(backend.DefaultName, mockNs).Build()
 		Expect(err).ToNot(HaveOccurred())
 
-		backend := backend.New(mockNs, backend.SignalTypeLogs, backend.WithTLS(*serverCerts))
+		backend := backend.New(mockNs, backend.SignalTypeLogsFluentBit, backend.WithTLS(*serverCerts))
 		succeedingObjs = append(succeedingObjs, backend.K8sObjects()...)
 
 		logPipelineMissingCa := testutils.NewLogPipelineBuilder().

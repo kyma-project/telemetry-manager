@@ -33,7 +33,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 			var objs []client.Object
 			objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-			backend1 := backend.New(mockNs, backend.SignalTypeLogs, backend.WithName(backend1Name))
+			backend1 := backend.New(mockNs, backend.SignalTypeLogsFluentBit, backend.WithName(backend1Name))
 			objs = append(objs, backend1.K8sObjects()...)
 			backend1ExportURL = backend1.ExportURL(suite.ProxyClient)
 
@@ -43,7 +43,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 				Build()
 			objs = append(objs, &logPipeline1)
 
-			backend2 := backend.New(mockNs, backend.SignalTypeLogs, backend.WithName(backend2Name))
+			backend2 := backend.New(mockNs, backend.SignalTypeLogsFluentBit, backend.WithName(backend2Name))
 			logProducer := loggen.New(mockNs)
 			objs = append(objs, backend2.K8sObjects()...)
 			objs = append(objs, logProducer.K8sObject())

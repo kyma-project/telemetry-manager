@@ -31,7 +31,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsOutage), Ordered
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs, kitk8s.WithIstioInjection()).K8sObject())
 
-		backend := backend.New(mockNs, backend.SignalTypeLogs, backend.WithReplicas(0))
+		backend := backend.New(mockNs, backend.SignalTypeLogsFluentBit, backend.WithReplicas(0))
 
 		logProducer := loggen.New(mockNs).WithReplicas(2).WithLoad(loggen.LoadHigh)
 

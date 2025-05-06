@@ -34,7 +34,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 		_, clientCertsCreatedAgain, err := testutils.NewCertBuilder(backend.DefaultName, mockNs).Build()
 		Expect(err).ToNot(HaveOccurred())
 
-		backend := backend.New(mockNs, backend.SignalTypeLogs, backend.WithTLS(*serverCertsDefault))
+		backend := backend.New(mockNs, backend.SignalTypeLogsFluentBit, backend.WithTLS(*serverCertsDefault))
 		objs = append(objs, backend.K8sObjects()...)
 
 		invalidClientCerts := &testutils.ClientCerts{

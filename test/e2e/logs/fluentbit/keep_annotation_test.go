@@ -32,7 +32,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		backend := backend.New(mockNs, backend.SignalTypeLogs)
+		backend := backend.New(mockNs, backend.SignalTypeLogsFluentBit)
 		logProducer := loggen.New(mockNs).WithAnnotations(map[string]string{"release": "v1.0.0"})
 		objs = append(objs, backend.K8sObjects()...)
 		objs = append(objs, logProducer.K8sObject())

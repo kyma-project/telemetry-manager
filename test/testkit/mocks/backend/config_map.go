@@ -105,7 +105,7 @@ func (cm *ConfigMap) K8sObject() *corev1.ConfigMap {
 	var configTemplate string
 
 	switch {
-	case cm.signalType == SignalTypeLogs:
+	case cm.signalType == SignalTypeLogsFluentBit:
 		configTemplate = logConfigTemplate
 	case cm.certs != nil:
 		configTemplate = tlsConfigTemplate
@@ -122,7 +122,7 @@ func (cm *ConfigMap) K8sObject() *corev1.ConfigMap {
 
 	data := make(map[string]string)
 
-	if cm.certs != nil && cm.signalType != SignalTypeLogs {
+	if cm.certs != nil && cm.signalType != SignalTypeLogsFluentBit {
 		certPem := strings.ReplaceAll(cm.certs.ServerCertPem.String(), "\n", "\\n")
 		keyPem := strings.ReplaceAll(cm.certs.ServerKeyPem.String(), "\n", "\\n")
 		config = strings.Replace(config, "{{ CERT_PEM }}", certPem, 1)

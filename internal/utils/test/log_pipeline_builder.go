@@ -72,6 +72,18 @@ func (b *LogPipelineBuilder) WithFinalizer(finalizer string) *LogPipelineBuilder
 	return b
 }
 
+func (b *LogPipelineBuilder) WithInput(input telemetryv1alpha1.LogPipelineInput) *LogPipelineBuilder {
+	b.input = input
+	return b
+}
+
+func (b *LogPipelineBuilder) WithOutput(output telemetryv1alpha1.LogPipelineOutput) *LogPipelineBuilder {
+	b.httpOutput = output.HTTP
+	b.customOutput = output.Custom
+	b.otlpOutput = output.OTLP
+	return b
+}
+
 func (b *LogPipelineBuilder) WithApplicationInput(enabled bool, opts ...LogPipelineInputOptions) *LogPipelineBuilder {
 	if b.input.Application == nil {
 		b.input.Application = &telemetryv1alpha1.LogPipelineApplicationInput{}

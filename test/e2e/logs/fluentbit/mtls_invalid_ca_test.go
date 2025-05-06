@@ -33,7 +33,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 			Build()
 		Expect(err).ToNot(HaveOccurred())
 
-		backend := backend.New(mockNs, backend.SignalTypeLogs, backend.WithTLS(*serverCerts))
+		backend := backend.New(mockNs, backend.SignalTypeLogsFluentBit, backend.WithTLS(*serverCerts))
 		objs = append(objs, backend.K8sObjects()...)
 
 		logPipeline := testutils.NewLogPipelineBuilder().
