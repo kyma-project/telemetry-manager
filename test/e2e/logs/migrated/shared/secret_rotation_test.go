@@ -1,8 +1,15 @@
 package shared
 
 import (
-	"context"
 	"fmt"
+	"testing"
+
+	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
@@ -11,17 +18,11 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
 )
 
 func TestSecretRotation_Otel(t *testing.T) {
 	RegisterTestingT(t)
-	//suite.SkipIfDoesNotMatchLabel(t, "logs")
+	// suite.SkipIfDoesNotMatchLabel(t, "logs")
 	tests := []struct {
 		name                 string
 		logPipelineInputFunc func() telemetryv1alpha1.LogPipelineInput
@@ -53,6 +54,7 @@ func TestSecretRotation_Otel(t *testing.T) {
 				endpointKey  = "logs-endpoint"
 				pipelineName = fmt.Sprintf("%s-pipeline", tc.name)
 			)
+
 			secret := kitk8s.NewOpaqueSecret("logs-missing", kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, "http://localhost:4317"))
 
 			logPipelineOutPut := telemetryv1alpha1.LogPipelineOutput{
@@ -79,7 +81,7 @@ func TestSecretRotation_Otel(t *testing.T) {
 			)
 
 			t.Cleanup(func() {
-				err := kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)
+				err := kitk8s.DeleteObjects(t.Context(), suite.K8sClient, resources...)
 				require.NoError(t, err)
 			})
 			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
@@ -105,19 +107,19 @@ func TestSecretRotation_Otel(t *testing.T) {
 
 			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, secret.K8sObject())).Should(Succeed())
 			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
-
 		})
 	}
 }
 
 func TestSecretRotation_FB(t *testing.T) {
 	RegisterTestingT(t)
-	//suite.SkipIfDoesNotMatchLabel(t, "logs")
+	// suite.SkipIfDoesNotMatchLabel(t, "logs")
 
 	var (
 		endpointKey  = "logs-endpoint"
 		pipelineName = "secret=rotation-fluentbit-pipeline"
 	)
+
 	secret := kitk8s.NewOpaqueSecret("logs-missing", kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, "http://localhost:4317"))
 
 	logPipelineOutPut := telemetryv1alpha1.LogPipelineOutput{
@@ -147,6 +149,12 @@ func TestSecretRotation_FB(t *testing.T) {
 		&pipeline,
 	)
 
+	t.Cleanup(func() {
+		err := kitk8s.DeleteObjects(t.Context(), suite.K8sClient, resources...)
+		require.NoError(t, err)
+	})
+	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
+
 	assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
@@ -168,5 +176,4 @@ func TestSecretRotation_FB(t *testing.T) {
 
 	Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, secret.K8sObject())).Should(Succeed())
 	assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
-
 }

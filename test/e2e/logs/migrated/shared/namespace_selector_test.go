@@ -1,8 +1,16 @@
 package shared
 
 import (
-	"context"
 	"fmt"
+	"strconv"
+	"testing"
+
+	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -12,33 +20,21 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/require"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
-	"testing"
 )
 
 func TestPipelineNamespace_Otel(t *testing.T) {
 	RegisterTestingT(t)
-	//suite.SkipIfDoesNotMatchLabel(t, "logs")
+	// suite.SkipIfDoesNotMatchLabel(t, "logs")
 
 	tests := []struct {
-		name string
-
+		name                 string
 		logPipelineInputFunc func(includeNs, excludeNs string) telemetryv1alpha1.LogPipelineInput
 		logProducerFunc      func(deploymentName, namespace string) client.Object
-
-		agent bool
+		agent                bool
 	}{
 		{
-			name: "gateway",
-			logPipelineInputFunc: func(includeNs, excludeNs string) telemetryv1alpha1.LogPipelineInput {
-				return withOTLPInput(includeNs, excludeNs)
-			},
-
+			name:                 "gateway",
+			logPipelineInputFunc: withOTLPInput,
 			logProducerFunc: func(deploymentName, namespace string) client.Object {
 				podSpecWithUndefinedService := telemetrygen.PodSpec(telemetrygen.SignalTypeLogs, telemetrygen.WithServiceName(""))
 				return kitk8s.NewDeployment(deploymentName, namespace).
@@ -49,11 +45,8 @@ func TestPipelineNamespace_Otel(t *testing.T) {
 		},
 
 		{
-			name: "agent",
-			logPipelineInputFunc: func(includeNs, excludeNs string) telemetryv1alpha1.LogPipelineInput {
-				return withApplicationInput(includeNs, excludeNs)
-			},
-
+			name:                 "agent",
+			logPipelineInputFunc: withApplicationInput,
 			logProducerFunc: func(deploymentName, namespace string) client.Object {
 				return loggen.New(namespace).
 					K8sObject()
@@ -113,7 +106,7 @@ func TestPipelineNamespace_Otel(t *testing.T) {
 			resources = append(resources, backendObj.K8sObjects()...)
 
 			t.Cleanup(func() {
-				err := kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)
+				err := kitk8s.DeleteObjects(t.Context(), suite.K8sClient, resources...)
 				require.NoError(t, err)
 			})
 			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
@@ -131,15 +124,13 @@ func TestPipelineNamespace_Otel(t *testing.T) {
 
 			assert.OtelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, includeNs)
 			assert.OtelLogsFromNamespaceNotDelivered(suite.ProxyClient, backendExportURL, excludeNs)
-
 		})
-
 	}
 }
 
 func TestPipelineNamespace_FluentBit(t *testing.T) {
 	RegisterTestingT(t)
-	//suite.SkipIfDoesNotMatchLabel(t, "logs")
+	// suite.SkipIfDoesNotMatchLabel(t, "logs")
 
 	var (
 		name        = "namespace-selector-fluent-bit"
@@ -186,7 +177,7 @@ func TestPipelineNamespace_FluentBit(t *testing.T) {
 	resources = append(resources, backendObj.K8sObjects()...)
 
 	t.Cleanup(func() {
-		err := kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)
+		err := kitk8s.DeleteObjects(t.Context(), suite.K8sClient, resources...)
 		require.NoError(t, err)
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
@@ -198,9 +189,8 @@ func TestPipelineNamespace_FluentBit(t *testing.T) {
 	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Name: backendName, Namespace: backendNs})
 	assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 
-	assert.FBLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, includeNs)
-	assert.FBLogsFromNamespaceNotDelivered(suite.ProxyClient, backendExportURL, excludeNs)
-
+	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, includeNs)
+	assert.FluentBitLogsFromNamespaceNotDelivered(suite.ProxyClient, backendExportURL, excludeNs)
 }
 
 func withApplicationInput(includeNs, excludeNs string) telemetryv1alpha1.LogPipelineInput {
@@ -214,6 +204,7 @@ func withApplicationInput(includeNs, excludeNs string) telemetryv1alpha1.LogPipe
 			},
 		}
 	}
+
 	return telemetryv1alpha1.LogPipelineInput{
 		Application: &telemetryv1alpha1.LogPipelineApplicationInput{
 			Enabled: ptr.To(true),
@@ -237,6 +228,7 @@ func withOTLPInput(includeNs, excludeNs string) telemetryv1alpha1.LogPipelineInp
 			},
 		}
 	}
+
 	return telemetryv1alpha1.LogPipelineInput{
 		Application: &telemetryv1alpha1.LogPipelineApplicationInput{
 			Enabled: ptr.To(false),
@@ -247,5 +239,4 @@ func withOTLPInput(includeNs, excludeNs string) telemetryv1alpha1.LogPipelineInp
 			},
 		},
 	}
-
 }

@@ -192,19 +192,19 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 		})
 
 		It("Should collect logs successfully", func() {
-			assert.LogsDelivered(suite.ProxyClient, "", logBackendURL)
+			assert.FluentBitLogsDelivered(suite.ProxyClient, "", logBackendURL)
 		})
 
 		It("Should collect otel collector component logs successfully", func() {
-			assert.LogsDelivered(suite.ProxyClient, "telemetry-", otelCollectorLogBackendURL)
+			assert.FluentBitLogsDelivered(suite.ProxyClient, "telemetry-", otelCollectorLogBackendURL)
 		})
 
 		It("Should collect fluent-bit component logs successfully", func() {
-			assert.LogsDelivered(suite.ProxyClient, "telemetry-", fluentBitLogBackendURL)
+			assert.FluentBitLogsDelivered(suite.ProxyClient, "telemetry-", fluentBitLogBackendURL)
 		})
 
 		It("Should collect self-monitor component logs successfully", func() {
-			assert.LogsDelivered(suite.ProxyClient, "telemetry-", selfMonitorLogBackendURL)
+			assert.FluentBitLogsDelivered(suite.ProxyClient, "telemetry-", selfMonitorLogBackendURL)
 		})
 
 		It("Should not have any error/warn logs in the otel collector component containers", func() {

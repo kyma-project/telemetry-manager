@@ -81,6 +81,7 @@ func (b *LogPipelineBuilder) WithOutput(output telemetryv1alpha1.LogPipelineOutp
 	b.httpOutput = output.HTTP
 	b.customOutput = output.Custom
 	b.otlpOutput = output.OTLP
+
 	return b
 }
 
