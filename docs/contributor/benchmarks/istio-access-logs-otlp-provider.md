@@ -1,5 +1,5 @@
 # Istio Access Logs OTLP Provider Load Test
-Goal: Ensure that enabling Istio access logs via the new OTLP provider `kyma-logs` does not negatively impact Envoy's performance.
+Goal: Ensure that enabling Istio access logs with the new OTLP provider `kyma-logs` does not negatively impact Envoy's performance.
 
 ## Setup
 
@@ -407,10 +407,10 @@ Observed Timeranges (CEST/UTC+2):
 |  R07  |  kyma-logs  | Functional, labels from old provider |          587           |             5.89              |           587 / 587            |                  854 / 517                  |               674 / 594 p/s               |                     0 p/s                      |  istio-proxy: 0.190, fortio: 0.0547   |        istio-proxy: 0%        |    istio-proxy: 37.9 MiB, fortio: 11.4 MiB     |
 |  R08  |  kyma-logs  |      Functional, reduced labels      |          572           |             6.06              |           572 / 572            |                  801 / 503                  |               656 / 576 p/s               |                     0 p/s                      |  istio-proxy: 0.179, fortio: 0.0550   |        istio-proxy: 0%        |    istio-proxy: 36.8 MiB, fortio: 10.9 MiB     |
 
-> Mentions:
-> - When not other specified, the observed metrics are reported as a rate (per second) over a 10 min timerange.
-> - "[Istio] ..." metrics are reported strictly in the context of the `fortio <-> nginx` traffic. Where the values reported in the `nginx` table refer to the `istio-proxy` instance of the `nginx` Pod, and the ones in the `fortio` table refer to the one of the `fortio` Pod (since these are exported as separate metrics, with the `instance` attribute set accordingly).
-> - "[Istio] Request Duration (ms)" is reported as sum/count (i.e. `istio_request_duration_milliseconds_sum` / `istio_request_duration_milliseconds_count`) over the 10 min timerange.
+> **NOTE:**
+> - Unless specified otherwise, the observed metrics are reported as a rate (per second) over a 10 min time range.
+> - "[Istio] ..." metrics are reported strictly in the context of the `fortio <-> nginx` traffic. The values reported in the `nginx` table refer to the `istio-proxy` instance of the `nginx` Pod, and the values in the `fortio` table refer to the one of the `fortio` Pod (because these are exported as separate metrics, with the `instance` attribute set accordingly).
+> - "[Istio] Request Duration (ms)" is reported as sum/count (that is, `istio_request_duration_milliseconds_sum` / `istio_request_duration_milliseconds_count`) over the 10 min time range.
 > - See [./assets/istio-access-logs/istio-config.yaml](./assets/istio-access-logs/istio-config.yaml) for custom provider configurations.
 
 ### Fault Injection Scenarios Results
@@ -422,7 +422,7 @@ Achieved by scaling down the backend Deployment to 0 replicas.
 
 Observed behavior:
   - No hint of dropped access logs or any other erroneous behavior was observed.
-  - Access logs were not reaching the backend, but most (see next point) of the envoy/istio metrics did not report this behavior.
+  - Access logs did not reach the backend, but most (see next point) of the Envoy/Istio metrics did not report this behavior.
   - One of the places where a difference was still perceived, was in the `istio_request_messages_total / istio_response_messages_total` metric, where a value of `0 / 0` was reported.
   - Resource consumption did not change compared to the normal working scenario, signaling that access logs were still being processed.
 
