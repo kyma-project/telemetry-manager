@@ -103,7 +103,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelExperimental)
 		})
 
 		It("Should deliver loggen logs", func() {
-			assert.OtelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, mockNs)
+			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, mockNs)
 		})
 
 		verifyServiceNameAttr := func(givenPodPrefix, expectedServiceName string) {

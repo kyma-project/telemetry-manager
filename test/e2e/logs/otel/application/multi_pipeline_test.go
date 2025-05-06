@@ -93,8 +93,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 		})
 
 		It("Should verify logs from loggen are delivered", func() {
-			assert.OtelLogsFromNamespaceDelivered(suite.ProxyClient, backend1ExportURL, mockNs)
-			assert.OtelLogsFromNamespaceDelivered(suite.ProxyClient, backend2ExportURL, mockNs)
+			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backend1ExportURL, mockNs)
+			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backend2ExportURL, mockNs)
 		})
 	})
 })

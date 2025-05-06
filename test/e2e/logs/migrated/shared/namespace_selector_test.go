@@ -1,8 +1,6 @@
 package shared
 
 import (
-	"fmt"
-	"strconv"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -20,36 +18,32 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestPipelineNamespace_Otel(t *testing.T) {
+func TestNamespaceSelector_OTel(t *testing.T) {
 	RegisterTestingT(t)
 	// suite.SkipIfDoesNotMatchLabel(t, "logs")
 
 	tests := []struct {
 		name                 string
 		logPipelineInputFunc func(includeNs, excludeNs string) telemetryv1alpha1.LogPipelineInput
-		logProducerFunc      func(deploymentName, namespace string) client.Object
+		logGeneratorFunc     func(namespace string) client.Object
 		agent                bool
 	}{
 		{
 			name:                 "gateway",
 			logPipelineInputFunc: withOTLPInput,
-			logProducerFunc: func(deploymentName, namespace string) client.Object {
-				podSpecWithUndefinedService := telemetrygen.PodSpec(telemetrygen.SignalTypeLogs, telemetrygen.WithServiceName(""))
-				return kitk8s.NewDeployment(deploymentName, namespace).
-					WithLabel("app", "workload").
-					WithPodSpec(podSpecWithUndefinedService).
-					K8sObject()
+			logGeneratorFunc: func(namespace string) client.Object {
+				return telemetrygen.NewDeployment(namespace, telemetrygen.SignalTypeLogs).K8sObject()
 			},
 		},
 
 		{
 			name:                 "agent",
 			logPipelineInputFunc: withApplicationInput,
-			logProducerFunc: func(deploymentName, namespace string) client.Object {
-				return loggen.New(namespace).
-					K8sObject()
+			logGeneratorFunc: func(namespace string) client.Object {
+				return loggen.New(namespace).K8sObject()
 			},
 			agent: true,
 		},
@@ -58,39 +52,28 @@ func TestPipelineNamespace_Otel(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			var (
-				includeNs = "producer-include"
-				excludeNs = "producer-exclude"
-				backendNs = suite.IDWithSuffix("backend")
+				uniquePrefix        = unique.Prefix(tc.name)
+				includeNs           = uniquePrefix("gen-include")
+				includePipelineName = uniquePrefix("include")
+				excludeNs           = uniquePrefix("gen-exclude")
+				excludePipelineName = uniquePrefix("exclude")
+				backendNs           = uniquePrefix("backend")
 			)
 
-			if tc.agent {
-				includeNs = fmt.Sprintf("%s-agent", includeNs)
-				excludeNs = fmt.Sprintf("%s-agent", excludeNs)
-				backendNs = fmt.Sprintf("%s-agent", backendNs)
-			}
-
 			backendName := "backend"
-			backendObj := backend.New(backendNs, backend.SignalTypeLogsOtel, backend.WithName(backendName))
-			backendExportURL := backendObj.ExportURL(suite.ProxyClient)
+			backend := backend.New(backendNs, backend.SignalTypeLogsOtel, backend.WithName(backendName))
+			backendExportURL := backend.ExportURL(suite.ProxyClient)
 
-			logPipelineOutput := telemetryv1alpha1.LogPipelineOutput{
-				OTLP: &telemetryv1alpha1.OTLPOutput{
-					Endpoint: telemetryv1alpha1.ValueType{Value: backendObj.Endpoint()},
-				},
-			}
-
-			pipelineIncludeName := fmt.Sprintf("%s-include", tc.name)
 			pipelineInclude := testutils.NewLogPipelineBuilder().
-				WithName(pipelineIncludeName).
+				WithName(includePipelineName).
 				WithInput(tc.logPipelineInputFunc(includeNs, "")).
-				WithOutput(logPipelineOutput).
+				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 				Build()
 
-			pipelineExcludeName := fmt.Sprintf("%s-exclude", tc.name)
 			pipelineExclude := testutils.NewLogPipelineBuilder().
-				WithName(pipelineExcludeName).
+				WithName(excludePipelineName).
 				WithInput(tc.logPipelineInputFunc("", excludeNs)).
-				WithOutput(logPipelineOutput).
+				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 				Build()
 
 			var resources []client.Object
@@ -100,10 +83,10 @@ func TestPipelineNamespace_Otel(t *testing.T) {
 				kitk8s.NewNamespace(excludeNs).K8sObject(),
 				&pipelineInclude,
 				&pipelineExclude,
-				tc.logProducerFunc("foo", includeNs),
-				tc.logProducerFunc("bar", excludeNs),
+				tc.logGeneratorFunc(includeNs),
+				tc.logGeneratorFunc(excludeNs),
 			)
-			resources = append(resources, backendObj.K8sObjects()...)
+			resources = append(resources, backend.K8sObjects()...)
 
 			t.Cleanup(func() {
 				err := kitk8s.DeleteObjects(t.Context(), suite.K8sClient, resources...)
@@ -111,10 +94,6 @@ func TestPipelineNamespace_Otel(t *testing.T) {
 			})
 			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
 
-			t.Log("Waiting for resources to be ready")
-
-			assert.LogPipelineHealthy(t.Context(), suite.K8sClient, pipelineIncludeName)
-			assert.LogPipelineHealthy(t.Context(), suite.K8sClient, pipelineExcludeName)
 			assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
 			assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Name: backendName, Namespace: backendNs})
 
@@ -122,59 +101,55 @@ func TestPipelineNamespace_Otel(t *testing.T) {
 				assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.LogAgentName)
 			}
 
-			assert.OtelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, includeNs)
-			assert.OtelLogsFromNamespaceNotDelivered(suite.ProxyClient, backendExportURL, excludeNs)
+			assert.LogPipelineHealthy(t.Context(), suite.K8sClient, includePipelineName)
+			assert.LogPipelineHealthy(t.Context(), suite.K8sClient, excludePipelineName)
+
+			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, includeNs)
+			assert.OTelLogsFromNamespaceNotDelivered(suite.ProxyClient, backendExportURL, excludeNs)
 		})
 	}
 }
 
-func TestPipelineNamespace_FluentBit(t *testing.T) {
+func TestNamespaceSelector_FluentBit(t *testing.T) {
 	RegisterTestingT(t)
 	// suite.SkipIfDoesNotMatchLabel(t, "logs")
 
 	var (
-		name        = "namespace-selector-fluent-bit"
-		includeNs   = "producer-include-fluentbit"
-		excludeNs   = "producer-exclude-fluentbit"
-		backendNs   = suite.IDWithSuffix("backend")
-		backendName = "backend"
+		uniquePrefix        = unique.Prefix()
+		includeNs           = uniquePrefix("gen-include")
+		includePipelineName = uniquePrefix("include")
+		excludeNs           = uniquePrefix("gen-exclude")
+		excludePipelineName = uniquePrefix("exclude")
+		backendNs           = uniquePrefix("backend")
 	)
 
-	backendObj := backend.New(backendNs, backend.SignalTypeLogsFluentBit, backend.WithName(backendName))
-	backendExportURL := backendObj.ExportURL(suite.ProxyClient)
+	backendName := "backend"
+	backend := backend.New(backendNs, backend.SignalTypeLogsFluentBit, backend.WithName(backendName))
+	backendExportURL := backend.ExportURL(suite.ProxyClient)
 
-	logPipelineOutputFunc := telemetryv1alpha1.LogPipelineOutput{
-		HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
-			Host: telemetryv1alpha1.ValueType{Value: backendObj.Host()},
-			Port: strconv.Itoa(int(backendObj.Port())),
-		},
-	}
-
-	pipelineIncludeName := fmt.Sprintf("%s-include", name)
 	pipelineInclude := testutils.NewLogPipelineBuilder().
-		WithName(pipelineIncludeName).
+		WithName(includePipelineName).
 		WithInput(withApplicationInput(includeNs, "")).
-		WithOutput(logPipelineOutputFunc).
+		WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 		Build()
 
-	pipelineExcludeName := fmt.Sprintf("%s-exclude", name)
 	pipelineExclude := testutils.NewLogPipelineBuilder().
-		WithName(pipelineExcludeName).
+		WithName(excludePipelineName).
 		WithInput(withApplicationInput("", excludeNs)).
-		WithHTTPOutput(testutils.HTTPHost(backendObj.Host()), testutils.HTTPPort(backendObj.Port())).
+		WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 		Build()
 
 	var resources []client.Object
 	resources = append(resources,
 		kitk8s.NewNamespace(backendNs).K8sObject(),
-		&pipelineInclude,
-		&pipelineExclude,
 		kitk8s.NewNamespace(includeNs).K8sObject(),
 		kitk8s.NewNamespace(excludeNs).K8sObject(),
+		&pipelineInclude,
+		&pipelineExclude,
 		loggen.New(includeNs).K8sObject(),
 		loggen.New(excludeNs).K8sObject(),
 	)
-	resources = append(resources, backendObj.K8sObjects()...)
+	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
 		err := kitk8s.DeleteObjects(t.Context(), suite.K8sClient, resources...)
@@ -182,10 +157,8 @@ func TestPipelineNamespace_FluentBit(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
 
-	t.Log("Waiting for resources to be ready")
-
-	assert.LogPipelineHealthy(t.Context(), suite.K8sClient, pipelineIncludeName)
-	assert.LogPipelineHealthy(t.Context(), suite.K8sClient, pipelineExcludeName)
+	assert.LogPipelineHealthy(t.Context(), suite.K8sClient, includePipelineName)
+	assert.LogPipelineHealthy(t.Context(), suite.K8sClient, excludePipelineName)
 	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Name: backendName, Namespace: backendNs})
 	assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 

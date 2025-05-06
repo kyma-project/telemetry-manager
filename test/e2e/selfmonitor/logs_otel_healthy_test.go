@@ -78,7 +78,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelExperimental, suite.LabelSelfMonit
 		})
 
 		It("Should deliver logs printed by loggen to stdout", func() {
-			assert.OtelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, mockNs)
+			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, mockNs)
 		})
 
 		It("Should have TypeFlowHealthy condition set to True", func() {
