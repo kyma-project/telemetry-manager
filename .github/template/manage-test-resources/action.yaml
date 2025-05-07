@@ -25,7 +25,7 @@ runs:
     - name: Delete Telemetry CR
       if: ${{ inputs.action == 'delete' }}
       shell: bash
-      run: kubectl delete telemetry.kyma-project.io telemetry -n kyma-system
+      run: kubectl delete telemetry.kyma-project.io default -n kyma-system
 
     - name: Delete Network Policy
       if: ${{ inputs.action == 'delete' }}
