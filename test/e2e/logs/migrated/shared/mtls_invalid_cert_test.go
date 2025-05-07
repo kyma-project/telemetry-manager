@@ -21,7 +21,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestMTLSInvalidCA_OTel(t *testing.T) {
+func TestMTLSInvalidCert_OTel(t *testing.T) {
 	RegisterTestingT(t)
 
 	tests := []struct {
@@ -59,7 +59,7 @@ func TestMTLSInvalidCA_OTel(t *testing.T) {
 			)
 
 			invalidServerCerts, invalidClientCerts, err := testutils.NewCertBuilder(backendName, backendNs).
-				WithInvalidCA().
+				WithInvalidClientCert().
 				Build()
 			Expect(err).ToNot(HaveOccurred())
 
@@ -109,7 +109,7 @@ func TestMTLSInvalidCA_OTel(t *testing.T) {
 	}
 }
 
-func TestMTLSInvalidCA_FluentBit(t *testing.T) {
+func TestMTLSInvalidCert_FluentBit(t *testing.T) {
 	RegisterTestingT(t)
 
 	var (
@@ -120,7 +120,7 @@ func TestMTLSInvalidCA_FluentBit(t *testing.T) {
 	)
 
 	invalidServerCerts, invalidClientCerts, err := testutils.NewCertBuilder(backendName, backendNs).
-		WithInvalidCA().
+		WithInvalidClientCert().
 		Build()
 	Expect(err).ToNot(HaveOccurred())
 
