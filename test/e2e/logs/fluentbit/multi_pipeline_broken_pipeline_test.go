@@ -78,7 +78,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 		})
 
 		It("Should have produced logs in the backend", func() {
-			assert.FluentBitLogsDelivered(suite.ProxyClient, loggen.DefaultName, backendExportURL)
+			assert.FluentBitLogsFromPodDelivered(suite.ProxyClient, loggen.DefaultName, backendExportURL)
 		})
 	})
 })

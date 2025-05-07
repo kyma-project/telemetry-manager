@@ -1,7 +1,8 @@
 package shared
 
 import (
-	"fmt"
+	"context"
+	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -20,17 +21,17 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-func TestSecretRotation_Otel(t *testing.T) {
+func TestSecretRotation_OTel(t *testing.T) {
 	RegisterTestingT(t)
 	// suite.SkipIfDoesNotMatchLabel(t, "logs")
 	tests := []struct {
-		name                 string
-		logPipelineInputFunc func() telemetryv1alpha1.LogPipelineInput
-		agent                bool
+		name         string
+		inputBuilder func() telemetryv1alpha1.LogPipelineInput
+		agent        bool
 	}{
 		{
-			name: "secret-rotation-otel-gateway",
-			logPipelineInputFunc: func() telemetryv1alpha1.LogPipelineInput {
+			name: "gateway",
+			inputBuilder: func() telemetryv1alpha1.LogPipelineInput {
 				return telemetryv1alpha1.LogPipelineInput{
 					Application: &telemetryv1alpha1.LogPipelineApplicationInput{
 						Enabled: ptr.To(false),
@@ -38,8 +39,8 @@ func TestSecretRotation_Otel(t *testing.T) {
 				}
 			},
 		}, {
-			name: "secret-rotation-otel-agent",
-			logPipelineInputFunc: func() telemetryv1alpha1.LogPipelineInput {
+			name: "agent",
+			inputBuilder: func() telemetryv1alpha1.LogPipelineInput {
 				return telemetryv1alpha1.LogPipelineInput{
 					Application: &telemetryv1alpha1.LogPipelineApplicationInput{
 						Enabled: ptr.To(true),
@@ -51,28 +52,21 @@ func TestSecretRotation_Otel(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			var (
+				uniquePrefix = unique.Prefix(tc.name)
 				endpointKey  = "logs-endpoint"
-				pipelineName = fmt.Sprintf("%s-pipeline", tc.name)
+				pipelineName = uniquePrefix("pipeline")
 			)
 
 			secret := kitk8s.NewOpaqueSecret("logs-missing", kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, "http://localhost:4317"))
 
-			logPipelineOutPut := telemetryv1alpha1.LogPipelineOutput{
-				OTLP: &telemetryv1alpha1.OTLPOutput{
-					Endpoint: telemetryv1alpha1.ValueType{
-						ValueFrom: &telemetryv1alpha1.ValueFromSource{
-							SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-								Name:      secret.Name(),
-								Namespace: secret.Namespace(),
-								Key:       endpointKey,
-							}},
-					},
-				},
-			}
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
-				WithInput(tc.logPipelineInputFunc()).
-				WithOutput(logPipelineOutPut).
+				WithInput(tc.inputBuilder()).
+				WithOTLPOutput(testutils.OTLPEndpointFromSecret(
+					secret.Name(),
+					secret.Namespace(),
+					endpointKey,
+				)).
 				Build()
 
 			var resources []client.Object
@@ -81,10 +75,12 @@ func TestSecretRotation_Otel(t *testing.T) {
 			)
 
 			t.Cleanup(func() {
-				err := kitk8s.DeleteObjects(t.Context(), suite.K8sClient, resources...)
+				err := kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)
 				require.NoError(t, err)
 			})
 			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
+
+			t.Log("Waiting for resources to be ready")
 
 			assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
@@ -111,37 +107,25 @@ func TestSecretRotation_Otel(t *testing.T) {
 	}
 }
 
-func TestSecretRotation_FB(t *testing.T) {
+func TestSecretRotation_FluentBit(t *testing.T) {
 	RegisterTestingT(t)
 	// suite.SkipIfDoesNotMatchLabel(t, "logs")
 
 	var (
+		uniquePrefix = unique.Prefix()
 		endpointKey  = "logs-endpoint"
-		pipelineName = "secret=rotation-fluentbit-pipeline"
+		pipelineName = uniquePrefix("pipeline")
 	)
 
 	secret := kitk8s.NewOpaqueSecret("logs-missing", kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, "http://localhost:4317"))
 
-	logPipelineOutPut := telemetryv1alpha1.LogPipelineOutput{
-		HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
-			Host: telemetryv1alpha1.ValueType{
-				ValueFrom: &telemetryv1alpha1.ValueFromSource{
-					SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-						Name:      secret.Name(),
-						Namespace: secret.Namespace(),
-						Key:       endpointKey,
-					}},
-			},
-		},
-	}
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
-		WithInput(telemetryv1alpha1.LogPipelineInput{
-			Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-				Enabled: ptr.To(true),
-			},
-		}).
-		WithOutput(logPipelineOutPut).
+		WithHTTPOutput(testutils.HTTPHostFromSecret(
+			secret.Name(),
+			secret.Namespace(),
+			endpointKey,
+		)).
 		Build()
 
 	var resources []client.Object
@@ -150,10 +134,12 @@ func TestSecretRotation_FB(t *testing.T) {
 	)
 
 	t.Cleanup(func() {
-		err := kitk8s.DeleteObjects(t.Context(), suite.K8sClient, resources...)
+		err := kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)
 		require.NoError(t, err)
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
+
+	t.Log("Waiting for resources to be ready")
 
 	assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
