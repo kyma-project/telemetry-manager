@@ -20,7 +20,7 @@ import (
 //	prefixFunc := Prefix("suffix1", "suffix2")
 //	result := prefixFunc("myString")
 //	// result might be "caller-file-path-test-category-suffix1-suffix2-myString"
-func Prefix(suffixes ...string) func(s string) string {
+func Prefix(fixedSuffixes ...string) func(suffixes ...string) string {
 	pc, filePath, _, ok := runtime.Caller(1)
 	if !ok {
 		panic("failed to retrieve the current file path")
@@ -35,10 +35,10 @@ func Prefix(suffixes ...string) func(s string) string {
 		}
 	}
 
-	idSegments = append(idSegments, suffixes...)
+	idSegments = append(idSegments, fixedSuffixes...)
 
-	return func(s string) string {
-		return strings.Join(append(idSegments, s), "-")
+	return func(strs ...string) string {
+		return strings.Join(append(idSegments, strs...), "-")
 	}
 }
 

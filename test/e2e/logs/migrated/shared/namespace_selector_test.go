@@ -90,8 +90,7 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 			resources = append(resources, backend.K8sObjects()...)
 
 			t.Cleanup(func() {
-				err := kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)
-				require.NoError(t, err)
+				require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...))
 			})
 			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
 
@@ -153,8 +152,7 @@ func TestNamespaceSelector_FluentBit(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		err := kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)
-		require.NoError(t, err)
+		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...))
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
 
