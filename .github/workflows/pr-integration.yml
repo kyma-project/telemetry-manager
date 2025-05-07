@@ -172,6 +172,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deploy Test Prerequisites
+        if: ${{ matrix.scenario == 'healthy' }}
         uses: "./.github/template/deploy-test-prerequisites"
 
       - name: Run tests without Istio
@@ -183,6 +184,10 @@ jobs:
       - name: Deploy Istio Module
         if: ${{ matrix.scenario != 'healthy' }}
         run: hack/deploy-istio.sh
+
+      - name: Deploy Test Prerequisites
+        if: ${{ matrix.scenario != 'healthy' }}
+        uses: "./.github/template/deploy-test-prerequisites"
 
       - name: Run tests with Istio
         if: ${{ matrix.scenario != 'healthy' }}
@@ -220,6 +225,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deploy Test Prerequisites
+        if: ${{ matrix.scenario == 'healthy' }}
         uses: "./.github/template/deploy-test-prerequisites"
 
       - name: Run tests without Istio
@@ -231,6 +237,10 @@ jobs:
       - name: Deploy Istio Module
         if: ${{ matrix.scenario != 'healthy' }}
         run: hack/deploy-istio.sh
+
+      - name: Deploy Test Prerequisites
+        if: ${{ matrix.scenario != 'healthy' }}
+        uses: "./.github/template/deploy-test-prerequisites"
 
       - name: Run tests with Istio
         if: ${{ matrix.scenario != 'healthy' }}
