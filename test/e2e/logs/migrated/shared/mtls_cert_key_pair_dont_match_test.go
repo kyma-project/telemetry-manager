@@ -16,22 +16,17 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
+func TestMTLSCertKeyDontMatch_OTel(t *testing.T) {
 	RegisterTestingT(t)
 
 	tests := []struct {
-		name                string
-		inputBuilder        func() telemetryv1alpha1.LogPipelineInput
-		logGeneratorBuilder func(namespace string) client.Object
-		expectAgent         bool
+		name         string
+		inputBuilder func() telemetryv1alpha1.LogPipelineInput
 	}{
 		{
 			name: "agent",
@@ -42,10 +37,6 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 					},
 				}
 			},
-			logGeneratorBuilder: func(namespace string) client.Object {
-				return loggen.New(namespace).K8sObject()
-			},
-			expectAgent: true,
 		},
 		{
 			name: "gateway",
@@ -56,9 +47,6 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 					},
 				}
 			},
-			logGeneratorBuilder: func(namespace string) client.Object {
-				return telemetrygen.NewDeployment(namespace, telemetrygen.SignalTypeLogs).K8sObject()
-			},
 		},
 	}
 	for _, tc := range tests {
@@ -67,17 +55,16 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 				uniquePrefix = unique.Prefix(tc.name)
 				pipelineName = uniquePrefix("pipeline")
 				backendNs    = uniquePrefix("backend")
-				genNs        = uniquePrefix("gen")
 				backendName  = backend.DefaultName
 			)
 
-			serverCerts, clientCerts, err := testutils.NewCertBuilder(backendName, backendNs).
-				WithAboutToExpireClientCert().
-				Build()
+			serverCertsDefault, clientCertsDefault, err := testutils.NewCertBuilder(backendName, backendNs).Build()
 			Expect(err).ToNot(HaveOccurred())
 
-			backend := backend.New(backendNs, backend.SignalTypeLogsOTel, backend.WithTLS(*serverCerts))
-			backendExportURL := backend.ExportURL(suite.ProxyClient)
+			_, clientCertsCreatedAgain, err := testutils.NewCertBuilder(backend.DefaultName, backendNs).Build()
+			Expect(err).ToNot(HaveOccurred())
+
+			backend := backend.New(backendNs, backend.SignalTypeLogsOTel, backend.WithTLS(*serverCertsDefault))
 
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
@@ -85,38 +72,32 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backend.Endpoint()),
 					testutils.OTLPClientTLSFromString(
-						clientCerts.CaCertPem.String(),
-						clientCerts.ClientCertPem.String(),
-						clientCerts.ClientKeyPem.String(),
+						clientCertsDefault.CaCertPem.String(),
+						clientCertsDefault.ClientCertPem.String(),
+						clientCertsCreatedAgain.ClientKeyPem.String(), // Use different key
 					)).
 				Build()
 
 			var resources []client.Object
 			resources = append(resources,
-				kitk8s.NewNamespace(backendNs).K8sObject(),
-				kitk8s.NewNamespace(genNs).K8sObject(),
 				&pipeline,
-				tc.logGeneratorBuilder(genNs),
 			)
-			resources = append(resources, backend.K8sObjects()...)
 
 			t.Cleanup(func() {
 				require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 			})
 			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
 
-			assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
-			assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
-
-			if tc.expectAgent {
-				assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.LogAgentName)
-			}
-
-			assert.LogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 			assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
-				Status: metav1.ConditionTrue,
-				Reason: conditions.ReasonTLSCertificateAboutToExpire,
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonTLSConfigurationInvalid,
+			})
+
+			assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
+				Type:   conditions.TypeFlowHealthy,
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonSelfMonConfigNotGenerated,
 			})
 
 			assert.TelemetryHasState(suite.Ctx, suite.K8sClient, operatorv1alpha1.StateWarning)
@@ -125,30 +106,27 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonTLSCertificateAboutToExpire,
 			})
-
-			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, genNs, backendExportURL)
 		})
 	}
 }
 
-func TestMTLSAboutToExpireCert_FluentBit(t *testing.T) {
+func TestMTLSCertKeyDontMatch_FluentBit(t *testing.T) {
 	RegisterTestingT(t)
 
 	var (
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix("pipeline")
 		backendNs    = uniquePrefix("backend")
-		genNs        = uniquePrefix("gen")
 		backendName  = backend.DefaultName
 	)
 
-	serverCerts, clientCerts, err := testutils.NewCertBuilder(backendName, backendNs).
-		WithAboutToExpireClientCert().
-		Build()
+	serverCertsDefault, clientCertsDefault, err := testutils.NewCertBuilder(backendName, backendNs).Build()
 	Expect(err).ToNot(HaveOccurred())
 
-	backend := backend.New(backendNs, backend.SignalTypeLogsFluentBit, backend.WithTLS(*serverCerts))
-	backendExportURL := backend.ExportURL(suite.ProxyClient)
+	_, clientCertsCreatedAgain, err := testutils.NewCertBuilder(backend.DefaultName, backendNs).Build()
+	Expect(err).ToNot(HaveOccurred())
+
+	backend := backend.New(backendNs, backend.SignalTypeLogsFluentBit, backend.WithTLS(*serverCertsDefault))
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
@@ -156,42 +134,38 @@ func TestMTLSAboutToExpireCert_FluentBit(t *testing.T) {
 			testutils.HTTPHost(backend.Host()),
 			testutils.HTTPPort(backend.Port()),
 			testutils.HTTPClientTLSFromString(
-				clientCerts.CaCertPem.String(),
-				clientCerts.ClientCertPem.String(),
-				clientCerts.ClientKeyPem.String(),
+				clientCertsDefault.CaCertPem.String(),
+				clientCertsDefault.ClientCertPem.String(),
+				clientCertsCreatedAgain.ClientKeyPem.String(), // Use different key
 			)).
 		Build()
 
 	var resources []client.Object
 	resources = append(resources,
-		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(genNs).K8sObject(),
 		&pipeline,
-		loggen.New(genNs).K8sObject(),
 	)
-	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
 		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
 
-	assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
-	assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.FluentBitDaemonSetName)
-
-	assert.LogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 	assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
-		Status: metav1.ConditionTrue,
-		Reason: conditions.ReasonTLSCertificateAboutToExpire,
+		Status: metav1.ConditionFalse,
+		Reason: conditions.ReasonTLSConfigurationInvalid,
+	})
+
+	assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
+		Type:   conditions.TypeFlowHealthy,
+		Status: metav1.ConditionFalse,
+		Reason: conditions.ReasonSelfMonConfigNotGenerated,
 	})
 
 	assert.TelemetryHasState(suite.Ctx, suite.K8sClient, operatorv1alpha1.StateWarning)
 	assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
 		Type:   conditions.TypeLogComponentsHealthy,
-		Status: metav1.ConditionTrue,
-		Reason: conditions.ReasonTLSCertificateAboutToExpire,
+		Status: metav1.ConditionFalse,
+		Reason: conditions.ReasonTLSConfigurationInvalid,
 	})
-
-	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, genNs)
 }

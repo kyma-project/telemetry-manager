@@ -75,8 +75,7 @@ func TestSecretRotation_OTel(t *testing.T) {
 			)
 
 			t.Cleanup(func() {
-				err := kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)
-				require.NoError(t, err)
+				require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 			})
 			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
 
@@ -134,8 +133,7 @@ func TestSecretRotation_FluentBit(t *testing.T) {
 	)
 
 	t.Cleanup(func() {
-		err := kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)
-		require.NoError(t, err)
+		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
 
