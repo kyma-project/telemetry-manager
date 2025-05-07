@@ -25,6 +25,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
+		// TODO: Add to custom output test
 		It("Should reject a logpipeline with denied custom filter", func() {
 			logPipeline := testutils.NewLogPipelineBuilder().
 				WithName("denied-custom-filter-pipeline").
@@ -36,6 +37,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 			}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
+		// TODO: Move to shared tests
 		It("Should reject a logpipeline with misconfigured secretrefs", func() {
 			logPipeline := testutils.NewLogPipelineBuilder().
 				WithName("misconfigured-secretref-pipeline").
