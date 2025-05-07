@@ -8,6 +8,5 @@ import (
 
 func TestDedot(t *testing.T) {
 	RegisterTestingT(t)
-
 	// TODO: Implement
 }

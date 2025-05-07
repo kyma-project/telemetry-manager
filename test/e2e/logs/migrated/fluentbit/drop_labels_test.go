@@ -8,6 +8,5 @@ import (
 
 func TestDropLabels(t *testing.T) {
 	RegisterTestingT(t)
-
 	// TODO: Implement
 }

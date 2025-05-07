@@ -8,6 +8,5 @@ import (
 
 func TestCustomOutput(t *testing.T) {
 	RegisterTestingT(t)
-
 	// TODO: Implement
 }

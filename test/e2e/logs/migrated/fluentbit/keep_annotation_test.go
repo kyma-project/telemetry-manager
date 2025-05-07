@@ -8,6 +8,5 @@ import (
 
 func TestKeepAnnotations(t *testing.T) {
 	RegisterTestingT(t)
-
 	// TODO: Implement
 }

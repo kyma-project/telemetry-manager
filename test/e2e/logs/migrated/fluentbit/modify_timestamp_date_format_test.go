@@ -8,6 +8,5 @@ import (
 
 func TestModifyTimestampDateFormat(t *testing.T) {
 	RegisterTestingT(t)
-
 	// TODO: Implement
 }

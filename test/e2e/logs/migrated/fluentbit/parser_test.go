@@ -8,6 +8,5 @@ import (
 
 func TestParser(t *testing.T) {
 	RegisterTestingT(t)
-
 	// TODO: Implement
 }
