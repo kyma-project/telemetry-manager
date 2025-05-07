@@ -2,7 +2,6 @@ package shared
 
 import (
 	"context"
-	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -19,6 +18,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
 func TestSecretRotation_OTel(t *testing.T) {
