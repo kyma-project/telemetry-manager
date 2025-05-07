@@ -1,0 +1,33 @@
+name: Manage Test Resources
+description: Deploys and deletes the Kubernetes resources needed for the test execution
+
+inputs:
+  action:
+    type: choice
+    description: Action to perform
+    options: [deploy, delete]
+    required: true
+
+runs:
+  using: "composite"
+
+  steps:
+    - name: Create Telemtry CR
+      if: ${{ inputs.action == 'deploy' }}
+      shell: bash
+      run: kubectl apply -f config/samples/operator_v1alpha1_telemetry.yaml -n kyma-system
+
+    - name: Create Network Policy
+      if: ${{ inputs.action == 'deploy' }}
+      shell: bash
+      run: kubectl apply -f config/networking/networkpolicy-deny-all.yaml -n kyma-system
+
+    - name: Delete Telemetry CR
+      if: ${{ inputs.action == 'delete' }}
+      shell: bash
+      run: kubectl delete telemetry.kyma-project.io telemetry -n kyma-system
+
+    - name: Delete Network Policy
+      if: ${{ inputs.action == 'delete' }}
+      shell: bash
+      run: kubectl delete networkpolicy telemetry-manager-deny-all -n kyma-system

@@ -62,10 +62,11 @@ jobs:
         shell: bash
         run: kubectl apply -f config/samples/operator_v1alpha1_telemetry.yaml -n kyma-system
 
-      # TODO: Uncomment this section after next release
-      # - name: Create Network Policy
-      #   shell: bash
-      #   run: kubectl apply -f config/networking/networkpolicy-deny-all.yaml -n kyma-system
+      # TODO: Uncomment this section after next release (and delete "Create Telemetry CR" step above)
+      # - name: Create Test Resources
+      #   uses: "./.github/template/manage-test-resources"
+      #   with:
+      #     action: deploy
 
       - name: Run test on latest tag
         shell: bash
