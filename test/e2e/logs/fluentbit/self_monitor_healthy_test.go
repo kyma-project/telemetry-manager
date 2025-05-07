@@ -77,7 +77,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsHealthy), Ordere
 		})
 
 		It("Should have produced logs in the backend", func() {
-			assert.FluentBitLogsDelivered(suite.ProxyClient, loggen.DefaultName, backendExportURL)
+			assert.FluentBitLogsFromPodDelivered(suite.ProxyClient, loggen.DefaultName, backendExportURL)
 		})
 
 		It("Should have TypeFlowHealthy condition set to True", func() {

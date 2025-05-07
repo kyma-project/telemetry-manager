@@ -78,7 +78,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsHealthy), Ordere
 		})
 
 		It("Should deliver logs printed by loggen to stdout", func() {
-			assert.FluentBitLogsDelivered(suite.ProxyClient, loggen.DefaultName, backendExportURL)
+			assert.FluentBitLogsFromPodDelivered(suite.ProxyClient, loggen.DefaultName, backendExportURL)
 		})
 
 		It("Should have TypeFlowHealthy condition set to True", func() {
