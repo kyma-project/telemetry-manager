@@ -1,6 +1,7 @@
 package shared
 
 import (
+	"context"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -33,7 +34,7 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 	}{
 		{
 			name:                 "gateway",
-			logPipelineInputFunc: withOTLPInput,
+			logPipelineInputFunc: otlpInput,
 			logGeneratorFunc: func(namespace string) client.Object {
 				return telemetrygen.NewDeployment(namespace, telemetrygen.SignalTypeLogs).K8sObject()
 			},
@@ -41,7 +42,7 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 
 		{
 			name:                 "agent",
-			logPipelineInputFunc: withApplicationInput,
+			logPipelineInputFunc: applicationInput,
 			logGeneratorFunc: func(namespace string) client.Object {
 				return loggen.New(namespace).K8sObject()
 			},
@@ -89,7 +90,7 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 			resources = append(resources, backend.K8sObjects()...)
 
 			t.Cleanup(func() {
-				err := kitk8s.DeleteObjects(t.Context(), suite.K8sClient, resources...)
+				err := kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)
 				require.NoError(t, err)
 			})
 			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
@@ -129,13 +130,13 @@ func TestNamespaceSelector_FluentBit(t *testing.T) {
 
 	pipelineInclude := testutils.NewLogPipelineBuilder().
 		WithName(includePipelineName).
-		WithInput(withApplicationInput(includeNs, "")).
+		WithApplicationInput(true, testutils.IncludeLogNamespaces(includeNs)).
 		WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 		Build()
 
 	pipelineExclude := testutils.NewLogPipelineBuilder().
 		WithName(excludePipelineName).
-		WithInput(withApplicationInput("", excludeNs)).
+		WithApplicationInput(true, testutils.ExcludeLogNamespaces(excludeNs)).
 		WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 		Build()
 
@@ -152,7 +153,7 @@ func TestNamespaceSelector_FluentBit(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		err := kitk8s.DeleteObjects(t.Context(), suite.K8sClient, resources...)
+		err := kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)
 		require.NoError(t, err)
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
@@ -166,50 +167,50 @@ func TestNamespaceSelector_FluentBit(t *testing.T) {
 	assert.FluentBitLogsFromNamespaceNotDelivered(suite.ProxyClient, backendExportURL, excludeNs)
 }
 
-func withApplicationInput(includeNs, excludeNs string) telemetryv1alpha1.LogPipelineInput {
-	if includeNs != "" {
-		return telemetryv1alpha1.LogPipelineInput{
-			Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-				Enabled: ptr.To(true),
-				Namespaces: telemetryv1alpha1.LogPipelineNamespaceSelector{
-					Include: []string{includeNs},
-				},
-			},
-		}
-	}
-
+func applicationInput(includeNs, excludeNs string) telemetryv1alpha1.LogPipelineInput {
 	return telemetryv1alpha1.LogPipelineInput{
 		Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-			Enabled: ptr.To(true),
-			Namespaces: telemetryv1alpha1.LogPipelineNamespaceSelector{
-				Exclude: []string{excludeNs},
-			},
+			Enabled:    ptr.To(true),
+			Namespaces: applicationNamespaceSelector(includeNs, excludeNs),
+		},
+		OTLP: &telemetryv1alpha1.OTLPInput{
+			Disabled: true,
 		},
 	}
 }
 
-func withOTLPInput(includeNs, excludeNs string) telemetryv1alpha1.LogPipelineInput {
+func applicationNamespaceSelector(includeNs, excludeNs string) telemetryv1alpha1.LogPipelineNamespaceSelector {
 	if includeNs != "" {
-		return telemetryv1alpha1.LogPipelineInput{
-			Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-				Enabled: ptr.To(false),
-			},
-			OTLP: &telemetryv1alpha1.OTLPInput{
-				Namespaces: &telemetryv1alpha1.NamespaceSelector{
-					Include: []string{includeNs},
-				},
-			},
+		return telemetryv1alpha1.LogPipelineNamespaceSelector{
+			Include: []string{includeNs},
 		}
 	}
 
+	return telemetryv1alpha1.LogPipelineNamespaceSelector{
+		Exclude: []string{excludeNs},
+	}
+}
+
+func otlpInput(includeNs, excludeNs string) telemetryv1alpha1.LogPipelineInput {
 	return telemetryv1alpha1.LogPipelineInput{
 		Application: &telemetryv1alpha1.LogPipelineApplicationInput{
 			Enabled: ptr.To(false),
 		},
 		OTLP: &telemetryv1alpha1.OTLPInput{
-			Namespaces: &telemetryv1alpha1.NamespaceSelector{
-				Exclude: []string{excludeNs},
-			},
+			Disabled:   false,
+			Namespaces: ptr.To(otlpNamespaceSelector(includeNs, excludeNs)),
 		},
+	}
+}
+
+func otlpNamespaceSelector(includeNs, excludeNs string) telemetryv1alpha1.NamespaceSelector {
+	if includeNs != "" {
+		return telemetryv1alpha1.NamespaceSelector{
+			Include: []string{includeNs},
+		}
+	}
+
+	return telemetryv1alpha1.NamespaceSelector{
+		Exclude: []string{excludeNs},
 	}
 }
