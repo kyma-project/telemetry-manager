@@ -21,7 +21,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestMTLSExpiredCert_OTel(t *testing.T) {
+func TestMTLSInvalidCA_OTel(t *testing.T) {
 	RegisterTestingT(t)
 
 	tests := []struct {
@@ -58,12 +58,12 @@ func TestMTLSExpiredCert_OTel(t *testing.T) {
 				backendName  = backend.DefaultName
 			)
 
-			expiredServerCerts, expiredClientCerts, err := testutils.NewCertBuilder(backendName, backendNs).
-				WithExpiredClientCert().
+			invalidServerCerts, invalidClientCerts, err := testutils.NewCertBuilder(backendName, backendNs).
+				WithInvalidCA().
 				Build()
 			Expect(err).ToNot(HaveOccurred())
 
-			backend := backend.New(backendNs, backend.SignalTypeLogsOTel, backend.WithTLS(*expiredServerCerts))
+			backend := backend.New(backendNs, backend.SignalTypeLogsOTel, backend.WithTLS(*invalidServerCerts))
 
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
@@ -71,9 +71,9 @@ func TestMTLSExpiredCert_OTel(t *testing.T) {
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backend.Endpoint()),
 					testutils.OTLPClientTLSFromString(
-						expiredClientCerts.CaCertPem.String(),
-						expiredClientCerts.ClientCertPem.String(),
-						expiredClientCerts.ClientKeyPem.String(),
+						invalidClientCerts.CaCertPem.String(),
+						invalidClientCerts.ClientCertPem.String(),
+						invalidClientCerts.ClientKeyPem.String(), // Use different key
 					)).
 				Build()
 
@@ -90,7 +90,7 @@ func TestMTLSExpiredCert_OTel(t *testing.T) {
 			assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
-				Reason: conditions.ReasonTLSCertificateExpired,
+				Reason: conditions.ReasonTLSConfigurationInvalid,
 			})
 
 			assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
@@ -103,13 +103,13 @@ func TestMTLSExpiredCert_OTel(t *testing.T) {
 			assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeLogComponentsHealthy,
 				Status: metav1.ConditionFalse,
-				Reason: conditions.ReasonTLSCertificateExpired,
+				Reason: conditions.ReasonTLSConfigurationInvalid,
 			})
 		})
 	}
 }
 
-func TestMTLSExpiredCert_FluentBit(t *testing.T) {
+func TestMTLSInvalidCA_FluentBit(t *testing.T) {
 	RegisterTestingT(t)
 
 	var (
@@ -119,12 +119,12 @@ func TestMTLSExpiredCert_FluentBit(t *testing.T) {
 		backendName  = backend.DefaultName
 	)
 
-	expiredServerCerts, expiredClientCerts, err := testutils.NewCertBuilder(backendName, backendNs).
-		WithExpiredClientCert().
+	invalidServerCerts, invalidClientCerts, err := testutils.NewCertBuilder(backendName, backendNs).
+		WithInvalidCA().
 		Build()
 	Expect(err).ToNot(HaveOccurred())
 
-	backend := backend.New(backendNs, backend.SignalTypeLogsFluentBit, backend.WithTLS(*expiredServerCerts))
+	backend := backend.New(backendNs, backend.SignalTypeLogsFluentBit, backend.WithTLS(*invalidServerCerts))
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
@@ -132,9 +132,9 @@ func TestMTLSExpiredCert_FluentBit(t *testing.T) {
 			testutils.HTTPHost(backend.Host()),
 			testutils.HTTPPort(backend.Port()),
 			testutils.HTTPClientTLSFromString(
-				expiredClientCerts.CaCertPem.String(),
-				expiredClientCerts.ClientCertPem.String(),
-				expiredClientCerts.ClientKeyPem.String(),
+				invalidClientCerts.CaCertPem.String(),
+				invalidClientCerts.ClientCertPem.String(),
+				invalidClientCerts.ClientKeyPem.String(),
 			)).
 		Build()
 
@@ -151,7 +151,7 @@ func TestMTLSExpiredCert_FluentBit(t *testing.T) {
 	assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
-		Reason: conditions.ReasonTLSCertificateExpired,
+		Reason: conditions.ReasonTLSConfigurationInvalid,
 	})
 
 	assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
@@ -164,6 +164,6 @@ func TestMTLSExpiredCert_FluentBit(t *testing.T) {
 	assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
 		Type:   conditions.TypeLogComponentsHealthy,
 		Status: metav1.ConditionFalse,
-		Reason: conditions.ReasonTLSCertificateExpired,
+		Reason: conditions.ReasonTLSConfigurationInvalid,
 	})
 }
