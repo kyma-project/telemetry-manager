@@ -32,7 +32,7 @@ func TestSinglePipeline_OTel(t *testing.T) {
 	}{
 		{
 			name:  "agent",
-			input: buildApplicationInput("", ""),
+			input: testutils.BuildLogPipelineApplicationInput(),
 			logGeneratorBuilder: func(namespace string) client.Object {
 				return loggen.New(namespace).K8sObject()
 			},
@@ -40,7 +40,7 @@ func TestSinglePipeline_OTel(t *testing.T) {
 		},
 		{
 			name:  "gateway",
-			input: buildOTLPInput("", ""),
+			input: testutils.BuildLogPipelineOTLPInput(),
 			logGeneratorBuilder: func(namespace string) client.Object {
 				return telemetrygen.NewDeployment(namespace, telemetrygen.SignalTypeLogs).K8sObject()
 			},
@@ -74,12 +74,13 @@ func TestSinglePipeline_OTel(t *testing.T) {
 			resources = append(resources, backend.K8sObjects()...)
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...))
+				require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 			})
 			require.NoError(t, kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...))
 
 			assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Name: backend.Name(), Namespace: backendNs})
 			assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
+
 			if tc.expectAgent {
 				assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.LogAgentName)
 			}
@@ -118,7 +119,7 @@ func TestSinglePipeline_FluentBit(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...))
+		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
 	require.NoError(t, kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...))
 
