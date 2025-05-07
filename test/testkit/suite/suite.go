@@ -59,18 +59,9 @@ func BeforeSuiteFunc() {
 	Expect(BeforeSuiteFuncErr()).Should(Succeed())
 }
 
-// AfterSuiteFuncErr is designed to return an error instead of relying on Gomega matchers.
-// This function is intended for use in a vanilla TestMain function within new e2e test suites.
-// Note that Gomega matchers cannot be utilized in the TestMain function.
-func AfterSuiteFuncErr() error {
-	cancel()
-
-	return nil
-}
-
 // AfterSuiteFunc is executed after each Ginkgo test suite
 func AfterSuiteFunc() {
-	Expect(AfterSuiteFuncErr()).Should(Succeed())
+	cancel()
 }
 
 // ID returns the current test suite ID.
