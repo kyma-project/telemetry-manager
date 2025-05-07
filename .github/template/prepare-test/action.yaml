@@ -8,6 +8,9 @@ inputs:
   github-token:
     description: Github token to use for github access
     required: true
+  is-istio:
+    description: Preparing a test where istio is involved
+    required: false
 
 runs:
   using: "composite"
@@ -54,6 +57,7 @@ runs:
       run: kubectl apply -f config/samples/operator_v1alpha1_telemetry.yaml -n kyma-system
     
     - name: Create Network Policy
+      if: ${{ !inputs.is-istio }}
       shell: bash
       run: kubectl apply -f config/networking/networkpolicy-deny-all.yaml -n kyma-system
 

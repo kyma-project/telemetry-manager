@@ -123,6 +123,7 @@ jobs:
         with:
           release: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          is-istio: true
 
       - name: Deploy Istio Module
         run: hack/deploy-istio.sh
@@ -161,6 +162,7 @@ jobs:
         with:
           release: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          is-istio: true
 
       - name: Run tests without Istio
         if: ${{ matrix.scenario == 'healthy' }}
@@ -206,6 +208,7 @@ jobs:
         uses: "./.github/template/prepare-test"
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          is-istio: true
 
       - name: Run tests without Istio
         if: ${{ matrix.scenario == 'healthy' }}
