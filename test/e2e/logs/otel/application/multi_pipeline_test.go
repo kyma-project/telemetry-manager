@@ -75,8 +75,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 		})
 
 		It("Should have running pipelines", func() {
-			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipeline1Name)
-			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipeline2Name)
+			assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipeline1Name)
+			assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipeline2Name)
 		})
 
 		It("Should have a running log gateway deployment", func() {

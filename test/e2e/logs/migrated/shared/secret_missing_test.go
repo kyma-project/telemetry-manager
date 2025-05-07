@@ -101,7 +101,7 @@ func TestSecretRotation_OTel(t *testing.T) {
 			})
 
 			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, secret.K8sObject())).Should(Succeed())
-			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+			assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 		})
 	}
 }
@@ -159,5 +159,5 @@ func TestSecretRotation_FluentBit(t *testing.T) {
 	})
 
 	Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, secret.K8sObject())).Should(Succeed())
-	assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+	assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 }

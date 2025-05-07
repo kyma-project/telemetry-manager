@@ -78,8 +78,8 @@ var _ = Describe(suite.ID(), Label(
 			})
 
 			It("Should have running pipelines", func() {
-				assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineNameNoInput)
-				assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineNameWithInput)
+				assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineNameNoInput)
+				assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineNameWithInput)
 			})
 
 			It("Pipeline with no input should have AgentNotRequired condition", func() {

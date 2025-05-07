@@ -112,7 +112,7 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 				assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.LogAgentName)
 			}
 
-			assert.LogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
+			assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 			assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionTrue,
@@ -179,7 +179,7 @@ func TestMTLSAboutToExpireCert_FluentBit(t *testing.T) {
 	assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
 	assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 
-	assert.LogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
+	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 	assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionTrue,

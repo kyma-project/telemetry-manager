@@ -65,8 +65,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 		})
 
 		It("Should have running pipelines", func() {
-			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, healthyPipelineName)
-			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, brokenPipelineName)
+			assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, healthyPipelineName)
+			assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, brokenPipelineName)
 		})
 
 		It("Should have running log agent", func() {

@@ -58,7 +58,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelExperimental, suite.LabelSelfMonit
 		})
 
 		It("Should have a running logpipeline", func() {
-			assert.LogPipelineOtelHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+			assert.OTelLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 		})
 
 		It("Should have a running log agent daemonset", func() {

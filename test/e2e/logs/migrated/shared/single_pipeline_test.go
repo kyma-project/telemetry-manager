@@ -84,7 +84,7 @@ func TestSinglePipeline_OTel(t *testing.T) {
 				assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.LogAgentName)
 			}
 
-			assert.LogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
+			assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 
 			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, generatorNs)
 		})
@@ -125,7 +125,7 @@ func TestSinglePipeline_FluentBit(t *testing.T) {
 	assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
 	assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 
-	assert.LogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
+	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 	assert.LogPipelineUnsupportedMode(suite.Ctx, suite.K8sClient, pipelineName, false)
 
 	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, generatorNs)

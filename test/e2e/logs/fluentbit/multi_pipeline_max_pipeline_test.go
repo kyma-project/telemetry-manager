@@ -47,7 +47,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 
 		It("Should have only running pipelines", func() {
 			for _, pipelineName := range pipelinesNames {
-				assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+				assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 			}
 		})
 

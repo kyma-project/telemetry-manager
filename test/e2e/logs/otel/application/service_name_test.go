@@ -99,7 +99,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelExperimental)
 		})
 
 		It("Should have a running pipeline", func() {
-			assert.LogPipelineOtelHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+			assert.OTelLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 		})
 
 		It("Should deliver loggen logs", func() {
