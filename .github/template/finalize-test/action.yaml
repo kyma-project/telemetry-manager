@@ -42,15 +42,3 @@ runs:
       if: ${{ inputs.failure }}
       run: |
         kubectl get all --all-namespaces
-
-    - name: Delete all pipeline CRs
-      shell: bash
-      run: |
-        kubectl delete LogPipeline --all --all-namespaces
-        kubectl delete MetricPipeline --all --all-namespaces
-        kubectl delete TracePipeline --all --all-namespaces
-
-    - name: Delete Test Resources
-      uses: "./.github/template/manage-test-resources"
-      with:
-        action: delete

@@ -71,10 +71,8 @@ jobs:
           release: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Deploy Test Resources
-        uses: "./.github/template/manage-test-resources"
-        with:
-          action: deploy
+      - name: Deploy Test Prerequisites
+        uses: "./.github/template/deploy-test-prerequisites"
 
       - name: Run tests
         run: bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags e2e --label-filter="${{ matrix.ginkgo-labels }} && !experimental" -r test/e2e
@@ -106,10 +104,8 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Deploy Test Resources
-        uses: "./.github/template/manage-test-resources"
-        with:
-          action: deploy
+      - name: Deploy Test Prerequisites
+        uses: "./.github/template/deploy-test-prerequisites"
 
       - name: Run tests
         run: bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags e2e --label-filter="${{ matrix.ginkgo-labels }} && experimental" -r test/e2e
@@ -137,10 +133,8 @@ jobs:
       - name: Deploy Istio Module
         run: hack/deploy-istio.sh
 
-      - name: Deploy Test Resources
-        uses: "./.github/template/manage-test-resources"
-        with:
-          action: deploy
+      - name: Deploy Test Prerequisites
+        uses: "./.github/template/deploy-test-prerequisites"
 
       - name: Run tests
         run: |
@@ -177,31 +171,18 @@ jobs:
           release: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Deploy Test Resources
-        uses: "./.github/template/manage-test-resources"
-        with:
-          action: deploy
+      - name: Deploy Test Prerequisites
+        uses: "./.github/template/deploy-test-prerequisites"
 
       - name: Run tests without Istio
         if: ${{ matrix.scenario == 'healthy' }}
         run: |
           bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags e2e --label-filter="self-mon-${{ matrix.signal-type }}-${{ matrix.scenario }} && !experimental" -r test/e2e
 
-      - name: Delete Test Resources
-        uses: "./.github/template/manage-test-resources"
-        with:
-          action: delete
-
         # we need Istio for fault injection to simulate backpressure and outages
       - name: Deploy Istio Module
         if: ${{ matrix.scenario != 'healthy' }}
         run: hack/deploy-istio.sh
-
-        # Resources need to be deleted before and re-deployed after deploying Istio
-      - name: Deploy Test Resources
-        uses: "./.github/template/manage-test-resources"
-        with:
-          action: deploy
 
       - name: Run tests with Istio
         if: ${{ matrix.scenario != 'healthy' }}
@@ -238,31 +219,18 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Deploy Test Resources
-        uses: "./.github/template/manage-test-resources"
-        with:
-          action: deploy
+      - name: Deploy Test Prerequisites
+        uses: "./.github/template/deploy-test-prerequisites"
 
       - name: Run tests without Istio
         if: ${{ matrix.scenario == 'healthy' }}
         run: |
           bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags e2e --label-filter="self-mon-${{ matrix.signal-type }}-${{ matrix.scenario }} && experimental" -r test/e2e
 
-      - name: Delete Test Resources
-        uses: "./.github/template/manage-test-resources"
-        with:
-          action: delete
-
         # we need Istio for fault injection to simulate backpressure and outages
       - name: Deploy Istio Module
         if: ${{ matrix.scenario != 'healthy' }}
         run: hack/deploy-istio.sh
-
-        # Resources need to be deleted before and re-deployed after deploying Istio
-      - name: Deploy Test Resources
-        uses: "./.github/template/manage-test-resources"
-        with:
-          action: deploy
 
       - name: Run tests with Istio
         if: ${{ matrix.scenario != 'healthy' }}
