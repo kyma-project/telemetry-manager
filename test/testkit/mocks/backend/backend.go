@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -123,6 +124,17 @@ func WithFaultDelayInjection(faultPercentage float64, delaySeconds int) Option {
 
 func (b *Backend) Name() string {
 	return b.name
+}
+
+func (b *Backend) Namespace() string {
+	return b.namespace
+}
+
+func (b *Backend) NamespacedName() types.NamespacedName {
+	return types.NamespacedName{
+		Name:      b.name,
+		Namespace: b.namespace,
+	}
 }
 
 func (b *Backend) Endpoint() string {

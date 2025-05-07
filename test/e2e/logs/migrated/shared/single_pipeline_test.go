@@ -6,7 +6,6 @@ import (
 
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -78,7 +77,7 @@ func TestSinglePipeline_OTel(t *testing.T) {
 			})
 			require.NoError(t, kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...))
 
-			assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Name: backend.Name(), Namespace: backendNs})
+			assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
 			assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
 
 			if tc.expectAgent {
@@ -123,7 +122,7 @@ func TestSinglePipeline_FluentBit(t *testing.T) {
 	})
 	require.NoError(t, kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...))
 
-	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Name: backend.Name(), Namespace: backendNs})
+	assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
 	assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 
 	assert.LogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)

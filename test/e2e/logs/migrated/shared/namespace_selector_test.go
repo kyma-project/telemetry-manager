@@ -6,7 +6,6 @@ import (
 
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -79,8 +78,7 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 				backendNs               = uniquePrefix("backend")
 			)
 
-			backendName := "backend"
-			backend := backend.New(backendNs, backend.SignalTypeLogsOTel, backend.WithName(backendName))
+			backend := backend.New(backendNs, backend.SignalTypeLogsOTel)
 			backendExportURL := backend.ExportURL(suite.ProxyClient)
 
 			includeGen1Pipeline := testutils.NewLogPipelineBuilder().
@@ -113,7 +111,7 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
 
 			assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
-			assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Name: backendName, Namespace: backendNs})
+			assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
 
 			if tc.expectAgent {
 				assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.LogAgentName)
@@ -141,8 +139,7 @@ func TestNamespaceSelector_FluentBit(t *testing.T) {
 		backendNs               = uniquePrefix("backend")
 	)
 
-	backendName := "backend"
-	backend := backend.New(backendNs, backend.SignalTypeLogsFluentBit, backend.WithName(backendName))
+	backend := backend.New(backendNs, backend.SignalTypeLogsFluentBit)
 	backendExportURL := backend.ExportURL(suite.ProxyClient)
 
 	includeGen1Pipeline := testutils.NewLogPipelineBuilder().
@@ -176,7 +173,7 @@ func TestNamespaceSelector_FluentBit(t *testing.T) {
 
 	assert.LogPipelineHealthy(t.Context(), suite.K8sClient, includeGen1PipelineName)
 	assert.LogPipelineHealthy(t.Context(), suite.K8sClient, excludeGen2PipelineName)
-	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Name: backendName, Namespace: backendNs})
+	assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
 	assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 
 	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, gen1Ns)
