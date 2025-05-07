@@ -38,7 +38,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelExperimental)
 	makeResources := func() []client.Object {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
-		backend := backend.New(mockNs, backend.SignalTypeLogsOtel)
+		backend := backend.New(mockNs, backend.SignalTypeLogsOTel)
 		objs = append(objs, backend.K8sObjects()...)
 		backendExportURL = backend.ExportURL(suite.ProxyClient)
 

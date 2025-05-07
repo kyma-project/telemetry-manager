@@ -27,65 +27,64 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 	// suite.SkipIfDoesNotMatchLabel(t, "logs")
 
 	tests := []struct {
-		name                 string
-		logPipelineInputFunc func(includeNs, excludeNs string) telemetryv1alpha1.LogPipelineInput
-		logGeneratorFunc     func(namespace string) client.Object
-		agent                bool
+		name                string
+		inputBuilder        func(includeNs, excludeNs string) telemetryv1alpha1.LogPipelineInput
+		logGeneratorBuilder func(namespace string) client.Object
+		expectAgent         bool
 	}{
 		{
-			name:                 "gateway",
-			logPipelineInputFunc: otlpInput,
-			logGeneratorFunc: func(namespace string) client.Object {
-				return telemetrygen.NewDeployment(namespace, telemetrygen.SignalTypeLogs).K8sObject()
-			},
-		},
-
-		{
-			name:                 "agent",
-			logPipelineInputFunc: applicationInput,
-			logGeneratorFunc: func(namespace string) client.Object {
+			name:         "agent",
+			inputBuilder: buildApplicationInput,
+			logGeneratorBuilder: func(namespace string) client.Object {
 				return loggen.New(namespace).K8sObject()
 			},
-			agent: true,
+			expectAgent: true,
+		},
+		{
+			name:         "gateway",
+			inputBuilder: buildOTLPInput,
+			logGeneratorBuilder: func(namespace string) client.Object {
+				return telemetrygen.NewDeployment(namespace, telemetrygen.SignalTypeLogs).K8sObject()
+			},
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			var (
-				uniquePrefix        = unique.Prefix(tc.name)
-				includeNs           = uniquePrefix("gen-include")
-				includePipelineName = uniquePrefix("include")
-				excludeNs           = uniquePrefix("gen-exclude")
-				excludePipelineName = uniquePrefix("exclude")
-				backendNs           = uniquePrefix("backend")
+				uniquePrefix            = unique.Prefix(tc.name)
+				gen1Ns                  = uniquePrefix("gen-1")
+				includeGen1PipelineName = uniquePrefix("include")
+				gen2Ns                  = uniquePrefix("gen-2")
+				excludeGen2PipelineName = uniquePrefix("exclude")
+				backendNs               = uniquePrefix("backend")
 			)
 
 			backendName := "backend"
-			backend := backend.New(backendNs, backend.SignalTypeLogsOtel, backend.WithName(backendName))
+			backend := backend.New(backendNs, backend.SignalTypeLogsOTel, backend.WithName(backendName))
 			backendExportURL := backend.ExportURL(suite.ProxyClient)
 
-			pipelineInclude := testutils.NewLogPipelineBuilder().
-				WithName(includePipelineName).
-				WithInput(tc.logPipelineInputFunc(includeNs, "")).
+			includeGen1Pipeline := testutils.NewLogPipelineBuilder().
+				WithName(includeGen1PipelineName).
+				WithInput(tc.inputBuilder(gen1Ns, "")).
 				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 				Build()
 
-			pipelineExclude := testutils.NewLogPipelineBuilder().
-				WithName(excludePipelineName).
-				WithInput(tc.logPipelineInputFunc("", excludeNs)).
+			excludeGen2Pipeline := testutils.NewLogPipelineBuilder().
+				WithName(excludeGen2PipelineName).
+				WithInput(tc.inputBuilder("", gen2Ns)).
 				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 				Build()
 
 			var resources []client.Object
 			resources = append(resources,
 				kitk8s.NewNamespace(backendNs).K8sObject(),
-				kitk8s.NewNamespace(includeNs).K8sObject(),
-				kitk8s.NewNamespace(excludeNs).K8sObject(),
-				&pipelineInclude,
-				&pipelineExclude,
-				tc.logGeneratorFunc(includeNs),
-				tc.logGeneratorFunc(excludeNs),
+				kitk8s.NewNamespace(gen1Ns).K8sObject(),
+				kitk8s.NewNamespace(gen2Ns).K8sObject(),
+				&includeGen1Pipeline,
+				&excludeGen2Pipeline,
+				tc.logGeneratorBuilder(gen1Ns),
+				tc.logGeneratorBuilder(gen2Ns),
 			)
 			resources = append(resources, backend.K8sObjects()...)
 
@@ -96,16 +95,15 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 
 			assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
 			assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Name: backendName, Namespace: backendNs})
-
-			if tc.agent {
+			if tc.expectAgent {
 				assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.LogAgentName)
 			}
 
-			assert.LogPipelineHealthy(t.Context(), suite.K8sClient, includePipelineName)
-			assert.LogPipelineHealthy(t.Context(), suite.K8sClient, excludePipelineName)
+			assert.LogPipelineHealthy(t.Context(), suite.K8sClient, includeGen1PipelineName)
+			assert.LogPipelineHealthy(t.Context(), suite.K8sClient, excludeGen2PipelineName)
 
-			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, includeNs)
-			assert.OTelLogsFromNamespaceNotDelivered(suite.ProxyClient, backendExportURL, excludeNs)
+			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, gen1Ns)
+			assert.OTelLogsFromNamespaceNotDelivered(suite.ProxyClient, backendExportURL, gen2Ns)
 		})
 	}
 }
@@ -115,39 +113,39 @@ func TestNamespaceSelector_FluentBit(t *testing.T) {
 	// suite.SkipIfDoesNotMatchLabel(t, "logs")
 
 	var (
-		uniquePrefix        = unique.Prefix()
-		includeNs           = uniquePrefix("gen-include")
-		includePipelineName = uniquePrefix("include")
-		excludeNs           = uniquePrefix("gen-exclude")
-		excludePipelineName = uniquePrefix("exclude")
-		backendNs           = uniquePrefix("backend")
+		uniquePrefix            = unique.Prefix()
+		gen1Ns                  = uniquePrefix("gen-1")
+		includeGen1PipelineName = uniquePrefix("include")
+		gen2Ns                  = uniquePrefix("gen-2")
+		excludeGen2PipelineName = uniquePrefix("exclude")
+		backendNs               = uniquePrefix("backend")
 	)
 
 	backendName := "backend"
 	backend := backend.New(backendNs, backend.SignalTypeLogsFluentBit, backend.WithName(backendName))
 	backendExportURL := backend.ExportURL(suite.ProxyClient)
 
-	pipelineInclude := testutils.NewLogPipelineBuilder().
-		WithName(includePipelineName).
-		WithApplicationInput(true, testutils.IncludeLogNamespaces(includeNs)).
+	includeGen1Pipeline := testutils.NewLogPipelineBuilder().
+		WithName(includeGen1PipelineName).
+		WithApplicationInput(true, testutils.IncludeLogNamespaces(gen1Ns)).
 		WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 		Build()
 
-	pipelineExclude := testutils.NewLogPipelineBuilder().
-		WithName(excludePipelineName).
-		WithApplicationInput(true, testutils.ExcludeLogNamespaces(excludeNs)).
+	excludeGen2Pipeline := testutils.NewLogPipelineBuilder().
+		WithName(excludeGen2PipelineName).
+		WithApplicationInput(true, testutils.ExcludeLogNamespaces(gen2Ns)).
 		WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 		Build()
 
 	var resources []client.Object
 	resources = append(resources,
 		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(includeNs).K8sObject(),
-		kitk8s.NewNamespace(excludeNs).K8sObject(),
-		&pipelineInclude,
-		&pipelineExclude,
-		loggen.New(includeNs).K8sObject(),
-		loggen.New(excludeNs).K8sObject(),
+		kitk8s.NewNamespace(gen1Ns).K8sObject(),
+		kitk8s.NewNamespace(gen2Ns).K8sObject(),
+		&includeGen1Pipeline,
+		&excludeGen2Pipeline,
+		loggen.New(gen1Ns).K8sObject(),
+		loggen.New(gen2Ns).K8sObject(),
 	)
 	resources = append(resources, backend.K8sObjects()...)
 
@@ -156,16 +154,16 @@ func TestNamespaceSelector_FluentBit(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
 
-	assert.LogPipelineHealthy(t.Context(), suite.K8sClient, includePipelineName)
-	assert.LogPipelineHealthy(t.Context(), suite.K8sClient, excludePipelineName)
+	assert.LogPipelineHealthy(t.Context(), suite.K8sClient, includeGen1PipelineName)
+	assert.LogPipelineHealthy(t.Context(), suite.K8sClient, excludeGen2PipelineName)
 	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Name: backendName, Namespace: backendNs})
 	assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 
-	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, includeNs)
-	assert.FluentBitLogsFromNamespaceNotDelivered(suite.ProxyClient, backendExportURL, excludeNs)
+	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, gen1Ns)
+	assert.FluentBitLogsFromNamespaceNotDelivered(suite.ProxyClient, backendExportURL, gen2Ns)
 }
 
-func applicationInput(includeNs, excludeNs string) telemetryv1alpha1.LogPipelineInput {
+func buildApplicationInput(includeNs, excludeNs string) telemetryv1alpha1.LogPipelineInput {
 	return telemetryv1alpha1.LogPipelineInput{
 		Application: &telemetryv1alpha1.LogPipelineApplicationInput{
 			Enabled:    ptr.To(true),
@@ -189,7 +187,7 @@ func applicationNamespaceSelector(includeNs, excludeNs string) telemetryv1alpha1
 	}
 }
 
-func otlpInput(includeNs, excludeNs string) telemetryv1alpha1.LogPipelineInput {
+func buildOTLPInput(includeNs, excludeNs string) telemetryv1alpha1.LogPipelineInput {
 	return telemetryv1alpha1.LogPipelineInput{
 		Application: &telemetryv1alpha1.LogPipelineApplicationInput{
 			Enabled: ptr.To(false),

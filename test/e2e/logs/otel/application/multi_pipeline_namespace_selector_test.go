@@ -34,7 +34,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 			kitk8s.NewNamespace(app1Ns).K8sObject(),
 			kitk8s.NewNamespace(app2Ns).K8sObject())
 
-		backend1 := backend.New(mockNs, backend.SignalTypeLogsOtel, backend.WithName(backend1Name))
+		backend1 := backend.New(mockNs, backend.SignalTypeLogsOTel, backend.WithName(backend1Name))
 		backend1ExportURL = backend1.ExportURL(suite.ProxyClient)
 		objs = append(objs, backend1.K8sObjects()...)
 
@@ -46,7 +46,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 			Build()
 		objs = append(objs, &pipelineIncludeApp1Ns)
 
-		backend2 := backend.New(mockNs, backend.SignalTypeLogsOtel, backend.WithName(backend2Name))
+		backend2 := backend.New(mockNs, backend.SignalTypeLogsOTel, backend.WithName(backend2Name))
 		backend2ExportURL = backend2.ExportURL(suite.ProxyClient)
 		objs = append(objs, backend2.K8sObjects()...)
 

@@ -114,7 +114,7 @@ func (cm *ConfigMap) K8sObject() *corev1.ConfigMap {
 	}
 
 	config := strings.Replace(configTemplate, "{{ FILEPATH }}", cm.exportedFilePath, 1)
-	if cm.signalType == SignalTypeLogsOtel {
+	if cm.signalType == SignalTypeLogsOTel {
 		config = strings.Replace(config, "{{ SIGNAL_TYPE }}", "logs", 1)
 	} else {
 		config = strings.Replace(config, "{{ SIGNAL_TYPE }}", string(cm.signalType), 1)

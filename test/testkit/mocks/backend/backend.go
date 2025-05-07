@@ -43,7 +43,7 @@ const (
 	SignalTypeTraces        = "traces"
 	SignalTypeMetrics       = "metrics"
 	SignalTypeLogsFluentBit = "logs"
-	SignalTypeLogsOtel      = "logs-otel"
+	SignalTypeLogsOTel      = "logs-otel"
 )
 
 type Option func(*Backend)
