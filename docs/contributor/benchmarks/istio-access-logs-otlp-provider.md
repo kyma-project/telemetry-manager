@@ -369,7 +369,7 @@ fortio logs:
 2025-04-23T09:47:31.271039Z    stream closed EOF for load-test/traffic-generator (fortio)
 ```
 
-### 📊 Scenario-based Filtered Results
+### 📊 Scenario-Based Filtered Results
 
 Load Generator (fortio): `["load", "-t", "0", "-qps", "0", "-nocatchup", "-uniform", "nginx.load-test.svc"]` (no catchup)
 
