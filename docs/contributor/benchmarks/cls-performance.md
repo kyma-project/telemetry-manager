@@ -50,8 +50,6 @@ Log generation:
 - Payload: ~2k (plus metadata)
 - [telemetry-gen configuration](assets/telemetry-gen-direct-to-cls.yml)
 
-with this setup we establish a baseline for the performance of telemetry gen:
-
 ```mermaid
 flowchart LR
     A[telemetrygen] --> B[CLS-service]
@@ -59,15 +57,14 @@ flowchart LR
     style A fill:#f9f,stroke:#333,stroke-width:1px
     style B fill:#bbf,stroke:#333,stroke-width:1px
 ```
-Performance can only be estimated using CLS. (unit: logs per second)
 
+(unit: logs per second)
 
 | **workers ↓ / replicas →** | 1      | 5       | 10      |
 | -------------------------- | ------ | ------- | ------- |
 | **1**                      | ~475   | ~2.260  | ~4.600  |
 | **5**                      | ~2.300 | ~11.600 | ~22.600 |
 | **10**                     | ~4.500 | ~22.500 | ~43.600 |
-
 
 ## Result
 10 replicas with 10 workers each are required to achieve more than 30000 logs per second.
@@ -82,7 +79,6 @@ Log generation:
 - Workers: 10
 - Replicas: 10
 - [telemetry-gen configuration](assets/telemetry-gen-using-log-pipeline.yaml)
-
 
 ```mermaid
 flowchart LR
@@ -123,7 +119,8 @@ flowchart LR
 
 ```
 
-Istio CPU limits increased `sidecar.istio.io/proxyCPULimit: "<limits>"`
+Istio CPU limits are increased using the `sidecar.istio.io/proxyCPULimit: "<limits>"` annotation.
+
 Gateway Replicas: 2
 
 | Istio Limits                                 | Throughput Msg / s | Enqueue failed Msg / s | Memory per instance (MB) | CPU per instance | Bytes transmitted (MB/s) | Bytes received (MB/s) | istio Memory | istio cpu |
