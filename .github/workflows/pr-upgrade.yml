@@ -62,9 +62,10 @@ jobs:
         shell: bash
         run: kubectl apply -f config/samples/operator_v1alpha1_telemetry.yaml -n kyma-system
 
-      - name: Create Network Policy
-        shell: bash
-        run: kubectl apply -f config/networking/networkpolicy-deny-all.yaml -n kyma-system
+      # TODO: Remove commented out section after next release
+      # - name: Create Network Policy
+      #   shell: bash
+      #   run: kubectl apply -f config/networking/networkpolicy-deny-all.yaml -n kyma-system
 
       - name: Run test on latest tag
         shell: bash
