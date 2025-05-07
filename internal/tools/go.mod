@@ -1,6 +1,6 @@
 module github.com/kyma-project/telemetry-manager/internal/tools
 
-go 1.24.2
+go 1.24.3
 
 require (
 	github.com/bombsimon/wsl/v4 v4.7.0
