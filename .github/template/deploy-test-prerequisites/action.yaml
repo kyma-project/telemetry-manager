@@ -1,0 +1,15 @@
+name: Deploy Test Prerequisites
+description: Deploys the Kubernetes resources needed for the test execution
+
+runs:
+  using: "composite"
+
+  steps:
+    - name: Create Telemetry CR
+      shell: bash
+      run: kubectl apply -f config/samples/operator_v1alpha1_telemetry.yaml -n kyma-system
+
+    # Deploying to simulate a typical setup on a Kyma cluster
+    - name: Create Network Policy
+      shell: bash
+      run: kubectl apply -f config/networking/networkpolicy-deny-all.yaml -n kyma-system

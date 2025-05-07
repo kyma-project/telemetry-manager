@@ -49,10 +49,6 @@ runs:
       shell: bash
       run: kubectl -n kyma-system wait pods -l app.kubernetes.io/instance=telemetry,app.kubernetes.io/name=manager --for=condition=Ready=true --timeout=90s
 
-    - name: Create Telemtry CR
-      shell: bash
-      run: kubectl apply -f config/samples/operator_v1alpha1_telemetry.yaml -n kyma-system
-
     - name: Print cluster info
       shell: bash
       run: |
