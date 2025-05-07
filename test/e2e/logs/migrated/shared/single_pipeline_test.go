@@ -122,8 +122,11 @@ func TestSinglePipeline_FluentBit(t *testing.T) {
 	})
 	require.NoError(t, kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...))
 
-	assert.LogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Name: backend.Name(), Namespace: backendNs})
 	assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.FluentBitDaemonSetName)
+
+	assert.LogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
+	assert.LogPipelineUnsupportedMode(suite.Ctx, suite.K8sClient, pipelineName, false)
+
 	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, generatorNs)
 }
