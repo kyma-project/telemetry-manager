@@ -6,7 +6,7 @@ Goal: Ensure that enabling Istio access logs with the new OTLP provider `kyma-lo
 ### Base Setup
 1. `istio` module deployed
 2. Change `kyma-system/istio-controller-manager` Deployment image to: `europe-central2-docker.pkg.dev/sap-se-cx-kyma-goat/istio/istio-manager:PR-1374`.
-   Alternatively, if you need additional, custom provider configurations, scale down the `istio-controller-manager` Deployment and apply [istio-config.yaml](./assets/istio-access-logs/istio-config.yaml).
+   Alternatively, if you need additional, custom provider configurations (for example, if you want to execute the scenarios that involve a custom provider configuration), scale down the `istio-controller-manager` Deployment and apply [istio-config.yaml](./assets/istio-access-logs/istio-config.yaml).
 3. Create load-test namespace: `kubectl create ns load-test`
 
 ### Prometheus + Grafana Setup
