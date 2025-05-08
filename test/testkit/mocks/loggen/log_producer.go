@@ -29,6 +29,7 @@ type LogProducer struct {
 	annotations map[string]string
 	labels      map[string]string
 	replicas    int32
+	container   string
 	load        Load
 	useJSON     bool
 }
@@ -38,8 +39,14 @@ func New(namespace string) *LogProducer {
 		name:      DefaultName,
 		namespace: namespace,
 		replicas:  1,
+		container: DefaultContainerName,
 		load:      LoadLow,
 	}
+}
+
+func (lp *LogProducer) WithName(name string) *LogProducer {
+	lp.name = name
+	return lp
 }
 
 func (lp *LogProducer) WithAnnotations(annotations map[string]string) *LogProducer {
@@ -54,6 +61,11 @@ func (lp *LogProducer) WithLabels(labels map[string]string) *LogProducer {
 
 func (lp *LogProducer) WithReplicas(replicas int32) *LogProducer {
 	lp.replicas = replicas
+	return lp
+}
+
+func (lp *LogProducer) WithContainer(container string) *LogProducer {
+	lp.container = container
 	return lp
 }
 
@@ -122,7 +134,7 @@ done`
 	return corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
-				Name:    DefaultContainerName,
+				Name:    lp.container,
 				Image:   "alpine:3.17.2",
 				Command: []string{"/bin/sh", "-c", logCmd}},
 		},
@@ -140,7 +152,7 @@ func (lp *LogProducer) flogSpec() corev1.PodSpec {
 	return corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
-				Name:            DefaultContainerName,
+				Name:            lp.container,
 				Image:           "mingrammer/flog",
 				Args:            args,
 				ImagePullPolicy: corev1.PullAlways,

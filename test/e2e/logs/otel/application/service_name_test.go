@@ -115,7 +115,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelExperimental)
 				bodyContent, err := io.ReadAll(resp.Body)
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(bodyContent).To(HaveFlatOtelLogs(
+				g.Expect(bodyContent).To(HaveFlatOTelLogs(
 					ContainElement(SatisfyAll(
 						HaveResourceAttributes(HaveKeyWithValue("service.name", expectedServiceName)),
 						HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", ContainSubstring(givenPodPrefix))),
@@ -140,7 +140,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelExperimental)
 				resp, err := suite.ProxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(HaveFlatOtelLogs(
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatOTelLogs(
 					Not(ContainElement(
 						HaveResourceAttributes(HaveKey(ContainSubstring("kyma"))),
 					)),

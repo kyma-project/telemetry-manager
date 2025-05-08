@@ -7,7 +7,7 @@ import (
 	"github.com/onsi/gomega/types"
 )
 
-func HaveFlatOtelLogs(matcher types.GomegaMatcher) types.GomegaMatcher {
+func HaveFlatOTelLogs(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(jsonLogs []byte) ([]FlatLogOtel, error) {
 		tds, err := unmarshalOtelLogs(jsonLogs)
 		if err != nil {

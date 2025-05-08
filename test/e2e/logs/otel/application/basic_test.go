@@ -98,7 +98,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 
-				g.Expect(resp).To(HaveHTTPBody(HaveFlatOtelLogs(
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatOTelLogs(
 					ContainElement(SatisfyAll(
 						HaveScopeName(Equal(agent.InstrumentationScopeRuntime)),
 						HaveScopeVersion(SatisfyAny(
@@ -120,7 +120,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 
-				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
+				g.Expect(bodyContent).To(HaveFlatOTelLogs(ContainElement(SatisfyAll(
 					HaveOtelTimestamp(Not(BeEmpty())),
 					HaveObservedTimestamp(Not(BeEmpty())),
 					HaveLogRecordBody(BeEmpty()),

@@ -126,7 +126,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPush, s
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 
-				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
+				g.Expect(bodyContent).To(HaveFlatOTelLogs(ContainElement(SatisfyAll(
 					HaveResourceAttributes(HaveKeyWithValue(logLabelExactMatchAttributeKey, "exact_match")),
 					HaveResourceAttributes(HaveKeyWithValue(logLabelPrefixMatchAttributeKey1, "prefix_match1")),
 					HaveResourceAttributes(HaveKeyWithValue(logLabelPrefixMatchAttributeKey2, "prefix_match2")),
