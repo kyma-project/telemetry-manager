@@ -13,7 +13,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -32,7 +32,7 @@ func TestCustomOutput(t *testing.T) {
 
 	resources = append(resources, kitk8s.NewNamespace(mockNs).K8sObject())
 
-	be := backend.New(mockNs, backend.SignalTypeLogsFluentBit)
+	be := kitbackend.New(mockNs, kitbackend.SignalTypeLogsFluentBit)
 	backendExportURL := be.ExportURL(suite.ProxyClient)
 	resources = append(resources, be.K8sObjects()...)
 

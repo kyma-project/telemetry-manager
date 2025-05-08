@@ -15,7 +15,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -36,7 +36,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 		logProducer := loggen.New(mockNs).WithUseJSON()
 		objs = append(objs, logProducer.K8sObject())
 
-		backend := backend.New(mockNs, backend.SignalTypeLogsFluentBit, backend.WithName(backendName))
+		backend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithName(backendName))
 		backendExportURL = backend.ExportURL(suite.ProxyClient)
 		objs = append(objs, backend.K8sObjects()...)
 		logPipeline := testutils.NewLogPipelineBuilder().

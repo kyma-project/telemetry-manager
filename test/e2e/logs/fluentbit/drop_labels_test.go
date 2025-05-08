@@ -15,7 +15,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -32,7 +32,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		backend := backend.New(mockNs, backend.SignalTypeLogsFluentBit)
+		backend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsFluentBit)
 		logProducer := loggen.New(mockNs).
 			WithLabels(map[string]string{"env": "dev"}).
 			WithAnnotations(map[string]string{"release": "v1.0.0"})
@@ -69,7 +69,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 		})
 
 		It("Should have a log backend running", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
 		})
 
 		It("Should have a log producer running", func() {

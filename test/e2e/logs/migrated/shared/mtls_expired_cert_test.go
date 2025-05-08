@@ -16,7 +16,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -55,7 +55,7 @@ func TestMTLSExpiredCert_OTel(t *testing.T) {
 				uniquePrefix = unique.Prefix(tc.name)
 				pipelineName = uniquePrefix()
 				backendNs    = uniquePrefix("backend")
-				backendName  = backend.DefaultName
+				backendName  = kitbackend.DefaultName
 			)
 
 			expiredServerCerts, expiredClientCerts, err := testutils.NewCertBuilder(backendName, backendNs).
@@ -63,7 +63,7 @@ func TestMTLSExpiredCert_OTel(t *testing.T) {
 				Build()
 			Expect(err).ToNot(HaveOccurred())
 
-			backend := backend.New(backendNs, backend.SignalTypeLogsOTel, backend.WithTLS(*expiredServerCerts))
+			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithTLS(*expiredServerCerts))
 
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
@@ -116,7 +116,7 @@ func TestMTLSExpiredCert_FluentBit(t *testing.T) {
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
 		backendNs    = uniquePrefix("backend")
-		backendName  = backend.DefaultName
+		backendName  = kitbackend.DefaultName
 	)
 
 	expiredServerCerts, expiredClientCerts, err := testutils.NewCertBuilder(backendName, backendNs).
@@ -124,7 +124,7 @@ func TestMTLSExpiredCert_FluentBit(t *testing.T) {
 		Build()
 	Expect(err).ToNot(HaveOccurred())
 
-	backend := backend.New(backendNs, backend.SignalTypeLogsFluentBit, backend.WithTLS(*expiredServerCerts))
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithTLS(*expiredServerCerts))
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).

@@ -17,7 +17,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -68,7 +68,7 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 				pipelineName = uniquePrefix()
 				backendNs    = uniquePrefix("backend")
 				genNs        = uniquePrefix("gen")
-				backendName  = backend.DefaultName
+				backendName  = kitbackend.DefaultName
 			)
 
 			serverCerts, clientCerts, err := testutils.NewCertBuilder(backendName, backendNs).
@@ -76,7 +76,7 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 				Build()
 			Expect(err).ToNot(HaveOccurred())
 
-			backend := backend.New(backendNs, backend.SignalTypeLogsOTel, backend.WithTLS(*serverCerts))
+			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithTLS(*serverCerts))
 			backendExportURL := backend.ExportURL(suite.ProxyClient)
 
 			pipeline := testutils.NewLogPipelineBuilder().
@@ -139,7 +139,7 @@ func TestMTLSAboutToExpireCert_FluentBit(t *testing.T) {
 		pipelineName = uniquePrefix()
 		backendNs    = uniquePrefix("backend")
 		genNs        = uniquePrefix("gen")
-		backendName  = backend.DefaultName
+		backendName  = kitbackend.DefaultName
 	)
 
 	serverCerts, clientCerts, err := testutils.NewCertBuilder(backendName, backendNs).
@@ -147,7 +147,7 @@ func TestMTLSAboutToExpireCert_FluentBit(t *testing.T) {
 		Build()
 	Expect(err).ToNot(HaveOccurred())
 
-	backend := backend.New(backendNs, backend.SignalTypeLogsFluentBit, backend.WithTLS(*serverCerts))
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithTLS(*serverCerts))
 	backendExportURL := backend.ExportURL(suite.ProxyClient)
 
 	pipeline := testutils.NewLogPipelineBuilder().

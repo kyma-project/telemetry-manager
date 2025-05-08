@@ -12,7 +12,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
@@ -32,10 +32,10 @@ func TestContainerSelector_OTel(t *testing.T) {
 		excludeContainer1PipelineName = uniquePrefix("exclude")
 	)
 
-	backend1 := backend.New(backendNs, backend.SignalTypeLogsOTel, backend.WithName("backend-1"))
+	backend1 := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithName("backend-1"))
 	backend1ExportURL := backend1.ExportURL(suite.ProxyClient)
 
-	backend2 := backend.New(backendNs, backend.SignalTypeLogsOTel, backend.WithName("backend-2"))
+	backend2 := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithName("backend-2"))
 	backend2ExportURL := backend2.ExportURL(suite.ProxyClient)
 
 	includeContainer1Pipeline := testutils.NewLogPipelineBuilder().
@@ -99,10 +99,10 @@ func TestContainerSelector_FluentBit(t *testing.T) {
 		excludeContainer1PipelineName = uniquePrefix("exclude")
 	)
 
-	backend1 := backend.New(backendNs, backend.SignalTypeLogsFluentBit, backend.WithName("backend-1"))
+	backend1 := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithName("backend-1"))
 	backend1ExportURL := backend1.ExportURL(suite.ProxyClient)
 
-	backend2 := backend.New(backendNs, backend.SignalTypeLogsFluentBit, backend.WithName("backend-2"))
+	backend2 := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithName("backend-2"))
 	backend2ExportURL := backend2.ExportURL(suite.ProxyClient)
 
 	includeContainer1Pipeline := testutils.NewLogPipelineBuilder().

@@ -17,7 +17,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/trafficgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
@@ -51,7 +51,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 		var objs []client.Object
 
 		// backend
-		traceBackend := backend.New(namespace, backend.SignalTypeTraces, backend.WithName(backendName))
+		traceBackend := kitbackend.New(namespace, kitbackend.SignalTypeTraces, kitbackend.WithName(backendName))
 		traceBackendURL = traceBackend.ExportURL(suite.ProxyClient)
 		objs = append(objs, traceBackend.K8sObjects()...)
 
@@ -71,7 +71,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 		var objs []client.Object
 
 		// backend
-		metricBackend := backend.New(namespace, backend.SignalTypeMetrics, backend.WithName(backendName))
+		metricBackend := kitbackend.New(namespace, kitbackend.SignalTypeMetrics, kitbackend.WithName(backendName))
 		metricBackendURL = metricBackend.ExportURL(suite.ProxyClient)
 		objs = append(objs, metricBackend.K8sObjects()...)
 
@@ -96,7 +96,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 		var objs []client.Object
 
 		// backend
-		logBackend := backend.New(namespace, backend.SignalTypeLogsFluentBit, backend.WithName(backendName))
+		logBackend := kitbackend.New(namespace, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithName(backendName))
 		logBackendURL = logBackend.ExportURL(suite.ProxyClient)
 		objs = append(objs, logBackend.K8sObjects()...)
 
@@ -115,7 +115,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 		var objs []client.Object
 
 		// backends
-		logBackend := backend.New(namespace, backend.SignalTypeLogsFluentBit, backend.WithName(backendName))
+		logBackend := kitbackend.New(namespace, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithName(backendName))
 		backendURL := logBackend.ExportURL(suite.ProxyClient)
 		objs = append(objs, logBackend.K8sObjects()...)
 
