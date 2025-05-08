@@ -21,7 +21,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
+const maxNumberOfLogPipelines = 5
+
 func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
+	RegisterTestingT(t)
+
 	tests := []struct {
 		name                string
 		input               telemetryv1alpha1.LogPipelineInput
@@ -47,7 +51,6 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			const maxNumberOfLogPipelines = 5
 
 			var (
 				uniquePrefix = unique.Prefix(tc.name)
@@ -96,12 +99,12 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 				assert.DaemonSetReady(context.Background(), suite.K8sClient, kitkyma.LogAgentName)
 			}
 
-			t.Log("Asserting all pipelines are healthy")
+			t.Log("Asserting 5 pipelines are healthy")
 			for _, pipeline := range pipelines {
 				assert.OTelLogPipelineHealthy(context.Background(), suite.K8sClient, pipeline.GetName())
 			}
 
-			t.Log("Attempting to create the invalid pipeline and expecting failure")
+			t.Log("Attempting to create the 6th pipeline and expecting failure")
 			err := kitk8s.CreateObjects(context.Background(), suite.K8sClient, &invalidPipeline)
 			require.Error(t, err, "Expected invalid pipeline creation to fail")
 
@@ -113,8 +116,6 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 
 func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
 	RegisterTestingT(t)
-
-	const maxNumberOfLogPipelines = 5
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -160,12 +161,12 @@ func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
 	assert.DeploymentReady(context.Background(), suite.K8sClient, backend.NamespacedName())
 	assert.DaemonSetReady(context.Background(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 
-	t.Log("Asserting all pipelines are healthy")
+	t.Log("Asserting 5 pipelines are healthy")
 	for _, pipeline := range pipelines {
 		assert.FluentBitLogPipelineHealthy(context.Background(), suite.K8sClient, pipeline.GetName())
 	}
 
-	t.Log("Attempting to create the exceeding pipeline and expecting failure")
+	t.Log("Attempting to create the 6th pipeline and expecting failure")
 	err := kitk8s.CreateObjects(context.Background(), suite.K8sClient, &invalidPipeline)
 	require.Error(t, err, "Expected exceeding pipeline creation to fail")
 
