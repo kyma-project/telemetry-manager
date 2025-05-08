@@ -47,11 +47,9 @@ func TestCustomFilterAllowed(t *testing.T) {
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix("allowed")
 
-		backendNs  = uniquePrefix("backend")
-		includeNs  = uniquePrefix("include")
-		excludeNs  = uniquePrefix("exclude")
-		includeGen = uniquePrefix("loggen-include")
-		excludeGen = uniquePrefix("loggen-exclude")
+		backendNs = uniquePrefix("backend")
+		includeNs = uniquePrefix("include")
+		excludeNs = uniquePrefix("exclude")
 	)
 
 	resources = append(resources, kitk8s.NewNamespace(backendNs).K8sObject())
@@ -62,10 +60,10 @@ func TestCustomFilterAllowed(t *testing.T) {
 	backendExportURL := backend.ExportURL(suite.ProxyClient)
 	resources = append(resources, backend.K8sObjects()...)
 
-	logProducerInclude := loggen.New(includeNs).WithName(includeGen)
+	logProducerInclude := loggen.New(includeNs)
 	resources = append(resources, logProducerInclude.K8sObject())
 
-	logProducerExclude := loggen.New(excludeNs).WithName(excludeGen)
+	logProducerExclude := loggen.New(excludeNs)
 	resources = append(resources, logProducerExclude.K8sObject())
 
 	logPipeline := testutils.NewLogPipelineBuilder().
