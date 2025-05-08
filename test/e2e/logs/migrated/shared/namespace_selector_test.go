@@ -117,8 +117,8 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 				assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.LogAgentName)
 			}
 
-			assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, includeGen1PipelineName)
-			assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, excludeGen2PipelineName)
+			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, includeGen1PipelineName)
+			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, excludeGen2PipelineName)
 
 			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, gen1Ns)
 			assert.OTelLogsFromNamespaceNotDelivered(suite.ProxyClient, backendExportURL, gen2Ns)
