@@ -32,7 +32,7 @@ WARNING: version difference between client (1.33) and server (1.31) exceeds the 
 
 ### Log Pipeline
 
-A basic logpipeline with an enabled otlp input and a default output to CLS is used for the test:
+The test uses a basic LogPipeline with an enabled OTLP input and a default output to CLS:
 
 [log-pipeline configuration](assets/otel-input.yaml)
 
