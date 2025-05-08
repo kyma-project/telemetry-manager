@@ -16,6 +16,8 @@ type FlatLogOtel struct {
 	Name, ScopeName, ScopeVersion                                string
 	ResourceAttributes, ScopeAttributes, Attributes              map[string]string
 	LogRecordBody, ObservedTimestamp, Timestamp, TraceId, SpanId string
+	SeverityText                                                 string
+	SeverityNumber                                               int
 }
 
 func unmarshalOtelLogs(jsonlMetrics []byte) ([]plog.Logs, error) {
@@ -58,6 +60,8 @@ func flattenOtelLogs(ld plog.Logs) []FlatLogOtel {
 					Timestamp:          lr.Timestamp().String(),
 					TraceId:            lr.TraceID().String(),
 					SpanId:             lr.SpanID().String(),
+					SeverityText:       lr.SeverityText(),
+					SeverityNumber:     int(lr.SeverityNumber()),
 				})
 			}
 		}

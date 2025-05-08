@@ -100,9 +100,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
 					HaveOtelTimestamp(Not(BeEmpty())),
 					HaveObservedTimestamp(Not(BeEmpty())),
-					HaveTraceId(Not(BeEmpty())),
-					HaveSpanId(Not(BeEmpty())),
 					HaveTraceId(Equal("255c2212dd02c02ac59a923ff07aec74")),
+					HaveSpanId(Equal("c5c735f175ad06a6")),
+					HaveTraceFlags(Equal("01")),
+					HaveAttributes(Not(HaveKey("trace_id"))),
+					HaveAttributes(Not(HaveKey("span_id"))),
+					HaveAttributes(Not(HaveKey("trace_flags"))),
+					HaveAttributes(Not(HaveKey("traceparent"))),
 				))))
 			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
@@ -120,31 +124,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
 					HaveOtelTimestamp(Not(BeEmpty())),
 					HaveObservedTimestamp(Not(BeEmpty())),
-					HaveSpanId(Not(BeEmpty())),
 					HaveTraceId(Equal("80e1afed08e019fc1110464cfa66635c")),
-				))))
-			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-		})
-
-		It("Should remove trace_id, span_id, trace_flags, and traceparent attributes", func() {
-			Consistently(func(g Gomega) {
-				resp, err := suite.ProxyClient.Get(backendExportURL)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-
-				bodyContent, err := io.ReadAll(resp.Body)
-				defer resp.Body.Close()
-				g.Expect(err).NotTo(HaveOccurred())
-
-				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
-					HaveOtelTimestamp(Not(BeEmpty())),
-					HaveObservedTimestamp(Not(BeEmpty())),
+					HaveSpanId(Equal("7a085853722dc6d2")),
+					HaveTraceFlags(Equal("01")),
 					HaveAttributes(Not(HaveKey("trace_id"))),
 					HaveAttributes(Not(HaveKey("span_id"))),
 					HaveAttributes(Not(HaveKey("trace_flags"))),
 					HaveAttributes(Not(HaveKey("traceparent"))),
 				))))
-			}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
 		It("Should have span_id log attribute but no trace data, not parsable", func() {
@@ -165,6 +153,32 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 					HaveAttributes(HaveKey("span_id")),
 				))))
 			}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Should have severityText and severityNumber in logs", func() {
+			Eventually(func(g Gomega) {
+				resp, err := suite.ProxyClient.Get(backendExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+
+				bodyContent, err := io.ReadAll(resp.Body)
+				defer resp.Body.Close()
+				g.Expect(err).NotTo(HaveOccurred())
+
+				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
+					HaveTraceId(Equal("80e1afed08e019fc1110464cfa66635c")),
+					HaveSeverityNumber(Equal(6)),
+					HaveSeverityText(Equal("WARN")),
+					aveAttributes(Not(HaveKey("log.level"))),
+				))))
+
+				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
+					HaveTraceId(Equal("255c2212dd02c02ac59a923ff07aec74")),
+					HaveSeverityNumber(Equal(8)),
+					HaveSeverityText(Equal("INFO")),
+					HaveAttributes(Not(HaveKey("level"))),
+				))))
+			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
 })

@@ -14,16 +14,32 @@ func NamespaceEquals(name string) string {
 }
 
 func ResourceAttributeEquals(key, value string) string {
-	return fmt.Sprintf("resource.attributes[\"%s\"] == \"%s\"", key, value)
+	return fmt.Sprintf("%s == \"%s\"", ResourceAttribute(key), value)
 }
 
 func ResourceAttributeNotEquals(key, value string) string {
-	return fmt.Sprintf("resource.attributes[\"%s\"] != \"%s\"", key, value)
+	return fmt.Sprintf("%s != \"%s\"", ResourceAttribute(key), value)
 }
 
 // ResourceAttributeNotNil returns an OTel expression that checks if the resource attribute exists
 func ResourceAttributeNotNil(key string) string {
-	return fmt.Sprintf("resource.attributes[\"%s\"] != nil", key)
+	return fmt.Sprintf("%s != nil", ResourceAttribute(key))
+}
+
+func ResourceAttribute(key string) string {
+	return fmt.Sprintf("resource.attributes[\"%s\"]", key)
+}
+
+func AttributeNotNil(key string) string {
+	return fmt.Sprintf("%s != nil", Attribute(key))
+}
+
+func AttributeNil(key string) string {
+	return fmt.Sprintf("%s == nil", Attribute(key))
+}
+
+func Attribute(key string) string {
+	return fmt.Sprintf("attributes[\"%s\"]", key)
 }
 
 func NameAttributeEquals(name string) string {
