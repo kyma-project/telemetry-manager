@@ -16,8 +16,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
-	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 )
 
 const (
@@ -30,11 +28,7 @@ var (
 	K8sClient   client.Client
 	ProxyClient *apiserverproxy.Client
 
-	cancel                   context.CancelFunc
-	preProvisionedK8sObjects = []client.Object{
-		// deny all network policy to simulate a typical kyma installation
-		kitk8s.NewNetworkPolicy("deny-all-ingress-and-egress", kitkyma.SystemNamespaceName).K8sObject(),
-	}
+	cancel context.CancelFunc
 )
 
 // BeforeSuiteFuncErr is designed to return an error instead of relying on Gomega matchers.
@@ -58,10 +52,6 @@ func BeforeSuiteFuncErr() error {
 		return fmt.Errorf("failed to create apiserver proxy client: %w", err)
 	}
 
-	if err := kitk8s.CreateObjects(Ctx, K8sClient, preProvisionedK8sObjects...); err != nil {
-		return fmt.Errorf("failed to create k8s objects: %w", err)
-	}
-
 	return nil
 }
 
@@ -70,22 +60,9 @@ func BeforeSuiteFunc() {
 	Expect(BeforeSuiteFuncErr()).Should(Succeed())
 }
 
-// AfterSuiteFuncErr is designed to return an error instead of relying on Gomega matchers.
-// This function is intended for use in a vanilla TestMain function within new e2e test suites.
-// Note that Gomega matchers cannot be utilized in the TestMain function.
-func AfterSuiteFuncErr() error {
-	if err := kitk8s.DeleteObjects(Ctx, K8sClient, preProvisionedK8sObjects...); err != nil {
-		return fmt.Errorf("failed to delete k8s objects: %w", err)
-	}
-
-	cancel()
-
-	return nil
-}
-
 // AfterSuiteFunc is executed after each Ginkgo test suite
 func AfterSuiteFunc() {
-	Expect(AfterSuiteFuncErr()).Should(Succeed())
+	cancel()
 }
 
 // ID returns the current test suite ID.

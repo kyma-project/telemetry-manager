@@ -8,7 +8,7 @@ import (
 	"context"
 
 	mock "github.com/stretchr/testify/mock"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // NewPipelineLock creates a new instance of PipelineLock. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.

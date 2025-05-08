@@ -42,11 +42,3 @@ runs:
       if: ${{ inputs.failure }}
       run: |
         kubectl get all --all-namespaces
-    
-    - name: Delete all telemetry-related CRs
-      shell: bash
-      run: |
-        kubectl delete LogPipeline --all --all-namespaces
-        kubectl delete MetricPipeline --all --all-namespaces
-        kubectl delete TracePipeline --all --all-namespaces
-        kubectl delete Telemetry default -n kyma-system

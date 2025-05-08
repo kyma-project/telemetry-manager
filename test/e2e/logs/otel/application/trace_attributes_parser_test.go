@@ -35,7 +35,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 		objs = append(objs, kitk8s.NewNamespace(backendNs).K8sObject())
 
-		backend := backend.New(backendNs, backend.SignalTypeLogsOTel, backend.WithPersistentHostSecret(suite.IsUpgrade()))
+		backend := backend.New(backendNs, backend.SignalTypeLogsOTel)
 		logProducer := loggen.New(mockNs).WithUseJSON()
 		objs = append(objs, backend.K8sObjects()...)
 		objs = append(objs, logProducer.K8sObject())
@@ -53,9 +53,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 					hostSecretRef.Key,
 				),
 			)
-		if suite.IsUpgrade() {
-			pipelineBuilder.WithLabels(kitk8s.PersistentLabel)
-		}
 		logPipeline := pipelineBuilder.Build()
 
 		objs = append(objs,

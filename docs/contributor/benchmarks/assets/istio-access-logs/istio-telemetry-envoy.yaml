@@ -1,0 +1,12 @@
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata:
+  name: access-logs-config
+  namespace: load-test
+spec:
+  selector:
+    matchLabels:
+      service.istio.io/canonical-name: load-test-workflow
+  accessLogging:
+    - providers:
+        - name: envoy
