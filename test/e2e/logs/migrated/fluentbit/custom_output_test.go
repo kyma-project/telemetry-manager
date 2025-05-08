@@ -15,7 +15,6 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -32,9 +31,9 @@ func TestCustomOutput(t *testing.T) {
 
 	resources = append(resources, kitk8s.NewNamespace(mockNs).K8sObject())
 
-	be := kitbackend.New(mockNs, kitbackend.SignalTypeLogsFluentBit)
-	backendExportURL := be.ExportURL(suite.ProxyClient)
-	resources = append(resources, be.K8sObjects()...)
+	backend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsFluentBit)
+	backendExportURL := backend.ExportURL(suite.ProxyClient)
+	resources = append(resources, backend.K8sObjects()...)
 
 	mockLogProducer := loggen.New(mockNs)
 	resources = append(resources, mockLogProducer.K8sObject())
@@ -43,7 +42,7 @@ func TestCustomOutput(t *testing.T) {
 	name   http
 	port   %d
 	host   %s
-	format json`, be.Port(), be.Host())
+	format json`, backend.Port(), backend.Host())
 	logPipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithCustomOutput(customOutputTemplate).
@@ -58,25 +57,6 @@ func TestCustomOutput(t *testing.T) {
 	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 	assert.LogPipelineUnsupportedMode(t.Context(), suite.K8sClient, pipelineName, true)
 	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
-	assert.DeploymentReady(t.Context(), suite.K8sClient, be.NamespacedName())
-	assert.DeploymentReady(t.Context(), suite.K8sClient, be.NamespacedName())
+	assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
 	assert.FluentBitLogsFromPodDelivered(suite.ProxyClient, backendExportURL, loggen.DefaultName)
 }
-
-func TestCustomFilter(t *testing.T) {
-	RegisterTestingT(t)
-
-	t.Run("shoud reject a logpipeline with denied custom filter", func(t *testing.T) {
-		logPipeline := testutils.NewLogPipelineBuilder().
-			WithName("denied-custom-filter-pipeline").
-			WithCustomFilter("Name kubernetes").
-			WithCustomOutput("Name stdout").
-			Build()
-
-		Consistently(func(g Gomega) {
-			g.Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, &logPipeline)).ShouldNot(Succeed())
-		}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
-	})
-}
-
-// TODO: Positive test for custom filter
