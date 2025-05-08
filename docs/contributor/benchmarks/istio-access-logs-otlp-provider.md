@@ -441,6 +441,6 @@ memorylimiter@v0.123.0/memorylimiter.go:212    Memory usage is above soft limit.
 - Resource consumption did not change compared to the normal working scenario.
 
 ## Conclusion
-Comparing the old provider (`envoy` and `stdout-json`) with the new provider (`kyma-logs`), no significant differences were observed in terms of resource consumption and performance. The new provider (`kyma-logs`) seems to be able to handle the same amount of traffic as the old provider (`envoy` and `stdout-json`) in the "Reduced labels" scenario, with similar CPU and memory usage and a slight increase in network bandwidth usage. So, using the new provider with the reduced label set (`kyma-logs-reduced-labels`) is recommended for achieving similar performance results as with the old provider.
+Comparing the old provider (`envoy` and `stdout-json`) with the new provider (`kyma-logs`), no significant differences were observed in terms of resource consumption and performance. The new provider (`kyma-logs`) seems to be able to handle the same amount of traffic as the old provider (`envoy` and `stdout-json`) in the "reduced labels" scenario, with similar CPU and memory usage and a slight increase in network bandwidth usage. So, to achieve similar performance results as with the old provider, it's recommended to use the new provider with the label `kyma-logs-reduced-labels` set.
 
 Testing the new provider in edge-case fault injected scenarios did not show any signs of failure or performance degradation.
