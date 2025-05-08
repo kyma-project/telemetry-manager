@@ -38,10 +38,10 @@ func TestBuildAgentConfig(t *testing.T) {
 
 			fileLogReceiver := collectorConfig.Receivers["filelog/test"]
 			expectedExcludeFilePath := []string{
-				"/var/log/pods/kyma-system_*system-logs-agent-*/*/*.log",
-				"/var/log/pods/kyma-system_*system-logs-collector-*/*/*.log",
-				"/var/log/pods/kyma-system_telemetry-log-agent-*/*/*.log",
-				"/var/log/pods/kyma-system_telemetry-fluent-bit-*/*/*.log",
+				"/var/log/pods/kyma-system_*system-logs-agent-*/collector/*.log",
+				"/var/log/pods/kyma-system_*system-logs-collector-*/collector/*.log",
+				"/var/log/pods/kyma-system_telemetry-log-agent-*/collector/*.log",
+				"/var/log/pods/kyma-system_telemetry-fluent-bit-*/fluent-bit/*.log",
 				"/var/log/pods/kyma-system_*/*/*.log",
 				"/var/log/pods/kube-system_*/*/*.log",
 				"/var/log/pods/istio-system_*/*/*.log",
