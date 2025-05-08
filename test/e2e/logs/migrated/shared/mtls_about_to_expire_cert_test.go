@@ -109,18 +109,18 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 			assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
 
 			if tc.expectAgent {
-				assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.LogAgentName)
+				assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
 			}
 
 			assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
-			assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
+			assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonTLSCertificateAboutToExpire,
 			})
 
-			assert.TelemetryHasState(suite.Ctx, suite.K8sClient, operatorv1alpha1.StateWarning)
-			assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
+			assert.TelemetryHasState(t.Context(), suite.K8sClient, operatorv1alpha1.StateWarning)
+			assert.TelemetryHasCondition(t.Context(), suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeLogComponentsHealthy,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonTLSCertificateAboutToExpire,
@@ -177,17 +177,17 @@ func TestMTLSAboutToExpireCert_FluentBit(t *testing.T) {
 	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
 
 	assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
-	assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.FluentBitDaemonSetName)
+	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 
 	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
-	assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
+	assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionTrue,
 		Reason: conditions.ReasonTLSCertificateAboutToExpire,
 	})
 
-	assert.TelemetryHasState(suite.Ctx, suite.K8sClient, operatorv1alpha1.StateWarning)
-	assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
+	assert.TelemetryHasState(t.Context(), suite.K8sClient, operatorv1alpha1.StateWarning)
+	assert.TelemetryHasCondition(t.Context(), suite.K8sClient, metav1.Condition{
 		Type:   conditions.TypeLogComponentsHealthy,
 		Status: metav1.ConditionTrue,
 		Reason: conditions.ReasonTLSCertificateAboutToExpire,

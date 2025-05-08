@@ -81,27 +81,27 @@ func TestSecretRotation_OTel(t *testing.T) {
 
 			t.Log("Waiting for resources to be ready")
 
-			assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
+			assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonReferencedSecretMissing,
 			})
 
-			assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
+			assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineName, metav1.Condition{
 				Type:   conditions.TypeFlowHealthy,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonSelfMonConfigNotGenerated,
 			})
 
-			assert.TelemetryHasState(suite.Ctx, suite.K8sClient, operatorv1alpha1.StateWarning)
-			assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
+			assert.TelemetryHasState(t.Context(), suite.K8sClient, operatorv1alpha1.StateWarning)
+			assert.TelemetryHasCondition(t.Context(), suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeLogComponentsHealthy,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonReferencedSecretMissing,
 			})
 
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, secret.K8sObject())).Should(Succeed())
-			assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, secret.K8sObject())).Should(Succeed())
+			assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 		})
 	}
 }
@@ -139,25 +139,25 @@ func TestSecretRotation_FluentBit(t *testing.T) {
 
 	t.Log("Waiting for resources to be ready")
 
-	assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
+	assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonReferencedSecretMissing,
 	})
 
-	assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
+	assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineName, metav1.Condition{
 		Type:   conditions.TypeFlowHealthy,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonSelfMonConfigNotGenerated,
 	})
 
-	assert.TelemetryHasState(suite.Ctx, suite.K8sClient, operatorv1alpha1.StateWarning)
-	assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
+	assert.TelemetryHasState(t.Context(), suite.K8sClient, operatorv1alpha1.StateWarning)
+	assert.TelemetryHasCondition(t.Context(), suite.K8sClient, metav1.Condition{
 		Type:   conditions.TypeLogComponentsHealthy,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonReferencedSecretMissing,
 	})
 
-	Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, secret.K8sObject())).Should(Succeed())
-	assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, secret.K8sObject())).Should(Succeed())
+	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 }
