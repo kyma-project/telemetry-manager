@@ -314,15 +314,17 @@ func makeRemoveSpanID() Operator {
 		ID:     "remove-span-id",
 		Type:   "remove",
 		Field:  attributeSpanID,
+		IfExpr: "attributes.span_id != nil",
 		Output: "remove-trace-flags",
 	}
 }
 
 func makeRemoveTraceFlags() Operator {
 	return Operator{
-		ID:    "remove-trace-flags",
-		Type:  "remove",
-		Field: attributeTraceFlags,
+		ID:     "remove-trace-flags",
+		Type:   "remove",
+		IfExpr: "attributes.trace_flags != nil",
+		Field:  attributeTraceFlags,
 	}
 }
 
