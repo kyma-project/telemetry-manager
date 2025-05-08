@@ -133,9 +133,11 @@ receivers:
               type: remove
               field: attributes.span_id
               output: remove-trace-flags
+              if: attributes.span_id != nil
             - id: remove-trace-flags
               type: remove
               field: attributes.trace_flags
+              if: attributes.trace_flags != nil
             - id: noop
               type: noop
 processors:
