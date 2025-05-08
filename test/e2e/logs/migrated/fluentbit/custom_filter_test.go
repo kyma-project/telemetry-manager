@@ -41,6 +41,7 @@ func TestCustomFilterDenied(t *testing.T) {
 
 func TestCustomFilterAllowed(t *testing.T) {
 	RegisterTestingT(t)
+
 	var (
 		resources    []client.Object
 		uniquePrefix = unique.Prefix()
