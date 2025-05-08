@@ -424,7 +424,7 @@ Achieved by scaling down the backend Deployment to 0 replicas.
 Observed behavior:
   - No hint of dropped access logs or any other erroneous behavior was observed.
   - Access logs did not reach the backend, but most (see next point) of the Envoy/Istio metrics did not report this behavior.
-  - One of the places where a difference was still perceived, was in the `istio_request_messages_total / istio_response_messages_total` metric, where a value of `0 / 0` was reported.
+  - One of the places where a difference was still perceived, was in the `istio_request_messages_total / istio_response_messages_total` metric of the backend traffic, where a value of `0 / 0` was reported.
   - Resource consumption did not change compared to the normal working scenario, signaling that access logs were still being processed.
 
 #### Backend backpressure
@@ -437,10 +437,10 @@ Observed behavior:
 memorylimiter@v0.123.0/memorylimiter.go:212    Memory usage is above soft limit. Refusing data.
 ```
 - Backpressure was not backpropagated, with the istio-proxy traffic being virtually unaffected.
-- One of the places where a difference was still perceived, was in the `istio_request_messages_total / istio_response_messages_total` metric, where a value of `29.5 / 5.15` was reported.
+- One of the places where a difference was still perceived, was in the `istio_request_messages_total / istio_response_messages_total` metric of the backend traffic, where a value of `29.5 / 5.15` was reported.
 - Resource consumption did not change compared to the normal working scenario.
 
 ## Conclusion
-Comparing the old provider (`envoy` and `stdout-json`) with the new provider (`kyma-logs`), no significant differences were observed in terms of resource consumption and performance. The new provider (`kyma-logs`) seems to be able to handle the same amount of traffic as the old provider (`envoy` and `stdout-json`), with similar CPU and memory usage and a slight increase in network bandwidth usage.
+Comparing the old provider (`envoy` and `stdout-json`) with the new provider (`kyma-logs`), no significant differences were observed in terms of resource consumption and performance. The new provider (`kyma-logs`) seems to be able to handle the same amount of traffic as the old provider (`envoy` and `stdout-json`) in the "Reduced labels" scenario, with similar CPU and memory usage and a slight increase in network bandwidth usage.
 
 Testing the new provider in edge-case fault injected scenarios did not show any signs of failure or performance degradation.
