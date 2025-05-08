@@ -23,20 +23,15 @@ func TestCustomOutput(t *testing.T) {
 	RegisterTestingT(t)
 
 	var (
-		resources    []client.Object
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
 		mockNs       = uniquePrefix()
 	)
 
-	resources = append(resources, kitk8s.NewNamespace(mockNs).K8sObject())
-
 	backend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsFluentBit)
 	backendExportURL := backend.ExportURL(suite.ProxyClient)
-	resources = append(resources, backend.K8sObjects()...)
 
 	mockLogProducer := loggen.New(mockNs)
-	resources = append(resources, mockLogProducer.K8sObject())
 
 	customOutputTemplate := fmt.Sprintf(`
 	name   http
@@ -47,7 +42,13 @@ func TestCustomOutput(t *testing.T) {
 		WithName(pipelineName).
 		WithCustomOutput(customOutputTemplate).
 		Build()
-	resources = append(resources, &logPipeline)
+
+	resources := []client.Object{
+		kitk8s.NewNamespace(mockNs).K8sObject(),
+		mockLogProducer.K8sObject(),
+		&logPipeline,
+	}
+	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
 		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects

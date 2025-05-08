@@ -43,7 +43,6 @@ func TestCustomFilterAllowed(t *testing.T) {
 	RegisterTestingT(t)
 
 	var (
-		resources    []client.Object
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix("allowed")
 
@@ -52,19 +51,11 @@ func TestCustomFilterAllowed(t *testing.T) {
 		excludeNs = uniquePrefix("exclude")
 	)
 
-	resources = append(resources, kitk8s.NewNamespace(backendNs).K8sObject())
-	resources = append(resources, kitk8s.NewNamespace(includeNs).K8sObject())
-	resources = append(resources, kitk8s.NewNamespace(excludeNs).K8sObject())
-
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
 	backendExportURL := backend.ExportURL(suite.ProxyClient)
-	resources = append(resources, backend.K8sObjects()...)
 
 	logProducerInclude := loggen.New(includeNs)
-	resources = append(resources, logProducerInclude.K8sObject())
-
 	logProducerExclude := loggen.New(excludeNs)
-	resources = append(resources, logProducerExclude.K8sObject())
 
 	logPipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
@@ -76,7 +67,16 @@ func TestCustomFilterAllowed(t *testing.T) {
 	    Exclude $kubernetes['namespace_name'] %s`, excludeNs)).
 		WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port()), testutils.HTTPDedot(true)).
 		Build()
-	resources = append(resources, &logPipeline)
+
+	resources := []client.Object{
+		kitk8s.NewNamespace(backendNs).K8sObject(),
+		kitk8s.NewNamespace(includeNs).K8sObject(),
+		kitk8s.NewNamespace(excludeNs).K8sObject(),
+		logProducerInclude.K8sObject(),
+		logProducerExclude.K8sObject(),
+		&logPipeline,
+	}
+	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
 		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
