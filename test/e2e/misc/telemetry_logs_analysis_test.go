@@ -174,13 +174,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 		})
 
 		It("Should have running pipelines", func() {
-			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, logBackendName)
+			assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, logBackendName)
 			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, metricBackendName)
 			assert.TracePipelineHealthy(suite.Ctx, suite.K8sClient, traceBackendName)
 
-			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, otelCollectorLogBackendName)
-			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, fluentBitLogBackendName)
-			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, selfMonitorLogBackendName)
+			assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, otelCollectorLogBackendName)
+			assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, fluentBitLogBackendName)
+			assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, selfMonitorLogBackendName)
 		})
 
 		It("Should push metrics successfully", func() {

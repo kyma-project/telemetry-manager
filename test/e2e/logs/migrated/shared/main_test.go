@@ -17,9 +17,4 @@ func TestMain(m *testing.M) {
 	}
 
 	m.Run()
-
-	if err := suite.AfterSuiteFuncErr(); err != nil {
-		log.Printf("Teardown failed: %v", err)
-		os.Exit(errorCode)
-	}
 }

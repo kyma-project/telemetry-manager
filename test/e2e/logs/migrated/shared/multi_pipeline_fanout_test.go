@@ -91,8 +91,8 @@ func TestMultiPipelineFanout_OTel(t *testing.T) {
 			assert.DeploymentReady(t.Context(), suite.K8sClient, backend1.NamespacedName())
 			assert.DeploymentReady(t.Context(), suite.K8sClient, backend2.NamespacedName())
 
-			assert.LogPipelineHealthy(t.Context(), suite.K8sClient, logPipeline1.Name)
-			assert.LogPipelineHealthy(t.Context(), suite.K8sClient, logPipeline2.Name)
+			assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, logPipeline1.Name)
+			assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, logPipeline2.Name)
 
 			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backend1ExportURL, generatorNs)
 			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backend2ExportURL, generatorNs)
@@ -147,8 +147,8 @@ func TestMultiPipelineFanout_FluentBit(t *testing.T) {
 	assert.DeploymentReady(t.Context(), suite.K8sClient, backend1.NamespacedName())
 	assert.DeploymentReady(t.Context(), suite.K8sClient, backend2.NamespacedName())
 
-	assert.LogPipelineHealthy(t.Context(), suite.K8sClient, logPipeline1.Name)
-	assert.LogPipelineHealthy(t.Context(), suite.K8sClient, logPipeline2.Name)
+	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, logPipeline1.Name)
+	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, logPipeline2.Name)
 
 	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backend1ExportURL, generatorNs)
 	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backend2ExportURL, generatorNs)

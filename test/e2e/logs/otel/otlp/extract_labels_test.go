@@ -40,7 +40,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPush, s
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		backend := backend.New(mockNs, backend.SignalTypeLogsOTel, backend.WithPersistentHostSecret(suite.IsUpgrade()))
+		backend := backend.New(mockNs, backend.SignalTypeLogsOTel)
 		objs = append(objs, backend.K8sObjects()...)
 		backendExportURL = backend.ExportURL(suite.ProxyClient)
 
@@ -55,9 +55,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPush, s
 					hostSecretRef.Key,
 				),
 			)
-		if suite.IsUpgrade() {
-			pipelineBuilder.WithLabels(kitk8s.PersistentLabel)
-		}
 		logPipeline := pipelineBuilder.Build()
 		otlpLogGen := telemetrygen.NewPod(mockNs, telemetrygen.SignalTypeLogs).
 			WithLabel("log.test.exact.should.match", "exact_match").
@@ -112,7 +109,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPush, s
 		})
 
 		It("Should have a running pipeline", func() {
-			assert.LogPipelineOtelHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+			assert.OTelLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 		})
 
 		It("Should deliver telemetrygen logs", func() {

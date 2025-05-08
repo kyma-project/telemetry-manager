@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+  namespace: load-test
+  labels:
+    run: nginx
+    service.istio.io/canonical-name: load-test-workflow
+spec:
+  containers:
+    - image: nginx
+      name: nginx
+      resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+  namespace: load-test
+  labels:
+    run: nginx
+spec:
+  ports:
+    - port: 80
+      protocol: TCP
+      targetPort: 80
+  selector:
+    run: nginx
+  type: NodePort
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: traffic-generator
+  namespace: load-test
+  labels:
+    app: traffic-generator
+spec:
+  containers:
+    - name: fortio
+      image: fortio/fortio
+      args: ["load", "-t", "10m", "-qps", "0", "-nocatchup", "-uniform", "nginx.load-test.svc"]
+      # args: ["load", "-t", "0", "-qps", "0", "-nocatchup", "-uniform", "nginx.load-test.svc"]

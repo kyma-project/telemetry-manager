@@ -82,7 +82,7 @@ func OTelLogsFromNamespaceNotDelivered(proxyClient *apiserverproxy.Client, backe
 }
 
 //nolint:dupl //LogPipelineHealthy and MetricPipelineHealthy have similarities, but they are not the same
-func LogPipelineHealthy(ctx context.Context, k8sClient client.Client, pipelineName string) {
+func FluentBitLogPipelineHealthy(ctx context.Context, k8sClient client.Client, pipelineName string) {
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.LogPipeline
 		key := types.NamespacedName{Name: pipelineName}
@@ -94,7 +94,7 @@ func LogPipelineHealthy(ctx context.Context, k8sClient client.Client, pipelineNa
 }
 
 //nolint:dupl //LogPipelineOtelHealthy and LogPipelineHealthy have similarities, but they are not the same
-func LogPipelineOtelHealthy(ctx context.Context, k8sClient client.Client, pipelineName string) {
+func OTelLogPipelineHealthy(ctx context.Context, k8sClient client.Client, pipelineName string) {
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.LogPipeline
 		key := types.NamespacedName{Name: pipelineName}
