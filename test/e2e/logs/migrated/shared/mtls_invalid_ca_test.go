@@ -53,7 +53,7 @@ func TestMTLSInvalidCA_OTel(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var (
 				uniquePrefix = unique.Prefix(tc.name)
-				pipelineName = uniquePrefix("pipeline")
+				pipelineName = uniquePrefix()
 				backendNs    = uniquePrefix("backend")
 				backendName  = backend.DefaultName
 			)
@@ -114,7 +114,7 @@ func TestMTLSInvalidCA_FluentBit(t *testing.T) {
 
 	var (
 		uniquePrefix = unique.Prefix()
-		pipelineName = uniquePrefix("pipeline")
+		pipelineName = uniquePrefix()
 		backendNs    = uniquePrefix("backend")
 		backendName  = backend.DefaultName
 	)

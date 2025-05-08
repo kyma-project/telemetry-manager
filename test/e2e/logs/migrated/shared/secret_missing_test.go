@@ -54,7 +54,7 @@ func TestSecretRotation_OTel(t *testing.T) {
 			var (
 				uniquePrefix = unique.Prefix(tc.name)
 				endpointKey  = "logs-endpoint"
-				pipelineName = uniquePrefix("pipeline")
+				pipelineName = uniquePrefix()
 			)
 
 			secret := kitk8s.NewOpaqueSecret("logs-missing", kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, "http://localhost:4317"))
@@ -113,7 +113,7 @@ func TestSecretRotation_FluentBit(t *testing.T) {
 	var (
 		uniquePrefix = unique.Prefix()
 		endpointKey  = "logs-endpoint"
-		pipelineName = uniquePrefix("pipeline")
+		pipelineName = uniquePrefix()
 	)
 
 	secret := kitk8s.NewOpaqueSecret("logs-missing", kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, "http://localhost:4317"))

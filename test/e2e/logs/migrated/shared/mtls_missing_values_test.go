@@ -53,7 +53,7 @@ func TestMTLSMissingValues_OTel(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var (
 				uniquePrefix = unique.Prefix(tc.name)
-				pipelineName = uniquePrefix("missing-ca")
+				pipelineName = uniquePrefix()
 				backendNs    = uniquePrefix("backend")
 			)
 
@@ -90,7 +90,7 @@ func TestMTLSMissingValues_FluentBit(t *testing.T) {
 
 	var (
 		uniquePrefix = unique.Prefix()
-		pipelineName = uniquePrefix("missing-ca")
+		pipelineName = uniquePrefix()
 		backendNs    = uniquePrefix("backend")
 	)
 
