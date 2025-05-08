@@ -89,6 +89,7 @@ func TestMultiPipelineBroken_OTel(t *testing.T) {
 
 			assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
 			assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
+
 			if tc.expectAgent {
 				assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
 			}

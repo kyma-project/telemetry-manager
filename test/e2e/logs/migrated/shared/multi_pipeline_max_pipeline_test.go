@@ -1,12 +1,12 @@
 package shared
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/net/context"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -51,7 +51,6 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-
 			var (
 				uniquePrefix = unique.Prefix(tc.name)
 				backendNs    = uniquePrefix("backend")
@@ -89,23 +88,26 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 			resources = append(resources, pipelines...)
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...))
+				require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 			})
-			require.NoError(t, kitk8s.CreateObjects(context.Background(), suite.K8sClient, resources...))
+			require.NoError(t, kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...))
 
-			assert.DeploymentReady(context.Background(), suite.K8sClient, backend.NamespacedName())
-			assert.DeploymentReady(context.Background(), suite.K8sClient, kitkyma.LogGatewayName)
+			assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
+			assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
+
 			if tc.expectAgent {
-				assert.DaemonSetReady(context.Background(), suite.K8sClient, kitkyma.LogAgentName)
+				assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
 			}
 
 			t.Log("Asserting 5 pipelines are healthy")
+
 			for _, pipeline := range pipelines {
-				assert.OTelLogPipelineHealthy(context.Background(), suite.K8sClient, pipeline.GetName())
+				assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipeline.GetName())
 			}
 
 			t.Log("Attempting to create the 6th pipeline and expecting failure")
-			err := kitk8s.CreateObjects(context.Background(), suite.K8sClient, &invalidPipeline)
+
+			err := kitk8s.CreateObjects(t.Context(), suite.K8sClient, &invalidPipeline)
 			require.Error(t, err, "Expected invalid pipeline creation to fail")
 
 			t.Log("Verifying logs are delivered for valid pipelines")
@@ -154,20 +156,22 @@ func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
 	resources = append(resources, pipelines...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...))
+		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
-	require.NoError(t, kitk8s.CreateObjects(context.Background(), suite.K8sClient, resources...))
+	require.NoError(t, kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...))
 
-	assert.DeploymentReady(context.Background(), suite.K8sClient, backend.NamespacedName())
-	assert.DaemonSetReady(context.Background(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
+	assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
+	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 
 	t.Log("Asserting 5 pipelines are healthy")
+
 	for _, pipeline := range pipelines {
-		assert.FluentBitLogPipelineHealthy(context.Background(), suite.K8sClient, pipeline.GetName())
+		assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipeline.GetName())
 	}
 
 	t.Log("Attempting to create the 6th pipeline and expecting failure")
-	err := kitk8s.CreateObjects(context.Background(), suite.K8sClient, &invalidPipeline)
+
+	err := kitk8s.CreateObjects(t.Context(), suite.K8sClient, &invalidPipeline)
 	require.Error(t, err, "Expected exceeding pipeline creation to fail")
 
 	t.Log("Verifying logs are delivered for valid pipelines")
