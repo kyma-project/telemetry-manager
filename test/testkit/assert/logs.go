@@ -31,7 +31,7 @@ func FluentBitLogsFromContainerNotDelivered(proxyClient *apiserverproxy.Client, 
 	)
 }
 
-func FluentBitLogsFromPodDelivered(proxyClient *apiserverproxy.Client, expectedPodNamePrefix string, backendExportURL string) {
+func FluentBitLogsFromPodDelivered(proxyClient *apiserverproxy.Client, backendExportURL string, expectedPodNamePrefix string) {
 	TelemetryDataDelivered(proxyClient, backendExportURL,
 		HaveFlatFluentBitLogs(ContainElement(HavePodName(ContainSubstring(expectedPodNamePrefix)))),
 	)
