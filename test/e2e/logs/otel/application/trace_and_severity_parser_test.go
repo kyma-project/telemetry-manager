@@ -153,7 +153,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 					HaveAttributes(HaveKeyWithValue("name", "c")),
 					HaveTraceId(BeEmpty()),
 					HaveSpanId(BeEmpty()),
-					HaveTraceFlags(BeEmpty()),
+					HaveTraceFlags(Equal(uint32(0))), // default value
 					HaveAttributes(HaveKey("span_id")),
 				))))
 			}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
