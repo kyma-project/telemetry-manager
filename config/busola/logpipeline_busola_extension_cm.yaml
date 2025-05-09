@@ -474,4 +474,16 @@ data:
               - 'True'
             critical:
               - 'False'
-  dataSources: "relatedSecrets:\n  resource:\n    kind: Secret\n    version: v1\n  filter: |-\n      $item.metadata.name =  $root.spec.output.http.user.valueFrom.secretKeyRef.name or \n      $item.metadata.name = $root.spec.output.http.password.valueFrom.secretKeyRef.name or \n      $item.metadata.name = $root.spec.output.http.host.valueFrom.secretKeyRef.name or\n      $item.metadata.name = $root.spec.output.http.url.valueFrom.secretKeyRef.name or\n      $item.metadata.name = $root.spec.output.http.tls.ca.valueFrom.secretKeyRef.name or\n      $item.metadata.name = $root.spec.output.http.tls.cert.valueFrom.secretKeyRef.name or\n      $item.metadata.name = $root.spec.output.http.tls.key.valueFrom.secretKeyRef.name\n"
+  dataSources: |-
+    relatedSecrets:
+      resource:
+        kind: Secret
+        version: v1
+      filter: |-
+          $item.metadata.name =  $root.spec.output.http.user.valueFrom.secretKeyRef.name or
+          $item.metadata.name = $root.spec.output.http.password.valueFrom.secretKeyRef.name or
+          $item.metadata.name = $root.spec.output.http.host.valueFrom.secretKeyRef.name or
+          $item.metadata.name = $root.spec.output.http.url.valueFrom.secretKeyRef.name or
+          $item.metadata.name = $root.spec.output.http.tls.ca.valueFrom.secretKeyRef.name or
+          $item.metadata.name = $root.spec.output.http.tls.cert.valueFrom.secretKeyRef.name or
+          $item.metadata.name = $root.spec.output.http.tls.key.valueFrom.secretKeyRef.name

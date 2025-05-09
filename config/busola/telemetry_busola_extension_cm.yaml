@@ -30,6 +30,19 @@ data:
         widget: Badge
     status:
       body:
+        - name: OTLP Endpoints
+          widget: Panel
+          source: status.endpoints
+          fullWidth: true
+          children:
+            - name: Traces GRPC
+              source: traces.grpc
+            - name: Traces HTTP
+              source: traces.http
+            - name: Metrics GRPC
+              source: metrics.grpc
+            - name: Metrics HTTP
+              source: metrics.http
         - name: Condition details
           widget: ConditionList
           source: status.conditions
