@@ -53,10 +53,8 @@ func TestCustomFilterAllowed(t *testing.T) {
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
 	backendExportURL := backend.ExportURL(suite.ProxyClient)
-
 	logProducerInclude := loggen.New(includeNs)
 	logProducerExclude := loggen.New(excludeNs)
-
 	logPipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithCustomFilter(fmt.Sprintf(`

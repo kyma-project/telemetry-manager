@@ -36,7 +36,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 			}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
-		// TODO: Move to shared tests
+		// TODO: Move to shared tests (discuss again on Monday)
 		It("Should reject a logpipeline with misconfigured secretrefs", func() {
 			logPipeline := testutils.NewLogPipelineBuilder().
 				WithName("misconfigured-secretref-pipeline").

@@ -2,8 +2,14 @@ package fluentbit
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"testing"
+
+	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -15,10 +21,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
-	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/require"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestDedot(t *testing.T) {
@@ -32,9 +34,7 @@ func TestDedot(t *testing.T) {
 
 	backend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsFluentBit)
 	backendExportURL := backend.ExportURL(suite.ProxyClient)
-
 	logProducer := loggen.New(mockNs).WithLabels(map[string]string{"dedot.label": "logging-dedot-value"})
-
 	logPipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithIncludeContainers(loggen.DefaultContainerName).
@@ -62,8 +62,13 @@ func TestDedot(t *testing.T) {
 		resp, err := suite.ProxyClient.Get(backendExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(
-			HaveFlatFluentBitLogs(ContainElement(HaveKubernetesLabels(HaveKeyWithValue("dedot_label", "logging-dedot-value")))),
-		))
+
+		bodyContent, err := io.ReadAll(resp.Body)
+		defer resp.Body.Close()
+		g.Expect(err).NotTo(HaveOccurred())
+
+		g.Expect(bodyContent).To(HaveFlatFluentBitLogs(
+			ContainElement(HaveKubernetesLabels(HaveKeyWithValue("dedot_label", "logging-dedot-value")))),
+		)
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }

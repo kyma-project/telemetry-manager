@@ -30,9 +30,7 @@ func TestCustomOutput(t *testing.T) {
 
 	backend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsFluentBit)
 	backendExportURL := backend.ExportURL(suite.ProxyClient)
-
 	logProducer := loggen.New(mockNs)
-
 	customOutputTemplate := fmt.Sprintf(`
 	name   http
 	port   %d
