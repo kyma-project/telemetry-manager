@@ -102,7 +102,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 					HaveObservedTimestamp(Not(BeEmpty())),
 					HaveTraceId(Equal("255c2212dd02c02ac59a923ff07aec74")),
 					HaveSpanId(Equal("c5c735f175ad06a6")),
-					HaveTraceFlags(Equal("01")),
+					HaveTraceFlags(Equal(0)),
 					HaveAttributes(Not(HaveKey("trace_id"))),
 					HaveAttributes(Not(HaveKey("span_id"))),
 					HaveAttributes(Not(HaveKey("trace_flags"))),
@@ -126,7 +126,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 					HaveObservedTimestamp(Not(BeEmpty())),
 					HaveTraceId(Equal("80e1afed08e019fc1110464cfa66635c")),
 					HaveSpanId(Equal("7a085853722dc6d2")),
-					HaveTraceFlags(Equal("01")),
+					HaveTraceFlags(Equal(1)),
 					HaveAttributes(Not(HaveKey("trace_id"))),
 					HaveAttributes(Not(HaveKey("span_id"))),
 					HaveAttributes(Not(HaveKey("trace_flags"))),
@@ -169,7 +169,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 					HaveTraceId(Equal("80e1afed08e019fc1110464cfa66635c")),
 					HaveSeverityNumber(Equal(6)),
 					HaveSeverityText(Equal("WARN")),
-					aveAttributes(Not(HaveKey("log.level"))),
+					HaveAttributes(Not(HaveKey("log.level"))),
 				))))
 
 				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(

@@ -68,6 +68,10 @@ func HaveSpanId(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(fl FlatLogOtel) string { return fl.SpanId }, matcher)
 }
 
+func HaveTraceFlags(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(fl FlatLogOtel) uint32 { return fl.TraceFlags }, matcher)
+}
+
 func HaveSeverityText(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(fl FlatLogOtel) string { return fl.SeverityText }, matcher)
 }
