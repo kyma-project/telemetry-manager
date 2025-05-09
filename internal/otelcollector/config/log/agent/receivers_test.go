@@ -361,10 +361,10 @@ func TestMakeTraceRouter(t *testing.T) {
 
 func getExcludePaths(system bool, paths ...string) []string {
 	var defaultExcludePaths = []string{
-		"/var/log/pods/kyma-system_*system-logs-agent*/*/*.log",
-		"/var/log/pods/kyma-system_*system-logs-collector*/*/*.log",
-		"/var/log/pods/kyma-system_telemetry-log-agent*/*/*.log",
-		"/var/log/pods/kyma-system_telemetry-fluent-bit*/*/*.log",
+		"/var/log/pods/kyma-system_*system-logs-agent-*/collector/*.log",
+		"/var/log/pods/kyma-system_*system-logs-collector-*/collector/*.log",
+		"/var/log/pods/kyma-system_telemetry-log-agent-*/collector/*.log",
+		"/var/log/pods/kyma-system_telemetry-fluent-bit-*/fluent-bit/*.log",
 	}
 
 	var systemExcludePaths = []string{

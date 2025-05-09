@@ -9,6 +9,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/namespaces"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 )
 
@@ -78,10 +79,10 @@ func createExcludePath(application *telemetryv1alpha1.LogPipelineApplicationInpu
 
 	var excludeNamespaces []string
 
-	excludeSystemLogAgentPath := makePath("kyma-system", fmt.Sprintf("*%s*", commonresources.SystemLogAgentName), "*")
-	excludeSystemLogCollectorPath := makePath("kyma-system", fmt.Sprintf("*%s*", commonresources.SystemLogCollectorName), "*")
-	excludeOtlpLogAgentPath := makePath("kyma-system", fmt.Sprintf("%s*", otelcollector.LogAgentName), "*")
-	excludeFluentBitPath := makePath("kyma-system", "telemetry-fluent-bit*", "*")
+	excludeSystemLogAgentPath := makePath("kyma-system", fmt.Sprintf("*%s-*", commonresources.SystemLogAgentName), "collector")
+	excludeSystemLogCollectorPath := makePath("kyma-system", fmt.Sprintf("*%s-*", commonresources.SystemLogCollectorName), "collector")
+	excludeOtlpLogAgentPath := makePath("kyma-system", fmt.Sprintf("%s-*", otelcollector.LogAgentName), "collector")
+	excludeFluentBitPath := makePath("kyma-system", fmt.Sprintf("%s-*", fluentbit.LogAgentName), "fluent-bit")
 
 	excludePath = append(excludePath, excludeSystemLogAgentPath, excludeSystemLogCollectorPath, excludeOtlpLogAgentPath, excludeFluentBitPath)
 
