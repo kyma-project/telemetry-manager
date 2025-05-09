@@ -176,7 +176,7 @@ func TestMakeSeverityParser(t *testing.T) {
 		ID:        "parse-level",
 		Type:      "severity_parser",
 		ParseFrom: "attributes[\"level\"]",
-		IfExpr:    "severityText == nil and attributes[\"level\"] != nil",
+		IfExpr:    "severity_text == nil and attributes[\"level\"] != nil",
 	}
 	assert.Equal(t, expectedSP, sp)
 }
@@ -334,7 +334,7 @@ func TestMakeRemoveTraceFlags(t *testing.T) {
 		ID:     "remove-trace-flags",
 		Type:   "remove",
 		Field:  "attributes[\"trace_flags\"]",
-		IfExpr: "trace_flags != nil and attributes[\"trace_flags\"] != nil",
+		IfExpr: "flags != nil and attributes[\"trace_flags\"] != nil",
 	}
 	assert.Equal(t, expectedSP, sp)
 }
@@ -373,7 +373,7 @@ func TestMakeSeverityParserFromLogLevel(t *testing.T) {
 	expectedSP := Operator{
 		ID:        "parse-log-level",
 		Type:      "severity_parser",
-		IfExpr:    "severityText == nil and attributes[\"log.level\"] != nil",
+		IfExpr:    "severity_text == nil and attributes[\"log.level\"] != nil",
 		ParseFrom: "attributes[\"log.level\"]",
 	}
 	assert.Equal(t, expectedSP, sp)
@@ -385,7 +385,7 @@ func TestMakeSeverityParserFromLevel(t *testing.T) {
 		ID:        "parse-level",
 		Type:      "severity_parser",
 		ParseFrom: "attributes[\"level\"]",
-		IfExpr:    "severityText == nil and attributes[\"level\"] != nil",
+		IfExpr:    "severity_text == nil and attributes[\"level\"] != nil",
 	}
 	assert.Equal(t, expectedSP, sp)
 }
@@ -396,7 +396,7 @@ func TestMakeRemoveLogLevel(t *testing.T) {
 		ID:     "remove-log-level",
 		Type:   "remove",
 		Field:  "attributes[\"log.level\"]",
-		IfExpr: "severityText != nil and attributes[\"log.level\"] != nil",
+		IfExpr: "severity_text != nil and attributes[\"log.level\"] != nil",
 	}
 	assert.Equal(t, expectedSP, sp)
 }
@@ -407,7 +407,7 @@ func TestMakeRemoveLevel(t *testing.T) {
 		ID:     "remove-level",
 		Type:   "remove",
 		Field:  "attributes[\"level\"]",
-		IfExpr: "severityText != nil and attributes[\"level\"] != nil",
+		IfExpr: "severity_text != nil and attributes[\"level\"] != nil",
 	}
 	assert.Equal(t, expectedSP, sp)
 }

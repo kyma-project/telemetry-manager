@@ -30,10 +30,10 @@ const (
 	attributeKeySpanID      = "span_id"
 	attributeKeyTraceFlags  = "trace_flags"
 	attributeKeyTraceParent = "traceparent"
-	keySeverityText         = "severityText"
+	keySeverityText         = "severity_text"
 	keyTraceId              = "trace_id"
 	keySpanId               = "span_id"
-	keyTraceFlags           = "trace_flags"
+	keyTraceFlags           = "flags"
 )
 
 func makeFileLogReceiver(logpipeline telemetryv1alpha1.LogPipeline) *FileLog {
