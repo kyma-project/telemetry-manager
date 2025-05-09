@@ -321,6 +321,7 @@ func TestMakeRemoveSpanID(t *testing.T) {
 		ID:     "remove-span-id",
 		Type:   "remove",
 		Field:  "attributes[\"span_id\"]",
+		IfExpr: "attributes[\"span_id\"] != nil",
 		Output: "remove-trace-flags",
 	}
 	assert.Equal(t, expectedSP, sp)
@@ -329,9 +330,10 @@ func TestMakeRemoveSpanID(t *testing.T) {
 func TestMakeRemoveTraceFlags(t *testing.T) {
 	sp := makeRemoveTraceFlags()
 	expectedSP := Operator{
-		ID:    "remove-trace-flags",
-		Type:  "remove",
-		Field: "attributes[\"trace_flags\"]",
+		ID:     "remove-trace-flags",
+		Type:   "remove",
+		Field:  "attributes[\"trace_flags\"]",
+		IfExpr: "attributes[\"trace_flags\"] != nil",
 	}
 	assert.Equal(t, expectedSP, sp)
 }
@@ -411,10 +413,10 @@ func TestMakeRemoveLevel(t *testing.T) {
 
 func getExcludePaths(system bool, paths ...string) []string {
 	var defaultExcludePaths = []string{
-		"/var/log/pods/kyma-system_*system-logs-agent*/*/*.log",
-		"/var/log/pods/kyma-system_*system-logs-collector*/*/*.log",
-		"/var/log/pods/kyma-system_telemetry-log-agent*/*/*.log",
-		"/var/log/pods/kyma-system_telemetry-fluent-bit*/*/*.log",
+		"/var/log/pods/kyma-system_*system-logs-agent-*/collector/*.log",
+		"/var/log/pods/kyma-system_*system-logs-collector-*/collector/*.log",
+		"/var/log/pods/kyma-system_telemetry-log-agent-*/collector/*.log",
+		"/var/log/pods/kyma-system_telemetry-fluent-bit-*/fluent-bit/*.log",
 	}
 
 	var systemExcludePaths = []string{

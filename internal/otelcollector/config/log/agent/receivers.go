@@ -10,6 +10,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/ottlexpr"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 )
 
@@ -86,10 +87,10 @@ func createExcludePath(application *telemetryv1alpha1.LogPipelineApplicationInpu
 
 	var excludeNamespaces []string
 
-	excludeSystemLogAgentPath := makePath("kyma-system", fmt.Sprintf("*%s*", commonresources.SystemLogAgentName), "*")
-	excludeSystemLogCollectorPath := makePath("kyma-system", fmt.Sprintf("*%s*", commonresources.SystemLogCollectorName), "*")
-	excludeOtlpLogAgentPath := makePath("kyma-system", fmt.Sprintf("%s*", otelcollector.LogAgentName), "*")
-	excludeFluentBitPath := makePath("kyma-system", "telemetry-fluent-bit*", "*")
+	excludeSystemLogAgentPath := makePath("kyma-system", fmt.Sprintf("*%s-*", commonresources.SystemLogAgentName), "collector")
+	excludeSystemLogCollectorPath := makePath("kyma-system", fmt.Sprintf("*%s-*", commonresources.SystemLogCollectorName), "collector")
+	excludeOtlpLogAgentPath := makePath("kyma-system", fmt.Sprintf("%s-*", otelcollector.LogAgentName), "collector")
+	excludeFluentBitPath := makePath("kyma-system", fmt.Sprintf("%s-*", fluentbit.LogAgentName), "fluent-bit")
 
 	excludePath = append(excludePath, excludeSystemLogAgentPath, excludeSystemLogCollectorPath, excludeOtlpLogAgentPath, excludeFluentBitPath)
 
@@ -355,15 +356,17 @@ func makeRemoveSpanID() Operator {
 		ID:     "remove-span-id",
 		Type:   Remove,
 		Field:  ottlexpr.Attribute(attributeKeySpanID),
+		IfExpr: ottlexpr.AttributeNotNil(attributeKeySpanID),
 		Output: "remove-trace-flags",
 	}
 }
 
 func makeRemoveTraceFlags() Operator {
 	return Operator{
-		ID:    "remove-trace-flags",
-		Type:  Remove,
-		Field: ottlexpr.Attribute(attributeKeyTraceFlags),
+		ID:     "remove-trace-flags",
+		Type:   Remove,
+		Field:  ottlexpr.Attribute(attributeKeyTraceFlags),
+		IfExpr: ottlexpr.AttributeNotNil(attributeKeyTraceFlags),
 	}
 }
 
