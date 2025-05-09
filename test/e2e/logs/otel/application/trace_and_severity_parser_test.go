@@ -100,6 +100,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
 					HaveOtelTimestamp(Not(BeEmpty())),
 					HaveObservedTimestamp(Not(BeEmpty())),
+					HaveAttributes(HaveKeyWithValue("name", "a")),
 					HaveTraceId(Equal("255c2212dd02c02ac59a923ff07aec74")),
 					HaveSpanId(Equal("c5c735f175ad06a6")),
 					HaveTraceFlags(Equal(uint32(0))),
@@ -124,6 +125,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
 					HaveOtelTimestamp(Not(BeEmpty())),
 					HaveObservedTimestamp(Not(BeEmpty())),
+					HaveAttributes(HaveKeyWithValue("name", "b")),
 					HaveTraceId(Equal("80e1afed08e019fc1110464cfa66635c")),
 					HaveSpanId(Equal("7a085853722dc6d2")),
 					HaveTraceFlags(Equal(uint32(1))),
@@ -148,8 +150,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
 					HaveOtelTimestamp(Not(BeEmpty())),
 					HaveObservedTimestamp(Not(BeEmpty())),
+					HaveAttributes(HaveKeyWithValue("name", "c")),
 					HaveTraceId(BeEmpty()),
 					HaveSpanId(BeEmpty()),
+					HaveTraceFlags(BeEmpty()),
 					HaveAttributes(HaveKey("span_id")),
 				))))
 			}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
@@ -166,14 +170,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 				g.Expect(err).NotTo(HaveOccurred())
 
 				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
-					HaveTraceId(Equal("80e1afed08e019fc1110464cfa66635c")),
+					HaveAttributes(HaveKeyWithValue("name", "b")),
 					HaveSeverityNumber(Equal(13)),
 					HaveSeverityText(Equal("WARN")),
 					HaveAttributes(Not(HaveKey("log.level"))),
 				))))
 
 				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
-					HaveTraceId(Equal("255c2212dd02c02ac59a923ff07aec74")),
+					HaveAttributes(HaveKeyWithValue("name", "a")),
 					HaveSeverityNumber(Equal(9)),
 					HaveSeverityText(Equal("INFO")),
 					HaveAttributes(Not(HaveKey("level"))),
