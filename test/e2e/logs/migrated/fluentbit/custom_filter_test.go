@@ -45,7 +45,6 @@ func TestCustomFilterAllowed(t *testing.T) {
 	var (
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix("allowed")
-
 		backendNs = uniquePrefix("backend")
 		includeNs = uniquePrefix("include")
 		excludeNs = uniquePrefix("exclude")

@@ -1,0 +1,148 @@
+package shared
+
+import (
+	"context"
+	"testing"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
+	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
+	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+// FIXME: Currently failing (Endpoint validation not implemented for OTel)
+func TestEndpointInvalid_OTel(t *testing.T) {
+	RegisterTestingT(t)
+
+	tests := []struct {
+		name         string
+		inputBuilder func() telemetryv1alpha1.LogPipelineInput
+	}{
+		{
+			name: "gateway",
+			inputBuilder: func() telemetryv1alpha1.LogPipelineInput {
+				return telemetryv1alpha1.LogPipelineInput{
+					Application: &telemetryv1alpha1.LogPipelineApplicationInput{
+						Enabled: ptr.To(false),
+					},
+				}
+			},
+		},
+		{
+			name: "agent",
+			inputBuilder: func() telemetryv1alpha1.LogPipelineInput {
+				return telemetryv1alpha1.LogPipelineInput{
+					Application: &telemetryv1alpha1.LogPipelineApplicationInput{
+						Enabled: ptr.To(true),
+					},
+				}
+			},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			const (
+				endpointKey     = "endpoint"
+				invalidEndpoint = "'http://example.com'"
+			)
+
+			var (
+				uniquePrefix          = unique.Prefix(tc.name)
+				pipelineNameValue     = uniquePrefix("value")
+				pipelineNameValueFrom = uniquePrefix("value-from")
+				secretName            = uniquePrefix()
+			)
+
+			logPipelineInvalidEndpointValue := testutils.NewLogPipelineBuilder().
+				WithName(pipelineNameValue).
+				WithInput(tc.inputBuilder()).
+				WithOTLPOutput(testutils.OTLPEndpoint(invalidEndpoint)).
+				Build()
+
+			secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, invalidEndpoint))
+			logPipelineInvalidEndpointValueFrom := testutils.NewLogPipelineBuilder().
+				WithName(pipelineNameValueFrom).
+				WithInput(tc.inputBuilder()).
+				WithOTLPOutput(testutils.OTLPEndpointFromSecret(secret.Name(), secret.Namespace(), endpointKey)).
+				Build()
+
+			resourcesToSucceedCreation := []client.Object{
+				secret.K8sObject(),
+				&logPipelineInvalidEndpointValueFrom,
+			}
+
+			resourcesToFailCreation := []client.Object{
+				&logPipelineInvalidEndpointValue,
+			}
+
+			t.Cleanup(func() {
+				require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resourcesToSucceedCreation...)) //nolint:usetesting // Remove ctx from DeleteObjects
+			})
+			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resourcesToSucceedCreation...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resourcesToFailCreation...)).Should(MatchError(ContainSubstring("invalid hostname")))
+
+			assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineNameValueFrom, metav1.Condition{
+				Type:   conditions.TypeConfigurationGenerated,
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonEndpointInvalid,
+			})
+		})
+	}
+}
+
+func TestEndpointInvalid_FluentBit(t *testing.T) {
+	RegisterTestingT(t)
+
+	const (
+		endpointKey     = "endpoint"
+		invalidEndpoint = "'http://example.com'"
+	)
+
+	var (
+		uniquePrefix          = unique.Prefix()
+		pipelineNameValue     = uniquePrefix("value")
+		pipelineNameValueFrom = uniquePrefix("value-from")
+		secretName            = uniquePrefix()
+	)
+
+	logPipelineInvalidEndpointValue := testutils.NewLogPipelineBuilder().
+		WithName(pipelineNameValue).
+		WithHTTPOutput(testutils.HTTPHost(invalidEndpoint)).
+		Build()
+
+	secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, invalidEndpoint))
+	logPipelineInvalidEndpointValueFrom := testutils.NewLogPipelineBuilder().
+		WithName(pipelineNameValueFrom).
+		WithHTTPOutput(testutils.HTTPHostFromSecret(secret.Name(), secret.Namespace(), endpointKey)).
+		Build()
+
+	resourcesToSucceedCreation := []client.Object{
+		secret.K8sObject(),
+		&logPipelineInvalidEndpointValueFrom,
+	}
+
+	resourcesToFailCreation := []client.Object{
+		&logPipelineInvalidEndpointValue,
+	}
+
+	t.Cleanup(func() {
+		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resourcesToSucceedCreation...)) //nolint:usetesting // Remove ctx from DeleteObjects
+	})
+	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resourcesToSucceedCreation...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resourcesToFailCreation...)).Should(MatchError(ContainSubstring("invalid hostname")))
+
+	assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineNameValueFrom, metav1.Condition{
+		Type:   conditions.TypeConfigurationGenerated,
+		Status: metav1.ConditionFalse,
+		Reason: conditions.ReasonEndpointInvalid,
+	})
+}

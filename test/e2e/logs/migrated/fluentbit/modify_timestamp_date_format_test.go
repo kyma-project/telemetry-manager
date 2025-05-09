@@ -54,10 +54,10 @@ func TestModifyTimestampDateFormat(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
 
-	assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
-	assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.FluentBitDaemonSetName)
-	assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
-	assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
+	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
+	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
+	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
+	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 
 	Eventually(func(g Gomega) {
 		resp, err := suite.ProxyClient.Get(backendExportURL)

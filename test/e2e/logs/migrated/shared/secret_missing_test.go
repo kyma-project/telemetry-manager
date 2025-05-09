@@ -27,7 +27,6 @@ func TestSecretRotation_OTel(t *testing.T) {
 	tests := []struct {
 		name         string
 		inputBuilder func() telemetryv1alpha1.LogPipelineInput
-		agent        bool
 	}{
 		{
 			name: "gateway",
@@ -51,9 +50,10 @@ func TestSecretRotation_OTel(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			const endpointKey = "logs-endpoint"
+
 			var (
 				uniquePrefix = unique.Prefix(tc.name)
-				endpointKey  = "logs-endpoint"
 				pipelineName = uniquePrefix()
 			)
 
@@ -109,10 +109,10 @@ func TestSecretRotation_OTel(t *testing.T) {
 func TestSecretRotation_FluentBit(t *testing.T) {
 	RegisterTestingT(t)
 	// suite.SkipIfDoesNotMatchLabel(t, "logs")
+	const endpointKey = "logs-endpoint"
 
 	var (
 		uniquePrefix = unique.Prefix()
-		endpointKey  = "logs-endpoint"
 		pipelineName = uniquePrefix()
 	)
 
