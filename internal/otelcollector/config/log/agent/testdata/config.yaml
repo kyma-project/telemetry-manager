@@ -90,19 +90,19 @@ receivers:
               if: attributes["msg"] != nil
             - id: parse-level
               type: severity_parser
-              if: severity_text == nil and attributes["level"] != nil
+              if: attributes["level"] != nil
               parse_from: attributes["level"]
             - id: remove-level
               type: remove
-              if: severity_text != nil and attributes["level"] != nil
+              if: attributes["level"] != nil
               field: attributes["level"]
             - id: parse-log-level
               type: severity_parser
-              if: severity_text == nil and attributes["log.level"] != nil
+              if: attributes["log.level"] != nil
               parse_from: attributes["log.level"]
             - id: remove-log-level
               type: remove
-              if: severity_text != nil and attributes["log.level"] != nil
+              if: attributes["log.level"] != nil
               field: attributes["log.level"]
             - id: trace-router
               type: router
@@ -139,17 +139,17 @@ receivers:
               output: remove-trace-id
             - id: remove-trace-id
               type: remove
-              if: trace_id != nil and attributes["trace_id"] != nil
+              if: attributes["trace_id"] != nil
               field: attributes["trace_id"]
               output: remove-span-id
             - id: remove-span-id
               type: remove
-              if: span_id != nil and attributes["span_id"] != nil
+              if: attributes["span_id"] != nil
               field: attributes["span_id"]
               output: remove-trace-flags
             - id: remove-trace-flags
               type: remove
-              if: flags != nil and attributes["trace_flags"] != nil
+              if: attributes["trace_flags"] != nil
               field: attributes["trace_flags"]
             - id: noop
               type: noop
