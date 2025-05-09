@@ -29,7 +29,7 @@ func TestOttlExprFunctions(t *testing.T) {
 		},
 		{
 			name:     "ResourceAttributeNotNil",
-			actual:   ResourceAttributeNotNil("key"),
+			actual:   ResourceAttributeIsNotNil("key"),
 			expected: `resource.attributes["key"] != nil`,
 		},
 		{

@@ -37,7 +37,10 @@ func TestReceiverCreator(t *testing.T) {
 				makeMoveBodyToLogOriginal(),
 				makeMoveMessageToBody(),
 				makeMoveMsgToBody(),
-				makeSeverityParser(),
+				makeSeverityParserFromLevel(),
+				makeRemoveLevel(),
+				makeSeverityParserFromLogLevel(),
+				makeRemoveLogLevel(),
 				makeTraceRouter(),
 				makeTraceParentParser(),
 				makeTraceParser(),
@@ -58,7 +61,10 @@ func TestReceiverCreator(t *testing.T) {
 				makeJSONParser(),
 				makeMoveMessageToBody(),
 				makeMoveMsgToBody(),
-				makeSeverityParser(),
+				makeSeverityParserFromLevel(),
+				makeRemoveLevel(),
+				makeSeverityParserFromLogLevel(),
+				makeRemoveLogLevel(),
 				makeTraceRouter(),
 				makeTraceParentParser(),
 				makeTraceParser(),
@@ -99,9 +105,9 @@ func TestMakeMoveToLogStream(t *testing.T) {
 	expectedMoveToLogStream := Operator{
 		ID:     "move-to-log-stream",
 		Type:   "move",
-		From:   "attributes.stream",
+		From:   "attributes[\"stream\"]",
 		To:     "attributes[\"log.iostream\"]",
-		IfExpr: "attributes.stream != nil",
+		IfExpr: "attributes[\"stream\"] != nil",
 	}
 	assert.Equal(t, expectedMoveToLogStream, mtls)
 }
@@ -145,9 +151,9 @@ func TestMakeMoveMessageToBody(t *testing.T) {
 
 		ID:     "move-message-to-body",
 		Type:   "move",
-		From:   "attributes.message",
+		From:   "attributes[\"message\"]",
 		To:     "body",
-		IfExpr: "attributes.message != nil",
+		IfExpr: "attributes[\"message\"] != nil",
 	}
 	assert.Equal(t, expectedMMTB, mmtb)
 }
@@ -157,20 +163,20 @@ func TestMakeMoveMsgToBody(t *testing.T) {
 	expectedMMTB := Operator{
 		ID:     "move-msg-to-body",
 		Type:   "move",
-		From:   "attributes.msg",
+		From:   "attributes[\"msg\"]",
 		To:     "body",
-		IfExpr: "attributes.msg != nil",
+		IfExpr: "attributes[\"msg\"] != nil",
 	}
 	assert.Equal(t, expectedMMTB, mmtb)
 }
 
 func TestMakeSeverityParser(t *testing.T) {
-	sp := makeSeverityParser()
+	sp := makeSeverityParserFromLevel()
 	expectedSP := Operator{
-		ID:        "severity-parser",
+		ID:        "parse-level",
 		Type:      "severity_parser",
-		ParseFrom: "attributes.level",
-		IfExpr:    "attributes.level != nil",
+		ParseFrom: "attributes[\"level\"]",
+		IfExpr:    "attributes[\"level\"] != nil",
 	}
 	assert.Equal(t, expectedSP, sp)
 }
@@ -252,13 +258,13 @@ func TestMakeTraceParser(t *testing.T) {
 		Type:   "trace_parser",
 		Output: "remove-trace-id",
 		TraceID: OperatorAttribute{
-			ParseFrom: attributeTraceID,
+			ParseFrom: "attributes[\"trace_id\"]",
 		},
 		SpanID: OperatorAttribute{
-			ParseFrom: attributeSpanID,
+			ParseFrom: "attributes[\"span_id\"]",
 		},
 		TraceFlags: OperatorAttribute{
-			ParseFrom: attributeTraceFlags,
+			ParseFrom: "attributes[\"trace_flags\"]",
 		},
 	}
 	assert.Equal(t, expectedSP, sp)
@@ -270,17 +276,17 @@ func TestMakeTraceParentParser(t *testing.T) {
 		ID:        "trace-parent-parser",
 		Type:      "regex_parser",
 		Regex:     traceParentExpression,
-		ParseFrom: attributeTraceParent,
+		ParseFrom: "attributes[\"traceparent\"]",
 		Output:    "remove-trace-parent",
 		Trace: TraceAttribute{
 			TraceID: OperatorAttribute{
-				ParseFrom: attributeTraceID,
+				ParseFrom: "attributes[\"trace_id\"]",
 			},
 			SpanID: OperatorAttribute{
-				ParseFrom: attributeSpanID,
+				ParseFrom: "attributes[\"span_id\"]",
 			},
 			TraceFlags: OperatorAttribute{
-				ParseFrom: attributeTraceFlags,
+				ParseFrom: "attributes[\"trace_flags\"]",
 			},
 		},
 	}
@@ -292,7 +298,7 @@ func TestMakeRemoveTraceParent(t *testing.T) {
 	expectedSP := Operator{
 		ID:     "remove-trace-parent",
 		Type:   "remove",
-		Field:  attributeTraceParent,
+		Field:  "attributes[\"traceparent\"]",
 		Output: "remove-trace-id",
 	}
 	assert.Equal(t, expectedSP, sp)
@@ -303,7 +309,8 @@ func TestMakeRemoveTraceID(t *testing.T) {
 	expectedSP := Operator{
 		ID:     "remove-trace-id",
 		Type:   "remove",
-		Field:  attributeTraceID,
+		Field:  "attributes[\"trace_id\"]",
+		IfExpr: "attributes[\"trace_id\"] != nil",
 		Output: "remove-span-id",
 	}
 	assert.Equal(t, expectedSP, sp)
@@ -314,8 +321,8 @@ func TestMakeRemoveSpanID(t *testing.T) {
 	expectedSP := Operator{
 		ID:     "remove-span-id",
 		Type:   "remove",
-		Field:  attributeSpanID,
-		IfExpr: "attributes.span_id != nil",
+		Field:  "attributes[\"span_id\"]",
+		IfExpr: "attributes[\"span_id\"] != nil",
 		Output: "remove-trace-flags",
 	}
 	assert.Equal(t, expectedSP, sp)
@@ -326,8 +333,8 @@ func TestMakeRemoveTraceFlags(t *testing.T) {
 	expectedSP := Operator{
 		ID:     "remove-trace-flags",
 		Type:   "remove",
-		Field:  attributeTraceFlags,
-		IfExpr: "attributes.trace_flags != nil",
+		Field:  "attributes[\"trace_flags\"]",
+		IfExpr: "attributes[\"trace_flags\"] != nil",
 	}
 	assert.Equal(t, expectedSP, sp)
 }
@@ -347,16 +354,60 @@ func TestMakeTraceRouter(t *testing.T) {
 		ID:      "trace-router",
 		Type:    "router",
 		Default: "noop",
-		Routes: []Router{
+		Routes: []Route{
 			{
-				Expression: fmt.Sprintf("%s != nil", attributeTraceID),
+				Expression: "attributes[\"trace_id\"] != nil",
 				Output:     "trace-parser",
 			},
 			{
-				Expression: fmt.Sprintf("%s == nil and %s != nil and attributes.traceparent matches '%s'", attributeTraceID, attributeTraceParent, traceParentExpression),
+				Expression: fmt.Sprintf("attributes[\"trace_id\"] == nil and attributes[\"traceparent\"] != nil and attributes[\"traceparent\"] matches '%s'", traceParentExpression),
 				Output:     "trace-parent-parser",
 			},
 		},
+	}
+	assert.Equal(t, expectedSP, sp)
+}
+
+func TestMakeSeverityParserFromLogLevel(t *testing.T) {
+	sp := makeSeverityParserFromLogLevel()
+	expectedSP := Operator{
+		ID:        "parse-log-level",
+		Type:      "severity_parser",
+		IfExpr:    "attributes[\"log.level\"] != nil",
+		ParseFrom: "attributes[\"log.level\"]",
+	}
+	assert.Equal(t, expectedSP, sp)
+}
+
+func TestMakeSeverityParserFromLevel(t *testing.T) {
+	sp := makeSeverityParserFromLevel()
+	expectedSP := Operator{
+		ID:        "parse-level",
+		Type:      "severity_parser",
+		ParseFrom: "attributes[\"level\"]",
+		IfExpr:    "attributes[\"level\"] != nil",
+	}
+	assert.Equal(t, expectedSP, sp)
+}
+
+func TestMakeRemoveLogLevel(t *testing.T) {
+	sp := makeRemoveLogLevel()
+	expectedSP := Operator{
+		ID:     "remove-log-level",
+		Type:   "remove",
+		Field:  "attributes[\"log.level\"]",
+		IfExpr: "attributes[\"log.level\"] != nil",
+	}
+	assert.Equal(t, expectedSP, sp)
+}
+
+func TestMakeRemoveLevel(t *testing.T) {
+	sp := makeRemoveLevel()
+	expectedSP := Operator{
+		ID:     "remove-level",
+		Type:   "remove",
+		Field:  "attributes[\"level\"]",
+		IfExpr: "attributes[\"level\"] != nil",
 	}
 	assert.Equal(t, expectedSP, sp)
 }

@@ -31,7 +31,7 @@ type FileLog struct {
 
 type Operator struct {
 	ID                      string            `yaml:"id,omitempty"`
-	Type                    string            `yaml:"type,omitempty"`
+	Type                    OperatorType      `yaml:"type,omitempty"`
 	AddMetadataFromFilePath *bool             `yaml:"add_metadata_from_file_path,omitempty"`
 	Format                  string            `yaml:"format,omitempty"`
 	From                    string            `yaml:"from,omitempty"`
@@ -45,10 +45,24 @@ type Operator struct {
 	TraceFlags              OperatorAttribute `yaml:"trace_flags,omitempty"`
 	Regex                   string            `yaml:"regex,omitempty"`
 	Trace                   TraceAttribute    `yaml:"trace,omitempty"`
-	Routes                  []Router          `yaml:"routes,omitempty"`
+	Routes                  []Route           `yaml:"routes,omitempty"`
 	Default                 string            `yaml:"default,omitempty"`
 	Output                  string            `yaml:"output,omitempty"`
 }
+
+type OperatorType string
+
+const (
+	Move           OperatorType = "move"
+	SeverityParser OperatorType = "severity_parser"
+	RegexParser    OperatorType = "regex_parser"
+	Remove         OperatorType = "remove"
+	Router         OperatorType = "router"
+	TraceParser    OperatorType = "trace_parser"
+	Noop           OperatorType = "noop"
+	JsonParser     OperatorType = "json_parser"
+	Container      OperatorType = "container"
+)
 
 type TraceAttribute struct {
 	TraceID    OperatorAttribute `yaml:"trace_id,omitempty"`
@@ -56,7 +70,7 @@ type TraceAttribute struct {
 	TraceFlags OperatorAttribute `yaml:"trace_flags,omitempty"`
 }
 
-type Router struct {
+type Route struct {
 	Expression string `yaml:"expr,omitempty"`
 	Output     string `yaml:"output,omitempty"`
 }
