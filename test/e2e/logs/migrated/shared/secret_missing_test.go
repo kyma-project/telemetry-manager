@@ -21,6 +21,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
+// FIXME: Currently failing (Secret validation not implemented for OTel)
 func TestSecretRotation_OTel(t *testing.T) {
 	RegisterTestingT(t)
 	// suite.SkipIfDoesNotMatchLabel(t, "logs")
@@ -69,17 +70,14 @@ func TestSecretRotation_OTel(t *testing.T) {
 				)).
 				Build()
 
-			var resources []client.Object
-			resources = append(resources,
+			resources := []client.Object{
 				&pipeline,
-			)
+			}
 
 			t.Cleanup(func() {
 				require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 			})
 			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
-
-			t.Log("Waiting for resources to be ready")
 
 			assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
@@ -127,17 +125,14 @@ func TestSecretRotation_FluentBit(t *testing.T) {
 		)).
 		Build()
 
-	var resources []client.Object
-	resources = append(resources,
+	resources := []client.Object{
 		&pipeline,
-	)
+	}
 
 	t.Cleanup(func() {
 		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
-
-	t.Log("Waiting for resources to be ready")
 
 	assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
