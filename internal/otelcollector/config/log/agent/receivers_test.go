@@ -315,6 +315,7 @@ func TestMakeRemoveSpanID(t *testing.T) {
 		ID:     "remove-span-id",
 		Type:   "remove",
 		Field:  attributeSpanID,
+		IfExpr: "attributes.span_id != nil",
 		Output: "remove-trace-flags",
 	}
 	assert.Equal(t, expectedSP, sp)
@@ -323,9 +324,10 @@ func TestMakeRemoveSpanID(t *testing.T) {
 func TestMakeRemoveTraceFlags(t *testing.T) {
 	sp := makeRemoveTraceFlags()
 	expectedSP := Operator{
-		ID:    "remove-trace-flags",
-		Type:  "remove",
-		Field: attributeTraceFlags,
+		ID:     "remove-trace-flags",
+		Type:   "remove",
+		Field:  attributeTraceFlags,
+		IfExpr: "attributes.trace_flags != nil",
 	}
 	assert.Equal(t, expectedSP, sp)
 }

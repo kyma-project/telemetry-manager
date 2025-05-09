@@ -131,10 +131,12 @@ receivers:
               output: remove-span-id
             - id: remove-span-id
               type: remove
+              if: attributes.span_id != nil
               field: attributes.span_id
               output: remove-trace-flags
             - id: remove-trace-flags
               type: remove
+              if: attributes.trace_flags != nil
               field: attributes.trace_flags
             - id: noop
               type: noop
