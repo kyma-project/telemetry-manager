@@ -94,8 +94,8 @@ flowchart LR
 ```
 
 Metrics in use:
-- Throughput: otelcol_exporter_sent_log_records_total
-- Enqueue failed: otelcol_exporter_enqueue_failed_log_records_total
+- Throughput: sum(rate(otelcol_exporter_sent_log_records_total{}[$__rate_interval]))
+- Enqueue failed: sum(rate(otelcol_exporter_enqueue_failed_log_records_total{}[$__rate_interval]))
 
 | Gateway Replicas | Throughput (Msg/s) | Enqueue failed (Msg/s) | Memory per instance (MB) | CPU per instance | Bytes transmitted (MB/s) | Bytes received (MB/s) | istio Memory | istio cpu |
 |------------------|--------------------|------------------------|--------------------------|------------------|--------------------------|-----------------------|--------------|-----------|
@@ -131,8 +131,8 @@ Istio CPU limits are increased using the `sidecar.istio.io/proxyCPULimit: "<limi
 Gateway Replicas: 2
 
 Metrics in use: 
-- Throughput: otelcol_exporter_sent_log_records_total
-- Enqueue failed: otelcol_exporter_enqueue_failed_log_records_total
+- Throughput: sum(rate(otelcol_exporter_sent_log_records_total{}[$__rate_interval]))
+- Enqueue failed: sum(rate(otelcol_exporter_enqueue_failed_log_records_total{}[$__rate_interval]))
 
 | Istio Limits                                 | Throughput (Msg/s) | Enqueue failed (Msg/s) | Memory per instance (MB) | CPU per instance | Bytes transmitted (MB/s) | Bytes received (MB/s) | istio Memory | istio cpu |
 |----------------------------------------------|--------------------|------------------------|--------------------------|------------------|--------------------------|-----------------------|--------------|-----------|
