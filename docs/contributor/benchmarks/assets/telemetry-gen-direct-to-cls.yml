@@ -18,7 +18,7 @@ spec:
             - /telemetrygen
             - logs
             - --otlp-endpoint
-            - ingest-otlp-sf-0d830b87-208b-4fe7-b168-407c1b878ebf.cls-03.cloud.logs.services.sap.hana.ondemand.com:443
+            - <some-cls-endpoint>:<and-its-port>
             - --mtls
             - --client-cert
             - /var/cls/ingest-otlp-cert
