@@ -31,7 +31,7 @@ func TestCustomOutput(t *testing.T) {
 	backend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsFluentBit)
 	backendExportURL := backend.ExportURL(suite.ProxyClient)
 
-	mockLogProducer := loggen.New(mockNs)
+	logProducer := loggen.New(mockNs)
 
 	customOutputTemplate := fmt.Sprintf(`
 	name   http
@@ -45,7 +45,7 @@ func TestCustomOutput(t *testing.T) {
 
 	resources := []client.Object{
 		kitk8s.NewNamespace(mockNs).K8sObject(),
-		mockLogProducer.K8sObject(),
+		logProducer.K8sObject(),
 		&logPipeline,
 	}
 	resources = append(resources, backend.K8sObjects()...)
