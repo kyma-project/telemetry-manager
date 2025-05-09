@@ -21,16 +21,19 @@ const (
 	maxElapsedTime        = "300s"
 	traceParentExpression = "^[0-9a-f]{2}-(?P<trace_id>[0-9a-f]{32})-(?P<span_id>[0-9a-f]{16})-(?P<trace_flags>[0-9a-f]{2})$"
 
-	attributeKeyLevel        = "level"
-	attributeKeyLogLevel     = "log.level"
-	attributeKeyStream       = "stream"
-	attributeKeyMsg          = "msg"
-	attributeKeyMessage      = "message"
-	attributeKeyTraceID      = "trace_id"
-	attributeKeySpanID       = "span_id"
-	attributeKeyTraceFlags   = "trace_flags"
-	attributeKeyTraceParent  = "traceparent"
-	attributeKeySeverityText = "severityText"
+	attributeKeyLevel       = "level"
+	attributeKeyLogLevel    = "log.level"
+	attributeKeyStream      = "stream"
+	attributeKeyMsg         = "msg"
+	attributeKeyMessage     = "message"
+	attributeKeyTraceID     = "trace_id"
+	attributeKeySpanID      = "span_id"
+	attributeKeyTraceFlags  = "trace_flags"
+	attributeKeyTraceParent = "traceparent"
+	keySeverityText         = "severityText"
+	keyTraceId              = "trace_id"
+	keySpanId               = "span_id"
+	keyTraceFlags           = "trace_flags"
 )
 
 func makeFileLogReceiver(logpipeline telemetryv1alpha1.LogPipeline) *FileLog {
@@ -179,7 +182,7 @@ func makeMoveToLogStream() Operator {
 		Type:   Move,
 		From:   ottlexpr.Attribute(attributeKeyStream),
 		To:     ottlexpr.Attribute("log.iostream"),
-		IfExpr: ottlexpr.AttributeNotNil(attributeKeyStream),
+		IfExpr: ottlexpr.AttributeIsNotNil(attributeKeyStream),
 	}
 }
 
@@ -221,7 +224,7 @@ func makeMoveMessageToBody() Operator {
 		Type:   Move,
 		From:   ottlexpr.Attribute(attributeKeyMessage),
 		To:     "body",
-		IfExpr: ottlexpr.AttributeNotNil(attributeKeyMessage),
+		IfExpr: ottlexpr.AttributeIsNotNil(attributeKeyMessage),
 	}
 }
 
@@ -232,7 +235,7 @@ func makeMoveMsgToBody() Operator {
 		Type:   Move,
 		From:   ottlexpr.Attribute(attributeKeyMsg),
 		To:     "body",
-		IfExpr: ottlexpr.AttributeNotNil(attributeKeyMsg),
+		IfExpr: ottlexpr.AttributeIsNotNil(attributeKeyMsg),
 	}
 }
 
@@ -242,7 +245,7 @@ func makeSeverityParserFromLevel() Operator {
 		ID:        "parse-level",
 		Type:      SeverityParser,
 		ParseFrom: ottlexpr.Attribute(attributeKeyLevel),
-		IfExpr:    ottlexpr.JoinWithAnd(ottlexpr.AttributeNil(attributeKeySeverityText), ottlexpr.AttributeNotNil(attributeKeyLevel)),
+		IfExpr:    ottlexpr.JoinWithAnd(ottlexpr.IsNil(keySeverityText), ottlexpr.AttributeIsNotNil(attributeKeyLevel)),
 	}
 }
 
@@ -252,7 +255,7 @@ func makeRemoveLevel() Operator {
 		ID:     "remove-level",
 		Type:   Remove,
 		Field:  ottlexpr.Attribute(attributeKeyLevel),
-		IfExpr: ottlexpr.JoinWithAnd(ottlexpr.AttributeNotNil(attributeKeySeverityText), ottlexpr.AttributeNotNil(attributeKeyLevel)),
+		IfExpr: ottlexpr.JoinWithAnd(ottlexpr.IsNotNil(keySeverityText), ottlexpr.AttributeIsNotNil(attributeKeyLevel)),
 	}
 }
 
@@ -262,7 +265,7 @@ func makeSeverityParserFromLogLevel() Operator {
 		ID:        "parse-log-level",
 		Type:      SeverityParser,
 		ParseFrom: ottlexpr.Attribute(attributeKeyLogLevel),
-		IfExpr:    ottlexpr.JoinWithAnd(ottlexpr.AttributeNil(attributeKeySeverityText), ottlexpr.AttributeNotNil(attributeKeyLogLevel)),
+		IfExpr:    ottlexpr.JoinWithAnd(ottlexpr.IsNil(keySeverityText), ottlexpr.AttributeIsNotNil(attributeKeyLogLevel)),
 	}
 }
 
@@ -272,7 +275,7 @@ func makeRemoveLogLevel() Operator {
 		ID:     "remove-log-level",
 		Type:   Remove,
 		Field:  ottlexpr.Attribute(attributeKeyLogLevel),
-		IfExpr: ottlexpr.JoinWithAnd(ottlexpr.AttributeNotNil(attributeKeySeverityText), ottlexpr.AttributeNotNil(attributeKeyLogLevel)),
+		IfExpr: ottlexpr.JoinWithAnd(ottlexpr.IsNotNil(keySeverityText), ottlexpr.AttributeIsNotNil(attributeKeyLogLevel)),
 	}
 }
 
@@ -283,11 +286,11 @@ func makeTraceRouter() Operator {
 		Default: "noop",
 		Routes: []Route{
 			{
-				Expression: ottlexpr.AttributeNotNil(attributeKeyTraceID),
+				Expression: ottlexpr.AttributeIsNotNil(attributeKeyTraceID),
 				Output:     "trace-parser",
 			},
 			{
-				Expression: ottlexpr.JoinWithAnd(ottlexpr.AttributeNil(attributeKeyTraceID), ottlexpr.AttributeNotNil(attributeKeyTraceParent), fmt.Sprintf("%s matches '%s'", ottlexpr.Attribute(attributeKeyTraceParent), traceParentExpression)),
+				Expression: ottlexpr.JoinWithAnd(ottlexpr.AttributeIsNil(attributeKeyTraceID), ottlexpr.AttributeIsNotNil(attributeKeyTraceParent), fmt.Sprintf("%s matches '%s'", ottlexpr.Attribute(attributeKeyTraceParent), traceParentExpression)),
 				Output:     "trace-parent-parser",
 			},
 		},
@@ -347,6 +350,7 @@ func makeRemoveTraceID() Operator {
 		ID:     "remove-trace-id",
 		Type:   Remove,
 		Field:  ottlexpr.Attribute(attributeKeyTraceID),
+		IfExpr: ottlexpr.JoinWithAnd(ottlexpr.IsNotNil(keyTraceId), ottlexpr.AttributeIsNotNil(attributeKeyTraceID)),
 		Output: "remove-span-id",
 	}
 }
@@ -356,7 +360,7 @@ func makeRemoveSpanID() Operator {
 		ID:     "remove-span-id",
 		Type:   Remove,
 		Field:  ottlexpr.Attribute(attributeKeySpanID),
-		IfExpr: ottlexpr.AttributeNotNil(attributeKeySpanID),
+		IfExpr: ottlexpr.JoinWithAnd(ottlexpr.IsNotNil(keySpanId), ottlexpr.AttributeIsNotNil(attributeKeySpanID)),
 		Output: "remove-trace-flags",
 	}
 }
@@ -366,7 +370,7 @@ func makeRemoveTraceFlags() Operator {
 		ID:     "remove-trace-flags",
 		Type:   Remove,
 		Field:  ottlexpr.Attribute(attributeKeyTraceFlags),
-		IfExpr: ottlexpr.AttributeNotNil(attributeKeyTraceFlags),
+		IfExpr: ottlexpr.JoinWithAnd(ottlexpr.IsNotNil(keyTraceFlags), ottlexpr.AttributeIsNotNil(attributeKeyTraceFlags)),
 	}
 }
 

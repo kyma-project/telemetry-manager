@@ -93,19 +93,19 @@ receivers:
               if: attributes["msg"] != nil
             - id: parse-level
               type: severity_parser
-              if: attributes["severityText"] == nil and attributes["level"] != nil
+              if: severityText == nil and attributes["level"] != nil
               parse_from: attributes["level"]
             - id: remove-level
               type: remove
-              if: attributes["severityText"] != nil and attributes["level"] != nil
+              if: severityText != nil and attributes["level"] != nil
               field: attributes["level"]
             - id: parse-log-level
               type: severity_parser
-              if: attributes["severityText"] == nil and attributes["log.level"] != nil
+              if: severityText == nil and attributes["log.level"] != nil
               parse_from: attributes["log.level"]
             - id: remove-log-level
               type: remove
-              if: attributes["severityText"] != nil and attributes["log.level"] != nil
+              if: severityText != nil and attributes["log.level"] != nil
               field: attributes["log.level"]
             - id: trace-router
               type: router
@@ -142,16 +142,17 @@ receivers:
               output: remove-trace-id
             - id: remove-trace-id
               type: remove
+              if: trace_id != nil and attributes["trace_id"] != nil
               field: attributes["trace_id"]
               output: remove-span-id
             - id: remove-span-id
               type: remove
-              if: attributes["span_id"] != nil
+              if: span_id != nil and attributes["span_id"] != nil
               field: attributes["span_id"]
               output: remove-trace-flags
             - id: remove-trace-flags
               type: remove
-              if: attributes["trace_flags"] != nil
+              if: trace_flags != nil and attributes["trace_flags"] != nil
               field: attributes["trace_flags"]
             - id: noop
               type: noop

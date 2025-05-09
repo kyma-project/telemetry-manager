@@ -107,7 +107,7 @@ func makeDropNonPVCVolumesMetricsProcessor() *FilterProcessor {
 			Metric: []string{
 				ottlexpr.JoinWithAnd(
 					// identify volume metrics by checking existence of "k8s.volume.name" resource attribute
-					ottlexpr.ResourceAttributeNotNil("k8s.volume.name"),
+					ottlexpr.ResourceAttributeIsNotNil("k8s.volume.name"),
 					ottlexpr.ResourceAttributeNotEquals("k8s.volume.type", "persistentVolumeClaim"),
 				),
 			},
