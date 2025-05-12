@@ -2,8 +2,6 @@ package fluentbit
 
 import (
 	"context"
-	"io"
-	"net/http"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -18,7 +16,6 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -58,17 +55,7 @@ func TestDedot(t *testing.T) {
 	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
 	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 
-	Eventually(func(g Gomega) {
-		resp, err := suite.ProxyClient.Get(backendExportURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-
-		bodyContent, err := io.ReadAll(resp.Body)
-		defer resp.Body.Close()
-		g.Expect(err).NotTo(HaveOccurred())
-
-		g.Expect(bodyContent).To(HaveFlatFluentBitLogs(
-			ContainElement(HaveKubernetesLabels(HaveKeyWithValue("dedot_label", "logging-dedot-value")))),
-		)
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+	assert.TelemetryDataDelivered(suite.ProxyClient, backendExportURL, HaveFlatFluentBitLogs(
+		ContainElement(HaveKubernetesLabels(HaveKeyWithValue("dedot_label", "logging-dedot-value")))),
+	)
 }

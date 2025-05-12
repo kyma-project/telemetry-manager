@@ -2,10 +2,7 @@ package fluentbit
 
 import (
 	"context"
-	"io"
-	"net/http"
 	"testing"
-	"time"
 
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
@@ -19,7 +16,6 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -67,19 +63,8 @@ Types user:string pass:string`
 	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
 	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 
-	Eventually(func(g Gomega) {
-		time.Sleep(20 * time.Second)
-		resp, err := suite.ProxyClient.Get(backendExportURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-
-		bodyContent, err := io.ReadAll(resp.Body)
-		defer resp.Body.Close()
-		g.Expect(err).NotTo(HaveOccurred())
-
-		g.Expect(bodyContent).To(HaveFlatFluentBitLogs(ContainElement(SatisfyAll(
-			HaveLogRecordAttributes(HaveKeyWithValue("user", "foo")),
-			HaveLogRecordAttributes(HaveKeyWithValue("pass", "bar")),
-		))))
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+	assert.TelemetryDataDelivered(suite.ProxyClient, backendExportURL, HaveFlatFluentBitLogs(ContainElement(SatisfyAll(
+		HaveLogRecordAttributes(HaveKeyWithValue("user", "foo")),
+		HaveLogRecordAttributes(HaveKeyWithValue("pass", "bar")),
+	))))
 }
