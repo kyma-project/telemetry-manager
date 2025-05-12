@@ -62,6 +62,10 @@ jobs:
         shell: bash
         run: kubectl apply -f config/samples/operator_v1alpha1_telemetry.yaml -n kyma-system
 
+      # TODO: Uncomment this section after next release (and delete "Create Telemetry CR" step above)
+      # - name: Deploy Test Prerequisites
+      #   uses: "./.github/template/deploy-test-prerequisites"
+
       - name: Run test on latest tag
         shell: bash
         run: |
