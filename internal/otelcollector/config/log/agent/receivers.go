@@ -8,6 +8,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/namespaces"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/ottlexpr"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
@@ -19,10 +20,16 @@ const (
 	// Time after which logs will not be discarded. Retrying never stops if value is 0.
 	maxElapsedTime        = "300s"
 	traceParentExpression = "^[0-9a-f]{2}-(?P<trace_id>[0-9a-f]{32})-(?P<span_id>[0-9a-f]{16})-(?P<trace_flags>[0-9a-f]{2})$"
-	attributeTraceID      = "attributes.trace_id"
-	attributeSpanID       = "attributes.span_id"
-	attributeTraceFlags   = "attributes.trace_flags"
-	attributeTraceParent  = "attributes.traceparent"
+
+	attributeKeyLevel       = "level"
+	attributeKeyLogLevel    = "log.level"
+	attributeKeyStream      = "stream"
+	attributeKeyMsg         = "msg"
+	attributeKeyMessage     = "message"
+	attributeKeyTraceID     = "trace_id"
+	attributeKeySpanID      = "span_id"
+	attributeKeyTraceFlags  = "trace_flags"
+	attributeKeyTraceParent = "traceparent"
 )
 
 func makeFileLogReceiver(logpipeline telemetryv1alpha1.LogPipeline) *FileLog {
@@ -137,7 +144,10 @@ func makeOperators(logPipeline telemetryv1alpha1.LogPipeline) []Operator {
 	operators = append(operators,
 		makeMoveMessageToBody(),
 		makeMoveMsgToBody(),
-		makeSeverityParser(),
+		makeSeverityParserFromLevel(),
+		makeRemoveLevel(),
+		makeSeverityParserFromLogLevel(),
+		makeRemoveLogLevel(),
 		makeTraceRouter(),
 		makeTraceParentParser(),
 		makeTraceParser(),
@@ -155,7 +165,7 @@ func makeOperators(logPipeline telemetryv1alpha1.LogPipeline) []Operator {
 func makeContainerParser() Operator {
 	return Operator{
 		ID:                      "containerd-parser",
-		Type:                    "container",
+		Type:                    Container,
 		AddMetadataFromFilePath: ptr.To(true),
 		Format:                  "containerd",
 	}
@@ -165,18 +175,18 @@ func makeContainerParser() Operator {
 func makeMoveToLogStream() Operator {
 	return Operator{
 		ID:     "move-to-log-stream",
-		Type:   "move",
-		From:   "attributes.stream",
-		To:     "attributes[\"log.iostream\"]",
-		IfExpr: "attributes.stream != nil",
+		Type:   Move,
+		From:   ottlexpr.Attribute(attributeKeyStream),
+		To:     ottlexpr.Attribute("log.iostream"),
+		IfExpr: ottlexpr.AttributeIsNotNil(attributeKeyStream),
 	}
 }
 
 func makeDropAttributeLogTag() Operator {
 	return Operator{
 		ID:    "drop-attribute-log-tag",
-		Type:  "remove",
-		Field: "attributes[\"logtag\"]",
+		Type:  Remove,
+		Field: ottlexpr.Attribute("logtag"),
 	}
 }
 
@@ -186,7 +196,7 @@ func makeJSONParser() Operator {
 
 	return Operator{
 		ID:        "json-parser",
-		Type:      "json_parser",
+		Type:      JsonParser,
 		ParseFrom: "body",
 		ParseTo:   "attributes",
 		IfExpr:    fmt.Sprintf("body matches '%s'", regexPattern),
@@ -197,9 +207,9 @@ func makeJSONParser() Operator {
 func makeMoveBodyToLogOriginal() Operator {
 	return Operator{
 		ID:   "move-body-to-attributes-log-original",
-		Type: "move",
+		Type: Move,
 		From: "body",
-		To:   "attributes[\"log.original\"]",
+		To:   ottlexpr.Attribute("log.original"),
 	}
 }
 
@@ -207,10 +217,10 @@ func makeMoveBodyToLogOriginal() Operator {
 func makeMoveMessageToBody() Operator {
 	return Operator{
 		ID:     "move-message-to-body",
-		Type:   "move",
-		From:   "attributes.message",
+		Type:   Move,
+		From:   ottlexpr.Attribute(attributeKeyMessage),
 		To:     "body",
-		IfExpr: "attributes.message != nil",
+		IfExpr: ottlexpr.AttributeIsNotNil(attributeKeyMessage),
 	}
 }
 
@@ -218,35 +228,65 @@ func makeMoveMessageToBody() Operator {
 func makeMoveMsgToBody() Operator {
 	return Operator{
 		ID:     "move-msg-to-body",
-		Type:   "move",
-		From:   "attributes.msg",
+		Type:   Move,
+		From:   ottlexpr.Attribute(attributeKeyMsg),
 		To:     "body",
-		IfExpr: "attributes.msg != nil",
+		IfExpr: ottlexpr.AttributeIsNotNil(attributeKeyMsg),
 	}
 }
 
-// set the severity level
-func makeSeverityParser() Operator {
+// parse severity from level attribute
+func makeSeverityParserFromLevel() Operator {
 	return Operator{
-		ID:        "severity-parser",
-		Type:      "severity_parser",
-		ParseFrom: "attributes.level",
-		IfExpr:    "attributes.level != nil",
+		ID:        "parse-level",
+		Type:      SeverityParser,
+		ParseFrom: ottlexpr.Attribute(attributeKeyLevel),
+		IfExpr:    ottlexpr.AttributeIsNotNil(attributeKeyLevel),
+	}
+}
+
+// Remove level attribute after parsing severity
+func makeRemoveLevel() Operator {
+	return Operator{
+		ID:     "remove-level",
+		Type:   Remove,
+		Field:  ottlexpr.Attribute(attributeKeyLevel),
+		IfExpr: ottlexpr.AttributeIsNotNil(attributeKeyLevel),
+	}
+}
+
+// parse severity from log level attribute
+func makeSeverityParserFromLogLevel() Operator {
+	return Operator{
+		ID:        "parse-log-level",
+		Type:      SeverityParser,
+		ParseFrom: ottlexpr.Attribute(attributeKeyLogLevel),
+		IfExpr:    ottlexpr.AttributeIsNotNil(attributeKeyLogLevel),
+	}
+}
+
+// Remove log level attribute after parsing severity
+func makeRemoveLogLevel() Operator {
+	return Operator{
+		ID:     "remove-log-level",
+		Type:   Remove,
+		Field:  ottlexpr.Attribute(attributeKeyLogLevel),
+		IfExpr: ottlexpr.AttributeIsNotNil(attributeKeyLogLevel),
 	}
 }
 
 func makeTraceRouter() Operator {
 	return Operator{
 		ID:      "trace-router",
-		Type:    "router",
+		Type:    Router,
 		Default: "noop",
-		Routes: []Router{
+		Routes: []Route{
 			{
-				Expression: fmt.Sprintf("%s != nil", attributeTraceID),
+				Expression: ottlexpr.AttributeIsNotNil(attributeKeyTraceID),
 				Output:     "trace-parser",
 			},
 			{
-				Expression: fmt.Sprintf("%s == nil and %s != nil and attributes.traceparent matches '%s'", attributeTraceID, attributeTraceParent, traceParentExpression),
+				Expression: ottlexpr.JoinWithAnd(ottlexpr.AttributeIsNil(attributeKeyTraceID), ottlexpr.AttributeIsNotNil(attributeKeyTraceParent), fmt.Sprintf("%s matches '%s'", ottlexpr.Attribute(attributeKeyTraceParent), traceParentExpression)),
 				Output:     "trace-parent-parser",
 			},
 		},
@@ -257,16 +297,16 @@ func makeTraceRouter() Operator {
 func makeTraceParser() Operator {
 	return Operator{
 		ID:     "trace-parser",
-		Type:   "trace_parser",
+		Type:   TraceParser,
 		Output: "remove-trace-id",
 		TraceID: OperatorAttribute{
-			ParseFrom: attributeTraceID,
+			ParseFrom: ottlexpr.Attribute(attributeKeyTraceID),
 		},
 		SpanID: OperatorAttribute{
-			ParseFrom: attributeSpanID,
+			ParseFrom: ottlexpr.Attribute(attributeKeySpanID),
 		},
 		TraceFlags: OperatorAttribute{
-			ParseFrom: attributeTraceFlags,
+			ParseFrom: ottlexpr.Attribute(attributeKeyTraceFlags),
 		},
 	}
 }
@@ -274,19 +314,19 @@ func makeTraceParser() Operator {
 func makeTraceParentParser() Operator {
 	return Operator{
 		ID:        "trace-parent-parser",
-		Type:      "regex_parser",
+		Type:      RegexParser,
 		Regex:     traceParentExpression,
-		ParseFrom: attributeTraceParent,
+		ParseFrom: ottlexpr.Attribute(attributeKeyTraceParent),
 		Output:    "remove-trace-parent",
 		Trace: TraceAttribute{
 			TraceID: OperatorAttribute{
-				ParseFrom: attributeTraceID,
+				ParseFrom: ottlexpr.Attribute(attributeKeyTraceID),
 			},
 			SpanID: OperatorAttribute{
-				ParseFrom: attributeSpanID,
+				ParseFrom: ottlexpr.Attribute(attributeKeySpanID),
 			},
 			TraceFlags: OperatorAttribute{
-				ParseFrom: attributeTraceFlags,
+				ParseFrom: ottlexpr.Attribute(attributeKeyTraceFlags),
 			},
 		},
 	}
@@ -295,8 +335,8 @@ func makeTraceParentParser() Operator {
 func makeRemoveTraceParent() Operator {
 	return Operator{
 		ID:     "remove-trace-parent",
-		Type:   "remove",
-		Field:  attributeTraceParent,
+		Type:   Remove,
+		Field:  ottlexpr.Attribute(attributeKeyTraceParent),
 		Output: "remove-trace-id",
 	}
 }
@@ -304,8 +344,9 @@ func makeRemoveTraceParent() Operator {
 func makeRemoveTraceID() Operator {
 	return Operator{
 		ID:     "remove-trace-id",
-		Type:   "remove",
-		Field:  attributeTraceID,
+		Type:   Remove,
+		Field:  ottlexpr.Attribute(attributeKeyTraceID),
+		IfExpr: ottlexpr.AttributeIsNotNil(attributeKeyTraceID),
 		Output: "remove-span-id",
 	}
 }
@@ -313,9 +354,9 @@ func makeRemoveTraceID() Operator {
 func makeRemoveSpanID() Operator {
 	return Operator{
 		ID:     "remove-span-id",
-		Type:   "remove",
-		Field:  attributeSpanID,
-		IfExpr: "attributes.span_id != nil",
+		Type:   Remove,
+		Field:  ottlexpr.Attribute(attributeKeySpanID),
+		IfExpr: ottlexpr.AttributeIsNotNil(attributeKeySpanID),
 		Output: "remove-trace-flags",
 	}
 }
@@ -323,9 +364,9 @@ func makeRemoveSpanID() Operator {
 func makeRemoveTraceFlags() Operator {
 	return Operator{
 		ID:     "remove-trace-flags",
-		Type:   "remove",
-		IfExpr: "attributes.trace_flags != nil",
-		Field:  attributeTraceFlags,
+		Type:   Remove,
+		Field:  ottlexpr.Attribute(attributeKeyTraceFlags),
+		IfExpr: ottlexpr.AttributeIsNotNil(attributeKeyTraceFlags),
 	}
 }
 
@@ -333,6 +374,6 @@ func makeRemoveTraceFlags() Operator {
 func makeNoop() Operator {
 	return Operator{
 		ID:   "noop",
-		Type: "noop",
+		Type: Noop,
 	}
 }
