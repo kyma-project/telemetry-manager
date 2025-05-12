@@ -9,6 +9,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 type LogPipelineBuilder struct {
@@ -65,6 +66,31 @@ func BuildLogPipelineOTLPInput(opts ...NamespaceSelectorOptions) telemetryv1alph
 
 	for _, opt := range opts {
 		opt(input.OTLP.Namespaces)
+	}
+
+	return input
+}
+
+func BuildLogPipelineV1Beta1RuntimeInput() telemetryv1beta1.LogPipelineInput {
+	input := telemetryv1beta1.LogPipelineInput{
+		Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
+			Enabled:    ptr.To(true),
+			Namespaces: telemetryv1beta1.LogPipelineNamespaceSelector{},
+		},
+	}
+
+	return input
+}
+
+func BuildLogPipelineV1Beta1OTLPInput() telemetryv1beta1.LogPipelineInput {
+	input := telemetryv1beta1.LogPipelineInput{
+		Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
+			Enabled: ptr.To(false),
+		},
+		OTLP: &telemetryv1beta1.OTLPInput{
+			Disabled:   false,
+			Namespaces: &telemetryv1beta1.NamespaceSelector{},
+		},
 	}
 
 	return input
