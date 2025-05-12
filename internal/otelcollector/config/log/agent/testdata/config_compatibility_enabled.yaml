@@ -66,9 +66,9 @@ receivers:
               format: containerd
             - id: move-to-log-stream
               type: move
-              from: attributes.stream
+              from: attributes["stream"]
               to: attributes["log.iostream"]
-              if: attributes.stream != nil
+              if: attributes["stream"] != nil
             - id: drop-attribute-log-tag
               type: remove
               field: attributes["logtag"]
@@ -83,64 +83,77 @@ receivers:
               to: attributes["log.original"]
             - id: move-message-to-body
               type: move
-              from: attributes.message
+              from: attributes["message"]
               to: body
-              if: attributes.message != nil
+              if: attributes["message"] != nil
             - id: move-msg-to-body
               type: move
-              from: attributes.msg
+              from: attributes["msg"]
               to: body
-              if: attributes.msg != nil
-            - id: severity-parser
+              if: attributes["msg"] != nil
+            - id: parse-level
               type: severity_parser
-              if: attributes.level != nil
-              parse_from: attributes.level
+              if: attributes["level"] != nil
+              parse_from: attributes["level"]
+            - id: remove-level
+              type: remove
+              if: attributes["level"] != nil
+              field: attributes["level"]
+            - id: parse-log-level
+              type: severity_parser
+              if: attributes["log.level"] != nil
+              parse_from: attributes["log.level"]
+            - id: remove-log-level
+              type: remove
+              if: attributes["log.level"] != nil
+              field: attributes["log.level"]
             - id: trace-router
               type: router
               routes:
-                - expr: attributes.trace_id != nil
+                - expr: attributes["trace_id"] != nil
                   output: trace-parser
-                - expr: attributes.trace_id == nil and attributes.traceparent != nil and attributes.traceparent matches '^[0-9a-f]{2}-(?P<trace_id>[0-9a-f]{32})-(?P<span_id>[0-9a-f]{16})-(?P<trace_flags>[0-9a-f]{2})$'
+                - expr: attributes["trace_id"] == nil and attributes["traceparent"] != nil and attributes["traceparent"] matches '^[0-9a-f]{2}-(?P<trace_id>[0-9a-f]{32})-(?P<span_id>[0-9a-f]{16})-(?P<trace_flags>[0-9a-f]{2})$'
                   output: trace-parent-parser
               default: noop
             - id: trace-parent-parser
               type: regex_parser
-              parse_from: attributes.traceparent
+              parse_from: attributes["traceparent"]
               regex: ^[0-9a-f]{2}-(?P<trace_id>[0-9a-f]{32})-(?P<span_id>[0-9a-f]{16})-(?P<trace_flags>[0-9a-f]{2})$
               trace:
                 trace_id:
-                    parse_from: attributes.trace_id
+                    parse_from: attributes["trace_id"]
                 span_id:
-                    parse_from: attributes.span_id
+                    parse_from: attributes["span_id"]
                 trace_flags:
-                    parse_from: attributes.trace_flags
+                    parse_from: attributes["trace_flags"]
               output: remove-trace-parent
             - id: trace-parser
               type: trace_parser
               trace_id:
-                parse_from: attributes.trace_id
+                parse_from: attributes["trace_id"]
               span_id:
-                parse_from: attributes.span_id
+                parse_from: attributes["span_id"]
               trace_flags:
-                parse_from: attributes.trace_flags
+                parse_from: attributes["trace_flags"]
               output: remove-trace-id
             - id: remove-trace-parent
               type: remove
-              field: attributes.traceparent
+              field: attributes["traceparent"]
               output: remove-trace-id
             - id: remove-trace-id
               type: remove
-              field: attributes.trace_id
+              if: attributes["trace_id"] != nil
+              field: attributes["trace_id"]
               output: remove-span-id
             - id: remove-span-id
               type: remove
-              if: attributes.span_id != nil
-              field: attributes.span_id
+              if: attributes["span_id"] != nil
+              field: attributes["span_id"]
               output: remove-trace-flags
             - id: remove-trace-flags
               type: remove
-              if: attributes.trace_flags != nil
-              field: attributes.trace_flags
+              if: attributes["trace_flags"] != nil
+              field: attributes["trace_flags"]
             - id: noop
               type: noop
 processors:
