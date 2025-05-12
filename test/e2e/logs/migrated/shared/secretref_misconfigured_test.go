@@ -1,0 +1,79 @@
+package shared
+
+import (
+	"testing"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
+	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
+	. "github.com/onsi/gomega"
+	"k8s.io/utils/ptr"
+)
+
+func TestSecretrefMisconfigured_OTel(t *testing.T) {
+	RegisterTestingT(t)
+
+	tests := []struct {
+		name         string
+		inputBuilder func() telemetryv1alpha1.LogPipelineInput
+	}{
+		{
+			name: "gateway",
+			inputBuilder: func() telemetryv1alpha1.LogPipelineInput {
+				return telemetryv1alpha1.LogPipelineInput{
+					Application: &telemetryv1alpha1.LogPipelineApplicationInput{
+						Enabled: ptr.To(false),
+					},
+				}
+			},
+		}, {
+			name: "agent",
+			inputBuilder: func() telemetryv1alpha1.LogPipelineInput {
+				return telemetryv1alpha1.LogPipelineInput{
+					Application: &telemetryv1alpha1.LogPipelineApplicationInput{
+						Enabled: ptr.To(true),
+					},
+				}
+			},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			var (
+				uniquePrefix = unique.Prefix()
+				pipelineName = uniquePrefix()
+			)
+
+			logPipeline := testutils.NewLogPipelineBuilder().
+				WithName(pipelineName).
+				WithInput(tc.inputBuilder()).
+				WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("name", "namespace", "", "")).
+				Build()
+
+			Consistently(func(g Gomega) {
+				g.Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, &logPipeline)).ShouldNot(Succeed())
+			}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
+		})
+	}
+}
+
+func TestSecretrefMisconfigured_FluentBit(t *testing.T) {
+	RegisterTestingT(t)
+
+	var (
+		uniquePrefix = unique.Prefix()
+		pipelineName = uniquePrefix()
+	)
+
+	logPipeline := testutils.NewLogPipelineBuilder().
+		WithName(pipelineName).
+		WithHTTPOutput(testutils.HTTPBasicAuthFromSecret("name", "namespace", "", "")).
+		Build()
+
+	Consistently(func(g Gomega) {
+		g.Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, &logPipeline)).ShouldNot(Succeed())
+	}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
+}
