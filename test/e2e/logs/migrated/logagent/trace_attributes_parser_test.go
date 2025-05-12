@@ -69,40 +69,20 @@ func TestAttributesParser(t *testing.T) {
 	assert.OTelLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 	assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, generatorNs)
 
-	Eventually(func(g Gomega) {
-		resp, err := suite.ProxyClient.Get(backendExportURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+	assert.TelemetryDataDelivered(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(ContainElement(SatisfyAll(
+		HaveOtelTimestamp(Not(BeEmpty())),
+		HaveObservedTimestamp(Not(BeEmpty())),
+		HaveTraceId(Not(BeEmpty())),
+		HaveSpanId(Not(BeEmpty())),
+		HaveTraceId(Equal("255c2212dd02c02ac59a923ff07aec74")),
+	))))
 
-		bodyContent, err := io.ReadAll(resp.Body)
-		defer resp.Body.Close()
-		g.Expect(err).NotTo(HaveOccurred())
-
-		g.Expect(bodyContent).To(HaveFlatOTelLogs(ContainElement(SatisfyAll(
-			HaveOtelTimestamp(Not(BeEmpty())),
-			HaveObservedTimestamp(Not(BeEmpty())),
-			HaveTraceId(Not(BeEmpty())),
-			HaveSpanId(Not(BeEmpty())),
-			HaveTraceId(Equal("255c2212dd02c02ac59a923ff07aec74")),
-		))))
-	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-
-	Eventually(func(g Gomega) {
-		resp, err := suite.ProxyClient.Get(backendExportURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-
-		bodyContent, err := io.ReadAll(resp.Body)
-		defer resp.Body.Close()
-		g.Expect(err).NotTo(HaveOccurred())
-
-		g.Expect(bodyContent).To(HaveFlatOTelLogs(ContainElement(SatisfyAll(
-			HaveOtelTimestamp(Not(BeEmpty())),
-			HaveObservedTimestamp(Not(BeEmpty())),
-			HaveSpanId(Not(BeEmpty())),
-			HaveTraceId(Equal("80e1afed08e019fc1110464cfa66635c")),
-		))))
-	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+	assert.TelemetryDataDelivered(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(ContainElement(SatisfyAll(
+		HaveOtelTimestamp(Not(BeEmpty())),
+		HaveObservedTimestamp(Not(BeEmpty())),
+		HaveSpanId(Not(BeEmpty())),
+		HaveTraceId(Equal("80e1afed08e019fc1110464cfa66635c")),
+	))))
 
 	Consistently(func(g Gomega) {
 		resp, err := suite.ProxyClient.Get(backendExportURL)
