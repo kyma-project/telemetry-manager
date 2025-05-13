@@ -27,6 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       checks: read # Required for checking the status of actions
+      contents: read
     steps:
       - uses: wechuli/allcheckspassed@e22f45a4f25f4cf821d1273705ac233355400db1 # v1.2.0
         with:
