@@ -185,14 +185,14 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 		WithLabels(map[string]string{"env": "dev"}).
 		WithAnnotations(map[string]string{"release": "v1.0.0"})
 
-	logPipelineNotDropped := testutils.NewLogPipelineBuilder().
+	pipelineNotDropped := testutils.NewLogPipelineBuilder().
 		WithName(pipelineNameNotDropped).
 		WithKeepAnnotations(false).
 		WithDropLabels(false).
 		WithHTTPOutput(testutils.HTTPHost(backendNotDropped.Host()), testutils.HTTPPort(backendNotDropped.Port())).
 		Build()
 
-	logPipelineDropped := testutils.NewLogPipelineBuilder().
+	pipelineDropped := testutils.NewLogPipelineBuilder().
 		WithName(pipelineNameDropped).
 		WithKeepAnnotations(false).
 		WithDropLabels(true).
@@ -204,8 +204,8 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 		kitk8s.NewNamespace(droppedNs).K8sObject(),
 		kitk8s.NewNamespace(generatorNs).K8sObject(),
 		logProducer.K8sObject(),
-		&logPipelineNotDropped,
-		&logPipelineDropped,
+		&pipelineNotDropped,
+		&pipelineDropped,
 	}
 	resources = append(resources, backendNotDropped.K8sObjects()...)
 	resources = append(resources, backendDropped.K8sObjects()...)

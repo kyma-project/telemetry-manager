@@ -1,4 +1,4 @@
-package logagent
+package agent
 
 import (
 	"log"
