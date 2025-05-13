@@ -35,7 +35,7 @@ func TestKeepAnnotations(t *testing.T) {
 	backend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsFluentBit)
 	backendExportURL := backend.ExportURL(suite.ProxyClient)
 	logProducer := loggen.New(mockNs).WithAnnotations(map[string]string{"release": "v1.0.0"})
-	logPipeline := testutils.NewLogPipelineBuilder().
+	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithKeepAnnotations(true).
 		WithDropLabels(true).
@@ -45,7 +45,7 @@ func TestKeepAnnotations(t *testing.T) {
 	resources := []client.Object{
 		kitk8s.NewNamespace(mockNs).K8sObject(),
 		logProducer.K8sObject(),
-		&logPipeline,
+		&pipeline,
 	}
 	resources = append(resources, backend.K8sObjects()...)
 

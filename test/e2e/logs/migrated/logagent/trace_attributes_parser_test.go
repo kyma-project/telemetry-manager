@@ -36,7 +36,7 @@ func TestAttributesParser(t *testing.T) {
 	backendExportURL := backend.ExportURL(suite.ProxyClient)
 	hostSecretRef := backend.HostSecretRefV1Alpha1()
 
-	logPipeline := testutils.NewLogPipelineBuilder().
+	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithApplicationInput(true).
 		WithOTLPOutput(
@@ -54,7 +54,7 @@ func TestAttributesParser(t *testing.T) {
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(generatorNs).K8sObject(),
 		logProducer,
-		&logPipeline,
+		&pipeline,
 	}
 	resources = append(resources, backend.K8sObjects()...)
 

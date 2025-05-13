@@ -32,7 +32,7 @@ func TestModifyTimestampDateFormat(t *testing.T) {
 	backend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsFluentBit)
 	backendExportURL := backend.ExportURL(suite.ProxyClient)
 	logProducer := loggen.New(mockNs).WithUseJSON()
-	logPipeline := testutils.NewLogPipelineBuilder().
+	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithIncludeContainers(loggen.DefaultContainerName).
 		WithIncludeNamespaces(mockNs).
@@ -42,7 +42,7 @@ func TestModifyTimestampDateFormat(t *testing.T) {
 	resources := []client.Object{
 		kitk8s.NewNamespace(mockNs).K8sObject(),
 		logProducer.K8sObject(),
-		&logPipeline,
+		&pipeline,
 	}
 	resources = append(resources, backend.K8sObjects()...)
 

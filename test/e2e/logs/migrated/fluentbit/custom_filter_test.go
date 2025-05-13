@@ -28,14 +28,14 @@ func TestCustomFilterDenied(t *testing.T) {
 		pipelineName = uniquePrefix("denied")
 	)
 
-	logPipeline := testutils.NewLogPipelineBuilder().
+	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithCustomFilter("Random custom filter").
 		WithCustomOutput("Random custom output").
 		Build()
 
 	Consistently(func(g Gomega) {
-		g.Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, &logPipeline)).ShouldNot(Succeed())
+		g.Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, &pipeline)).ShouldNot(Succeed())
 	}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
@@ -54,7 +54,7 @@ func TestCustomFilterAllowed(t *testing.T) {
 	backendExportURL := backend.ExportURL(suite.ProxyClient)
 	logProducerInclude := loggen.New(includeNs)
 	logProducerExclude := loggen.New(excludeNs)
-	logPipeline := testutils.NewLogPipelineBuilder().
+	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithCustomFilter(fmt.Sprintf(`
 	    Name    grep
@@ -71,7 +71,7 @@ func TestCustomFilterAllowed(t *testing.T) {
 		kitk8s.NewNamespace(excludeNs).K8sObject(),
 		logProducerInclude.K8sObject(),
 		logProducerExclude.K8sObject(),
-		&logPipeline,
+		&pipeline,
 	}
 	resources = append(resources, backend.K8sObjects()...)
 

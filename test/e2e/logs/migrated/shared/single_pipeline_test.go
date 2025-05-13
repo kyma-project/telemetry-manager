@@ -58,7 +58,7 @@ func TestSinglePipeline_OTel(t *testing.T) {
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
 			backendExportURL := backend.ExportURL(suite.ProxyClient)
 
-			logPipeline := testutils.NewLogPipelineBuilder().
+			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
 				WithInput(tc.input).
 				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
@@ -67,7 +67,7 @@ func TestSinglePipeline_OTel(t *testing.T) {
 			resources := []client.Object{
 				kitk8s.NewNamespace(backendNs).K8sObject(),
 				kitk8s.NewNamespace(generatorNs).K8sObject(),
-				&logPipeline,
+				&pipeline,
 				tc.logGeneratorBuilder(generatorNs),
 			}
 			resources = append(resources, backend.K8sObjects()...)
@@ -104,7 +104,7 @@ func TestSinglePipeline_FluentBit(t *testing.T) {
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
 	backendExportURL := backend.ExportURL(suite.ProxyClient)
 
-	logPipeline := testutils.NewLogPipelineBuilder().
+	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 		Build()
@@ -113,7 +113,7 @@ func TestSinglePipeline_FluentBit(t *testing.T) {
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(generatorNs).K8sObject(),
 		loggen.New(generatorNs).K8sObject(),
-		&logPipeline,
+		&pipeline,
 	}
 	resources = append(resources, backend.K8sObjects()...)
 

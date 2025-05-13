@@ -36,7 +36,7 @@ func TestCustomOutput(t *testing.T) {
 	port   %d
 	host   %s
 	format json`, backend.Port(), backend.Host())
-	logPipeline := testutils.NewLogPipelineBuilder().
+	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithCustomOutput(customOutputTemplate).
 		Build()
@@ -44,7 +44,7 @@ func TestCustomOutput(t *testing.T) {
 	resources := []client.Object{
 		kitk8s.NewNamespace(mockNs).K8sObject(),
 		logProducer.K8sObject(),
-		&logPipeline,
+		&pipeline,
 	}
 	resources = append(resources, backend.K8sObjects()...)
 

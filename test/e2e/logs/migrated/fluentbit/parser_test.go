@@ -39,7 +39,7 @@ Types user:string pass:string`
 	backendExportURL := backend.ExportURL(suite.ProxyClient)
 	logProducer := loggen.New(mockNs).
 		WithAnnotations(map[string]string{"fluentbit.io/parser": "my-regex-parser"})
-	logPipeline := testutils.NewLogPipelineBuilder().
+	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 		Build()
@@ -48,7 +48,7 @@ Types user:string pass:string`
 	resources := []client.Object{
 		kitk8s.NewNamespace(mockNs).K8sObject(),
 		logProducer.K8sObject(),
-		&logPipeline,
+		&pipeline,
 		logRegexParser.K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)

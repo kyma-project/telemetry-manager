@@ -32,7 +32,7 @@ func TestDedot(t *testing.T) {
 	backend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsFluentBit)
 	backendExportURL := backend.ExportURL(suite.ProxyClient)
 	logProducer := loggen.New(mockNs).WithLabels(map[string]string{"dedot.label": "logging-dedot-value"})
-	logPipeline := testutils.NewLogPipelineBuilder().
+	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithIncludeContainers(loggen.DefaultContainerName).
 		WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port()), testutils.HTTPDedot(true)).
@@ -41,7 +41,7 @@ func TestDedot(t *testing.T) {
 	resources := []client.Object{
 		kitk8s.NewNamespace(mockNs).K8sObject(),
 		logProducer.K8sObject(),
-		&logPipeline,
+		&pipeline,
 	}
 	resources = append(resources, backend.K8sObjects()...)
 

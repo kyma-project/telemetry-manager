@@ -61,7 +61,7 @@ func TestSinglePipelineV1Beta1_OTel(t *testing.T) {
 			backendExportURL := backend.ExportURL(suite.ProxyClient)
 
 			// creating a log pipeline explicitly since the testutils.LogPipelineBuilder is not available in the v1beta1 API
-			logPipeline := telemetryv1beta1.LogPipeline{
+			pipeline := telemetryv1beta1.LogPipeline{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: pipelineName,
 				},
@@ -85,7 +85,7 @@ func TestSinglePipelineV1Beta1_OTel(t *testing.T) {
 			resources := []client.Object{
 				kitk8s.NewNamespace(backendNs).K8sObject(),
 				kitk8s.NewNamespace(generatorNs).K8sObject(),
-				&logPipeline,
+				&pipeline,
 				tc.logGeneratorBuilder(generatorNs),
 			}
 			resources = append(resources, backend.K8sObjects()...)
@@ -122,7 +122,7 @@ func TestSinglePipelineV1Beta1_FluentBit(t *testing.T) {
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
 	backendExportURL := backend.ExportURL(suite.ProxyClient)
 
-	logPipeline := telemetryv1beta1.LogPipeline{
+	pipeline := telemetryv1beta1.LogPipeline{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: pipelineName,
 		},
@@ -147,7 +147,7 @@ func TestSinglePipelineV1Beta1_FluentBit(t *testing.T) {
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(generatorNs).K8sObject(),
 		loggen.New(generatorNs).K8sObject(),
-		&logPipeline,
+		&pipeline,
 	}
 	resources = append(resources, backend.K8sObjects()...)
 

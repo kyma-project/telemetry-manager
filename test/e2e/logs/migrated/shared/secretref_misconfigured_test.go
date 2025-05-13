@@ -48,14 +48,14 @@ func TestSecretrefMisconfigured_OTel(t *testing.T) {
 				pipelineName = uniquePrefix()
 			)
 
-			logPipeline := testutils.NewLogPipelineBuilder().
+			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
 				WithInput(tc.inputBuilder()).
 				WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("name", "namespace", "", "")).
 				Build()
 
 			Consistently(func(g Gomega) {
-				g.Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, &logPipeline)).ShouldNot(Succeed())
+				g.Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, &pipeline)).ShouldNot(Succeed())
 			}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 	}
@@ -69,12 +69,12 @@ func TestSecretrefMisconfigured_FluentBit(t *testing.T) {
 		pipelineName = uniquePrefix()
 	)
 
-	logPipeline := testutils.NewLogPipelineBuilder().
+	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithHTTPOutput(testutils.HTTPBasicAuthFromSecret("name", "namespace", "", "")).
 		Build()
 
 	Consistently(func(g Gomega) {
-		g.Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, &logPipeline)).ShouldNot(Succeed())
+		g.Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, &pipeline)).ShouldNot(Succeed())
 	}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
 }

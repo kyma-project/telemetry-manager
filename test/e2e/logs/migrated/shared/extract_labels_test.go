@@ -83,7 +83,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 			backendExportURL := backend.ExportURL(suite.ProxyClient)
 			hostSecretRef := backend.HostSecretRefV1Alpha1()
 
-			logPipeline := testutils.NewLogPipelineBuilder().
+			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
 				WithInput(tc.inputBuilder()).
 				WithOTLPOutput(
@@ -106,7 +106,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 				kitk8s.NewNamespace(backendNs).K8sObject(),
 				kitk8s.NewNamespace(generatorNs).K8sObject(),
 				otlpLogGen,
-				&logPipeline,
+				&pipeline,
 			}
 			resources = append(resources, backend.K8sObjects()...)
 
