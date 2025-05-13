@@ -1,7 +1,6 @@
 package logagent
 
 import (
-	"context"
 	"io"
 	"net/http"
 	"testing"
@@ -60,7 +59,7 @@ func TestAttributesParser(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...))
+		require.NoError(t, kitk8s.DeleteObjects(t.Context(), suite.K8sClient, resources...))
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
 
