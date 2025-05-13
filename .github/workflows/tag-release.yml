@@ -11,7 +11,7 @@ on:
 jobs:
   release:
     permissions:
-      contents: write
+      contents: write # Required for creating the release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo

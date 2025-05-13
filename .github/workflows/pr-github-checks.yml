@@ -29,7 +29,7 @@ env:
 jobs:
   pr-milestone-project-check:
     permissions:
-      pull-requests: write
+      pull-requests: write # Required for setting the milestone
     runs-on: ubuntu-latest
     steps:
       - name: Set milestone
@@ -49,7 +49,7 @@ jobs:
 
   pr-label-check:
     permissions:
-      pull-requests: write
+      pull-requests: write # Required for setting the labels
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code

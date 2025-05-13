@@ -21,7 +21,7 @@ on:
 jobs:
   sync-external-images:
     permissions:
-      id-token: write # This is required for requesting the JWT token
+      id-token: write # Required for requesting the JWT token
     uses: kyma-project/test-infra/.github/workflows/image-syncer.yml@main
     with:
       debug: true
