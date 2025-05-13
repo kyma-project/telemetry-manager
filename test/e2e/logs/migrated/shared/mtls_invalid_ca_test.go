@@ -7,7 +7,6 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
@@ -25,28 +24,16 @@ func TestMTLSInvalidCA_OTel(t *testing.T) {
 	RegisterTestingT(t)
 
 	tests := []struct {
-		name         string
-		inputBuilder func() telemetryv1alpha1.LogPipelineInput
+		name  string
+		input telemetryv1alpha1.LogPipelineInput
 	}{
 		{
-			name: "agent",
-			inputBuilder: func() telemetryv1alpha1.LogPipelineInput {
-				return telemetryv1alpha1.LogPipelineInput{
-					Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-						Enabled: ptr.To(true),
-					},
-				}
-			},
+			name:  "agent",
+			input: testutils.BuildLogPipelineApplicationInput(),
 		},
 		{
-			name: "gateway",
-			inputBuilder: func() telemetryv1alpha1.LogPipelineInput {
-				return telemetryv1alpha1.LogPipelineInput{
-					Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-						Enabled: ptr.To(false),
-					},
-				}
-			},
+			name:  "gateway",
+			input: testutils.BuildLogPipelineOTLPInput(),
 		},
 	}
 	for _, tc := range tests {
@@ -67,7 +54,7 @@ func TestMTLSInvalidCA_OTel(t *testing.T) {
 
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
-				WithInput(tc.inputBuilder()).
+				WithInput(tc.input).
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backend.Endpoint()),
 					testutils.OTLPClientTLSFromString(
