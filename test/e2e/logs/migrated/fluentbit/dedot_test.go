@@ -21,7 +21,7 @@ import (
 )
 
 func TestDedot(t *testing.T) {
-	RegisterTestingT(t)
+	suite.RegisterTestCase(t, suite.LabelLogsFluentBit)
 
 	var (
 		uniquePrefix = unique.Prefix()

@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -21,16 +20,14 @@ import (
 )
 
 func TestSinglePipeline_OTel(t *testing.T) {
-	RegisterTestingT(t)
-
 	tests := []struct {
-		name                string
+		label               string
 		input               telemetryv1alpha1.LogPipelineInput
 		logGeneratorBuilder func(namespace string) client.Object
 		expectAgent         bool
 	}{
 		{
-			name:  "agent",
+			label: suite.LabelLogsOTelAgent,
 			input: testutils.BuildLogPipelineApplicationInput(),
 			logGeneratorBuilder: func(namespace string) client.Object {
 				return loggen.New(namespace).K8sObject()
@@ -38,7 +35,7 @@ func TestSinglePipeline_OTel(t *testing.T) {
 			expectAgent: true,
 		},
 		{
-			name:  "gateway",
+			label: suite.LabelLogsOTelGateway,
 			input: testutils.BuildLogPipelineOTLPInput(),
 			logGeneratorBuilder: func(namespace string) client.Object {
 				return telemetrygen.NewDeployment(namespace, telemetrygen.SignalTypeLogs).K8sObject()
@@ -47,9 +44,11 @@ func TestSinglePipeline_OTel(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.label, func(t *testing.T) {
+			suite.RegisterTestCase(t, tc.label)
+
 			var (
-				uniquePrefix = unique.Prefix(tc.name)
+				uniquePrefix = unique.Prefix(tc.label)
 				pipelineName = uniquePrefix("pipeline")
 				generatorNs  = uniquePrefix("gen")
 				backendNs    = uniquePrefix("backend")
@@ -92,7 +91,7 @@ func TestSinglePipeline_OTel(t *testing.T) {
 }
 
 func TestSinglePipeline_FluentBit(t *testing.T) {
-	RegisterTestingT(t)
+	suite.RegisterTestCase(t, suite.LabelLogsFluentBit)
 
 	var (
 		uniquePrefix = unique.Prefix()

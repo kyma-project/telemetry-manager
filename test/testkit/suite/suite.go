@@ -6,14 +6,15 @@ import (
 	"os"
 	"path"
 	"runtime"
-	"slices"
 	"strings"
 	"testing"
 
+	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	ctrl "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 )
@@ -36,6 +37,9 @@ var (
 // Note that Gomega matchers cannot be utilized in the TestMain function.
 func BeforeSuiteFuncErr() error {
 	Ctx, cancel = context.WithCancel(context.Background()) //nolint:fatcontext // context is used in tests
+
+	//TODO: set up stdout and stderr loggers
+	ctrl.SetLogger(logr.FromContextOrDiscard(Ctx))
 
 	restConfig, err := config.GetConfig()
 	if err != nil {
@@ -97,33 +101,17 @@ func sanitizeSpecID(filePath string) string {
 	return specID
 }
 
-func SkipIfDoesNotMatchLabel(t *testing.T, label string) {
-	args := os.Args
-	idx := slices.IndexFunc(args, func(arg string) bool {
-		return strings.HasPrefix(arg, "label")
-	})
-
-	if idx == -1 {
-		return
-	}
-
-	labelArg := args[idx]
-	if parts := strings.Split(labelArg, "="); len(parts) == 2 {
-		labelVal := parts[1]
-		if labelVal != label {
-			t.Skipf("Skipping test: label mismatch. Expected: %s, Got: %s", label, labelVal)
-		}
-	}
-}
-
 const (
 	// Test suites labels
-	LabelLogsOtel      = "logs-otel"
-	LabelLogsFluentBit = "logs-fluentbit"
-	LabelTraces        = "traces"
-	LabelMetrics       = "metrics"
-	LabelTelemetry     = "telemetry"
-	LabelMaxPipeline   = "max-pipeline"
+	LabelLogs            = "logs"
+	LabelLogsOtel        = "logs-otel"
+	LabelLogsOTelAgent   = "logs-otel-agent"
+	LabelLogsOTelGateway = "logs-otel-gateway"
+	LabelLogsFluentBit   = "logs-fluentbit"
+	LabelTraces          = "traces"
+	LabelMetrics         = "metrics"
+	LabelTelemetry       = "telemetry"
+	LabelMaxPipeline     = "max-pipeline"
 
 	// Test "sub-suites" labels
 	LabelExperimental = "experimental"
@@ -160,4 +148,49 @@ func IsUpgrade() bool {
 	labelsFilter := GinkgoLabelFilter()
 
 	return labelsFilter != "" && Label(LabelUpgrade).MatchesLabelFilter(labelsFilter)
+}
+
+func RegisterTestCase(t *testing.T, labels ...string) {
+	RegisterTestingT(t)
+
+	labelSet := toSet(labels)
+	requiredLabels := findRequiredLabels()
+	if len(requiredLabels) == 0 {
+		return
+	}
+
+	for _, requiredLabel := range requiredLabels {
+		if _, exists := labelSet[requiredLabel]; !exists {
+			t.Skipf("Skipping test: label mismatch. Required: %s, Provided: %s", requiredLabels, labels)
+		}
+	}
+}
+
+func findRequiredLabels() []string {
+	const prefix = "--labels="
+	var labelsArg string
+	for _, arg := range os.Args {
+		if strings.HasPrefix(arg, prefix) {
+			labelsArg = arg
+		}
+	}
+
+	if labelsArg == "" {
+		return nil
+	}
+
+	labelsKV := strings.SplitN(labelsArg, "=", 2)
+	if len(labelsKV) != 2 {
+		return nil
+	}
+
+	return strings.Split(labelsKV[1], ",")
+}
+
+func toSet(labels []string) map[string]struct{} {
+	set := make(map[string]struct{}, len(labels))
+	for _, label := range labels {
+		set[label] = struct{}{}
+	}
+	return set
 }

@@ -20,8 +20,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestParser(t *testing.T) {
-	RegisterTestingT(t)
+func TestLogParser(t *testing.T) {
+	suite.RegisterTestCase(t, suite.LabelLogsFluentBit)
 
 	var (
 		uniquePrefix = unique.Prefix()
