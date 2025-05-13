@@ -59,7 +59,6 @@ jobs:
   build-image:
     permissions:
       id-token: write
-      contents: read
     needs: envs
     uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main # Usage: kyma-project/test-infra/.github/workflows/image-builder.yml@main
     with:

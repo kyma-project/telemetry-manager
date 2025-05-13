@@ -1,7 +1,6 @@
 name: Build Telemetry Self Monitor Image
 
 permissions:
-  id-token: write
   contents: read
 
 on:
@@ -62,7 +61,6 @@ jobs:
   build-image:
     permissions:
       id-token: write
-      contents: read
     needs: envs
     uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main
     with:
