@@ -1,5 +1,8 @@
 name: PR Integration
 
+permissions:
+  contents: read
+
 env:
   # add the tag PR-<number> to the image if it is a PR, if the trigger is merge_group, then add the sha as the tag
   IMG: europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:${{ github.event_name == 'pull_request' && 'PR-' || '' }}${{ github.event.number || github.event.merge_group.head_sha }}
@@ -40,7 +43,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Setup Golang
         uses: ./.github/template/setup-golang
@@ -63,7 +66,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Prepare test
         uses: "./.github/template/prepare-test"
@@ -97,7 +100,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Prepare test
         uses: "./.github/template/prepare-test"
@@ -122,7 +125,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Prepare Test
         uses: "./.github/template/prepare-test"
@@ -163,7 +166,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Prepare Test
         uses: "./.github/template/prepare-test"
@@ -217,7 +220,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Prepare Test
         uses: "./.github/template/prepare-test"

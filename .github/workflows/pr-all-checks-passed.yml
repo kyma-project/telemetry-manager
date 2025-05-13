@@ -1,4 +1,8 @@
 name: All Checks passed
+
+permissions:
+  contents: read
+
 on:
   merge_group:
   pull_request:
