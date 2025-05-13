@@ -35,21 +35,21 @@ func TestExtractLabels_OTel(t *testing.T) {
 		inputBuilder func() telemetryv1alpha1.LogPipelineInput
 	}{
 		{
-			name: "gateway",
-			inputBuilder: func() telemetryv1alpha1.LogPipelineInput {
-				return telemetryv1alpha1.LogPipelineInput{
-					Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-						Enabled: ptr.To(false),
-					},
-				}
-			},
-		},
-		{
 			name: "agent", // FIXME: Currently failing (Label Extraction not implemented for OTel Agent)
 			inputBuilder: func() telemetryv1alpha1.LogPipelineInput {
 				return telemetryv1alpha1.LogPipelineInput{
 					Application: &telemetryv1alpha1.LogPipelineApplicationInput{
 						Enabled: ptr.To(true),
+					},
+				}
+			},
+		},
+		{
+			name: "gateway",
+			inputBuilder: func() telemetryv1alpha1.LogPipelineInput {
+				return telemetryv1alpha1.LogPipelineInput{
+					Application: &telemetryv1alpha1.LogPipelineApplicationInput{
+						Enabled: ptr.To(false),
 					},
 				}
 			},

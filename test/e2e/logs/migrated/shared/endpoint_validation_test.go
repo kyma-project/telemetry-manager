@@ -29,21 +29,21 @@ func TestEndpointInvalid_OTel(t *testing.T) {
 		inputBuilder func() telemetryv1alpha1.LogPipelineInput
 	}{
 		{
-			name: "gateway",
-			inputBuilder: func() telemetryv1alpha1.LogPipelineInput {
-				return telemetryv1alpha1.LogPipelineInput{
-					Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-						Enabled: ptr.To(false),
-					},
-				}
-			},
-		},
-		{
 			name: "agent",
 			inputBuilder: func() telemetryv1alpha1.LogPipelineInput {
 				return telemetryv1alpha1.LogPipelineInput{
 					Application: &telemetryv1alpha1.LogPipelineApplicationInput{
 						Enabled: ptr.To(true),
+					},
+				}
+			},
+		},
+		{
+			name: "gateway",
+			inputBuilder: func() telemetryv1alpha1.LogPipelineInput {
+				return telemetryv1alpha1.LogPipelineInput{
+					Application: &telemetryv1alpha1.LogPipelineApplicationInput{
+						Enabled: ptr.To(false),
 					},
 				}
 			},
