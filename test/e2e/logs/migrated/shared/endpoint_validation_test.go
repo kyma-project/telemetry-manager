@@ -50,14 +50,14 @@ func TestEndpointInvalid_OTel(t *testing.T) {
 				secretName            = uniquePrefix()
 			)
 
-			logPipelineInvalidEndpointValue := testutils.NewLogPipelineBuilder().
+			pipelineInvalidEndpointValue := testutils.NewLogPipelineBuilder().
 				WithName(pipelineNameValue).
 				WithInput(tc.input).
 				WithOTLPOutput(testutils.OTLPEndpoint(invalidEndpoint)).
 				Build()
 
 			secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, invalidEndpoint))
-			logPipelineInvalidEndpointValueFrom := testutils.NewLogPipelineBuilder().
+			pipelineInvalidEndpointValueFrom := testutils.NewLogPipelineBuilder().
 				WithName(pipelineNameValueFrom).
 				WithInput(tc.input).
 				WithOTLPOutput(testutils.OTLPEndpointFromSecret(secret.Name(), secret.Namespace(), endpointKey)).
@@ -65,11 +65,11 @@ func TestEndpointInvalid_OTel(t *testing.T) {
 
 			resourcesToSucceedCreation := []client.Object{
 				secret.K8sObject(),
-				&logPipelineInvalidEndpointValueFrom,
+				&pipelineInvalidEndpointValueFrom,
 			}
 
 			resourcesToFailCreation := []client.Object{
-				&logPipelineInvalidEndpointValue,
+				&pipelineInvalidEndpointValue,
 			}
 
 			t.Cleanup(func() {
@@ -102,24 +102,24 @@ func TestEndpointInvalid_FluentBit(t *testing.T) {
 		secretName            = uniquePrefix()
 	)
 
-	logPipelineInvalidEndpointValue := testutils.NewLogPipelineBuilder().
+	pipelineInvalidEndpointValue := testutils.NewLogPipelineBuilder().
 		WithName(pipelineNameValue).
 		WithHTTPOutput(testutils.HTTPHost(invalidEndpoint)).
 		Build()
 
 	secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, invalidEndpoint))
-	logPipelineInvalidEndpointValueFrom := testutils.NewLogPipelineBuilder().
+	pipelineInvalidEndpointValueFrom := testutils.NewLogPipelineBuilder().
 		WithName(pipelineNameValueFrom).
 		WithHTTPOutput(testutils.HTTPHostFromSecret(secret.Name(), secret.Namespace(), endpointKey)).
 		Build()
 
 	resourcesToSucceedCreation := []client.Object{
 		secret.K8sObject(),
-		&logPipelineInvalidEndpointValueFrom,
+		&pipelineInvalidEndpointValueFrom,
 	}
 
 	resourcesToFailCreation := []client.Object{
-		&logPipelineInvalidEndpointValue,
+		&pipelineInvalidEndpointValue,
 	}
 
 	t.Cleanup(func() {
