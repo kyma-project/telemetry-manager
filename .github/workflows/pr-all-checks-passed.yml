@@ -1,4 +1,8 @@
 name: All Checks passed
+
+permissions:
+  contents: read
+
 on:
   merge_group:
   pull_request:
@@ -22,8 +26,7 @@ jobs:
   all-checks:
     runs-on: ubuntu-latest
     permissions:
-      checks: read
-      contents: read
+      checks: read # Required for checking the status of actions
     steps:
       - uses: wechuli/allcheckspassed@e22f45a4f25f4cf821d1273705ac233355400db1 # v1.2.0
         with:

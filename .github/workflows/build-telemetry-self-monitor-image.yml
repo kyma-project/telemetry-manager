@@ -1,5 +1,8 @@
 name: Build Telemetry Self Monitor Image
 
+permissions:
+  contents: read
+
 on:
   pull_request_target:
     paths:
@@ -12,10 +15,6 @@ on:
       - "dependencies/telemetry-self-monitor/**"
   workflow_dispatch:
 
-permissions:
-  id-token: write
-  contents: read
-
 jobs:
   envs:
     runs-on: ubuntu-latest
@@ -25,7 +24,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Fetch new env file
         run: |
@@ -60,6 +59,8 @@ jobs:
         if: github.event_name == 'push'
 
   build-image:
+    permissions:
+      id-token: write # Required for requesting the JWT token
     needs: envs
     uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main
     with:
