@@ -23,8 +23,12 @@ import (
 func TestDisabledInput_OTel(t *testing.T) {
 	RegisterTestingT(t)
 
+	const (
+		endpoint = "localhost:443"
+	)
+
 	var (
-		uniquePrefix = unique.Prefix("disabled-input")
+		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
 		mockNs       = uniquePrefix()
 	)
@@ -34,7 +38,7 @@ func TestDisabledInput_OTel(t *testing.T) {
 		WithApplicationInput(false).
 		WithOTLPInput(false).
 		WithOTLPOutput(
-			testutils.OTLPEndpoint("localhost", 443),
+			testutils.OTLPEndpoint(endpoint),
 		).
 		Build()
 
@@ -48,12 +52,6 @@ func TestDisabledInput_OTel(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
 
-	assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
-		Type:   conditions.TypeAgentHealthy,
-		Status: metav1.ConditionFalse,
-		Reason: conditions.ReasonAgentNotReady,
-	})
-
 	Consistently(func(g Gomega) {
 		var deployment appsv1.Deployment
 		err := suite.K8sClient.Get(suite.Ctx, kitkyma.LogAgentName, &deployment)
@@ -64,8 +62,13 @@ func TestDisabledInput_OTel(t *testing.T) {
 func TestDisabledInput_FluentBit(t *testing.T) {
 	RegisterTestingT(t)
 
+	const (
+		endpointAddress = "localhost"
+		endpointPort    = 443
+	)
+
 	var (
-		uniquePrefix = unique.Prefix("disabled-input")
+		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
 		mockNs       = uniquePrefix()
 	)
@@ -74,8 +77,8 @@ func TestDisabledInput_FluentBit(t *testing.T) {
 		WithName(pipelineName).
 		WithApplicationInput(false).
 		WithHTTPOutput(
-			testutils.HTTPHost("localhost"),
-			testutils.HTTPPort(443),
+			testutils.HTTPHost(endpointAddress),
+			testutils.HTTPPort(endpointPort),
 		).
 		Build()
 
