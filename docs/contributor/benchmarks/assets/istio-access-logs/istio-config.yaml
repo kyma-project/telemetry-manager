@@ -1,0 +1,184 @@
+apiVersion: v1
+data:
+  mesh: |-
+    defaultConfig:
+      discoveryAddress: istiod.istio-system.svc:15012
+      holdApplicationUntilProxyStarts: true
+      proxyMetadata:
+        BOOTSTRAP_XDS_AGENT: "true"
+        CITADEL_SELF_SIGNED_CA_RSA_KEY_SIZE: "4096"
+        WORKLOAD_RSA_KEY_SIZE: "3072"
+      tracingServiceName: CANONICAL_NAME_ONLY
+    defaultProviders:
+      metrics:
+      - prometheus
+      tracing: []
+    enablePrometheusMerge: false
+    enableTracing: false
+    extensionProviders:
+    - name: kyma-traces
+      opentelemetry:
+        port: 4317
+        service: telemetry-otlp-traces.kyma-system.svc.cluster.local
+    - envoyFileAccessLog:
+        logFormat:
+          labels: {}
+        path: /dev/stdout
+      name: envoy
+    - envoyFileAccessLog:
+        logFormat:
+          labels:
+            authority: '%REQ(:AUTHORITY)%'
+            bytes_received: '%BYTES_RECEIVED%'
+            bytes_sent: '%BYTES_SENT%'
+            connection_termination_details: '%CONNECTION_TERMINATION_DETAILS%'
+            downstream_local_address: '%DOWNSTREAM_LOCAL_ADDRESS%'
+            downstream_remote_address: '%DOWNSTREAM_REMOTE_ADDRESS%'
+            duration: '%DURATION%'
+            method: '%REQ(:METHOD)%'
+            path: '%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%'
+            protocol: '%PROTOCOL%'
+            request_id: '%REQ(X-REQUEST-ID)%'
+            requested_server_name: '%REQUESTED_SERVER_NAME%'
+            response_code: '%RESPONSE_CODE%'
+            response_code_details: '%RESPONSE_CODE_DETAILS%'
+            response_flags: '%RESPONSE_FLAGS%'
+            route_name: '%ROUTE_NAME%'
+            start_time: '%START_TIME%'
+            traceparent: '%REQ(TRACEPARENT)%'
+            tracestate: '%REQ(TRACESTATE)%'
+            upstream_cluster: '%UPSTREAM_CLUSTER%'
+            upstream_host: '%UPSTREAM_HOST%'
+            upstream_local_address: '%UPSTREAM_LOCAL_ADDRESS%'
+            upstream_service_time: '%RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)%'
+            upstream_transport_failure_reason: '%CONNECTION_TERMINATION_DETAILS%'
+            user_agent: '%REQ(USER-AGENT)%'
+            x_forwarded_for: '%REQ(X-FORWARDED-FOR)%'
+        path: /dev/stdout
+      name: stdout-json
+    - envoyOtelAls:
+        logFormat:
+          labels:
+            client.address: '%CEL(xds.listener_direction==1?source.address:upstream.local_address)%'
+            client.port: '%CEL(xds.listener_direction==1?source.port:"")%'
+            http.direction: '%CEL(xds.listener_direction==1?"inbound":(xds.listener_direction==2?"outbound":""))%'
+            http.request.body.size: '%CEL(request.size)%'
+            http.request.duration: '%CEL(request.duration.getMilliseconds())%'
+            http.request.header.referer: '%CEL(request.referer)%'
+            http.request.header.x-forwarded-for: '%CEL(request.headers[X-FORWARDED-FOR])%'
+            http.request.header.x-request-id: '%CEL(request.id)%'
+            http.request.method: '%CEL(request.method)%'
+            http.request.size: '%CEL(request.total_size)%'
+            http.response.body.size: '%CEL(response.size)%'
+            http.response.size: '%CEL(response.total_size)%'
+            http.response.status_code: '%CEL(response.code)%'
+            kyma.component: istio
+            network.local.address: '%CEL(xds.listener_direction==1?destination.address:upstream.local_address)%'
+            network.local.port: '%CEL(xds.listener_direction==1?destination.port:"")%'
+            network.peer.address: '%CEL(xds.listener_direction==1?source.address:upstream.address)%'
+            network.peer.port: '%CEL(xds.listener_direction==1?source.port:upstream.port)%'
+            network.protocol.name: '%CEL(request.protocol)%'
+            server.address: '%CEL(request.host)%'
+            server.port: '%CEL(xds.listener_direction==1?destination.port:upstream.port)%'
+            tls.protocol.name: '%CEL(xds.listener_direction==1?connection.tls_version:upstream.tls_version)%'
+            url.path: '%CEL(request.url_path)%'
+            url.query: '%CEL(request.query)%'
+            url.scheme: '%CEL(request.scheme)%'
+            user_agent.original: '%CEL(request.useragent)%'
+          text: '%DOWNSTREAM_REMOTE_ADDRESS_WITHOUT_PORT% - - [%START_TIME%] "%REQ(:METHOD)%
+            %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)% %PROTOCOL%" %RESPONSE_CODE% %BYTES_SENT%'
+        logName: kyma-logs
+        port: 4317
+        service: telemetry-otlp-logs.kyma-system.svc.cluster.local
+      name: kyma-logs
+    - envoyOtelAls:
+        logFormat:
+          text: '%DOWNSTREAM_REMOTE_ADDRESS_WITHOUT_PORT% - - [%START_TIME%] "%REQ(:METHOD)%
+            %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)% %PROTOCOL%" %RESPONSE_CODE% %BYTES_SENT%'
+        logName: kyma-logs
+        port: 4317
+        service: telemetry-otlp-logs.kyma-system.svc.cluster.local
+      name: kyma-logs-no-labels
+    - envoyOtelAls:
+        logFormat:
+          labels:
+            authority: '%REQ(:AUTHORITY)%'
+            bytes_received: '%BYTES_RECEIVED%'
+            bytes_sent: '%BYTES_SENT%'
+            connection_termination_details: '%CONNECTION_TERMINATION_DETAILS%'
+            downstream_local_address: '%DOWNSTREAM_LOCAL_ADDRESS%'
+            downstream_remote_address: '%DOWNSTREAM_REMOTE_ADDRESS%'
+            duration: '%DURATION%'
+            method: '%REQ(:METHOD)%'
+            path: '%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%'
+            protocol: '%PROTOCOL%'
+            request_id: '%REQ(X-REQUEST-ID)%'
+            requested_server_name: '%REQUESTED_SERVER_NAME%'
+            response_code: '%RESPONSE_CODE%'
+            response_code_details: '%RESPONSE_CODE_DETAILS%'
+            response_flags: '%RESPONSE_FLAGS%'
+            route_name: '%ROUTE_NAME%'
+            start_time: '%START_TIME%'
+            traceparent: '%REQ(TRACEPARENT)%'
+            tracestate: '%REQ(TRACESTATE)%'
+            upstream_cluster: '%UPSTREAM_CLUSTER%'
+            upstream_host: '%UPSTREAM_HOST%'
+            upstream_local_address: '%UPSTREAM_LOCAL_ADDRESS%'
+            upstream_service_time: '%RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)%'
+            upstream_transport_failure_reason: '%CONNECTION_TERMINATION_DETAILS%'
+            user_agent: '%REQ(USER-AGENT)%'
+            x_forwarded_for: '%REQ(X-FORWARDED-FOR)%'
+          text: '%DOWNSTREAM_REMOTE_ADDRESS_WITHOUT_PORT% - - [%START_TIME%] "%REQ(:METHOD)%
+            %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)% %PROTOCOL%" %RESPONSE_CODE% %BYTES_SENT%'
+        logName: kyma-logs
+        port: 4317
+        service: telemetry-otlp-logs.kyma-system.svc.cluster.local
+      name: kyma-logs-old-labels
+    - envoyOtelAls:
+        logFormat:
+          text: '%DOWNSTREAM_REMOTE_ADDRESS_WITHOUT_PORT% - - [%START_TIME%] "%REQ(:METHOD)% %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)% %PROTOCOL%" %RESPONSE_CODE% %BYTES_SENT%'
+          labels:
+            http.request.body.size: '%CEL(request.size)%'
+            http.request.method: '%CEL(request.method)%'
+            http.request.duration: '%CEL(request.duration.getMilliseconds())%'
+            http.response.body.size: '%CEL(response.size)%'
+            http.response.status_code: '%CEL(response.code)%'
+            http.request.header.x-forwarded-for: '%CEL(request.headers[X-FORWARDED-FOR])%'
+            http.request.header.x-request-id: '%CEL(request.id)%'
+            url.scheme: '%CEL(request.scheme)%'
+            url.path: '%CEL(request.url_path)%'
+            url.query: '%CEL(request.query)%'
+            user_agent.original: '%CEL(request.useragent)%'
+            server.address: '%CEL(request.host)%'
+            server.port: '%CEL(xds.listener_direction==1?destination.port:upstream.port)%'
+            network.peer.address: '%CEL(xds.listener_direction==1?source.address:upstream.address)%'
+            network.peer.port: '%CEL(xds.listener_direction==1?source.port:upstream.port)%'
+            network.protocol.name: '%CEL(request.protocol)%'
+            http.direction: '%CEL(xds.listener_direction==1?"inbound":(xds.listener_direction==2?"outbound":""))%'
+            kyma.component: 'istio'
+        logName: kyma-logs
+        port: 4317
+        service: telemetry-otlp-logs.kyma-system.svc.cluster.local
+      name: kyma-logs-reduced-labels
+    rootNamespace: istio-system
+    trustDomain: cluster.local
+  meshNetworks: "networks: {}"
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: istio
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: istiod
+    app.kubernetes.io/part-of: istio
+    app.kubernetes.io/version: 1.0.0
+    helm.sh/chart: istiod-1.0.0
+    install.operator.istio.io/owning-resource: default-operator
+    install.operator.istio.io/owning-resource-namespace: istio-system
+    istio.io/rev: default
+    kyma-project.io/module: istio
+    operator.istio.io/component: Pilot
+    operator.istio.io/managed: Reconcile
+    operator.istio.io/version: unknown
+    release: istio
+  name: istio
+  namespace: istio-system

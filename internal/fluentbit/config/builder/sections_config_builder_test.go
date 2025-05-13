@@ -83,9 +83,9 @@ func TestCreateLuaDedotFilterWithDedotFalse(t *testing.T) {
 func TestMergeSectionsConfig(t *testing.T) {
 	excludePath := strings.Join([]string{
 		"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
-		"/var/log/containers/*system-logs-agent*_kyma-system_collector-*.log",
-		"/var/log/containers/*system-logs-collector*_kyma-system_collector-*.log",
-		"/var/log/containers/telemetry-log-agent_kyma-system_collector-*.log",
+		"/var/log/containers/*system-logs-agent-*_kyma-system_collector-*.log",
+		"/var/log/containers/*system-logs-collector-*_kyma-system_collector-*.log",
+		"/var/log/containers/telemetry-log-agent-*_kyma-system_collector-*.log",
 		"/var/log/containers/*_*_container1-*.log",
 		"/var/log/containers/*_*_container2-*.log",
 	}, ",")
@@ -209,9 +209,9 @@ func TestMergeSectionsConfig(t *testing.T) {
 
 func TestMergeSectionsConfigCustomOutput(t *testing.T) {
 	excludePath := strings.Join([]string{
-		"/var/log/containers/*system-logs-agent*_kyma-system_collector-*.log",
-		"/var/log/containers/*system-logs-collector*_kyma-system_collector-*.log",
-		"/var/log/containers/telemetry-log-agent_kyma-system_collector-*.log",
+		"/var/log/containers/*system-logs-agent-*_kyma-system_collector-*.log",
+		"/var/log/containers/*system-logs-collector-*_kyma-system_collector-*.log",
+		"/var/log/containers/telemetry-log-agent-*_kyma-system_collector-*.log",
 	}, ",")
 	expected := fmt.Sprintf(`[INPUT]
     name             tail

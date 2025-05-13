@@ -71,6 +71,9 @@ jobs:
           release: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Deploy Test Prerequisites
+        uses: "./.github/template/deploy-test-prerequisites"
+
       - name: Run tests
         run: bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags e2e --label-filter="${{ matrix.ginkgo-labels }} && !experimental" -r test/e2e
 
@@ -101,6 +104,9 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Deploy Test Prerequisites
+        uses: "./.github/template/deploy-test-prerequisites"
+
       - name: Run tests
         run: bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags e2e --label-filter="${{ matrix.ginkgo-labels }} && experimental" -r test/e2e
 
@@ -126,6 +132,9 @@ jobs:
 
       - name: Deploy Istio Module
         run: hack/deploy-istio.sh
+
+      - name: Deploy Test Prerequisites
+        uses: "./.github/template/deploy-test-prerequisites"
 
       - name: Run tests
         run: |
@@ -162,15 +171,23 @@ jobs:
           release: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Deploy Test Prerequisites
+        if: ${{ matrix.scenario == 'healthy' }}
+        uses: "./.github/template/deploy-test-prerequisites"
+
       - name: Run tests without Istio
         if: ${{ matrix.scenario == 'healthy' }}
         run: |
-          bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags e2e --label-filter="self-mon-${{ matrix.signal-type }}-${{ matrix.scenario }} && !experimental" -r test/e2e 
+          bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags e2e --label-filter="self-mon-${{ matrix.signal-type }}-${{ matrix.scenario }} && !experimental" -r test/e2e
 
         # we need Istio for fault injection to simulate backpressure and outages
       - name: Deploy Istio Module
         if: ${{ matrix.scenario != 'healthy' }}
         run: hack/deploy-istio.sh
+
+      - name: Deploy Test Prerequisites
+        if: ${{ matrix.scenario != 'healthy' }}
+        uses: "./.github/template/deploy-test-prerequisites"
 
       - name: Run tests with Istio
         if: ${{ matrix.scenario != 'healthy' }}
@@ -207,6 +224,10 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Deploy Test Prerequisites
+        if: ${{ matrix.scenario == 'healthy' }}
+        uses: "./.github/template/deploy-test-prerequisites"
+
       - name: Run tests without Istio
         if: ${{ matrix.scenario == 'healthy' }}
         run: |
@@ -216,6 +237,10 @@ jobs:
       - name: Deploy Istio Module
         if: ${{ matrix.scenario != 'healthy' }}
         run: hack/deploy-istio.sh
+
+      - name: Deploy Test Prerequisites
+        if: ${{ matrix.scenario != 'healthy' }}
+        uses: "./.github/template/deploy-test-prerequisites"
 
       - name: Run tests with Istio
         if: ${{ matrix.scenario != 'healthy' }}
