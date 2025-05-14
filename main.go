@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"crypto/fips140"
 	"flag"
 	"fmt"
 	"os"
@@ -162,6 +163,8 @@ func run() error {
 	for _, flag := range featureflags.EnabledFlags() {
 		setupLog.Info("Enabled feature flag", "flag", flag)
 	}
+
+	setupLog.Info("FIPS mode", "enabled", fips140.Enabled())
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                  scheme,
