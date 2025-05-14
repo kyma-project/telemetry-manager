@@ -1,4 +1,4 @@
-package shared
+package agent
 
 import (
 	"context"
@@ -22,11 +22,11 @@ import (
 	"testing"
 )
 
-func TestObservedTime_Otel(t *testing.T) {
+func TestObservedTime(t *testing.T) {
 	RegisterTestingT(t)
 	var (
-		uniquePrefix = unique.Prefix()
-		pipelineName = uniquePrefix("")
+		uniquePrefix = unique.Prefix("agent")
+		pipelineName = uniquePrefix()
 		genNs        = uniquePrefix("gen")
 		backendNs    = uniquePrefix("backend")
 	)

@@ -108,7 +108,7 @@ func TestServiceName(t *testing.T) {
 	verifyServiceNameAttr(podWithBothLabelsName, kubeAppLabelValue)
 	verifyServiceNameAttr(jobName, jobName)
 	verifyServiceNameAttr(podWithNoLabelsName, podWithNoLabelsName)
-	assert.TelemetryDataDelivered(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(
+	assert.DataConsistentlyMatching(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(
 		Not(ContainElement(
 			HaveResourceAttributes(HaveKey(ContainSubstring("kyma"))),
 		)),
