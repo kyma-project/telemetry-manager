@@ -24,16 +24,14 @@ import (
 
 // TODO: TO BE FIXED
 func TestResources_OTel(t *testing.T) {
-	RegisterTestingT(t)
-
 	tests := []struct {
-		name                     string
+		label                    string
 		input                    telemetryv1alpha1.LogPipelineInput
 		mainResourceToCheckFor   assert.Resource
 		otherResourcesToCheckFor []assert.Resource
 	}{
 		{
-			name:                   "agent",
+			label:                  suite.LabelLogAgent,
 			input:                  testutils.BuildLogPipelineApplicationInput(),
 			mainResourceToCheckFor: assert.NewResource[*appsv1.DaemonSet](kitkyma.LogAgentName),
 			otherResourcesToCheckFor: []assert.Resource{
@@ -46,7 +44,7 @@ func TestResources_OTel(t *testing.T) {
 			},
 		},
 		{
-			name:                   "gateway",
+			label:                  suite.LabelLogGateway,
 			input:                  testutils.BuildLogPipelineOTLPInput(),
 			mainResourceToCheckFor: assert.NewResource[*appsv1.Deployment](kitkyma.LogGatewayName),
 			otherResourcesToCheckFor: []assert.Resource{
@@ -60,7 +58,9 @@ func TestResources_OTel(t *testing.T) {
 		},
 	}
 	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.label, func(t *testing.T) {
+			suite.RegisterTestCase(t, tc.label)
+
 			const (
 				endpointKey = "endpoint"
 				endpoint    = "http://localhost:123"
@@ -101,7 +101,7 @@ func TestResources_OTel(t *testing.T) {
 }
 
 func TestResources_FluentBit(t *testing.T) {
-	RegisterTestingT(t)
+	suite.RegisterTestCase(t, suite.LabelFluentBit)
 
 	const (
 		endpointKey = "endpoint"
