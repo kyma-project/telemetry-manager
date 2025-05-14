@@ -19,8 +19,7 @@ import (
 )
 
 func TestContainerSelector_OTel(t *testing.T) {
-	RegisterTestingT(t)
-	// suite.SkipIfDoesNotMatchLabel(t, "logs")
+	suite.RegisterTestCase(t, suite.LabelLogAgent)
 
 	var (
 		uniquePrefix                  = unique.Prefix("agent")
@@ -86,8 +85,7 @@ func TestContainerSelector_OTel(t *testing.T) {
 }
 
 func TestContainerSelector_FluentBit(t *testing.T) {
-	RegisterTestingT(t)
-	// suite.SkipIfDoesNotMatchLabel(t, "logs")
+	suite.RegisterTestCase(t, suite.LabelFluentBit)
 
 	var (
 		uniquePrefix                  = unique.Prefix()

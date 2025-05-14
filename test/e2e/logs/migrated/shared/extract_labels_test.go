@@ -9,7 +9,6 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
@@ -28,35 +27,24 @@ import (
 )
 
 func TestExtractLabels_OTel(t *testing.T) {
-	RegisterTestingT(t)
-
 	tests := []struct {
-		name         string
-		inputBuilder func() telemetryv1alpha1.LogPipelineInput
+		label        string
+		inputBuilder telemetryv1alpha1.LogPipelineInput
 	}{
 		{
-			name: "agent", // FIXME: Currently failing (Label Extraction not implemented for OTel Agent)
-			inputBuilder: func() telemetryv1alpha1.LogPipelineInput {
-				return telemetryv1alpha1.LogPipelineInput{
-					Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-						Enabled: ptr.To(true),
-					},
-				}
-			},
+			label:        suite.LabelLogAgent, // FIXME: Currently failing (Label Extraction not implemented for OTel Agent)
+			inputBuilder: testutils.BuildLogPipelineApplicationInput(),
 		},
 		{
-			name: "gateway",
-			inputBuilder: func() telemetryv1alpha1.LogPipelineInput {
-				return telemetryv1alpha1.LogPipelineInput{
-					Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-						Enabled: ptr.To(false),
-					},
-				}
-			},
+			label:        suite.LabelLogGateway,
+			inputBuilder: testutils.BuildLogPipelineOTLPInput(),
 		},
 	}
+
 	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.label, func(t *testing.T) {
+			suite.RegisterTestCase(t, tc.label)
+
 			const (
 				k8sLabelKeyPrefix = "k8s.pod.label"
 				logLabelKeyPrefix = "log.test.prefix"
@@ -76,7 +64,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 				uniquePrefix = unique.Prefix()
 				backendNs    = uniquePrefix("backend")
 				generatorNs  = uniquePrefix("generator")
-				pipelineName = uniquePrefix(tc.name)
+				pipelineName = uniquePrefix(tc.label)
 			)
 
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
@@ -85,7 +73,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
-				WithInput(tc.inputBuilder()).
+				WithInput(tc.inputBuilder).
 				WithOTLPOutput(
 					testutils.OTLPEndpointFromSecret(
 						hostSecretRef.Name,
@@ -164,7 +152,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 }
 
 func TestExtractLabels_FluentBit(t *testing.T) {
-	RegisterTestingT(t)
+	suite.RegisterTestCase(t, suite.LabelFluentBit)
 
 	var (
 		uniquePrefix           = unique.Prefix()

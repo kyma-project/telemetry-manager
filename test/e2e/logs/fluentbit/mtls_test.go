@@ -17,7 +17,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelFluentBit), Ordered, func() {
 	var (
 		mockNs           = suite.ID()
 		pipelineName     = suite.ID()

@@ -26,7 +26,7 @@ import (
 )
 
 func TestServiceName(t *testing.T) {
-	RegisterTestingT(t)
+	suite.RegisterTestCase(t, suite.LabelLogAgent)
 
 	const (
 		jobName               = "job"

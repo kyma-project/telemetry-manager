@@ -23,7 +23,7 @@ import (
 )
 
 func TestAttributesParser(t *testing.T) {
-	RegisterTestingT(t)
+	suite.RegisterTestCase(t, suite.LabelLogAgent)
 
 	var (
 		uniquePrefix = unique.Prefix()

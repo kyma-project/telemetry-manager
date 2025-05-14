@@ -103,15 +103,15 @@ func sanitizeSpecID(filePath string) string {
 
 const (
 	// Test suites labels
-	LabelLogs            = "logs"
-	LabelLogsOtel        = "logs-otel"
-	LabelLogsOTelAgent   = "logs-otel-agent"
-	LabelLogsOTelGateway = "logs-otel-gateway"
-	LabelLogsFluentBit   = "logs-fluentbit"
-	LabelTraces          = "traces"
-	LabelMetrics         = "metrics"
-	LabelTelemetry       = "telemetry"
-	LabelMaxPipeline     = "max-pipeline"
+	LabelLogs        = "logs"
+	LabelLogsOtel    = "logs-otel"
+	LabelLogAgent    = "log-agent"
+	LabelLogGateway  = "log-gateway"
+	LabelFluentBit   = "fluent-bit"
+	LabelTraces      = "traces"
+	LabelMetrics     = "metrics"
+	LabelTelemetry   = "telemetry"
+	LabelMaxPipeline = "max-pipeline"
 
 	// Test "sub-suites" labels
 	LabelExperimental = "experimental"

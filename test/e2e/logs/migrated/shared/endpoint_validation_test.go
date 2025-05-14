@@ -21,30 +21,31 @@ import (
 
 // FIXME: Currently failing (Endpoint validation not implemented for OTel)
 func TestEndpointInvalid_OTel(t *testing.T) {
-	RegisterTestingT(t)
-
 	tests := []struct {
-		name  string
+		label string
 		input telemetryv1alpha1.LogPipelineInput
 	}{
 		{
-			name:  "agent",
+			label: suite.LabelLogAgent,
 			input: testutils.BuildLogPipelineApplicationInput(),
 		},
 		{
-			name:  "gateway",
+			label: suite.LabelLogGateway,
 			input: testutils.BuildLogPipelineOTLPInput(),
 		},
 	}
+
 	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.label, func(t *testing.T) {
+			suite.RegisterTestCase(t, tc.label)
+
 			const (
 				endpointKey     = "endpoint"
 				invalidEndpoint = "'http://example.com'"
 			)
 
 			var (
-				uniquePrefix          = unique.Prefix(tc.name)
+				uniquePrefix          = unique.Prefix(tc.label)
 				pipelineNameValue     = uniquePrefix("value")
 				pipelineNameValueFrom = uniquePrefix("value-from")
 				secretName            = uniquePrefix()
@@ -88,7 +89,7 @@ func TestEndpointInvalid_OTel(t *testing.T) {
 }
 
 func TestEndpointInvalid_FluentBit(t *testing.T) {
-	RegisterTestingT(t)
+	suite.RegisterTestCase(t, suite.LabelFluentBit)
 
 	const (
 		endpointKey     = "endpoint"

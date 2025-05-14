@@ -21,7 +21,7 @@ import (
 )
 
 func TestDisabledInput_OTel(t *testing.T) {
-	RegisterTestingT(t)
+	suite.RegisterTestCase(t, suite.LabelLogAgent)
 
 	const (
 		endpoint = "localhost:443"
@@ -60,7 +60,7 @@ func TestDisabledInput_OTel(t *testing.T) {
 }
 
 func TestDisabledInput_FluentBit(t *testing.T) {
-	RegisterTestingT(t)
+	suite.RegisterTestCase(t, suite.LabelFluentBit)
 
 	const (
 		endpointAddress = "localhost"

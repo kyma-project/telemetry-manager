@@ -21,7 +21,7 @@ import (
 )
 
 func TestCustomFilterDenied(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelLogsFluentBit)
+	suite.RegisterTestCase(t, suite.LabelFluentBit)
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -40,7 +40,7 @@ func TestCustomFilterDenied(t *testing.T) {
 }
 
 func TestCustomFilterAllowed(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelLogsFluentBit)
+	suite.RegisterTestCase(t, suite.LabelFluentBit)
 
 	var (
 		uniquePrefix = unique.Prefix()

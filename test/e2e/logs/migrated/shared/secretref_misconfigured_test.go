@@ -14,23 +14,24 @@ import (
 )
 
 func TestSecretrefMisconfigured_OTel(t *testing.T) {
-	RegisterTestingT(t)
-
 	tests := []struct {
-		name  string
+		label string
 		input telemetryv1alpha1.LogPipelineInput
 	}{
 		{
-			name:  "agent",
+			label: suite.LabelLogAgent,
 			input: testutils.BuildLogPipelineApplicationInput(),
 		},
 		{
-			name:  "gateway",
+			label: suite.LabelLogGateway,
 			input: testutils.BuildLogPipelineOTLPInput(),
 		},
 	}
+
 	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.label, func(t *testing.T) {
+			suite.RegisterTestCase(t, tc.label)
+
 			var (
 				uniquePrefix = unique.Prefix()
 				pipelineName = uniquePrefix()
@@ -50,7 +51,7 @@ func TestSecretrefMisconfigured_OTel(t *testing.T) {
 }
 
 func TestSecretrefMisconfigured_FluentBit(t *testing.T) {
-	RegisterTestingT(t)
+	suite.RegisterTestCase(t, suite.LabelFluentBit)
 
 	var (
 		uniquePrefix = unique.Prefix()

@@ -22,27 +22,28 @@ import (
 
 // FIXME: Currently failing (Secret validation not implemented for OTel)
 func TestSecretRotation_OTel(t *testing.T) {
-	RegisterTestingT(t)
-	// suite.SkipIfDoesNotMatchLabel(t, "logs")
 	tests := []struct {
-		name  string
+		label string
 		input telemetryv1alpha1.LogPipelineInput
 	}{
 		{
-			name:  "agent",
+			label: suite.LabelLogAgent,
 			input: testutils.BuildLogPipelineApplicationInput(),
 		},
 		{
-			name:  "gateway",
+			label: suite.LabelLogGateway,
 			input: testutils.BuildLogPipelineOTLPInput(),
 		},
 	}
+
 	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.label, func(t *testing.T) {
+			suite.RegisterTestCase(t, tc.label)
+
 			const endpointKey = "logs-endpoint"
 
 			var (
-				uniquePrefix = unique.Prefix(tc.name)
+				uniquePrefix = unique.Prefix(tc.label)
 				pipelineName = uniquePrefix()
 			)
 
@@ -93,8 +94,8 @@ func TestSecretRotation_OTel(t *testing.T) {
 }
 
 func TestSecretRotation_FluentBit(t *testing.T) {
-	RegisterTestingT(t)
-	// suite.SkipIfDoesNotMatchLabel(t, "logs")
+	suite.RegisterTestCase(t, suite.LabelFluentBit)
+
 	const endpointKey = "logs-endpoint"
 
 	var (

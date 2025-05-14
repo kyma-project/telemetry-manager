@@ -21,17 +21,14 @@ import (
 )
 
 func TestNamespaceSelector_OTel(t *testing.T) {
-	RegisterTestingT(t)
-	// suite.SkipIfDoesNotMatchLabel(t, "logs")
-
 	tests := []struct {
-		name                string
+		label               string
 		inputBuilder        func(includeNs, excludeNs string) telemetryv1alpha1.LogPipelineInput
 		logGeneratorBuilder func(namespace string) client.Object
 		expectAgent         bool
 	}{
 		{
-			name: "agent",
+			label: suite.LabelLogAgent,
 			inputBuilder: func(includeNs, excludeNs string) telemetryv1alpha1.LogPipelineInput {
 				var opts []testutils.ExtendedNamespaceSelectorOptions
 				if includeNs != "" {
@@ -49,7 +46,7 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 			expectAgent: true,
 		},
 		{
-			name: "gateway",
+			label: suite.LabelLogGateway,
 			inputBuilder: func(includeNs, excludeNs string) telemetryv1alpha1.LogPipelineInput {
 				var opts []testutils.NamespaceSelectorOptions
 				if includeNs != "" {
@@ -68,9 +65,11 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.label, func(t *testing.T) {
+			suite.RegisterTestCase(t, tc.label)
+
 			var (
-				uniquePrefix            = unique.Prefix(tc.name)
+				uniquePrefix            = unique.Prefix(tc.label)
 				gen1Ns                  = uniquePrefix("gen-1")
 				includeGen1PipelineName = uniquePrefix("include")
 				gen2Ns                  = uniquePrefix("gen-2")
@@ -127,8 +126,7 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 }
 
 func TestNamespaceSelector_FluentBit(t *testing.T) {
-	RegisterTestingT(t)
-	// suite.SkipIfDoesNotMatchLabel(t, "logs")
+	suite.RegisterTestCase(t, suite.LabelLogAgent)
 
 	var (
 		uniquePrefix            = unique.Prefix()
