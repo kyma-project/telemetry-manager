@@ -2,7 +2,6 @@ package assert
 
 import (
 	"context"
-	"fmt"
 
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -10,7 +9,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
 type Resource struct {
@@ -18,20 +16,26 @@ type Resource struct {
 	Name   types.NamespacedName
 }
 
-func NewResource[T client.Object](name types.NamespacedName) Resource {
-	var obj T
-
+func NewResource(object client.Object, name types.NamespacedName) Resource {
 	return Resource{
-		Object: obj,
+		Object: object,
 		Name:   name,
 	}
 }
 
 func ResourcesExist(ctx context.Context, k8sClient client.Client, resources ...Resource) {
 	for _, resource := range resources {
+		Eventually(func(g Gomega) {
+			g.Expect(k8sClient.Get(ctx, resource.Name, resource.Object)).To(Succeed())
+		}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed(), "resource %s of type %T does not exist", resource.Name, resource.Object)
+	}
+}
+
+func ResourcesNotExist(ctx context.Context, k8sClient client.Client, resources ...Resource) {
+	for _, resource := range resources {
 		Eventually(func(g Gomega) bool {
-			err := suite.K8sClient.Get(ctx, resource.Name, resource.Object)
+			err := k8sClient.Get(ctx, resource.Name, resource.Object)
 			return apierrors.IsNotFound(err)
-		}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), fmt.Sprintf("resource %s of type %s should exist", resource.Name, resource.Object.GetObjectKind().GroupVersionKind().Kind))
+		}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "resource %s of type %T still exists", resource.Name, resource.Object)
 	}
 }

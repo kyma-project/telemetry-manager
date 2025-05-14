@@ -136,6 +136,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPush, s
 		//		g.Expect(err).NotTo(HaveOccurred())
 		//		g.Expect(resp).To(HaveHTTPStatus(http.StatusServiceUnavailable))
 		//	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
-		//})
+		// })
 	})
 })
