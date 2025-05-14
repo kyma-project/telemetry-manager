@@ -2,25 +2,26 @@ package shared
 
 import (
 	"context"
+	"io"
+	"net/http"
+	"testing"
+
+	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/require"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
-	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/require"
-	"io"
-	"net/http"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"testing"
 )
 
 func TestObservedTime(t *testing.T) {
@@ -56,7 +57,8 @@ func TestObservedTime(t *testing.T) {
 				genNs        = uniquePrefix("gen")
 				backendNs    = uniquePrefix("backend")
 			)
-			backend := backend.New(backendNs, backend.SignalTypeLogsOTel)
+
+			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
 			backendExportURL := backend.ExportURL(suite.ProxyClient)
 
 			pipeline := testutils.NewLogPipelineBuilder().
@@ -106,5 +108,4 @@ func TestObservedTime(t *testing.T) {
 			}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	}
-
 }

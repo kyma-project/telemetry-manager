@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
 type Resource struct {
@@ -19,6 +20,7 @@ type Resource struct {
 
 func NewResource[T client.Object](name types.NamespacedName) Resource {
 	var obj T
+
 	return Resource{
 		Object: obj,
 		Name:   name,

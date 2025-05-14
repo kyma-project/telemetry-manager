@@ -2,19 +2,21 @@ package shared
 
 import (
 	"context"
+	"testing"
+
+	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/require"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
-	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/require"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
 )
 
 func TestKeepOriginalBody_OTel(t *testing.T) {
@@ -32,10 +34,10 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 		pipelineWithoutKeepOriginalBodyName = uniquePrefix("false")
 	)
 
-	backendGen1 := backend.New(backendGen1Ns, backend.SignalTypeLogsOTel, backend.WithName("backend-gen-1"))
+	backendGen1 := kitbackend.New(backendGen1Ns, kitbackend.SignalTypeLogsOTel, kitbackend.WithName("backend-gen-1"))
 	backendGen1ExportURL := backendGen1.ExportURL(suite.ProxyClient)
 
-	backendGen2 := backend.New(backendGen2Ns, backend.SignalTypeLogsOTel, backend.WithName("backend-gen-2"))
+	backendGen2 := kitbackend.New(backendGen2Ns, kitbackend.SignalTypeLogsOTel, kitbackend.WithName("backend-gen-2"))
 	backendGen2ExportURL := backendGen2.ExportURL(suite.ProxyClient)
 
 	pipelineKeepOriginalBody := testutils.NewLogPipelineBuilder().
@@ -94,7 +96,6 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 			HaveAttributes(HaveKey("log.original")),
 		)),
 	))
-
 }
 
 func TestKeepOriginalBody_FluentBit(t *testing.T) {
@@ -112,10 +113,10 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 		pipelineWithoutKeepOriginalBodyName = uniquePrefix("without-keep-original-body")
 	)
 
-	backendGen1 := backend.New(backendGen1Ns, backend.SignalTypeLogsFluentBit, backend.WithName("backend-gen-1"))
+	backendGen1 := kitbackend.New(backendGen1Ns, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithName("backend-gen-1"))
 	backendGen1ExportURL := backendGen1.ExportURL(suite.ProxyClient)
 
-	backendGen2 := backend.New(backendGen2Ns, backend.SignalTypeLogsFluentBit, backend.WithName("backend-gen-2"))
+	backendGen2 := kitbackend.New(backendGen2Ns, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithName("backend-gen-2"))
 	backendGen2ExportURL := backendGen2.ExportURL(suite.ProxyClient)
 
 	pipelineKeepOriginalBody := testutils.NewLogPipelineBuilder().

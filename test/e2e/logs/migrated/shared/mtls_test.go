@@ -2,20 +2,20 @@ package shared
 
 import (
 	"context"
-	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
-	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
-	"github.com/stretchr/testify/require"
 	"testing"
 
 	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -54,10 +54,10 @@ func TestMTLS_OTel(t *testing.T) {
 				backendNs    = uniquePrefix("backend")
 			)
 
-			serverCerts, clientCerts, err := testutils.NewCertBuilder(backend.DefaultName, backendNs).Build()
+			serverCerts, clientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
 			Expect(err).ToNot(HaveOccurred())
 
-			backend := backend.New(backendNs, backend.SignalTypeLogsOTel, backend.WithTLS(*serverCerts))
+			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithTLS(*serverCerts))
 			backendExportURL := backend.ExportURL(suite.ProxyClient)
 
 			pipeline := testutils.NewLogPipelineBuilder().
@@ -88,9 +88,11 @@ func TestMTLS_OTel(t *testing.T) {
 			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 			assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
 			assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
+
 			if tc.expectAgent {
 				assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
 			}
+
 			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, genNs)
 		})
 	}
@@ -106,10 +108,10 @@ func TestMTLS_FluentBit(t *testing.T) {
 		backendNs    = uniquePrefix("backend")
 	)
 
-	serverCerts, clientCerts, err := testutils.NewCertBuilder(backend.DefaultName, backendNs).Build()
+	serverCerts, clientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
 	Expect(err).ToNot(HaveOccurred())
 
-	backend := backend.New(backendNs, backend.SignalTypeLogsFluentBit, backend.WithTLS(*serverCerts))
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithTLS(*serverCerts))
 	backendExportURL := backend.ExportURL(suite.ProxyClient)
 
 	pipeline := testutils.NewLogPipelineBuilder().

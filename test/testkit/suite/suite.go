@@ -14,7 +14,7 @@ import (
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
-	ctrl "sigs.k8s.io/controller-runtime/pkg/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 )
@@ -39,7 +39,7 @@ func BeforeSuiteFuncErr() error {
 	Ctx, cancel = context.WithCancel(context.Background()) //nolint:fatcontext // context is used in tests
 
 	//TODO: set up stdout and stderr loggers
-	ctrl.SetLogger(logr.FromContextOrDiscard(Ctx))
+	logf.SetLogger(logr.FromContextOrDiscard(Ctx))
 
 	restConfig, err := config.GetConfig()
 	if err != nil {
@@ -154,6 +154,7 @@ func RegisterTestCase(t *testing.T, labels ...string) {
 	RegisterTestingT(t)
 
 	labelSet := toSet(labels)
+
 	requiredLabels := findRequiredLabels()
 	if len(requiredLabels) == 0 {
 		return
@@ -168,7 +169,9 @@ func RegisterTestCase(t *testing.T, labels ...string) {
 
 func findRequiredLabels() []string {
 	const prefix = "-labels="
+
 	var labelsArg string
+
 	for _, arg := range os.Args {
 		if strings.HasPrefix(arg, prefix) {
 			labelsArg = arg
@@ -192,5 +195,6 @@ func toSet(labels []string) map[string]struct{} {
 	for _, label := range labels {
 		set[label] = struct{}{}
 	}
+
 	return set
 }

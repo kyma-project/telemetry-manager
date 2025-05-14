@@ -120,7 +120,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPush, s
 			assert.EmitsOTelCollectorMetrics(suite.ProxyClient, gatewayMetricsURL)
 		})
 
-		//It("Should have a working network policy", func() {
+		// It("Should have a working network policy", func() {
 		//	var networkPolicy networkingv1.NetworkPolicy
 		//	Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.LogGatewayNetworkPolicy, &networkPolicy)).To(Succeed())
 		//

@@ -98,5 +98,4 @@ func TestAttributesParser(t *testing.T) {
 			HaveSpanId(BeEmpty()),
 			HaveAttributes(HaveKey("span_id")),
 		))))
-
 }

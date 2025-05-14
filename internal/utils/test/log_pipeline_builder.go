@@ -133,12 +133,14 @@ func (b *LogPipelineBuilder) WithOutput(output telemetryv1alpha1.LogPipelineOutp
 func (b *LogPipelineBuilder) WithApplicationInput(enabled bool, opts ...ExtendedNamespaceSelectorOptions) *LogPipelineBuilder {
 	b.input = BuildLogPipelineApplicationInput(opts...)
 	b.input.Application.Enabled = ptr.To(enabled)
+
 	return b
 }
 
 func (b *LogPipelineBuilder) WithOTLPInput(enabled bool, opts ...NamespaceSelectorOptions) *LogPipelineBuilder {
 	b.input = BuildLogPipelineOTLPInput(opts...)
 	b.input.OTLP.Disabled = !enabled
+
 	return b
 }
 

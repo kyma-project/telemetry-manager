@@ -8,12 +8,14 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -21,9 +23,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
-	"github.com/stretchr/testify/require"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // TODO: TO BE FIXED
@@ -125,7 +124,9 @@ func TestServiceName_OTel(t *testing.T) {
 			verifyServiceNameAttr(podWithBothLabelsName, kubeAppLabelValue)
 			verifyServiceNameAttr(jobName, jobName)
 			verifyServiceNameAttr(podWithNoLabelsName, podWithNoLabelsName)
-			assert.TelemetryDataDelivered(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(
+
+			// Verify that temporary kyma resource attributes are removed from the logs
+			assert.DataConsistentlyMatching(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(
 				Not(ContainElement(
 					HaveResourceAttributes(HaveKey(ContainSubstring("kyma"))),
 				)),
