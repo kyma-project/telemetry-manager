@@ -1,5 +1,8 @@
 name: PR Github Checks
 
+permissions:
+  contents: read
+
 on:
   pull_request_target:
     branches:
@@ -23,10 +26,11 @@ env:
   TITLE: ${{ github.event.pull_request.title }}
   GH_HOST: github.com
 
-permissions: write-all
-
 jobs:
   pr-milestone-project-check:
+    permissions:
+      pull-requests: write # Required for setting the milestone
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - name: Set milestone
@@ -45,10 +49,13 @@ jobs:
           gh pr edit ${{ github.event.number }} --milestone "${latest_milestone}"
 
   pr-label-check:
+    permissions:
+      pull-requests: write # Required for setting the labels
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Add kind label based on PR title prefix
         if: always()
@@ -124,7 +131,7 @@ jobs:
     if: ${{ github.event.pull_request.base.ref == 'main' }}
     steps:
       - name: Check-out code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
           repository: ${{ github.event.pull_request.head.repo.full_name }}
