@@ -59,6 +59,7 @@ func (g *caCertGeneratorImpl) generateCertInternal() (*x509.Certificate, *rsa.Pr
 		BasicConstraintsValid: true,
 		IsCA:                  true,
 		SignatureAlgorithm:    x509.SHA256WithRSA,
+		PublicKeyAlgorithm:    x509.RSA,
 	}
 
 	certDERBytes, err := x509.CreateCertificate(crand.Reader, &caCertTemplate, &caCertTemplate, caKey.Public(), caKey)
