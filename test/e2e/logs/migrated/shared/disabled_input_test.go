@@ -53,8 +53,8 @@ func TestDisabledInput_OTel(t *testing.T) {
 	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
 
 	Consistently(func(g Gomega) {
-		var deployment appsv1.Deployment
-		err := suite.K8sClient.Get(suite.Ctx, kitkyma.LogAgentName, &deployment)
+		var daemonSet appsv1.DaemonSet
+		err := suite.K8sClient.Get(suite.Ctx, kitkyma.LogAgentName, &daemonSet)
 		g.Expect(apierrors.IsNotFound(err)).To(BeTrue())
 	}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
 }

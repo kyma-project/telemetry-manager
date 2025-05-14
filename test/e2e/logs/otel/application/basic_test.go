@@ -92,6 +92,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, mockNs)
 		})
 
+		// TODO: Separate test for instrumentation scope
 		It("Ensures logs have expected scope name and scope version", func() {
 			Eventually(func(g Gomega) {
 				resp, err := suite.ProxyClient.Get(backendExportURL)

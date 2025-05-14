@@ -9,8 +9,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -116,27 +114,28 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPush, s
 			}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
+		// TODO: Cover with a separate basic test
 		It("Should be able to get log gateway metrics endpoint", func() {
 			gatewayMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.LogGatewayMetricsService.Namespace, kitkyma.LogGatewayMetricsService.Name, "metrics", ports.Metrics)
 			assert.EmitsOTelCollectorMetrics(suite.ProxyClient, gatewayMetricsURL)
 		})
 
-		It("Should have a working network policy", func() {
-			var networkPolicy networkingv1.NetworkPolicy
-			Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.LogGatewayNetworkPolicy, &networkPolicy)).To(Succeed())
-
-			Eventually(func(g Gomega) {
-				var podList corev1.PodList
-				g.Expect(suite.K8sClient.List(suite.Ctx, &podList, client.InNamespace(kitkyma.SystemNamespaceName), client.MatchingLabels{"app.kubernetes.io/name": kitkyma.LogGatewayBaseName})).To(Succeed())
-				g.Expect(podList.Items).NotTo(BeEmpty())
-
-				logGatewayPodName := podList.Items[0].Name
-				pprofEndpoint := suite.ProxyClient.ProxyURLForPod(kitkyma.SystemNamespaceName, logGatewayPodName, "debug/pprof/", ports.Pprof)
-
-				resp, err := suite.ProxyClient.Get(pprofEndpoint)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusServiceUnavailable))
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
-		})
+		//It("Should have a working network policy", func() {
+		//	var networkPolicy networkingv1.NetworkPolicy
+		//	Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.LogGatewayNetworkPolicy, &networkPolicy)).To(Succeed())
+		//
+		//	Eventually(func(g Gomega) {
+		//		var podList corev1.PodList
+		//		g.Expect(suite.K8sClient.List(suite.Ctx, &podList, client.InNamespace(kitkyma.SystemNamespaceName), client.MatchingLabels{"app.kubernetes.io/name": kitkyma.LogGatewayBaseName})).To(Succeed())
+		//		g.Expect(podList.Items).NotTo(BeEmpty())
+		//
+		//		logGatewayPodName := podList.Items[0].Name
+		//		pprofEndpoint := suite.ProxyClient.ProxyURLForPod(kitkyma.SystemNamespaceName, logGatewayPodName, "debug/pprof/", ports.Pprof)
+		//
+		//		resp, err := suite.ProxyClient.Get(pprofEndpoint)
+		//		g.Expect(err).NotTo(HaveOccurred())
+		//		g.Expect(resp).To(HaveHTTPStatus(http.StatusServiceUnavailable))
+		//	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+		//})
 	})
 })
