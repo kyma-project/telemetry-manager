@@ -14,7 +14,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 )
@@ -25,33 +24,21 @@ func TestSelfMonitorHappyPath_OTel(t *testing.T) {
 
 	tests := []struct {
 		name                string
-		inputBuilder        func() telemetryv1alpha1.LogPipelineInput
+		input               telemetryv1alpha1.LogPipelineInput
 		logGeneratorBuilder func(namespace string) client.Object
 		expectAgent         bool
 	}{
 		{
-			name: "agent",
-			inputBuilder: func() telemetryv1alpha1.LogPipelineInput {
-				return telemetryv1alpha1.LogPipelineInput{
-					Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-						Enabled: ptr.To(true),
-					},
-				}
-			},
+			name:  "agent",
+			input: testutils.BuildLogPipelineApplicationInput(),
 			logGeneratorBuilder: func(namespace string) client.Object {
 				return loggen.New(namespace).K8sObject()
 			},
 			expectAgent: true,
 		},
 		{
-			name: "gateway",
-			inputBuilder: func() telemetryv1alpha1.LogPipelineInput {
-				return telemetryv1alpha1.LogPipelineInput{
-					Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-						Enabled: ptr.To(false),
-					},
-				}
-			},
+			name:  "gateway",
+			input: testutils.BuildLogPipelineApplicationInput(),
 			logGeneratorBuilder: func(namespace string) client.Object {
 				return telemetrygen.NewDeployment(namespace, telemetrygen.SignalTypeLogs).K8sObject()
 			},
@@ -72,7 +59,7 @@ func TestSelfMonitorHappyPath_OTel(t *testing.T) {
 
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
-				WithInput(tc.inputBuilder()).
+				WithInput(tc.input).
 				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 				Build()
 
