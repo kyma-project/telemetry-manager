@@ -62,7 +62,13 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
-		pipelineValidatorWithStubs := &Validator{}
+		pipelineLock := &mocks.PipelineLock{}
+		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
+
+		pipelineValidatorWithStubs := &Validator{
+			PipelineLock: pipelineLock,
+		}
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
@@ -119,7 +125,13 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
-		pipelineValidatorWithStubs := &Validator{}
+		pipelineLock := &mocks.PipelineLock{}
+		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
+
+		pipelineValidatorWithStubs := &Validator{
+			PipelineLock: pipelineLock,
+		}
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
@@ -173,7 +185,13 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		pipelineValidatorWithStubs := &Validator{}
+		pipelineLock := &mocks.PipelineLock{}
+		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
+
+		pipelineValidatorWithStubs := &Validator{
+			PipelineLock: pipelineLock,
+		}
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -229,7 +247,13 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(&workloadstatus.PodIsPendingError{Message: "Error"})
 
-		pipelineValidatorWithStubs := &Validator{}
+		pipelineLock := &mocks.PipelineLock{}
+		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
+
+		pipelineValidatorWithStubs := &Validator{
+			PipelineLock: pipelineLock,
+		}
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -285,7 +309,13 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		pipelineValidatorWithStubs := &Validator{}
+		pipelineLock := &mocks.PipelineLock{}
+		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
+
+		pipelineValidatorWithStubs := &Validator{
+			PipelineLock: pipelineLock,
+		}
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -438,7 +468,13 @@ func TestReconcile(t *testing.T) {
 				flowHealthProberStub := &mocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
 
-				pipelineValidatorWithStubs := &Validator{}
+				pipelineLock := &mocks.PipelineLock{}
+				pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+				pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
+
+				pipelineValidatorWithStubs := &Validator{
+					PipelineLock: pipelineLock,
+				}
 
 				errToMsg := &conditions.ErrorToMessageConverter{}
 				sut := New(
@@ -499,6 +535,14 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
+		pipelineLock := &mocks.PipelineLock{}
+		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
+
+		pipelineValidatorWithStubs := &Validator{
+			PipelineLock: pipelineLock,
+		}
+
 		sut := New(
 			fakeClient,
 			telemetryNamespace,
@@ -511,7 +555,7 @@ func TestReconcile(t *testing.T) {
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
 			istioStatusCheckerStub,
-			&Validator{},
+			pipelineValidatorWithStubs,
 			&conditions.ErrorToMessageConverter{})
 		err := sut.Reconcile(t.Context(), &pipeline)
 		require.NoError(t, err)
@@ -552,6 +596,14 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, mock.Anything).Return(prober.OTelPipelineProbeResult{}, nil)
 
+		pipelineLock := &mocks.PipelineLock{}
+		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
+
+		pipelineValidatorWithStubs := &Validator{
+			PipelineLock: pipelineLock,
+		}
+
 		sut := New(
 			fakeClient,
 			telemetryNamespace,
@@ -564,7 +616,7 @@ func TestReconcile(t *testing.T) {
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
 			istioStatusCheckerStub,
-			&Validator{},
+			pipelineValidatorWithStubs,
 			&conditions.ErrorToMessageConverter{})
 		err1 := sut.Reconcile(t.Context(), &pipeline1)
 		err2 := sut.Reconcile(t.Context(), &pipeline2)
@@ -606,6 +658,14 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, mock.Anything).Return(prober.OTelPipelineProbeResult{}, nil)
 
+		pipelineLock := &mocks.PipelineLock{}
+		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
+
+		pipelineValidatorWithStubs := &Validator{
+			PipelineLock: pipelineLock,
+		}
+
 		sut := New(
 			fakeClient,
 			telemetryNamespace,
@@ -618,7 +678,7 @@ func TestReconcile(t *testing.T) {
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
 			istioStatusCheckerStub,
-			&Validator{},
+			pipelineValidatorWithStubs,
 			&conditions.ErrorToMessageConverter{})
 		err1 := sut.Reconcile(t.Context(), &pipeline1)
 		err2 := sut.Reconcile(t.Context(), &pipeline2)

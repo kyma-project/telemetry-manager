@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"gopkg.in/yaml.v3"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -17,7 +18,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/processors"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
@@ -57,6 +57,18 @@ type AgentApplierDeleter interface {
 
 var _ logpipeline.LogPipelineReconciler = &Reconciler{}
 
+type PipelineValidator interface {
+	Validate(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error
+}
+
+type Prober interface {
+	IsReady(ctx context.Context, name types.NamespacedName) error
+}
+
+type ErrorToMessageConverter interface {
+	Convert(err error) string
+}
+
 type Reconciler struct {
 	client.Client
 
@@ -66,14 +78,14 @@ type Reconciler struct {
 	// Dependencies
 	flowHealthProber      FlowHealthProber
 	agentConfigBuilder    AgentConfigBuilder
-	agentProber           commonstatus.Prober
+	agentProber           Prober
 	agentApplierDeleter   AgentApplierDeleter
 	gatewayApplierDeleter GatewayApplierDeleter
 	gatewayConfigBuilder  GatewayConfigBuilder
-	gatewayProber         commonstatus.Prober
+	gatewayProber         Prober
 	istioStatusChecker    IstioStatusChecker
-	pipelineValidator     *Validator
-	errToMessageConverter commonstatus.ErrorToMessageConverter
+	pipelineValidator     PipelineValidator
+	errToMessageConverter ErrorToMessageConverter
 }
 
 func New(
@@ -83,13 +95,13 @@ func New(
 	flowHeathProber FlowHealthProber,
 	agentConfigBuilder AgentConfigBuilder,
 	agentApplierDeleter AgentApplierDeleter,
-	agentProber commonstatus.Prober,
+	agentProber Prober,
 	gatewayApplierDeleter GatewayApplierDeleter,
 	gatewayConfigBuilder GatewayConfigBuilder,
-	gatewayProber commonstatus.Prober,
+	gatewayProber Prober,
 	istioStatusChecker IstioStatusChecker,
-	pipelineValidator *Validator,
-	errToMessageConverter commonstatus.ErrorToMessageConverter,
+	pipelineValidator PipelineValidator,
+	errToMessageConverter ErrorToMessageConverter,
 ) *Reconciler {
 	return &Reconciler{
 		Client:                client,
@@ -196,7 +208,7 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 		return false, nil
 	}
 
-	err := r.pipelineValidator.validate(ctx, pipeline)
+	err := r.pipelineValidator.Validate(ctx, pipeline)
 
 	// Pipeline with a certificate that is about to expire is still considered reconcilable
 	if err == nil || tlscert.IsCertAboutToExpireError(err) {

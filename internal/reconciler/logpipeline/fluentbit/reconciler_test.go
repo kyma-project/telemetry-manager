@@ -61,10 +61,15 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
 
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
+
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
 			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:       pipelineLockStub,
 		}
 
 		errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
@@ -99,10 +104,15 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
 
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
+
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
 			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:       pipelineLockStub,
 		}
 
 		errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
@@ -137,10 +147,15 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
 
+		pipelineLockMock := &mocks.PipelineLock{}
+		pipelineLockMock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockMock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
+
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
 			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:       pipelineLockMock,
 		}
 
 		errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
@@ -170,10 +185,15 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
 
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
+
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
 			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:       pipelineLockStub,
 		}
 
 		errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
@@ -214,10 +234,15 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
 
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
+
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
 			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:       pipelineLockStub,
 		}
 
 		errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
@@ -257,10 +282,15 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
 
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
+
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
 			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:       pipelineLockStub,
 		}
 
 		errToMsgStub := &conditions.ErrorToMessageConverter{}
@@ -364,10 +394,15 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
 
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
+
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
 			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:       pipelineLockStub,
 		}
 
 		errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
@@ -504,10 +539,15 @@ func TestReconcile(t *testing.T) {
 				flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
 
+				pipelineLockStub := &mocks.PipelineLock{}
+				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
+
 				pipelineValidatorWithStubs := &Validator{
 					EndpointValidator:  stubs.NewEndpointValidator(nil),
 					TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 					SecretRefValidator: stubs.NewSecretRefValidator(nil),
+					PipelineLock:       pipelineLockStub,
 				}
 
 				errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
@@ -715,10 +755,15 @@ func TestReconcile(t *testing.T) {
 				flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
 
+				pipelineLockStub := &mocks.PipelineLock{}
+				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
+
 				pipelineValidatorWithStubs := &Validator{
 					EndpointValidator:  stubs.NewEndpointValidator(nil),
 					TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 					SecretRefValidator: stubs.NewSecretRefValidator(nil),
+					PipelineLock:       pipelineLockStub,
 				}
 
 				errToMsgStub := &conditions.ErrorToMessageConverter{}

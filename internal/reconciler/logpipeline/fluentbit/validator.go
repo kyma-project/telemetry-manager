@@ -3,6 +3,8 @@ package fluentbit
 import (
 	"context"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
@@ -20,13 +22,19 @@ type SecretRefValidator interface {
 	ValidateLogPipeline(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error
 }
 
+type PipelineLock interface {
+	TryAcquireLock(ctx context.Context, owner metav1.Object) error
+	IsLockHolder(ctx context.Context, owner metav1.Object) error
+}
+
 type Validator struct {
 	EndpointValidator  EndpointValidator
 	TLSCertValidator   TLSCertValidator
 	SecretRefValidator SecretRefValidator
+	PipelineLock       PipelineLock
 }
 
-func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
+func (v *Validator) Validate(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
 	if err := v.SecretRefValidator.ValidateLogPipeline(ctx, pipeline); err != nil {
 		return err
 	}
@@ -47,6 +55,9 @@ func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.Lo
 		if err := v.TLSCertValidator.Validate(ctx, tlsConfig); err != nil {
 			return err
 		}
+	}
+	if err := v.PipelineLock.TryAcquireLock(ctx, pipeline); err != nil {
+		return err
 	}
 
 	return nil
