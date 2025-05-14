@@ -1,8 +1,6 @@
 package agent
 
 import (
-	"io"
-	"net/http"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -17,7 +15,6 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -83,16 +80,8 @@ func TestAttributesParser(t *testing.T) {
 		HaveTraceId(Equal("80e1afed08e019fc1110464cfa66635c")),
 	))))
 
-	Consistently(func(g Gomega) {
-		resp, err := suite.ProxyClient.Get(backendExportURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-
-		bodyContent, err := io.ReadAll(resp.Body)
-		defer resp.Body.Close()
-		g.Expect(err).NotTo(HaveOccurred())
-
-		g.Expect(bodyContent).To(HaveFlatOTelLogs(ContainElement(SatisfyAll(
+	assert.DataConsistentlyMatching(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(
+		ContainElement(SatisfyAll(
 			HaveOtelTimestamp(Not(BeEmpty())),
 			HaveObservedTimestamp(Not(BeEmpty())),
 			HaveAttributes(Not(HaveKey("trace_id"))),
@@ -100,23 +89,14 @@ func TestAttributesParser(t *testing.T) {
 			HaveAttributes(Not(HaveKey("trace_flags"))),
 			HaveAttributes(Not(HaveKey("traceparent"))),
 		))))
-	}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 
-	Consistently(func(g Gomega) {
-		resp, err := suite.ProxyClient.Get(backendExportURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-
-		bodyContent, err := io.ReadAll(resp.Body)
-		defer resp.Body.Close()
-		g.Expect(err).NotTo(HaveOccurred())
-
-		g.Expect(bodyContent).To(HaveFlatOTelLogs(ContainElement(SatisfyAll(
+	assert.DataConsistentlyMatching(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(
+		ContainElement(SatisfyAll(
 			HaveOtelTimestamp(Not(BeEmpty())),
 			HaveObservedTimestamp(Not(BeEmpty())),
 			HaveTraceId(BeEmpty()),
 			HaveSpanId(BeEmpty()),
 			HaveAttributes(HaveKey("span_id")),
 		))))
-	}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+
 }
