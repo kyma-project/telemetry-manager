@@ -167,7 +167,7 @@ func RegisterTestCase(t *testing.T, labels ...string) {
 }
 
 func findRequiredLabels() []string {
-	const prefix = "--labels="
+	const prefix = "-labels="
 	var labelsArg string
 	for _, arg := range os.Args {
 		if strings.HasPrefix(arg, prefix) {
