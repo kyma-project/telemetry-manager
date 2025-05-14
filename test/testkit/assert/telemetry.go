@@ -2,7 +2,8 @@ package assert
 
 import (
 	"context"
-
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,5 +33,14 @@ func TelemetryHasCondition(ctx context.Context, k8sClient client.Client, expecte
 		g.Expect(condition).NotTo(BeNil())
 		g.Expect(condition.Reason).To(Equal(expectedCond.Reason))
 		g.Expect(condition.Status).To(Equal(expectedCond.Status))
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+}
+
+func SelfMonitorIsHealthyForPipeline(ctx context.Context, k8sClient client.Client, pipelineName string) {
+	Eventually(func(g Gomega) {
+		var pipeline telemetryv1alpha1.LogPipeline
+		key := types.NamespacedName{Name: pipelineName}
+		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
+		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeFlowHealthy)).To(BeTrueBecause("Flow not healthy"))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
