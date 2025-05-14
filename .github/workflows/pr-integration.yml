@@ -51,8 +51,6 @@ jobs:
       fail-fast: false
       matrix:
         ginkgo-labels:
-          - logs-fluentbit
-          - logs-otel
           - "metrics && set_a"
           - "metrics && set_b"
           - "metrics && set_c"
@@ -84,14 +82,45 @@ jobs:
           failure: failure()
           job-name: ${{ github.job }}-${{ matrix.ginkgo-labels }}
 
+  e2e-logs:
+    needs: setup
+    strategy:
+      fail-fast: false
+      matrix:
+        labels:
+          - agent
+          - gateway
+          - fluent-bit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Prepare test
+        uses: "./.github/template/prepare-test"
+        with:
+          release: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy Test Prerequisites
+        uses: "./.github/template/deploy-test-prerequisites"
+
+      - name: Run tests
+        run: go test -v -timeout 30m ./test/e2e/logs/... -- -labels="${{ matrix.labels }}"
+
+      - name: Finalize test
+        uses: "./.github/template/finalize-test"
+        if: success() || failure()
+        with:
+          failure: failure()
+          job-name: ${{ github.job }}-${{ matrix.ginkgo-labels }}
+
   e2e-experimental:
     needs: setup
     strategy:
       fail-fast: false
       matrix:
         ginkgo-labels:
-          - logs-fluentbit
-          - logs-otel
           - metrics
           - traces
     runs-on: ubuntu-latest
