@@ -43,9 +43,7 @@ func HaveScopeVersion(matcher types.GomegaMatcher) types.GomegaMatcher {
 
 // HaveAttributes extracts resource attributes from FlatLog and applies the matcher to them.
 func HaveAttributes(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(fl FlatLogOtel) map[string]string {
-		return fl.Attributes
-	}, matcher)
+	return gomega.WithTransform(func(fl FlatLogOtel) map[string]string { return fl.Attributes }, matcher)
 }
 
 func HaveLogRecordBody(matcher types.GomegaMatcher) types.GomegaMatcher {

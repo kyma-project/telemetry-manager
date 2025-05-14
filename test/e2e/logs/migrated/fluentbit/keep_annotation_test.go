@@ -59,7 +59,7 @@ func TestKeepAnnotations(t *testing.T) {
 	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
 	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 
-	assert.TelemetryDataDelivered(suite.ProxyClient, backendExportURL, HaveFlatFluentBitLogs(
+	assert.DataEventuallyMatching(suite.ProxyClient, backendExportURL, HaveFlatFluentBitLogs(
 		ContainElement(HaveKubernetesAnnotations(HaveKeyWithValue("release", "v1.0.0")))),
 	)
 

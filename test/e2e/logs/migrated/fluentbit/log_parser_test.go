@@ -63,7 +63,7 @@ Types user:string pass:string`
 	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
 	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 
-	assert.TelemetryDataDelivered(suite.ProxyClient, backendExportURL, HaveFlatFluentBitLogs(ContainElement(SatisfyAll(
+	assert.DataEventuallyMatching(suite.ProxyClient, backendExportURL, HaveFlatFluentBitLogs(ContainElement(SatisfyAll(
 		HaveLogRecordAttributes(HaveKeyWithValue("user", "foo")),
 		HaveLogRecordAttributes(HaveKeyWithValue("pass", "bar")),
 	))))

@@ -68,7 +68,7 @@ func TestAttributesParser(t *testing.T) {
 	assert.OTelLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 	assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, generatorNs)
 
-	assert.TelemetryDataDelivered(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(ContainElement(SatisfyAll(
+	assert.DataEventuallyMatching(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(ContainElement(SatisfyAll(
 		HaveOtelTimestamp(Not(BeEmpty())),
 		HaveObservedTimestamp(Not(BeEmpty())),
 		HaveTraceId(Not(BeEmpty())),
@@ -76,7 +76,7 @@ func TestAttributesParser(t *testing.T) {
 		HaveTraceId(Equal("255c2212dd02c02ac59a923ff07aec74")),
 	))))
 
-	assert.TelemetryDataDelivered(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(ContainElement(SatisfyAll(
+	assert.DataEventuallyMatching(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(ContainElement(SatisfyAll(
 		HaveOtelTimestamp(Not(BeEmpty())),
 		HaveObservedTimestamp(Not(BeEmpty())),
 		HaveSpanId(Not(BeEmpty())),

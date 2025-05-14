@@ -211,7 +211,7 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Namespace: generatorNs, Name: loggen.DefaultName})
 
 	// Scenario 1: Labels not dropped
-	assert.TelemetryDataDelivered(suite.ProxyClient, backendNotDroppedExportURL, HaveFlatFluentBitLogs(
+	assert.DataEventuallyMatching(suite.ProxyClient, backendNotDroppedExportURL, HaveFlatFluentBitLogs(
 		ContainElement(HaveKubernetesLabels(HaveKeyWithValue("env", "dev")))),
 	)
 

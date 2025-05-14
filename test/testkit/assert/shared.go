@@ -10,7 +10,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
-func TelemetryDataDelivered(
+func DataEventuallyMatching(
 	proxyClient *apiserverproxy.Client,
 	backendExportURL string,
 	httpBodyMatcher types.GomegaMatcher,
@@ -24,7 +24,7 @@ func TelemetryDataDelivered(
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-func TelemetryDataNotDelivered(
+func DataConsistentlyMatching(
 	proxyClient *apiserverproxy.Client,
 	backendExportURL string,
 	httpBodyMatcher types.GomegaMatcher,

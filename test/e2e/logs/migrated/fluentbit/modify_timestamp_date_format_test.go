@@ -56,7 +56,7 @@ func TestModifyTimestampDateFormat(t *testing.T) {
 	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
 	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 
-	assert.TelemetryDataDelivered(suite.ProxyClient, backendExportURL, HaveFlatFluentBitLogs(HaveEach(SatisfyAll(
+	assert.DataEventuallyMatching(suite.ProxyClient, backendExportURL, HaveFlatFluentBitLogs(HaveEach(SatisfyAll(
 		HaveLogRecordAttributes(HaveKey("@timestamp")),
 		HaveDateISO8601Format(BeTrue()),
 	))))
