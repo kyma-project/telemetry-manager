@@ -65,7 +65,7 @@ func TestResources_OTel(t *testing.T) {
 			)
 
 			var (
-				uniquePrefix = unique.Prefix()
+				uniquePrefix = unique.Prefix(tc.label)
 				pipelineName = uniquePrefix()
 				secretName   = uniquePrefix()
 			)

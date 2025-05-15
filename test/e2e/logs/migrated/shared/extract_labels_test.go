@@ -30,9 +30,10 @@ func TestExtractLabels_OTel(t *testing.T) {
 	tests := []struct {
 		label        string
 		inputBuilder telemetryv1alpha1.LogPipelineInput
+		expectAgent  bool
 	}{
 		{
-			label:        suite.LabelLogAgent, // FIXME: Currently failing (Label Extraction not implemented for OTel Agent)
+			label:        suite.LabelLogAgent,
 			inputBuilder: testutils.BuildLogPipelineApplicationInput(),
 		},
 		{
@@ -61,7 +62,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 			)
 
 			var (
-				uniquePrefix = unique.Prefix()
+				uniquePrefix = unique.Prefix(tc.label)
 				backendNs    = uniquePrefix("backend")
 				generatorNs  = uniquePrefix("generator")
 				pipelineName = uniquePrefix(tc.label)
@@ -83,20 +84,32 @@ func TestExtractLabels_OTel(t *testing.T) {
 				).
 				Build()
 
-			otlpLogGen := telemetrygen.NewPod(generatorNs, telemetrygen.SignalTypeLogs).
-				WithLabel(labelKeyExactMatch, labelValueExactMatch).
-				WithLabel(labelKeyPrefixMatch1, labelValuePrefixMatch1).
-				WithLabel(labelKeyPrefixMatch2, labelValuePrefixMatch2).
-				WithLabel("log.test.label.should.not.match", "should_not_match").
-				K8sObject()
-
 			resources := []client.Object{
 				kitk8s.NewNamespace(backendNs).K8sObject(),
 				kitk8s.NewNamespace(generatorNs).K8sObject(),
-				otlpLogGen,
 				&pipeline,
 			}
 			resources = append(resources, backend.K8sObjects()...)
+
+			if tc.expectAgent {
+				resources = append(resources, loggen.New(generatorNs).
+					WithLabels(map[string]string{
+						labelKeyExactMatch:     labelValueExactMatch,
+						labelKeyPrefixMatch1:   labelValuePrefixMatch1,
+						labelKeyPrefixMatch2:   labelValuePrefixMatch2,
+						labelKeyShouldNotMatch: labelValueShouldNotMatch,
+					}).
+					K8sObject(),
+				)
+			} else {
+				resources = append(resources, telemetrygen.NewPod(generatorNs, telemetrygen.SignalTypeLogs).
+					WithLabel(labelKeyExactMatch, labelValueExactMatch).
+					WithLabel(labelKeyPrefixMatch1, labelValuePrefixMatch1).
+					WithLabel(labelKeyPrefixMatch2, labelValuePrefixMatch2).
+					WithLabel(labelKeyShouldNotMatch, labelValueShouldNotMatch).
+					K8sObject(),
+				)
+			}
 
 			t.Cleanup(func() {
 				require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
@@ -108,6 +121,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 				err := suite.K8sClient.Get(t.Context(), kitkyma.TelemetryName, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
 
+				// TODO: After Hisar's merge => API changed to telemetry.Spec instead of telemetry.Spec.Log => modify this
 				telemetry.Spec.Log = &operatorv1alpha1.LogSpec{
 					Enrichments: &operatorv1alpha1.EnrichmentSpec{
 						Enabled: true,
@@ -125,6 +139,10 @@ func TestExtractLabels_OTel(t *testing.T) {
 				g.Expect(err).NotTo(HaveOccurred())
 				return len(telemetry.Spec.Log.Enrichments.ExtractPodLabels)
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(2))
+
+			if tc.expectAgent {
+				assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
+			}
 
 			assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
 			assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})

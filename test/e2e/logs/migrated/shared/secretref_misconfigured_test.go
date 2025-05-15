@@ -33,7 +33,7 @@ func TestSecretrefMisconfigured_OTel(t *testing.T) {
 			suite.RegisterTestCase(t, tc.label)
 
 			var (
-				uniquePrefix = unique.Prefix()
+				uniquePrefix = unique.Prefix(tc.label)
 				pipelineName = uniquePrefix()
 			)
 
