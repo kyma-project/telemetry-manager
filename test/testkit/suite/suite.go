@@ -120,6 +120,7 @@ const (
 	LabelSetC         = "set_c"
 	LabelSignalPush   = "signal-push"
 	LabelSignalPull   = "signal-pull"
+	LabelSkip         = "skip"
 
 	// Self-monitoring test labels
 	LabelSelfMonitoringLogsHealthy         = "self-mon-logs-healthy"
@@ -160,6 +161,12 @@ func RegisterTestCase(t *testing.T, labels ...string) {
 		return
 	}
 
+	// Skip test if it contains "skipped" label
+	if _, exists := labelSet[LabelSkip]; exists {
+		t.Skipf("Skipping test: label %s is set", LabelSkip)
+	}
+
+	// Skip test if it doesn't contain at least one required label
 	for _, requiredLabel := range requiredLabels {
 		if _, exists := labelSet[requiredLabel]; !exists {
 			t.Skipf("Skipping test: label mismatch. Required: %s, Provided: %s", requiredLabels, labels)

@@ -83,7 +83,7 @@ func TestResources_OTel(t *testing.T) {
 			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, &pipeline, secret.K8sObject())).Should(Succeed())
 
 			assert.ResourcesExist(t.Context(), suite.K8sClient, tc.resources...)
-			// FIXME: This fails currently => resources are not deleted when pipeline becomes non-reconcilable
+			// FIXME: Currently failing (resources are not deleted when pipeline becomes non-reconcilable)
 			// When pipeline becomes non-reconcilable...
 			// Expect(suite.K8sClient.Delete(suite.Ctx, secret.K8sObject())).Should(Succeed())
 			// assert.ResourcesNotExist(t.Context(), suite.K8sClient, tc.resources...)

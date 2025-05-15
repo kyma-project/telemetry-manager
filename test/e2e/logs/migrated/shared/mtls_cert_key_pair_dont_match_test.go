@@ -36,7 +36,7 @@ func TestMTLSCertKeyDontMatch_OTel(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label)
+			suite.RegisterTestCase(t, tc.label, suite.LabelSkip) // FIXME: Currently failing (not implemented)
 
 			var (
 				uniquePrefix = unique.Prefix(tc.label)

@@ -65,7 +65,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 				uniquePrefix = unique.Prefix(tc.label)
 				backendNs    = uniquePrefix("backend")
 				generatorNs  = uniquePrefix("generator")
-				pipelineName = uniquePrefix(tc.label)
+				pipelineName = uniquePrefix()
 			)
 
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)

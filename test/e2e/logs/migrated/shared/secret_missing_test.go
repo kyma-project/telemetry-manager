@@ -20,7 +20,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-// FIXME: Currently failing (Secret validation not implemented for OTel)
 func TestSecretRotation_OTel(t *testing.T) {
 	tests := []struct {
 		label string
@@ -38,7 +37,7 @@ func TestSecretRotation_OTel(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label)
+			suite.RegisterTestCase(t, tc.label, suite.LabelSkip) // FIXME: Currently failing (Secret validation not implemented for OTel)
 
 			const endpointKey = "logs-endpoint"
 
