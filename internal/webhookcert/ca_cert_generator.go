@@ -3,8 +3,10 @@ package webhookcert
 import (
 	crand "crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/asn1"
 	"fmt"
 	"math/big"
 	"time"
@@ -48,6 +50,13 @@ func (g *caCertGeneratorImpl) generateCertInternal() (*x509.Certificate, *rsa.Pr
 	validFrom := g.clock.now().Add(-time.Hour).UTC() // valid an hour earlier to avoid flakes due to clock skew
 	validTo := validFrom.Add(caCertMaxAge).UTC()
 
+	icke := *caKey.Public().(*rsa.PublicKey)
+	publicKeyBytes, err := asn1.Marshal(icke)
+	if err != nil {
+		return nil, nil, err
+	}
+	subjectKeyId := sha256.Sum256(publicKeyBytes)
+
 	caCertTemplate := x509.Certificate{
 		SerialNumber: new(big.Int).SetInt64(0),
 		Subject: pkix.Name{
@@ -60,6 +69,7 @@ func (g *caCertGeneratorImpl) generateCertInternal() (*x509.Certificate, *rsa.Pr
 		IsCA:                  true,
 		SignatureAlgorithm:    x509.SHA256WithRSA,
 		PublicKeyAlgorithm:    x509.RSA,
+		SubjectKeyId:          subjectKeyId[:],
 	}
 
 	certDERBytes, err := x509.CreateCertificate(crand.Reader, &caCertTemplate, &caCertTemplate, caKey.Public(), caKey)
