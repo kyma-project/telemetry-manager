@@ -137,6 +137,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 
 func cleanupTelemetryConfig() {
 	var telemetry operatorv1alpha1.Telemetry
+
 	Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
 	telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{}
 	Expect(suite.K8sClient.Update(suite.Ctx, &telemetry)).Should(Succeed())
