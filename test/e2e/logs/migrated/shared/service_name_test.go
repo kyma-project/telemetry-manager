@@ -63,10 +63,10 @@ func TestServiceName_OTel(t *testing.T) {
 			)
 
 			var (
-				uniquePrefix    = unique.Prefix()
+				uniquePrefix    = unique.Prefix(tc.label)
 				pipelineName    = uniquePrefix()
-				deploymentName  = uniquePrefix("gateway")
-				statefulSetName = uniquePrefix("gateway")
+				deploymentName  = uniquePrefix()
+				statefulSetName = uniquePrefix()
 				mockNs          = uniquePrefix()
 			)
 
