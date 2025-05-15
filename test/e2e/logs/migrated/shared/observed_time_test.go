@@ -25,8 +25,6 @@ import (
 )
 
 func TestObservedTime(t *testing.T) {
-	RegisterTestingT(t)
-
 	tests := []struct {
 		label               string
 		input               telemetryv1alpha1.LogPipelineInput
