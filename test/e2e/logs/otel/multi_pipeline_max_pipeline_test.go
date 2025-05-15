@@ -10,7 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -70,7 +70,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 			}
 		})
 		additionalPipelineName := fmt.Sprintf("%s-limit-exceeding", suite.ID())
-		var pipeline v1alpha1.LogPipeline
+		var pipeline telemetryv1alpha1.LogPipeline
 
 		It("Should create an additional pipeline in not healthy state", func() {
 			pipeline = testutils.NewLogPipelineBuilder().WithName(additionalPipelineName).Build()

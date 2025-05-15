@@ -153,6 +153,7 @@ func TestReconcile(t *testing.T) {
 			pipelineValidatorWithStubs,
 			errToMsgStub,
 		)
+
 		var pl1 telemetryv1alpha1.LogPipeline
 
 		require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))
@@ -206,6 +207,7 @@ func TestReconcile(t *testing.T) {
 			pipelineValidatorWithStubs,
 			errToMsgStub,
 		)
+
 		var pl1 telemetryv1alpha1.LogPipeline
 
 		require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))
@@ -259,6 +261,7 @@ func TestReconcile(t *testing.T) {
 			pipelineValidatorWithStubs,
 			errToMsgStub,
 		)
+
 		var pl1 telemetryv1alpha1.LogPipeline
 
 		require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))
@@ -308,6 +311,7 @@ func TestReconcile(t *testing.T) {
 			pipelineValidatorWithStubs,
 			errToMsgStub,
 		)
+
 		var pl1 telemetryv1alpha1.LogPipeline
 
 		require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))
@@ -366,6 +370,7 @@ func TestReconcile(t *testing.T) {
 			pipelineValidatorWithStubs,
 			errToMsgStub,
 		)
+
 		var pl1 telemetryv1alpha1.LogPipeline
 
 		require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))
@@ -424,6 +429,7 @@ func TestReconcile(t *testing.T) {
 			pipelineValidatorWithStubs,
 			errToMsgStub,
 		)
+
 		var pl1 telemetryv1alpha1.LogPipeline
 
 		require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))
@@ -485,6 +491,7 @@ func TestReconcile(t *testing.T) {
 			pipelineValidatorWithStubs,
 			errToMsgStub,
 		)
+
 		var pl1 telemetryv1alpha1.LogPipeline
 
 		require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))
@@ -562,6 +569,7 @@ func TestReconcile(t *testing.T) {
 			pipelineValidatorWithStubs,
 			errToMsgStub,
 		)
+
 		var pl1 telemetryv1alpha1.LogPipeline
 
 		require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))
@@ -717,6 +725,7 @@ func TestReconcile(t *testing.T) {
 					pipelineValidatorWithStubs,
 					errToMsgStub,
 				)
+
 				var pl1 telemetryv1alpha1.LogPipeline
 
 				require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))
@@ -850,6 +859,7 @@ func TestReconcile(t *testing.T) {
 					pipelineValidatorWithStubs,
 					errToMsgStub,
 				)
+
 				var pl1 telemetryv1alpha1.LogPipeline
 
 				require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))
@@ -957,6 +967,7 @@ func TestReconcile(t *testing.T) {
 					pipelineValidatorWithStubs,
 					errToMsgStub,
 				)
+
 				var pl1 telemetryv1alpha1.LogPipeline
 
 				require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))
@@ -1019,6 +1030,7 @@ func TestReconcile(t *testing.T) {
 			pipelineValidatorWithStubs,
 			errToMsgStub,
 		)
+
 		var pl1 telemetryv1alpha1.LogPipeline
 
 		require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))

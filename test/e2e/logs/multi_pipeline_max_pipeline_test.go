@@ -10,7 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -38,7 +38,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 			for i := range maxNumberOfLogPipelines {
 				pipelineName := fmt.Sprintf("%s-limit-%d", suite.ID(), i)
 				// every other pipeline will have a will have HTTP output
-				var pipeline v1alpha1.LogPipeline
+				var pipeline telemetryv1alpha1.LogPipeline
 				if i%2 == 0 {
 					pipeline = testutils.NewLogPipelineBuilder().WithName(pipelineName).WithHTTPOutput().Build()
 					pipelinesNames = append(pipelinesNames, pipelineName)
@@ -79,7 +79,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 				assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 			}
 		})
-		var pipeline v1alpha1.LogPipeline
+		var pipeline telemetryv1alpha1.LogPipeline
 		additionalPipelineName := fmt.Sprintf("%s-limit-exceeding", suite.ID())
 
 		It("Should create an additional pipeline in not healthy state", func() {
