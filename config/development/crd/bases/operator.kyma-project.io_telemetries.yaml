@@ -60,9 +60,9 @@ spec:
                       This field is optional.
                     items:
                       description: |-
-                        PodLabel defines labels from a pod used for telemetry data enrichments, which can be specified either by a key or a key prefix.
+                        PodLabel defines labels from a Pod used for telemetry data enrichments, which can be specified either by a key or a key prefix.
                         Either 'key' or 'keyPrefix' must be specified, but not both.
-                        The enriched telemetry data will contains resource attributes with key k8s.pod.label.<label_key>.
+                        The enriched telemetry data contains resource attributes with key k8s.pod.label.<label_key>.
                       properties:
                         key:
                           description: |-
