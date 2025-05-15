@@ -15,24 +15,15 @@ type Config struct {
 }
 
 type Receivers struct {
-	OTLP                              config.OTLPReceiver                `yaml:"otlp"`
-	SingletonKymaStatsReceiverCreator *SingletonKymaStatsReceiverCreator `yaml:"singleton_receiver_creator/kymastats,omitempty"`
-}
-
-type SingletonKymaStatsReceiverCreator struct {
-	AuthType                   string                     `yaml:"auth_type"`
-	LeaderElection             metric.LeaderElection      `yaml:"leader_election"`
-	SingletonKymaStatsReceiver SingletonKymaStatsReceiver `yaml:"receiver"`
-}
-
-type SingletonKymaStatsReceiver struct {
-	KymaStatsReceiver KymaStatsReceiver `yaml:"kymastats"`
+	OTLP              config.OTLPReceiver `yaml:"otlp"`
+	KymaStatsReceiver *KymaStatsReceiver  `yaml:"kymastats,omitempty"`
 }
 
 type KymaStatsReceiver struct {
 	AuthType           string      `yaml:"auth_type"`
 	CollectionInterval string      `yaml:"collection_interval"`
 	Resources          []ModuleGVR `yaml:"resources"`
+	K8sLeaderElector   string      `yaml:"k8s_leader_elector"`
 }
 
 type MetricConfig struct {
