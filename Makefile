@@ -153,14 +153,14 @@ test: $(GINKGO) manifests generate fmt vet tidy ## Run tests.
 
 .PHONY: check-coverage
 check-coverage: $(GO_TEST_COVERAGE) ## Check tests coverage.
-	go test ./... -short -coverprofile=cover.out -covermode=atomic -coverpkg=./...
+	GOFIPS140=latest go test ./... -short -coverprofile=cover.out -covermode=atomic -coverpkg=./...
 	$(GO_TEST_COVERAGE) --config=./.testcoverage.yml
 
 
 ##@ Build
 .PHONY: build
 build: generate fmt vet tidy ## Build manager binary.
-	go build -o bin/manager main.go
+	GOFIPS140=latest go build -o bin/manager main.go
 
 check-clean: generate manifests manifests-experimental crd-docs-gen ## Check if repo is clean up-to-date. Used after code generation
 	@echo "Checking if all generated files are up-to-date"
