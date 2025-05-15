@@ -376,6 +376,8 @@ func TestBuildAgentConfig(t *testing.T) {
 					err = os.WriteFile(goldenFilePath, configYAML, 0600)
 					require.NoError(t, err, "failed to overwrite golden file")
 
+					t.Fatalf("Golden file %s has been saved, please verify it and remove this line", goldenFilePath)
+
 					return
 				}
 
