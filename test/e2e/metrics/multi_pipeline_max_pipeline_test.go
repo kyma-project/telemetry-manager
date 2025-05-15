@@ -12,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/controllers/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -22,7 +23,7 @@ import (
 var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 
 	Context("When reaching the pipeline limit", Ordered, func() {
-		const maxNumberOfMetricPipelines = 3
+		const maxNumberOfMetricPipelines = telemetry.MaxPipelineCount
 
 		var (
 			pipelinesNames       = make([]string, 0, maxNumberOfMetricPipelines)
