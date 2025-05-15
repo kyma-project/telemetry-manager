@@ -33,6 +33,7 @@ func TestReceiverCreator(t *testing.T) {
 				makeContainerParser(),
 				makeMoveToLogStream(),
 				makeDropAttributeLogTag(),
+				makeBodyRouter(),
 				makeJSONParser(),
 				makeMoveBodyToLogOriginal(),
 				makeMoveMessageToBody(),
@@ -58,6 +59,7 @@ func TestReceiverCreator(t *testing.T) {
 				makeContainerParser(),
 				makeMoveToLogStream(),
 				makeDropAttributeLogTag(),
+				makeBodyRouter(),
 				makeJSONParser(),
 				makeMoveMessageToBody(),
 				makeMoveMsgToBody(),
@@ -112,6 +114,22 @@ func TestMakeMoveToLogStream(t *testing.T) {
 	assert.Equal(t, expectedMoveToLogStream, mtls)
 }
 
+func TestExpectedMakeBodyRouter(t *testing.T) {
+	jp := makeBodyRouter()
+	expectedJP := Operator{
+		ID:      "body-router",
+		Type:    "router",
+		Default: "noop",
+		Routes: []Route{
+			{
+				Expression: "body matches '^{.*}$'",
+				Output:     "json-parser",
+			},
+		},
+	}
+	assert.Equal(t, expectedJP, jp)
+}
+
 func TestExpectedMakeJSONParser(t *testing.T) {
 	jp := makeJSONParser()
 	expectedJP := Operator{
@@ -119,7 +137,6 @@ func TestExpectedMakeJSONParser(t *testing.T) {
 		Type:      "json_parser",
 		ParseFrom: "body",
 		ParseTo:   "attributes",
-		IfExpr:    "body matches '^{.*}$'",
 	}
 	assert.Equal(t, expectedJP, jp)
 }
@@ -296,10 +313,9 @@ func TestMakeTraceParentParser(t *testing.T) {
 func TestMakeRemoveTraceParent(t *testing.T) {
 	sp := makeRemoveTraceParent()
 	expectedSP := Operator{
-		ID:     "remove-trace-parent",
-		Type:   "remove",
-		Field:  "attributes[\"traceparent\"]",
-		Output: "remove-trace-id",
+		ID:    "remove-trace-parent",
+		Type:  "remove",
+		Field: "attributes[\"traceparent\"]",
 	}
 	assert.Equal(t, expectedSP, sp)
 }
@@ -311,7 +327,6 @@ func TestMakeRemoveTraceID(t *testing.T) {
 		Type:   "remove",
 		Field:  "attributes[\"trace_id\"]",
 		IfExpr: "attributes[\"trace_id\"] != nil",
-		Output: "remove-span-id",
 	}
 	assert.Equal(t, expectedSP, sp)
 }
@@ -323,7 +338,6 @@ func TestMakeRemoveSpanID(t *testing.T) {
 		Type:   "remove",
 		Field:  "attributes[\"span_id\"]",
 		IfExpr: "attributes[\"span_id\"] != nil",
-		Output: "remove-trace-flags",
 	}
 	assert.Equal(t, expectedSP, sp)
 }
@@ -360,7 +374,7 @@ func TestMakeTraceRouter(t *testing.T) {
 				Output:     "trace-parser",
 			},
 			{
-				Expression: fmt.Sprintf("attributes[\"trace_id\"] == nil and attributes[\"traceparent\"] != nil and attributes[\"traceparent\"] matches '%s'", traceParentExpression),
+				Expression: fmt.Sprintf("attributes[\"traceparent\"] != nil and attributes[\"traceparent\"] matches '%s'", traceParentExpression),
 				Output:     "trace-parent-parser",
 			},
 		},

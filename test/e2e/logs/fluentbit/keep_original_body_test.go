@@ -94,27 +94,51 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 		})
 
-		It("Should ship logs without original body to backend1", func() {
-			// Log generator produces JSON logs and logPipeline1 drops the original body if JSON keys were successfully extracted
+		It("Should ship JSON logs without original body to backend1 having drop orginal active", func() {
 			Eventually(func(g Gomega) {
 				resp, err := suite.ProxyClient.Get(backend1ExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(HaveFlatFluentBitLogs(HaveEach(
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatFluentBitLogs(ContainElement(SatisfyAll(
+					HaveLogRecordAttributes(HaveKeyWithValue("name", "b")),
 					HaveLogBody(BeEmpty()),
-				))))
+				)))))
+
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Should ship logs with original body to backend2", func() {
-			// Log generator produces JSON logs and logPipeline1 keeps the original body if JSON keys were successfully extracted
+		It("Should ship plain logs with original body to backend1 having drop orginal active", func() {
+			Eventually(func(g Gomega) {
+				resp, err := suite.ProxyClient.Get(backend1ExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatFluentBitLogs(ContainElement(SatisfyAll(
+					HaveLogBody(HavePrefix("name=d")),
+				)))))
+
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Should ship JSON logs with original body to backend2 having drop orginal inactive", func() {
 			Eventually(func(g Gomega) {
 				resp, err := suite.ProxyClient.Get(backend2ExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(HaveFlatFluentBitLogs(HaveEach(
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatFluentBitLogs(ContainElement(SatisfyAll(
+					HaveLogRecordAttributes(HaveKeyWithValue("name", "b")),
 					HaveLogBody(Not(BeEmpty())),
-				))))
+				)))))
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Should ship plain logs with original body to backend2 having drop orginal inactive", func() {
+			Eventually(func(g Gomega) {
+				resp, err := suite.ProxyClient.Get(backend2ExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatFluentBitLogs(ContainElement(SatisfyAll(
+					HaveLogBody(HavePrefix("name=d")),
+				)))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
