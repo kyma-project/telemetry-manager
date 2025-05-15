@@ -72,12 +72,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 		additionalPipelineName := fmt.Sprintf("%s-limit-exceeding", suite.ID())
 		var pipeline v1alpha1.LogPipeline
 
-		It("Should create an additional pipeline", func() {
+		It("Should create an additional pipeline in not healthy state", func() {
 			pipeline = testutils.NewLogPipelineBuilder().WithName(additionalPipelineName).Build()
 
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, &pipeline)).Should(Succeed())
-		})
-		It("Should not have the additional pipeline in a healthy state", func() {
 			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, &pipeline)).Should(Succeed())
 
 			assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, additionalPipelineName, metav1.Condition{
