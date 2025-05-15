@@ -6,7 +6,6 @@ mode: "deployment"
 
 image:
   repository: "otel/opentelemetry-collector-contrib"
-  tag: "0.119.0"
 
 config:
   exporters:
