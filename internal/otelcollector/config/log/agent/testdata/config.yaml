@@ -69,9 +69,14 @@ receivers:
             - id: drop-attribute-log-tag
               type: remove
               field: attributes["logtag"]
+            - id: body-router
+              type: router
+              routes:
+                - expr: body matches '^{.*}$'
+                  output: json-parser
+              default: noop
             - id: json-parser
               type: json_parser
-              if: body matches '^{.*}$'
               parse_from: body
               parse_to: attributes
             - id: move-body-to-attributes-log-original
@@ -109,7 +114,7 @@ receivers:
               routes:
                 - expr: attributes["trace_id"] != nil
                   output: trace-parser
-                - expr: attributes["trace_id"] == nil and attributes["traceparent"] != nil and attributes["traceparent"] matches '^[0-9a-f]{2}-(?P<trace_id>[0-9a-f]{32})-(?P<span_id>[0-9a-f]{16})-(?P<trace_flags>[0-9a-f]{2})$'
+                - expr: attributes["traceparent"] != nil and attributes["traceparent"] matches '^[0-9a-f]{2}-(?P<trace_id>[0-9a-f]{32})-(?P<span_id>[0-9a-f]{16})-(?P<trace_flags>[0-9a-f]{2})$'
                   output: trace-parent-parser
               default: noop
             - id: trace-parent-parser
@@ -136,17 +141,14 @@ receivers:
             - id: remove-trace-parent
               type: remove
               field: attributes["traceparent"]
-              output: remove-trace-id
             - id: remove-trace-id
               type: remove
               if: attributes["trace_id"] != nil
               field: attributes["trace_id"]
-              output: remove-span-id
             - id: remove-span-id
               type: remove
               if: attributes["span_id"] != nil
               field: attributes["span_id"]
-              output: remove-trace-flags
             - id: remove-trace-flags
               type: remove
               if: attributes["trace_flags"] != nil

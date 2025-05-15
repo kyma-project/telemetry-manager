@@ -19,13 +19,15 @@ import (
 
 var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, suite.LabelExperimental), Ordered, func() {
 	var (
-		mockNs            = suite.ID()
-		app1Ns            = suite.IDWithSuffix("app-1")
-		app2Ns            = suite.IDWithSuffix("app-2")
-		backend1Name      = "backend-1"
-		backend1ExportURL string
-		backend2Name      = "backend-2"
-		backend2ExportURL string
+		mockNs                    = suite.ID()
+		app1Ns                    = suite.IDWithSuffix("app-1")
+		app2Ns                    = suite.IDWithSuffix("app-2")
+		backend1Name              = "backend-1"
+		backend1ExportURL         string
+		backend2Name              = "backend-2"
+		backend2ExportURL         string
+		pipelineNameIncludeApp1Ns = "include-" + app1Ns
+		pipelineNameExcludeApp1Ns = "exclude-" + app1Ns
 	)
 
 	makeResources := func() []client.Object {
@@ -39,7 +41,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 		objs = append(objs, backend1.K8sObjects()...)
 
 		pipelineIncludeApp1Ns := testutils.NewLogPipelineBuilder().
-			WithName("include-"+app1Ns).
+			WithName(pipelineNameIncludeApp1Ns).
 			WithOTLPInput(false).
 			WithApplicationInput(true, testutils.IncludeLogNamespaces(app1Ns)).
 			WithOTLPOutput(testutils.OTLPEndpoint(backend1.Endpoint())).
@@ -51,7 +53,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 		objs = append(objs, backend2.K8sObjects()...)
 
 		pipelineExcludeApp1Ns := testutils.NewLogPipelineBuilder().
-			WithName("exclude-"+app1Ns).
+			WithName(pipelineNameExcludeApp1Ns).
 			WithOTLPInput(false).
 			WithApplicationInput(true, testutils.ExcludeLogNamespaces(app1Ns)).
 			WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
@@ -93,6 +95,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
 			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
 			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
+		})
+
+		It("Should have running pipelines", func() {
+			assert.LogPipelineOtelHealthy(suite.Ctx, suite.K8sClient, pipelineNameIncludeApp1Ns)
+			assert.LogPipelineOtelHealthy(suite.Ctx, suite.K8sClient, pipelineNameExcludeApp1Ns)
 		})
 
 		// verify logs from apps1Ns delivered to backend1
