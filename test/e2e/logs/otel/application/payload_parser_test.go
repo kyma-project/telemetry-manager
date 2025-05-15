@@ -87,7 +87,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 			assert.OtelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, mockNs)
 		})
 
-		It("Should have trace and span ids in logs", func() {
+		It("Should parse body", func() {
 			Eventually(func(g Gomega) {
 				resp, err := suite.ProxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -98,8 +98,43 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 				g.Expect(err).NotTo(HaveOccurred())
 
 				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
-					HaveOtelTimestamp(Not(BeEmpty())),
-					HaveObservedTimestamp(Not(BeEmpty())),
+					HaveAttributes(HaveKeyWithValue("name", "a")),
+					HaveLogRecordBody(Equal("a-body")),
+					HaveAttributes(Not(HaveKey("message"))),
+					HaveAttributes(HaveKey("log.original")),
+				))))
+
+				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
+					HaveAttributes(HaveKeyWithValue("name", "b")),
+					HaveLogRecordBody(Equal("b-body")),
+					HaveAttributes(Not(HaveKey("msg"))),
+					HaveAttributes(HaveKey("log.original")),
+				))))
+
+				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
+					HaveAttributes(HaveKeyWithValue("name", "c")),
+					HaveLogRecordBody(BeEmpty()),
+					HaveAttributes(HaveKey("log.original")),
+				))))
+
+				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
+					HaveLogRecordBody(HavePrefix("name=d")),
+					HaveAttributes(Not(HaveKey("log.original"))),
+				))))
+			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Should parse traces", func() {
+			Eventually(func(g Gomega) {
+				resp, err := suite.ProxyClient.Get(backendExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+
+				bodyContent, err := io.ReadAll(resp.Body)
+				defer resp.Body.Close()
+				g.Expect(err).NotTo(HaveOccurred())
+
+				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
 					HaveAttributes(HaveKeyWithValue("name", "a")),
 					HaveTraceId(Equal("255c2212dd02c02ac59a923ff07aec74")),
 					HaveSpanId(Equal("c5c735f175ad06a6")),
@@ -109,22 +144,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 					HaveAttributes(Not(HaveKey("trace_flags"))),
 					HaveAttributes(Not(HaveKey("traceparent"))),
 				))))
-			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-		})
-
-		It("Should parse traceparent", func() {
-			Eventually(func(g Gomega) {
-				resp, err := suite.ProxyClient.Get(backendExportURL)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-
-				bodyContent, err := io.ReadAll(resp.Body)
-				defer resp.Body.Close()
-				g.Expect(err).NotTo(HaveOccurred())
 
 				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
-					HaveOtelTimestamp(Not(BeEmpty())),
-					HaveObservedTimestamp(Not(BeEmpty())),
 					HaveAttributes(HaveKeyWithValue("name", "b")),
 					HaveTraceId(Equal("80e1afed08e019fc1110464cfa66635c")),
 					HaveSpanId(Equal("7a085853722dc6d2")),
@@ -134,32 +155,25 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 					HaveAttributes(Not(HaveKey("trace_flags"))),
 					HaveAttributes(Not(HaveKey("traceparent"))),
 				))))
-			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-		})
-
-		It("Should have span_id log attribute but no trace data, not parsable", func() {
-			Consistently(func(g Gomega) {
-				resp, err := suite.ProxyClient.Get(backendExportURL)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-
-				bodyContent, err := io.ReadAll(resp.Body)
-				defer resp.Body.Close()
-				g.Expect(err).NotTo(HaveOccurred())
 
 				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
-					HaveOtelTimestamp(Not(BeEmpty())),
-					HaveObservedTimestamp(Not(BeEmpty())),
 					HaveAttributes(HaveKeyWithValue("name", "c")),
 					HaveTraceId(BeEmpty()),
 					HaveSpanId(BeEmpty()),
 					HaveTraceFlags(Equal(uint32(0))), // default value
 					HaveAttributes(HaveKey("span_id")),
 				))))
-			}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+
+				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
+					HaveLogRecordBody(HavePrefix("name=d")),
+					HaveTraceId(BeEmpty()),
+					HaveSpanId(BeEmpty()),
+					HaveTraceFlags(Equal(uint32(0))), // default value
+				))))
+			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Should have severityText and severityNumber in logs", func() {
+		It("Should parse severity", func() {
 			Eventually(func(g Gomega) {
 				resp, err := suite.ProxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -170,6 +184,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 				g.Expect(err).NotTo(HaveOccurred())
 
 				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
+					HaveAttributes(HaveKeyWithValue("name", "a")),
+					HaveSeverityNumber(Equal(9)),
+					HaveSeverityText(Equal("INFO")),
+					HaveAttributes(Not(HaveKey("level"))),
+				))))
+
+				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
 					HaveAttributes(HaveKeyWithValue("name", "b")),
 					HaveSeverityNumber(Equal(13)),
 					HaveSeverityText(Equal("WARN")),
@@ -177,10 +198,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 				))))
 
 				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
-					HaveAttributes(HaveKeyWithValue("name", "a")),
-					HaveSeverityNumber(Equal(9)),
-					HaveSeverityText(Equal("INFO")),
-					HaveAttributes(Not(HaveKey("level"))),
+					HaveAttributes(HaveKeyWithValue("name", "c")),
+					HaveSeverityNumber(Equal(0)), // default value
+					HaveSeverityText(BeEmpty()),
+				))))
+
+				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
+					HaveLogRecordBody(HavePrefix("name=d")),
+					HaveSeverityNumber(Equal(0)), // default value
+					HaveSeverityText(BeEmpty()),
 				))))
 			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})

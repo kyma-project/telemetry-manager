@@ -30,6 +30,8 @@ const (
 	attributeKeySpanID      = "span_id"
 	attributeKeyTraceFlags  = "trace_flags"
 	attributeKeyTraceParent = "traceparent"
+
+	operatorNoop = "noop"
 )
 
 func makeFileLogReceiver(logpipeline telemetryv1alpha1.LogPipeline) *FileLog {
@@ -135,6 +137,7 @@ func makeOperators(logPipeline telemetryv1alpha1.LogPipeline) []Operator {
 		makeContainerParser(),
 		makeMoveToLogStream(),
 		makeDropAttributeLogTag(),
+		makeBodyRouter(),
 		makeJSONParser(),
 	}
 	if keepOriginalBody {
@@ -190,16 +193,30 @@ func makeDropAttributeLogTag() Operator {
 	}
 }
 
-// parse body as json and move it to attributes
-func makeJSONParser() Operator {
+func makeBodyRouter() Operator {
 	regexPattern := `^{.*}$`
 
+	// If body is not a JSON document, then skip all operators as they are all based on a parsed record and go to noop
+	return Operator{
+		ID:      "body-router",
+		Type:    Router,
+		Default: operatorNoop,
+		Routes: []Route{
+			{
+				Expression: fmt.Sprintf("body matches '%s'", regexPattern),
+				Output:     "json-parser",
+			},
+		},
+	}
+}
+
+// parse body as json and move it to attributes
+func makeJSONParser() Operator {
 	return Operator{
 		ID:        "json-parser",
 		Type:      JsonParser,
 		ParseFrom: "body",
 		ParseTo:   "attributes",
-		IfExpr:    fmt.Sprintf("body matches '%s'", regexPattern),
 	}
 }
 
@@ -279,14 +296,14 @@ func makeTraceRouter() Operator {
 	return Operator{
 		ID:      "trace-router",
 		Type:    Router,
-		Default: "noop",
+		Default: operatorNoop,
 		Routes: []Route{
 			{
 				Expression: ottlexpr.AttributeIsNotNil(attributeKeyTraceID),
 				Output:     "trace-parser",
 			},
 			{
-				Expression: ottlexpr.JoinWithAnd(ottlexpr.AttributeIsNil(attributeKeyTraceID), ottlexpr.AttributeIsNotNil(attributeKeyTraceParent), fmt.Sprintf("%s matches '%s'", ottlexpr.Attribute(attributeKeyTraceParent), traceParentExpression)),
+				Expression: ottlexpr.JoinWithAnd(ottlexpr.AttributeIsNotNil(attributeKeyTraceParent), fmt.Sprintf("%s matches '%s'", ottlexpr.Attribute(attributeKeyTraceParent), traceParentExpression)),
 				Output:     "trace-parent-parser",
 			},
 		},
@@ -334,10 +351,9 @@ func makeTraceParentParser() Operator {
 
 func makeRemoveTraceParent() Operator {
 	return Operator{
-		ID:     "remove-trace-parent",
-		Type:   Remove,
-		Field:  ottlexpr.Attribute(attributeKeyTraceParent),
-		Output: "remove-trace-id",
+		ID:    "remove-trace-parent",
+		Type:  Remove,
+		Field: ottlexpr.Attribute(attributeKeyTraceParent),
 	}
 }
 
@@ -347,7 +363,6 @@ func makeRemoveTraceID() Operator {
 		Type:   Remove,
 		Field:  ottlexpr.Attribute(attributeKeyTraceID),
 		IfExpr: ottlexpr.AttributeIsNotNil(attributeKeyTraceID),
-		Output: "remove-span-id",
 	}
 }
 
@@ -357,7 +372,6 @@ func makeRemoveSpanID() Operator {
 		Type:   Remove,
 		Field:  ottlexpr.Attribute(attributeKeySpanID),
 		IfExpr: ottlexpr.AttributeIsNotNil(attributeKeySpanID),
-		Output: "remove-trace-flags",
 	}
 }
 
@@ -373,7 +387,7 @@ func makeRemoveTraceFlags() Operator {
 // The noop operator is required because of router operator, an entry that does not match any of the routes is dropped and not processed further, to avoid that we add a noop operator as default route
 func makeNoop() Operator {
 	return Operator{
-		ID:   "noop",
+		ID:   operatorNoop,
 		Type: Noop,
 	}
 }
