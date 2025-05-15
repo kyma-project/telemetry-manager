@@ -72,7 +72,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 		additionalPipelineName := fmt.Sprintf("%s-limit-exceeding", suite.ID())
 		var pipeline v1alpha1.LogPipeline
 
-		By("Creating an additional pipeline", func() {
+		It("Should create an additional pipeline", func() {
 			pipeline = testutils.NewLogPipelineBuilder().WithName(additionalPipelineName).Build()
 
 			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, &pipeline)).Should(Succeed())
