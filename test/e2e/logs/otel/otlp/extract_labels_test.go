@@ -81,22 +81,19 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPush, s
 				err := suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
 
-				telemetry.Spec.Log = &operatorv1alpha1.LogSpec{
-					Enrichments: &operatorv1alpha1.EnrichmentSpec{
-						Enabled: true,
-						ExtractPodLabels: []operatorv1alpha1.PodLabel{
-							{
-								Key: "log.test.exact.should.match",
-							},
-							{
-								KeyPrefix: "log.test.prefix",
-							},
+				telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{
+					ExtractPodLabels: []operatorv1alpha1.PodLabel{
+						{
+							Key: "log.test.exact.should.match",
+						},
+						{
+							KeyPrefix: "log.test.prefix",
 						},
 					},
 				}
 				err = suite.K8sClient.Update(suite.Ctx, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
-				return len(telemetry.Spec.Log.Enrichments.ExtractPodLabels)
+				return len(telemetry.Spec.Enrichments.ExtractPodLabels)
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(2))
 		})
 

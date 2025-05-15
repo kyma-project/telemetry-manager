@@ -46,6 +46,10 @@ type TelemetrySpec struct {
 
 	// +optional
 	Log *LogSpec `json:"log,omitempty"`
+
+	// Enrichments specifies optional enrichments for the log data.
+	// This field is optional.
+	Enrichments *EnrichmentSpec `json:"enrichments,omitempty"`
 }
 
 // MetricSpec defines the behavior of the metric gateway
@@ -71,10 +75,6 @@ type TraceGatewaySpec struct {
 type LogSpec struct {
 	// Gateway specifies the settings for the log gateway.
 	Gateway LogGatewaySpec `json:"gateway,omitempty"`
-
-	// Enrichments specifies optional enrichments for the log data.
-	// This field is optional.
-	Enrichments *EnrichmentSpec `json:"enrichments,omitempty"`
 }
 
 type LogGatewaySpec struct {
@@ -180,10 +180,6 @@ type Status struct {
 // EnrichmentSpec defines the configuration for telemetry data enrichment.
 // EnrichmentSpec contains settings to enable enrichment and specify pod labels for enrichment.
 type EnrichmentSpec struct {
-	// Enabled indicates whether enrichment is enabled.
-	// This field is optional.
-	Enabled bool `json:"enabled,omitempty"`
-
 	// ExtractPodLabels specifies the list of pod labels to be used for enrichment.
 	// This field is optional.
 	ExtractPodLabels []PodLabel `json:"extractPodLabels,omitempty"`
