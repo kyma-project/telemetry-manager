@@ -316,7 +316,7 @@ func TestMakeConfig(t *testing.T) {
 					err = os.WriteFile(tt.goldenFileName, configYAML, 0600)
 					require.NoError(t, err, "failed to overwrite golden file")
 
-					t.Fatalf("Golden file %s has been saved, please verify it and remove this line", tt.goldenFileName)
+					t.Fatalf("Golden file %s has been saved, please verify it and set the overwriteGoldenFile flag to false", tt.goldenFileName)
 				}
 
 				goldenFilePath := filepath.Join("testdata", tt.goldenFileName)
