@@ -196,6 +196,7 @@ func makeDropAttributeLogTag() Operator {
 func makeBodyRouter() Operator {
 	regexPattern := `^{.*}$`
 
+        // If body is not a JSON document, then skip all operators as they are all based on a parsed record and go to noop
 	return Operator{
 		ID:      "body-router",
 		Type:    Router,
