@@ -1147,8 +1147,8 @@ github.com/vbatts/tar-split v0.11.3 h1:hLFqsOLQ1SsppQNTMpkpPXClLDfC2A3Zgy9OUU+RV
 github.com/vbatts/tar-split v0.11.3/go.mod h1:9QlHN18E+fEH7RdG+QAJJcuya3rqT7eXSTY7wGrAokY=
 github.com/vektra/mockery/v3 v3.2.5 h1:l65hiOW/zR7Z9XJtCS4EpOP3jhGExS2MV8INWwgcuaQ=
 github.com/vektra/mockery/v3 v3.2.5/go.mod h1:UQwIbP5U84gbN/nkMyYVSW+tp7BFhaSym907rfS1HL4=
-github.com/vladopajic/go-test-coverage/v2 v2.14.2 h1:6NN/rpx6d8QdOIiWfRI0OwurxXdttrs/WnQNlhBrio4=
-github.com/vladopajic/go-test-coverage/v2 v2.14.2/go.mod h1:tGYEQKZndfLXBZcTojUv4ipkHtURwLU0ErhXrA28ebE=
+github.com/vladopajic/go-test-coverage/v2 v2.14.3 h1:8uErizEqcbPIGGm2qqSPX4YVPg3IB1PvclP1/Q4fwE8=
+github.com/vladopajic/go-test-coverage/v2 v2.14.3/go.mod h1:tGYEQKZndfLXBZcTojUv4ipkHtURwLU0ErhXrA28ebE=
 github.com/x448/float16 v0.8.4 h1:qLwI1I70+NjRFUR3zs1JPUCgaCXSh3SW62uAKT1mSBM=
 github.com/x448/float16 v0.8.4/go.mod h1:14CWIYCyZA/cWjXOioeEpHeN/83MdbZDRQHoFcYsOfg=
 github.com/xanzy/ssh-agent v0.3.3 h1:+/15pJfg/RsTxqYcX6fHqOXZwwMP+2VyYWJeWM2qQFM=
