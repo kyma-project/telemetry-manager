@@ -50,11 +50,18 @@ func (g *caCertGeneratorImpl) generateCertInternal() (*x509.Certificate, *rsa.Pr
 	validFrom := g.clock.now().Add(-time.Hour).UTC() // valid an hour earlier to avoid flakes due to clock skew
 	validTo := validFrom.Add(caCertMaxAge).UTC()
 
-	icke := *caKey.Public().(*rsa.PublicKey)
+	pub := caKey.Public()
+
+	icke, ok := pub.(rsa.PublicKey)
+	if !ok {
+		return nil, nil, fmt.Errorf("failed to cast public key to rsa.PublicKey")
+	}
+
 	publicKeyBytes, err := asn1.Marshal(icke)
 	if err != nil {
 		return nil, nil, err
 	}
+
 	subjectKeyId := sha256.Sum256(publicKeyBytes)
 
 	caCertTemplate := x509.Certificate{
