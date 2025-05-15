@@ -10,15 +10,19 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
+	var (
+		mockNs = suite.ID()
+	)
 
 	Context("When reaching the pipeline limit", Ordered, func() {
 		const maxNumberOfLogPipelines = 3
@@ -27,11 +31,33 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 			pipelinesNames = make([]string, 0, maxNumberOfLogPipelines)
 		)
 
+		backend := backend.New(mockNs, backend.SignalTypeLogsOtel, backend.WithPersistentHostSecret(suite.IsUpgrade()))
+		hostSecretRef := backend.HostSecretRefV1Alpha1()
 		makeResources := func() []client.Object {
 			var objs []client.Object
 			for i := range maxNumberOfLogPipelines {
 				pipelineName := fmt.Sprintf("%s-limit-%d", suite.ID(), i)
-				pipeline := testutils.NewLogPipelineBuilder().WithName(pipelineName).WithHTTPOutput().Build()
+				// every other pipeline will have a will have HTTP output
+				var pipeline v1alpha1.LogPipeline
+				if i%2 == 0 {
+					pipeline = testutils.NewLogPipelineBuilder().WithName(pipelineName).WithHTTPOutput().Build()
+					pipelinesNames = append(pipelinesNames, pipelineName)
+
+					objs = append(objs, &pipeline)
+					continue
+				} else {
+					pipeline = testutils.NewLogPipelineBuilder().
+						WithName(pipelineName).
+						WithApplicationInput(false).
+						WithKeepOriginalBody(false).
+						WithOTLPOutput(
+							testutils.OTLPEndpointFromSecret(
+								hostSecretRef.Name,
+								hostSecretRef.Namespace,
+								hostSecretRef.Key,
+							),
+						).Build()
+				}
 				pipelinesNames = append(pipelinesNames, pipelineName)
 
 				objs = append(objs, &pipeline)
@@ -53,7 +79,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 				assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 			}
 		})
-		var pipeline telemetryv1alpha1.LogPipeline
+		var pipeline v1alpha1.LogPipeline
 		additionalPipelineName := fmt.Sprintf("%s-limit-exceeding", suite.ID())
 
 		By("Creating an additional pipeline", func() {
