@@ -17,13 +17,15 @@ COPY internal/ internal/
 COPY webhook/ webhook/
 
 # Clean up unused (test) dependencies and build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go mod tidy && go build -a -o manager main.go
+RUN CGO_ENABLED=0 GOFIPS140=latest GOOS=linux GOARCH=amd64 go mod tidy && go build -a -o manager main.go
 
 FROM scratch
 
 LABEL org.opencontainers.image.source="https://github.com/kyma-project/telemetry-manager"
 
 WORKDIR /
+
+ENV GODEBUG=fips140=only
 
 COPY --from=builder /telemetry-manager-workspace/manager .
 
