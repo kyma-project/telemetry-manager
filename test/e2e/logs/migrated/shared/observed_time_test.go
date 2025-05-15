@@ -28,13 +28,13 @@ func TestObservedTime(t *testing.T) {
 	RegisterTestingT(t)
 
 	tests := []struct {
-		name                string
+		label               string
 		input               telemetryv1alpha1.LogPipelineInput
 		logGeneratorBuilder func(namespace string) client.Object
 		expectAgent         bool
 	}{
 		{
-			name:  "agent",
+			label: suite.LabelLogAgent,
 			input: testutils.BuildLogPipelineApplicationInput(),
 			logGeneratorBuilder: func(namespace string) client.Object {
 				return loggen.New(namespace).K8sObject()
@@ -42,7 +42,7 @@ func TestObservedTime(t *testing.T) {
 			expectAgent: true,
 		},
 		{
-			name:  "gateway",
+			label: suite.LabelLogGateway,
 			input: testutils.BuildLogPipelineOTLPInput(),
 			logGeneratorBuilder: func(namespace string) client.Object {
 				return telemetrygen.NewDeployment(namespace, telemetrygen.SignalTypeLogs).K8sObject()
@@ -50,9 +50,11 @@ func TestObservedTime(t *testing.T) {
 		},
 	}
 	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.label, func(t *testing.T) {
+			suite.RegisterTestCase(t, tc.label)
+
 			var (
-				uniquePrefix = unique.Prefix(tc.name)
+				uniquePrefix = unique.Prefix(tc.label)
 				pipelineName = uniquePrefix()
 				genNs        = uniquePrefix("gen")
 				backendNs    = uniquePrefix("backend")
