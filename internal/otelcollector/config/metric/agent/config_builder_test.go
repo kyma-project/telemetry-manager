@@ -123,7 +123,7 @@ func TestBuildAgentConfig(t *testing.T) {
 				},
 			}
 			for _, tc := range tt {
-				expectedReceiverIDs := []string{"kubeletstats", "singleton_receiver_creator/k8s_cluster"}
+				expectedReceiverIDs := []string{"kubeletstats", "k8s_cluster"}
 				expectedExporterIDs := []string{"otlp"}
 
 				var expectedProcessorIDs []string
@@ -204,7 +204,7 @@ func TestBuildAgentConfig(t *testing.T) {
 
 			require.Len(t, collectorConfig.Service.Pipelines, 3)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
-			require.Equal(t, []string{"kubeletstats", "singleton_receiver_creator/k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
+			require.Equal(t, []string{"kubeletstats", "k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
 			require.Equal(t, []string{"memory_limiter", "filter/drop-non-pvc-volumes-metrics", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
@@ -247,7 +247,7 @@ func TestBuildAgentConfig(t *testing.T) {
 
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
-			require.Equal(t, []string{"kubeletstats", "singleton_receiver_creator/k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
+			require.Equal(t, []string{"kubeletstats", "k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
 			require.Equal(t, []string{"memory_limiter", "filter/drop-non-pvc-volumes-metrics", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
 		})
@@ -266,7 +266,7 @@ func TestBuildAgentConfig(t *testing.T) {
 
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
-			require.Equal(t, []string{"kubeletstats", "singleton_receiver_creator/k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
+			require.Equal(t, []string{"kubeletstats", "k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
 			require.Equal(t, []string{"memory_limiter", "filter/drop-non-pvc-volumes-metrics", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
 		})
@@ -319,7 +319,7 @@ func TestBuildAgentConfig(t *testing.T) {
 
 			require.Len(t, collectorConfig.Service.Pipelines, 2)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
-			require.Equal(t, []string{"kubeletstats", "singleton_receiver_creator/k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
+			require.Equal(t, []string{"kubeletstats", "k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
 			require.Equal(t, []string{"memory_limiter", "filter/drop-non-pvc-volumes-metrics", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
@@ -376,7 +376,7 @@ func TestBuildAgentConfig(t *testing.T) {
 					err = os.WriteFile(goldenFilePath, configYAML, 0600)
 					require.NoError(t, err, "failed to overwrite golden file")
 
-					t.Fatalf("Golden file %s has been saved, please verify it and remove this line", goldenFilePath)
+					t.Fatalf("Golden file %s has been saved, please verify it and set the overwriteGoldenFile flag to false", goldenFilePath)
 
 					return
 				}
