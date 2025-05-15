@@ -94,7 +94,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 		})
 
-		It("Should ship JSON logs without original body to backend1 having drop orginal active", func() {
+		It("Should ship JSON logs without original body to backend1 having drop original active", func() {
 			Eventually(func(g Gomega) {
 				resp, err := suite.ProxyClient.Get(backend1ExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -107,7 +107,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Should ship plain logs with original body to backend1 having drop orginal active", func() {
+		It("Should ship plain logs with original body to backend1 having drop original active", func() {
 			Eventually(func(g Gomega) {
 				resp, err := suite.ProxyClient.Get(backend1ExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -119,7 +119,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Should ship JSON logs with original body to backend2 having drop orginal inactive", func() {
+		It("Should ship JSON logs with original body to backend2 having drop original inactive", func() {
 			Eventually(func(g Gomega) {
 				resp, err := suite.ProxyClient.Get(backend2ExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -131,7 +131,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Should ship plain logs with original body to backend2 having drop orginal inactive", func() {
+		It("Should ship plain logs with original body to backend2 having drop original inactive", func() {
 			Eventually(func(g Gomega) {
 				resp, err := suite.ProxyClient.Get(backend2ExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
