@@ -84,6 +84,7 @@ func TestReconcile(t *testing.T) {
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
 			istioStatusCheckerStub,
+			pipelineLock,
 			pipelineValidatorWithStubs,
 			errToMsg)
 		err := sut.Reconcile(t.Context(), &pipeline)
@@ -147,6 +148,7 @@ func TestReconcile(t *testing.T) {
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
 			istioStatusCheckerStub,
+			pipelineLock,
 			pipelineValidatorWithStubs,
 			errToMsg)
 		err := sut.Reconcile(t.Context(), &pipeline)
@@ -210,6 +212,7 @@ func TestReconcile(t *testing.T) {
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
 			istioStatusCheckerStub,
+			pipelineLock,
 			pipelineValidatorWithStubs,
 			errToMsg)
 		err := sut.Reconcile(t.Context(), &pipeline)
@@ -272,6 +275,7 @@ func TestReconcile(t *testing.T) {
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
 			istioStatusCheckerStub,
+			pipelineLock,
 			pipelineValidatorWithStubs,
 			errToMsg)
 		err := sut.Reconcile(t.Context(), &pipeline)
@@ -334,6 +338,7 @@ func TestReconcile(t *testing.T) {
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
 			istioStatusCheckerStub,
+			pipelineLock,
 			pipelineValidatorWithStubs,
 			errToMsg)
 		err := sut.Reconcile(t.Context(), &pipeline)
@@ -489,6 +494,7 @@ func TestReconcile(t *testing.T) {
 					gatewayConfigBuilderMock,
 					gatewayProberStub,
 					istioStatusCheckerStub,
+					pipelineLock,
 					pipelineValidatorWithStubs,
 					errToMsg)
 				err := sut.Reconcile(t.Context(), &pipeline)
@@ -555,6 +561,7 @@ func TestReconcile(t *testing.T) {
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
 			istioStatusCheckerStub,
+			pipelineLock,
 			pipelineValidatorWithStubs,
 			&conditions.ErrorToMessageConverter{})
 		err := sut.Reconcile(t.Context(), &pipeline)
@@ -616,6 +623,7 @@ func TestReconcile(t *testing.T) {
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
 			istioStatusCheckerStub,
+			pipelineLock,
 			pipelineValidatorWithStubs,
 			&conditions.ErrorToMessageConverter{})
 		err1 := sut.Reconcile(t.Context(), &pipeline1)
@@ -678,6 +686,7 @@ func TestReconcile(t *testing.T) {
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
 			istioStatusCheckerStub,
+			pipelineLock,
 			pipelineValidatorWithStubs,
 			&conditions.ErrorToMessageConverter{})
 		err1 := sut.Reconcile(t.Context(), &pipeline1)

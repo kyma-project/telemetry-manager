@@ -18,7 +18,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/processors"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
+	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
@@ -55,7 +55,7 @@ type AgentApplierDeleter interface {
 	DeleteResources(ctx context.Context, c client.Client) error
 }
 
-var _ logpipeline.LogPipelineReconciler = &Reconciler{}
+// var _ logpipeline.LogPipelineReconciler = &Reconciler{}
 
 type PipelineValidator interface {
 	Validate(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error
@@ -84,6 +84,7 @@ type Reconciler struct {
 	gatewayConfigBuilder  GatewayConfigBuilder
 	gatewayProber         Prober
 	istioStatusChecker    IstioStatusChecker
+	pipelineLock          PipelineLock
 	pipelineValidator     PipelineValidator
 	errToMessageConverter ErrorToMessageConverter
 }
@@ -100,6 +101,7 @@ func New(
 	gatewayConfigBuilder GatewayConfigBuilder,
 	gatewayProber Prober,
 	istioStatusChecker IstioStatusChecker,
+	pipelineLock PipelineLock,
 	pipelineValidator PipelineValidator,
 	errToMessageConverter ErrorToMessageConverter,
 ) *Reconciler {
@@ -115,6 +117,7 @@ func New(
 		gatewayConfigBuilder:  gatewayConfigBuilder,
 		gatewayProber:         gatewayProber,
 		istioStatusChecker:    istioStatusChecker,
+		pipelineLock:          pipelineLock,
 		pipelineValidator:     pipelineValidator,
 		errToMessageConverter: errToMessageConverter,
 	}
@@ -141,7 +144,16 @@ func (r *Reconciler) SupportedOutput() logpipelineutils.Mode {
 }
 
 func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
-	allPipelines, err := logpipeline.GetPipelinesForType(ctx, r.Client, r.SupportedOutput())
+	if err := r.pipelineLock.TryAcquireLock(ctx, pipeline); err != nil {
+		if errors.Is(err, resourcelock.ErrMaxPipelinesExceeded) {
+			logf.FromContext(ctx).V(1).Info("Skipping reconciliation: maximum pipeline count limit exceeded")
+			return nil
+		}
+
+		return fmt.Errorf("failed to acquire lock: %w", err)
+	}
+
+	allPipelines, err := logpipelineutils.GetPipelinesForType(ctx, r.Client, r.SupportedOutput())
 	if err != nil {
 		return err
 	}

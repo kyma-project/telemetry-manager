@@ -207,6 +207,7 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 		&workloadstatus.DaemonSetProber{Client: client},
 		flowHealthProber,
 		istiostatus.NewChecker(discoveryClient),
+		pipelineLock,
 		pipelineValidator,
 		&conditions.ErrorToMessageConverter{})
 
@@ -247,6 +248,7 @@ func configureOtelReconciler(client client.Client, config LogPipelineControllerC
 		&gateway.Builder{Reader: client},
 		&workloadstatus.DeploymentProber{Client: client},
 		istiostatus.NewChecker(discoveryClient),
+		pipelineLock,
 		pipelineValidator,
 		&conditions.ErrorToMessageConverter{})
 
