@@ -51,12 +51,12 @@ spec:
             properties:
               enrichments:
                 description: |-
-                  Enrichments specifies optional enrichments for the log data.
+                  Enrichments specifies optional enrichments for the telemetry data.
                   This field is optional.
                 properties:
                   extractPodLabels:
                     description: |-
-                      ExtractPodLabels specifies the list of pod labels to be used for enrichment.
+                      ExtractPodLabels specifies the list of Pod labels to be used for enrichment.
                       This field is optional.
                     items:
                       description: |-

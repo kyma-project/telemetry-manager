@@ -47,7 +47,7 @@ type TelemetrySpec struct {
 	// +optional
 	Log *LogSpec `json:"log,omitempty"`
 
-	// Enrichments specifies optional enrichments for the log data.
+	// Enrichments specifies optional enrichments for the telemetry data.
 	// This field is optional.
 	Enrichments *EnrichmentSpec `json:"enrichments,omitempty"`
 }
@@ -180,7 +180,7 @@ type Status struct {
 // EnrichmentSpec defines the configuration for telemetry data enrichment.
 // EnrichmentSpec contains settings to enable enrichment and specify pod labels for enrichment.
 type EnrichmentSpec struct {
-	// ExtractPodLabels specifies the list of pod labels to be used for enrichment.
+	// ExtractPodLabels specifies the list of Pod labels to be used for enrichment.
 	// This field is optional.
 	ExtractPodLabels []PodLabel `json:"extractPodLabels,omitempty"`
 }

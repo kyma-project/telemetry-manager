@@ -114,6 +114,7 @@ manifests: $(CONTROLLER_GEN) $(YQ) $(YAMLFMT) ## Generate WebhookConfiguration, 
 	## Remove empty x-kubernetes-validations arrays from logpipeline crd that can be caused by previous yq manipulations
 	$(YQ) eval 'del(.. | select(select(has("x-kubernetes-validations"))."x-kubernetes-validations" | length == 0)."x-kubernetes-validations")' -i ./config/crd/bases/telemetry.kyma-project.io_logpipelines.yaml
 	$(YQ) eval 'del(.. | select(has("log")).log)' -i ./config/crd/bases/operator.kyma-project.io_telemetries.yaml
+	$(YQ) eval 'del(.. | select(has("enrichments")).enrichments)' -i ./config/crd/bases/operator.kyma-project.io_telemetries.yaml
 	$(YAMLFMT)
 
 .PHONY: manifests-experimental
