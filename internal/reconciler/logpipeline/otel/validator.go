@@ -21,5 +21,6 @@ func (v *Validator) Validate(ctx context.Context, pipeline *telemetryv1alpha1.Lo
 	if err := v.PipelineLock.TryAcquireLock(ctx, pipeline); err != nil {
 		return err
 	}
+
 	return nil
 }

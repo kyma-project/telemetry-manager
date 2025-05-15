@@ -59,7 +59,7 @@ func TestLogComponentsCheck(t *testing.T) {
 			},
 		},
 		{
-			name: "should not be healthy if one pipeline refs missing secret",
+			name: "should not be healthy if max pipelines exceeded",
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(healthyAgentCond).
@@ -70,8 +70,8 @@ func TestLogComponentsCheck(t *testing.T) {
 					WithStatusCondition(metav1.Condition{
 						Type:    conditions.TypeConfigurationGenerated,
 						Status:  metav1.ConditionFalse,
-						Reason:  conditions.ReasonReferencedSecretMissing,
-						Message: "One or more referenced Secrets are missing",
+						Reason:  conditions.ReasonMaxPipelinesExceeded,
+						Message: "Maximum pipeline count limit exceeded",
 					}).
 					Build(),
 			},
@@ -79,8 +79,8 @@ func TestLogComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    conditions.TypeLogComponentsHealthy,
 				Status:  "False",
-				Reason:  conditions.ReasonReferencedSecretMissing,
-				Message: "One or more referenced Secrets are missing",
+				Reason:  "MaxPipelinesExceeded",
+				Message: "Maximum pipeline count limit exceeded",
 			},
 		},
 		{
