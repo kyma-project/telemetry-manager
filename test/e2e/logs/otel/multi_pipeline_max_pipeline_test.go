@@ -29,12 +29,27 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelExperimental,
 		const maxNumberOfLogPipelines = telemetrycontrollers.MaxPipelineCount
 
 		var (
-			pipelines          []client.Object
-			additionalPipeline client.Object
+			pipelines     []client.Object
+			backend       = backend.New(mockNs, backend.SignalTypeLogsOtel, backend.WithPersistentHostSecret(suite.IsUpgrade()))
+			hostSecretRef = backend.HostSecretRefV1Alpha1()
+
+			additionalPipelineName = fmt.Sprintf("%s-limit-exceeding", suite.ID())
+			additionalPipeline     = ptr.To(
+				testutils.NewLogPipelineBuilder().
+					WithName(additionalPipelineName).
+					WithApplicationInput(false).
+					WithKeepOriginalBody(false).
+					WithOTLPOutput(
+						testutils.OTLPEndpointFromSecret(
+							hostSecretRef.Name,
+							hostSecretRef.Namespace,
+							hostSecretRef.Key,
+						),
+					).
+					Build(),
+			)
 		)
 
-		backend := backend.New(mockNs, backend.SignalTypeLogsOtel, backend.WithPersistentHostSecret(suite.IsUpgrade()))
-		hostSecretRef := backend.HostSecretRefV1Alpha1()
 		makeResources := func() []client.Object {
 			var objs []client.Object
 			for i := range maxNumberOfLogPipelines {
@@ -60,7 +75,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelExperimental,
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, additionalPipeline)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects[1:]...)).Should(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
@@ -72,8 +88,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelExperimental,
 		})
 
 		It("Should create an additional pipeline in not healthy state", func() {
-			additionalPipelineName := fmt.Sprintf("%s-limit-exceeding", suite.ID())
-			additionalPipeline = ptr.To(testutils.NewLogPipelineBuilder().WithName(additionalPipelineName).Build())
 
 			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, additionalPipeline)).Should(Succeed())
 
@@ -95,6 +109,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelExperimental,
 			deletePipeline, pipelines = pipelines[0], pipelines[1:]
 			Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, deletePipeline)).Should(Succeed())
 			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, additionalPipeline.GetName())
+
 		})
 
 	})
