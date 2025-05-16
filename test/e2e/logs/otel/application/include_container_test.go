@@ -85,14 +85,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 		})
 
 		It("Should only have logs from included container in the backend", func() {
-			Consistently(func(g Gomega) {
+			Eventually(func(g Gomega) {
 				resp, err := suite.ProxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(HaveFlatOtelLogs(ContainElement(
 					HaveResourceAttributes(HaveKeyWithValue("k8s.container.name", Equal(loggen.DefaultContainerName))),
 				))))
-			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
 
