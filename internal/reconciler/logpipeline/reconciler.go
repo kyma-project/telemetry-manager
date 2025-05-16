@@ -90,7 +90,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	outputType := GetOutputType(&pipeline)
+	outputType := logpipelineutils.GetOutputType(&pipeline)
 	reconciler, ok := r.reconcilers[outputType]
 
 	if !ok {
@@ -100,29 +100,4 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	err = reconciler.Reconcile(ctx, &pipeline)
 
 	return ctrl.Result{}, err
-}
-
-func GetOutputType(t *telemetryv1alpha1.LogPipeline) logpipelineutils.Mode {
-	if t.Spec.Output.OTLP != nil {
-		return logpipelineutils.OTel
-	}
-
-	return logpipelineutils.FluentBit
-}
-
-func GetPipelinesForType(ctx context.Context, client client.Client, mode logpipelineutils.Mode) ([]telemetryv1alpha1.LogPipeline, error) {
-	var allPipelines telemetryv1alpha1.LogPipelineList
-	if err := client.List(ctx, &allPipelines); err != nil {
-		return nil, fmt.Errorf("failed to get all log pipelines while syncing Fluent Bit ConfigMaps: %w", err)
-	}
-
-	var filteredList []telemetryv1alpha1.LogPipeline
-
-	for _, lp := range allPipelines.Items {
-		if GetOutputType(&lp) == mode {
-			filteredList = append(filteredList, lp)
-		}
-	}
-
-	return filteredList, nil
 }

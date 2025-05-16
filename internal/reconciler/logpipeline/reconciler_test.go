@@ -2,8 +2,10 @@ package logpipeline
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -74,7 +76,7 @@ func TestGetOutputType(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := GetOutputType(tt.args.t); got != tt.want {
+			if got := logpipelineutils.GetOutputType(tt.args.t); got != tt.want {
 				t.Errorf("GetOutputType() = %v, want %v", got, tt.want)
 			}
 		})
@@ -92,11 +94,11 @@ func TestGetPipelinesForType(t *testing.T) {
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&otelPipeline, &fluentbitPipeline1, &fluentbitPipeline2).WithStatusSubresource(&otelPipeline, &fluentbitPipeline1, &fluentbitPipeline2).Build()
 
-	got, err := GetPipelinesForType(t.Context(), fakeClient, logpipelineutils.OTel)
+	got, err := logpipelineutils.GetPipelinesForType(t.Context(), fakeClient, logpipelineutils.OTel)
 	require.NoError(t, err)
 	require.ElementsMatch(t, got, []telemetryv1alpha1.LogPipeline{otelPipeline})
 
-	got, err = GetPipelinesForType(t.Context(), fakeClient, logpipelineutils.FluentBit)
+	got, err = logpipelineutils.GetPipelinesForType(t.Context(), fakeClient, logpipelineutils.FluentBit)
 	require.NoError(t, err)
 	require.ElementsMatch(t, got, []telemetryv1alpha1.LogPipeline{fluentbitPipeline1, fluentbitPipeline2})
 }
@@ -134,6 +136,86 @@ func TestRegisterAndCallRegisteredReconciler(t *testing.T) {
 	})
 	require.ErrorIs(t, err, ErrUnsupportedOutputType)
 	require.NotNil(t, res)
+}
+
+func TestReconcile_PausedOverride(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = telemetryv1alpha1.AddToScheme(scheme)
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
+
+	overridesHandler := &mocks.OverridesHandler{}
+	overridesHandler.On("LoadOverrides", mock.Anything).Return(&overrides.Config{
+		Logging: overrides.LoggingConfig{Paused: true},
+	}, nil)
+
+	rec := New(fakeClient, overridesHandler)
+
+	res, err := rec.Reconcile(t.Context(), ctrl.Request{
+		NamespacedName: types.NamespacedName{Name: "nonexistent-pipeline"},
+	})
+	require.NoError(t, err)
+	require.Equal(t, ctrl.Result{}, res)
+}
+
+func TestReconcile_MissingLogPipeline(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = telemetryv1alpha1.AddToScheme(scheme)
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
+
+	overridesHandler := &mocks.OverridesHandler{}
+	overridesHandler.On("LoadOverrides", mock.Anything).Return(&overrides.Config{}, nil)
+
+	rec := New(fakeClient, overridesHandler)
+
+	res, err := rec.Reconcile(t.Context(), ctrl.Request{
+		NamespacedName: types.NamespacedName{Name: "nonexistent-pipeline"},
+	})
+	require.NoError(t, err)
+	require.Equal(t, ctrl.Result{}, res)
+}
+
+func TestReconcile_UnsupportedOutputType(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = telemetryv1alpha1.AddToScheme(scheme)
+
+	unsupportedPipeline := testutils.NewLogPipelineBuilder().WithCustomOutput("custom").Build()
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&unsupportedPipeline).Build()
+
+	overridesHandler := &mocks.OverridesHandler{}
+	overridesHandler.On("LoadOverrides", mock.Anything).Return(&overrides.Config{}, nil)
+
+	rec := New(fakeClient, overridesHandler)
+
+	res, err := rec.Reconcile(t.Context(), ctrl.Request{
+		NamespacedName: types.NamespacedName{Name: unsupportedPipeline.Name},
+	})
+	require.ErrorIs(t, err, ErrUnsupportedOutputType)
+	require.Equal(t, ctrl.Result{}, res)
+}
+
+func TestReconcile_LoadingOverridesFails(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = telemetryv1alpha1.AddToScheme(scheme)
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
+
+	overridesHandler := &mocks.OverridesHandler{}
+	overridesHandler.On("LoadOverrides", mock.Anything).Return(nil, fmt.Errorf("error loading overrides"))
+
+	rec := New(fakeClient, overridesHandler)
+
+	res, err := rec.Reconcile(t.Context(), ctrl.Request{
+		NamespacedName: types.NamespacedName{Name: "nonexistent-pipeline"},
+	})
+	require.Error(t, err)
+	require.Equal(t, ctrl.Result{}, res)
 }
 
 // putting it here to avoid circular imports

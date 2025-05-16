@@ -1,6 +1,6 @@
 //go:build e2e
 
-package fluentbit
+package otel
 
 import (
 	"fmt"
@@ -16,28 +16,56 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelExperimental, suite.LabelMaxPipeline), Ordered, func() {
+	var (
+		mockNs = suite.ID()
+	)
 
 	Context("When reaching the pipeline limit", Ordered, func() {
 		const maxNumberOfLogPipelines = telemetrycontrollers.MaxPipelineCount
 
 		var (
-			pipelines              []client.Object
-			pipelinesNames         = make([]string, 0, maxNumberOfLogPipelines)
+			pipelines     []client.Object
+			backend       = backend.New(mockNs, backend.SignalTypeLogsOtel, backend.WithPersistentHostSecret(suite.IsUpgrade()))
+			hostSecretRef = backend.HostSecretRefV1Alpha1()
+
 			additionalPipelineName = fmt.Sprintf("%s-limit-exceeding", suite.ID())
-			additionalPipeline     = ptr.To(testutils.NewLogPipelineBuilder().WithName(additionalPipelineName).WithHTTPOutput().Build())
+			additionalPipeline     = ptr.To(
+				testutils.NewLogPipelineBuilder().
+					WithName(additionalPipelineName).
+					WithApplicationInput(false).
+					WithKeepOriginalBody(false).
+					WithOTLPOutput(
+						testutils.OTLPEndpointFromSecret(
+							hostSecretRef.Name,
+							hostSecretRef.Namespace,
+							hostSecretRef.Key,
+						),
+					).
+					Build(),
+			)
 		)
 
 		makeResources := func() []client.Object {
 			var objs []client.Object
 			for i := range maxNumberOfLogPipelines {
 				pipelineName := fmt.Sprintf("%s-limit-%d", suite.ID(), i)
-				pipeline := ptr.To(testutils.NewLogPipelineBuilder().WithName(pipelineName).WithHTTPOutput().Build())
-				pipelinesNames = append(pipelinesNames, pipelineName)
-				pipelines = append(pipelines, pipeline)
+				pipeline := testutils.NewLogPipelineBuilder().
+					WithName(pipelineName).
+					WithApplicationInput(false).
+					WithKeepOriginalBody(false).
+					WithOTLPOutput(
+						testutils.OTLPEndpointFromSecret(
+							hostSecretRef.Name,
+							hostSecretRef.Namespace,
+							hostSecretRef.Key,
+						),
+					).Build()
+				pipelines = append(pipelines, &pipeline)
 			}
 			objs = append(objs, pipelines...)
 
@@ -54,12 +82,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 		})
 
 		It("Should have only running pipelines", func() {
-			for _, pipelineName := range pipelinesNames {
-				assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+			for _, pipeline := range pipelines {
+				assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipeline.GetName())
 			}
 		})
 
 		It("Should create an additional pipeline in not healthy state", func() {
+
 			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, additionalPipeline)).Should(Succeed())
 
 			assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, additionalPipeline.GetName(), metav1.Condition{
@@ -80,6 +109,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 			deletePipeline, pipelines = pipelines[0], pipelines[1:]
 			Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, deletePipeline)).Should(Succeed())
 			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, additionalPipeline.GetName())
+
 		})
+
 	})
 })

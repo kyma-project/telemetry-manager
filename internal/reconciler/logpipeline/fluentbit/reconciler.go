@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -12,9 +13,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
+	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
@@ -33,7 +34,7 @@ type IstioStatusChecker interface {
 	IsIstioActive(ctx context.Context) bool
 }
 
-var _ logpipeline.LogPipelineReconciler = &Reconciler{}
+// var _ logpipeline.LogPipelineReconciler = &Reconciler{}
 
 type Reconciler struct {
 	client.Client
@@ -42,26 +43,44 @@ type Reconciler struct {
 	agentApplierDeleter AgentApplierDeleter
 
 	// Dependencies
-	agentProber        commonstatus.Prober
-	flowHealthProber   logpipeline.FlowHealthProber
+	agentProber        AgentProber
+	flowHealthProber   FlowHealthProber
 	istioStatusChecker IstioStatusChecker
-	pipelineValidator  *Validator
-	errToMsgConverter  commonstatus.ErrorToMessageConverter
+	pipelineLock       PipelineLock
+	pipelineValidator  PipelineValidator
+	errToMsgConverter  ErrorToMessageConverter
 }
 
 func (r *Reconciler) SupportedOutput() logpipelineutils.Mode {
 	return logpipelineutils.FluentBit
 }
 
-func New(client client.Client, telemetryNamespace string, agentConfigBuilder AgentConfigBuilder, agentApplierDeleter AgentApplierDeleter, prober commonstatus.Prober, healthProber logpipeline.FlowHealthProber, checker IstioStatusChecker, validator *Validator, converter commonstatus.ErrorToMessageConverter) *Reconciler {
+type PipelineValidator interface {
+	Validate(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error
+}
+
+type ErrorToMessageConverter interface {
+	Convert(err error) string
+}
+
+type FlowHealthProber interface {
+	Probe(ctx context.Context, pipelineName string) (prober.LogPipelineProbeResult, error)
+}
+
+type AgentProber interface {
+	IsReady(ctx context.Context, name types.NamespacedName) error
+}
+
+func New(client client.Client, telemetryNamespace string, agentConfigBuilder AgentConfigBuilder, agentApplierDeleter AgentApplierDeleter, agentProber AgentProber, healthProber FlowHealthProber, checker IstioStatusChecker, pipelineLock PipelineLock, validator PipelineValidator, converter ErrorToMessageConverter) *Reconciler {
 	return &Reconciler{
 		Client:              client,
 		telemetryNamespace:  telemetryNamespace,
 		agentConfigBuilder:  agentConfigBuilder,
 		agentApplierDeleter: agentApplierDeleter,
-		agentProber:         prober,
+		agentProber:         agentProber,
 		flowHealthProber:    healthProber,
 		istioStatusChecker:  checker,
+		pipelineLock:        pipelineLock,
 		pipelineValidator:   validator,
 		errToMsgConverter:   converter,
 	}
@@ -99,7 +118,7 @@ func (r *Reconciler) IsReconcilable(ctx context.Context, pipeline *telemetryv1al
 		return false, nil
 	}
 
-	err := r.pipelineValidator.validate(ctx, pipeline)
+	err := r.pipelineValidator.Validate(ctx, pipeline)
 
 	// Pipeline with a certificate that is about to expire is still considered reconcilable
 	if err == nil || tlscert.IsCertAboutToExpireError(err) {
@@ -117,7 +136,16 @@ func (r *Reconciler) IsReconcilable(ctx context.Context, pipeline *telemetryv1al
 }
 
 func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
-	allPipelines, err := logpipeline.GetPipelinesForType(ctx, r.Client, r.SupportedOutput())
+	if err := r.pipelineLock.TryAcquireLock(ctx, pipeline); err != nil {
+		if errors.Is(err, resourcelock.ErrMaxPipelinesExceeded) {
+			logf.FromContext(ctx).V(1).Info("Skipping reconciliation: maximum pipeline count limit exceeded")
+			return nil
+		}
+
+		return fmt.Errorf("failed to acquire lock: %w", err)
+	}
+
+	allPipelines, err := logpipelineutils.GetPipelinesForType(ctx, r.Client, r.SupportedOutput())
 	if err != nil {
 		return err
 	}
