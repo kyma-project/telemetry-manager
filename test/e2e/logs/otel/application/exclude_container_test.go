@@ -25,6 +25,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 
 	var (
 		mockNs           = suite.ID()
+		backendNs        = suite.IDWithSuffix("backend")
 		pipelineName     = suite.ID()
 		backendExportURL string
 	)
@@ -32,8 +33,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 	makeResources := func() []client.Object {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
+		objs = append(objs, kitk8s.NewNamespace(backendNs).K8sObject())
 
-		backend := backend.New(mockNs, backend.SignalTypeLogsOtel)
+		backend := backend.New(backendNs, backend.SignalTypeLogsOtel)
 		logProducer := loggen.New(mockNs)
 		objs = append(objs, backend.K8sObjects()...)
 		objs = append(objs, logProducer.K8sObject())
@@ -67,8 +69,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 		})
 
 		It("Should have a logs backend running", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
-			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: backendNs, Name: backend.DefaultName})
+			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: backendNs, Name: backend.DefaultName})
 		})
 
 		It("Should have some logs in the backend", func() {
@@ -81,14 +83,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 		})
 
 		It("Should not have logs from excluded container in the backend", func() {
-			Consistently(func(g Gomega) {
+			Eventually(func(g Gomega) {
 				resp, err := suite.ProxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(HaveFlatOtelLogs(Not(ContainElement(
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatOtelLogs(Not(HaveEach(
 					HaveResourceAttributes(HaveKeyWithValue("k8s.container.name", Equal(loggen.DefaultContainerName))),
 				)))))
-			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
 

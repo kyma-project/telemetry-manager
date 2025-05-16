@@ -25,6 +25,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 
 	var (
 		mockNs           = suite.ID()
+		backendNs        = suite.IDWithSuffix("backend")
 		pipelineName     = suite.ID()
 		backendExportURL string
 	)
@@ -32,6 +33,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 	makeResources := func() []client.Object {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
+		objs = append(objs, kitk8s.NewNamespace(backendNs).K8sObject())
 
 		backend := backend.New(mockNs, backend.SignalTypeLogsOtel)
 		logProducer := loggen.New(mockNs)
@@ -67,8 +69,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 		})
 
 		It("Should have a logs backend running", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
-			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: backendNs, Name: backend.DefaultName})
+			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: backendNs, Name: backend.DefaultName})
 		})
 
 		It("Should have a log producer running", func() {
@@ -89,7 +91,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 				resp, err := suite.ProxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(HaveFlatOtelLogs(ContainElement(
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatOtelLogs(HaveEach(
 					HaveResourceAttributes(HaveKeyWithValue("k8s.container.name", Equal(loggen.DefaultContainerName))),
 				))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
