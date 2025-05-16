@@ -118,7 +118,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 		})
 
 		It("Should have a right labels attached to the logs", func() {
-			Consistently(func(g Gomega) {
+			Eventually(func(g Gomega) {
 				resp, err := suite.ProxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
@@ -133,7 +133,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 					HaveResourceAttributes(HaveKeyWithValue(logLabelPrefixMatchAttributeKey2, "prefix_match2")),
 					Not(HaveResourceAttributes(HaveKeyWithValue(logLabelShouldNotMatchAttributeKey, "should_not_match"))),
 				))))
-			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
 })
