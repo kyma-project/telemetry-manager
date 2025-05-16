@@ -1,6 +1,6 @@
 //go:build e2e
 
-package fluentbit
+package logs
 
 import (
 	"fmt"
