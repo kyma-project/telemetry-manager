@@ -24,7 +24,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-// TODO: this fails
 func TestExtractLabels_OTel(t *testing.T) {
 	tests := []struct {
 		label        string
@@ -96,7 +95,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 				WithInput(tc.inputBuilder(genNs, "")).
 				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 				Build()
-			
+
 			resources := []client.Object{
 				kitk8s.NewNamespace(backendNs).K8sObject(),
 				kitk8s.NewNamespace(genNs).K8sObject(),
