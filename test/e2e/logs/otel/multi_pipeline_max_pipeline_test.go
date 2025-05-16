@@ -29,6 +29,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelExperimental,
 		const maxNumberOfLogPipelines = telemetrycontrollers.MaxPipelineCount
 
 		var (
+			pipelines      []client.Object
 			pipelinesNames = make([]string, 0, maxNumberOfLogPipelines)
 		)
 
@@ -49,10 +50,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelExperimental,
 							hostSecretRef.Key,
 						),
 					).Build()
+				pipelines = append(pipelines, &pipeline)
 				pipelinesNames = append(pipelinesNames, pipelineName)
-
-				objs = append(objs, &pipeline)
 			}
+			objs = append(objs, pipelines...)
 
 			return objs
 		}
@@ -91,5 +92,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelExperimental,
 				Reason: conditions.ReasonSelfMonConfigNotGenerated,
 			})
 		})
+
+		It("Should delete one previously healthy pipeline and render the additional pipeline healthy", func() {
+			var deletePipeline client.Object
+			deletePipeline, pipelines = pipelines[0], pipelines[1:]
+			Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, deletePipeline)).Should(Succeed())
+			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, additionalPipelineName)
+		})
+
 	})
 })

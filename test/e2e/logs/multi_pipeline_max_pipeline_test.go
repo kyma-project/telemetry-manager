@@ -30,6 +30,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline, suite.LabelLogs, suit
 
 		var (
 			pipelinesNames = make([]string, 0, maxNumberOfLogPipelines)
+			pipelines      []client.Object
 		)
 
 		backend := backend.New(mockNs, backend.SignalTypeLogsOtel, backend.WithPersistentHostSecret(suite.IsUpgrade()))
@@ -44,7 +45,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline, suite.LabelLogs, suit
 					pipeline = testutils.NewLogPipelineBuilder().WithName(pipelineName).WithHTTPOutput().Build()
 					pipelinesNames = append(pipelinesNames, pipelineName)
 
-					objs = append(objs, &pipeline)
 					continue
 				} else {
 					pipeline = testutils.NewLogPipelineBuilder().
@@ -59,10 +59,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline, suite.LabelLogs, suit
 							),
 						).Build()
 				}
+				pipelines = append(pipelines, &pipeline)
 				pipelinesNames = append(pipelinesNames, pipelineName)
-
-				objs = append(objs, &pipeline)
 			}
+			objs = append(objs, pipelines...)
 
 			return objs
 		}
@@ -99,6 +99,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline, suite.LabelLogs, suit
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonSelfMonConfigNotGenerated,
 			})
+		})
+
+		It("Should delete one previously healthy pipeline and render the additional pipeline healthy", func() {
+			var deletePipeline client.Object
+			deletePipeline, pipelines = pipelines[0], pipelines[1:]
+			Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, deletePipeline)).Should(Succeed())
+			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, additionalPipelineName)
 		})
 	})
 })

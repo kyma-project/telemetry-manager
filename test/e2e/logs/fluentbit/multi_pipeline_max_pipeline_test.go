@@ -25,6 +25,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 		const maxNumberOfLogPipelines = telemetrycontrollers.MaxPipelineCount
 
 		var (
+			pipelines      []client.Object
 			pipelinesNames = make([]string, 0, maxNumberOfLogPipelines)
 		)
 
@@ -34,9 +35,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 				pipelineName := fmt.Sprintf("%s-limit-%d", suite.ID(), i)
 				pipeline := testutils.NewLogPipelineBuilder().WithName(pipelineName).WithHTTPOutput().Build()
 				pipelinesNames = append(pipelinesNames, pipelineName)
+				pipelines = append(pipelines, &pipeline)
 
-				objs = append(objs, &pipeline)
 			}
+			objs = append(objs, pipelines...)
 
 			return objs
 		}
@@ -72,6 +74,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonSelfMonConfigNotGenerated,
 			})
+		})
+
+		It("Should delete one previously healthy pipeline and render the additional pipeline healthy", func() {
+			var deletePipeline client.Object
+			deletePipeline, pipelines = pipelines[0], pipelines[1:]
+			Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, deletePipeline)).Should(Succeed())
+			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, additionalPipelineName)
 		})
 	})
 })
