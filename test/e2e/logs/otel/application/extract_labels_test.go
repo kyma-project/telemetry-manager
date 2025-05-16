@@ -73,32 +73,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 
+			configureEnrichments()
+
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 				cleanupTelemetryConfig()
 			})
 			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
-		})
-		It("Should have global log label config", func() {
-			Eventually(func(g Gomega) int {
-				var telemetry operatorv1alpha1.Telemetry
-				err := suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)
-				g.Expect(err).NotTo(HaveOccurred())
-
-				telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{
-					ExtractPodLabels: []operatorv1alpha1.PodLabel{
-						{
-							Key: "log.test.exact.should.match",
-						},
-						{
-							KeyPrefix: "log.test.prefix",
-						},
-					},
-				}
-				err = suite.K8sClient.Update(suite.Ctx, &telemetry)
-				g.Expect(err).NotTo(HaveOccurred())
-				return len(telemetry.Spec.Enrichments.ExtractPodLabels)
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(2))
 		})
 
 		It("Should have a running log agent daemonset", func() {
@@ -144,4 +125,26 @@ func cleanupTelemetryConfig() {
 	Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
 	telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{}
 	Expect(suite.K8sClient.Update(suite.Ctx, &telemetry)).Should(Succeed())
+}
+
+func configureEnrichments() {
+	Eventually(func(g Gomega) int {
+		var telemetry operatorv1alpha1.Telemetry
+		err := suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)
+		g.Expect(err).NotTo(HaveOccurred())
+
+		telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{
+			ExtractPodLabels: []operatorv1alpha1.PodLabel{
+				{
+					Key: "log.test.exact.should.match",
+				},
+				{
+					KeyPrefix: "log.test.prefix",
+				},
+			},
+		}
+		err = suite.K8sClient.Update(suite.Ctx, &telemetry)
+		g.Expect(err).NotTo(HaveOccurred())
+		return len(telemetry.Spec.Enrichments.ExtractPodLabels)
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(2))
 }
