@@ -199,7 +199,7 @@ func TestReconcile_UnsupportedOutputType(t *testing.T) {
 	require.Equal(t, ctrl.Result{}, res)
 }
 
-func TestReconcile_LoadingOverridesFailes(t *testing.T) {
+func TestReconcile_LoadingOverridesFails(t *testing.T) {
 	scheme := runtime.NewScheme()
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = telemetryv1alpha1.AddToScheme(scheme)
