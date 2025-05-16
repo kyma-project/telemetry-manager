@@ -55,10 +55,9 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 				pipelineName = uniquePrefix()
 				backendNs    = uniquePrefix("backend")
 				genNs        = uniquePrefix("gen")
-				backendName  = kitbackend.DefaultName
 			)
 
-			serverCerts, clientCerts, err := testutils.NewCertBuilder(backendName, backendNs).
+			serverCerts, clientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).
 				WithAboutToExpireClientCert().
 				Build()
 			Expect(err).ToNot(HaveOccurred())
@@ -126,10 +125,9 @@ func TestMTLSAboutToExpireCert_FluentBit(t *testing.T) {
 		pipelineName = uniquePrefix()
 		backendNs    = uniquePrefix("backend")
 		genNs        = uniquePrefix("gen")
-		backendName  = kitbackend.DefaultName
 	)
 
-	serverCerts, clientCerts, err := testutils.NewCertBuilder(backendName, backendNs).
+	serverCerts, clientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).
 		WithAboutToExpireClientCert().
 		Build()
 	Expect(err).ToNot(HaveOccurred())

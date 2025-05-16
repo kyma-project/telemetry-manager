@@ -2,8 +2,6 @@ package shared
 
 import (
 	"context"
-	"io"
-	"net/http"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -19,7 +17,6 @@ import (
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -87,25 +84,12 @@ func TestObservedTime(t *testing.T) {
 			assert.DeploymentReady(suite.Ctx, suite.K8sClient, backend.NamespacedName())
 
 			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, genNs)
-			assert.DataConsistentlyMatching(suite.ProxyClient, backendExportURL,
-				HaveFlatOTelLogs(ContainElement(SatisfyAll(
+			assert.DataConsistentlyMatching(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(
+				HaveEach(SatisfyAll(
 					HaveOtelTimestamp(Not(BeEmpty())),
 					HaveObservedTimestamp(Not(Equal("1970-01-01 00:00:00 +0000 UTC"))),
-				))))
-			Consistently(func(g Gomega) {
-				resp, err := suite.ProxyClient.Get(backendExportURL)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-
-				bodyContent, err := io.ReadAll(resp.Body)
-				defer resp.Body.Close()
-				g.Expect(err).NotTo(HaveOccurred())
-
-				g.Expect(bodyContent).To(HaveFlatOTelLogs(ContainElement(SatisfyAll(
-					HaveOtelTimestamp(Not(BeEmpty())),
-					HaveObservedTimestamp(Not(Equal("1970-01-01 00:00:00 +0000 UTC"))),
-				))))
-			}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+				)),
+			))
 		})
 	}
 }

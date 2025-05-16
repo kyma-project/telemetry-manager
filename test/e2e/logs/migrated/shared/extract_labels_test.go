@@ -2,8 +2,8 @@ package shared
 
 import (
 	"context"
-	"io"
-	"net/http"
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -11,7 +11,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -21,24 +20,44 @@ import (
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
+// TODO: this fails
 func TestExtractLabels_OTel(t *testing.T) {
 	tests := []struct {
 		label        string
-		inputBuilder telemetryv1alpha1.LogPipelineInput
+		inputBuilder func(includeNs, excludeNs string) telemetryv1alpha1.LogPipelineInput
 		expectAgent  bool
 	}{
 		{
-			label:        suite.LabelLogAgent,
-			inputBuilder: testutils.BuildLogPipelineApplicationInput(),
+			label: suite.LabelLogAgent,
+			inputBuilder: func(includeNs, excludeNs string) telemetryv1alpha1.LogPipelineInput {
+				var opts []testutils.ExtendedNamespaceSelectorOptions
+				if includeNs != "" {
+					opts = append(opts, testutils.ExtIncludeNamespaces(includeNs))
+				}
+				if excludeNs != "" {
+					opts = append(opts, testutils.ExtExcludeNamespaces(excludeNs))
+				}
+
+				return testutils.BuildLogPipelineApplicationInput(opts...)
+			},
 		},
 		{
-			label:        suite.LabelLogGateway,
-			inputBuilder: testutils.BuildLogPipelineOTLPInput(),
+			label: suite.LabelLogGateway,
+			inputBuilder: func(includeNs, excludeNs string) telemetryv1alpha1.LogPipelineInput {
+				var opts []testutils.ExtendedNamespaceSelectorOptions
+				if includeNs != "" {
+					opts = append(opts, testutils.ExtIncludeNamespaces(includeNs))
+				}
+				if excludeNs != "" {
+					opts = append(opts, testutils.ExtExcludeNamespaces(excludeNs))
+				}
+
+				return testutils.BuildLogPipelineApplicationInput(opts...)
+			},
 		},
 	}
 
@@ -64,35 +83,29 @@ func TestExtractLabels_OTel(t *testing.T) {
 			var (
 				uniquePrefix = unique.Prefix(tc.label)
 				backendNs    = uniquePrefix("backend")
-				generatorNs  = uniquePrefix("generator")
-				pipelineName = uniquePrefix()
+
+				genNs        = uniquePrefix("gen")
+				pipelineName = uniquePrefix(tc.label)
 			)
 
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
 			backendExportURL := backend.ExportURL(suite.ProxyClient)
-			hostSecretRef := backend.HostSecretRefV1Alpha1()
 
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
-				WithInput(tc.inputBuilder).
-				WithOTLPOutput(
-					testutils.OTLPEndpointFromSecret(
-						hostSecretRef.Name,
-						hostSecretRef.Namespace,
-						hostSecretRef.Key,
-					),
-				).
+				WithInput(tc.inputBuilder(genNs, "")).
+				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 				Build()
-
+			
 			resources := []client.Object{
 				kitk8s.NewNamespace(backendNs).K8sObject(),
-				kitk8s.NewNamespace(generatorNs).K8sObject(),
+				kitk8s.NewNamespace(genNs).K8sObject(),
 				&pipeline,
 			}
 			resources = append(resources, backend.K8sObjects()...)
 
 			if tc.expectAgent {
-				resources = append(resources, loggen.New(generatorNs).
+				resources = append(resources, loggen.New(genNs).
 					WithLabels(map[string]string{
 						labelKeyExactMatch:     labelValueExactMatch,
 						labelKeyPrefixMatch1:   labelValuePrefixMatch1,
@@ -102,7 +115,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 					K8sObject(),
 				)
 			} else {
-				resources = append(resources, telemetrygen.NewPod(generatorNs, telemetrygen.SignalTypeLogs).
+				resources = append(resources, telemetrygen.NewPod(genNs, telemetrygen.SignalTypeLogs).
 					WithLabel(labelKeyExactMatch, labelValueExactMatch).
 					WithLabel(labelKeyPrefixMatch1, labelValuePrefixMatch1).
 					WithLabel(labelKeyPrefixMatch2, labelValuePrefixMatch2).
@@ -111,17 +124,13 @@ func TestExtractLabels_OTel(t *testing.T) {
 				)
 			}
 
-			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
-			})
-			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
-
 			Eventually(func(g Gomega) int {
 				var telemetry operatorv1alpha1.Telemetry
 				err := suite.K8sClient.Get(t.Context(), kitkyma.TelemetryName, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
 
 				// TODO: After Hisar's merge => API changed to telemetry.Spec instead of telemetry.Spec.Log => modify this
+
 				telemetry.Spec.Log = &operatorv1alpha1.LogSpec{
 					Enrichments: &operatorv1alpha1.EnrichmentSpec{
 						Enabled: true,
@@ -140,6 +149,11 @@ func TestExtractLabels_OTel(t *testing.T) {
 				return len(telemetry.Spec.Log.Enrichments.ExtractPodLabels)
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(2))
 
+			t.Cleanup(func() {
+				require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+			})
+			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
+
 			if tc.expectAgent {
 				assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
 			}
@@ -147,24 +161,16 @@ func TestExtractLabels_OTel(t *testing.T) {
 			assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
 			assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})
 			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
-			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, generatorNs)
+			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, genNs)
 
-			Consistently(func(g Gomega) {
-				resp, err := suite.ProxyClient.Get(backendExportURL)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-
-				bodyContent, err := io.ReadAll(resp.Body)
-				defer resp.Body.Close()
-				g.Expect(err).NotTo(HaveOccurred())
-
-				g.Expect(bodyContent).To(HaveFlatOTelLogs(ContainElement(SatisfyAll(
+			assert.DataConsistentlyMatching(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(
+				HaveEach(SatisfyAll(
 					HaveResourceAttributes(HaveKeyWithValue(k8sLabelKeyPrefix+"."+labelKeyExactMatch, labelValueExactMatch)),
 					HaveResourceAttributes(HaveKeyWithValue(k8sLabelKeyPrefix+"."+labelKeyPrefixMatch1, labelValuePrefixMatch1)),
 					HaveResourceAttributes(HaveKeyWithValue(k8sLabelKeyPrefix+"."+labelKeyPrefixMatch2, labelValuePrefixMatch2)),
 					Not(HaveResourceAttributes(HaveKeyWithValue(k8sLabelKeyPrefix+"."+labelKeyShouldNotMatch, labelValueShouldNotMatch))),
-				))))
-			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+				)),
+			))
 		})
 	}
 }
@@ -178,7 +184,7 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 		pipelineNameDropped    = uniquePrefix("dropped")
 		notDroppedNs           = uniquePrefix("not-dropped")
 		droppedNs              = uniquePrefix("dropped")
-		generatorNs            = uniquePrefix("generator")
+		genNs                  = uniquePrefix("generator")
 	)
 
 	backendNotDropped := kitbackend.New(notDroppedNs, kitbackend.SignalTypeLogsFluentBit)
@@ -187,13 +193,14 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 	backendDropped := kitbackend.New(droppedNs, kitbackend.SignalTypeLogsFluentBit)
 	backendDroppedExportURL := backendDropped.ExportURL(suite.ProxyClient)
 
-	logProducer := loggen.New(generatorNs).
+	logProducer := loggen.New(genNs).
 		WithLabels(map[string]string{"env": "dev"}).
 		WithAnnotations(map[string]string{"release": "v1.0.0"})
 
 	pipelineNotDropped := testutils.NewLogPipelineBuilder().
 		WithName(pipelineNameNotDropped).
 		WithKeepAnnotations(false).
+		WithApplicationInput(true, testutils.ExtIncludeNamespaces(genNs)).
 		WithDropLabels(false).
 		WithHTTPOutput(testutils.HTTPHost(backendNotDropped.Host()), testutils.HTTPPort(backendNotDropped.Port())).
 		Build()
@@ -201,6 +208,7 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 	pipelineDropped := testutils.NewLogPipelineBuilder().
 		WithName(pipelineNameDropped).
 		WithKeepAnnotations(false).
+		WithApplicationInput(true, testutils.ExtIncludeNamespaces(genNs)).
 		WithDropLabels(true).
 		WithHTTPOutput(testutils.HTTPHost(backendDropped.Host()), testutils.HTTPPort(backendDropped.Port())).
 		Build()
@@ -208,7 +216,7 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 	resources := []client.Object{
 		kitk8s.NewNamespace(notDroppedNs).K8sObject(),
 		kitk8s.NewNamespace(droppedNs).K8sObject(),
-		kitk8s.NewNamespace(generatorNs).K8sObject(),
+		kitk8s.NewNamespace(genNs).K8sObject(),
 		logProducer.K8sObject(),
 		&pipelineNotDropped,
 		&pipelineDropped,
@@ -226,49 +234,32 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Namespace: notDroppedNs, Name: kitbackend.DefaultName})
 	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Namespace: droppedNs, Name: kitbackend.DefaultName})
-	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Namespace: generatorNs, Name: loggen.DefaultName})
+	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Namespace: genNs, Name: loggen.DefaultName})
 
 	// Scenario 1: Labels not dropped
+	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backendNotDroppedExportURL, genNs)
 	assert.DataEventuallyMatching(suite.ProxyClient, backendNotDroppedExportURL, HaveFlatFluentBitLogs(
-		ContainElement(HaveKubernetesLabels(HaveKeyWithValue("env", "dev")))),
+		HaveEach(HaveKubernetesLabels(HaveKeyWithValue("env", "dev")))),
 	)
 
-	Consistently(func(g Gomega) {
-		resp, err := suite.ProxyClient.Get(backendNotDroppedExportURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-
-		bodyContent, err := io.ReadAll(resp.Body)
-		defer resp.Body.Close()
-		g.Expect(err).NotTo(HaveOccurred())
-
-		g.Expect(bodyContent).To(HaveFlatFluentBitLogs(Not(ContainElement(
-			HaveKubernetesAnnotations(Not(BeEmpty()))))),
-		)
-	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+	assert.DataConsistentlyMatching(suite.ProxyClient, backendNotDroppedExportURL, HaveFlatFluentBitLogs(
+		Not(HaveEach(
+			HaveKubernetesAnnotations(Not(BeEmpty())),
+		)),
+	))
 
 	// Scenario 2: Labels dropped
-	Consistently(func(g Gomega) {
-		resp, err := suite.ProxyClient.Get(backendDroppedExportURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		defer resp.Body.Close()
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(Not(HaveHTTPBody(HaveFlatFluentBitLogs(
-			ContainElement(HaveKubernetesLabels(HaveKeyWithValue("env", "dev")))),
-		)))
-	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 
-	Consistently(func(g Gomega) {
-		resp, err := suite.ProxyClient.Get(backendDroppedExportURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backendDroppedExportURL, genNs)
+	assert.DataConsistentlyMatching(suite.ProxyClient, backendDroppedExportURL, HaveFlatFluentBitLogs(
+		HaveEach(Not(
+			HaveKubernetesLabels(HaveKeyWithValue("env", "dev")),
+		)),
+	))
 
-		bodyContent, err := io.ReadAll(resp.Body)
-		defer resp.Body.Close()
-		g.Expect(err).NotTo(HaveOccurred())
-
-		g.Expect(bodyContent).To(HaveFlatFluentBitLogs(Not(ContainElement(
-			HaveKubernetesAnnotations(Not(BeEmpty()))))),
-		)
-	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+	assert.DataConsistentlyMatching(suite.ProxyClient, backendDroppedExportURL, HaveFlatFluentBitLogs(
+		Not(ContainElement(
+			HaveKubernetesAnnotations(Not(BeEmpty())),
+		)),
+	))
 }

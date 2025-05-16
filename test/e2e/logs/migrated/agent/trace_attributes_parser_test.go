@@ -25,7 +25,7 @@ func TestAttributesParser(t *testing.T) {
 
 	var (
 		uniquePrefix = unique.Prefix()
-		generatorNs  = uniquePrefix("generator")
+		genNs        = uniquePrefix("generator")
 		backendNs    = uniquePrefix("backend")
 		pipelineName = uniquePrefix()
 	)
@@ -46,11 +46,11 @@ func TestAttributesParser(t *testing.T) {
 		).
 		Build()
 
-	logProducer := loggen.New(generatorNs).WithUseJSON().K8sObject()
+	logProducer := loggen.New(genNs).WithUseJSON().K8sObject()
 
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(generatorNs).K8sObject(),
+		kitk8s.NewNamespace(genNs).K8sObject(),
 		logProducer,
 		&pipeline,
 	}
@@ -64,7 +64,7 @@ func TestAttributesParser(t *testing.T) {
 	assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.LogAgentName)
 	assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})
 	assert.OTelLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
-	assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, generatorNs)
+	assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, genNs)
 
 	assert.DataEventuallyMatching(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(ContainElement(SatisfyAll(
 		HaveOtelTimestamp(Not(BeEmpty())),

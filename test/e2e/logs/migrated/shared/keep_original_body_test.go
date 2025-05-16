@@ -19,6 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
+// TODO: Needs to be modified based on new changes
 func TestKeepOriginalBody_OTel(t *testing.T) {
 	RegisterTestingT(t)
 
@@ -85,14 +86,14 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 
 	assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendGen1ExportURL, gen1Ns)
 	assert.DataConsistentlyMatching(suite.ProxyClient, backendGen1ExportURL, HaveFlatOTelLogs(
-		ContainElement(
+		HaveEach(
 			HaveAttributes(HaveKey("log.original")),
 		),
 	))
 
 	assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendGen2ExportURL, gen2Ns)
 	assert.DataConsistentlyMatching(suite.ProxyClient, backendGen2ExportURL, HaveFlatOTelLogs(
-		Not(ContainElement(
+		Not(HaveEach(
 			HaveAttributes(HaveKey("log.original")),
 		)),
 	))

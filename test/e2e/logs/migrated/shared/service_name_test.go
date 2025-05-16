@@ -2,15 +2,10 @@ package shared
 
 import (
 	"context"
-	"fmt"
-	"io"
-	"net/http"
 	"testing"
 
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
-	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -22,7 +17,6 @@ import (
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -67,10 +61,11 @@ func TestServiceName_OTel(t *testing.T) {
 				pipelineName    = uniquePrefix()
 				deploymentName  = uniquePrefix()
 				statefulSetName = uniquePrefix()
-				mockNs          = uniquePrefix()
+				backendNs       = uniquePrefix("backend")
+				genNs           = uniquePrefix("gen")
 			)
 
-			backend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsOTel)
+			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
 			backendExportURL := backend.ExportURL(suite.ProxyClient)
 			hostSecretRef := backend.HostSecretRefV1Alpha1()
 
@@ -88,31 +83,32 @@ func TestServiceName_OTel(t *testing.T) {
 				Build()
 
 			resources := []client.Object{
-				kitk8s.NewNamespace(mockNs).K8sObject(),
+				kitk8s.NewNamespace(backendNs).K8sObject(),
+				kitk8s.NewNamespace(genNs).K8sObject(),
 				&pipeline,
 			}
 			resources = append(resources, backend.K8sObjects()...)
 
 			if tc.expectAgent {
-				podSpecLogs := loggen.New(mockNs).PodSpec()
+				podSpecLogs := loggen.New(genNs).PodSpec()
 				resources = append(resources,
-					kitk8s.NewPod(podWithBothLabelsName, mockNs).
+					kitk8s.NewPod(podWithBothLabelsName, genNs).
 						WithLabel(kubeAppLabelKey, kubeAppLabelValue).
 						WithLabel(appLabelKey, appLabelValue).
 						WithPodSpec(podSpecLogs).
 						K8sObject(),
-					kitk8s.NewJob(jobName, mockNs).WithPodSpec(podSpecLogs).K8sObject(),
-					kitk8s.NewPod(podWithNoLabelsName, mockNs).WithPodSpec(podSpecLogs).K8sObject(),
+					kitk8s.NewJob(jobName, genNs).WithPodSpec(podSpecLogs).K8sObject(),
+					kitk8s.NewPod(podWithNoLabelsName, genNs).WithPodSpec(podSpecLogs).K8sObject(),
 				)
 			} else {
 				podSpecWithUndefinedService := telemetrygen.PodSpec(telemetrygen.SignalTypeLogs, telemetrygen.WithServiceName(""))
 				resources = append(resources,
-					kitk8s.NewPod(podWithAppLabelName, mockNs).
+					kitk8s.NewPod(podWithAppLabelName, genNs).
 						WithLabel(appLabelKey, appLabelValue).
 						WithPodSpec(podSpecWithUndefinedService).
 						K8sObject(),
-					kitk8s.NewDeployment(deploymentName, mockNs).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
-					kitk8s.NewStatefulSet(statefulSetName, mockNs).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
+					kitk8s.NewDeployment(deploymentName, genNs).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
+					kitk8s.NewStatefulSet(statefulSetName, genNs).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
 				)
 			}
 
@@ -127,32 +123,19 @@ func TestServiceName_OTel(t *testing.T) {
 				assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.LogAgentName)
 			}
 
-			Eventually(func(g Gomega) int32 {
-				var deployment appsv1.Deployment
-				err := suite.K8sClient.Get(suite.Ctx, kitkyma.LogGatewayName, &deployment)
-				g.Expect(err).NotTo(HaveOccurred())
-				return *deployment.Spec.Replicas
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(int32(2)))
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.LogGatewayName)
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, backend.NamespacedName())
 			assert.OTelLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
-			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, mockNs)
+			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, genNs)
 
 			verifyServiceNameAttr := func(givenPodPrefix, expectedServiceName string) {
-				Eventually(func(g Gomega) {
-					resp, err := suite.ProxyClient.Get(backendExportURL)
-					g.Expect(err).NotTo(HaveOccurred())
-					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				assert.DataEventuallyMatching(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(
+					ContainElement(SatisfyAll(
+						HaveResourceAttributes(HaveKeyWithValue(serviceKey, expectedServiceName)),
+						HaveResourceAttributes(HaveKeyWithValue(podKey, ContainSubstring(givenPodPrefix))),
+					)),
+				))
 
-					bodyContent, err := io.ReadAll(resp.Body)
-					defer resp.Body.Close()
-					g.Expect(err).NotTo(HaveOccurred())
-					g.Expect(bodyContent).To(HaveFlatOTelLogs(
-						ContainElement(SatisfyAll(
-							HaveResourceAttributes(HaveKeyWithValue(serviceKey, expectedServiceName)),
-							HaveResourceAttributes(HaveKeyWithValue(podKey, ContainSubstring(givenPodPrefix))),
-						)),
-					))
-				}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed(), fmt.Sprintf("could not find logs matching service.name: %s, k8s.pod.name: %s.*", expectedServiceName, givenPodPrefix))
 			}
 
 			if tc.expectAgent {
@@ -166,7 +149,7 @@ func TestServiceName_OTel(t *testing.T) {
 			}
 
 			// Verify that temporary kyma resource attributes are removed from the logs
-			assert.DataEventuallyMatching(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(
+			assert.DataConsistentlyMatching(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(
 				Not(ContainElement(
 					HaveResourceAttributes(HaveKey(ContainSubstring("kyma"))),
 				)),

@@ -42,10 +42,9 @@ func TestMTLSExpiredCert_OTel(t *testing.T) {
 				uniquePrefix = unique.Prefix(tc.label)
 				pipelineName = uniquePrefix()
 				backendNs    = uniquePrefix("backend")
-				backendName  = kitbackend.DefaultName
 			)
 
-			expiredServerCerts, expiredClientCerts, err := testutils.NewCertBuilder(backendName, backendNs).
+			expiredServerCerts, expiredClientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).
 				WithExpiredClientCert().
 				Build()
 			Expect(err).ToNot(HaveOccurred())
