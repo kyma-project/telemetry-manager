@@ -76,7 +76,6 @@ func TestK8sAttributesProcessorConfig(t *testing.T) {
 	}
 
 	config := K8sAttributesProcessorConfig(Enrichments{
-		Enabled: true,
 		PodLabels: []PodLabel{
 			{Key: "", KeyPrefix: "app.kubernetes.io/name"},
 			{Key: "app", KeyPrefix: ""},
@@ -100,7 +99,6 @@ func TestBuildPodLabelEnrichments(t *testing.T) {
 		{
 			name: "Enrichments disabled",
 			presets: Enrichments{
-				Enabled:   false,
 				PodLabels: []PodLabel{},
 			},
 			expected: []config.ExtractLabel{},
@@ -108,7 +106,6 @@ func TestBuildPodLabelEnrichments(t *testing.T) {
 		{
 			name: "Enrichments enabled with key",
 			presets: Enrichments{
-				Enabled: true,
 				PodLabels: []PodLabel{
 					{Key: "app"},
 				},
@@ -124,7 +121,6 @@ func TestBuildPodLabelEnrichments(t *testing.T) {
 		{
 			name: "Enrichments enabled with key prefix",
 			presets: Enrichments{
-				Enabled: true,
 				PodLabels: []PodLabel{
 					{KeyPrefix: "app.kubernetes.io"},
 				},
@@ -140,7 +136,6 @@ func TestBuildPodLabelEnrichments(t *testing.T) {
 		{
 			name: "Enrichments enabled with multiple labels",
 			presets: Enrichments{
-				Enabled: true,
 				PodLabels: []PodLabel{
 					{Key: "app"},
 					{KeyPrefix: "app.kubernetes.io"},

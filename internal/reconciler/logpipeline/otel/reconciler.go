@@ -323,8 +323,7 @@ func (r *Reconciler) getEnrichmentsFromTelemetry(ctx context.Context) processors
 		return processors.Enrichments{}
 	}
 
-	if telemetry.Spec.Log != nil &&
-		telemetry.Spec.Log.Enrichments != nil {
+	if telemetry.Spec.Enrichments != nil {
 		mapPodLabels := func(values []operatorv1alpha1.PodLabel, fn func(operatorv1alpha1.PodLabel) processors.PodLabel) []processors.PodLabel {
 			var result []processors.PodLabel
 			for i := range values {
@@ -335,8 +334,7 @@ func (r *Reconciler) getEnrichmentsFromTelemetry(ctx context.Context) processors
 		}
 
 		return processors.Enrichments{
-			Enabled: telemetry.Spec.Log.Enrichments.Enabled,
-			PodLabels: mapPodLabels(telemetry.Spec.Log.Enrichments.ExtractPodLabels, func(value operatorv1alpha1.PodLabel) processors.PodLabel {
+			PodLabels: mapPodLabels(telemetry.Spec.Enrichments.ExtractPodLabels, func(value operatorv1alpha1.PodLabel) processors.PodLabel {
 				return processors.PodLabel{
 					Key:       value.Key,
 					KeyPrefix: value.KeyPrefix,

@@ -18,12 +18,12 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPush, suite.LabelExperimental), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, suite.LabelExperimental), Ordered, func() {
 	const (
 		logLabelExactMatchAttributeKey     = "k8s.pod.label.log.test.exact.should.match"
 		logLabelPrefixMatchAttributeKey1   = "k8s.pod.label.log.test.prefix.should.match1"
@@ -49,7 +49,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPush, s
 		hostSecretRef := backend.HostSecretRefV1Alpha1()
 		pipelineBuilder := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
-			WithApplicationInput(false).
+			WithApplicationInput(true).
 			WithIncludeNamespaces(mockNs).
 			WithOTLPOutput(
 				testutils.OTLPEndpointFromSecret(
@@ -59,18 +59,17 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPush, s
 				),
 			)
 		logPipeline := pipelineBuilder.Build()
-		otlpLogGen := telemetrygen.NewPod(mockNs, telemetrygen.SignalTypeLogs).
-			WithLabel("log.test.exact.should.match", "exact_match").
-			WithLabel("log.test.prefix.should.match1", "prefix_match1").
-			WithLabel("log.test.prefix.should.match2", "prefix_match2").
-			WithLabel("log.test.label.should.not.match", "should_not_match").
+		logGen := loggen.New(mockNs).
+			WithLabels(map[string]string{"log.test.exact.should.match": "exact_match",
+				"log.test.prefix.should.match1":   "prefix_match1",
+				"log.test.prefix.should.match2":   "prefix_match2",
+				"log.test.label.should.not.match": "should_not_match"}).
 			K8sObject()
-		objs = append(objs, otlpLogGen, &logPipeline)
+		objs = append(objs, logGen, &logPipeline)
 		return objs
 	}
 
-	Context("When a logpipeline gateway with OTLP output exists", Ordered, func() {
-
+	Context("When a logpipeline agent with OTLP output exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 
@@ -83,8 +82,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPush, s
 			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running log gateway deployment", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.LogGatewayName)
+		It("Should have a running log agent daemonset", func() {
+			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.LogAgentName)
 		})
 
 		It("Should have a log backend running", func() {
@@ -95,7 +94,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPush, s
 			assert.LogPipelineOtelHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 		})
 
-		It("Should deliver telemetrygen logs", func() {
+		It("Should deliver loggen logs", func() {
 			assert.OtelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, mockNs)
 		})
 
