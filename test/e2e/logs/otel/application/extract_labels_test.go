@@ -33,14 +33,16 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 
 	var (
 		mockNs           = suite.ID()
+		backendNs        = suite.IDWithSuffix("backend")
 		pipelineName     = suite.ID()
 		backendExportURL string
 	)
 	makeResources := func() []client.Object {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
+		objs = append(objs, kitk8s.NewNamespace(backendNs).K8sObject())
 
-		backend := backend.New(mockNs, backend.SignalTypeLogsOtel)
+		backend := backend.New(backendNs, backend.SignalTypeLogsOtel)
 		objs = append(objs, backend.K8sObjects()...)
 		backendExportURL = backend.ExportURL(suite.ProxyClient)
 
@@ -48,7 +50,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 		pipelineBuilder := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
 			WithApplicationInput(true).
-			WithIncludeNamespaces(mockNs...).
+			WithIncludeNamespaces(mockNs).
 			WithOTLPOutput(
 				testutils.OTLPEndpointFromSecret(
 					hostSecretRef.Name,
