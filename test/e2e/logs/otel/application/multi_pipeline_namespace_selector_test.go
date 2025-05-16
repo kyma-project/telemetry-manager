@@ -48,7 +48,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 			WithName(pipelineNameIncludeApp1Ns).
 			WithOTLPInput(false).
 			WithApplicationInput(true, testutils.IncludeLogNamespaces(app1Ns)).
-			WithExcludeNamespaces(app2Ns).
 			WithOTLPOutput(testutils.OTLPEndpoint(backend1.Endpoint())).
 			Build()
 		objs = append(objs, &pipelineIncludeApp1Ns)
@@ -60,8 +59,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 		pipelineExcludeApp1Ns := testutils.NewLogPipelineBuilder().
 			WithName(pipelineNameExcludeApp1Ns).
 			WithOTLPInput(false).
-			WithApplicationInput(true, testutils.ExcludeLogNamespaces(app1Ns)).
-			WithIncludeNamespaces(app2Ns).
+			WithApplicationInput(true, testutils.IncludeLogNamespaces(app2Ns)).
 			WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
 			Build()
 		objs = append(objs, &pipelineExcludeApp1Ns)
