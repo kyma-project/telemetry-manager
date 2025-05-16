@@ -152,7 +152,7 @@ func TestReconcile_PausedOverride(t *testing.T) {
 
 	rec := New(fakeClient, overridesHandler)
 
-	res, err := rec.Reconcile(context.TODO(), ctrl.Request{
+	res, err := rec.Reconcile(t.Context(), ctrl.Request{
 		NamespacedName: types.NamespacedName{Name: "nonexistent-pipeline"},
 	})
 	require.NoError(t, err)
@@ -171,7 +171,7 @@ func TestReconcile_MissingLogPipeline(t *testing.T) {
 
 	rec := New(fakeClient, overridesHandler)
 
-	res, err := rec.Reconcile(context.TODO(), ctrl.Request{
+	res, err := rec.Reconcile(t.Context(), ctrl.Request{
 		NamespacedName: types.NamespacedName{Name: "nonexistent-pipeline"},
 	})
 	require.NoError(t, err)
@@ -192,7 +192,7 @@ func TestReconcile_UnsupportedOutputType(t *testing.T) {
 
 	rec := New(fakeClient, overridesHandler)
 
-	res, err := rec.Reconcile(context.TODO(), ctrl.Request{
+	res, err := rec.Reconcile(t.Context(), ctrl.Request{
 		NamespacedName: types.NamespacedName{Name: unsupportedPipeline.Name},
 	})
 	require.ErrorIs(t, err, ErrUnsupportedOutputType)
@@ -211,7 +211,7 @@ func TestReconcile_LoadingOverridesFailes(t *testing.T) {
 
 	rec := New(fakeClient, overridesHandler)
 
-	res, err := rec.Reconcile(context.TODO(), ctrl.Request{
+	res, err := rec.Reconcile(t.Context(), ctrl.Request{
 		NamespacedName: types.NamespacedName{Name: "nonexistent-pipeline"},
 	})
 	require.Error(t, err)
