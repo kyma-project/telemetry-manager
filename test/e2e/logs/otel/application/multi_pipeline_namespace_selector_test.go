@@ -22,6 +22,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 		mockNs                    = suite.ID()
 		app1Ns                    = suite.IDWithSuffix("app-1")
 		app2Ns                    = suite.IDWithSuffix("app-2")
+		backendNs1                = suite.IDWithSuffix("backend-1")
+		backendNs2                = suite.IDWithSuffix("backend-2")
 		backend1Name              = "backend-1"
 		backend1ExportURL         string
 		backend2Name              = "backend-2"
@@ -34,9 +36,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject(),
 			kitk8s.NewNamespace(app1Ns).K8sObject(),
-			kitk8s.NewNamespace(app2Ns).K8sObject())
+			kitk8s.NewNamespace(app2Ns).K8sObject(),
+			kitk8s.NewNamespace(backendNs1).K8sObject(),
+			kitk8s.NewNamespace(backendNs2).K8sObject())
 
-		backend1 := backend.New(mockNs, backend.SignalTypeLogsOtel, backend.WithName(backend1Name))
+		backend1 := backend.New(backendNs1, backend.SignalTypeLogsOtel, backend.WithName(backend1Name))
 		backend1ExportURL = backend1.ExportURL(suite.ProxyClient)
 		objs = append(objs, backend1.K8sObjects()...)
 
@@ -44,11 +48,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 			WithName(pipelineNameIncludeApp1Ns).
 			WithOTLPInput(false).
 			WithApplicationInput(true, testutils.IncludeLogNamespaces(app1Ns)).
+			WithExcludeNamespaces(app2Ns).
 			WithOTLPOutput(testutils.OTLPEndpoint(backend1.Endpoint())).
 			Build()
 		objs = append(objs, &pipelineIncludeApp1Ns)
 
-		backend2 := backend.New(mockNs, backend.SignalTypeLogsOtel, backend.WithName(backend2Name))
+		backend2 := backend.New(backendNs2, backend.SignalTypeLogsOtel, backend.WithName(backend2Name))
 		backend2ExportURL = backend2.ExportURL(suite.ProxyClient)
 		objs = append(objs, backend2.K8sObjects()...)
 
@@ -56,6 +61,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 			WithName(pipelineNameExcludeApp1Ns).
 			WithOTLPInput(false).
 			WithApplicationInput(true, testutils.ExcludeLogNamespaces(app1Ns)).
+			WithIncludeNamespaces(app2Ns).
 			WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
 			Build()
 		objs = append(objs, &pipelineExcludeApp1Ns)
@@ -91,10 +97,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 		})
 
 		It("Should have a logs backend running", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
-			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
-			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend1Name, Namespace: backendNs1})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend2Name, Namespace: backendNs2})
+			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend1Name, Namespace: backendNs1})
+			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend2Name, Namespace: backendNs2})
 		})
 
 		It("Should have running pipelines", func() {
