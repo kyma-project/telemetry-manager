@@ -57,7 +57,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelExperimental,
 			return objs
 		}
 
-		BeforeAll(func() {
+		It("creates the resource", func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
@@ -70,6 +70,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelExperimental,
 				assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 			}
 		})
+
 		additionalPipelineName := fmt.Sprintf("%s-limit-exceeding", suite.ID())
 		var pipeline telemetryv1alpha1.LogPipeline
 

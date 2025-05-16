@@ -125,11 +125,7 @@ jobs:
       fail-fast: false
       matrix:
         ginkgo-labels:
-          - logs-fluentbit
-          - logs-otel
-          - logs
-          - metrics
-          - traces
+          - max-pipeline
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
