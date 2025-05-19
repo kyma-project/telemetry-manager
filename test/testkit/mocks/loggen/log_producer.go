@@ -134,7 +134,7 @@ done`
 		Containers: []corev1.Container{
 			{
 
-				Name:  DefaultContainerName,
+				Name:  lp.container,
 				Image: "alpine:latest",
 
 				Command: []string{"/bin/sh", "-c", logCmd}},
