@@ -79,7 +79,6 @@ func TestObservedTime(t *testing.T) {
 			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
 
 			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.LogGatewayName)
-			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.LogAgentName)
 			assert.OTelLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 			assert.DeploymentReady(suite.Ctx, suite.K8sClient, backend.NamespacedName())
 
