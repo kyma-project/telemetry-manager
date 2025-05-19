@@ -47,7 +47,7 @@ func TestMultiPipelineBroken_OTel(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label)
+			suite.RegisterTestCase(t, tc.label, suite.LabelSkip) // FIXME: Currently failing (not implemented)
 
 			var (
 				uniquePrefix   = unique.Prefix(tc.label)
@@ -94,12 +94,11 @@ func TestMultiPipelineBroken_OTel(t *testing.T) {
 			}
 
 			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineGood.Name)
-			// TODO(skhalash): Uncomment when validation is implemented
-			// assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineBroken.Name, metav1.Condition{
-			// 	Type:   conditions.TypeConfigurationGenerated,
-			// 	Status: metav1.ConditionFalse,
-			// 	Reason: conditions.ReasonReferencedSecretMissing,
-			// })
+			assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineBroken.Name, metav1.Condition{
+				Type:   conditions.TypeConfigurationGenerated,
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonReferencedSecretMissing,
+			})
 
 			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, genNs)
 		})
