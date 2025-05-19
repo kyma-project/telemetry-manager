@@ -131,7 +131,7 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 }
 
 func TestNamespaceSelector_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelLogAgent)
+	suite.RegisterTestCase(t, suite.LabelFluentBit)
 
 	var (
 		uniquePrefix            = unique.Prefix()

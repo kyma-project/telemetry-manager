@@ -49,7 +49,7 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label)
+			suite.RegisterTestCase(t, tc.label, suite.LabelSkip) // skipping for now, as we need to execute this test in isolation
 
 			var (
 				uniquePrefix = unique.Prefix(tc.label)
