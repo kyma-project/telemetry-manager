@@ -183,7 +183,7 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 		pipelineNameDropped    = uniquePrefix("dropped")
 		notDroppedNs           = uniquePrefix("not-dropped")
 		droppedNs              = uniquePrefix("dropped")
-		genNs                  = uniquePrefix("generator")
+		genNs                  = uniquePrefix("gen")
 	)
 
 	backendNotDropped := kitbackend.New(notDroppedNs, kitbackend.SignalTypeLogsFluentBit)
