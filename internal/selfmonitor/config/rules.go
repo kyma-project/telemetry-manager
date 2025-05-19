@@ -11,11 +11,17 @@ import (
 )
 
 const (
-	// OTEL Collector rule names. Note that the actual full names will be prefixed with Metric or Trace
+	// OTEL Collector rule names for gateways. Note that the actual full names will be prefixed with Metric or Trace or Log
 	RuleNameGatewayAllDataDropped  = "GatewayAllDataDropped"
 	RuleNameGatewaySomeDataDropped = "GatewaySomeDataDropped"
 	RuleNameGatewayQueueAlmostFull = "GatewayQueueAlmostFull"
 	RuleNameGatewayThrottling      = "GatewayThrottling"
+
+	// OTEL Collector rule names for agents. Note that the actual full names will be prefixed with Log
+	// Note that for agents, there is no throttling rule, as the agent does not have an OTLP receiver
+	RuleNameAgentAllDataDropped  = "AgentAllDataDropped"
+	RuleNameAgentSomeDataDropped = "AgentSomeDataDropped"
+	RuleNameAgentQueueAlmostFull = "AgentQueueAlmostFull"
 
 	// Fluent Bit rule names. Note that the actual full names will be prefixed with Log
 	RuleNameLogFluentBitAllDataDropped  = "FluentBitAllDataDropped"
@@ -62,28 +68,36 @@ const (
 func MakeRules(compatibilityMode bool) RuleGroups {
 	var rules []Rule
 
-	metricRuleBuilder := otelCollectorRuleBuilder{
+	metricGatewayRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    ruleDataType(typeMetricPipeline, compatibilityMode),
 		serviceName: otelcollector.MetricGatewayName + "-metrics",
 		namePrefix:  ruleNamePrefix(typeMetricPipeline),
 	}
 
-	rules = append(rules, metricRuleBuilder.rules()...)
+	rules = append(rules, metricGatewayRuleBuilder.gatewayRules()...)
 
-	traceRuleBuilder := otelCollectorRuleBuilder{
+	traceGatewayRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    ruleDataType(typeTracePipeline, compatibilityMode),
 		serviceName: otelcollector.TraceGatewayName + "-metrics",
 		namePrefix:  ruleNamePrefix(typeTracePipeline),
 	}
-	rules = append(rules, traceRuleBuilder.rules()...)
+	rules = append(rules, traceGatewayRuleBuilder.gatewayRules()...)
 
-	logRuleBuilder := otelCollectorRuleBuilder{
+	logGatewayRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    ruleDataType(typeLogPipeline, compatibilityMode),
 		serviceName: otelcollector.LogGatewayName + "-metrics",
 		namePrefix:  ruleNamePrefix(typeLogPipeline),
 	}
 
-	rules = append(rules, logRuleBuilder.rules()...)
+	rules = append(rules, logGatewayRuleBuilder.gatewayRules()...)
+
+	logAgentRuleBuilder := otelCollectorRuleBuilder{
+		dataType:    ruleDataType(typeLogPipeline, compatibilityMode),
+		serviceName: otelcollector.LogAgentName + "-metrics",
+		namePrefix:  ruleNamePrefix(typeLogPipeline),
+	}
+
+	rules = append(rules, logAgentRuleBuilder.agentRules()...)
 
 	FluentBitLogRuleBuilder := fluentBitRuleBuilder{}
 	rules = append(rules, FluentBitLogRuleBuilder.rules()...)
