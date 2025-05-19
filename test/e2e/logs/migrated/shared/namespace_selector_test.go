@@ -183,7 +183,7 @@ func TestNamespaceSelector_FluentBit(t *testing.T) {
 
 	assert.DeploymentReady(t.Context(), suite.K8sClient, backend1.NamespacedName())
 	assert.DeploymentReady(t.Context(), suite.K8sClient, backend2.NamespacedName())
-	
+
 	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 
 	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backend1ExportURL, gen1Ns)

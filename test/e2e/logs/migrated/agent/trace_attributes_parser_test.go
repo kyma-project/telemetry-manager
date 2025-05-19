@@ -25,7 +25,7 @@ func TestAttributesParser(t *testing.T) {
 
 	var (
 		uniquePrefix = unique.Prefix()
-		genNs        = uniquePrefix("generator")
+		genNs        = uniquePrefix("gen")
 		backendNs    = uniquePrefix("backend")
 		pipelineName = uniquePrefix()
 	)

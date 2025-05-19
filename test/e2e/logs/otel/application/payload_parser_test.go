@@ -16,7 +16,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -35,7 +35,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 		objs = append(objs, kitk8s.NewNamespace(backendNs).K8sObject())
 
-		backend := backend.New(backendNs, backend.SignalTypeLogsOtel)
+		backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
 		logProducer := loggen.New(mockNs).WithUseJSON()
 		objs = append(objs, backend.K8sObjects()...)
 		objs = append(objs, logProducer.K8sObject())
@@ -76,15 +76,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 		})
 
 		It("Should have a log backend running", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: backendNs})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})
 		})
 
 		It("Should have a running pipeline", func() {
-			assert.LogPipelineOtelHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+			assert.OTelLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 		})
 
 		It("Should deliver loggen logs", func() {
-			assert.OtelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, mockNs)
+			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, mockNs)
 		})
 
 		It("Should parse body", func() {
@@ -97,27 +97,27 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 
-				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
+				g.Expect(bodyContent).To(HaveFlatOTelLogs(ContainElement(SatisfyAll(
 					HaveAttributes(HaveKeyWithValue("name", "a")),
 					HaveLogRecordBody(Equal("a-body")),
 					HaveAttributes(Not(HaveKey("message"))),
 					HaveAttributes(HaveKey("log.original")),
 				))))
 
-				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
+				g.Expect(bodyContent).To(HaveFlatOTelLogs(ContainElement(SatisfyAll(
 					HaveAttributes(HaveKeyWithValue("name", "b")),
 					HaveLogRecordBody(Equal("b-body")),
 					HaveAttributes(Not(HaveKey("msg"))),
 					HaveAttributes(HaveKey("log.original")),
 				))))
 
-				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
+				g.Expect(bodyContent).To(HaveFlatOTelLogs(ContainElement(SatisfyAll(
 					HaveAttributes(HaveKeyWithValue("name", "c")),
 					HaveLogRecordBody(BeEmpty()),
 					HaveAttributes(HaveKey("log.original")),
 				))))
 
-				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
+				g.Expect(bodyContent).To(HaveFlatOTelLogs(ContainElement(SatisfyAll(
 					HaveLogRecordBody(HavePrefix("name=d")),
 					HaveAttributes(Not(HaveKey("log.original"))),
 				))))
@@ -134,7 +134,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 
-				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
+				g.Expect(bodyContent).To(HaveFlatOTelLogs(ContainElement(SatisfyAll(
 					HaveAttributes(HaveKeyWithValue("name", "a")),
 					HaveTraceId(Equal("255c2212dd02c02ac59a923ff07aec74")),
 					HaveSpanId(Equal("c5c735f175ad06a6")),
@@ -145,7 +145,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 					HaveAttributes(Not(HaveKey("traceparent"))),
 				))))
 
-				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
+				g.Expect(bodyContent).To(HaveFlatOTelLogs(ContainElement(SatisfyAll(
 					HaveAttributes(HaveKeyWithValue("name", "b")),
 					HaveTraceId(Equal("80e1afed08e019fc1110464cfa66635c")),
 					HaveSpanId(Equal("7a085853722dc6d2")),
@@ -156,7 +156,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 					HaveAttributes(Not(HaveKey("traceparent"))),
 				))))
 
-				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
+				g.Expect(bodyContent).To(HaveFlatOTelLogs(ContainElement(SatisfyAll(
 					HaveAttributes(HaveKeyWithValue("name", "c")),
 					HaveTraceId(BeEmpty()),
 					HaveSpanId(BeEmpty()),
@@ -164,7 +164,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 					HaveAttributes(HaveKey("span_id")),
 				))))
 
-				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
+				g.Expect(bodyContent).To(HaveFlatOTelLogs(ContainElement(SatisfyAll(
 					HaveLogRecordBody(HavePrefix("name=d")),
 					HaveTraceId(BeEmpty()),
 					HaveSpanId(BeEmpty()),
@@ -183,27 +183,27 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 
-				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
+				g.Expect(bodyContent).To(HaveFlatOTelLogs(ContainElement(SatisfyAll(
 					HaveAttributes(HaveKeyWithValue("name", "a")),
 					HaveSeverityNumber(Equal(9)),
 					HaveSeverityText(Equal("INFO")),
 					HaveAttributes(Not(HaveKey("level"))),
 				))))
 
-				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
+				g.Expect(bodyContent).To(HaveFlatOTelLogs(ContainElement(SatisfyAll(
 					HaveAttributes(HaveKeyWithValue("name", "b")),
 					HaveSeverityNumber(Equal(13)),
 					HaveSeverityText(Equal("WARN")),
 					HaveAttributes(Not(HaveKey("log.level"))),
 				))))
 
-				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
+				g.Expect(bodyContent).To(HaveFlatOTelLogs(ContainElement(SatisfyAll(
 					HaveAttributes(HaveKeyWithValue("name", "c")),
 					HaveSeverityNumber(Equal(0)), // default value
 					HaveSeverityText(BeEmpty()),
 				))))
 
-				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
+				g.Expect(bodyContent).To(HaveFlatOTelLogs(ContainElement(SatisfyAll(
 					HaveLogRecordBody(HavePrefix("name=d")),
 					HaveSeverityNumber(Equal(0)), // default value
 					HaveSeverityText(BeEmpty()),
