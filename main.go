@@ -93,7 +93,7 @@ var (
 )
 
 const (
-	cacheSyncPeriod           = 100 * time.Minute
+	cacheSyncPeriod           = 1 * time.Minute
 	telemetryNamespaceEnvVar  = "MANAGER_NAMESPACE"
 	telemetryNamespaceDefault = "default"
 	selfMonitorName           = "telemetry-self-monitor"
