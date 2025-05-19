@@ -1,6 +1,6 @@
 //go:build e2e
 
-package otlp
+package otel
 
 import (
 	"testing"
@@ -17,7 +17,7 @@ func TestSuite(t *testing.T) {
 	format.MaxLength = suite.GomegaMaxLenght
 
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "E2E Suite - OTel Logs (OTLP)")
+	RunSpecs(t, "E2E Suite - OTel Logs (OTLP/Application)")
 }
 
 var _ = BeforeSuite(suite.BeforeSuiteFunc)
