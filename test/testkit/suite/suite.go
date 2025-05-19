@@ -105,6 +105,7 @@ const (
 	// Test suites labels
 	LabelLogs                 = "logs"
 	LabelLogsOtel             = "logs-otel"
+	LabelLogsFluentBit        = "logs-fluentbit"
 	LabelLogAgent             = "log-agent"
 	LabelLogGateway           = "log-gateway"
 	LabelFluentBit            = "fluent-bit"
