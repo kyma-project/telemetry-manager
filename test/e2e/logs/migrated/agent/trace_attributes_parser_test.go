@@ -44,6 +44,7 @@ func TestAttributesParser(t *testing.T) {
 				hostSecretRef.Key,
 			),
 		).
+		WithIncludeNamespaces(genNs).
 		Build()
 
 	logProducer := loggen.New(genNs).WithUseJSON().K8sObject()

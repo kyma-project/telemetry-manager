@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -117,7 +116,7 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 }
 
 func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
-	RegisterTestingT(t)
+	suite.RegisterTestCase(t, suite.LabelFluentBit, suite.LabelSkip) // skipping for now, as we need to execute this test in isolation
 
 	var (
 		uniquePrefix = unique.Prefix()
