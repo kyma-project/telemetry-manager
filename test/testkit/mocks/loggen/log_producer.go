@@ -116,26 +116,27 @@ func (lp *LogProducer) PodSpec() corev1.PodSpec {
 func (lp *LogProducer) alpineSpec() corev1.PodSpec {
 	logCmd := `while true
 do
-	echo "foo bar"
-	sleep 10
+    echo "foo bar"
+    sleep 10
 done`
 	if lp.useJSON {
 		logCmd = `while true
 do
-	echo '{"name": "John Doe", "age": 30, "city": "Munich", "trace_id": "255c2212dd02c02ac59a923ff07aec74", "span_id": "c5c735f175ad06a6", "trace_flags": "01"}'
-    sleep 1
-    echo '{"name": "John Doe", "age": 30, "city": "Munich", "traceparent": "00-80e1afed08e019fc1110464cfa66635c-7a085853722dc6d2-01"}'
-    sleep 1
-    echo '{"name": "John Doe", "age": 30, "city": "Munich", "span_id": "123456789"}'
-	sleep 10
+    echo '{"name": "a", "level": "INFO", "age": 30, "city": "Munich", "trace_id": "255c2212dd02c02ac59a923ff07aec74", "span_id": "c5c735f175ad06a6", "trace_flags": "00", "message":"a-body"}'
+    echo '{"name": "b", "log.level":"WARN", "age": 30, "city": "Munich", "traceparent": "00-80e1afed08e019fc1110464cfa66635c-7a085853722dc6d2-01", "msg":"b-body"}'
+    echo '{"name": "c", "age": 30, "city": "Munich", "span_id": "123456789", "body":"c-body"}'
+    echo 'name=d age=30 city=Munich span_id=123456789 msg=test'
+    sleep 10
 done`
 	}
 
 	return corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
-				Name:    lp.container,
-				Image:   "alpine:3.17.2",
+
+				Name:  DefaultContainerName,
+				Image: "alpine:latest",
+
 				Command: []string{"/bin/sh", "-c", logCmd}},
 		},
 	}

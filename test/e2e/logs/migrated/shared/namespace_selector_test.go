@@ -77,19 +77,22 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 				backendNs               = uniquePrefix("backend")
 			)
 
-			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
-			backendExportURL := backend.ExportURL(suite.ProxyClient)
+			backend1 := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithName("backend-1"))
+			backend1ExportURL := backend1.ExportURL(suite.ProxyClient)
+
+			backend2 := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithName("backend-2"))
+			backend2ExportURL := backend2.ExportURL(suite.ProxyClient)
 
 			includeGen1Pipeline := testutils.NewLogPipelineBuilder().
 				WithName(includeGen1PipelineName).
 				WithInput(tc.inputBuilder(gen1Ns, "")).
-				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+				WithOTLPOutput(testutils.OTLPEndpoint(backend1.Endpoint())).
 				Build()
 
 			excludeGen2Pipeline := testutils.NewLogPipelineBuilder().
 				WithName(excludeGen2PipelineName).
 				WithInput(tc.inputBuilder("", gen2Ns)).
-				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+				WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
 				Build()
 
 			var resources []client.Object
@@ -102,7 +105,8 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 				tc.logGeneratorBuilder(gen1Ns),
 				tc.logGeneratorBuilder(gen2Ns),
 			)
-			resources = append(resources, backend.K8sObjects()...)
+			resources = append(resources, backend1.K8sObjects()...)
+			resources = append(resources, backend2.K8sObjects()...)
 
 			t.Cleanup(func() {
 				require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
@@ -110,7 +114,8 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
 
 			assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
-			assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
+			assert.DeploymentReady(t.Context(), suite.K8sClient, backend1.NamespacedName())
+			assert.DeploymentReady(t.Context(), suite.K8sClient, backend2.NamespacedName())
 
 			if tc.expectAgent {
 				assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
@@ -119,8 +124,8 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, includeGen1PipelineName)
 			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, excludeGen2PipelineName)
 
-			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, gen1Ns)
-			assert.OTelLogsFromNamespaceNotDelivered(suite.ProxyClient, backendExportURL, gen2Ns)
+			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backend1ExportURL, gen1Ns)
+			assert.OTelLogsFromNamespaceNotDelivered(suite.ProxyClient, backend2ExportURL, gen2Ns)
 		})
 	}
 }
@@ -137,19 +142,22 @@ func TestNamespaceSelector_FluentBit(t *testing.T) {
 		backendNs               = uniquePrefix("backend")
 	)
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
-	backendExportURL := backend.ExportURL(suite.ProxyClient)
+	backend1 := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithName("backend-1"))
+	backend1ExportURL := backend1.ExportURL(suite.ProxyClient)
+
+	backend2 := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithName("backend-2"))
+	backend2ExportURL := backend2.ExportURL(suite.ProxyClient)
 
 	includeGen1Pipeline := testutils.NewLogPipelineBuilder().
 		WithName(includeGen1PipelineName).
 		WithApplicationInput(true, testutils.ExtIncludeNamespaces(gen1Ns)).
-		WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
+		WithHTTPOutput(testutils.HTTPHost(backend1.Host()), testutils.HTTPPort(backend1.Port())).
 		Build()
 
 	excludeGen2Pipeline := testutils.NewLogPipelineBuilder().
 		WithName(excludeGen2PipelineName).
 		WithApplicationInput(true, testutils.ExtExcludeNamespaces(gen2Ns)).
-		WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
+		WithHTTPOutput(testutils.HTTPHost(backend2.Host()), testutils.HTTPPort(backend2.Port())).
 		Build()
 
 	var resources []client.Object
@@ -162,7 +170,8 @@ func TestNamespaceSelector_FluentBit(t *testing.T) {
 		loggen.New(gen1Ns).K8sObject(),
 		loggen.New(gen2Ns).K8sObject(),
 	)
-	resources = append(resources, backend.K8sObjects()...)
+	resources = append(resources, backend1.K8sObjects()...)
+	resources = append(resources, backend2.K8sObjects()...)
 
 	t.Cleanup(func() {
 		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
@@ -171,9 +180,12 @@ func TestNamespaceSelector_FluentBit(t *testing.T) {
 
 	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, includeGen1PipelineName)
 	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, excludeGen2PipelineName)
-	assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
+
+	assert.DeploymentReady(t.Context(), suite.K8sClient, backend1.NamespacedName())
+	assert.DeploymentReady(t.Context(), suite.K8sClient, backend2.NamespacedName())
+	
 	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 
-	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, gen1Ns)
-	assert.FluentBitLogsFromNamespaceNotDelivered(suite.ProxyClient, backendExportURL, gen2Ns)
+	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backend1ExportURL, gen1Ns)
+	assert.FluentBitLogsFromNamespaceNotDelivered(suite.ProxyClient, backend2ExportURL, gen2Ns)
 }
