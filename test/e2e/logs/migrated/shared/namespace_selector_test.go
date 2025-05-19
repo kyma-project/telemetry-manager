@@ -6,6 +6,7 @@ import (
 
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -23,19 +24,19 @@ import (
 func TestNamespaceSelector_OTel(t *testing.T) {
 	tests := []struct {
 		label               string
-		inputBuilder        func(includeNs, excludeNs string) telemetryv1alpha1.LogPipelineInput
+		inputBuilder        func(includeNss, excludeNss []string) telemetryv1alpha1.LogPipelineInput
 		logGeneratorBuilder func(ns string) client.Object
 		expectAgent         bool
 	}{
 		{
 			label: suite.LabelLogAgent,
-			inputBuilder: func(includeNs, excludeNs string) telemetryv1alpha1.LogPipelineInput {
+			inputBuilder: func(includeNss, excludeNss []string) telemetryv1alpha1.LogPipelineInput {
 				var opts []testutils.ExtendedNamespaceSelectorOptions
-				if includeNs != "" {
-					opts = append(opts, testutils.ExtIncludeNamespaces(includeNs))
+				if len(includeNss) > 0 {
+					opts = append(opts, testutils.ExtIncludeNamespaces(includeNss...))
 				}
-				if excludeNs != "" {
-					opts = append(opts, testutils.ExtExcludeNamespaces(excludeNs))
+				if len(excludeNss) > 0 {
+					opts = append(opts, testutils.ExtExcludeNamespaces(excludeNss...))
 				}
 
 				return testutils.BuildLogPipelineApplicationInput(opts...)
@@ -47,13 +48,13 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 		},
 		{
 			label: suite.LabelLogGateway,
-			inputBuilder: func(includeNs, excludeNs string) telemetryv1alpha1.LogPipelineInput {
+			inputBuilder: func(includeNss, excludeNss []string) telemetryv1alpha1.LogPipelineInput {
 				var opts []testutils.NamespaceSelectorOptions
-				if includeNs != "" {
-					opts = append(opts, testutils.IncludeNamespaces(includeNs))
+				if len(includeNss) > 0 {
+					opts = append(opts, testutils.IncludeNamespaces(includeNss...))
 				}
-				if excludeNs != "" {
-					opts = append(opts, testutils.ExcludeNamespaces(excludeNs))
+				if len(excludeNss) > 0 {
+					opts = append(opts, testutils.ExcludeNamespaces(excludeNss...))
 				}
 
 				return testutils.BuildLogPipelineOTLPInput(opts...)
@@ -69,12 +70,12 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 			suite.RegisterTestCase(t, tc.label)
 
 			var (
-				uniquePrefix            = unique.Prefix(tc.label)
-				gen1Ns                  = uniquePrefix("gen-1")
-				includeGen1PipelineName = uniquePrefix("include")
-				gen2Ns                  = uniquePrefix("gen-2")
-				excludeGen2PipelineName = uniquePrefix("exclude")
-				backendNs               = uniquePrefix("backend")
+				uniquePrefix        = unique.Prefix(tc.label)
+				gen1Ns              = uniquePrefix("gen-1")
+				includePipelineName = uniquePrefix("include")
+				gen2Ns              = uniquePrefix("gen-2")
+				excludePipelineName = uniquePrefix("exclude")
+				backendNs           = uniquePrefix("backend")
 			)
 
 			backend1 := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithName("backend-1"))
@@ -83,15 +84,29 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 			backend2 := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithName("backend-2"))
 			backend2ExportURL := backend2.ExportURL(suite.ProxyClient)
 
-			includeGen1Pipeline := testutils.NewLogPipelineBuilder().
-				WithName(includeGen1PipelineName).
-				WithInput(tc.inputBuilder(gen1Ns, "")).
+			// Include gen1Ns only
+			includePipeline := testutils.NewLogPipelineBuilder().
+				WithName(includePipelineName).
+				WithInput(tc.inputBuilder([]string{gen1Ns}, nil)).
 				WithOTLPOutput(testutils.OTLPEndpoint(backend1.Endpoint())).
 				Build()
 
-			excludeGen2Pipeline := testutils.NewLogPipelineBuilder().
-				WithName(excludeGen2PipelineName).
-				WithInput(tc.inputBuilder("", gen2Ns)).
+			// Exclude all namespaces except gen1Ns (gen2Ns and other unrelated namespaces)
+			// to avoid implicitly collecting logs from other namespaces
+			// and potentially overloading the backend.
+			var nsList corev1.NamespaceList
+			Expect(suite.K8sClient.List(t.Context(), &nsList)).Should(Succeed())
+
+			excludeNss := []string{gen2Ns}
+			for _, namespace := range nsList.Items {
+				if namespace.Name != gen1Ns && namespace.Name != gen2Ns {
+					excludeNss = append(excludeNss, namespace.Name)
+				}
+			}
+
+			excludePipeline := testutils.NewLogPipelineBuilder().
+				WithName(excludePipelineName).
+				WithInput(tc.inputBuilder(nil, excludeNss)).
 				WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
 				Build()
 
@@ -100,8 +115,8 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 				kitk8s.NewNamespace(backendNs).K8sObject(),
 				kitk8s.NewNamespace(gen1Ns).K8sObject(),
 				kitk8s.NewNamespace(gen2Ns).K8sObject(),
-				&includeGen1Pipeline,
-				&excludeGen2Pipeline,
+				&includePipeline,
+				&excludePipeline,
 				tc.logGeneratorBuilder(gen1Ns),
 				tc.logGeneratorBuilder(gen2Ns),
 			)
@@ -121,8 +136,8 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 				assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
 			}
 
-			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, includeGen1PipelineName)
-			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, excludeGen2PipelineName)
+			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, includePipelineName)
+			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, excludePipelineName)
 
 			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backend1ExportURL, gen1Ns)
 			assert.OTelLogsFromNamespaceNotDelivered(suite.ProxyClient, backend2ExportURL, gen2Ns)

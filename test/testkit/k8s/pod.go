@@ -29,6 +29,13 @@ func (p *Pod) WithLabel(key, value string) *Pod {
 	return p
 }
 
+func (p *Pod) WithLabels(labels map[string]string) *Pod {
+	for k, v := range labels {
+		p.labels[k] = v
+	}
+	return p
+}
+
 func (p *Pod) WithPodSpec(podSpec corev1.PodSpec) *Pod {
 	p.podSpec = podSpec
 	return p

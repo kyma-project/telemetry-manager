@@ -26,20 +26,27 @@ import (
 
 func TestExtractLabels_OTel(t *testing.T) {
 	tests := []struct {
-		label        string
-		inputBuilder func(includeNs string) telemetryv1alpha1.LogPipelineInput
-		expectAgent  bool
+		label               string
+		inputBuilder        func(includeNs string) telemetryv1alpha1.LogPipelineInput
+		logGeneratorBuilder func(ns string, labels map[string]string) client.Object
+		expectAgent         bool
 	}{
 		{
 			label: suite.LabelLogAgent,
 			inputBuilder: func(includeNs string) telemetryv1alpha1.LogPipelineInput {
 				return testutils.BuildLogPipelineApplicationInput(testutils.ExtIncludeNamespaces(includeNs))
 			},
+			logGeneratorBuilder: func(ns string, labels map[string]string) client.Object {
+				return loggen.New(ns).WithLabels(labels).K8sObject()
+			},
 		},
 		{
 			label: suite.LabelLogGateway,
 			inputBuilder: func(includeNs string) telemetryv1alpha1.LogPipelineInput {
 				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
+			},
+			logGeneratorBuilder: func(ns string, labels map[string]string) client.Object {
+				return telemetrygen.NewPod(ns, telemetrygen.SignalTypeLogs).WithLabels(labels).K8sObject()
 			},
 		},
 	}
@@ -80,32 +87,19 @@ func TestExtractLabels_OTel(t *testing.T) {
 				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 				Build()
 
+			genLabels := map[string]string{
+				labelKeyExactMatch:     labelValueExactMatch,
+				labelKeyPrefixMatch1:   labelValuePrefixMatch1,
+				labelKeyPrefixMatch2:   labelValuePrefixMatch2,
+				labelKeyShouldNotMatch: labelValueShouldNotMatch,
+			}
 			resources := []client.Object{
 				kitk8s.NewNamespace(backendNs).K8sObject(),
 				kitk8s.NewNamespace(genNs).K8sObject(),
 				&pipeline,
+				tc.logGeneratorBuilder(genNs, genLabels),
 			}
 			resources = append(resources, backend.K8sObjects()...)
-
-			if tc.expectAgent {
-				resources = append(resources, loggen.New(genNs).
-					WithLabels(map[string]string{
-						labelKeyExactMatch:     labelValueExactMatch,
-						labelKeyPrefixMatch1:   labelValuePrefixMatch1,
-						labelKeyPrefixMatch2:   labelValuePrefixMatch2,
-						labelKeyShouldNotMatch: labelValueShouldNotMatch,
-					}).
-					K8sObject(),
-				)
-			} else {
-				resources = append(resources, telemetrygen.NewPod(genNs, telemetrygen.SignalTypeLogs).
-					WithLabel(labelKeyExactMatch, labelValueExactMatch).
-					WithLabel(labelKeyPrefixMatch1, labelValuePrefixMatch1).
-					WithLabel(labelKeyPrefixMatch2, labelValuePrefixMatch2).
-					WithLabel(labelKeyShouldNotMatch, labelValueShouldNotMatch).
-					K8sObject(),
-				)
-			}
 
 			Eventually(func(g Gomega) int {
 				var telemetry operatorv1alpha1.Telemetry

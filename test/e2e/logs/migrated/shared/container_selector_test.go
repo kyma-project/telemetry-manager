@@ -22,13 +22,13 @@ func TestContainerSelector_OTel(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelLogAgent)
 
 	var (
-		uniquePrefix                  = unique.Prefix("agent")
-		genNs                         = uniquePrefix("gen")
-		backendNs                     = uniquePrefix("backend")
-		container1                    = "gen-container-1"
-		container2                    = "gen-container-2"
-		includeContainer1PipelineName = uniquePrefix("include")
-		excludeContainer1PipelineName = uniquePrefix("exclude")
+		uniquePrefix        = unique.Prefix("agent")
+		genNs               = uniquePrefix("gen")
+		backendNs           = uniquePrefix("backend")
+		container1          = "gen-container-1"
+		container2          = "gen-container-2"
+		includePipelineName = uniquePrefix("include")
+		excludePipelineName = uniquePrefix("exclude")
 	)
 
 	backend1 := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithName("backend-1"))
@@ -37,15 +37,17 @@ func TestContainerSelector_OTel(t *testing.T) {
 	backend2 := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithName("backend-2"))
 	backend2ExportURL := backend2.ExportURL(suite.ProxyClient)
 
-	includeContainer1Pipeline := testutils.NewLogPipelineBuilder().
-		WithName(includeContainer1PipelineName).
+	// Include container1 from namespace genNs
+	includePipeline := testutils.NewLogPipelineBuilder().
+		WithName(includePipelineName).
 		WithIncludeContainers(container1).
 		WithIncludeNamespaces(genNs).
 		WithOTLPOutput(testutils.OTLPEndpoint(backend1.Endpoint())).
 		Build()
 
-	excludeContainer1Pipeline := testutils.NewLogPipelineBuilder().
-		WithName(excludeContainer1PipelineName).
+	// Exclude container1 from namespace genNs
+	excludePipeline := testutils.NewLogPipelineBuilder().
+		WithName(excludePipelineName).
 		WithExcludeContainers(container1).
 		WithIncludeNamespaces(genNs).
 		WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
@@ -55,8 +57,8 @@ func TestContainerSelector_OTel(t *testing.T) {
 	resources = append(resources,
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
-		&includeContainer1Pipeline,
-		&excludeContainer1Pipeline,
+		&includePipeline,
+		&excludePipeline,
 		loggen.New(genNs).WithName("gen-1").WithContainer(container1).K8sObject(),
 		loggen.New(genNs).WithName("gen-2").WithContainer(container2).K8sObject(),
 	)
@@ -74,8 +76,8 @@ func TestContainerSelector_OTel(t *testing.T) {
 
 	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
 
-	assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, includeContainer1PipelineName)
-	assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, excludeContainer1PipelineName)
+	assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, includePipelineName)
+	assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, excludePipelineName)
 
 	// backend1 - only container1 should be delivered
 	assert.OTelLogsFromContainerDelivered(suite.ProxyClient, backend1ExportURL, container1)
