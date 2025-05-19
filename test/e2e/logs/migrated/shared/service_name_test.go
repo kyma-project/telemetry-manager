@@ -23,18 +23,22 @@ import (
 
 func TestServiceName_OTel(t *testing.T) {
 	tests := []struct {
-		label       string
-		input       telemetryv1alpha1.LogPipelineInput
-		expectAgent bool
+		label        string
+		inputBuilder func(includeNs string) telemetryv1alpha1.LogPipelineInput
+		expectAgent  bool
 	}{
 		{
-			label:       suite.LabelLogAgent,
-			input:       testutils.BuildLogPipelineApplicationInput(),
+			label: suite.LabelLogAgent,
+			inputBuilder: func(includeNs string) telemetryv1alpha1.LogPipelineInput {
+				return testutils.BuildLogPipelineApplicationInput(testutils.ExtIncludeNamespaces(includeNs))
+			},
 			expectAgent: true,
 		},
 		{
-			label:       suite.LabelLogGateway,
-			input:       testutils.BuildLogPipelineOTLPInput(),
+			label: suite.LabelLogGateway,
+			inputBuilder: func(includeNs string) telemetryv1alpha1.LogPipelineInput {
+				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
+			},
 			expectAgent: false,
 		},
 	}
@@ -71,7 +75,7 @@ func TestServiceName_OTel(t *testing.T) {
 
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
-				WithInput(tc.input).
+				WithInput(tc.inputBuilder(genNs)).
 				WithKeepOriginalBody(tc.expectAgent).
 				WithOTLPOutput(
 					testutils.OTLPEndpointFromSecret(

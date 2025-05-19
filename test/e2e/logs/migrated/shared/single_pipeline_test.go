@@ -22,23 +22,27 @@ import (
 func TestSinglePipeline_OTel(t *testing.T) {
 	tests := []struct {
 		label               string
-		input               telemetryv1alpha1.LogPipelineInput
-		logGeneratorBuilder func(namespace string) client.Object
+		inputBuilder        func(includeNs string) telemetryv1alpha1.LogPipelineInput
+		logGeneratorBuilder func(ns string) client.Object
 		expectAgent         bool
 	}{
 		{
 			label: suite.LabelLogAgent,
-			input: testutils.BuildLogPipelineApplicationInput(),
-			logGeneratorBuilder: func(namespace string) client.Object {
-				return loggen.New(namespace).K8sObject()
+			inputBuilder: func(includeNs string) telemetryv1alpha1.LogPipelineInput {
+				return testutils.BuildLogPipelineApplicationInput(testutils.ExtIncludeNamespaces(includeNs))
+			},
+			logGeneratorBuilder: func(ns string) client.Object {
+				return loggen.New(ns).K8sObject()
 			},
 			expectAgent: true,
 		},
 		{
 			label: suite.LabelLogGateway,
-			input: testutils.BuildLogPipelineOTLPInput(),
-			logGeneratorBuilder: func(namespace string) client.Object {
-				return telemetrygen.NewDeployment(namespace, telemetrygen.SignalTypeLogs).K8sObject()
+			inputBuilder: func(includeNs string) telemetryv1alpha1.LogPipelineInput {
+				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
+			},
+			logGeneratorBuilder: func(ns string) client.Object {
+				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
 			},
 		},
 	}
@@ -50,7 +54,7 @@ func TestSinglePipeline_OTel(t *testing.T) {
 			var (
 				uniquePrefix = unique.Prefix(tc.label)
 				pipelineName = uniquePrefix("pipeline")
-				generatorNs  = uniquePrefix("gen")
+				genNs        = uniquePrefix("gen")
 				backendNs    = uniquePrefix("backend")
 			)
 
@@ -59,15 +63,15 @@ func TestSinglePipeline_OTel(t *testing.T) {
 
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
-				WithInput(tc.input).
+				WithInput(tc.inputBuilder(genNs)).
 				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 				Build()
 
 			resources := []client.Object{
 				kitk8s.NewNamespace(backendNs).K8sObject(),
-				kitk8s.NewNamespace(generatorNs).K8sObject(),
+				kitk8s.NewNamespace(genNs).K8sObject(),
 				&pipeline,
-				tc.logGeneratorBuilder(generatorNs),
+				tc.logGeneratorBuilder(genNs),
 			}
 			resources = append(resources, backend.K8sObjects()...)
 
@@ -84,7 +88,7 @@ func TestSinglePipeline_OTel(t *testing.T) {
 			}
 
 			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
-			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, generatorNs)
+			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, genNs)
 		})
 	}
 }

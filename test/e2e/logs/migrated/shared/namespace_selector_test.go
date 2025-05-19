@@ -24,7 +24,7 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 	tests := []struct {
 		label               string
 		inputBuilder        func(includeNs, excludeNs string) telemetryv1alpha1.LogPipelineInput
-		logGeneratorBuilder func(namespace string) client.Object
+		logGeneratorBuilder func(ns string) client.Object
 		expectAgent         bool
 	}{
 		{
@@ -40,8 +40,8 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 
 				return testutils.BuildLogPipelineApplicationInput(opts...)
 			},
-			logGeneratorBuilder: func(namespace string) client.Object {
-				return loggen.New(namespace).K8sObject()
+			logGeneratorBuilder: func(ns string) client.Object {
+				return loggen.New(ns).K8sObject()
 			},
 			expectAgent: true,
 		},
@@ -58,8 +58,8 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 
 				return testutils.BuildLogPipelineOTLPInput(opts...)
 			},
-			logGeneratorBuilder: func(namespace string) client.Object {
-				return telemetrygen.NewDeployment(namespace, telemetrygen.SignalTypeLogs).K8sObject()
+			logGeneratorBuilder: func(ns string) client.Object {
+				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
 			},
 		},
 	}

@@ -27,35 +27,19 @@ import (
 func TestExtractLabels_OTel(t *testing.T) {
 	tests := []struct {
 		label        string
-		inputBuilder func(includeNs, excludeNs string) telemetryv1alpha1.LogPipelineInput
+		inputBuilder func(includeNs string) telemetryv1alpha1.LogPipelineInput
 		expectAgent  bool
 	}{
 		{
 			label: suite.LabelLogAgent,
-			inputBuilder: func(includeNs, excludeNs string) telemetryv1alpha1.LogPipelineInput {
-				var opts []testutils.ExtendedNamespaceSelectorOptions
-				if includeNs != "" {
-					opts = append(opts, testutils.ExtIncludeNamespaces(includeNs))
-				}
-				if excludeNs != "" {
-					opts = append(opts, testutils.ExtExcludeNamespaces(excludeNs))
-				}
-
-				return testutils.BuildLogPipelineApplicationInput(opts...)
+			inputBuilder: func(includeNs string) telemetryv1alpha1.LogPipelineInput {
+				return testutils.BuildLogPipelineApplicationInput(testutils.ExtIncludeNamespaces(includeNs))
 			},
 		},
 		{
 			label: suite.LabelLogGateway,
-			inputBuilder: func(includeNs, excludeNs string) telemetryv1alpha1.LogPipelineInput {
-				var opts []testutils.ExtendedNamespaceSelectorOptions
-				if includeNs != "" {
-					opts = append(opts, testutils.ExtIncludeNamespaces(includeNs))
-				}
-				if excludeNs != "" {
-					opts = append(opts, testutils.ExtExcludeNamespaces(excludeNs))
-				}
-
-				return testutils.BuildLogPipelineApplicationInput(opts...)
+			inputBuilder: func(includeNs string) telemetryv1alpha1.LogPipelineInput {
+				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
 		},
 	}
@@ -84,7 +68,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 				backendNs    = uniquePrefix("backend")
 
 				genNs        = uniquePrefix("gen")
-				pipelineName = uniquePrefix(tc.label)
+				pipelineName = uniquePrefix()
 			)
 
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
@@ -92,7 +76,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
-				WithInput(tc.inputBuilder(genNs, "")).
+				WithInput(tc.inputBuilder(genNs)).
 				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 				Build()
 

@@ -150,23 +150,27 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 	tests := []struct {
 		label               string
-		input               telemetryv1alpha1.LogPipelineInput
-		logGeneratorBuilder func(namespace string) client.Object
+		inputBuilder        func(includeNs string) telemetryv1alpha1.LogPipelineInput
+		logGeneratorBuilder func(ns string) client.Object
 		expectAgent         bool
 	}{
 		{
 			label: suite.LabelMaxPipelineAgent,
-			input: testutils.BuildLogPipelineApplicationInput(),
-			logGeneratorBuilder: func(namespace string) client.Object {
-				return loggen.New(namespace).K8sObject()
+			inputBuilder: func(includeNs string) telemetryv1alpha1.LogPipelineInput {
+				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
+			},
+			logGeneratorBuilder: func(ns string) client.Object {
+				return loggen.New(ns).K8sObject()
 			},
 			expectAgent: true,
 		},
 		{
 			label: suite.LabelMaxPipelineGateway,
-			input: testutils.BuildLogPipelineOTLPInput(),
-			logGeneratorBuilder: func(namespace string) client.Object {
-				return telemetrygen.NewDeployment(namespace, telemetrygen.SignalTypeLogs).K8sObject()
+			inputBuilder: func(includeNs string) telemetryv1alpha1.LogPipelineInput {
+				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces())
+			},
+			logGeneratorBuilder: func(ns string) client.Object {
+				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
 			},
 		},
 	}
@@ -178,7 +182,7 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 			var (
 				uniquePrefix           = unique.Prefix(tc.label)
 				backendNs              = uniquePrefix("backend")
-				generatorNs            = uniquePrefix("gen")
+				genNs                  = uniquePrefix("gen")
 				pipelineBase           = uniquePrefix()
 				additionalPipelineName = fmt.Sprintf("%s-limit-exceeding", pipelineBase)
 				pipelines              []client.Object
@@ -191,7 +195,7 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 				pipelineName := fmt.Sprintf("%s-%d", pipelineBase, i)
 				pipeline := testutils.NewLogPipelineBuilder().
 					WithName(pipelineName).
-					WithInput(tc.input).
+					WithInput(tc.inputBuilder(genNs)).
 					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 					Build()
 				pipelines = append(pipelines, &pipeline)
@@ -199,14 +203,14 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 
 			additionalPipeline := testutils.NewLogPipelineBuilder().
 				WithName(additionalPipelineName).
-				WithInput(tc.input).
+				WithInput(tc.inputBuilder(genNs)).
 				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 				Build()
 
 			resources := []client.Object{
 				kitk8s.NewNamespace(backendNs).K8sObject(),
-				kitk8s.NewNamespace(generatorNs).K8sObject(),
-				tc.logGeneratorBuilder(generatorNs),
+				kitk8s.NewNamespace(genNs).K8sObject(),
+				tc.logGeneratorBuilder(genNs),
 			}
 			resources = append(resources, backend.K8sObjects()...)
 
@@ -245,7 +249,7 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 			})
 
 			t.Log("Verifying logs are delivered for valid pipelines")
-			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, generatorNs)
+			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, genNs)
 
 			t.Log("Deleting one previously healthy pipeline and expecting the additional pipeline to be healthy")
 

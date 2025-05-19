@@ -25,22 +25,22 @@ func TestSinglePipelineV1Beta1_OTel(t *testing.T) {
 	tests := []struct {
 		label               string
 		input               telemetryv1beta1.LogPipelineInput
-		logGeneratorBuilder func(namespace string) client.Object
+		logGeneratorBuilder func(ns string) client.Object
 		expectAgent         bool
 	}{
 		{
 			label: suite.LabelLogAgent,
 			input: testutils.BuildLogPipelineV1Beta1RuntimeInput(),
-			logGeneratorBuilder: func(namespace string) client.Object {
-				return loggen.New(namespace).K8sObject()
+			logGeneratorBuilder: func(ns string) client.Object {
+				return loggen.New(ns).K8sObject()
 			},
 			expectAgent: true,
 		},
 		{
 			label: suite.LabelLogGateway,
 			input: testutils.BuildLogPipelineV1Beta1OTLPInput(),
-			logGeneratorBuilder: func(namespace string) client.Object {
-				return telemetrygen.NewDeployment(namespace, telemetrygen.SignalTypeLogs).K8sObject()
+			logGeneratorBuilder: func(ns string) client.Object {
+				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
 			},
 		},
 	}

@@ -26,23 +26,27 @@ import (
 func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 	tests := []struct {
 		label               string
-		input               telemetryv1alpha1.LogPipelineInput
-		logGeneratorBuilder func(namespace string) client.Object
+		inputBuilder        func(includeNs string) telemetryv1alpha1.LogPipelineInput
+		logGeneratorBuilder func(ns string) client.Object
 		expectAgent         bool
 	}{
 		{
 			label: suite.LabelLogAgent,
-			input: testutils.BuildLogPipelineApplicationInput(),
-			logGeneratorBuilder: func(namespace string) client.Object {
-				return loggen.New(namespace).K8sObject()
+			inputBuilder: func(includeNs string) telemetryv1alpha1.LogPipelineInput {
+				return testutils.BuildLogPipelineApplicationInput(testutils.ExtIncludeNamespaces(includeNs))
+			},
+			logGeneratorBuilder: func(ns string) client.Object {
+				return loggen.New(ns).K8sObject()
 			},
 			expectAgent: true,
 		},
 		{
 			label: suite.LabelLogGateway,
-			input: testutils.BuildLogPipelineOTLPInput(),
-			logGeneratorBuilder: func(namespace string) client.Object {
-				return telemetrygen.NewDeployment(namespace, telemetrygen.SignalTypeLogs).K8sObject()
+			inputBuilder: func(includeNs string) telemetryv1alpha1.LogPipelineInput {
+				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
+			},
+			logGeneratorBuilder: func(ns string) client.Object {
+				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
 			},
 		},
 	}
@@ -67,7 +71,7 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
-				WithInput(tc.input).
+				WithInput(tc.inputBuilder(genNs)).
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backend.Endpoint()),
 					testutils.OTLPClientTLSFromString(

@@ -37,6 +37,7 @@ func TestAttributesParser(t *testing.T) {
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithApplicationInput(true).
+		WithIncludeNamespaces(genNs).
 		WithOTLPOutput(
 			testutils.OTLPEndpointFromSecret(
 				hostSecretRef.Name,
@@ -44,7 +45,6 @@ func TestAttributesParser(t *testing.T) {
 				hostSecretRef.Key,
 			),
 		).
-		WithIncludeNamespaces(genNs).
 		Build()
 
 	logProducer := loggen.New(genNs).WithUseJSON().K8sObject()

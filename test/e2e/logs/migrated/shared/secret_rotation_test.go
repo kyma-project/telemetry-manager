@@ -86,7 +86,9 @@ func TestSecretRotation_OTel(t *testing.T) {
 				Reason: conditions.ReasonReferencedSecretMissing,
 			})
 
+			// Create the secret and make sure the pipeline heals
 			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, secret.K8sObject())).Should(Succeed())
+
 			assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 		})
 	}
@@ -141,6 +143,8 @@ func TestSecretRotation_FluentBit(t *testing.T) {
 		Reason: conditions.ReasonReferencedSecretMissing,
 	})
 
+	// Create the secret and make sure the pipeline heals
 	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, secret.K8sObject())).Should(Succeed())
+
 	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 }

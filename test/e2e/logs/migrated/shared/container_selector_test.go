@@ -40,12 +40,14 @@ func TestContainerSelector_OTel(t *testing.T) {
 	includeContainer1Pipeline := testutils.NewLogPipelineBuilder().
 		WithName(includeContainer1PipelineName).
 		WithIncludeContainers(container1).
+		WithIncludeNamespaces(genNs).
 		WithOTLPOutput(testutils.OTLPEndpoint(backend1.Endpoint())).
 		Build()
 
 	excludeContainer1Pipeline := testutils.NewLogPipelineBuilder().
 		WithName(excludeContainer1PipelineName).
 		WithExcludeContainers(container1).
+		WithIncludeNamespaces(genNs).
 		WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
 		Build()
 
