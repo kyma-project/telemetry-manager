@@ -14,10 +14,11 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
@@ -30,10 +31,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline, suite.LabelLogs, suit
 		const maxNumberOfLogPipelines = telemetrycontrollers.MaxPipelineCount
 
 		var (
-			backend       = backend.New(mockNs, backend.SignalTypeLogsOtel, backend.WithPersistentHostSecret(suite.IsUpgrade()))
+			backend       = kitbackend.New(mockNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithPersistentHostSecret(suite.IsUpgrade()))
 			hostSecretRef = backend.HostSecretRefV1Alpha1()
 
 			pipelinesNames = make([]string, 0, maxNumberOfLogPipelines)
+			pipelineModes  = make([]logpipelineutils.Mode, 0, maxNumberOfLogPipelines)
 			pipelines      []client.Object
 
 			additionalFBPipelineName = fmt.Sprintf("%s-limit-exceeding-fluentbit", suite.ID())
@@ -67,6 +69,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline, suite.LabelLogs, suit
 						WithName(pipelineName).
 						WithHTTPOutput().
 						Build()
+					pipelineModes = append(pipelineModes, logpipelineutils.FluentBit)
 				} else {
 					pipeline = testutils.NewLogPipelineBuilder().
 						WithName(pipelineName).
@@ -79,6 +82,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline, suite.LabelLogs, suit
 								hostSecretRef.Key,
 							),
 						).Build()
+					pipelineModes = append(pipelineModes, logpipelineutils.OTel)
 				}
 				pipelines = append(pipelines, &pipeline)
 				pipelinesNames = append(pipelinesNames, pipelineName)
@@ -99,10 +103,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline, suite.LabelLogs, suit
 		})
 
 		It("Should have only running pipelines", func() {
-			for _, pipelineName := range pipelinesNames {
-				assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+			for i, pipelineName := range pipelinesNames {
+				if pipelineModes[i] == logpipelineutils.FluentBit {
+					assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+				} else {
+					assert.OTelLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+				}
 			}
 		})
+
 		It("Should create additional pipeline in not healthy state", func() {
 			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, additionalFBPipeline)).Should(Succeed())
 
@@ -122,7 +131,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline, suite.LabelLogs, suit
 		It("Should delete one previously healthy pipeline and render the additional pipeline healthy", func() {
 			deletePipeline := pipelines[0]
 			Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, deletePipeline)).Should(Succeed())
-			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, additionalFBPipeline.GetName())
+			assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, additionalFBPipeline.GetName())
 		})
 
 		It("Should create additional pipeline in not healthy state", func() {
@@ -144,7 +153,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline, suite.LabelLogs, suit
 		It("Should delete one previously healthy pipeline and render the additional pipeline healthy", func() {
 			deletePipeline := pipelines[1]
 			Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, deletePipeline)).Should(Succeed())
-			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, additionalOtelPipeline.GetName())
+			assert.OTelLogPipelineHealthy(suite.Ctx, suite.K8sClient, additionalOtelPipeline.GetName())
 		})
 	})
 })

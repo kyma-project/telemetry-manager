@@ -55,7 +55,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 
 		It("Should have only running pipelines", func() {
 			for _, pipelineName := range pipelinesNames {
-				assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+				assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 			}
 		})
 
@@ -79,7 +79,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 			var deletePipeline client.Object
 			deletePipeline, pipelines = pipelines[0], pipelines[1:]
 			Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, deletePipeline)).Should(Succeed())
-			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, additionalPipeline.GetName())
+			assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, additionalPipeline.GetName())
 		})
 	})
 })

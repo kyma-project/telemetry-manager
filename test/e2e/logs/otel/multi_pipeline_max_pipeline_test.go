@@ -16,7 +16,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
@@ -30,7 +30,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelExperimental,
 
 		var (
 			pipelines     []client.Object
-			backend       = backend.New(mockNs, backend.SignalTypeLogsOtel, backend.WithPersistentHostSecret(suite.IsUpgrade()))
+			backend       = kitbackend.New(mockNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithPersistentHostSecret(suite.IsUpgrade()))
 			hostSecretRef = backend.HostSecretRefV1Alpha1()
 
 			additionalPipelineName = fmt.Sprintf("%s-limit-exceeding", suite.ID())
@@ -83,7 +83,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelExperimental,
 
 		It("Should have only running pipelines", func() {
 			for _, pipeline := range pipelines {
-				assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipeline.GetName())
+				assert.OTelLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipeline.GetName())
 			}
 		})
 
@@ -108,7 +108,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelExperimental,
 			var deletePipeline client.Object
 			deletePipeline, pipelines = pipelines[0], pipelines[1:]
 			Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, deletePipeline)).Should(Succeed())
-			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, additionalPipeline.GetName())
+			assert.OTelLogPipelineHealthy(suite.Ctx, suite.K8sClient, additionalPipeline.GetName())
 
 		})
 

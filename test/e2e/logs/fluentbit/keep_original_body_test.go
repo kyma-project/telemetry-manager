@@ -15,7 +15,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -40,7 +40,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 		objs = append(objs, logProducer.K8sObject())
 
 		// logPipeline1 ships logs without original body to backend1
-		backend1 := backend.New(mockNs, backend.SignalTypeLogs, backend.WithName(backend1Name))
+		backend1 := kitbackend.New(mockNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithName(backend1Name))
 		backend1ExportURL = backend1.ExportURL(suite.ProxyClient)
 		objs = append(objs, backend1.K8sObjects()...)
 		logPipeline1 := testutils.NewLogPipelineBuilder().
@@ -53,7 +53,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 		objs = append(objs, &logPipeline1)
 
 		// logPipeline2 ships logs with original body to backend2 (default behavior)
-		backend2 := backend.New(mockNs, backend.SignalTypeLogs, backend.WithName(backend2Name))
+		backend2 := kitbackend.New(mockNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithName(backend2Name))
 		backend2ExportURL = backend2.ExportURL(suite.ProxyClient)
 		objs = append(objs, backend2.K8sObjects()...)
 		logPipeline2 := testutils.NewLogPipelineBuilder().
@@ -77,8 +77,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 		})
 
 		It("Should have running logpipelines", func() {
-			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipeline1Name)
-			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipeline2Name)
+			assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipeline1Name)
+			assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipeline2Name)
 		})
 
 		It("Should have running log agent", func() {

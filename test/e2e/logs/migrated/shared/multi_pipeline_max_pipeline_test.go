@@ -13,7 +13,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -58,7 +58,7 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 				pipelines    []client.Object
 			)
 
-			backend := backend.New(backendNs, backend.SignalTypeLogsOTel)
+			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
 			backendExportURL := backend.ExportURL(suite.ProxyClient)
 
 			for i := range maxNumberOfLogPipelines {
@@ -126,7 +126,7 @@ func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
 		pipelines    []client.Object
 	)
 
-	backend := backend.New(backendNs, backend.SignalTypeLogsFluentBit)
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
 	backendExportURL := backend.ExportURL(suite.ProxyClient)
 
 	for i := range maxNumberOfLogPipelines {
