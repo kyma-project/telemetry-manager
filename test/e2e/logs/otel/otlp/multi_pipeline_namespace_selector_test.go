@@ -1,6 +1,6 @@
 //go:build e2e
 
-package otel
+package otlp
 
 import (
 	. "github.com/onsi/ginkgo/v2"
