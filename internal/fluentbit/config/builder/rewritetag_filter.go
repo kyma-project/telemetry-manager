@@ -33,7 +33,7 @@ func createRewriteTagFilter(logPipeline *telemetryv1alpha1.LogPipeline, defaults
 	emitterPostfix := getEmitterPostfixByOutput(output)
 
 	if emitterPostfix != "" {
-		emitterName += ("-" + emitterPostfix)
+		emitterName += "-" + emitterPostfix
 	}
 
 	var sectionBuilder = NewFilterSectionBuilder().

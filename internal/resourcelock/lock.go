@@ -31,6 +31,13 @@ func New(client client.Client, lockName types.NamespacedName, maxOwners int) *Ch
 	}
 }
 
+func NewSyncer(client client.Client, lockName types.NamespacedName) *Checker {
+	return &Checker{
+		client:   client,
+		lockName: lockName,
+	}
+}
+
 func (l *Checker) TryAcquireLock(ctx context.Context, owner metav1.Object) error {
 	var lock corev1.ConfigMap
 	if err := l.client.Get(ctx, l.lockName, &lock); err != nil {

@@ -83,6 +83,14 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 		MaxPipelineCount,
 	)
 
+	pipelineSync := resourcelock.NewSyncer(
+		client,
+		types.NamespacedName{
+			Name:      "telemetry-tracepipeline-sync",
+			Namespace: config.TelemetryNamespace,
+		},
+	)
+
 	pipelineValidator := &tracepipeline.Validator{
 		EndpointValidator:  &endpoint.Validator{Client: client},
 		TLSCertValidator:   tlscert.New(client),
@@ -105,6 +113,7 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 		istiostatus.NewChecker(discoveryClient),
 		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
 		pipelineLock,
+		pipelineSync,
 		pipelineValidator,
 		&conditions.ErrorToMessageConverter{})
 

@@ -18,8 +18,10 @@ package logpipeline
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -49,7 +51,7 @@ type OverridesHandler interface {
 }
 
 type PipelineSyncer interface {
-	TryAcquireLock(ctx context.Context, object client.Object) error
+	TryAcquireLock(ctx context.Context, owner metav1.Object) error
 }
 
 type Reconciler struct {
@@ -100,10 +102,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	if err := r.pipelineSyncer.TryAcquireLock(ctx, &pipeline); err != nil {
-		if err == resourcelock.ErrMaxPipelinesExceeded {
+		if errors.Is(err, resourcelock.ErrMaxPipelinesExceeded) {
 			logf.FromContext(ctx).V(1).Error(err, "Skipping reconciliation: max pipelines exceeded")
 			return ctrl.Result{}, nil
 		}
+
 		return ctrl.Result{}, err
 	}
 

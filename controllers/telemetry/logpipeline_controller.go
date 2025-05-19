@@ -88,13 +88,12 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 		MaxPipelineCount,
 	)
 
-	pipelineSyncer := resourcelock.New(
+	pipelineSyncer := resourcelock.NewSyncer(
 		client,
 		types.NamespacedName{
 			Name:      "telemetry-logpipeline-sync",
 			Namespace: config.TelemetryNamespace,
 		},
-		UnlimitedPipelineCount,
 	)
 
 	flowHealthProber, err := prober.NewLogPipelineProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})

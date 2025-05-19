@@ -87,6 +87,14 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 		MaxPipelineCount,
 	)
 
+	pipelineSync := resourcelock.NewSyncer(
+		client,
+		types.NamespacedName{
+			Name:      "telemetry-metricpipeline-lock",
+			Namespace: config.TelemetryNamespace,
+		},
+	)
+
 	pipelineValidator := &metricpipeline.Validator{
 		EndpointValidator:  &endpoint.Validator{Client: client},
 		TLSCertValidator:   tlscert.New(client),
@@ -121,6 +129,7 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 		istiostatus.NewChecker(discoveryClient),
 		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
 		pipelineLock,
+		pipelineSync,
 		pipelineValidator,
 		&conditions.ErrorToMessageConverter{},
 	)
