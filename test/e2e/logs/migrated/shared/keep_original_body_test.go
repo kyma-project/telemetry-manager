@@ -19,9 +19,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-// TODO: Needs to be modified based on new changes
 func TestKeepOriginalBody_OTel(t *testing.T) {
-	RegisterTestingT(t)
+	suite.RegisterTestCase(t, suite.LabelLogAgent)
 
 	var (
 		uniquePrefix = unique.Prefix()

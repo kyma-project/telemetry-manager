@@ -135,7 +135,6 @@ func TestServiceName_OTel(t *testing.T) {
 						HaveResourceAttributes(HaveKeyWithValue(podKey, ContainSubstring(givenPodPrefix))),
 					)),
 				))
-
 			}
 
 			if tc.expectAgent {
