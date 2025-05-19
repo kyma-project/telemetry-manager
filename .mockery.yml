@@ -17,6 +17,7 @@ packages:
     interfaces:
       AgentApplierDeleter:
       AgentConfigBuilder:
+      PipelineLock:
   github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel:
     interfaces:
       AgentApplierDeleter:
@@ -24,6 +25,7 @@ packages:
       FlowHealthProber:
       GatewayApplierDeleter:
       GatewayConfigBuilder:
+      PipelineLock:
   github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline:
     interfaces:
       AgentApplierDeleter:

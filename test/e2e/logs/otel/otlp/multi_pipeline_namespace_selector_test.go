@@ -1,6 +1,6 @@
 //go:build e2e
 
-package application
+package otlp
 
 import (
 	. "github.com/onsi/ginkgo/v2"
@@ -13,7 +13,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
@@ -40,8 +40,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 
 		pipelineIncludeApp1Ns := testutils.NewLogPipelineBuilder().
 			WithName("include-"+app1Ns).
-			WithOTLPInput(false).
-			WithApplicationInput(true, testutils.IncludeLogNamespaces(app1Ns)).
+			WithApplicationInput(false).
+			WithOTLPInput(true, testutils.IncludeNamespaces(app1Ns)).
 			WithOTLPOutput(testutils.OTLPEndpoint(backend1.Endpoint())).
 			Build()
 		objs = append(objs, &pipelineIncludeApp1Ns)
@@ -52,18 +52,16 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 
 		pipelineExcludeApp1Ns := testutils.NewLogPipelineBuilder().
 			WithName("exclude-"+app1Ns).
-			WithOTLPInput(false).
-			WithApplicationInput(true, testutils.ExcludeLogNamespaces(app1Ns)).
+			WithApplicationInput(false).
+			WithOTLPInput(true, testutils.ExcludeNamespaces(app1Ns)).
 			WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
 			Build()
 		objs = append(objs, &pipelineExcludeApp1Ns)
 
-		logProducer1 := loggen.New(app1Ns)
-		logProducer2 := loggen.New(app2Ns)
-
+		podSpec := telemetrygen.PodSpec(telemetrygen.SignalTypeLogs)
 		objs = append(objs,
-			logProducer1.K8sObject(),
-			logProducer2.K8sObject(),
+			kitk8s.NewDeployment(app1Ns, app1Ns).WithPodSpec(podSpec).K8sObject(),
+			kitk8s.NewDeployment(app2Ns, app2Ns).WithPodSpec(podSpec).K8sObject(),
 		)
 
 		return objs
@@ -82,10 +80,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 
 		It("Should have a running log gateway deployment", func() {
 			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.LogGatewayName)
-		})
-
-		It("Should have a running log agent daemonset", func() {
-			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.LogAgentName)
 		})
 
 		It("Should have a logs backend running", func() {
