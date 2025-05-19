@@ -30,7 +30,7 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 		expectAgent         bool
 	}{
 		{
-			label: suite.LabelLogAgent,
+			label: suite.LabelMaxPipelineAgent,
 			input: testutils.BuildLogPipelineApplicationInput(),
 			logGeneratorBuilder: func(namespace string) client.Object {
 				return loggen.New(namespace).K8sObject()
@@ -38,7 +38,7 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 			expectAgent: true,
 		},
 		{
-			label: suite.LabelLogGateway,
+			label: suite.LabelMaxPipelineGateway,
 			input: testutils.BuildLogPipelineOTLPInput(),
 			logGeneratorBuilder: func(namespace string) client.Object {
 				return telemetrygen.NewDeployment(namespace, telemetrygen.SignalTypeLogs).K8sObject()
@@ -48,7 +48,7 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label, suite.LabelSkip) // skipping for now, as we need to execute this test in isolation
+			suite.RegisterTestCase(t, tc.label)
 
 			var (
 				uniquePrefix = unique.Prefix(tc.label)
@@ -116,7 +116,7 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 }
 
 func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit, suite.LabelSkip) // skipping for now, as we need to execute this test in isolation
+	suite.RegisterTestCase(t, suite.LabelMaxPipelineFluentBit)
 
 	var (
 		uniquePrefix = unique.Prefix()
