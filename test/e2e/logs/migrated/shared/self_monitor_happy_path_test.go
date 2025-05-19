@@ -96,7 +96,7 @@ func TestSelfMonitorHappyPath_OTel(t *testing.T) {
 
 func TestSelfMonitorHappyPath_FluentBit(t *testing.T) {
 	RegisterTestingT(t)
-	// suite.SkipIfDoesNotMatchLabel(t, "logs")
+	suite.RegisterTestCase(t, suite.LabelFluentBit)
 
 	var (
 		uniquePrefix = unique.Prefix()

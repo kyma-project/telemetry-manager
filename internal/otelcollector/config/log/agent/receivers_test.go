@@ -33,11 +33,15 @@ func TestReceiverCreator(t *testing.T) {
 				makeContainerParser(),
 				makeMoveToLogStream(),
 				makeDropAttributeLogTag(),
+				makeBodyRouter(),
 				makeJSONParser(),
 				makeMoveBodyToLogOriginal(),
 				makeMoveMessageToBody(),
 				makeMoveMsgToBody(),
-				makeSeverityParser(),
+				makeSeverityParserFromLevel(),
+				makeRemoveLevel(),
+				makeSeverityParserFromLogLevel(),
+				makeRemoveLogLevel(),
 				makeTraceRouter(),
 				makeTraceParentParser(),
 				makeTraceParser(),
@@ -55,10 +59,14 @@ func TestReceiverCreator(t *testing.T) {
 				makeContainerParser(),
 				makeMoveToLogStream(),
 				makeDropAttributeLogTag(),
+				makeBodyRouter(),
 				makeJSONParser(),
 				makeMoveMessageToBody(),
 				makeMoveMsgToBody(),
-				makeSeverityParser(),
+				makeSeverityParserFromLevel(),
+				makeRemoveLevel(),
+				makeSeverityParserFromLogLevel(),
+				makeRemoveLogLevel(),
 				makeTraceRouter(),
 				makeTraceParentParser(),
 				makeTraceParser(),
@@ -99,11 +107,27 @@ func TestMakeMoveToLogStream(t *testing.T) {
 	expectedMoveToLogStream := Operator{
 		ID:     "move-to-log-stream",
 		Type:   "move",
-		From:   "attributes.stream",
+		From:   "attributes[\"stream\"]",
 		To:     "attributes[\"log.iostream\"]",
-		IfExpr: "attributes.stream != nil",
+		IfExpr: "attributes[\"stream\"] != nil",
 	}
 	assert.Equal(t, expectedMoveToLogStream, mtls)
+}
+
+func TestExpectedMakeBodyRouter(t *testing.T) {
+	jp := makeBodyRouter()
+	expectedJP := Operator{
+		ID:      "body-router",
+		Type:    "router",
+		Default: "noop",
+		Routes: []Route{
+			{
+				Expression: "body matches '^{.*}$'",
+				Output:     "json-parser",
+			},
+		},
+	}
+	assert.Equal(t, expectedJP, jp)
 }
 
 func TestExpectedMakeJSONParser(t *testing.T) {
@@ -113,7 +137,6 @@ func TestExpectedMakeJSONParser(t *testing.T) {
 		Type:      "json_parser",
 		ParseFrom: "body",
 		ParseTo:   "attributes",
-		IfExpr:    "body matches '^{.*}$'",
 	}
 	assert.Equal(t, expectedJP, jp)
 }
@@ -145,9 +168,9 @@ func TestMakeMoveMessageToBody(t *testing.T) {
 
 		ID:     "move-message-to-body",
 		Type:   "move",
-		From:   "attributes.message",
+		From:   "attributes[\"message\"]",
 		To:     "body",
-		IfExpr: "attributes.message != nil",
+		IfExpr: "attributes[\"message\"] != nil",
 	}
 	assert.Equal(t, expectedMMTB, mmtb)
 }
@@ -157,20 +180,20 @@ func TestMakeMoveMsgToBody(t *testing.T) {
 	expectedMMTB := Operator{
 		ID:     "move-msg-to-body",
 		Type:   "move",
-		From:   "attributes.msg",
+		From:   "attributes[\"msg\"]",
 		To:     "body",
-		IfExpr: "attributes.msg != nil",
+		IfExpr: "attributes[\"msg\"] != nil",
 	}
 	assert.Equal(t, expectedMMTB, mmtb)
 }
 
 func TestMakeSeverityParser(t *testing.T) {
-	sp := makeSeverityParser()
+	sp := makeSeverityParserFromLevel()
 	expectedSP := Operator{
-		ID:        "severity-parser",
+		ID:        "parse-level",
 		Type:      "severity_parser",
-		ParseFrom: "attributes.level",
-		IfExpr:    "attributes.level != nil",
+		ParseFrom: "attributes[\"level\"]",
+		IfExpr:    "attributes[\"level\"] != nil",
 	}
 	assert.Equal(t, expectedSP, sp)
 }
@@ -252,13 +275,13 @@ func TestMakeTraceParser(t *testing.T) {
 		Type:   "trace_parser",
 		Output: "remove-trace-id",
 		TraceID: OperatorAttribute{
-			ParseFrom: attributeTraceID,
+			ParseFrom: "attributes[\"trace_id\"]",
 		},
 		SpanID: OperatorAttribute{
-			ParseFrom: attributeSpanID,
+			ParseFrom: "attributes[\"span_id\"]",
 		},
 		TraceFlags: OperatorAttribute{
-			ParseFrom: attributeTraceFlags,
+			ParseFrom: "attributes[\"trace_flags\"]",
 		},
 	}
 	assert.Equal(t, expectedSP, sp)
@@ -270,17 +293,17 @@ func TestMakeTraceParentParser(t *testing.T) {
 		ID:        "trace-parent-parser",
 		Type:      "regex_parser",
 		Regex:     traceParentExpression,
-		ParseFrom: attributeTraceParent,
+		ParseFrom: "attributes[\"traceparent\"]",
 		Output:    "remove-trace-parent",
 		Trace: TraceAttribute{
 			TraceID: OperatorAttribute{
-				ParseFrom: attributeTraceID,
+				ParseFrom: "attributes[\"trace_id\"]",
 			},
 			SpanID: OperatorAttribute{
-				ParseFrom: attributeSpanID,
+				ParseFrom: "attributes[\"span_id\"]",
 			},
 			TraceFlags: OperatorAttribute{
-				ParseFrom: attributeTraceFlags,
+				ParseFrom: "attributes[\"trace_flags\"]",
 			},
 		},
 	}
@@ -290,10 +313,9 @@ func TestMakeTraceParentParser(t *testing.T) {
 func TestMakeRemoveTraceParent(t *testing.T) {
 	sp := makeRemoveTraceParent()
 	expectedSP := Operator{
-		ID:     "remove-trace-parent",
-		Type:   "remove",
-		Field:  attributeTraceParent,
-		Output: "remove-trace-id",
+		ID:    "remove-trace-parent",
+		Type:  "remove",
+		Field: "attributes[\"traceparent\"]",
 	}
 	assert.Equal(t, expectedSP, sp)
 }
@@ -303,8 +325,8 @@ func TestMakeRemoveTraceID(t *testing.T) {
 	expectedSP := Operator{
 		ID:     "remove-trace-id",
 		Type:   "remove",
-		Field:  attributeTraceID,
-		Output: "remove-span-id",
+		Field:  "attributes[\"trace_id\"]",
+		IfExpr: "attributes[\"trace_id\"] != nil",
 	}
 	assert.Equal(t, expectedSP, sp)
 }
@@ -314,8 +336,8 @@ func TestMakeRemoveSpanID(t *testing.T) {
 	expectedSP := Operator{
 		ID:     "remove-span-id",
 		Type:   "remove",
-		Field:  attributeSpanID,
-		Output: "remove-trace-flags",
+		Field:  "attributes[\"span_id\"]",
+		IfExpr: "attributes[\"span_id\"] != nil",
 	}
 	assert.Equal(t, expectedSP, sp)
 }
@@ -323,9 +345,10 @@ func TestMakeRemoveSpanID(t *testing.T) {
 func TestMakeRemoveTraceFlags(t *testing.T) {
 	sp := makeRemoveTraceFlags()
 	expectedSP := Operator{
-		ID:    "remove-trace-flags",
-		Type:  "remove",
-		Field: attributeTraceFlags,
+		ID:     "remove-trace-flags",
+		Type:   "remove",
+		Field:  "attributes[\"trace_flags\"]",
+		IfExpr: "attributes[\"trace_flags\"] != nil",
 	}
 	assert.Equal(t, expectedSP, sp)
 }
@@ -345,13 +368,13 @@ func TestMakeTraceRouter(t *testing.T) {
 		ID:      "trace-router",
 		Type:    "router",
 		Default: "noop",
-		Routes: []Router{
+		Routes: []Route{
 			{
-				Expression: fmt.Sprintf("%s != nil", attributeTraceID),
+				Expression: "attributes[\"trace_id\"] != nil",
 				Output:     "trace-parser",
 			},
 			{
-				Expression: fmt.Sprintf("%s == nil and %s != nil and attributes.traceparent matches '%s'", attributeTraceID, attributeTraceParent, traceParentExpression),
+				Expression: fmt.Sprintf("attributes[\"traceparent\"] != nil and attributes[\"traceparent\"] matches '%s'", traceParentExpression),
 				Output:     "trace-parent-parser",
 			},
 		},
@@ -359,12 +382,56 @@ func TestMakeTraceRouter(t *testing.T) {
 	assert.Equal(t, expectedSP, sp)
 }
 
+func TestMakeSeverityParserFromLogLevel(t *testing.T) {
+	sp := makeSeverityParserFromLogLevel()
+	expectedSP := Operator{
+		ID:        "parse-log-level",
+		Type:      "severity_parser",
+		IfExpr:    "attributes[\"log.level\"] != nil",
+		ParseFrom: "attributes[\"log.level\"]",
+	}
+	assert.Equal(t, expectedSP, sp)
+}
+
+func TestMakeSeverityParserFromLevel(t *testing.T) {
+	sp := makeSeverityParserFromLevel()
+	expectedSP := Operator{
+		ID:        "parse-level",
+		Type:      "severity_parser",
+		ParseFrom: "attributes[\"level\"]",
+		IfExpr:    "attributes[\"level\"] != nil",
+	}
+	assert.Equal(t, expectedSP, sp)
+}
+
+func TestMakeRemoveLogLevel(t *testing.T) {
+	sp := makeRemoveLogLevel()
+	expectedSP := Operator{
+		ID:     "remove-log-level",
+		Type:   "remove",
+		Field:  "attributes[\"log.level\"]",
+		IfExpr: "attributes[\"log.level\"] != nil",
+	}
+	assert.Equal(t, expectedSP, sp)
+}
+
+func TestMakeRemoveLevel(t *testing.T) {
+	sp := makeRemoveLevel()
+	expectedSP := Operator{
+		ID:     "remove-level",
+		Type:   "remove",
+		Field:  "attributes[\"level\"]",
+		IfExpr: "attributes[\"level\"] != nil",
+	}
+	assert.Equal(t, expectedSP, sp)
+}
+
 func getExcludePaths(system bool, paths ...string) []string {
 	var defaultExcludePaths = []string{
-		"/var/log/pods/kyma-system_*system-logs-agent*/*/*.log",
-		"/var/log/pods/kyma-system_*system-logs-collector*/*/*.log",
-		"/var/log/pods/kyma-system_telemetry-log-agent*/*/*.log",
-		"/var/log/pods/kyma-system_telemetry-fluent-bit*/*/*.log",
+		"/var/log/pods/kyma-system_*system-logs-agent-*/collector/*.log",
+		"/var/log/pods/kyma-system_*system-logs-collector-*/collector/*.log",
+		"/var/log/pods/kyma-system_telemetry-log-agent-*/collector/*.log",
+		"/var/log/pods/kyma-system_telemetry-fluent-bit-*/fluent-bit/*.log",
 	}
 
 	var systemExcludePaths = []string{

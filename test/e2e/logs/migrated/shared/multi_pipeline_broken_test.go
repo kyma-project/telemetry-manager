@@ -52,7 +52,7 @@ func TestMultiPipelineBroken_OTel(t *testing.T) {
 			var (
 				uniquePrefix   = unique.Prefix(tc.label)
 				backendNs      = uniquePrefix("backend")
-				generatorNs    = uniquePrefix("gen")
+				genNs          = uniquePrefix("gen")
 				goodPipeline   = uniquePrefix("good")
 				brokenPipeline = uniquePrefix("broken")
 			)
@@ -74,10 +74,10 @@ func TestMultiPipelineBroken_OTel(t *testing.T) {
 
 			resources := []client.Object{
 				kitk8s.NewNamespace(backendNs).K8sObject(),
-				kitk8s.NewNamespace(generatorNs).K8sObject(),
+				kitk8s.NewNamespace(genNs).K8sObject(),
 				&pipelineGood,
 				&pipelineBroken,
-				tc.logGeneratorBuilder(generatorNs),
+				tc.logGeneratorBuilder(genNs),
 			}
 			resources = append(resources, backend.K8sObjects()...)
 
@@ -101,7 +101,7 @@ func TestMultiPipelineBroken_OTel(t *testing.T) {
 			// 	Reason: conditions.ReasonReferencedSecretMissing,
 			// })
 
-			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, generatorNs)
+			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, genNs)
 		})
 	}
 }
@@ -112,7 +112,7 @@ func TestMultiPipelineBroken_FluentBit(t *testing.T) {
 	var (
 		uniquePrefix   = unique.Prefix()
 		backendNs      = uniquePrefix("backend")
-		generatorNs    = uniquePrefix("gen")
+		genNs          = uniquePrefix("gen")
 		goodPipeline   = uniquePrefix("good")
 		brokenPipeline = uniquePrefix("broken")
 	)
@@ -134,10 +134,10 @@ func TestMultiPipelineBroken_FluentBit(t *testing.T) {
 
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(generatorNs).K8sObject(),
+		kitk8s.NewNamespace(genNs).K8sObject(),
 		&pipelineGood,
 		&pipelineBroken,
-		loggen.New(generatorNs).K8sObject(),
+		loggen.New(genNs).K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
 
@@ -156,5 +156,5 @@ func TestMultiPipelineBroken_FluentBit(t *testing.T) {
 		Reason: conditions.ReasonReferencedSecretMissing,
 	})
 
-	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, generatorNs)
+	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, genNs)
 }

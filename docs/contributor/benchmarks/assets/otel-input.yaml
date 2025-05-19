@@ -1,0 +1,13 @@
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: LogPipeline
+metadata:
+  name: sample-otel
+spec:
+  input:
+    application:
+      enabled: false
+  output:
+    otlp:
+      endpoint:
+        value: http://log-sink.log-sink-otel:4317
+      protocol: grpc

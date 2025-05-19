@@ -31,7 +31,6 @@ func TestDisabledInput_OTel(t *testing.T) {
 	var (
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
-		mockNs       = uniquePrefix()
 	)
 
 	pipeline := testutils.NewLogPipelineBuilder().
@@ -44,7 +43,6 @@ func TestDisabledInput_OTel(t *testing.T) {
 		Build()
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(mockNs).K8sObject(),
 		&pipeline,
 	}
 
@@ -71,7 +69,6 @@ func TestDisabledInput_FluentBit(t *testing.T) {
 	var (
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
-		mockNs       = uniquePrefix()
 	)
 
 	pipeline := testutils.NewLogPipelineBuilder().
@@ -84,7 +81,6 @@ func TestDisabledInput_FluentBit(t *testing.T) {
 		Build()
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(mockNs).K8sObject(),
 		&pipeline,
 	}
 

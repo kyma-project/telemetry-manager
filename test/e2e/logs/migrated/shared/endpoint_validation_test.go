@@ -44,10 +44,10 @@ func TestEndpointInvalid_OTel(t *testing.T) {
 			)
 
 			var (
-				uniquePrefix          = unique.Prefix(tc.label)
-				pipelineNameValue     = uniquePrefix("value")
-				pipelineNameValueFrom = uniquePrefix("value-from")
-				secretName            = uniquePrefix()
+				uniquePrefix                = unique.Prefix(tc.label)
+				pipelineNameValue           = uniquePrefix("value")
+				pipelineNameValueFromSecret = uniquePrefix("value-from-secret")
+				secretName                  = uniquePrefix()
 			)
 
 			pipelineInvalidEndpointValue := testutils.NewLogPipelineBuilder().
@@ -58,7 +58,7 @@ func TestEndpointInvalid_OTel(t *testing.T) {
 
 			secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, invalidEndpoint))
 			pipelineInvalidEndpointValueFrom := testutils.NewLogPipelineBuilder().
-				WithName(pipelineNameValueFrom).
+				WithName(pipelineNameValueFromSecret).
 				WithInput(tc.input).
 				WithOTLPOutput(testutils.OTLPEndpointFromSecret(secret.Name(), secret.Namespace(), endpointKey)).
 				Build()
@@ -78,7 +78,7 @@ func TestEndpointInvalid_OTel(t *testing.T) {
 			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resourcesToSucceedCreation...)).Should(Succeed())
 			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resourcesToFailCreation...)).Should(MatchError(ContainSubstring("invalid hostname")))
 
-			assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineNameValueFrom, metav1.Condition{
+			assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineNameValueFromSecret, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonEndpointInvalid,
@@ -96,10 +96,10 @@ func TestEndpointInvalid_FluentBit(t *testing.T) {
 	)
 
 	var (
-		uniquePrefix          = unique.Prefix()
-		pipelineNameValue     = uniquePrefix("value")
-		pipelineNameValueFrom = uniquePrefix("value-from")
-		secretName            = uniquePrefix()
+		uniquePrefix                = unique.Prefix()
+		pipelineNameValue           = uniquePrefix("value")
+		pipelineNameValueFromSecret = uniquePrefix("value-from-secret")
+		secretName                  = uniquePrefix()
 	)
 
 	pipelineInvalidEndpointValue := testutils.NewLogPipelineBuilder().
@@ -109,7 +109,7 @@ func TestEndpointInvalid_FluentBit(t *testing.T) {
 
 	secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, invalidEndpoint))
 	pipelineInvalidEndpointValueFrom := testutils.NewLogPipelineBuilder().
-		WithName(pipelineNameValueFrom).
+		WithName(pipelineNameValueFromSecret).
 		WithHTTPOutput(testutils.HTTPHostFromSecret(secret.Name(), secret.Namespace(), endpointKey)).
 		Build()
 
@@ -128,7 +128,7 @@ func TestEndpointInvalid_FluentBit(t *testing.T) {
 	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resourcesToSucceedCreation...)).Should(Succeed())
 	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resourcesToFailCreation...)).Should(MatchError(ContainSubstring("invalid hostname")))
 
-	assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineNameValueFrom, metav1.Condition{
+	assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineNameValueFromSecret, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonEndpointInvalid,

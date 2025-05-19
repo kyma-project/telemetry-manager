@@ -24,7 +24,7 @@ func TestContainerSelector_OTel(t *testing.T) {
 	var (
 		uniquePrefix                  = unique.Prefix("agent")
 		genNs                         = uniquePrefix("gen")
-		backendNs                     = uniquePrefix("backend-1")
+		backendNs                     = uniquePrefix("backend")
 		container1                    = "gen-container-1"
 		container2                    = "gen-container-2"
 		includeContainer1PipelineName = uniquePrefix("include")

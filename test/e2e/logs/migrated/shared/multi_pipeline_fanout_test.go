@@ -49,7 +49,7 @@ func TestMultiPipelineFanout_OTel(t *testing.T) {
 			var (
 				uniquePrefix  = unique.Prefix(tc.label)
 				backendNs     = uniquePrefix("backend")
-				generatorNs   = uniquePrefix("gen")
+				genNs         = uniquePrefix("gen")
 				pipeline1Name = uniquePrefix("pipeline1")
 				pipeline2Name = uniquePrefix("pipeline2")
 			)
@@ -74,10 +74,10 @@ func TestMultiPipelineFanout_OTel(t *testing.T) {
 
 			resources := []client.Object{
 				kitk8s.NewNamespace(backendNs).K8sObject(),
-				kitk8s.NewNamespace(generatorNs).K8sObject(),
+				kitk8s.NewNamespace(genNs).K8sObject(),
 				&pipeline1,
 				&pipeline2,
-				tc.logGeneratorBuilder(generatorNs),
+				tc.logGeneratorBuilder(genNs),
 			}
 			resources = append(resources, backend1.K8sObjects()...)
 			resources = append(resources, backend2.K8sObjects()...)
@@ -93,8 +93,8 @@ func TestMultiPipelineFanout_OTel(t *testing.T) {
 			assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipeline1.Name)
 			assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipeline2.Name)
 
-			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backend1ExportURL, generatorNs)
-			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backend2ExportURL, generatorNs)
+			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backend1ExportURL, genNs)
+			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backend2ExportURL, genNs)
 		})
 	}
 }
@@ -105,7 +105,7 @@ func TestMultiPipelineFanout_FluentBit(t *testing.T) {
 	var (
 		uniquePrefix  = unique.Prefix()
 		backendNs     = uniquePrefix("backend")
-		generatorNs   = uniquePrefix("gen")
+		genNs         = uniquePrefix("gen")
 		pipeline1Name = uniquePrefix("pipeline1")
 		pipeline2Name = uniquePrefix("pipeline2")
 	)
@@ -130,10 +130,10 @@ func TestMultiPipelineFanout_FluentBit(t *testing.T) {
 
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(generatorNs).K8sObject(),
+		kitk8s.NewNamespace(genNs).K8sObject(),
 		&pipeline1,
 		&pipeline2,
-		loggen.New(generatorNs).K8sObject(),
+		loggen.New(genNs).K8sObject(),
 	}
 	resources = append(resources, backend1.K8sObjects()...)
 	resources = append(resources, backend2.K8sObjects()...)
@@ -149,6 +149,6 @@ func TestMultiPipelineFanout_FluentBit(t *testing.T) {
 	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipeline1.Name)
 	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipeline2.Name)
 
-	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backend1ExportURL, generatorNs)
-	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backend2ExportURL, generatorNs)
+	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backend1ExportURL, genNs)
+	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backend2ExportURL, genNs)
 }

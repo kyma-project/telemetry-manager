@@ -418,4 +418,16 @@ data:
               - 'True'
             critical:
               - 'False'
-  dataSources: "relatedSecrets:\n  resource:\n    kind: Secret\n    version: v1\n  filter: |-\n      $item.metadata.name =  $root.spec.output.otlp.authentication.basic.user.valueFrom.secretKeyRef.name or \n      $item.metadata.name =  $root.spec.output.otlp.authentication.basic.password.valueFrom.secretKeyRef.name or \n      $item.metadata.name = $root.spec.output.otlp.endpoint.valueFrom.secretKeyRef.name or\n      $item.metadata.name = $root.spec.output.otlp.headers.valueFrom.secretKeyRef.name or\n      $item.metadata.name = $root.spec.output.otlp.tls.ca.valueFrom.secretKeyRef.name or\n      $item.metadata.name = $root.spec.output.otlp.tls.cert.valueFrom.secretKeyRef.name or\n      $item.metadata.name = $root.spec.output.otlp.tls.key.valueFrom.secretKeyRef.name"
+  dataSources: |-
+    relatedSecrets:
+      resource:
+        kind: Secret
+        version: v1
+      filter: |-
+          $item.metadata.name =  $root.spec.output.otlp.authentication.basic.user.valueFrom.secretKeyRef.name or
+          $item.metadata.name =  $root.spec.output.otlp.authentication.basic.password.valueFrom.secretKeyRef.name or
+          $item.metadata.name = $root.spec.output.otlp.endpoint.valueFrom.secretKeyRef.name or
+          $item.metadata.name = $root.spec.output.otlp.headers.valueFrom.secretKeyRef.name or
+          $item.metadata.name = $root.spec.output.otlp.tls.ca.valueFrom.secretKeyRef.name or
+          $item.metadata.name = $root.spec.output.otlp.tls.cert.valueFrom.secretKeyRef.name or
+          $item.metadata.name = $root.spec.output.otlp.tls.key.valueFrom.secretKeyRef.name

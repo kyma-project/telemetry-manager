@@ -42,10 +42,9 @@ func TestMTLSCertKeyDontMatch_OTel(t *testing.T) {
 				uniquePrefix = unique.Prefix(tc.label)
 				pipelineName = uniquePrefix()
 				backendNs    = uniquePrefix("backend")
-				backendName  = kitbackend.DefaultName
 			)
 
-			serverCertsDefault, clientCertsDefault, err := testutils.NewCertBuilder(backendName, backendNs).Build()
+			serverCertsDefault, clientCertsDefault, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
 			Expect(err).ToNot(HaveOccurred())
 
 			_, clientCertsCreatedAgain, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
@@ -104,10 +103,9 @@ func TestMTLSCertKeyDontMatch_FluentBit(t *testing.T) {
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
 		backendNs    = uniquePrefix("backend")
-		backendName  = kitbackend.DefaultName
 	)
 
-	serverCertsDefault, clientCertsDefault, err := testutils.NewCertBuilder(backendName, backendNs).Build()
+	serverCertsDefault, clientCertsDefault, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
 	Expect(err).ToNot(HaveOccurred())
 
 	_, clientCertsCreatedAgain, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()

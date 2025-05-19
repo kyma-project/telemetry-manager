@@ -52,7 +52,7 @@ func TestSinglePipelineV1Beta1_OTel(t *testing.T) {
 			var (
 				uniquePrefix = unique.Prefix(tc.label)
 				pipelineName = uniquePrefix("pipeline")
-				generatorNs  = uniquePrefix("gen")
+				genNs        = uniquePrefix("gen")
 				backendNs    = uniquePrefix("backend")
 			)
 
@@ -83,9 +83,9 @@ func TestSinglePipelineV1Beta1_OTel(t *testing.T) {
 
 			resources := []client.Object{
 				kitk8s.NewNamespace(backendNs).K8sObject(),
-				kitk8s.NewNamespace(generatorNs).K8sObject(),
+				kitk8s.NewNamespace(genNs).K8sObject(),
 				&pipeline,
-				tc.logGeneratorBuilder(generatorNs),
+				tc.logGeneratorBuilder(genNs),
 			}
 			resources = append(resources, backend.K8sObjects()...)
 
@@ -101,9 +101,8 @@ func TestSinglePipelineV1Beta1_OTel(t *testing.T) {
 				assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
 			}
 
-			assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
-
-			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, generatorNs)
+			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
+			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, genNs)
 		})
 	}
 }
@@ -114,7 +113,7 @@ func TestSinglePipelineV1Beta1_FluentBit(t *testing.T) {
 	var (
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
-		generatorNs  = uniquePrefix("gen")
+		genNs        = uniquePrefix("gen")
 		backendNs    = uniquePrefix("backend")
 	)
 
@@ -144,8 +143,8 @@ func TestSinglePipelineV1Beta1_FluentBit(t *testing.T) {
 
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(generatorNs).K8sObject(),
-		loggen.New(generatorNs).K8sObject(),
+		kitk8s.NewNamespace(genNs).K8sObject(),
+		loggen.New(genNs).K8sObject(),
 		&pipeline,
 	}
 	resources = append(resources, backend.K8sObjects()...)
@@ -161,5 +160,5 @@ func TestSinglePipelineV1Beta1_FluentBit(t *testing.T) {
 	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 	assert.LogPipelineUnsupportedMode(t.Context(), suite.K8sClient, pipelineName, false)
 
-	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, generatorNs)
+	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, genNs)
 }

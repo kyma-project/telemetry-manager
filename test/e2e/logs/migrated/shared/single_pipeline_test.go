@@ -83,8 +83,7 @@ func TestSinglePipeline_OTel(t *testing.T) {
 				assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
 			}
 
-			assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
-
+			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, generatorNs)
 		})
 	}

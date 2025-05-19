@@ -42,10 +42,9 @@ func TestMTLSInvalidCA_OTel(t *testing.T) {
 				uniquePrefix = unique.Prefix(tc.label)
 				pipelineName = uniquePrefix()
 				backendNs    = uniquePrefix("backend")
-				backendName  = kitbackend.DefaultName
 			)
 
-			invalidServerCerts, invalidClientCerts, err := testutils.NewCertBuilder(backendName, backendNs).
+			invalidServerCerts, invalidClientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).
 				WithInvalidCA().
 				Build()
 			Expect(err).ToNot(HaveOccurred())
@@ -103,10 +102,9 @@ func TestMTLSInvalidCA_FluentBit(t *testing.T) {
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
 		backendNs    = uniquePrefix("backend")
-		backendName  = kitbackend.DefaultName
 	)
 
-	invalidServerCerts, invalidClientCerts, err := testutils.NewCertBuilder(backendName, backendNs).
+	invalidServerCerts, invalidClientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).
 		WithInvalidCA().
 		Build()
 	Expect(err).ToNot(HaveOccurred())

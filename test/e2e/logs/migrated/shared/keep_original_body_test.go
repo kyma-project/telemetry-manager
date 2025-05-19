@@ -19,6 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
+// TODO: Needs to be modified based on new changes
 func TestKeepOriginalBody_OTel(t *testing.T) {
 	RegisterTestingT(t)
 
@@ -30,8 +31,8 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 		backendGen1Ns = uniquePrefix("backend-gen-1")
 		backendGen2Ns = uniquePrefix("backend-gen-2")
 
-		pipelineKeepOriginalBodyName        = uniquePrefix("true")
-		pipelineWithoutKeepOriginalBodyName = uniquePrefix("false")
+		pipelineKeepOriginalBodyName        = uniquePrefix("keep-original-body")
+		pipelineWithoutKeepOriginalBodyName = uniquePrefix("without-keep-original-body")
 	)
 
 	backendGen1 := kitbackend.New(backendGen1Ns, kitbackend.SignalTypeLogsOTel, kitbackend.WithName("backend-gen-1"))
@@ -40,19 +41,19 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 	backendGen2 := kitbackend.New(backendGen2Ns, kitbackend.SignalTypeLogsOTel, kitbackend.WithName("backend-gen-2"))
 	backendGen2ExportURL := backendGen2.ExportURL(suite.ProxyClient)
 
-	pipelineKeepOriginalBody := testutils.NewLogPipelineBuilder().
-		WithName(pipelineKeepOriginalBodyName).
-		WithApplicationInput(true,
-			[]testutils.ExtendedNamespaceSelectorOptions{testutils.ExtIncludeNamespaces(gen1Ns)}...).
-		WithKeepOriginalBody(true).
-		WithOTLPOutput(testutils.OTLPEndpoint(backendGen1.Endpoint())).
-		Build()
-
 	pipelineWithoutKeepOriginalBody := testutils.NewLogPipelineBuilder().
 		WithName(pipelineWithoutKeepOriginalBodyName).
 		WithApplicationInput(true,
-			[]testutils.ExtendedNamespaceSelectorOptions{testutils.ExtIncludeNamespaces(gen2Ns)}...).
+			[]testutils.ExtendedNamespaceSelectorOptions{testutils.ExtIncludeNamespaces(gen1Ns)}...).
 		WithKeepOriginalBody(false).
+		WithOTLPOutput(testutils.OTLPEndpoint(backendGen1.Endpoint())).
+		Build()
+
+	pipelineKeepOriginalBody := testutils.NewLogPipelineBuilder().
+		WithName(pipelineKeepOriginalBodyName).
+		WithApplicationInput(true,
+			[]testutils.ExtendedNamespaceSelectorOptions{testutils.ExtIncludeNamespaces(gen2Ns)}...).
+		WithKeepOriginalBody(true).
 		WithOTLPOutput(testutils.OTLPEndpoint(backendGen2.Endpoint())).
 		Build()
 
@@ -84,16 +85,87 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 	assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineWithoutKeepOriginalBodyName)
 
 	assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendGen1ExportURL, gen1Ns)
-	assert.DataConsistentlyMatching(suite.ProxyClient, backendGen1ExportURL, HaveFlatOTelLogs(
-		ContainElement(
-			HaveAttributes(HaveKey("log.original")),
-		),
+
+	// Scenario [keepOriginalBody=false with JSON logs]: Ship `JSON` Logs without original body shipped to Backend1
+	// Since JSON body is parsed, the original body is not shipped to the backend and JSON fields are present in attributes
+	// Parse logline with `message`
+	assert.DataEventuallyMatching(suite.ProxyClient, backendGen1ExportURL, HaveFlatOTelLogs(
+		ContainElement(SatisfyAll(
+			HaveAttributes(HaveKeyWithValue("name", "a")),
+			HaveLogRecordBody(Equal("a-body")),
+			HaveAttributes(Not(HaveKey("message"))),
+			HaveAttributes(Not(HaveKey("log.original"))),
+		)),
 	))
 
+	// Parse logline with `msg`
+	assert.DataEventuallyMatching(suite.ProxyClient, backendGen1ExportURL, HaveFlatOTelLogs(
+		ContainElement(SatisfyAll(
+			HaveAttributes(HaveKeyWithValue("name", "b")),
+			HaveLogRecordBody(Equal("b-body")),
+			HaveAttributes(Not(HaveKey("msg"))),
+			HaveAttributes(Not(HaveKey("log.original"))),
+		)),
+	))
+
+	// Parse logline which has `body`
+	// Since message or msg is not present we keep the `Body()`
+	assert.DataEventuallyMatching(suite.ProxyClient, backendGen1ExportURL, HaveFlatOTelLogs(
+		ContainElement(SatisfyAll(
+			HaveAttributes(HaveKeyWithValue("name", "c")),
+			HaveLogRecordBody(Equal("{\"name\": \"c\", \"age\": 30, \"city\": \"Munich\", \"span_id\": \"123456789\", \"body\":\"c-body\"}")),
+			HaveAttributes(HaveKey("body")),
+			HaveAttributes(Not(HaveKey("log.original"))),
+		)),
+	))
+
+	// Scenario [keepOriginalBody=false with Plain logs]: Ship `Plain` Logs with original body shipped to Backend1
+	// Since Plain body is not parsed, the original body is shipped to the backend and attributes is empty
+	assert.DataEventuallyMatching(suite.ProxyClient, backendGen1ExportURL, HaveFlatOTelLogs(
+		ContainElement(SatisfyAll(
+			HaveLogRecordBody(HavePrefix("name=d")),
+			HaveAttributes(Not(HaveKey("log.original"))),
+		)),
+	))
+
+	// Tests where we expect log.Original() to be present
 	assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendGen2ExportURL, gen2Ns)
+
+	// Scenario [keepOriginalBody=true with JSON logs]: Ship `JSON` Logs with original body shipped to Backend2
 	assert.DataConsistentlyMatching(suite.ProxyClient, backendGen2ExportURL, HaveFlatOTelLogs(
-		Not(ContainElement(
+		ContainElement(SatisfyAll(
+			HaveAttributes(HaveKeyWithValue("name", "a")),
+			HaveLogRecordBody(Equal("a-body")),
+			HaveAttributes(Not(HaveKey("message"))),
 			HaveAttributes(HaveKey("log.original")),
+		)),
+	))
+
+	// Parse logline with `msg`
+	assert.DataEventuallyMatching(suite.ProxyClient, backendGen1ExportURL, HaveFlatOTelLogs(
+		ContainElement(SatisfyAll(
+			HaveAttributes(HaveKeyWithValue("name", "b")),
+			HaveLogRecordBody(Equal("b-body")),
+			HaveAttributes(Not(HaveKey("msg"))),
+			HaveAttributes(Not(HaveKey("log.original"))),
+		)),
+	))
+
+	// Parse logline which has `body`
+	// Since message or msg is not present we keep the `Body()`
+	assert.DataEventuallyMatching(suite.ProxyClient, backendGen1ExportURL, HaveFlatOTelLogs(
+		ContainElement(SatisfyAll(
+			HaveAttributes(HaveKeyWithValue("name", "c")),
+			HaveLogRecordBody(Equal("{\"name\": \"c\", \"age\": 30, \"city\": \"Munich\", \"span_id\": \"123456789\", \"body\":\"c-body\"}")),
+			HaveAttributes(HaveKey("body")),
+			HaveAttributes(Not(HaveKey("log.original"))),
+		)),
+	))
+
+	// Scenario [keepOriginalBody=true with Plain logs]: Ship `Plain` Logs with original body shipped to Backend2
+	assert.DataConsistentlyMatching(suite.ProxyClient, backendGen2ExportURL, HaveFlatOTelLogs(
+		ContainElement(SatisfyAll(
+			HaveLogRecordBody(HavePrefix("name=d")),
 		)),
 	))
 }
@@ -119,19 +191,19 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 	backendGen2 := kitbackend.New(backendGen2Ns, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithName("backend-gen-2"))
 	backendGen2ExportURL := backendGen2.ExportURL(suite.ProxyClient)
 
-	pipelineKeepOriginalBody := testutils.NewLogPipelineBuilder().
+	pipelineWithoutKeepOriginalBody := testutils.NewLogPipelineBuilder().
 		WithName(pipelineKeepOriginalBodyName).
 		WithApplicationInput(true).
 		WithIncludeNamespaces(gen1Ns).
-		WithKeepOriginalBody(true).
+		WithKeepOriginalBody(false).
 		WithHTTPOutput(testutils.HTTPHost(backendGen1.Host()), testutils.HTTPPort(backendGen1.Port())).
 		Build()
 
-	pipelineWithoutKeepOriginalBody := testutils.NewLogPipelineBuilder().
+	pipelineKeepOriginalBody := testutils.NewLogPipelineBuilder().
 		WithName(pipelineWithoutKeepOriginalBodyName).
 		WithApplicationInput(true).
 		WithIncludeNamespaces(gen2Ns).
-		WithKeepOriginalBody(false).
+		WithKeepOriginalBody(true).
 		WithHTTPOutput(testutils.HTTPHost(backendGen2.Host()), testutils.HTTPPort(backendGen2.Port())).
 		Build()
 
@@ -162,16 +234,36 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineWithoutKeepOriginalBodyName)
 
 	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backendGen1ExportURL, gen1Ns)
+
+	// Scenario [keepOriginalBody=false with JSON logs]: Ship `JSON` Logs without original body shipped to Backend1
 	assert.DataConsistentlyMatching(suite.ProxyClient, backendGen1ExportURL, HaveFlatFluentBitLogs(
-		HaveEach(
-			HaveLogBody(Not(BeEmpty())),
-		),
+		ContainElement(SatisfyAll(
+			HaveLogRecordAttributes(HaveKeyWithValue("name", "b")),
+			HaveLogBody(BeEmpty()),
+		)),
+	))
+
+	// Scenario [keepOriginalBody=false with Plain logs]: Ship `Plain` Logs with original body shipped to Backend1
+	assert.DataConsistentlyMatching(suite.ProxyClient, backendGen1ExportURL, HaveFlatFluentBitLogs(
+		ContainElement(SatisfyAll(
+			HaveLogBody(HavePrefix("name=d")),
+		)),
 	))
 
 	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backendGen2ExportURL, gen2Ns)
+
+	// Scenario [keepOriginalBody=true with JSON logs]: Ship `JSON` Logs with original body shipped to Backend2
 	assert.DataConsistentlyMatching(suite.ProxyClient, backendGen2ExportURL, HaveFlatFluentBitLogs(
-		HaveEach(
-			HaveLogBody(BeEmpty()),
-		),
+		ContainElement(SatisfyAll(
+			HaveLogRecordAttributes(HaveKeyWithValue("name", "b")),
+			HaveLogBody(Not(BeEmpty())),
+		)),
+	))
+
+	// Scenario [keepOriginalBody=false with Plain logs]: Ship `Plain` Logs with original body shipped to Backend2
+	assert.DataConsistentlyMatching(suite.ProxyClient, backendGen2ExportURL, HaveFlatFluentBitLogs(
+		ContainElement(SatisfyAll(
+			HaveLogBody(HavePrefix("name=d")),
+		)),
 	))
 }
