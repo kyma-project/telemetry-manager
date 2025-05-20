@@ -325,7 +325,7 @@ jobs:
       - name: Run tests experimental
         if : ${{ matrix.labels.experimental }}
         run: |
-          go test -v -timeout=0 ./test/e2e/logs/... -- -labels=${{ matrix.labels.name }},experimental
+          go test -v -timeout=0 ./test/e2e-migrated/logs/... -- -labels=${{ matrix.labels.name }},experimental
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"

@@ -166,13 +166,13 @@ func RegisterTestCase(t *testing.T, labels ...string) {
 
 	// Skip test if it contains "skipped" label
 	if _, exists := labelSet[LabelSkip]; exists {
-		t.Skipf("Skipping test: label %s is set", LabelSkip)
+		t.Skip()
 	}
 
 	// Skip test if it doesn't contain at least one required label
 	for _, requiredLabel := range requiredLabels {
 		if _, exists := labelSet[requiredLabel]; !exists {
-			t.Skipf("Skipping test: label mismatch. Required: %s, Provided: %s", requiredLabels, labels)
+			t.Skip()
 		}
 	}
 }
