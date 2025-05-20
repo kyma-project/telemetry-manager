@@ -86,7 +86,6 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 
 			gatewayMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.LogGatewayMetricsService.Namespace, kitkyma.LogGatewayMetricsService.Name, "metrics", ports.Metrics)
 			assert.EmitsOTelCollectorMetrics(suite.ProxyClient, gatewayMetricsURL)
-
 		})
 	}
 }
@@ -124,5 +123,4 @@ func TestMetricsEndpoint_FluentBit(t *testing.T) {
 
 	fluentBitMetricsUrl := suite.ProxyClient.ProxyURLForService(kitkyma.FluentBitMetricsService.Namespace, kitkyma.FluentBitMetricsService.Name, "api/v1/metrics/prometheus", fbPorts.HTTP)
 	assert.EmitsFluentBitMetrics(suite.ProxyClient, fluentBitMetricsUrl)
-
 }
