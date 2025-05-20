@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
 	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"k8s.io/apimachinery/pkg/types"
+
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
 )
 
 type OTelAgentProber struct {
