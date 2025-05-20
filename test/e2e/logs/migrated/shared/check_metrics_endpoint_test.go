@@ -8,7 +8,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
+	fbPorts "github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -121,6 +121,6 @@ func TestMetricsEndpoint_FluentBit(t *testing.T) {
 	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 	assert.LogPipelineUnsupportedMode(t.Context(), suite.K8sClient, pipelineName, false)
 
-	fluentBitMetricsUrl := suite.ProxyClient.ProxyURLForService(kitkyma.FluentBitMetricsService.Namespace, kitkyma.FluentBitMetricsService.Name, "api/v1/metrics/prometheus", ports.HTTP)
+	fluentBitMetricsUrl := suite.ProxyClient.ProxyURLForService(kitkyma.FluentBitMetricsService.Namespace, kitkyma.FluentBitMetricsService.Name, "api/v1/metrics/prometheus", fbPorts.HTTP)
 	assert.EmitsFluentBitMetrics(suite.ProxyClient, fluentBitMetricsUrl)
 }
