@@ -2,11 +2,11 @@ package otel
 
 import (
 	"context"
-	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
 type EndpointValidator interface {
@@ -22,7 +22,7 @@ type SecretRefValidator interface {
 }
 
 type Validator struct {
-	PipelineLock PipelineLock
+	PipelineLock       PipelineLock
 	EndpointValidator  EndpointValidator
 	TLSCertValidator   TLSCertValidator
 	SecretRefValidator SecretRefValidator

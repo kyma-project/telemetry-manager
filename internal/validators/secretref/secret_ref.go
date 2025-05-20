@@ -43,6 +43,7 @@ func (v *Validator) ValidateLogPipeline(ctx context.Context, pipeline *telemetry
 	if pipeline.Spec.Output.OTLP != nil {
 		return v.validate(ctx, getSecretRefsInOTLPOutput(pipeline.Spec.Output.OTLP))
 	}
+
 	return v.validate(ctx, getSecretRefsLogPipeline(pipeline))
 }
 
