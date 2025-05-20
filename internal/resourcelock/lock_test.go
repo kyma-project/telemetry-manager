@@ -100,6 +100,7 @@ func Test_new(t *testing.T) {
 		maxOwners int
 		suffix    string
 	}
+
 	tests := []struct {
 		name string
 		args args
