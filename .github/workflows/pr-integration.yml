@@ -54,8 +54,8 @@ jobs:
       fail-fast: false
       matrix:
         ginkgo-labels:
-          - logs-fluentbit
-          - logs-otel
+          - logs-fluentbit # remove
+          - logs-otel # remove
           - "metrics && set_a"
           - "metrics && set_b"
           - "metrics && set_c"
@@ -92,8 +92,8 @@ jobs:
       fail-fast: false
       matrix:
         ginkgo-labels:
-          - logs-fluentbit
-          - logs-otel
+          - logs-fluentbit # remove
+          - logs-otel # remove
           - metrics
           - traces
     runs-on: ubuntu-latest
@@ -189,7 +189,7 @@ jobs:
       fail-fast: false
       matrix:
         signal-type:
-          - logs
+          - logs # remove
           - metrics
           - traces
         scenario:
@@ -243,7 +243,7 @@ jobs:
       fail-fast: false
       matrix:
         signal-type:
-          - logs
+          - logs # remove
           - metrics
           - traces
         scenario:
@@ -289,3 +289,130 @@ jobs:
         with:
           failure: failure()
           job-name: ${{ github.job }}-${{ matrix.signal-type }}-${{ matrix.scenario }}
+
+  e2e-migrated:
+    needs: setup
+    strategy:
+      fail-fast: false
+      matrix:
+        labels:
+          - fluent-bit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Prepare Test
+        uses: "./.github/template/prepare-test"
+        with:
+          release: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy Test Prerequisites
+        uses: "./.github/template/deploy-test-prerequisites"
+
+      - name: Run tests
+        run: |
+          go test -v -timeout=0 ./test/e2e/logs/... -- -labels=${{ matrix.labels }}
+
+      - name: Finalize Test
+        uses: "./.github/template/finalize-test"
+        if: success() || failure()
+        with:
+          failure: failure()
+          job-name: ${{ github.job }}-${{ matrix.labels }}
+
+  e2e-migrated-experimental:
+    needs: setup
+    strategy:
+      fail-fast: false
+      matrix:
+        labels:
+          - fluent-bit
+          - log-agent
+          - log-gateway
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Prepare test
+        uses: "./.github/template/prepare-test"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy Test Prerequisites
+        uses: "./.github/template/deploy-test-prerequisites"
+
+      - name: Run tests
+        run: go test -v -timeout=0 ./test/e2e/logs/... -- -labels=${{ matrix.labels }}
+
+      - name: Finalize test
+        uses: "./.github/template/finalize-test"
+        if: success() || failure()
+        with:
+          failure: failure()
+          job-name: ${{ github.job }}-${{ matrix.labels }}
+
+  e2e-migrated-max-pipeline:
+    needs: setup
+    strategy:
+      fail-fast: false
+      matrix:
+        labels:
+          - max-pipeline-fluent-bit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Prepare test
+        uses: "./.github/template/prepare-test"
+        with:
+          release: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy Test Prerequisites
+        uses: "./.github/template/deploy-test-prerequisites"
+
+      - name: Run tests
+        run: go test -v -timeout=0 ./test/e2e/logs/... -- -labels=${{ matrix.labels }}
+
+      - name: Finalize test
+        uses: "./.github/template/finalize-test"
+        if: success() || failure()
+        with:
+          failure: failure()
+          job-name: ${{ github.job }}-${{ matrix.labels }}
+
+  e2e-migrated-experimental-max-pipeline:
+    needs: setup
+    strategy:
+      fail-fast: false
+      matrix:
+        labels:
+          - max-pipeline-fluent-bit
+          - max-pipeline
+          - max-pipeline-otel
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Prepare test
+        uses: "./.github/template/prepare-test"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy Test Prerequisites
+        uses: "./.github/template/deploy-test-prerequisites"
+
+      - name: Run tests
+        run: go test -v -timeout=0 ./test/e2e/logs/... -- -labels=${{ matrix.labels }}
+
+      - name: Finalize test
+        uses: "./.github/template/finalize-test"
+        if: success() || failure()
+        with:
+          failure: failure()
+          job-name: ${{ github.job }}-${{ matrix.labels }}
