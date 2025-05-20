@@ -9,16 +9,16 @@ bdba:
 mend:
   language: golang-mod
   exclude:
-    - "**/mocks/**"
-    - "**/stubs/**"
-    - "**/test/**"
-    - "**/*_test.go"
+    - '**/mocks/**'
+    - '**/stubs/**'
+    - '**/test/**'
+    - '**/*_test.go'
     - docs/**
 checkmarx-one:
   preset: go-default
   exclude:
-    - "**/mocks/**"
-    - "**/stubs/**"
-    - "**/test/**"
-    - "**/*_test.go"
+    - '**/mocks/**'
+    - '**/stubs/**'
+    - '**/test/**'
+    - '**/*_test.go'
     - docs/**
