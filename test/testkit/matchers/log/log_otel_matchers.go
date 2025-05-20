@@ -54,7 +54,7 @@ func HaveObservedTimestamp(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(fl FlatLogOtel) string { return fl.ObservedTimestamp }, matcher)
 }
 
-func HaveOtelTimestamp(matcher types.GomegaMatcher) types.GomegaMatcher {
+func HaveOTelTimestamp(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(fl FlatLogOtel) string { return fl.Timestamp }, matcher)
 }
 

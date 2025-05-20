@@ -107,12 +107,12 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 
 	t.Log("Attempting to create the 6th pipeline (FluentBit)")
 	require.NoError(t, kitk8s.CreateObjects(t.Context(), suite.K8sClient, &additionalFBPipeline))
-	assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, additionalFBPipeline.GetName(), metav1.Condition{
+	assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, additionalFBPipeline.GetName(), metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonMaxPipelinesExceeded,
 	})
-	assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, additionalFBPipeline.GetName(), metav1.Condition{
+	assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, additionalFBPipeline.GetName(), metav1.Condition{
 		Type:   conditions.TypeFlowHealthy,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonSelfMonConfigNotGenerated,
@@ -122,16 +122,16 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 
 	deletePipeline := pipelines[0]
 	require.NoError(t, kitk8s.DeleteObjects(t.Context(), suite.K8sClient, deletePipeline))
-	assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, additionalFBPipeline.GetName())
+	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, additionalFBPipeline.GetName())
 
 	t.Log("Attempting to create the 6th pipeline (OTel)")
 	require.NoError(t, kitk8s.CreateObjects(t.Context(), suite.K8sClient, &additionalOTelPipeline))
-	assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, additionalOTelPipeline.GetName(), metav1.Condition{
+	assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, additionalOTelPipeline.GetName(), metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonMaxPipelinesExceeded,
 	})
-	assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, additionalOTelPipeline.GetName(), metav1.Condition{
+	assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, additionalOTelPipeline.GetName(), metav1.Condition{
 		Type:   conditions.TypeFlowHealthy,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonSelfMonConfigNotGenerated,
@@ -237,12 +237,12 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 
 			t.Log("Attempting to create the 6th pipeline")
 			require.NoError(t, kitk8s.CreateObjects(t.Context(), suite.K8sClient, &additionalPipeline))
-			assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, additionalPipeline.GetName(), metav1.Condition{
+			assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, additionalPipeline.GetName(), metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonMaxPipelinesExceeded,
 			})
-			assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, additionalPipeline.GetName(), metav1.Condition{
+			assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, additionalPipeline.GetName(), metav1.Condition{
 				Type:   conditions.TypeFlowHealthy,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonSelfMonConfigNotGenerated,
@@ -317,12 +317,12 @@ func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
 
 	t.Log("Attempting to create the 6th pipeline")
 	require.NoError(t, kitk8s.CreateObjects(t.Context(), suite.K8sClient, &additionalPipeline))
-	assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, additionalPipeline.GetName(), metav1.Condition{
+	assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, additionalPipeline.GetName(), metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonMaxPipelinesExceeded,
 	})
-	assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, additionalPipeline.GetName(), metav1.Condition{
+	assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, additionalPipeline.GetName(), metav1.Condition{
 		Type:   conditions.TypeFlowHealthy,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonSelfMonConfigNotGenerated,

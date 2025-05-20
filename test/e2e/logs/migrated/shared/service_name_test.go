@@ -121,15 +121,15 @@ func TestServiceName_OTel(t *testing.T) {
 			})
 			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
 
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.LogGatewayName)
+			assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
 
 			if tc.expectAgent {
-				assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.LogAgentName)
+				assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
 			}
 
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.LogGatewayName)
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, backend.NamespacedName())
-			assert.OTelLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+			assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
+			assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
+			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, genNs)
 
 			verifyServiceNameAttr := func(givenPodPrefix, expectedServiceName string) {

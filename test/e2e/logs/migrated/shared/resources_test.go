@@ -85,7 +85,7 @@ func TestResources_OTel(t *testing.T) {
 			assert.ResourcesExist(t.Context(), suite.K8sClient, tc.resources...)
 			// FIXME: Currently failing (resources are not deleted when pipeline becomes non-reconcilable)
 			// When pipeline becomes non-reconcilable...
-			// Expect(suite.K8sClient.Delete(suite.Ctx, secret.K8sObject())).Should(Succeed())
+			// Expect(suite.K8sClient.Delete(t.Context(), secret.K8sObject())).Should(Succeed())
 			// assert.ResourcesNotExist(t.Context(), suite.K8sClient, tc.resources...)
 		})
 	}
@@ -136,6 +136,6 @@ func TestResources_FluentBit(t *testing.T) {
 	assert.ResourcesExist(t.Context(), suite.K8sClient, reources...)
 
 	// When pipeline becomes non-reconcilable...
-	Expect(suite.K8sClient.Delete(suite.Ctx, secret.K8sObject())).Should(Succeed())
+	Expect(suite.K8sClient.Delete(t.Context(), secret.K8sObject())).Should(Succeed())
 	assert.ResourcesNotExist(t.Context(), suite.K8sClient, reources...)
 }

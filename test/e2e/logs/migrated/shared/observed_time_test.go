@@ -21,7 +21,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestObservedTime(t *testing.T) {
+func TestObservedTime_OTel(t *testing.T) {
 	tests := []struct {
 		label               string
 		inputBuilder        func(includeNs string) telemetryv1alpha1.LogPipelineInput
@@ -82,14 +82,14 @@ func TestObservedTime(t *testing.T) {
 			})
 			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
 
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.LogGatewayName)
-			assert.OTelLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, backend.NamespacedName())
+			assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
+			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
+			assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
 
 			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, genNs)
 			assert.DataConsistentlyMatching(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(
 				HaveEach(SatisfyAll(
-					HaveOtelTimestamp(Not(BeEmpty())),
+					HaveOTelTimestamp(Not(BeEmpty())),
 					HaveObservedTimestamp(Not(Equal("1970-01-01 00:00:00 +0000 UTC"))),
 				)),
 			))

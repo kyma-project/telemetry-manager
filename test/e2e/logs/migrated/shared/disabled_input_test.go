@@ -53,7 +53,7 @@ func TestDisabledInput_OTel(t *testing.T) {
 
 	Eventually(func(g Gomega) {
 		var daemonSet appsv1.DaemonSet
-		err := suite.K8sClient.Get(suite.Ctx, kitkyma.LogAgentName, &daemonSet)
+		err := suite.K8sClient.Get(t.Context(), kitkyma.LogAgentName, &daemonSet)
 		g.Expect(apierrors.IsNotFound(err)).To(BeTrue(), "Log agent DaemonSet must not exist")
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
@@ -89,7 +89,7 @@ func TestDisabledInput_FluentBit(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
 
-	assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
+	assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineName, metav1.Condition{
 		Type:   conditions.TypeAgentHealthy,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonAgentNotReady,
@@ -97,7 +97,7 @@ func TestDisabledInput_FluentBit(t *testing.T) {
 
 	Eventually(func(g Gomega) {
 		var daemonSet appsv1.DaemonSet
-		err := suite.K8sClient.Get(suite.Ctx, kitkyma.FluentBitDaemonSetName, &daemonSet)
+		err := suite.K8sClient.Get(t.Context(), kitkyma.FluentBitDaemonSetName, &daemonSet)
 		g.Expect(apierrors.IsNotFound(err)).To(BeTrue(), "Fluent Bit DaemonSet must not exist")
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }

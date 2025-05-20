@@ -62,13 +62,13 @@ func TestAttributesParser(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
 
-	assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.LogAgentName)
-	assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})
-	assert.OTelLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
+	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})
+	assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 	assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, genNs)
 
 	assert.DataEventuallyMatching(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(ContainElement(SatisfyAll(
-		HaveOtelTimestamp(Not(BeEmpty())),
+		HaveOTelTimestamp(Not(BeEmpty())),
 		HaveObservedTimestamp(Not(BeEmpty())),
 		HaveTraceId(Not(BeEmpty())),
 		HaveSpanId(Not(BeEmpty())),
@@ -76,7 +76,7 @@ func TestAttributesParser(t *testing.T) {
 	))))
 
 	assert.DataEventuallyMatching(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(ContainElement(SatisfyAll(
-		HaveOtelTimestamp(Not(BeEmpty())),
+		HaveOTelTimestamp(Not(BeEmpty())),
 		HaveObservedTimestamp(Not(BeEmpty())),
 		HaveSpanId(Not(BeEmpty())),
 		HaveTraceId(Equal("80e1afed08e019fc1110464cfa66635c")),
@@ -84,7 +84,7 @@ func TestAttributesParser(t *testing.T) {
 
 	assert.DataConsistentlyMatching(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(
 		ContainElement(SatisfyAll(
-			HaveOtelTimestamp(Not(BeEmpty())),
+			HaveOTelTimestamp(Not(BeEmpty())),
 			HaveObservedTimestamp(Not(BeEmpty())),
 			HaveAttributes(Not(HaveKey("trace_id"))),
 			HaveAttributes(Not(HaveKey("span_id"))),
@@ -94,7 +94,7 @@ func TestAttributesParser(t *testing.T) {
 
 	assert.DataConsistentlyMatching(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(
 		ContainElement(SatisfyAll(
-			HaveOtelTimestamp(Not(BeEmpty())),
+			HaveOTelTimestamp(Not(BeEmpty())),
 			HaveObservedTimestamp(Not(BeEmpty())),
 			HaveTraceId(BeEmpty()),
 			HaveSpanId(BeEmpty()),
