@@ -3,8 +3,6 @@ apiVersion: k3d.io/v1alpha5
 kind: Simple
 metadata:
   name: kyma
-image: europe-docker.pkg.dev/kyma-project/prod/external/rancher/k3s:v1.31.7-k3s1 # refers to the image used by k3d
-
 servers: 1
 agents: 0
 kubeAPI:
@@ -13,7 +11,6 @@ registries:
   create:
     name: kyma
     hostPort: '5001'
-    image: europe-docker.pkg.dev/kyma-project/prod/external/library/registry:2
 
 options:
   k3s:
