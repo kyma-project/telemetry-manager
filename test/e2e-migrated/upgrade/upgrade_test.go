@@ -64,7 +64,7 @@ func TestUpgrade(t *testing.T) {
 		assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
 		assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 
-		assert.LogPipelineUnsupportedMode(t.Context(), suite.K8sClient, pipelineName, false)
+		assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 		assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, generatorNs)
 	})
 }
