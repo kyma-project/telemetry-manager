@@ -92,13 +92,13 @@ func TestContainerSelector_FluentBit(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelFluentBit)
 
 	var (
-		uniquePrefix                  = unique.Prefix()
-		genNs                         = uniquePrefix("gen")
-		backendNs                     = uniquePrefix("backend")
-		container1                    = "gen-container-1"
-		container2                    = "gen-container-2"
-		includeContainer1PipelineName = uniquePrefix("include")
-		excludeContainer1PipelineName = uniquePrefix("exclude")
+		uniquePrefix        = unique.Prefix()
+		genNs               = uniquePrefix("gen")
+		backendNs           = uniquePrefix("backend")
+		container1          = "gen-container-1"
+		container2          = "gen-container-2"
+		includePipelineName = uniquePrefix("include")
+		excludePipelineName = uniquePrefix("exclude")
 	)
 
 	backend1 := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithName("backend-1"))
@@ -107,15 +107,15 @@ func TestContainerSelector_FluentBit(t *testing.T) {
 	backend2 := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithName("backend-2"))
 	backend2ExportURL := backend2.ExportURL(suite.ProxyClient)
 
-	includeContainer1Pipeline := testutils.NewLogPipelineBuilder().
-		WithName(includeContainer1PipelineName).
+	includePipeline := testutils.NewLogPipelineBuilder().
+		WithName(includePipelineName).
 		WithApplicationInput(true).
 		WithIncludeContainers(container1).
 		WithHTTPOutput(testutils.HTTPHost(backend1.Host()), testutils.HTTPPort(backend1.Port())).
 		Build()
 
-	excludeContainer1Pipeline := testutils.NewLogPipelineBuilder().
-		WithName(excludeContainer1PipelineName).
+	excludePipeline := testutils.NewLogPipelineBuilder().
+		WithName(excludePipelineName).
 		WithApplicationInput(true).
 		WithExcludeContainers(container1).
 		WithHTTPOutput(testutils.HTTPHost(backend2.Host()), testutils.HTTPPort(backend2.Port())).
@@ -125,8 +125,8 @@ func TestContainerSelector_FluentBit(t *testing.T) {
 	resources = append(resources,
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
-		&includeContainer1Pipeline,
-		&excludeContainer1Pipeline,
+		&includePipeline,
+		&excludePipeline,
 		loggen.New(genNs).WithName("gen-1").WithContainer(container1).K8sObject(),
 		loggen.New(genNs).WithName("gen-2").WithContainer(container2).K8sObject(),
 	)
@@ -142,8 +142,8 @@ func TestContainerSelector_FluentBit(t *testing.T) {
 	assert.DeploymentReady(t.Context(), suite.K8sClient, backend2.NamespacedName())
 	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 
-	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, includeContainer1PipelineName)
-	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, excludeContainer1PipelineName)
+	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, includePipelineName)
+	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, excludePipelineName)
 
 	// backend1 - only container1 should be delivered
 	assert.FluentBitLogsFromContainerDelivered(suite.ProxyClient, backend1ExportURL, container1)

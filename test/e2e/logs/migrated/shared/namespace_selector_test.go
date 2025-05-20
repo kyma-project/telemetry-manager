@@ -151,12 +151,12 @@ func TestNamespaceSelector_FluentBit(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelFluentBit)
 
 	var (
-		uniquePrefix            = unique.Prefix()
-		gen1Ns                  = uniquePrefix("gen-1")
-		includeGen1PipelineName = uniquePrefix("include")
-		gen2Ns                  = uniquePrefix("gen-2")
-		excludeGen2PipelineName = uniquePrefix("exclude")
-		backendNs               = uniquePrefix("backend")
+		uniquePrefix        = unique.Prefix()
+		gen1Ns              = uniquePrefix("gen-1")
+		includePipelineName = uniquePrefix("include")
+		gen2Ns              = uniquePrefix("gen-2")
+		excludePipelineName = uniquePrefix("exclude")
+		backendNs           = uniquePrefix("backend")
 	)
 
 	backend1 := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithName("backend-1"))
@@ -165,14 +165,14 @@ func TestNamespaceSelector_FluentBit(t *testing.T) {
 	backend2 := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithName("backend-2"))
 	backend2ExportURL := backend2.ExportURL(suite.ProxyClient)
 
-	includeGen1Pipeline := testutils.NewLogPipelineBuilder().
-		WithName(includeGen1PipelineName).
+	includePipeline := testutils.NewLogPipelineBuilder().
+		WithName(includePipelineName).
 		WithApplicationInput(true, testutils.ExtIncludeNamespaces(gen1Ns)).
 		WithHTTPOutput(testutils.HTTPHost(backend1.Host()), testutils.HTTPPort(backend1.Port())).
 		Build()
 
 	excludeGen2Pipeline := testutils.NewLogPipelineBuilder().
-		WithName(excludeGen2PipelineName).
+		WithName(excludePipelineName).
 		WithApplicationInput(true, testutils.ExtExcludeNamespaces(gen2Ns)).
 		WithHTTPOutput(testutils.HTTPHost(backend2.Host()), testutils.HTTPPort(backend2.Port())).
 		Build()
@@ -182,7 +182,7 @@ func TestNamespaceSelector_FluentBit(t *testing.T) {
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(gen1Ns).K8sObject(),
 		kitk8s.NewNamespace(gen2Ns).K8sObject(),
-		&includeGen1Pipeline,
+		&includePipeline,
 		&excludeGen2Pipeline,
 		loggen.New(gen1Ns).K8sObject(),
 		loggen.New(gen2Ns).K8sObject(),
@@ -195,8 +195,8 @@ func TestNamespaceSelector_FluentBit(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
 
-	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, includeGen1PipelineName)
-	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, excludeGen2PipelineName)
+	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, includePipelineName)
+	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, excludePipelineName)
 
 	assert.DeploymentReady(t.Context(), suite.K8sClient, backend1.NamespacedName())
 	assert.DeploymentReady(t.Context(), suite.K8sClient, backend2.NamespacedName())
