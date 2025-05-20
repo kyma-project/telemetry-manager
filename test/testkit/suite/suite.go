@@ -113,8 +113,7 @@ const (
 	LabelMetrics              = "metrics"
 	LabelTelemetry            = "telemetry"
 	LabelMaxPipeline          = "max-pipeline"
-	LabelMaxPipelineAgent     = "max-pipeline-agent"
-	LabelMaxPipelineGateway   = "max-pipeline-gateway"
+	LabelMaxPipelineOTel      = "max-pipeline-otel"
 	LabelMaxPipelineFluentBit = "max-pipeline-fluent-bit"
 
 	// Test "sub-suites" labels

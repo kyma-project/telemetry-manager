@@ -56,7 +56,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 			// OTel pipeline
 			pipeline = testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
-				WithInput(testutils.BuildLogPipelineOTLPInput()).
+				WithInput(testutils.BuildLogPipelineApplicationInput()).
 				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 				Build()
 		}
@@ -72,7 +72,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 
 	additionalOTelPipeline := testutils.NewLogPipelineBuilder().
 		WithName(additionalOTelPipelineName).
-		WithInput(testutils.BuildLogPipelineOTLPInput()).
+		WithInput(testutils.BuildLogPipelineApplicationInput()).
 		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 		Build()
 
@@ -148,116 +148,81 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 }
 
 func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
-	tests := []struct {
-		label               string
-		inputBuilder        func(includeNs string) telemetryv1alpha1.LogPipelineInput
-		logGeneratorBuilder func(ns string) client.Object
-		expectAgent         bool
-	}{
-		{
-			label: suite.LabelMaxPipelineAgent,
-			inputBuilder: func(includeNs string) telemetryv1alpha1.LogPipelineInput {
-				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
-			},
-			logGeneratorBuilder: func(ns string) client.Object {
-				return loggen.New(ns).K8sObject()
-			},
-			expectAgent: true,
-		},
-		{
-			label: suite.LabelMaxPipelineGateway,
-			inputBuilder: func(includeNs string) telemetryv1alpha1.LogPipelineInput {
-				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces())
-			},
-			logGeneratorBuilder: func(ns string) client.Object {
-				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
-			},
-		},
+	suite.RegisterTestCase(t, suite.LabelMaxPipelineOTel)
+
+	var (
+		uniquePrefix           = unique.Prefix()
+		backendNs              = uniquePrefix("backend")
+		genNs                  = uniquePrefix("gen")
+		pipelineBase           = uniquePrefix()
+		additionalPipelineName = fmt.Sprintf("%s-limit-exceeding", pipelineBase)
+		pipelines              []client.Object
+	)
+
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
+	backendExportURL := backend.ExportURL(suite.ProxyClient)
+
+	for i := range maxNumberOfLogPipelines {
+		pipelineName := fmt.Sprintf("%s-%d", pipelineBase, i)
+		pipeline := testutils.NewLogPipelineBuilder().
+			WithName(pipelineName).
+			WithInput(testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(genNs))).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+			Build()
+		pipelines = append(pipelines, &pipeline)
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label)
+	additionalPipeline := testutils.NewLogPipelineBuilder().
+		WithName(additionalPipelineName).
+		WithInput(testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(genNs))).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+		Build()
 
-			var (
-				uniquePrefix           = unique.Prefix(tc.label)
-				backendNs              = uniquePrefix("backend")
-				genNs                  = uniquePrefix("gen")
-				pipelineBase           = uniquePrefix()
-				additionalPipelineName = fmt.Sprintf("%s-limit-exceeding", pipelineBase)
-				pipelines              []client.Object
-			)
-
-			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
-			backendExportURL := backend.ExportURL(suite.ProxyClient)
-
-			for i := range maxNumberOfLogPipelines {
-				pipelineName := fmt.Sprintf("%s-%d", pipelineBase, i)
-				pipeline := testutils.NewLogPipelineBuilder().
-					WithName(pipelineName).
-					WithInput(tc.inputBuilder(genNs)).
-					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
-					Build()
-				pipelines = append(pipelines, &pipeline)
-			}
-
-			additionalPipeline := testutils.NewLogPipelineBuilder().
-				WithName(additionalPipelineName).
-				WithInput(tc.inputBuilder(genNs)).
-				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
-				Build()
-
-			resources := []client.Object{
-				kitk8s.NewNamespace(backendNs).K8sObject(),
-				kitk8s.NewNamespace(genNs).K8sObject(),
-				tc.logGeneratorBuilder(genNs),
-			}
-			resources = append(resources, backend.K8sObjects()...)
-
-			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...))        //nolint:usetesting // Remove ctx from DeleteObjects
-				require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, pipelines[1:]...))    //nolint:usetesting // Remove ctx from DeleteObjects
-				require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, &additionalPipeline)) //nolint:usetesting // Remove ctx from DeleteObjects
-			})
-			require.NoError(t, kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...))
-			require.NoError(t, kitk8s.CreateObjects(t.Context(), suite.K8sClient, pipelines...))
-
-			assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
-			assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
-
-			if tc.expectAgent {
-				assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
-			}
-
-			t.Log("Asserting 5 pipelines are healthy")
-
-			for _, pipeline := range pipelines {
-				assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipeline.GetName())
-			}
-
-			t.Log("Attempting to create the 6th pipeline")
-			require.NoError(t, kitk8s.CreateObjects(t.Context(), suite.K8sClient, &additionalPipeline))
-			assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, additionalPipeline.GetName(), metav1.Condition{
-				Type:   conditions.TypeConfigurationGenerated,
-				Status: metav1.ConditionFalse,
-				Reason: conditions.ReasonMaxPipelinesExceeded,
-			})
-			assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, additionalPipeline.GetName(), metav1.Condition{
-				Type:   conditions.TypeFlowHealthy,
-				Status: metav1.ConditionFalse,
-				Reason: conditions.ReasonSelfMonConfigNotGenerated,
-			})
-
-			t.Log("Verifying logs are delivered for valid pipelines")
-			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, genNs)
-
-			t.Log("Deleting one previously healthy pipeline and expecting the additional pipeline to be healthy")
-
-			deletePipeline := pipelines[0]
-			require.NoError(t, kitk8s.DeleteObjects(t.Context(), suite.K8sClient, deletePipeline))
-			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, additionalPipeline.GetName())
-		})
+	resources := []client.Object{
+		kitk8s.NewNamespace(backendNs).K8sObject(),
+		kitk8s.NewNamespace(genNs).K8sObject(),
+		telemetrygen.NewDeployment(genNs, telemetrygen.SignalTypeLogs).K8sObject(),
 	}
+	resources = append(resources, backend.K8sObjects()...)
+
+	t.Cleanup(func() {
+		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...))        //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, pipelines[1:]...))    //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, &additionalPipeline)) //nolint:usetesting // Remove ctx from DeleteObjects
+	})
+	require.NoError(t, kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...))
+	require.NoError(t, kitk8s.CreateObjects(t.Context(), suite.K8sClient, pipelines...))
+
+	assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
+	assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
+
+	t.Log("Asserting 5 pipelines are healthy")
+
+	for _, pipeline := range pipelines {
+		assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipeline.GetName())
+	}
+
+	t.Log("Attempting to create the 6th pipeline")
+	require.NoError(t, kitk8s.CreateObjects(t.Context(), suite.K8sClient, &additionalPipeline))
+	assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, additionalPipeline.GetName(), metav1.Condition{
+		Type:   conditions.TypeConfigurationGenerated,
+		Status: metav1.ConditionFalse,
+		Reason: conditions.ReasonMaxPipelinesExceeded,
+	})
+	assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, additionalPipeline.GetName(), metav1.Condition{
+		Type:   conditions.TypeFlowHealthy,
+		Status: metav1.ConditionFalse,
+		Reason: conditions.ReasonSelfMonConfigNotGenerated,
+	})
+
+	t.Log("Verifying logs are delivered for valid pipelines")
+	assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, genNs)
+
+	t.Log("Deleting one previously healthy pipeline and expecting the additional pipeline to be healthy")
+
+	deletePipeline := pipelines[0]
+	require.NoError(t, kitk8s.DeleteObjects(t.Context(), suite.K8sClient, deletePipeline))
+	assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, additionalPipeline.GetName())
 }
 
 func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
