@@ -14,27 +14,15 @@ import (
 )
 
 func EmitsFluentBitMetrics(proxyClient *apiserverproxy.Client, metricsURL string) {
-	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(metricsURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(HaveFlatMetricFamilies(ContainElement(HaveName(ContainSubstring("fluentbit"))))))
-
-		err = resp.Body.Close()
-		g.Expect(err).NotTo(HaveOccurred())
-	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+	DataEventuallyMatching(proxyClient, metricsURL, HaveHTTPBody(HaveFlatMetricFamilies(
+		ContainElement(HaveName(ContainSubstring("fluentbit"))),
+	)))
 }
 
 func EmitsOTelCollectorMetrics(proxyClient *apiserverproxy.Client, metricsURL string) {
-	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(metricsURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(HaveFlatMetricFamilies(ContainElement(HaveName(ContainSubstring("otelcol"))))))
-
-		err = resp.Body.Close()
-		g.Expect(err).NotTo(HaveOccurred())
-	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+	DataEventuallyMatching(proxyClient, metricsURL, HaveHTTPBody(HaveFlatMetricFamilies(
+		ContainElement(HaveName(ContainSubstring("otelcol"))),
+	)))
 }
 
 func ManagerEmitsMetric(
