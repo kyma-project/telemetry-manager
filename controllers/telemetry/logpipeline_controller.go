@@ -46,6 +46,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	logpipelinefluentbit "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit"
 	logpipelineotel "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel"
+	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
@@ -78,6 +79,15 @@ type LogPipelineControllerConfig struct {
 }
 
 func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config LogPipelineControllerConfig) (*LogPipelineController, error) {
+	pipelineLock := resourcelock.New(
+		client,
+		types.NamespacedName{
+			Name:      "telemetry-logpipeline-lock",
+			Namespace: config.TelemetryNamespace,
+		},
+		MaxPipelineCount,
+	)
+
 	fluentBitFlowHealthProber, err := prober.NewFluentBitLogPipelineProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
 	if err != nil {
 		return nil, err
@@ -93,12 +103,12 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 		return nil, err
 	}
 
-	fluentBitReconciler, err := configureFluentBitReconciler(client, config, fluentBitFlowHealthProber)
+	fluentBitReconciler, err := configureFluentBitReconciler(client, config, pipelineLock, fluentBitFlowHealthProber)
 	if err != nil {
 		return nil, err
 	}
 
-	otelReconciler, err := configureOtelReconciler(client, config, otelGatewayFlowHealthProber, otelAgentFlowHealthProber)
+	otelReconciler, err := configureOtelReconciler(client, config, pipelineLock, otelGatewayFlowHealthProber, otelAgentFlowHealthProber)
 	if err != nil {
 		return nil, err
 	}
@@ -172,11 +182,12 @@ func (r *LogPipelineController) mapTelemetryChanges(ctx context.Context, object 
 	return requests
 }
 
-func configureFluentBitReconciler(client client.Client, config LogPipelineControllerConfig, flowHealthProber *prober.FluentBitLogPipelineProber) (*logpipelinefluentbit.Reconciler, error) {
+func configureFluentBitReconciler(client client.Client, config LogPipelineControllerConfig, pipelineLock logpipelinefluentbit.PipelineLock, flowHealthProber *prober.FluentBitLogPipelineProber) (*logpipelinefluentbit.Reconciler, error) {
 	pipelineValidator := &logpipelinefluentbit.Validator{
 		EndpointValidator:  &endpoint.Validator{Client: client},
 		TLSCertValidator:   tlscert.New(client),
 		SecretRefValidator: &secretref.Validator{Client: client},
+		PipelineLock:       pipelineLock,
 	}
 
 	fluentBitApplierDeleter := fluentbit.NewFluentBitApplierDeleter(
@@ -201,6 +212,7 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 		&workloadstatus.DaemonSetProber{Client: client},
 		flowHealthProber,
 		istiostatus.NewChecker(discoveryClient),
+		pipelineLock,
 		pipelineValidator,
 		&conditions.ErrorToMessageConverter{})
 
@@ -208,9 +220,9 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 }
 
 //nolint:unparam // error is always nil: An error could be returned after implementing the IstioStatusChecker (TODO)
-func configureOtelReconciler(client client.Client, config LogPipelineControllerConfig, gatewayFlowHealthProber *prober.OTelGatewayProber, agentFlowHealthProber *prober.OTelAgentProber) (*logpipelineotel.Reconciler, error) {
+func configureOtelReconciler(client client.Client, config LogPipelineControllerConfig, pipelineLock logpipelineotel.PipelineLock, gatewayFlowHealthProber *prober.OTelGatewayProber, agentFlowHealthProber *prober.OTelAgentProber) (*logpipelineotel.Reconciler, error) {
 	pipelineValidator := &logpipelineotel.Validator{
-		// TODO: Add validators
+		PipelineLock: pipelineLock,
 	}
 
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)
@@ -238,6 +250,7 @@ func configureOtelReconciler(client client.Client, config LogPipelineControllerC
 		&gateway.Builder{Reader: client},
 		&workloadstatus.DeploymentProber{Client: client},
 		istiostatus.NewChecker(discoveryClient),
+		pipelineLock,
 		pipelineValidator,
 		&conditions.ErrorToMessageConverter{})
 

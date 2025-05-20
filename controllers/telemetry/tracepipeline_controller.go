@@ -53,10 +53,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
-const (
-	maxTracePipelines = 3
-)
-
 // TracePipelineController reconciles a TracePipeline object
 type TracePipelineController struct {
 	client.Client
@@ -84,7 +80,7 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 			Name:      "telemetry-tracepipeline-lock",
 			Namespace: config.TelemetryNamespace,
 		},
-		maxTracePipelines,
+		MaxPipelineCount,
 	)
 
 	pipelineValidator := &tracepipeline.Validator{

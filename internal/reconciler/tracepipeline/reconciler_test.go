@@ -384,7 +384,7 @@ func TestReconcile(t *testing.T) {
 			pipelineValidatorWithStubs,
 			errToMsg)
 		_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
-		require.Error(t, err)
+		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.TracePipeline
 		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
