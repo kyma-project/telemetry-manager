@@ -83,8 +83,8 @@ func (_c *FlowHealthProber_Probe_Call) Run(run func(ctx context.Context, pipelin
 	return _c
 }
 
-func (_c *FlowHealthProber_Probe_Call) Return(oTelPipelineProbeResult prober.OTelGatewayProbeResult, err error) *FlowHealthProber_Probe_Call {
-	_c.Call.Return(oTelPipelineProbeResult, err)
+func (_c *FlowHealthProber_Probe_Call) Return(oTelGatewayProbeResult prober.OTelGatewayProbeResult, err error) *FlowHealthProber_Probe_Call {
+	_c.Call.Return(oTelGatewayProbeResult, err)
 	return _c
 }
 
