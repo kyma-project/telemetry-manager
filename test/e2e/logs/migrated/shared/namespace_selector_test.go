@@ -95,9 +95,11 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 			// to avoid implicitly collecting logs from other namespaces
 			// and potentially overloading the backend.
 			var nsList corev1.NamespaceList
+
 			Expect(suite.K8sClient.List(t.Context(), &nsList)).Should(Succeed())
 
 			excludeNss := []string{gen2Ns}
+
 			for _, namespace := range nsList.Items {
 				if namespace.Name != gen1Ns && namespace.Name != gen2Ns {
 					excludeNss = append(excludeNss, namespace.Name)

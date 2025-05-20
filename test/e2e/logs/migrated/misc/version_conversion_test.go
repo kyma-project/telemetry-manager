@@ -77,10 +77,12 @@ func TestVersionConversion(t *testing.T) {
 	})
 
 	var v1Alpha1AsV1Beta1 telemetryv1beta1.LogPipeline
+
 	Expect(suite.K8sClient.Get(t.Context(), types.NamespacedName{Name: v1Alpha1PipelineName}, &v1Alpha1AsV1Beta1)).To(Succeed())
 	Expect(v1Alpha1AsV1Beta1.Name).To(Equal(v1Alpha1PipelineName))
 
 	var v1Beta1AsV1Alpha1 telemetryv1alpha1.LogPipeline
+
 	Expect(suite.K8sClient.Get(t.Context(), types.NamespacedName{Name: v1Beta1PipelineName}, &v1Beta1AsV1Alpha1)).To(Succeed())
 	Expect(v1Beta1AsV1Alpha1.Name).To(Equal(v1Beta1PipelineName))
 }

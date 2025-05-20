@@ -33,6 +33,7 @@ func (p *Pod) WithLabels(labels map[string]string) *Pod {
 	for k, v := range labels {
 		p.labels[k] = v
 	}
+
 	return p
 }
 
