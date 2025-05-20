@@ -90,7 +90,7 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 	pipelineSync := resourcelock.NewSyncer(
 		client,
 		types.NamespacedName{
-			Name:      "telemetry-metricpipeline-lock",
+			Name:      "telemetry-metricpipeline-sync",
 			Namespace: config.TelemetryNamespace,
 		},
 	)
