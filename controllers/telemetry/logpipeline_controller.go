@@ -221,7 +221,10 @@ type FlowHealthProber interface {
 //nolint:unparam // error is always nil: An error could be returned after implementing the IstioStatusChecker (TODO)
 func configureOtelReconciler(client client.Client, config LogPipelineControllerConfig, flowHealthProber FlowHealthProber, pipelineLock logpipelineotel.PipelineLock) (*logpipelineotel.Reconciler, error) {
 	pipelineValidator := &logpipelineotel.Validator{
-		PipelineLock: pipelineLock,
+		PipelineLock:       pipelineLock,
+		EndpointValidator:  &endpoint.Validator{Client: client},
+		TLSCertValidator:   tlscert.New(client),
+		SecretRefValidator: &secretref.Validator{Client: client},
 	}
 
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)
