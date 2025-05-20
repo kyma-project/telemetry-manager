@@ -14,15 +14,15 @@ import (
 )
 
 func EmitsFluentBitMetrics(proxyClient *apiserverproxy.Client, metricsURL string) {
-	DataEventuallyMatching(proxyClient, metricsURL, HaveHTTPBody(HaveFlatMetricFamilies(
+	DataEventuallyMatching(proxyClient, metricsURL, HaveFlatMetricFamilies(
 		ContainElement(HaveName(ContainSubstring("fluentbit"))),
-	)))
+	))
 }
 
 func EmitsOTelCollectorMetrics(proxyClient *apiserverproxy.Client, metricsURL string) {
-	DataEventuallyMatching(proxyClient, metricsURL, HaveHTTPBody(HaveFlatMetricFamilies(
+	DataEventuallyMatching(proxyClient, metricsURL, HaveFlatMetricFamilies(
 		ContainElement(HaveName(ContainSubstring("otelcol"))),
-	)))
+	))
 }
 
 func ManagerEmitsMetric(
