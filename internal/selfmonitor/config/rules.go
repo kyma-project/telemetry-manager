@@ -18,7 +18,6 @@ const (
 	RuleNameGatewayThrottling      = "GatewayThrottling"
 
 	// OTEL Collector rule names for agents. Note that the actual full names will be prefixed with Log
-	// Note that for agents, there is no throttling rule, as the agent does not have an OTLP receiver
 	RuleNameAgentAllDataDropped  = "AgentAllDataDropped"
 	RuleNameAgentSomeDataDropped = "AgentSomeDataDropped"
 	RuleNameAgentQueueAlmostFull = "AgentQueueAlmostFull"
