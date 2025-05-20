@@ -13,13 +13,13 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober/mocks"
 )
 
-func TestOTelPipelineProber(t *testing.T) {
+func TestLogPipelineProber(t *testing.T) {
 	testCases := []struct {
 		name         string
 		alerts       promv1.AlertsResult
 		alertsErr    error
 		pipelineName string
-		expected     OTelPipelineProbeResult
+		expected     FluentBitLogPipelineProbeResult
 		expectErr    bool
 	}{
 		{
@@ -34,7 +34,7 @@ func TestOTelPipelineProber(t *testing.T) {
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{},
 			},
-			expected: OTelPipelineProbeResult{
+			expected: FluentBitLogPipelineProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					Healthy: true,
 				},
@@ -54,7 +54,7 @@ func TestOTelPipelineProber(t *testing.T) {
 					},
 				},
 			},
-			expected: OTelPipelineProbeResult{
+			expected: FluentBitLogPipelineProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					Healthy: true,
 				},
@@ -67,13 +67,13 @@ func TestOTelPipelineProber(t *testing.T) {
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname": "TraceGatewayAllDataDropped",
+							"alertname": "LogFluentBitAllDataDropped",
 						},
 						State: promv1.AlertStatePending,
 					},
 				},
 			},
-			expected: OTelPipelineProbeResult{
+			expected: FluentBitLogPipelineProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					Healthy: true,
 				},
@@ -86,13 +86,13 @@ func TestOTelPipelineProber(t *testing.T) {
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname": "TraceGatewayAllDataDropped",
+							"alertname": "LogFluentBitAllDataDropped",
 						},
 						State: promv1.AlertStateFiring,
 					},
 				},
 			},
-			expected: OTelPipelineProbeResult{
+			expected: FluentBitLogPipelineProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					AllDataDropped: true,
 					Healthy:        false,
@@ -106,34 +106,14 @@ func TestOTelPipelineProber(t *testing.T) {
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname":     "TraceGatewayAllDataDropped",
+							"alertname":     "LogFluentBitBufferFull",
 							"pipeline_name": "dynatrace",
 						},
 						State: promv1.AlertStateFiring,
 					},
 				},
 			},
-			expected: OTelPipelineProbeResult{
-				PipelineProbeResult: PipelineProbeResult{
-					Healthy: true,
-				},
-			},
-		},
-		{
-			name:         "overlapping pipeline names",
-			pipelineName: "cls",
-			alerts: promv1.AlertsResult{
-				Alerts: []promv1.Alert{
-					{
-						Labels: model.LabelSet{
-							"alertname":     "TraceGatewayAllDataDropped",
-							"pipeline_name": "cls-2",
-						},
-						State: promv1.AlertStateFiring,
-					},
-				},
-			},
-			expected: OTelPipelineProbeResult{
+			expected: FluentBitLogPipelineProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					Healthy: true,
 				},
@@ -153,14 +133,14 @@ func TestOTelPipelineProber(t *testing.T) {
 					},
 					{
 						Labels: model.LabelSet{
-							"alertname":     "LogFluentBitBufferInUse",
+							"alertname":     "TraceGatewayAllDataDropped",
 							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
 					},
 				},
 			},
-			expected: OTelPipelineProbeResult{
+			expected: FluentBitLogPipelineProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					Healthy: true,
 				},
@@ -173,14 +153,14 @@ func TestOTelPipelineProber(t *testing.T) {
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname":     "TraceGatewayAllDataDropped",
+							"alertname":     "LogFluentBitAllDataDropped",
 							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
 					},
 				},
 			},
-			expected: OTelPipelineProbeResult{
+			expected: FluentBitLogPipelineProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					AllDataDropped: true,
 				},
@@ -193,64 +173,62 @@ func TestOTelPipelineProber(t *testing.T) {
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname":     "TraceGatewaySomeDataDropped",
+							"alertname":     "LogFluentBitSomeDataDropped",
 							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
 					},
 				},
 			},
-			expected: OTelPipelineProbeResult{
+			expected: FluentBitLogPipelineProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					SomeDataDropped: true,
 				},
 			},
 		},
 		{
-			name:         "queue almost full alert firing",
+			name:         "no logs delivered firing",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname":     "TraceGatewayQueueAlmostFull",
+							"alertname":     "LogFluentBitNoLogsDelivered",
 							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
 					},
 				},
 			},
-			expected: OTelPipelineProbeResult{
-				QueueAlmostFull: true,
+			expected: FluentBitLogPipelineProbeResult{
+				NoLogsDelivered: true,
 			},
 		},
 		{
-			name:         "throttling alert firing",
+			name:         "buffer in use firing",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname":     "TraceGatewayThrottling",
+							"alertname":     "LogFluentBitBufferInUse",
 							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
 					},
 				},
 			},
-			expected: OTelPipelineProbeResult{
-				Throttling: true,
+			expected: FluentBitLogPipelineProbeResult{
+				BufferFillingUp: true,
 			},
 		},
 		{
-			name:         "healthy",
+			name:         "no alerts firing",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{
-				Alerts: []promv1.Alert{
-					{},
-				},
+				Alerts: []promv1.Alert{},
 			},
-			expected: OTelPipelineProbeResult{
+			expected: FluentBitLogPipelineProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					Healthy: true,
 				},
@@ -260,76 +238,7 @@ func TestOTelPipelineProber(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			sut, err := NewTracePipelineProber(types.NamespacedName{Name: "test"})
-			require.NoError(t, err)
-
-			alertGetterMock := &mocks.AlertGetter{}
-			if tc.alertsErr != nil {
-				alertGetterMock.On("Alerts", mock.Anything).Return(promv1.AlertsResult{}, tc.alertsErr)
-			} else {
-				alertGetterMock.On("Alerts", mock.Anything).Return(tc.alerts, nil)
-			}
-
-			sut.getter = alertGetterMock
-
-			result, err := sut.Probe(t.Context(), tc.pipelineName)
-
-			if tc.expectErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				assert.Equal(t, tc.expected, result)
-			}
-		})
-	}
-}
-
-func TestOTelMetricPipelineProber(t *testing.T) {
-	testCases := []struct {
-		name         string
-		alerts       promv1.AlertsResult
-		alertsErr    error
-		pipelineName string
-		expected     OTelPipelineProbeResult
-		expectErr    bool
-	}{
-		{
-			name:         "throttling alert firing",
-			pipelineName: "cls",
-			alerts: promv1.AlertsResult{
-				Alerts: []promv1.Alert{
-					{
-						Labels: model.LabelSet{
-							"alertname":     "MetricGatewayThrottling",
-							"pipeline_name": "cls",
-						},
-						State: promv1.AlertStateFiring,
-					},
-				},
-			},
-			expected: OTelPipelineProbeResult{
-				Throttling: true,
-			},
-		},
-		{
-			name:         "healthy",
-			pipelineName: "cls",
-			alerts: promv1.AlertsResult{
-				Alerts: []promv1.Alert{
-					{},
-				},
-			},
-			expected: OTelPipelineProbeResult{
-				PipelineProbeResult: PipelineProbeResult{
-					Healthy: true,
-				},
-			},
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			sut, err := NewMetricPipelineProber(types.NamespacedName{Name: "test"})
+			sut, err := NewFluentBitLogPipelineProber(types.NamespacedName{})
 			require.NoError(t, err)
 
 			alertGetterMock := &mocks.AlertGetter{}

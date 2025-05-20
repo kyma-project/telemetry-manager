@@ -10,37 +10,33 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
 )
 
-type LogPipelineProber struct {
+type FluentBitLogPipelineProber struct {
 	getter alertGetter
 }
 
-type LogPipelineProbeResult struct {
+type FluentBitLogPipelineProbeResult struct {
 	PipelineProbeResult
 
 	NoLogsDelivered bool
 	BufferFillingUp bool
 }
 
-func NewOtelLogPipelineProber(selfMonitorName types.NamespacedName) (*OTelPipelineProber, error) {
-	return newOTelPipelineProber(selfMonitorName, config.MatchesLogPipelineRule)
-}
-
-func NewLogPipelineProber(selfMonitorName types.NamespacedName) (*LogPipelineProber, error) {
+func NewFluentBitLogPipelineProber(selfMonitorName types.NamespacedName) (*FluentBitLogPipelineProber, error) {
 	promClient, err := newPrometheusClient(selfMonitorName)
 	if err != nil {
 		return nil, err
 	}
 
-	return &LogPipelineProber{
+	return &FluentBitLogPipelineProber{
 		getter: promClient,
 	}, nil
 }
 
 //nolint:dupl // Keep it duplicated for now, as Fluent Bit logging will be replaced by OpenTelemetry
-func (p *LogPipelineProber) Probe(ctx context.Context, pipelineName string) (LogPipelineProbeResult, error) {
+func (p *FluentBitLogPipelineProber) Probe(ctx context.Context, pipelineName string) (FluentBitLogPipelineProbeResult, error) {
 	alerts, err := retrieveAlerts(ctx, p.getter)
 	if err != nil {
-		return LogPipelineProbeResult{}, fmt.Errorf("failed to retrieve alerts: %w", err)
+		return FluentBitLogPipelineProbeResult{}, fmt.Errorf("failed to retrieve alerts: %w", err)
 	}
 
 	allDropped := p.isFiring(alerts, config.RuleNameLogFluentBitAllDataDropped, pipelineName)
@@ -49,7 +45,7 @@ func (p *LogPipelineProber) Probe(ctx context.Context, pipelineName string) (Log
 	noLogs := p.isFiring(alerts, config.RuleNameLogFluentBitNoLogsDelivered, pipelineName)
 	healthy := !allDropped && !someDropped && !bufferFillingUp && !noLogs
 
-	return LogPipelineProbeResult{
+	return FluentBitLogPipelineProbeResult{
 		PipelineProbeResult: PipelineProbeResult{
 			AllDataDropped:  allDropped,
 			SomeDataDropped: someDropped,
@@ -60,6 +56,6 @@ func (p *LogPipelineProber) Probe(ctx context.Context, pipelineName string) (Log
 	}, nil
 }
 
-func (p *LogPipelineProber) isFiring(alerts []promv1.Alert, ruleName, pipelineName string) bool {
+func (p *FluentBitLogPipelineProber) isFiring(alerts []promv1.Alert, ruleName, pipelineName string) bool {
 	return isFiringWithMatcher(alerts, ruleName, pipelineName, config.MatchesFluentBitLogPipelineRule)
 }

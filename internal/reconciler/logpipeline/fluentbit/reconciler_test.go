@@ -59,7 +59,7 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitLogPipelineProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -97,7 +97,7 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitLogPipelineProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -135,7 +135,7 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitLogPipelineProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -168,7 +168,7 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(workloadstatus.ErrDaemonSetNotFound)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitLogPipelineProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -212,7 +212,7 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitLogPipelineProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -255,7 +255,7 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(workloadstatus.ErrDaemonSetFetching)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitLogPipelineProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -300,7 +300,7 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitLogPipelineProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -362,7 +362,7 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitLogPipelineProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -395,7 +395,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("flow healthy", func(t *testing.T) {
 		tests := []struct {
 			name            string
-			probe           prober.LogPipelineProbeResult
+			probe           prober.FluentBitLogPipelineProbeResult
 			probeErr        error
 			expectedStatus  metav1.ConditionStatus
 			expectedReason  string
@@ -410,7 +410,7 @@ func TestReconcile(t *testing.T) {
 			},
 			{
 				name: "healthy",
-				probe: prober.LogPipelineProbeResult{
+				probe: prober.FluentBitLogPipelineProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
 				},
 				expectedStatus:  metav1.ConditionTrue,
@@ -419,7 +419,7 @@ func TestReconcile(t *testing.T) {
 			},
 			{
 				name: "buffer filling up",
-				probe: prober.LogPipelineProbeResult{
+				probe: prober.FluentBitLogPipelineProbeResult{
 					BufferFillingUp: true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
@@ -428,7 +428,7 @@ func TestReconcile(t *testing.T) {
 			},
 			{
 				name: "no logs delivered",
-				probe: prober.LogPipelineProbeResult{
+				probe: prober.FluentBitLogPipelineProbeResult{
 					NoLogsDelivered: true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
@@ -437,7 +437,7 @@ func TestReconcile(t *testing.T) {
 			},
 			{
 				name: "no logs delivered shadows other problems",
-				probe: prober.LogPipelineProbeResult{
+				probe: prober.FluentBitLogPipelineProbeResult{
 					NoLogsDelivered: true,
 					BufferFillingUp: true,
 				},
@@ -447,7 +447,7 @@ func TestReconcile(t *testing.T) {
 			},
 			{
 				name: "some data dropped",
-				probe: prober.LogPipelineProbeResult{
+				probe: prober.FluentBitLogPipelineProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
 				},
 				expectedStatus:  metav1.ConditionFalse,
@@ -456,7 +456,7 @@ func TestReconcile(t *testing.T) {
 			},
 			{
 				name: "some data dropped shadows other problems",
-				probe: prober.LogPipelineProbeResult{
+				probe: prober.FluentBitLogPipelineProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
 					BufferFillingUp:     true,
 				},
@@ -466,7 +466,7 @@ func TestReconcile(t *testing.T) {
 			},
 			{
 				name: "all data dropped",
-				probe: prober.LogPipelineProbeResult{
+				probe: prober.FluentBitLogPipelineProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
 				},
 				expectedStatus:  metav1.ConditionFalse,
@@ -475,7 +475,7 @@ func TestReconcile(t *testing.T) {
 			},
 			{
 				name: "all data dropped shadows other problems",
-				probe: prober.LogPipelineProbeResult{
+				probe: prober.FluentBitLogPipelineProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{
 						AllDataDropped:  true,
 						SomeDataDropped: true,
@@ -620,7 +620,7 @@ func TestReconcile(t *testing.T) {
 				proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 				flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitLogPipelineProbeResult{}, nil)
 
 				pipelineValidatorWithStubs := &Validator{
 					EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -713,7 +713,7 @@ func TestReconcile(t *testing.T) {
 				proberStub := commonStatusStubs.NewDaemonSetProber(tt.probeErr)
 
 				flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitLogPipelineProbeResult{}, nil)
 
 				pipelineValidatorWithStubs := &Validator{
 					EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -758,7 +758,7 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitLogPipelineProbeResult{}, nil)
 
 		serverErr := errors.New("failed to get secret: server error")
 		pipelineValidatorWithStubs := &Validator{

@@ -59,7 +59,7 @@ type PipelineLock interface {
 }
 
 type FlowHealthProber interface {
-	Probe(ctx context.Context, pipelineName string) (prober.OTelPipelineProbeResult, error)
+	Probe(ctx context.Context, pipelineName string) (prober.OTelGatewayProbeResult, error)
 }
 
 type OverridesHandler interface {

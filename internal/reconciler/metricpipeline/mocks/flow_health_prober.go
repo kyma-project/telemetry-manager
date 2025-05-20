@@ -39,22 +39,22 @@ func (_m *FlowHealthProber) EXPECT() *FlowHealthProber_Expecter {
 }
 
 // Probe provides a mock function for the type FlowHealthProber
-func (_mock *FlowHealthProber) Probe(ctx context.Context, pipelineName string) (prober.OTelPipelineProbeResult, error) {
+func (_mock *FlowHealthProber) Probe(ctx context.Context, pipelineName string) (prober.OTelGatewayProbeResult, error) {
 	ret := _mock.Called(ctx, pipelineName)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Probe")
 	}
 
-	var r0 prober.OTelPipelineProbeResult
+	var r0 prober.OTelGatewayProbeResult
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (prober.OTelPipelineProbeResult, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (prober.OTelGatewayProbeResult, error)); ok {
 		return returnFunc(ctx, pipelineName)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) prober.OTelPipelineProbeResult); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) prober.OTelGatewayProbeResult); ok {
 		r0 = returnFunc(ctx, pipelineName)
 	} else {
-		r0 = ret.Get(0).(prober.OTelPipelineProbeResult)
+		r0 = ret.Get(0).(prober.OTelGatewayProbeResult)
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = returnFunc(ctx, pipelineName)
@@ -83,12 +83,12 @@ func (_c *FlowHealthProber_Probe_Call) Run(run func(ctx context.Context, pipelin
 	return _c
 }
 
-func (_c *FlowHealthProber_Probe_Call) Return(oTelPipelineProbeResult prober.OTelPipelineProbeResult, err error) *FlowHealthProber_Probe_Call {
+func (_c *FlowHealthProber_Probe_Call) Return(oTelPipelineProbeResult prober.OTelGatewayProbeResult, err error) *FlowHealthProber_Probe_Call {
 	_c.Call.Return(oTelPipelineProbeResult, err)
 	return _c
 }
 
-func (_c *FlowHealthProber_Probe_Call) RunAndReturn(run func(ctx context.Context, pipelineName string) (prober.OTelPipelineProbeResult, error)) *FlowHealthProber_Probe_Call {
+func (_c *FlowHealthProber_Probe_Call) RunAndReturn(run func(ctx context.Context, pipelineName string) (prober.OTelGatewayProbeResult, error)) *FlowHealthProber_Probe_Call {
 	_c.Call.Return(run)
 	return _c
 }

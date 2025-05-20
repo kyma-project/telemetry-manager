@@ -148,7 +148,7 @@ func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *
 	return metav1.ConditionFalse, reason
 }
 
-func flowHealthReasonFor(probeResult prober.LogPipelineProbeResult) string {
+func flowHealthReasonFor(probeResult prober.FluentBitLogPipelineProbeResult) string {
 	switch {
 	case probeResult.AllDataDropped:
 		return conditions.ReasonSelfMonAllDataDropped
