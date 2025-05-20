@@ -78,7 +78,7 @@ jobs:
       - name: Run vanilla go tests on latest tag
         shell: bash
         run: |
-          go test -v -timeout=10m -run=TestUpgrade/before_upgrade ./test/e2e-migrated/upgrade...
+          go test -v -timeout=10m -run=TestUpgrade/before_upgrade ./test/e2e-migrated/upgrade/...
 
       - name: Switch back to current revision
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -117,7 +117,7 @@ jobs:
       - name: Run vanilla go tests on current revision
         shell: bash
         run: |
-          go test -v -timeout=10m -run=TestUpgrade/after_upgrade ./test/e2e-migrated/upgrade
+          go test -v -timeout=10m -run=TestUpgrade/after_upgrade ./test/e2e-migrated/upgrade/...
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"
