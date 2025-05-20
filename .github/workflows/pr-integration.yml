@@ -317,7 +317,7 @@ jobs:
       - name: Run tests
         if: ${{ !matrix.labels.experimental }}
         run: |
-          go test -v -timeout=20 ./test/e2e-migrated/logs/... -- -labels=${{ matrix.labels.name }}
+          go test -v -timeout=20m ./test/e2e-migrated/logs/... -- -labels=${{ matrix.labels.name }}
 
       - name: Run tests experimental
         if: ${{ matrix.labels.experimental }}
