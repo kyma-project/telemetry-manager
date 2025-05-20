@@ -98,7 +98,7 @@ lint: $(GOLANGCI_LINT)
 
 .PHONY: crd-docs-gen
 crd-docs-gen: $(TABLE_GEN) manifests## Generates CRD spec into docs folder
-	$(TABLE_GEN) --crd-filename ./config/crd/bases/operator.kyma-project.io_.telemetriesyaml --md-filename ./docs/user/resources/01-telemetry.md
+	$(TABLE_GEN) --crd-filename ./config/crd/bases/operator.kyma-project.io_telemetries.yaml --md-filename ./docs/user/resources/01-telemetry.md
 	$(TABLE_GEN) --crd-filename ./config/crd/bases/telemetry.kyma-project.io_logpipelines.yaml --md-filename ./docs/user/resources/02-logpipeline.md
 	$(TABLE_GEN) --crd-filename ./config/crd/bases/telemetry.kyma-project.io_logparsers.yaml --md-filename ./docs/user/resources/03-logparser.md
 	$(TABLE_GEN) --crd-filename ./config/crd/bases/telemetry.kyma-project.io_tracepipelines.yaml --md-filename ./docs/user/resources/04-tracepipeline.md
