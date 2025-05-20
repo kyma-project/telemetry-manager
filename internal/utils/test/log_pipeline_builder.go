@@ -9,6 +9,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 type LogPipelineBuilder struct {
@@ -29,26 +30,70 @@ type LogPipelineBuilder struct {
 	statusConditions []metav1.Condition
 }
 
-type LogPipelineInputOptions func(selector *telemetryv1alpha1.LogPipelineNamespaceSelector)
-
-func IncludeLogNamespaces(namespaces ...string) LogPipelineInputOptions {
-	return func(selector *telemetryv1alpha1.LogPipelineNamespaceSelector) {
-		selector.Include = namespaces
-		selector.Exclude = nil
+func BuildLogPipelineApplicationInput(opts ...ExtendedNamespaceSelectorOptions) telemetryv1alpha1.LogPipelineInput {
+	input := telemetryv1alpha1.LogPipelineInput{
+		Application: &telemetryv1alpha1.LogPipelineApplicationInput{
+			Enabled:    ptr.To(true),
+			Namespaces: telemetryv1alpha1.LogPipelineNamespaceSelector{},
+		},
 	}
+
+	if len(opts) == 0 {
+		return input
+	}
+
+	for _, opt := range opts {
+		opt(&input.Application.Namespaces)
+	}
+
+	return input
 }
 
-func ExcludeLogNamespaces(namespaces ...string) LogPipelineInputOptions {
-	return func(selector *telemetryv1alpha1.LogPipelineNamespaceSelector) {
-		selector.Include = nil
-		selector.Exclude = namespaces
+func BuildLogPipelineOTLPInput(opts ...NamespaceSelectorOptions) telemetryv1alpha1.LogPipelineInput {
+	input := telemetryv1alpha1.LogPipelineInput{
+		Application: &telemetryv1alpha1.LogPipelineApplicationInput{
+			Enabled: ptr.To(false),
+		},
+		OTLP: &telemetryv1alpha1.OTLPInput{
+			Disabled:   false,
+			Namespaces: &telemetryv1alpha1.NamespaceSelector{},
+		},
 	}
+
+	if len(opts) == 0 {
+		return input
+	}
+
+	for _, opt := range opts {
+		opt(input.OTLP.Namespaces)
+	}
+
+	return input
 }
 
-func SystemLogNamespaces(enable bool) LogPipelineInputOptions {
-	return func(selector *telemetryv1alpha1.LogPipelineNamespaceSelector) {
-		selector.System = enable
+func BuildLogPipelineV1Beta1RuntimeInput() telemetryv1beta1.LogPipelineInput {
+	input := telemetryv1beta1.LogPipelineInput{
+		Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
+			Enabled:    ptr.To(true),
+			Namespaces: telemetryv1beta1.LogPipelineNamespaceSelector{},
+		},
 	}
+
+	return input
+}
+
+func BuildLogPipelineV1Beta1OTLPInput() telemetryv1beta1.LogPipelineInput {
+	input := telemetryv1beta1.LogPipelineInput{
+		Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
+			Enabled: ptr.To(false),
+		},
+		OTLP: &telemetryv1beta1.OTLPInput{
+			Disabled:   false,
+			Namespaces: &telemetryv1beta1.NamespaceSelector{},
+		},
+	}
+
+	return input
 }
 
 func NewLogPipelineBuilder() *LogPipelineBuilder {
@@ -72,42 +117,29 @@ func (b *LogPipelineBuilder) WithFinalizer(finalizer string) *LogPipelineBuilder
 	return b
 }
 
-func (b *LogPipelineBuilder) WithApplicationInput(enabled bool, opts ...LogPipelineInputOptions) *LogPipelineBuilder {
-	if b.input.Application == nil {
-		b.input.Application = &telemetryv1alpha1.LogPipelineApplicationInput{}
-	}
+func (b *LogPipelineBuilder) WithInput(input telemetryv1alpha1.LogPipelineInput) *LogPipelineBuilder {
+	b.input = input
+	return b
+}
 
-	b.input.Application.Enabled = ptr.To(enabled)
-
-	if len(opts) == 0 {
-		return b
-	}
-
-	for _, opt := range opts {
-		opt(&b.input.Application.Namespaces)
-	}
+func (b *LogPipelineBuilder) WithOutput(output telemetryv1alpha1.LogPipelineOutput) *LogPipelineBuilder {
+	b.httpOutput = output.HTTP
+	b.customOutput = output.Custom
+	b.otlpOutput = output.OTLP
 
 	return b
 }
 
-func (b *LogPipelineBuilder) WithOTLPInput(enabled bool, opts ...InputOptions) *LogPipelineBuilder {
-	if b.input.OTLP == nil {
-		b.input.OTLP = &telemetryv1alpha1.OTLPInput{}
-	}
+func (b *LogPipelineBuilder) WithApplicationInput(enabled bool, opts ...ExtendedNamespaceSelectorOptions) *LogPipelineBuilder {
+	b.input = BuildLogPipelineApplicationInput(opts...)
+	b.input.Application.Enabled = ptr.To(enabled)
 
+	return b
+}
+
+func (b *LogPipelineBuilder) WithOTLPInput(enabled bool, opts ...NamespaceSelectorOptions) *LogPipelineBuilder {
+	b.input = BuildLogPipelineOTLPInput(opts...)
 	b.input.OTLP.Disabled = !enabled
-
-	if len(opts) == 0 {
-		return b
-	}
-
-	if b.input.OTLP.Namespaces == nil {
-		b.input.OTLP.Namespaces = &telemetryv1alpha1.NamespaceSelector{}
-	}
-
-	for _, opt := range opts {
-		opt(b.input.OTLP.Namespaces)
-	}
 
 	return b
 }
