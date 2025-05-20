@@ -75,10 +75,11 @@ jobs:
         run: |
           bin/ginkgo run --junit-report=junit-report-latest-version.xml --tags e2e --flake-attempts=5 --label-filter="upgrade || operational" -v -r test/e2e
 
-      - name: Run vanilla go tests on latest tag
-        shell: bash
-        run: |
-          go test -v -timeout=10m -run=TestUpgrade/before_upgrade ./test/e2e-migrated/upgrade/...
+      # TODO: Uncomment after 1.41 is released
+      # - name: Run vanilla go tests on latest tag
+      #   shell: bash
+      #   run: |
+      #     go test -v -timeout=10m -run=TestUpgrade/before_upgrade ./test/e2e-migrated/upgrade/...
 
       - name: Switch back to current revision
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -114,10 +115,11 @@ jobs:
           make install-tools # delete after the tools via go modules are released
           bin/ginkgo run --junit-report=junit-report-current-version.xml --tags e2e --flake-attempts=5 --label-filter="upgrade" -v -r test/e2e
 
-      - name: Run vanilla go tests on current revision
-        shell: bash
-        run: |
-          go test -v -timeout=10m -run=TestUpgrade/after_upgrade ./test/e2e-migrated/upgrade/...
+      # TODO: Uncomment after 1.41 is released
+      # - name: Run vanilla go tests on current revision
+      #   shell: bash
+      #   run: |
+      #     go test -v -timeout=10m -run=TestUpgrade/after_upgrade ./test/e2e-migrated/upgrade/...
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"
