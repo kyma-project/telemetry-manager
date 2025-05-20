@@ -10,6 +10,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
 )
 
+// OTelAgentProber is a prober for OTel Agent
 type OTelAgentProber struct {
 	getter  alertGetter
 	matcher matcherFunc
