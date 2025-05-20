@@ -25,12 +25,13 @@ func TestCustomOutput(t *testing.T) {
 	var (
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
-		mockNs       = uniquePrefix()
+		genNs        = uniquePrefix("gen")
+		backendNs    = uniquePrefix("backend")
 	)
 
-	backend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsFluentBit)
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
 	backendExportURL := backend.ExportURL(suite.ProxyClient)
-	logProducer := loggen.New(mockNs)
+	logProducer := loggen.New(genNs)
 	customOutputTemplate := fmt.Sprintf(`
 	name   http
 	port   %d
@@ -42,7 +43,8 @@ func TestCustomOutput(t *testing.T) {
 		Build()
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(mockNs).K8sObject(),
+		kitk8s.NewNamespace(backendNs).K8sObject(),
+		kitk8s.NewNamespace(genNs).K8sObject(),
 		logProducer.K8sObject(),
 		&pipeline,
 	}

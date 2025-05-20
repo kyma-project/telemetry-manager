@@ -8,7 +8,6 @@ import (
 
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -29,12 +28,13 @@ func TestKeepAnnotations(t *testing.T) {
 	var (
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
-		mockNs       = uniquePrefix()
+		genNs        = uniquePrefix("gen")
+		backendNs    = uniquePrefix("backend")
 	)
 
-	backend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsFluentBit)
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
 	backendExportURL := backend.ExportURL(suite.ProxyClient)
-	logProducer := loggen.New(mockNs).WithAnnotations(map[string]string{"release": "v1.0.0"})
+	logProducer := loggen.New(genNs).WithAnnotations(map[string]string{"release": "v1.0.0"})
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithKeepAnnotations(true).
@@ -43,7 +43,8 @@ func TestKeepAnnotations(t *testing.T) {
 		Build()
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(mockNs).K8sObject(),
+		kitk8s.NewNamespace(backendNs).K8sObject(),
+		kitk8s.NewNamespace(genNs).K8sObject(),
 		logProducer.K8sObject(),
 		&pipeline,
 	}
@@ -56,8 +57,8 @@ func TestKeepAnnotations(t *testing.T) {
 
 	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
-	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
-	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
+	assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
+	assert.DeploymentReady(t.Context(), suite.K8sClient, logProducer.NamespacedName())
 
 	assert.DataEventuallyMatching(suite.ProxyClient, backendExportURL, HaveFlatFluentBitLogs(
 		ContainElement(HaveKubernetesAnnotations(HaveKeyWithValue("release", "v1.0.0")))),

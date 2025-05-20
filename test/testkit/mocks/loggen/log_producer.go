@@ -8,6 +8,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 )
 
@@ -77,6 +78,10 @@ func (lp *LogProducer) WithLoad(load Load) *LogProducer {
 func (lp *LogProducer) WithUseJSON() *LogProducer {
 	lp.useJSON = true
 	return lp
+}
+
+func (lp *LogProducer) NamespacedName() types.NamespacedName {
+	return types.NamespacedName{Name: lp.name, Namespace: lp.namespace}
 }
 
 func (lp *LogProducer) K8sObject() *appsv1.Deployment {

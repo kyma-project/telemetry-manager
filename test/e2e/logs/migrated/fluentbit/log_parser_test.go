@@ -6,7 +6,6 @@ import (
 
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -26,7 +25,8 @@ func TestLogParser(t *testing.T) {
 	var (
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
-		mockNs       = uniquePrefix()
+		genNs        = uniquePrefix("gen")
+		backendNs    = uniquePrefix("backend")
 
 		parser = `Format regex
 Regex  ^(?<user>[^ ]*) (?<pass>[^ ]*)$
@@ -35,9 +35,9 @@ Time_Format %d/%b/%Y:%H:%M:%S %z
 Types user:string pass:string`
 	)
 
-	backend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsFluentBit)
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
 	backendExportURL := backend.ExportURL(suite.ProxyClient)
-	logProducer := loggen.New(mockNs).
+	logProducer := loggen.New(genNs).
 		WithAnnotations(map[string]string{"fluentbit.io/parser": "my-regex-parser"})
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
@@ -46,7 +46,8 @@ Types user:string pass:string`
 	logRegexParser := kitk8s.NewLogParser("my-regex-parser", parser)
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(mockNs).K8sObject(),
+		kitk8s.NewNamespace(backendNs).K8sObject(),
+		kitk8s.NewNamespace(genNs).K8sObject(),
 		logProducer.K8sObject(),
 		&pipeline,
 		logRegexParser.K8sObject(),
@@ -60,8 +61,8 @@ Types user:string pass:string`
 
 	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
-	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
-	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
+	assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
+	assert.DeploymentReady(t.Context(), suite.K8sClient, logProducer.NamespacedName())
 
 	assert.DataEventuallyMatching(suite.ProxyClient, backendExportURL, HaveFlatFluentBitLogs(ContainElement(SatisfyAll(
 		HaveLogRecordAttributes(HaveKeyWithValue("user", "foo")),
