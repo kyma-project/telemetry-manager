@@ -13,7 +13,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober/mocks"
 )
 
-func TestTracePipelineProber(t *testing.T) {
+func TestOTelTraceGatewayProber(t *testing.T) {
 	testCases := []struct {
 		name         string
 		alerts       promv1.AlertsResult
@@ -284,7 +284,7 @@ func TestTracePipelineProber(t *testing.T) {
 	}
 }
 
-func TestMetricPipelineProber(t *testing.T) {
+func TestOTelMetricGatewayProber(t *testing.T) {
 	testCases := []struct {
 		name         string
 		alerts       promv1.AlertsResult
@@ -353,7 +353,7 @@ func TestMetricPipelineProber(t *testing.T) {
 	}
 }
 
-func TestOTelLogPipelineProber(t *testing.T) {
+func TestOTelLogGatewayProber(t *testing.T) {
 	testCases := []struct {
 		name         string
 		alerts       promv1.AlertsResult

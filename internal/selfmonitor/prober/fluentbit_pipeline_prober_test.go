@@ -13,7 +13,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober/mocks"
 )
 
-func TestLogPipelineProber(t *testing.T) {
+func TestFluentBitLogPipelineProber(t *testing.T) {
 	testCases := []struct {
 		name         string
 		alerts       promv1.AlertsResult
