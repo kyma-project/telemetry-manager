@@ -78,22 +78,27 @@ type LogPipelineControllerConfig struct {
 }
 
 func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config LogPipelineControllerConfig) (*LogPipelineController, error) {
-	flowHealthProber, err := prober.NewFluentBitLogPipelineProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
+	fluentBitFlowHealthProber, err := prober.NewFluentBitLogPipelineProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
 	if err != nil {
 		return nil, err
 	}
 
-	otelFlowHealthProber, err := prober.NewOTelLogGatewayProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
+	otelGatewayFlowHealthProber, err := prober.NewOTelLogGatewayProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
 	if err != nil {
 		return nil, err
 	}
 
-	fbReconciler, err := configureFluentBitReconciler(client, config, flowHealthProber)
+	otelAgentFlowHealthProber, err := prober.NewOTelLogAgentProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
 	if err != nil {
 		return nil, err
 	}
 
-	otelReconciler, err := configureOtelReconciler(client, config, otelFlowHealthProber)
+	fluentBitReconciler, err := configureFluentBitReconciler(client, config, fluentBitFlowHealthProber)
+	if err != nil {
+		return nil, err
+	}
+
+	otelReconciler, err := configureOtelReconciler(client, config, otelGatewayFlowHealthProber, otelAgentFlowHealthProber)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +106,7 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 	reconciler := logpipeline.New(
 		client,
 		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
-		fbReconciler,
+		fluentBitReconciler,
 		otelReconciler,
 	)
 
@@ -203,7 +208,7 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 }
 
 //nolint:unparam // error is always nil: An error could be returned after implementing the IstioStatusChecker (TODO)
-func configureOtelReconciler(client client.Client, config LogPipelineControllerConfig, flowHealthProber *prober.OTelGatewayProber) (*logpipelineotel.Reconciler, error) {
+func configureOtelReconciler(client client.Client, config LogPipelineControllerConfig, gatewayFlowHealthProber *prober.OTelGatewayProber, agentFlowHealthProber *prober.OTelAgentProber) (*logpipelineotel.Reconciler, error) {
 	pipelineValidator := &logpipelineotel.Validator{
 		// TODO: Add validators
 	}
@@ -224,7 +229,8 @@ func configureOtelReconciler(client client.Client, config LogPipelineControllerC
 		client,
 		config.TelemetryNamespace,
 		config.ModuleVersion,
-		flowHealthProber,
+		gatewayFlowHealthProber,
+		agentFlowHealthProber,
 		agentConfigBuilder,
 		otelcollector.NewLogAgentApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.LogAgentPriorityClassName),
 		&workloadstatus.DaemonSetProber{Client: client},

@@ -71,7 +71,7 @@ func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *
 		return metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated
 	}
 
-	probeResult, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
+	probeResult, err := r.gatewayFlowHealthProber.Probe(ctx, pipeline.Name)
 	if err != nil {
 		logf.FromContext(ctx).Error(err, "Failed to probe flow health")
 		return metav1.ConditionUnknown, conditions.ReasonSelfMonProbingFailed
