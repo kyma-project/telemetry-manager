@@ -5,3 +5,4 @@ images:
     tag: "v1.31.7-k3s1" # used by k3d
   - source: "library/registry@sha256:a3d8aaa63ed8681a604f1dea0aa03f100d5895b6a58ace528858a7b332415373"
     tag: "2" # used by k3d
+
