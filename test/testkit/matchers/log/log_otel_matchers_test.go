@@ -7,7 +7,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/plog"
 )
 
-var flsOtel = []FlatLogOtel{
+var flsOtel = []FlatLogOTel{
 	{
 		LogRecordBody: "Test first log body",
 		ResourceAttributes: map[string]string{

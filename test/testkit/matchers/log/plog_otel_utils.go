@@ -7,12 +7,12 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
 
-// FlatLogOtel holds all needed information about a Otel log record.
+// FlatLogOTel holds all needed information about a Otel log record.
 // Gomega doesn't handle deeply nested data structure very well and generates large, unreadable diffs when paired with the deeply nested structure of plogs.
 //
 // Introducing a go struct with a flat data structure by extracting necessary information from different levels of plogs makes accessing the information easier than using plog.
 // Logs directly and improves the readability of the test output logs.
-type FlatLogOtel struct {
+type FlatLogOTel struct {
 	Name, ScopeName, ScopeVersion                                string
 	ResourceAttributes, ScopeAttributes, Attributes              map[string]string
 	LogRecordBody, ObservedTimestamp, Timestamp, TraceId, SpanId string
@@ -30,8 +30,8 @@ func unmarshalOtelLogs(jsonlMetrics []byte) ([]plog.Logs, error) {
 
 // flattenAllOtelLogs flattens an array of plog.Logs to a slice of FlatLogOtel.
 // It converts the deeply nested plog.Logs data structure to a flat struct, to make it more readable in the test output logs.
-func flattenAllOtelLogs(lds []plog.Logs) []FlatLogOtel {
-	var flatLogs []FlatLogOtel
+func flattenAllOtelLogs(lds []plog.Logs) []FlatLogOTel {
+	var flatLogs []FlatLogOTel
 
 	for _, ld := range lds {
 		flatLogs = append(flatLogs, flattenOtelLogs(ld)...)
@@ -42,8 +42,8 @@ func flattenAllOtelLogs(lds []plog.Logs) []FlatLogOtel {
 
 // flattenOtelLogs converts a single plog.Logs to a slice of FlatLogOtel
 // It takes relevant information from different levels of pdata and puts it into a FlatLogOtel go struct.
-func flattenOtelLogs(ld plog.Logs) []FlatLogOtel {
-	var flatLogs []FlatLogOtel
+func flattenOtelLogs(ld plog.Logs) []FlatLogOTel {
+	var flatLogs []FlatLogOTel
 
 	for i := range ld.ResourceLogs().Len() {
 		resourceLogs := ld.ResourceLogs().At(i)
@@ -51,7 +51,7 @@ func flattenOtelLogs(ld plog.Logs) []FlatLogOtel {
 			scopeLogs := resourceLogs.ScopeLogs().At(j)
 			for k := range scopeLogs.LogRecords().Len() {
 				lr := scopeLogs.LogRecords().At(k)
-				flatLogs = append(flatLogs, FlatLogOtel{
+				flatLogs = append(flatLogs, FlatLogOTel{
 					ResourceAttributes: attributeToMapOtel(resourceLogs.Resource().Attributes()),
 					ScopeName:          scopeLogs.Scope().Name(),
 					ScopeVersion:       scopeLogs.Scope().Version(),
