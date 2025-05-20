@@ -73,7 +73,7 @@ func TestObservedTime_OTel(t *testing.T) {
 				kitk8s.NewNamespace(genNs).K8sObject(),
 				kitk8s.NewNamespace(backendNs).K8sObject(),
 				&pipeline,
-				loggen.New(genNs).K8sObject(),
+				tc.logGeneratorBuilder(genNs),
 			)
 			resources = append(resources, backend.K8sObjects()...)
 
