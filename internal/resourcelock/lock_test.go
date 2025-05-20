@@ -39,7 +39,7 @@ func TestTryAcquireLock(t *testing.T) {
 
 	ctx := t.Context()
 	fakeClient := fake.NewClientBuilder().Build()
-	l := New(fakeClient, lockName, 2)
+	l := NewLocker(fakeClient, lockName, 2)
 
 	err := l.TryAcquireLock(ctx, owner1)
 	require.NoError(t, err)
@@ -73,7 +73,7 @@ func TestIsLockHolder(t *testing.T) {
 
 	ctx := t.Context()
 	fakeClient := fake.NewClientBuilder().Build()
-	l := New(fakeClient, lockName, 2)
+	l := NewLocker(fakeClient, lockName, 2)
 
 	err := l.TryAcquireLock(ctx, owner1)
 	require.NoError(t, err)

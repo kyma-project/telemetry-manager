@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -23,7 +24,11 @@ type Checker struct {
 	maxOwners int
 }
 
-func New(client client.Client, lockName types.NamespacedName, maxOwners int) *Checker {
+func NewLocker(client client.Client, lockName types.NamespacedName, maxOwners int) *Checker {
+	if !strings.HasSuffix(lockName.Name, "-lock") {
+		lockName.Name = fmt.Sprintf("%s-lock", lockName.Name)
+	}
+
 	return &Checker{
 		client:    client,
 		lockName:  lockName,
@@ -32,6 +37,10 @@ func New(client client.Client, lockName types.NamespacedName, maxOwners int) *Ch
 }
 
 func NewSyncer(client client.Client, lockName types.NamespacedName) *Checker {
+	if !strings.HasSuffix(lockName.Name, "-sync") {
+		lockName.Name = fmt.Sprintf("%s-sync", lockName.Name)
+	}
+
 	return &Checker{
 		client:   client,
 		lockName: lockName,
