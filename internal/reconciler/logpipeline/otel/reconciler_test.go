@@ -59,8 +59,11 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(workloadstatus.ErrDeploymentFetching)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHeathProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 		pipelineLock := &mocks.PipelineLock{}
 		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -76,7 +79,8 @@ func TestReconcile(t *testing.T) {
 			fakeClient,
 			telemetryNamespace,
 			moduleVersion,
-			flowHealthProberStub,
+			gatewayFlowHeathProber,
+			agentFlowHealthProber,
 			agentConfigBuilderMock,
 			agentApplierDeleterMock,
 			agentProberStub,
@@ -123,8 +127,11 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(&workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"})
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHeathProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 		pipelineLock := &mocks.PipelineLock{}
 		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -140,7 +147,8 @@ func TestReconcile(t *testing.T) {
 			fakeClient,
 			telemetryNamespace,
 			moduleVersion,
-			flowHealthProberStub,
+			gatewayFlowHeathProber,
+			agentFlowHealthProber,
 			agentConfigBuilderMock,
 			agentApplierDeleterMock,
 			agentProberStub,
@@ -195,8 +203,11 @@ func TestReconcile(t *testing.T) {
 			PipelineLock: pipelineLock,
 		}
 
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHeathProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
@@ -204,7 +215,8 @@ func TestReconcile(t *testing.T) {
 			fakeClient,
 			telemetryNamespace,
 			moduleVersion,
-			flowHealthProberStub,
+			gatewayFlowHeathProber,
+			agentFlowHealthProber,
 			agentConfigBuilderMock,
 			agentApplierDeleterMock,
 			agentProberStub,
@@ -258,8 +270,11 @@ func TestReconcile(t *testing.T) {
 			PipelineLock: pipelineLock,
 		}
 
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHeathProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
@@ -267,7 +282,8 @@ func TestReconcile(t *testing.T) {
 			fakeClient,
 			telemetryNamespace,
 			moduleVersion,
-			flowHealthProberStub,
+			gatewayFlowHeathProber,
+			agentFlowHealthProber,
 			agentConfigBuilderMock,
 			agentApplierDeleterMock,
 			agentProberStub,
@@ -321,8 +337,11 @@ func TestReconcile(t *testing.T) {
 			PipelineLock: pipelineLock,
 		}
 
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHeathProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
@@ -330,7 +349,8 @@ func TestReconcile(t *testing.T) {
 			fakeClient,
 			telemetryNamespace,
 			moduleVersion,
-			flowHealthProberStub,
+			gatewayFlowHeathProber,
+			agentFlowHealthProber,
 			agentConfigBuilderMock,
 			agentApplierDeleterMock,
 			agentProberStub,
@@ -470,8 +490,11 @@ func TestReconcile(t *testing.T) {
 
 				agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-				flowHealthProberStub := &mocks.FlowHealthProber{}
-				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
+				gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
+				gatewayFlowHeathProber.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
+
+				agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
+				agentFlowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 				pipelineLock := &mocks.PipelineLock{}
 				pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -486,7 +509,8 @@ func TestReconcile(t *testing.T) {
 					fakeClient,
 					telemetryNamespace,
 					moduleVersion,
-					flowHealthProberStub,
+					gatewayFlowHeathProber,
+					agentFlowHealthProber,
 					agentConfigBuilderMock,
 					agentApplierDeleterMock,
 					agentProberStub,
@@ -538,8 +562,11 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHeathProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 		pipelineLock := &mocks.PipelineLock{}
 		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -553,7 +580,8 @@ func TestReconcile(t *testing.T) {
 			fakeClient,
 			telemetryNamespace,
 			moduleVersion,
-			flowHealthProberStub,
+			gatewayFlowHeathProber,
+			agentFlowHealthProber,
 			&mocks.AgentConfigBuilder{},
 			agentApplierDeleterMock,
 			agentProberStub,
@@ -600,8 +628,11 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, mock.Anything).Return(prober.OTelGatewayProbeResult{}, nil)
+		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHeathProber.On("Probe", mock.Anything, mock.Anything).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProber.On("Probe", mock.Anything, mock.Anything).Return(prober.OTelAgentProbeResult{}, nil)
 
 		pipelineLock := &mocks.PipelineLock{}
 		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -615,7 +646,8 @@ func TestReconcile(t *testing.T) {
 			fakeClient,
 			telemetryNamespace,
 			moduleVersion,
-			flowHealthProberStub,
+			gatewayFlowHeathProber,
+			agentFlowHealthProber,
 			agentConfigBuilderMock,
 			agentApplierDeleterMock,
 			agentProberStub,
@@ -663,8 +695,11 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, mock.Anything).Return(prober.OTelGatewayProbeResult{}, nil)
+		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHeathProber.On("Probe", mock.Anything, mock.Anything).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProber.On("Probe", mock.Anything, mock.Anything).Return(prober.OTelAgentProbeResult{}, nil)
 
 		pipelineLock := &mocks.PipelineLock{}
 		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -678,7 +713,8 @@ func TestReconcile(t *testing.T) {
 			fakeClient,
 			telemetryNamespace,
 			moduleVersion,
-			flowHealthProberStub,
+			gatewayFlowHeathProber,
+			agentFlowHealthProber,
 			&mocks.AgentConfigBuilder{},
 			agentApplierDeleterMock,
 			agentProberStub,

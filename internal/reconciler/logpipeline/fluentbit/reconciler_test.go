@@ -60,7 +60,7 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitLogPipelineProbeResult{}, nil)
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
