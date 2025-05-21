@@ -36,7 +36,7 @@ func TestEndpointInvalid_OTel(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label, suite.LabelSkip) // FIXME: Currently failing (Endpoint validation not implemented for OTel)
+			suite.RegisterTestCase(t, tc.label) // FIXME: Currently failing (Endpoint validation not implemented for OTel)
 
 			const (
 				endpointKey     = "endpoint"
