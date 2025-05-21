@@ -188,7 +188,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}
 
 	if isLogAgentRequired(pipeline) {
-		if err := r.reconcileLogAgent(ctx, pipeline, reconcilablePipelines); err != nil {
+		if err := r.reconcileLogAgent(ctx, pipeline, reconcilablePipelinesRequiringAgents); err != nil {
 			return fmt.Errorf("failed to reconcile log agent: %w", err)
 		}
 	}
