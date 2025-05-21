@@ -19,7 +19,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
@@ -43,7 +43,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Label(suite.LabelMet
 			objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 			objs = append(objs, kitk8s.NewConfigMap("shoot-info", "kube-system").WithData("shootName", "kyma-telemetry").WithData("provider", "k3d").WithLabel(kitk8s.PersistentLabelName, "true").K8sObject())
 
-			backend := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithName(backendName))
+			backend := kitbackend.New(mockNs, kitbackend.SignalTypeMetrics, kitbackend.WithName(backendName))
 			objs = append(objs, backend.K8sObjects()...)
 			backendURL = backend.ExportURL(suite.ProxyClient)
 

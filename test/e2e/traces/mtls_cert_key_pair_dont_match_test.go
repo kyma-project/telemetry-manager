@@ -13,7 +13,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
@@ -28,13 +28,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		serverCertsDefault, clientCertsDefault, err := testutils.NewCertBuilder(backend.DefaultName, mockNs).Build()
+		serverCertsDefault, clientCertsDefault, err := testutils.NewCertBuilder(kitbackend.DefaultName, mockNs).Build()
 		Expect(err).ToNot(HaveOccurred())
 
-		_, clientCertsCreatedAgain, err := testutils.NewCertBuilder(backend.DefaultName, mockNs).Build()
+		_, clientCertsCreatedAgain, err := testutils.NewCertBuilder(kitbackend.DefaultName, mockNs).Build()
 		Expect(err).ToNot(HaveOccurred())
 
-		backend := backend.New(mockNs, backend.SignalTypeTraces, backend.WithTLS(*serverCertsDefault))
+		backend := kitbackend.New(mockNs, kitbackend.SignalTypeTraces, kitbackend.WithTLS(*serverCertsDefault))
 		objs = append(objs, backend.K8sObjects()...)
 
 		invalidClientCerts := &testutils.ClientCerts{

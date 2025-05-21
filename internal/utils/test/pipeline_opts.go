@@ -168,18 +168,38 @@ func HTTPBasicAuthFromSecret(secretName, secretNamespace, userKey, passwordKey s
 	}
 }
 
-type InputOptions func(selector *telemetryv1alpha1.NamespaceSelector)
+type NamespaceSelectorOptions func(selector *telemetryv1alpha1.NamespaceSelector)
 
-func IncludeNamespaces(namespaces ...string) InputOptions {
+func IncludeNamespaces(namespaces ...string) NamespaceSelectorOptions {
 	return func(selector *telemetryv1alpha1.NamespaceSelector) {
 		selector.Include = namespaces
-		selector.Exclude = nil
 	}
 }
 
-func ExcludeNamespaces(namespaces ...string) InputOptions {
+func ExcludeNamespaces(namespaces ...string) NamespaceSelectorOptions {
 	return func(selector *telemetryv1alpha1.NamespaceSelector) {
-		selector.Include = nil
 		selector.Exclude = namespaces
+	}
+}
+
+// ExtendedNamespaceSelectorOptions unlike NamespaceSelectorOptions, allows to set the System flag
+// Only used in the LogPipeline Application input, and will be deprecated in the future
+type ExtendedNamespaceSelectorOptions func(selector *telemetryv1alpha1.LogPipelineNamespaceSelector)
+
+func ExtIncludeNamespaces(namespaces ...string) ExtendedNamespaceSelectorOptions {
+	return func(selector *telemetryv1alpha1.LogPipelineNamespaceSelector) {
+		selector.Include = namespaces
+	}
+}
+
+func ExtExcludeNamespaces(namespaces ...string) ExtendedNamespaceSelectorOptions {
+	return func(selector *telemetryv1alpha1.LogPipelineNamespaceSelector) {
+		selector.Exclude = namespaces
+	}
+}
+
+func ExtSystemNamespaces(enable bool) ExtendedNamespaceSelectorOptions {
+	return func(selector *telemetryv1alpha1.LogPipelineNamespaceSelector) {
+		selector.System = enable
 	}
 }

@@ -16,7 +16,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/trafficgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -45,7 +45,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 			kitk8s.NewNamespace(app1Ns, kitk8s.WithIstioInjection()).K8sObject(),
 			kitk8s.NewNamespace(app2Ns, kitk8s.WithIstioInjection()).K8sObject())
 
-		backend1 := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithName(backend1Name))
+		backend1 := kitbackend.New(mockNs, kitbackend.SignalTypeMetrics, kitbackend.WithName(backend1Name))
 		backend1ExportURL = backend1.ExportURL(suite.ProxyClient)
 		objs = append(objs, backend1.K8sObjects()...)
 
@@ -57,7 +57,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 			Build()
 		objs = append(objs, &pipelineIncludeApp1Ns)
 
-		backend2 := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithName(backend2Name))
+		backend2 := kitbackend.New(mockNs, kitbackend.SignalTypeMetrics, kitbackend.WithName(backend2Name))
 		backend2ExportURL = backend2.ExportURL(suite.ProxyClient)
 		objs = append(objs, backend2.K8sObjects()...)
 
