@@ -756,7 +756,7 @@ To detect and fix such situations, check the [pipeline status](./resources/05-me
 **Symptom**:
 
 - No metrics arrive at the backend.
-- In the MetricPipeline status, the `TelemetryFlowHealthy` condition has status **AllDataDropped**.
+- In the MetricPipeline status, the `TelemetryFlowHealthy` condition has status **GatewayAllTelemetryDataDropped**.
 
 **Cause**: Incorrect backend endpoint configuration (such as using the wrong authentication credentials) or the backend is unreachable.
 
@@ -771,7 +771,7 @@ To detect and fix such situations, check the [pipeline status](./resources/05-me
 **Symptom**:
 
 - The backend is reachable and the connection is properly configured, but some metrics are refused.
-- In the MetricPipeline status, the `TelemetryFlowHealthy` condition has status **SomeDataDropped**.
+- In the MetricPipeline status, the `TelemetryFlowHealthy` condition has status **GatewaySomeTelemetryDataDropped**.
 
 **Cause**: It can happen due to a variety of reasons - for example, the backend is limiting the ingestion rate.
 
@@ -841,9 +841,9 @@ spec:
 
 ### Gateway Buffer Filling Up
 
-**Symptom**: In the MetricPipeline status, the `TelemetryFlowHealthy` condition has status **BufferFillingUp**.
+**Symptom**: In the MetricPipeline status, the `TelemetryFlowHealthy` condition has status **GatewayBufferFillingUp**.
 
-**Cause**: The backend export rate is too low compared to the gateway ingestion rate.
+**Cause**: The backend ingestion rate rate is too low compared to the gateway export rate.
 
 **Solution**:
 

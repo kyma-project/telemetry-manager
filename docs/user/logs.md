@@ -551,13 +551,13 @@ To detect and fix such situations, check the [pipeline status](./resources/02-lo
 **Symptom**:
 
 - No logs arrive at the backend.
-- In the LogPipeline status, the `TelemetryFlowHealthy` condition has status **AllDataDropped**.
+- In the LogPipeline status, the `TelemetryFlowHealthy` condition has status **GatewayAllTelemetryDataDropped** or **AgentAllTelemetryDataDropped**
 
 **Cause**: Incorrect backend endpoint configuration (such as using the wrong authentication credentials) or the backend is unreachable.
 
 **Solution**:
 
-1. Check the `telemetry-log-gateway` and `telemetry-log-agent` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
+1. Check the `telemetry-log-gateway`  Pod (in case of **GatewayAllTelemetryDataDropped** status) or `telemetry-log-agent` Pod (in case of **AgentAllTelemetryDataDropped** status) for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
 2. Check if the backend is up and reachable.
 3. Fix the errors.
 
@@ -566,21 +566,21 @@ To detect and fix such situations, check the [pipeline status](./resources/02-lo
 **Symptom**:
 
 - The backend is reachable and the connection is properly configured, but some logs are refused.
-- In the LogPipeline status, the `TelemetryFlowHealthy` condition has status **SomeDataDropped**.
+- In the LogPipeline status, the `TelemetryFlowHealthy` condition has status **GatewaySomeTelemetryDataDropped** or **AgentSomeTelemetryDataDropped**.
 
 **Cause**: It can happen due to a variety of reasons - for example, the backend is limiting the ingestion rate.
 
 **Solution**:
 
-1. Check the `telemetry-log-gateway` and `telemetry-log-agent` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`. Also, check your observability backend to investigate potential causes.
-2. If backend is limiting the rate by refusing logs, try the options desribed in [Gateway Buffer Filling Up](#gateway-buffer-filling-up).
+1. Check the `telemetry-log-gateway` Pod (in case of **GatewaySomeTelemetryDataDropped**) or `telemetry-log-agent` Pod (in case of **AgentSomeTelemetryDataDropped**) for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`. Also, check your observability backend to investigate potential causes.
+2. If backend is limiting the rate by refusing logs, try the options desribed in [Buffer Filling Up](#gateway-buffer-filling-up).
 3. Otherwise, take the actions appropriate to the cause indicated in the logs.
 
-### Gateway Buffer Filling Up
+### Buffer Filling Up
 
-**Symptom**: In the LogPipeline status, the `TelemetryFlowHealthy` condition has status **BufferFillingUp**.
+**Symptom**: In the LogPipeline status, the `TelemetryFlowHealthy` condition has status **GatewayBufferFillingUp** or **AgentBufferFillingUp**.
 
-**Cause**: The backend export rate is too low compared to the gateway ingestion rate.
+**Cause**: The backend ingestion rate is too low compared to the gateway/agent export rate.
 
 **Solution**:
 
