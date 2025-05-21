@@ -14,15 +14,15 @@ import (
 
 func BackendDataEventuallyMatches(ctx context.Context, backend *kitbackend.Backend, httpBodyMatcher types.GomegaMatcher) {
 	queryURL := suite.ProxyClient.ProxyURLForService(backend.Namespace(), backend.Name(), kitbackend.QueryPath, kitbackend.QueryPort)
-	DataEventuallyMatches(ctx, queryURL, httpBodyMatcher)
+	HTTPResponseEventuallyMatches(ctx, queryURL, httpBodyMatcher)
 }
 
 func BackendDataConsistentlyMatches(ctx context.Context, backend *kitbackend.Backend, httpBodyMatcher types.GomegaMatcher) {
 	queryURL := suite.ProxyClient.ProxyURLForService(backend.Namespace(), backend.Name(), kitbackend.QueryPath, kitbackend.QueryPort)
-	DataConsistentlyMatches(ctx, queryURL, httpBodyMatcher)
+	HTTPResponseConsistentlyMatches(ctx, queryURL, httpBodyMatcher)
 }
 
-func DataEventuallyMatches(ctx context.Context, queryURL string, httpBodyMatcher types.GomegaMatcher) {
+func HTTPResponseEventuallyMatches(ctx context.Context, queryURL string, httpBodyMatcher types.GomegaMatcher) {
 	Eventually(func(g Gomega) {
 		resp, err := suite.ProxyClient.GetWithContext(ctx, queryURL)
 		g.Expect(err).NotTo(HaveOccurred())
@@ -32,7 +32,7 @@ func DataEventuallyMatches(ctx context.Context, queryURL string, httpBodyMatcher
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-func DataConsistentlyMatches(ctx context.Context, queryURL string, httpBodyMatcher types.GomegaMatcher) {
+func HTTPResponseConsistentlyMatches(ctx context.Context, queryURL string, httpBodyMatcher types.GomegaMatcher) {
 	Consistently(func(g Gomega) {
 		resp, err := suite.ProxyClient.GetWithContext(ctx, queryURL)
 		g.Expect(err).NotTo(HaveOccurred())
