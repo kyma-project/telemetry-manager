@@ -102,7 +102,7 @@ func TestMTLS_OTel(t *testing.T) {
 }
 
 func TestMTLS_FluentBit(t *testing.T) {
-	RegisterTestingT(t)
+	suite.RegisterTestCase(t, suite.LabelFluentBit)
 
 	var (
 		uniquePrefix = unique.Prefix()
