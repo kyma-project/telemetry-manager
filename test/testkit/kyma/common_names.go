@@ -60,7 +60,13 @@ var (
 	TraceGatewayClusterRoleBinding = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
 	TraceGatewayConfigMap          = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
 
-	LogAgentName = types.NamespacedName{Name: LogAgentBaseName, Namespace: SystemNamespaceName}
+	LogAgentName               = types.NamespacedName{Name: LogAgentBaseName, Namespace: SystemNamespaceName}
+	LogAgentMetricsService     = types.NamespacedName{Name: LogAgentBaseName + "-metrics", Namespace: SystemNamespaceName}
+	LogAgentServiceAccount     = types.NamespacedName{Name: LogAgentBaseName, Namespace: SystemNamespaceName}
+	LogAgentClusterRole        = types.NamespacedName{Name: LogAgentBaseName, Namespace: SystemNamespaceName}
+	LogAgentClusterRoleBinding = types.NamespacedName{Name: LogAgentBaseName, Namespace: SystemNamespaceName}
+	LogAgentNetworkPolicy      = types.NamespacedName{Name: LogAgentBaseName, Namespace: SystemNamespaceName}
+	LogAgentConfigMap          = types.NamespacedName{Name: LogAgentBaseName, Namespace: SystemNamespaceName}
 
 	LogGatewayName               = types.NamespacedName{Name: LogGatewayBaseName, Namespace: SystemNamespaceName}
 	LogGatewayMetricsService     = types.NamespacedName{Name: LogGatewayBaseName + "-metrics", Namespace: SystemNamespaceName}

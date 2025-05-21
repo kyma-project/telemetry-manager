@@ -150,11 +150,11 @@ tidy: ## Check if there any dirty change for go mod tidy.
 .PHONY: test
 test: $(GINKGO) manifests generate fmt vet tidy ## Run tests.
 	$(GINKGO) run test/testkit/matchers/...
-	go test ./... -coverprofile cover.out
+	go test $$(go list ./... | grep -v /test/) -coverprofile cover.out
 
 .PHONY: check-coverage
 check-coverage: $(GO_TEST_COVERAGE) ## Check tests coverage.
-	go test ./... -short -coverprofile=cover.out -covermode=atomic -coverpkg=./...
+	go test $$(go list ./... | grep -v /test/) -short -coverprofile=cover.out -covermode=atomic -coverpkg=./...
 	$(GO_TEST_COVERAGE) --config=./.testcoverage.yml
 
 

@@ -112,7 +112,7 @@ func (d *Deployment) containers() []corev1.Container {
 		},
 	}
 
-	if d.signalType == SignalTypeLogs {
+	if d.signalType == SignalTypeLogsFluentBit {
 		containers = append(containers, corev1.Container{
 			Name:  "fluentd",
 			Image: fluentDImage,
@@ -146,7 +146,7 @@ func (d *Deployment) volumes() []corev1.Volume {
 		},
 	}
 
-	if d.signalType == SignalTypeLogs {
+	if d.signalType == SignalTypeLogsFluentBit {
 		volumes = append(volumes, corev1.Volume{
 			Name: "fluentd-config",
 			VolumeSource: corev1.VolumeSource{
