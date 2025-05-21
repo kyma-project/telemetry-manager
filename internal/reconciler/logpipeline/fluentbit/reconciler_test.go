@@ -600,7 +600,7 @@ func TestReconcile(t *testing.T) {
 				name:            "prober fails",
 				probeErr:        assert.AnError,
 				expectedStatus:  metav1.ConditionUnknown,
-				expectedReason:  conditions.ReasonSelfMonProbingFailed,
+				expectedReason:  conditions.ReasonSelfMonAgentProbingFailed,
 				expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing failed",
 			},
 			{
@@ -618,7 +618,7 @@ func TestReconcile(t *testing.T) {
 					BufferFillingUp: true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonBufferFillingUp,
+				expectedReason:  conditions.ReasonSelfMonAgentBufferFillingUp,
 				expectedMessage: "Buffer nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=agent-buffer-filling-up",
 			},
 			{
@@ -646,7 +646,7 @@ func TestReconcile(t *testing.T) {
 					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonSomeDataDropped,
+				expectedReason:  conditions.ReasonSelfMonAgentSomeDataDropped,
 				expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=not-all-logs-arrive-at-the-backend",
 			},
 			{
@@ -656,7 +656,7 @@ func TestReconcile(t *testing.T) {
 					BufferFillingUp:     true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonSomeDataDropped,
+				expectedReason:  conditions.ReasonSelfMonAgentSomeDataDropped,
 				expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=not-all-logs-arrive-at-the-backend",
 			},
 			{
@@ -665,7 +665,7 @@ func TestReconcile(t *testing.T) {
 					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonAllDataDropped,
+				expectedReason:  conditions.ReasonSelfMonAgentAllDataDropped,
 				expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
 			},
 			{
@@ -677,7 +677,7 @@ func TestReconcile(t *testing.T) {
 					},
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonAllDataDropped,
+				expectedReason:  conditions.ReasonSelfMonAgentAllDataDropped,
 				expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
 			},
 		}

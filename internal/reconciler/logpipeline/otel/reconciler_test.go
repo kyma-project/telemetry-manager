@@ -390,7 +390,7 @@ func TestReconcile(t *testing.T) {
 				name:            "prober fails",
 				probeErr:        assert.AnError,
 				expectedStatus:  metav1.ConditionUnknown,
-				expectedReason:  conditions.ReasonSelfMonProbingFailed,
+				expectedReason:  conditions.ReasonSelfMonGatewayProbingFailed,
 				expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing failed",
 			},
 			{
@@ -417,7 +417,7 @@ func TestReconcile(t *testing.T) {
 					QueueAlmostFull: true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonBufferFillingUp,
+				expectedReason:  conditions.ReasonSelfMonGatewayBufferFillingUp,
 				expectedMessage: "Buffer nearing capacity. Incoming log rate exceeds export rate.",
 			},
 			{
@@ -427,7 +427,7 @@ func TestReconcile(t *testing.T) {
 					Throttling:      true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonBufferFillingUp,
+				expectedReason:  conditions.ReasonSelfMonGatewayBufferFillingUp,
 				expectedMessage: "Buffer nearing capacity. Incoming log rate exceeds export rate.",
 			},
 			{
@@ -436,7 +436,7 @@ func TestReconcile(t *testing.T) {
 					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonSomeDataDropped,
+				expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
 				expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped.",
 			},
 			{
@@ -446,7 +446,7 @@ func TestReconcile(t *testing.T) {
 					Throttling:          true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonSomeDataDropped,
+				expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
 				expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped.",
 			},
 			{
@@ -455,7 +455,7 @@ func TestReconcile(t *testing.T) {
 					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonAllDataDropped,
+				expectedReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
 				expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped.",
 			},
 			{
@@ -465,7 +465,7 @@ func TestReconcile(t *testing.T) {
 					Throttling:          true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonAllDataDropped,
+				expectedReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
 				expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped.",
 			},
 		}
