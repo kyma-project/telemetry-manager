@@ -30,7 +30,6 @@ func TestCustomOutput(t *testing.T) {
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
-	backendExportURL := backend.ExportURL(suite.ProxyClient)
 	logProducer := loggen.New(genNs)
 	customOutputTemplate := fmt.Sprintf(`
 	name   http
@@ -59,5 +58,5 @@ func TestCustomOutput(t *testing.T) {
 	assert.LogPipelineUnsupportedMode(t.Context(), suite.K8sClient, pipelineName, true)
 	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 	assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
-	assert.FluentBitLogsFromPodDelivered(suite.ProxyClient, backendExportURL, loggen.DefaultName)
+	assert.FluentBitLogsFromPodDelivered(t.Context(), backend, loggen.DefaultName)
 }

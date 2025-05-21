@@ -30,7 +30,6 @@ func TestDedot(t *testing.T) {
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
-	backendExportURL := backend.ExportURL(suite.ProxyClient)
 	logProducer := loggen.New(genNs).WithLabels(map[string]string{"dedot.label": "logging-dedot-value"})
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
@@ -56,7 +55,7 @@ func TestDedot(t *testing.T) {
 	assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
 	assert.DeploymentReady(t.Context(), suite.K8sClient, logProducer.NamespacedName())
 
-	assert.DataEventuallyMatching(suite.ProxyClient, backendExportURL, HaveFlatFluentBitLogs(
+	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatFluentBitLogs(
 		ContainElement(HaveKubernetesLabels(HaveKeyWithValue("dedot_label", "logging-dedot-value")))),
 	)
 }

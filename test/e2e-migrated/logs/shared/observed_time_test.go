@@ -60,7 +60,6 @@ func TestObservedTime_OTel(t *testing.T) {
 			)
 
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
-			backendExportURL := backend.ExportURL(suite.ProxyClient)
 
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
@@ -86,8 +85,8 @@ func TestObservedTime_OTel(t *testing.T) {
 			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 			assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
 
-			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, genNs)
-			assert.DataConsistentlyMatching(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(
+			assert.OTelLogsFromNamespaceDelivered(t.Context(), backend, genNs)
+			assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatOTelLogs(
 				HaveEach(SatisfyAll(
 					HaveOTelTimestamp(Not(BeEmpty())),
 					HaveObservedTimestamp(Not(Equal("1970-01-01 00:00:00 +0000 UTC"))),

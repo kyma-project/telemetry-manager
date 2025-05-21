@@ -79,10 +79,7 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 			)
 
 			backend1 := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithName("backend-1"))
-			backend1ExportURL := backend1.ExportURL(suite.ProxyClient)
-
 			backend2 := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithName("backend-2"))
-			backend2ExportURL := backend2.ExportURL(suite.ProxyClient)
 
 			// Include gen1Ns only
 			includePipeline := testutils.NewLogPipelineBuilder().
@@ -141,8 +138,8 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, includePipelineName)
 			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, excludePipelineName)
 
-			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backend1ExportURL, gen1Ns)
-			assert.OTelLogsFromNamespaceNotDelivered(suite.ProxyClient, backend2ExportURL, gen2Ns)
+			assert.OTelLogsFromNamespaceDelivered(t.Context(), backend1, gen1Ns)
+			assert.OTelLogsFromNamespaceNotDelivered(t.Context(), backend2, gen2Ns)
 		})
 	}
 }
@@ -160,10 +157,7 @@ func TestNamespaceSelector_FluentBit(t *testing.T) {
 	)
 
 	backend1 := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithName("backend-1"))
-	backend1ExportURL := backend1.ExportURL(suite.ProxyClient)
-
 	backend2 := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithName("backend-2"))
-	backend2ExportURL := backend2.ExportURL(suite.ProxyClient)
 
 	includePipeline := testutils.NewLogPipelineBuilder().
 		WithName(includePipelineName).
@@ -203,6 +197,6 @@ func TestNamespaceSelector_FluentBit(t *testing.T) {
 
 	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 
-	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backend1ExportURL, gen1Ns)
-	assert.FluentBitLogsFromNamespaceNotDelivered(suite.ProxyClient, backend2ExportURL, gen2Ns)
+	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend1, gen1Ns)
+	assert.FluentBitLogsFromNamespaceNotDelivered(t.Context(), backend2, gen2Ns)
 }

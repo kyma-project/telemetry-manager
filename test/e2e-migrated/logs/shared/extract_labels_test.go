@@ -80,7 +80,6 @@ func TestExtractLabels_OTel(t *testing.T) {
 			)
 
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
-			backendExportURL := backend.ExportURL(suite.ProxyClient)
 
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
@@ -134,9 +133,9 @@ func TestExtractLabels_OTel(t *testing.T) {
 			assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
 			assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})
 			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
-			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, genNs)
+			assert.OTelLogsFromNamespaceDelivered(t.Context(), backend, genNs)
 
-			assert.DataConsistentlyMatching(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(
+			assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatOTelLogs(
 				HaveEach(SatisfyAll(
 					HaveResourceAttributes(HaveKeyWithValue(k8sLabelKeyPrefix+"."+labelKeyExactMatch, labelValueExactMatch)),
 					HaveResourceAttributes(HaveKeyWithValue(k8sLabelKeyPrefix+"."+labelKeyPrefixMatch1, labelValuePrefixMatch1)),
@@ -161,10 +160,7 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 	)
 
 	backendNotDropped := kitbackend.New(notDroppedNs, kitbackend.SignalTypeLogsFluentBit)
-	backendNotDroppedExportURL := backendNotDropped.ExportURL(suite.ProxyClient)
-
 	backendDropped := kitbackend.New(droppedNs, kitbackend.SignalTypeLogsFluentBit)
-	backendDroppedExportURL := backendDropped.ExportURL(suite.ProxyClient)
 
 	logProducer := loggen.New(genNs).
 		WithLabels(map[string]string{"env": "dev"}).
@@ -210,12 +206,11 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Namespace: genNs, Name: loggen.DefaultName})
 
 	// Scenario 1: Labels not dropped
-	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backendNotDroppedExportURL, genNs)
-	assert.DataEventuallyMatching(suite.ProxyClient, backendNotDroppedExportURL, HaveFlatFluentBitLogs(
+	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backendNotDropped, genNs)
+	assert.BackendDataEventuallyMatches(t.Context(), backendNotDropped, HaveFlatFluentBitLogs(
 		HaveEach(HaveKubernetesLabels(HaveKeyWithValue("env", "dev")))),
 	)
-
-	assert.DataConsistentlyMatching(suite.ProxyClient, backendNotDroppedExportURL, HaveFlatFluentBitLogs(
+	assert.BackendDataConsistentlyMatches(t.Context(), backendNotDropped, HaveFlatFluentBitLogs(
 		Not(HaveEach(
 			HaveKubernetesAnnotations(Not(BeEmpty())),
 		)),
@@ -223,14 +218,13 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 
 	// Scenario 2: Labels dropped
 
-	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backendDroppedExportURL, genNs)
-	assert.DataConsistentlyMatching(suite.ProxyClient, backendDroppedExportURL, HaveFlatFluentBitLogs(
+	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backendDropped, genNs)
+	assert.BackendDataConsistentlyMatches(t.Context(), backendDropped, HaveFlatFluentBitLogs(
 		HaveEach(Not(
 			HaveKubernetesLabels(HaveKeyWithValue("env", "dev")),
 		)),
 	))
-
-	assert.DataConsistentlyMatching(suite.ProxyClient, backendDroppedExportURL, HaveFlatFluentBitLogs(
+	assert.BackendDataConsistentlyMatches(t.Context(), backendDropped, HaveFlatFluentBitLogs(
 		Not(ContainElement(
 			HaveKubernetesAnnotations(Not(BeEmpty())),
 		)),

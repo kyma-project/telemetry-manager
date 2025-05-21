@@ -31,9 +31,7 @@ func TestAttributesParser(t *testing.T) {
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
-	backendExportURL := backend.ExportURL(suite.ProxyClient)
 	hostSecretRef := backend.HostSecretRefV1Alpha1()
-
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithApplicationInput(true).
@@ -46,7 +44,6 @@ func TestAttributesParser(t *testing.T) {
 			),
 		).
 		Build()
-
 	logProducer := loggen.New(genNs).WithUseJSON().K8sObject()
 
 	resources := []client.Object{
@@ -64,10 +61,11 @@ func TestAttributesParser(t *testing.T) {
 
 	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
 	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})
-	assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
-	assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, genNs)
 
-	assert.DataEventuallyMatching(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(ContainElement(SatisfyAll(
+	assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
+	assert.OTelLogsFromNamespaceDelivered(t.Context(), backend, genNs)
+
+	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatOTelLogs(ContainElement(SatisfyAll(
 		HaveOTelTimestamp(Not(BeEmpty())),
 		HaveObservedTimestamp(Not(BeEmpty())),
 		HaveTraceId(Not(BeEmpty())),
@@ -75,14 +73,14 @@ func TestAttributesParser(t *testing.T) {
 		HaveTraceId(Equal("255c2212dd02c02ac59a923ff07aec74")),
 	))))
 
-	assert.DataEventuallyMatching(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(ContainElement(SatisfyAll(
+	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatOTelLogs(ContainElement(SatisfyAll(
 		HaveOTelTimestamp(Not(BeEmpty())),
 		HaveObservedTimestamp(Not(BeEmpty())),
 		HaveSpanId(Not(BeEmpty())),
 		HaveTraceId(Equal("80e1afed08e019fc1110464cfa66635c")),
 	))))
 
-	assert.DataConsistentlyMatching(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(
+	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatOTelLogs(
 		ContainElement(SatisfyAll(
 			HaveOTelTimestamp(Not(BeEmpty())),
 			HaveObservedTimestamp(Not(BeEmpty())),
@@ -92,7 +90,7 @@ func TestAttributesParser(t *testing.T) {
 			HaveAttributes(Not(HaveKey("traceparent"))),
 		))))
 
-	assert.DataConsistentlyMatching(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(
+	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatOTelLogs(
 		ContainElement(SatisfyAll(
 			HaveOTelTimestamp(Not(BeEmpty())),
 			HaveObservedTimestamp(Not(BeEmpty())),

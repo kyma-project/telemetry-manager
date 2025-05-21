@@ -70,7 +70,6 @@ func TestServiceName_OTel(t *testing.T) {
 			)
 
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
-			backendExportURL := backend.ExportURL(suite.ProxyClient)
 			hostSecretRef := backend.HostSecretRefV1Alpha1()
 
 			pipeline := testutils.NewLogPipelineBuilder().
@@ -130,10 +129,10 @@ func TestServiceName_OTel(t *testing.T) {
 			assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
 			assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
 			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
-			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, genNs)
+			assert.OTelLogsFromNamespaceDelivered(t.Context(), backend, genNs)
 
 			verifyServiceNameAttr := func(givenPodPrefix, expectedServiceName string) {
-				assert.DataEventuallyMatching(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(
+				assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatOTelLogs(
 					ContainElement(SatisfyAll(
 						HaveResourceAttributes(HaveKeyWithValue(serviceKey, expectedServiceName)),
 						HaveResourceAttributes(HaveKeyWithValue(podKey, ContainSubstring(givenPodPrefix))),
@@ -152,7 +151,7 @@ func TestServiceName_OTel(t *testing.T) {
 			}
 
 			// Verify that temporary kyma resource attributes are removed from the logs
-			assert.DataConsistentlyMatching(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(
+			assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatOTelLogs(
 				Not(ContainElement(
 					HaveResourceAttributes(HaveKey(ContainSubstring("kyma"))),
 				)),

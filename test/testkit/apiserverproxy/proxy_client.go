@@ -74,12 +74,18 @@ func (a Client) ProxyURLForPod(namespace, pod, path string, port int32) string {
 }
 
 // Get performs an HTTPS request to the in-cluster resource identifiable by ProxyURLForService or ProxyURLForPod.
+// [Deprecated]: Use GetWithContext instead
 func (a Client) Get(proxyURL string) (*http.Response, error) {
+	return a.GetWithContext(context.Background(), proxyURL)
+}
+
+// Get performs an HTTPS request to the in-cluster resource identifiable by ProxyURLForService or ProxyURLForPod.
+func (a Client) GetWithContext(ctx context.Context, proxyURL string) (*http.Response, error) {
 	client := &http.Client{Transport: &http.Transport{
 		TLSClientConfig: a.tlsClientConfig,
 	}}
 
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, proxyURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, proxyURL, nil)
 	if err != nil {
 		return nil, err
 	}

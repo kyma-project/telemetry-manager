@@ -31,8 +31,6 @@ func TestInstrumentationScope(t *testing.T) {
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
-	backendExportURL := backend.ExportURL(suite.ProxyClient)
-
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithApplicationInput(true,
@@ -47,7 +45,6 @@ func TestInstrumentationScope(t *testing.T) {
 		loggen.New(genNs).WithUseJSON().K8sObject(),
 		&pipeline,
 	)
-
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
@@ -61,7 +58,7 @@ func TestInstrumentationScope(t *testing.T) {
 
 	assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 
-	assert.DataEventuallyMatching(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(
+	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatOTelLogs(
 		ContainElement(SatisfyAll(
 			HaveScopeName(Equal(agent.InstrumentationScopeRuntime)),
 			HaveScopeVersion(SatisfyAny(

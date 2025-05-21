@@ -62,7 +62,6 @@ func TestMultiPipelineBroken_OTel(t *testing.T) {
 			)
 
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
-			backendExportURL := backend.ExportURL(suite.ProxyClient)
 
 			pipelineGood := testutils.NewLogPipelineBuilder().
 				WithName(goodPipeline).
@@ -104,7 +103,7 @@ func TestMultiPipelineBroken_OTel(t *testing.T) {
 				Reason: conditions.ReasonReferencedSecretMissing,
 			})
 
-			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, genNs)
+			assert.OTelLogsFromNamespaceDelivered(t.Context(), backend, genNs)
 		})
 	}
 }
@@ -121,7 +120,6 @@ func TestMultiPipelineBroken_FluentBit(t *testing.T) {
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
-	backendExportURL := backend.ExportURL(suite.ProxyClient)
 
 	pipelineGood := testutils.NewLogPipelineBuilder().
 		WithName(goodPipeline).
@@ -159,5 +157,5 @@ func TestMultiPipelineBroken_FluentBit(t *testing.T) {
 		Reason: conditions.ReasonReferencedSecretMissing,
 	})
 
-	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, genNs)
+	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend, genNs)
 }
