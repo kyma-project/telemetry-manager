@@ -17,7 +17,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -50,11 +50,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		objs = append(objs, kitk8s.NewNamespace(istiofiedBackendNs, kitk8s.WithIstioInjection()).K8sObject())
 		objs = append(objs, kitk8s.NewNamespace(appNs).K8sObject())
 
-		backend1 := backend.New(backendNs, backend.SignalTypeTraces)
+		backend1 := kitbackend.New(backendNs, kitbackend.SignalTypeTraces)
 		objs = append(objs, backend1.K8sObjects()...)
 		backendExportURL = backend1.ExportURL(suite.ProxyClient)
 
-		backend2 := backend.New(istiofiedBackendNs, backend.SignalTypeTraces)
+		backend2 := kitbackend.New(istiofiedBackendNs, kitbackend.SignalTypeTraces)
 		objs = append(objs, backend2.K8sObjects()...)
 		istiofiedBackendExportURL = backend2.ExportURL(suite.ProxyClient)
 
@@ -99,8 +99,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		})
 
 		It("Should have a trace backend running", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: backendNs})
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: istiofiedBackendNs})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: istiofiedBackendNs})
 		})
 
 		It("Should have sample app running with Istio sidecar", func() {

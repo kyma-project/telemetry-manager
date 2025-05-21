@@ -8,6 +8,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 )
 
@@ -29,6 +30,7 @@ type LogProducer struct {
 	annotations map[string]string
 	labels      map[string]string
 	replicas    int32
+	container   string
 	load        Load
 	useJSON     bool
 }
@@ -38,8 +40,14 @@ func New(namespace string) *LogProducer {
 		name:      DefaultName,
 		namespace: namespace,
 		replicas:  1,
+		container: DefaultContainerName,
 		load:      LoadLow,
 	}
+}
+
+func (lp *LogProducer) WithName(name string) *LogProducer {
+	lp.name = name
+	return lp
 }
 
 func (lp *LogProducer) WithAnnotations(annotations map[string]string) *LogProducer {
@@ -57,6 +65,11 @@ func (lp *LogProducer) WithReplicas(replicas int32) *LogProducer {
 	return lp
 }
 
+func (lp *LogProducer) WithContainer(container string) *LogProducer {
+	lp.container = container
+	return lp
+}
+
 func (lp *LogProducer) WithLoad(load Load) *LogProducer {
 	lp.load = load
 	return lp
@@ -65,6 +78,10 @@ func (lp *LogProducer) WithLoad(load Load) *LogProducer {
 func (lp *LogProducer) WithUseJSON() *LogProducer {
 	lp.useJSON = true
 	return lp
+}
+
+func (lp *LogProducer) NamespacedName() types.NamespacedName {
+	return types.NamespacedName{Name: lp.name, Namespace: lp.namespace}
 }
 
 func (lp *LogProducer) K8sObject() *appsv1.Deployment {
@@ -121,8 +138,10 @@ done`
 	return corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
-				Name:    DefaultContainerName,
-				Image:   "alpine:latest",
+
+				Name:  lp.container,
+				Image: "alpine:latest",
+
 				Command: []string{"/bin/sh", "-c", logCmd}},
 		},
 	}
@@ -139,7 +158,7 @@ func (lp *LogProducer) flogSpec() corev1.PodSpec {
 	return corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
-				Name:            DefaultContainerName,
+				Name:            lp.container,
 				Image:           "mingrammer/flog",
 				Args:            args,
 				ImagePullPolicy: corev1.PullAlways,

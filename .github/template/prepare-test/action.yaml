@@ -2,8 +2,8 @@ name: Prepare test
 description: Prepares everything for integration test execution
 
 inputs:
-  release:
-    description: Deploy manager in release mode
+  experimental:
+    description: Deploy manager in experimental mode
     required: false
   github-token:
     description: Github token to use for github access
@@ -32,12 +32,12 @@ runs:
         IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
 
     - name: Deploy module release
-      if: ${{ inputs.release }}
+      if: ${{ !inputs.experimental }}
       shell: bash
       run: make --debug deploy
 
     - name: Deploy module experimental
-      if: ${{ !inputs.release }}
+      if: ${{ inputs.experimental }}
       shell: bash
       run: make --debug deploy-experimental
 

@@ -51,7 +51,6 @@ func flattenFluentBitLogs(ld plog.Logs) []FlatLogFluentBit {
 			for k := range scopeLogs.LogRecords().Len() {
 				lr := scopeLogs.LogRecords().At(k)
 				k8sAttrs := getKubernetesAttributes(lr)
-
 				flatLogs = append(flatLogs, FlatLogFluentBit{
 					LogRecordAttributes:            attributeToMapFluentBit(lr.Attributes()),
 					LogRecordBody:                  lr.Body().AsString(),

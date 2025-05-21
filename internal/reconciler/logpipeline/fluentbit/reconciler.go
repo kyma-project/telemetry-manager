@@ -12,7 +12,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
-	"github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
+	fbports "github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
@@ -182,7 +182,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 
 	allowedPorts := getFluentBitPorts()
 	if r.istioStatusChecker.IsIstioActive(ctx) {
-		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
+		allowedPorts = append(allowedPorts, fbports.IstioEnvoy)
 	}
 
 	if err = r.agentApplierDeleter.ApplyResources(
@@ -224,7 +224,7 @@ func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines 
 
 func getFluentBitPorts() []int32 {
 	return []int32{
-		ports.ExporterMetrics,
-		ports.HTTP,
+		fbports.ExporterMetrics,
+		fbports.HTTP,
 	}
 }
