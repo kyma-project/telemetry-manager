@@ -58,7 +58,7 @@ func TestPayloadParser(t *testing.T) {
 	assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 
 	// Parse traces properly
-	assert.BackendDataEventuallyMatching(t.Context(), backend, HaveFlatOTelLogs(
+	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatOTelLogs(
 		ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("name", "a")),
 			HaveTraceId(Equal("255c2212dd02c02ac59a923ff07aec74")),
@@ -71,7 +71,7 @@ func TestPayloadParser(t *testing.T) {
 		)),
 	))
 
-	assert.BackendDataEventuallyMatching(t.Context(), backend, HaveFlatOTelLogs(
+	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatOTelLogs(
 		ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("name", "b")),
 			HaveTraceId(Equal("80e1afed08e019fc1110464cfa66635c")),
@@ -84,7 +84,7 @@ func TestPayloadParser(t *testing.T) {
 		)),
 	))
 
-	assert.BackendDataConsistentlyMatching(t.Context(), backend, HaveFlatOTelLogs(
+	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatOTelLogs(
 		ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("name", "c")),
 			HaveTraceId(BeEmpty()),
@@ -94,7 +94,7 @@ func TestPayloadParser(t *testing.T) {
 		)),
 	))
 
-	assert.BackendDataConsistentlyMatching(t.Context(), backend, HaveFlatOTelLogs(
+	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatOTelLogs(
 		ContainElement(SatisfyAll(
 			HaveLogRecordBody(HavePrefix("name=d")),
 			HaveTraceId(BeEmpty()),
@@ -104,7 +104,7 @@ func TestPayloadParser(t *testing.T) {
 	))
 
 	// Parse severity properly
-	assert.BackendDataConsistentlyMatching(t.Context(), backend, HaveFlatOTelLogs(
+	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatOTelLogs(
 		ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("name", "a")),
 			HaveSeverityNumber(Equal(9)),
@@ -113,7 +113,7 @@ func TestPayloadParser(t *testing.T) {
 		)),
 	))
 
-	assert.BackendDataConsistentlyMatching(t.Context(), backend, HaveFlatOTelLogs(
+	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatOTelLogs(
 		ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("name", "b")),
 			HaveSeverityNumber(Equal(13)),
@@ -122,7 +122,7 @@ func TestPayloadParser(t *testing.T) {
 		)),
 	))
 
-	assert.BackendDataConsistentlyMatching(t.Context(), backend, HaveFlatOTelLogs(
+	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatOTelLogs(
 		ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("name", "c")),
 			HaveSeverityNumber(Equal(0)), // default value
@@ -130,7 +130,7 @@ func TestPayloadParser(t *testing.T) {
 		)),
 	))
 
-	assert.BackendDataConsistentlyMatching(t.Context(), backend, HaveFlatOTelLogs(
+	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatOTelLogs(
 		ContainElement(SatisfyAll(
 			HaveLogRecordBody(HavePrefix("name=d")),
 			HaveSeverityNumber(Equal(0)), // default value

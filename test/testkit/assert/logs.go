@@ -20,55 +20,55 @@ import (
 )
 
 func FluentBitLogsFromContainerDelivered(ctx context.Context, backend *kitbackend.Backend, expectedContainerName string) {
-	BackendDataEventuallyMatching(ctx, backend,
+	BackendDataEventuallyMatches(ctx, backend,
 		HaveFlatFluentBitLogs(ContainElement(HaveContainerName(Equal(expectedContainerName)))),
 	)
 }
 
 func FluentBitLogsFromContainerNotDelivered(ctx context.Context, backend *kitbackend.Backend, expectedContainerName string) {
-	BackendDataConsistentlyMatching(ctx, backend,
+	BackendDataConsistentlyMatches(ctx, backend,
 		HaveFlatFluentBitLogs(Not(ContainElement(HaveContainerName(Equal(expectedContainerName))))),
 	)
 }
 
 func FluentBitLogsFromPodDelivered(ctx context.Context, backend *kitbackend.Backend, expectedPodNamePrefix string) {
-	BackendDataEventuallyMatching(ctx, backend,
+	BackendDataEventuallyMatches(ctx, backend,
 		HaveFlatFluentBitLogs(ContainElement(HavePodName(ContainSubstring(expectedPodNamePrefix)))),
 	)
 }
 
 func FluentBitLogsFromNamespaceDelivered(ctx context.Context, backend *kitbackend.Backend, namespace string) {
-	BackendDataEventuallyMatching(ctx, backend,
+	BackendDataEventuallyMatches(ctx, backend,
 		HaveFlatFluentBitLogs(ContainElement(HaveNamespace(Equal(namespace)))),
 	)
 }
 
 func FluentBitLogsFromNamespaceNotDelivered(ctx context.Context, backend *kitbackend.Backend, namespace string) {
-	BackendDataConsistentlyMatching(ctx, backend,
+	BackendDataConsistentlyMatches(ctx, backend,
 		HaveFlatFluentBitLogs(Not(ContainElement(HaveNamespace(Equal(namespace))))),
 	)
 }
 
 func OTelLogsFromContainerDelivered(ctx context.Context, backend *kitbackend.Backend, containerName string) {
-	BackendDataEventuallyMatching(ctx, backend,
+	BackendDataEventuallyMatches(ctx, backend,
 		HaveFlatOTelLogs(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.container.name", containerName)))),
 	)
 }
 
 func OTelLogsFromContainerNotDelivered(ctx context.Context, backend *kitbackend.Backend, containerName string) {
-	BackendDataConsistentlyMatching(ctx, backend,
+	BackendDataConsistentlyMatches(ctx, backend,
 		HaveFlatOTelLogs(Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.container.name", containerName))))),
 	)
 }
 
 func OTelLogsFromNamespaceDelivered(ctx context.Context, backend *kitbackend.Backend, namespace string) {
-	BackendDataEventuallyMatching(ctx, backend,
+	BackendDataEventuallyMatches(ctx, backend,
 		HaveFlatOTelLogs(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)))),
 	)
 }
 
 func OTelLogsFromNamespaceNotDelivered(ctx context.Context, backend *kitbackend.Backend, namespace string) {
-	BackendDataConsistentlyMatching(ctx, backend,
+	BackendDataConsistentlyMatches(ctx, backend,
 		HaveFlatOTelLogs(Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace))))),
 	)
 }

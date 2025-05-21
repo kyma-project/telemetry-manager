@@ -65,7 +65,7 @@ func TestAttributesParser(t *testing.T) {
 	assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 	assert.OTelLogsFromNamespaceDelivered(t.Context(), backend, genNs)
 
-	assert.BackendDataEventuallyMatching(t.Context(), backend, HaveFlatOTelLogs(ContainElement(SatisfyAll(
+	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatOTelLogs(ContainElement(SatisfyAll(
 		HaveOTelTimestamp(Not(BeEmpty())),
 		HaveObservedTimestamp(Not(BeEmpty())),
 		HaveTraceId(Not(BeEmpty())),
@@ -73,14 +73,14 @@ func TestAttributesParser(t *testing.T) {
 		HaveTraceId(Equal("255c2212dd02c02ac59a923ff07aec74")),
 	))))
 
-	assert.BackendDataEventuallyMatching(t.Context(), backend, HaveFlatOTelLogs(ContainElement(SatisfyAll(
+	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatOTelLogs(ContainElement(SatisfyAll(
 		HaveOTelTimestamp(Not(BeEmpty())),
 		HaveObservedTimestamp(Not(BeEmpty())),
 		HaveSpanId(Not(BeEmpty())),
 		HaveTraceId(Equal("80e1afed08e019fc1110464cfa66635c")),
 	))))
 
-	assert.BackendDataConsistentlyMatching(t.Context(), backend, HaveFlatOTelLogs(
+	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatOTelLogs(
 		ContainElement(SatisfyAll(
 			HaveOTelTimestamp(Not(BeEmpty())),
 			HaveObservedTimestamp(Not(BeEmpty())),
@@ -90,7 +90,7 @@ func TestAttributesParser(t *testing.T) {
 			HaveAttributes(Not(HaveKey("traceparent"))),
 		))))
 
-	assert.BackendDataConsistentlyMatching(t.Context(), backend, HaveFlatOTelLogs(
+	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatOTelLogs(
 		ContainElement(SatisfyAll(
 			HaveOTelTimestamp(Not(BeEmpty())),
 			HaveObservedTimestamp(Not(BeEmpty())),

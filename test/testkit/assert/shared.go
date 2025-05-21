@@ -12,17 +12,17 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-func BackendDataEventuallyMatching(ctx context.Context, backend *kitbackend.Backend, httpBodyMatcher types.GomegaMatcher) {
+func BackendDataEventuallyMatches(ctx context.Context, backend *kitbackend.Backend, httpBodyMatcher types.GomegaMatcher) {
 	queryURL := suite.ProxyClient.ProxyURLForService(backend.Namespace(), backend.Name(), kitbackend.QueryPath, kitbackend.QueryPort)
-	DataEventuallyMatching(ctx, queryURL, httpBodyMatcher)
+	DataEventuallyMatches(ctx, queryURL, httpBodyMatcher)
 }
 
-func BackendDataConsistentlyMatching(ctx context.Context, backend *kitbackend.Backend, httpBodyMatcher types.GomegaMatcher) {
+func BackendDataConsistentlyMatches(ctx context.Context, backend *kitbackend.Backend, httpBodyMatcher types.GomegaMatcher) {
 	queryURL := suite.ProxyClient.ProxyURLForService(backend.Namespace(), backend.Name(), kitbackend.QueryPath, kitbackend.QueryPort)
-	DataConsistentlyMatching(ctx, queryURL, httpBodyMatcher)
+	DataConsistentlyMatches(ctx, queryURL, httpBodyMatcher)
 }
 
-func DataEventuallyMatching(ctx context.Context, queryURL string, httpBodyMatcher types.GomegaMatcher) {
+func DataEventuallyMatches(ctx context.Context, queryURL string, httpBodyMatcher types.GomegaMatcher) {
 	Eventually(func(g Gomega) {
 		resp, err := suite.ProxyClient.GetWithContext(ctx, queryURL)
 		g.Expect(err).NotTo(HaveOccurred())
@@ -32,7 +32,7 @@ func DataEventuallyMatching(ctx context.Context, queryURL string, httpBodyMatche
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-func DataConsistentlyMatching(ctx context.Context, queryURL string, httpBodyMatcher types.GomegaMatcher) {
+func DataConsistentlyMatches(ctx context.Context, queryURL string, httpBodyMatcher types.GomegaMatcher) {
 	Consistently(func(g Gomega) {
 		resp, err := suite.ProxyClient.GetWithContext(ctx, queryURL)
 		g.Expect(err).NotTo(HaveOccurred())

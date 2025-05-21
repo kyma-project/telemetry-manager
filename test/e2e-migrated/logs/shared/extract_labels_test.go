@@ -139,7 +139,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 			assert.OTelLogsFromNamespaceDelivered(t.Context(), backend, genNs)
 
-			assert.BackendDataConsistentlyMatching(t.Context(), backend, HaveFlatOTelLogs(
+			assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatOTelLogs(
 				HaveEach(SatisfyAll(
 					HaveResourceAttributes(HaveKeyWithValue(k8sLabelKeyPrefix+"."+labelKeyExactMatch, labelValueExactMatch)),
 					HaveResourceAttributes(HaveKeyWithValue(k8sLabelKeyPrefix+"."+labelKeyPrefixMatch1, labelValuePrefixMatch1)),
@@ -211,10 +211,10 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 
 	// Scenario 1: Labels not dropped
 	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backendNotDropped, genNs)
-	assert.BackendDataEventuallyMatching(t.Context(), backendNotDropped, HaveFlatFluentBitLogs(
+	assert.BackendDataEventuallyMatches(t.Context(), backendNotDropped, HaveFlatFluentBitLogs(
 		HaveEach(HaveKubernetesLabels(HaveKeyWithValue("env", "dev")))),
 	)
-	assert.BackendDataConsistentlyMatching(t.Context(), backendNotDropped, HaveFlatFluentBitLogs(
+	assert.BackendDataConsistentlyMatches(t.Context(), backendNotDropped, HaveFlatFluentBitLogs(
 		Not(HaveEach(
 			HaveKubernetesAnnotations(Not(BeEmpty())),
 		)),
@@ -223,12 +223,12 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 	// Scenario 2: Labels dropped
 
 	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backendDropped, genNs)
-	assert.BackendDataConsistentlyMatching(t.Context(), backendDropped, HaveFlatFluentBitLogs(
+	assert.BackendDataConsistentlyMatches(t.Context(), backendDropped, HaveFlatFluentBitLogs(
 		HaveEach(Not(
 			HaveKubernetesLabels(HaveKeyWithValue("env", "dev")),
 		)),
 	))
-	assert.BackendDataConsistentlyMatching(t.Context(), backendDropped, HaveFlatFluentBitLogs(
+	assert.BackendDataConsistentlyMatches(t.Context(), backendDropped, HaveFlatFluentBitLogs(
 		Not(ContainElement(
 			HaveKubernetesAnnotations(Not(BeEmpty())),
 		)),

@@ -56,7 +56,7 @@ func TestModifyTimestampDateFormat(t *testing.T) {
 	assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
 	assert.DeploymentReady(t.Context(), suite.K8sClient, logProducer.NamespacedName())
 
-	assert.BackendDataEventuallyMatching(t.Context(), backend, HaveFlatFluentBitLogs(HaveEach(SatisfyAll(
+	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatFluentBitLogs(HaveEach(SatisfyAll(
 		HaveLogRecordAttributes(HaveKey("@timestamp")),
 		HaveDateISO8601Format(BeTrue()),
 	))))

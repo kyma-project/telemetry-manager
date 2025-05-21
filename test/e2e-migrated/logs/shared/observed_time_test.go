@@ -86,7 +86,7 @@ func TestObservedTime_OTel(t *testing.T) {
 			assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
 
 			assert.OTelLogsFromNamespaceDelivered(t.Context(), backend, genNs)
-			assert.BackendDataConsistentlyMatching(t.Context(), backend, HaveFlatOTelLogs(
+			assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatOTelLogs(
 				HaveEach(SatisfyAll(
 					HaveOTelTimestamp(Not(BeEmpty())),
 					HaveObservedTimestamp(Not(Equal("1970-01-01 00:00:00 +0000 UTC"))),

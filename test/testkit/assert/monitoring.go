@@ -15,13 +15,13 @@ import (
 )
 
 func EmitsFluentBitMetrics(ctx context.Context, metricsURL string) {
-	DataEventuallyMatching(ctx, metricsURL, HaveFlatMetricFamilies(
+	DataEventuallyMatches(ctx, metricsURL, HaveFlatMetricFamilies(
 		ContainElement(HaveName(ContainSubstring("fluentbit"))),
 	))
 }
 
 func EmitsOTelCollectorMetrics(ctx context.Context, metricsURL string) {
-	DataEventuallyMatching(ctx, metricsURL, HaveFlatMetricFamilies(
+	DataEventuallyMatches(ctx, metricsURL, HaveFlatMetricFamilies(
 		ContainElement(HaveName(ContainSubstring("otelcol"))),
 	))
 }
