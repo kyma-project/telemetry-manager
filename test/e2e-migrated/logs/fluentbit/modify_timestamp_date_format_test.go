@@ -30,7 +30,6 @@ func TestModifyTimestampDateFormat(t *testing.T) {
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
-	backendExportURL := backend.ExportURL(suite.ProxyClient)
 	logProducer := loggen.New(genNs).WithUseJSON()
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
@@ -57,7 +56,7 @@ func TestModifyTimestampDateFormat(t *testing.T) {
 	assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
 	assert.DeploymentReady(t.Context(), suite.K8sClient, logProducer.NamespacedName())
 
-	assert.DataEventuallyMatching(suite.ProxyClient, backendExportURL, HaveFlatFluentBitLogs(HaveEach(SatisfyAll(
+	assert.BackendDataEventuallyMatching(t.Context(), backend, HaveFlatFluentBitLogs(HaveEach(SatisfyAll(
 		HaveLogRecordAttributes(HaveKey("@timestamp")),
 		HaveDateISO8601Format(BeTrue()),
 	))))

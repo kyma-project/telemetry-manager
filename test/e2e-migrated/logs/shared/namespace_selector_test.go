@@ -141,8 +141,8 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, includePipelineName)
 			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, excludePipelineName)
 
-			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backend1ExportURL, gen1Ns)
-			assert.OTelLogsFromNamespaceNotDelivered(suite.ProxyClient, backend2ExportURL, gen2Ns)
+			assert.OTelLogsFromNamespaceDelivered(t.Context(), suite.ProxyClient, backend1ExportURL, gen1Ns)
+			assert.OTelLogsFromNamespaceNotDelivered(t.Context(), suite.ProxyClient, backend2ExportURL, gen2Ns)
 		})
 	}
 }
@@ -203,6 +203,6 @@ func TestNamespaceSelector_FluentBit(t *testing.T) {
 
 	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 
-	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backend1ExportURL, gen1Ns)
-	assert.FluentBitLogsFromNamespaceNotDelivered(suite.ProxyClient, backend2ExportURL, gen2Ns)
+	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), suite.ProxyClient, backend1ExportURL, gen1Ns)
+	assert.FluentBitLogsFromNamespaceNotDelivered(t.Context(), suite.ProxyClient, backend2ExportURL, gen2Ns)
 }

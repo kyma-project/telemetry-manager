@@ -80,12 +80,12 @@ func TestContainerSelector_OTel(t *testing.T) {
 	assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, excludePipelineName)
 
 	// backend1 - only container1 should be delivered
-	assert.OTelLogsFromContainerDelivered(suite.ProxyClient, backend1ExportURL, container1)
-	assert.OTelLogsFromContainerNotDelivered(suite.ProxyClient, backend1ExportURL, container2)
+	assert.OTelLogsFromContainerDelivered(t.Context(), suite.ProxyClient, backend1ExportURL, container1)
+	assert.OTelLogsFromContainerNotDelivered(t.Context(), suite.ProxyClient, backend1ExportURL, container2)
 
 	// backend2 - only container2 should be delivered
-	assert.OTelLogsFromContainerNotDelivered(suite.ProxyClient, backend2ExportURL, container1)
-	assert.OTelLogsFromContainerDelivered(suite.ProxyClient, backend2ExportURL, container2)
+	assert.OTelLogsFromContainerNotDelivered(t.Context(), suite.ProxyClient, backend2ExportURL, container1)
+	assert.OTelLogsFromContainerDelivered(t.Context(), suite.ProxyClient, backend2ExportURL, container2)
 }
 
 func TestContainerSelector_FluentBit(t *testing.T) {
@@ -146,10 +146,10 @@ func TestContainerSelector_FluentBit(t *testing.T) {
 	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, excludePipelineName)
 
 	// backend1 - only container1 should be delivered
-	assert.FluentBitLogsFromContainerDelivered(suite.ProxyClient, backend1ExportURL, container1)
-	assert.FluentBitLogsFromContainerNotDelivered(suite.ProxyClient, backend1ExportURL, container2)
+	assert.FluentBitLogsFromContainerDelivered(t.Context(), suite.ProxyClient, backend1ExportURL, container1)
+	assert.FluentBitLogsFromContainerNotDelivered(t.Context(), suite.ProxyClient, backend1ExportURL, container2)
 
 	// backend2 - only container2 should be delivered
-	assert.FluentBitLogsFromContainerNotDelivered(suite.ProxyClient, backend2ExportURL, container1)
-	assert.FluentBitLogsFromContainerDelivered(suite.ProxyClient, backend2ExportURL, container2)
+	assert.FluentBitLogsFromContainerNotDelivered(t.Context(), suite.ProxyClient, backend2ExportURL, container1)
+	assert.FluentBitLogsFromContainerDelivered(t.Context(), suite.ProxyClient, backend2ExportURL, container2)
 }

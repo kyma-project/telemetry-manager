@@ -36,7 +36,6 @@ Types user:string pass:string`
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
-	backendExportURL := backend.ExportURL(suite.ProxyClient)
 	logProducer := loggen.New(genNs).
 		WithAnnotations(map[string]string{"fluentbit.io/parser": "my-regex-parser"})
 	pipeline := testutils.NewLogPipelineBuilder().
@@ -64,7 +63,7 @@ Types user:string pass:string`
 	assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
 	assert.DeploymentReady(t.Context(), suite.K8sClient, logProducer.NamespacedName())
 
-	assert.DataEventuallyMatching(suite.ProxyClient, backendExportURL, HaveFlatFluentBitLogs(ContainElement(SatisfyAll(
+	assert.BackendDataEventuallyMatching(t.Context(), backend, HaveFlatFluentBitLogs(ContainElement(SatisfyAll(
 		HaveLogRecordAttributes(HaveKeyWithValue("user", "foo")),
 		HaveLogRecordAttributes(HaveKeyWithValue("pass", "bar")),
 	))))

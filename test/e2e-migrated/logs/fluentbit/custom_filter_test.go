@@ -51,7 +51,6 @@ func TestCustomFilterAllowed(t *testing.T) {
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
-	backendExportURL := backend.ExportURL(suite.ProxyClient)
 	logProducerInclude := loggen.New(includeNs)
 	logProducerExclude := loggen.New(excludeNs)
 	pipeline := testutils.NewLogPipelineBuilder().
@@ -84,6 +83,6 @@ func TestCustomFilterAllowed(t *testing.T) {
 	assert.LogPipelineUnsupportedMode(t.Context(), suite.K8sClient, pipelineName, true)
 	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 	assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
-	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, includeNs)
-	assert.FluentBitLogsFromNamespaceNotDelivered(suite.ProxyClient, backendExportURL, excludeNs)
+	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend, includeNs)
+	assert.FluentBitLogsFromNamespaceNotDelivered(t.Context(), backend, excludeNs)
 }

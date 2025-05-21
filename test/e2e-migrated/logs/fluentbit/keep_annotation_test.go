@@ -2,8 +2,6 @@ package fluentbit
 
 import (
 	"context"
-	"io"
-	"net/http"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -17,7 +15,6 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -33,7 +30,6 @@ func TestKeepAnnotations(t *testing.T) {
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
-	backendExportURL := backend.ExportURL(suite.ProxyClient)
 	logProducer := loggen.New(genNs).WithAnnotations(map[string]string{"release": "v1.0.0"})
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
@@ -60,21 +56,10 @@ func TestKeepAnnotations(t *testing.T) {
 	assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
 	assert.DeploymentReady(t.Context(), suite.K8sClient, logProducer.NamespacedName())
 
-	assert.DataEventuallyMatching(suite.ProxyClient, backendExportURL, HaveFlatFluentBitLogs(
+	assert.BackendDataEventuallyMatching(t.Context(), backend, HaveFlatFluentBitLogs(
 		ContainElement(HaveKubernetesAnnotations(HaveKeyWithValue("release", "v1.0.0")))),
 	)
-
-	Consistently(func(g Gomega) {
-		resp, err := suite.ProxyClient.Get(backendExportURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-
-		bodyContent, err := io.ReadAll(resp.Body)
-		defer resp.Body.Close()
-		g.Expect(err).NotTo(HaveOccurred())
-
-		g.Expect(bodyContent).To(HaveFlatFluentBitLogs(Not(ContainElement(
-			HaveKubernetesLabels(Not(BeEmpty()))))),
-		)
-	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+	assert.BackendDataConsistentlyMatching(t.Context(), backend, HaveFlatFluentBitLogs(
+		Not(ContainElement(HaveKubernetesLabels(Not(BeEmpty()))))),
+	)
 }
