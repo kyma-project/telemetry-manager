@@ -39,7 +39,6 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
-	backendExportURL := backend.ExportURL(suite.ProxyClient)
 
 	for i := range maxNumberOfLogPipelines {
 		pipelineName := fmt.Sprintf("%s-%d", pipelineBase, i)
@@ -138,7 +137,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	})
 
 	t.Log("Verifying logs are delivered for valid pipelines")
-	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, generatorNs)
+	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend, generatorNs)
 
 	t.Log("Deleting one previously healthy pipeline and expecting the additional OTel pipeline to be healthy")
 
@@ -160,7 +159,6 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
-	backendExportURL := backend.ExportURL(suite.ProxyClient)
 
 	for i := range maxNumberOfLogPipelines {
 		pipelineName := fmt.Sprintf("%s-%d", pipelineBase, i)
@@ -216,7 +214,7 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 	})
 
 	t.Log("Verifying logs are delivered for valid pipelines")
-	assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, genNs)
+	assert.OTelLogsFromNamespaceDelivered(t.Context(), backend, genNs)
 
 	t.Log("Deleting one previously healthy pipeline and expecting the additional pipeline to be healthy")
 
@@ -238,7 +236,6 @@ func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
-	backendExportURL := backend.ExportURL(suite.ProxyClient)
 
 	for i := range maxNumberOfLogPipelines {
 		pipelineName := fmt.Sprintf("%s-%d", pipelineBase, i)
@@ -294,7 +291,7 @@ func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
 	})
 
 	t.Log("Verifying logs are delivered for valid pipelines")
-	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, generatorNs)
+	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend, generatorNs)
 
 	t.Log("Deleting one previously healthy pipeline and expecting the additional pipeline to be healthy")
 

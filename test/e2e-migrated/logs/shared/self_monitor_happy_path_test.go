@@ -60,7 +60,6 @@ func TestSelfMonitorHappyPath_OTel(t *testing.T) {
 			)
 
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
-			backendExportURL := backend.ExportURL(suite.ProxyClient)
 
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
@@ -91,7 +90,7 @@ func TestSelfMonitorHappyPath_OTel(t *testing.T) {
 				assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
 			}
 
-			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, genNs)
+			assert.OTelLogsFromNamespaceDelivered(t.Context(), backend, genNs)
 
 			assert.SelfMonitorIsHealthyForPipeline(t.Context(), suite.K8sClient, pipelineName)
 		})
@@ -110,7 +109,6 @@ func TestSelfMonitorHappyPath_FluentBit(t *testing.T) {
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
-	backendExportURL := backend.ExportURL(suite.ProxyClient)
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
@@ -138,7 +136,7 @@ func TestSelfMonitorHappyPath_FluentBit(t *testing.T) {
 	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 	assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.SelfMonitorName)
 
-	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, genNs)
+	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend, genNs)
 
 	assert.SelfMonitorIsHealthyForPipeline(t.Context(), suite.K8sClient, pipelineName)
 }
