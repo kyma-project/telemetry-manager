@@ -80,12 +80,12 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 
 			if tc.expectAgent {
 				assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
-				AgentMetricsUrl := suite.ProxyClient.ProxyURLForService(kitkyma.LogAgentMetricsService.Namespace, kitkyma.LogAgentMetricsService.Name, "metrics", ports.Metrics)
-				assert.EmitsOTelCollectorMetrics(suite.ProxyClient, AgentMetricsUrl)
+				agentMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.LogAgentMetricsService.Namespace, kitkyma.LogAgentMetricsService.Name, "metrics", ports.Metrics)
+				assert.EmitsOTelCollectorMetrics(t.Context(), agentMetricsURL)
 			}
 
 			gatewayMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.LogGatewayMetricsService.Namespace, kitkyma.LogGatewayMetricsService.Name, "metrics", ports.Metrics)
-			assert.EmitsOTelCollectorMetrics(suite.ProxyClient, gatewayMetricsURL)
+			assert.EmitsOTelCollectorMetrics(t.Context(), gatewayMetricsURL)
 		})
 	}
 }
@@ -121,6 +121,6 @@ func TestMetricsEndpoint_FluentBit(t *testing.T) {
 	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 	assert.LogPipelineUnsupportedMode(t.Context(), suite.K8sClient, pipelineName, false)
 
-	fluentBitMetricsUrl := suite.ProxyClient.ProxyURLForService(kitkyma.FluentBitMetricsService.Namespace, kitkyma.FluentBitMetricsService.Name, "api/v1/metrics/prometheus", fbports.HTTP)
-	assert.EmitsFluentBitMetrics(suite.ProxyClient, fluentBitMetricsUrl)
+	fluentBitMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.FluentBitMetricsService.Namespace, kitkyma.FluentBitMetricsService.Name, "api/v1/metrics/prometheus", fbports.HTTP)
+	assert.EmitsFluentBitMetrics(t.Context(), fluentBitMetricsURL)
 }

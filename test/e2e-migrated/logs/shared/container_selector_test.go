@@ -32,10 +32,7 @@ func TestContainerSelector_OTel(t *testing.T) {
 	)
 
 	backend1 := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithName("backend-1"))
-	backend1ExportURL := backend1.ExportURL(suite.ProxyClient)
-
 	backend2 := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithName("backend-2"))
-	backend2ExportURL := backend2.ExportURL(suite.ProxyClient)
 
 	// Include container1 from namespace genNs
 	includePipeline := testutils.NewLogPipelineBuilder().
@@ -80,12 +77,12 @@ func TestContainerSelector_OTel(t *testing.T) {
 	assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, excludePipelineName)
 
 	// backend1 - only container1 should be delivered
-	assert.OTelLogsFromContainerDelivered(suite.ProxyClient, backend1ExportURL, container1)
-	assert.OTelLogsFromContainerNotDelivered(suite.ProxyClient, backend1ExportURL, container2)
+	assert.OTelLogsFromContainerDelivered(t.Context(), backend1, container1)
+	assert.OTelLogsFromContainerNotDelivered(t.Context(), backend1, container2)
 
 	// backend2 - only container2 should be delivered
-	assert.OTelLogsFromContainerNotDelivered(suite.ProxyClient, backend2ExportURL, container1)
-	assert.OTelLogsFromContainerDelivered(suite.ProxyClient, backend2ExportURL, container2)
+	assert.OTelLogsFromContainerNotDelivered(t.Context(), backend2, container1)
+	assert.OTelLogsFromContainerDelivered(t.Context(), backend2, container2)
 }
 
 func TestContainerSelector_FluentBit(t *testing.T) {
@@ -102,10 +99,7 @@ func TestContainerSelector_FluentBit(t *testing.T) {
 	)
 
 	backend1 := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithName("backend-1"))
-	backend1ExportURL := backend1.ExportURL(suite.ProxyClient)
-
 	backend2 := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithName("backend-2"))
-	backend2ExportURL := backend2.ExportURL(suite.ProxyClient)
 
 	includePipeline := testutils.NewLogPipelineBuilder().
 		WithName(includePipelineName).
@@ -146,10 +140,10 @@ func TestContainerSelector_FluentBit(t *testing.T) {
 	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, excludePipelineName)
 
 	// backend1 - only container1 should be delivered
-	assert.FluentBitLogsFromContainerDelivered(suite.ProxyClient, backend1ExportURL, container1)
-	assert.FluentBitLogsFromContainerNotDelivered(suite.ProxyClient, backend1ExportURL, container2)
+	assert.FluentBitLogsFromContainerDelivered(t.Context(), backend1, container1)
+	assert.FluentBitLogsFromContainerNotDelivered(t.Context(), backend1, container2)
 
 	// backend2 - only container2 should be delivered
-	assert.FluentBitLogsFromContainerNotDelivered(suite.ProxyClient, backend2ExportURL, container1)
-	assert.FluentBitLogsFromContainerDelivered(suite.ProxyClient, backend2ExportURL, container2)
+	assert.FluentBitLogsFromContainerNotDelivered(t.Context(), backend2, container1)
+	assert.FluentBitLogsFromContainerDelivered(t.Context(), backend2, container2)
 }

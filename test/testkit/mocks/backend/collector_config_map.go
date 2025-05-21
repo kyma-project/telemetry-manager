@@ -9,7 +9,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
-type ConfigMap struct {
+type collectorConfigMapBuilder struct {
 	name             string
 	namespace        string
 	exportedFilePath string
@@ -17,8 +17,8 @@ type ConfigMap struct {
 	certs            *testutils.ServerCerts
 }
 
-func NewConfigMap(name, namespace, path string, signalType SignalType, certs *testutils.ServerCerts) *ConfigMap {
-	return &ConfigMap{
+func newCollectorConfigMap(name, namespace, path string, signalType SignalType, certs *testutils.ServerCerts) *collectorConfigMapBuilder {
+	return &collectorConfigMapBuilder{
 		name:             name,
 		namespace:        namespace,
 		exportedFilePath: path,
@@ -97,11 +97,11 @@ service:
       exporters:
         - file`
 
-func (cm *ConfigMap) Name() string {
+func (cm *collectorConfigMapBuilder) Name() string {
 	return cm.name
 }
 
-func (cm *ConfigMap) K8sObject() *corev1.ConfigMap {
+func (cm *collectorConfigMapBuilder) K8sObject() *corev1.ConfigMap {
 	var configTemplate string
 
 	switch {
