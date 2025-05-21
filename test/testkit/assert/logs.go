@@ -15,61 +15,62 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
+	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
 func FluentBitLogsFromContainerDelivered(ctx context.Context, backend *kitbackend.Backend, expectedContainerName string) {
 	BackendDataEventuallyMatches(ctx, backend,
-		HaveFlatFluentBitLogs(ContainElement(HaveContainerName(Equal(expectedContainerName)))),
+		fluentbit.HaveFlatLogs(ContainElement(fluentbit.HaveContainerName(Equal(expectedContainerName)))),
 	)
 }
 
 func FluentBitLogsFromContainerNotDelivered(ctx context.Context, backend *kitbackend.Backend, expectedContainerName string) {
 	BackendDataConsistentlyMatches(ctx, backend,
-		HaveFlatFluentBitLogs(Not(ContainElement(HaveContainerName(Equal(expectedContainerName))))),
+		fluentbit.HaveFlatLogs(Not(ContainElement(fluentbit.HaveContainerName(Equal(expectedContainerName))))),
 	)
 }
 
 func FluentBitLogsFromPodDelivered(ctx context.Context, backend *kitbackend.Backend, expectedPodNamePrefix string) {
 	BackendDataEventuallyMatches(ctx, backend,
-		HaveFlatFluentBitLogs(ContainElement(HavePodName(ContainSubstring(expectedPodNamePrefix)))),
+		fluentbit.HaveFlatLogs(ContainElement(fluentbit.HavePodName(ContainSubstring(expectedPodNamePrefix)))),
 	)
 }
 
 func FluentBitLogsFromNamespaceDelivered(ctx context.Context, backend *kitbackend.Backend, namespace string) {
 	BackendDataEventuallyMatches(ctx, backend,
-		HaveFlatFluentBitLogs(ContainElement(HaveNamespace(Equal(namespace)))),
+		fluentbit.HaveFlatLogs(ContainElement(fluentbit.HaveNamespace(Equal(namespace)))),
 	)
 }
 
 func FluentBitLogsFromNamespaceNotDelivered(ctx context.Context, backend *kitbackend.Backend, namespace string) {
 	BackendDataConsistentlyMatches(ctx, backend,
-		HaveFlatFluentBitLogs(Not(ContainElement(HaveNamespace(Equal(namespace))))),
+		fluentbit.HaveFlatLogs(Not(ContainElement(fluentbit.HaveNamespace(Equal(namespace))))),
 	)
 }
 
 func OTelLogsFromContainerDelivered(ctx context.Context, backend *kitbackend.Backend, containerName string) {
 	BackendDataEventuallyMatches(ctx, backend,
-		HaveFlatOTelLogs(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.container.name", containerName)))),
+		HaveFlatLogs(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.container.name", containerName)))),
 	)
 }
 
 func OTelLogsFromContainerNotDelivered(ctx context.Context, backend *kitbackend.Backend, containerName string) {
 	BackendDataConsistentlyMatches(ctx, backend,
-		HaveFlatOTelLogs(Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.container.name", containerName))))),
+		HaveFlatLogs(Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.container.name", containerName))))),
 	)
 }
 
 func OTelLogsFromNamespaceDelivered(ctx context.Context, backend *kitbackend.Backend, namespace string) {
 	BackendDataEventuallyMatches(ctx, backend,
-		HaveFlatOTelLogs(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)))),
+		HaveFlatLogs(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)))),
 	)
 }
 
 func OTelLogsFromNamespaceNotDelivered(ctx context.Context, backend *kitbackend.Backend, namespace string) {
 	BackendDataConsistentlyMatches(ctx, backend,
-		HaveFlatOTelLogs(Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace))))),
+		HaveFlatLogs(Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace))))),
 	)
 }
 

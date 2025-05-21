@@ -16,6 +16,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
+	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
@@ -135,7 +136,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 			assert.OTelLogsFromNamespaceDelivered(t.Context(), backend, genNs)
 
-			assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatOTelLogs(
+			assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
 				HaveEach(SatisfyAll(
 					HaveResourceAttributes(HaveKeyWithValue(k8sLabelKeyPrefix+"."+labelKeyExactMatch, labelValueExactMatch)),
 					HaveResourceAttributes(HaveKeyWithValue(k8sLabelKeyPrefix+"."+labelKeyPrefixMatch1, labelValuePrefixMatch1)),
@@ -207,26 +208,26 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 
 	// Scenario 1: Labels not dropped
 	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backendNotDropped, genNs)
-	assert.BackendDataEventuallyMatches(t.Context(), backendNotDropped, HaveFlatFluentBitLogs(
-		HaveEach(HaveKubernetesLabels(HaveKeyWithValue("env", "dev")))),
+	assert.BackendDataEventuallyMatches(t.Context(), backendNotDropped, fluentbit.HaveFlatLogs(
+		HaveEach(fluentbit.HaveKubernetesLabels(HaveKeyWithValue("env", "dev")))),
 	)
-	assert.BackendDataConsistentlyMatches(t.Context(), backendNotDropped, HaveFlatFluentBitLogs(
+	assert.BackendDataConsistentlyMatches(t.Context(), backendNotDropped, fluentbit.HaveFlatLogs(
 		Not(HaveEach(
-			HaveKubernetesAnnotations(Not(BeEmpty())),
+			fluentbit.HaveKubernetesAnnotations(Not(BeEmpty())),
 		)),
 	))
 
 	// Scenario 2: Labels dropped
 
 	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backendDropped, genNs)
-	assert.BackendDataConsistentlyMatches(t.Context(), backendDropped, HaveFlatFluentBitLogs(
+	assert.BackendDataConsistentlyMatches(t.Context(), backendDropped, fluentbit.HaveFlatLogs(
 		HaveEach(Not(
-			HaveKubernetesLabels(HaveKeyWithValue("env", "dev")),
+			fluentbit.HaveKubernetesLabels(HaveKeyWithValue("env", "dev")),
 		)),
 	))
-	assert.BackendDataConsistentlyMatches(t.Context(), backendDropped, HaveFlatFluentBitLogs(
+	assert.BackendDataConsistentlyMatches(t.Context(), backendDropped, fluentbit.HaveFlatLogs(
 		Not(ContainElement(
-			HaveKubernetesAnnotations(Not(BeEmpty())),
+			fluentbit.HaveKubernetesAnnotations(Not(BeEmpty())),
 		)),
 	))
 }

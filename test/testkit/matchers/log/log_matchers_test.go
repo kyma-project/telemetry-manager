@@ -7,7 +7,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/plog"
 )
 
-var flsOtel = []FlatLogOTel{
+var fls = []FlatLog{
 	{
 		LogRecordBody: "Test first log body",
 		ResourceAttributes: map[string]string{
@@ -24,21 +24,21 @@ var flsOtel = []FlatLogOTel{
 var _ = Describe("HaveFlatOtelLogs", func() {
 	It("should apply matcher to valid log data", func() {
 		td := plog.NewLogs()
-		Expect(mustMarshalOtelLogs(td)).Should(HaveFlatOTelLogs(ContainElements()))
+		Expect(mustMarshalOtelLogs(td)).Should(HaveFlatLogs(ContainElements()))
 	})
 
 	It("should fail when given empty byte slice", func() {
-		Expect([]byte{}).Should(HaveFlatOTelLogs(BeEmpty()))
+		Expect([]byte{}).Should(HaveFlatLogs(BeEmpty()))
 	})
 
 	It("should return error for nil input", func() {
-		success, err := HaveFlatOTelLogs(BeEmpty()).Match(nil)
+		success, err := HaveFlatLogs(BeEmpty()).Match(nil)
 		Expect(err).Should(HaveOccurred())
 		Expect(success).Should(BeFalse())
 	})
 
 	It("should return error for invalid input type", func() {
-		success, err := HaveFlatOTelLogs(BeEmpty()).Match(struct{}{})
+		success, err := HaveFlatLogs(BeEmpty()).Match(struct{}{})
 		Expect(err).Should(HaveOccurred())
 		Expect(success).Should(BeFalse())
 	})
@@ -63,13 +63,13 @@ var _ = Describe("HaveFlatOtelLogs", func() {
 		attrs.PutStr("k8s.pod.ip", "10.42.1.76")
 		attrs.PutStr("k8s.deployment.name", "backend")
 
-		Expect(mustMarshalOtelLogs(ld)).Should(HaveFlatOTelLogs(ContainElements(flsOtel[0])))
+		Expect(mustMarshalOtelLogs(ld)).Should(HaveFlatLogs(ContainElements(fls[0])))
 	})
 })
 
 var _ = Describe("HaveResourceAttributes", func() {
 	It("should apply matcher", func() {
-		Expect(flsOtel).Should(ContainElement(HaveResourceAttributes(HaveKey("k8s.deployment.name"))))
+		Expect(fls).Should(ContainElement(HaveResourceAttributes(HaveKey("k8s.deployment.name"))))
 	})
 })
 

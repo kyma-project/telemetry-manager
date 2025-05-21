@@ -16,7 +16,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
+	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/trafficgen"
@@ -214,10 +214,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					HaveFlatFluentBitLogs(Not(ContainElement(SatisfyAll(
-						HavePodName(ContainSubstring("telemetry-")),
-						HaveLevel(MatchRegexp(logLevelsRegexp)),
-						HaveLogBody(Not( // whitelist possible (flaky/expected) errors
+					fluentbit.HaveFlatLogs(Not(ContainElement(SatisfyAll(
+						fluentbit.HavePodName(ContainSubstring("telemetry-")),
+						fluentbit.HaveLevel(MatchRegexp(logLevelsRegexp)),
+						fluentbit.HaveLogBody(Not( // whitelist possible (flaky/expected) errors
 							Or(
 								ContainSubstring("grpc: addrConn.createTransport failed to connect"),
 								ContainSubstring("rpc error: code = Unavailable desc = no healthy upstream"),
@@ -237,9 +237,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					HaveFlatFluentBitLogs(Not(ContainElement(SatisfyAll(
-						HavePodName(ContainSubstring("telemetry-")),
-						HaveLogBody(MatchRegexp(logLevelsRegexp)), // fluenbit does not log in JSON, so we need to check the body for errors
+					fluentbit.HaveFlatLogs(Not(ContainElement(SatisfyAll(
+						fluentbit.HavePodName(ContainSubstring("telemetry-")),
+						fluentbit.HaveLogBody(MatchRegexp(logLevelsRegexp)), // fluenbit does not log in JSON, so we need to check the body for errors
 					)))),
 				))
 			}, consistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
@@ -253,9 +253,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					HaveFlatFluentBitLogs(Not(ContainElement(SatisfyAll(
-						HavePodName(ContainSubstring("telemetry-")),
-						HaveLevel(MatchRegexp(logLevelsRegexp)),
+					fluentbit.HaveFlatLogs(Not(ContainElement(SatisfyAll(
+						fluentbit.HavePodName(ContainSubstring("telemetry-")),
+						fluentbit.HaveLevel(MatchRegexp(logLevelsRegexp)),
 					)))),
 				))
 			}, consistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
