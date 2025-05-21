@@ -187,7 +187,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return fmt.Errorf("failed to reconcile log gateway: %w", err)
 	}
 
-	if isLogAgentRequired(pipeline) {
+	if len(reconcilablePipelinesRequiringAgents) > 0 {
 		if err := r.reconcileLogAgent(ctx, pipeline, reconcilablePipelinesRequiringAgents); err != nil {
 			return fmt.Errorf("failed to reconcile log agent: %w", err)
 		}
@@ -387,7 +387,7 @@ func getAgentPorts() []int32 {
 }
 
 func (r *Reconciler) getPipelinesRequiringAgents(allPipelines []telemetryv1alpha1.LogPipeline) []telemetryv1alpha1.LogPipeline {
-	var pipelinesRequiringAgents []telemetryv1alpha1.LogPipeline
+	var pipelinesRequiringAgents = make([]telemetryv1alpha1.LogPipeline, 0)
 
 	for i := range allPipelines {
 		if isLogAgentRequired(&allPipelines[i]) {
