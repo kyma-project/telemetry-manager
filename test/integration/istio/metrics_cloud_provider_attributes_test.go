@@ -45,6 +45,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Label(suite.LabelMet
 
 			backend := kitbackend.New(mockNs, kitbackend.SignalTypeMetrics, kitbackend.WithName(backendName))
 			objs = append(objs, backend.K8sObjects()...)
+			backendURL = backend.ExportURL(suite.ProxyClient)
 
 			pipeline := testutils.NewMetricPipelineBuilder().
 				WithName(pipelineName).
