@@ -12,7 +12,6 @@ const (
 )
 
 type Enrichments struct {
-	Enabled   bool
 	PodLabels []PodLabel
 }
 
@@ -94,7 +93,7 @@ func extractLabels() []config.ExtractLabel {
 func buildExtractPodLabels(enrichments Enrichments) []config.ExtractLabel {
 	extractPodLabels := make([]config.ExtractLabel, 0)
 
-	if enrichments.Enabled {
+	if len(enrichments.PodLabels) > 0 {
 		for _, label := range enrichments.PodLabels {
 			labelConfig := config.ExtractLabel{
 				From:    "pod",
