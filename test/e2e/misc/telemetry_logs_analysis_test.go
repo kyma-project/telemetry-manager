@@ -208,7 +208,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 
 		It("Should not have any error/warn logs in the otel collector component containers", func() {
 			Consistently(func(g Gomega) {
-				//TODO(skhalash): provide a way to inject custom timout into the BackendDataConsistentlyMatching helper
+				// TODO(skhalash): provide a way to inject custom timout into the BackendDataConsistentlyMatching helper
 				queryURL := suite.ProxyClient.ProxyURLForService(otelCollectorLogBackend.Namespace(), otelCollectorLogBackend.Name(), kitbackend.QueryPath, kitbackend.QueryPort)
 				resp, err := suite.ProxyClient.Get(queryURL)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -231,7 +231,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 
 		It("Should not have any error/warn logs in the FluentBit containers", func() {
 			Consistently(func(g Gomega) {
-				//TODO(skhalash): provide a way to inject custom timout into the BackendDataConsistentlyMatching helper
+				// TODO(skhalash): provide a way to inject custom timout into the BackendDataConsistentlyMatching helper
 				queryURL := suite.ProxyClient.ProxyURLForService(fluentBitLogBackend.Namespace(), fluentBitLogBackend.Name(), kitbackend.QueryPath, kitbackend.QueryPort)
 				resp, err := suite.ProxyClient.Get(queryURL)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -247,7 +247,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 
 		It("Should not have any error/warn logs in the self-monitor containers", func() {
 			Consistently(func(g Gomega) {
-				//TODO(skhalash): provide a way to inject custom timout into the BackendDataConsistentlyMatching helper
+				// TODO(skhalash): provide a way to inject custom timout into the BackendDataConsistentlyMatching helper
 				queryURL := suite.ProxyClient.ProxyURLForService(selfMonitorLogBackend.Namespace(), selfMonitorLogBackend.Name(), kitbackend.QueryPath, kitbackend.QueryPort)
 				resp, err := suite.ProxyClient.Get(queryURL)
 				g.Expect(err).NotTo(HaveOccurred())

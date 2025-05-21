@@ -24,7 +24,7 @@ func BackendDataConsistentlyMatching(ctx context.Context, backend *kitbackend.Ba
 
 func DataEventuallyMatching(ctx context.Context, queryURL string, httpBodyMatcher types.GomegaMatcher) {
 	Eventually(func(g Gomega) {
-		resp, err := suite.ProxyClient.Get(queryURL)
+		resp, err := suite.ProxyClient.GetWithContext(ctx, queryURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		defer resp.Body.Close()
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
@@ -34,7 +34,7 @@ func DataEventuallyMatching(ctx context.Context, queryURL string, httpBodyMatche
 
 func DataConsistentlyMatching(ctx context.Context, queryURL string, httpBodyMatcher types.GomegaMatcher) {
 	Consistently(func(g Gomega) {
-		resp, err := suite.ProxyClient.Get(queryURL)
+		resp, err := suite.ProxyClient.GetWithContext(ctx, queryURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		defer resp.Body.Close()
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))

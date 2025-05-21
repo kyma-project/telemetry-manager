@@ -18,8 +18,6 @@ import (
 )
 
 const (
-	defaultNamespaceName = "default"
-
 	otlpGRPCPortName = "grpc-otlp"
 	otlpHTTPPortName = "http-otlp"
 	httpLogsPortName = "http-logs"

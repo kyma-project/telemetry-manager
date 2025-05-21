@@ -34,7 +34,7 @@ func EmitsManagerMetrics(ctx context.Context, matchers ...types.GomegaMatcher) {
 			kitkyma.TelemetryManagerMetricsServiceName.Name,
 			metricsPath,
 			kitkyma.TelemetryManagerMetricsPort)
-		resp, err := suite.ProxyClient.Get(telemetryManagerMetricsURL)
+		resp, err := suite.ProxyClient.GetWithContext(ctx, telemetryManagerMetricsURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 
