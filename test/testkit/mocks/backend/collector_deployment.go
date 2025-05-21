@@ -16,7 +16,7 @@ const (
 	fluentDImage = "europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluentd:v1.16-debian-1"
 )
 
-type Deployment struct {
+type collectorDeploymentBuilder struct {
 	name              string
 	namespace         string
 	configmapName     string
@@ -27,8 +27,8 @@ type Deployment struct {
 	annotations       map[string]string
 }
 
-func NewDeployment(name, namespace, configmapName, dataPath string, replicas int32, signalType SignalType) *Deployment {
-	return &Deployment{
+func newCollectorDeployment(name, namespace, configmapName, dataPath string, replicas int32, signalType SignalType) *collectorDeploymentBuilder {
+	return &collectorDeploymentBuilder{
 		name:          name,
 		namespace:     namespace,
 		configmapName: configmapName,
@@ -38,16 +38,17 @@ func NewDeployment(name, namespace, configmapName, dataPath string, replicas int
 	}
 }
 
-func (d *Deployment) WithFluentdConfigName(fluentdConfigName string) *Deployment {
+func (d *collectorDeploymentBuilder) WithFluentdConfigName(fluentdConfigName string) *collectorDeploymentBuilder {
 	d.fluentdConfigName = fluentdConfigName
 	return d
 }
 
-func (d *Deployment) WithAnnotations(annotations map[string]string) *Deployment {
+func (d *collectorDeploymentBuilder) WithAnnotations(annotations map[string]string) *collectorDeploymentBuilder {
 	d.annotations = annotations
 	return d
 }
-func (d *Deployment) K8sObject(opts ...testkit.OptFunc) *appsv1.Deployment {
+
+func (d *collectorDeploymentBuilder) K8sObject(opts ...testkit.OptFunc) *appsv1.Deployment {
 	labels := kitk8s.ProcessLabelOptions(opts...)
 
 	containers := d.containers()
@@ -78,7 +79,7 @@ func (d *Deployment) K8sObject(opts ...testkit.OptFunc) *appsv1.Deployment {
 	}
 }
 
-func (d *Deployment) containers() []corev1.Container {
+func (d *collectorDeploymentBuilder) containers() []corev1.Container {
 	containers := []corev1.Container{
 		{
 			Name:  "otel-collector",
@@ -128,7 +129,7 @@ func (d *Deployment) containers() []corev1.Container {
 	return containers
 }
 
-func (d *Deployment) volumes() []corev1.Volume {
+func (d *collectorDeploymentBuilder) volumes() []corev1.Volume {
 	volumes := []corev1.Volume{
 		{
 			Name: "config",

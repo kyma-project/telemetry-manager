@@ -15,16 +15,15 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/fluentd"
 )
 
 const (
 	defaultNamespaceName = "default"
 
-	otlpGRPCPortName   = "grpc-otlp"
-	otlpHTTPPortName   = "http-otlp"
-	httpLogsPortName   = "http-logs"
-	httpExportPortName = "http-web"
+	otlpGRPCPortName = "grpc-otlp"
+	otlpHTTPPortName = "http-otlp"
+	httpLogsPortName = "http-logs"
+	queryPortName    = "http-query"
 
 	// Ports for pushing telemetry data to the backend (OTLP or FluentBit HTTP)
 	otlpGRPCPort          int32 = 4317
@@ -58,12 +57,12 @@ type Backend struct {
 	replicas                    int32
 	signalType                  SignalType
 
-	fluentDConfigMap        *fluentd.ConfigMap
-	hostSecret              *kitk8s.Secret
-	otelCollectorConfigMap  *ConfigMap
-	otelCollectorDeployment *Deployment
-	otlpService             *kitk8s.Service
-	virtualService          *kitk8s.VirtualService
+	fluentDConfigMap    *fluentdConfigMapBuilder
+	hostSecret          *kitk8s.Secret
+	collectorConfigMap  *collectorConfigMapBuilder
+	collectorDeployment *collectorDeploymentBuilder
+	collectorService    *kitk8s.Service
+	virtualService      *kitk8s.VirtualService
 }
 
 func New(namespace string, signalType SignalType, opts ...Option) *Backend {
@@ -138,9 +137,9 @@ func (b *Backend) K8sObjects() []client.Object {
 		objects = append(objects, b.virtualService.K8sObject())
 	}
 
-	objects = append(objects, b.otelCollectorConfigMap.K8sObject())
-	objects = append(objects, b.otelCollectorDeployment.K8sObject(kitk8s.WithLabel("app", b.name)))
-	objects = append(objects, b.otlpService.K8sObject(kitk8s.WithLabel("app", b.name)))
+	objects = append(objects, b.collectorConfigMap.K8sObject())
+	objects = append(objects, b.collectorDeployment.K8sObject(kitk8s.WithLabel("app", b.name)))
+	objects = append(objects, b.collectorService.K8sObject(kitk8s.WithLabel("app", b.name)))
 	objects = append(objects, b.hostSecret.K8sObject())
 
 	return objects
@@ -149,12 +148,29 @@ func (b *Backend) K8sObjects() []client.Object {
 func (b *Backend) buildResources() {
 	exportedFilePath := fmt.Sprintf("/%s/%s", string(b.signalType), QueryPath)
 
-	b.otelCollectorConfigMap = NewConfigMap(fmt.Sprintf("%s-receiver-config", b.name), b.namespace, exportedFilePath, b.signalType, b.certs)
-	b.otelCollectorDeployment = NewDeployment(b.name, b.namespace, b.otelCollectorConfigMap.Name(), filepath.Dir(exportedFilePath), b.replicas, b.signalType).WithAnnotations(map[string]string{"traffic.sidecar.istio.io/excludeInboundPorts": strconv.Itoa(int(QueryPort))})
-	b.otlpService = kitk8s.NewService(b.name, b.namespace).
+	b.collectorConfigMap = newCollectorConfigMap(
+		fmt.Sprintf("%s-receiver-config", b.name),
+		b.namespace,
+		exportedFilePath,
+		b.signalType,
+		b.certs,
+	)
+
+	b.collectorDeployment = newCollectorDeployment(
+		b.name,
+		b.namespace,
+		b.collectorConfigMap.Name(),
+		filepath.Dir(exportedFilePath),
+		b.replicas,
+		b.signalType,
+	).WithAnnotations(map[string]string{
+		"traffic.sidecar.istio.io/excludeInboundPorts": strconv.Itoa(int(QueryPort)),
+	})
+
+	b.collectorService = kitk8s.NewService(b.name, b.namespace).
 		WithPort(otlpGRPCPortName, otlpGRPCPort).
 		WithPort(otlpHTTPPortName, otlpHTTPPort).
-		WithPort(httpExportPortName, QueryPort)
+		WithPort(queryPortName, QueryPort)
 
 	// TODO: LogPipelines requires the host and the port to be separated.
 	// TracePipeline/MetricPipeline requires an endpoint in the format of scheme://host:port.
@@ -162,19 +178,28 @@ func (b *Backend) buildResources() {
 	host := b.Endpoint()
 
 	if b.signalType == SignalTypeLogsFluentBit {
-		b.fluentDConfigMap = fluentd.NewConfigMap(fmt.Sprintf("%s-receiver-config-fluentd", b.name), b.namespace, b.certs)
-		b.otelCollectorDeployment.WithFluentdConfigName(b.fluentDConfigMap.Name())
-		b.otlpService = b.otlpService.WithPort(httpLogsPortName, httpFluentBitPushPort)
+		b.fluentDConfigMap = newFluentDConfigMapBuilder(
+			fmt.Sprintf("%s-receiver-config-fluentd", b.name),
+			b.namespace,
+			b.certs,
+		)
+		b.collectorDeployment.WithFluentdConfigName(b.fluentDConfigMap.Name())
+		b.collectorService = b.collectorService.WithPort(httpLogsPortName, httpFluentBitPushPort)
 		host = b.Host()
 	}
 
-	b.hostSecret = kitk8s.NewOpaqueSecret(fmt.Sprintf("%s-receiver-hostname", b.name), defaultNamespaceName,
-		kitk8s.WithStringData("host", host)).Persistent(b.persistentHostSecret)
+	b.hostSecret = kitk8s.NewOpaqueSecret(
+		fmt.Sprintf("%s-receiver-hostname", b.name),
+		b.namespace,
+		kitk8s.WithStringData("host", host),
+	).Persistent(b.persistentHostSecret)
 
 	if b.abortFaultPercentage > 0 || b.faultDelayPercentage > 0 {
 		// Configure fault injection for self-monitoring negative tests.
-		b.virtualService = kitk8s.NewVirtualService("fault-injection", b.namespace, b.name).
-			WithFaultAbortPercentage(b.abortFaultPercentage).
-			WithFaultDelay(b.faultDelayPercentage, time.Duration(b.faultDelayFixedDelaySeconds)*time.Second)
+		b.virtualService = kitk8s.NewVirtualService(
+			"fault-injection",
+			b.namespace,
+			b.name,
+		).WithFaultAbortPercentage(b.abortFaultPercentage).WithFaultDelay(b.faultDelayPercentage, time.Duration(b.faultDelayFixedDelaySeconds)*time.Second)
 	}
 }

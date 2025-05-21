@@ -120,7 +120,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesOutage), Order
 			It("Ensures that controller_runtime_webhook_requests_total is increased", func() {
 				// Pushing metrics to the metric gateway triggers an alert.
 				// It makes the self-monitor call the webhook, which in turn increases the counter.
-				assert.ManagerEmitsMetric(suite.ProxyClient,
+				assert.EmitsManagerMetrics(suite.ProxyClient,
 					HaveName(Equal("controller_runtime_webhook_requests_total")),
 					SatisfyAll(
 						HaveLabels(HaveKeyWithValue("webhook", "/api/v2/alerts")),
@@ -129,7 +129,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesOutage), Order
 			})
 
 			It("Ensures that telemetry_self_monitor_prober_requests_total is emitted", func() {
-				assert.ManagerEmitsMetric(
+				assert.EmitsManagerMetrics(
 					suite.ProxyClient,
 					HaveName(Equal("telemetry_self_monitor_prober_requests_total")),
 					HaveMetricValue(BeNumerically(">", 0)),
