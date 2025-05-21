@@ -16,7 +16,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/istio"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
+	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
@@ -103,8 +103,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 				resp, err := suite.ProxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(HaveFlatFluentBitLogs(ContainElement(
-					HaveLogRecordAttributes(HaveKey(BeElementOf(istio.AccessLogAttributeKeys))),
+				g.Expect(resp).To(HaveHTTPBody(fluentbit.HaveFlatLogs(ContainElement(
+					fluentbit.HaveAttributes(HaveKey(BeElementOf(istio.AccessLogAttributeKeys))),
 				))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})

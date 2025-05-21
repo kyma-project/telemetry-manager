@@ -65,24 +65,24 @@ func TestAttributesParser(t *testing.T) {
 	assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 	assert.OTelLogsFromNamespaceDelivered(t.Context(), backend, genNs)
 
-	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatOTelLogs(ContainElement(SatisfyAll(
-		HaveOTelTimestamp(Not(BeEmpty())),
+	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatLogs(ContainElement(SatisfyAll(
+		HaveTimestamp(Not(BeEmpty())),
 		HaveObservedTimestamp(Not(BeEmpty())),
-		HaveTraceId(Not(BeEmpty())),
-		HaveSpanId(Not(BeEmpty())),
-		HaveTraceId(Equal("255c2212dd02c02ac59a923ff07aec74")),
+		HaveTraceID(Not(BeEmpty())),
+		HaveSpanID(Not(BeEmpty())),
+		HaveTraceID(Equal("255c2212dd02c02ac59a923ff07aec74")),
 	))))
 
-	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatOTelLogs(ContainElement(SatisfyAll(
-		HaveOTelTimestamp(Not(BeEmpty())),
+	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatLogs(ContainElement(SatisfyAll(
+		HaveTimestamp(Not(BeEmpty())),
 		HaveObservedTimestamp(Not(BeEmpty())),
-		HaveSpanId(Not(BeEmpty())),
-		HaveTraceId(Equal("80e1afed08e019fc1110464cfa66635c")),
+		HaveSpanID(Not(BeEmpty())),
+		HaveTraceID(Equal("80e1afed08e019fc1110464cfa66635c")),
 	))))
 
-	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatOTelLogs(
+	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
 		ContainElement(SatisfyAll(
-			HaveOTelTimestamp(Not(BeEmpty())),
+			HaveTimestamp(Not(BeEmpty())),
 			HaveObservedTimestamp(Not(BeEmpty())),
 			HaveAttributes(Not(HaveKey("trace_id"))),
 			HaveAttributes(Not(HaveKey("span_id"))),
@@ -90,12 +90,12 @@ func TestAttributesParser(t *testing.T) {
 			HaveAttributes(Not(HaveKey("traceparent"))),
 		))))
 
-	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatOTelLogs(
+	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
 		ContainElement(SatisfyAll(
-			HaveOTelTimestamp(Not(BeEmpty())),
+			HaveTimestamp(Not(BeEmpty())),
 			HaveObservedTimestamp(Not(BeEmpty())),
-			HaveTraceId(BeEmpty()),
-			HaveSpanId(BeEmpty()),
+			HaveTraceID(BeEmpty()),
+			HaveSpanID(BeEmpty()),
 			HaveAttributes(HaveKey("span_id")),
 		))))
 }

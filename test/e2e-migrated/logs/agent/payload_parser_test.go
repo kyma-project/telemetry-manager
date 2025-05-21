@@ -58,11 +58,11 @@ func TestPayloadParser(t *testing.T) {
 	assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 
 	// Parse traces properly
-	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatOTelLogs(
+	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatLogs(
 		ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("name", "a")),
-			HaveTraceId(Equal("255c2212dd02c02ac59a923ff07aec74")),
-			HaveSpanId(Equal("c5c735f175ad06a6")),
+			HaveTraceID(Equal("255c2212dd02c02ac59a923ff07aec74")),
+			HaveSpanID(Equal("c5c735f175ad06a6")),
 			HaveTraceFlags(Equal(uint32(0))),
 			HaveAttributes(Not(HaveKey("trace_id"))),
 			HaveAttributes(Not(HaveKey("span_id"))),
@@ -71,11 +71,11 @@ func TestPayloadParser(t *testing.T) {
 		)),
 	))
 
-	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatOTelLogs(
+	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatLogs(
 		ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("name", "b")),
-			HaveTraceId(Equal("80e1afed08e019fc1110464cfa66635c")),
-			HaveSpanId(Equal("7a085853722dc6d2")),
+			HaveTraceID(Equal("80e1afed08e019fc1110464cfa66635c")),
+			HaveSpanID(Equal("7a085853722dc6d2")),
 			HaveTraceFlags(Equal(uint32(1))),
 			HaveAttributes(Not(HaveKey("trace_id"))),
 			HaveAttributes(Not(HaveKey("span_id"))),
@@ -84,27 +84,27 @@ func TestPayloadParser(t *testing.T) {
 		)),
 	))
 
-	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatOTelLogs(
+	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
 		ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("name", "c")),
-			HaveTraceId(BeEmpty()),
-			HaveSpanId(BeEmpty()),
+			HaveTraceID(BeEmpty()),
+			HaveSpanID(BeEmpty()),
 			HaveTraceFlags(Equal(uint32(0))), // default value
 			HaveAttributes(HaveKey("span_id")),
 		)),
 	))
 
-	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatOTelLogs(
+	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
 		ContainElement(SatisfyAll(
-			HaveLogRecordBody(HavePrefix("name=d")),
-			HaveTraceId(BeEmpty()),
-			HaveSpanId(BeEmpty()),
+			HaveLogBody(HavePrefix("name=d")),
+			HaveTraceID(BeEmpty()),
+			HaveSpanID(BeEmpty()),
 			HaveTraceFlags(Equal(uint32(0))), // default value
 		)),
 	))
 
 	// Parse severity properly
-	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatOTelLogs(
+	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
 		ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("name", "a")),
 			HaveSeverityNumber(Equal(9)),
@@ -113,7 +113,7 @@ func TestPayloadParser(t *testing.T) {
 		)),
 	))
 
-	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatOTelLogs(
+	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
 		ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("name", "b")),
 			HaveSeverityNumber(Equal(13)),
@@ -122,7 +122,7 @@ func TestPayloadParser(t *testing.T) {
 		)),
 	))
 
-	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatOTelLogs(
+	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
 		ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("name", "c")),
 			HaveSeverityNumber(Equal(0)), // default value
@@ -130,9 +130,9 @@ func TestPayloadParser(t *testing.T) {
 		)),
 	))
 
-	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatOTelLogs(
+	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
 		ContainElement(SatisfyAll(
-			HaveLogRecordBody(HavePrefix("name=d")),
+			HaveLogBody(HavePrefix("name=d")),
 			HaveSeverityNumber(Equal(0)), // default value
 			HaveSeverityText(BeEmpty()),
 		)),

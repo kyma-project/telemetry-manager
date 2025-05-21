@@ -58,7 +58,7 @@ func TestInstrumentationScope(t *testing.T) {
 
 	assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 
-	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatOTelLogs(
+	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatLogs(
 		ContainElement(SatisfyAll(
 			HaveScopeName(Equal(agent.InstrumentationScopeRuntime)),
 			HaveScopeVersion(SatisfyAny(

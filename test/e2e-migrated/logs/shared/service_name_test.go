@@ -132,7 +132,7 @@ func TestServiceName_OTel(t *testing.T) {
 			assert.OTelLogsFromNamespaceDelivered(t.Context(), backend, genNs)
 
 			verifyServiceNameAttr := func(givenPodPrefix, expectedServiceName string) {
-				assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatOTelLogs(
+				assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatLogs(
 					ContainElement(SatisfyAll(
 						HaveResourceAttributes(HaveKeyWithValue(serviceKey, expectedServiceName)),
 						HaveResourceAttributes(HaveKeyWithValue(podKey, ContainSubstring(givenPodPrefix))),
@@ -151,7 +151,7 @@ func TestServiceName_OTel(t *testing.T) {
 			}
 
 			// Verify that temporary kyma resource attributes are removed from the logs
-			assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatOTelLogs(
+			assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
 				Not(ContainElement(
 					HaveResourceAttributes(HaveKey(ContainSubstring("kyma"))),
 				)),

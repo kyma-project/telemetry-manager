@@ -12,7 +12,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
+	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -56,10 +56,10 @@ func TestKeepAnnotations(t *testing.T) {
 	assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
 	assert.DeploymentReady(t.Context(), suite.K8sClient, logProducer.NamespacedName())
 
-	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatFluentBitLogs(
-		ContainElement(HaveKubernetesAnnotations(HaveKeyWithValue("release", "v1.0.0")))),
+	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(
+		ContainElement(fluentbit.HaveKubernetesAnnotations(HaveKeyWithValue("release", "v1.0.0")))),
 	)
-	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatFluentBitLogs(
-		Not(ContainElement(HaveKubernetesLabels(Not(BeEmpty()))))),
+	assert.BackendDataConsistentlyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(
+		Not(ContainElement(fluentbit.HaveKubernetesLabels(Not(BeEmpty()))))),
 	)
 }
