@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -40,10 +41,10 @@ const (
 type SignalType string
 
 const (
-	SignalTypeTraces   = "traces"
-	SignalTypeMetrics  = "metrics"
-	SignalTypeLogs     = "logs"
-	SignalTypeLogsOtel = "logs-otel"
+	SignalTypeTraces        = "traces"
+	SignalTypeMetrics       = "metrics"
+	SignalTypeLogsFluentBit = "logs"
+	SignalTypeLogsOTel      = "logs-otel"
 )
 
 type Option func(*Backend)
@@ -125,6 +126,17 @@ func (b *Backend) Name() string {
 	return b.name
 }
 
+func (b *Backend) Namespace() string {
+	return b.namespace
+}
+
+func (b *Backend) NamespacedName() types.NamespacedName {
+	return types.NamespacedName{
+		Name:      b.name,
+		Namespace: b.namespace,
+	}
+}
+
 func (b *Backend) Endpoint() string {
 	addr := net.JoinHostPort(b.Host(), strconv.Itoa(int(b.Port())))
 	return fmt.Sprintf("http://%s", addr)
@@ -135,7 +147,7 @@ func (b *Backend) Host() string {
 }
 
 func (b *Backend) Port() int32 {
-	if b.signalType == SignalTypeLogs {
+	if b.signalType == SignalTypeLogsFluentBit {
 		return httpLogsPort
 	} else {
 		return otlpGRPCPort
@@ -156,7 +168,7 @@ func (b *Backend) ExportURL(proxyClient *apiserverproxy.Client) string {
 
 func (b *Backend) K8sObjects() []client.Object {
 	var objects []client.Object
-	if b.signalType == SignalTypeLogs {
+	if b.signalType == SignalTypeLogsFluentBit {
 		objects = append(objects, b.fluentDConfigMap.K8sObject())
 	}
 
@@ -186,7 +198,7 @@ func (b *Backend) buildResources() {
 	// The referencable secret is called host in both cases, but the value is different. It has to be refactored.
 	host := b.Endpoint()
 
-	if b.signalType == SignalTypeLogs {
+	if b.signalType == SignalTypeLogsFluentBit {
 		b.fluentDConfigMap = fluentd.NewConfigMap(fmt.Sprintf("%s-receiver-config-fluentd", b.name), b.namespace, b.certs)
 		b.otelCollectorDeployment.WithFluentdConfigName(b.fluentDConfigMap.Name())
 		b.otlpService = b.otlpService.WithPort(httpLogsPortName, httpLogsPort)

@@ -79,9 +79,7 @@ func HaveKubernetesLabels(matcher types.GomegaMatcher) types.GomegaMatcher {
 }
 
 func HaveLogBody(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(fl FlatLogFluentBit) string {
-		return fl.LogRecordBody
-	}, matcher)
+	return gomega.WithTransform(func(fl FlatLogFluentBit) string { return fl.LogRecordBody }, matcher)
 }
 
 func HaveDateISO8601Format(matcher types.GomegaMatcher) types.GomegaMatcher {

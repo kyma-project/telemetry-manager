@@ -3,14 +3,18 @@ package suite
 import (
 	"context"
 	"fmt"
+	"os"
 	"path"
 	"runtime"
 	"strings"
+	"testing"
 
+	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 )
@@ -34,11 +38,12 @@ var (
 func BeforeSuiteFuncErr() error {
 	Ctx, cancel = context.WithCancel(context.Background()) //nolint:fatcontext // context is used in tests
 
-	kubeconfigPath := clientcmd.NewDefaultClientConfigLoadingRules().GetDefaultFilename()
+	//TODO: set up stdout and stderr loggers
+	logf.SetLogger(logr.FromContextOrDiscard(Ctx))
 
-	restConfig, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
+	restConfig, err := config.GetConfig()
 	if err != nil {
-		return fmt.Errorf("failed to load kubeconfig: %w", err)
+		return fmt.Errorf("failed to get k8s config: %w", err)
 	}
 
 	K8sClient, err = client.New(restConfig, client.Options{Scheme: scheme})
@@ -98,13 +103,18 @@ func sanitizeSpecID(filePath string) string {
 
 const (
 	// Test suites labels
-	LabelLogsOtel      = "logs-otel"
-	LabelLogsFluentBit = "logs-fluentbit"
-	LabelLogs          = "logs"
-	LabelTraces        = "traces"
-	LabelMetrics       = "metrics"
-	LabelTelemetry     = "telemetry"
-	LabelMaxPipeline   = "max-pipeline"
+	LabelLogs                 = "logs"
+	LabelLogsOtel             = "logs-otel"
+	LabelLogsFluentBit        = "logs-fluentbit"
+	LabelLogAgent             = "log-agent"
+	LabelLogGateway           = "log-gateway"
+	LabelFluentBit            = "fluent-bit"
+	LabelTraces               = "traces"
+	LabelMetrics              = "metrics"
+	LabelTelemetry            = "telemetry"
+	LabelMaxPipeline          = "max-pipeline"
+	LabelMaxPipelineOTel      = "max-pipeline-otel"
+	LabelMaxPipelineFluentBit = "max-pipeline-fluent-bit"
 
 	// Test "sub-suites" labels
 	LabelExperimental = "experimental"
@@ -113,6 +123,7 @@ const (
 	LabelSetC         = "set_c"
 	LabelSignalPush   = "signal-push"
 	LabelSignalPull   = "signal-pull"
+	LabelSkip         = "skip"
 
 	// Self-monitoring test labels
 	LabelSelfMonitoringLogsHealthy         = "self-mon-logs-healthy"
@@ -141,4 +152,59 @@ func IsUpgrade() bool {
 	labelsFilter := GinkgoLabelFilter()
 
 	return labelsFilter != "" && Label(LabelUpgrade).MatchesLabelFilter(labelsFilter)
+}
+
+func RegisterTestCase(t *testing.T, labels ...string) {
+	RegisterTestingT(t)
+
+	labelSet := toSet(labels)
+
+	requiredLabels := findRequiredLabels()
+	if len(requiredLabels) == 0 {
+		return
+	}
+
+	// Skip test if it contains "skipped" label
+	if _, exists := labelSet[LabelSkip]; exists {
+		t.Skip()
+	}
+
+	// Skip test if it doesn't contain at least one required label
+	for _, requiredLabel := range requiredLabels {
+		if _, exists := labelSet[requiredLabel]; !exists {
+			t.Skip()
+		}
+	}
+}
+
+func findRequiredLabels() []string {
+	const prefix = "-labels="
+
+	var labelsArg string
+
+	for _, arg := range os.Args {
+		if strings.HasPrefix(arg, prefix) {
+			labelsArg = arg
+		}
+	}
+
+	if labelsArg == "" {
+		return nil
+	}
+
+	labelsKV := strings.SplitN(labelsArg, "=", 2)
+	if len(labelsKV) != 2 {
+		return nil
+	}
+
+	return strings.Split(labelsKV[1], ",")
+}
+
+func toSet(labels []string) map[string]struct{} {
+	set := make(map[string]struct{}, len(labels))
+	for _, label := range labels {
+		set[label] = struct{}{}
+	}
+
+	return set
 }

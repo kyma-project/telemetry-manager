@@ -16,7 +16,7 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/metrics/runtime"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -72,7 +72,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), 
 				var objs []client.Object
 				objs = append(objs, kitk8s.NewNamespace(tt.namespace).K8sObject())
 
-				backendOnlyNodeMetricsEnabled := backend.New(tt.namespace, backend.SignalTypeMetrics, backend.WithName(backendOnlyNodeMetricsEnabledName))
+				backendOnlyNodeMetricsEnabled := kitbackend.New(tt.namespace, kitbackend.SignalTypeMetrics, kitbackend.WithName(backendOnlyNodeMetricsEnabledName))
 				objs = append(objs, backendOnlyNodeMetricsEnabled.K8sObjects()...)
 				backendOnlyNodeMetricsEnabledURL = backendOnlyNodeMetricsEnabled.ExportURL(suite.ProxyClient)
 
