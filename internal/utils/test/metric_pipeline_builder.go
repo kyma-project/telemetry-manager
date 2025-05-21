@@ -51,7 +51,7 @@ func (b *MetricPipelineBuilder) WithAnnotations(annotations map[string]string) *
 	return b
 }
 
-func (b *MetricPipelineBuilder) WithRuntimeInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
+func (b *MetricPipelineBuilder) WithRuntimeInput(enable bool, opts ...NamespaceSelectorOptions) *MetricPipelineBuilder {
 	if b.inRuntime == nil {
 		b.inRuntime = &telemetryv1alpha1.MetricPipelineRuntimeInput{}
 	}
@@ -73,7 +73,7 @@ func (b *MetricPipelineBuilder) WithRuntimeInput(enable bool, opts ...InputOptio
 	return b
 }
 
-func (b *MetricPipelineBuilder) WithPrometheusInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
+func (b *MetricPipelineBuilder) WithPrometheusInput(enable bool, opts ...NamespaceSelectorOptions) *MetricPipelineBuilder {
 	if b.inPrometheus == nil {
 		b.inPrometheus = &telemetryv1alpha1.MetricPipelinePrometheusInput{}
 	}
@@ -95,7 +95,7 @@ func (b *MetricPipelineBuilder) WithPrometheusInput(enable bool, opts ...InputOp
 	return b
 }
 
-func (b *MetricPipelineBuilder) WithIstioInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
+func (b *MetricPipelineBuilder) WithIstioInput(enable bool, opts ...NamespaceSelectorOptions) *MetricPipelineBuilder {
 	if b.inIstio == nil {
 		b.inIstio = &telemetryv1alpha1.MetricPipelineIstioInput{}
 	}
@@ -117,7 +117,7 @@ func (b *MetricPipelineBuilder) WithIstioInput(enable bool, opts ...InputOptions
 	return b
 }
 
-func (b *MetricPipelineBuilder) WithOTLPInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
+func (b *MetricPipelineBuilder) WithOTLPInput(enable bool, opts ...NamespaceSelectorOptions) *MetricPipelineBuilder {
 	if b.inOTLP == nil {
 		b.inOTLP = &telemetryv1alpha1.OTLPInput{}
 	}

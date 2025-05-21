@@ -3,7 +3,6 @@ package assert
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -20,45 +19,62 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
-func LogsDelivered(proxyClient *apiserverproxy.Client, expectedPodNamePrefix string, backendExportURL string) {
-	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(backendExportURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		defer resp.Body.Close()
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(
-			HaveFlatFluentBitLogs(ContainElement(
-				HavePodName(ContainSubstring(expectedPodNamePrefix))),
-			)))
-	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+func FluentBitLogsFromContainerDelivered(proxyClient *apiserverproxy.Client, backendExportURL string, expectedContainerName string) {
+	DataEventuallyMatching(proxyClient, backendExportURL,
+		HaveFlatFluentBitLogs(ContainElement(HaveContainerName(Equal(expectedContainerName)))),
+	)
 }
 
-func OtelLogsFromNamespaceDelivered(proxyClient *apiserverproxy.Client, backendExportURL, namespace string) {
-	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(backendExportURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		defer resp.Body.Close()
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(
-			HaveFlatOtelLogs(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)))),
-		))
-	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+func FluentBitLogsFromContainerNotDelivered(proxyClient *apiserverproxy.Client, backendExportURL string, expectedContainerName string) {
+	DataConsistentlyMatching(proxyClient, backendExportURL,
+		HaveFlatFluentBitLogs(Not(ContainElement(HaveContainerName(Equal(expectedContainerName))))),
+	)
 }
 
-func OtelLogsFromNamespaceNotDelivered(proxyClient *apiserverproxy.Client, backendExportURL, namespace string) {
-	Consistently(func(g Gomega) {
-		resp, err := proxyClient.Get(backendExportURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		defer resp.Body.Close()
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(
-			HaveFlatOtelLogs(Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace))))),
-		))
-	}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+func FluentBitLogsFromPodDelivered(proxyClient *apiserverproxy.Client, backendExportURL string, expectedPodNamePrefix string) {
+	DataEventuallyMatching(proxyClient, backendExportURL,
+		HaveFlatFluentBitLogs(ContainElement(HavePodName(ContainSubstring(expectedPodNamePrefix)))),
+	)
+}
+
+func FluentBitLogsFromNamespaceDelivered(proxyClient *apiserverproxy.Client, backendExportURL, namespace string) {
+	DataEventuallyMatching(proxyClient, backendExportURL,
+		HaveFlatFluentBitLogs(ContainElement(HaveNamespace(Equal(namespace)))),
+	)
+}
+
+func FluentBitLogsFromNamespaceNotDelivered(proxyClient *apiserverproxy.Client, backendExportURL, namespace string) {
+	DataConsistentlyMatching(proxyClient, backendExportURL,
+		HaveFlatFluentBitLogs(Not(ContainElement(HaveNamespace(Equal(namespace))))),
+	)
+}
+
+func OTelLogsFromContainerDelivered(proxyClient *apiserverproxy.Client, backendExportURL, containerName string) {
+	DataEventuallyMatching(proxyClient, backendExportURL,
+		HaveFlatOTelLogs(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.container.name", containerName)))),
+	)
+}
+
+func OTelLogsFromContainerNotDelivered(proxyClient *apiserverproxy.Client, backendExportURL, containerName string) {
+	DataConsistentlyMatching(proxyClient, backendExportURL,
+		HaveFlatOTelLogs(Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.container.name", containerName))))),
+	)
+}
+
+func OTelLogsFromNamespaceDelivered(proxyClient *apiserverproxy.Client, backendExportURL, namespace string) {
+	DataEventuallyMatching(proxyClient, backendExportURL,
+		HaveFlatOTelLogs(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)))),
+	)
+}
+
+func OTelLogsFromNamespaceNotDelivered(proxyClient *apiserverproxy.Client, backendExportURL, namespace string) {
+	DataConsistentlyMatching(proxyClient, backendExportURL,
+		HaveFlatOTelLogs(Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace))))),
+	)
 }
 
 //nolint:dupl //LogPipelineHealthy and MetricPipelineHealthy have similarities, but they are not the same
-func LogPipelineHealthy(ctx context.Context, k8sClient client.Client, pipelineName string) {
+func FluentBitLogPipelineHealthy(ctx context.Context, k8sClient client.Client, pipelineName string) {
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.LogPipeline
 		key := types.NamespacedName{Name: pipelineName}
@@ -70,7 +86,7 @@ func LogPipelineHealthy(ctx context.Context, k8sClient client.Client, pipelineNa
 }
 
 //nolint:dupl //LogPipelineOtelHealthy and LogPipelineHealthy have similarities, but they are not the same
-func LogPipelineOtelHealthy(ctx context.Context, k8sClient client.Client, pipelineName string) {
+func OTelLogPipelineHealthy(ctx context.Context, k8sClient client.Client, pipelineName string) {
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.LogPipeline
 		key := types.NamespacedName{Name: pipelineName}

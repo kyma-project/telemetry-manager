@@ -17,7 +17,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/trafficgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
@@ -51,7 +51,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 		var objs []client.Object
 
 		// backend
-		traceBackend := backend.New(namespace, backend.SignalTypeTraces, backend.WithName(backendName))
+		traceBackend := kitbackend.New(namespace, kitbackend.SignalTypeTraces, kitbackend.WithName(backendName))
 		traceBackendURL = traceBackend.ExportURL(suite.ProxyClient)
 		objs = append(objs, traceBackend.K8sObjects()...)
 
@@ -71,7 +71,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 		var objs []client.Object
 
 		// backend
-		metricBackend := backend.New(namespace, backend.SignalTypeMetrics, backend.WithName(backendName))
+		metricBackend := kitbackend.New(namespace, kitbackend.SignalTypeMetrics, kitbackend.WithName(backendName))
 		metricBackendURL = metricBackend.ExportURL(suite.ProxyClient)
 		objs = append(objs, metricBackend.K8sObjects()...)
 
@@ -96,7 +96,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 		var objs []client.Object
 
 		// backend
-		logBackend := backend.New(namespace, backend.SignalTypeLogs, backend.WithName(backendName))
+		logBackend := kitbackend.New(namespace, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithName(backendName))
 		logBackendURL = logBackend.ExportURL(suite.ProxyClient)
 		objs = append(objs, logBackend.K8sObjects()...)
 
@@ -115,7 +115,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 		var objs []client.Object
 
 		// backends
-		logBackend := backend.New(namespace, backend.SignalTypeLogs, backend.WithName(backendName))
+		logBackend := kitbackend.New(namespace, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithName(backendName))
 		backendURL := logBackend.ExportURL(suite.ProxyClient)
 		objs = append(objs, logBackend.K8sObjects()...)
 
@@ -174,13 +174,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 		})
 
 		It("Should have running pipelines", func() {
-			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, logBackendName)
+			assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, logBackendName)
 			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, metricBackendName)
 			assert.TracePipelineHealthy(suite.Ctx, suite.K8sClient, traceBackendName)
 
-			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, otelCollectorLogBackendName)
-			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, fluentBitLogBackendName)
-			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, selfMonitorLogBackendName)
+			assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, otelCollectorLogBackendName)
+			assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, fluentBitLogBackendName)
+			assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, selfMonitorLogBackendName)
 		})
 
 		It("Should push metrics successfully", func() {
@@ -192,19 +192,19 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 		})
 
 		It("Should collect logs successfully", func() {
-			assert.LogsDelivered(suite.ProxyClient, "", logBackendURL)
+			assert.FluentBitLogsFromPodDelivered(suite.ProxyClient, logBackendURL, "")
 		})
 
 		It("Should collect otel collector component logs successfully", func() {
-			assert.LogsDelivered(suite.ProxyClient, "telemetry-", otelCollectorLogBackendURL)
+			assert.FluentBitLogsFromPodDelivered(suite.ProxyClient, otelCollectorLogBackendURL, "telemetry-")
 		})
 
 		It("Should collect fluent-bit component logs successfully", func() {
-			assert.LogsDelivered(suite.ProxyClient, "telemetry-", fluentBitLogBackendURL)
+			assert.FluentBitLogsFromPodDelivered(suite.ProxyClient, fluentBitLogBackendURL, "telemetry-")
 		})
 
 		It("Should collect self-monitor component logs successfully", func() {
-			assert.LogsDelivered(suite.ProxyClient, "telemetry-", selfMonitorLogBackendURL)
+			assert.FluentBitLogsFromPodDelivered(suite.ProxyClient, selfMonitorLogBackendURL, "telemetry-")
 		})
 
 		It("Should not have any error/warn logs in the otel collector component containers", func() {

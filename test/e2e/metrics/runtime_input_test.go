@@ -24,7 +24,7 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/metrics/runtime"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
@@ -67,7 +67,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 			// PipelineB should deliver only deployment, daemonset, statefulset and job metrics
 			// PipelineC should deliver default resource metrics (currently all resource metrics are enabled by default)
 
-			backendResourceMetricsEnabledA := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithName(backendResourceMetricsEnabledNameA))
+			backendResourceMetricsEnabledA := kitbackend.New(mockNs, kitbackend.SignalTypeMetrics, kitbackend.WithName(backendResourceMetricsEnabledNameA))
 			objs = append(objs, backendResourceMetricsEnabledA.K8sObjects()...)
 			backendResourceMetricsEnabledURLA = backendResourceMetricsEnabledA.ExportURL(suite.ProxyClient)
 
@@ -86,7 +86,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 				Build()
 			objs = append(objs, &pipelineResourceMetricsEnabledA)
 
-			backendResourceMetricsEnabledB := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithName(backendResourceMetricsEnabledNameB))
+			backendResourceMetricsEnabledB := kitbackend.New(mockNs, kitbackend.SignalTypeMetrics, kitbackend.WithName(backendResourceMetricsEnabledNameB))
 			objs = append(objs, backendResourceMetricsEnabledB.K8sObjects()...)
 			backendResourceMetricsEnabledURLB = backendResourceMetricsEnabledB.ExportURL(suite.ProxyClient)
 
@@ -105,7 +105,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 				Build()
 			objs = append(objs, &pipelineResourceMetricsEnabledB)
 
-			backendResourceMetricsEnabledC := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithName(backendResourceMetricsEnabledNameC))
+			backendResourceMetricsEnabledC := kitbackend.New(mockNs, kitbackend.SignalTypeMetrics, kitbackend.WithName(backendResourceMetricsEnabledNameC))
 			objs = append(objs, backendResourceMetricsEnabledC.K8sObjects()...)
 			backendResourceMetricsEnabledURLC = backendResourceMetricsEnabledC.ExportURL(suite.ProxyClient)
 			pipelineResourceMetricsEnabledC := testutils.NewMetricPipelineBuilder().
