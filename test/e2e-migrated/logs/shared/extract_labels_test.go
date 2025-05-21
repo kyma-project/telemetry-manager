@@ -39,6 +39,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 			logGeneratorBuilder: func(ns string, labels map[string]string) client.Object {
 				return loggen.New(ns).WithLabels(labels).K8sObject()
 			},
+			expectAgent: true,
 		},
 		{
 			label: suite.LabelLogGateway,
@@ -106,24 +107,19 @@ func TestExtractLabels_OTel(t *testing.T) {
 				err := suite.K8sClient.Get(t.Context(), kitkyma.TelemetryName, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
 
-				// TODO: After Hisar's merge => API changed to telemetry.Spec instead of telemetry.Spec.Log => modify this
-
-				telemetry.Spec.Log = &operatorv1alpha1.LogSpec{
-					Enrichments: &operatorv1alpha1.EnrichmentSpec{
-						Enabled: true,
-						ExtractPodLabels: []operatorv1alpha1.PodLabel{
-							{
-								Key: "log.test.exact.should.match",
-							},
-							{
-								KeyPrefix: "log.test.prefix",
-							},
+				telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{
+					ExtractPodLabels: []operatorv1alpha1.PodLabel{
+						{
+							Key: "log.test.exact.should.match",
+						},
+						{
+							KeyPrefix: "log.test.prefix",
 						},
 					},
 				}
 				err = suite.K8sClient.Update(t.Context(), &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
-				return len(telemetry.Spec.Log.Enrichments.ExtractPodLabels)
+				return len(telemetry.Spec.Enrichments.ExtractPodLabels)
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(2))
 
 			t.Cleanup(func() {
