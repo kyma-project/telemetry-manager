@@ -46,7 +46,7 @@ const (
 
 	// LogPipeline reasons
 	ReasonAgentConfigured        = "AgentConfigured"
-	ReasonSelfMonNoLogsDelivered = "NoLogsDelivered"
+	ReasonSelfMonNoLogsDelivered = "AgentNoLogsDelivered"
 	ReasonLogAgentNotRequired    = "AgentNotRequired"
 
 	// MetricPipeline reasons
