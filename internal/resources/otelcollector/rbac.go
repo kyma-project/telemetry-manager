@@ -122,7 +122,7 @@ func makeMetricAgentRBAC(namespace string) rbac {
 		commonresources.LabelValueK8sComponentAgent,
 		withClusterRole(withKubeletStatsRules(), withPrometheusRules(), withK8sClusterRules()),
 		withClusterRoleBinding(),
-		withRole(withSingletonCreatorRules()),
+		withRole(withLeaderElectionRules()),
 		withRoleBinding(),
 	)
 }
@@ -133,7 +133,7 @@ func makeMetricGatewayRBAC(namespace string) rbac {
 		commonresources.LabelValueK8sComponentGateway,
 		withClusterRole(withK8sAttributeRules(), withKymaStatsRules()),
 		withClusterRoleBinding(),
-		withRole(withSingletonCreatorRules()),
+		withRole(withLeaderElectionRules()),
 		withRoleBinding(),
 	)
 }
@@ -157,16 +157,16 @@ func makeLogGatewayRBAC(namespace string) rbac {
 
 type RoleOption func(*rbacv1.Role)
 
-// withSingletonCreatorRules returns a role option since resources needed are only namespace scoped
-func withSingletonCreatorRules() RoleOption {
+// withLeaderElectionRules returns a role option since resources needed are only namespace scoped
+func withLeaderElectionRules() RoleOption {
 	return func(r *rbacv1.Role) {
-		// policy rules needed for the singletonreceivercreator component
-		singletonCreatorRules := []rbacv1.PolicyRule{{
+		// policy rules needed for the leader election mechanism
+		leaderElectionRules := []rbacv1.PolicyRule{{
 			APIGroups: []string{"coordination.k8s.io"},
 			Resources: []string{"leases"},
 			Verbs:     []string{"get", "list", "watch", "create", "update", "patch", "delete"},
 		}}
-		r.Rules = append(r.Rules, singletonCreatorRules...)
+		r.Rules = append(r.Rules, leaderElectionRules...)
 	}
 }
 
