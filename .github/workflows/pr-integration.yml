@@ -324,8 +324,8 @@ jobs:
       - name: Deploy Test Prerequisites
         uses: "./.github/template/deploy-test-prerequisites"
 
-      - name: Run tests
-        if: ${{ matrix.labels.mode == 'regular' }}
+      - name: Run tests release
+        if: ${{ matrix.labels.mode == 'release' }}
         run: |
           go test -v -timeout=20m ./test/e2e-migrated/logs/... -- -labels=${{ matrix.labels.name }}
 
