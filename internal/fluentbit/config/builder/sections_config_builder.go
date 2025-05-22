@@ -123,10 +123,11 @@ func createTimestampAndAppNameModifyFilter(pipeline *telemetryv1alpha1.LogPipeli
 	}
 
 	return NewFilterSectionBuilder().
+		WithoutSorting().
 		AddConfigParam("name", "modify").
 		AddConfigParam("match", fmt.Sprintf("%s.*", pipeline.Name)).
-		AddConfigParam("copy", "time @timestamp").
 		AddConfigParam("copy", "kubernetes.labels.app_kubernetes_io_name kubernetes.app_name").
 		AddConfigParam("copy", "kubernetes.labels.app kubernetes.app_name").
+		AddConfigParam("copy", "time @timestamp").
 		Build()
 }
