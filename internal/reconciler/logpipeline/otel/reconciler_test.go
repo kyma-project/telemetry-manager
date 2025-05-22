@@ -539,13 +539,7 @@ func TestReconcile(t *testing.T) {
 		}
 	})
 
-	// TODO: "referenced secret missing" (requires SecretRefValidator to be implemented)
-	// TODO: "referenced secret exists" (requires SecretRefValidator to be implemented)
 	// TODO: "flow healthy" (requires SelfMonitoring to be implemented)
-	// TODO: "tls conditions" (requires TLSCertValidator to be implemented)
-	// TODO: "all log pipelines are non-reconcilable" (requires SecretRefValidator to be implemented)
-	// TODO: "Check different Pod Error Conditions" (requires SecretRefValidator to be implemented)
-
 	t.Run("one log pipeline does not require an agent", func(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().WithApplicationInput(false).Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
