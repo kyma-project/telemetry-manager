@@ -57,12 +57,12 @@ func TestBasePayloadWithHttpOutput(t *testing.T) {
 	assert.DeploymentReady(t.Context(), suite.K8sClient, logProducer.NamespacedName())
 
 	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(HaveEach(SatisfyAll(
-		//timestamps
+		// timestamps
 		fluentbit.HaveAttributes(HaveKey("@timestamp")),
 		fluentbit.HaveAttributes(HaveKey("time")),
 		fluentbit.HaveDateISO8601Format(BeTrue()),
 
-		//kubernetes filter
+		// kubernetes filter
 		fluentbit.HaveAttributes(HaveKey("kubernetes.container_hash")),
 		fluentbit.HaveAttributes(HaveKeyWithValue("kubernetes.container_name", loggen.DefaultContainerName)),
 		fluentbit.HaveAttributes(HaveKeyWithValue("kubernetes.container_image", loggen.DefaultImageName)),

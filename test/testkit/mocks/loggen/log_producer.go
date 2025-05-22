@@ -87,7 +87,7 @@ func (lp *LogProducer) NamespacedName() types.NamespacedName {
 func (lp *LogProducer) K8sObject() *appsv1.Deployment {
 	labels := map[string]string{"app": lp.name}
 	if lp.labels != nil {
-		//if labels are configured, just overwrite all to support a clean setup
+		// if labels are configured, just overwrite all to support a clean setup
 		labels = lp.labels
 	}
 
