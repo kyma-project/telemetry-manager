@@ -236,8 +236,8 @@ func TestLogComponentsCheck(t *testing.T) {
 					WithStatusCondition(metav1.Condition{
 						Type:    conditions.TypeFlowHealthy,
 						Status:  metav1.ConditionFalse,
-						Reason:  conditions.ReasonSelfMonNoLogsDelivered,
-						Message: conditions.MessageForFluentBitLogPipeline(conditions.ReasonSelfMonNoLogsDelivered),
+						Reason:  conditions.ReasonSelfMonAgentNoLogsDelivered,
+						Message: conditions.MessageForFluentBitLogPipeline(conditions.ReasonSelfMonAgentNoLogsDelivered),
 					}).
 					Build(),
 			},

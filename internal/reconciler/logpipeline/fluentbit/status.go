@@ -160,7 +160,7 @@ func flowHealthReasonFor(probeResult prober.FluentBitLogPipelineProbeResult) str
 	case probeResult.SomeDataDropped:
 		return conditions.ReasonSelfMonAgentSomeDataDropped
 	case probeResult.NoLogsDelivered:
-		return conditions.ReasonSelfMonNoLogsDelivered
+		return conditions.ReasonSelfMonAgentNoLogsDelivered
 	case probeResult.BufferFillingUp:
 		return conditions.ReasonSelfMonAgentBufferFillingUp
 	default:

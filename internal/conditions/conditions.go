@@ -45,9 +45,9 @@ const (
 	ReasonResourceBlocksDeletion = "ResourceBlocksDeletion"
 
 	// LogPipeline reasons
-	ReasonAgentConfigured        = "AgentConfigured"
-	ReasonSelfMonNoLogsDelivered = "AgentNoLogsDelivered"
-	ReasonLogAgentNotRequired    = "AgentNotRequired"
+	ReasonAgentConfigured             = "AgentConfigured"
+	ReasonSelfMonAgentNoLogsDelivered = "AgentNoLogsDelivered"
+	ReasonLogAgentNotRequired         = "AgentNotRequired"
 
 	// MetricPipeline reasons
 	ReasonMetricAgentNotRequired = "AgentNotRequired"
@@ -83,7 +83,7 @@ var fluentBitLogPipelineMessages = map[string]string{
 	ReasonSelfMonAgentAllDataDropped:  "Backend is not reachable or rejecting logs. All logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
 	ReasonSelfMonAgentBufferFillingUp: "Buffer nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=agent-buffer-filling-up",
 	ReasonSelfMonConfigNotGenerated:   "No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details",
-	ReasonSelfMonNoLogsDelivered:      "Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
+	ReasonSelfMonAgentNoLogsDelivered: "Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
 	ReasonSelfMonAgentSomeDataDropped: "Backend is reachable, but rejecting logs. Some logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=not-all-logs-arrive-at-the-backend",
 }
 
