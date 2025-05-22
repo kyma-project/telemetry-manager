@@ -16,7 +16,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
+	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/trafficgen"
@@ -36,15 +36,16 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 	)
 
 	var (
-		traceBackendURL            string
-		metricBackendURL           string
-		logBackendURL              string
-		otelCollectorLogBackendURL string
-		fluentBitLogBackendURL     string
-		selfMonitorLogBackendURL   string
-		namespace                  = suite.ID()
-		gomegaMaxLength            = format.MaxLength
-		logLevelsRegexp            = "ERROR|error|WARNING|warning|WARN|warn"
+		traceBackendURL  string
+		metricBackendURL string
+
+		logBackend              *kitbackend.Backend
+		otelCollectorLogBackend *kitbackend.Backend
+		fluentBitLogBackend     *kitbackend.Backend
+		selfMonitorLogBackend   *kitbackend.Backend
+		namespace               = suite.ID()
+		gomegaMaxLength         = format.MaxLength
+		logLevelsRegexp         = "ERROR|error|WARNING|warning|WARN|warn"
 	)
 
 	makeResourcesTracePipeline := func(backendName string) []client.Object {
@@ -96,8 +97,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 		var objs []client.Object
 
 		// backend
-		logBackend := kitbackend.New(namespace, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithName(backendName))
-		logBackendURL = logBackend.ExportURL(suite.ProxyClient)
+		logBackend = kitbackend.New(namespace, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithName(backendName))
 		objs = append(objs, logBackend.K8sObjects()...)
 
 		// log pipeline
@@ -111,12 +111,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 		return objs
 	}
 
-	makeResourcesToCollectLogs := func(backendName string, containers ...string) ([]client.Object, string) {
+	makeResourcesToCollectLogs := func(backendName string, containers ...string) ([]client.Object, *kitbackend.Backend) {
 		var objs []client.Object
 
 		// backends
-		logBackend := kitbackend.New(namespace, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithName(backendName))
-		backendURL := logBackend.ExportURL(suite.ProxyClient)
+		logBackend = kitbackend.New(namespace, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithName(backendName))
 		objs = append(objs, logBackend.K8sObjects()...)
 
 		// log pipeline
@@ -127,7 +126,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 			WithHTTPOutput(testutils.HTTPHost(logBackend.Host()), testutils.HTTPPort(logBackend.Port())).
 			Build()
 		objs = append(objs, &logPipeline)
-		return objs, backendURL
+		return objs, logBackend
 	}
 
 	Context("When all components are deployed", func() {
@@ -140,11 +139,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 			K8sObjects = append(K8sObjects, makeResourcesMetricPipeline(metricBackendName)...)
 			K8sObjects = append(K8sObjects, makeResourcesLogPipeline(logBackendName)...)
 			var objs []client.Object
-			objs, otelCollectorLogBackendURL = makeResourcesToCollectLogs(otelCollectorLogBackendName, "collector")
+			objs, otelCollectorLogBackend = makeResourcesToCollectLogs(otelCollectorLogBackendName, "collector")
 			K8sObjects = append(K8sObjects, objs...)
-			objs, fluentBitLogBackendURL = makeResourcesToCollectLogs(fluentBitLogBackendName, "fluent-bit", "exporter")
+			objs, fluentBitLogBackend = makeResourcesToCollectLogs(fluentBitLogBackendName, "fluent-bit", "exporter")
 			K8sObjects = append(K8sObjects, objs...)
-			objs, selfMonitorLogBackendURL = makeResourcesToCollectLogs(selfMonitorLogBackendName, "self-monitor")
+			objs, selfMonitorLogBackend = makeResourcesToCollectLogs(selfMonitorLogBackendName, "self-monitor")
 			K8sObjects = append(K8sObjects, objs...)
 
 			DeferCleanup(func() {
@@ -192,31 +191,33 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 		})
 
 		It("Should collect logs successfully", func() {
-			assert.FluentBitLogsFromPodDelivered(suite.ProxyClient, logBackendURL, "")
+			assert.FluentBitLogsFromPodDelivered(suite.Ctx, logBackend, "")
 		})
 
 		It("Should collect otel collector component logs successfully", func() {
-			assert.FluentBitLogsFromPodDelivered(suite.ProxyClient, otelCollectorLogBackendURL, "telemetry-")
+			assert.FluentBitLogsFromPodDelivered(suite.Ctx, otelCollectorLogBackend, "telemetry-")
 		})
 
 		It("Should collect fluent-bit component logs successfully", func() {
-			assert.FluentBitLogsFromPodDelivered(suite.ProxyClient, fluentBitLogBackendURL, "telemetry-")
+			assert.FluentBitLogsFromPodDelivered(suite.Ctx, fluentBitLogBackend, "telemetry-")
 		})
 
 		It("Should collect self-monitor component logs successfully", func() {
-			assert.FluentBitLogsFromPodDelivered(suite.ProxyClient, selfMonitorLogBackendURL, "telemetry-")
+			assert.FluentBitLogsFromPodDelivered(suite.Ctx, selfMonitorLogBackend, "telemetry-")
 		})
 
 		It("Should not have any error/warn logs in the otel collector component containers", func() {
 			Consistently(func(g Gomega) {
-				resp, err := suite.ProxyClient.Get(otelCollectorLogBackendURL)
+				// TODO(skhalash): provide a way to inject custom timout into the BackendDataConsistentlyMatching helper
+				queryURL := suite.ProxyClient.ProxyURLForService(otelCollectorLogBackend.Namespace(), otelCollectorLogBackend.Name(), kitbackend.QueryPath, kitbackend.QueryPort)
+				resp, err := suite.ProxyClient.Get(queryURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					HaveFlatFluentBitLogs(Not(ContainElement(SatisfyAll(
-						HavePodName(ContainSubstring("telemetry-")),
-						HaveLevel(MatchRegexp(logLevelsRegexp)),
-						HaveLogBody(Not( // whitelist possible (flaky/expected) errors
+					fluentbit.HaveFlatLogs(Not(ContainElement(SatisfyAll(
+						fluentbit.HavePodName(ContainSubstring("telemetry-")),
+						fluentbit.HaveLevel(MatchRegexp(logLevelsRegexp)),
+						fluentbit.HaveLogBody(Not( // whitelist possible (flaky/expected) errors
 							Or(
 								ContainSubstring("grpc: addrConn.createTransport failed to connect"),
 								ContainSubstring("rpc error: code = Unavailable desc = no healthy upstream"),
@@ -230,13 +231,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 
 		It("Should not have any error/warn logs in the FluentBit containers", func() {
 			Consistently(func(g Gomega) {
-				resp, err := suite.ProxyClient.Get(fluentBitLogBackendURL)
+				// TODO(skhalash): provide a way to inject custom timout into the BackendDataConsistentlyMatching helper
+				queryURL := suite.ProxyClient.ProxyURLForService(fluentBitLogBackend.Namespace(), fluentBitLogBackend.Name(), kitbackend.QueryPath, kitbackend.QueryPort)
+				resp, err := suite.ProxyClient.Get(queryURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					HaveFlatFluentBitLogs(Not(ContainElement(SatisfyAll(
-						HavePodName(ContainSubstring("telemetry-")),
-						HaveLogBody(MatchRegexp(logLevelsRegexp)), // fluenbit does not log in JSON, so we need to check the body for errors
+					fluentbit.HaveFlatLogs(Not(ContainElement(SatisfyAll(
+						fluentbit.HavePodName(ContainSubstring("telemetry-")),
+						fluentbit.HaveLogBody(MatchRegexp(logLevelsRegexp)), // fluenbit does not log in JSON, so we need to check the body for errors
 					)))),
 				))
 			}, consistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
@@ -244,13 +247,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 
 		It("Should not have any error/warn logs in the self-monitor containers", func() {
 			Consistently(func(g Gomega) {
-				resp, err := suite.ProxyClient.Get(selfMonitorLogBackendURL)
+				// TODO(skhalash): provide a way to inject custom timout into the BackendDataConsistentlyMatching helper
+				queryURL := suite.ProxyClient.ProxyURLForService(selfMonitorLogBackend.Namespace(), selfMonitorLogBackend.Name(), kitbackend.QueryPath, kitbackend.QueryPort)
+				resp, err := suite.ProxyClient.Get(queryURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					HaveFlatFluentBitLogs(Not(ContainElement(SatisfyAll(
-						HavePodName(ContainSubstring("telemetry-")),
-						HaveLevel(MatchRegexp(logLevelsRegexp)),
+					fluentbit.HaveFlatLogs(Not(ContainElement(SatisfyAll(
+						fluentbit.HavePodName(ContainSubstring("telemetry-")),
+						fluentbit.HaveLevel(MatchRegexp(logLevelsRegexp)),
 					)))),
 				))
 			}, consistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())

@@ -18,20 +18,19 @@ import (
 
 var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 	var (
-		mockNs           = suite.ID()
-		pipelineName     = suite.ID()
-		backendExportURL string
+		mockNs       = suite.ID()
+		pipelineName = suite.ID()
+		backend      *kitbackend.Backend
 	)
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		backend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithPersistentHostSecret(suite.IsUpgrade()))
+		backend = kitbackend.New(mockNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithPersistentHostSecret(suite.IsUpgrade()))
 		logProducer := loggen.New(mockNs)
 		objs = append(objs, backend.K8sObjects()...)
 		objs = append(objs, logProducer.K8sObject())
-		backendExportURL = backend.ExportURL(suite.ProxyClient)
 		hostSecretRef := backend.HostSecretRefV1Alpha1()
 
 		pipelineBuilder := testutils.NewLogPipelineBuilder().
@@ -75,7 +74,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 		})
 
 		It("Should have produced logs in the backend", Label(suite.LabelUpgrade), func() {
-			assert.FluentBitLogsFromPodDelivered(suite.ProxyClient, backendExportURL, loggen.DefaultName)
+			assert.FluentBitLogsFromPodDelivered(suite.Ctx, backend, loggen.DefaultName)
 		})
 	})
 })

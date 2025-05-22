@@ -67,7 +67,6 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 			Expect(err).ToNot(HaveOccurred())
 
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithTLS(*serverCerts))
-			backendExportURL := backend.ExportURL(suite.ProxyClient)
 
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
@@ -116,7 +115,7 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 				Reason: conditions.ReasonTLSCertificateAboutToExpire,
 			})
 
-			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, genNs, backendExportURL)
+			assert.OTelLogsFromNamespaceDelivered(t.Context(), backend, genNs)
 		})
 	}
 }
@@ -137,7 +136,6 @@ func TestMTLSAboutToExpireCert_FluentBit(t *testing.T) {
 	Expect(err).ToNot(HaveOccurred())
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithTLS(*serverCerts))
-	backendExportURL := backend.ExportURL(suite.ProxyClient)
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
@@ -182,5 +180,5 @@ func TestMTLSAboutToExpireCert_FluentBit(t *testing.T) {
 		Reason: conditions.ReasonTLSCertificateAboutToExpire,
 	})
 
-	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, genNs)
+	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend, genNs)
 }

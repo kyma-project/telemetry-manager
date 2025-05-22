@@ -62,7 +62,6 @@ func TestMTLS_OTel(t *testing.T) {
 			Expect(err).ToNot(HaveOccurred())
 
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithTLS(*serverCerts))
-			backendExportURL := backend.ExportURL(suite.ProxyClient)
 
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
@@ -97,13 +96,13 @@ func TestMTLS_OTel(t *testing.T) {
 				assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
 			}
 
-			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, genNs)
+			assert.OTelLogsFromNamespaceDelivered(t.Context(), backend, genNs)
 		})
 	}
 }
 
 func TestMTLS_FluentBit(t *testing.T) {
-	RegisterTestingT(t)
+	suite.RegisterTestCase(t, suite.LabelFluentBit)
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -116,7 +115,6 @@ func TestMTLS_FluentBit(t *testing.T) {
 	Expect(err).ToNot(HaveOccurred())
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithTLS(*serverCerts))
-	backendExportURL := backend.ExportURL(suite.ProxyClient)
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
@@ -147,5 +145,5 @@ func TestMTLS_FluentBit(t *testing.T) {
 	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 	assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
 	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
-	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, backendNs)
+	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend, backendNs)
 }

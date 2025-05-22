@@ -12,7 +12,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
+	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -36,7 +36,6 @@ Types user:string pass:string`
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
-	backendExportURL := backend.ExportURL(suite.ProxyClient)
 	logProducer := loggen.New(genNs).
 		WithAnnotations(map[string]string{"fluentbit.io/parser": "my-regex-parser"})
 	pipeline := testutils.NewLogPipelineBuilder().
@@ -64,8 +63,8 @@ Types user:string pass:string`
 	assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
 	assert.DeploymentReady(t.Context(), suite.K8sClient, logProducer.NamespacedName())
 
-	assert.DataEventuallyMatching(suite.ProxyClient, backendExportURL, HaveFlatFluentBitLogs(ContainElement(SatisfyAll(
-		HaveLogRecordAttributes(HaveKeyWithValue("user", "foo")),
-		HaveLogRecordAttributes(HaveKeyWithValue("pass", "bar")),
+	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(ContainElement(SatisfyAll(
+		fluentbit.HaveAttributes(HaveKeyWithValue("user", "foo")),
+		fluentbit.HaveAttributes(HaveKeyWithValue("pass", "bar")),
 	))))
 }
