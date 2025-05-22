@@ -3,7 +3,6 @@ package gateway
 import (
 	"context"
 	"fmt"
-	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 	"maps"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -13,6 +12,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/processors"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 )
 
 const (
@@ -88,6 +88,7 @@ func makeReceiversConfig() Receivers {
 func addComponentsForLogPipeline(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.LogPipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
 	addNamespaceFilter(pipeline, cfg)
 	addInputSourceFilters(pipeline, cfg)
+
 	return addOTLPExporter(ctx, otlpExporterBuilder, pipeline, cfg, envVars)
 }
 
@@ -127,5 +128,4 @@ func addInputSourceFilters(pipeline *telemetryv1alpha1.LogPipeline, cfg *Config)
 	if !logpipelineutils.IsOTLPInputEnabled(input) {
 		cfg.Processors.DropIfInputSourceOTLP = makeDropIfInputSourceOTLPConfig()
 	}
-
 }
