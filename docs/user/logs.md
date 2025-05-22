@@ -573,7 +573,7 @@ To detect and fix such situations, check the [pipeline status](./resources/02-lo
 **Solution**:
 
 1. Check the `telemetry-log-gateway` Pod (in case of **GatewaySomeTelemetryDataDropped**) or `telemetry-log-agent` Pod (in case of **AgentSomeTelemetryDataDropped**) for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`. Also, check your observability backend to investigate potential causes.
-2. If backend is limiting the rate by refusing logs, try the options desribed in [Buffer Filling Up](#gateway-buffer-filling-up).
+2. If backend is limiting the rate by refusing logs, try the options desribed in [Buffer Filling Up](#buffer-filling-up).
 3. Otherwise, take the actions appropriate to the cause indicated in the logs.
 
 ### Buffer Filling Up
