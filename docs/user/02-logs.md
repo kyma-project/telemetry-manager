@@ -442,13 +442,31 @@ The record **after** applying the JSON parser:
   "traceID": "123"
 }
 ```
-### Log Time Fields
 
-SAP Cloud Logging service uses a dedicated attribute called **@timestamp** to represent the time of a log record. When processing a log, SAP Cloud Logging first checks whether the record contains a date field with a valid value in either Unix time (integer format) or ISO 8601 format. If the date field is missing or contains an invalid value, SAP Cloud Logging generates the **@timestamp** attribute based on the time the log record was received. This generated timestamp is usually later than the original log time and is not helpful in most scenarios.
+### Further Enrichment
 
-Fluent Bit's HTTP output plugin also uses a date field. This field represents the time when Fluent Bit observed the log and is formatted in ISO 8601 with millisecond precision. The field's value may slightly differ from the original log time because while the original log timestamp may have nanosecond precision, the Fluent Bit date field is limited to millisecond precision.
+Additionally, the agent enriches every log record with the `cluster_identifier` attribute by setting the APIServer URL of the underlying Kubernetes cluster:
 
-Fluent Bit HTTP output uses an additional filter to improve log time precision. The filter allows copying the original **time** attribute to the **@timestamp** field. 
+```json
+{
+   "cluster_identifier": "<APIServer URL>"
+   ...
+}
+```
+
+For LogPipelines which are using an HTTP output, additionally the following attributes are enriched for an optimzed user experience when integrating with SAP Cloud Logging:
+
+```json
+{
+  "@timestamp": "<value of attribute 'time'>",
+  "date": "<agent time in iso8601>",
+  "kubernetes": {
+    "app_name": "<value of pod label 'app.kubernetes.io/name' or 'app'>"
+    ...
+  },
+  ...
+}
+```
 
 ## Operations
 

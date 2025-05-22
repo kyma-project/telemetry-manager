@@ -80,6 +80,30 @@ func TestCreateLuaDedotFilterWithDedotFalse(t *testing.T) {
 	require.Equal(t, "", actual)
 }
 
+func TestCreateTimestampAndAppNameModifyFilter(t *testing.T) {
+	expected := `[FILTER]
+    name  modify
+    match foo.*
+    copy  kubernetes.labels.app_kubernetes_io_name kubernetes.app_name
+    copy  kubernetes.labels.app kubernetes.app_name
+    copy  time @timestamp
+
+`
+	logPipeline := &telemetryv1alpha1.LogPipeline{
+		ObjectMeta: metav1.ObjectMeta{Name: "foo"},
+		Spec: telemetryv1alpha1.LogPipelineSpec{
+			Output: telemetryv1alpha1.LogPipelineOutput{
+				HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
+					Host: telemetryv1alpha1.ValueType{Value: "localhost"},
+				},
+			},
+		},
+	}
+
+	actual := createTimestampAndAppNameModifyFilter(logPipeline)
+	require.Equal(t, expected, actual)
+}
+
 func TestMergeSectionsConfig(t *testing.T) {
 	excludePath := strings.Join([]string{
 		"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
@@ -127,6 +151,8 @@ func TestMergeSectionsConfig(t *testing.T) {
 [FILTER]
     name  modify
     match foo.*
+    copy  kubernetes.labels.app_kubernetes_io_name kubernetes.app_name
+    copy  kubernetes.labels.app kubernetes.app_name
     copy  time @timestamp
 
 [FILTER]

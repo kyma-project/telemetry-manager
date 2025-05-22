@@ -47,7 +47,7 @@ func buildFluentBitSectionsConfig(pipeline *telemetryv1alpha1.LogPipeline, confi
 	sb.WriteString(createCustomFilters(pipeline, multilineFilter))
 	sb.WriteString(createRecordModifierFilter(pipeline))
 	sb.WriteString(createKubernetesFilter(pipeline))
-	sb.WriteString(createTimestampModifyFilter(pipeline))
+	sb.WriteString(createTimestampAndAppNameModifyFilter(pipeline))
 	sb.WriteString(createCustomFilters(pipeline, nonMultilineFilter))
 	sb.WriteString(createLuaDedotFilter(pipeline))
 	sb.WriteString(createOutputSection(pipeline, config.pipelineDefaults))
@@ -116,7 +116,7 @@ func validateInput(pipeline *telemetryv1alpha1.LogPipeline) error {
 	return nil
 }
 
-func createTimestampModifyFilter(pipeline *telemetryv1alpha1.LogPipeline) string {
+func createTimestampAndAppNameModifyFilter(pipeline *telemetryv1alpha1.LogPipeline) string {
 	output := pipeline.Spec.Output
 	if !logpipelineutils.IsHTTPDefined(&output) {
 		return ""
@@ -126,5 +126,7 @@ func createTimestampModifyFilter(pipeline *telemetryv1alpha1.LogPipeline) string
 		AddConfigParam("name", "modify").
 		AddConfigParam("match", fmt.Sprintf("%s.*", pipeline.Name)).
 		AddConfigParam("copy", "time @timestamp").
+		AddConfigParam("copy", "kubernetes.labels.app_kubernetes_io_name kubernetes.app_name").
+		AddConfigParam("copy", "kubernetes.labels.app kubernetes.app_name").
 		Build()
 }

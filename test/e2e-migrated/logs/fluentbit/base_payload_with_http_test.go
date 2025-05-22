@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestModifyTimestampDateFormat(t *testing.T) {
+func TestBasePayloadWithHttpOutput(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelFluentBit)
 
 	var (
@@ -57,7 +57,28 @@ func TestModifyTimestampDateFormat(t *testing.T) {
 	assert.DeploymentReady(t.Context(), suite.K8sClient, logProducer.NamespacedName())
 
 	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(HaveEach(SatisfyAll(
+		//timestamps
 		fluentbit.HaveAttributes(HaveKey("@timestamp")),
+		fluentbit.HaveAttributes(HaveKey("time")),
 		fluentbit.HaveDateISO8601Format(BeTrue()),
+
+		//kubernetes filter
+		fluentbit.HaveAttributes(HaveKey("kubernetes.container_hash")),
+		fluentbit.HaveAttributes(HaveKeyWithValue("kubernetes.container_name", loggen.DefaultContainerName)),
+		fluentbit.HaveAttributes(HaveKeyWithValue("kubernetes.container_image", loggen.DefaultImageName)),
+		fluentbit.HaveAttributes(HaveKeyWithValue("kubernetes.namespace_name", genNs)),
+		fluentbit.HaveAttributes(HaveKey("kubernetes.pod_name")),
+		fluentbit.HaveAttributes(HaveKey("kubernetes.pod_id")),
+		fluentbit.HaveAttributes(HaveKey("kubernetes.pod_ip")),
+		fluentbit.HaveAttributes(HaveKey("kubernetes.docker_id")),
+		fluentbit.HaveAttributes(HaveKey("kubernetes.host")),
+		fluentbit.HaveAttributes(HaveKeyWithValue("kubernetes.labels.app", loggen.DefaultName)),
+
+		// record_modifier filter
+		fluentbit.HaveAttributes(HaveKey("cluster_identifier")),
+
+		// base attributes
+		fluentbit.HaveLogBody(Not(BeEmpty())),
+		fluentbit.HaveAttributes(HaveKeyWithValue("stream", "stdout")),
 	))))
 }
