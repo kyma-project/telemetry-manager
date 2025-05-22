@@ -31,7 +31,6 @@ func TestUpgrade(t *testing.T) {
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithPersistentHostSecret(true))
-	backendExportURL := backend.ExportURL(suite.ProxyClient)
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
@@ -53,7 +52,7 @@ func TestUpgrade(t *testing.T) {
 		assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 
 		assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
-		assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, generatorNs)
+		assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend, generatorNs)
 	})
 
 	t.Run("after upgrade", func(t *testing.T) {
@@ -65,6 +64,6 @@ func TestUpgrade(t *testing.T) {
 		assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 
 		assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
-		assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, generatorNs)
+		assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend, generatorNs)
 	})
 }

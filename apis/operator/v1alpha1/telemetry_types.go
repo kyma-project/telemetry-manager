@@ -46,6 +46,10 @@ type TelemetrySpec struct {
 
 	// +optional
 	Log *LogSpec `json:"log,omitempty"`
+
+	// Enrichments specifies optional enrichments for the telemetry data.
+	// This field is optional.
+	Enrichments *EnrichmentSpec `json:"enrichments,omitempty"`
 }
 
 // MetricSpec defines the behavior of the metric gateway
@@ -71,10 +75,6 @@ type TraceGatewaySpec struct {
 type LogSpec struct {
 	// Gateway specifies the settings for the log gateway.
 	Gateway LogGatewaySpec `json:"gateway,omitempty"`
-
-	// Enrichments specifies optional enrichments for the log data.
-	// This field is optional.
-	Enrichments *EnrichmentSpec `json:"enrichments,omitempty"`
 }
 
 type LogGatewaySpec struct {
@@ -180,20 +180,16 @@ type Status struct {
 // EnrichmentSpec defines the configuration for telemetry data enrichment.
 // EnrichmentSpec contains settings to enable enrichment and specify pod labels for enrichment.
 type EnrichmentSpec struct {
-	// Enabled indicates whether enrichment is enabled.
-	// This field is optional.
-	Enabled bool `json:"enabled,omitempty"`
-
-	// ExtractPodLabels specifies the list of pod labels to be used for enrichment.
+	// ExtractPodLabels specifies the list of Pod labels to be used for enrichment.
 	// This field is optional.
 	ExtractPodLabels []PodLabel `json:"extractPodLabels,omitempty"`
 }
 
 // +kubebuilder:validation:XValidation:rule="(has(self.key) || has(self.keyPrefix))", message="Either 'key' or 'keyPrefix' must be specified"
 // +kubebuilder:validation:XValidation:rule="!(has(self.key) && has(self.keyPrefix))", message="Either 'key' or 'keyPrefix' must be specified"
-// PodLabel defines labels from a pod used for telemetry data enrichments, which can be specified either by a key or a key prefix.
+// PodLabel defines labels from a Pod used for telemetry data enrichments, which can be specified either by a key or a key prefix.
 // Either 'key' or 'keyPrefix' must be specified, but not both.
-// The enriched telemetry data will contains resource attributes with key k8s.pod.label.<label_key>.
+// The enriched telemetry data contains resource attributes with key k8s.pod.label.<label_key>.
 type PodLabel struct {
 	// Key specifies the exact label key to be used.
 	// This field is optional.

@@ -1,4 +1,4 @@
-package fluentd
+package backend
 
 import (
 	corev1 "k8s.io/api/core/v1"
@@ -7,14 +7,14 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
-type ConfigMap struct {
+type fluentdConfigMapBuilder struct {
 	name      string
 	namespace string
 	certs     *testutils.ServerCerts
 }
 
-func NewConfigMap(name, namespace string, certs *testutils.ServerCerts) *ConfigMap {
-	return &ConfigMap{
+func newFluentDConfigMapBuilder(name, namespace string, certs *testutils.ServerCerts) *fluentdConfigMapBuilder {
+	return &fluentdConfigMapBuilder{
 		name:      name,
 		namespace: namespace,
 		certs:     certs,
@@ -83,11 +83,11 @@ const configTemplateFluentdTLS = `<system>
   </server>
 </match>`
 
-func (cm *ConfigMap) Name() string {
+func (cm *fluentdConfigMapBuilder) Name() string {
 	return cm.name
 }
 
-func (cm *ConfigMap) K8sObject() *corev1.ConfigMap {
+func (cm *fluentdConfigMapBuilder) K8sObject() *corev1.ConfigMap {
 	data := make(map[string]string)
 	if cm.certs != nil {
 		data["fluent.conf"] = configTemplateFluentdTLS
