@@ -109,7 +109,8 @@ func makeDropIfInputSourceOTLPConfig() *FilterProcessor {
 }
 
 func otlpInputSource() string {
-	return fmt.Sprintf("not(%s)",
+	return fmt.Sprintf("not(%s or %s)",
 		ottlexpr.ScopeNameEquals(metric.InstrumentationScopeRuntime),
+		ottlexpr.ScopeNameEquals(metric.InstrumentationScopeKyma),
 	)
 }
