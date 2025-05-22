@@ -10,13 +10,6 @@ func WithAbortFaultInjection(abortFaultPercentage float64) Option {
 	}
 }
 
-func WithFaultDelayInjection(faultPercentage float64, delaySeconds int) Option {
-	return func(b *Backend) {
-		b.faultDelayPercentage = faultPercentage
-		b.faultDelayFixedDelaySeconds = delaySeconds
-	}
-}
-
 func WithName(name string) Option {
 	return func(b *Backend) {
 		b.name = name
