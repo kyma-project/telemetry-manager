@@ -22,7 +22,7 @@ import (
 
 const (
 	// keepOriginalBody = true (default)
-	scenarioKeepOriginal = "keep-original-ody"
+	scenarioKeepOriginal = "keep-original-body"
 	// keepOriginalBody = false
 	scenarioDropOriginal = "drop-original-body"
 )
