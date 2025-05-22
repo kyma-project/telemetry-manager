@@ -56,10 +56,11 @@ func (b *Builder) Build(pipelines []telemetryv1alpha1.MetricPipeline, opts Build
 	}
 
 	return &Config{
-		Base: config.Base{
-			Service:    config.DefaultService(makePipelinesConfig(inputs), opts.InternalMetricCompatibilityMode),
-			Extensions: config.DefaultExtensions(),
-		},
+		Base: *config.DefaultBaseConfig(
+			makePipelinesConfig(inputs),
+			opts.InternalMetricCompatibilityMode,
+			config.WithK8sLeaderElector("serviceAccount", "telemetry-metric-agent-k8scluster", opts.AgentNamespace),
+		),
 		Receivers:  makeReceiversConfig(inputs, opts),
 		Processors: makeProcessorsConfig(inputs, opts.InstrumentationScopeVersion),
 		Exporters:  makeExportersConfig(b.Config.GatewayOTLPServiceName),
@@ -238,7 +239,7 @@ func makePipelinesConfig(inputs inputSources) config.Pipelines {
 
 	if inputs.runtime {
 		pipelinesConfig["metrics/runtime"] = config.Pipeline{
-			Receivers:  []string{"kubeletstats", "singleton_receiver_creator/k8s_cluster"},
+			Receivers:  []string{"kubeletstats", "k8s_cluster"},
 			Processors: makeRuntimePipelineProcessorsIDs(inputs.runtimeResources),
 			Exporters:  []string{"otlp"},
 		}
