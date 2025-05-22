@@ -21,10 +21,10 @@ import (
 )
 
 const (
-	//keepOriginalBody = true (default)
-	scenarioKeepOriginal = "keepOriginalBody"
-	//keepOriginalBody = false
-	scenarioDropOriginal = "dropOriginalBody"
+	// keepOriginalBody = true (default)
+	scenarioKeepOriginal = "keep-original-ody"
+	// keepOriginalBody = false
+	scenarioDropOriginal = "drop-original-body"
 )
 
 func TestKeepOriginalBody_OTel(t *testing.T) {
