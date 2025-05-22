@@ -14,62 +14,63 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
+	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
-func FluentBitLogsFromContainerDelivered(proxyClient *apiserverproxy.Client, backendExportURL string, expectedContainerName string) {
-	DataEventuallyMatching(proxyClient, backendExportURL,
-		HaveFlatFluentBitLogs(ContainElement(HaveContainerName(Equal(expectedContainerName)))),
+func FluentBitLogsFromContainerDelivered(ctx context.Context, backend *kitbackend.Backend, expectedContainerName string) {
+	BackendDataEventuallyMatches(ctx, backend,
+		fluentbit.HaveFlatLogs(ContainElement(fluentbit.HaveContainerName(Equal(expectedContainerName)))),
 	)
 }
 
-func FluentBitLogsFromContainerNotDelivered(proxyClient *apiserverproxy.Client, backendExportURL string, expectedContainerName string) {
-	DataConsistentlyMatching(proxyClient, backendExportURL,
-		HaveFlatFluentBitLogs(Not(ContainElement(HaveContainerName(Equal(expectedContainerName))))),
+func FluentBitLogsFromContainerNotDelivered(ctx context.Context, backend *kitbackend.Backend, expectedContainerName string) {
+	BackendDataConsistentlyMatches(ctx, backend,
+		fluentbit.HaveFlatLogs(Not(ContainElement(fluentbit.HaveContainerName(Equal(expectedContainerName))))),
 	)
 }
 
-func FluentBitLogsFromPodDelivered(proxyClient *apiserverproxy.Client, backendExportURL string, expectedPodNamePrefix string) {
-	DataEventuallyMatching(proxyClient, backendExportURL,
-		HaveFlatFluentBitLogs(ContainElement(HavePodName(ContainSubstring(expectedPodNamePrefix)))),
+func FluentBitLogsFromPodDelivered(ctx context.Context, backend *kitbackend.Backend, expectedPodNamePrefix string) {
+	BackendDataEventuallyMatches(ctx, backend,
+		fluentbit.HaveFlatLogs(ContainElement(fluentbit.HavePodName(ContainSubstring(expectedPodNamePrefix)))),
 	)
 }
 
-func FluentBitLogsFromNamespaceDelivered(proxyClient *apiserverproxy.Client, backendExportURL, namespace string) {
-	DataEventuallyMatching(proxyClient, backendExportURL,
-		HaveFlatFluentBitLogs(ContainElement(HaveNamespace(Equal(namespace)))),
+func FluentBitLogsFromNamespaceDelivered(ctx context.Context, backend *kitbackend.Backend, namespace string) {
+	BackendDataEventuallyMatches(ctx, backend,
+		fluentbit.HaveFlatLogs(ContainElement(fluentbit.HaveNamespace(Equal(namespace)))),
 	)
 }
 
-func FluentBitLogsFromNamespaceNotDelivered(proxyClient *apiserverproxy.Client, backendExportURL, namespace string) {
-	DataConsistentlyMatching(proxyClient, backendExportURL,
-		HaveFlatFluentBitLogs(Not(ContainElement(HaveNamespace(Equal(namespace))))),
+func FluentBitLogsFromNamespaceNotDelivered(ctx context.Context, backend *kitbackend.Backend, namespace string) {
+	BackendDataConsistentlyMatches(ctx, backend,
+		fluentbit.HaveFlatLogs(Not(ContainElement(fluentbit.HaveNamespace(Equal(namespace))))),
 	)
 }
 
-func OTelLogsFromContainerDelivered(proxyClient *apiserverproxy.Client, backendExportURL, containerName string) {
-	DataEventuallyMatching(proxyClient, backendExportURL,
-		HaveFlatOTelLogs(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.container.name", containerName)))),
+func OTelLogsFromContainerDelivered(ctx context.Context, backend *kitbackend.Backend, containerName string) {
+	BackendDataEventuallyMatches(ctx, backend,
+		HaveFlatLogs(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.container.name", containerName)))),
 	)
 }
 
-func OTelLogsFromContainerNotDelivered(proxyClient *apiserverproxy.Client, backendExportURL, containerName string) {
-	DataConsistentlyMatching(proxyClient, backendExportURL,
-		HaveFlatOTelLogs(Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.container.name", containerName))))),
+func OTelLogsFromContainerNotDelivered(ctx context.Context, backend *kitbackend.Backend, containerName string) {
+	BackendDataConsistentlyMatches(ctx, backend,
+		HaveFlatLogs(Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.container.name", containerName))))),
 	)
 }
 
-func OTelLogsFromNamespaceDelivered(proxyClient *apiserverproxy.Client, backendExportURL, namespace string) {
-	DataEventuallyMatching(proxyClient, backendExportURL,
-		HaveFlatOTelLogs(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)))),
+func OTelLogsFromNamespaceDelivered(ctx context.Context, backend *kitbackend.Backend, namespace string) {
+	BackendDataEventuallyMatches(ctx, backend,
+		HaveFlatLogs(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)))),
 	)
 }
 
-func OTelLogsFromNamespaceNotDelivered(proxyClient *apiserverproxy.Client, backendExportURL, namespace string) {
-	DataConsistentlyMatching(proxyClient, backendExportURL,
-		HaveFlatOTelLogs(Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace))))),
+func OTelLogsFromNamespaceNotDelivered(ctx context.Context, backend *kitbackend.Backend, namespace string) {
+	BackendDataConsistentlyMatches(ctx, backend,
+		HaveFlatLogs(Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace))))),
 	)
 }
 

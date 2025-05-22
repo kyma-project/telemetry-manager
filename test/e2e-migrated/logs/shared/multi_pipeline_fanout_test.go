@@ -61,9 +61,6 @@ func TestMultiPipelineFanout_OTel(t *testing.T) {
 			backend1 := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithName("backend1"))
 			backend2 := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithName("backend2"))
 
-			backend1ExportURL := backend1.ExportURL(suite.ProxyClient)
-			backend2ExportURL := backend2.ExportURL(suite.ProxyClient)
-
 			pipeline1 := testutils.NewLogPipelineBuilder().
 				WithName(pipeline1Name).
 				WithInput(tc.inputBuilder(genNs)).
@@ -97,8 +94,8 @@ func TestMultiPipelineFanout_OTel(t *testing.T) {
 			assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipeline1.Name)
 			assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipeline2.Name)
 
-			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backend1ExportURL, genNs)
-			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backend2ExportURL, genNs)
+			assert.OTelLogsFromNamespaceDelivered(t.Context(), backend1, genNs)
+			assert.OTelLogsFromNamespaceDelivered(t.Context(), backend2, genNs)
 		})
 	}
 }
@@ -116,9 +113,6 @@ func TestMultiPipelineFanout_FluentBit(t *testing.T) {
 
 	backend1 := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithName("backend1"))
 	backend2 := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithName("backend2"))
-
-	backend1ExportURL := backend1.ExportURL(suite.ProxyClient)
-	backend2ExportURL := backend2.ExportURL(suite.ProxyClient)
 
 	pipeline1 := testutils.NewLogPipelineBuilder().
 		WithName(pipeline1Name).
@@ -153,6 +147,6 @@ func TestMultiPipelineFanout_FluentBit(t *testing.T) {
 	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipeline1.Name)
 	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipeline2.Name)
 
-	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backend1ExportURL, genNs)
-	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backend2ExportURL, genNs)
+	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend1, genNs)
+	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend2, genNs)
 }
