@@ -86,7 +86,6 @@ func DefaultBaseConfig(pipelines Pipelines, compatibilityMode bool, opts ...Conf
 	}
 
 	return baseConfig
-
 }
 
 type ConfigOption func(*Base)
