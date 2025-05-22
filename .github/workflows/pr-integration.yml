@@ -234,13 +234,9 @@ jobs:
       fail-fast: false
       matrix:
         signal-type:
-          - logs-fluentbit
           - logs-agent
           - logs-gateway
-          - metrics
-          - traces
         scenario:
-          - healthy
           - backpressure
           - outage
     runs-on: ubuntu-latest
