@@ -8,14 +8,14 @@ runs:
     # uses the go version from go.mod.
     # Run this step after the checkout step!
     - name: Setup Golang
-      uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
+      uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
       with:
         go-version-file: "go.mod"
         cache: false
 
     - name: Cache Go
       id: go-cache
-      uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4
+      uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
       with:
         path: |
           ~/go/bin

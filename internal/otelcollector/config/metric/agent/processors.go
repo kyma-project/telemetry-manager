@@ -83,17 +83,8 @@ func makeInsertSkipEnrichmentAttributeProcessor() *metric.TransformProcessor {
 		ErrorMode: "ignore",
 		MetricStatements: []config.TransformProcessorStatements{
 			{
-				// Workaround for a context inference issue: Removing the explicit context
-				// for this transform processor causes failures due to conditions and statements
-				// using different context paths.
-				//
-				// To resolve this, a 'where' clause is added to ensure expressions with 'metric.'
-				// can be used within conditions.
-				//
-				// The inference relies on path names found in the statements.
-				// It happens automatically because path names are prefixed with the context name.
 				Statements: []string{
-					fmt.Sprintf("set(resource.attributes[\"%s\"], \"true\") where metric.name != \"\"", metric.SkipEnrichmentAttribute),
+					fmt.Sprintf("set(resource.attributes[\"%s\"], \"true\")", metric.SkipEnrichmentAttribute),
 				},
 				Conditions: makeMetricNameConditionsWithIsMatch(metricsToSkipEnrichment),
 			},
@@ -107,7 +98,7 @@ func makeDropNonPVCVolumesMetricsProcessor() *FilterProcessor {
 			Metric: []string{
 				ottlexpr.JoinWithAnd(
 					// identify volume metrics by checking existence of "k8s.volume.name" resource attribute
-					ottlexpr.ResourceAttributeNotNil("k8s.volume.name"),
+					ottlexpr.ResourceAttributeIsNotNil("k8s.volume.name"),
 					ottlexpr.ResourceAttributeNotEquals("k8s.volume.type", "persistentVolumeClaim"),
 				),
 			},

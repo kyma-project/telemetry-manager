@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -37,7 +37,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		backend := backend.New(mockNs, backend.SignalTypeTraces, backend.WithPersistentHostSecret(suite.IsUpgrade()))
+		backend := kitbackend.New(mockNs, kitbackend.SignalTypeTraces, kitbackend.WithPersistentHostSecret(suite.IsUpgrade()))
 		objs = append(objs, backend.K8sObjects()...)
 		backendExportURL = backend.ExportURL(suite.ProxyClient)
 
@@ -166,7 +166,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should have a trace backend running", Label(suite.LabelUpgrade), func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have a running pipeline", Label(suite.LabelUpgrade), func() {
@@ -179,7 +179,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 
 		It("Should be able to get trace gateway metrics endpoint", Label(suite.LabelUpgrade), func() {
 			gatewayMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.TraceGatewayMetricsService.Namespace, kitkyma.TraceGatewayMetricsService.Name, "metrics", ports.Metrics)
-			assert.EmitsOTelCollectorMetrics(suite.ProxyClient, gatewayMetricsURL)
+			assert.EmitsOTelCollectorMetrics(suite.Ctx, gatewayMetricsURL)
 		})
 
 		It("Should have a working network policy", Label(suite.LabelUpgrade), func() {

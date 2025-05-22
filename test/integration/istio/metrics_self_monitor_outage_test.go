@@ -18,7 +18,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/prometheus"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
@@ -32,7 +32,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsOutage), Orde
 	makeResources := func() []client.Object {
 		var objs []client.Object
 
-		backend := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithReplicas(0))
+		backend := kitbackend.New(mockNs, kitbackend.SignalTypeMetrics, kitbackend.WithReplicas(0))
 		objs = append(objs, backend.K8sObjects()...)
 
 		metricPipeline := testutils.NewMetricPipelineBuilder().
@@ -97,7 +97,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsOutage), Orde
 		})
 
 		It("Should have a metrics backend running", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
 		})
 
 		It("Should have a telemetrygen running", func() {
@@ -146,7 +146,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsOutage), Orde
 			It("Ensures that controller_runtime_webhook_requests_total is increased", func() {
 				// Pushing metrics to the metric gateway triggers an alert.
 				// It makes the self-monitor call the webhook, which in turn increases the counter.
-				assert.ManagerEmitsMetric(suite.ProxyClient,
+				assert.EmitsManagerMetrics(suite.Ctx,
 					HaveName(Equal("controller_runtime_webhook_requests_total")),
 					SatisfyAll(
 						HaveLabels(HaveKeyWithValue("webhook", "/api/v2/alerts")),
@@ -155,8 +155,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsOutage), Orde
 			})
 
 			It("Ensures that telemetry_self_monitor_prober_requests_total is emitted", func() {
-				assert.ManagerEmitsMetric(
-					suite.ProxyClient,
+				assert.EmitsManagerMetrics(suite.Ctx,
 					HaveName(Equal("telemetry_self_monitor_prober_requests_total")),
 					HaveMetricValue(BeNumerically(">", 0)),
 				)

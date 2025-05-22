@@ -363,7 +363,7 @@ processors:
         error_mode: ignore
         metric_statements:
             - statements:
-                - set(resource.attributes["io.kyma-project.telemetry.skip_enrichment"], "true") where metric.name != ""
+                - set(resource.attributes["io.kyma-project.telemetry.skip_enrichment"], "true")
               conditions:
                 - IsMatch(metric.name, "^k8s.node.*")
                 - IsMatch(metric.name, "^k8s.statefulset.*")

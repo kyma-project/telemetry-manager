@@ -30,6 +30,19 @@ data:
         widget: Badge
     status:
       body:
+        - name: OTLP Endpoints
+          widget: Panel
+          source: status.endpoints
+          fullWidth: true
+          children:
+            - name: Traces GRPC
+              source: traces.grpc
+            - name: Traces HTTP
+              source: traces.http
+            - name: Metrics GRPC
+              source: metrics.grpc
+            - name: Metrics HTTP
+              source: metrics.http
         - name: Condition details
           widget: ConditionList
           source: status.conditions
@@ -97,17 +110,6 @@ data:
           source: spec.metric.gateway.scaling.static.replicas
         - name: Scaling Type
           source: spec.metric.gateway.scaling.type
-      - name: Status
-        widget: Panel
-        children:
-        - source: status.endpoints.traces.grpc
-          name: OTLP GRPC Trace Endpoint
-        - source: status.endpoints.traces.http
-          name: OTLP HTTP Trace Endpoint
-        - source: status.endpoints.metrics.grpc
-          name: OTLP GRPC Metric Endpoint
-        - source: status.endpoints.metrics.http
-          name: OTLP HTTP Metric Endpoint
     resourceGraph:
       colorVariant: 2
       dataSources:
