@@ -106,7 +106,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Label(suite.LabelMet
 
 		It("Ensures accessibility of metric agent metrics endpoint", func() {
 			agentMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.MetricAgentMetricsService.Namespace, kitkyma.MetricAgentMetricsService.Name, "metrics", ports.Metrics)
-			assert.EmitsOTelCollectorMetrics(suite.ProxyClient, agentMetricsURL)
+			assert.EmitsOTelCollectorMetrics(suite.Ctx, agentMetricsURL)
 		})
 
 		Context("Pipeline A should deliver pod metrics", Ordered, func() {

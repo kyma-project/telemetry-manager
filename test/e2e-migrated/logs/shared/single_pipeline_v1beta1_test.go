@@ -57,7 +57,6 @@ func TestSinglePipelineV1Beta1_OTel(t *testing.T) {
 			)
 
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
-			backendExportURL := backend.ExportURL(suite.ProxyClient)
 
 			// creating a log pipeline explicitly since the testutils.LogPipelineBuilder is not available in the v1beta1 API
 			pipeline := telemetryv1beta1.LogPipeline{
@@ -102,7 +101,7 @@ func TestSinglePipelineV1Beta1_OTel(t *testing.T) {
 			}
 
 			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
-			assert.OTelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, genNs)
+			assert.OTelLogsFromNamespaceDelivered(t.Context(), backend, genNs)
 		})
 	}
 }
@@ -118,7 +117,6 @@ func TestSinglePipelineV1Beta1_FluentBit(t *testing.T) {
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
-	backendExportURL := backend.ExportURL(suite.ProxyClient)
 
 	pipeline := telemetryv1beta1.LogPipeline{
 		ObjectMeta: metav1.ObjectMeta{
@@ -160,5 +158,5 @@ func TestSinglePipelineV1Beta1_FluentBit(t *testing.T) {
 	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 	assert.LogPipelineUnsupportedMode(t.Context(), suite.K8sClient, pipelineName, false)
 
-	assert.FluentBitLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, genNs)
+	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend, genNs)
 }
