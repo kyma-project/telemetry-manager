@@ -1,9 +1,11 @@
 package gateway
 
 import (
+	"fmt"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/ottlexpr"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/processors"
 )
@@ -93,4 +95,21 @@ func makeNamespacesConditions(namespaces []string) []string {
 	}
 
 	return namespacesConditions
+}
+
+func makeDropIfInputSourceOTLPConfig() *FilterProcessor {
+	return &FilterProcessor{
+		Logs: FilterProcessorLogs{
+			Log: []string{
+				otlpInputSource(),
+			},
+		},
+	}
+}
+
+func otlpInputSource() string {
+	return fmt.Sprintf("not(%s or %s)",
+		ottlexpr.ScopeNameEquals(metric.InstrumentationScopeRuntime),
+		ottlexpr.ScopeNameEquals(metric.InstrumentationScopeKyma),
+	)
 }

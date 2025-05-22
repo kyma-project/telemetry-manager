@@ -308,4 +308,26 @@ func TestBuildConfig(t *testing.T) {
 		require.Error(t, err)
 		require.ErrorContains(t, err, "failed to make otlp exporter config")
 	})
+
+	t.Run("otlp input disabled", func(t *testing.T) {
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithName("test").WithOTLPOutput().WithOTLPInput(false).Build()}, BuildOptions{
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
+			CloudProvider: "test-cloud-provider",
+		})
+		require.NoError(t, err)
+
+		require.Contains(t, collectorConfig.Service.Pipelines, "logs/test")
+		require.Contains(t, collectorConfig.Service.Pipelines["logs/test"].Receivers, "otlp")
+
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[0], "memory_limiter")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[1], "transform/set-observed-time-if-zero")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[2], "k8sattributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[3], "filter/drop-if-input-source-otlp")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[4], "resource/insert-cluster-attributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[5], "service_enrichment")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[6], "resource/drop-kyma-attributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[7], "batch")
+
+		require.Contains(t, collectorConfig.Service.Pipelines["logs/test"].Exporters, "otlp/test")
+	})
 }

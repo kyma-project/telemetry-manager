@@ -2,10 +2,10 @@ package gateway
 
 import (
 	"fmt"
-
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
+	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 )
 
 func makePipelineServiceConfig(pipeline *telemetryv1alpha1.LogPipeline) config.Pipeline {
@@ -16,6 +16,10 @@ func makePipelineServiceConfig(pipeline *telemetryv1alpha1.LogPipeline) config.P
 		"k8sattributes",
 	}
 
+	if !logpipelineutils.IsOTLPInputEnabled(pipeline.Spec.Input) {
+		processorIDs = append(processorIDs, "filter/drop-if-input-source-otlp")
+	}
+	
 	// Add namespace filters after k8sattributes processor because they depend on the
 	// k8s.namespace.name resource attribute
 	if pipeline.Spec.Input.OTLP != nil && shouldFilterByNamespace(pipeline.Spec.Input.OTLP.Namespaces) {

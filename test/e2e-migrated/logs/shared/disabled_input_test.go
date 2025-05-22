@@ -2,6 +2,10 @@ package shared
 
 import (
 	"context"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
+	"k8s.io/apimachinery/pkg/types"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -13,6 +17,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
@@ -21,27 +26,36 @@ import (
 func TestDisabledInput_OTel(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelLogAgent)
 
-	const (
-		endpoint = "localhost:443"
-	)
-
 	var (
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
+		backendNs    = uniquePrefix("backend")
+
+		genNs = uniquePrefix("gen")
 	)
+
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
+	backendExportURL := backend.ExportURL(suite.ProxyClient)
+
+	loggen := telemetrygen.NewPod(genNs, telemetrygen.SignalTypeLogs)
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithApplicationInput(false).
 		WithOTLPInput(false).
 		WithOTLPOutput(
-			testutils.OTLPEndpoint(endpoint),
+			testutils.OTLPEndpoint(backend.Endpoint()),
 		).
 		Build()
 
 	resources := []client.Object{
 		&pipeline,
+		loggen.K8sObject(),
+		kitk8s.NewNamespace(backendNs).K8sObject(),
+		kitk8s.NewNamespace(genNs).K8sObject(),
 	}
+
+	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
 		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
@@ -53,6 +67,14 @@ func TestDisabledInput_OTel(t *testing.T) {
 		err := suite.K8sClient.Get(t.Context(), kitkyma.LogAgentName, &daemonSet)
 		g.Expect(apierrors.IsNotFound(err)).To(BeTrue(), "Log agent DaemonSet must not exist")
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+
+	assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
+	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})
+	assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
+
+	assert.DataConsistentlyMatching(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(
+		BeEmpty(),
+	))
 }
 
 func TestDisabledInput_FluentBit(t *testing.T) {
