@@ -5,7 +5,6 @@ import (
 	"net"
 	"path/filepath"
 	"strconv"
-	"time"
 
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -45,15 +44,13 @@ const (
 )
 
 type Backend struct {
-	abortFaultPercentage        float64
-	certs                       *testutils.ServerCerts
-	faultDelayFixedDelaySeconds int
-	faultDelayPercentage        float64
-	name                        string
-	namespace                   string
-	persistentHostSecret        bool
-	replicas                    int32
-	signalType                  SignalType
+	abortFaultPercentage float64
+	certs                *testutils.ServerCerts
+	name                 string
+	namespace            string
+	persistentHostSecret bool
+	replicas             int32
+	signalType           SignalType
 
 	fluentDConfigMap    *fluentdConfigMapBuilder
 	hostSecret          *kitk8s.Secret
@@ -192,12 +189,12 @@ func (b *Backend) buildResources() {
 		kitk8s.WithStringData("host", host),
 	).Persistent(b.persistentHostSecret)
 
-	if b.abortFaultPercentage > 0 || b.faultDelayPercentage > 0 {
+	if b.abortFaultPercentage > 0 {
 		// Configure fault injection for self-monitoring negative tests.
 		b.virtualService = kitk8s.NewVirtualService(
 			"fault-injection",
 			b.namespace,
 			b.name,
-		).WithFaultAbortPercentage(b.abortFaultPercentage).WithFaultDelay(b.faultDelayPercentage, time.Duration(b.faultDelayFixedDelaySeconds)*time.Second)
+		).WithFaultAbortPercentage(b.abortFaultPercentage)
 	}
 }
