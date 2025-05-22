@@ -289,17 +289,19 @@ jobs:
       matrix:
         labels:
           - name: fluent-bit
-            experimental: false
+            mode: release
           - name: fluent-bit
-            experimental: true
+            mode: experimental
           - name: log-agent
-            experimental: true
+            mode: experimental
+          - name: log-gateway
+            mode: experimental
           - name: max-pipeline
-            experimental: true
+            mode: experimental
           - name: max-pipeline-fluent-bit
-            experimental: false
+            mode: release
           - name: max-pipeline-otel
-            experimental: true
+            mode: experimental
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -315,14 +317,14 @@ jobs:
         uses: "./.github/template/deploy-test-prerequisites"
 
       - name: Run tests
-        if: ${{ !matrix.labels.experimental }}
+        if: ${{ !matrix.labels.mode == 'regular' }}
         run: |
           go test -v -timeout=20m ./test/e2e-migrated/logs/... -- -labels=${{ matrix.labels.name }}
 
       - name: Run tests experimental
-        if: ${{ matrix.labels.experimental }}
+        if: ${{ matrix.labels.mode == 'experimental' }}
         run: |
-          go test -v -timeout=20m ./test/e2e-migrated/logs/... -- -labels=${{ matrix.labels.name }},experimental
+          go test -v -timeout=20m ./test/e2e-migrated/logs/... -- -labels=${{ matrix.labels.name }}
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
