@@ -55,9 +55,9 @@ func flattenMetrics(md pmetric.Metrics) []FlatMetric {
 						Description:        metric.Description(),
 						ScopeName:          scopeMetrics.Scope().Name(),
 						ScopeVersion:       scopeMetrics.Scope().Version(),
-						ResourceAttributes: attributeToMap(resourceMetrics.Resource().Attributes()),
-						ScopeAttributes:    attributeToMap(scopeMetrics.Scope().Attributes()),
-						MetricAttributes:   attributeToMap(dataPointsAttributes[l]),
+						ResourceAttributes: attributesToMap(resourceMetrics.Resource().Attributes()),
+						ScopeAttributes:    attributesToMap(scopeMetrics.Scope().Attributes()),
+						MetricAttributes:   attributesToMap(dataPointsAttributes[l]),
 						Type:               metric.Type().String(),
 					})
 				}
@@ -68,8 +68,8 @@ func flattenMetrics(md pmetric.Metrics) []FlatMetric {
 	return flatMetrics
 }
 
-// attributeToMap converts pdata.AttributeMap to a map using the string representation of the values.
-func attributeToMap(attrs pcommon.Map) map[string]string {
+// attributesToMap converts pdata.AttributeMap to a map using the string representation of the values.
+func attributesToMap(attrs pcommon.Map) map[string]string {
 	attrMap := make(map[string]string)
 
 	attrs.Range(func(k string, v pcommon.Value) bool {

@@ -1,4 +1,4 @@
-package log
+package fluentbit
 
 import (
 	"time"
@@ -10,14 +10,14 @@ import (
 
 var testTime = time.Date(2023, 12, 07, 9, 36, 38, 0, time.UTC)
 
-var flsFluentBit = []FlatLogFluentBit{
+var flsFluentBit = []FlatLog{
 	{
-		LogRecordAttributes: map[string]string{
+		Attributes: map[string]string{
 			"level":     "INFO",
 			"user":      "foo",
 			"timestamp": testTime.Format(time.RFC3339),
 		},
-		LogRecordBody: "Test first log body",
+		LogBody: "Test first log body",
 		KubernetesAttributes: map[string]string{
 			"pod_name":       "test-pod",
 			"container_name": "test-container",
@@ -31,21 +31,21 @@ var flsFluentBit = []FlatLogFluentBit{
 var _ = Describe("HaveFlatFluentBitLogs", func() {
 	It("should apply matcher to transform valid log data", func() {
 		ld := plog.NewLogs()
-		Expect(mustMarshalFluentBitLogs(ld)).Should(HaveFlatFluentBitLogs(ContainElements()))
+		Expect(mustMarshalFluentBitLogs(ld)).Should(HaveFlatLogs(ContainElements()))
 	})
 
 	It("should fail when given empty byte slice", func() {
-		Expect([]byte{}).Should(HaveFlatFluentBitLogs(BeEmpty()))
+		Expect([]byte{}).Should(HaveFlatLogs(BeEmpty()))
 	})
 
 	It("should return error for nil input", func() {
-		success, err := HaveFlatFluentBitLogs(BeEmpty()).Match(nil)
+		success, err := HaveFlatLogs(BeEmpty()).Match(nil)
 		Expect(err).Should(HaveOccurred())
 		Expect(success).Should(BeFalse())
 	})
 
 	It("should return error for invalid input type", func() {
-		success, err := HaveFlatFluentBitLogs(BeEmpty()).Match(struct{}{})
+		success, err := HaveFlatLogs(BeEmpty()).Match(struct{}{})
 		Expect(err).Should(HaveOccurred())
 		Expect(success).Should(BeFalse())
 	})
@@ -76,7 +76,7 @@ var _ = Describe("HaveFlatFluentBitLogs", func() {
 		k8sAttrs.PutStr("container_name", "test-container")
 		k8sAttrs.PutStr("namespace_name", "test-namespace")
 
-		Expect(mustMarshalFluentBitLogs(ld)).Should(HaveFlatFluentBitLogs(ContainElement(flsFluentBit[0])))
+		Expect(mustMarshalFluentBitLogs(ld)).Should(HaveFlatLogs(ContainElement(flsFluentBit[0])))
 	})
 })
 
@@ -100,7 +100,7 @@ var _ = Describe("HavePodName", func() {
 
 var _ = Describe("HaveLogRecordAttributes", func() {
 	It("should apply matcher", func() {
-		Expect(flsFluentBit).Should(ContainElement(HaveLogRecordAttributes(HaveKeyWithValue("user", "foo"))))
+		Expect(flsFluentBit).Should(ContainElement(HaveAttributes(HaveKeyWithValue("user", "foo"))))
 	})
 })
 
@@ -144,8 +144,8 @@ var _ = Describe("HaveLogBody", func() {
 
 var _ = Describe("HaveDateISO8601Format", func() {
 	It("should return true for valid ISO8601 date format", func() {
-		fl := FlatLogFluentBit{
-			LogRecordAttributes: map[string]string{
+		fl := FlatLog{
+			Attributes: map[string]string{
 				"date": "2023-12-07T09:36:38.123Z",
 			},
 		}
@@ -153,8 +153,8 @@ var _ = Describe("HaveDateISO8601Format", func() {
 	})
 
 	It("should return false for invalid ISO8601 date format", func() {
-		fl := FlatLogFluentBit{
-			LogRecordAttributes: map[string]string{
+		fl := FlatLog{
+			Attributes: map[string]string{
 				"date": "07-12-2023 09:36:38",
 			},
 		}
@@ -162,15 +162,15 @@ var _ = Describe("HaveDateISO8601Format", func() {
 	})
 
 	It("should return false when date attribute is missing", func() {
-		fl := FlatLogFluentBit{
-			LogRecordAttributes: map[string]string{},
+		fl := FlatLog{
+			Attributes: map[string]string{},
 		}
 		Expect(fl).Should(HaveDateISO8601Format(BeFalse()))
 	})
 
 	It("should return false for unix timestamp date format", func() {
-		fl := FlatLogFluentBit{
-			LogRecordAttributes: map[string]string{
+		fl := FlatLog{
+			Attributes: map[string]string{
 				"date": "1744288742.123",
 			},
 		}
@@ -178,8 +178,8 @@ var _ = Describe("HaveDateISO8601Format", func() {
 	})
 
 	It("should return false when date attribute is empty", func() {
-		fl := FlatLogFluentBit{
-			LogRecordAttributes: map[string]string{
+		fl := FlatLog{
+			Attributes: map[string]string{
 				"date": "",
 			},
 		}
