@@ -35,7 +35,6 @@ func TestDisabledInput_OTel(t *testing.T) {
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
-	backendExportURL := backend.ExportURL(suite.ProxyClient)
 
 	loggen := telemetrygen.NewPod(genNs, telemetrygen.SignalTypeLogs)
 
@@ -49,10 +48,10 @@ func TestDisabledInput_OTel(t *testing.T) {
 		Build()
 
 	resources := []client.Object{
-		&pipeline,
-		loggen.K8sObject(),
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
+		&pipeline,
+		loggen.K8sObject(),
 	}
 
 	resources = append(resources, backend.K8sObjects()...)
@@ -68,11 +67,12 @@ func TestDisabledInput_OTel(t *testing.T) {
 		g.Expect(apierrors.IsNotFound(err)).To(BeTrue(), "Log agent DaemonSet must not exist")
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 
+	// OTLP input disabled for gateway, no logs from OTLP-receiver should reach to the backend
 	assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
 	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})
 	assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 
-	assert.DataConsistentlyMatching(suite.ProxyClient, backendExportURL, HaveFlatOTelLogs(
+	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
 		BeEmpty(),
 	))
 }
