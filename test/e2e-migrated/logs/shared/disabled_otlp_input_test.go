@@ -2,6 +2,13 @@ package shared
 
 import (
 	"context"
+	"testing"
+
+	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -12,11 +19,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
-	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/require"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
 )
 
 func TestDisabledOTLPInput_OTel(t *testing.T) {
@@ -39,7 +41,7 @@ func TestDisabledOTLPInput_OTel(t *testing.T) {
 		WithApplicationInput(true, []testutils.ExtendedNamespaceSelectorOptions{testutils.ExtIncludeNamespaces(genNs)}...).
 		WithOTLPOutput(
 			testutils.OTLPEndpoint("telemetry-otlp-logs.kyma-system:4317"),
-			testutils.OTLPClientTLS( &telemetryv1alpha1.OTLPTLS{
+			testutils.OTLPClientTLS(&telemetryv1alpha1.OTLPTLS{
 				Insecure: true,
 			}),
 		).
@@ -79,5 +81,4 @@ func TestDisabledOTLPInput_OTel(t *testing.T) {
 
 	assert.OTelLogsFromNamespaceDelivered(t.Context(), backend, genNs)
 	assert.OTelLogsFromNamespaceNotDelivered(t.Context(), backend, telemetryGenNs)
-
 }
