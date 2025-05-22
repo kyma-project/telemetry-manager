@@ -312,14 +312,14 @@ func TestMakeConfig(t *testing.T) {
 				configYAML, err := yaml.Marshal(config)
 				require.NoError(t, err, "failed to marshal config")
 
+				goldenFilePath := filepath.Join("testdata", tt.goldenFileName)
 				if tt.overwriteGoldenFile {
-					err = os.WriteFile(tt.goldenFileName, configYAML, 0600)
+					err = os.WriteFile(goldenFilePath, configYAML, 0600)
 					require.NoError(t, err, "failed to overwrite golden file")
 
 					t.Fatalf("Golden file %s has been saved, please verify it and set the overwriteGoldenFile flag to false", tt.goldenFileName)
 				}
 
-				goldenFilePath := filepath.Join("testdata", tt.goldenFileName)
 				goldenFile, err := os.ReadFile(goldenFilePath)
 				require.NoError(t, err, "failed to load golden file")
 
