@@ -31,7 +31,7 @@ func TestService(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-attributes-enrichment")
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-output")
 
-			require.Equal(t, []string{"otlp", "singleton_receiver_creator/kymastats"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
+			require.Equal(t, []string{"otlp", "kymastats"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
 			require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-input"].Processors)
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-input"].Exporters)
 
@@ -69,7 +69,7 @@ func TestService(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-attributes-enrichment")
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-output")
 
-			require.Equal(t, []string{"otlp", "singleton_receiver_creator/kymastats"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
+			require.Equal(t, []string{"otlp", "kymastats"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
 			require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-input"].Processors)
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-input"].Exporters)
 
@@ -105,7 +105,7 @@ func TestService(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-attributes-enrichment")
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-output")
 
-			require.Equal(t, []string{"otlp", "singleton_receiver_creator/kymastats"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
+			require.Equal(t, []string{"otlp", "kymastats"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
 			require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-input"].Processors)
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-input"].Exporters)
 
@@ -142,7 +142,7 @@ func TestService(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-attributes-enrichment")
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-output")
 
-			require.Equal(t, []string{"otlp", "singleton_receiver_creator/kymastats"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
+			require.Equal(t, []string{"otlp", "kymastats"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
 			require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-input"].Processors)
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-input"].Exporters)
 
@@ -179,7 +179,7 @@ func TestService(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-attributes-enrichment")
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-output")
 
-			require.Equal(t, []string{"otlp", "singleton_receiver_creator/kymastats"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
+			require.Equal(t, []string{"otlp", "kymastats"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
 			require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-input"].Processors)
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-input"].Exporters)
 
@@ -215,7 +215,7 @@ func TestService(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-attributes-enrichment")
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-output")
 
-			require.Equal(t, []string{"otlp", "singleton_receiver_creator/kymastats"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
+			require.Equal(t, []string{"otlp", "kymastats"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
 			require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-input"].Processors)
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-input"].Exporters)
 
@@ -252,7 +252,7 @@ func TestService(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-attributes-enrichment")
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-output")
 
-			require.Equal(t, []string{"otlp", "singleton_receiver_creator/kymastats"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
+			require.Equal(t, []string{"otlp", "kymastats"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
 			require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-input"].Processors)
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-input"].Exporters)
 
@@ -289,7 +289,7 @@ func TestService(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-attributes-enrichment")
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-output")
 
-			require.Equal(t, []string{"otlp", "singleton_receiver_creator/kymastats"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
+			require.Equal(t, []string{"otlp", "kymastats"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
 			require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-input"].Processors)
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-input"].Exporters)
 
@@ -326,7 +326,7 @@ func TestService(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-attributes-enrichment")
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-output")
 
-			require.Equal(t, []string{"otlp", "singleton_receiver_creator/kymastats"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
+			require.Equal(t, []string{"otlp", "kymastats"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
 			require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-input"].Processors)
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-input"].Exporters)
 
@@ -363,7 +363,7 @@ func TestService(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-attributes-enrichment")
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-output")
 
-			require.Equal(t, []string{"otlp", "singleton_receiver_creator/kymastats"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
+			require.Equal(t, []string{"otlp", "kymastats"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
 			require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-input"].Processors)
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-input"].Exporters)
 
@@ -415,7 +415,7 @@ func TestService(t *testing.T) {
 		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-1-attributes-enrichment")
 		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-1-output")
 
-		require.Equal(t, []string{"otlp", "singleton_receiver_creator/kymastats"}, collectorConfig.Service.Pipelines["metrics/test-1-input"].Receivers)
+		require.Equal(t, []string{"otlp", "kymastats"}, collectorConfig.Service.Pipelines["metrics/test-1-input"].Receivers)
 		require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-1-input"].Processors)
 		require.Equal(t, []string{"routing/test-1"}, collectorConfig.Service.Pipelines["metrics/test-1-input"].Exporters)
 
@@ -442,7 +442,7 @@ func TestService(t *testing.T) {
 		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-2-attributes-enrichment")
 		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-2-output")
 
-		require.Equal(t, []string{"otlp", "singleton_receiver_creator/kymastats"}, collectorConfig.Service.Pipelines["metrics/test-2-input"].Receivers)
+		require.Equal(t, []string{"otlp", "kymastats"}, collectorConfig.Service.Pipelines["metrics/test-2-input"].Receivers)
 		require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-2-input"].Processors)
 		require.Equal(t, []string{"routing/test-2"}, collectorConfig.Service.Pipelines["metrics/test-2-input"].Exporters)
 
@@ -470,7 +470,7 @@ func TestService(t *testing.T) {
 		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-3-attributes-enrichment")
 		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-3-output")
 
-		require.Equal(t, []string{"otlp", "singleton_receiver_creator/kymastats"}, collectorConfig.Service.Pipelines["metrics/test-3-input"].Receivers)
+		require.Equal(t, []string{"otlp", "kymastats"}, collectorConfig.Service.Pipelines["metrics/test-3-input"].Receivers)
 		require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-3-input"].Processors)
 		require.Equal(t, []string{"routing/test-3"}, collectorConfig.Service.Pipelines["metrics/test-3-input"].Exporters)
 
@@ -715,7 +715,7 @@ func TestService_RuntimeResources_Enabled(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-attributes-enrichment")
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-output")
 
-			require.Equal(t, []string{"otlp", "singleton_receiver_creator/kymastats"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
+			require.Equal(t, []string{"otlp", "kymastats"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
 			require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-input"].Processors)
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-input"].Exporters)
 

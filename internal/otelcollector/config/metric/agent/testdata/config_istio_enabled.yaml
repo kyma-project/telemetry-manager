@@ -3,6 +3,10 @@ extensions:
         endpoint: ${MY_POD_IP}:13133
     pprof:
         endpoint: 127.0.0.1:1777
+    k8s_leader_elector:
+        auth_type: serviceAccount
+        lease_name: telemetry-metric-agent-k8scluster
+        lease_namespace: ""
 service:
     pipelines:
         metrics/istio:
@@ -30,7 +34,7 @@ service:
         metrics/runtime:
             receivers:
                 - kubeletstats
-                - singleton_receiver_creator/k8s_cluster
+                - k8s_cluster
             processors:
                 - memory_limiter
                 - filter/drop-non-pvc-volumes-metrics
@@ -54,6 +58,7 @@ service:
     extensions:
         - health_check
         - pprof
+        - k8s_leader_elector
 receivers:
     kubeletstats:
         collection_interval: 30s
@@ -90,51 +95,46 @@ receivers:
                 enabled: false
         extra_metadata_labels:
             - k8s.volume.type
-    singleton_receiver_creator/k8s_cluster:
+    k8s_cluster:
         auth_type: serviceAccount
-        leader_election:
-            lease_name: telemetry-metric-agent-k8scluster
-            lease_namespace: ""
-        receiver:
-            k8s_cluster:
-                auth_type: serviceAccount
-                collection_interval: 30s
-                node_conditions_to_report: []
-                metrics:
-                    k8s.container.storage_request:
-                        enabled: false
-                    k8s.container.storage_limit:
-                        enabled: false
-                    k8s.container.ephemeralstorage_request:
-                        enabled: false
-                    k8s.container.ephemeralstorage_limit:
-                        enabled: false
-                    k8s.container.ready:
-                        enabled: false
-                    k8s.namespace.phase:
-                        enabled: false
-                    k8s.hpa.current_replicas:
-                        enabled: false
-                    k8s.hpa.desired_replicas:
-                        enabled: false
-                    k8s.hpa.min_replicas:
-                        enabled: false
-                    k8s.hpa.max_replicas:
-                        enabled: false
-                    k8s.replicaset.available:
-                        enabled: false
-                    k8s.replicaset.desired:
-                        enabled: false
-                    k8s.replication_controller.available:
-                        enabled: false
-                    k8s.replication_controller.desired:
-                        enabled: false
-                    k8s.resource_quota.hard_limit:
-                        enabled: false
-                    k8s.resource_quota.used:
-                        enabled: false
-                    k8s.cronjob.active_jobs:
-                        enabled: false
+        collection_interval: 30s
+        node_conditions_to_report: []
+        metrics:
+            k8s.container.storage_request:
+                enabled: false
+            k8s.container.storage_limit:
+                enabled: false
+            k8s.container.ephemeralstorage_request:
+                enabled: false
+            k8s.container.ephemeralstorage_limit:
+                enabled: false
+            k8s.container.ready:
+                enabled: false
+            k8s.namespace.phase:
+                enabled: false
+            k8s.hpa.current_replicas:
+                enabled: false
+            k8s.hpa.desired_replicas:
+                enabled: false
+            k8s.hpa.min_replicas:
+                enabled: false
+            k8s.hpa.max_replicas:
+                enabled: false
+            k8s.replicaset.available:
+                enabled: false
+            k8s.replicaset.desired:
+                enabled: false
+            k8s.replication_controller.available:
+                enabled: false
+            k8s.replication_controller.desired:
+                enabled: false
+            k8s.resource_quota.hard_limit:
+                enabled: false
+            k8s.resource_quota.used:
+                enabled: false
+            k8s.cronjob.active_jobs:
+                enabled: false
+        k8s_leader_elector: k8s_leader_elector
     prometheus/app-pods:
         config:
             scrape_configs:
