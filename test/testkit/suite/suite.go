@@ -126,15 +126,18 @@ const (
 	LabelSkip         = "skip"
 
 	// Self-monitoring test labels
-	LabelSelfMonitoringLogsHealthy         = "self-mon-logs-healthy"
-	LabelSelfMonitoringLogsBackpressure    = "self-mon-logs-backpressure"
-	LabelSelfMonitoringLogsOutage          = "self-mon-logs-outage"
-	LabelSelfMonitoringTracesHealthy       = "self-mon-traces-healthy"
-	LabelSelfMonitoringTracesBackpressure  = "self-mon-traces-backpressure"
-	LabelSelfMonitoringTracesOutage        = "self-mon-traces-outage"
-	LabelSelfMonitoringMetricsHealthy      = "self-mon-metrics-healthy"
-	LabelSelfMonitoringMetricsBackpressure = "self-mon-metrics-backpressure"
-	LabelSelfMonitoringMetricsOutage       = "self-mon-metrics-outage"
+	LabelSelfMonitoringLogsFluentBitBackpressure = "self-mon-logs-fluentbit-backpressure"
+	LabelSelfMonitoringLogsFluentBitOutage       = "self-mon-logs-fluentbit-outage"
+	LabelSelfMonitoringLogsAgentBackpressure     = "self-mon-logs-agent-backpressure"
+	LabelSelfMonitoringLogsAgentOutage           = "self-mon-logs-agent-outage"
+	LabelSelfMonitoringLogsGatewayBackpressure   = "self-mon-logs-gateway-backpressure"
+	LabelSelfMonitoringLogsGatewayOutage         = "self-mon-logs-gateway-outage"
+	LabelSelfMonitoringTracesHealthy             = "self-mon-traces-healthy"
+	LabelSelfMonitoringTracesBackpressure        = "self-mon-traces-backpressure"
+	LabelSelfMonitoringTracesOutage              = "self-mon-traces-outage"
+	LabelSelfMonitoringMetricsHealthy            = "self-mon-metrics-healthy"
+	LabelSelfMonitoringMetricsBackpressure       = "self-mon-metrics-backpressure"
+	LabelSelfMonitoringMetricsOutage             = "self-mon-metrics-outage"
 
 	// Miscellaneous test label (for edge-cases and unrelated tests)
 	// [please avoid adding tests to this category if it already fits in a more specific one]
