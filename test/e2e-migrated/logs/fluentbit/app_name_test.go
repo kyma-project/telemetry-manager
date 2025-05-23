@@ -80,24 +80,24 @@ func TestAppName(t *testing.T) {
 	// No labels should not have app value
 	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(ContainElement(SatisfyAll(
 		fluentbit.HaveNamespace(Equal(nsNone)),
-		fluentbit.HaveAttributes(Not(HaveKey("app_name"))),
+		fluentbit.HaveKubernetesAttributes(Not(HaveKey("app_name"))),
 	))))
 
 	// App only label should have app value of app label
 	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(ContainElement(SatisfyAll(
 		fluentbit.HaveNamespace(Equal(nsAppOnly)),
-		fluentbit.HaveAttributes(HaveKeyWithValue("app_name", "app-only"))),
+		fluentbit.HaveKubernetesAttributes(HaveKeyWithValue("app_name", "app-only"))),
 	)))
 
 	// Name only label should have app value of name label
 	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(ContainElement(SatisfyAll(
 		fluentbit.HaveNamespace(Equal(nsAppOnly)),
-		fluentbit.HaveAttributes(HaveKeyWithValue("app_name", "name-only"))),
+		fluentbit.HaveKubernetesAttributes(HaveKeyWithValue("app_name", "name-only"))),
 	)))
 
 	// Mixed label should have app value of name label
 	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(ContainElement(SatisfyAll(
 		fluentbit.HaveNamespace(Equal(nsAppOnly)),
-		fluentbit.HaveAttributes(HaveKeyWithValue("app_name", "name-mixed"))),
+		fluentbit.HaveKubernetesAttributes(HaveKeyWithValue("app_name", "name-mixed"))),
 	)))
 }
