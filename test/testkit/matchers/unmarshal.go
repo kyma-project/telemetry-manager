@@ -53,5 +53,6 @@ func handleUnmarshalError(err error, line []byte, dataSize int) error {
 		lastElems = line[size-maxPreviewSize:]
 	}
 
-	return fmt.Errorf("failed to unmarshal logs: %w, body size: %d, last 100 elems: %q", err, dataSize, string(lastElems))
+	return fmt.Errorf("failed to unmarshal pdata: size: %d, last %d elems: %q, error: %w",
+		dataSize, maxPreviewSize, string(lastElems), err)
 }
