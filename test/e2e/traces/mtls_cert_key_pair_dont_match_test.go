@@ -73,7 +73,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should set ConfigurationGenerated condition to False in pipeline", func() {
-			assert.TracePipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
+			assert.TracePipelineHasCondition(suite.Ctx, pipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonTLSConfigurationInvalid,
@@ -81,7 +81,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should set TelemetryFlowHealthy condition to False in pipeline", func() {
-			assert.TracePipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
+			assert.TracePipelineHasCondition(suite.Ctx, pipelineName, metav1.Condition{
 				Type:   conditions.TypeFlowHealthy,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonSelfMonConfigNotGenerated,
@@ -89,7 +89,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should set TraceComponentsHealthy condition to False in Telemetry", func() {
-			assert.TelemetryHasState(suite.Ctx, suite.K8sClient, operatorv1alpha1.StateWarning)
+			assert.TelemetryHasState(suite.Ctx, operatorv1alpha1.StateWarning)
 			assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeTraceComponentsHealthy,
 				Status: metav1.ConditionFalse,

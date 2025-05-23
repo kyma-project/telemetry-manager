@@ -67,8 +67,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 		})
 
 		It("Should have running pipelines", func() {
-			assert.TracePipelineHealthy(suite.Ctx, suite.K8sClient, pipeline1Name)
-			assert.TracePipelineHealthy(suite.Ctx, suite.K8sClient, pipeline2Name)
+			assert.TracePipelineHealthy(suite.Ctx, pipeline1Name)
+			assert.TracePipelineHealthy(suite.Ctx, pipeline2Name)
 		})
 
 		It("Should have a running trace gateway deployment", func() {

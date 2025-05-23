@@ -79,7 +79,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 				Namespace:     sampleAppNs,
 			}
 
-			assert.PodsReady(suite.Ctx, suite.K8sClient, listOptions)
+			assert.PodsReady(suite.Ctx, listOptions)
 		})
 
 		It("Should have the log pipeline running", func() {

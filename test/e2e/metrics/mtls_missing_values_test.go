@@ -126,19 +126,19 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), 
 		})
 
 		It("Should set ConfigurationGenerated condition to True in pipelines", func() {
-			assert.MetricPipelineHasCondition(suite.Ctx, suite.K8sClient, missingCaPipelineName, metav1.Condition{
+			assert.MetricPipelineHasCondition(suite.Ctx, missingCaPipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonGatewayConfigured,
 			})
 
-			assert.MetricPipelineHasCondition(suite.Ctx, suite.K8sClient, missingAllButCaPipelineName, metav1.Condition{
+			assert.MetricPipelineHasCondition(suite.Ctx, missingAllButCaPipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonGatewayConfigured,
 			})
 
-			assert.MetricPipelineHasCondition(suite.Ctx, suite.K8sClient, missingAllPipelineName, metav1.Condition{
+			assert.MetricPipelineHasCondition(suite.Ctx, missingAllPipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonGatewayConfigured,
@@ -146,19 +146,19 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), 
 		})
 
 		It("Should set TelemetryFlowHealthy condition to True in pipelines", func() {
-			assert.MetricPipelineHasCondition(suite.Ctx, suite.K8sClient, missingCaPipelineName, metav1.Condition{
+			assert.MetricPipelineHasCondition(suite.Ctx, missingCaPipelineName, metav1.Condition{
 				Type:   conditions.TypeFlowHealthy,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonSelfMonFlowHealthy,
 			})
 
-			assert.MetricPipelineHasCondition(suite.Ctx, suite.K8sClient, missingAllButCaPipelineName, metav1.Condition{
+			assert.MetricPipelineHasCondition(suite.Ctx, missingAllButCaPipelineName, metav1.Condition{
 				Type:   conditions.TypeFlowHealthy,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonSelfMonFlowHealthy,
 			})
 
-			assert.MetricPipelineHasCondition(suite.Ctx, suite.K8sClient, missingAllPipelineName, metav1.Condition{
+			assert.MetricPipelineHasCondition(suite.Ctx, missingAllPipelineName, metav1.Condition{
 				Type:   conditions.TypeFlowHealthy,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonSelfMonFlowHealthy,
@@ -166,7 +166,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), 
 		})
 
 		It("Should set MetricComponentsHealthy condition to True in Telemetry", func() {
-			assert.TelemetryHasState(suite.Ctx, suite.K8sClient, operatorv1alpha1.StateReady)
+			assert.TelemetryHasState(suite.Ctx, operatorv1alpha1.StateReady)
 			assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeMetricComponentsHealthy,
 				Status: metav1.ConditionTrue,

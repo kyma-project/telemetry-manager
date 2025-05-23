@@ -72,16 +72,16 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelSetA), Ordered
 
 		It("Should have a metrics backend running", func() {
 			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
-			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
+			assert.ServiceReady(suite.Ctx, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have running pipelines", func() {
-			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineNameNoInput)
-			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineNameWithInput)
+			assert.MetricPipelineHealthy(suite.Ctx, pipelineNameNoInput)
+			assert.MetricPipelineHealthy(suite.Ctx, pipelineNameWithInput)
 		})
 
 		It("Pipeline with no input should have AgentNotRequired condition", func() {
-			assert.MetricPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineNameNoInput, metav1.Condition{
+			assert.MetricPipelineHasCondition(suite.Ctx, pipelineNameNoInput, metav1.Condition{
 				Type:   conditions.TypeAgentHealthy,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonMetricAgentNotRequired,

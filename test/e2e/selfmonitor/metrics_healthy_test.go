@@ -89,11 +89,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsHealthy), Ord
 
 		It("Should have a metrics backend running", func() {
 			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
-			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
+			assert.ServiceReady(suite.Ctx, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have a running pipeline", func() {
-			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+			assert.MetricPipelineHealthy(suite.Ctx, pipelineName)
 		})
 
 		It("Ensures the metric gateway deployment is ready", func() {

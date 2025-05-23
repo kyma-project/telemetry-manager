@@ -76,19 +76,19 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should set ConfigurationGenerated condition to False in pipelines", func() {
-			assert.TracePipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineNameValue, metav1.Condition{
+			assert.TracePipelineHasCondition(suite.Ctx, pipelineNameValue, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonEndpointInvalid,
 			})
 
-			assert.TracePipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineNameValueFrom, metav1.Condition{
+			assert.TracePipelineHasCondition(suite.Ctx, pipelineNameValueFrom, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonEndpointInvalid,
 			})
 
-			assert.TracePipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineNameHTTP, metav1.Condition{
+			assert.TracePipelineHasCondition(suite.Ctx, pipelineNameHTTP, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonEndpointInvalid,

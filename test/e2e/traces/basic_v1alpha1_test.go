@@ -170,7 +170,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should have a running pipeline", Label(suite.LabelUpgrade), func() {
-			assert.TracePipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+			assert.TracePipelineHealthy(suite.Ctx, pipelineName)
 		})
 
 		It("Should deliver telemetrygen traces", Label(suite.LabelUpgrade), func() {

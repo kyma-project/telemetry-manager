@@ -91,20 +91,20 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetC), 
 		})
 
 		It("Should have running pipelines", func() {
-			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineRuntimeName)
-			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, pipelinePrometheusName)
+			assert.MetricPipelineHealthy(suite.Ctx, pipelineRuntimeName)
+			assert.MetricPipelineHealthy(suite.Ctx, pipelinePrometheusName)
 		})
 
 		It("Should have a running metric gateway deployment", func() {
 			assert.DeploymentReady(suite.Ctx, kitkyma.MetricGatewayName)
-			assert.ServiceReady(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayMetricsService)
+			assert.ServiceReady(suite.Ctx, kitkyma.MetricGatewayMetricsService)
 		})
 
 		It("Should have a metrics backend running", func() {
 			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: backendRuntimeName, Namespace: mockNs})
 			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: backendPrometheusName, Namespace: mockNs})
-			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backendRuntimeName, Namespace: mockNs})
-			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backendPrometheusName, Namespace: mockNs})
+			assert.ServiceReady(suite.Ctx, types.NamespacedName{Name: backendRuntimeName, Namespace: mockNs})
+			assert.ServiceReady(suite.Ctx, types.NamespacedName{Name: backendPrometheusName, Namespace: mockNs})
 		})
 
 		It("Ensures runtime metrics are sent to runtime backend", func() {

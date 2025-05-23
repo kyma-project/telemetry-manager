@@ -69,7 +69,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), 
 		})
 
 		It("Ensures the metric pipelines are healthy", func() {
-			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineWithAnnotationName)
+			assert.MetricPipelineHealthy(suite.Ctx, pipelineWithAnnotationName)
 		})
 
 		It("Ensures Telemetry module status metrics are sent to the backend which is receiving metrics from the pipeline with annotation", func() {

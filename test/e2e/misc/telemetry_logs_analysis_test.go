@@ -174,8 +174,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 
 		It("Should have running pipelines", func() {
 			assert.FluentBitLogPipelineHealthy(suite.Ctx, logBackendName)
-			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, metricBackendName)
-			assert.TracePipelineHealthy(suite.Ctx, suite.K8sClient, traceBackendName)
+			assert.MetricPipelineHealthy(suite.Ctx, metricBackendName)
+			assert.TracePipelineHealthy(suite.Ctx, traceBackendName)
 
 			assert.FluentBitLogPipelineHealthy(suite.Ctx, otelCollectorLogBackendName)
 			assert.FluentBitLogPipelineHealthy(suite.Ctx, fluentBitLogBackendName)

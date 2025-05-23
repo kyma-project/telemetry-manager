@@ -62,7 +62,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 
 		It("Should have only running pipelines", func() {
 			for _, pipelineName := range pipelinesNames {
-				assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+				assert.MetricPipelineHealthy(suite.Ctx, pipelineName)
 			}
 		})
 
@@ -75,13 +75,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 
 				Expect(kitk8s.CreateObjects(suite.Ctx, &pipeline)).Should(Succeed())
 
-				assert.MetricPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
+				assert.MetricPipelineHasCondition(suite.Ctx, pipelineName, metav1.Condition{
 					Type:   conditions.TypeConfigurationGenerated,
 					Status: metav1.ConditionFalse,
 					Reason: conditions.ReasonMaxPipelinesExceeded,
 				})
 
-				assert.MetricPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
+				assert.MetricPipelineHasCondition(suite.Ctx, pipelineName, metav1.Condition{
 					Type:   conditions.TypeFlowHealthy,
 					Status: metav1.ConditionFalse,
 					Reason: conditions.ReasonSelfMonConfigNotGenerated,
@@ -94,7 +94,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 				Expect(kitk8s.DeleteObjects(suite.Ctx, pipelineCreatedFirst)).Should(Succeed())
 
 				for _, pipeline := range pipelinesNames[1:] {
-					assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, pipeline)
+					assert.MetricPipelineHealthy(suite.Ctx, pipeline)
 				}
 			})
 		})

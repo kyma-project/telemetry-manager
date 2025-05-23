@@ -49,7 +49,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetC), 
 		})
 
 		It("Should have a secret with endpoint and path", func() {
-			assert.SecretHasKeyValue(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewaySecretName, endpointDataKey, endpoint+path)
+			assert.SecretHasKeyValue(suite.Ctx, kitkyma.MetricGatewaySecretName, endpointDataKey, endpoint+path)
 		})
 	})
 })

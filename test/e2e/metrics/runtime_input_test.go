@@ -146,8 +146,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 		})
 
 		It("Should have healthy pipelines", func() {
-			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineResourceMetricsEnabledNameA)
-			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineResourceMetricsEnabledNameB)
+			assert.MetricPipelineHealthy(suite.Ctx, pipelineResourceMetricsEnabledNameA)
+			assert.MetricPipelineHealthy(suite.Ctx, pipelineResourceMetricsEnabledNameB)
 		})
 
 		It("Ensures the metric gateway deployment is ready", func() {
@@ -161,21 +161,21 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 		It("Should have metrics backends running", func() {
 			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: backendResourceMetricsEnabledNameA, Namespace: mockNs})
 			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: backendResourceMetricsEnabledNameB, Namespace: mockNs})
-			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backendResourceMetricsEnabledNameA, Namespace: mockNs})
-			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backendResourceMetricsEnabledNameB, Namespace: mockNs})
+			assert.ServiceReady(suite.Ctx, types.NamespacedName{Name: backendResourceMetricsEnabledNameA, Namespace: mockNs})
+			assert.ServiceReady(suite.Ctx, types.NamespacedName{Name: backendResourceMetricsEnabledNameB, Namespace: mockNs})
 
 		})
 
 		It("should have workloads created properly", func() {
 			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: DeploymentName, Namespace: mockNs})
 			assert.DaemonSetReady(suite.Ctx, types.NamespacedName{Name: DaemonSetName, Namespace: mockNs})
-			assert.StatefulSetReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: StatefulSetName, Namespace: mockNs})
-			assert.JobReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: JobName, Namespace: mockNs})
+			assert.StatefulSetReady(suite.Ctx, types.NamespacedName{Name: StatefulSetName, Namespace: mockNs})
+			assert.JobReady(suite.Ctx, types.NamespacedName{Name: JobName, Namespace: mockNs})
 		})
 
 		It("Should have pods mounting volumes running", func() {
-			assert.PodReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: podMountingPVCName, Namespace: mockNs})
-			assert.PodReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: podMountingEmptyDirName, Namespace: mockNs})
+			assert.PodReady(suite.Ctx, types.NamespacedName{Name: podMountingPVCName, Namespace: mockNs})
+			assert.PodReady(suite.Ctx, types.NamespacedName{Name: podMountingEmptyDirName, Namespace: mockNs})
 		})
 
 		It("Ensures accessibility of metric agent metrics endpoint", func() {

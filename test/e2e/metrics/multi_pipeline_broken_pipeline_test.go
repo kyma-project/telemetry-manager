@@ -65,8 +65,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetC), 
 		})
 
 		It("Should have running pipelines", func() {
-			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, healthyPipelineName)
-			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, brokenPipelineName)
+			assert.MetricPipelineHealthy(suite.Ctx, healthyPipelineName)
+			assert.MetricPipelineHealthy(suite.Ctx, brokenPipelineName)
 		})
 
 		It("Should have a running metric gateway deployment", func() {
@@ -75,7 +75,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetC), 
 
 		It("Should have a metrics backend running", func() {
 			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
-			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
+			assert.ServiceReady(suite.Ctx, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should deliver telemetrygen metrics", func() {

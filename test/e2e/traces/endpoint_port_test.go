@@ -74,13 +74,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should set ConfigurationGenerated condition to False in pipelines", func() {
-			assert.TracePipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineNameInvalid, metav1.Condition{
+			assert.TracePipelineHasCondition(suite.Ctx, pipelineNameInvalid, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonEndpointInvalid,
 			})
 
-			assert.TracePipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineNameMissingGRPC, metav1.Condition{
+			assert.TracePipelineHasCondition(suite.Ctx, pipelineNameMissingGRPC, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonEndpointInvalid,
@@ -88,7 +88,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should set ConfigurationGenerated condition to True in pipelines with missing port and HTTP protocol", func() {
-			assert.TracePipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineNameMissingHTTP, metav1.Condition{
+			assert.TracePipelineHasCondition(suite.Ctx, pipelineNameMissingHTTP, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonGatewayConfigured,

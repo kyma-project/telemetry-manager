@@ -117,8 +117,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		})
 
 		It("Should have the trace pipelines running", func() {
-			assert.TracePipelineHealthy(suite.Ctx, suite.K8sClient, pipeline1Name)
-			assert.TracePipelineHealthy(suite.Ctx, suite.K8sClient, pipeline2Name)
+			assert.TracePipelineHealthy(suite.Ctx, pipeline1Name)
+			assert.TracePipelineHealthy(suite.Ctx, pipeline2Name)
 		})
 
 		It("Trace gateway with should answer requests", func() {
@@ -173,7 +173,7 @@ func verifySidecarPresent(namespace string, labelSelector map[string]string) {
 			Namespace:     namespace,
 		}
 
-		hasIstioSidecar, err := assert.HasContainer(suite.Ctx, suite.K8sClient, listOptions, "istio-proxy")
+		hasIstioSidecar, err := assert.HasContainer(suite.Ctx, listOptions, "istio-proxy")
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(hasIstioSidecar).To(BeTrueBecause("Istio sidecar not present"))
 	}, periodic.EventuallyTimeout*2, periodic.DefaultInterval).Should(Succeed())
@@ -185,7 +185,7 @@ func verifyAppIsRunning(namespace string, labelSelector map[string]string) {
 		Namespace:     namespace,
 	}
 
-	assert.PodsReady(suite.Ctx, suite.K8sClient, listOptions)
+	assert.PodsReady(suite.Ctx, listOptions)
 }
 
 func verifyIstioSpans(backendURL, namespace string) {

@@ -10,19 +10,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-func PodReady(ctx context.Context, k8sClient client.Client, name types.NamespacedName) {
+func PodReady(ctx context.Context, name types.NamespacedName) {
 	Eventually(func(g Gomega) {
-		ready, err := isPodReady(ctx, k8sClient, name)
+		ready, err := isPodReady(ctx, suite.K8sClient, name)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(ready).To(BeTrueBecause("Pod not ready"))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func PodsReady(ctx context.Context, k8sClient client.Client, listOptions client.ListOptions) {
+func PodsReady(ctx context.Context, listOptions client.ListOptions) {
 	Eventually(func(g Gomega) {
-		ready, err := arePodsReady(ctx, k8sClient, listOptions)
+		ready, err := arePodsReady(ctx, suite.K8sClient, listOptions)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(ready).To(BeTrueBecause("Pods are not ready"))
 	}, 2*periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
@@ -75,10 +76,10 @@ func generateContainerError(podName string, containerStatus corev1.ContainerStat
 	return fmt.Errorf("pod %s has a container %s that is not running. Additional info: %s", podName, containerStatus.Name, additionalInfo)
 }
 
-func HasContainer(ctx context.Context, k8sClient client.Client, listOptions client.ListOptions, containerName string) (bool, error) {
+func HasContainer(ctx context.Context, listOptions client.ListOptions, containerName string) (bool, error) {
 	var pods corev1.PodList
 
-	err := k8sClient.List(ctx, &pods, &listOptions)
+	err := suite.K8sClient.List(ctx, &pods, &listOptions)
 	if err != nil {
 		return false, fmt.Errorf("failed to list pods: %w", err)
 	}

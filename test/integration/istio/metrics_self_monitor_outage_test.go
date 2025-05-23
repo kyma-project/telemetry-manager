@@ -85,7 +85,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsOutage), Orde
 		})
 
 		It("Should have a running metricpipeline", func() {
-			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+			assert.MetricPipelineHealthy(suite.Ctx, pipelineName)
 		})
 
 		It("Should have a running metric gateway deployment", func() {
@@ -105,12 +105,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsOutage), Orde
 		})
 
 		It("Should wait for the metrics flow to report a full buffer", func() {
-			assert.MetricPipelineConditionReasonsTransition(suite.Ctx, suite.K8sClient, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
+			assert.MetricPipelineConditionReasonsTransition(suite.Ctx, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 				{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
 				{Reason: conditions.ReasonSelfMonGatewayBufferFillingUp, Status: metav1.ConditionFalse},
 			})
 
-			assert.TelemetryHasState(suite.Ctx, suite.K8sClient, operatorv1alpha1.StateWarning)
+			assert.TelemetryHasState(suite.Ctx, operatorv1alpha1.StateWarning)
 			assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeMetricComponentsHealthy,
 				Status: metav1.ConditionFalse,
@@ -130,11 +130,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsOutage), Orde
 		})
 
 		It("Should wait for the metrics flow to report dropped metrics", func() {
-			assert.MetricPipelineConditionReasonsTransition(suite.Ctx, suite.K8sClient, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
+			assert.MetricPipelineConditionReasonsTransition(suite.Ctx, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 				{Reason: conditions.ReasonSelfMonGatewayAllDataDropped, Status: metav1.ConditionFalse},
 			})
 
-			assert.TelemetryHasState(suite.Ctx, suite.K8sClient, operatorv1alpha1.StateWarning)
+			assert.TelemetryHasState(suite.Ctx, operatorv1alpha1.StateWarning)
 			assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeMetricComponentsHealthy,
 				Status: metav1.ConditionFalse,

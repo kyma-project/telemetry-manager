@@ -86,7 +86,7 @@ func TestMTLSCertKeyDontMatch_OTel(t *testing.T) {
 				Reason: conditions.ReasonSelfMonConfigNotGenerated,
 			})
 
-			assert.TelemetryHasState(t.Context(), suite.K8sClient, operatorv1alpha1.StateWarning)
+			assert.TelemetryHasState(t.Context(), operatorv1alpha1.StateWarning)
 			assert.TelemetryHasCondition(t.Context(), suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeLogComponentsHealthy,
 				Status: metav1.ConditionTrue,
@@ -147,7 +147,7 @@ func TestMTLSCertKeyDontMatch_FluentBit(t *testing.T) {
 		Reason: conditions.ReasonSelfMonConfigNotGenerated,
 	})
 
-	assert.TelemetryHasState(t.Context(), suite.K8sClient, operatorv1alpha1.StateWarning)
+	assert.TelemetryHasState(t.Context(), operatorv1alpha1.StateWarning)
 	assert.TelemetryHasCondition(t.Context(), suite.K8sClient, metav1.Condition{
 		Type:   conditions.TypeLogComponentsHealthy,
 		Status: metav1.ConditionFalse,

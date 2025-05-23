@@ -97,8 +97,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		It("Should have a metrics backend running", func() {
 			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
 			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
-			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
-			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
+			assert.ServiceReady(suite.Ctx, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
+			assert.ServiceReady(suite.Ctx, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
 		})
 
 		It("Should verify envoy metric reach backend-1", func() {
