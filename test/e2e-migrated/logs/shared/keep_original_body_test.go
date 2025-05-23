@@ -88,7 +88,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 	assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineKeepOriginalName)
 	assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineDropOriginalName)
 
-	assert.OTelLogsFromNamespaceDelivered(t.Context(), backendDropOriginal, sourceNsKeepOriginal)
+	assert.OTelLogsFromNamespaceDelivered(t.Context(), backendDropOriginal, sourceNsDropOriginal)
 
 	// Scenario [keepOriginalBody=false with JSON logs]: Ship `JSON` Logs without original body
 	// Since JSON body is parsed, the original body is not shipped and JSON fields are present in attributes
@@ -133,7 +133,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 	))
 
 	// Tests where we expect log.Original() to be present
-	assert.OTelLogsFromNamespaceDelivered(t.Context(), backendKeepOriginal, sourceNsDropOriginal)
+	assert.OTelLogsFromNamespaceDelivered(t.Context(), backendKeepOriginal, sourceNsKeepOriginal)
 
 	// Scenario [keepOriginalBody=true with JSON logs]: Ship `JSON` Logs with original body
 	assert.BackendDataEventuallyMatches(t.Context(), backendKeepOriginal, HaveFlatLogs(
