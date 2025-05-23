@@ -59,19 +59,19 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelSetA), Ordered
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 			})
 
 			k8sObjectsToCreate := append(k8sObjects, &metricPipelineWithInput)
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjectsToCreate...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjectsToCreate...)).Should(Succeed())
 		})
 
 		It("Ensures the metric gateway deployment is ready", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(suite.Ctx, kitkyma.MetricGatewayName)
 		})
 
 		It("Should have a metrics backend running", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
 			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
 		})
 
@@ -93,7 +93,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelSetA), Ordered
 		})
 
 		It("Should delete the pipeline with input", func() {
-			Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, &metricPipelineWithInput)).Should(Succeed())
+			Expect(kitk8s.DeleteObjects(suite.Ctx, &metricPipelineWithInput)).Should(Succeed())
 		})
 
 		It("Ensures the metric agent DaemonSet is no longer running", func() {

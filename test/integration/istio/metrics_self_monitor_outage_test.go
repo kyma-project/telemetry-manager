@@ -79,9 +79,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsOutage), Orde
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have a running metricpipeline", func() {
@@ -89,19 +89,19 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsOutage), Orde
 		})
 
 		It("Should have a running metric gateway deployment", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(suite.Ctx, kitkyma.MetricGatewayName)
 		})
 
 		It("Should have a running self-monitor", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.SelfMonitorName)
+			assert.DeploymentReady(suite.Ctx, kitkyma.SelfMonitorName)
 		})
 
 		It("Should have a metrics backend running", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
 		})
 
 		It("Should have a telemetrygen running", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: telemetrygen.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: telemetrygen.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should wait for the metrics flow to report a full buffer", func() {

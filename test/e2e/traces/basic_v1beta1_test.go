@@ -68,13 +68,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces, suite.LabelExperimental), 
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have a running trace gateway deployment", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.TraceGatewayName)
+			assert.DeploymentReady(suite.Ctx, kitkyma.TraceGatewayName)
 		})
 
 		It("Should have 2 trace gateway replicas", func() {
@@ -168,7 +168,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces, suite.LabelExperimental), 
 		})
 
 		It("Should have a trace backend running", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have a running pipeline", func() {

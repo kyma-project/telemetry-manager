@@ -55,9 +55,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 					return obj.GetName() == pipelineCreatedFirst.GetName() // first pipeline is deleted separately in one of the specs
 				})
 				k8sObjectsToDelete = append(k8sObjectsToDelete, pipelineCreatedLater)
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjectsToDelete...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjectsToDelete...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have only running pipelines", func() {
@@ -73,7 +73,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 				pipelineCreatedLater = &pipeline
 				pipelinesNames = append(pipelinesNames, pipelineName)
 
-				Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, &pipeline)).Should(Succeed())
+				Expect(kitk8s.CreateObjects(suite.Ctx, &pipeline)).Should(Succeed())
 
 				assert.MetricPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
 					Type:   conditions.TypeConfigurationGenerated,
@@ -91,7 +91,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 
 		It("Should have only running pipeline", func() {
 			By("Deleting a pipeline", func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, pipelineCreatedFirst)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, pipelineCreatedFirst)).Should(Succeed())
 
 				for _, pipeline := range pipelinesNames[1:] {
 					assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, pipeline)

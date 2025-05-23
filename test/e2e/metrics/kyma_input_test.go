@@ -52,20 +52,20 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), 
 		k8sObjects := makeResources()
 
 		DeferCleanup(func() {
-			Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 		})
 
-		Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+		Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 	})
 
 	Context("When a metricpipeline with kyma input annotation exists", Ordered, func() {
 
 		It("Ensures the metric gateway deployment is ready", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(suite.Ctx, kitkyma.MetricGatewayName)
 		})
 
 		It("Ensures the metrics backends are ready", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backendForKymaInputName, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: backendForKymaInputName, Namespace: mockNs})
 		})
 
 		It("Ensures the metric pipelines are healthy", func() {

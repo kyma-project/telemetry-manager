@@ -72,11 +72,11 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 			}
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+				require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 			})
-			require.NoError(t, kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...))
+			require.NoError(t, kitk8s.CreateObjects(t.Context(), resources...))
 
-			assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
+			assert.DeploymentReady(t.Context(), kitkyma.LogGatewayName)
 
 			if tc.expectAgent {
 				assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
@@ -112,14 +112,14 @@ func TestMetricsEndpoint_FluentBit(t *testing.T) {
 	}
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
-	require.NoError(t, kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...))
+	require.NoError(t, kitk8s.CreateObjects(t.Context(), resources...))
 
 	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 
-	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
-	assert.LogPipelineUnsupportedMode(t.Context(), suite.K8sClient, pipelineName, false)
+	assert.FluentBitLogPipelineHealthy(t.Context(), pipelineName)
+	assert.LogPipelineUnsupportedMode(t.Context(), pipelineName, false)
 
 	fluentBitMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.FluentBitMetricsService.Namespace, kitkyma.FluentBitMetricsService.Name, "api/v1/metrics/prometheus", fbports.HTTP)
 	assert.EmitsFluentBitMetrics(t.Context(), fluentBitMetricsURL)

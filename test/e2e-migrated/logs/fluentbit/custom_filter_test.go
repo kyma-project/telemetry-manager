@@ -35,7 +35,7 @@ func TestCustomFilterDenied(t *testing.T) {
 		Build()
 
 	Consistently(func(g Gomega) {
-		g.Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, &pipeline)).ShouldNot(Succeed())
+		g.Expect(kitk8s.CreateObjects(t.Context(), &pipeline)).ShouldNot(Succeed())
 	}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
@@ -75,14 +75,14 @@ func TestCustomFilterAllowed(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
-	assert.LogPipelineUnsupportedMode(t.Context(), suite.K8sClient, pipelineName, true)
+	assert.FluentBitLogPipelineHealthy(t.Context(), pipelineName)
+	assert.LogPipelineUnsupportedMode(t.Context(), pipelineName, true)
 	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
-	assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
+	assert.DeploymentReady(t.Context(), backend.NamespacedName())
 	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend, includeNs)
 	assert.FluentBitLogsFromNamespaceNotDelivered(t.Context(), backend, excludeNs)
 }

@@ -64,13 +64,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have a log backend running", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have sample app running", func() {
@@ -83,7 +83,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		})
 
 		It("Should have the log pipeline running", func() {
-			assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+			assert.FluentBitLogPipelineHealthy(suite.Ctx, pipelineName)
 		})
 
 		It("Should have a running log agent daemonset", func() {

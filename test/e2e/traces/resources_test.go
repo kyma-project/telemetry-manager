@@ -33,9 +33,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 
 		BeforeAll(func() {
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, &tracePipeline)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, &tracePipeline)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, &tracePipeline, secret.K8sObject())).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, &tracePipeline, secret.K8sObject())).Should(Succeed())
 		})
 
 		It("Should have a ServiceAccount owned by the TracePipeline", func() {
@@ -84,7 +84,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should have a Deployment with correct pod priority class", func() {
-			assert.DeploymentHasPriorityClass(suite.Ctx, suite.K8sClient, kitkyma.TraceGatewayName, "telemetry-priority-class")
+			assert.DeploymentHasPriorityClass(suite.Ctx, kitkyma.TraceGatewayName, "telemetry-priority-class")
 		})
 
 		It("Should clean up gateway resources when pipeline becomes non-reconcilable", func() {

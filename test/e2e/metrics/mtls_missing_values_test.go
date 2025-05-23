@@ -116,12 +116,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), 
 			k8sSucceedingObjects, k8sFailingObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sSucceedingObjects...)).Should(Succeed())
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sFailingObjects...)).
+				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sSucceedingObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sFailingObjects...)).
 					Should(MatchError(ContainSubstring(notFoundError)))
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sSucceedingObjects...)).Should(Succeed())
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sFailingObjects...)).
+			Expect(kitk8s.CreateObjects(suite.Ctx, k8sSucceedingObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, k8sFailingObjects...)).
 				Should(MatchError(ContainSubstring(tlsCrdValidationError)))
 		})
 

@@ -44,9 +44,9 @@ func TestDisabledInput_OTel(t *testing.T) {
 	}
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
 	Eventually(func(g Gomega) {
 		var daemonSet appsv1.DaemonSet
@@ -82,9 +82,9 @@ func TestDisabledInput_FluentBit(t *testing.T) {
 	}
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
 	Eventually(func(g Gomega) {
 		var daemonSet appsv1.DaemonSet

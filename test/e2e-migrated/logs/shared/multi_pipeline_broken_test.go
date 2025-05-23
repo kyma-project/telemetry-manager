@@ -85,19 +85,19 @@ func TestMultiPipelineBroken_OTel(t *testing.T) {
 			resources = append(resources, backend.K8sObjects()...)
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+				require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 			})
-			require.NoError(t, kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...))
+			require.NoError(t, kitk8s.CreateObjects(t.Context(), resources...))
 
-			assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
-			assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
+			assert.DeploymentReady(t.Context(), backend.NamespacedName())
+			assert.DeploymentReady(t.Context(), kitkyma.LogGatewayName)
 
 			if tc.expectAgent {
 				assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
 			}
 
-			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineGood.Name)
-			assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineBroken.Name, metav1.Condition{
+			assert.OTelLogPipelineHealthy(t.Context(), pipelineGood.Name)
+			assert.LogPipelineHasCondition(t.Context(), pipelineBroken.Name, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonReferencedSecretMissing,
@@ -143,15 +143,15 @@ func TestMultiPipelineBroken_FluentBit(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
-	require.NoError(t, kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...))
+	require.NoError(t, kitk8s.CreateObjects(t.Context(), resources...))
 
-	assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
+	assert.DeploymentReady(t.Context(), backend.NamespacedName())
 	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 
-	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineGood.Name)
-	assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineBroken.Name, metav1.Condition{
+	assert.FluentBitLogPipelineHealthy(t.Context(), pipelineGood.Name)
+	assert.LogPipelineHasCondition(t.Context(), pipelineBroken.Name, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonReferencedSecretMissing,

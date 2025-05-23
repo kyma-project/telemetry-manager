@@ -31,10 +31,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetC), 
 			Build()
 
 		BeforeAll(func() {
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, &metricPipeline)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, &metricPipeline)).Should(Succeed())
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, &metricPipeline, secret.K8sObject())).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, &metricPipeline, secret.K8sObject())).Should(Succeed())
 			})
 		})
 
@@ -73,7 +73,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetC), 
 
 		It("Should have running metricpipeline", func() {
 			By("Creating missing secret", func() {
-				Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, secret.K8sObject())).Should(Succeed())
+				Expect(kitk8s.CreateObjects(suite.Ctx, secret.K8sObject())).Should(Succeed())
 			})
 
 			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)

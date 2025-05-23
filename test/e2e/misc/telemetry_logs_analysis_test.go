@@ -147,24 +147,24 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 			K8sObjects = append(K8sObjects, objs...)
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, K8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, K8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, K8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, K8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have running metric and trace gateways", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayName)
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.TraceGatewayName)
+			assert.DeploymentReady(suite.Ctx, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(suite.Ctx, kitkyma.TraceGatewayName)
 		})
 
 		It("Should have running backends", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: namespace, Name: logBackendName})
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: namespace, Name: metricBackendName})
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: namespace, Name: traceBackendName})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Namespace: namespace, Name: logBackendName})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Namespace: namespace, Name: metricBackendName})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Namespace: namespace, Name: traceBackendName})
 
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: namespace, Name: otelCollectorLogBackendName})
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: namespace, Name: fluentBitLogBackendName})
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: namespace, Name: selfMonitorLogBackendName})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Namespace: namespace, Name: otelCollectorLogBackendName})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Namespace: namespace, Name: fluentBitLogBackendName})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Namespace: namespace, Name: selfMonitorLogBackendName})
 		})
 
 		It("Should have running agents", func() {
@@ -173,13 +173,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 		})
 
 		It("Should have running pipelines", func() {
-			assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, logBackendName)
+			assert.FluentBitLogPipelineHealthy(suite.Ctx, logBackendName)
 			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, metricBackendName)
 			assert.TracePipelineHealthy(suite.Ctx, suite.K8sClient, traceBackendName)
 
-			assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, otelCollectorLogBackendName)
-			assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, fluentBitLogBackendName)
-			assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, selfMonitorLogBackendName)
+			assert.FluentBitLogPipelineHealthy(suite.Ctx, otelCollectorLogBackendName)
+			assert.FluentBitLogPipelineHealthy(suite.Ctx, fluentBitLogBackendName)
+			assert.FluentBitLogPipelineHealthy(suite.Ctx, selfMonitorLogBackendName)
 		})
 
 		It("Should push metrics successfully", func() {

@@ -46,24 +46,24 @@ func TestUpgrade(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Run("before upgrade", func(t *testing.T) {
-		require.NoError(t, kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...))
+		require.NoError(t, kitk8s.CreateObjects(t.Context(), resources...))
 
-		assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
+		assert.DeploymentReady(t.Context(), backend.NamespacedName())
 		assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 
-		assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
+		assert.FluentBitLogPipelineHealthy(t.Context(), pipelineName)
 		assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend, generatorNs)
 	})
 
 	t.Run("after upgrade", func(t *testing.T) {
 		t.Cleanup(func() {
-			require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+			require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 		})
 
-		assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
+		assert.DeploymentReady(t.Context(), backend.NamespacedName())
 		assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 
-		assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
+		assert.FluentBitLogPipelineHealthy(t.Context(), pipelineName)
 		assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend, generatorNs)
 	})
 }

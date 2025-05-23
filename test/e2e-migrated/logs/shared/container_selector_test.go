@@ -63,18 +63,18 @@ func TestContainerSelector_OTel(t *testing.T) {
 	resources = append(resources, backend2.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
-	assert.DeploymentReady(t.Context(), suite.K8sClient, backend1.NamespacedName())
-	assert.DeploymentReady(t.Context(), suite.K8sClient, backend2.NamespacedName())
+	assert.DeploymentReady(t.Context(), kitkyma.LogGatewayName)
+	assert.DeploymentReady(t.Context(), backend1.NamespacedName())
+	assert.DeploymentReady(t.Context(), backend2.NamespacedName())
 
 	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
 
-	assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, includePipelineName)
-	assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, excludePipelineName)
+	assert.OTelLogPipelineHealthy(t.Context(), includePipelineName)
+	assert.OTelLogPipelineHealthy(t.Context(), excludePipelineName)
 
 	// backend1 - only container1 should be delivered
 	assert.OTelLogsFromContainerDelivered(t.Context(), backend1, container1)
@@ -128,16 +128,16 @@ func TestContainerSelector_FluentBit(t *testing.T) {
 	resources = append(resources, backend2.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.DeploymentReady(t.Context(), suite.K8sClient, backend1.NamespacedName())
-	assert.DeploymentReady(t.Context(), suite.K8sClient, backend2.NamespacedName())
+	assert.DeploymentReady(t.Context(), backend1.NamespacedName())
+	assert.DeploymentReady(t.Context(), backend2.NamespacedName())
 	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 
-	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, includePipelineName)
-	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, excludePipelineName)
+	assert.FluentBitLogPipelineHealthy(t.Context(), includePipelineName)
+	assert.FluentBitLogPipelineHealthy(t.Context(), excludePipelineName)
 
 	// backend1 - only container1 should be delivered
 	assert.FluentBitLogsFromContainerDelivered(t.Context(), backend1, container1)

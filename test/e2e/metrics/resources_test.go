@@ -34,9 +34,9 @@ var _ = Describe(suite.ID(), Ordered, func() {
 
 		BeforeAll(func() {
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, &metricPipeline)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, &metricPipeline)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, &metricPipeline, secret.K8sObject())).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, &metricPipeline, secret.K8sObject())).Should(Succeed())
 		})
 
 		Context("Should have gateway resources", Ordered, func() {
@@ -86,7 +86,7 @@ var _ = Describe(suite.ID(), Ordered, func() {
 			})
 
 			It("Should have a gateway Deployment with correct pod priority class", func() {
-				assert.DeploymentHasPriorityClass(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayName, "telemetry-priority-class")
+				assert.DeploymentHasPriorityClass(suite.Ctx, kitkyma.MetricGatewayName, "telemetry-priority-class")
 			})
 		})
 
@@ -150,9 +150,9 @@ var _ = Describe(suite.ID(), Ordered, func() {
 
 		BeforeAll(func() {
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, &metricPipeline)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, &metricPipeline)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, &metricPipeline, secret.K8sObject())).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, &metricPipeline, secret.K8sObject())).Should(Succeed())
 		})
 
 		Context("should have experimental gateway resources", Ordered, func() {

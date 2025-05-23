@@ -140,9 +140,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have healthy pipelines", func() {
@@ -151,7 +151,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 		})
 
 		It("Ensures the metric gateway deployment is ready", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(suite.Ctx, kitkyma.MetricGatewayName)
 		})
 
 		It("Ensures the metric agent daemonset is ready", func() {
@@ -159,15 +159,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 		})
 
 		It("Should have metrics backends running", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backendResourceMetricsEnabledNameA, Namespace: mockNs})
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backendResourceMetricsEnabledNameB, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: backendResourceMetricsEnabledNameA, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: backendResourceMetricsEnabledNameB, Namespace: mockNs})
 			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backendResourceMetricsEnabledNameA, Namespace: mockNs})
 			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backendResourceMetricsEnabledNameB, Namespace: mockNs})
 
 		})
 
 		It("should have workloads created properly", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: DeploymentName, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: DeploymentName, Namespace: mockNs})
 			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: DaemonSetName, Namespace: mockNs})
 			assert.StatefulSetReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: StatefulSetName, Namespace: mockNs})
 			assert.JobReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: JobName, Namespace: mockNs})

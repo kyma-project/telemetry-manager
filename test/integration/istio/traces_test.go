@@ -93,14 +93,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have a trace backend running", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: istiofiedBackendNs})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: istiofiedBackendNs})
 		})
 
 		It("Should have sample app running with Istio sidecar", func() {
@@ -113,7 +113,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		})
 
 		It("Should have a running trace gateway deployment", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.TraceGatewayName)
+			assert.DeploymentReady(suite.Ctx, kitkyma.TraceGatewayName)
 		})
 
 		It("Should have the trace pipelines running", func() {

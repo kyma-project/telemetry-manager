@@ -63,17 +63,17 @@ func TestSecretRotation_OTel(t *testing.T) {
 			}
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+				require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 			})
-			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-			assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineName, metav1.Condition{
+			assert.LogPipelineHasCondition(t.Context(), pipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonReferencedSecretMissing,
 			})
 
-			assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineName, metav1.Condition{
+			assert.LogPipelineHasCondition(t.Context(), pipelineName, metav1.Condition{
 				Type:   conditions.TypeFlowHealthy,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonSelfMonConfigNotGenerated,
@@ -87,9 +87,9 @@ func TestSecretRotation_OTel(t *testing.T) {
 			})
 
 			// Create the secret and make sure the pipeline heals
-			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, secret.K8sObject())).Should(Succeed())
+			Expect(kitk8s.CreateObjects(t.Context(), secret.K8sObject())).Should(Succeed())
 
-			assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
+			assert.FluentBitLogPipelineHealthy(t.Context(), pipelineName)
 		})
 	}
 }
@@ -120,17 +120,17 @@ func TestSecretRotation_FluentBit(t *testing.T) {
 	}
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineName, metav1.Condition{
+	assert.LogPipelineHasCondition(t.Context(), pipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonReferencedSecretMissing,
 	})
 
-	assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineName, metav1.Condition{
+	assert.LogPipelineHasCondition(t.Context(), pipelineName, metav1.Condition{
 		Type:   conditions.TypeFlowHealthy,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonSelfMonConfigNotGenerated,
@@ -144,7 +144,7 @@ func TestSecretRotation_FluentBit(t *testing.T) {
 	})
 
 	// Create the secret and make sure the pipeline heals
-	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, secret.K8sObject())).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t.Context(), secret.K8sObject())).Should(Succeed())
 
-	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
+	assert.FluentBitLogPipelineHealthy(t.Context(), pipelineName)
 }

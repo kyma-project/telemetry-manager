@@ -78,9 +78,9 @@ func TestResources_OTel(t *testing.T) {
 				Build()
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, &pipeline)) //nolint:usetesting // Remove ctx from DeleteObjects
+				require.NoError(t, kitk8s.DeleteObjects(context.Background(), &pipeline)) //nolint:usetesting // Remove ctx from DeleteObjects
 			})
-			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, &pipeline, secret.K8sObject())).Should(Succeed())
+			Expect(kitk8s.CreateObjects(t.Context(), &pipeline, secret.K8sObject())).Should(Succeed())
 
 			assert.ResourcesExist(t.Context(), suite.K8sClient, tc.resources...)
 			// FIXME: Currently failing (resources are not deleted when pipeline becomes non-reconcilable)
@@ -129,9 +129,9 @@ func TestResources_FluentBit(t *testing.T) {
 		Build()
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, &pipeline)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(context.Background(), &pipeline)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, &pipeline, secret.K8sObject())).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t.Context(), &pipeline, secret.K8sObject())).Should(Succeed())
 
 	assert.ResourcesExist(t.Context(), suite.K8sClient, reources...)
 
