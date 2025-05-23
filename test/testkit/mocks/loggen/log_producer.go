@@ -2,6 +2,7 @@ package loggen
 
 import (
 	"fmt"
+	"maps"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -85,10 +86,9 @@ func (lp *LogProducer) NamespacedName() types.NamespacedName {
 }
 
 func (lp *LogProducer) K8sObject() *appsv1.Deployment {
-	labels := map[string]string{"app": lp.name}
+	labels := map[string]string{"selector": lp.name}
 	if lp.labels != nil {
-		// if labels are configured, just overwrite all to support a clean setup
-		labels = lp.labels
+		maps.Copy(labels, lp.labels)
 	}
 
 	return &appsv1.Deployment{
