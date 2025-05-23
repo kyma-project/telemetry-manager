@@ -3,13 +3,14 @@ package prober
 import (
 	"testing"
 
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober/mocks"
 	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/types"
+
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober/mocks"
 )
 
 func TestOTelLogAgentProber(t *testing.T) {
