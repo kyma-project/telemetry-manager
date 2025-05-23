@@ -454,7 +454,7 @@ Additionally, the agent enriches every log record with the `cluster_identifier` 
 }
 ```
 
-For LogPipelines which are using an HTTP output, additionally the following attributes are enriched for an optimzed user experience when integrating with SAP Cloud Logging:
+For LogPipelines that use an HTTP output, additionally, the following attributes are enriched for an optimized user experience when integrating with SAP Cloud Logging:
 
 ```json
 {
