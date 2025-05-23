@@ -124,12 +124,12 @@ const (
 	LabelSkip         = "skip"
 
 	// Self-monitoring test labels
-	LabelSelfMonitoringLogsFluentBitBackpressure = "self-mon-logs-fluentbit-backpressure"
-	LabelSelfMonitoringLogsFluentBitOutage       = "self-mon-logs-fluentbit-outage"
-	LabelSelfMonitoringLogsAgentBackpressure     = "self-mon-logs-agent-backpressure"
-	LabelSelfMonitoringLogsAgentOutage           = "self-mon-logs-agent-outage"
-	LabelSelfMonitoringLogsGatewayBackpressure   = "self-mon-logs-gateway-backpressure"
-	LabelSelfMonitoringLogsGatewayOutage         = "self-mon-logs-gateway-outage"
+	LabelSelfMonitoringLogsFluentBitBackpressure = "self-mon-fluentbit-backpressure"
+	LabelSelfMonitoringLogsFluentBitOutage       = "self-mon-fluentbit-outage"
+	LabelSelfMonitoringLogsAgentBackpressure     = "self-mon-log-agent-backpressure"
+	LabelSelfMonitoringLogsAgentOutage           = "self-mon-log-agent-outage"
+	LabelSelfMonitoringLogsGatewayBackpressure   = "self-mon-log-gateway-backpressure"
+	LabelSelfMonitoringLogsGatewayOutage         = "self-mon-log-gateway-outage"
 	LabelSelfMonitoringTracesHealthy             = "self-mon-traces-healthy"
 	LabelSelfMonitoringTracesBackpressure        = "self-mon-traces-backpressure"
 	LabelSelfMonitoringTracesOutage              = "self-mon-traces-outage"

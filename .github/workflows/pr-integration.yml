@@ -181,7 +181,7 @@ jobs:
       fail-fast: false
       matrix:
         signal-type:
-          - logs-fluentbit
+          - fluentbit
           - metrics
           - traces
         scenario:
@@ -234,8 +234,8 @@ jobs:
       fail-fast: false
       matrix:
         signal-type:
-          - logs-agent
-          - logs-gateway
+          - log-agent
+          - log-gateway
         scenario:
           - backpressure
           - outage
