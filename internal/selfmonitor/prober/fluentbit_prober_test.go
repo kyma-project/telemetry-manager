@@ -13,13 +13,13 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober/mocks"
 )
 
-func TestLogPipelineProber(t *testing.T) {
+func TestFluentBitLogPipelineProber(t *testing.T) {
 	testCases := []struct {
 		name         string
 		alerts       promv1.AlertsResult
 		alertsErr    error
 		pipelineName string
-		expected     LogPipelineProbeResult
+		expected     FluentBitProbeResult
 		expectErr    bool
 	}{
 		{
@@ -34,7 +34,7 @@ func TestLogPipelineProber(t *testing.T) {
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{},
 			},
-			expected: LogPipelineProbeResult{
+			expected: FluentBitProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					Healthy: true,
 				},
@@ -54,7 +54,7 @@ func TestLogPipelineProber(t *testing.T) {
 					},
 				},
 			},
-			expected: LogPipelineProbeResult{
+			expected: FluentBitProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					Healthy: true,
 				},
@@ -73,7 +73,7 @@ func TestLogPipelineProber(t *testing.T) {
 					},
 				},
 			},
-			expected: LogPipelineProbeResult{
+			expected: FluentBitProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					Healthy: true,
 				},
@@ -92,7 +92,7 @@ func TestLogPipelineProber(t *testing.T) {
 					},
 				},
 			},
-			expected: LogPipelineProbeResult{
+			expected: FluentBitProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					AllDataDropped: true,
 					Healthy:        false,
@@ -113,7 +113,7 @@ func TestLogPipelineProber(t *testing.T) {
 					},
 				},
 			},
-			expected: LogPipelineProbeResult{
+			expected: FluentBitProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					Healthy: true,
 				},
@@ -140,7 +140,7 @@ func TestLogPipelineProber(t *testing.T) {
 					},
 				},
 			},
-			expected: LogPipelineProbeResult{
+			expected: FluentBitProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					Healthy: true,
 				},
@@ -160,7 +160,7 @@ func TestLogPipelineProber(t *testing.T) {
 					},
 				},
 			},
-			expected: LogPipelineProbeResult{
+			expected: FluentBitProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					AllDataDropped: true,
 				},
@@ -180,7 +180,7 @@ func TestLogPipelineProber(t *testing.T) {
 					},
 				},
 			},
-			expected: LogPipelineProbeResult{
+			expected: FluentBitProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					SomeDataDropped: true,
 				},
@@ -200,7 +200,7 @@ func TestLogPipelineProber(t *testing.T) {
 					},
 				},
 			},
-			expected: LogPipelineProbeResult{
+			expected: FluentBitProbeResult{
 				NoLogsDelivered: true,
 			},
 		},
@@ -218,7 +218,7 @@ func TestLogPipelineProber(t *testing.T) {
 					},
 				},
 			},
-			expected: LogPipelineProbeResult{
+			expected: FluentBitProbeResult{
 				BufferFillingUp: true,
 			},
 		},
@@ -228,7 +228,7 @@ func TestLogPipelineProber(t *testing.T) {
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{},
 			},
-			expected: LogPipelineProbeResult{
+			expected: FluentBitProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					Healthy: true,
 				},
@@ -238,62 +238,7 @@ func TestLogPipelineProber(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			sut, err := NewLogPipelineProber(types.NamespacedName{})
-			require.NoError(t, err)
-
-			alertGetterMock := &mocks.AlertGetter{}
-			if tc.alertsErr != nil {
-				alertGetterMock.On("Alerts", mock.Anything).Return(promv1.AlertsResult{}, tc.alertsErr)
-			} else {
-				alertGetterMock.On("Alerts", mock.Anything).Return(tc.alerts, nil)
-			}
-
-			sut.getter = alertGetterMock
-
-			result, err := sut.Probe(t.Context(), tc.pipelineName)
-
-			if tc.expectErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				assert.Equal(t, tc.expected, result)
-			}
-		})
-	}
-}
-
-func TestOTelLogPipelineProber(t *testing.T) {
-	testCases := []struct {
-		name         string
-		alerts       promv1.AlertsResult
-		alertsErr    error
-		pipelineName string
-		expected     OTelPipelineProbeResult
-		expectErr    bool
-	}{
-		{
-			name:         "alert getter fails",
-			pipelineName: "cls",
-			alertsErr:    assert.AnError,
-			expectErr:    true,
-		},
-		{
-			name:         "no alerts firing",
-			pipelineName: "cls",
-			alerts: promv1.AlertsResult{
-				Alerts: []promv1.Alert{},
-			},
-			expected: OTelPipelineProbeResult{
-				PipelineProbeResult: PipelineProbeResult{
-					Healthy: true,
-				},
-			},
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			sut, err := NewOtelLogPipelineProber(types.NamespacedName{Name: "test"})
+			sut, err := NewFluentBitProber(types.NamespacedName{})
 			require.NoError(t, err)
 
 			alertGetterMock := &mocks.AlertGetter{}
