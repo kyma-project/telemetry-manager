@@ -36,7 +36,7 @@ func TestEndpointInvalid_OTel(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label, suite.LabelSkip) // FIXME: Currently failing (Endpoint validation not implemented for OTel)
+			suite.RegisterTestCase(t, tc.label)
 
 			const (
 				endpointKey     = "endpoint"
@@ -66,19 +66,22 @@ func TestEndpointInvalid_OTel(t *testing.T) {
 			resourcesToSucceedCreation := []client.Object{
 				secret.K8sObject(),
 				&pipelineInvalidEndpointValueFrom,
-			}
-
-			resourcesToFailCreation := []client.Object{
 				&pipelineInvalidEndpointValue,
 			}
 
 			t.Cleanup(func() {
 				require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resourcesToSucceedCreation...)) //nolint:usetesting // Remove ctx from DeleteObjects
 			})
+
 			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resourcesToSucceedCreation...)).Should(Succeed())
-			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resourcesToFailCreation...)).Should(MatchError(ContainSubstring("invalid hostname")))
 
 			assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineNameValueFromSecret, metav1.Condition{
+				Type:   conditions.TypeConfigurationGenerated,
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonEndpointInvalid,
+			})
+
+			assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineNameValue, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonEndpointInvalid,
