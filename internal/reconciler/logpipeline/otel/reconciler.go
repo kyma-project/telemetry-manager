@@ -38,8 +38,12 @@ type GatewayApplierDeleter interface {
 	DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error
 }
 
-type FlowHealthProber interface {
-	Probe(ctx context.Context, pipelineName string) (prober.OTelPipelineProbeResult, error)
+type GatewayFlowHealthProber interface {
+	Probe(ctx context.Context, pipelineName string) (prober.OTelGatewayProbeResult, error)
+}
+
+type AgentFlowHealthProber interface {
+	Probe(ctx context.Context, pipelineName string) (prober.OTelAgentProbeResult, error)
 }
 
 type IstioStatusChecker interface {
@@ -76,24 +80,26 @@ type Reconciler struct {
 	moduleVersion      string
 
 	// Dependencies
-	flowHealthProber      FlowHealthProber
-	agentConfigBuilder    AgentConfigBuilder
-	agentProber           Prober
-	agentApplierDeleter   AgentApplierDeleter
-	gatewayApplierDeleter GatewayApplierDeleter
-	gatewayConfigBuilder  GatewayConfigBuilder
-	gatewayProber         Prober
-	istioStatusChecker    IstioStatusChecker
-	pipelineLock          PipelineLock
-	pipelineValidator     PipelineValidator
-	errToMessageConverter ErrorToMessageConverter
+	gatewayFlowHealthProber GatewayFlowHealthProber
+	agentFlowHealthProber   AgentFlowHealthProber
+	agentConfigBuilder      AgentConfigBuilder
+	agentProber             Prober
+	agentApplierDeleter     AgentApplierDeleter
+	gatewayApplierDeleter   GatewayApplierDeleter
+	gatewayConfigBuilder    GatewayConfigBuilder
+	gatewayProber           Prober
+	istioStatusChecker      IstioStatusChecker
+	pipelineLock            PipelineLock
+	pipelineValidator       PipelineValidator
+	errToMessageConverter   ErrorToMessageConverter
 }
 
 func New(
 	client client.Client,
 	telemetryNamespace string,
 	moduleVersion string,
-	flowHeathProber FlowHealthProber,
+	gatewayFlowHeathProber GatewayFlowHealthProber,
+	agentFlowHealthProber AgentFlowHealthProber,
 	agentConfigBuilder AgentConfigBuilder,
 	agentApplierDeleter AgentApplierDeleter,
 	agentProber Prober,
@@ -106,20 +112,21 @@ func New(
 	errToMessageConverter ErrorToMessageConverter,
 ) *Reconciler {
 	return &Reconciler{
-		Client:                client,
-		telemetryNamespace:    telemetryNamespace,
-		moduleVersion:         moduleVersion,
-		flowHealthProber:      flowHeathProber,
-		agentConfigBuilder:    agentConfigBuilder,
-		agentApplierDeleter:   agentApplierDeleter,
-		agentProber:           agentProber,
-		gatewayApplierDeleter: gatewayApplierDeleter,
-		gatewayConfigBuilder:  gatewayConfigBuilder,
-		gatewayProber:         gatewayProber,
-		istioStatusChecker:    istioStatusChecker,
-		pipelineLock:          pipelineLock,
-		pipelineValidator:     pipelineValidator,
-		errToMessageConverter: errToMessageConverter,
+		Client:                  client,
+		telemetryNamespace:      telemetryNamespace,
+		moduleVersion:           moduleVersion,
+		gatewayFlowHealthProber: gatewayFlowHeathProber,
+		agentFlowHealthProber:   agentFlowHealthProber,
+		agentConfigBuilder:      agentConfigBuilder,
+		agentApplierDeleter:     agentApplierDeleter,
+		agentProber:             agentProber,
+		gatewayApplierDeleter:   gatewayApplierDeleter,
+		gatewayConfigBuilder:    gatewayConfigBuilder,
+		gatewayProber:           gatewayProber,
+		istioStatusChecker:      istioStatusChecker,
+		pipelineLock:            pipelineLock,
+		pipelineValidator:       pipelineValidator,
+		errToMessageConverter:   errToMessageConverter,
 	}
 }
 

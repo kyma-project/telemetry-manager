@@ -69,7 +69,7 @@ func TestReconcile(t *testing.T) {
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -133,7 +133,7 @@ func TestReconcile(t *testing.T) {
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
@@ -197,7 +197,7 @@ func TestReconcile(t *testing.T) {
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -265,7 +265,7 @@ func TestReconcile(t *testing.T) {
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(&workloadstatus.PodIsPendingError{Message: "Error"})
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -333,7 +333,7 @@ func TestReconcile(t *testing.T) {
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(workloadstatus.ErrDaemonSetNotFound)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -402,7 +402,7 @@ func TestReconcile(t *testing.T) {
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -475,7 +475,7 @@ func TestReconcile(t *testing.T) {
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -539,7 +539,7 @@ func TestReconcile(t *testing.T) {
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -608,7 +608,7 @@ func TestReconcile(t *testing.T) {
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -661,7 +661,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("flow healthy", func(t *testing.T) {
 		tests := []struct {
 			name            string
-			probe           prober.OTelPipelineProbeResult
+			probe           prober.OTelGatewayProbeResult
 			probeErr        error
 			expectedStatus  metav1.ConditionStatus
 			expectedReason  string
@@ -671,12 +671,12 @@ func TestReconcile(t *testing.T) {
 				name:            "prober fails",
 				probeErr:        assert.AnError,
 				expectedStatus:  metav1.ConditionUnknown,
-				expectedReason:  conditions.ReasonSelfMonProbingFailed,
-				expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing failed",
+				expectedReason:  conditions.ReasonSelfMonGatewayProbingFailed,
+				expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing of gateway failed",
 			},
 			{
 				name: "healthy",
-				probe: prober.OTelPipelineProbeResult{
+				probe: prober.OTelGatewayProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
 				},
 				expectedStatus:  metav1.ConditionTrue,
@@ -685,7 +685,7 @@ func TestReconcile(t *testing.T) {
 			},
 			{
 				name: "throttling",
-				probe: prober.OTelPipelineProbeResult{
+				probe: prober.OTelGatewayProbeResult{
 					Throttling: true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
@@ -694,59 +694,59 @@ func TestReconcile(t *testing.T) {
 			},
 			{
 				name: "buffer filling up",
-				probe: prober.OTelPipelineProbeResult{
+				probe: prober.OTelGatewayProbeResult{
 					QueueAlmostFull: true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonBufferFillingUp,
+				expectedReason:  conditions.ReasonSelfMonGatewayBufferFillingUp,
 				expectedMessage: "Buffer nearing capacity. Incoming metric rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-buffer-filling-up",
 			},
 			{
 				name: "buffer filling up shadows other problems",
-				probe: prober.OTelPipelineProbeResult{
+				probe: prober.OTelGatewayProbeResult{
 					QueueAlmostFull: true,
 					Throttling:      true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonBufferFillingUp,
+				expectedReason:  conditions.ReasonSelfMonGatewayBufferFillingUp,
 				expectedMessage: "Buffer nearing capacity. Incoming metric rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-buffer-filling-up",
 			},
 			{
 				name: "some data dropped",
-				probe: prober.OTelPipelineProbeResult{
+				probe: prober.OTelGatewayProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonSomeDataDropped,
+				expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
 				expectedMessage: "Backend is reachable, but rejecting metrics. Some metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
 			},
 			{
 				name: "some data dropped shadows other problems",
-				probe: prober.OTelPipelineProbeResult{
+				probe: prober.OTelGatewayProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
 					Throttling:          true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonSomeDataDropped,
+				expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
 				expectedMessage: "Backend is reachable, but rejecting metrics. Some metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
 			},
 			{
 				name: "all data dropped",
-				probe: prober.OTelPipelineProbeResult{
+				probe: prober.OTelGatewayProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonAllDataDropped,
+				expectedReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
 				expectedMessage: "Backend is not reachable or rejecting metrics. All metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=no-metrics-arrive-at-the-backend",
 			},
 			{
 				name: "all data dropped shadows other problems",
-				probe: prober.OTelPipelineProbeResult{
+				probe: prober.OTelGatewayProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
 					Throttling:          true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonAllDataDropped,
+				expectedReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
 				expectedMessage: "Backend is not reachable or rejecting metrics. All metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=no-metrics-arrive-at-the-backend",
 			},
 		}
@@ -911,7 +911,7 @@ func TestReconcile(t *testing.T) {
 				agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 				flowHealthProberStub := &mocks.FlowHealthProber{}
-				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
 
 				pipelineValidatorWithStubs := &Validator{
 					EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -999,7 +999,7 @@ func TestReconcile(t *testing.T) {
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
 
 		serverErr := errors.New("failed to get secret: server error")
 		pipelineValidatorWithStubs := &Validator{
@@ -1074,7 +1074,7 @@ func TestReconcile(t *testing.T) {
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -1149,7 +1149,7 @@ func TestReconcile(t *testing.T) {
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -1209,7 +1209,7 @@ func TestReconcile(t *testing.T) {
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -1290,8 +1290,8 @@ func TestReconcile(t *testing.T) {
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline1.Name).Return(prober.OTelPipelineProbeResult{}, nil)
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline2.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline1.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline2.Name).Return(prober.OTelGatewayProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -1373,8 +1373,8 @@ func TestReconcile(t *testing.T) {
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline1.Name).Return(prober.OTelPipelineProbeResult{}, nil)
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline2.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline1.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline2.Name).Return(prober.OTelGatewayProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -1517,7 +1517,7 @@ func TestReconcile(t *testing.T) {
 				agentProberMock := commonStatusStubs.NewDaemonSetProber(tt.probeAgentErr)
 
 				flowHealthProberStub := &mocks.FlowHealthProber{}
-				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
 
 				pipelineLockStub := &mocks.PipelineLock{}
 				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)

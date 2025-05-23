@@ -236,8 +236,8 @@ func TestLogComponentsCheck(t *testing.T) {
 					WithStatusCondition(metav1.Condition{
 						Type:    conditions.TypeFlowHealthy,
 						Status:  metav1.ConditionFalse,
-						Reason:  conditions.ReasonSelfMonNoLogsDelivered,
-						Message: conditions.MessageForFluentBitLogPipeline(conditions.ReasonSelfMonNoLogsDelivered),
+						Reason:  conditions.ReasonSelfMonAgentNoLogsDelivered,
+						Message: conditions.MessageForFluentBitLogPipeline(conditions.ReasonSelfMonAgentNoLogsDelivered),
 					}).
 					Build(),
 			},
@@ -245,7 +245,7 @@ func TestLogComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    conditions.TypeLogComponentsHealthy,
 				Status:  "False",
-				Reason:  "NoLogsDelivered",
+				Reason:  "AgentNoLogsDelivered",
 				Message: "Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
 			},
 		},
