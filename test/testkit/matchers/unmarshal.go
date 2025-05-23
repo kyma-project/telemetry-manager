@@ -14,10 +14,12 @@ import (
 // UnmarshalPdata reads and unmarshals pdata signals from a JSONL-encoded byte slice (every line is a JSON document encoding pdata).
 // It processes each line of the input data and applies the provided unmarshal function.
 func UnmarshalPdata[T plog.Logs | pmetric.Metrics | ptrace.Traces](data []byte, unmarshal func(buf []byte) (T, error)) ([]T, error) {
-	var allSignals []T
+	var allPdata []T
 
 	// User bufio.Reader instead of bufio.Scanner to handle very long lines gracefully
-	reader := bufio.NewReader(bytes.NewReader(data))
+	// Increase default buffer size to 64KB to accommodate larger lines
+	const bufSize = 64 * 1024
+	reader := bufio.NewReaderSize(bytes.NewReader(data), bufSize)
 
 	for {
 		line, readerErr := reader.ReadBytes('\n')
@@ -26,12 +28,12 @@ func UnmarshalPdata[T plog.Logs | pmetric.Metrics | ptrace.Traces](data []byte, 
 		}
 
 		if len(line) > 0 {
-			signals, err := unmarshal(line)
+			linePdata, err := unmarshal(line)
 			if err != nil {
 				return nil, handleUnmarshalError(err, line, len(data))
 			}
 
-			allSignals = append(allSignals, signals)
+			allPdata = append(allPdata, linePdata)
 		}
 
 		// check the io.EOF error after checking the line since both can be returned simultaneously
@@ -40,7 +42,7 @@ func UnmarshalPdata[T plog.Logs | pmetric.Metrics | ptrace.Traces](data []byte, 
 		}
 	}
 
-	return allSignals, nil
+	return allPdata, nil
 }
 
 func handleUnmarshalError(err error, line []byte, totalLength int) error {
