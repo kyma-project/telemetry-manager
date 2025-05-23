@@ -45,7 +45,9 @@ func UnmarshalPdata[T plog.Logs | pmetric.Metrics | ptrace.Traces](data []byte, 
 
 func handleUnmarshalError(err error, line []byte, dataSize int) error {
 	size := len(line)
+
 	const maxPreviewSize = 100
+
 	lastElems := line
 	if size > maxPreviewSize {
 		lastElems = line[size-maxPreviewSize:]
