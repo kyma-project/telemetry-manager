@@ -101,7 +101,7 @@ func makeDropIfInputSourceOTLPConfig() *FilterProcessor {
 			Log: []string{
 				// Drop all logs; the filter processor requires at least one valid condition expression,
 				// to drop all logs, we use a condition that is always true for any log
-				ottlexpr.IsNotNil("log.observed_time"),
+				ottlexpr.JoinWithOr(ottlexpr.IsNotNil("log.observed_time"), ottlexpr.IsNotNil("log.time")),
 			},
 		},
 	}

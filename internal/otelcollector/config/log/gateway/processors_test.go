@@ -162,7 +162,7 @@ func TestProcessors(t *testing.T) {
 		actualStatements := dropOTLPInputFilter.Logs.Log
 		require.Len(t, actualStatements, 1)
 
-		expectedStatement := `log.observed_time != nil`
+		expectedStatement := `(log.observed_time != nil or log.time != nil)`
 		require.Equal(t, expectedStatement, actualStatements[0])
 	})
 }

@@ -710,7 +710,6 @@ func TestReconcile(t *testing.T) {
 		}
 	})
 
-	// TODO: "flow healthy" (requires SelfMonitoring to be implemented)
 	t.Run("one log pipeline does not require an agent", func(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().WithApplicationInput(false).Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
