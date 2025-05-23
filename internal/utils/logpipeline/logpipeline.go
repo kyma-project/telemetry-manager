@@ -102,3 +102,7 @@ func GetOutputType(t *telemetryv1alpha1.LogPipeline) Mode {
 
 	return FluentBit
 }
+
+func IsOTLPInputEnabled(input telemetryv1alpha1.LogPipelineInput) bool {
+	return input.OTLP == nil || !input.OTLP.Disabled
+}

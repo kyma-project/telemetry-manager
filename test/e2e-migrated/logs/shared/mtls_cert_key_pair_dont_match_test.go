@@ -36,7 +36,7 @@ func TestMTLSCertKeyDontMatch_OTel(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label, suite.LabelSkip) // FIXME: Currently failing (not implemented)
+			suite.RegisterTestCase(t, tc.label)
 
 			var (
 				uniquePrefix = unique.Prefix(tc.label)
@@ -89,8 +89,8 @@ func TestMTLSCertKeyDontMatch_OTel(t *testing.T) {
 			assert.TelemetryHasState(t.Context(), suite.K8sClient, operatorv1alpha1.StateWarning)
 			assert.TelemetryHasCondition(t.Context(), suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeLogComponentsHealthy,
-				Status: metav1.ConditionTrue,
-				Reason: conditions.ReasonTLSCertificateAboutToExpire,
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonTLSConfigurationInvalid,
 			})
 		})
 	}

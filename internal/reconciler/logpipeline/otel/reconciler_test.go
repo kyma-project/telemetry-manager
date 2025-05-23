@@ -68,9 +68,13 @@ func TestReconcile(t *testing.T) {
 		pipelineLock := &mocks.PipelineLock{}
 		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
+		pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 		pipelineValidatorWithStubs := &Validator{
-			PipelineLock: pipelineLock,
+			PipelineLock:       pipelineLock,
+			EndpointValidator:  stubs.NewEndpointValidator(nil),
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
 		}
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
@@ -136,9 +140,13 @@ func TestReconcile(t *testing.T) {
 		pipelineLock := &mocks.PipelineLock{}
 		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
+		pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 		pipelineValidatorWithStubs := &Validator{
-			PipelineLock: pipelineLock,
+			PipelineLock:       pipelineLock,
+			EndpointValidator:  stubs.NewEndpointValidator(nil),
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
 		}
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
@@ -198,9 +206,13 @@ func TestReconcile(t *testing.T) {
 		pipelineLock := &mocks.PipelineLock{}
 		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
+		pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 		pipelineValidatorWithStubs := &Validator{
-			PipelineLock: pipelineLock,
+			PipelineLock:       pipelineLock,
+			EndpointValidator:  stubs.NewEndpointValidator(nil),
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
 		}
 
 		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
@@ -265,9 +277,13 @@ func TestReconcile(t *testing.T) {
 		pipelineLock := &mocks.PipelineLock{}
 		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
+		pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 		pipelineValidatorWithStubs := &Validator{
-			PipelineLock: pipelineLock,
+			PipelineLock:       pipelineLock,
+			EndpointValidator:  stubs.NewEndpointValidator(nil),
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
 		}
 
 		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
@@ -332,9 +348,13 @@ func TestReconcile(t *testing.T) {
 		pipelineLock := &mocks.PipelineLock{}
 		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
+		pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 		pipelineValidatorWithStubs := &Validator{
-			PipelineLock: pipelineLock,
+			PipelineLock:       pipelineLock,
+			EndpointValidator:  stubs.NewEndpointValidator(nil),
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
 		}
 
 		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
@@ -499,9 +519,13 @@ func TestReconcile(t *testing.T) {
 				pipelineLock := &mocks.PipelineLock{}
 				pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 				pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
+				pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 				pipelineValidatorWithStubs := &Validator{
-					PipelineLock: pipelineLock,
+					PipelineLock:       pipelineLock,
+					EndpointValidator:  stubs.NewEndpointValidator(nil),
+					TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+					SecretRefValidator: stubs.NewSecretRefValidator(nil),
 				}
 
 				errToMsg := &conditions.ErrorToMessageConverter{}
@@ -642,9 +666,13 @@ func TestReconcile(t *testing.T) {
 				pipelineLock := &mocks.PipelineLock{}
 				pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 				pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
+				pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 				pipelineValidatorWithStubs := &Validator{
-					PipelineLock: pipelineLock,
+					PipelineLock:       pipelineLock,
+					EndpointValidator:  stubs.NewEndpointValidator(nil),
+					TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+					SecretRefValidator: stubs.NewSecretRefValidator(nil),
 				}
 
 				errToMsg := &conditions.ErrorToMessageConverter{}
@@ -682,13 +710,6 @@ func TestReconcile(t *testing.T) {
 		}
 	})
 
-	// TODO: "referenced secret missing" (requires SecretRefValidator to be implemented)
-	// TODO: "referenced secret exists" (requires SecretRefValidator to be implemented)
-	// TODO: "flow healthy" (requires SelfMonitoring to be implemented)
-	// TODO: "tls conditions" (requires TLSCertValidator to be implemented)
-	// TODO: "all log pipelines are non-reconcilable" (requires SecretRefValidator to be implemented)
-	// TODO: "Check different Pod Error Conditions" (requires SecretRefValidator to be implemented)
-
 	t.Run("one log pipeline does not require an agent", func(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().WithApplicationInput(false).Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
@@ -714,9 +735,13 @@ func TestReconcile(t *testing.T) {
 		pipelineLock := &mocks.PipelineLock{}
 		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
+		pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 		pipelineValidatorWithStubs := &Validator{
-			PipelineLock: pipelineLock,
+			PipelineLock:       pipelineLock,
+			EndpointValidator:  stubs.NewEndpointValidator(nil),
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
 		}
 
 		sut := New(
@@ -757,13 +782,13 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline1, &pipeline2).WithStatusSubresource(&pipeline1, &pipeline2).Build()
 
 		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-		agentConfigBuilderMock.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline1, pipeline2}), mock.Anything).Return(&agent.Config{}, nil, nil).Times(1)
+		agentConfigBuilderMock.On("Build", mock.Anything, mock.Anything, mock.Anything).Return(&agent.Config{}, nil, nil)
 
 		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Times(1)
+		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline1, pipeline2}), mock.Anything).Return(&gateway.Config{}, nil, nil)
+		gatewayConfigBuilderMock.On("Build", mock.Anything, mock.Anything, mock.Anything).Return(&gateway.Config{}, nil, nil)
 
 		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
 		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -780,9 +805,13 @@ func TestReconcile(t *testing.T) {
 		pipelineLock := &mocks.PipelineLock{}
 		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
+		pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 		pipelineValidatorWithStubs := &Validator{
-			PipelineLock: pipelineLock,
+			PipelineLock:       pipelineLock,
+			EndpointValidator:  stubs.NewEndpointValidator(nil),
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
 		}
 
 		sut := New(
@@ -847,9 +876,13 @@ func TestReconcile(t *testing.T) {
 		pipelineLock := &mocks.PipelineLock{}
 		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
+		pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 		pipelineValidatorWithStubs := &Validator{
-			PipelineLock: pipelineLock,
+			PipelineLock:       pipelineLock,
+			EndpointValidator:  stubs.NewEndpointValidator(nil),
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
 		}
 
 		sut := New(

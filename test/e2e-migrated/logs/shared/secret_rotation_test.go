@@ -37,7 +37,7 @@ func TestSecretRotation_OTel(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label, suite.LabelSkip) // FIXME: Currently failing (Secret validation not implemented for OTel)
+			suite.RegisterTestCase(t, tc.label)
 
 			const endpointKey = "logs-endpoint"
 
@@ -89,7 +89,7 @@ func TestSecretRotation_OTel(t *testing.T) {
 			// Create the secret and make sure the pipeline heals
 			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, secret.K8sObject())).Should(Succeed())
 
-			assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
+			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 		})
 	}
 }

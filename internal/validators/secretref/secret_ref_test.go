@@ -549,3 +549,55 @@ func TestLogPipeline_GetSecretRefs(t *testing.T) {
 		})
 	}
 }
+
+func TestGetValue_SecretNotFound(t *testing.T) {
+	fakeClient := fake.NewClientBuilder().Build()
+	ref := telemetryv1alpha1.SecretKeyRef{Name: "my-secret1", Namespace: "default", Key: "myKey1"}
+
+	_, err := GetValue(t.Context(), fakeClient, ref)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "one or more referenced Secrets are missing")
+}
+
+func TestGetSecretRefsInHTTPOutput_TLSFields(t *testing.T) {
+	httpOutput := &telemetryv1alpha1.LogPipelineHTTPOutput{
+
+		TLS: telemetryv1alpha1.LogPipelineOutputTLS{
+			CA:   &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{Name: "ca", Key: "ca"}}},
+			Cert: &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{Name: "cert", Key: "cert"}}},
+			Key:  &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{Name: "key", Key: "key"}}},
+		},
+	}
+	refs := getSecretRefsInHTTPOutput(httpOutput)
+	require.ElementsMatch(t, []telemetryv1alpha1.SecretKeyRef{
+		{Name: "ca", Key: "ca"},
+		{Name: "cert", Key: "cert"},
+		{Name: "key", Key: "key"},
+	}, refs)
+}
+
+func TestGetSecretRefsInOTLPOutput_TLSFieldsAndInsecure(t *testing.T) {
+	otlp := &telemetryv1alpha1.OTLPOutput{
+		TLS: &telemetryv1alpha1.OTLPTLS{
+			Insecure: false,
+			CA:       &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{Name: "ca", Key: "ca"}}},
+			Cert:     &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{Name: "cert", Key: "cert"}}},
+			Key:      &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{Name: "key", Key: "key"}}},
+		},
+	}
+	refs := getSecretRefsInOTLPOutput(otlp)
+	require.ElementsMatch(t, []telemetryv1alpha1.SecretKeyRef{
+		{Name: "ca", Key: "ca"},
+		{Name: "cert", Key: "cert"},
+		{Name: "key", Key: "key"},
+	}, refs)
+
+	otlp.TLS.Insecure = true
+	refs = getSecretRefsInOTLPOutput(otlp)
+	require.Empty(t, refs)
+}
+
+func TestAppendIfSecretRef_NonSecretValue(t *testing.T) {
+	refs := appendIfSecretRef(nil, telemetryv1alpha1.ValueType{Value: "not-a-secret"})
+	require.Empty(t, refs)
+}
