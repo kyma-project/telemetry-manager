@@ -43,16 +43,21 @@ func UnmarshalPdata[T plog.Logs | pmetric.Metrics | ptrace.Traces](data []byte, 
 	return allSignals, nil
 }
 
-func handleUnmarshalError(err error, line []byte, dataSize int) error {
-	size := len(line)
+func handleUnmarshalError(err error, line []byte, totalLength int) error {
+	lineLength := len(line)
 
-	const maxPreviewSize = 100
+	const maxPreviewLength = 100
 
 	lastElems := line
-	if size > maxPreviewSize {
-		lastElems = line[size-maxPreviewSize:]
+	if lineLength > maxPreviewLength {
+		lastElems = line[lineLength-maxPreviewLength:]
 	}
 
-	return fmt.Errorf("failed to unmarshal pdata: size: %d, last %d elems: %q, error: %w",
-		dataSize, maxPreviewSize, string(lastElems), err)
+	return fmt.Errorf("failed to unmarshal pdata: total bytes: %d, line bytes: %d, last %d elems: %q, error: %w",
+		totalLength,
+		lineLength,
+		maxPreviewLength,
+		string(lastElems),
+		err,
+	)
 }
