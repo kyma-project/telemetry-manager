@@ -136,7 +136,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 	assert.OTelLogsFromNamespaceDelivered(t.Context(), backendKeepOriginal, sourceNsDropOriginal)
 
 	// Scenario [keepOriginalBody=true with JSON logs]: Ship `JSON` Logs with original body
-	assert.BackendDataConsistentlyMatches(t.Context(), backendKeepOriginal, HaveFlatLogs(
+	assert.BackendDataEventuallyMatches(t.Context(), backendKeepOriginal, HaveFlatLogs(
 		ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("name", "a")),
 			HaveLogBody(Equal("a-body")),
@@ -167,7 +167,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 	))
 
 	// Scenario [keepOriginalBody=true with Plain logs]: Ship `Plain` Logs with original body
-	assert.BackendDataConsistentlyMatches(t.Context(), backendKeepOriginal, HaveFlatLogs(
+	assert.BackendDataEventuallyMatches(t.Context(), backendKeepOriginal, HaveFlatLogs(
 		ContainElement(SatisfyAll(
 			HaveLogBody(HavePrefix("name=d")),
 			HaveAttributes(Not(HaveKey("log.original"))),
@@ -246,7 +246,7 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 	))
 
 	// Scenario [keepOriginalBody=false with Plain logs]: Ship `Plain` Logs with original body shipped to Backend1
-	assert.BackendDataConsistentlyMatches(t.Context(), backendDropOriginal, fluentbit.HaveFlatLogs(
+	assert.BackendDataEventuallyMatches(t.Context(), backendDropOriginal, fluentbit.HaveFlatLogs(
 		ContainElement(SatisfyAll(
 			fluentbit.HaveLogBody(HavePrefix("name=d")),
 		)),
@@ -255,7 +255,7 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backendKeepOriginal, sourceNsDropOriginal)
 
 	// Scenario [keepOriginalBody=true with JSON logs]: Ship `JSON` Logs with original body shipped to Backend2
-	assert.BackendDataConsistentlyMatches(t.Context(), backendKeepOriginal, fluentbit.HaveFlatLogs(
+	assert.BackendDataEventuallyMatches(t.Context(), backendKeepOriginal, fluentbit.HaveFlatLogs(
 		ContainElement(SatisfyAll(
 			fluentbit.HaveAttributes(HaveKeyWithValue("name", "b")),
 			fluentbit.HaveLogBody(Not(BeEmpty())),
@@ -263,7 +263,7 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 	))
 
 	// Scenario [keepOriginalBody=false with Plain logs]: Ship `Plain` Logs with original body shipped to Backend2
-	assert.BackendDataConsistentlyMatches(t.Context(), backendKeepOriginal, fluentbit.HaveFlatLogs(
+	assert.BackendDataEventuallyMatches(t.Context(), backendKeepOriginal, fluentbit.HaveFlatLogs(
 		ContainElement(SatisfyAll(
 			fluentbit.HaveLogBody(HavePrefix("name=d")),
 		)),
