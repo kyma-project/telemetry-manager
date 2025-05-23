@@ -63,7 +63,7 @@ func TestBasePayloadWithHttpOutput(t *testing.T) {
 
 		// kubernetes filter
 		fluentbit.HaveKubernetesAttributes(HaveKey("container_hash")),
-		fluentbit.HaveKubernetesAttributes(HaveKeyWithValue("container_name", loggen.DefaultContainerName)),
+		fluentbit.HaveKubernetesAttributes(HaveKeyWithValue("container_name", "docker.io/library/"+loggen.DefaultContainerName)),
 		fluentbit.HaveKubernetesAttributes(HaveKeyWithValue("container_image", loggen.DefaultImageName)),
 		fluentbit.HaveKubernetesAttributes(HaveKeyWithValue("namespace_name", genNs)),
 		fluentbit.HaveKubernetesAttributes(HaveKey("pod_name")),
@@ -71,7 +71,7 @@ func TestBasePayloadWithHttpOutput(t *testing.T) {
 		fluentbit.HaveKubernetesAttributes(HaveKey("pod_ip")),
 		fluentbit.HaveKubernetesAttributes(HaveKey("docker_id")),
 		fluentbit.HaveKubernetesAttributes(HaveKey("host")),
-		fluentbit.HaveKubernetesLabels(HaveKeyWithValue("app", loggen.DefaultName)),
+		fluentbit.HaveKubernetesLabels(HaveKeyWithValue("selector", loggen.DefaultName)),
 
 		// record_modifier filter
 		fluentbit.HaveAttributes(HaveKey("cluster_identifier")),
