@@ -57,9 +57,9 @@ func TestDisabledInput_OTel(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
 	// If Application input is disabled, THEN the log agent deployed and DaemonSet must not exist
 	Eventually(func(g Gomega) {
@@ -69,9 +69,9 @@ func TestDisabledInput_OTel(t *testing.T) {
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 
 	// If OTLP input is disabled, THEN the logs pushed the gateway should not be sent to the backend
-	assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
-	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})
-	assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
+	assert.DeploymentReady(t.Context(), kitkyma.LogGatewayName)
+	assert.DeploymentReady(t.Context(), types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})
+	assert.OTelLogPipelineHealthy(t.Context(), pipelineName)
 
 	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
 		BeEmpty(),
@@ -105,9 +105,9 @@ func TestDisabledInput_FluentBit(t *testing.T) {
 	}
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
 	Eventually(func(g Gomega) {
 		var daemonSet appsv1.DaemonSet

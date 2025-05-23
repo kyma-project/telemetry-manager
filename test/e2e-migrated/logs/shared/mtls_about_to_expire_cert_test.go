@@ -90,25 +90,25 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 			resources = append(resources, backend.K8sObjects()...)
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+				require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 			})
-			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-			assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
-			assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
+			assert.DeploymentReady(t.Context(), kitkyma.LogGatewayName)
+			assert.DeploymentReady(t.Context(), backend.NamespacedName())
 
 			if tc.expectAgent {
-				assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
+				assert.DaemonSetReady(t.Context(), kitkyma.LogAgentName)
 			}
 
-			assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
-			assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineName, metav1.Condition{
+			assert.FluentBitLogPipelineHealthy(t.Context(), pipelineName)
+			assert.LogPipelineHasCondition(t.Context(), pipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonTLSCertificateAboutToExpire,
 			})
 
-			assert.TelemetryHasState(t.Context(), suite.K8sClient, operatorv1alpha1.StateWarning)
+			assert.TelemetryHasState(t.Context(), operatorv1alpha1.StateWarning)
 			assert.TelemetryHasCondition(t.Context(), suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeLogComponentsHealthy,
 				Status: metav1.ConditionTrue,
@@ -159,21 +159,21 @@ func TestMTLSAboutToExpireCert_FluentBit(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
-	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
+	assert.DeploymentReady(t.Context(), backend.NamespacedName())
+	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 
-	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
-	assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineName, metav1.Condition{
+	assert.FluentBitLogPipelineHealthy(t.Context(), pipelineName)
+	assert.LogPipelineHasCondition(t.Context(), pipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionTrue,
 		Reason: conditions.ReasonTLSCertificateAboutToExpire,
 	})
 
-	assert.TelemetryHasState(t.Context(), suite.K8sClient, operatorv1alpha1.StateWarning)
+	assert.TelemetryHasState(t.Context(), operatorv1alpha1.StateWarning)
 	assert.TelemetryHasCondition(t.Context(), suite.K8sClient, metav1.Condition{
 		Type:   conditions.TypeLogComponentsHealthy,
 		Status: metav1.ConditionTrue,

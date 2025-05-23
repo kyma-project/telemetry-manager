@@ -31,15 +31,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			Build()
 
 		BeforeAll(func() {
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, &tracePipeline)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, &tracePipeline)).Should(Succeed())
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, &tracePipeline, secret.K8sObject())).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, &tracePipeline, secret.K8sObject())).Should(Succeed())
 			})
 		})
 
 		It("Should set ConfigurationGenerated condition to False", func() {
-			assert.TracePipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
+			assert.TracePipelineHasCondition(suite.Ctx, pipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonReferencedSecretMissing,
@@ -47,7 +47,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should set TelemetryFlowHealthy condition to False", func() {
-			assert.TracePipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
+			assert.TracePipelineHasCondition(suite.Ctx, pipelineName, metav1.Condition{
 				Type:   conditions.TypeFlowHealthy,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonSelfMonConfigNotGenerated,
@@ -55,7 +55,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should set TraceComponentsHealthy condition to False in Telemetry", func() {
-			assert.TelemetryHasState(suite.Ctx, suite.K8sClient, operatorv1alpha1.StateWarning)
+			assert.TelemetryHasState(suite.Ctx, operatorv1alpha1.StateWarning)
 			assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeTraceComponentsHealthy,
 				Status: metav1.ConditionFalse,
@@ -73,10 +73,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 
 		It("Should have running tracepipeline", func() {
 			By("Creating missing secret", func() {
-				Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, secret.K8sObject())).Should(Succeed())
+				Expect(kitk8s.CreateObjects(suite.Ctx, secret.K8sObject())).Should(Succeed())
 			})
 
-			assert.TracePipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+			assert.TracePipelineHealthy(suite.Ctx, pipelineName)
 		})
 	})
 

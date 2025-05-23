@@ -97,18 +97,18 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 				k8sObjects = append(k8sObjects, overrides)
 			}
 
-			Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 		})
-		Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+		Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 	})
 
 	Context("When a logpipeline with HTTP output exists", Ordered, func() {
 		It("Should have a running logpipeline", func() {
-			assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+			assert.FluentBitLogPipelineHealthy(suite.Ctx, pipelineName)
 		})
 
 		It("Should have a log backend running", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
 		})
 
 		It("Should have INFO level logs in the backend", func() {
@@ -142,7 +142,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 
 		It("Should add the overrides configmap and modify the log pipeline", func() {
 			overrides = kitk8s.NewOverrides().WithLogLevel(kitk8s.DEBUG).K8sObject()
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, overrides)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, overrides)).Should(Succeed())
 
 			lookupKey := types.NamespacedName{
 				Name: pipelineName,

@@ -116,29 +116,29 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			k8sSucceedingObjects, k8sFailingObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sSucceedingObjects...)).Should(Succeed())
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sFailingObjects...)).
+				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sSucceedingObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sFailingObjects...)).
 					Should(MatchError(ContainSubstring(notFoundError)))
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sSucceedingObjects...)).Should(Succeed())
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sFailingObjects...)).
+			Expect(kitk8s.CreateObjects(suite.Ctx, k8sSucceedingObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, k8sFailingObjects...)).
 				Should(MatchError(ContainSubstring(tlsCrdValidationError)))
 		})
 
 		It("Should set ConfigurationGenerated condition to True in pipelines", func() {
-			assert.TracePipelineHasCondition(suite.Ctx, suite.K8sClient, missingCaPipelineName, metav1.Condition{
+			assert.TracePipelineHasCondition(suite.Ctx, missingCaPipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonGatewayConfigured,
 			})
 
-			assert.TracePipelineHasCondition(suite.Ctx, suite.K8sClient, missingAllButCaPipelineName, metav1.Condition{
+			assert.TracePipelineHasCondition(suite.Ctx, missingAllButCaPipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonGatewayConfigured,
 			})
 
-			assert.TracePipelineHasCondition(suite.Ctx, suite.K8sClient, missingAllPipelineName, metav1.Condition{
+			assert.TracePipelineHasCondition(suite.Ctx, missingAllPipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonGatewayConfigured,
@@ -146,19 +146,19 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should set TelemetryFlowHealthy condition to True in pipelines", func() {
-			assert.TracePipelineHasCondition(suite.Ctx, suite.K8sClient, missingCaPipelineName, metav1.Condition{
+			assert.TracePipelineHasCondition(suite.Ctx, missingCaPipelineName, metav1.Condition{
 				Type:   conditions.TypeFlowHealthy,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonSelfMonFlowHealthy,
 			})
 
-			assert.TracePipelineHasCondition(suite.Ctx, suite.K8sClient, missingAllButCaPipelineName, metav1.Condition{
+			assert.TracePipelineHasCondition(suite.Ctx, missingAllButCaPipelineName, metav1.Condition{
 				Type:   conditions.TypeFlowHealthy,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonSelfMonFlowHealthy,
 			})
 
-			assert.TracePipelineHasCondition(suite.Ctx, suite.K8sClient, missingAllPipelineName, metav1.Condition{
+			assert.TracePipelineHasCondition(suite.Ctx, missingAllPipelineName, metav1.Condition{
 				Type:   conditions.TypeFlowHealthy,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonSelfMonFlowHealthy,
@@ -166,7 +166,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should set TraceComponentsHealthy condition to True in Telemetry", func() {
-			assert.TelemetryHasState(suite.Ctx, suite.K8sClient, operatorv1alpha1.StateReady)
+			assert.TelemetryHasState(suite.Ctx, operatorv1alpha1.StateReady)
 			assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeTraceComponentsHealthy,
 				Status: metav1.ConditionTrue,

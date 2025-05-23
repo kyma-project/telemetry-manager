@@ -51,38 +51,38 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesBackpressure),
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have a running tracepipeline", func() {
-			assert.TracePipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+			assert.TracePipelineHealthy(suite.Ctx, pipelineName)
 		})
 
 		It("Should have a running trace gateway deployment", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.TraceGatewayName)
+			assert.DeploymentReady(suite.Ctx, kitkyma.TraceGatewayName)
 		})
 
 		It("Should have a running self-monitor", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.SelfMonitorName)
+			assert.DeploymentReady(suite.Ctx, kitkyma.SelfMonitorName)
 		})
 
 		It("Should have a trace backend running", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
 		})
 
 		It("Should have a telemetrygen running", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: telemetrygen.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: telemetrygen.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should wait for the trace flow to gradually become unhealthy", func() {
-			assert.TracePipelineConditionReasonsTransition(suite.Ctx, suite.K8sClient, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
+			assert.TracePipelineConditionReasonsTransition(suite.Ctx, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 				{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
 				{Reason: conditions.ReasonSelfMonGatewaySomeDataDropped, Status: metav1.ConditionFalse},
 			})
 
-			assert.TelemetryHasState(suite.Ctx, suite.K8sClient, operatorv1alpha1.StateWarning)
+			assert.TelemetryHasState(suite.Ctx, operatorv1alpha1.StateWarning)
 			assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeTraceComponentsHealthy,
 				Status: metav1.ConditionFalse,

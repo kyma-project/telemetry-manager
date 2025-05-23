@@ -89,18 +89,18 @@ func TestSinglePipelineV1Beta1_OTel(t *testing.T) {
 			resources = append(resources, backend.K8sObjects()...)
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+				require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 			})
-			require.NoError(t, kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...))
+			require.NoError(t, kitk8s.CreateObjects(t.Context(), resources...))
 
-			assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
-			assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
+			assert.DeploymentReady(t.Context(), backend.NamespacedName())
+			assert.DeploymentReady(t.Context(), kitkyma.LogGatewayName)
 
 			if tc.expectAgent {
-				assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
+				assert.DaemonSetReady(t.Context(), kitkyma.LogAgentName)
 			}
 
-			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
+			assert.OTelLogPipelineHealthy(t.Context(), pipelineName)
 			assert.OTelLogsFromNamespaceDelivered(t.Context(), backend, genNs)
 		})
 	}
@@ -148,15 +148,15 @@ func TestSinglePipelineV1Beta1_FluentBit(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
-	require.NoError(t, kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...))
+	require.NoError(t, kitk8s.CreateObjects(t.Context(), resources...))
 
-	assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
-	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
+	assert.DeploymentReady(t.Context(), backend.NamespacedName())
+	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 
-	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
-	assert.LogPipelineUnsupportedMode(t.Context(), suite.K8sClient, pipelineName, false)
+	assert.FluentBitLogPipelineHealthy(t.Context(), pipelineName)
+	assert.LogPipelineUnsupportedMode(t.Context(), pipelineName, false)
 
 	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend, genNs)
 }

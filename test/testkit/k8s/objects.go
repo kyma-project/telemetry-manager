@@ -6,16 +6,18 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
 // CreateObjects creates k8s objects passed as a slice.
-func CreateObjects(ctx context.Context, cl client.Client, resources ...client.Object) error {
+func CreateObjects(ctx context.Context, resources ...client.Object) error {
 	for _, resource := range resources {
 		// Skip object creation if it already exists.
 		if labelMatches(resource.GetLabels(), PersistentLabelName, "true") {
 			//nolint:errcheck // The value is guaranteed to be of type client.Object.
 			existingResource := reflect.New(reflect.ValueOf(resource).Elem().Type()).Interface().(client.Object)
-			if err := cl.Get(
+			if err := suite.K8sClient.Get(
 				ctx,
 				types.NamespacedName{Name: resource.GetName(), Namespace: resource.GetNamespace()},
 				existingResource,
@@ -24,7 +26,7 @@ func CreateObjects(ctx context.Context, cl client.Client, resources ...client.Ob
 			}
 		}
 
-		if err := cl.Create(ctx, resource); err != nil {
+		if err := suite.K8sClient.Create(ctx, resource); err != nil {
 			return err
 		}
 	}
@@ -33,14 +35,14 @@ func CreateObjects(ctx context.Context, cl client.Client, resources ...client.Ob
 }
 
 // DeleteObjects deletes k8s objects passed as a slice.
-func DeleteObjects(ctx context.Context, client client.Client, resources ...client.Object) error {
+func DeleteObjects(ctx context.Context, resources ...client.Object) error {
 	for _, r := range resources {
 		// Skip object deletion for persistent ones.
 		if labelMatches(r.GetLabels(), PersistentLabelName, "true") {
 			continue
 		}
 
-		if err := client.Delete(ctx, r); err != nil {
+		if err := suite.K8sClient.Delete(ctx, r); err != nil {
 			return err
 		}
 	}
@@ -49,9 +51,9 @@ func DeleteObjects(ctx context.Context, client client.Client, resources ...clien
 }
 
 // ForceDeleteObjects deletes k8s objects including persistent ones.
-func ForceDeleteObjects(ctx context.Context, client client.Client, resources ...client.Object) error {
+func ForceDeleteObjects(ctx context.Context, resources ...client.Object) error {
 	for _, r := range resources {
-		if err := client.Delete(ctx, r); err != nil {
+		if err := suite.K8sClient.Delete(ctx, r); err != nil {
 			return err
 		}
 	}

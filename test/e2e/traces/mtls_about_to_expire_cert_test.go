@@ -65,21 +65,21 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have running pipelines", func() {
-			assert.TracePipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+			assert.TracePipelineHealthy(suite.Ctx, pipelineName)
 		})
 
 		It("Should have a running trace gateway deployment", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.TraceGatewayName)
+			assert.DeploymentReady(suite.Ctx, kitkyma.TraceGatewayName)
 		})
 
 		It("Should have a tlsCertificateAboutToExpire Condition set in pipeline conditions", func() {
-			assert.TracePipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
+			assert.TracePipelineHasCondition(suite.Ctx, pipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonTLSCertificateAboutToExpire,
@@ -87,7 +87,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should have telemetryCR showing correct condition in its status", func() {
-			assert.TelemetryHasState(suite.Ctx, suite.K8sClient, operatorv1alpha1.StateWarning)
+			assert.TelemetryHasState(suite.Ctx, operatorv1alpha1.StateWarning)
 			assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeTraceComponentsHealthy,
 				Status: metav1.ConditionTrue,
@@ -96,7 +96,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should have a trace backend running", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should deliver telemetrygen traces", func() {

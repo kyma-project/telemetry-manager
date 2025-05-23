@@ -56,21 +56,21 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have a running pipeline", Label(suite.LabelUpgrade), func() {
-			assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+			assert.FluentBitLogPipelineHealthy(suite.Ctx, pipelineName)
 		})
 
 		It("Should have a log backend running", Label(suite.LabelUpgrade), func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
 		})
 
 		It("Should have a log producer running", Label(suite.LabelUpgrade), func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 		})
 
 		It("Should have produced logs in the backend", Label(suite.LabelUpgrade), func() {

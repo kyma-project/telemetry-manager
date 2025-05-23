@@ -69,23 +69,23 @@ func TestMTLSInvalidCA_OTel(t *testing.T) {
 			)
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+				require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 			})
-			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-			assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineName, metav1.Condition{
+			assert.LogPipelineHasCondition(t.Context(), pipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonTLSConfigurationInvalid,
 			})
 
-			assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineName, metav1.Condition{
+			assert.LogPipelineHasCondition(t.Context(), pipelineName, metav1.Condition{
 				Type:   conditions.TypeFlowHealthy,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonSelfMonConfigNotGenerated,
 			})
 
-			assert.TelemetryHasState(t.Context(), suite.K8sClient, operatorv1alpha1.StateWarning)
+			assert.TelemetryHasState(t.Context(), operatorv1alpha1.StateWarning)
 			assert.TelemetryHasCondition(t.Context(), suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeLogComponentsHealthy,
 				Status: metav1.ConditionFalse,
@@ -129,23 +129,23 @@ func TestMTLSInvalidCA_FluentBit(t *testing.T) {
 	)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineName, metav1.Condition{
+	assert.LogPipelineHasCondition(t.Context(), pipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonTLSConfigurationInvalid,
 	})
 
-	assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineName, metav1.Condition{
+	assert.LogPipelineHasCondition(t.Context(), pipelineName, metav1.Condition{
 		Type:   conditions.TypeFlowHealthy,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonSelfMonConfigNotGenerated,
 	})
 
-	assert.TelemetryHasState(t.Context(), suite.K8sClient, operatorv1alpha1.StateWarning)
+	assert.TelemetryHasState(t.Context(), operatorv1alpha1.StateWarning)
 	assert.TelemetryHasCondition(t.Context(), suite.K8sClient, metav1.Condition{
 		Type:   conditions.TypeLogComponentsHealthy,
 		Status: metav1.ConditionFalse,

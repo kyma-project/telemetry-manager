@@ -94,26 +94,26 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), 
 				k8sObjects := makeResources()
 
 				DeferCleanup(func() {
-					Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+					Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 				})
-				Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 			})
 
 			It("Should have healthy pipelines", func() {
-				assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineOnlyNodeMetricsEnabledName)
+				assert.MetricPipelineHealthy(suite.Ctx, pipelineOnlyNodeMetricsEnabledName)
 			})
 
 			It("Ensures the metric gateway deployment is ready", func() {
-				assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayName)
+				assert.DeploymentReady(suite.Ctx, kitkyma.MetricGatewayName)
 			})
 
 			It("Ensures the metric agent daemonset is ready", func() {
-				assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.MetricAgentName)
+				assert.DaemonSetReady(suite.Ctx, kitkyma.MetricAgentName)
 			})
 
 			It("Should have metrics backends running", func() {
-				assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backendOnlyNodeMetricsEnabledName, Namespace: tt.namespace})
-				assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backendOnlyNodeMetricsEnabledName, Namespace: tt.namespace})
+				assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: backendOnlyNodeMetricsEnabledName, Namespace: tt.namespace})
+				assert.ServiceReady(suite.Ctx, types.NamespacedName{Name: backendOnlyNodeMetricsEnabledName, Namespace: tt.namespace})
 
 			})
 

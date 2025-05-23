@@ -78,15 +78,15 @@ func TestResources_OTel(t *testing.T) {
 				Build()
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, &pipeline)) //nolint:usetesting // Remove ctx from DeleteObjects
+				require.NoError(t, kitk8s.DeleteObjects(context.Background(), &pipeline)) //nolint:usetesting // Remove ctx from DeleteObjects
 			})
-			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, &pipeline, secret.K8sObject())).Should(Succeed())
+			Expect(kitk8s.CreateObjects(t.Context(), &pipeline, secret.K8sObject())).Should(Succeed())
 
-			assert.ResourcesExist(t.Context(), suite.K8sClient, tc.resources...)
+			assert.ResourcesExist(t.Context(), tc.resources...)
 			// FIXME: Currently failing (resources are not deleted when pipeline becomes non-reconcilable)
 			// When pipeline becomes non-reconcilable...
 			// Expect(suite.K8sClient.Delete(t.Context(), secret.K8sObject())).Should(Succeed())
-			// assert.ResourcesNotExist(t.Context(), suite.K8sClient, tc.resources...)
+			// assert.ResourcesNotExist(t.Context(), tc.resources...)
 		})
 	}
 }
@@ -129,13 +129,13 @@ func TestResources_FluentBit(t *testing.T) {
 		Build()
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, &pipeline)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(context.Background(), &pipeline)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, &pipeline, secret.K8sObject())).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t.Context(), &pipeline, secret.K8sObject())).Should(Succeed())
 
-	assert.ResourcesExist(t.Context(), suite.K8sClient, reources...)
+	assert.ResourcesExist(t.Context(), reources...)
 
 	// When pipeline becomes non-reconcilable...
 	Expect(suite.K8sClient.Delete(t.Context(), secret.K8sObject())).Should(Succeed())
-	assert.ResourcesNotExist(t.Context(), suite.K8sClient, reources...)
+	assert.ResourcesNotExist(t.Context(), reources...)
 }

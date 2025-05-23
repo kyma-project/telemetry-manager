@@ -41,29 +41,29 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetC), 
 
 		BeforeAll(func() {
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient,
+				Expect(kitk8s.DeleteObjects(suite.Ctx,
 					&metricPipelineWithGRPCAndWithoutPath, &metricPipelineWithHTTPAndPath, &metricPipelineWithHTTPAndWithoutPath)).Should(Succeed())
 			})
 		})
 
 		It("Should reject a MetricPipeline with path and default protocol", func() {
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, &metricPipelineDefaultGRPCWithPath)).ShouldNot(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, &metricPipelineDefaultGRPCWithPath)).ShouldNot(Succeed())
 		})
 
 		It("Should reject a MetricPipeline with path and gRPC protocol", func() {
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, &metricPipelineWithGRPCAndPath)).ShouldNot(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, &metricPipelineWithGRPCAndPath)).ShouldNot(Succeed())
 		})
 
 		It("Should accept a MetricPipeline with no path and gRPC protocol", func() {
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, &metricPipelineWithGRPCAndWithoutPath)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, &metricPipelineWithGRPCAndWithoutPath)).Should(Succeed())
 		})
 
 		It("Should accept a MetricPipeline with no path and HTTP protocol", func() {
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, &metricPipelineWithHTTPAndWithoutPath)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, &metricPipelineWithHTTPAndWithoutPath)).Should(Succeed())
 		})
 
 		It("Should accept a MetricPipeline with path and HTTP protocol", func() {
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, &metricPipelineWithHTTPAndPath)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, &metricPipelineWithHTTPAndPath)).Should(Succeed())
 		})
 	})
 })

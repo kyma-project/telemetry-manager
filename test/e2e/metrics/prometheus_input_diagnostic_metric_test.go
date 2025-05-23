@@ -57,26 +57,26 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 			})
 
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Ensures the metric gateway deployment is ready", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(suite.Ctx, kitkyma.MetricGatewayName)
 		})
 
 		It("Ensures the metrics backend is ready", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Ensures the metric agent daemonset is ready", func() {
-			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.MetricAgentName)
+			assert.DaemonSetReady(suite.Ctx, kitkyma.MetricAgentName)
 		})
 
 		It("Ensures the MetricPipeline is running", func() {
-			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+			assert.MetricPipelineHealthy(suite.Ctx, pipelineName)
 		})
 
 		It("Ensures all defined diagnostic metrics are sent to the backend", func() {

@@ -84,15 +84,15 @@ func TestMultiPipelineFanout_OTel(t *testing.T) {
 			resources = append(resources, backend2.K8sObjects()...)
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+				require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 			})
-			require.NoError(t, kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...))
+			require.NoError(t, kitk8s.CreateObjects(t.Context(), resources...))
 
-			assert.DeploymentReady(t.Context(), suite.K8sClient, backend1.NamespacedName())
-			assert.DeploymentReady(t.Context(), suite.K8sClient, backend2.NamespacedName())
+			assert.DeploymentReady(t.Context(), backend1.NamespacedName())
+			assert.DeploymentReady(t.Context(), backend2.NamespacedName())
 
-			assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipeline1.Name)
-			assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipeline2.Name)
+			assert.FluentBitLogPipelineHealthy(t.Context(), pipeline1.Name)
+			assert.FluentBitLogPipelineHealthy(t.Context(), pipeline2.Name)
 
 			assert.OTelLogsFromNamespaceDelivered(t.Context(), backend1, genNs)
 			assert.OTelLogsFromNamespaceDelivered(t.Context(), backend2, genNs)
@@ -137,15 +137,15 @@ func TestMultiPipelineFanout_FluentBit(t *testing.T) {
 	resources = append(resources, backend2.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
-	require.NoError(t, kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...))
+	require.NoError(t, kitk8s.CreateObjects(t.Context(), resources...))
 
-	assert.DeploymentReady(t.Context(), suite.K8sClient, backend1.NamespacedName())
-	assert.DeploymentReady(t.Context(), suite.K8sClient, backend2.NamespacedName())
+	assert.DeploymentReady(t.Context(), backend1.NamespacedName())
+	assert.DeploymentReady(t.Context(), backend2.NamespacedName())
 
-	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipeline1.Name)
-	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipeline2.Name)
+	assert.FluentBitLogPipelineHealthy(t.Context(), pipeline1.Name)
+	assert.FluentBitLogPipelineHealthy(t.Context(), pipeline2.Name)
 
 	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend1, genNs)
 	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend2, genNs)

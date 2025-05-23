@@ -65,9 +65,9 @@ func TestMTLSMissingValues_OTel(t *testing.T) {
 			)
 
 			t.Cleanup(func() {
-				Expect(kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)).Should(MatchError(ContainSubstring(notFoundError))) //nolint:usetesting // Remove ctx from DeleteObjects
+				Expect(kitk8s.DeleteObjects(context.Background(), resources...)).Should(MatchError(ContainSubstring(notFoundError))) //nolint:usetesting // Remove ctx from DeleteObjects
 			})
-			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(MatchError(ContainSubstring(tlsCrdValidationError)))
+			Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(MatchError(ContainSubstring(tlsCrdValidationError)))
 		})
 	}
 }
@@ -103,7 +103,7 @@ func TestMTLSMissingValues_FluentBit(t *testing.T) {
 	)
 
 	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)).Should(MatchError(ContainSubstring(notFoundError))) //nolint:usetesting // Remove ctx from DeleteObjects
+		Expect(kitk8s.DeleteObjects(context.Background(), resources...)).Should(MatchError(ContainSubstring(notFoundError))) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(MatchError(ContainSubstring(tlsCrdValidationError)))
+	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(MatchError(ContainSubstring(tlsCrdValidationError)))
 }
