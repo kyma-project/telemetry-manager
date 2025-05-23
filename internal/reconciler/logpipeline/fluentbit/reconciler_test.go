@@ -601,7 +601,7 @@ func TestReconcile(t *testing.T) {
 				probeErr:        assert.AnError,
 				expectedStatus:  metav1.ConditionUnknown,
 				expectedReason:  conditions.ReasonSelfMonAgentProbingFailed,
-				expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing failed",
+				expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing of agent failed",
 			},
 			{
 				name: "healthy",

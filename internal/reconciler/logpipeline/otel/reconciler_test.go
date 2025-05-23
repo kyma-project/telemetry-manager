@@ -391,7 +391,7 @@ func TestReconcile(t *testing.T) {
 				probeErr:        assert.AnError,
 				expectedStatus:  metav1.ConditionUnknown,
 				expectedReason:  conditions.ReasonSelfMonGatewayProbingFailed,
-				expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing failed",
+				expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing of gateway failed",
 			},
 			{
 				name: "healthy",
@@ -409,7 +409,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonGatewayThrottling,
-				expectedMessage: "Log gateway is unable to receive logs at current rate.",
+				expectedMessage: "Log gateway is unable to receive logs at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=gateway-throttling",
 			},
 			{
 				name: "buffer filling up",
@@ -418,7 +418,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonGatewayBufferFillingUp,
-				expectedMessage: "Buffer nearing capacity. Incoming log rate exceeds export rate.",
+				expectedMessage: "Buffer in Log gateway nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=gateway-buffer-filling-up",
 			},
 			{
 				name: "buffer filling up shadows other problems",
@@ -428,7 +428,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonGatewayBufferFillingUp,
-				expectedMessage: "Buffer nearing capacity. Incoming log rate exceeds export rate.",
+				expectedMessage: "Buffer in Log gateway nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=gateway-buffer-filling-up",
 			},
 			{
 				name: "some data dropped",
@@ -437,7 +437,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
-				expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped.",
+				expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in Log gateway. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=not-all-logs-arrive-at-the-backend",
 			},
 			{
 				name: "some data dropped shadows other problems",
@@ -447,7 +447,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
-				expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped.",
+				expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in Log gateway. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=not-all-logs-arrive-at-the-backend",
 			},
 			{
 				name: "all data dropped",
@@ -456,7 +456,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
-				expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped.",
+				expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log gateway. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=no-logs-arrive-at-the-backend",
 			},
 			{
 				name: "all data dropped shadows other problems",
@@ -466,7 +466,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
-				expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped.",
+				expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log gateway. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=no-logs-arrive-at-the-backend",
 			},
 		}
 		for _, tt := range tests {
