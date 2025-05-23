@@ -147,13 +147,6 @@ const (
 	RulesAny = "any"
 )
 
-// MatchesFluentBitLogPipelineRule checks if the given alert label set matches the expected rule name and pipeline name for a log pipeline.
-// If the alert does not have a name label, it should be matched by all pipelines.
-// RulesAny can be used to match any LogPipeline rule name.
-func MatchesFluentBitLogPipelineRule(labelSet map[string]string, unprefixedRuleName string, pipelineName string) bool {
-	return matchesRule(labelSet, unprefixedRuleName, pipelineName, typeLogPipeline)
-}
-
 // MatchesMetricPipelineRule checks if the given alert label set matches the expected rule name (or RulesAny) and pipeline name for a metric pipeline.
 // If the alert does not have an exporter label, it should be matched by all pipelines.
 func MatchesMetricPipelineRule(labelSet map[string]string, unprefixedRuleName string, pipelineName string) bool {
