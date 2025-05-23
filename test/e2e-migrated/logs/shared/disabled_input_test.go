@@ -61,13 +61,14 @@ func TestDisabledInput_OTel(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
 
+	// If Application input is disabled, THEN the log agent DaemonSet must not exist
 	Eventually(func(g Gomega) {
 		var daemonSet appsv1.DaemonSet
 		err := suite.K8sClient.Get(t.Context(), kitkyma.LogAgentName, &daemonSet)
 		g.Expect(apierrors.IsNotFound(err)).To(BeTrue(), "Log agent DaemonSet must not exist")
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 
-	// OTLP input disabled for gateway, no logs from OTLP-receiver should reach to the backend
+	// If OTLP input is disabled, THEN the logs pushed the gateway should not be sent to the backend
 	assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
 	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})
 	assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
