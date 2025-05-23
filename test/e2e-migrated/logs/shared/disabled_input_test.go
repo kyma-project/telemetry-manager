@@ -69,9 +69,9 @@ func TestDisabledInput_OTel(t *testing.T) {
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 
 	// If OTLP input is disabled, THEN the logs pushed the gateway should not be sent to the backend
-	assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
-	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})
-	assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
+	assert.DeploymentReady(t.Context(), kitkyma.LogGatewayName)
+	assert.DeploymentReady(t.Context(), types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})
+	assert.OTelLogPipelineHealthy(t.Context(), pipelineName)
 
 	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
 		BeEmpty(),
