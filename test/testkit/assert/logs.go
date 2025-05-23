@@ -3,6 +3,7 @@ package assert
 import (
 	"context"
 	"fmt"
+	"testing"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -59,6 +60,13 @@ func OTelLogsFromContainerDelivered(ctx context.Context, backend *kitbackend.Bac
 func OTelLogsFromContainerNotDelivered(ctx context.Context, backend *kitbackend.Backend, containerName string) {
 	BackendDataConsistentlyMatches(ctx, backend,
 		HaveFlatLogs(Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.container.name", containerName))))),
+	)
+}
+
+func OTelLogsFromNamespaceDelivered1(t *testing.T, backend *kitbackend.Backend, namespace string) {
+	t.Helper()
+	BackendDataEventuallyMatches1(1, t, backend,
+		HaveFlatLogs(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)))),
 	)
 }
 

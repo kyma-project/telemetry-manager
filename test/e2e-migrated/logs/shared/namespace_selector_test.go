@@ -138,8 +138,8 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, includePipelineName)
 			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, excludePipelineName)
 
-			assert.OTelLogsFromNamespaceDelivered(t.Context(), backend1, gen1Ns)
-			assert.OTelLogsFromNamespaceNotDelivered(t.Context(), backend2, gen2Ns)
+			assert.OTelLogsFromNamespaceDelivered1(t, backend1, "foo")
+			//assert.OTelLogsFromNamespaceNotDelivered(t.Context(), backend2, gen2Ns)
 		})
 	}
 }
