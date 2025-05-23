@@ -1,9 +1,10 @@
 package stdloggen
 
 import (
-	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+
+	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 )
 
 type Option func(*corev1.PodSpec)
@@ -47,7 +48,6 @@ func NewDeployment(namespace string, opts ...Option) *kitk8s.Deployment {
 }
 
 func PodSpec(opts ...Option) corev1.PodSpec {
-
 	spec := corev1.PodSpec{
 		Containers: []corev1.Container{
 			{

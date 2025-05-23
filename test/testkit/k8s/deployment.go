@@ -41,6 +41,7 @@ func (d *Deployment) WithLabels(labels map[string]string) *Deployment {
 	for key, value := range labels {
 		d.labels[key] = value
 	}
+
 	return d
 }
 
