@@ -46,18 +46,18 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 	backendDropOriginal := kitbackend.New(backendNsDropOriginal, kitbackend.SignalTypeLogsOTel, kitbackend.WithName(scenarioDropOriginal))
 
 	pipelineKeepOriginal := testutils.NewLogPipelineBuilder().
-		WithName(pipelineDropOriginalName).
+		WithName(pipelineKeepOriginalName).
 		WithApplicationInput(true,
 			[]testutils.ExtendedNamespaceSelectorOptions{testutils.ExtIncludeNamespaces(sourceNsKeepOriginal)}...).
-		WithKeepOriginalBody(false).
+		WithKeepOriginalBody(true).
 		WithOTLPOutput(testutils.OTLPEndpoint(backendKeepOriginal.Endpoint())).
 		Build()
 
 	pipelineDropOriginal := testutils.NewLogPipelineBuilder().
-		WithName(pipelineKeepOriginalName).
+		WithName(pipelineDropOriginalName).
 		WithApplicationInput(true,
 			[]testutils.ExtendedNamespaceSelectorOptions{testutils.ExtIncludeNamespaces(sourceNsDropOriginal)}...).
-		WithKeepOriginalBody(true).
+		WithKeepOriginalBody(false).
 		WithOTLPOutput(testutils.OTLPEndpoint(backendDropOriginal.Endpoint())).
 		Build()
 
@@ -197,7 +197,7 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 		WithName(pipelineKeepOriginalName).
 		WithApplicationInput(true).
 		WithIncludeNamespaces(sourceNsKeepOriginal).
-		WithKeepOriginalBody(false).
+		WithKeepOriginalBody(true).
 		WithHTTPOutput(testutils.HTTPHost(backendKeepOriginal.Host()), testutils.HTTPPort(backendKeepOriginal.Port())).
 		Build()
 
@@ -205,7 +205,7 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 		WithName(pipelineDropOriginalName).
 		WithApplicationInput(true).
 		WithIncludeNamespaces(sourceNsDropOriginal).
-		WithKeepOriginalBody(true).
+		WithKeepOriginalBody(false).
 		WithHTTPOutput(testutils.HTTPHost(backendDropOriginal.Host()), testutils.HTTPPort(backendDropOriginal.Port())).
 		Build()
 
