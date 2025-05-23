@@ -55,7 +55,7 @@ func TestDedot(t *testing.T) {
 	assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
 	assert.DeploymentReady(t.Context(), suite.K8sClient, logProducer.NamespacedName())
 
-	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(
-		ContainElement(fluentbit.HaveKubernetesLabels(HaveKeyWithValue("dedot_label", "logging-dedot-value")))),
-	)
+	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(ContainElement(
+		fluentbit.HaveKubernetesLabels(HaveKeyWithValue("dedot_label", "logging-dedot-value")),
+	)))
 }

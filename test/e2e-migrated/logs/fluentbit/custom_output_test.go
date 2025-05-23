@@ -64,7 +64,7 @@ func TestCustomOutput(t *testing.T) {
 	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(HaveEach(SatisfyAll(
 		fluentbit.HaveAttributes(HaveKey("cluster_identifier")),
 		fluentbit.HaveAttributes(Not(HaveKey("@timestamp"))),
-		fluentbit.HaveAttributes(Not(HaveKey("kubernetes.app_name"))),
+		fluentbit.HaveKubernetesAttributes(Not(HaveKey("app_name"))),
 		fluentbit.HaveLogBody(Not(BeEmpty())),
 		fluentbit.HaveAttributes(HaveKeyWithValue("stream", "stdout")),
 	))))

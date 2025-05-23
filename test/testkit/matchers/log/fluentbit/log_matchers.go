@@ -41,6 +41,12 @@ func HavePodName(matcher types.GomegaMatcher) types.GomegaMatcher {
 	}, matcher)
 }
 
+func HaveKubernetesAttributes(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(fl FlatLog) map[string]string {
+		return fl.KubernetesAttributes
+	}, matcher)
+}
+
 func HaveAttributes(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(fl FlatLog) map[string]string {
 		return fl.Attributes
