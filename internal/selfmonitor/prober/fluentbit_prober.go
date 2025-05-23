@@ -10,33 +10,33 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
 )
 
-type FluentBitLogPipelineProber struct {
+type FluentBitProber struct {
 	getter alertGetter
 }
 
-type FluentBitLogPipelineProbeResult struct {
+type FluentBitProbeResult struct {
 	PipelineProbeResult
 
 	NoLogsDelivered bool
 	BufferFillingUp bool
 }
 
-func NewFluentBitLogPipelineProber(selfMonitorName types.NamespacedName) (*FluentBitLogPipelineProber, error) {
+func NewFluentBitProber(selfMonitorName types.NamespacedName) (*FluentBitProber, error) {
 	promClient, err := newPrometheusClient(selfMonitorName)
 	if err != nil {
 		return nil, err
 	}
 
-	return &FluentBitLogPipelineProber{
+	return &FluentBitProber{
 		getter: promClient,
 	}, nil
 }
 
 //nolint:dupl // Keep it duplicated for now, as Fluent Bit logging will be replaced by OpenTelemetry
-func (p *FluentBitLogPipelineProber) Probe(ctx context.Context, pipelineName string) (FluentBitLogPipelineProbeResult, error) {
+func (p *FluentBitProber) Probe(ctx context.Context, pipelineName string) (FluentBitProbeResult, error) {
 	alerts, err := retrieveAlerts(ctx, p.getter)
 	if err != nil {
-		return FluentBitLogPipelineProbeResult{}, fmt.Errorf("failed to retrieve alerts: %w", err)
+		return FluentBitProbeResult{}, fmt.Errorf("failed to retrieve alerts: %w", err)
 	}
 
 	allDropped := p.isFiring(alerts, config.RuleNameLogFluentBitAllDataDropped, pipelineName)
@@ -45,7 +45,7 @@ func (p *FluentBitLogPipelineProber) Probe(ctx context.Context, pipelineName str
 	noLogs := p.isFiring(alerts, config.RuleNameLogFluentBitNoLogsDelivered, pipelineName)
 	healthy := !allDropped && !someDropped && !bufferFillingUp && !noLogs
 
-	return FluentBitLogPipelineProbeResult{
+	return FluentBitProbeResult{
 		PipelineProbeResult: PipelineProbeResult{
 			AllDataDropped:  allDropped,
 			SomeDataDropped: someDropped,
@@ -56,6 +56,6 @@ func (p *FluentBitLogPipelineProber) Probe(ctx context.Context, pipelineName str
 	}, nil
 }
 
-func (p *FluentBitLogPipelineProber) isFiring(alerts []promv1.Alert, ruleName, pipelineName string) bool {
+func (p *FluentBitProber) isFiring(alerts []promv1.Alert, ruleName, pipelineName string) bool {
 	return isFiringWithMatcher(alerts, ruleName, pipelineName, config.MatchesLogPipelineRule)
 }

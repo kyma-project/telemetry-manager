@@ -60,7 +60,7 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitLogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
@@ -126,7 +126,7 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitLogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -180,7 +180,7 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitLogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -234,7 +234,7 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitLogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -283,7 +283,7 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(workloadstatus.ErrDaemonSetNotFound)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitLogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -343,7 +343,7 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitLogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -402,7 +402,7 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(workloadstatus.ErrDaemonSetFetching)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitLogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -463,7 +463,7 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitLogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -541,7 +541,7 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitLogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -590,7 +590,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("flow healthy", func(t *testing.T) {
 		tests := []struct {
 			name            string
-			probe           prober.FluentBitLogPipelineProbeResult
+			probe           prober.FluentBitProbeResult
 			probeErr        error
 			expectedStatus  metav1.ConditionStatus
 			expectedReason  string
@@ -605,7 +605,7 @@ func TestReconcile(t *testing.T) {
 			},
 			{
 				name: "healthy",
-				probe: prober.FluentBitLogPipelineProbeResult{
+				probe: prober.FluentBitProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
 				},
 				expectedStatus:  metav1.ConditionTrue,
@@ -614,7 +614,7 @@ func TestReconcile(t *testing.T) {
 			},
 			{
 				name: "buffer filling up",
-				probe: prober.FluentBitLogPipelineProbeResult{
+				probe: prober.FluentBitProbeResult{
 					BufferFillingUp: true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
@@ -623,7 +623,7 @@ func TestReconcile(t *testing.T) {
 			},
 			{
 				name: "no logs delivered",
-				probe: prober.FluentBitLogPipelineProbeResult{
+				probe: prober.FluentBitProbeResult{
 					NoLogsDelivered: true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
@@ -632,7 +632,7 @@ func TestReconcile(t *testing.T) {
 			},
 			{
 				name: "no logs delivered shadows other problems",
-				probe: prober.FluentBitLogPipelineProbeResult{
+				probe: prober.FluentBitProbeResult{
 					NoLogsDelivered: true,
 					BufferFillingUp: true,
 				},
@@ -642,7 +642,7 @@ func TestReconcile(t *testing.T) {
 			},
 			{
 				name: "some data dropped",
-				probe: prober.FluentBitLogPipelineProbeResult{
+				probe: prober.FluentBitProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
 				},
 				expectedStatus:  metav1.ConditionFalse,
@@ -651,7 +651,7 @@ func TestReconcile(t *testing.T) {
 			},
 			{
 				name: "some data dropped shadows other problems",
-				probe: prober.FluentBitLogPipelineProbeResult{
+				probe: prober.FluentBitProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
 					BufferFillingUp:     true,
 				},
@@ -661,7 +661,7 @@ func TestReconcile(t *testing.T) {
 			},
 			{
 				name: "all data dropped",
-				probe: prober.FluentBitLogPipelineProbeResult{
+				probe: prober.FluentBitProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
 				},
 				expectedStatus:  metav1.ConditionFalse,
@@ -670,7 +670,7 @@ func TestReconcile(t *testing.T) {
 			},
 			{
 				name: "all data dropped shadows other problems",
-				probe: prober.FluentBitLogPipelineProbeResult{
+				probe: prober.FluentBitProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{
 						AllDataDropped:  true,
 						SomeDataDropped: true,
@@ -831,7 +831,7 @@ func TestReconcile(t *testing.T) {
 				proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 				flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitLogPipelineProbeResult{}, nil)
+				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
 				pipelineLockStub := &mocks.PipelineLock{}
 				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -940,7 +940,7 @@ func TestReconcile(t *testing.T) {
 				proberStub := commonStatusStubs.NewDaemonSetProber(tt.probeErr)
 
 				flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitLogPipelineProbeResult{}, nil)
+				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
 				pipelineLockStub := &mocks.PipelineLock{}
 				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -1001,7 +1001,7 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitLogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
 		serverErr := errors.New("failed to get secret: server error")
 

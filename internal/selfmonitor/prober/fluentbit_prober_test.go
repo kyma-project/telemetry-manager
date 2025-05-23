@@ -19,7 +19,7 @@ func TestFluentBitLogPipelineProber(t *testing.T) {
 		alerts       promv1.AlertsResult
 		alertsErr    error
 		pipelineName string
-		expected     FluentBitLogPipelineProbeResult
+		expected     FluentBitProbeResult
 		expectErr    bool
 	}{
 		{
@@ -34,7 +34,7 @@ func TestFluentBitLogPipelineProber(t *testing.T) {
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{},
 			},
-			expected: FluentBitLogPipelineProbeResult{
+			expected: FluentBitProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					Healthy: true,
 				},
@@ -54,7 +54,7 @@ func TestFluentBitLogPipelineProber(t *testing.T) {
 					},
 				},
 			},
-			expected: FluentBitLogPipelineProbeResult{
+			expected: FluentBitProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					Healthy: true,
 				},
@@ -73,7 +73,7 @@ func TestFluentBitLogPipelineProber(t *testing.T) {
 					},
 				},
 			},
-			expected: FluentBitLogPipelineProbeResult{
+			expected: FluentBitProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					Healthy: true,
 				},
@@ -92,7 +92,7 @@ func TestFluentBitLogPipelineProber(t *testing.T) {
 					},
 				},
 			},
-			expected: FluentBitLogPipelineProbeResult{
+			expected: FluentBitProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					AllDataDropped: true,
 					Healthy:        false,
@@ -113,7 +113,7 @@ func TestFluentBitLogPipelineProber(t *testing.T) {
 					},
 				},
 			},
-			expected: FluentBitLogPipelineProbeResult{
+			expected: FluentBitProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					Healthy: true,
 				},
@@ -140,7 +140,7 @@ func TestFluentBitLogPipelineProber(t *testing.T) {
 					},
 				},
 			},
-			expected: FluentBitLogPipelineProbeResult{
+			expected: FluentBitProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					Healthy: true,
 				},
@@ -160,7 +160,7 @@ func TestFluentBitLogPipelineProber(t *testing.T) {
 					},
 				},
 			},
-			expected: FluentBitLogPipelineProbeResult{
+			expected: FluentBitProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					AllDataDropped: true,
 				},
@@ -180,7 +180,7 @@ func TestFluentBitLogPipelineProber(t *testing.T) {
 					},
 				},
 			},
-			expected: FluentBitLogPipelineProbeResult{
+			expected: FluentBitProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					SomeDataDropped: true,
 				},
@@ -200,7 +200,7 @@ func TestFluentBitLogPipelineProber(t *testing.T) {
 					},
 				},
 			},
-			expected: FluentBitLogPipelineProbeResult{
+			expected: FluentBitProbeResult{
 				NoLogsDelivered: true,
 			},
 		},
@@ -218,7 +218,7 @@ func TestFluentBitLogPipelineProber(t *testing.T) {
 					},
 				},
 			},
-			expected: FluentBitLogPipelineProbeResult{
+			expected: FluentBitProbeResult{
 				BufferFillingUp: true,
 			},
 		},
@@ -228,7 +228,7 @@ func TestFluentBitLogPipelineProber(t *testing.T) {
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{},
 			},
-			expected: FluentBitLogPipelineProbeResult{
+			expected: FluentBitProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					Healthy: true,
 				},
@@ -238,7 +238,7 @@ func TestFluentBitLogPipelineProber(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			sut, err := NewFluentBitLogPipelineProber(types.NamespacedName{})
+			sut, err := NewFluentBitProber(types.NamespacedName{})
 			require.NoError(t, err)
 
 			alertGetterMock := &mocks.AlertGetter{}

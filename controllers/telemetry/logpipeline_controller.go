@@ -88,7 +88,7 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 		MaxPipelineCount,
 	)
 
-	fluentBitFlowHealthProber, err := prober.NewFluentBitLogPipelineProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
+	fluentBitFlowHealthProber, err := prober.NewFluentBitProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +182,7 @@ func (r *LogPipelineController) mapTelemetryChanges(ctx context.Context, object 
 	return requests
 }
 
-func configureFluentBitReconciler(client client.Client, config LogPipelineControllerConfig, pipelineLock logpipelinefluentbit.PipelineLock, flowHealthProber *prober.FluentBitLogPipelineProber) (*logpipelinefluentbit.Reconciler, error) {
+func configureFluentBitReconciler(client client.Client, config LogPipelineControllerConfig, pipelineLock logpipelinefluentbit.PipelineLock, flowHealthProber *prober.FluentBitProber) (*logpipelinefluentbit.Reconciler, error) {
 	pipelineValidator := &logpipelinefluentbit.Validator{
 		EndpointValidator:  &endpoint.Validator{Client: client},
 		TLSCertValidator:   tlscert.New(client),

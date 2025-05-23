@@ -64,7 +64,7 @@ type ErrorToMessageConverter interface {
 }
 
 type FlowHealthProber interface {
-	Probe(ctx context.Context, pipelineName string) (prober.FluentBitLogPipelineProbeResult, error)
+	Probe(ctx context.Context, pipelineName string) (prober.FluentBitProbeResult, error)
 }
 
 type AgentProber interface {
