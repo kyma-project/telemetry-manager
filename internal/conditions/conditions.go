@@ -94,8 +94,8 @@ var otelLogPipelineMessages = map[string]string{
 
 	ReasonSelfMonGatewayAllDataDropped:  "Backend is not reachable or rejecting logs. All logs are dropped in Log gateway. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=no-logs-arrive-at-the-backend",
 	ReasonSelfMonAgentAllDataDropped:    "Backend is not reachable or rejecting logs. All logs are dropped in Log agent. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=no-logs-arrive-at-the-backend",
-	ReasonSelfMonGatewayBufferFillingUp: "Buffer in Log gateway nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=gateway-buffer-filling-up",
-	ReasonSelfMonAgentBufferFillingUp:   "Buffer in Log agent nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=gateway-buffer-filling-up",
+	ReasonSelfMonGatewayBufferFillingUp: "Buffer in Log gateway nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=buffer-filling-up",
+	ReasonSelfMonAgentBufferFillingUp:   "Buffer in Log agent nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=buffer-filling-up",
 	ReasonSelfMonGatewaySomeDataDropped: "Backend is reachable, but rejecting logs. Some logs are dropped in Log gateway. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=not-all-logs-arrive-at-the-backend",
 	ReasonSelfMonAgentSomeDataDropped:   "Backend is reachable, but rejecting logs. Some logs are dropped in Log agent. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=not-all-logs-arrive-at-the-backend",
 	ReasonSelfMonGatewayThrottling:      "Log gateway is unable to receive logs at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=gateway-throttling",
