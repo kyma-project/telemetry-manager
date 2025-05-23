@@ -90,9 +90,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 
 	assert.OTelLogsFromNamespaceDelivered(t.Context(), backendDropOriginal, sourceNsDropOriginal)
 
-	// Scenario [keepOriginalBody=false with JSON logs]: Ship `JSON` Logs without original body
-	// Since JSON body is parsed, the original body is not shipped and JSON fields are present in attributes
-	// Parse logline with `message` and move to body
+	t.Log("Scenario keepOriginalBody=false with JSON logs and 'message' should have attributes, the 'message' moved into the body and no original body")
 	assert.BackendDataEventuallyMatches(t.Context(), backendDropOriginal, HaveFlatLogs(
 		ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("name", "a")),
@@ -102,7 +100,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 		)),
 	))
 
-	// Parse logline with `msg` and move to body
+	t.Log("Scenario keepOriginalBody=false with JSON logs and 'msg' should have attributes, the 'msg' moved into the body and no original body")
 	assert.BackendDataEventuallyMatches(t.Context(), backendDropOriginal, HaveFlatLogs(
 		ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("name", "b")),
@@ -112,8 +110,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 		)),
 	))
 
-	// Parse logline which has `body` attribute
-	// Since message or msg is not present the `Body()`` is empty
+	t.Log("Scenario keepOriginalBody=false with JSON logs should have attributes, the body empty and no original body")
 	assert.BackendDataEventuallyMatches(t.Context(), backendDropOriginal, HaveFlatLogs(
 		ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("name", "c")),
@@ -123,19 +120,18 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 		)),
 	))
 
-	// Scenario [keepOriginalBody=false with Plain logs]: Ship `Plain` Logs with original body
-	// Since Plain body is not parsed, the original body is shipped to the backend and attributes are empty
+	t.Log("Scenario keepOriginalBody=false with plain logs should have no attributes, the body filled and no original body")
 	assert.BackendDataEventuallyMatches(t.Context(), backendDropOriginal, HaveFlatLogs(
 		ContainElement(SatisfyAll(
+			HaveAttributes(Not(HaveKey("name"))),
 			HaveLogBody(HavePrefix("name=d")),
 			HaveAttributes(Not(HaveKey("log.original"))),
 		)),
 	))
 
-	// Tests where we expect log.Original() to be present
 	assert.OTelLogsFromNamespaceDelivered(t.Context(), backendKeepOriginal, sourceNsKeepOriginal)
 
-	// Scenario [keepOriginalBody=true with JSON logs]: Ship `JSON` Logs with original body
+	t.Log("Scenario keepOriginalBody=true with JSON logs and 'message' should have attributes, the 'message' moved into the body and the original body")
 	assert.BackendDataEventuallyMatches(t.Context(), backendKeepOriginal, HaveFlatLogs(
 		ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("name", "a")),
@@ -145,7 +141,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 		)),
 	))
 
-	// Parse logline with `msg`
+	t.Log("Scenario keepOriginalBody=true with JSON logs and 'msg' should have attributes, the 'msg' moved into the body and the original body")
 	assert.BackendDataEventuallyMatches(t.Context(), backendKeepOriginal, HaveFlatLogs(
 		ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("name", "b")),
@@ -155,8 +151,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 		)),
 	))
 
-	// Parse logline which has `body`
-	// Since message or msg is not present the `Body()` is empty
+	t.Log("Scenario keepOriginalBody=true with JSON logs should have attributes, the body empty and the original body")
 	assert.BackendDataEventuallyMatches(t.Context(), backendKeepOriginal, HaveFlatLogs(
 		ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("name", "c")),
@@ -166,9 +161,10 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 		)),
 	))
 
-	// Scenario [keepOriginalBody=true with Plain logs]: Ship `Plain` Logs with original body
+	t.Log("Scenario keepOriginalBody=true with plain logs should have no attributes, the body filled and no original body")
 	assert.BackendDataEventuallyMatches(t.Context(), backendKeepOriginal, HaveFlatLogs(
 		ContainElement(SatisfyAll(
+			HaveAttributes(Not(HaveKey("name"))),
 			HaveLogBody(HavePrefix("name=d")),
 			HaveAttributes(Not(HaveKey("log.original"))),
 		)),
@@ -237,7 +233,7 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 
 	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backendDropOriginal, sourceNsDropOriginal)
 
-	// Scenario [keepOriginalBody=false with JSON logs]: Ship `JSON` Logs without original body
+	t.Log("Scenario keepOriginalBody=false with JSON logs should parse attributes and not have a body")
 	assert.BackendDataConsistentlyMatches(t.Context(), backendDropOriginal, fluentbit.HaveFlatLogs(
 		ContainElement(SatisfyAll(
 			fluentbit.HaveAttributes(HaveKeyWithValue("name", "b")),
@@ -245,16 +241,17 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 		)),
 	))
 
-	// Scenario [keepOriginalBody=false with Plain logs]: Ship `Plain` Logs with original body shipped to Backend1
+	t.Log("Scenario keepOriginalBody=false with plain logs should not have attributes and have a body")
 	assert.BackendDataEventuallyMatches(t.Context(), backendDropOriginal, fluentbit.HaveFlatLogs(
 		ContainElement(SatisfyAll(
+			fluentbit.HaveAttributes(Not(HaveKey("name"))),
 			fluentbit.HaveLogBody(HavePrefix("name=d")),
 		)),
 	))
 
 	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backendKeepOriginal, sourceNsKeepOriginal)
 
-	// Scenario [keepOriginalBody=true with JSON logs]: Ship `JSON` Logs with original body shipped to Backend2
+	t.Log("Scenario keepOriginalBody=true with JSON logs should parse attributes and have a body")
 	assert.BackendDataEventuallyMatches(t.Context(), backendKeepOriginal, fluentbit.HaveFlatLogs(
 		ContainElement(SatisfyAll(
 			fluentbit.HaveAttributes(HaveKeyWithValue("name", "b")),
@@ -262,9 +259,10 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 		)),
 	))
 
-	// Scenario [keepOriginalBody=false with Plain logs]: Ship `Plain` Logs with original body shipped to Backend2
+	t.Log("Scenario keepOriginalBody=true with plain logs should not have attributes and have a body")
 	assert.BackendDataEventuallyMatches(t.Context(), backendKeepOriginal, fluentbit.HaveFlatLogs(
 		ContainElement(SatisfyAll(
+			fluentbit.HaveAttributes(Not(HaveKey("name"))),
 			fluentbit.HaveLogBody(HavePrefix("name=d")),
 		)),
 	))
