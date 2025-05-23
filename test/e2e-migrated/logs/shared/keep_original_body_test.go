@@ -90,7 +90,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 
 	assert.OTelLogsFromNamespaceDelivered(t.Context(), backendDropOriginal, sourceNsDropOriginal)
 
-	t.Log("Scenario keepOriginalBody=false with JSON logs and 'message' should have attributes, the 'message' moved into the body and no original body")
+	t.Log("Scenario keepOriginalBody=false with JSON logs and 'message' should have attributes, the 'message' moved into the body, and no attribute 'log.original'")
 	assert.BackendDataEventuallyMatches(t.Context(), backendDropOriginal, HaveFlatLogs(
 		ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("name", "a")),
@@ -100,7 +100,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 		)),
 	))
 
-	t.Log("Scenario keepOriginalBody=false with JSON logs and 'msg' should have attributes, the 'msg' moved into the body and no original body")
+	t.Log("Scenario keepOriginalBody=false with JSON logs and 'msg' should have attributes, the 'msg' moved into the body, and no attribute 'log.original'")
 	assert.BackendDataEventuallyMatches(t.Context(), backendDropOriginal, HaveFlatLogs(
 		ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("name", "b")),
@@ -110,7 +110,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 		)),
 	))
 
-	t.Log("Scenario keepOriginalBody=false with JSON logs should have attributes, the body empty and no original body")
+	t.Log("Scenario keepOriginalBody=false with JSON logs should have attributes, the body empty, and no attribute 'log.original'")
 	assert.BackendDataEventuallyMatches(t.Context(), backendDropOriginal, HaveFlatLogs(
 		ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("name", "c")),
@@ -120,7 +120,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 		)),
 	))
 
-	t.Log("Scenario keepOriginalBody=false with plain logs should have no attributes, the body filled and no original body")
+	t.Log("Scenario keepOriginalBody=false with plain logs should have no attributes, the body filled, and no attribute 'log.original'")
 	assert.BackendDataEventuallyMatches(t.Context(), backendDropOriginal, HaveFlatLogs(
 		ContainElement(SatisfyAll(
 			HaveAttributes(Not(HaveKey("name"))),
@@ -131,7 +131,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 
 	assert.OTelLogsFromNamespaceDelivered(t.Context(), backendKeepOriginal, sourceNsKeepOriginal)
 
-	t.Log("Scenario keepOriginalBody=true with JSON logs and 'message' should have attributes, the 'message' moved into the body and the original body")
+	t.Log("Scenario keepOriginalBody=true with JSON logs and 'message' should have attributes, the 'message' moved into the body, and have attribute 'log.original'")
 	assert.BackendDataEventuallyMatches(t.Context(), backendKeepOriginal, HaveFlatLogs(
 		ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("name", "a")),
@@ -141,7 +141,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 		)),
 	))
 
-	t.Log("Scenario keepOriginalBody=true with JSON logs and 'msg' should have attributes, the 'msg' moved into the body and the original body")
+	t.Log("Scenario keepOriginalBody=true with JSON logs and 'msg' should have attributes, the 'msg' moved into the body, and have attribute 'log.original'")
 	assert.BackendDataEventuallyMatches(t.Context(), backendKeepOriginal, HaveFlatLogs(
 		ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("name", "b")),
@@ -151,7 +151,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 		)),
 	))
 
-	t.Log("Scenario keepOriginalBody=true with JSON logs should have attributes, the body empty and the original body")
+	t.Log("Scenario keepOriginalBody=true with JSON logs should have attributes, the body empty, and have attribute 'log.original'")
 	assert.BackendDataEventuallyMatches(t.Context(), backendKeepOriginal, HaveFlatLogs(
 		ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("name", "c")),
@@ -161,7 +161,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 		)),
 	))
 
-	t.Log("Scenario keepOriginalBody=true with plain logs should have no attributes, the body filled and no original body")
+	t.Log("Scenario keepOriginalBody=true with plain logs should have no attributes, the body filled, and no attribute 'log.original'")
 	assert.BackendDataEventuallyMatches(t.Context(), backendKeepOriginal, HaveFlatLogs(
 		ContainElement(SatisfyAll(
 			HaveAttributes(Not(HaveKey("name"))),
