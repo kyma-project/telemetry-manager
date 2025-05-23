@@ -61,7 +61,7 @@ func TestDisabledInput_OTel(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
 
-	// If Application input is disabled, THEN the log agent DaemonSet must not exist
+	// If Application input is disabled, THEN the log agent deployed and DaemonSet must not exist
 	Eventually(func(g Gomega) {
 		var daemonSet appsv1.DaemonSet
 		err := suite.K8sClient.Get(t.Context(), kitkyma.LogAgentName, &daemonSet)

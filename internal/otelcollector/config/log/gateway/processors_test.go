@@ -149,7 +149,7 @@ func TestProcessors(t *testing.T) {
 	t.Run("OTLP input disabled", func(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().
 			WithName("dummy").
-			WithOTLPInput(false,).
+			WithOTLPInput(false).
 			WithOTLPOutput().
 			Build()
 
