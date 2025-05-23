@@ -578,8 +578,8 @@ To detect and fix such situations, check the [pipeline status](./resources/02-lo
    - For **GatewaySomeTelemetryDataDropped**, check Pod `telemetry-log-gateway`
    - For **AgentSomeTelemetryDataDropped**, check Pod `telemetry-log-agent`
 2. Check your observability backend to investigate potential causes.
-2. If backend is limiting the rate by refusing logs, try the options desribed in [Buffer Filling Up](#buffer-filling-up).
-3. Otherwise, take the actions appropriate to the cause indicated in the logs.
+3. If the backend is limiting the rate by refusing logs, try the options described in [Buffer Filling Up](#buffer-filling-up).
+4. Otherwise, take the actions appropriate to the cause indicated in the logs.
 
 ### Buffer Filling Up
 
