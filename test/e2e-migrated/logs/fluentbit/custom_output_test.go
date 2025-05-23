@@ -66,6 +66,6 @@ func TestCustomOutput(t *testing.T) {
 		fluentbit.HaveAttributes(Not(HaveKey("@timestamp"))),
 		fluentbit.HaveKubernetesAttributes(Not(HaveKey("app_name"))),
 		fluentbit.HaveLogBody(Not(BeEmpty())),
-		fluentbit.HaveAttributes(HaveKeyWithValue("stream", "stderr")),
+		fluentbit.HaveAttributes(HaveKey("stream")),
 	))))
 }

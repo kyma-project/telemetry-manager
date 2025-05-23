@@ -259,7 +259,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: eaa896d9488035744d810110a006c2ef035d4b7b9eb7c9d937462b1d066af0b6
+        checksum/config: 03cdfc5350e694ff139f803e660d2fe780b07a3611d29593838c7899607ecfca
         traffic.sidecar.istio.io/excludeInboundPorts: 2020,2021
       creationTimestamp: null
       labels:
