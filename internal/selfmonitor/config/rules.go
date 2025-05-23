@@ -11,13 +11,13 @@ import (
 )
 
 const (
-	// OTEL Collector rule names for gateways. Note that the actual full names will be prefixed with Metric or Trace or Log
+	// OTel Collector rule names for gateways. Note that the actual full names will be prefixed with Metric, or Trace, or Log
 	RuleNameGatewayAllDataDropped  = "GatewayAllDataDropped"
 	RuleNameGatewaySomeDataDropped = "GatewaySomeDataDropped"
 	RuleNameGatewayQueueAlmostFull = "GatewayQueueAlmostFull"
 	RuleNameGatewayThrottling      = "GatewayThrottling"
 
-	// OTEL Collector rule names for agents. Note that the actual full names will be prefixed with Log
+	// OTel Collector rule names for agents. Note that the actual full names will be prefixed with Log
 	RuleNameAgentAllDataDropped  = "AgentAllDataDropped"
 	RuleNameAgentSomeDataDropped = "AgentSomeDataDropped"
 	RuleNameAgentQueueAlmostFull = "AgentQueueAlmostFull"
