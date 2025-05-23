@@ -131,7 +131,7 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 			r.agentProber,
 			types.NamespacedName{Name: otelcollector.LogAgentName, Namespace: r.telemetryNamespace},
 			r.errToMessageConverter,
-			commonstatus.SignalTypeLogs)
+			commonstatus.SignalTypeOtelLogs)
 	}
 
 	condition.ObservedGeneration = pipeline.Generation
