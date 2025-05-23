@@ -29,7 +29,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsGatewayBackpress
 	makeResources := func() []client.Object {
 
 		backend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithAbortFaultInjection(85))
-		logGenerator := telemetrygen.NewDeployment(mockNs, telemetrygen.SignalTypeLogs)
+
+		logGenerator := telemetrygen.NewDeployment(mockNs, telemetrygen.SignalTypeLogs,
+			telemetrygen.WithRate(800),
+			telemetrygen.WithWorkers(5))
 
 		logPipeline := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
