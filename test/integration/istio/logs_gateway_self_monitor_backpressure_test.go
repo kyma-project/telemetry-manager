@@ -20,71 +20,73 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsBackpressure), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsGatewayBackpressure, suite.LabelExperimental), Ordered, func() {
 	var (
 		mockNs       = "istio-permissive-mtls"
 		pipelineName = suite.ID()
 	)
 
 	makeResources := func() []client.Object {
-		var objs []client.Object
 
-		backend := kitbackend.New(mockNs, kitbackend.SignalTypeMetrics, kitbackend.WithAbortFaultInjection(85))
-		objs = append(objs, backend.K8sObjects()...)
+		backend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithAbortFaultInjection(85))
 
-		metricPipeline := testutils.NewMetricPipelineBuilder().
+		logGenerator := telemetrygen.NewDeployment(mockNs, telemetrygen.SignalTypeLogs,
+			telemetrygen.WithRate(800),
+			telemetrygen.WithWorkers(5))
+
+		logPipeline := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
+			WithInput(testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(mockNs))).
 			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 			Build()
 
-		objs = append(objs,
-			&metricPipeline,
-			telemetrygen.NewDeployment(mockNs, telemetrygen.SignalTypeMetrics,
-				telemetrygen.WithRate(800),
-				telemetrygen.WithWorkers(5)).K8sObject(),
-		)
+		objs := []client.Object{
+			logGenerator.K8sObject(),
+			&logPipeline,
+		}
+		objs = append(objs, backend.K8sObjects()...)
 
 		return objs
 	}
 
-	Context("When a metricpipeline exists", Ordered, func() {
+	Context("When a logpipeline exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running metricpipeline", func() {
-			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+		It("Should have a running logpipeline", func() {
+			assert.OTelLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 		})
 
-		It("Should have a running metric gateway deployment", func() {
-			assert.DeploymentReady(suite.Ctx, kitkyma.MetricGatewayName)
+		It("Should have a running log gateway deployment", func() {
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.LogGatewayName)
 		})
 
 		It("Should have a running self-monitor", func() {
-			assert.DeploymentReady(suite.Ctx, kitkyma.SelfMonitorName)
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.SelfMonitorName)
 		})
 
-		It("Should have a metrics backend running", func() {
-			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
+		It("Should have a log backend running", func() {
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
 		})
 
 		It("Should have a telemetrygen running", func() {
-			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: telemetrygen.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: telemetrygen.DefaultName, Namespace: mockNs})
 		})
 
-		It("Should wait for the metrics flow to gradually become unhealthy", func() {
-			assert.MetricPipelineConditionReasonsTransition(suite.Ctx, suite.K8sClient, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
+		It("Should wait for the log flow to gradually become unhealthy", func() {
+			assert.LogPipelineConditionReasonsTransition(suite.Ctx, suite.K8sClient, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 				{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
 				{Reason: conditions.ReasonSelfMonGatewaySomeDataDropped, Status: metav1.ConditionFalse},
 			})
 
 			assert.TelemetryHasState(suite.Ctx, suite.K8sClient, operatorv1alpha1.StateWarning)
 			assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
-				Type:   conditions.TypeMetricComponentsHealthy,
+				Type:   conditions.TypeLogComponentsHealthy,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonSelfMonGatewaySomeDataDropped,
 			})

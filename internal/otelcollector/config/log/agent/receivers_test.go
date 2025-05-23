@@ -61,6 +61,7 @@ func TestReceiverCreator(t *testing.T) {
 				makeDropAttributeLogTag(),
 				makeBodyRouter(),
 				makeJSONParser(),
+				makeRemoveBody(),
 				makeMoveMessageToBody(),
 				makeMoveMsgToBody(),
 				makeSeverityParserFromLevel(),
@@ -148,6 +149,16 @@ func TestMakeMoveBodyToLogOriginal(t *testing.T) {
 		Type: "move",
 		From: "body",
 		To:   "attributes[\"log.original\"]",
+	}
+	assert.Equal(t, expectedCBTO, mbto)
+}
+
+func TestMakeRemoveBody(t *testing.T) {
+	mbto := makeRemoveBody()
+	expectedCBTO := Operator{
+		ID:    "remove-body",
+		Type:  "remove",
+		Field: "body",
 	}
 	assert.Equal(t, expectedCBTO, mbto)
 }

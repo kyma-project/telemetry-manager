@@ -59,8 +59,11 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(workloadstatus.ErrDeploymentFetching)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHeathProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 		pipelineLock := &mocks.PipelineLock{}
 		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -76,7 +79,8 @@ func TestReconcile(t *testing.T) {
 			fakeClient,
 			telemetryNamespace,
 			moduleVersion,
-			flowHealthProberStub,
+			gatewayFlowHeathProber,
+			agentFlowHealthProber,
 			agentConfigBuilderMock,
 			agentApplierDeleterMock,
 			agentProberStub,
@@ -123,8 +127,11 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(&workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"})
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHeathProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 		pipelineLock := &mocks.PipelineLock{}
 		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -140,7 +147,8 @@ func TestReconcile(t *testing.T) {
 			fakeClient,
 			telemetryNamespace,
 			moduleVersion,
-			flowHealthProberStub,
+			gatewayFlowHeathProber,
+			agentFlowHealthProber,
 			agentConfigBuilderMock,
 			agentApplierDeleterMock,
 			agentProberStub,
@@ -195,8 +203,11 @@ func TestReconcile(t *testing.T) {
 			PipelineLock: pipelineLock,
 		}
 
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHeathProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
@@ -204,7 +215,8 @@ func TestReconcile(t *testing.T) {
 			fakeClient,
 			telemetryNamespace,
 			moduleVersion,
-			flowHealthProberStub,
+			gatewayFlowHeathProber,
+			agentFlowHealthProber,
 			agentConfigBuilderMock,
 			agentApplierDeleterMock,
 			agentProberStub,
@@ -258,8 +270,11 @@ func TestReconcile(t *testing.T) {
 			PipelineLock: pipelineLock,
 		}
 
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHeathProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
@@ -267,7 +282,8 @@ func TestReconcile(t *testing.T) {
 			fakeClient,
 			telemetryNamespace,
 			moduleVersion,
-			flowHealthProberStub,
+			gatewayFlowHeathProber,
+			agentFlowHealthProber,
 			agentConfigBuilderMock,
 			agentApplierDeleterMock,
 			agentProberStub,
@@ -321,8 +337,11 @@ func TestReconcile(t *testing.T) {
 			PipelineLock: pipelineLock,
 		}
 
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHeathProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
@@ -330,7 +349,8 @@ func TestReconcile(t *testing.T) {
 			fakeClient,
 			telemetryNamespace,
 			moduleVersion,
-			flowHealthProberStub,
+			gatewayFlowHeathProber,
+			agentFlowHealthProber,
 			agentConfigBuilderMock,
 			agentApplierDeleterMock,
 			agentProberStub,
@@ -357,10 +377,10 @@ func TestReconcile(t *testing.T) {
 		gatewayConfigBuilderMock.AssertExpectations(t)
 	})
 
-	t.Run("flow healthy", func(t *testing.T) {
+	t.Run("log gateway flow healthy", func(t *testing.T) {
 		tests := []struct {
 			name            string
-			probe           prober.OTelPipelineProbeResult
+			probe           prober.OTelGatewayProbeResult
 			probeErr        error
 			expectedStatus  metav1.ConditionStatus
 			expectedReason  string
@@ -370,12 +390,12 @@ func TestReconcile(t *testing.T) {
 				name:            "prober fails",
 				probeErr:        assert.AnError,
 				expectedStatus:  metav1.ConditionUnknown,
-				expectedReason:  conditions.ReasonSelfMonProbingFailed,
-				expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing failed",
+				expectedReason:  conditions.ReasonSelfMonGatewayProbingFailed,
+				expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing of gateway failed",
 			},
 			{
 				name: "healthy",
-				probe: prober.OTelPipelineProbeResult{
+				probe: prober.OTelGatewayProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
 				},
 				expectedStatus:  metav1.ConditionTrue,
@@ -384,69 +404,69 @@ func TestReconcile(t *testing.T) {
 			},
 			{
 				name: "throttling",
-				probe: prober.OTelPipelineProbeResult{
+				probe: prober.OTelGatewayProbeResult{
 					Throttling: true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonGatewayThrottling,
-				expectedMessage: "Log gateway is unable to receive logs at current rate.",
+				expectedMessage: "Log gateway is unable to receive logs at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=gateway-throttling",
 			},
 			{
 				name: "buffer filling up",
-				probe: prober.OTelPipelineProbeResult{
+				probe: prober.OTelGatewayProbeResult{
 					QueueAlmostFull: true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonBufferFillingUp,
-				expectedMessage: "Buffer nearing capacity. Incoming log rate exceeds export rate.",
+				expectedReason:  conditions.ReasonSelfMonGatewayBufferFillingUp,
+				expectedMessage: "Buffer in Log gateway nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=buffer-filling-up",
 			},
 			{
 				name: "buffer filling up shadows other problems",
-				probe: prober.OTelPipelineProbeResult{
+				probe: prober.OTelGatewayProbeResult{
 					QueueAlmostFull: true,
 					Throttling:      true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonBufferFillingUp,
-				expectedMessage: "Buffer nearing capacity. Incoming log rate exceeds export rate.",
+				expectedReason:  conditions.ReasonSelfMonGatewayBufferFillingUp,
+				expectedMessage: "Buffer in Log gateway nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=buffer-filling-up",
 			},
 			{
 				name: "some data dropped",
-				probe: prober.OTelPipelineProbeResult{
+				probe: prober.OTelGatewayProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonSomeDataDropped,
-				expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped.",
+				expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
+				expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in Log gateway. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=not-all-logs-arrive-at-the-backend",
 			},
 			{
 				name: "some data dropped shadows other problems",
-				probe: prober.OTelPipelineProbeResult{
+				probe: prober.OTelGatewayProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
 					Throttling:          true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonSomeDataDropped,
-				expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped.",
+				expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
+				expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in Log gateway. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=not-all-logs-arrive-at-the-backend",
 			},
 			{
 				name: "all data dropped",
-				probe: prober.OTelPipelineProbeResult{
+				probe: prober.OTelGatewayProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonAllDataDropped,
-				expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped.",
+				expectedReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
+				expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log gateway. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=no-logs-arrive-at-the-backend",
 			},
 			{
 				name: "all data dropped shadows other problems",
-				probe: prober.OTelPipelineProbeResult{
+				probe: prober.OTelGatewayProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
 					Throttling:          true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonAllDataDropped,
-				expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped.",
+				expectedReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
+				expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log gateway. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=no-logs-arrive-at-the-backend",
 			},
 		}
 		for _, tt := range tests {
@@ -470,8 +490,11 @@ func TestReconcile(t *testing.T) {
 
 				agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-				flowHealthProberStub := &mocks.FlowHealthProber{}
-				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
+				gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
+				gatewayFlowHeathProber.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
+
+				agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
+				agentFlowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 				pipelineLock := &mocks.PipelineLock{}
 				pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -486,7 +509,151 @@ func TestReconcile(t *testing.T) {
 					fakeClient,
 					telemetryNamespace,
 					moduleVersion,
-					flowHealthProberStub,
+					gatewayFlowHeathProber,
+					agentFlowHealthProber,
+					agentConfigBuilderMock,
+					agentApplierDeleterMock,
+					agentProberStub,
+					gatewayApplierDeleterMock,
+					gatewayConfigBuilderMock,
+					gatewayProberStub,
+					istioStatusCheckerStub,
+					pipelineLock,
+					pipelineValidatorWithStubs,
+					errToMsg)
+				err := sut.Reconcile(t.Context(), &pipeline)
+				require.NoError(t, err)
+
+				var updatedPipeline telemetryv1alpha1.LogPipeline
+				_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+				requireHasStatusCondition(t, updatedPipeline,
+					conditions.TypeFlowHealthy,
+					tt.expectedStatus,
+					tt.expectedReason,
+					tt.expectedMessage,
+				)
+				agentConfigBuilderMock.AssertExpectations(t)
+				gatewayConfigBuilderMock.AssertExpectations(t)
+			})
+		}
+	})
+
+	t.Run("log agent flow healthy", func(t *testing.T) {
+		tests := []struct {
+			name            string
+			probe           prober.OTelAgentProbeResult
+			probeErr        error
+			expectedStatus  metav1.ConditionStatus
+			expectedReason  string
+			expectedMessage string
+		}{
+			{
+				name:            "prober fails",
+				probeErr:        assert.AnError,
+				expectedStatus:  metav1.ConditionUnknown,
+				expectedReason:  conditions.ReasonSelfMonAgentProbingFailed,
+				expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing of agent failed",
+			},
+			{
+				name: "healthy",
+				probe: prober.OTelAgentProbeResult{
+					PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
+				},
+				expectedStatus:  metav1.ConditionTrue,
+				expectedReason:  conditions.ReasonSelfMonFlowHealthy,
+				expectedMessage: "No problems detected in the telemetry flow",
+			},
+			{
+				name: "buffer filling up",
+				probe: prober.OTelAgentProbeResult{
+					QueueAlmostFull: true,
+				},
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonSelfMonAgentBufferFillingUp,
+				expectedMessage: "Buffer in Log agent nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=buffer-filling-up",
+			},
+			{
+				name: "some data dropped",
+				probe: prober.OTelAgentProbeResult{
+					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
+				},
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonSelfMonAgentSomeDataDropped,
+				expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in Log agent. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=not-all-logs-arrive-at-the-backend",
+			},
+			{
+				name: "some data dropped shadows other problems",
+				probe: prober.OTelAgentProbeResult{
+					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
+					QueueAlmostFull:     true,
+				},
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonSelfMonAgentSomeDataDropped,
+				expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in Log agent. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=not-all-logs-arrive-at-the-backend",
+			},
+			{
+				name: "all data dropped",
+				probe: prober.OTelAgentProbeResult{
+					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
+				},
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonSelfMonAgentAllDataDropped,
+				expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log agent. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=no-logs-arrive-at-the-backend",
+			},
+			{
+				name: "all data dropped shadows other problems",
+				probe: prober.OTelAgentProbeResult{
+					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
+					QueueAlmostFull:     true,
+				},
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonSelfMonAgentAllDataDropped,
+				expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log agent. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=no-logs-arrive-at-the-backend",
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).WithApplicationInput(true).Build()
+				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+				gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+				gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&gateway.Config{}, nil, nil).Times(1)
+
+				agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+				agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Times(1)
+
+				agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
+				agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&agent.Config{}, nil, nil).Times(1)
+
+				gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+				gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+				gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+
+				agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
+
+				gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
+				gatewayFlowHeathProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+				agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
+				agentFlowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
+
+				pipelineLock := &mocks.PipelineLock{}
+				pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+				pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
+
+				pipelineValidatorWithStubs := &Validator{
+					PipelineLock: pipelineLock,
+				}
+
+				errToMsg := &conditions.ErrorToMessageConverter{}
+				sut := New(
+					fakeClient,
+					telemetryNamespace,
+					moduleVersion,
+					gatewayFlowHeathProber,
+					agentFlowHealthProber,
 					agentConfigBuilderMock,
 					agentApplierDeleterMock,
 					agentProberStub,
@@ -538,8 +705,11 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHeathProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 		pipelineLock := &mocks.PipelineLock{}
 		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -553,7 +723,8 @@ func TestReconcile(t *testing.T) {
 			fakeClient,
 			telemetryNamespace,
 			moduleVersion,
-			flowHealthProberStub,
+			gatewayFlowHeathProber,
+			agentFlowHealthProber,
 			&mocks.AgentConfigBuilder{},
 			agentApplierDeleterMock,
 			agentProberStub,
@@ -600,8 +771,11 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, mock.Anything).Return(prober.OTelPipelineProbeResult{}, nil)
+		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHeathProber.On("Probe", mock.Anything, mock.Anything).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProber.On("Probe", mock.Anything, mock.Anything).Return(prober.OTelAgentProbeResult{}, nil)
 
 		pipelineLock := &mocks.PipelineLock{}
 		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -615,7 +789,8 @@ func TestReconcile(t *testing.T) {
 			fakeClient,
 			telemetryNamespace,
 			moduleVersion,
-			flowHealthProberStub,
+			gatewayFlowHeathProber,
+			agentFlowHealthProber,
 			agentConfigBuilderMock,
 			agentApplierDeleterMock,
 			agentProberStub,
@@ -663,8 +838,11 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, mock.Anything).Return(prober.OTelPipelineProbeResult{}, nil)
+		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHeathProber.On("Probe", mock.Anything, mock.Anything).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProber.On("Probe", mock.Anything, mock.Anything).Return(prober.OTelAgentProbeResult{}, nil)
 
 		pipelineLock := &mocks.PipelineLock{}
 		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -678,7 +856,8 @@ func TestReconcile(t *testing.T) {
 			fakeClient,
 			telemetryNamespace,
 			moduleVersion,
-			flowHealthProberStub,
+			gatewayFlowHeathProber,
+			agentFlowHealthProber,
 			&mocks.AgentConfigBuilder{},
 			agentApplierDeleterMock,
 			agentProberStub,

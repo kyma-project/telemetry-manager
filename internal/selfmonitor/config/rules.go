@@ -11,11 +11,16 @@ import (
 )
 
 const (
-	// OTEL Collector rule names. Note that the actual full names will be prefixed with Metric or Trace
+	// OTel Collector rule names for gateways. Note that the actual full names will be prefixed with Metric, or Trace, or Log
 	RuleNameGatewayAllDataDropped  = "GatewayAllDataDropped"
 	RuleNameGatewaySomeDataDropped = "GatewaySomeDataDropped"
 	RuleNameGatewayQueueAlmostFull = "GatewayQueueAlmostFull"
 	RuleNameGatewayThrottling      = "GatewayThrottling"
+
+	// OTel Collector rule names for agents. Note that the actual full names will be prefixed with Log
+	RuleNameAgentAllDataDropped  = "AgentAllDataDropped"
+	RuleNameAgentSomeDataDropped = "AgentSomeDataDropped"
+	RuleNameAgentQueueAlmostFull = "AgentQueueAlmostFull"
 
 	// Fluent Bit rule names. Note that the actual full names will be prefixed with Log
 	RuleNameLogFluentBitAllDataDropped  = "FluentBitAllDataDropped"
@@ -62,28 +67,36 @@ const (
 func MakeRules(compatibilityMode bool) RuleGroups {
 	var rules []Rule
 
-	metricRuleBuilder := otelCollectorRuleBuilder{
+	metricGatewayRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    ruleDataType(typeMetricPipeline, compatibilityMode),
 		serviceName: otelcollector.MetricGatewayName + "-metrics",
 		namePrefix:  ruleNamePrefix(typeMetricPipeline),
 	}
 
-	rules = append(rules, metricRuleBuilder.rules()...)
+	rules = append(rules, metricGatewayRuleBuilder.gatewayRules()...)
 
-	traceRuleBuilder := otelCollectorRuleBuilder{
+	traceGatewayRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    ruleDataType(typeTracePipeline, compatibilityMode),
 		serviceName: otelcollector.TraceGatewayName + "-metrics",
 		namePrefix:  ruleNamePrefix(typeTracePipeline),
 	}
-	rules = append(rules, traceRuleBuilder.rules()...)
+	rules = append(rules, traceGatewayRuleBuilder.gatewayRules()...)
 
-	logRuleBuilder := otelCollectorRuleBuilder{
+	logGatewayRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    ruleDataType(typeLogPipeline, compatibilityMode),
 		serviceName: otelcollector.LogGatewayName + "-metrics",
 		namePrefix:  ruleNamePrefix(typeLogPipeline),
 	}
 
-	rules = append(rules, logRuleBuilder.rules()...)
+	rules = append(rules, logGatewayRuleBuilder.gatewayRules()...)
+
+	logAgentRuleBuilder := otelCollectorRuleBuilder{
+		dataType:    ruleDataType(typeLogPipeline, compatibilityMode),
+		serviceName: otelcollector.LogAgentName + "-metrics",
+		namePrefix:  ruleNamePrefix(typeLogPipeline),
+	}
+
+	rules = append(rules, logAgentRuleBuilder.agentRules()...)
 
 	FluentBitLogRuleBuilder := fluentBitRuleBuilder{}
 	rules = append(rules, FluentBitLogRuleBuilder.rules()...)
@@ -133,13 +146,6 @@ func ruleNamePrefix(t pipelineType) string {
 const (
 	RulesAny = "any"
 )
-
-// MatchesFluentBitLogPipelineRule checks if the given alert label set matches the expected rule name and pipeline name for a log pipeline.
-// If the alert does not have a name label, it should be matched by all pipelines.
-// RulesAny can be used to match any LogPipeline rule name.
-func MatchesFluentBitLogPipelineRule(labelSet map[string]string, unprefixedRuleName string, pipelineName string) bool {
-	return matchesRule(labelSet, unprefixedRuleName, pipelineName, typeLogPipeline)
-}
 
 // MatchesMetricPipelineRule checks if the given alert label set matches the expected rule name (or RulesAny) and pipeline name for a metric pipeline.
 // If the alert does not have an exporter label, it should be matched by all pipelines.
