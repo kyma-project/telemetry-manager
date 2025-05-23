@@ -14,7 +14,7 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -41,7 +41,7 @@ func TestPayloadParser(t *testing.T) {
 	resources = append(resources,
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
-		loggen.New(genNs).WithUseJSON().K8sObject(),
+		stdloggen.NewDeployment(genNs, stdloggen.WithScript(stdloggen.JSONScript)).K8sObject(),
 		&pipeline,
 	)
 	resources = append(resources, backend.K8sObjects()...)

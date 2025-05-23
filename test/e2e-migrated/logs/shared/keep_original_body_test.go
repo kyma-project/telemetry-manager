@@ -15,7 +15,7 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -69,8 +69,8 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 		kitk8s.NewNamespace(backendNsDropOriginal).K8sObject(),
 		&pipelineDropOriginal,
 		&pipelineKeepOriginal,
-		loggen.New(sourceNsKeepOriginal).WithUseJSON().K8sObject(),
-		loggen.New(sourceNsDropOriginal).WithUseJSON().K8sObject(),
+		stdloggen.NewDeployment(sourceNsKeepOriginal, stdloggen.WithScript(stdloggen.JSONScript)).K8sObject(),
+		stdloggen.NewDeployment(sourceNsDropOriginal, stdloggen.WithScript(stdloggen.JSONScript)).K8sObject(),
 	)
 	resources = append(resources, backendKeepOriginal.K8sObjects()...)
 	resources = append(resources, backendDropOriginal.K8sObjects()...)
@@ -213,8 +213,8 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 		kitk8s.NewNamespace(backendNsDropOriginal).K8sObject(),
 		&pipelineDropOriginal,
 		&pipelineKeepOriginal,
-		loggen.New(sourceNsKeepOriginal).WithUseJSON().K8sObject(),
-		loggen.New(sourceNsDropOriginal).WithUseJSON().K8sObject(),
+		stdloggen.NewDeployment(sourceNsKeepOriginal, stdloggen.WithScript(stdloggen.JSONScript)).K8sObject(),
+		stdloggen.NewDeployment(sourceNsDropOriginal, stdloggen.WithScript(stdloggen.JSONScript)).K8sObject(),
 	)
 	resources = append(resources, backendKeepOriginal.K8sObjects()...)
 	resources = append(resources, backendDropOriginal.K8sObjects()...)

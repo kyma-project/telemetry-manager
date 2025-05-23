@@ -17,7 +17,7 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/prometheus"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/floggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
@@ -33,7 +33,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsFluentBitOutage)
 
 		backend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithReplicas(0))
 
-		logProducer := loggen.New(mockNs).WithReplicas(2).WithLoad(loggen.LoadHigh)
+		logProducer := floggen.NewDeployment(mockNs).WithReplicas(2)
 
 		logPipeline := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
@@ -73,7 +73,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsFluentBitOutage)
 		})
 
 		It("Should have a log producer running", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: floggen.DefaultName})
 		})
 
 		It("Should wait for the log flow to gradually become unhealthy", func() {
