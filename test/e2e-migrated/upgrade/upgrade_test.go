@@ -49,7 +49,7 @@ func TestUpgrade(t *testing.T) {
 		require.NoError(t, kitk8s.CreateObjects(t.Context(), resources...))
 
 		assert.DeploymentReady(t.Context(), backend.NamespacedName())
-		assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
+		assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 
 		assert.FluentBitLogPipelineHealthy(t.Context(), pipelineName)
 		assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend, generatorNs)
@@ -61,7 +61,7 @@ func TestUpgrade(t *testing.T) {
 		})
 
 		assert.DeploymentReady(t.Context(), backend.NamespacedName())
-		assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
+		assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 
 		assert.FluentBitLogPipelineHealthy(t.Context(), pipelineName)
 		assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend, generatorNs)

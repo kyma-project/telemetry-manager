@@ -71,7 +71,7 @@ func TestContainerSelector_OTel(t *testing.T) {
 	assert.DeploymentReady(t.Context(), backend1.NamespacedName())
 	assert.DeploymentReady(t.Context(), backend2.NamespacedName())
 
-	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
+	assert.DaemonSetReady(t.Context(), kitkyma.LogAgentName)
 
 	assert.OTelLogPipelineHealthy(t.Context(), includePipelineName)
 	assert.OTelLogPipelineHealthy(t.Context(), excludePipelineName)
@@ -134,7 +134,7 @@ func TestContainerSelector_FluentBit(t *testing.T) {
 
 	assert.DeploymentReady(t.Context(), backend1.NamespacedName())
 	assert.DeploymentReady(t.Context(), backend2.NamespacedName())
-	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
+	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 
 	assert.FluentBitLogPipelineHealthy(t.Context(), includePipelineName)
 	assert.FluentBitLogPipelineHealthy(t.Context(), excludePipelineName)

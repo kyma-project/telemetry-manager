@@ -93,7 +93,7 @@ func TestMultiPipelineBroken_OTel(t *testing.T) {
 			assert.DeploymentReady(t.Context(), kitkyma.LogGatewayName)
 
 			if tc.expectAgent {
-				assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
+				assert.DaemonSetReady(t.Context(), kitkyma.LogAgentName)
 			}
 
 			assert.OTelLogPipelineHealthy(t.Context(), pipelineGood.Name)
@@ -148,7 +148,7 @@ func TestMultiPipelineBroken_FluentBit(t *testing.T) {
 	require.NoError(t, kitk8s.CreateObjects(t.Context(), resources...))
 
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
-	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
+	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 
 	assert.FluentBitLogPipelineHealthy(t.Context(), pipelineGood.Name)
 	assert.LogPipelineHasCondition(t.Context(), pipelineBroken.Name, metav1.Condition{

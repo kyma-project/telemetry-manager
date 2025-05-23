@@ -112,7 +112,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		})
 
 		It("Should have a running metric agent daemonset", func() {
-			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.MetricAgentName)
+			assert.DaemonSetReady(suite.Ctx, kitkyma.MetricAgentName)
 		})
 
 		It("Should have a metrics backend running", func() {
@@ -120,7 +120,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		})
 
 		It("Should have a running metric agent daemonset", func() {
-			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.MetricAgentName)
+			assert.DaemonSetReady(suite.Ctx, kitkyma.MetricAgentName)
 		})
 
 		It("Should verify istio proxy metric scraping", func() {

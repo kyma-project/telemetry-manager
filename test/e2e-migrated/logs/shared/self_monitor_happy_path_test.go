@@ -87,7 +87,7 @@ func TestSelfMonitorHappyPath_OTel(t *testing.T) {
 			assert.DeploymentReady(t.Context(), backend.NamespacedName())
 
 			if tc.expectAgent {
-				assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
+				assert.DaemonSetReady(t.Context(), kitkyma.LogAgentName)
 			}
 
 			assert.OTelLogsFromNamespaceDelivered(t.Context(), backend, genNs)
@@ -132,7 +132,7 @@ func TestSelfMonitorHappyPath_FluentBit(t *testing.T) {
 	assert.FluentBitLogPipelineHealthy(t.Context(), pipelineName)
 
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
-	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
+	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 	assert.DeploymentReady(t.Context(), kitkyma.SelfMonitorName)
 
 	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend, genNs)

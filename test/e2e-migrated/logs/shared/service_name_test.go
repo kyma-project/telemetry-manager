@@ -123,7 +123,7 @@ func TestServiceName_OTel(t *testing.T) {
 			assert.DeploymentReady(t.Context(), kitkyma.LogGatewayName)
 
 			if tc.expectAgent {
-				assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
+				assert.DaemonSetReady(t.Context(), kitkyma.LogAgentName)
 			}
 
 			assert.DeploymentReady(t.Context(), kitkyma.LogGatewayName)

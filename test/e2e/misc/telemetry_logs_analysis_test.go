@@ -168,8 +168,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 		})
 
 		It("Should have running agents", func() {
-			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.MetricAgentName)
-			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.FluentBitDaemonSetName)
+			assert.DaemonSetReady(suite.Ctx, kitkyma.MetricAgentName)
+			assert.DaemonSetReady(suite.Ctx, kitkyma.FluentBitDaemonSetName)
 		})
 
 		It("Should have running pipelines", func() {

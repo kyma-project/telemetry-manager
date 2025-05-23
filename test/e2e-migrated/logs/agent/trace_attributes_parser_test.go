@@ -59,7 +59,7 @@ func TestAttributesParser(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
+	assert.DaemonSetReady(t.Context(), kitkyma.LogAgentName)
 	assert.DeploymentReady(t.Context(), types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})
 
 	assert.OTelLogPipelineHealthy(t.Context(), pipelineName)

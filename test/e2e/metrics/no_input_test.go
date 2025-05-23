@@ -89,7 +89,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelSetA), Ordered
 		})
 
 		It("Ensures the metric agent DaemonSet is running", func() {
-			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.MetricAgentName)
+			assert.DaemonSetReady(suite.Ctx, kitkyma.MetricAgentName)
 		})
 
 		It("Should delete the pipeline with input", func() {
@@ -97,7 +97,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelSetA), Ordered
 		})
 
 		It("Ensures the metric agent DaemonSet is no longer running", func() {
-			assert.DaemonSetNotFound(suite.Ctx, suite.K8sClient, kitkyma.MetricAgentName)
+			assert.DaemonSetNotFound(suite.Ctx, kitkyma.MetricAgentName)
 		})
 	})
 })

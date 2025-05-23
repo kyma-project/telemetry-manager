@@ -81,7 +81,7 @@ func TestCustomFilterAllowed(t *testing.T) {
 
 	assert.FluentBitLogPipelineHealthy(t.Context(), pipelineName)
 	assert.LogPipelineUnsupportedMode(t.Context(), pipelineName, true)
-	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
+	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
 	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend, includeNs)
 	assert.FluentBitLogsFromNamespaceNotDelivered(t.Context(), backend, excludeNs)

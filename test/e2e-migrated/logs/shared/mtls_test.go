@@ -93,7 +93,7 @@ func TestMTLS_OTel(t *testing.T) {
 			assert.DeploymentReady(t.Context(), kitkyma.LogGatewayName)
 
 			if tc.expectAgent {
-				assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
+				assert.DaemonSetReady(t.Context(), kitkyma.LogAgentName)
 			}
 
 			assert.OTelLogsFromNamespaceDelivered(t.Context(), backend, genNs)
@@ -144,6 +144,6 @@ func TestMTLS_FluentBit(t *testing.T) {
 
 	assert.FluentBitLogPipelineHealthy(t.Context(), pipelineName)
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
-	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
+	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend, backendNs)
 }

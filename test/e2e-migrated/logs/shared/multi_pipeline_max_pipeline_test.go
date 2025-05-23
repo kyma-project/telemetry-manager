@@ -92,7 +92,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	require.NoError(t, kitk8s.CreateObjects(t.Context(), pipelines...))
 
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
-	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
+	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 
 	t.Log("Asserting 5 pipelines are healthy")
 
@@ -269,7 +269,7 @@ func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
 	require.NoError(t, kitk8s.CreateObjects(t.Context(), pipelines...))
 
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
-	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
+	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 
 	t.Log("Asserting 5 pipelines are healthy")
 

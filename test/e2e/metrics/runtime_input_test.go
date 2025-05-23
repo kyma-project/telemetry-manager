@@ -155,7 +155,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 		})
 
 		It("Ensures the metric agent daemonset is ready", func() {
-			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.MetricAgentName)
+			assert.DaemonSetReady(suite.Ctx, kitkyma.MetricAgentName)
 		})
 
 		It("Should have metrics backends running", func() {
@@ -168,7 +168,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 
 		It("should have workloads created properly", func() {
 			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: DeploymentName, Namespace: mockNs})
-			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: DaemonSetName, Namespace: mockNs})
+			assert.DaemonSetReady(suite.Ctx, types.NamespacedName{Name: DaemonSetName, Namespace: mockNs})
 			assert.StatefulSetReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: StatefulSetName, Namespace: mockNs})
 			assert.JobReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: JobName, Namespace: mockNs})
 		})

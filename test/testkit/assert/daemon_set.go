@@ -12,19 +12,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-func DaemonSetReady(ctx context.Context, k8sClient client.Client, name types.NamespacedName) {
+func DaemonSetReady(ctx context.Context, name types.NamespacedName) {
 	Eventually(func(g Gomega) {
-		ready, err := isDaemonSetReady(ctx, k8sClient, name)
+		ready, err := isDaemonSetReady(ctx, suite.K8sClient, name)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(ready).To(BeTrueBecause("DaemonSet not ready"))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func DaemonSetNotFound(ctx context.Context, k8sClient client.Client, name types.NamespacedName) {
+func DaemonSetNotFound(ctx context.Context, name types.NamespacedName) {
 	Eventually(func(g Gomega) {
-		_, err := isDaemonSetReady(ctx, k8sClient, name)
+		_, err := isDaemonSetReady(ctx, suite.K8sClient, name)
 		g.Expect(err).To(HaveOccurred())
 		g.Expect(apierrors.IsNotFound(err)).To(BeTrue())
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())

@@ -128,7 +128,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 			Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
 			if tc.expectAgent {
-				assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
+				assert.DaemonSetReady(t.Context(), kitkyma.LogAgentName)
 			}
 
 			assert.DeploymentReady(t.Context(), kitkyma.LogGatewayName)
@@ -201,7 +201,7 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 
 	assert.FluentBitLogPipelineHealthy(t.Context(), pipelineNameNotDropped)
 	assert.FluentBitLogPipelineHealthy(t.Context(), pipelineNameDropped)
-	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
+	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 	assert.DeploymentReady(t.Context(), types.NamespacedName{Namespace: notDroppedNs, Name: kitbackend.DefaultName})
 	assert.DeploymentReady(t.Context(), types.NamespacedName{Namespace: droppedNs, Name: kitbackend.DefaultName})
 	assert.DeploymentReady(t.Context(), types.NamespacedName{Namespace: genNs, Name: loggen.DefaultName})

@@ -79,7 +79,7 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 			assert.DeploymentReady(t.Context(), kitkyma.LogGatewayName)
 
 			if tc.expectAgent {
-				assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
+				assert.DaemonSetReady(t.Context(), kitkyma.LogAgentName)
 				agentMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.LogAgentMetricsService.Namespace, kitkyma.LogAgentMetricsService.Name, "metrics", ports.Metrics)
 				assert.EmitsOTelCollectorMetrics(t.Context(), agentMetricsURL)
 			}
@@ -116,7 +116,7 @@ func TestMetricsEndpoint_FluentBit(t *testing.T) {
 	})
 	require.NoError(t, kitk8s.CreateObjects(t.Context(), resources...))
 
-	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
+	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 
 	assert.FluentBitLogPipelineHealthy(t.Context(), pipelineName)
 	assert.LogPipelineUnsupportedMode(t.Context(), pipelineName, false)

@@ -65,7 +65,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsFluentBitOutage)
 		})
 
 		It("Should have a running log agent daemonset", func() {
-			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.FluentBitDaemonSetName)
+			assert.DaemonSetReady(suite.Ctx, kitkyma.FluentBitDaemonSetName)
 		})
 
 		It("Should have a log backend running", func() {

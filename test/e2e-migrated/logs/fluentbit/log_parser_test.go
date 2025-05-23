@@ -59,7 +59,7 @@ Types user:string pass:string`
 	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
 	assert.FluentBitLogPipelineHealthy(t.Context(), pipelineName)
-	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
+	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
 	assert.DeploymentReady(t.Context(), logProducer.NamespacedName())
 
