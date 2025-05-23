@@ -33,10 +33,10 @@ type BuildOptions struct {
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {
 	cfg := &Config{
-		Base: config.Base{
-			Service:    config.DefaultService(make(config.Pipelines), opts.InternalMetricCompatibilityMode),
-			Extensions: config.DefaultExtensions(),
-		},
+		Base: *config.DefaultBaseConfig(
+			make(config.Pipelines),
+			opts.InternalMetricCompatibilityMode,
+			config.WithK8sLeaderElector("serviceAccount", "telemetry-metric-gateway-kymastats", opts.GatewayNamespace)),
 		Receivers:  makeReceiversConfig(),
 		Processors: makeProcessorsConfig(opts),
 		Exporters:  make(Exporters),
@@ -84,7 +84,7 @@ func declareComponentsForMetricPipeline(
 	envVars otlpexporter.EnvVars,
 	opts BuildOptions,
 ) error {
-	declareSingletonKymaStatsReceiverCreator(cfg, opts)
+	declareKymaStatsReceiver(cfg)
 	declareDiagnosticMetricsDropFilters(pipeline, cfg)
 	declareInputSourceFilters(pipeline, cfg)
 	declareRuntimeResourcesFilters(pipeline, cfg)
@@ -95,8 +95,8 @@ func declareComponentsForMetricPipeline(
 	return declareOTLPExporter(ctx, otlpExporterBuilder, pipeline, cfg, envVars)
 }
 
-func declareSingletonKymaStatsReceiverCreator(cfg *Config, opts BuildOptions) {
-	cfg.Receivers.SingletonKymaStatsReceiverCreator = makeSingletonKymaStatsReceiverCreatorConfig(opts.GatewayNamespace)
+func declareKymaStatsReceiver(cfg *Config) {
+	cfg.Receivers.KymaStatsReceiver = makeKymaStatsReceiverConfig()
 }
 
 func declareDiagnosticMetricsDropFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {

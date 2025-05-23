@@ -16,11 +16,11 @@ type Config struct {
 }
 
 type Receivers struct {
-	KubeletStats                       *KubeletStatsReceiver               `yaml:"kubeletstats,omitempty"`
-	SingletonK8sClusterReceiverCreator *SingletonK8sClusterReceiverCreator `yaml:"singleton_receiver_creator/k8s_cluster,omitempty"`
-	PrometheusAppPods                  *PrometheusReceiver                 `yaml:"prometheus/app-pods,omitempty"`
-	PrometheusAppServices              *PrometheusReceiver                 `yaml:"prometheus/app-services,omitempty"`
-	PrometheusIstio                    *PrometheusReceiver                 `yaml:"prometheus/istio,omitempty"`
+	KubeletStats          *KubeletStatsReceiver `yaml:"kubeletstats,omitempty"`
+	K8sClusterReceiver    *K8sClusterReceiver   `yaml:"k8s_cluster,omitempty"`
+	PrometheusAppPods     *PrometheusReceiver   `yaml:"prometheus/app-pods,omitempty"`
+	PrometheusAppServices *PrometheusReceiver   `yaml:"prometheus/app-services,omitempty"`
+	PrometheusIstio       *PrometheusReceiver   `yaml:"prometheus/istio,omitempty"`
 }
 
 type KubeletStatsReceiver struct {
@@ -141,16 +141,7 @@ type K8sClusterReceiver struct {
 	CollectionInterval     string                  `yaml:"collection_interval"`
 	NodeConditionsToReport []string                `yaml:"node_conditions_to_report"`
 	Metrics                K8sClusterMetricsToDrop `yaml:"metrics"`
-}
-
-type SingletonK8sClusterReceiver struct {
-	K8sClusterReceiver K8sClusterReceiver `yaml:"k8s_cluster"`
-}
-
-type SingletonK8sClusterReceiverCreator struct {
-	AuthType                    string                      `yaml:"auth_type"`
-	LeaderElection              metric.LeaderElection       `yaml:"leader_election"`
-	SingletonK8sClusterReceiver SingletonK8sClusterReceiver `yaml:"receiver"`
+	K8sLeaderElector       string                  `yaml:"k8s_leader_elector"`
 }
 
 type PrometheusReceiver struct {
