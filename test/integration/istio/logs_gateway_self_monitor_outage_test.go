@@ -17,32 +17,35 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/prometheus"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsOutage), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsGatewayOutage, suite.LabelExperimental), Ordered, func() {
 	var (
-		mockNs       = suite.ID()
+		mockNs       = "istio-permissive-mtls"
 		pipelineName = suite.ID()
 	)
 
 	makeResources := func() []client.Object {
-		var objs []client.Object
-		objs = append(objs, kitk8s.NewNamespace(mockNs, kitk8s.WithIstioInjection()).K8sObject())
 
-		backend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithReplicas(0))
+		backend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithReplicas(0))
 
-		logProducer := loggen.New(mockNs).WithReplicas(2).WithLoad(loggen.LoadHigh)
+		logGenerator := telemetrygen.NewDeployment(mockNs, telemetrygen.SignalTypeLogs,
+			telemetrygen.WithRate(800),
+			telemetrygen.WithWorkers(5))
 
 		logPipeline := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
-			WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
+			WithInput(testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(mockNs))).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 			Build()
 
+		objs := []client.Object{
+			logGenerator.K8sObject(),
+			&logPipeline,
+		}
 		objs = append(objs, backend.K8sObjects()...)
-		objs = append(objs, logProducer.K8sObject())
-		objs = append(objs, &logPipeline)
 
 		return objs
 	}
@@ -57,37 +60,36 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsOutage), Ordered
 		})
 
 		It("Should have a running logpipeline", func() {
-			assert.FluentBitLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+			assert.OTelLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+		})
+
+		It("Should have a running log gateway deployment", func() {
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.LogGatewayName)
 		})
 
 		It("Should have a running self-monitor", func() {
 			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.SelfMonitorName)
 		})
 
-		It("Should have a running log agent daemonset", func() {
-			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.FluentBitDaemonSetName)
-		})
-
 		It("Should have a log backend running", func() {
 			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
 		})
 
-		It("Should have a log producer running", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
+		It("Should have a telemetrygen running", func() {
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: telemetrygen.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should wait for the log flow to gradually become unhealthy", func() {
 			assert.LogPipelineConditionReasonsTransition(suite.Ctx, suite.K8sClient, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 				{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
-				{Reason: conditions.ReasonSelfMonNoLogsDelivered, Status: metav1.ConditionFalse},
-				{Reason: conditions.ReasonSelfMonAllDataDropped, Status: metav1.ConditionFalse},
+				{Reason: conditions.ReasonSelfMonGatewayAllDataDropped, Status: metav1.ConditionFalse},
 			})
 
 			assert.TelemetryHasState(suite.Ctx, suite.K8sClient, operatorv1alpha1.StateWarning)
 			assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeLogComponentsHealthy,
 				Status: metav1.ConditionFalse,
-				Reason: conditions.ReasonSelfMonAllDataDropped,
+				Reason: conditions.ReasonSelfMonGatewayAllDataDropped,
 			})
 		})
 

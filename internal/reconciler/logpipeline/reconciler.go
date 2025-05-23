@@ -35,7 +35,7 @@ var (
 )
 
 type FlowHealthProber interface {
-	Probe(ctx context.Context, pipelineName string) (prober.LogPipelineProbeResult, error)
+	Probe(ctx context.Context, pipelineName string) (prober.FluentBitProbeResult, error)
 }
 
 type LogPipelineReconciler interface {

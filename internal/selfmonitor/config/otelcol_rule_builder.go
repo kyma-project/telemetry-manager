@@ -26,12 +26,20 @@ type otelCollectorRuleBuilder struct {
 	namePrefix  string
 }
 
-func (rb otelCollectorRuleBuilder) rules() []Rule {
+func (rb otelCollectorRuleBuilder) gatewayRules() []Rule {
 	return []Rule{
 		rb.makeRule(RuleNameGatewayAllDataDropped, rb.allDataDroppedExpr()),
 		rb.makeRule(RuleNameGatewaySomeDataDropped, rb.someDataDroppedExpr()),
 		rb.makeRule(RuleNameGatewayQueueAlmostFull, rb.queueAlmostFullExpr()),
 		rb.makeRule(RuleNameGatewayThrottling, rb.throttlingExpr()),
+	}
+}
+
+func (rb otelCollectorRuleBuilder) agentRules() []Rule {
+	return []Rule{
+		rb.makeRule(RuleNameAgentAllDataDropped, rb.allDataDroppedExpr()),
+		rb.makeRule(RuleNameAgentSomeDataDropped, rb.someDataDroppedExpr()),
+		rb.makeRule(RuleNameAgentQueueAlmostFull, rb.queueAlmostFullExpr()),
 	}
 }
 

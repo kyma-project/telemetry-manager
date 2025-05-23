@@ -140,7 +140,7 @@ func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *
 	probeResult, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
 	if err != nil {
 		logf.FromContext(ctx).Error(err, "Failed to probe flow health")
-		return metav1.ConditionUnknown, conditions.ReasonSelfMonProbingFailed
+		return metav1.ConditionUnknown, conditions.ReasonSelfMonAgentProbingFailed
 	}
 
 	logf.FromContext(ctx).V(1).Info("Probed flow health", "result", probeResult)
@@ -153,16 +153,16 @@ func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *
 	return metav1.ConditionFalse, reason
 }
 
-func flowHealthReasonFor(probeResult prober.LogPipelineProbeResult) string {
+func flowHealthReasonFor(probeResult prober.FluentBitProbeResult) string {
 	switch {
 	case probeResult.AllDataDropped:
-		return conditions.ReasonSelfMonAllDataDropped
+		return conditions.ReasonSelfMonAgentAllDataDropped
 	case probeResult.SomeDataDropped:
-		return conditions.ReasonSelfMonSomeDataDropped
+		return conditions.ReasonSelfMonAgentSomeDataDropped
 	case probeResult.NoLogsDelivered:
-		return conditions.ReasonSelfMonNoLogsDelivered
+		return conditions.ReasonSelfMonAgentNoLogsDelivered
 	case probeResult.BufferFillingUp:
-		return conditions.ReasonSelfMonBufferFillingUp
+		return conditions.ReasonSelfMonAgentBufferFillingUp
 	default:
 		return conditions.ReasonSelfMonFlowHealthy
 	}

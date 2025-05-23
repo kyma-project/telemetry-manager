@@ -5,10 +5,8 @@ package istio
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
@@ -19,38 +17,38 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/prometheus"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesOutage), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsAgentOutage, suite.LabelExperimental), Ordered, func() {
 	var (
 		mockNs       = "istio-permissive-mtls"
 		pipelineName = suite.ID()
 	)
 
 	makeResources := func() []client.Object {
-		var objs []client.Object
 
-		backend := kitbackend.New(mockNs, kitbackend.SignalTypeTraces, kitbackend.WithReplicas(0))
-		objs = append(objs, backend.K8sObjects()...)
+		backend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithReplicas(0))
 
-		tracePipeline := testutils.NewTracePipelineBuilder().
+		logProducer := loggen.New(mockNs).WithReplicas(3).WithLoad(loggen.LoadHigh)
+
+		logPipeline := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
+			WithInput(testutils.BuildLogPipelineApplicationInput(testutils.ExtIncludeNamespaces(mockNs))).
 			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 			Build()
 
-		objs = append(objs,
-			&tracePipeline,
-			telemetrygen.NewDeployment(mockNs, telemetrygen.SignalTypeTraces,
-				telemetrygen.WithRate(80),
-				telemetrygen.WithWorkers(10)).K8sObject(),
-		)
+		objs := []client.Object{
+			logProducer.K8sObject(),
+			&logPipeline,
+		}
+		objs = append(objs, backend.K8sObjects()...)
 
 		return objs
 	}
 
-	Context("When a tracepipeline exists", Ordered, func() {
+	Context("When a logpipeline exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
@@ -59,60 +57,38 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesOutage), Order
 			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running tracepipeline", func() {
-			assert.TracePipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+		It("Should have a running logpipeline", func() {
+			assert.OTelLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 		})
 
-		It("Should have a running trace gateway deployment", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.TraceGatewayName)
+		It("Should have a running log agent daemonset", func() {
+			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.LogAgentName)
 		})
 
 		It("Should have a running self-monitor", func() {
 			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.SelfMonitorName)
 		})
 
-		It("Should have a trace backend running", func() {
+		It("Should have a log backend running", func() {
 			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
 		})
 
-		It("Should have a telemetrygen running", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: telemetrygen.DefaultName, Namespace: mockNs})
+		It("Should have a log producer running", func() {
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 		})
 
-		It("Should wait for the trace flow to report a full buffer", func() {
-			assert.TracePipelineConditionReasonsTransition(suite.Ctx, suite.K8sClient, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
+		It("Should wait for the log flow to gradually become unhealthy", func() {
+			assert.LogPipelineConditionReasonsTransition(suite.Ctx, suite.K8sClient, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 				{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
-				{Reason: conditions.ReasonSelfMonGatewayBufferFillingUp, Status: metav1.ConditionFalse},
+				{Reason: conditions.ReasonSelfMonAgentBufferFillingUp, Status: metav1.ConditionFalse},
+				{Reason: conditions.ReasonSelfMonAgentAllDataDropped, Status: metav1.ConditionFalse},
 			})
 
 			assert.TelemetryHasState(suite.Ctx, suite.K8sClient, operatorv1alpha1.StateWarning)
 			assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
-				Type:   conditions.TypeTraceComponentsHealthy,
+				Type:   conditions.TypeLogComponentsHealthy,
 				Status: metav1.ConditionFalse,
-				Reason: conditions.ReasonSelfMonGatewayBufferFillingUp,
-			})
-		})
-
-		It("Should stop sending metrics from telemetrygen", func() {
-			var telgen appsv1.Deployment
-			err := suite.K8sClient.Get(suite.Ctx, types.NamespacedName{Namespace: mockNs, Name: telemetrygen.DefaultName}, &telgen)
-			Expect(err).NotTo(HaveOccurred())
-
-			telgen.Spec.Replicas = ptr.To(int32(0))
-			err = suite.K8sClient.Update(suite.Ctx, &telgen)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("Should wait for the trace flow to report dropped metrics", func() {
-			assert.TracePipelineConditionReasonsTransition(suite.Ctx, suite.K8sClient, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
-				{Reason: conditions.ReasonSelfMonGatewayAllDataDropped, Status: metav1.ConditionFalse},
-			})
-
-			assert.TelemetryHasState(suite.Ctx, suite.K8sClient, operatorv1alpha1.StateWarning)
-			assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
-				Type:   conditions.TypeTraceComponentsHealthy,
-				Status: metav1.ConditionFalse,
-				Reason: conditions.ReasonSelfMonGatewayAllDataDropped,
+				Reason: conditions.ReasonSelfMonAgentAllDataDropped,
 			})
 		})
 

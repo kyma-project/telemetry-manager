@@ -13,13 +13,13 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober/mocks"
 )
 
-func TestOTelPipelineProber(t *testing.T) {
+func TestOTelTraceGatewayProber(t *testing.T) {
 	testCases := []struct {
 		name         string
 		alerts       promv1.AlertsResult
 		alertsErr    error
 		pipelineName string
-		expected     OTelPipelineProbeResult
+		expected     OTelGatewayProbeResult
 		expectErr    bool
 	}{
 		{
@@ -34,7 +34,7 @@ func TestOTelPipelineProber(t *testing.T) {
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{},
 			},
-			expected: OTelPipelineProbeResult{
+			expected: OTelGatewayProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					Healthy: true,
 				},
@@ -54,7 +54,7 @@ func TestOTelPipelineProber(t *testing.T) {
 					},
 				},
 			},
-			expected: OTelPipelineProbeResult{
+			expected: OTelGatewayProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					Healthy: true,
 				},
@@ -73,7 +73,7 @@ func TestOTelPipelineProber(t *testing.T) {
 					},
 				},
 			},
-			expected: OTelPipelineProbeResult{
+			expected: OTelGatewayProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					Healthy: true,
 				},
@@ -92,7 +92,7 @@ func TestOTelPipelineProber(t *testing.T) {
 					},
 				},
 			},
-			expected: OTelPipelineProbeResult{
+			expected: OTelGatewayProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					AllDataDropped: true,
 					Healthy:        false,
@@ -113,7 +113,7 @@ func TestOTelPipelineProber(t *testing.T) {
 					},
 				},
 			},
-			expected: OTelPipelineProbeResult{
+			expected: OTelGatewayProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					Healthy: true,
 				},
@@ -133,7 +133,7 @@ func TestOTelPipelineProber(t *testing.T) {
 					},
 				},
 			},
-			expected: OTelPipelineProbeResult{
+			expected: OTelGatewayProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					Healthy: true,
 				},
@@ -160,7 +160,7 @@ func TestOTelPipelineProber(t *testing.T) {
 					},
 				},
 			},
-			expected: OTelPipelineProbeResult{
+			expected: OTelGatewayProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					Healthy: true,
 				},
@@ -180,7 +180,7 @@ func TestOTelPipelineProber(t *testing.T) {
 					},
 				},
 			},
-			expected: OTelPipelineProbeResult{
+			expected: OTelGatewayProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					AllDataDropped: true,
 				},
@@ -200,7 +200,7 @@ func TestOTelPipelineProber(t *testing.T) {
 					},
 				},
 			},
-			expected: OTelPipelineProbeResult{
+			expected: OTelGatewayProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					SomeDataDropped: true,
 				},
@@ -220,7 +220,7 @@ func TestOTelPipelineProber(t *testing.T) {
 					},
 				},
 			},
-			expected: OTelPipelineProbeResult{
+			expected: OTelGatewayProbeResult{
 				QueueAlmostFull: true,
 			},
 		},
@@ -238,7 +238,7 @@ func TestOTelPipelineProber(t *testing.T) {
 					},
 				},
 			},
-			expected: OTelPipelineProbeResult{
+			expected: OTelGatewayProbeResult{
 				Throttling: true,
 			},
 		},
@@ -250,7 +250,7 @@ func TestOTelPipelineProber(t *testing.T) {
 					{},
 				},
 			},
-			expected: OTelPipelineProbeResult{
+			expected: OTelGatewayProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					Healthy: true,
 				},
@@ -260,7 +260,7 @@ func TestOTelPipelineProber(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			sut, err := NewTracePipelineProber(types.NamespacedName{Name: "test"})
+			sut, err := NewOTelTraceGatewayProber(types.NamespacedName{Name: "test"})
 			require.NoError(t, err)
 
 			alertGetterMock := &mocks.AlertGetter{}
@@ -284,13 +284,13 @@ func TestOTelPipelineProber(t *testing.T) {
 	}
 }
 
-func TestOTelMetricPipelineProber(t *testing.T) {
+func TestOTelMetricGatewayProber(t *testing.T) {
 	testCases := []struct {
 		name         string
 		alerts       promv1.AlertsResult
 		alertsErr    error
 		pipelineName string
-		expected     OTelPipelineProbeResult
+		expected     OTelGatewayProbeResult
 		expectErr    bool
 	}{
 		{
@@ -307,7 +307,7 @@ func TestOTelMetricPipelineProber(t *testing.T) {
 					},
 				},
 			},
-			expected: OTelPipelineProbeResult{
+			expected: OTelGatewayProbeResult{
 				Throttling: true,
 			},
 		},
@@ -319,7 +319,7 @@ func TestOTelMetricPipelineProber(t *testing.T) {
 					{},
 				},
 			},
-			expected: OTelPipelineProbeResult{
+			expected: OTelGatewayProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					Healthy: true,
 				},
@@ -329,7 +329,62 @@ func TestOTelMetricPipelineProber(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			sut, err := NewMetricPipelineProber(types.NamespacedName{Name: "test"})
+			sut, err := NewOTelMetricGatewayProber(types.NamespacedName{Name: "test"})
+			require.NoError(t, err)
+
+			alertGetterMock := &mocks.AlertGetter{}
+			if tc.alertsErr != nil {
+				alertGetterMock.On("Alerts", mock.Anything).Return(promv1.AlertsResult{}, tc.alertsErr)
+			} else {
+				alertGetterMock.On("Alerts", mock.Anything).Return(tc.alerts, nil)
+			}
+
+			sut.getter = alertGetterMock
+
+			result, err := sut.Probe(t.Context(), tc.pipelineName)
+
+			if tc.expectErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tc.expected, result)
+			}
+		})
+	}
+}
+
+func TestOTelLogGatewayProber(t *testing.T) {
+	testCases := []struct {
+		name         string
+		alerts       promv1.AlertsResult
+		alertsErr    error
+		pipelineName string
+		expected     OTelGatewayProbeResult
+		expectErr    bool
+	}{
+		{
+			name:         "alert getter fails",
+			pipelineName: "cls",
+			alertsErr:    assert.AnError,
+			expectErr:    true,
+		},
+		{
+			name:         "no alerts firing",
+			pipelineName: "cls",
+			alerts: promv1.AlertsResult{
+				Alerts: []promv1.Alert{},
+			},
+			expected: OTelGatewayProbeResult{
+				PipelineProbeResult: PipelineProbeResult{
+					Healthy: true,
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			sut, err := NewOTelLogGatewayProber(types.NamespacedName{Name: "test"})
 			require.NoError(t, err)
 
 			alertGetterMock := &mocks.AlertGetter{}

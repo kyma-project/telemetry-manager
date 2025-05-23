@@ -10,44 +10,48 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
 )
 
-// OTelPipelineProber is a prober for OTel Collector pipelines
-type OTelPipelineProber struct {
+// OTelGatewayProber is a prober for OTel Gateway
+type OTelGatewayProber struct {
 	getter  alertGetter
 	matcher matcherFunc
 }
 
-type OTelPipelineProbeResult struct {
+type OTelGatewayProbeResult struct {
 	PipelineProbeResult
 
 	QueueAlmostFull bool
 	Throttling      bool
 }
 
-func NewMetricPipelineProber(selfMonitorName types.NamespacedName) (*OTelPipelineProber, error) {
-	return newOTelPipelineProber(selfMonitorName, config.MatchesMetricPipelineRule)
+func NewOTelMetricGatewayProber(selfMonitorName types.NamespacedName) (*OTelGatewayProber, error) {
+	return newOTelGatewayProber(selfMonitorName, config.MatchesMetricPipelineRule)
 }
 
-func NewTracePipelineProber(selfMonitorName types.NamespacedName) (*OTelPipelineProber, error) {
-	return newOTelPipelineProber(selfMonitorName, config.MatchesTracePipelineRule)
+func NewOTelTraceGatewayProber(selfMonitorName types.NamespacedName) (*OTelGatewayProber, error) {
+	return newOTelGatewayProber(selfMonitorName, config.MatchesTracePipelineRule)
 }
 
-func newOTelPipelineProber(selfMonitorName types.NamespacedName, matcher matcherFunc) (*OTelPipelineProber, error) {
+func NewOTelLogGatewayProber(selfMonitorName types.NamespacedName) (*OTelGatewayProber, error) {
+	return newOTelGatewayProber(selfMonitorName, config.MatchesLogPipelineRule)
+}
+
+func newOTelGatewayProber(selfMonitorName types.NamespacedName, matcher matcherFunc) (*OTelGatewayProber, error) {
 	promClient, err := newPrometheusClient(selfMonitorName)
 	if err != nil {
 		return nil, err
 	}
 
-	return &OTelPipelineProber{
+	return &OTelGatewayProber{
 		getter:  promClient,
 		matcher: matcher,
 	}, nil
 }
 
 //nolint:dupl // Keep it duplicated for now, as Fluent Bit logging will be replaced by OpenTelemetry
-func (p *OTelPipelineProber) Probe(ctx context.Context, pipelineName string) (OTelPipelineProbeResult, error) {
+func (p *OTelGatewayProber) Probe(ctx context.Context, pipelineName string) (OTelGatewayProbeResult, error) {
 	alerts, err := retrieveAlerts(ctx, p.getter)
 	if err != nil {
-		return OTelPipelineProbeResult{}, fmt.Errorf("failed to retrieve alerts: %w", err)
+		return OTelGatewayProbeResult{}, fmt.Errorf("failed to retrieve alerts: %w", err)
 	}
 
 	allDropped := p.isFiring(alerts, config.RuleNameGatewayAllDataDropped, pipelineName)
@@ -56,7 +60,7 @@ func (p *OTelPipelineProber) Probe(ctx context.Context, pipelineName string) (OT
 	throttling := p.isFiring(alerts, config.RuleNameGatewayThrottling, pipelineName)
 	healthy := !allDropped && !someDropped && !queueAlmostFull && !throttling
 
-	return OTelPipelineProbeResult{
+	return OTelGatewayProbeResult{
 		PipelineProbeResult: PipelineProbeResult{
 			AllDataDropped:  allDropped,
 			SomeDataDropped: someDropped,
@@ -67,6 +71,6 @@ func (p *OTelPipelineProber) Probe(ctx context.Context, pipelineName string) (OT
 	}, nil
 }
 
-func (p *OTelPipelineProber) isFiring(alerts []promv1.Alert, ruleName, pipelineName string) bool {
+func (p *OTelGatewayProber) isFiring(alerts []promv1.Alert, ruleName, pipelineName string) bool {
 	return isFiringWithMatcher(alerts, ruleName, pipelineName, p.matcher)
 }
