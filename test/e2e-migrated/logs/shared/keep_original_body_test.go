@@ -235,7 +235,7 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineKeepOriginalName)
 	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineDropOriginalName)
 
-	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backendDropOriginal, sourceNsKeepOriginal)
+	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backendDropOriginal, sourceNsDropOriginal)
 
 	// Scenario [keepOriginalBody=false with JSON logs]: Ship `JSON` Logs without original body
 	assert.BackendDataConsistentlyMatches(t.Context(), backendDropOriginal, fluentbit.HaveFlatLogs(
@@ -252,7 +252,7 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 		)),
 	))
 
-	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backendKeepOriginal, sourceNsDropOriginal)
+	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backendKeepOriginal, sourceNsKeepOriginal)
 
 	// Scenario [keepOriginalBody=true with JSON logs]: Ship `JSON` Logs with original body shipped to Backend2
 	assert.BackendDataEventuallyMatches(t.Context(), backendKeepOriginal, fluentbit.HaveFlatLogs(
