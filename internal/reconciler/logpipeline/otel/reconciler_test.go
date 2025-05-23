@@ -666,9 +666,13 @@ func TestReconcile(t *testing.T) {
 				pipelineLock := &mocks.PipelineLock{}
 				pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 				pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
+				pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 				pipelineValidatorWithStubs := &Validator{
-					PipelineLock: pipelineLock,
+					PipelineLock:       pipelineLock,
+					EndpointValidator:  stubs.NewEndpointValidator(nil),
+					TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+					SecretRefValidator: stubs.NewSecretRefValidator(nil),
 				}
 
 				errToMsg := &conditions.ErrorToMessageConverter{}
