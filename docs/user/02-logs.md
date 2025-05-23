@@ -454,7 +454,7 @@ Additionally, the agent enriches every log record with the `cluster_identifier` 
 }
 ```
 
-For LogPipelines that use an HTTP output, additionally, the following attributes are enriched for an optimized user experience when integrating with SAP Cloud Logging:
+For LogPipelines that use an HTTP output, the following attributes are enriched for an optimized user experience when integrating with SAP Cloud Logging:
 
 ```json
 {
@@ -472,7 +472,7 @@ The enriched timestamp attributes have the following meaning:
 
 - **time**: The time when the container runtime captured the log on `stdout/stderr`, which is very close to the time when the log originated in the application.
 - **date**: The time when the log agent processed the log, which is later than the value in `time`.
-- **@timestamp**: contains the same value as **time** and is present for an optimized experience with the SAP Cloud Logging integration.
+- **@timestamp**: Contains the same value as **time** and is present for an optimized experience with the SAP Cloud Logging integration.
 
 ## Operations
 
