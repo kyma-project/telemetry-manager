@@ -11,11 +11,13 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
-func UnmarshalSignals[T plog.Logs | pmetric.Metrics | ptrace.Traces](jsonlSignals []byte, unmarshal func(buf []byte) (T, error)) ([]T, error) {
+// UnmarshalPdata reads and unmarshals pdata signals from a JSONL-encoded byte slice (every line is a JSON document encoding pdata).
+// It processes each line of the input data and applies the provided unmarshal function.
+func UnmarshalPdata[T plog.Logs | pmetric.Metrics | ptrace.Traces](data []byte, unmarshal func(buf []byte) (T, error)) ([]T, error) {
 	var allSignals []T
 
 	// User bufio.Reader instead of bufio.Scanner to handle very long lines gracefully
-	reader := bufio.NewReader(bytes.NewReader(jsonlSignals))
+	reader := bufio.NewReader(bytes.NewReader(data))
 
 	for {
 		line, readerErr := reader.ReadBytes('\n')
@@ -26,7 +28,7 @@ func UnmarshalSignals[T plog.Logs | pmetric.Metrics | ptrace.Traces](jsonlSignal
 		if len(line) > 0 {
 			signals, err := unmarshal(line)
 			if err != nil {
-				return nil, fmt.Errorf("failed to unmarshal logs: %w", readerErr)
+				return nil, handleUnmarshalError(err, line, len(data))
 			}
 
 			allSignals = append(allSignals, signals)
@@ -39,4 +41,15 @@ func UnmarshalSignals[T plog.Logs | pmetric.Metrics | ptrace.Traces](jsonlSignal
 	}
 
 	return allSignals, nil
+}
+
+func handleUnmarshalError(err error, line []byte, dataSize int) error {
+	size := len(line)
+	const maxPreviewSize = 100
+	lastElems := line
+	if size > maxPreviewSize {
+		lastElems = line[size-maxPreviewSize:]
+	}
+
+	return fmt.Errorf("failed to unmarshal logs: %w, body size: %d, last 100 elems: %q", err, dataSize, string(lastElems))
 }
