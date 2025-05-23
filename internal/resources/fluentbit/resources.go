@@ -622,6 +622,14 @@ func makeParserConfigmap(name types.NamespacedName) *corev1.ConfigMap {
 func makeLuaConfigMap(name types.NamespacedName) *corev1.ConfigMap {
 	//nolint:dupword // Ignore lua syntax code duplications.
 	luaFilter := `
+function enrich_app_name(tag, timestamp, record)
+  if record.kubernetes == nil or record.kubernetes.labels == nil then
+    return 0
+  end
+  local labels = record.kubernetes.labels
+  record.kubernetes["app_name"] = labels["app.kubernetes.io/name"] or labels["app"]
+  return 1, timestamp, record
+end
 function kubernetes_map_keys(tag, timestamp, record)
   if record.kubernetes == nil then
     return 0

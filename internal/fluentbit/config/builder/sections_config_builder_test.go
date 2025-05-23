@@ -80,12 +80,33 @@ func TestCreateLuaDedotFilterWithDedotFalse(t *testing.T) {
 	require.Equal(t, "", actual)
 }
 
+func TestCreateLuaEnrichAppNameFilter(t *testing.T) {
+	expected := `[FILTER]
+    name   lua
+    match  foo.*
+    call   enrich_app_name
+    script /fluent-bit/scripts/filter-script.lua
+
+`
+	logPipeline := &telemetryv1alpha1.LogPipeline{
+		ObjectMeta: metav1.ObjectMeta{Name: "foo"},
+		Spec: telemetryv1alpha1.LogPipelineSpec{
+			Output: telemetryv1alpha1.LogPipelineOutput{
+				HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
+					Host: telemetryv1alpha1.ValueType{Value: "localhost"},
+				},
+			},
+		},
+	}
+
+	actual := createLuaEnrichAppNameFilter(logPipeline)
+	require.Equal(t, expected, actual)
+}
+
 func TestCreateTimestampAndAppNameModifyFilter(t *testing.T) {
 	expected := `[FILTER]
     name  modify
     match foo.*
-    copy  kubernetes.labels.app_kubernetes_io_name kubernetes.app_name
-    copy  kubernetes.labels.app kubernetes.app_name
     copy  time @timestamp
 
 `
@@ -151,14 +172,18 @@ func TestMergeSectionsConfig(t *testing.T) {
 [FILTER]
     name  modify
     match foo.*
-    copy  kubernetes.labels.app_kubernetes_io_name kubernetes.app_name
-    copy  kubernetes.labels.app kubernetes.app_name
     copy  time @timestamp
 
 [FILTER]
     name  grep
     match foo.*
     regex log aa
+
+[FILTER]
+    name   lua
+    match  foo.*
+    call   enrich_app_name
+    script /fluent-bit/scripts/filter-script.lua
 
 [FILTER]
     name   lua

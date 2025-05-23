@@ -49,6 +49,7 @@ func buildFluentBitSectionsConfig(pipeline *telemetryv1alpha1.LogPipeline, confi
 	sb.WriteString(createKubernetesFilter(pipeline))
 	sb.WriteString(createTimestampAndAppNameModifyFilter(pipeline))
 	sb.WriteString(createCustomFilters(pipeline, nonMultilineFilter))
+	sb.WriteString(createLuaEnrichAppNameFilter(pipeline))
 	sb.WriteString(createLuaDedotFilter(pipeline))
 	sb.WriteString(createOutputSection(pipeline, config.pipelineDefaults))
 
@@ -74,6 +75,20 @@ func createLuaDedotFilter(logPipeline *telemetryv1alpha1.LogPipeline) string {
 		AddConfigParam("match", fmt.Sprintf("%s.*", logPipeline.Name)).
 		AddConfigParam("script", "/fluent-bit/scripts/filter-script.lua").
 		AddConfigParam("call", "kubernetes_map_keys").
+		Build()
+}
+
+func createLuaEnrichAppNameFilter(logPipeline *telemetryv1alpha1.LogPipeline) string {
+	output := logPipeline.Spec.Output
+	if !logpipelineutils.IsHTTPDefined(&output) {
+		return ""
+	}
+
+	return NewFilterSectionBuilder().
+		AddConfigParam("name", "lua").
+		AddConfigParam("match", fmt.Sprintf("%s.*", logPipeline.Name)).
+		AddConfigParam("script", "/fluent-bit/scripts/filter-script.lua").
+		AddConfigParam("call", "enrich_app_name").
 		Build()
 }
 
@@ -126,8 +141,6 @@ func createTimestampAndAppNameModifyFilter(pipeline *telemetryv1alpha1.LogPipeli
 		WithoutSorting().
 		AddConfigParam("name", "modify").
 		AddConfigParam("match", fmt.Sprintf("%s.*", pipeline.Name)).
-		AddConfigParam("copy", "kubernetes.labels.app_kubernetes_io_name kubernetes.app_name").
-		AddConfigParam("copy", "kubernetes.labels.app kubernetes.app_name").
 		AddConfigParam("copy", "time @timestamp").
 		Build()
 }
