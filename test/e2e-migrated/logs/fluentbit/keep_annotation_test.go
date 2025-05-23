@@ -56,12 +56,14 @@ func TestKeepAnnotations(t *testing.T) {
 	assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
 	assert.DeploymentReady(t.Context(), suite.K8sClient, logProducer.NamespacedName())
 
-	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(ContainElement(
-		fluentbit.HaveKubernetesAnnotations(HaveKeyWithValue("release", "v1.0.0")),
-	)))
+	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(
+		ContainElement(SatisfyAll(
+			fluentbit.HaveKubernetesAnnotations(HaveKeyWithValue("release", "v1.0.0")),
+		))))
 
-	assert.BackendDataConsistentlyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(ContainElement(
-		fluentbit.HaveKubernetesLabels(BeEmpty()),
-		fluentbit.HaveKubernetesAttributes(Not(HaveKey("app_name"))),
-	)))
+	assert.BackendDataConsistentlyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(
+		ContainElement(SatisfyAll(
+			fluentbit.HaveKubernetesLabels(BeEmpty()),
+			fluentbit.HaveKubernetesAttributes(Not(HaveKey("app_name"))),
+		))))
 }

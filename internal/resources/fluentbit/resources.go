@@ -628,7 +628,7 @@ function enrich_app_name(tag, timestamp, record)
   end
   local labels = record.kubernetes.labels
   record.kubernetes["app_name"] = labels["app.kubernetes.io/name"] or labels["app"]
-  return 1, timestamp, record
+  return 2, timestamp, record
 end
 function kubernetes_map_keys(tag, timestamp, record)
   if record.kubernetes == nil then
@@ -636,7 +636,7 @@ function kubernetes_map_keys(tag, timestamp, record)
   end
   map_keys(record.kubernetes.annotations)
   map_keys(record.kubernetes.labels)
-  return 1, timestamp, record
+  return 2, timestamp, record
 end
 function map_keys(table)
   if table == nil then

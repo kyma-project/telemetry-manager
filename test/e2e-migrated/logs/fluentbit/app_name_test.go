@@ -91,13 +91,13 @@ func TestAppName(t *testing.T) {
 
 	// Name only label should have app value of name label
 	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(ContainElement(SatisfyAll(
-		fluentbit.HaveNamespace(Equal(nsAppOnly)),
+		fluentbit.HaveNamespace(Equal(nsNameOnly)),
 		fluentbit.HaveKubernetesAttributes(HaveKeyWithValue("app_name", "name-only"))),
 	)))
 
 	// Mixed label should have app value of name label
 	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(ContainElement(SatisfyAll(
-		fluentbit.HaveNamespace(Equal(nsAppOnly)),
+		fluentbit.HaveNamespace(Equal(nsMixed)),
 		fluentbit.HaveKubernetesAttributes(HaveKeyWithValue("app_name", "name-mixed"))),
 	)))
 }
