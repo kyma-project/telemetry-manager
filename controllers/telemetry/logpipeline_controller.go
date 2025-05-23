@@ -79,13 +79,21 @@ type LogPipelineControllerConfig struct {
 }
 
 func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config LogPipelineControllerConfig) (*LogPipelineController, error) {
-	pipelineLock := resourcelock.New(
+	pipelineLock := resourcelock.NewLocker(
 		client,
 		types.NamespacedName{
 			Name:      "telemetry-logpipeline-lock",
 			Namespace: config.TelemetryNamespace,
 		},
 		MaxPipelineCount,
+	)
+
+	pipelineSyncer := resourcelock.NewSyncer(
+		client,
+		types.NamespacedName{
+			Name:      "telemetry-logpipeline-sync",
+			Namespace: config.TelemetryNamespace,
+		},
 	)
 
 	flowHealthProber, err := prober.NewLogPipelineProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
@@ -111,6 +119,7 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 	reconciler := logpipeline.New(
 		client,
 		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
+		pipelineSyncer,
 		fbReconciler,
 		otelReconciler,
 	)

@@ -15,6 +15,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	logpipelinemocks "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry/mocks"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -118,12 +119,15 @@ func TestRegisterAndCallRegisteredReconciler(t *testing.T) {
 	overridesHandler := &mocks.OverridesHandler{}
 	overridesHandler.On("LoadOverrides", t.Context()).Return(&overrides.Config{}, nil)
 
+	pipelineSync := &logpipelinemocks.PipelineSyncer{}
+	pipelineSync.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
 	otelReconciler := ReconcilerStub{
 		OutputType: logpipelineutils.OTel,
 		Result:     nil,
 	}
 
-	rec := New(fakeClient, overridesHandler, &otelReconciler)
+	rec := New(fakeClient, overridesHandler, pipelineSync, &otelReconciler)
 
 	res, err := rec.Reconcile(t.Context(), ctrl.Request{
 		NamespacedName: types.NamespacedName{Name: otelPipeline.Name},
@@ -150,7 +154,10 @@ func TestReconcile_PausedOverride(t *testing.T) {
 		Logging: overrides.LoggingConfig{Paused: true},
 	}, nil)
 
-	rec := New(fakeClient, overridesHandler)
+	pipelineSync := &logpipelinemocks.PipelineSyncer{}
+	pipelineSync.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
+	rec := New(fakeClient, overridesHandler, pipelineSync)
 
 	res, err := rec.Reconcile(t.Context(), ctrl.Request{
 		NamespacedName: types.NamespacedName{Name: "nonexistent-pipeline"},
@@ -169,7 +176,10 @@ func TestReconcile_MissingLogPipeline(t *testing.T) {
 	overridesHandler := &mocks.OverridesHandler{}
 	overridesHandler.On("LoadOverrides", mock.Anything).Return(&overrides.Config{}, nil)
 
-	rec := New(fakeClient, overridesHandler)
+	pipelineSync := &logpipelinemocks.PipelineSyncer{}
+	pipelineSync.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
+	rec := New(fakeClient, overridesHandler, pipelineSync)
 
 	res, err := rec.Reconcile(t.Context(), ctrl.Request{
 		NamespacedName: types.NamespacedName{Name: "nonexistent-pipeline"},
@@ -190,7 +200,10 @@ func TestReconcile_UnsupportedOutputType(t *testing.T) {
 	overridesHandler := &mocks.OverridesHandler{}
 	overridesHandler.On("LoadOverrides", mock.Anything).Return(&overrides.Config{}, nil)
 
-	rec := New(fakeClient, overridesHandler)
+	pipelineSync := &logpipelinemocks.PipelineSyncer{}
+	pipelineSync.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
+	rec := New(fakeClient, overridesHandler, pipelineSync)
 
 	res, err := rec.Reconcile(t.Context(), ctrl.Request{
 		NamespacedName: types.NamespacedName{Name: unsupportedPipeline.Name},
@@ -209,7 +222,10 @@ func TestReconcile_LoadingOverridesFails(t *testing.T) {
 	overridesHandler := &mocks.OverridesHandler{}
 	overridesHandler.On("LoadOverrides", mock.Anything).Return(nil, fmt.Errorf("error loading overrides"))
 
-	rec := New(fakeClient, overridesHandler)
+	pipelineSync := &logpipelinemocks.PipelineSyncer{}
+	pipelineSync.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
+	rec := New(fakeClient, overridesHandler, pipelineSync)
 
 	res, err := rec.Reconcile(t.Context(), ctrl.Request{
 		NamespacedName: types.NamespacedName{Name: "nonexistent-pipeline"},

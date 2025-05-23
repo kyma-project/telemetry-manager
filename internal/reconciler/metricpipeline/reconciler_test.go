@@ -65,6 +65,9 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
+		pipelineSyncStub := &mocks.PipelineSyncer{}
+		pipelineSyncStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(&workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"})
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
@@ -94,6 +97,7 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
+			pipelineSyncStub,
 			pipelineValidatorWithStubs,
 			errToMsg,
 		)
@@ -129,6 +133,9 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
+		pipelineSyncStub := &mocks.PipelineSyncer{}
+		pipelineSyncStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(workloadstatus.ErrDeploymentFetching)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
@@ -158,6 +165,7 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
+			pipelineSyncStub,
 			pipelineValidatorWithStubs,
 			errToMsg,
 		)
@@ -193,6 +201,9 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
+		pipelineSyncStub := &mocks.PipelineSyncer{}
+		pipelineSyncStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
@@ -222,6 +233,7 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
+			pipelineSyncStub,
 			pipelineValidatorWithStubs,
 			errToMsg,
 		)
@@ -260,6 +272,9 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
+		pipelineSyncStub := &mocks.PipelineSyncer{}
+		pipelineSyncStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(&workloadstatus.PodIsPendingError{Message: "Error"})
@@ -289,6 +304,7 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
+			pipelineSyncStub,
 			pipelineValidatorWithStubs,
 			errToMsg,
 		)
@@ -328,6 +344,9 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
+		pipelineSyncStub := &mocks.PipelineSyncer{}
+		pipelineSyncStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(workloadstatus.ErrDaemonSetNotFound)
@@ -358,6 +377,7 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
+			pipelineSyncStub,
 			pipelineValidatorWithStubs,
 			errToMsg,
 		)
@@ -397,6 +417,9 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
+		pipelineSyncStub := &mocks.PipelineSyncer{}
+		pipelineSyncStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
@@ -427,6 +450,7 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
+			pipelineSyncStub,
 			pipelineValidatorWithStubs,
 			errToMsg,
 		)
@@ -471,6 +495,9 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
+		pipelineSyncStub := &mocks.PipelineSyncer{}
+		pipelineSyncStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
@@ -500,6 +527,7 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
+			pipelineSyncStub,
 			pipelineValidatorWithStubs,
 			errToMsg,
 		)
@@ -535,6 +563,9 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
+		pipelineSyncStub := &mocks.PipelineSyncer{}
+		pipelineSyncStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
@@ -564,6 +595,7 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
+			pipelineSyncStub,
 			pipelineValidatorWithStubs,
 			errToMsg,
 		)
@@ -603,6 +635,9 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
 
+		pipelineSyncStub := &mocks.PipelineSyncer{}
+		pipelineSyncStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
@@ -632,6 +667,7 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
+			pipelineSyncStub,
 			pipelineValidatorWithStubs,
 			errToMsg,
 		)
@@ -769,6 +805,9 @@ func TestReconcile(t *testing.T) {
 				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
+				pipelineSyncStub := &mocks.PipelineSyncer{}
+				pipelineSyncStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
 				gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 
 				agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
@@ -798,6 +837,7 @@ func TestReconcile(t *testing.T) {
 					istioStatusCheckerStub,
 					overridesHandlerStub,
 					pipelineLockStub,
+					pipelineSyncStub,
 					pipelineValidatorWithStubs,
 					errToMsg,
 				)
@@ -907,6 +947,9 @@ func TestReconcile(t *testing.T) {
 				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
+				pipelineSyncStub := &mocks.PipelineSyncer{}
+				pipelineSyncStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
 				gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 				agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
@@ -936,6 +979,7 @@ func TestReconcile(t *testing.T) {
 					istioStatusCheckerStub,
 					overridesHandlerStub,
 					pipelineLockStub,
+					pipelineSyncStub,
 					pipelineValidatorWithStubs,
 					errToMsg,
 				)
@@ -995,6 +1039,9 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
+		pipelineSyncStub := &mocks.PipelineSyncer{}
+		pipelineSyncStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
@@ -1025,6 +1072,7 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
+			pipelineSyncStub,
 			pipelineValidatorWithStubs,
 			errToMsg,
 		)
@@ -1067,6 +1115,9 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 
+		pipelineSyncStub := &mocks.PipelineSyncer{}
+		pipelineSyncStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
 		serverErr := errors.New("failed to get lock: server error")
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(&errortypes.APIRequestFailedError{Err: serverErr})
 
@@ -1099,6 +1150,7 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
+			pipelineSyncStub,
 			pipelineValidatorWithStubs,
 			errToMsg,
 		)
@@ -1145,6 +1197,9 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
+		pipelineSyncStub := &mocks.PipelineSyncer{}
+		pipelineSyncStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
@@ -1174,6 +1229,7 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
+			pipelineSyncStub,
 			pipelineValidatorWithStubs,
 			errToMsg,
 		)
@@ -1205,6 +1261,9 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
+		pipelineSyncStub := &mocks.PipelineSyncer{}
+		pipelineSyncStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
@@ -1234,6 +1293,7 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
+			pipelineSyncStub,
 			pipelineValidatorWithStubs,
 			errToMsg,
 		)
@@ -1286,6 +1346,9 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
+		pipelineSyncStub := &mocks.PipelineSyncer{}
+		pipelineSyncStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
@@ -1316,6 +1379,7 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
+			pipelineSyncStub,
 			pipelineValidatorWithStubs,
 			errToMsg,
 		)
@@ -1369,6 +1433,9 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
+		pipelineSyncStub := &mocks.PipelineSyncer{}
+		pipelineSyncStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
@@ -1399,6 +1466,7 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
+			pipelineSyncStub,
 			pipelineValidatorWithStubs,
 			errToMsg,
 		)
@@ -1523,6 +1591,9 @@ func TestReconcile(t *testing.T) {
 				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
+				pipelineSync := &mocks.PipelineSyncer{}
+				pipelineSync.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
 				pipelineValidatorWithStubs := &Validator{
 					EndpointValidator:  stubs.NewEndpointValidator(nil),
 					TLSCertValidator:   stubs.NewTLSCertValidator(nil),
@@ -1541,6 +1612,7 @@ func TestReconcile(t *testing.T) {
 					agentApplierDeleter:   agentApplierDeleterMock,
 					gatewayApplierDeleter: gatewayApplierDeleterMock,
 					pipelineLock:          pipelineLockStub,
+					pipelineSync:          pipelineSync,
 					gatewayProber:         gatewayProberStub,
 					agentProber:           agentProberMock,
 					flowHealthProber:      flowHealthProberStub,
