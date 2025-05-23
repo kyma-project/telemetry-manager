@@ -17,8 +17,8 @@ func UnmarshalPdata[T plog.Logs | pmetric.Metrics | ptrace.Traces](data []byte, 
 	var allPdata []T
 
 	// User bufio.Reader instead of bufio.Scanner to handle very long lines gracefully
-	// Increase default buffer size to 64KB to accommodate larger lines
-	const bufSize = 64 * 1024
+	// Increase default buffer size to 1MB to accommodate larger lines
+	const bufSize = 1024 * 1024
 	reader := bufio.NewReaderSize(bytes.NewReader(data), bufSize)
 
 	for {
