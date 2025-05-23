@@ -843,7 +843,7 @@ spec:
 
 **Symptom**: In the MetricPipeline status, the `TelemetryFlowHealthy` condition has status **GatewayBufferFillingUp**.
 
-**Cause**: The backend ingestion rate rate is too low compared to the gateway export rate.
+**Cause**: The backend ingestion rate is too low compared to the gateway export rate.
 
 **Solution**:
 

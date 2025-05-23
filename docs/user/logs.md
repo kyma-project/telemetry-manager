@@ -557,7 +557,9 @@ To detect and fix such situations, check the [pipeline status](./resources/02-lo
 
 **Solution**:
 
-1. Check the `telemetry-log-gateway`  Pod (in case of **GatewayAllTelemetryDataDropped** status) or `telemetry-log-agent` Pod (in case of **AgentAllTelemetryDataDropped** status) for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
+1. Check the error logs for the affected Pod by calling `kubectl logs -n kyma-system {POD_NAME}`:
+   - For **GatewayAllTelemetryDataDropped**, check Pod `telemetry-log-gateway`
+   - For **AgentAllTelemetryDataDropped**, check Pod `telemetry-log-agent`
 2. Check if the backend is up and reachable.
 3. Fix the errors.
 
@@ -572,7 +574,10 @@ To detect and fix such situations, check the [pipeline status](./resources/02-lo
 
 **Solution**:
 
-1. Check the `telemetry-log-gateway` Pod (in case of **GatewaySomeTelemetryDataDropped**) or `telemetry-log-agent` Pod (in case of **AgentSomeTelemetryDataDropped**) for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`. Also, check your observability backend to investigate potential causes.
+1. Check the error logs for the affected Pod by calling `kubectl logs -n kyma-system {POD_NAME}`:
+   - For **GatewaySomeTelemetryDataDropped**, check Pod `telemetry-log-gateway`
+   - For **AgentSomeTelemetryDataDropped**, check Pod `telemetry-log-agent`
+2. Check your observability backend to investigate potential causes.
 2. If backend is limiting the rate by refusing logs, try the options desribed in [Buffer Filling Up](#buffer-filling-up).
 3. Otherwise, take the actions appropriate to the cause indicated in the logs.
 
@@ -580,7 +585,7 @@ To detect and fix such situations, check the [pipeline status](./resources/02-lo
 
 **Symptom**: In the LogPipeline status, the `TelemetryFlowHealthy` condition has status **GatewayBufferFillingUp** or **AgentBufferFillingUp**.
 
-**Cause**: The backend ingestion rate is too low compared to the gateway/agent export rate.
+**Cause**: The backend ingestion rate is too low compared to the export rate of the gateway or agent.
 
 **Solution**:
 
