@@ -60,7 +60,7 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
@@ -126,7 +126,7 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -180,7 +180,7 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -234,7 +234,7 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -283,7 +283,7 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(workloadstatus.ErrDaemonSetNotFound)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -343,7 +343,7 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -402,7 +402,7 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(workloadstatus.ErrDaemonSetFetching)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -463,7 +463,7 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -541,7 +541,7 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -590,7 +590,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("flow healthy", func(t *testing.T) {
 		tests := []struct {
 			name            string
-			probe           prober.LogPipelineProbeResult
+			probe           prober.FluentBitProbeResult
 			probeErr        error
 			expectedStatus  metav1.ConditionStatus
 			expectedReason  string
@@ -600,12 +600,12 @@ func TestReconcile(t *testing.T) {
 				name:            "prober fails",
 				probeErr:        assert.AnError,
 				expectedStatus:  metav1.ConditionUnknown,
-				expectedReason:  conditions.ReasonSelfMonProbingFailed,
-				expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing failed",
+				expectedReason:  conditions.ReasonSelfMonAgentProbingFailed,
+				expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing of agent failed",
 			},
 			{
 				name: "healthy",
-				probe: prober.LogPipelineProbeResult{
+				probe: prober.FluentBitProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
 				},
 				expectedStatus:  metav1.ConditionTrue,
@@ -614,70 +614,70 @@ func TestReconcile(t *testing.T) {
 			},
 			{
 				name: "buffer filling up",
-				probe: prober.LogPipelineProbeResult{
+				probe: prober.FluentBitProbeResult{
 					BufferFillingUp: true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonBufferFillingUp,
+				expectedReason:  conditions.ReasonSelfMonAgentBufferFillingUp,
 				expectedMessage: "Buffer nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=agent-buffer-filling-up",
 			},
 			{
 				name: "no logs delivered",
-				probe: prober.LogPipelineProbeResult{
+				probe: prober.FluentBitProbeResult{
 					NoLogsDelivered: true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonNoLogsDelivered,
+				expectedReason:  conditions.ReasonSelfMonAgentNoLogsDelivered,
 				expectedMessage: "Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
 			},
 			{
 				name: "no logs delivered shadows other problems",
-				probe: prober.LogPipelineProbeResult{
+				probe: prober.FluentBitProbeResult{
 					NoLogsDelivered: true,
 					BufferFillingUp: true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonNoLogsDelivered,
+				expectedReason:  conditions.ReasonSelfMonAgentNoLogsDelivered,
 				expectedMessage: "Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
 			},
 			{
 				name: "some data dropped",
-				probe: prober.LogPipelineProbeResult{
+				probe: prober.FluentBitProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonSomeDataDropped,
+				expectedReason:  conditions.ReasonSelfMonAgentSomeDataDropped,
 				expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=not-all-logs-arrive-at-the-backend",
 			},
 			{
 				name: "some data dropped shadows other problems",
-				probe: prober.LogPipelineProbeResult{
+				probe: prober.FluentBitProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
 					BufferFillingUp:     true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonSomeDataDropped,
+				expectedReason:  conditions.ReasonSelfMonAgentSomeDataDropped,
 				expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=not-all-logs-arrive-at-the-backend",
 			},
 			{
 				name: "all data dropped",
-				probe: prober.LogPipelineProbeResult{
+				probe: prober.FluentBitProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonAllDataDropped,
+				expectedReason:  conditions.ReasonSelfMonAgentAllDataDropped,
 				expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
 			},
 			{
 				name: "all data dropped shadows other problems",
-				probe: prober.LogPipelineProbeResult{
+				probe: prober.FluentBitProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{
 						AllDataDropped:  true,
 						SomeDataDropped: true,
 					},
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonAllDataDropped,
+				expectedReason:  conditions.ReasonSelfMonAgentAllDataDropped,
 				expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
 			},
 		}
@@ -831,7 +831,7 @@ func TestReconcile(t *testing.T) {
 				proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 				flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
 				pipelineLockStub := &mocks.PipelineLock{}
 				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -940,7 +940,7 @@ func TestReconcile(t *testing.T) {
 				proberStub := commonStatusStubs.NewDaemonSetProber(tt.probeErr)
 
 				flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
 				pipelineLockStub := &mocks.PipelineLock{}
 				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -1001,7 +1001,7 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
 		serverErr := errors.New("failed to get secret: server error")
 

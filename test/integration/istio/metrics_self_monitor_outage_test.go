@@ -107,14 +107,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsOutage), Orde
 		It("Should wait for the metrics flow to report a full buffer", func() {
 			assert.MetricPipelineConditionReasonsTransition(suite.Ctx, suite.K8sClient, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 				{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
-				{Reason: conditions.ReasonSelfMonBufferFillingUp, Status: metav1.ConditionFalse},
+				{Reason: conditions.ReasonSelfMonGatewayBufferFillingUp, Status: metav1.ConditionFalse},
 			})
 
 			assert.TelemetryHasState(suite.Ctx, suite.K8sClient, operatorv1alpha1.StateWarning)
 			assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeMetricComponentsHealthy,
 				Status: metav1.ConditionFalse,
-				Reason: conditions.ReasonSelfMonBufferFillingUp,
+				Reason: conditions.ReasonSelfMonGatewayBufferFillingUp,
 			})
 		})
 
@@ -131,14 +131,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsOutage), Orde
 
 		It("Should wait for the metrics flow to report dropped metrics", func() {
 			assert.MetricPipelineConditionReasonsTransition(suite.Ctx, suite.K8sClient, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
-				{Reason: conditions.ReasonSelfMonAllDataDropped, Status: metav1.ConditionFalse},
+				{Reason: conditions.ReasonSelfMonGatewayAllDataDropped, Status: metav1.ConditionFalse},
 			})
 
 			assert.TelemetryHasState(suite.Ctx, suite.K8sClient, operatorv1alpha1.StateWarning)
 			assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeMetricComponentsHealthy,
 				Status: metav1.ConditionFalse,
-				Reason: conditions.ReasonSelfMonAllDataDropped,
+				Reason: conditions.ReasonSelfMonGatewayAllDataDropped,
 			})
 		})
 

@@ -20,34 +20,36 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesBackpressure), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsGatewayBackpressure, suite.LabelExperimental), Ordered, func() {
 	var (
 		mockNs       = "istio-permissive-mtls"
 		pipelineName = suite.ID()
 	)
 
 	makeResources := func() []client.Object {
-		var objs []client.Object
 
-		backend := kitbackend.New(mockNs, kitbackend.SignalTypeTraces, kitbackend.WithAbortFaultInjection(75))
-		objs = append(objs, backend.K8sObjects()...)
+		backend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithAbortFaultInjection(85))
 
-		tracePipeline := testutils.NewTracePipelineBuilder().
+		logGenerator := telemetrygen.NewDeployment(mockNs, telemetrygen.SignalTypeLogs,
+			telemetrygen.WithRate(800),
+			telemetrygen.WithWorkers(5))
+
+		logPipeline := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
+			WithInput(testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(mockNs))).
 			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 			Build()
 
-		objs = append(objs,
-			&tracePipeline,
-			telemetrygen.NewDeployment(mockNs, telemetrygen.SignalTypeTraces,
-				telemetrygen.WithRate(800),
-				telemetrygen.WithWorkers(5)).K8sObject(),
-		)
+		objs := []client.Object{
+			logGenerator.K8sObject(),
+			&logPipeline,
+		}
+		objs = append(objs, backend.K8sObjects()...)
 
 		return objs
 	}
 
-	Context("When a tracepipeline exists", Ordered, func() {
+	Context("When a logpipeline exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
@@ -56,19 +58,19 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesBackpressure),
 			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running tracepipeline", func() {
-			assert.TracePipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+		It("Should have a running logpipeline", func() {
+			assert.OTelLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 		})
 
-		It("Should have a running trace gateway deployment", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.TraceGatewayName)
+		It("Should have a running log gateway deployment", func() {
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.LogGatewayName)
 		})
 
 		It("Should have a running self-monitor", func() {
 			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.SelfMonitorName)
 		})
 
-		It("Should have a trace backend running", func() {
+		It("Should have a log backend running", func() {
 			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
 		})
 
@@ -76,15 +78,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesBackpressure),
 			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: telemetrygen.DefaultName, Namespace: mockNs})
 		})
 
-		It("Should wait for the trace flow to gradually become unhealthy", func() {
-			assert.TracePipelineConditionReasonsTransition(suite.Ctx, suite.K8sClient, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
+		It("Should wait for the log flow to gradually become unhealthy", func() {
+			assert.LogPipelineConditionReasonsTransition(suite.Ctx, suite.K8sClient, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 				{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
 				{Reason: conditions.ReasonSelfMonGatewaySomeDataDropped, Status: metav1.ConditionFalse},
 			})
 
 			assert.TelemetryHasState(suite.Ctx, suite.K8sClient, operatorv1alpha1.StateWarning)
 			assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
-				Type:   conditions.TypeTraceComponentsHealthy,
+				Type:   conditions.TypeLogComponentsHealthy,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonSelfMonGatewaySomeDataDropped,
 			})

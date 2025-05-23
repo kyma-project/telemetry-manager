@@ -16,38 +16,38 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesBackpressure), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsAgentBackpressure, suite.LabelExperimental), Ordered, func() {
 	var (
 		mockNs       = "istio-permissive-mtls"
 		pipelineName = suite.ID()
 	)
 
 	makeResources := func() []client.Object {
-		var objs []client.Object
 
-		backend := kitbackend.New(mockNs, kitbackend.SignalTypeTraces, kitbackend.WithAbortFaultInjection(75))
-		objs = append(objs, backend.K8sObjects()...)
+		backend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithAbortFaultInjection(85))
 
-		tracePipeline := testutils.NewTracePipelineBuilder().
+		logProducer := loggen.New(mockNs).WithReplicas(3).WithLoad(loggen.LoadHigh)
+
+		logPipeline := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
+			WithInput(testutils.BuildLogPipelineApplicationInput(testutils.ExtIncludeNamespaces(mockNs))).
 			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 			Build()
 
-		objs = append(objs,
-			&tracePipeline,
-			telemetrygen.NewDeployment(mockNs, telemetrygen.SignalTypeTraces,
-				telemetrygen.WithRate(800),
-				telemetrygen.WithWorkers(5)).K8sObject(),
-		)
+		objs := []client.Object{
+			logProducer.K8sObject(),
+			&logPipeline,
+		}
+		objs = append(objs, backend.K8sObjects()...)
 
 		return objs
 	}
 
-	Context("When a tracepipeline exists", Ordered, func() {
+	Context("When a logpipeline exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
@@ -56,37 +56,38 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesBackpressure),
 			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running tracepipeline", func() {
-			assert.TracePipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+		It("Should have a running logpipeline", func() {
+			assert.OTelLogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 		})
 
-		It("Should have a running trace gateway deployment", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.TraceGatewayName)
+		It("Should have a running log agent daemonset", func() {
+			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.LogAgentName)
 		})
 
 		It("Should have a running self-monitor", func() {
 			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.SelfMonitorName)
 		})
 
-		It("Should have a trace backend running", func() {
+		It("Should have a log backend running", func() {
 			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
 		})
 
-		It("Should have a telemetrygen running", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: telemetrygen.DefaultName, Namespace: mockNs})
+		It("Should have a log producer running", func() {
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 		})
 
-		It("Should wait for the trace flow to gradually become unhealthy", func() {
-			assert.TracePipelineConditionReasonsTransition(suite.Ctx, suite.K8sClient, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
+		It("Should wait for the log flow to gradually become unhealthy", func() {
+			assert.LogPipelineConditionReasonsTransition(suite.Ctx, suite.K8sClient, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 				{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
-				{Reason: conditions.ReasonSelfMonGatewaySomeDataDropped, Status: metav1.ConditionFalse},
+				{Reason: conditions.ReasonSelfMonAgentBufferFillingUp, Status: metav1.ConditionFalse},
+				{Reason: conditions.ReasonSelfMonAgentSomeDataDropped, Status: metav1.ConditionFalse},
 			})
 
 			assert.TelemetryHasState(suite.Ctx, suite.K8sClient, operatorv1alpha1.StateWarning)
 			assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
-				Type:   conditions.TypeTraceComponentsHealthy,
+				Type:   conditions.TypeLogComponentsHealthy,
 				Status: metav1.ConditionFalse,
-				Reason: conditions.ReasonSelfMonGatewaySomeDataDropped,
+				Reason: conditions.ReasonSelfMonAgentSomeDataDropped,
 			})
 		})
 	})
