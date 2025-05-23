@@ -468,7 +468,11 @@ For LogPipelines which are using an HTTP output, additionally the following attr
 }
 ```
 
-Hereby, the `time` is the time when the container runtime captured the log on `stdout/stderr` (very close to the time when the log originated). The `date` is the time when the log agent processed the log, so potentially containing a value which is later than `time`. The `@timestamp` contains the same value as `time` and is present specificly for the SAP Cloud Logging integration.
+The resulting timestamp attributes have the following meaning:
+
+- **time**: the time when the container runtime captured the log on `stdout/stderr`, which is timely very close to the time when the log originated in the application.
+- **date**: the time when the log agent processed the log, which is later then the value in `time`.
+- **@timestamp**: contains the same value as `time` and is present for an optimized experience with the SAP Cloud Logging integration.
 
 ## Operations
 

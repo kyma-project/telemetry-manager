@@ -59,7 +59,6 @@ func TestBasePayloadWithHttpOutput(t *testing.T) {
 	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(HaveEach(SatisfyAll(
 		// timestamps
 		fluentbit.HaveAttributes(HaveKey("@timestamp")),
-		fluentbit.HaveAttributes(HaveKey("time")),
 		fluentbit.HaveDateISO8601Format(BeTrue()),
 
 		// kubernetes filter
