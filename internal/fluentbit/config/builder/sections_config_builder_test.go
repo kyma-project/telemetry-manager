@@ -80,6 +80,51 @@ func TestCreateLuaDedotFilterWithDedotFalse(t *testing.T) {
 	require.Equal(t, "", actual)
 }
 
+func TestCreateLuaEnrichAppNameFilter(t *testing.T) {
+	expected := `[FILTER]
+    name   lua
+    match  foo.*
+    call   enrich_app_name
+    script /fluent-bit/scripts/filter-script.lua
+
+`
+	logPipeline := &telemetryv1alpha1.LogPipeline{
+		ObjectMeta: metav1.ObjectMeta{Name: "foo"},
+		Spec: telemetryv1alpha1.LogPipelineSpec{
+			Output: telemetryv1alpha1.LogPipelineOutput{
+				HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
+					Host: telemetryv1alpha1.ValueType{Value: "localhost"},
+				},
+			},
+		},
+	}
+
+	actual := createLuaEnrichAppNameFilter(logPipeline)
+	require.Equal(t, expected, actual)
+}
+
+func TestCreateTimestampAndAppNameModifyFilter(t *testing.T) {
+	expected := `[FILTER]
+    name  modify
+    match foo.*
+    copy  time @timestamp
+
+`
+	logPipeline := &telemetryv1alpha1.LogPipeline{
+		ObjectMeta: metav1.ObjectMeta{Name: "foo"},
+		Spec: telemetryv1alpha1.LogPipelineSpec{
+			Output: telemetryv1alpha1.LogPipelineOutput{
+				HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
+					Host: telemetryv1alpha1.ValueType{Value: "localhost"},
+				},
+			},
+		},
+	}
+
+	actual := createTimestampAndAppNameModifyFilter(logPipeline)
+	require.Equal(t, expected, actual)
+}
+
 func TestMergeSectionsConfig(t *testing.T) {
 	excludePath := strings.Join([]string{
 		"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
@@ -242,6 +287,12 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
     kube_tag_prefix     foo.var.log.containers.
     labels              on
     merge_log           on
+
+[FILTER]
+    name   lua
+    match  foo.*
+    call   enrich_app_name
+    script /fluent-bit/scripts/filter-script.lua
 
 [OUTPUT]
     name                     stdout

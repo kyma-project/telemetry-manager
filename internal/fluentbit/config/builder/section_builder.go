@@ -9,9 +9,10 @@ import (
 )
 
 type SectionBuilder struct {
-	params  []config.Parameter
-	keyLen  int
-	builder strings.Builder
+	params         []config.Parameter
+	keyLen         int
+	builder        strings.Builder
+	withoutSorting bool
 }
 
 func NewInputSectionBuilder() *SectionBuilder {
@@ -30,29 +31,31 @@ func NewOutputSectionBuilder() *SectionBuilder {
 }
 
 func (sb *SectionBuilder) Build() string {
-	sort.Slice(sb.params, func(i, j int) bool {
-		if sb.params[i].Key != sb.params[j].Key {
-			if sb.params[i].Key == "name" {
-				return true
+	if !sb.withoutSorting {
+		sort.Slice(sb.params, func(i, j int) bool {
+			if sb.params[i].Key != sb.params[j].Key {
+				if sb.params[i].Key == "name" {
+					return true
+				}
+
+				if sb.params[j].Key == "name" {
+					return false
+				}
+
+				if sb.params[i].Key == "match" {
+					return true
+				}
+
+				if sb.params[j].Key == "match" {
+					return false
+				}
+
+				return sb.params[i].Key < sb.params[j].Key
 			}
 
-			if sb.params[j].Key == "name" {
-				return false
-			}
-
-			if sb.params[i].Key == "match" {
-				return true
-			}
-
-			if sb.params[j].Key == "match" {
-				return false
-			}
-
-			return sb.params[i].Key < sb.params[j].Key
-		}
-
-		return sb.params[i].Value < sb.params[j].Value
-	})
+			return sb.params[i].Value < sb.params[j].Value
+		})
+	}
 
 	indentation := strings.Repeat(" ", 4) //nolint:mnd // 4 spaces per indentation level
 	for _, p := range sb.params {
@@ -76,6 +79,11 @@ func (sb *SectionBuilder) AddConfigParam(key string, value string) *SectionBuild
 
 	sb.params = append(sb.params, config.Parameter{Key: strings.ToLower(key), Value: value})
 
+	return sb
+}
+
+func (sb *SectionBuilder) WithoutSorting() *SectionBuilder {
+	sb.withoutSorting = true
 	return sb
 }
 

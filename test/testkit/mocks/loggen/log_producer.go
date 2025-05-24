@@ -15,6 +15,7 @@ import (
 const (
 	DefaultName          = "log-producer"
 	DefaultContainerName = "log-producer"
+	DefaultImageName     = "alpine:latest"
 )
 
 type Load int
@@ -85,7 +86,7 @@ func (lp *LogProducer) NamespacedName() types.NamespacedName {
 }
 
 func (lp *LogProducer) K8sObject() *appsv1.Deployment {
-	labels := map[string]string{"app": lp.name}
+	labels := map[string]string{"selector": lp.name}
 	if lp.labels != nil {
 		maps.Copy(labels, lp.labels)
 	}
@@ -159,7 +160,7 @@ func (lp *LogProducer) flogSpec() corev1.PodSpec {
 		Containers: []corev1.Container{
 			{
 				Name:            lp.container,
-				Image:           "mingrammer/flog",
+				Image:           DefaultImageName,
 				Args:            args,
 				ImagePullPolicy: corev1.PullAlways,
 				Resources: corev1.ResourceRequirements{
