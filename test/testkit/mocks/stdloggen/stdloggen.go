@@ -1,6 +1,9 @@
 package stdloggen
 
 import (
+	"fmt"
+	"regexp"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 
@@ -13,18 +16,11 @@ const (
 	DefaultName          = "stdloggen"
 	DefaultContainerName = "stdloggen"
 	DefaultImageName     = "alpine:latest"
+	firstLine            = "echo 'foo bar'"
 	DefaultScript        = `while true
 do
-    echo "foo bar"
-    sleep 10
-done`
-	JSONScript = `while true
-do
-    echo '{"name": "a", "level": "INFO", "age": 30, "city": "Munich", "trace_id": "255c2212dd02c02ac59a923ff07aec74", "span_id": "c5c735f175ad06a6", "trace_flags": "00", "message":"a-body"}'
-    echo '{"name": "b", "log.level":"WARN", "age": 30, "city": "Munich", "traceparent": "00-80e1afed08e019fc1110464cfa66635c-7a085853722dc6d2-01", "msg":"b-body"}'
-    echo '{"name": "c", "age": 30, "city": "Munich", "span_id": "123456789", "body":"c-body"}'
-    echo 'name=d age=30 city=Munich span_id=123456789 msg=test'
-    sleep 10
+` + firstLine + `
+sleep 10
 done`
 )
 
@@ -39,6 +35,14 @@ func WithScript(script string) Option {
 		spec.Containers[0].Command[2] = script
 	}
 }
+
+func AppendLogLine(line string) Option {
+	return func(spec *corev1.PodSpec) {
+		regex := regexp.MustCompile(".*(" + firstLine + ").*")
+		spec.Containers[0].Command[2] = regex.ReplaceAllString(spec.Containers[0].Command[2], fmt.Sprintf("echo '%s'\n%s", line, firstLine))
+	}
+}
+
 func NewPod(namespace string, opts ...Option) *kitk8s.Pod {
 	return kitk8s.NewPod(DefaultName, namespace).WithPodSpec(PodSpec(opts...)).WithLabel("selector", DefaultName)
 }

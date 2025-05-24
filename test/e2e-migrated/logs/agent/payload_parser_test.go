@@ -22,6 +22,12 @@ import (
 func TestPayloadParser(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelLogAgent)
 
+	const (
+		line1 = `{"name": "a", "level": "INFO", "age": 30, "city": "Munich", "trace_id": "255c2212dd02c02ac59a923ff07aec74", "span_id": "c5c735f175ad06a6", "trace_flags": "00", "message":"a-body"}`
+		line2 = `{"name": "b", "log.level":"WARN", "age": 30, "city": "Munich", "traceparent": "00-80e1afed08e019fc1110464cfa66635c-7a085853722dc6d2-01", "msg":"b-body"}`
+		line3 = `{"name": "c", "age": 30, "city": "Munich", "span_id": "123456789", "body":"c-body"}`
+		line4 = `name=d age=30 city=Munich span_id=123456789 msg=test`
+	)
 	var (
 		uniquePrefix = unique.Prefix()
 		genNs        = uniquePrefix("generator")
@@ -41,7 +47,13 @@ func TestPayloadParser(t *testing.T) {
 	resources = append(resources,
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
-		stdloggen.NewDeployment(genNs, stdloggen.WithScript(stdloggen.JSONScript)).K8sObject(),
+		stdloggen.NewDeployment(
+			genNs,
+			stdloggen.AppendLogLine(line1),
+			stdloggen.AppendLogLine(line2),
+			stdloggen.AppendLogLine(line3),
+			stdloggen.AppendLogLine(line4),
+		).K8sObject(),
 		&pipeline,
 	)
 	resources = append(resources, backend.K8sObjects()...)
