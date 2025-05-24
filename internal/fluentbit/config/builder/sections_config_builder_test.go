@@ -182,12 +182,6 @@ func TestMergeSectionsConfig(t *testing.T) {
 [FILTER]
     name   lua
     match  foo.*
-    call   enrich_app_name
-    script /fluent-bit/scripts/filter-script.lua
-
-[FILTER]
-    name   lua
-    match  foo.*
     call   kubernetes_map_keys
     script /fluent-bit/scripts/filter-script.lua
 
@@ -293,6 +287,12 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
     kube_tag_prefix     foo.var.log.containers.
     labels              on
     merge_log           on
+
+[FILTER]
+    name   lua
+    match  foo.*
+    call   enrich_app_name
+    script /fluent-bit/scripts/filter-script.lua
 
 [OUTPUT]
     name                     stdout
