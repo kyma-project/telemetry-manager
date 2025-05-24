@@ -15,7 +15,7 @@ import (
 const (
 	DefaultName          = "log-producer"
 	DefaultContainerName = "log-producer"
-	DefaultImageName     = "mingrammer/flog"
+	DefaultImageName     = "alpine:latest"
 )
 
 type Load int

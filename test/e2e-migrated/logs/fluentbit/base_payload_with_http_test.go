@@ -20,7 +20,7 @@ import (
 )
 
 func TestBasePayloadWithHttpOutput(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit)
+	suite.RegisterTestCase(t, "icke")
 
 	var (
 		uniquePrefix = unique.Prefix()
