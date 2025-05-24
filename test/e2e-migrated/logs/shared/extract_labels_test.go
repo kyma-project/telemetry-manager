@@ -18,7 +18,7 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -38,7 +38,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 				return testutils.BuildLogPipelineApplicationInput(testutils.ExtIncludeNamespaces(includeNs))
 			},
 			logGeneratorBuilder: func(ns string, labels map[string]string) client.Object {
-				return loggen.New(ns).WithLabels(labels).K8sObject()
+				return stdloggen.NewDeployment(ns).WithLabels(labels).K8sObject()
 			},
 			expectAgent: true,
 		},
@@ -163,9 +163,9 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 	backendNotDropped := kitbackend.New(notDroppedNs, kitbackend.SignalTypeLogsFluentBit)
 	backendDropped := kitbackend.New(droppedNs, kitbackend.SignalTypeLogsFluentBit)
 
-	logProducer := loggen.New(genNs).
-		WithLabels(map[string]string{"env": "dev"}).
-		WithAnnotations(map[string]string{"release": "v1.0.0"})
+	logProducer := stdloggen.NewDeployment(genNs).
+		WithLabel("env", "dev").
+		WithAnnotation("release", "v1.0.0")
 
 	pipelineNotDropped := testutils.NewLogPipelineBuilder().
 		WithName(pipelineNameNotDropped).
@@ -204,7 +204,7 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Namespace: notDroppedNs, Name: kitbackend.DefaultName})
 	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Namespace: droppedNs, Name: kitbackend.DefaultName})
-	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Namespace: genNs, Name: loggen.DefaultName})
+	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Namespace: genNs, Name: stdloggen.DefaultName})
 
 	// Scenario 1: Labels not dropped
 	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backendNotDropped, genNs)

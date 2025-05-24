@@ -23,7 +23,6 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -74,7 +73,7 @@ func TestOTelLogPipeline_ServiceNameEnrichment(t *testing.T) {
 				}
 			},
 			logProducerFunc: func(deploymentName, namespace string) client.Object {
-				return loggen.New(namespace).
+				return stdloggen.NewDeployment(namespace).
 					WithName(deploymentName).
 					WithLabels(map[string]string{
 						appLabelName: appLabelValue,

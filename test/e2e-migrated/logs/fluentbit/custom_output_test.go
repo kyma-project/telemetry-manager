@@ -14,7 +14,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -30,7 +30,7 @@ func TestCustomOutput(t *testing.T) {
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
-	logProducer := loggen.New(genNs)
+	logProducer := stdloggen.NewDeployment(genNs)
 	customOutputTemplate := fmt.Sprintf(`
 	name   http
 	port   %d
@@ -58,5 +58,5 @@ func TestCustomOutput(t *testing.T) {
 	assert.LogPipelineUnsupportedMode(t.Context(), suite.K8sClient, pipelineName, true)
 	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 	assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
-	assert.FluentBitLogsFromPodDelivered(t.Context(), backend, loggen.DefaultName)
+	assert.FluentBitLogsFromPodDelivered(t.Context(), backend, stdloggen.DefaultName)
 }

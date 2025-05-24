@@ -15,7 +15,7 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -25,6 +25,10 @@ const (
 	scenarioKeepOriginal = "keep-original-body"
 	// keepOriginalBody = false
 	scenarioDropOriginal = "drop-original-body"
+	line1                = `{"name": "a", "level": "INFO", "age": 30, "city": "Munich", "trace_id": "255c2212dd02c02ac59a923ff07aec74", "span_id": "c5c735f175ad06a6", "trace_flags": "00", "message":"a-body"}`
+	line2                = `{"name": "b", "log.level":"WARN", "age": 30, "city": "Munich", "traceparent": "00-80e1afed08e019fc1110464cfa66635c-7a085853722dc6d2-01", "msg":"b-body"}`
+	line3                = `{"name": "c", "age": 30, "city": "Munich", "span_id": "123456789", "body":"c-body"}`
+	line4                = `name=d age=30 city=Munich span_id=123456789 msg=test`
 )
 
 func TestKeepOriginalBody_OTel(t *testing.T) {
@@ -69,8 +73,19 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 		kitk8s.NewNamespace(backendNsDropOriginal).K8sObject(),
 		&pipelineDropOriginal,
 		&pipelineKeepOriginal,
-		loggen.New(sourceNsKeepOriginal).WithUseJSON().K8sObject(),
-		loggen.New(sourceNsDropOriginal).WithUseJSON().K8sObject(),
+		stdloggen.NewDeployment(
+			sourceNsKeepOriginal,
+			stdloggen.AppendLogLine(line1),
+			stdloggen.AppendLogLine(line2),
+			stdloggen.AppendLogLine(line3),
+			stdloggen.AppendLogLine(line4),
+		).K8sObject(),
+		stdloggen.NewDeployment(sourceNsDropOriginal,
+			stdloggen.AppendLogLine(line1),
+			stdloggen.AppendLogLine(line2),
+			stdloggen.AppendLogLine(line3),
+			stdloggen.AppendLogLine(line4),
+		).K8sObject(),
 	)
 	resources = append(resources, backendKeepOriginal.K8sObjects()...)
 	resources = append(resources, backendDropOriginal.K8sObjects()...)
@@ -213,8 +228,20 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 		kitk8s.NewNamespace(backendNsDropOriginal).K8sObject(),
 		&pipelineDropOriginal,
 		&pipelineKeepOriginal,
-		loggen.New(sourceNsKeepOriginal).WithUseJSON().K8sObject(),
-		loggen.New(sourceNsDropOriginal).WithUseJSON().K8sObject(),
+		stdloggen.NewDeployment(
+			sourceNsKeepOriginal,
+			stdloggen.AppendLogLine(line1),
+			stdloggen.AppendLogLine(line2),
+			stdloggen.AppendLogLine(line3),
+			stdloggen.AppendLogLine(line4),
+		).K8sObject(),
+		stdloggen.NewDeployment(
+			sourceNsDropOriginal,
+			stdloggen.AppendLogLine(line1),
+			stdloggen.AppendLogLine(line2),
+			stdloggen.AppendLogLine(line3),
+			stdloggen.AppendLogLine(line4),
+		).K8sObject(),
 	)
 	resources = append(resources, backendKeepOriginal.K8sObjects()...)
 	resources = append(resources, backendDropOriginal.K8sObjects()...)
