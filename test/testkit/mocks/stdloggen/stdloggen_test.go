@@ -1,8 +1,9 @@
 package stdloggen
 
 import (
-	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAppendLogLine(t *testing.T) {
@@ -15,5 +16,11 @@ func TestAppendLogLine(t *testing.T) {
 	// The script should now contain the new line before "foo bar"
 	gotScript := spec.Containers[0].Command[2]
 
-	fmt.Printf("Got script: %s\n", gotScript)
+	expectedSrcipt := `while true
+do
+echo 'new log line'
+echo 'foo bar'
+sleep 10
+done`
+	assert.Equal(t, expectedSrcipt, gotScript, "The script should contain the new log line before the first line")
 }

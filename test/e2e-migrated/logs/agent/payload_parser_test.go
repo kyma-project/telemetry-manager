@@ -28,6 +28,7 @@ func TestPayloadParser(t *testing.T) {
 		line3 = `{"name": "c", "age": 30, "city": "Munich", "span_id": "123456789", "body":"c-body"}`
 		line4 = `name=d age=30 city=Munich span_id=123456789 msg=test`
 	)
+
 	var (
 		uniquePrefix = unique.Prefix()
 		genNs        = uniquePrefix("generator")
