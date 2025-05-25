@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestPayloadParser(t *testing.T) {
+func TestSeverityParser(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelLogAgent)
 
 	var (
@@ -63,8 +63,8 @@ func TestPayloadParser(t *testing.T) {
 
 	assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 
-	t.Log("Scenario levelAndINFO should parse level attribute and remote it")
-	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
+	t.Log("Scenario levelAndINFO should parse level attribute and remove it")
+	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatLogs(
 		ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("scenario", "levelAndINFO")),
 			HaveSeverityNumber(Equal(9)),
@@ -73,8 +73,8 @@ func TestPayloadParser(t *testing.T) {
 		)),
 	))
 
-	t.Log("Scenario levelAndWarning should parse level attribute and remote it")
-	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
+	t.Log("Scenario levelAndWarning should parse level attribute and remove it")
+	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatLogs(
 		ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("scenario", "levelAndWarning")),
 			HaveSeverityNumber(Equal(13)),
@@ -83,8 +83,8 @@ func TestPayloadParser(t *testing.T) {
 		)),
 	))
 
-	t.Log("Scenario log.level should parse log.level attribute and remote it")
-	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
+	t.Log("Scenario log.level should parse log.level attribute and remove it")
+	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatLogs(
 		ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("scenario", "log.level")),
 			HaveSeverityText(Equal("WARN")),
@@ -93,7 +93,7 @@ func TestPayloadParser(t *testing.T) {
 	))
 
 	t.Log("Default scenario should not have any severity")
-	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
+	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatLogs(
 		ContainElement(SatisfyAll(
 			HaveLogBody(Equal(stdloggen.DefaultLine)),
 			HaveSeverityNumber(Equal(0)), // default value
