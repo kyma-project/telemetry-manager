@@ -141,7 +141,7 @@ done`
 			{
 
 				Name:  lp.container,
-				Image: "alpine:latest",
+				Image: DefaultImageName,
 
 				Command: []string{"/bin/sh", "-c", logCmd}},
 		},
@@ -160,7 +160,7 @@ func (lp *LogProducer) flogSpec() corev1.PodSpec {
 		Containers: []corev1.Container{
 			{
 				Name:            lp.container,
-				Image:           DefaultImageName,
+				Image:           "mingrammer/flog:latest",
 				Args:            args,
 				ImagePullPolicy: corev1.PullAlways,
 				Resources: corev1.ResourceRequirements{
