@@ -22,13 +22,6 @@ import (
 func TestPayloadParser(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelLogAgent)
 
-	const (
-		line1 = `{"name": "a", "level": "INFO", "age": 30, "city": "Munich", "trace_id": "255c2212dd02c02ac59a923ff07aec74", "span_id": "c5c735f175ad06a6", "trace_flags": "00", "message":"a-body"}`
-		line2 = `{"name": "b", "log.level":"WARN", "age": 30, "city": "Munich", "traceparent": "00-80e1afed08e019fc1110464cfa66635c-7a085853722dc6d2-01", "msg":"b-body"}`
-		line3 = `{"name": "c", "age": 30, "city": "Munich", "span_id": "123456789", "body":"c-body"}`
-		line4 = `name=d age=30 city=Munich span_id=123456789 msg=test`
-	)
-
 	var (
 		uniquePrefix = unique.Prefix()
 		genNs        = uniquePrefix("generator")
@@ -50,10 +43,10 @@ func TestPayloadParser(t *testing.T) {
 		kitk8s.NewNamespace(genNs).K8sObject(),
 		stdloggen.NewDeployment(
 			genNs,
-			stdloggen.AppendLogLine(line1),
-			stdloggen.AppendLogLine(line2),
-			stdloggen.AppendLogLine(line3),
-			stdloggen.AppendLogLine(line4),
+			stdloggen.AppendLogLine(`{"scenario": "levelAndINFO", "level": "INFO"}`),
+			stdloggen.AppendLogLine(`{"scenario": "levelAndWarning", "level": "warning"}`),
+			stdloggen.AppendLogLine(`{"scenario": "log.level", "log.level":"WARN"}`),
+			stdloggen.AppendLogLine(`{"scenario": "noLevel"}`),
 		).K8sObject(),
 		&pipeline,
 	)
@@ -70,82 +63,39 @@ func TestPayloadParser(t *testing.T) {
 
 	assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
 
-	// Parse traces properly
-	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatLogs(
-		ContainElement(SatisfyAll(
-			HaveAttributes(HaveKeyWithValue("name", "a")),
-			HaveTraceID(Equal("255c2212dd02c02ac59a923ff07aec74")),
-			HaveSpanID(Equal("c5c735f175ad06a6")),
-			HaveTraceFlags(Equal(uint32(0))),
-			HaveAttributes(Not(HaveKey("trace_id"))),
-			HaveAttributes(Not(HaveKey("span_id"))),
-			HaveAttributes(Not(HaveKey("trace_flags"))),
-			HaveAttributes(Not(HaveKey("traceparent"))),
-		)),
-	))
-
-	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatLogs(
-		ContainElement(SatisfyAll(
-			HaveAttributes(HaveKeyWithValue("name", "b")),
-			HaveTraceID(Equal("80e1afed08e019fc1110464cfa66635c")),
-			HaveSpanID(Equal("7a085853722dc6d2")),
-			HaveTraceFlags(Equal(uint32(1))),
-			HaveAttributes(Not(HaveKey("trace_id"))),
-			HaveAttributes(Not(HaveKey("span_id"))),
-			HaveAttributes(Not(HaveKey("trace_flags"))),
-			HaveAttributes(Not(HaveKey("traceparent"))),
-		)),
-	))
-
+	t.Log("Scenario levelAndINFO should parse level attribute and remote it")
 	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
 		ContainElement(SatisfyAll(
-			HaveAttributes(HaveKeyWithValue("name", "c")),
-			HaveTraceID(BeEmpty()),
-			HaveSpanID(BeEmpty()),
-			HaveTraceFlags(Equal(uint32(0))), // default value
-			HaveAttributes(HaveKey("span_id")),
-		)),
-	))
-
-	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
-		ContainElement(SatisfyAll(
-			HaveLogBody(HavePrefix("name=d")),
-			HaveTraceID(BeEmpty()),
-			HaveSpanID(BeEmpty()),
-			HaveTraceFlags(Equal(uint32(0))), // default value
-		)),
-	))
-
-	// Parse severity properly
-	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
-		ContainElement(SatisfyAll(
-			HaveAttributes(HaveKeyWithValue("name", "a")),
+			HaveAttributes(HaveKeyWithValue("scenario", "levelAndINFO")),
 			HaveSeverityNumber(Equal(9)),
 			HaveSeverityText(Equal("INFO")),
 			HaveAttributes(Not(HaveKey("level"))),
 		)),
 	))
 
+	t.Log("Scenario levelAndWarning should parse level attribute and remote it")
 	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
 		ContainElement(SatisfyAll(
-			HaveAttributes(HaveKeyWithValue("name", "b")),
+			HaveAttributes(HaveKeyWithValue("scenario", "levelAndWarning")),
 			HaveSeverityNumber(Equal(13)),
+			HaveSeverityText(Equal("WARN")),
+			HaveAttributes(Not(HaveKey("level"))),
+		)),
+	))
+
+	t.Log("Scenario log.level should parse log.level attribute and remote it")
+	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
+		ContainElement(SatisfyAll(
+			HaveAttributes(HaveKeyWithValue("scenario", "log.level")),
 			HaveSeverityText(Equal("WARN")),
 			HaveAttributes(Not(HaveKey("log.level"))),
 		)),
 	))
 
+	t.Log("Default scenario should not have any severity")
 	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
 		ContainElement(SatisfyAll(
-			HaveAttributes(HaveKeyWithValue("name", "c")),
-			HaveSeverityNumber(Equal(0)), // default value
-			HaveSeverityText(BeEmpty()),
-		)),
-	))
-
-	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
-		ContainElement(SatisfyAll(
-			HaveLogBody(HavePrefix("name=d")),
+			HaveLogBody(Equal(stdloggen.DefaultLine)),
 			HaveSeverityNumber(Equal(0)), // default value
 			HaveSeverityText(BeEmpty()),
 		)),

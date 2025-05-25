@@ -16,10 +16,10 @@ const (
 	DefaultName          = "stdloggen"
 	DefaultContainerName = "stdloggen"
 	DefaultImageName     = "alpine:latest"
-	firstLine            = "echo 'foo bar'"
-	DefaultScript        = `while true
+	DefaultLine          = "foo bar"
+	defaultScript        = `while true
 do
-` + firstLine + `
+echo '` + DefaultLine + `'
 sleep 10
 done`
 )
@@ -38,8 +38,8 @@ func WithScript(script string) Option {
 
 func AppendLogLine(line string) Option {
 	return func(spec *corev1.PodSpec) {
-		regex := regexp.MustCompile(".*(" + firstLine + ").*")
-		spec.Containers[0].Command[2] = regex.ReplaceAllString(spec.Containers[0].Command[2], fmt.Sprintf("echo '%s'\n%s", line, firstLine))
+		regex := regexp.MustCompile(".*(echo '" + DefaultLine + "').*")
+		spec.Containers[0].Command[2] = regex.ReplaceAllString(spec.Containers[0].Command[2], fmt.Sprintf("echo '%s'\necho '%s'", DefaultLine, line))
 	}
 }
 
@@ -63,7 +63,7 @@ func PodSpec(opts ...Option) corev1.PodSpec {
 						corev1.ResourceMemory: resource.MustParse("30Mi"),
 					},
 				},
-				Command: []string{"/bin/sh", "-c", DefaultScript},
+				Command: []string{"/bin/sh", "-c", defaultScript},
 			},
 		},
 	}

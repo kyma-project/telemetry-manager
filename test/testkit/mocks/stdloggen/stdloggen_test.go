@@ -18,8 +18,8 @@ func TestAppendLogLine(t *testing.T) {
 
 	expectedSrcipt := `while true
 do
-echo 'new log line'
 echo 'foo bar'
+echo 'new log line'
 sleep 10
 done`
 	assert.Equal(t, expectedSrcipt, gotScript, "The script should contain the new log line before the first line")
