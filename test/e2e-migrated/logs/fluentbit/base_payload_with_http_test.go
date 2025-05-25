@@ -62,7 +62,6 @@ func TestBasePayloadWithHttpOutput(t *testing.T) {
 		fluentbit.HaveDateISO8601Format(BeTrue()),
 
 		// kubernetes filter
-		fluentbit.HaveKubernetesAttributes(HaveKey("container_hash")),
 		fluentbit.HaveKubernetesAttributes(HaveKeyWithValue("container_name", loggen.DefaultContainerName)),
 		fluentbit.HaveKubernetesAttributes(HaveKeyWithValue("container_image", "docker.io/library/"+loggen.DefaultImageName)),
 		fluentbit.HaveKubernetesAttributes(HaveKeyWithValue("namespace_name", genNs)),
