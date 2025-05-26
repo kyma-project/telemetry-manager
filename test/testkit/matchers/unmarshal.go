@@ -18,9 +18,7 @@ func UnmarshalOTLPFile[T plog.Logs | pmetric.Metrics | ptrace.Traces](jsonData [
 	var otlpData []T
 
 	// User bufio.Reader instead of bufio.Scanner to handle very long lines gracefully
-	// Increase default buffer size to 1MB to accommodate larger lines
-	const bufSize = 1024 * 1024
-	reader := bufio.NewReaderSize(bytes.NewReader(jsonData), bufSize)
+	reader := bufio.NewReader(bytes.NewReader(jsonData))
 
 	for {
 		lineJSONData, readerErr := reader.ReadBytes('\n')
