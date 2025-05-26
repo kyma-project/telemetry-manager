@@ -10,9 +10,11 @@ import (
 
 const iso8601 = "2006-01-02T15:04:05.999Z"
 
+// HaveFlatLogs unmarshals OTLP logs from a JSON file, converts them to FlatLogs and applies the matcher to them.
+// Even though FluentBit does not use OTLP, the logs are still in OTLP format, so we can use the e2e test setup as for other telemetry types.
 func HaveFlatLogs(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(jsonlPLogs []byte) ([]FlatLog, error) {
-		lds, err := unmarshalPLogs(jsonlPLogs)
+	return gomega.WithTransform(func(otlpLogs []byte) ([]FlatLog, error) {
+		lds, err := unmarshalOTLPLogs(otlpLogs)
 		if err != nil {
 			return nil, fmt.Errorf("HaveFlat requires a valid OTLP JSON document: %w", err)
 		}

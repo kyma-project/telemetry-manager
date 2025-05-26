@@ -8,8 +8,8 @@ import (
 )
 
 func HaveFlatTraces(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(jsonTraces []byte) ([]FlatTrace, error) {
-		tds, err := unmarshalPTraces(jsonTraces)
+	return gomega.WithTransform(func(otlpTraces []byte) ([]FlatTrace, error) {
+		tds, err := unmarshalOTLPTraces(otlpTraces)
 		if err != nil {
 			return nil, fmt.Errorf("HaveFlatTraces requires a valid OTLP JSON document: %w", err)
 		}

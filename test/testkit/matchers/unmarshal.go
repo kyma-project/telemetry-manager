@@ -11,15 +11,15 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
-// UnmarshalPdata reads and unmarshals pdata signals from a JSONL-encoded byte slice (every line is a JSON document encoding pdata).
+// UnmarshalOTLPFile reads and unmarshals pdata signals from a JSONL-encoded byte slice (every line is a JSON document encoding pdata).
 // It processes each line of the input data and applies the provided unmarshal function.
-func UnmarshalPdata[T plog.Logs | pmetric.Metrics | ptrace.Traces](data []byte, unmarshal func(buf []byte) (T, error)) ([]T, error) {
-	var allPdata []T
+func UnmarshalOTLPFile[T plog.Logs | pmetric.Metrics | ptrace.Traces](rawData []byte, unmarshal func(buf []byte) (T, error)) ([]T, error) {
+	var otlpData []T
 
 	// User bufio.Reader instead of bufio.Scanner to handle very long lines gracefully
 	// Increase default buffer size to 1MB to accommodate larger lines
 	const bufSize = 1024 * 1024
-	reader := bufio.NewReaderSize(bytes.NewReader(data), bufSize)
+	reader := bufio.NewReaderSize(bytes.NewReader(rawData), bufSize)
 
 	for {
 		line, readerErr := reader.ReadBytes('\n')
@@ -28,12 +28,18 @@ func UnmarshalPdata[T plog.Logs | pmetric.Metrics | ptrace.Traces](data []byte, 
 		}
 
 		if len(line) > 0 {
-			linePdata, err := unmarshal(line)
-			if err != nil {
-				return nil, handleUnmarshalError(err, line, len(data))
+			linePdata, unmarshalErr := unmarshal(line)
+			if unmarshalErr != nil {
+				if lastLine := readerErr == io.EOF; lastLine {
+					// If the error is due to the last line not being complete, we can still return the data read so far
+					// but we should not return an error.
+					continue
+				}
+
+				return nil, handleUnmarshalError(unmarshalErr, line, len(rawData))
 			}
 
-			allPdata = append(allPdata, linePdata)
+			otlpData = append(otlpData, linePdata)
 		}
 
 		// check the io.EOF error after checking the line since both can be returned simultaneously
@@ -42,7 +48,7 @@ func UnmarshalPdata[T plog.Logs | pmetric.Metrics | ptrace.Traces](data []byte, 
 		}
 	}
 
-	return allPdata, nil
+	return otlpData, nil
 }
 
 func handleUnmarshalError(err error, line []byte, totalLength int) error {
@@ -55,7 +61,7 @@ func handleUnmarshalError(err error, line []byte, totalLength int) error {
 		lastElems = line[lineLength-maxPreviewLength:]
 	}
 
-	return fmt.Errorf("failed to unmarshal pdata: total bytes: %d, line bytes: %d, last %d elems: %q, error: %w",
+	return fmt.Errorf("failed to unmarshal data: total bytes: %d, line bytes: %d, last %d elems: %q, error: %w",
 		totalLength,
 		lineLength,
 		maxPreviewLength,

@@ -21,8 +21,8 @@ type FlatLog struct {
 	TraceFlags                                                   uint32
 }
 
-func unmarshalPLogs(jsonlPLogs []byte) ([]plog.Logs, error) {
-	return matchers.UnmarshalPdata(jsonlPLogs, func(buf []byte) (plog.Logs, error) {
+func unmarshalOTLPLogs(otlpLogs []byte) ([]plog.Logs, error) {
+	return matchers.UnmarshalOTLPFile(otlpLogs, func(buf []byte) (plog.Logs, error) {
 		var unmarshaler plog.JSONUnmarshaler
 		return unmarshaler.UnmarshalLogs(buf)
 	})
