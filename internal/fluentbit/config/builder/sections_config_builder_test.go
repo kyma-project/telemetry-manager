@@ -288,12 +288,6 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
     labels              on
     merge_log           on
 
-[FILTER]
-    name   lua
-    match  foo.*
-    call   enrich_app_name
-    script /fluent-bit/scripts/filter-script.lua
-
 [OUTPUT]
     name                     stdout
     match                    foo.*
