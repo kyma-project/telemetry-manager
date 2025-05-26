@@ -2,6 +2,7 @@ package assert
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	. "github.com/onsi/gomega"
@@ -23,21 +24,27 @@ func BackendDataConsistentlyMatches(ctx context.Context, backend *kitbackend.Bac
 }
 
 func HTTPResponseEventuallyMatches(ctx context.Context, queryURL string, httpBodyMatcher types.GomegaMatcher) {
+	var resp *http.Response
+	var err error
 	Eventually(func(g Gomega) {
-		resp, err := suite.ProxyClient.GetWithContext(ctx, queryURL)
+		resp, err = suite.ProxyClient.GetWithContext(ctx, queryURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		defer resp.Body.Close()
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(httpBodyMatcher))
-	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed(),
+		fmt.Sprintf("HTTP response did not match expected body within the timeout period. Response: %+v", resp))
 }
 
 func HTTPResponseConsistentlyMatches(ctx context.Context, queryURL string, httpBodyMatcher types.GomegaMatcher) {
+	var resp *http.Response
+	var err error
 	Consistently(func(g Gomega) {
-		resp, err := suite.ProxyClient.GetWithContext(ctx, queryURL)
+		resp, err = suite.ProxyClient.GetWithContext(ctx, queryURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		defer resp.Body.Close()
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(httpBodyMatcher))
-	}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+	}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed(),
+		fmt.Sprintf("HTTP response did not match expected body within the consistent period. Response: %+v", resp))
 }
