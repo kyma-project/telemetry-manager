@@ -33,23 +33,14 @@ func BackendDataConsistentlyMatches(ctx context.Context, backend *kitbackend.Bac
 
 func HTTPResponseEventuallyMatches1(offset int, t *testing.T, queryURL string, httpBodyMatcher types.GomegaMatcher) {
 	t.Helper()
-	//t.Log("Waiting for the backend to be ready...")
-
-	//t.Logf("The offset is: %d", getOffset())
 	EventuallyWithOffset(getOffset(), func(g Gomega) {
 		resp, err := suite.ProxyClient.GetWithContext(t.Context(), queryURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		defer resp.Body.Close()
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		//return testme(g, resp, httpBodyMatcher)
 		g.Expect(resp).To(HaveHTTPBody(httpBodyMatcher))
 	}, 2, periodic.TelemetryInterval).Should(Succeed(), "")
 }
-
-//func testme(g Gomega, resp *http.Response, httpBodyMatcher types.GomegaMatcher) bool {
-//	//return g.Expect(resp).To(HaveHTTPBody(httpBodyMatcher))
-//	return false
-//}
 
 func HTTPResponseEventuallyMatches(ctx context.Context, queryURL string, httpBodyMatcher types.GomegaMatcher) {
 	Eventually(func(g Gomega) {
@@ -84,7 +75,7 @@ func getOffset() int {
 		funcName := getFuncName(frame.Function)
 
 		if !startCounting {
-			if funcName == "getOffset" {
+			if funcName == "getOffset" { // start offset counting from current function to TestXXXX function
 				startCounting = true
 				continue
 			}
