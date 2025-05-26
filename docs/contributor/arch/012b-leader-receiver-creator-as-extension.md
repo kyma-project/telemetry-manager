@@ -50,9 +50,7 @@ extensions:
 
 The leader elector extension would contain the configuration providing lease name and namespace. This extension would be then referenced in the receivers.
 
-The Singleton Receiver Creator would be deprecated and removed. The `kymastatsreceiver` and `k8sclusterreceiver` would use the leader elector extension for leader election.
-
-The change would also require changes in the `k8sclusterreceiver` to support the leader election extension.
+### Consequences
 
 The Singleton Receiver Creator (https://github.com/kyma-project/opentelemetry-collector-components/tree/v0.1.16/receiver/singletonreceivercreator) would be deprecated and removed. The `kymastatsreceiver` and `k8sclusterreceiver` would use the leader elector extension for leader election.
 
