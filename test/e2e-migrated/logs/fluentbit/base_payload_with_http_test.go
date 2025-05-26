@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestBasePayloadWithHttpOutput(t *testing.T) {
+func TestBasePayloadWithHTTPOutput(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelFluentBit)
 
 	var (
