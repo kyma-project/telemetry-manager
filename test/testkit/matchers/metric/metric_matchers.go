@@ -13,8 +13,8 @@ import (
 
 // HaveFlatMetrics extracts FlatMetrics from JSON and applies the matcher to them.
 func HaveFlatMetrics(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(jsonMetrics []byte) ([]FlatMetric, error) {
-		mds, err := unmarshalMetrics(jsonMetrics)
+	return gomega.WithTransform(func(jsonlPMetrics []byte) ([]FlatMetric, error) {
+		mds, err := unmarshalPMetrics(jsonlPMetrics)
 		if err != nil {
 			return nil, fmt.Errorf("HaveFlatMetrics requires a valid OTLP JSON document: %w", err)
 		}

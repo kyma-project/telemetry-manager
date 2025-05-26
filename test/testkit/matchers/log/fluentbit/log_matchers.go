@@ -11,10 +11,10 @@ import (
 const iso8601 = "2006-01-02T15:04:05.999Z"
 
 func HaveFlatLogs(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(jsonLogs []byte) ([]FlatLog, error) {
-		lds, err := unmarshalLogs(jsonLogs)
+	return gomega.WithTransform(func(jsonlPLogs []byte) ([]FlatLog, error) {
+		lds, err := unmarshalPLogs(jsonlPLogs)
 		if err != nil {
-			return nil, fmt.Errorf("HaveFlatFluentBitLogs requires a valid OTLP JSON document: %w", err)
+			return nil, fmt.Errorf("HaveFlat requires a valid OTLP JSON document: %w", err)
 		}
 
 		fl := flattenAllLogs(lds)
