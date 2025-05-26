@@ -14,7 +14,7 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -36,8 +36,8 @@ Types user:string pass:string`
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
-	logProducer := loggen.New(genNs).
-		WithAnnotations(map[string]string{"fluentbit.io/parser": "my-regex-parser"})
+	logProducer := stdloggen.NewDeployment(genNs).
+		WithAnnotation("fluentbit.io/parser", "my-regex-parser")
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).

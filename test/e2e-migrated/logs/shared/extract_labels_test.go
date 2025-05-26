@@ -6,7 +6,6 @@ import (
 
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
@@ -18,7 +17,7 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -38,7 +37,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 				return testutils.BuildLogPipelineApplicationInput(testutils.ExtIncludeNamespaces(includeNs))
 			},
 			logGeneratorBuilder: func(ns string, labels map[string]string) client.Object {
-				return loggen.New(ns).WithLabels(labels).K8sObject()
+				return stdloggen.NewDeployment(ns).WithLabels(labels).K8sObject()
 			},
 			expectAgent: true,
 		},
@@ -94,13 +93,6 @@ func TestExtractLabels_OTel(t *testing.T) {
 				labelKeyPrefixMatch2:   labelValuePrefixMatch2,
 				labelKeyShouldNotMatch: labelValueShouldNotMatch,
 			}
-			resources := []client.Object{
-				kitk8s.NewNamespace(backendNs).K8sObject(),
-				kitk8s.NewNamespace(genNs).K8sObject(),
-				&pipeline,
-				tc.logGeneratorBuilder(genNs, genLabels),
-			}
-			resources = append(resources, backend.K8sObjects()...)
 
 			Eventually(func(g Gomega) int {
 				var telemetry operatorv1alpha1.Telemetry
@@ -122,6 +114,14 @@ func TestExtractLabels_OTel(t *testing.T) {
 				return len(telemetry.Spec.Enrichments.ExtractPodLabels)
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(2))
 
+			resources := []client.Object{
+				kitk8s.NewNamespace(backendNs).K8sObject(),
+				kitk8s.NewNamespace(genNs).K8sObject(),
+				&pipeline,
+				tc.logGeneratorBuilder(genNs, genLabels),
+			}
+			resources = append(resources, backend.K8sObjects()...)
+
 			t.Cleanup(func() {
 				require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 			})
@@ -132,7 +132,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 			}
 
 			assert.DeploymentReady(t.Context(), kitkyma.LogGatewayName)
-			assert.DeploymentReady(t.Context(), types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})
+			assert.DeploymentReady(t.Context(), backend.NamespacedName())
 			assert.OTelLogPipelineHealthy(t.Context(), pipelineName)
 			assert.OTelLogsFromNamespaceDelivered(t.Context(), backend, genNs)
 
@@ -163,9 +163,9 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 	backendNotDropped := kitbackend.New(notDroppedNs, kitbackend.SignalTypeLogsFluentBit)
 	backendDropped := kitbackend.New(droppedNs, kitbackend.SignalTypeLogsFluentBit)
 
-	logProducer := loggen.New(genNs).
-		WithLabels(map[string]string{"env": "dev"}).
-		WithAnnotations(map[string]string{"release": "v1.0.0"})
+	logProducer := stdloggen.NewDeployment(genNs).
+		WithLabel("env", "dev").
+		WithAnnotation("release", "v1.0.0")
 
 	pipelineNotDropped := testutils.NewLogPipelineBuilder().
 		WithName(pipelineNameNotDropped).
@@ -202,9 +202,9 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 	assert.FluentBitLogPipelineHealthy(t.Context(), pipelineNameNotDropped)
 	assert.FluentBitLogPipelineHealthy(t.Context(), pipelineNameDropped)
 	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
-	assert.DeploymentReady(t.Context(), types.NamespacedName{Namespace: notDroppedNs, Name: kitbackend.DefaultName})
-	assert.DeploymentReady(t.Context(), types.NamespacedName{Namespace: droppedNs, Name: kitbackend.DefaultName})
-	assert.DeploymentReady(t.Context(), types.NamespacedName{Namespace: genNs, Name: loggen.DefaultName})
+	assert.DeploymentReady(t.Context(), backendNotDropped.NamespacedName())
+	assert.DeploymentReady(t.Context(), backendDropped.NamespacedName())
+	assert.DeploymentReady(t.Context(), logProducer.NamespacedName())
 
 	// Scenario 1: Labels not dropped
 	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backendNotDropped, genNs)

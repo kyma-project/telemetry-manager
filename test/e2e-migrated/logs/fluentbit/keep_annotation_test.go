@@ -14,7 +14,7 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -30,7 +30,7 @@ func TestKeepAnnotations(t *testing.T) {
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
-	logProducer := loggen.New(genNs).WithAnnotations(map[string]string{"release": "v1.0.0"})
+	logProducer := stdloggen.NewDeployment(genNs).WithAnnotation("release", "v1.0.0")
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithKeepAnnotations(true).
