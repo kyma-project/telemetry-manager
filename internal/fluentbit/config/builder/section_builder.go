@@ -9,10 +9,9 @@ import (
 )
 
 type SectionBuilder struct {
-	params         []config.Parameter
-	keyLen         int
-	builder        strings.Builder
-	withoutSorting bool
+	params  []config.Parameter
+	keyLen  int
+	builder strings.Builder
 }
 
 func NewInputSectionBuilder() *SectionBuilder {

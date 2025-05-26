@@ -63,7 +63,7 @@ data:
       enrich_app_name_internal(record.kubernetes)
       return 2, timestamp, record
     end
-    function kubernetes_map_keys(tag, timestamp, record)
+    function dedot_and_enrich_app_name(tag, timestamp, record)
       if record.kubernetes == nil then
         return 0
       end
@@ -265,7 +265,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 9a334ac8a53dc0cc655d6a9ed4620310c3109b49607c3fa95581692086ae6ff7
+        checksum/config: 54ef44075035247cd4eba50a8df088d1426f0ea5deccdc0ba7b9f81078bc0226
         traffic.sidecar.istio.io/excludeInboundPorts: 2020,2021
       creationTimestamp: null
       labels:

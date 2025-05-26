@@ -629,7 +629,7 @@ function enrich_app_name(tag, timestamp, record)
   enrich_app_name_internal(record.kubernetes)
   return 2, timestamp, record
 end
-function kubernetes_map_keys(tag, timestamp, record)
+function dedot_and_enrich_app_name(tag, timestamp, record)
   if record.kubernetes == nil then
     return 0
   end

@@ -27,11 +27,11 @@ func TestCreateRecordModifierFilter(t *testing.T) {
 	require.Equal(t, expected, actual, "Fluent Bit Permanent parser config is invalid")
 }
 
-func TestCreateLuaDedotFilterWithDefinedHostAndDedotSet(t *testing.T) {
+func TestCreateLuaFilterWithDefinedHostAndDedot(t *testing.T) {
 	expected := `[FILTER]
     name   lua
     match  foo.*
-    call   kubernetes_map_keys
+    call   dedot_and_enrich_app_name
     script /fluent-bit/scripts/filter-script.lua
 
 `
@@ -47,11 +47,11 @@ func TestCreateLuaDedotFilterWithDefinedHostAndDedotSet(t *testing.T) {
 		},
 	}
 
-	actual := createLuaDedotFilter(logPipeline)
+	actual := createLuaFilter(logPipeline)
 	require.Equal(t, expected, actual)
 }
 
-func TestCreateLuaDedotFilterWithUndefinedHost(t *testing.T) {
+func TestCreateLuaFilterWithUndefinedHostAndDedot(t *testing.T) {
 	logPipeline := &telemetryv1alpha1.LogPipeline{
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Output: telemetryv1alpha1.LogPipelineOutput{
@@ -60,27 +60,11 @@ func TestCreateLuaDedotFilterWithUndefinedHost(t *testing.T) {
 		},
 	}
 
-	actual := createLuaDedotFilter(logPipeline)
+	actual := createLuaFilter(logPipeline)
 	require.Equal(t, "", actual)
 }
 
-func TestCreateLuaDedotFilterWithDedotFalse(t *testing.T) {
-	logPipeline := &telemetryv1alpha1.LogPipeline{
-		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Output: telemetryv1alpha1.LogPipelineOutput{
-				HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
-					Dedot: false,
-					Host:  telemetryv1alpha1.ValueType{Value: "localhost"},
-				},
-			},
-		},
-	}
-
-	actual := createLuaDedotFilter(logPipeline)
-	require.Equal(t, "", actual)
-}
-
-func TestCreateLuaEnrichAppNameFilter(t *testing.T) {
+func TestCreateLuaFilterWithDedotFalse(t *testing.T) {
 	expected := `[FILTER]
     name   lua
     match  foo.*
@@ -93,17 +77,18 @@ func TestCreateLuaEnrichAppNameFilter(t *testing.T) {
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Output: telemetryv1alpha1.LogPipelineOutput{
 				HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
-					Host: telemetryv1alpha1.ValueType{Value: "localhost"},
+					Dedot: false,
+					Host:  telemetryv1alpha1.ValueType{Value: "localhost"},
 				},
 			},
 		},
 	}
 
-	actual := createLuaEnrichAppNameFilter(logPipeline)
+	actual := createLuaFilter(logPipeline)
 	require.Equal(t, expected, actual)
 }
 
-func TestCreateTimestampAndAppNameModifyFilter(t *testing.T) {
+func TestCreateTimestampModifyFilter(t *testing.T) {
 	expected := `[FILTER]
     name  modify
     match foo.*
@@ -182,7 +167,7 @@ func TestMergeSectionsConfig(t *testing.T) {
 [FILTER]
     name   lua
     match  foo.*
-    call   kubernetes_map_keys
+    call   dedot_and_enrich_app_name
     script /fluent-bit/scripts/filter-script.lua
 
 [OUTPUT]

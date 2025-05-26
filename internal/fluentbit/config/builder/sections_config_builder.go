@@ -49,8 +49,7 @@ func buildFluentBitSectionsConfig(pipeline *telemetryv1alpha1.LogPipeline, confi
 	sb.WriteString(createKubernetesFilter(pipeline))
 	sb.WriteString(createTimestampModifyFilter(pipeline))
 	sb.WriteString(createCustomFilters(pipeline, nonMultilineFilter))
-	sb.WriteString(createLuaEnrichAppNameFilter(pipeline))
-	sb.WriteString(createLuaDedotFilter(pipeline))
+	sb.WriteString(createLuaFilter(pipeline))
 	sb.WriteString(createOutputSection(pipeline, config.pipelineDefaults))
 
 	return sb.String(), nil
@@ -64,31 +63,22 @@ func createRecordModifierFilter(pipeline *telemetryv1alpha1.LogPipeline) string 
 		Build()
 }
 
-func createLuaDedotFilter(logPipeline *telemetryv1alpha1.LogPipeline) string {
+func createLuaFilter(logPipeline *telemetryv1alpha1.LogPipeline) string {
 	output := logPipeline.Spec.Output
-	if !logpipelineutils.IsHTTPDefined(&output) || !output.HTTP.Dedot {
+	if !logpipelineutils.IsHTTPDefined(&output) {
 		return ""
+	}
+
+	call := "enrich_app_name"
+	if output.HTTP.Dedot {
+		call = "dedot_and_enrich_app_name"
 	}
 
 	return NewFilterSectionBuilder().
 		AddConfigParam("name", "lua").
 		AddConfigParam("match", fmt.Sprintf("%s.*", logPipeline.Name)).
 		AddConfigParam("script", "/fluent-bit/scripts/filter-script.lua").
-		AddConfigParam("call", "kubernetes_map_keys").
-		Build()
-}
-
-func createLuaEnrichAppNameFilter(logPipeline *telemetryv1alpha1.LogPipeline) string {
-	output := logPipeline.Spec.Output
-	if !logpipelineutils.IsHTTPDefined(&output) || (logpipelineutils.IsHTTPDefined(&output) && output.HTTP.Dedot) {
-		return ""
-	}
-
-	return NewFilterSectionBuilder().
-		AddConfigParam("name", "lua").
-		AddConfigParam("match", fmt.Sprintf("%s.*", logPipeline.Name)).
-		AddConfigParam("script", "/fluent-bit/scripts/filter-script.lua").
-		AddConfigParam("call", "enrich_app_name").
+		AddConfigParam("call", call).
 		Build()
 }
 
