@@ -103,8 +103,6 @@ func sanitizeSpecID(filePath string) string {
 
 const (
 	// Test suites labels
-	LabelLogs                 = "logs"
-	LabelLogsOtel             = "logs-otel"
 	LabelLogsFluentBit        = "logs-fluentbit"
 	LabelLogAgent             = "log-agent"
 	LabelLogGateway           = "log-gateway"
@@ -126,15 +124,18 @@ const (
 	LabelSkip         = "skip"
 
 	// Self-monitoring test labels
-	LabelSelfMonitoringLogsHealthy         = "self-mon-logs-healthy"
-	LabelSelfMonitoringLogsBackpressure    = "self-mon-logs-backpressure"
-	LabelSelfMonitoringLogsOutage          = "self-mon-logs-outage"
-	LabelSelfMonitoringTracesHealthy       = "self-mon-traces-healthy"
-	LabelSelfMonitoringTracesBackpressure  = "self-mon-traces-backpressure"
-	LabelSelfMonitoringTracesOutage        = "self-mon-traces-outage"
-	LabelSelfMonitoringMetricsHealthy      = "self-mon-metrics-healthy"
-	LabelSelfMonitoringMetricsBackpressure = "self-mon-metrics-backpressure"
-	LabelSelfMonitoringMetricsOutage       = "self-mon-metrics-outage"
+	LabelSelfMonitoringLogsFluentBitBackpressure = "self-mon-fluentbit-backpressure"
+	LabelSelfMonitoringLogsFluentBitOutage       = "self-mon-fluentbit-outage"
+	LabelSelfMonitoringLogsAgentBackpressure     = "self-mon-log-agent-backpressure"
+	LabelSelfMonitoringLogsAgentOutage           = "self-mon-log-agent-outage"
+	LabelSelfMonitoringLogsGatewayBackpressure   = "self-mon-log-gateway-backpressure"
+	LabelSelfMonitoringLogsGatewayOutage         = "self-mon-log-gateway-outage"
+	LabelSelfMonitoringTracesHealthy             = "self-mon-traces-healthy"
+	LabelSelfMonitoringTracesBackpressure        = "self-mon-traces-backpressure"
+	LabelSelfMonitoringTracesOutage              = "self-mon-traces-outage"
+	LabelSelfMonitoringMetricsHealthy            = "self-mon-metrics-healthy"
+	LabelSelfMonitoringMetricsBackpressure       = "self-mon-metrics-backpressure"
+	LabelSelfMonitoringMetricsOutage             = "self-mon-metrics-outage"
 
 	// Miscellaneous test label (for edge-cases and unrelated tests)
 	// [please avoid adding tests to this category if it already fits in a more specific one]

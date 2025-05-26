@@ -142,6 +142,8 @@ func makeOperators(logPipeline telemetryv1alpha1.LogPipeline) []Operator {
 	}
 	if keepOriginalBody {
 		operators = append(operators, makeMoveBodyToLogOriginal())
+	} else {
+		operators = append(operators, makeRemoveBody())
 	}
 
 	operators = append(operators,
@@ -227,6 +229,15 @@ func makeMoveBodyToLogOriginal() Operator {
 		Type: Move,
 		From: "body",
 		To:   ottlexpr.Attribute("log.original"),
+	}
+}
+
+// remove body attribute
+func makeRemoveBody() Operator {
+	return Operator{
+		ID:    "remove-body",
+		Type:  Remove,
+		Field: "body",
 	}
 }
 

@@ -447,7 +447,7 @@ To detect and fix such situations, check the [pipeline status](./resources/04-tr
 
 ### No Spans Arrive at the Backend
 
-**Symptom**: In the TracePipeline status, the `TelemetryFlowHealthy` condition has status **AllDataDropped**.
+**Symptom**: In the TracePipeline status, the `TelemetryFlowHealthy` condition has status **GatewayAllTelemetryDataDropped**.
 
 **Cause**: Incorrect backend endpoint configuration (such as using the wrong authentication credentials), or the backend is unreachable.
 
@@ -462,7 +462,7 @@ To detect and fix such situations, check the [pipeline status](./resources/04-tr
 **Symptom**:
 
 - The backend is reachable and the connection is properly configured, but some spans are refused.
-- In the TracePipeline status, the `TelemetryFlowHealthy` condition has status **SomeDataDropped**.
+- In the TracePipeline status, the `TelemetryFlowHealthy` condition has status **GatewaySomeTelemetryDataDropped**.
 
 **Cause**: It can happen due to a variety of reasons - for example, the backend is limiting the ingestion rate.
 
@@ -512,9 +512,9 @@ If you just want to see traces for one particular request, you can manually forc
 
 ### Gateway Buffer Filling Up
 
-**Symptom**: In the TracePipeline status, the `TelemetryFlowHealthy` condition has status **BufferFillingUp**.
+**Symptom**: In the TracePipeline status, the `TelemetryFlowHealthy` condition has status **GatewayBufferFillingUp**.
 
-**Cause**: The backend export rate is too low compared to the gateway ingestion rate.
+**Cause**: The backend ingestion rate is too low compared to the gateway export rate.
 
 **Solution**:
 

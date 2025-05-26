@@ -71,32 +71,48 @@ func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *
 		return metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated
 	}
 
-	probeResult, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
+	// Probe gateway flow health
+	gatewayProbeResult, err := r.gatewayFlowHealthProber.Probe(ctx, pipeline.Name)
 	if err != nil {
-		logf.FromContext(ctx).Error(err, "Failed to probe flow health")
-		return metav1.ConditionUnknown, conditions.ReasonSelfMonProbingFailed
+		logf.FromContext(ctx).Error(err, "Failed to probe gateway flow health")
+		return metav1.ConditionUnknown, conditions.ReasonSelfMonGatewayProbingFailed
 	}
 
-	logf.FromContext(ctx).V(1).Info("Probed flow health", "result", probeResult)
+	logf.FromContext(ctx).V(1).Info("Probed gateway flow health", "result", gatewayProbeResult)
 
-	reason := flowHealthReasonFor(probeResult)
-	if probeResult.Healthy {
+	// Probe agent flow health
+	agentProbeResult, err := r.agentFlowHealthProber.Probe(ctx, pipeline.Name)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Failed to probe agent flow health")
+		return metav1.ConditionUnknown, conditions.ReasonSelfMonAgentProbingFailed
+	}
+
+	logf.FromContext(ctx).V(1).Info("Probed agent flow health", "result", agentProbeResult)
+
+	reason := flowHealthReasonFor(gatewayProbeResult, agentProbeResult)
+	if reason == conditions.ReasonSelfMonFlowHealthy {
 		return metav1.ConditionTrue, reason
 	}
 
 	return metav1.ConditionFalse, reason
 }
 
-func flowHealthReasonFor(probeResult prober.OTelPipelineProbeResult) string {
+func flowHealthReasonFor(gatewayProbeResult prober.OTelGatewayProbeResult, agentProbeResult prober.OTelAgentProbeResult) string {
 	switch {
-	case probeResult.AllDataDropped:
-		return conditions.ReasonSelfMonAllDataDropped
-	case probeResult.SomeDataDropped:
-		return conditions.ReasonSelfMonSomeDataDropped
-	case probeResult.QueueAlmostFull:
-		return conditions.ReasonSelfMonBufferFillingUp
-	case probeResult.Throttling:
+	case gatewayProbeResult.AllDataDropped:
+		return conditions.ReasonSelfMonGatewayAllDataDropped
+	case gatewayProbeResult.SomeDataDropped:
+		return conditions.ReasonSelfMonGatewaySomeDataDropped
+	case gatewayProbeResult.QueueAlmostFull:
+		return conditions.ReasonSelfMonGatewayBufferFillingUp
+	case gatewayProbeResult.Throttling:
 		return conditions.ReasonSelfMonGatewayThrottling
+	case agentProbeResult.AllDataDropped:
+		return conditions.ReasonSelfMonAgentAllDataDropped
+	case agentProbeResult.SomeDataDropped:
+		return conditions.ReasonSelfMonAgentSomeDataDropped
+	case agentProbeResult.QueueAlmostFull:
+		return conditions.ReasonSelfMonAgentBufferFillingUp
 	default:
 		return conditions.ReasonSelfMonFlowHealthy
 	}
@@ -115,7 +131,7 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 			r.agentProber,
 			types.NamespacedName{Name: otelcollector.LogAgentName, Namespace: r.telemetryNamespace},
 			r.errToMessageConverter,
-			commonstatus.SignalTypeLogs)
+			commonstatus.SignalTypeOtelLogs)
 	}
 
 	condition.ObservedGeneration = pipeline.Generation

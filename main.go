@@ -159,8 +159,8 @@ func run() error {
 
 	setupLog.Info("Starting Telemetry Manager", "version", version)
 
-	for _, flag := range featureflags.EnabledFlags() {
-		setupLog.Info("Enabled feature flag", "flag", flag)
+	for _, flg := range featureflags.EnabledFlags() {
+		setupLog.Info("Enabled feature flag", "flag", flg)
 	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{

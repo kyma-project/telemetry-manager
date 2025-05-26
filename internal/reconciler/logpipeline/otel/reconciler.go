@@ -38,8 +38,12 @@ type GatewayApplierDeleter interface {
 	DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error
 }
 
-type FlowHealthProber interface {
-	Probe(ctx context.Context, pipelineName string) (prober.OTelPipelineProbeResult, error)
+type GatewayFlowHealthProber interface {
+	Probe(ctx context.Context, pipelineName string) (prober.OTelGatewayProbeResult, error)
+}
+
+type AgentFlowHealthProber interface {
+	Probe(ctx context.Context, pipelineName string) (prober.OTelAgentProbeResult, error)
 }
 
 type IstioStatusChecker interface {
@@ -76,24 +80,26 @@ type Reconciler struct {
 	moduleVersion      string
 
 	// Dependencies
-	flowHealthProber      FlowHealthProber
-	agentConfigBuilder    AgentConfigBuilder
-	agentProber           Prober
-	agentApplierDeleter   AgentApplierDeleter
-	gatewayApplierDeleter GatewayApplierDeleter
-	gatewayConfigBuilder  GatewayConfigBuilder
-	gatewayProber         Prober
-	istioStatusChecker    IstioStatusChecker
-	pipelineLock          PipelineLock
-	pipelineValidator     PipelineValidator
-	errToMessageConverter ErrorToMessageConverter
+	gatewayFlowHealthProber GatewayFlowHealthProber
+	agentFlowHealthProber   AgentFlowHealthProber
+	agentConfigBuilder      AgentConfigBuilder
+	agentProber             Prober
+	agentApplierDeleter     AgentApplierDeleter
+	gatewayApplierDeleter   GatewayApplierDeleter
+	gatewayConfigBuilder    GatewayConfigBuilder
+	gatewayProber           Prober
+	istioStatusChecker      IstioStatusChecker
+	pipelineLock            PipelineLock
+	pipelineValidator       PipelineValidator
+	errToMessageConverter   ErrorToMessageConverter
 }
 
 func New(
 	client client.Client,
 	telemetryNamespace string,
 	moduleVersion string,
-	flowHeathProber FlowHealthProber,
+	gatewayFlowHeathProber GatewayFlowHealthProber,
+	agentFlowHealthProber AgentFlowHealthProber,
 	agentConfigBuilder AgentConfigBuilder,
 	agentApplierDeleter AgentApplierDeleter,
 	agentProber Prober,
@@ -106,20 +112,21 @@ func New(
 	errToMessageConverter ErrorToMessageConverter,
 ) *Reconciler {
 	return &Reconciler{
-		Client:                client,
-		telemetryNamespace:    telemetryNamespace,
-		moduleVersion:         moduleVersion,
-		flowHealthProber:      flowHeathProber,
-		agentConfigBuilder:    agentConfigBuilder,
-		agentApplierDeleter:   agentApplierDeleter,
-		agentProber:           agentProber,
-		gatewayApplierDeleter: gatewayApplierDeleter,
-		gatewayConfigBuilder:  gatewayConfigBuilder,
-		gatewayProber:         gatewayProber,
-		istioStatusChecker:    istioStatusChecker,
-		pipelineLock:          pipelineLock,
-		pipelineValidator:     pipelineValidator,
-		errToMessageConverter: errToMessageConverter,
+		Client:                  client,
+		telemetryNamespace:      telemetryNamespace,
+		moduleVersion:           moduleVersion,
+		gatewayFlowHealthProber: gatewayFlowHeathProber,
+		agentFlowHealthProber:   agentFlowHealthProber,
+		agentConfigBuilder:      agentConfigBuilder,
+		agentApplierDeleter:     agentApplierDeleter,
+		agentProber:             agentProber,
+		gatewayApplierDeleter:   gatewayApplierDeleter,
+		gatewayConfigBuilder:    gatewayConfigBuilder,
+		gatewayProber:           gatewayProber,
+		istioStatusChecker:      istioStatusChecker,
+		pipelineLock:            pipelineLock,
+		pipelineValidator:       pipelineValidator,
+		errToMessageConverter:   errToMessageConverter,
 	}
 }
 
@@ -183,12 +190,12 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return nil
 	}
 
-	if err := r.reconcileLogGateway(ctx, pipeline, allPipelines); err != nil {
+	if err := r.reconcileLogGateway(ctx, pipeline, reconcilablePipelines); err != nil {
 		return fmt.Errorf("failed to reconcile log gateway: %w", err)
 	}
 
-	if isLogAgentRequired(pipeline) {
-		if err := r.reconcileLogAgent(ctx, pipeline, allPipelines); err != nil {
+	if len(reconcilablePipelinesRequiringAgents) > 0 {
+		if err := r.reconcileLogAgent(ctx, pipeline, reconcilablePipelinesRequiringAgents); err != nil {
 			return fmt.Errorf("failed to reconcile log agent: %w", err)
 		}
 	}
@@ -387,7 +394,7 @@ func getAgentPorts() []int32 {
 }
 
 func (r *Reconciler) getPipelinesRequiringAgents(allPipelines []telemetryv1alpha1.LogPipeline) []telemetryv1alpha1.LogPipeline {
-	var pipelinesRequiringAgents []telemetryv1alpha1.LogPipeline
+	var pipelinesRequiringAgents = make([]telemetryv1alpha1.LogPipeline, 0)
 
 	for i := range allPipelines {
 		if isLogAgentRequired(&allPipelines[i]) {

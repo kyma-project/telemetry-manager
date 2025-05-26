@@ -39,22 +39,22 @@ func (_m *FlowHealthProber) EXPECT() *FlowHealthProber_Expecter {
 }
 
 // Probe provides a mock function for the type FlowHealthProber
-func (_mock *FlowHealthProber) Probe(ctx context.Context, pipelineName string) (prober.LogPipelineProbeResult, error) {
+func (_mock *FlowHealthProber) Probe(ctx context.Context, pipelineName string) (prober.FluentBitProbeResult, error) {
 	ret := _mock.Called(ctx, pipelineName)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Probe")
 	}
 
-	var r0 prober.LogPipelineProbeResult
+	var r0 prober.FluentBitProbeResult
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (prober.LogPipelineProbeResult, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (prober.FluentBitProbeResult, error)); ok {
 		return returnFunc(ctx, pipelineName)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) prober.LogPipelineProbeResult); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) prober.FluentBitProbeResult); ok {
 		r0 = returnFunc(ctx, pipelineName)
 	} else {
-		r0 = ret.Get(0).(prober.LogPipelineProbeResult)
+		r0 = ret.Get(0).(prober.FluentBitProbeResult)
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = returnFunc(ctx, pipelineName)
@@ -83,12 +83,12 @@ func (_c *FlowHealthProber_Probe_Call) Run(run func(ctx context.Context, pipelin
 	return _c
 }
 
-func (_c *FlowHealthProber_Probe_Call) Return(logPipelineProbeResult prober.LogPipelineProbeResult, err error) *FlowHealthProber_Probe_Call {
-	_c.Call.Return(logPipelineProbeResult, err)
+func (_c *FlowHealthProber_Probe_Call) Return(fluentBitProbeResult prober.FluentBitProbeResult, err error) *FlowHealthProber_Probe_Call {
+	_c.Call.Return(fluentBitProbeResult, err)
 	return _c
 }
 
-func (_c *FlowHealthProber_Probe_Call) RunAndReturn(run func(ctx context.Context, pipelineName string) (prober.LogPipelineProbeResult, error)) *FlowHealthProber_Probe_Call {
+func (_c *FlowHealthProber_Probe_Call) RunAndReturn(run func(ctx context.Context, pipelineName string) (prober.FluentBitProbeResult, error)) *FlowHealthProber_Probe_Call {
 	_c.Call.Return(run)
 	return _c
 }
