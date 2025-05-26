@@ -30,7 +30,8 @@ func TestKeepAnnotations(t *testing.T) {
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
-	logProducer := stdloggen.NewDeployment(genNs).WithAnnotation("release", "v1.0.0")
+	logProducer := stdloggen.NewDeployment(genNs).WithAnnotation("release", "v1.0.0").WithLabel("app", stdloggen.DefaultName)
+
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithKeepAnnotations(true).
@@ -57,9 +58,13 @@ func TestKeepAnnotations(t *testing.T) {
 	assert.DeploymentReady(t.Context(), logProducer.NamespacedName())
 
 	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(
-		ContainElement(fluentbit.HaveKubernetesAnnotations(HaveKeyWithValue("release", "v1.0.0")))),
-	)
+		ContainElement(SatisfyAll(
+			fluentbit.HaveKubernetesAnnotations(HaveKeyWithValue("release", "v1.0.0")),
+		))))
+
 	assert.BackendDataConsistentlyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(
-		Not(ContainElement(fluentbit.HaveKubernetesLabels(Not(BeEmpty()))))),
-	)
+		ContainElement(SatisfyAll(
+			fluentbit.HaveKubernetesLabels(BeEmpty()),
+			fluentbit.HaveKubernetesAttributes(Not(HaveKey("app_name"))),
+		))))
 }

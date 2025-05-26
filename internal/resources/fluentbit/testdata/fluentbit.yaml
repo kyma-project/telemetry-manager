@@ -56,13 +56,27 @@ apiVersion: v1
 data:
   filter-script.lua: |2
 
-    function kubernetes_map_keys(tag, timestamp, record)
+    function enrich_app_name(tag, timestamp, record)
       if record.kubernetes == nil then
         return 0
       end
+      enrich_app_name_internal(record.kubernetes)
+      return 2, timestamp, record
+    end
+    function dedot_and_enrich_app_name(tag, timestamp, record)
+      if record.kubernetes == nil then
+        return 0
+      end
+      enrich_app_name_internal(record.kubernetes)
       map_keys(record.kubernetes.annotations)
       map_keys(record.kubernetes.labels)
-      return 1, timestamp, record
+      return 2, timestamp, record
+    end
+    function enrich_app_name_internal(table)
+      if table.labels == nil then
+        return 0
+      end
+      table["app_name"] = table.labels["app.kubernetes.io/name"] or table.labels["app"]
     end
     function map_keys(table)
       if table == nil then
@@ -251,7 +265,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: f63cb2ee03d10a92328014e8994d8a8c2258801a5a0777a07bb08add7cdb9329
+        checksum/config: 54ef44075035247cd4eba50a8df088d1426f0ea5deccdc0ba7b9f81078bc0226
         traffic.sidecar.istio.io/excludeInboundPorts: 2020,2021
       creationTimestamp: null
       labels:
