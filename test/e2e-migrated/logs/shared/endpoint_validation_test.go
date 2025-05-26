@@ -70,18 +70,18 @@ func TestEndpointInvalid_OTel(t *testing.T) {
 			}
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resourcesToSucceedCreation...)) //nolint:usetesting // Remove ctx from DeleteObjects
+				require.NoError(t, kitk8s.DeleteObjects(context.Background(), resourcesToSucceedCreation...)) //nolint:usetesting // Remove ctx from DeleteObjects
 			})
 
-			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resourcesToSucceedCreation...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(t.Context(), resourcesToSucceedCreation...)).Should(Succeed())
 
-			assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineNameValueFromSecret, metav1.Condition{
+			assert.LogPipelineHasCondition(t.Context(), pipelineNameValueFromSecret, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonEndpointInvalid,
 			})
 
-			assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineNameValue, metav1.Condition{
+			assert.LogPipelineHasCondition(t.Context(), pipelineNameValue, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonEndpointInvalid,
@@ -126,12 +126,12 @@ func TestEndpointInvalid_FluentBit(t *testing.T) {
 	}
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resourcesToSucceedCreation...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resourcesToSucceedCreation...)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resourcesToSucceedCreation...)).Should(Succeed())
-	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resourcesToFailCreation...)).Should(MatchError(ContainSubstring("invalid hostname")))
+	Expect(kitk8s.CreateObjects(t.Context(), resourcesToSucceedCreation...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t.Context(), resourcesToFailCreation...)).Should(MatchError(ContainSubstring("invalid hostname")))
 
-	assert.LogPipelineHasCondition(t.Context(), suite.K8sClient, pipelineNameValueFromSecret, metav1.Condition{
+	assert.LogPipelineHasCondition(t.Context(), pipelineNameValueFromSecret, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonEndpointInvalid,

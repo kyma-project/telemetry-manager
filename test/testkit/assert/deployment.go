@@ -11,11 +11,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-func DeploymentReady(ctx context.Context, k8sClient client.Client, name types.NamespacedName) {
+func DeploymentReady(ctx context.Context, name types.NamespacedName) {
 	Eventually(func(g Gomega) {
-		ready, err := isDeploymentReady(ctx, k8sClient, name)
+		ready, err := isDeploymentReady(ctx, suite.K8sClient, name)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(ready).To(BeTrueBecause("Deployment not ready"))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
@@ -37,10 +38,10 @@ func isDeploymentReady(ctx context.Context, k8sClient client.Client, name types.
 	return arePodsReady(ctx, k8sClient, listOptions)
 }
 
-func DeploymentHasPriorityClass(ctx context.Context, k8sClient client.Client, name types.NamespacedName, expectedPriorityClassName string) {
+func DeploymentHasPriorityClass(ctx context.Context, name types.NamespacedName, expectedPriorityClassName string) {
 	Eventually(func(g Gomega) {
 		var deployment appsv1.Deployment
-		g.Expect(k8sClient.Get(ctx, name, &deployment)).To(Succeed())
+		g.Expect(suite.K8sClient.Get(ctx, name, &deployment)).To(Succeed())
 
 		g.Expect(deployment.Spec.Template.Spec.PriorityClassName).To(Equal(expectedPriorityClassName))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
