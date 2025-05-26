@@ -78,7 +78,7 @@ func TestSeverityParser(t *testing.T) {
 		ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("scenario", "levelAndWarning")),
 			HaveSeverityNumber(Equal(13)),
-			HaveSeverityText(Equal("WARN")),
+			HaveSeverityText(Equal("warning")),
 			HaveAttributes(Not(HaveKey("level"))),
 		)),
 	))
