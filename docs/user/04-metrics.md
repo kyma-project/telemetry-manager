@@ -74,9 +74,6 @@ The following push URLs are set up:
 
 The default protocol for shipping the data to a backend is GRPC, but you can choose HTTP instead. Depending on the configured protocol, an `otlp` or an `otlphttp` exporter is used. Ensure that the correct port is configured as part of the endpoint.
 
-> **Limitation**
-> The Telemetry module supports a maximum of 5 active MetricPipeline resources. After reaching this limit, additional Pipelines will not be considered in the generated configuration.
-
 <!-- tabs:start -->
 
 #### **GRPC**
@@ -750,7 +747,7 @@ To detect and fix such situations, check the [pipeline status](./resources/05-me
   By design, the connections to the gateway are long-living connections (because OTLP is based on gRPC and HTTP/2). For optimal scaling of the gateway, the clients or applications must balance the connections across the available instances, which is automatically achieved if you use an Istio sidecar. If your application has no Istio sidecar, the data is always sent to one instance of the gateway.
 - **Unavailability of Output**: For up to 5 minutes, a retry for data is attempted when the destination is unavailable. After that, data is dropped.
 - **No Guaranteed Delivery**: The used buffers are volatile. If the gateway or agent instances crash, metric data can be lost.
-- **Multiple MetricPipeline Support**: The maximum amount of MetricPipeline resources is 3.
+- **Multiple MetricPipeline Support**: The maximum amount of MetricPipeline resources is 5.
 
 ## Troubleshooting
 
