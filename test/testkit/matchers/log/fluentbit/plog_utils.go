@@ -21,7 +21,7 @@ type FlatLog struct {
 }
 
 func unmarshalOTLPLogs(otlpLogs []byte) ([]plog.Logs, error) {
-	return matchers.UnmarshalOTLPFile(otlpLogs, func(buf []byte) (plog.Logs, error) {
+	return matchers.UnmarshalOTLPData(otlpLogs, func(buf []byte) (plog.Logs, error) {
 		var unmarshaler plog.JSONUnmarshaler
 		return unmarshaler.UnmarshalLogs(buf)
 	})

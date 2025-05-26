@@ -17,7 +17,7 @@ type FlatTrace struct {
 }
 
 func unmarshalOTLPTraces(otlpTraces []byte) ([]ptrace.Traces, error) {
-	return matchers.UnmarshalOTLPFile(otlpTraces, func(buf []byte) (ptrace.Traces, error) {
+	return matchers.UnmarshalOTLPData(otlpTraces, func(buf []byte) (ptrace.Traces, error) {
 		var unmarshaler ptrace.JSONUnmarshaler
 		return unmarshaler.UnmarshalTraces(buf)
 	})
