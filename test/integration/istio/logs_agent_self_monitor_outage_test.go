@@ -74,7 +74,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsAgentOutage, sui
 		})
 
 		It("Should have a log producer running", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: floggen.DefaultName})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Namespace: mockNs, Name: floggen.DefaultName})
 		})
 
 		It("Should wait for the log flow to gradually become unhealthy", func() {
