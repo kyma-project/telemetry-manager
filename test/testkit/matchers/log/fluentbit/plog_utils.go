@@ -20,8 +20,8 @@ type FlatLog struct {
 	KubernetesAnnotationAttributes map[string]any
 }
 
-func unmarshalOTLPLogs(otlpLogs []byte) ([]plog.Logs, error) {
-	return matchers.UnmarshalOTLPData(otlpLogs, func(buf []byte) (plog.Logs, error) {
+func unmarshalLogs(jsonLogs []byte) ([]plog.Logs, error) {
+	return matchers.UnmarshalOTLPJSONData(jsonLogs, func(buf []byte) (plog.Logs, error) {
 		var unmarshaler plog.JSONUnmarshaler
 		return unmarshaler.UnmarshalLogs(buf)
 	})

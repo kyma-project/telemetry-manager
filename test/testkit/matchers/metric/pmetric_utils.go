@@ -17,8 +17,8 @@ type FlatMetric struct {
 	Type                                                  string
 }
 
-func unmarshalOTLPMetrics(otlpMetrics []byte) ([]pmetric.Metrics, error) {
-	return matchers.UnmarshalOTLPData(otlpMetrics, func(buf []byte) (pmetric.Metrics, error) {
+func unmarshalMetrics(jsonMetrics []byte) ([]pmetric.Metrics, error) {
+	return matchers.UnmarshalOTLPJSONData(jsonMetrics, func(buf []byte) (pmetric.Metrics, error) {
 		var unmarshaler pmetric.JSONUnmarshaler
 		return unmarshaler.UnmarshalMetrics(buf)
 	})

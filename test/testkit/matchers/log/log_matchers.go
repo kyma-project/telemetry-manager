@@ -8,8 +8,8 @@ import (
 )
 
 func HaveFlatLogs(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(otlpLogs []byte) ([]FlatLog, error) {
-		tds, err := unmarshalOTLPLogs(otlpLogs)
+	return gomega.WithTransform(func(jsonLogs []byte) ([]FlatLog, error) {
+		tds, err := unmarshalLogs(jsonLogs)
 		if err != nil {
 			return nil, fmt.Errorf("HaveFlatLogs requires a valid OTLP JSON document: %w", err)
 		}
