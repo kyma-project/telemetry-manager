@@ -16,7 +16,7 @@ func HaveFlatLogs(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(otlpLogs []byte) ([]FlatLog, error) {
 		lds, err := unmarshalOTLPLogs(otlpLogs)
 		if err != nil {
-			return nil, fmt.Errorf("HaveFlat requires a valid OTLP JSON document: %w", err)
+			return nil, fmt.Errorf("HaveFlatLogs requires a valid OTLP JSON document: %w", err)
 		}
 
 		fl := flattenAllLogs(lds)
