@@ -121,7 +121,7 @@ func TestCreateTimestampAndAppNameModifyFilter(t *testing.T) {
 		},
 	}
 
-	actual := createTimestampAndAppNameModifyFilter(logPipeline)
+	actual := createTimestampModifyFilter(logPipeline)
 	require.Equal(t, expected, actual)
 }
 
