@@ -2,7 +2,6 @@ package assert
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	. "github.com/onsi/gomega"
@@ -33,7 +32,7 @@ func HTTPResponseEventuallyMatches(ctx context.Context, queryURL string, httpBod
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(httpBodyMatcher))
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed(),
-		fmt.Sprintf("HTTP response did not match expected body within the timeout period. Response: %+v", resp))
+		"HTTP response did not match expected body within the timeout period. Response: %+v", resp)
 }
 
 func HTTPResponseConsistentlyMatches(ctx context.Context, queryURL string, httpBodyMatcher types.GomegaMatcher) {
@@ -46,5 +45,5 @@ func HTTPResponseConsistentlyMatches(ctx context.Context, queryURL string, httpB
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(httpBodyMatcher))
 	}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed(),
-		fmt.Sprintf("HTTP response did not match expected body within the consistent period. Response: %+v", resp))
+		"HTTP response did not match expected body within the consistent period. Response: %+v", resp)
 }
