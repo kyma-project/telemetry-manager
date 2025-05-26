@@ -14,7 +14,7 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -33,15 +33,15 @@ func TestAppName(t *testing.T) {
 	nsAppOnly := uniquePrefix("app-only")
 	nsNameOnly := uniquePrefix("name-only")
 	nsMixed := uniquePrefix("mixed")
-	logProducerNone := loggen.New(nsNone).WithName("none").WithUseJSON().WithLabels(map[string]string{})
-	logProducerAppOnly := loggen.New(nsAppOnly).WithName("app-only").WithUseJSON().WithLabels(map[string]string{"app": "app-only"})
-	logProducerNameOnly := loggen.New(nsNameOnly).WithName("name-only").WithUseJSON().WithLabels(map[string]string{"app.kubernetes.io/name": "name-only"})
-	logProducerMixed := loggen.New(nsMixed).WithName("mixed").WithUseJSON().WithLabels(map[string]string{"app": "app-mixed", "app.kubernetes.io/name": "name-mixed"})
+	logProducerNone := stdloggen.NewDeployment(nsNone).WithName("none")
+	logProducerAppOnly := stdloggen.NewDeployment(nsAppOnly).WithName("app-only").WithLabel("app", "app-only")
+	logProducerNameOnly := stdloggen.NewDeployment(nsNameOnly).WithName("name-only").WithLabel("app.kubernetes.io/name", "name-only")
+	logProducerMixed := stdloggen.NewDeployment(nsMixed).WithName("mixed").WithLabel("app", "app-mixed").WithLabel("app.kubernetes.io/name", "name-mixed")
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
-		WithIncludeContainers(loggen.DefaultContainerName).
+		WithIncludeContainers(stdloggen.DefaultContainerName).
 		WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 		Build()
 
@@ -60,17 +60,17 @@ func TestAppName(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
-	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
-	assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
-	assert.DeploymentReady(t.Context(), suite.K8sClient, logProducerNone.NamespacedName())
-	assert.DeploymentReady(t.Context(), suite.K8sClient, logProducerAppOnly.NamespacedName())
-	assert.DeploymentReady(t.Context(), suite.K8sClient, logProducerNameOnly.NamespacedName())
-	assert.DeploymentReady(t.Context(), suite.K8sClient, logProducerMixed.NamespacedName())
+	assert.FluentBitLogPipelineHealthy(t.Context(), pipelineName)
+	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
+	assert.DeploymentReady(t.Context(), backend.NamespacedName())
+	assert.DeploymentReady(t.Context(), logProducerNone.NamespacedName())
+	assert.DeploymentReady(t.Context(), logProducerAppOnly.NamespacedName())
+	assert.DeploymentReady(t.Context(), logProducerNameOnly.NamespacedName())
+	assert.DeploymentReady(t.Context(), logProducerMixed.NamespacedName())
 
 	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend, nsNone)
 	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend, nsAppOnly)

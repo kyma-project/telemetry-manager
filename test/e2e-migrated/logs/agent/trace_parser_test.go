@@ -14,12 +14,12 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestPayloadParser(t *testing.T) {
+func TestTraceParser(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelLogAgent)
 
 	var (
@@ -41,29 +41,37 @@ func TestPayloadParser(t *testing.T) {
 	resources = append(resources,
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
-		loggen.New(genNs).WithUseJSON().K8sObject(),
+		stdloggen.NewDeployment(
+			genNs,
+			stdloggen.AppendLogLines(
+				`{"scenario": "traceIdFullOnly", "trace_id": "255c2212dd02c02ac59a923ff07aec74", "span_id": "c5c735f175ad06a6", "trace_flags": "01"}`,
+				`{"scenario": "traceparentOnly", "traceparent": "00-80e1afed08e019fc1110464cfa66635c-7a085853722dc6d2-01"}`,
+				`{"scenario": "traceIdPartialOnly", "span_id": "123456789"}`,
+				`{"scenario": "traceIdAndTraceparent", "trace_id": "255c2212dd02c02ac59a923ff07aec74", "span_id": "c5c735f175ad06a6", "traceparent": "00-80e1afed08e019fc1110464cfa66635c-7a085853722dc6d2-01"}`,
+			),
+		).K8sObject(),
 		&pipeline,
 	)
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
-	assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
-	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
+	assert.DeploymentReady(t.Context(), kitkyma.LogGatewayName)
+	assert.DeploymentReady(t.Context(), backend.NamespacedName())
+	assert.DaemonSetReady(t.Context(), kitkyma.LogAgentName)
 
-	assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
+	assert.OTelLogPipelineHealthy(t.Context(), pipelineName)
 
-	// Parse traces properly
+	t.Log("Scenario traceIdFullOnly should parse all trace_id attributes and remove them")
 	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatLogs(
 		ContainElement(SatisfyAll(
-			HaveAttributes(HaveKeyWithValue("name", "a")),
+			HaveAttributes(HaveKeyWithValue("scenario", "traceIdFullOnly")),
 			HaveTraceID(Equal("255c2212dd02c02ac59a923ff07aec74")),
 			HaveSpanID(Equal("c5c735f175ad06a6")),
-			HaveTraceFlags(Equal(uint32(0))),
+			HaveTraceFlags(Equal(uint32(1))),
 			HaveAttributes(Not(HaveKey("trace_id"))),
 			HaveAttributes(Not(HaveKey("span_id"))),
 			HaveAttributes(Not(HaveKey("trace_flags"))),
@@ -71,9 +79,10 @@ func TestPayloadParser(t *testing.T) {
 		)),
 	))
 
+	t.Log("Scenario traceparentOnly should parse the traceparent attribute and remove it")
 	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatLogs(
 		ContainElement(SatisfyAll(
-			HaveAttributes(HaveKeyWithValue("name", "b")),
+			HaveAttributes(HaveKeyWithValue("scenario", "traceparentOnly")),
 			HaveTraceID(Equal("80e1afed08e019fc1110464cfa66635c")),
 			HaveSpanID(Equal("7a085853722dc6d2")),
 			HaveTraceFlags(Equal(uint32(1))),
@@ -84,57 +93,43 @@ func TestPayloadParser(t *testing.T) {
 		)),
 	))
 
+	t.Log("Scenario traceIdPartialOnly should not parse any trace attribute and keep the span_id")
 	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
 		ContainElement(SatisfyAll(
-			HaveAttributes(HaveKeyWithValue("name", "c")),
+			HaveAttributes(HaveKeyWithValue("scenario", "traceIdPartialOnly")),
 			HaveTraceID(BeEmpty()),
 			HaveSpanID(BeEmpty()),
 			HaveTraceFlags(Equal(uint32(0))), // default value
 			HaveAttributes(HaveKey("span_id")),
+			HaveAttributes(Not(HaveKey("traceparent"))),
 		)),
 	))
 
+	t.Log("Scenario traceIdAndTraceparent should parse trace attributes, and remove them, and keep traceparent attribute")
 	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
 		ContainElement(SatisfyAll(
-			HaveLogBody(HavePrefix("name=d")),
+			HaveAttributes(HaveKeyWithValue("scenario", "traceIdAndTraceparent")),
+			HaveTraceID(Equal("255c2212dd02c02ac59a923ff07aec74")),
+			HaveSpanID(Equal("c5c735f175ad06a6")),
+			HaveTraceFlags(Equal(uint32(0))), // default value
+			HaveAttributes(Not(HaveKey("trace_id"))),
+			HaveAttributes(Not(HaveKey("span_id"))),
+			HaveAttributes(Not(HaveKey("trace_flags"))),
+			HaveAttributes((HaveKeyWithValue("traceparent", "00-80e1afed08e019fc1110464cfa66635c-7a085853722dc6d2-01"))),
+		)),
+	))
+
+	t.Log("Default scenario should not have any trace data")
+	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
+		ContainElement(SatisfyAll(
+			HaveLogBody(Equal(stdloggen.DefaultLine)),
 			HaveTraceID(BeEmpty()),
 			HaveSpanID(BeEmpty()),
 			HaveTraceFlags(Equal(uint32(0))), // default value
-		)),
-	))
-
-	// Parse severity properly
-	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
-		ContainElement(SatisfyAll(
-			HaveAttributes(HaveKeyWithValue("name", "a")),
-			HaveSeverityNumber(Equal(9)),
-			HaveSeverityText(Equal("INFO")),
-			HaveAttributes(Not(HaveKey("level"))),
-		)),
-	))
-
-	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
-		ContainElement(SatisfyAll(
-			HaveAttributes(HaveKeyWithValue("name", "b")),
-			HaveSeverityNumber(Equal(13)),
-			HaveSeverityText(Equal("WARN")),
-			HaveAttributes(Not(HaveKey("log.level"))),
-		)),
-	))
-
-	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
-		ContainElement(SatisfyAll(
-			HaveAttributes(HaveKeyWithValue("name", "c")),
-			HaveSeverityNumber(Equal(0)), // default value
-			HaveSeverityText(BeEmpty()),
-		)),
-	))
-
-	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
-		ContainElement(SatisfyAll(
-			HaveLogBody(HavePrefix("name=d")),
-			HaveSeverityNumber(Equal(0)), // default value
-			HaveSeverityText(BeEmpty()),
+			HaveAttributes(Not(HaveKey("trace_id"))),
+			HaveAttributes(Not(HaveKey("span_id"))),
+			HaveAttributes(Not(HaveKey("trace_flags"))),
+			HaveAttributes(Not(HaveKey("traceparent"))),
 		)),
 	))
 }
