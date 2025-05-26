@@ -81,9 +81,14 @@ func (a Client) Get(proxyURL string) (*http.Response, error) {
 
 // Get performs an HTTPS request to the in-cluster resource identifiable by ProxyURLForService or ProxyURLForPod.
 func (a Client) GetWithContext(ctx context.Context, proxyURL string) (*http.Response, error) {
-	client := &http.Client{Transport: &http.Transport{
-		TLSClientConfig: a.tlsClientConfig,
-	}}
+	defaultTransport, ok := http.DefaultTransport.(*http.Transport)
+	if !ok {
+		return nil, fmt.Errorf("default transport is not of type *http.Transport")
+	}
+
+	transport := defaultTransport.Clone()
+	transport.TLSClientConfig = a.tlsClientConfig
+	client := &http.Client{Transport: transport}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, proxyURL, nil)
 	if err != nil {
