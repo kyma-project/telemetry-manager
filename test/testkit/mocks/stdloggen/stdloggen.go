@@ -36,10 +36,12 @@ func WithScript(script string) Option {
 	}
 }
 
-func AppendLogLine(line string) Option {
+func AppendLogLines(lines ...string) Option {
 	return func(spec *corev1.PodSpec) {
-		regex := regexp.MustCompile(".*(echo '" + DefaultLine + "').*")
-		spec.Containers[0].Command[2] = regex.ReplaceAllString(spec.Containers[0].Command[2], fmt.Sprintf("echo '%s'\necho '%s'", DefaultLine, line))
+		for _, line := range lines {
+			regex := regexp.MustCompile(".*(echo '" + DefaultLine + "').*")
+			spec.Containers[0].Command[2] = regex.ReplaceAllString(spec.Containers[0].Command[2], fmt.Sprintf("echo '%s'\necho '%s'", line, DefaultLine))
+		}
 	}
 }
 

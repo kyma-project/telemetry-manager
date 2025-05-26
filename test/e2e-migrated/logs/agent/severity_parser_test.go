@@ -43,10 +43,12 @@ func TestSeverityParser(t *testing.T) {
 		kitk8s.NewNamespace(genNs).K8sObject(),
 		stdloggen.NewDeployment(
 			genNs,
-			stdloggen.AppendLogLine(`{"scenario": "levelAndINFO", "level": "INFO"}`),
-			stdloggen.AppendLogLine(`{"scenario": "levelAndWarning", "level": "warning"}`),
-			stdloggen.AppendLogLine(`{"scenario": "log.level", "log.level":"WARN"}`),
-			stdloggen.AppendLogLine(`{"scenario": "noLevel"}`),
+			stdloggen.AppendLogLines(
+				`{"scenario": "levelAndINFO", "level": "INFO"}`,
+				`{"scenario": "levelAndWarning", "level": "warning"}`,
+				`{"scenario": "log.level", "log.level":"WARN"}`,
+				`{"scenario": "noLevel"}`,
+			),
 		).K8sObject(),
 		&pipeline,
 	)

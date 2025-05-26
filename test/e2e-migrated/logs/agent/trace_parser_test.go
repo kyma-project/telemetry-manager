@@ -43,10 +43,12 @@ func TestTraceParser(t *testing.T) {
 		kitk8s.NewNamespace(genNs).K8sObject(),
 		stdloggen.NewDeployment(
 			genNs,
-			stdloggen.AppendLogLine(`{"scenario": "traceIdFullOnly", "trace_id": "255c2212dd02c02ac59a923ff07aec74", "span_id": "c5c735f175ad06a6", "trace_flags": "01"}`),
-			stdloggen.AppendLogLine(`{"scenario": "traceparentOnly", "traceparent": "00-80e1afed08e019fc1110464cfa66635c-7a085853722dc6d2-01"}`),
-			stdloggen.AppendLogLine(`{"scenario": "traceIdPartialOnly", "span_id": "123456789"}`),
-			stdloggen.AppendLogLine(`{"scenario": "traceIdAndTraceparent", "trace_id": "255c2212dd02c02ac59a923ff07aec74", "span_id": "c5c735f175ad06a6", "traceparent": "00-80e1afed08e019fc1110464cfa66635c-7a085853722dc6d2-01"}`),
+			stdloggen.AppendLogLines(
+				`{"scenario": "traceIdFullOnly", "trace_id": "255c2212dd02c02ac59a923ff07aec74", "span_id": "c5c735f175ad06a6", "trace_flags": "01"}`,
+				`{"scenario": "traceparentOnly", "traceparent": "00-80e1afed08e019fc1110464cfa66635c-7a085853722dc6d2-01"}`,
+				`{"scenario": "traceIdPartialOnly", "span_id": "123456789"}`,
+				`{"scenario": "traceIdAndTraceparent", "trace_id": "255c2212dd02c02ac59a923ff07aec74", "span_id": "c5c735f175ad06a6", "traceparent": "00-80e1afed08e019fc1110464cfa66635c-7a085853722dc6d2-01"}`,
+			),
 		).K8sObject(),
 		&pipeline,
 	)

@@ -59,5 +59,4 @@ func TestCustomOutput(t *testing.T) {
 	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
 	assert.FluentBitLogsFromPodDelivered(t.Context(), backend, stdloggen.DefaultName)
-
 }

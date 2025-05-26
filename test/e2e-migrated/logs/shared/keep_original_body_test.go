@@ -25,11 +25,13 @@ const (
 	scenarioKeepOriginal = "keep-original-body"
 	// keepOriginalBody = false
 	scenarioDropOriginal = "drop-original-body"
-
-	lineScenarioMessage = `{"scenario": "message", "message":"a-body"}`
-	lineScenarioMsg     = `{"scenario": "msg", "msg":"b-body"}`
-	lineScenarioNone    = `{"scenario": "none", "body":"c-body"}`
 )
+
+var logLines = []string{
+	`{"scenario": "message", "message":"a-body"}`,
+	`{"scenario": "msg", "msg":"b-body"}`,
+	`{"scenario": "none", "body":"c-body"}`,
+}
 
 func TestKeepOriginalBody_OTel(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelLogAgent)
@@ -75,14 +77,10 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 		&pipelineKeepOriginal,
 		stdloggen.NewDeployment(
 			sourceNsKeepOriginal,
-			stdloggen.AppendLogLine(lineScenarioMessage),
-			stdloggen.AppendLogLine(lineScenarioMsg),
-			stdloggen.AppendLogLine(lineScenarioNone),
+			stdloggen.AppendLogLines(logLines...),
 		).K8sObject(),
 		stdloggen.NewDeployment(sourceNsDropOriginal,
-			stdloggen.AppendLogLine(lineScenarioMessage),
-			stdloggen.AppendLogLine(lineScenarioMsg),
-			stdloggen.AppendLogLine(lineScenarioNone),
+			stdloggen.AppendLogLines(logLines...),
 		).K8sObject(),
 	)
 	resources = append(resources, backendKeepOriginal.K8sObjects()...)
@@ -228,15 +226,11 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 		&pipelineKeepOriginal,
 		stdloggen.NewDeployment(
 			sourceNsKeepOriginal,
-			stdloggen.AppendLogLine(lineScenarioMessage),
-			stdloggen.AppendLogLine(lineScenarioMsg),
-			stdloggen.AppendLogLine(lineScenarioNone),
+			stdloggen.AppendLogLines(logLines...),
 		).K8sObject(),
 		stdloggen.NewDeployment(
 			sourceNsDropOriginal,
-			stdloggen.AppendLogLine(lineScenarioMessage),
-			stdloggen.AppendLogLine(lineScenarioMsg),
-			stdloggen.AppendLogLine(lineScenarioNone),
+			stdloggen.AppendLogLines(logLines...),
 		).K8sObject(),
 	)
 	resources = append(resources, backendKeepOriginal.K8sObjects()...)

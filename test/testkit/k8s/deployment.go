@@ -5,6 +5,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 type Deployment struct {
@@ -25,6 +26,10 @@ func NewDeployment(name, namespace string) *Deployment {
 		annotations: make(map[string]string),
 		podSpec:     SleeperPodSpec(),
 	}
+}
+
+func (d *Deployment) NamespacedName() types.NamespacedName {
+	return types.NamespacedName{Name: d.name, Namespace: d.namespace}
 }
 
 func (d *Deployment) WithName(name string) *Deployment {

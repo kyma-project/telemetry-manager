@@ -15,7 +15,7 @@ const (
 
 type Option func(*corev1.PodSpec)
 
-func WithJsonFormat() Option {
+func WithJSONFormat() Option {
 	return func(spec *corev1.PodSpec) {
 		spec.Containers[0].Args = append(spec.Containers[0].Args, "-f=json")
 	}

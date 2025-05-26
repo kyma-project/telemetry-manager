@@ -6,7 +6,6 @@ import (
 
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -54,7 +53,7 @@ func TestDedot(t *testing.T) {
 	assert.FluentBitLogPipelineHealthy(t.Context(), pipelineName)
 	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
-	assert.DeploymentReady(t.Context(), types.NamespacedName{Name: stdloggen.DefaultName, Namespace: genNs})
+	assert.DeploymentReady(t.Context(), logProducer.NamespacedName())
 
 	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(
 		ContainElement(fluentbit.HaveKubernetesLabels(HaveKeyWithValue("dedot_label", "logging-dedot-value")))),
