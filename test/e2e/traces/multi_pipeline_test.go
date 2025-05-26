@@ -61,23 +61,23 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have running pipelines", func() {
-			assert.TracePipelineHealthy(suite.Ctx, suite.K8sClient, pipeline1Name)
-			assert.TracePipelineHealthy(suite.Ctx, suite.K8sClient, pipeline2Name)
+			assert.TracePipelineHealthy(suite.Ctx, pipeline1Name)
+			assert.TracePipelineHealthy(suite.Ctx, pipeline2Name)
 		})
 
 		It("Should have a running trace gateway deployment", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.TraceGatewayName)
+			assert.DeploymentReady(suite.Ctx, kitkyma.TraceGatewayName)
 		})
 
 		It("Should have a trace backend running", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
 		})
 
 		It("Should verify traces from telemetrygen are delivered", func() {

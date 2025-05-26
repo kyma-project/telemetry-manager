@@ -77,13 +77,13 @@ func TestObservedTime_OTel(t *testing.T) {
 			resources = append(resources, backend.K8sObjects()...)
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+				require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 			})
-			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-			assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
-			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
-			assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
+			assert.DeploymentReady(t.Context(), kitkyma.LogGatewayName)
+			assert.OTelLogPipelineHealthy(t.Context(), pipelineName)
+			assert.DeploymentReady(t.Context(), backend.NamespacedName())
 
 			assert.OTelLogsFromNamespaceDelivered(t.Context(), backend, genNs)
 			assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(

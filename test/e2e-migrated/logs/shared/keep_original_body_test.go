@@ -76,17 +76,17 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 	resources = append(resources, backendDropOriginal.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
-	assert.DeploymentReady(t.Context(), suite.K8sClient, backendKeepOriginal.NamespacedName())
-	assert.DeploymentReady(t.Context(), suite.K8sClient, backendDropOriginal.NamespacedName())
-	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
+	assert.DeploymentReady(t.Context(), kitkyma.LogGatewayName)
+	assert.DeploymentReady(t.Context(), backendKeepOriginal.NamespacedName())
+	assert.DeploymentReady(t.Context(), backendDropOriginal.NamespacedName())
+	assert.DaemonSetReady(t.Context(), kitkyma.LogAgentName)
 
-	assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineKeepOriginalName)
-	assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineDropOriginalName)
+	assert.OTelLogPipelineHealthy(t.Context(), pipelineKeepOriginalName)
+	assert.OTelLogPipelineHealthy(t.Context(), pipelineDropOriginalName)
 
 	assert.OTelLogsFromNamespaceDelivered(t.Context(), backendDropOriginal, sourceNsDropOriginal)
 
@@ -220,16 +220,16 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 	resources = append(resources, backendDropOriginal.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.DeploymentReady(t.Context(), suite.K8sClient, backendKeepOriginal.NamespacedName())
-	assert.DeploymentReady(t.Context(), suite.K8sClient, backendDropOriginal.NamespacedName())
-	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
+	assert.DeploymentReady(t.Context(), backendKeepOriginal.NamespacedName())
+	assert.DeploymentReady(t.Context(), backendDropOriginal.NamespacedName())
+	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 
-	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineKeepOriginalName)
-	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineDropOriginalName)
+	assert.FluentBitLogPipelineHealthy(t.Context(), pipelineKeepOriginalName)
+	assert.FluentBitLogPipelineHealthy(t.Context(), pipelineDropOriginalName)
 
 	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backendDropOriginal, sourceNsDropOriginal)
 
