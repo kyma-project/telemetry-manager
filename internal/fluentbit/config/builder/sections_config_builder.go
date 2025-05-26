@@ -80,7 +80,7 @@ func createLuaDedotFilter(logPipeline *telemetryv1alpha1.LogPipeline) string {
 
 func createLuaEnrichAppNameFilter(logPipeline *telemetryv1alpha1.LogPipeline) string {
 	output := logPipeline.Spec.Output
-	if logpipelineutils.IsHTTPDefined(&output) && output.HTTP.Dedot {
+	if !logpipelineutils.IsHTTPDefined(&output) || (logpipelineutils.IsHTTPDefined(&output) && output.HTTP.Dedot) {
 		return ""
 	}
 
