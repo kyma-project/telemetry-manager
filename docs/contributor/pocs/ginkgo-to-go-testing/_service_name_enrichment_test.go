@@ -121,7 +121,7 @@ func TestOTelLogPipeline_ServiceNameEnrichment(t *testing.T) {
 				err := kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)
 				require.NoError(t, err)
 			})
-			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
 			t.Log("Waiting for resources to be ready")
 

@@ -123,17 +123,17 @@ func TestExtractLabels_OTel(t *testing.T) {
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(2))
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+				require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 			})
-			Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
 			if tc.expectAgent {
-				assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.LogAgentName)
+				assert.DaemonSetReady(t.Context(), kitkyma.LogAgentName)
 			}
 
-			assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
-			assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})
-			assert.OTelLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
+			assert.DeploymentReady(t.Context(), kitkyma.LogGatewayName)
+			assert.DeploymentReady(t.Context(), types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})
+			assert.OTelLogPipelineHealthy(t.Context(), pipelineName)
 			assert.OTelLogsFromNamespaceDelivered(t.Context(), backend, genNs)
 
 			assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
@@ -195,16 +195,16 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 	resources = append(resources, backendDropped.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineNameNotDropped)
-	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineNameDropped)
-	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
-	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Namespace: notDroppedNs, Name: kitbackend.DefaultName})
-	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Namespace: droppedNs, Name: kitbackend.DefaultName})
-	assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Namespace: genNs, Name: stdloggen.DefaultName})
+	assert.FluentBitLogPipelineHealthy(t.Context(), pipelineNameNotDropped)
+	assert.FluentBitLogPipelineHealthy(t.Context(), pipelineNameDropped)
+	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
+	assert.DeploymentReady(t.Context(), types.NamespacedName{Namespace: notDroppedNs, Name: kitbackend.DefaultName})
+	assert.DeploymentReady(t.Context(), types.NamespacedName{Namespace: droppedNs, Name: kitbackend.DefaultName})
+	assert.DeploymentReady(t.Context(), types.NamespacedName{Namespace: genNs, Name: stdloggen.DefaultName})
 
 	// Scenario 1: Labels not dropped
 	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backendNotDropped, genNs)

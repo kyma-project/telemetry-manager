@@ -50,13 +50,14 @@ func TestCustomOutput(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), suite.K8sClient, resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.FluentBitLogPipelineHealthy(t.Context(), suite.K8sClient, pipelineName)
-	assert.LogPipelineUnsupportedMode(t.Context(), suite.K8sClient, pipelineName, true)
-	assert.DaemonSetReady(t.Context(), suite.K8sClient, kitkyma.FluentBitDaemonSetName)
-	assert.DeploymentReady(t.Context(), suite.K8sClient, backend.NamespacedName())
+	assert.FluentBitLogPipelineHealthy(t.Context(), pipelineName)
+	assert.LogPipelineUnsupportedMode(t.Context(), pipelineName, true)
+	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
+	assert.DeploymentReady(t.Context(), backend.NamespacedName())
 	assert.FluentBitLogsFromPodDelivered(t.Context(), backend, stdloggen.DefaultName)
+
 }
