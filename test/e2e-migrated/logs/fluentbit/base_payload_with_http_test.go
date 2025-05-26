@@ -63,7 +63,7 @@ func TestBasePayloadWithHttpOutput(t *testing.T) {
 
 		// kubernetes filter
 		fluentbit.HaveKubernetesAttributes(HaveKeyWithValue("container_name", stdloggen.DefaultContainerName)),
-		fluentbit.HaveKubernetesAttributes(HaveKeyWithValue("container_image", "docker.io/library/"+stdloggen.DefaultImageName)),
+		fluentbit.HaveKubernetesAttributes(HaveKeyWithValue("container_image", HaveSuffix(stdloggen.DefaultImageName))),
 		fluentbit.HaveKubernetesAttributes(HaveKeyWithValue("namespace_name", genNs)),
 		fluentbit.HaveKubernetesAttributes(HaveKey("pod_name")),
 		fluentbit.HaveKubernetesAttributes(HaveKey("pod_id")),
