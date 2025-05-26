@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -70,7 +69,7 @@ func TestDisabledInput_OTel(t *testing.T) {
 
 	// If OTLP input is disabled, THEN the logs pushed the gateway should not be sent to the backend
 	assert.DeploymentReady(t.Context(), kitkyma.LogGatewayName)
-	assert.DeploymentReady(t.Context(), types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})
+	assert.DeploymentReady(t.Context(), backend.NamespacedName())
 	assert.OTelLogPipelineHealthy(t.Context(), pipelineName)
 
 	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(

@@ -14,7 +14,7 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -30,10 +30,10 @@ func TestModifyTimestampDateFormat(t *testing.T) {
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
-	logProducer := loggen.New(genNs).WithUseJSON()
+	logProducer := stdloggen.NewDeployment(genNs)
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
-		WithIncludeContainers(loggen.DefaultContainerName).
+		WithIncludeContainers(stdloggen.DefaultContainerName).
 		WithIncludeNamespaces(genNs).
 		WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 		Build()

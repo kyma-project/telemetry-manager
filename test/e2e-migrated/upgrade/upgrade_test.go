@@ -12,7 +12,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -40,7 +40,7 @@ func TestUpgrade(t *testing.T) {
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(generatorNs).K8sObject(),
-		loggen.New(generatorNs).K8sObject(),
+		stdloggen.NewDeployment(generatorNs).K8sObject(),
 		&pipeline,
 	}
 	resources = append(resources, backend.K8sObjects()...)

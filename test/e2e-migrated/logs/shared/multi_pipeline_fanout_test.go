@@ -12,7 +12,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
@@ -31,7 +31,7 @@ func TestMultiPipelineFanout_OTel(t *testing.T) {
 				return testutils.BuildLogPipelineApplicationInput(testutils.ExtIncludeNamespaces(includeNs))
 			},
 			logGeneratorBuilder: func(ns string) client.Object {
-				return loggen.New(ns).K8sObject()
+				return stdloggen.NewDeployment(ns).K8sObject()
 			},
 			expectAgent: true,
 		},
@@ -131,7 +131,7 @@ func TestMultiPipelineFanout_FluentBit(t *testing.T) {
 		kitk8s.NewNamespace(genNs).K8sObject(),
 		&pipeline1,
 		&pipeline2,
-		loggen.New(genNs).K8sObject(),
+		stdloggen.NewDeployment(genNs).K8sObject(),
 	}
 	resources = append(resources, backend1.K8sObjects()...)
 	resources = append(resources, backend2.K8sObjects()...)

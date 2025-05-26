@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/agent"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -20,7 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestInstrumentationScope(t *testing.T) {
+func TestSeverityParser(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelLogAgent)
 
 	var (
@@ -42,7 +41,15 @@ func TestInstrumentationScope(t *testing.T) {
 	resources = append(resources,
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
-		stdloggen.NewDeployment(genNs).K8sObject(),
+		stdloggen.NewDeployment(
+			genNs,
+			stdloggen.AppendLogLines(
+				`{"scenario": "levelAndINFO", "level": "INFO"}`,
+				`{"scenario": "levelAndWarning", "level": "warning"}`,
+				`{"scenario": "log.level", "log.level":"WARN"}`,
+				`{"scenario": "noLevel"}`,
+			),
+		).K8sObject(),
 		&pipeline,
 	)
 	resources = append(resources, backend.K8sObjects()...)
@@ -58,13 +65,41 @@ func TestInstrumentationScope(t *testing.T) {
 
 	assert.OTelLogPipelineHealthy(t.Context(), pipelineName)
 
+	t.Log("Scenario levelAndINFO should parse level attribute and remove it")
 	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatLogs(
 		ContainElement(SatisfyAll(
-			HaveScopeName(Equal(agent.InstrumentationScopeRuntime)),
-			HaveScopeVersion(SatisfyAny(
-				Equal("main"),
-				MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
-			)),
+			HaveAttributes(HaveKeyWithValue("scenario", "levelAndINFO")),
+			HaveSeverityNumber(Equal(9)),
+			HaveSeverityText(Equal("INFO")),
+			HaveAttributes(Not(HaveKey("level"))),
+		)),
+	))
+
+	t.Log("Scenario levelAndWarning should parse level attribute and remove it")
+	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatLogs(
+		ContainElement(SatisfyAll(
+			HaveAttributes(HaveKeyWithValue("scenario", "levelAndWarning")),
+			HaveSeverityNumber(Equal(13)),
+			HaveSeverityText(Equal("warning")),
+			HaveAttributes(Not(HaveKey("level"))),
+		)),
+	))
+
+	t.Log("Scenario log.level should parse log.level attribute and remove it")
+	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatLogs(
+		ContainElement(SatisfyAll(
+			HaveAttributes(HaveKeyWithValue("scenario", "log.level")),
+			HaveSeverityText(Equal("WARN")),
+			HaveAttributes(Not(HaveKey("log.level"))),
+		)),
+	))
+
+	t.Log("Default scenario should not have any severity")
+	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatLogs(
+		ContainElement(SatisfyAll(
+			HaveLogBody(Equal(stdloggen.DefaultLine)),
+			HaveSeverityNumber(Equal(0)), // default value
+			HaveSeverityText(BeEmpty()),
 		)),
 	))
 }
