@@ -74,6 +74,9 @@ The following push URLs are set up:
 
 The default protocol for shipping the data to a backend is GRPC, but you can choose HTTP instead. Depending on the configured protocol, an `otlp` or an `otlphttp` exporter is used. Ensure that the correct port is configured as part of the endpoint.
 
+> **Limitation**
+> The Telemetry module supports a maximum of 5 active MetricPipeline resources. After reaching this limit, additional Pipelines will not be considered in the generated configuration.
+
 <!-- tabs:start -->
 
 #### **GRPC**

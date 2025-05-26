@@ -97,6 +97,9 @@ The default protocol for shipping the data to a backend is GRPC, but you can cho
         endpoint:
           value: https://backend.example.com:4318
   ```
+  
+> **Limitation**
+> The Telemetry module supports a maximum of 5 active TracePipeline resources. After reaching this limit, additional Pipelines will not be considered in the generated configuration.
 
 ### 2. Enable Istio Tracing
 
