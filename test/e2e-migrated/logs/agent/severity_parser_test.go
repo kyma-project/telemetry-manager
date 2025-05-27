@@ -65,41 +65,47 @@ func TestSeverityParser(t *testing.T) {
 
 	assert.OTelLogPipelineHealthy(t.Context(), pipelineName)
 
-	t.Log("Scenario levelAndINFO should parse level attribute and remove it")
-	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatLogs(
-		ContainElement(SatisfyAll(
+	assert.BackendDataEventuallyMatches(
+		t.Context(),
+		backend, HaveFlatLogs(ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("scenario", "levelAndINFO")),
 			HaveSeverityNumber(Equal(9)),
 			HaveSeverityText(Equal("INFO")),
 			HaveAttributes(Not(HaveKey("level"))),
-		)),
-	))
+		))),
+		"Scenario levelAndINFO should parse level attribute and remove it",
+	)
 
-	t.Log("Scenario levelAndWarning should parse level attribute and remove it")
-	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatLogs(
-		ContainElement(SatisfyAll(
+	assert.BackendDataEventuallyMatches(
+		t.Context(),
+		backend,
+		HaveFlatLogs(ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("scenario", "levelAndWarning")),
 			HaveSeverityNumber(Equal(13)),
 			HaveSeverityText(Equal("warning")),
 			HaveAttributes(Not(HaveKey("level"))),
-		)),
-	))
+		))),
+		"Scenario levelAndWarning should parse level attribute and remove it",
+	)
 
-	t.Log("Scenario log.level should parse log.level attribute and remove it")
-	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatLogs(
-		ContainElement(SatisfyAll(
+	assert.BackendDataEventuallyMatches(
+		t.Context(),
+		backend,
+		HaveFlatLogs(ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("scenario", "log.level")),
 			HaveSeverityText(Equal("WARN")),
 			HaveAttributes(Not(HaveKey("log.level"))),
-		)),
-	))
+		))),
+		"Scenario log.level should parse log.level attribute and remove it",
+	)
 
-	t.Log("Default scenario should not have any severity")
-	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatLogs(
-		ContainElement(SatisfyAll(
+	assert.BackendDataEventuallyMatches(
+		t.Context(),
+		backend, HaveFlatLogs(ContainElement(SatisfyAll(
 			HaveLogBody(Equal(stdloggen.DefaultLine)),
 			HaveSeverityNumber(Equal(0)), // default value
 			HaveSeverityText(BeEmpty()),
-		)),
-	))
+		))),
+		"Default scenario should not have any severity",
+	)
 }
