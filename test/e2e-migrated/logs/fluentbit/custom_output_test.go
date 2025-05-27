@@ -13,6 +13,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -59,4 +60,12 @@ func TestCustomOutput(t *testing.T) {
 	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
 	assert.FluentBitLogsFromPodDelivered(t.Context(), backend, stdloggen.DefaultName)
+
+	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(HaveEach(SatisfyAll(
+		fluentbit.HaveAttributes(HaveKey("cluster_identifier")),
+		fluentbit.HaveAttributes(Not(HaveKey("@timestamp"))),
+		fluentbit.HaveKubernetesAttributes(Not(HaveKey("app_name"))),
+		fluentbit.HaveLogBody(Not(BeEmpty())),
+		fluentbit.HaveAttributes(HaveKey("stream")),
+	))))
 }

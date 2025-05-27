@@ -30,11 +30,15 @@ func TestDedot(t *testing.T) {
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
-	logProducer := stdloggen.NewDeployment(genNs).WithLabel("dedot.label", "logging-dedot-value")
+
+	logProducer := stdloggen.NewDeployment(genNs).WithLabel("dedot.label", "logging-dedot-value").WithLabel("app", "appName")
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithIncludeContainers(stdloggen.DefaultContainerName).
-		WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port()), testutils.HTTPDedot(true)).
+		WithHTTPOutput(
+			testutils.HTTPHost(backend.Host()),
+			testutils.HTTPPort(backend.Port()),
+			testutils.HTTPDedot(true)).
 		Build()
 
 	resources := []client.Object{
@@ -56,6 +60,8 @@ func TestDedot(t *testing.T) {
 	assert.DeploymentReady(t.Context(), logProducer.NamespacedName())
 
 	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(
-		ContainElement(fluentbit.HaveKubernetesLabels(HaveKeyWithValue("dedot_label", "logging-dedot-value")))),
-	)
+		ContainElement(SatisfyAll(
+			fluentbit.HaveKubernetesLabels(HaveKeyWithValue("dedot_label", "logging-dedot-value")),
+			fluentbit.HaveKubernetesAttributes(HaveKeyWithValue("app_name", "appName")),
+		))))
 }
