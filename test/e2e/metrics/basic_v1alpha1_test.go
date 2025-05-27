@@ -37,18 +37,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), 
 
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		backend := kitbackend.New(mockNs, kitbackend.SignalTypeMetrics, kitbackend.WithPersistentHostSecret(suite.IsUpgrade()))
+		backend := kitbackend.New(mockNs, kitbackend.SignalTypeMetrics)
 		objs = append(objs, backend.K8sObjects()...)
 		backendExportURL = backend.ExportURL(suite.ProxyClient)
 
-		hostSecretRef := backend.HostSecretRefV1Alpha1()
 		metricPipelineBuilder := testutils.NewMetricPipelineBuilder().
 			WithName(pipelineName).
-			WithOTLPOutput(testutils.OTLPEndpointFromSecret(
-				hostSecretRef.Name,
-				hostSecretRef.Namespace,
-				hostSecretRef.Key,
-			))
+			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint()))
 		if suite.IsUpgrade() {
 			metricPipelineBuilder.WithLabels(kitk8s.PersistentLabel)
 		}

@@ -16,12 +16,6 @@ func WithName(name string) Option {
 	}
 }
 
-func WithPersistentHostSecret(persistentHostSecret bool) Option {
-	return func(b *Backend) {
-		b.persistentHostSecret = persistentHostSecret
-	}
-}
-
 func WithReplicas(replicas int32) Option {
 	return func(b *Backend) {
 		b.replicas = replicas

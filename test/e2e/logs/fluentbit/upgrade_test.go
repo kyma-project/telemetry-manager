@@ -27,7 +27,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		backend = kitbackend.New(mockNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithPersistentHostSecret(suite.IsUpgrade()))
+		backend = kitbackend.New(mockNs, kitbackend.SignalTypeLogsFluentBit)
 		logProducer := stdloggen.NewDeployment(mockNs)
 		objs = append(objs, backend.K8sObjects()...)
 		objs = append(objs, logProducer.K8sObject())

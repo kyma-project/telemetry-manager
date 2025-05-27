@@ -37,18 +37,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		backend := kitbackend.New(mockNs, kitbackend.SignalTypeTraces, kitbackend.WithPersistentHostSecret(suite.IsUpgrade()))
+		backend := kitbackend.New(mockNs, kitbackend.SignalTypeTraces)
 		objs = append(objs, backend.K8sObjects()...)
 		backendExportURL = backend.ExportURL(suite.ProxyClient)
 
-		hostSecretRef := backend.HostSecretRefV1Alpha1()
 		tracePipelineBuilder := testutils.NewTracePipelineBuilder().
 			WithName(pipelineName).
-			WithOTLPOutput(testutils.OTLPEndpointFromSecret(
-				hostSecretRef.Name,
-				hostSecretRef.Namespace,
-				hostSecretRef.Key,
-			))
+			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint()))
 		if suite.IsUpgrade() {
 			tracePipelineBuilder.WithLabels(kitk8s.PersistentLabel)
 		}

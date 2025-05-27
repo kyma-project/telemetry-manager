@@ -30,7 +30,7 @@ func TestUpgrade(t *testing.T) {
 		backendNs    = uniquePrefix("backend")
 	)
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithPersistentHostSecret(true))
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
