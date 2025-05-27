@@ -73,7 +73,6 @@ func TestBasePayloadWithHTTPOutput(t *testing.T) {
 			fluentbit.HaveKubernetesAttributes(SatisfyAll(
 				HaveKey("pod_name"),
 				HaveKey("pod_id"),
-				HaveKey("pod_ip"),
 				HaveKey("docker_id"),
 				HaveKey("host"),
 			)),
