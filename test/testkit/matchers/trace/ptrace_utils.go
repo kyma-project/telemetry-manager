@@ -16,8 +16,8 @@ type FlatTrace struct {
 	ResourceAttributes, SpanAttributes map[string]string
 }
 
-func unmarshalTraces(jsonlMetrics []byte) ([]ptrace.Traces, error) {
-	return matchers.UnmarshalSignals[ptrace.Traces](jsonlMetrics, func(buf []byte) (ptrace.Traces, error) {
+func unmarshalTraces(jsonTraces []byte) ([]ptrace.Traces, error) {
+	return matchers.UnmarshalOTLPJSONData(jsonTraces, func(buf []byte) (ptrace.Traces, error) {
 		var unmarshaler ptrace.JSONUnmarshaler
 		return unmarshaler.UnmarshalTraces(buf)
 	})
