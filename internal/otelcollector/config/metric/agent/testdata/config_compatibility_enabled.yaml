@@ -83,6 +83,9 @@ receivers:
                 enabled: false
         extra_metadata_labels:
             - k8s.volume.type
+        collect_all_network_interfaces:
+            pod: false
+            node: true
     k8s_cluster:
         auth_type: serviceAccount
         collection_interval: 30s
