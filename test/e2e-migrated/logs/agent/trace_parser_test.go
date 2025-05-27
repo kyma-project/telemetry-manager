@@ -65,9 +65,10 @@ func TestTraceParser(t *testing.T) {
 
 	assert.OTelLogPipelineHealthy(t.Context(), pipelineName)
 
-	t.Log("Scenario traceIdFullOnly should parse all trace_id attributes and remove them")
-	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatLogs(
-		ContainElement(SatisfyAll(
+	assert.BackendDataEventuallyMatches(
+		t.Context(),
+		backend,
+		HaveFlatLogs(ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("scenario", "traceIdFullOnly")),
 			HaveTraceID(Equal("255c2212dd02c02ac59a923ff07aec74")),
 			HaveSpanID(Equal("c5c735f175ad06a6")),
@@ -76,12 +77,14 @@ func TestTraceParser(t *testing.T) {
 			HaveAttributes(Not(HaveKey("span_id"))),
 			HaveAttributes(Not(HaveKey("trace_flags"))),
 			HaveAttributes(Not(HaveKey("traceparent"))),
-		)),
-	))
+		))),
+		"Scenario traceIdFullOnly should parse all trace_id attributes and remove them",
+	)
 
-	t.Log("Scenario traceparentOnly should parse the traceparent attribute and remove it")
-	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatLogs(
-		ContainElement(SatisfyAll(
+	assert.BackendDataEventuallyMatches(
+		t.Context(),
+		backend,
+		HaveFlatLogs(ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("scenario", "traceparentOnly")),
 			HaveTraceID(Equal("80e1afed08e019fc1110464cfa66635c")),
 			HaveSpanID(Equal("7a085853722dc6d2")),
@@ -90,24 +93,28 @@ func TestTraceParser(t *testing.T) {
 			HaveAttributes(Not(HaveKey("span_id"))),
 			HaveAttributes(Not(HaveKey("trace_flags"))),
 			HaveAttributes(Not(HaveKey("traceparent"))),
-		)),
-	))
+		))),
+		"Scenario traceparentOnly should parse the traceparent attribute and remove it",
+	)
 
-	t.Log("Scenario traceIdPartialOnly should not parse any trace attribute and keep the span_id")
-	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
-		ContainElement(SatisfyAll(
+	assert.BackendDataConsistentlyMatches(
+		t.Context(),
+		backend,
+		HaveFlatLogs(ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("scenario", "traceIdPartialOnly")),
 			HaveTraceID(BeEmpty()),
 			HaveSpanID(BeEmpty()),
 			HaveTraceFlags(Equal(uint32(0))), // default value
 			HaveAttributes(HaveKey("span_id")),
 			HaveAttributes(Not(HaveKey("traceparent"))),
-		)),
-	))
+		))),
+		"Scenario traceIdPartialOnly should not parse any trace attribute and keep the span_id",
+	)
 
-	t.Log("Scenario traceIdAndTraceparent should parse trace attributes, and remove them, and keep traceparent attribute")
-	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
-		ContainElement(SatisfyAll(
+	assert.BackendDataConsistentlyMatches(
+		t.Context(),
+		backend,
+		HaveFlatLogs(ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("scenario", "traceIdAndTraceparent")),
 			HaveTraceID(Equal("255c2212dd02c02ac59a923ff07aec74")),
 			HaveSpanID(Equal("c5c735f175ad06a6")),
@@ -116,12 +123,14 @@ func TestTraceParser(t *testing.T) {
 			HaveAttributes(Not(HaveKey("span_id"))),
 			HaveAttributes(Not(HaveKey("trace_flags"))),
 			HaveAttributes((HaveKeyWithValue("traceparent", "00-80e1afed08e019fc1110464cfa66635c-7a085853722dc6d2-01"))),
-		)),
-	))
+		))),
+		"Scenario traceIdAndTraceparent should parse trace attributes, and remove them, and keep traceparent attribute",
+	)
 
-	t.Log("Default scenario should not have any trace data")
-	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
-		ContainElement(SatisfyAll(
+	assert.BackendDataConsistentlyMatches(
+		t.Context(),
+		backend,
+		HaveFlatLogs(ContainElement(SatisfyAll(
 			HaveLogBody(Equal(stdloggen.DefaultLine)),
 			HaveTraceID(BeEmpty()),
 			HaveSpanID(BeEmpty()),
@@ -130,6 +139,7 @@ func TestTraceParser(t *testing.T) {
 			HaveAttributes(Not(HaveKey("span_id"))),
 			HaveAttributes(Not(HaveKey("trace_flags"))),
 			HaveAttributes(Not(HaveKey("traceparent"))),
-		)),
-	))
+		))),
+		"Default scenario should not have any trace data",
+	)
 }
