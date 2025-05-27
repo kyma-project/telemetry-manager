@@ -28,7 +28,7 @@ var (
 	toTelemetryTraceService  = ottlexpr.JoinWithAnd(componentIsProxy, methodIsPost, operationIsOutbound, urlIsTelemetryTraceService)
 	toTelemetryMetricService = ottlexpr.JoinWithAnd(componentIsProxy, methodIsPost, operationIsOutbound, urlIsTelemetryMetricService)
 
-	//TODO: should be system namespaces after solving https://github.com/kyma-project/telemetry-manager/issues/380
+	// TODO: should be system namespaces after solving https://github.com/kyma-project/telemetry-manager/issues/380
 	fromVMScrapeAgent        = ottlexpr.JoinWithAnd(componentIsProxy, methodIsGet, operationIsInbound, userAgentMatches("vm_promscrape"))
 	fromTelemetryMetricAgent = ottlexpr.JoinWithAnd(componentIsProxy, methodIsGet, operationIsInbound, userAgentMatches("kyma-otelcol\\\\/.*"))
 )
