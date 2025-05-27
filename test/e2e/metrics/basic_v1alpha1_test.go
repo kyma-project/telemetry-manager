@@ -14,6 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -27,9 +28,9 @@ import (
 
 var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), Ordered, func() {
 	var (
-		mockNs           = suite.ID()
-		pipelineName     = suite.ID()
-		backendExportURL string
+		mockNs       = suite.ID()
+		pipelineName = suite.ID()
+		backend      *kitbackend.Backend
 	)
 
 	makeResources := func() []client.Object {
@@ -37,9 +38,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), 
 
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		backend := kitbackend.New(mockNs, kitbackend.SignalTypeMetrics)
+		backend = kitbackend.New(mockNs, kitbackend.SignalTypeMetrics)
 		objs = append(objs, backend.K8sObjects()...)
-		backendExportURL = backend.ExportURL(suite.ProxyClient)
 
 		metricPipelineBuilder := testutils.NewMetricPipelineBuilder().
 			WithName(pipelineName).
@@ -62,7 +62,22 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), 
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 			})
+
 			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
+
+			// TODO(skhalash): remove this block after 1.42 release
+			// This is a workaround to compensate for a bug resulting in a missing backend host secret after the pre-upgrade test run
+			if suite.IsUpgrade() {
+				var pipeline telemetryv1alpha1.MetricPipeline
+				suite.K8sClient.Get(suite.Ctx, types.NamespacedName{Name: pipelineName}, &pipeline)
+				output := pipeline.Spec.Output.OTLP
+				if output != nil && output.Endpoint.ValueFrom != nil && output.Endpoint.ValueFrom.SecretKeyRef != nil {
+					output.Endpoint.Value = backend.Endpoint()
+					output.Endpoint.ValueFrom = nil
+					pipeline.Spec.Output.OTLP = output
+					Expect(suite.K8sClient.Update(suite.Ctx, &pipeline)).To(Succeed())
+				}
+			}
 		})
 
 		It("Should have a running metric gateway deployment", Label(suite.LabelUpgrade), func() {
@@ -160,7 +175,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), 
 		})
 
 		It("Should deliver telemetrygen metrics", Label(suite.LabelUpgrade), func() {
-			assert.MetricsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, mockNs, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(suite.ProxyClient, backend.ExportURL(suite.ProxyClient), mockNs, telemetrygen.MetricNames)
 		})
 
 		It("Should be able to get metric gateway metrics endpoint", Label(suite.LabelUpgrade), func() {
