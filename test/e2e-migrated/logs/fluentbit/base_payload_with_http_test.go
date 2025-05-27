@@ -66,31 +66,47 @@ func TestBasePayloadWithHTTPOutput(t *testing.T) {
 		"should have @timestamp and date attributes",
 	)
 
-	t.Log("Should have typical kuberenetes attributes set by kubernetes filter")
-	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(HaveEach(SatisfyAll(
-		fluentbit.HaveKubernetesAttributes(HaveKey("pod_name")),
-		fluentbit.HaveKubernetesAttributes(HaveKey("pod_id")),
-		fluentbit.HaveKubernetesAttributes(HaveKey("pod_ip")),
-		fluentbit.HaveKubernetesAttributes(HaveKey("docker_id")),
-		fluentbit.HaveKubernetesAttributes(HaveKey("host")),
-	))))
+	assert.BackendDataEventuallyMatches(
+		t.Context(),
+		backend,
+		fluentbit.HaveFlatLogs(HaveEach(SatisfyAll(
+			fluentbit.HaveKubernetesAttributes(HaveKey("pod_name")),
+			fluentbit.HaveKubernetesAttributes(HaveKey("pod_id")),
+			fluentbit.HaveKubernetesAttributes(HaveKey("pod_ip")),
+			fluentbit.HaveKubernetesAttributes(HaveKey("docker_id")),
+			fluentbit.HaveKubernetesAttributes(HaveKey("host")),
+		))),
+		"should have typical Kubernetes attributes are set by the kubernetes filter",
+	)
 
-	t.Log("Should have typical kuberenetes attributes with values set by kubernetes filter")
-	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(HaveEach(SatisfyAll(
-		fluentbit.HaveKubernetesAttributes(HaveKeyWithValue("container_name", stdloggen.DefaultContainerName)),
-		fluentbit.HaveKubernetesAttributes(HaveKeyWithValue("container_image", HaveSuffix(stdloggen.DefaultImageName))),
-		fluentbit.HaveKubernetesAttributes(HaveKeyWithValue("namespace_name", genNs)),
-		fluentbit.HaveKubernetesLabels(HaveKeyWithValue("selector", stdloggen.DefaultName)),
-	))))
+	assert.BackendDataEventuallyMatches(
+		t.Context(),
+		backend,
+		fluentbit.HaveFlatLogs(HaveEach(SatisfyAll(
+			fluentbit.HaveKubernetesAttributes(HaveKeyWithValue("container_name", stdloggen.DefaultContainerName)),
+			fluentbit.HaveKubernetesAttributes(HaveKeyWithValue("container_image", HaveSuffix(stdloggen.DefaultImageName))),
+			fluentbit.HaveKubernetesAttributes(HaveKeyWithValue("namespace_name", genNs)),
+			fluentbit.HaveKubernetesLabels(HaveKeyWithValue("selector", stdloggen.DefaultName)),
+		))),
+		"should have Kubernetes attributes with corresponding values set by the kubernetes filter",
+	)
 
-	t.Log("Should have cluster identifier set by record_modifier filter")
-	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(HaveEach(SatisfyAll(
-		fluentbit.HaveAttributes(HaveKey("cluster_identifier")),
-	))))
+	assert.BackendDataEventuallyMatches(
+		t.Context(),
+		backend,
+		fluentbit.HaveFlatLogs(HaveEach(SatisfyAll(
+			fluentbit.HaveAttributes(HaveKey("cluster_identifier")),
+		))),
+		"should have cluster identifier set by record_modifier filter",
+	)
 
-	t.Log("Should have proper base attributes")
-	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(HaveEach(SatisfyAll(
-		fluentbit.HaveLogBody(Not(BeEmpty())),
-		fluentbit.HaveAttributes(HaveKeyWithValue("stream", "stdout")),
-	))))
+	assert.BackendDataEventuallyMatches(
+		t.Context(),
+		backend,
+		fluentbit.HaveFlatLogs(HaveEach(SatisfyAll(
+			fluentbit.HaveLogBody(Not(BeEmpty())),
+			fluentbit.HaveAttributes(HaveKeyWithValue("stream", "stdout")),
+		))),
+		"should have log body and stream attribute",
+	)
 }
