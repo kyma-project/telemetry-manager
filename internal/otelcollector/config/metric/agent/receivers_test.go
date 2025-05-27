@@ -194,6 +194,9 @@ func TestReceivers(t *testing.T) {
 				ExtraMetadataLabels: []string{
 					"k8s.volume.type",
 				},
+				CollectAllNetworkInterfaces: NetworkInterfacesEnablerConfig{
+					NodeMetrics: true,
+				},
 			}
 			require.Equal(t, expectedKubeletStatsReceiver, *collectorConfig.Receivers.KubeletStats)
 		}

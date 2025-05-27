@@ -50,6 +50,9 @@ func makeKubeletStatsConfig(runtimeResources runtimeResourcesEnabled) *KubeletSt
 			K8sNodeMemoryPageFaults:      MetricConfig{Enabled: false},
 		},
 		ExtraMetadataLabels: []string{"k8s.volume.type"},
+		CollectAllNetworkInterfaces: NetworkInterfacesEnablerConfig{
+			NodeMetrics: true,
+		},
 	}
 }
 
