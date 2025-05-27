@@ -533,7 +533,7 @@ To detect and fix such situations, check the [pipeline status](./resources/02-lo
 
 > [! WARNING]
 > It's not recommended to access the metrics endpoint of the used OTel Collector instances directly, because the exposed metrics are no official API of the Kyma Telemetry module. Breaking changes can happen if the underlying OTel Collector version introduces such.
-> Instead, use the [pipeline status](./resources/05-metricpipeline.md#metricpipeline-status).
+> Instead, use the [pipeline status](./resources/02-logpipeline.md#logpipeline-status).
 
 ## Limitations
 

@@ -1,7 +1,6 @@
 package upgrade
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -30,7 +29,7 @@ func TestUpgrade(t *testing.T) {
 		backendNs    = uniquePrefix("backend")
 	)
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithPersistentHostSecret(true))
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
@@ -56,10 +55,10 @@ func TestUpgrade(t *testing.T) {
 	})
 
 	t.Run("after upgrade", func(t *testing.T) {
-		t.Cleanup(func() {
-			require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
-		})
-
+		// TODO(skhalash): uncomment after 1.42 release
+		// t.Cleanup(func() {
+		// 	require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		// })
 		assert.DeploymentReady(t.Context(), backend.NamespacedName())
 		assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 

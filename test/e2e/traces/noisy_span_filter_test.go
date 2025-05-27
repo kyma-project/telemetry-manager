@@ -58,7 +58,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			kitk8s.NewNamespace(traceServiceInternalSpansNs).K8sObject(),
 		)
 
-		backend := kitbackend.New(mockNs, kitbackend.SignalTypeTraces, kitbackend.WithPersistentHostSecret(true))
+		backend := kitbackend.New(mockNs, kitbackend.SignalTypeTraces)
 		backendExportURL = backend.ExportURL(suite.ProxyClient)
 		objs = append(objs, backend.K8sObjects()...)
 
