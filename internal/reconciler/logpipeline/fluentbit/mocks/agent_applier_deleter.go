@@ -62,16 +62,32 @@ type AgentApplierDeleter_ApplyResources_Call struct {
 }
 
 // ApplyResources is a helper method to define mock.On call
-//   - ctx
-//   - c
-//   - opts
+//   - ctx context.Context
+//   - c client.Client
+//   - opts fluentbit.AgentApplyOptions
 func (_e *AgentApplierDeleter_Expecter) ApplyResources(ctx interface{}, c interface{}, opts interface{}) *AgentApplierDeleter_ApplyResources_Call {
 	return &AgentApplierDeleter_ApplyResources_Call{Call: _e.mock.On("ApplyResources", ctx, c, opts)}
 }
 
 func (_c *AgentApplierDeleter_ApplyResources_Call) Run(run func(ctx context.Context, c client.Client, opts fluentbit.AgentApplyOptions)) *AgentApplierDeleter_ApplyResources_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(client.Client), args[2].(fluentbit.AgentApplyOptions))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 client.Client
+		if args[1] != nil {
+			arg1 = args[1].(client.Client)
+		}
+		var arg2 fluentbit.AgentApplyOptions
+		if args[2] != nil {
+			arg2 = args[2].(fluentbit.AgentApplyOptions)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
 	})
 	return _c
 }
@@ -109,15 +125,26 @@ type AgentApplierDeleter_DeleteResources_Call struct {
 }
 
 // DeleteResources is a helper method to define mock.On call
-//   - ctx
-//   - c
+//   - ctx context.Context
+//   - c client.Client
 func (_e *AgentApplierDeleter_Expecter) DeleteResources(ctx interface{}, c interface{}) *AgentApplierDeleter_DeleteResources_Call {
 	return &AgentApplierDeleter_DeleteResources_Call{Call: _e.mock.On("DeleteResources", ctx, c)}
 }
 
 func (_c *AgentApplierDeleter_DeleteResources_Call) Run(run func(ctx context.Context, c client.Client)) *AgentApplierDeleter_DeleteResources_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(client.Client))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 client.Client
+		if args[1] != nil {
+			arg1 = args[1].(client.Client)
+		}
+		run(
+			arg0,
+			arg1,
+		)
 	})
 	return _c
 }
