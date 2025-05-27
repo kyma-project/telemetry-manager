@@ -79,13 +79,21 @@ type LogPipelineControllerConfig struct {
 }
 
 func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config LogPipelineControllerConfig) (*LogPipelineController, error) {
-	pipelineLock := resourcelock.New(
+	pipelineLock := resourcelock.NewLocker(
 		client,
 		types.NamespacedName{
 			Name:      "telemetry-logpipeline-lock",
 			Namespace: config.TelemetryNamespace,
 		},
 		MaxPipelineCount,
+	)
+
+	pipelineSyncer := resourcelock.NewSyncer(
+		client,
+		types.NamespacedName{
+			Name:      "telemetry-logpipeline-sync",
+			Namespace: config.TelemetryNamespace,
+		},
 	)
 
 	fluentBitFlowHealthProber, err := prober.NewFluentBitProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
@@ -103,7 +111,7 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 		return nil, err
 	}
 
-	fluentBitReconciler, err := configureFluentBitReconciler(client, config, pipelineLock, fluentBitFlowHealthProber)
+	fluentBitReconciler, err := configureFluentBitReconciler(client, config, fluentBitFlowHealthProber, pipelineLock)
 	if err != nil {
 		return nil, err
 	}
@@ -116,6 +124,7 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 	reconciler := logpipeline.New(
 		client,
 		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
+		pipelineSyncer,
 		fluentBitReconciler,
 		otelReconciler,
 	)
@@ -182,7 +191,7 @@ func (r *LogPipelineController) mapTelemetryChanges(ctx context.Context, object 
 	return requests
 }
 
-func configureFluentBitReconciler(client client.Client, config LogPipelineControllerConfig, pipelineLock logpipelinefluentbit.PipelineLock, flowHealthProber *prober.FluentBitProber) (*logpipelinefluentbit.Reconciler, error) {
+func configureFluentBitReconciler(client client.Client, config LogPipelineControllerConfig, flowHealthProber *prober.FluentBitProber, pipelineLock logpipelinefluentbit.PipelineLock) (*logpipelinefluentbit.Reconciler, error) {
 	pipelineValidator := &logpipelinefluentbit.Validator{
 		EndpointValidator:  &endpoint.Validator{Client: client},
 		TLSCertValidator:   tlscert.New(client),

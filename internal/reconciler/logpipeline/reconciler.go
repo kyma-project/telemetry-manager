@@ -18,14 +18,17 @@ package logpipeline
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 )
@@ -47,17 +50,24 @@ type OverridesHandler interface {
 	LoadOverrides(ctx context.Context) (*overrides.Config, error)
 }
 
+type PipelineSyncer interface {
+	TryAcquireLock(ctx context.Context, owner metav1.Object) error
+}
+
 type Reconciler struct {
 	client.Client
 
 	overridesHandler OverridesHandler
 	reconcilers      map[logpipelineutils.Mode]LogPipelineReconciler
+
+	pipelineSyncer PipelineSyncer
 }
 
 func New(
 	client client.Client,
 
 	overridesHandler OverridesHandler,
+	pipelineSyncer PipelineSyncer,
 	reconcilers ...LogPipelineReconciler,
 ) *Reconciler {
 	reconcilersMap := make(map[logpipelineutils.Mode]LogPipelineReconciler)
@@ -69,6 +79,7 @@ func New(
 		Client:           client,
 		overridesHandler: overridesHandler,
 		reconcilers:      reconcilersMap,
+		pipelineSyncer:   pipelineSyncer,
 	}
 }
 
@@ -88,6 +99,15 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	var pipeline telemetryv1alpha1.LogPipeline
 	if err := r.Get(ctx, req.NamespacedName, &pipeline); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	if err := r.pipelineSyncer.TryAcquireLock(ctx, &pipeline); err != nil {
+		if errors.Is(err, resourcelock.ErrMaxPipelinesExceeded) {
+			logf.FromContext(ctx).V(1).Error(err, "Skipping reconciliation: max pipelines exceeded")
+			return ctrl.Result{}, nil
+		}
+
+		return ctrl.Result{}, err
 	}
 
 	outputType := logpipelineutils.GetOutputType(&pipeline)
