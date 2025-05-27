@@ -20,57 +20,84 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-func FluentBitLogsFromContainerDelivered(ctx context.Context, backend *kitbackend.Backend, expectedContainerName string) {
-	BackendDataEventuallyMatches(ctx, backend,
+func FluentBitLogsFromContainerDelivered(ctx context.Context, backend *kitbackend.Backend, expectedContainerName string, optionalDescription ...any) {
+	BackendDataEventuallyMatches(
+		ctx,
+		backend,
 		fluentbit.HaveFlatLogs(ContainElement(fluentbit.HaveContainerName(Equal(expectedContainerName)))),
+		optionalDescription...,
 	)
 }
 
-func FluentBitLogsFromContainerNotDelivered(ctx context.Context, backend *kitbackend.Backend, expectedContainerName string) {
-	BackendDataConsistentlyMatches(ctx, backend,
+func FluentBitLogsFromContainerNotDelivered(ctx context.Context, backend *kitbackend.Backend, expectedContainerName string, optionalDescription ...any) {
+	BackendDataConsistentlyMatches(
+		ctx,
+		backend,
 		fluentbit.HaveFlatLogs(Not(ContainElement(fluentbit.HaveContainerName(Equal(expectedContainerName))))),
+		optionalDescription...,
 	)
 }
 
-func FluentBitLogsFromPodDelivered(ctx context.Context, backend *kitbackend.Backend, expectedPodNamePrefix string) {
-	BackendDataEventuallyMatches(ctx, backend,
+func FluentBitLogsFromPodDelivered(ctx context.Context, backend *kitbackend.Backend, expectedPodNamePrefix string, optionalDescription ...any) {
+	BackendDataEventuallyMatches(
+		ctx,
+		backend,
 		fluentbit.HaveFlatLogs(ContainElement(fluentbit.HavePodName(ContainSubstring(expectedPodNamePrefix)))),
+		optionalDescription...,
 	)
 }
 
-func FluentBitLogsFromNamespaceDelivered(ctx context.Context, backend *kitbackend.Backend, namespace string) {
-	BackendDataEventuallyMatches(ctx, backend,
+func FluentBitLogsFromNamespaceDelivered(ctx context.Context, backend *kitbackend.Backend, namespace string, optionalDescription ...any) {
+	BackendDataEventuallyMatches(
+		ctx,
+		backend,
 		fluentbit.HaveFlatLogs(ContainElement(fluentbit.HaveNamespace(Equal(namespace)))),
+		optionalDescription...,
 	)
 }
 
-func FluentBitLogsFromNamespaceNotDelivered(ctx context.Context, backend *kitbackend.Backend, namespace string) {
-	BackendDataConsistentlyMatches(ctx, backend,
+func FluentBitLogsFromNamespaceNotDelivered(ctx context.Context, backend *kitbackend.Backend, namespace string, optionalDescription ...any) {
+	BackendDataConsistentlyMatches(
+		ctx,
+		backend,
 		fluentbit.HaveFlatLogs(Not(ContainElement(fluentbit.HaveNamespace(Equal(namespace))))),
+		optionalDescription...,
 	)
 }
 
-func OTelLogsFromContainerDelivered(ctx context.Context, backend *kitbackend.Backend, containerName string) {
-	BackendDataEventuallyMatches(ctx, backend,
+func OTelLogsFromContainerDelivered(ctx context.Context, backend *kitbackend.Backend, containerName string, optionalDescription ...any) {
+	BackendDataEventuallyMatches(
+		ctx,
+		backend,
 		HaveFlatLogs(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.container.name", containerName)))),
+		optionalDescription...,
 	)
 }
 
-func OTelLogsFromContainerNotDelivered(ctx context.Context, backend *kitbackend.Backend, containerName string) {
-	BackendDataConsistentlyMatches(ctx, backend,
+func OTelLogsFromContainerNotDelivered(ctx context.Context, backend *kitbackend.Backend, containerName string, optionalDescription ...any) {
+	BackendDataConsistentlyMatches(
+		ctx,
+		backend,
 		HaveFlatLogs(Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.container.name", containerName))))),
+		optionalDescription...,
 	)
 }
 
-func OTelLogsFromNamespaceDelivered(ctx context.Context, backend *kitbackend.Backend, namespace string) {
-	BackendDataEventuallyMatches(ctx, backend,
+func OTelLogsFromNamespaceDelivered(ctx context.Context, backend *kitbackend.Backend, namespace string, optionalDescription ...any) {
+	BackendDataEventuallyMatches(
+		ctx,
+		backend,
 		HaveFlatLogs(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)))),
+		optionalDescription...,
 	)
 }
 
-func OTelLogsFromNamespaceNotDelivered(ctx context.Context, backend *kitbackend.Backend, namespace string) {
-	BackendDataConsistentlyMatches(ctx, backend,
+func OTelLogsFromNamespaceNotDelivered(ctx context.Context, backend *kitbackend.Backend, namespace string, optionalDescription ...any) {
+	BackendDataConsistentlyMatches(
+		ctx,
+		backend,
 		HaveFlatLogs(Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace))))),
+		optionalDescription...,
 	)
 }
 

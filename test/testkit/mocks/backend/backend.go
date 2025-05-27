@@ -48,7 +48,6 @@ type Backend struct {
 	certs                *testutils.ServerCerts
 	name                 string
 	namespace            string
-	persistentHostSecret bool
 	replicas             int32
 	signalType           SignalType
 
@@ -187,7 +186,7 @@ func (b *Backend) buildResources() {
 		fmt.Sprintf("%s-receiver-hostname", b.name),
 		b.namespace,
 		kitk8s.WithStringData("host", host),
-	).Persistent(b.persistentHostSecret)
+	)
 
 	if b.abortFaultPercentage > 0 {
 		// Configure fault injection for self-monitoring negative tests.
