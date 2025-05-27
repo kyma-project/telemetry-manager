@@ -56,26 +56,36 @@ func TestBasePayloadWithHTTPOutput(t *testing.T) {
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
 	assert.DeploymentReady(t.Context(), logProducer.NamespacedName())
 
+	t.Log("Should have timestamp and date attributes")
 	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(HaveEach(SatisfyAll(
-		// timestamps
 		fluentbit.HaveAttributes(HaveKey("@timestamp")),
 		fluentbit.HaveDateISO8601Format(BeTrue()),
+	))))
 
-		// kubernetes filter
-		fluentbit.HaveKubernetesAttributes(HaveKeyWithValue("container_name", stdloggen.DefaultContainerName)),
-		fluentbit.HaveKubernetesAttributes(HaveKeyWithValue("container_image", HaveSuffix(stdloggen.DefaultImageName))),
-		fluentbit.HaveKubernetesAttributes(HaveKeyWithValue("namespace_name", genNs)),
+	t.Log("Should have typical kuberenetes attributes set by kubernetes filter")
+	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(HaveEach(SatisfyAll(
 		fluentbit.HaveKubernetesAttributes(HaveKey("pod_name")),
 		fluentbit.HaveKubernetesAttributes(HaveKey("pod_id")),
 		fluentbit.HaveKubernetesAttributes(HaveKey("pod_ip")),
 		fluentbit.HaveKubernetesAttributes(HaveKey("docker_id")),
 		fluentbit.HaveKubernetesAttributes(HaveKey("host")),
+	))))
+
+	t.Log("Should have typical kuberenetes attributes with values set by kubernetes filter")
+	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(HaveEach(SatisfyAll(
+		fluentbit.HaveKubernetesAttributes(HaveKeyWithValue("container_name", stdloggen.DefaultContainerName)),
+		fluentbit.HaveKubernetesAttributes(HaveKeyWithValue("container_image", HaveSuffix(stdloggen.DefaultImageName))),
+		fluentbit.HaveKubernetesAttributes(HaveKeyWithValue("namespace_name", genNs)),
 		fluentbit.HaveKubernetesLabels(HaveKeyWithValue("selector", stdloggen.DefaultName)),
+	))))
 
-		// record_modifier filter
+	t.Log("Should have cluster identifier set by record_modifier filter")
+	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(HaveEach(SatisfyAll(
 		fluentbit.HaveAttributes(HaveKey("cluster_identifier")),
+	))))
 
-		// base attributes
+	t.Log("Should have proper base attributes")
+	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(HaveEach(SatisfyAll(
 		fluentbit.HaveLogBody(Not(BeEmpty())),
 		fluentbit.HaveAttributes(HaveKeyWithValue("stream", "stdout")),
 	))))
