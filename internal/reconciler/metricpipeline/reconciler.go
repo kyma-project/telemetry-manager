@@ -54,6 +54,10 @@ type PipelineLock interface {
 	IsLockHolder(ctx context.Context, owner metav1.Object) error
 }
 
+type PipelineSyncer interface {
+	TryAcquireLock(ctx context.Context, owner metav1.Object) error
+}
+
 type FlowHealthProber interface {
 	Probe(ctx context.Context, pipelineName string) (prober.OTelGatewayProbeResult, error)
 }
@@ -83,6 +87,7 @@ type Reconciler struct {
 	istioStatusChecker    IstioStatusChecker
 	overridesHandler      OverridesHandler
 	pipelineLock          PipelineLock
+	pipelineSync          PipelineSyncer
 	pipelineValidator     *Validator
 	errToMsgConverter     commonstatus.ErrorToMessageConverter
 }
@@ -101,6 +106,7 @@ func New(
 	istioStatusChecker IstioStatusChecker,
 	overridesHandler OverridesHandler,
 	pipelineLock PipelineLock,
+	pipelineSync PipelineSyncer,
 	pipelineValidator *Validator,
 	errToMsgConverter commonstatus.ErrorToMessageConverter,
 ) *Reconciler {
@@ -118,6 +124,7 @@ func New(
 		istioStatusChecker:    istioStatusChecker,
 		overridesHandler:      overridesHandler,
 		pipelineLock:          pipelineLock,
+		pipelineSync:          pipelineSync,
 		pipelineValidator:     pipelineValidator,
 		errToMsgConverter:     errToMsgConverter,
 	}
@@ -139,6 +146,15 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	var metricPipeline telemetryv1alpha1.MetricPipeline
 	if err := r.Get(ctx, req.NamespacedName, &metricPipeline); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	if err := r.pipelineSync.TryAcquireLock(ctx, &metricPipeline); err != nil {
+		if errors.Is(err, resourcelock.ErrMaxPipelinesExceeded) {
+			logf.FromContext(ctx).V(1).Error(err, "Could not register pipeline")
+			return ctrl.Result{}, nil
+		}
+
+		return ctrl.Result{}, err
 	}
 
 	err = r.doReconcile(ctx, &metricPipeline)
