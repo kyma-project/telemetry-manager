@@ -56,11 +56,15 @@ func TestBasePayloadWithHTTPOutput(t *testing.T) {
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
 	assert.DeploymentReady(t.Context(), logProducer.NamespacedName())
 
-	t.Log("Should have timestamp and date attributes")
-	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(HaveEach(SatisfyAll(
-		fluentbit.HaveAttributes(HaveKey("@timestamp")),
-		fluentbit.HaveDateISO8601Format(BeTrue()),
-	))))
+	assert.BackendDataEventuallyMatches(
+		t.Context(),
+		backend,
+		fluentbit.HaveFlatLogs(HaveEach(SatisfyAll(
+			fluentbit.HaveAttributes(HaveKey("@timestamp")),
+			fluentbit.HaveDateISO8601Format(BeTrue()),
+		))),
+		"should have @timestamp and date attributes",
+	)
 
 	t.Log("Should have typical kuberenetes attributes set by kubernetes filter")
 	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(HaveEach(SatisfyAll(
