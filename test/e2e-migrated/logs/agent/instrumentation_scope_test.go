@@ -56,15 +56,15 @@ func TestInstrumentationScope(t *testing.T) {
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
 	assert.DaemonSetReady(t.Context(), kitkyma.LogAgentName)
 
-	assert.OTelLogPipelineHealthy(t.Context(), pipelineName)
+	assert.OTelLogPipelineHealthy(t, pipelineName)
 
-	assert.BackendDataEventuallyMatches(t.Context(), backend, HaveFlatLogs(
-		ContainElement(SatisfyAll(
+	assert.BackendDataEventuallyMatches(t, backend,
+		HaveFlatLogs(ContainElement(SatisfyAll(
 			HaveScopeName(Equal(agent.InstrumentationScopeRuntime)),
 			HaveScopeVersion(SatisfyAny(
 				Equal("main"),
 				MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
 			)),
-		)),
-	))
+		))),
+	)
 }

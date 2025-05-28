@@ -55,17 +55,19 @@ func TestCustomOutput(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.FluentBitLogPipelineHealthy(t.Context(), pipelineName)
-	assert.LogPipelineUnsupportedMode(t.Context(), pipelineName, true)
+	assert.FluentBitLogPipelineHealthy(t, pipelineName)
+	assert.LogPipelineUnsupportedMode(t, pipelineName, true)
 	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
-	assert.FluentBitLogsFromPodDelivered(t.Context(), backend, stdloggen.DefaultName)
+	assert.FluentBitLogsFromPodDelivered(t, backend, stdloggen.DefaultName)
 
-	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(HaveEach(SatisfyAll(
-		fluentbit.HaveAttributes(HaveKey("cluster_identifier")),
-		fluentbit.HaveAttributes(Not(HaveKey("@timestamp"))),
-		fluentbit.HaveKubernetesAttributes(Not(HaveKey("app_name"))),
-		fluentbit.HaveLogBody(Not(BeEmpty())),
-		fluentbit.HaveAttributes(HaveKey("stream")),
-	))))
+	assert.BackendDataEventuallyMatches(t, backend,
+		fluentbit.HaveFlatLogs(HaveEach(SatisfyAll(
+			fluentbit.HaveAttributes(HaveKey("cluster_identifier")),
+			fluentbit.HaveAttributes(Not(HaveKey("@timestamp"))),
+			fluentbit.HaveKubernetesAttributes(Not(HaveKey("app_name"))),
+			fluentbit.HaveLogBody(Not(BeEmpty())),
+			fluentbit.HaveAttributes(HaveKey("stream")),
+		))),
+	)
 }

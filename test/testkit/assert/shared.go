@@ -2,7 +2,6 @@ package assert
 
 import (
 	"net/http"
-	"testing"
 
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
@@ -12,21 +11,22 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-func BackendDataEventuallyMatches(t *testing.T, backend *kitbackend.Backend, httpBodyMatcher types.GomegaMatcher, optionalDescription ...any) {
+func BackendDataEventuallyMatches(t TestingT, backend *kitbackend.Backend, httpBodyMatcher types.GomegaMatcher, optionalDescription ...any) {
 	t.Helper()
 
 	queryURL := suite.ProxyClient.ProxyURLForService(backend.Namespace(), backend.Name(), kitbackend.QueryPath, kitbackend.QueryPort)
 	HTTPResponseEventuallyMatches(t, queryURL, httpBodyMatcher, optionalDescription...)
 }
 
-func BackendDataConsistentlyMatches(t *testing.T, backend *kitbackend.Backend, httpBodyMatcher types.GomegaMatcher, optionalDescription ...any) {
+func BackendDataConsistentlyMatches(t TestingT, backend *kitbackend.Backend, httpBodyMatcher types.GomegaMatcher, optionalDescription ...any) {
 	t.Helper()
 
 	queryURL := suite.ProxyClient.ProxyURLForService(backend.Namespace(), backend.Name(), kitbackend.QueryPath, kitbackend.QueryPort)
 	HTTPResponseConsistentlyMatches(t, queryURL, httpBodyMatcher, optionalDescription...)
 }
 
-func HTTPResponseEventuallyMatches(t *testing.T, queryURL string, httpBodyMatcher types.GomegaMatcher, optionalDescription ...any) {
+//nolint:dupl // This function is similar to BackendDataEventuallyMatches but uses Eventually instead of Consistently.
+func HTTPResponseEventuallyMatches(t TestingT, queryURL string, httpBodyMatcher types.GomegaMatcher, optionalDescription ...any) {
 	t.Helper()
 
 	Eventually(func(g Gomega) {
@@ -38,7 +38,8 @@ func HTTPResponseEventuallyMatches(t *testing.T, queryURL string, httpBodyMatche
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-func HTTPResponseConsistentlyMatches(t *testing.T, queryURL string, httpBodyMatcher types.GomegaMatcher, optionalDescription ...any) {
+//nolint:dupl // This function is similar to HTTPResponseEventuallyMatches but uses Consistently instead of Eventually.
+func HTTPResponseConsistentlyMatches(t TestingT, queryURL string, httpBodyMatcher types.GomegaMatcher, optionalDescription ...any) {
 	t.Helper()
 
 	Consistently(func(g Gomega) {

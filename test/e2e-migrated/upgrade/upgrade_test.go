@@ -50,8 +50,8 @@ func TestUpgrade(t *testing.T) {
 		assert.DeploymentReady(t.Context(), backend.NamespacedName())
 		assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 
-		assert.FluentBitLogPipelineHealthy(t.Context(), pipelineName)
-		assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend, generatorNs)
+		assert.FluentBitLogPipelineHealthy(t, pipelineName)
+		assert.FluentBitLogsFromNamespaceDelivered(t, backend, generatorNs)
 	})
 
 	t.Run("after upgrade", func(t *testing.T) {
@@ -62,7 +62,7 @@ func TestUpgrade(t *testing.T) {
 		assert.DeploymentReady(t.Context(), backend.NamespacedName())
 		assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 
-		assert.FluentBitLogPipelineHealthy(t.Context(), pipelineName)
-		assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend, generatorNs)
+		assert.FluentBitLogPipelineHealthy(t, pipelineName)
+		assert.FluentBitLogsFromNamespaceDelivered(t, backend, generatorNs)
 	})
 }

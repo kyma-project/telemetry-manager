@@ -91,11 +91,11 @@ func TestMultiPipelineFanout_OTel(t *testing.T) {
 			assert.DeploymentReady(t.Context(), backend1.NamespacedName())
 			assert.DeploymentReady(t.Context(), backend2.NamespacedName())
 
-			assert.FluentBitLogPipelineHealthy(t.Context(), pipeline1.Name)
-			assert.FluentBitLogPipelineHealthy(t.Context(), pipeline2.Name)
+			assert.FluentBitLogPipelineHealthy(t, pipeline1.Name)
+			assert.FluentBitLogPipelineHealthy(t, pipeline2.Name)
 
-			assert.OTelLogsFromNamespaceDelivered(t.Context(), backend1, genNs)
-			assert.OTelLogsFromNamespaceDelivered(t.Context(), backend2, genNs)
+			assert.OTelLogsFromNamespaceDelivered(t, backend1, genNs)
+			assert.OTelLogsFromNamespaceDelivered(t, backend2, genNs)
 		})
 	}
 }
@@ -144,9 +144,9 @@ func TestMultiPipelineFanout_FluentBit(t *testing.T) {
 	assert.DeploymentReady(t.Context(), backend1.NamespacedName())
 	assert.DeploymentReady(t.Context(), backend2.NamespacedName())
 
-	assert.FluentBitLogPipelineHealthy(t.Context(), pipeline1.Name)
-	assert.FluentBitLogPipelineHealthy(t.Context(), pipeline2.Name)
+	assert.FluentBitLogPipelineHealthy(t, pipeline1.Name)
+	assert.FluentBitLogPipelineHealthy(t, pipeline2.Name)
 
-	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend1, genNs)
-	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend2, genNs)
+	assert.FluentBitLogsFromNamespaceDelivered(t, backend1, genNs)
+	assert.FluentBitLogsFromNamespaceDelivered(t, backend2, genNs)
 }
