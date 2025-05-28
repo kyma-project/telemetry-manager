@@ -1,16 +1,18 @@
 ARG ALPINE_VERSION
 
-FROM node:alpine${ALPINE_VERSION} as builder
+FROM --platform=$BUILDPLATFORM node:alpine${ALPINE_VERSION} AS builder
 
+ARG TARGETOS
+ARG TARGETARCH
 ARG PROMETHEUS_VERSION
 
 RUN apk add --no-cache git make musl-dev go curl bash
 RUN apk --no-cache upgrade
 
 # Configure Go
-ENV GOROOT /usr/lib/go
-ENV GOPATH /go
-ENV PATH /go/bin:$PATH
+ENV GOROOT=/usr/lib/go
+ENV GOPATH=/go
+ENV PATH=/go/bin:$PATH
 
 
 RUN mkdir -p ${GOPATH}/src ${GOPATH}/bin
@@ -21,7 +23,12 @@ RUN mv /prometheus-${PROMETHEUS_VERSION} /prometheus
 
 WORKDIR /prometheus
 COPY plugins.yml plugins.yml
-RUN make build
+
+# Only support for linux OS
+# to be enabled when the workflow is based on multi-build
+# RUN if [ "${TARGETOS}" != "linux" ]; then echo "Unsupported OS: ${TARGETOS}"; exit 1; fi
+
+RUN DOCKER_ARCHS=${TARGETARCH} make build
 
 FROM scratch
 
