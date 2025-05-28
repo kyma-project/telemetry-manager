@@ -251,8 +251,8 @@ func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetr
 		CloudProvider:                   clusterInfo.CloudProvider,
 		Enrichments:                     r.getEnrichmentsFromTelemetry(ctx),
 		InternalMetricCompatibilityMode: telemetryutils.GetCompatibilityModeFromTelemetry(ctx, r.Client, r.telemetryNamespace),
+		ModuleVersion:                   r.moduleVersion,
 	})
-
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)
 	}
