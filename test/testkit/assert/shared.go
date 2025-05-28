@@ -17,6 +17,7 @@ import (
 
 func BackendDataEventuallyMatches1(offset int, t *testing.T, backend *kitbackend.Backend, httpBodyMatcher types.GomegaMatcher) {
 	t.Helper()
+
 	queryURL := suite.ProxyClient.ProxyURLForService(backend.Namespace(), backend.Name(), kitbackend.QueryPath, kitbackend.QueryPort)
 	HTTPResponseEventuallyMatches1(offset+1, t, queryURL, httpBodyMatcher)
 }
@@ -68,6 +69,7 @@ func getOffset() int {
 	frames := runtime.CallersFrames(pc[:n])
 
 	var startCounting bool
+
 	count := 0
 
 	for {
@@ -79,6 +81,7 @@ func getOffset() int {
 				startCounting = true
 				continue
 			}
+
 			continue
 		}
 
@@ -87,17 +90,18 @@ func getOffset() int {
 		}
 
 		count++
+
 		if !more {
 			break
 		}
 	}
 
 	return count
-
 }
 func getFuncName(fullName string) string {
 	if idx := strings.LastIndex(fullName, "."); idx != -1 {
 		return fullName[idx+1:]
 	}
+
 	return fullName
 }
