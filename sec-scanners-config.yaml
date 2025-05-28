@@ -2,7 +2,7 @@ module-name: telemetry
 kind: kyma
 bdba:
   - europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:main
-  - europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20250527-3929a1b9
+  - europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20250527-dfa5b526
   - europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:4.0.2
   - europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.126.0-main
   - europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:3.4.0-e58238b

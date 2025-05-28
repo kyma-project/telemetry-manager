@@ -19,8 +19,7 @@ RUN go mod download
 COPY *.go .
 
 # Clean up unused (test) dependencies and build
-RUN go mod tidy
-RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o main ./...
+RUN go mod tidy && CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o main ./...
 
 # Use the scratch image for a minimal image
 FROM scratch

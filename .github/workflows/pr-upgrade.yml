@@ -30,6 +30,7 @@ on:
       - "test/integration/istio/*.go"
       - ".github/workflows/pr-upgrade.yml"
       - ".github/template/**"
+      - ".env"
   workflow_dispatch:
 
 jobs:
