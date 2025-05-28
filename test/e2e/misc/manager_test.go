@@ -80,7 +80,7 @@ var _ = Describe(suite.ID(), func() {
 						break
 					}
 				}
-				Expect(webhookEndpoints).NotTo(BeEmpty())
+				Expect(webhookEndpoints).NotTo(BeNil())
 
 				var addresses []string
 				for _, endpoint := range webhookEndpoints.Endpoints {
@@ -111,7 +111,7 @@ var _ = Describe(suite.ID(), func() {
 						break
 					}
 				}
-				Expect(metricsEndpoints).NotTo(BeEmpty())
+				Expect(metricsEndpoints).NotTo(BeNil())
 
 				var addresses []string
 				for _, endpoint := range metricsEndpoints.Endpoints {
