@@ -58,14 +58,20 @@ type ErrorToMessageConverter_Convert_Call struct {
 }
 
 // Convert is a helper method to define mock.On call
-//   - err
+//   - err error
 func (_e *ErrorToMessageConverter_Expecter) Convert(err interface{}) *ErrorToMessageConverter_Convert_Call {
 	return &ErrorToMessageConverter_Convert_Call{Call: _e.mock.On("Convert", err)}
 }
 
 func (_c *ErrorToMessageConverter_Convert_Call) Run(run func(err error)) *ErrorToMessageConverter_Convert_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(error))
+		var arg0 error
+		if args[0] != nil {
+			arg0 = args[0].(error)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }

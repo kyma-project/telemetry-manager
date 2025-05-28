@@ -14,12 +14,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -27,9 +28,9 @@ import (
 
 var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 	var (
-		mockNs           = suite.ID()
-		pipelineName     = suite.ID()
-		backendExportURL string
+		mockNs       = suite.ID()
+		pipelineName = suite.ID()
+		backend      *kitbackend.Backend
 	)
 
 	makeResources := func() []client.Object {
@@ -37,18 +38,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		backend := backend.New(mockNs, backend.SignalTypeTraces, backend.WithPersistentHostSecret(suite.IsUpgrade()))
+		backend = kitbackend.New(mockNs, kitbackend.SignalTypeTraces)
 		objs = append(objs, backend.K8sObjects()...)
-		backendExportURL = backend.ExportURL(suite.ProxyClient)
 
-		hostSecretRef := backend.HostSecretRefV1Alpha1()
 		tracePipelineBuilder := testutils.NewTracePipelineBuilder().
 			WithName(pipelineName).
-			WithOTLPOutput(testutils.OTLPEndpointFromSecret(
-				hostSecretRef.Name,
-				hostSecretRef.Namespace,
-				hostSecretRef.Key,
-			))
+			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint()))
 		if suite.IsUpgrade() {
 			tracePipelineBuilder.WithLabels(kitk8s.PersistentLabel)
 		}
@@ -66,13 +61,27 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
+
+			// TODO(skhalash): remove this block after 1.42 release
+			// This is a workaround to compensate for a bug resulting in a missing backend host secret after the pre-upgrade test run
+			if suite.IsUpgrade() {
+				var pipeline telemetryv1alpha1.TracePipeline
+				suite.K8sClient.Get(suite.Ctx, types.NamespacedName{Name: pipelineName}, &pipeline)
+				output := pipeline.Spec.Output.OTLP
+				if output != nil && output.Endpoint.ValueFrom != nil && output.Endpoint.ValueFrom.SecretKeyRef != nil {
+					output.Endpoint.Value = backend.Endpoint()
+					output.Endpoint.ValueFrom = nil
+					pipeline.Spec.Output.OTLP = output
+					Expect(suite.K8sClient.Update(suite.Ctx, &pipeline)).To(Succeed())
+				}
+			}
 		})
 
 		It("Should have a running trace gateway deployment", Label(suite.LabelUpgrade), func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.TraceGatewayName)
+			assert.DeploymentReady(suite.Ctx, kitkyma.TraceGatewayName)
 		})
 
 		It("Should have 2 trace gateway replicas", Label(suite.LabelUpgrade), func() {
@@ -166,20 +175,20 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should have a trace backend running", Label(suite.LabelUpgrade), func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have a running pipeline", Label(suite.LabelUpgrade), func() {
-			assert.TracePipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+			assert.TracePipelineHealthy(suite.Ctx, pipelineName)
 		})
 
 		It("Should deliver telemetrygen traces", Label(suite.LabelUpgrade), func() {
-			assert.TracesFromNamespaceDelivered(suite.ProxyClient, backendExportURL, mockNs)
+			assert.TracesFromNamespaceDelivered(suite.ProxyClient, backend.ExportURL(suite.ProxyClient), mockNs)
 		})
 
 		It("Should be able to get trace gateway metrics endpoint", Label(suite.LabelUpgrade), func() {
 			gatewayMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.TraceGatewayMetricsService.Namespace, kitkyma.TraceGatewayMetricsService.Name, "metrics", ports.Metrics)
-			assert.EmitsOTelCollectorMetrics(suite.ProxyClient, gatewayMetricsURL)
+			assert.EmitsOTelCollectorMetrics(suite.Ctx, gatewayMetricsURL)
 		})
 
 		It("Should have a working network policy", Label(suite.LabelUpgrade), func() {

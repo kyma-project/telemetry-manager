@@ -3,18 +3,20 @@ package suite
 import (
 	"context"
 	"fmt"
+	"os"
 	"path"
 	"runtime"
 	"strings"
+	"testing"
 
+	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
-	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 )
 
 const (
@@ -27,11 +29,7 @@ var (
 	K8sClient   client.Client
 	ProxyClient *apiserverproxy.Client
 
-	cancel                   context.CancelFunc
-	preProvisionedK8sObjects = []client.Object{
-		// deny all network policy to simulate a typical kyma installation
-		kitk8s.NewNetworkPolicy("deny-all-ingress-and-egress", kitkyma.SystemNamespaceName).K8sObject(),
-	}
+	cancel context.CancelFunc
 )
 
 // BeforeSuiteFuncErr is designed to return an error instead of relying on Gomega matchers.
@@ -40,11 +38,12 @@ var (
 func BeforeSuiteFuncErr() error {
 	Ctx, cancel = context.WithCancel(context.Background()) //nolint:fatcontext // context is used in tests
 
-	kubeconfigPath := clientcmd.NewDefaultClientConfigLoadingRules().GetDefaultFilename()
+	//TODO: set up stdout and stderr loggers
+	logf.SetLogger(logr.FromContextOrDiscard(Ctx))
 
-	restConfig, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
+	restConfig, err := config.GetConfig()
 	if err != nil {
-		return fmt.Errorf("failed to load kubeconfig: %w", err)
+		return fmt.Errorf("failed to get k8s config: %w", err)
 	}
 
 	K8sClient, err = client.New(restConfig, client.Options{Scheme: scheme})
@@ -57,10 +56,6 @@ func BeforeSuiteFuncErr() error {
 		return fmt.Errorf("failed to create apiserver proxy client: %w", err)
 	}
 
-	if err := kitk8s.CreateObjects(Ctx, K8sClient, preProvisionedK8sObjects...); err != nil {
-		return fmt.Errorf("failed to create default k8s objects: %w", err)
-	}
-
 	return nil
 }
 
@@ -69,22 +64,9 @@ func BeforeSuiteFunc() {
 	Expect(BeforeSuiteFuncErr()).Should(Succeed())
 }
 
-// AfterSuiteFuncErr is designed to return an error instead of relying on Gomega matchers.
-// This function is intended for use in a vanilla TestMain function within new e2e test suites.
-// Note that Gomega matchers cannot be utilized in the TestMain function.
-func AfterSuiteFuncErr() error {
-	if err := kitk8s.DeleteObjects(Ctx, K8sClient, preProvisionedK8sObjects...); err != nil {
-		return fmt.Errorf("failed to delete default k8s objects: %w", err)
-	}
-
-	cancel()
-
-	return nil
-}
-
 // AfterSuiteFunc is executed after each Ginkgo test suite
 func AfterSuiteFunc() {
-	Expect(AfterSuiteFuncErr()).Should(Succeed())
+	cancel()
 }
 
 // ID returns the current test suite ID.
@@ -121,12 +103,16 @@ func sanitizeSpecID(filePath string) string {
 
 const (
 	// Test suites labels
-	LabelLogsOtel      = "logs-otel"
-	LabelLogsFluentBit = "logs-fluentbit"
-	LabelTraces        = "traces"
-	LabelMetrics       = "metrics"
-	LabelTelemetry     = "telemetry"
-	LabelMaxPipeline   = "max-pipeline"
+	LabelLogsFluentBit        = "logs-fluentbit"
+	LabelLogAgent             = "log-agent"
+	LabelLogGateway           = "log-gateway"
+	LabelFluentBit            = "fluent-bit"
+	LabelTraces               = "traces"
+	LabelMetrics              = "metrics"
+	LabelTelemetry            = "telemetry"
+	LabelMaxPipeline          = "max-pipeline"
+	LabelMaxPipelineOTel      = "max-pipeline-otel"
+	LabelMaxPipelineFluentBit = "max-pipeline-fluent-bit"
 
 	// Test "sub-suites" labels
 	LabelExperimental = "experimental"
@@ -135,17 +121,21 @@ const (
 	LabelSetC         = "set_c"
 	LabelSignalPush   = "signal-push"
 	LabelSignalPull   = "signal-pull"
+	LabelSkip         = "skip"
 
 	// Self-monitoring test labels
-	LabelSelfMonitoringLogsHealthy         = "self-mon-logs-healthy"
-	LabelSelfMonitoringLogsBackpressure    = "self-mon-logs-backpressure"
-	LabelSelfMonitoringLogsOutage          = "self-mon-logs-outage"
-	LabelSelfMonitoringTracesHealthy       = "self-mon-traces-healthy"
-	LabelSelfMonitoringTracesBackpressure  = "self-mon-traces-backpressure"
-	LabelSelfMonitoringTracesOutage        = "self-mon-traces-outage"
-	LabelSelfMonitoringMetricsHealthy      = "self-mon-metrics-healthy"
-	LabelSelfMonitoringMetricsBackpressure = "self-mon-metrics-backpressure"
-	LabelSelfMonitoringMetricsOutage       = "self-mon-metrics-outage"
+	LabelSelfMonitoringLogsFluentBitBackpressure = "self-mon-fluentbit-backpressure"
+	LabelSelfMonitoringLogsFluentBitOutage       = "self-mon-fluentbit-outage"
+	LabelSelfMonitoringLogsAgentBackpressure     = "self-mon-log-agent-backpressure"
+	LabelSelfMonitoringLogsAgentOutage           = "self-mon-log-agent-outage"
+	LabelSelfMonitoringLogsGatewayBackpressure   = "self-mon-log-gateway-backpressure"
+	LabelSelfMonitoringLogsGatewayOutage         = "self-mon-log-gateway-outage"
+	LabelSelfMonitoringTracesHealthy             = "self-mon-traces-healthy"
+	LabelSelfMonitoringTracesBackpressure        = "self-mon-traces-backpressure"
+	LabelSelfMonitoringTracesOutage              = "self-mon-traces-outage"
+	LabelSelfMonitoringMetricsHealthy            = "self-mon-metrics-healthy"
+	LabelSelfMonitoringMetricsBackpressure       = "self-mon-metrics-backpressure"
+	LabelSelfMonitoringMetricsOutage             = "self-mon-metrics-outage"
 
 	// Miscellaneous test label (for edge-cases and unrelated tests)
 	// [please avoid adding tests to this category if it already fits in a more specific one]
@@ -163,4 +153,59 @@ func IsUpgrade() bool {
 	labelsFilter := GinkgoLabelFilter()
 
 	return labelsFilter != "" && Label(LabelUpgrade).MatchesLabelFilter(labelsFilter)
+}
+
+func RegisterTestCase(t *testing.T, labels ...string) {
+	RegisterTestingT(t)
+
+	labelSet := toSet(labels)
+
+	requiredLabels := findRequiredLabels()
+	if len(requiredLabels) == 0 {
+		return
+	}
+
+	// Skip test if it contains "skipped" label
+	if _, exists := labelSet[LabelSkip]; exists {
+		t.Skip()
+	}
+
+	// Skip test if it doesn't contain at least one required label
+	for _, requiredLabel := range requiredLabels {
+		if _, exists := labelSet[requiredLabel]; !exists {
+			t.Skip()
+		}
+	}
+}
+
+func findRequiredLabels() []string {
+	const prefix = "-labels="
+
+	var labelsArg string
+
+	for _, arg := range os.Args {
+		if strings.HasPrefix(arg, prefix) {
+			labelsArg = arg
+		}
+	}
+
+	if labelsArg == "" {
+		return nil
+	}
+
+	labelsKV := strings.SplitN(labelsArg, "=", 2)
+	if len(labelsKV) != 2 {
+		return nil
+	}
+
+	return strings.Split(labelsKV[1], ",")
+}
+
+func toSet(labels []string) map[string]struct{} {
+	set := make(map[string]struct{}, len(labels))
+	for _, label := range labels {
+		set[label] = struct{}{}
+	}
+
+	return set
 }

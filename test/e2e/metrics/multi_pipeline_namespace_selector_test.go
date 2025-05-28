@@ -13,7 +13,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/metrics/runtime"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -36,7 +36,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetC), 
 			kitk8s.NewNamespace(app1Ns).K8sObject(),
 			kitk8s.NewNamespace(app2Ns).K8sObject())
 
-		backend1 := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithName(backend1Name))
+		backend1 := kitbackend.New(mockNs, kitbackend.SignalTypeMetrics, kitbackend.WithName(backend1Name))
 		backend1ExportURL = backend1.ExportURL(suite.ProxyClient)
 		objs = append(objs, backend1.K8sObjects()...)
 
@@ -49,7 +49,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetC), 
 			Build()
 		objs = append(objs, &pipelineIncludeApp1Ns)
 
-		backend2 := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithName(backend2Name))
+		backend2 := kitbackend.New(mockNs, kitbackend.SignalTypeMetrics, kitbackend.WithName(backend2Name))
 		backend2ExportURL = backend2.ExportURL(suite.ProxyClient)
 		objs = append(objs, backend2.K8sObjects()...)
 
@@ -80,25 +80,25 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetC), 
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 			})
 
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have a running metric gateway deployment", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(suite.Ctx, kitkyma.MetricGatewayName)
 		})
 
 		It("Should have a running metric agent daemonset", func() {
-			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.MetricAgentName)
+			assert.DaemonSetReady(suite.Ctx, kitkyma.MetricAgentName)
 		})
 
 		It("Should have a metrics backend running", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
-			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
-			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
+			assert.ServiceReady(suite.Ctx, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
+			assert.ServiceReady(suite.Ctx, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
 		})
 
 		// verify metrics from apps1Ns delivered to backend1

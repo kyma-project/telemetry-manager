@@ -20,6 +20,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
+	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
@@ -53,8 +54,12 @@ type PipelineLock interface {
 	IsLockHolder(ctx context.Context, owner metav1.Object) error
 }
 
+type PipelineSyncer interface {
+	TryAcquireLock(ctx context.Context, owner metav1.Object) error
+}
+
 type FlowHealthProber interface {
-	Probe(ctx context.Context, pipelineName string) (prober.OTelPipelineProbeResult, error)
+	Probe(ctx context.Context, pipelineName string) (prober.OTelGatewayProbeResult, error)
 }
 
 type OverridesHandler interface {
@@ -82,6 +87,7 @@ type Reconciler struct {
 	istioStatusChecker    IstioStatusChecker
 	overridesHandler      OverridesHandler
 	pipelineLock          PipelineLock
+	pipelineSync          PipelineSyncer
 	pipelineValidator     *Validator
 	errToMsgConverter     commonstatus.ErrorToMessageConverter
 }
@@ -100,6 +106,7 @@ func New(
 	istioStatusChecker IstioStatusChecker,
 	overridesHandler OverridesHandler,
 	pipelineLock PipelineLock,
+	pipelineSync PipelineSyncer,
 	pipelineValidator *Validator,
 	errToMsgConverter commonstatus.ErrorToMessageConverter,
 ) *Reconciler {
@@ -117,6 +124,7 @@ func New(
 		istioStatusChecker:    istioStatusChecker,
 		overridesHandler:      overridesHandler,
 		pipelineLock:          pipelineLock,
+		pipelineSync:          pipelineSync,
 		pipelineValidator:     pipelineValidator,
 		errToMsgConverter:     errToMsgConverter,
 	}
@@ -140,6 +148,15 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	if err := r.pipelineSync.TryAcquireLock(ctx, &metricPipeline); err != nil {
+		if errors.Is(err, resourcelock.ErrMaxPipelinesExceeded) {
+			logf.FromContext(ctx).V(1).Error(err, "Could not register pipeline")
+			return ctrl.Result{}, nil
+		}
+
+		return ctrl.Result{}, err
+	}
+
 	err = r.doReconcile(ctx, &metricPipeline)
 	if statusErr := r.updateStatus(ctx, metricPipeline.Name); statusErr != nil {
 		if err != nil {
@@ -154,6 +171,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) error {
 	if err := r.pipelineLock.TryAcquireLock(ctx, pipeline); err != nil {
+		if errors.Is(err, resourcelock.ErrMaxPipelinesExceeded) {
+			logf.FromContext(ctx).V(1).Info("Skipping reconciliation: maximum pipeline count limit exceeded")
+			return nil
+		}
+
 		return err
 	}
 

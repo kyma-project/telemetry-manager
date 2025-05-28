@@ -14,7 +14,7 @@ runs:
 
   steps:
     - name: Upload Report
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: ${{ inputs.job-name }}-report
         path: junit-report*.xml
@@ -42,11 +42,3 @@ runs:
       if: ${{ inputs.failure }}
       run: |
         kubectl get all --all-namespaces
-    
-    - name: Delete all telemetry-related CRs
-      shell: bash
-      run: |
-        kubectl delete LogPipeline --all --all-namespaces
-        kubectl delete MetricPipeline --all --all-namespaces
-        kubectl delete TracePipeline --all --all-namespaces
-        kubectl delete Telemetry default -n kyma-system

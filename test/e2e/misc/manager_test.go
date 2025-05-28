@@ -106,7 +106,7 @@ var _ = Describe(suite.ID(), func() {
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).ShouldNot(BeEmpty())
 		})
 
-		It("Should have LogPipelines CRD", Label(suite.LabelLogsFluentBit), func() {
+		It("Should have LogPipelines CRD", Label(suite.LabelFluentBit), func() {
 			var crd apiextensionsv1.CustomResourceDefinition
 			key := types.NamespacedName{
 				Name: "logpipelines.telemetry.kyma-project.io",
@@ -116,7 +116,7 @@ var _ = Describe(suite.ID(), func() {
 			Expect(crd.Spec.Scope).To(Equal(apiextensionsv1.ClusterScoped))
 		})
 
-		It("Should have LogParsers CRD", Label(suite.LabelLogsFluentBit), func() {
+		It("Should have LogParsers CRD", Label(suite.LabelFluentBit), func() {
 			var crd apiextensionsv1.CustomResourceDefinition
 			key := types.NamespacedName{
 				Name: "logparsers.telemetry.kyma-project.io",
@@ -166,7 +166,7 @@ var _ = Describe(suite.ID(), func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("Should have a Busola extension for LogPipelines CRD", Label(suite.LabelLogsFluentBit), func() {
+		It("Should have a Busola extension for LogPipelines CRD", Label(suite.LabelFluentBit), func() {
 			var cm corev1.ConfigMap
 			key := types.NamespacedName{
 				Name:      "telemetry-logpipelines",

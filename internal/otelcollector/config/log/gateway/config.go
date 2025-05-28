@@ -25,6 +25,7 @@ type Processors struct {
 	InsertClusterAttributes *config.ResourceProcessor          `yaml:"resource/insert-cluster-attributes,omitempty"`
 	ResolveServiceName      *config.ServiceEnrichmentProcessor `yaml:"service_enrichment,omitempty"`
 	DropKymaAttributes      *config.ResourceProcessor          `yaml:"resource/drop-kyma-attributes,omitempty"`
+	DropIfInputSourceOTLP   *FilterProcessor                   `yaml:"filter/drop-if-input-source-otlp,omitempty"`
 
 	// NamespaceFilters contains filter processors, which need different configurations per pipeline
 	NamespaceFilters NamespaceFilters `yaml:",inline,omitempty"`

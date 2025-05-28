@@ -1,5 +1,8 @@
 name: PR Upgrade
 
+permissions:
+  contents: read
+
 on:
   merge_group:
   pull_request:
@@ -23,6 +26,7 @@ on:
       - "!**_test.go"
       - "!docs/**"
       - "test/e2e/*.go"
+      - "test/e2e-migrated/*.go"
       - "test/integration/istio/*.go"
       - ".github/workflows/pr-upgrade.yml"
       - ".github/template/**"
@@ -33,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Setup Golang
         uses: "./.github/template/setup-golang"
@@ -58,17 +62,21 @@ jobs:
         shell: bash
         run: kubectl -n kyma-system rollout status deployment telemetry-manager --timeout=90s
 
-      - name: Create Telemtry CR
-        shell: bash
-        run: kubectl apply -f config/samples/operator_v1alpha1_telemetry.yaml -n kyma-system
+      - name: Deploy Test Prerequisites
+        uses: "./.github/template/deploy-test-prerequisites"
 
-      - name: Run test on latest tag
+      - name: Run ginkgo tests on latest tag
         shell: bash
         run: |
           bin/ginkgo run --junit-report=junit-report-latest-version.xml --tags e2e --flake-attempts=5 --label-filter="upgrade || operational" -v -r test/e2e
 
+      - name: Run vanilla go tests on latest tag
+        shell: bash
+        run: |
+          go test -v -timeout=10m -run=TestUpgrade/before_upgrade ./test/e2e-migrated/upgrade/...
+
       - name: Switch back to current revision
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Wait for cleanup of test run
         shell: bash
@@ -95,11 +103,16 @@ jobs:
         shell: bash
         run: kubectl -n kyma-system rollout status deployment telemetry-manager --timeout=90s
 
-      - name: Run test on current version
+      - name: Run test on current revision
         shell: bash
         run: |
           make install-tools # delete after the tools via go modules are released
           bin/ginkgo run --junit-report=junit-report-current-version.xml --tags e2e --flake-attempts=5 --label-filter="upgrade" -v -r test/e2e
+
+      - name: Run vanilla go tests on current revision
+        shell: bash
+        run: |
+          go test -v -timeout=10m -run=TestUpgrade/after_upgrade ./test/e2e-migrated/upgrade/...
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"

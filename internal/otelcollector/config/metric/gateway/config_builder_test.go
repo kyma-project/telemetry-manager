@@ -266,10 +266,11 @@ func TestMakeConfig(t *testing.T) {
 
 	t.Run("marshaling", func(t *testing.T) {
 		tests := []struct {
-			name              string
-			goldenFileName    string
-			withOTLPInput     bool
-			compatibilityMode bool
+			name                string
+			goldenFileName      string
+			overwriteGoldenFile bool
+			withOTLPInput       bool
+			compatibilityMode   bool
 		}{
 			{
 				name:              "OTLP Endpoint enabled",
@@ -312,6 +313,13 @@ func TestMakeConfig(t *testing.T) {
 				require.NoError(t, err, "failed to marshal config")
 
 				goldenFilePath := filepath.Join("testdata", tt.goldenFileName)
+				if tt.overwriteGoldenFile {
+					err = os.WriteFile(goldenFilePath, configYAML, 0600)
+					require.NoError(t, err, "failed to overwrite golden file")
+
+					t.Fatalf("Golden file %s has been saved, please verify it and set the overwriteGoldenFile flag to false", tt.goldenFileName)
+				}
+
 				goldenFile, err := os.ReadFile(goldenFilePath)
 				require.NoError(t, err, "failed to load golden file")
 

@@ -18,7 +18,7 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/metrics/runtime"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -40,7 +40,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetC), 
 			var objs []client.Object
 			objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-			backendRuntime := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithName(backendRuntimeName))
+			backendRuntime := kitbackend.New(mockNs, kitbackend.SignalTypeMetrics, kitbackend.WithName(backendRuntimeName))
 			objs = append(objs, backendRuntime.K8sObjects()...)
 			backendRuntimeExportURL = backendRuntime.ExportURL(suite.ProxyClient)
 
@@ -61,7 +61,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetC), 
 				Build()
 			objs = append(objs, &metricPipelineRuntime)
 
-			backendPrometheus := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithName(backendPrometheusName))
+			backendPrometheus := kitbackend.New(mockNs, kitbackend.SignalTypeMetrics, kitbackend.WithName(backendPrometheusName))
 			objs = append(objs, backendPrometheus.K8sObjects()...)
 			backendPrometheusExportURL = backendPrometheus.ExportURL(suite.ProxyClient)
 
@@ -85,26 +85,26 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetC), 
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have running pipelines", func() {
-			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineRuntimeName)
-			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, pipelinePrometheusName)
+			assert.MetricPipelineHealthy(suite.Ctx, pipelineRuntimeName)
+			assert.MetricPipelineHealthy(suite.Ctx, pipelinePrometheusName)
 		})
 
 		It("Should have a running metric gateway deployment", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayName)
-			assert.ServiceReady(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayMetricsService)
+			assert.DeploymentReady(suite.Ctx, kitkyma.MetricGatewayName)
+			assert.ServiceReady(suite.Ctx, kitkyma.MetricGatewayMetricsService)
 		})
 
 		It("Should have a metrics backend running", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backendRuntimeName, Namespace: mockNs})
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backendPrometheusName, Namespace: mockNs})
-			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backendRuntimeName, Namespace: mockNs})
-			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backendPrometheusName, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: backendRuntimeName, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: backendPrometheusName, Namespace: mockNs})
+			assert.ServiceReady(suite.Ctx, types.NamespacedName{Name: backendRuntimeName, Namespace: mockNs})
+			assert.ServiceReady(suite.Ctx, types.NamespacedName{Name: backendPrometheusName, Namespace: mockNs})
 		})
 
 		It("Ensures runtime metrics are sent to runtime backend", func() {

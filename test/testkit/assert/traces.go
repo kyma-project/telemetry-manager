@@ -11,13 +11,13 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
 func TracesFromNamespaceDelivered(proxyClient *apiserverproxy.Client, backendExportURL, namespace string) {
@@ -46,11 +46,11 @@ func TracesFromNamespacesNotDelivered(proxyClient *apiserverproxy.Client, backen
 	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-func TracePipelineHealthy(ctx context.Context, k8sClient client.Client, pipelineName string) {
+func TracePipelineHealthy(ctx context.Context, pipelineName string) {
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.TracePipeline
 		key := types.NamespacedName{Name: pipelineName}
-		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
+		g.Expect(suite.K8sClient.Get(ctx, key, &pipeline)).To(Succeed())
 
 		gatewayHealthy := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeGatewayHealthy)
 		g.Expect(gatewayHealthy).NotTo(BeNil())
@@ -62,11 +62,11 @@ func TracePipelineHealthy(ctx context.Context, k8sClient client.Client, pipeline
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func TracePipelineHasCondition(ctx context.Context, k8sClient client.Client, pipelineName string, expectedCond metav1.Condition) {
+func TracePipelineHasCondition(ctx context.Context, pipelineName string, expectedCond metav1.Condition) {
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.TracePipeline
 		key := types.NamespacedName{Name: pipelineName}
-		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
+		g.Expect(suite.K8sClient.Get(ctx, key, &pipeline)).To(Succeed())
 		condition := meta.FindStatusCondition(pipeline.Status.Conditions, expectedCond.Type)
 		g.Expect(condition).NotTo(BeNil())
 		g.Expect(condition.Reason).To(Equal(expectedCond.Reason))
@@ -75,7 +75,7 @@ func TracePipelineHasCondition(ctx context.Context, k8sClient client.Client, pip
 }
 
 //nolint:dupl //LogPipelineConditionReasonsTransition,TracePipelineConditionReasonsTransition, MetricPipelineConditionReasonsTransition have similarities, but they are not the same
-func TracePipelineConditionReasonsTransition(ctx context.Context, k8sClient client.Client, pipelineName, condType string, expected []ReasonStatus) {
+func TracePipelineConditionReasonsTransition(ctx context.Context, pipelineName, condType string, expected []ReasonStatus) {
 	var currCond *metav1.Condition
 
 	for _, expected := range expected {
@@ -83,7 +83,7 @@ func TracePipelineConditionReasonsTransition(ctx context.Context, k8sClient clie
 		Eventually(func(g Gomega) ReasonStatus {
 			var pipeline telemetryv1alpha1.TracePipeline
 			key := types.NamespacedName{Name: pipelineName}
-			err := k8sClient.Get(ctx, key, &pipeline)
+			err := suite.K8sClient.Get(ctx, key, &pipeline)
 			g.Expect(err).To(Succeed())
 			currCond = meta.FindStatusCondition(pipeline.Status.Conditions, condType)
 			if currCond == nil {

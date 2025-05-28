@@ -60,10 +60,13 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
+		pipelineSyncStub := &mocks.PipelineSyncer{}
+		pipelineSyncStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(workloadstatus.ErrDeploymentFetching)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -84,6 +87,7 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
+			pipelineSyncStub,
 			pipelineValidatorWithStubs,
 			errToMsg)
 		_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
@@ -117,10 +121,13 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
+		pipelineSyncStub := &mocks.PipelineSyncer{}
+		pipelineSyncStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(&workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"})
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -141,6 +148,7 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
+			pipelineSyncStub,
 			pipelineValidatorWithStubs,
 			errToMsg)
 		_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
@@ -174,10 +182,13 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
+		pipelineSyncStub := &mocks.PipelineSyncer{}
+		pipelineSyncStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -198,6 +209,7 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
+			pipelineSyncStub,
 			pipelineValidatorWithStubs,
 			errToMsg)
 		_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
@@ -230,10 +242,13 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
+		pipelineSyncStub := &mocks.PipelineSyncer{}
+		pipelineSyncStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -254,6 +269,7 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
+			pipelineSyncStub,
 			pipelineValidatorWithStubs,
 			errToMsg)
 		_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
@@ -304,10 +320,13 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
+		pipelineSyncStub := &mocks.PipelineSyncer{}
+		pipelineSyncStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -328,6 +347,7 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
+			pipelineSyncStub,
 			pipelineValidatorWithStubs,
 			errToMsg)
 		_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
@@ -357,10 +377,13 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
 
+		pipelineSyncStub := &mocks.PipelineSyncer{}
+		pipelineSyncStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -381,10 +404,11 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
+			pipelineSyncStub,
 			pipelineValidatorWithStubs,
 			errToMsg)
 		_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
-		require.Error(t, err)
+		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.TracePipeline
 		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
@@ -409,7 +433,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("flow healthy", func(t *testing.T) {
 		tests := []struct {
 			name            string
-			probe           prober.OTelPipelineProbeResult
+			probe           prober.OTelGatewayProbeResult
 			probeErr        error
 			expectedStatus  metav1.ConditionStatus
 			expectedReason  string
@@ -419,12 +443,12 @@ func TestReconcile(t *testing.T) {
 				name:            "prober fails",
 				probeErr:        assert.AnError,
 				expectedStatus:  metav1.ConditionUnknown,
-				expectedReason:  conditions.ReasonSelfMonProbingFailed,
-				expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing failed",
+				expectedReason:  conditions.ReasonSelfMonGatewayProbingFailed,
+				expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing of gateway failed",
 			},
 			{
 				name: "healthy",
-				probe: prober.OTelPipelineProbeResult{
+				probe: prober.OTelGatewayProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
 				},
 				expectedStatus:  metav1.ConditionTrue,
@@ -433,7 +457,7 @@ func TestReconcile(t *testing.T) {
 			},
 			{
 				name: "throttling",
-				probe: prober.OTelPipelineProbeResult{
+				probe: prober.OTelGatewayProbeResult{
 					Throttling: true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
@@ -442,59 +466,59 @@ func TestReconcile(t *testing.T) {
 			},
 			{
 				name: "buffer filling up",
-				probe: prober.OTelPipelineProbeResult{
+				probe: prober.OTelGatewayProbeResult{
 					QueueAlmostFull: true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonBufferFillingUp,
+				expectedReason:  conditions.ReasonSelfMonGatewayBufferFillingUp,
 				expectedMessage: "Buffer nearing capacity. Incoming span rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-buffer-filling-up",
 			},
 			{
 				name: "buffer filling up shadows other problems",
-				probe: prober.OTelPipelineProbeResult{
+				probe: prober.OTelGatewayProbeResult{
 					QueueAlmostFull: true,
 					Throttling:      true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonBufferFillingUp,
+				expectedReason:  conditions.ReasonSelfMonGatewayBufferFillingUp,
 				expectedMessage: "Buffer nearing capacity. Incoming span rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-buffer-filling-up",
 			},
 			{
 				name: "some data dropped",
-				probe: prober.OTelPipelineProbeResult{
+				probe: prober.OTelGatewayProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonSomeDataDropped,
+				expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
 				expectedMessage: "Backend is reachable, but rejecting spans. Some spans are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=not-all-spans-arrive-at-the-backend",
 			},
 			{
 				name: "some data dropped shadows other problems",
-				probe: prober.OTelPipelineProbeResult{
+				probe: prober.OTelGatewayProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
 					Throttling:          true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonSomeDataDropped,
+				expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
 				expectedMessage: "Backend is reachable, but rejecting spans. Some spans are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=not-all-spans-arrive-at-the-backend",
 			},
 			{
 				name: "all data dropped",
-				probe: prober.OTelPipelineProbeResult{
+				probe: prober.OTelGatewayProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonAllDataDropped,
+				expectedReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
 				expectedMessage: "Backend is not reachable or rejecting spans. All spans are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=no-spans-arrive-at-the-backend",
 			},
 			{
 				name: "all data dropped shadows other problems",
-				probe: prober.OTelPipelineProbeResult{
+				probe: prober.OTelGatewayProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
 					Throttling:          true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonAllDataDropped,
+				expectedReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
 				expectedMessage: "Backend is not reachable or rejecting spans. All spans are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=no-spans-arrive-at-the-backend",
 			},
 		}
@@ -513,6 +537,9 @@ func TestReconcile(t *testing.T) {
 				pipelineLockStub := &mocks.PipelineLock{}
 				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
+
+				pipelineSyncStub := &mocks.PipelineSyncer{}
+				pipelineSyncStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 
 				gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 
@@ -538,6 +565,7 @@ func TestReconcile(t *testing.T) {
 					istioStatusCheckerStub,
 					overridesHandlerStub,
 					pipelineLockStub,
+					pipelineSyncStub,
 					pipelineValidatorWithStubs,
 					errToMsg)
 				_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
@@ -642,10 +670,13 @@ func TestReconcile(t *testing.T) {
 				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
 
+				pipelineSyncStub := &mocks.PipelineSyncer{}
+				pipelineSyncStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
 				gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 
 				flowHealthProberStub := &mocks.FlowHealthProber{}
-				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
 
 				pipelineValidatorWithStubs := &Validator{
 					EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -666,6 +697,7 @@ func TestReconcile(t *testing.T) {
 					istioStatusCheckerStub,
 					overridesHandlerStub,
 					pipelineLockStub,
+					pipelineSyncStub,
 					pipelineValidatorWithStubs,
 					errToMsg)
 				_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
@@ -724,10 +756,13 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
+		pipelineSyncStub := &mocks.PipelineSyncer{}
+		pipelineSyncStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
 
 		serverErr := errors.New("failed to get lock: server error")
 		pipelineValidatorWithStubs := &Validator{
@@ -749,6 +784,7 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
+			pipelineSyncStub,
 			pipelineValidatorWithStubs,
 			errToMsg)
 		_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
@@ -787,13 +823,16 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 
+		pipelineSyncStub := &mocks.PipelineSyncer{}
+		pipelineSyncStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
 		serverErr := errors.New("failed to get lock: server error")
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(&errortypes.APIRequestFailedError{Err: serverErr})
 
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -814,6 +853,7 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
+			pipelineSyncStub,
 			pipelineValidatorWithStubs,
 			errToMsg)
 		_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
@@ -853,10 +893,13 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
+		pipelineSyncStub := &mocks.PipelineSyncer{}
+		pipelineSyncStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -877,6 +920,7 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
+			pipelineSyncStub,
 			pipelineValidatorWithStubs,
 			errToMsg)
 		_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
@@ -944,6 +988,9 @@ func TestReconcile(t *testing.T) {
 				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
+				pipelineSyncStub := &mocks.PipelineSyncer{}
+				pipelineSyncStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
 				pipelineValidatorWithStubs := &Validator{
 					EndpointValidator:  stubs.NewEndpointValidator(nil),
 					TLSCertValidator:   stubs.NewTLSCertValidator(nil),
@@ -954,7 +1001,7 @@ func TestReconcile(t *testing.T) {
 				gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(tt.probeGatewayErr)
 
 				flowHealthProberStub := &mocks.FlowHealthProber{}
-				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
 
 				errToMsg := &conditions.ErrorToMessageConverter{}
 
@@ -968,6 +1015,7 @@ func TestReconcile(t *testing.T) {
 					istioStatusCheckerStub,
 					overridesHandlerStub,
 					pipelineLockStub,
+					pipelineSyncStub,
 					pipelineValidatorWithStubs,
 					errToMsg)
 

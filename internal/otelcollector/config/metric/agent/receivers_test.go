@@ -112,13 +112,8 @@ func TestReceivers(t *testing.T) {
 			require.Nil(t, collectorConfig.Receivers.PrometheusAppPods)
 			require.Nil(t, collectorConfig.Receivers.PrometheusIstio)
 
-			singletonK8sClusterReceiverCreator := collectorConfig.Receivers.SingletonK8sClusterReceiverCreator
-			require.NotNil(t, singletonK8sClusterReceiverCreator)
-			require.Equal(t, "serviceAccount", singletonK8sClusterReceiverCreator.AuthType)
-			require.Equal(t, "telemetry-metric-agent-k8scluster", singletonK8sClusterReceiverCreator.LeaderElection.LeaseName)
-			require.Equal(t, agentNamespace, singletonK8sClusterReceiverCreator.LeaderElection.LeaseNamespace)
-
-			k8sClusterReceiver := singletonK8sClusterReceiverCreator.SingletonK8sClusterReceiver.K8sClusterReceiver
+			k8sClusterReceiver := collectorConfig.Receivers.K8sClusterReceiver
+			require.NotNil(t, k8sClusterReceiver)
 			require.Equal(t, "serviceAccount", k8sClusterReceiver.AuthType)
 			require.Equal(t, "30s", k8sClusterReceiver.CollectionInterval)
 			require.Len(t, k8sClusterReceiver.NodeConditionsToReport, 0)

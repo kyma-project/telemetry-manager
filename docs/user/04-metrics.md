@@ -747,7 +747,7 @@ To detect and fix such situations, check the [pipeline status](./resources/05-me
   By design, the connections to the gateway are long-living connections (because OTLP is based on gRPC and HTTP/2). For optimal scaling of the gateway, the clients or applications must balance the connections across the available instances, which is automatically achieved if you use an Istio sidecar. If your application has no Istio sidecar, the data is always sent to one instance of the gateway.
 - **Unavailability of Output**: For up to 5 minutes, a retry for data is attempted when the destination is unavailable. After that, data is dropped.
 - **No Guaranteed Delivery**: The used buffers are volatile. If the gateway or agent instances crash, metric data can be lost.
-- **Multiple MetricPipeline Support**: The maximum amount of MetricPipeline resources is 3.
+- **Multiple MetricPipeline Support**: The maximum amount of MetricPipeline resources is 5.
 
 ## Troubleshooting
 
@@ -756,7 +756,7 @@ To detect and fix such situations, check the [pipeline status](./resources/05-me
 **Symptom**:
 
 - No metrics arrive at the backend.
-- In the MetricPipeline status, the `TelemetryFlowHealthy` condition has status **AllDataDropped**.
+- In the MetricPipeline status, the `TelemetryFlowHealthy` condition has status **GatewayAllTelemetryDataDropped**.
 
 **Cause**: Incorrect backend endpoint configuration (such as using the wrong authentication credentials) or the backend is unreachable.
 
@@ -771,14 +771,14 @@ To detect and fix such situations, check the [pipeline status](./resources/05-me
 **Symptom**:
 
 - The backend is reachable and the connection is properly configured, but some metrics are refused.
-- In the MetricPipeline status, the `TelemetryFlowHealthy` condition has status **SomeDataDropped**.
+- In the MetricPipeline status, the `TelemetryFlowHealthy` condition has status **GatewaySomeTelemetryDataDropped**.
 
 **Cause**: It can happen due to a variety of reasons - for example, the backend is limiting the ingestion rate.
 
 **Solution**:
 
 1. Check the `telemetry-metric-gateway` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`. Also, check your observability backend to investigate potential causes.
-2. If backend is limiting the rate by refusing metrics, try the options described in [Gateway Buffer Filling Up](#gateway-buffer-filling-up).
+2. If the backend is limiting the rate by refusing metrics, try the options described in [Gateway Buffer Filling Up](#gateway-buffer-filling-up).
 3. Otherwise, take the actions appropriate to the cause indicated in the logs.
 
 ### Only Istio Metrics Arrive at the Backend
@@ -841,9 +841,9 @@ spec:
 
 ### Gateway Buffer Filling Up
 
-**Symptom**: In the MetricPipeline status, the `TelemetryFlowHealthy` condition has status **BufferFillingUp**.
+**Symptom**: In the MetricPipeline status, the `TelemetryFlowHealthy` condition has status **GatewayBufferFillingUp**.
 
-**Cause**: The backend export rate is too low compared to the gateway ingestion rate.
+**Cause**: The backend ingestion rate is too low compared to the gateway export rate.
 
 **Solution**:
 

@@ -145,4 +145,24 @@ func TestProcessors(t *testing.T) {
 		expectedStatement := `(resource.attributes["k8s.namespace.name"] == "kyma-system" or resource.attributes["k8s.namespace.name"] == "default")`
 		require.Equal(t, expectedStatement, actualStatements[0])
 	})
+
+	t.Run("OTLP input disabled", func(t *testing.T) {
+		pipeline := testutils.NewLogPipelineBuilder().
+			WithName("dummy").
+			WithOTLPInput(false).
+			WithOTLPOutput().
+			Build()
+
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{pipeline}, BuildOptions{})
+		require.NoError(t, err)
+
+		dropOTLPInputFilter := collectorConfig.Processors.DropIfInputSourceOTLP
+		require.NotNil(t, dropOTLPInputFilter)
+
+		actualStatements := dropOTLPInputFilter.Logs.Log
+		require.Len(t, actualStatements, 1)
+
+		expectedStatement := `(log.observed_time != nil or log.time != nil)`
+		require.Equal(t, expectedStatement, actualStatements[0])
+	})
 }

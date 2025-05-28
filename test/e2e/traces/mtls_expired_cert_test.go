@@ -13,7 +13,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
@@ -28,12 +28,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		serverCerts, clientCerts, err := testutils.NewCertBuilder(backend.DefaultName, mockNs).
+		serverCerts, clientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, mockNs).
 			WithExpiredClientCert().
 			Build()
 		Expect(err).ToNot(HaveOccurred())
 
-		backend := backend.New(mockNs, backend.SignalTypeTraces, backend.WithTLS(*serverCerts))
+		backend := kitbackend.New(mockNs, kitbackend.SignalTypeTraces, kitbackend.WithTLS(*serverCerts))
 		objs = append(objs, backend.K8sObjects()...)
 
 		tracePipeline := testutils.NewTracePipelineBuilder().
@@ -61,13 +61,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should set ConfigurationGenerated condition to False in pipeline", func() {
-			assert.TracePipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
+			assert.TracePipelineHasCondition(suite.Ctx, pipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonTLSCertificateExpired,
@@ -75,7 +75,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should set TelemetryFlowHealthy condition to False in pipeline", func() {
-			assert.TracePipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
+			assert.TracePipelineHasCondition(suite.Ctx, pipelineName, metav1.Condition{
 				Type:   conditions.TypeFlowHealthy,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonSelfMonConfigNotGenerated,
@@ -83,7 +83,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should set TraceComponentsHealthy condition to False in Telemetry", func() {
-			assert.TelemetryHasState(suite.Ctx, suite.K8sClient, operatorv1alpha1.StateWarning)
+			assert.TelemetryHasState(suite.Ctx, operatorv1alpha1.StateWarning)
 			assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeTraceComponentsHealthy,
 				Status: metav1.ConditionFalse,

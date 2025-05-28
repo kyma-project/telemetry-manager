@@ -54,10 +54,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
-const (
-	maxMetricPipelines = 3
-)
-
 // MetricPipelineController reconciles a MetricPipeline object
 type MetricPipelineController struct {
 	client.Client
@@ -77,18 +73,26 @@ type MetricPipelineControllerConfig struct {
 }
 
 func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config MetricPipelineControllerConfig) (*MetricPipelineController, error) {
-	flowHealthProber, err := prober.NewMetricPipelineProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
+	flowHealthProber, err := prober.NewOTelMetricGatewayProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
 	if err != nil {
 		return nil, err
 	}
 
-	pipelineLock := resourcelock.New(
+	pipelineLock := resourcelock.NewLocker(
 		client,
 		types.NamespacedName{
 			Name:      "telemetry-metricpipeline-lock",
 			Namespace: config.TelemetryNamespace,
 		},
-		maxMetricPipelines,
+		MaxPipelineCount,
+	)
+
+	pipelineSync := resourcelock.NewSyncer(
+		client,
+		types.NamespacedName{
+			Name:      "telemetry-metricpipeline-sync",
+			Namespace: config.TelemetryNamespace,
+		},
 	)
 
 	pipelineValidator := &metricpipeline.Validator{
@@ -125,6 +129,7 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 		istiostatus.NewChecker(discoveryClient),
 		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
 		pipelineLock,
+		pipelineSync,
 		pipelineValidator,
 		&conditions.ErrorToMessageConverter{},
 	)

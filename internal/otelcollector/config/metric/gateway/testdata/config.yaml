@@ -3,6 +3,10 @@ extensions:
         endpoint: ${MY_POD_IP}:13133
     pprof:
         endpoint: 127.0.0.1:1777
+    k8s_leader_elector:
+        auth_type: serviceAccount
+        lease_name: telemetry-metric-gateway-kymastats
+        lease_namespace: ""
 service:
     pipelines:
         metrics/test-attributes-enrichment:
@@ -16,7 +20,7 @@ service:
         metrics/test-input:
             receivers:
                 - otlp
-                - singleton_receiver_creator/kymastats
+                - kymastats
             processors:
                 - memory_limiter
             exporters:
@@ -51,6 +55,7 @@ service:
     extensions:
         - health_check
         - pprof
+        - k8s_leader_elector
 receivers:
     otlp:
         protocols:
@@ -58,28 +63,23 @@ receivers:
                 endpoint: ${MY_POD_IP}:4318
             grpc:
                 endpoint: ${MY_POD_IP}:4317
-    singleton_receiver_creator/kymastats:
+    kymastats:
         auth_type: serviceAccount
-        leader_election:
-            lease_name: telemetry-metric-gateway-kymastats
-            lease_namespace: ""
-        receiver:
-            kymastats:
-                auth_type: serviceAccount
-                collection_interval: 30s
-                resources:
-                    - group: operator.kyma-project.io
-                      version: v1alpha1
-                      resource: telemetries
-                    - group: telemetry.kyma-project.io
-                      version: v1alpha1
-                      resource: logpipelines
-                    - group: telemetry.kyma-project.io
-                      version: v1alpha1
-                      resource: metricpipelines
-                    - group: telemetry.kyma-project.io
-                      version: v1alpha1
-                      resource: tracepipelines
+        collection_interval: 30s
+        resources:
+            - group: operator.kyma-project.io
+              version: v1alpha1
+              resource: telemetries
+            - group: telemetry.kyma-project.io
+              version: v1alpha1
+              resource: logpipelines
+            - group: telemetry.kyma-project.io
+              version: v1alpha1
+              resource: metricpipelines
+            - group: telemetry.kyma-project.io
+              version: v1alpha1
+              resource: tracepipelines
+        k8s_leader_elector: k8s_leader_elector
 processors:
     batch:
         send_batch_size: 1024

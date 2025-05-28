@@ -16,9 +16,7 @@ func makeProcessorsConfig(opts BuildOptions) Processors {
 			Batch:         makeBatchProcessorConfig(),
 			MemoryLimiter: makeMemoryLimiterConfig(),
 		},
-		K8sAttributes: processors.K8sAttributesProcessorConfig(processors.Enrichments{
-			Enabled: false,
-		}),
+		K8sAttributes:                 processors.K8sAttributesProcessorConfig(processors.Enrichments{}),
 		InsertClusterAttributes:       processors.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.CloudProvider),
 		ResolveServiceName:            processors.MakeResolveServiceNameConfig(),
 		DropKymaAttributes:            processors.DropKymaAttributesProcessorConfig(),
@@ -230,7 +228,7 @@ func makeFilterByNamespaceConfig(namespaceSelector *telemetryv1alpha1.NamespaceS
 
 			// Ensure the k8s.namespace.name resource attribute is not nil,
 			// so we don't drop logs without a namespace label
-			ottlexpr.ResourceAttributeNotNil(ottlexpr.K8sNamespaceName),
+			ottlexpr.ResourceAttributeIsNotNil(ottlexpr.K8sNamespaceName),
 
 			// Logs are dropped if the filter expression evaluates to true,
 			// so we negate the match against included namespaces to keep only those

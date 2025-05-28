@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 )
 
 func makeReceiversConfig(inputs inputSources, opts BuildOptions) Receivers {
@@ -17,7 +16,7 @@ func makeReceiversConfig(inputs inputSources, opts BuildOptions) Receivers {
 
 	if inputs.runtime {
 		receiversConfig.KubeletStats = makeKubeletStatsConfig(inputs.runtimeResources)
-		receiversConfig.SingletonK8sClusterReceiverCreator = makeSingletonK8sClusterReceiverCreatorConfig(opts.AgentNamespace, inputs.runtimeResources)
+		receiversConfig.K8sClusterReceiver = makeK8sClusterReceiverConfig(inputs.runtimeResources)
 	}
 
 	if inputs.istio {
@@ -56,21 +55,13 @@ func makeKubeletStatsConfig(runtimeResources runtimeResourcesEnabled) *KubeletSt
 	}
 }
 
-func makeSingletonK8sClusterReceiverCreatorConfig(gatewayNamespace string, runtimeResources runtimeResourcesEnabled) *SingletonK8sClusterReceiverCreator {
-	return &SingletonK8sClusterReceiverCreator{
-		AuthType: "serviceAccount",
-		LeaderElection: metric.LeaderElection{
-			LeaseName:      "telemetry-metric-agent-k8scluster",
-			LeaseNamespace: gatewayNamespace,
-		},
-		SingletonK8sClusterReceiver: SingletonK8sClusterReceiver{
-			K8sClusterReceiver: K8sClusterReceiver{
-				AuthType:               "serviceAccount",
-				CollectionInterval:     "30s",
-				NodeConditionsToReport: []string{},
-				Metrics:                makeK8sClusterMetricsToDrop(runtimeResources),
-			},
-		},
+func makeK8sClusterReceiverConfig(runtimeResources runtimeResourcesEnabled) *K8sClusterReceiver {
+	return &K8sClusterReceiver{
+		AuthType:               "serviceAccount",
+		CollectionInterval:     "30s",
+		NodeConditionsToReport: []string{},
+		K8sLeaderElector:       "k8s_leader_elector",
+		Metrics:                makeK8sClusterMetricsToDrop(runtimeResources),
 	}
 }
 

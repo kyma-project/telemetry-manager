@@ -27,6 +27,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit/mocks"
 	logpipelinemocks "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/stubs"
+	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
@@ -45,6 +46,72 @@ func TestReconcile(t *testing.T) {
 
 	istioStatusCheckerStub := &stubs.IstioStatusChecker{IsActive: false}
 
+	t.Run("max pipelines exceeded", func(t *testing.T) {
+		pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").WithCustomFilter("Name grep").Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		agentConfigBuilder := &mocks.AgentConfigBuilder{}
+		agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
+
+		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
+
+		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
+
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
+
+		pipelineValidatorWithStubs := &Validator{
+			EndpointValidator:  stubs.NewEndpointValidator(nil),
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:       pipelineLockStub,
+		}
+
+		errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
+
+		sut := New(
+			fakeClient,
+			telemetryNamespace,
+			agentConfigBuilder,
+			agentApplierDeleterMock,
+			proberStub,
+			flowHealthProberStub,
+			istioStatusCheckerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs,
+			errToMsgStub,
+		)
+
+		var pl1 telemetryv1alpha1.LogPipeline
+
+		require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))
+		err := sut.Reconcile(t.Context(), &pl1)
+		require.NoError(t, err)
+
+		var updatedPipeline telemetryv1alpha1.LogPipeline
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeConfigurationGenerated,
+			metav1.ConditionFalse,
+			conditions.ReasonMaxPipelinesExceeded,
+			"Maximum pipeline count limit exceeded",
+		)
+
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeFlowHealthy,
+			metav1.ConditionFalse,
+			conditions.ReasonSelfMonConfigNotGenerated,
+			"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details",
+		)
+	})
+
 	t.Run("should set status UnsupportedMode true if contains custom plugin", func(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").WithCustomFilter("Name grep").Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
@@ -59,17 +126,33 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
+
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
 			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:       pipelineLockStub,
 		}
 
 		errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
 
-		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(
+			fakeClient,
+			telemetryNamespace,
+			agentConfigBuilder,
+			agentApplierDeleterMock,
+			proberStub,
+			flowHealthProberStub,
+			istioStatusCheckerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs,
+			errToMsgStub,
+		)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -97,17 +180,33 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
+
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
 			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:       pipelineLockStub,
 		}
 
 		errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
 
-		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(
+			fakeClient,
+			telemetryNamespace,
+			agentConfigBuilder,
+			agentApplierDeleterMock,
+			proberStub,
+			flowHealthProberStub,
+			istioStatusCheckerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs,
+			errToMsgStub,
+		)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -135,17 +234,33 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
+
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
 			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:       pipelineLockStub,
 		}
 
 		errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
 
-		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(
+			fakeClient,
+			telemetryNamespace,
+			agentConfigBuilder,
+			agentApplierDeleterMock,
+			proberStub,
+			flowHealthProberStub,
+			istioStatusCheckerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs,
+			errToMsgStub,
+		)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -168,18 +283,34 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(workloadstatus.ErrDaemonSetNotFound)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
+
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
 			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:       pipelineLockStub,
 		}
 
 		errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
 		errToMsgStub.On("Convert", mock.Anything).Return("DaemonSet is not yet created")
 
-		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(
+			fakeClient,
+			telemetryNamespace,
+			agentConfigBuilder,
+			agentApplierDeleterMock,
+			proberStub,
+			flowHealthProberStub,
+			istioStatusCheckerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs,
+			errToMsgStub,
+		)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -212,17 +343,33 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
+
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
 			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:       pipelineLockStub,
 		}
 
 		errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
 
-		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(
+			fakeClient,
+			telemetryNamespace,
+			agentConfigBuilder,
+			agentApplierDeleterMock,
+			proberStub,
+			flowHealthProberStub,
+			istioStatusCheckerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs,
+			errToMsgStub,
+		)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -255,17 +402,33 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(workloadstatus.ErrDaemonSetFetching)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
+
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
 			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:       pipelineLockStub,
 		}
 
 		errToMsgStub := &conditions.ErrorToMessageConverter{}
 
-		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(
+			fakeClient,
+			telemetryNamespace,
+			agentConfigBuilder,
+			agentApplierDeleterMock,
+			proberStub,
+			flowHealthProberStub,
+			istioStatusCheckerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs,
+			errToMsgStub,
+		)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -300,18 +463,34 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
+
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
 			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 			SecretRefValidator: stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound)),
+			PipelineLock:       pipelineLockStub,
 		}
 
 		errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
 		errToMsgStub.On("Convert", mock.Anything).Return("")
 
-		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(
+			fakeClient,
+			telemetryNamespace,
+			agentConfigBuilder,
+			agentApplierDeleterMock,
+			proberStub,
+			flowHealthProberStub,
+			istioStatusCheckerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs,
+			errToMsgStub,
+		)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -362,18 +541,34 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
+
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
 			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:       pipelineLockStub,
 		}
 
 		errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
 		errToMsgStub.On("Convert", mock.Anything).Return("")
 
-		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(
+			fakeClient,
+			telemetryNamespace,
+			agentConfigBuilder,
+			agentApplierDeleterMock,
+			proberStub,
+			flowHealthProberStub,
+			istioStatusCheckerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs,
+			errToMsgStub,
+		)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -395,7 +590,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("flow healthy", func(t *testing.T) {
 		tests := []struct {
 			name            string
-			probe           prober.LogPipelineProbeResult
+			probe           prober.FluentBitProbeResult
 			probeErr        error
 			expectedStatus  metav1.ConditionStatus
 			expectedReason  string
@@ -405,12 +600,12 @@ func TestReconcile(t *testing.T) {
 				name:            "prober fails",
 				probeErr:        assert.AnError,
 				expectedStatus:  metav1.ConditionUnknown,
-				expectedReason:  conditions.ReasonSelfMonProbingFailed,
-				expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing failed",
+				expectedReason:  conditions.ReasonSelfMonAgentProbingFailed,
+				expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing of agent failed",
 			},
 			{
 				name: "healthy",
-				probe: prober.LogPipelineProbeResult{
+				probe: prober.FluentBitProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
 				},
 				expectedStatus:  metav1.ConditionTrue,
@@ -419,70 +614,70 @@ func TestReconcile(t *testing.T) {
 			},
 			{
 				name: "buffer filling up",
-				probe: prober.LogPipelineProbeResult{
+				probe: prober.FluentBitProbeResult{
 					BufferFillingUp: true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonBufferFillingUp,
+				expectedReason:  conditions.ReasonSelfMonAgentBufferFillingUp,
 				expectedMessage: "Buffer nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=agent-buffer-filling-up",
 			},
 			{
 				name: "no logs delivered",
-				probe: prober.LogPipelineProbeResult{
+				probe: prober.FluentBitProbeResult{
 					NoLogsDelivered: true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonNoLogsDelivered,
+				expectedReason:  conditions.ReasonSelfMonAgentNoLogsDelivered,
 				expectedMessage: "Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
 			},
 			{
 				name: "no logs delivered shadows other problems",
-				probe: prober.LogPipelineProbeResult{
+				probe: prober.FluentBitProbeResult{
 					NoLogsDelivered: true,
 					BufferFillingUp: true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonNoLogsDelivered,
+				expectedReason:  conditions.ReasonSelfMonAgentNoLogsDelivered,
 				expectedMessage: "Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
 			},
 			{
 				name: "some data dropped",
-				probe: prober.LogPipelineProbeResult{
+				probe: prober.FluentBitProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonSomeDataDropped,
+				expectedReason:  conditions.ReasonSelfMonAgentSomeDataDropped,
 				expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=not-all-logs-arrive-at-the-backend",
 			},
 			{
 				name: "some data dropped shadows other problems",
-				probe: prober.LogPipelineProbeResult{
+				probe: prober.FluentBitProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
 					BufferFillingUp:     true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonSomeDataDropped,
+				expectedReason:  conditions.ReasonSelfMonAgentSomeDataDropped,
 				expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=not-all-logs-arrive-at-the-backend",
 			},
 			{
 				name: "all data dropped",
-				probe: prober.LogPipelineProbeResult{
+				probe: prober.FluentBitProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonAllDataDropped,
+				expectedReason:  conditions.ReasonSelfMonAgentAllDataDropped,
 				expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
 			},
 			{
 				name: "all data dropped shadows other problems",
-				probe: prober.LogPipelineProbeResult{
+				probe: prober.FluentBitProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{
 						AllDataDropped:  true,
 						SomeDataDropped: true,
 					},
 				},
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonAllDataDropped,
+				expectedReason:  conditions.ReasonSelfMonAgentAllDataDropped,
 				expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
 			},
 		}
@@ -504,16 +699,32 @@ func TestReconcile(t *testing.T) {
 				flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
 
+				pipelineLockStub := &mocks.PipelineLock{}
+				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
+
 				pipelineValidatorWithStubs := &Validator{
 					EndpointValidator:  stubs.NewEndpointValidator(nil),
 					TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 					SecretRefValidator: stubs.NewSecretRefValidator(nil),
+					PipelineLock:       pipelineLockStub,
 				}
 
 				errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
 				errToMsgStub.On("Convert", mock.Anything).Return("")
 
-				sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+				sut := New(
+					fakeClient,
+					telemetryNamespace,
+					agentConfigBuilder,
+					agentApplierDeleterMock,
+					proberStub,
+					flowHealthProberStub,
+					istioStatusCheckerStub,
+					pipelineLockStub,
+					pipelineValidatorWithStubs,
+					errToMsgStub,
+				)
 
 				var pl1 telemetryv1alpha1.LogPipeline
 
@@ -620,18 +831,34 @@ func TestReconcile(t *testing.T) {
 				proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 				flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
+
+				pipelineLockStub := &mocks.PipelineLock{}
+				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 				pipelineValidatorWithStubs := &Validator{
 					EndpointValidator:  stubs.NewEndpointValidator(nil),
 					TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 					SecretRefValidator: stubs.NewSecretRefValidator(tt.tlsCertErr),
+					PipelineLock:       pipelineLockStub,
 				}
 
 				errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
 				errToMsgStub.On("Convert", mock.Anything).Return("")
 
-				sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+				sut := New(
+					fakeClient,
+					telemetryNamespace,
+					agentConfigBuilder,
+					agentApplierDeleterMock,
+					proberStub,
+					flowHealthProberStub,
+					istioStatusCheckerStub,
+					pipelineLockStub,
+					pipelineValidatorWithStubs,
+					errToMsgStub,
+				)
 
 				var pl1 telemetryv1alpha1.LogPipeline
 
@@ -713,17 +940,33 @@ func TestReconcile(t *testing.T) {
 				proberStub := commonStatusStubs.NewDaemonSetProber(tt.probeErr)
 
 				flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
+
+				pipelineLockStub := &mocks.PipelineLock{}
+				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 				pipelineValidatorWithStubs := &Validator{
 					EndpointValidator:  stubs.NewEndpointValidator(nil),
 					TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 					SecretRefValidator: stubs.NewSecretRefValidator(nil),
+					PipelineLock:       pipelineLockStub,
 				}
 
 				errToMsgStub := &conditions.ErrorToMessageConverter{}
 
-				sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+				sut := New(
+					fakeClient,
+					telemetryNamespace,
+					agentConfigBuilder,
+					agentApplierDeleterMock,
+					proberStub,
+					flowHealthProberStub,
+					istioStatusCheckerStub,
+					pipelineLockStub,
+					pipelineValidatorWithStubs,
+					errToMsgStub,
+				)
 
 				var pl1 telemetryv1alpha1.LogPipeline
 
@@ -758,18 +1001,35 @@ func TestReconcile(t *testing.T) {
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
 		serverErr := errors.New("failed to get secret: server error")
+
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
+
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
 			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 			SecretRefValidator: stubs.NewSecretRefValidator(&errortypes.APIRequestFailedError{Err: serverErr}),
+			PipelineLock:       pipelineLockStub,
 		}
 
 		errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
 
-		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(
+			fakeClient,
+			telemetryNamespace,
+			agentConfigBuilder,
+			agentApplierDeleterMock,
+			proberStub,
+			flowHealthProberStub,
+			istioStatusCheckerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs,
+			errToMsgStub,
+		)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
