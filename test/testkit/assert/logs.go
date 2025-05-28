@@ -1,8 +1,8 @@
 package assert
 
 import (
-	"context"
 	"fmt"
+	"testing"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -20,81 +20,99 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-func FluentBitLogsFromContainerDelivered(ctx context.Context, backend *kitbackend.Backend, expectedContainerName string, optionalDescription ...any) {
+func FluentBitLogsFromContainerDelivered(t *testing.T, backend *kitbackend.Backend, expectedContainerName string, optionalDescription ...any) {
+	t.Helper()
+
 	BackendDataEventuallyMatches(
-		ctx,
+		t,
 		backend,
 		fluentbit.HaveFlatLogs(ContainElement(fluentbit.HaveContainerName(Equal(expectedContainerName)))),
 		optionalDescription...,
 	)
 }
 
-func FluentBitLogsFromContainerNotDelivered(ctx context.Context, backend *kitbackend.Backend, expectedContainerName string, optionalDescription ...any) {
+func FluentBitLogsFromContainerNotDelivered(t *testing.T, backend *kitbackend.Backend, expectedContainerName string, optionalDescription ...any) {
+	t.Helper()
+
 	BackendDataConsistentlyMatches(
-		ctx,
+		t,
 		backend,
 		fluentbit.HaveFlatLogs(Not(ContainElement(fluentbit.HaveContainerName(Equal(expectedContainerName))))),
 		optionalDescription...,
 	)
 }
 
-func FluentBitLogsFromPodDelivered(ctx context.Context, backend *kitbackend.Backend, expectedPodNamePrefix string, optionalDescription ...any) {
+func FluentBitLogsFromPodDelivered(t *testing.T, backend *kitbackend.Backend, expectedPodNamePrefix string, optionalDescription ...any) {
+	t.Helper()
+
 	BackendDataEventuallyMatches(
-		ctx,
+		t,
 		backend,
 		fluentbit.HaveFlatLogs(ContainElement(fluentbit.HavePodName(ContainSubstring(expectedPodNamePrefix)))),
 		optionalDescription...,
 	)
 }
 
-func FluentBitLogsFromNamespaceDelivered(ctx context.Context, backend *kitbackend.Backend, namespace string, optionalDescription ...any) {
+func FluentBitLogsFromNamespaceDelivered(t *testing.T, backend *kitbackend.Backend, namespace string, optionalDescription ...any) {
+	t.Helper()
+
 	BackendDataEventuallyMatches(
-		ctx,
+		t,
 		backend,
 		fluentbit.HaveFlatLogs(ContainElement(fluentbit.HaveNamespace(Equal(namespace)))),
 		optionalDescription...,
 	)
 }
 
-func FluentBitLogsFromNamespaceNotDelivered(ctx context.Context, backend *kitbackend.Backend, namespace string, optionalDescription ...any) {
+func FluentBitLogsFromNamespaceNotDelivered(t *testing.T, backend *kitbackend.Backend, namespace string, optionalDescription ...any) {
+	t.Helper()
+
 	BackendDataConsistentlyMatches(
-		ctx,
+		t,
 		backend,
 		fluentbit.HaveFlatLogs(Not(ContainElement(fluentbit.HaveNamespace(Equal(namespace))))),
 		optionalDescription...,
 	)
 }
 
-func OTelLogsFromContainerDelivered(ctx context.Context, backend *kitbackend.Backend, containerName string, optionalDescription ...any) {
+func OTelLogsFromContainerDelivered(t *testing.T, backend *kitbackend.Backend, containerName string, optionalDescription ...any) {
+	t.Helper()
+
 	BackendDataEventuallyMatches(
-		ctx,
+		t,
 		backend,
 		HaveFlatLogs(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.container.name", containerName)))),
 		optionalDescription...,
 	)
 }
 
-func OTelLogsFromContainerNotDelivered(ctx context.Context, backend *kitbackend.Backend, containerName string, optionalDescription ...any) {
+func OTelLogsFromContainerNotDelivered(t *testing.T, backend *kitbackend.Backend, containerName string, optionalDescription ...any) {
+	t.Helper()
+
 	BackendDataConsistentlyMatches(
-		ctx,
+		t,
 		backend,
 		HaveFlatLogs(Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.container.name", containerName))))),
 		optionalDescription...,
 	)
 }
 
-func OTelLogsFromNamespaceDelivered(ctx context.Context, backend *kitbackend.Backend, namespace string, optionalDescription ...any) {
+func OTelLogsFromNamespaceDelivered(t *testing.T, backend *kitbackend.Backend, namespace string, optionalDescription ...any) {
+	t.Helper()
+
 	BackendDataEventuallyMatches(
-		ctx,
+		t,
 		backend,
 		HaveFlatLogs(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)))),
 		optionalDescription...,
 	)
 }
 
-func OTelLogsFromNamespaceNotDelivered(ctx context.Context, backend *kitbackend.Backend, namespace string, optionalDescription ...any) {
+func OTelLogsFromNamespaceNotDelivered(t *testing.T, backend *kitbackend.Backend, namespace string, optionalDescription ...any) {
+	t.Helper()
+
 	BackendDataConsistentlyMatches(
-		ctx,
+		t,
 		backend,
 		HaveFlatLogs(Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace))))),
 		optionalDescription...,
@@ -102,11 +120,13 @@ func OTelLogsFromNamespaceNotDelivered(ctx context.Context, backend *kitbackend.
 }
 
 //nolint:dupl //LogPipelineHealthy and MetricPipelineHealthy have similarities, but they are not the same
-func FluentBitLogPipelineHealthy(ctx context.Context, pipelineName string) {
+func FluentBitLogPipelineHealthy(t *testing.T, pipelineName string) {
+	t.Helper()
+
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.LogPipeline
 		key := types.NamespacedName{Name: pipelineName}
-		g.Expect(suite.K8sClient.Get(ctx, key, &pipeline)).To(Succeed())
+		g.Expect(suite.K8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
 
 		statusConditionHealthy(g, pipeline, conditions.TypeAgentHealthy)
 		statusConditionHealthy(g, pipeline, conditions.TypeConfigurationGenerated)
@@ -114,11 +134,13 @@ func FluentBitLogPipelineHealthy(ctx context.Context, pipelineName string) {
 }
 
 //nolint:dupl //LogPipelineOtelHealthy and LogPipelineHealthy have similarities, but they are not the same
-func OTelLogPipelineHealthy(ctx context.Context, pipelineName string) {
+func OTelLogPipelineHealthy(t *testing.T, pipelineName string) {
+	t.Helper()
+
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.LogPipeline
 		key := types.NamespacedName{Name: pipelineName}
-		g.Expect(suite.K8sClient.Get(ctx, key, &pipeline)).To(Succeed())
+		g.Expect(suite.K8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
 
 		statusConditionHealthy(g, pipeline, conditions.TypeAgentHealthy)
 		statusConditionHealthy(g, pipeline, conditions.TypeGatewayHealthy)
@@ -133,11 +155,13 @@ func statusConditionHealthy(g Gomega, pipeline telemetryv1alpha1.LogPipeline, co
 }
 
 //nolint:dupl // This provides a better readability for the test as we can test the TLS condition in a clear way
-func LogPipelineHasCondition(ctx context.Context, pipelineName string, expectedCond metav1.Condition) {
+func LogPipelineHasCondition(t *testing.T, pipelineName string, expectedCond metav1.Condition) {
+	t.Helper()
+
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.LogPipeline
 		key := types.NamespacedName{Name: pipelineName}
-		g.Expect(suite.K8sClient.Get(ctx, key, &pipeline)).To(Succeed())
+		g.Expect(suite.K8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
 		condition := meta.FindStatusCondition(pipeline.Status.Conditions, expectedCond.Type)
 		g.Expect(condition).NotTo(BeNil())
 		g.Expect(condition.Reason).To(Equal(expectedCond.Reason))
@@ -146,7 +170,9 @@ func LogPipelineHasCondition(ctx context.Context, pipelineName string, expectedC
 }
 
 //nolint:dupl //LogPipelineConditionReasonsTransition,TracePipelineConditionReasonsTransition, MetricPipelineConditionReasonsTransition have similarities, but they are not the same
-func LogPipelineConditionReasonsTransition(ctx context.Context, pipelineName, condType string, expected []ReasonStatus) {
+func LogPipelineConditionReasonsTransition(t *testing.T, pipelineName, condType string, expected []ReasonStatus) {
+	t.Helper()
+
 	var currCond *metav1.Condition
 
 	for _, expected := range expected {
@@ -154,7 +180,7 @@ func LogPipelineConditionReasonsTransition(ctx context.Context, pipelineName, co
 		Eventually(func(g Gomega) ReasonStatus {
 			var pipeline telemetryv1alpha1.LogPipeline
 			key := types.NamespacedName{Name: pipelineName}
-			err := suite.K8sClient.Get(ctx, key, &pipeline)
+			err := suite.K8sClient.Get(t.Context(), key, &pipeline)
 			g.Expect(err).To(Succeed())
 			currCond = meta.FindStatusCondition(pipeline.Status.Conditions, condType)
 			if currCond == nil {
@@ -168,11 +194,13 @@ func LogPipelineConditionReasonsTransition(ctx context.Context, pipelineName, co
 	}
 }
 
-func LogPipelineUnsupportedMode(ctx context.Context, pipelineName string, isUnsupportedMode bool) {
+func LogPipelineUnsupportedMode(t *testing.T, pipelineName string, isUnsupportedMode bool) {
+	t.Helper()
+
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.LogPipeline
 		key := types.NamespacedName{Name: pipelineName}
-		g.Expect(suite.K8sClient.Get(ctx, key, &pipeline)).To(Succeed())
+		g.Expect(suite.K8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
 		g.Expect(*pipeline.Status.UnsupportedMode).To(Equal(isUnsupportedMode))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }

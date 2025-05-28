@@ -1,8 +1,8 @@
 package assert
 
 import (
-	"context"
 	"net/http"
+	"testing"
 
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
@@ -12,19 +12,25 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-func BackendDataEventuallyMatches(ctx context.Context, backend *kitbackend.Backend, httpBodyMatcher types.GomegaMatcher, optionalDescription ...any) {
+func BackendDataEventuallyMatches(t *testing.T, backend *kitbackend.Backend, httpBodyMatcher types.GomegaMatcher, optionalDescription ...any) {
+	t.Helper()
+
 	queryURL := suite.ProxyClient.ProxyURLForService(backend.Namespace(), backend.Name(), kitbackend.QueryPath, kitbackend.QueryPort)
-	HTTPResponseEventuallyMatches(ctx, queryURL, httpBodyMatcher, optionalDescription...)
+	HTTPResponseEventuallyMatches(t, queryURL, httpBodyMatcher, optionalDescription...)
 }
 
-func BackendDataConsistentlyMatches(ctx context.Context, backend *kitbackend.Backend, httpBodyMatcher types.GomegaMatcher, optionalDescription ...any) {
+func BackendDataConsistentlyMatches(t *testing.T, backend *kitbackend.Backend, httpBodyMatcher types.GomegaMatcher, optionalDescription ...any) {
+	t.Helper()
+
 	queryURL := suite.ProxyClient.ProxyURLForService(backend.Namespace(), backend.Name(), kitbackend.QueryPath, kitbackend.QueryPort)
-	HTTPResponseConsistentlyMatches(ctx, queryURL, httpBodyMatcher, optionalDescription...)
+	HTTPResponseConsistentlyMatches(t, queryURL, httpBodyMatcher, optionalDescription...)
 }
 
-func HTTPResponseEventuallyMatches(ctx context.Context, queryURL string, httpBodyMatcher types.GomegaMatcher, optionalDescription ...any) {
+func HTTPResponseEventuallyMatches(t *testing.T, queryURL string, httpBodyMatcher types.GomegaMatcher, optionalDescription ...any) {
+	t.Helper()
+
 	Eventually(func(g Gomega) {
-		resp, err := suite.ProxyClient.GetWithContext(ctx, queryURL)
+		resp, err := suite.ProxyClient.GetWithContext(t.Context(), queryURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		defer resp.Body.Close()
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
@@ -32,9 +38,11 @@ func HTTPResponseEventuallyMatches(ctx context.Context, queryURL string, httpBod
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-func HTTPResponseConsistentlyMatches(ctx context.Context, queryURL string, httpBodyMatcher types.GomegaMatcher, optionalDescription ...any) {
+func HTTPResponseConsistentlyMatches(t *testing.T, queryURL string, httpBodyMatcher types.GomegaMatcher, optionalDescription ...any) {
+	t.Helper()
+
 	Consistently(func(g Gomega) {
-		resp, err := suite.ProxyClient.GetWithContext(ctx, queryURL)
+		resp, err := suite.ProxyClient.GetWithContext(t.Context(), queryURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		defer resp.Body.Close()
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
