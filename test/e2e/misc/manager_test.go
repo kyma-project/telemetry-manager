@@ -3,6 +3,8 @@
 package misc
 
 import (
+	"strings"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
@@ -62,24 +64,30 @@ var _ = Describe(suite.ID(), func() {
 
 		It("Should have a webhook service", Label(suite.LabelTelemetry), func() {
 			var service corev1.Service
-			key := types.NamespacedName{
-				Name:      "telemetry-manager-webhook",
-				Namespace: kitkyma.SystemNamespaceName,
-			}
-			err := suite.K8sClient.Get(suite.Ctx, key, &service)
+			err := suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryManagerWebhookServiceName, &service)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func() []string {
-				var endpoints discoveryv1.EndpointSlice
-				err := suite.K8sClient.Get(suite.Ctx, key, &endpoints)
+				var endpointsList discoveryv1.EndpointSliceList
+				err := suite.K8sClient.List(suite.Ctx, &endpointsList, client.InNamespace(kitkyma.SystemNamespaceName))
 				Expect(err).NotTo(HaveOccurred())
-				Expect(endpoints.Endpoints).NotTo(BeEmpty())
+
+				var webhookEndpoints *discoveryv1.EndpointSlice
+				for _, endpoints := range endpointsList.Items {
+					// EndpointSlice names are prefixed with the service name
+					if strings.HasPrefix(endpoints.Name, kitkyma.TelemetryManagerWebhookServiceName.Name) {
+						webhookEndpoints = &endpoints
+						break
+					}
+				}
+				Expect(webhookEndpoints).NotTo(BeEmpty())
+
 				var addresses []string
-				for _, endpoint := range endpoints.Endpoints {
+				for _, endpoint := range webhookEndpoints.Endpoints {
 					addresses = append(addresses, endpoint.Addresses...)
 				}
 				return addresses
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).ShouldNot(BeEmpty())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).ShouldNot(BeEmpty(), "Webhook service endpoints should have IP addresses assigned")
 		})
 
 		It("Should have a metrics service", Label(suite.LabelTelemetry), func() {
@@ -91,15 +99,26 @@ var _ = Describe(suite.ID(), func() {
 			Expect(service.Annotations).Should(HaveKeyWithValue("prometheus.io/port", "8080"))
 
 			Eventually(func() []string {
-				var endpoints discoveryv1.EndpointSlice
-				err := suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryManagerMetricsServiceName, &endpoints)
+				var endpointsList discoveryv1.EndpointSliceList
+				err := suite.K8sClient.List(suite.Ctx, &endpointsList, client.InNamespace(kitkyma.SystemNamespaceName))
 				Expect(err).NotTo(HaveOccurred())
+
+				var metricsEndpoints *discoveryv1.EndpointSlice
+				for _, endpoints := range endpointsList.Items {
+					// EndpointSlice names are prefixed with the service name
+					if strings.HasPrefix(endpoints.Name, kitkyma.TelemetryManagerMetricsServiceName.Name) {
+						metricsEndpoints = &endpoints
+						break
+					}
+				}
+				Expect(metricsEndpoints).NotTo(BeEmpty())
+
 				var addresses []string
-				for _, endpoint := range endpoints.Endpoints {
+				for _, endpoint := range metricsEndpoints.Endpoints {
 					addresses = append(addresses, endpoint.Addresses...)
 				}
 				return addresses
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).ShouldNot(BeEmpty())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).ShouldNot(BeEmpty(), "Metrics service endpoints should have IP addresses assigned")
 		})
 
 		It("Should have LogPipelines CRD", Label(suite.LabelFluentBit), func() {
