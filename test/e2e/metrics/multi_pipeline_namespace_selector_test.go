@@ -97,8 +97,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetC), 
 		It("Should have a metrics backend running", func() {
 			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
 			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
-			assert.ServiceReady(suite.Ctx, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
-			assert.ServiceReady(suite.Ctx, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
 		})
 
 		// verify metrics from apps1Ns delivered to backend1

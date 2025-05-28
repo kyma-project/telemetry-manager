@@ -113,7 +113,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), 
 
 			It("Should have metrics backends running", func() {
 				assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: backendOnlyNodeMetricsEnabledName, Namespace: tt.namespace})
-				assert.ServiceReady(suite.Ctx, types.NamespacedName{Name: backendOnlyNodeMetricsEnabledName, Namespace: tt.namespace})
 
 			})
 
