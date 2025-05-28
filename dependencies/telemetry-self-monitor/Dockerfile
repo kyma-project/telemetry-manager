@@ -27,8 +27,7 @@ COPY plugins.yml plugins.yml
 # Only support for linux OS
 RUN if [ "${TARGETOS}" != "linux" ]; then echo "Unsupported OS: ${TARGETOS}"; exit 1; fi
 
-ENV DOCKER_ARCHS=${TARGETARCH}
-RUN make build
+RUN make DOCKER_ARCHS=${TARGETARCH} build
 
 FROM scratch
 
