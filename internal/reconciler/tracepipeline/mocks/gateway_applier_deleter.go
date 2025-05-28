@@ -62,16 +62,32 @@ type GatewayApplierDeleter_ApplyResources_Call struct {
 }
 
 // ApplyResources is a helper method to define mock.On call
-//   - ctx
-//   - c
-//   - opts
+//   - ctx context.Context
+//   - c client.Client
+//   - opts otelcollector.GatewayApplyOptions
 func (_e *GatewayApplierDeleter_Expecter) ApplyResources(ctx interface{}, c interface{}, opts interface{}) *GatewayApplierDeleter_ApplyResources_Call {
 	return &GatewayApplierDeleter_ApplyResources_Call{Call: _e.mock.On("ApplyResources", ctx, c, opts)}
 }
 
 func (_c *GatewayApplierDeleter_ApplyResources_Call) Run(run func(ctx context.Context, c client.Client, opts otelcollector.GatewayApplyOptions)) *GatewayApplierDeleter_ApplyResources_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(client.Client), args[2].(otelcollector.GatewayApplyOptions))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 client.Client
+		if args[1] != nil {
+			arg1 = args[1].(client.Client)
+		}
+		var arg2 otelcollector.GatewayApplyOptions
+		if args[2] != nil {
+			arg2 = args[2].(otelcollector.GatewayApplyOptions)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
 	})
 	return _c
 }
@@ -109,16 +125,32 @@ type GatewayApplierDeleter_DeleteResources_Call struct {
 }
 
 // DeleteResources is a helper method to define mock.On call
-//   - ctx
-//   - c
-//   - isIstioActive
+//   - ctx context.Context
+//   - c client.Client
+//   - isIstioActive bool
 func (_e *GatewayApplierDeleter_Expecter) DeleteResources(ctx interface{}, c interface{}, isIstioActive interface{}) *GatewayApplierDeleter_DeleteResources_Call {
 	return &GatewayApplierDeleter_DeleteResources_Call{Call: _e.mock.On("DeleteResources", ctx, c, isIstioActive)}
 }
 
 func (_c *GatewayApplierDeleter_DeleteResources_Call) Run(run func(ctx context.Context, c client.Client, isIstioActive bool)) *GatewayApplierDeleter_DeleteResources_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(client.Client), args[2].(bool))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 client.Client
+		if args[1] != nil {
+			arg1 = args[1].(client.Client)
+		}
+		var arg2 bool
+		if args[2] != nil {
+			arg2 = args[2].(bool)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
 	})
 	return _c
 }
