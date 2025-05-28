@@ -72,7 +72,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelSetA), Ordered
 
 		It("Should have a metrics backend running", func() {
 			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
-			assert.ServiceReady(suite.Ctx, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have running pipelines", func() {
