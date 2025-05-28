@@ -49,5 +49,5 @@ type Exporter struct {
 }
 
 type IstioEnrichmentProcessor struct {
-	ScopeVersion  string `yaml:"scope_version,omitempty"`
+	ScopeVersion string `yaml:"scope_version,omitempty"`
 }

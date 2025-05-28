@@ -25,7 +25,7 @@ func makeProcessorsConfig(opts BuildOptions) Processors {
 
 func makeIstioEnrichmentProcessorConfig(opts BuildOptions) *IstioEnrichmentProcessor {
 	return &IstioEnrichmentProcessor{
-		ScopeVersion:  opts.ModuleVersion,
+		ScopeVersion: opts.ModuleVersion,
 	}
 }
 
