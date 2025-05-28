@@ -62,15 +62,26 @@ type AgentConfigBuilder_Build_Call struct {
 }
 
 // Build is a helper method to define mock.On call
-//   - pipelines
-//   - options
+//   - pipelines []v1alpha1.MetricPipeline
+//   - options agent.BuildOptions
 func (_e *AgentConfigBuilder_Expecter) Build(pipelines interface{}, options interface{}) *AgentConfigBuilder_Build_Call {
 	return &AgentConfigBuilder_Build_Call{Call: _e.mock.On("Build", pipelines, options)}
 }
 
 func (_c *AgentConfigBuilder_Build_Call) Run(run func(pipelines []v1alpha1.MetricPipeline, options agent.BuildOptions)) *AgentConfigBuilder_Build_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]v1alpha1.MetricPipeline), args[1].(agent.BuildOptions))
+		var arg0 []v1alpha1.MetricPipeline
+		if args[0] != nil {
+			arg0 = args[0].([]v1alpha1.MetricPipeline)
+		}
+		var arg1 agent.BuildOptions
+		if args[1] != nil {
+			arg1 = args[1].(agent.BuildOptions)
+		}
+		run(
+			arg0,
+			arg1,
+		)
 	})
 	return _c
 }

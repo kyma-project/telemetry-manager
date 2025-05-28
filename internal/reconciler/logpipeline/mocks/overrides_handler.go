@@ -72,14 +72,20 @@ type OverridesHandler_LoadOverrides_Call struct {
 }
 
 // LoadOverrides is a helper method to define mock.On call
-//   - ctx
+//   - ctx context.Context
 func (_e *OverridesHandler_Expecter) LoadOverrides(ctx interface{}) *OverridesHandler_LoadOverrides_Call {
 	return &OverridesHandler_LoadOverrides_Call{Call: _e.mock.On("LoadOverrides", ctx)}
 }
 
 func (_c *OverridesHandler_LoadOverrides_Call) Run(run func(ctx context.Context)) *OverridesHandler_LoadOverrides_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }

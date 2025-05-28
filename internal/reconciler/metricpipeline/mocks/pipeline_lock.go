@@ -61,15 +61,26 @@ type PipelineLock_IsLockHolder_Call struct {
 }
 
 // IsLockHolder is a helper method to define mock.On call
-//   - ctx
-//   - owner
+//   - ctx context.Context
+//   - owner v1.Object
 func (_e *PipelineLock_Expecter) IsLockHolder(ctx interface{}, owner interface{}) *PipelineLock_IsLockHolder_Call {
 	return &PipelineLock_IsLockHolder_Call{Call: _e.mock.On("IsLockHolder", ctx, owner)}
 }
 
 func (_c *PipelineLock_IsLockHolder_Call) Run(run func(ctx context.Context, owner v1.Object)) *PipelineLock_IsLockHolder_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(v1.Object))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 v1.Object
+		if args[1] != nil {
+			arg1 = args[1].(v1.Object)
+		}
+		run(
+			arg0,
+			arg1,
+		)
 	})
 	return _c
 }
@@ -107,15 +118,26 @@ type PipelineLock_TryAcquireLock_Call struct {
 }
 
 // TryAcquireLock is a helper method to define mock.On call
-//   - ctx
-//   - owner
+//   - ctx context.Context
+//   - owner v1.Object
 func (_e *PipelineLock_Expecter) TryAcquireLock(ctx interface{}, owner interface{}) *PipelineLock_TryAcquireLock_Call {
 	return &PipelineLock_TryAcquireLock_Call{Call: _e.mock.On("TryAcquireLock", ctx, owner)}
 }
 
 func (_c *PipelineLock_TryAcquireLock_Call) Run(run func(ctx context.Context, owner v1.Object)) *PipelineLock_TryAcquireLock_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(v1.Object))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 v1.Object
+		if args[1] != nil {
+			arg1 = args[1].(v1.Object)
+		}
+		run(
+			arg0,
+			arg1,
+		)
 	})
 	return _c
 }
