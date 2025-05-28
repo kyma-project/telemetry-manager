@@ -76,9 +76,7 @@ var _ = Describe(suite.ID(), func() {
 				Expect(endpoints.Endpoints).NotTo(BeEmpty())
 				var addresses []string
 				for _, endpoint := range endpoints.Endpoints {
-					for _, address := range endpoint.Addresses {
-						addresses = append(addresses, address)
-					}
+					addresses = append(addresses, endpoint.Addresses...)
 				}
 				return addresses
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).ShouldNot(BeEmpty())
@@ -98,9 +96,7 @@ var _ = Describe(suite.ID(), func() {
 				Expect(err).NotTo(HaveOccurred())
 				var addresses []string
 				for _, endpoint := range endpoints.Endpoints {
-					for _, address := range endpoint.Addresses {
-						addresses = append(addresses, address)
-					}
+					addresses = append(addresses, endpoint.Addresses...)
 				}
 				return addresses
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).ShouldNot(BeEmpty())
