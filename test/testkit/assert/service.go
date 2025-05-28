@@ -3,9 +3,10 @@ package assert
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	. "github.com/onsi/gomega"
-	corev1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -21,26 +22,24 @@ func ServiceReady(ctx context.Context, k8sClient client.Client, name types.Names
 }
 
 func isServiceReady(ctx context.Context, k8sClient client.Client, name types.NamespacedName) (bool, error) {
-	var endpoint corev1.Endpoints
+	var endpointSlice discoveryv1.EndpointSlice
 
-	err := k8sClient.Get(ctx, name, &endpoint)
+	err := k8sClient.Get(ctx, name, &endpointSlice)
 	if err != nil {
-		return false, fmt.Errorf("failed to get endpoint for service: %w", err)
+		return false, fmt.Errorf("failed to get endpoint slice for service: %w", err)
 	}
 
-	if endpoint.Subsets == nil {
+	if len(endpointSlice.Endpoints) == 0 {
 		return false, nil
 	}
 
-	for _, subset := range endpoint.Subsets {
-		if len(subset.Addresses) == 0 {
+	for _, endpoint := range endpointSlice.Endpoints {
+		if len(endpoint.Addresses) == 0 {
 			return false, nil
 		}
 
-		for _, address := range subset.Addresses {
-			if address.IP == "" {
-				return false, nil
-			}
+		if slices.Contains(endpoint.Addresses, "") {
+			return false, nil
 		}
 	}
 

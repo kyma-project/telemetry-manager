@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	schedulingv1 "k8s.io/api/scheduling/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -68,12 +69,18 @@ var _ = Describe(suite.ID(), func() {
 			err := suite.K8sClient.Get(suite.Ctx, key, &service)
 			Expect(err).NotTo(HaveOccurred())
 
-			Eventually(func() []corev1.EndpointAddress {
-				var endpoints corev1.Endpoints
+			Eventually(func() []string {
+				var endpoints discoveryv1.EndpointSlice
 				err := suite.K8sClient.Get(suite.Ctx, key, &endpoints)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(endpoints.Subsets).NotTo(BeEmpty())
-				return endpoints.Subsets[0].Addresses
+				Expect(endpoints.Endpoints).NotTo(BeEmpty())
+				var addresses []string
+				for _, endpoint := range endpoints.Endpoints {
+					for _, address := range endpoint.Addresses {
+						addresses = append(addresses, address)
+					}
+				}
+				return addresses
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).ShouldNot(BeEmpty())
 		})
 
@@ -85,11 +92,17 @@ var _ = Describe(suite.ID(), func() {
 			Expect(service.Annotations).Should(HaveKeyWithValue("prometheus.io/scrape", "true"))
 			Expect(service.Annotations).Should(HaveKeyWithValue("prometheus.io/port", "8080"))
 
-			Eventually(func() []corev1.EndpointAddress {
-				var endpoints corev1.Endpoints
+			Eventually(func() []string {
+				var endpoints discoveryv1.EndpointSlice
 				err := suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryManagerMetricsServiceName, &endpoints)
 				Expect(err).NotTo(HaveOccurred())
-				return endpoints.Subsets[0].Addresses
+				var addresses []string
+				for _, endpoint := range endpoints.Endpoints {
+					for _, address := range endpoint.Addresses {
+						addresses = append(addresses, address)
+					}
+				}
+				return addresses
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).ShouldNot(BeEmpty())
 		})
 
