@@ -13,7 +13,7 @@ require (
 	github.com/kyma-project/kyma/hack/table-gen v0.0.0-20250404123224-5afb7a10791b
 	github.com/mikefarah/yq/v4 v4.45.4
 	github.com/onsi/ginkgo/v2 v2.23.4
-	github.com/vektra/mockery/v3 v3.2.5
+	github.com/vektra/mockery/v3 v3.3.1
 	github.com/vladopajic/go-test-coverage/v2 v2.14.3
 	github.com/yeya24/promlinter v0.3.0
 	golang.org/x/tools v0.33.0
