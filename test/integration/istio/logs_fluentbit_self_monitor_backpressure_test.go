@@ -53,7 +53,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsFluentBitBackpre
 		})
 
 		It("Should have a running logpipeline", func() {
-			assert.FluentBitLogPipelineHealthy(suite.Ctx, pipelineName)
+			assert.FluentBitLogPipelineHealthy(GinkgoT(), pipelineName)
 		})
 
 		It("Should have a running log agent daemonset", func() {
@@ -73,7 +73,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsFluentBitBackpre
 		})
 
 		It("Should wait for the log flow to gradually become unhealthy", func() {
-			assert.LogPipelineConditionReasonsTransition(suite.Ctx, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
+			assert.LogPipelineConditionReasonsTransition(GinkgoT(), pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 				{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
 				{Reason: conditions.ReasonSelfMonAgentBufferFillingUp, Status: metav1.ConditionFalse},
 				{Reason: conditions.ReasonSelfMonAgentSomeDataDropped, Status: metav1.ConditionFalse},

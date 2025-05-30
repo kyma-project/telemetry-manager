@@ -58,7 +58,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsAgentOutage, sui
 		})
 
 		It("Should have a running logpipeline", func() {
-			assert.OTelLogPipelineHealthy(suite.Ctx, pipelineName)
+			assert.OTelLogPipelineHealthy(GinkgoT(), pipelineName)
 		})
 
 		It("Should have a running log agent daemonset", func() {
@@ -78,7 +78,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsAgentOutage, sui
 		})
 
 		It("Should wait for the log flow to gradually become unhealthy", func() {
-			assert.LogPipelineConditionReasonsTransition(suite.Ctx, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
+			assert.LogPipelineConditionReasonsTransition(GinkgoT(), pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 				{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
 				{Reason: conditions.ReasonSelfMonAgentBufferFillingUp, Status: metav1.ConditionFalse},
 				{Reason: conditions.ReasonSelfMonAgentAllDataDropped, Status: metav1.ConditionFalse},
@@ -96,7 +96,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsAgentOutage, sui
 			It("Ensures that controller_runtime_webhook_requests_total is increased", func() {
 				// Pushing metrics to the metric gateway triggers an alert.
 				// It makes the self-monitor call the webhook, which in turn increases the counter.
-				assert.EmitsManagerMetrics(suite.Ctx,
+				assert.EmitsManagerMetrics(GinkgoT(),
 					HaveName(Equal("controller_runtime_webhook_requests_total")),
 					SatisfyAll(
 						HaveLabels(HaveKeyWithValue("webhook", "/api/v2/alerts")),
@@ -105,7 +105,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsAgentOutage, sui
 			})
 
 			It("Ensures that telemetry_self_monitor_prober_requests_total is emitted", func() {
-				assert.EmitsManagerMetrics(suite.Ctx,
+				assert.EmitsManagerMetrics(GinkgoT(),
 					HaveName(Equal("telemetry_self_monitor_prober_requests_total")),
 					HaveMetricValue(BeNumerically(">", 0)),
 				)

@@ -173,13 +173,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 		})
 
 		It("Should have running pipelines", func() {
-			assert.FluentBitLogPipelineHealthy(suite.Ctx, logBackendName)
+			assert.FluentBitLogPipelineHealthy(GinkgoT(), logBackendName)
 			assert.MetricPipelineHealthy(suite.Ctx, metricBackendName)
 			assert.TracePipelineHealthy(suite.Ctx, traceBackendName)
 
-			assert.FluentBitLogPipelineHealthy(suite.Ctx, otelCollectorLogBackendName)
-			assert.FluentBitLogPipelineHealthy(suite.Ctx, fluentBitLogBackendName)
-			assert.FluentBitLogPipelineHealthy(suite.Ctx, selfMonitorLogBackendName)
+			assert.FluentBitLogPipelineHealthy(GinkgoT(), otelCollectorLogBackendName)
+			assert.FluentBitLogPipelineHealthy(GinkgoT(), fluentBitLogBackendName)
+			assert.FluentBitLogPipelineHealthy(GinkgoT(), selfMonitorLogBackendName)
 		})
 
 		It("Should push metrics successfully", func() {
@@ -191,19 +191,19 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 		})
 
 		It("Should collect logs successfully", func() {
-			assert.FluentBitLogsFromPodDelivered(suite.Ctx, logBackend, "")
+			assert.FluentBitLogsFromPodDelivered(GinkgoT(), logBackend, "")
 		})
 
 		It("Should collect otel collector component logs successfully", func() {
-			assert.FluentBitLogsFromPodDelivered(suite.Ctx, otelCollectorLogBackend, "telemetry-")
+			assert.FluentBitLogsFromPodDelivered(GinkgoT(), otelCollectorLogBackend, "telemetry-")
 		})
 
 		It("Should collect fluent-bit component logs successfully", func() {
-			assert.FluentBitLogsFromPodDelivered(suite.Ctx, fluentBitLogBackend, "telemetry-")
+			assert.FluentBitLogsFromPodDelivered(GinkgoT(), fluentBitLogBackend, "telemetry-")
 		})
 
 		It("Should collect self-monitor component logs successfully", func() {
-			assert.FluentBitLogsFromPodDelivered(suite.Ctx, selfMonitorLogBackend, "telemetry-")
+			assert.FluentBitLogsFromPodDelivered(GinkgoT(), selfMonitorLogBackend, "telemetry-")
 		})
 
 		It("Should not have any error/warn logs in the otel collector component containers", func() {

@@ -96,14 +96,14 @@ func TestMultiPipelineBroken_OTel(t *testing.T) {
 				assert.DaemonSetReady(t.Context(), kitkyma.LogAgentName)
 			}
 
-			assert.OTelLogPipelineHealthy(t.Context(), pipelineGood.Name)
-			assert.LogPipelineHasCondition(t.Context(), pipelineBroken.Name, metav1.Condition{
+			assert.OTelLogPipelineHealthy(t, pipelineGood.Name)
+			assert.LogPipelineHasCondition(t, pipelineBroken.Name, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonReferencedSecretMissing,
 			})
 
-			assert.OTelLogsFromNamespaceDelivered(t.Context(), backend, genNs)
+			assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
 		})
 	}
 }
@@ -150,12 +150,12 @@ func TestMultiPipelineBroken_FluentBit(t *testing.T) {
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
 	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 
-	assert.FluentBitLogPipelineHealthy(t.Context(), pipelineGood.Name)
-	assert.LogPipelineHasCondition(t.Context(), pipelineBroken.Name, metav1.Condition{
+	assert.FluentBitLogPipelineHealthy(t, pipelineGood.Name)
+	assert.LogPipelineHasCondition(t, pipelineBroken.Name, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonReferencedSecretMissing,
 	})
 
-	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend, genNs)
+	assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
 }

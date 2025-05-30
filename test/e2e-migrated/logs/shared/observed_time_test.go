@@ -82,16 +82,15 @@ func TestObservedTime_OTel(t *testing.T) {
 			Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
 			assert.DeploymentReady(t.Context(), kitkyma.LogGatewayName)
-			assert.OTelLogPipelineHealthy(t.Context(), pipelineName)
+			assert.OTelLogPipelineHealthy(t, pipelineName)
 			assert.DeploymentReady(t.Context(), backend.NamespacedName())
 
-			assert.OTelLogsFromNamespaceDelivered(t.Context(), backend, genNs)
-			assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
-				HaveEach(SatisfyAll(
+			assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
+			assert.BackendDataConsistentlyMatches(t, backend,
+				HaveFlatLogs(HaveEach(SatisfyAll(
 					HaveTimestamp(Not(BeEmpty())),
-					HaveObservedTimestamp(Not(Equal("1970-01-01 00:00:00 +0000 UTC"))),
-				)),
-			))
+					HaveObservedTimestamp(Not(Equal("1970-01-01 00:00:00 +0000 UTC")))),
+				)))
 		})
 	}
 }

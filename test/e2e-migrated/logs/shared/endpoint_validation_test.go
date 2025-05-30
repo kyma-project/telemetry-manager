@@ -75,13 +75,13 @@ func TestEndpointInvalid_OTel(t *testing.T) {
 
 			Expect(kitk8s.CreateObjects(t.Context(), resourcesToSucceedCreation...)).Should(Succeed())
 
-			assert.LogPipelineHasCondition(t.Context(), pipelineNameValueFromSecret, metav1.Condition{
+			assert.LogPipelineHasCondition(t, pipelineNameValueFromSecret, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonEndpointInvalid,
 			})
 
-			assert.LogPipelineHasCondition(t.Context(), pipelineNameValue, metav1.Condition{
+			assert.LogPipelineHasCondition(t, pipelineNameValue, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonEndpointInvalid,
@@ -131,7 +131,7 @@ func TestEndpointInvalid_FluentBit(t *testing.T) {
 	Expect(kitk8s.CreateObjects(t.Context(), resourcesToSucceedCreation...)).Should(Succeed())
 	Expect(kitk8s.CreateObjects(t.Context(), resourcesToFailCreation...)).Should(MatchError(ContainSubstring("invalid hostname")))
 
-	assert.LogPipelineHasCondition(t.Context(), pipelineNameValueFromSecret, metav1.Condition{
+	assert.LogPipelineHasCondition(t, pipelineNameValueFromSecret, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonEndpointInvalid,

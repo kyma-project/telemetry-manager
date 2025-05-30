@@ -67,13 +67,13 @@ func TestSecretRotation_OTel(t *testing.T) {
 			})
 			Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-			assert.LogPipelineHasCondition(t.Context(), pipelineName, metav1.Condition{
+			assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonReferencedSecretMissing,
 			})
 
-			assert.LogPipelineHasCondition(t.Context(), pipelineName, metav1.Condition{
+			assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
 				Type:   conditions.TypeFlowHealthy,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonSelfMonConfigNotGenerated,
@@ -89,7 +89,7 @@ func TestSecretRotation_OTel(t *testing.T) {
 			// Create the secret and make sure the pipeline heals
 			Expect(kitk8s.CreateObjects(t.Context(), secret.K8sObject())).Should(Succeed())
 
-			assert.OTelLogPipelineHealthy(t.Context(), pipelineName)
+			assert.OTelLogPipelineHealthy(t, pipelineName)
 		})
 	}
 }
@@ -124,13 +124,13 @@ func TestSecretRotation_FluentBit(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.LogPipelineHasCondition(t.Context(), pipelineName, metav1.Condition{
+	assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonReferencedSecretMissing,
 	})
 
-	assert.LogPipelineHasCondition(t.Context(), pipelineName, metav1.Condition{
+	assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
 		Type:   conditions.TypeFlowHealthy,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonSelfMonConfigNotGenerated,
@@ -146,5 +146,5 @@ func TestSecretRotation_FluentBit(t *testing.T) {
 	// Create the secret and make sure the pipeline heals
 	Expect(kitk8s.CreateObjects(t.Context(), secret.K8sObject())).Should(Succeed())
 
-	assert.FluentBitLogPipelineHealthy(t.Context(), pipelineName)
+	assert.FluentBitLogPipelineHealthy(t, pipelineName)
 }

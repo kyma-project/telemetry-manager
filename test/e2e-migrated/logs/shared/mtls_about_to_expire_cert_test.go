@@ -101,8 +101,8 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 				assert.DaemonSetReady(t.Context(), kitkyma.LogAgentName)
 			}
 
-			assert.FluentBitLogPipelineHealthy(t.Context(), pipelineName)
-			assert.LogPipelineHasCondition(t.Context(), pipelineName, metav1.Condition{
+			assert.FluentBitLogPipelineHealthy(t, pipelineName)
+			assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonTLSCertificateAboutToExpire,
@@ -115,7 +115,7 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 				Reason: conditions.ReasonTLSCertificateAboutToExpire,
 			})
 
-			assert.OTelLogsFromNamespaceDelivered(t.Context(), backend, genNs)
+			assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
 		})
 	}
 }
@@ -166,8 +166,8 @@ func TestMTLSAboutToExpireCert_FluentBit(t *testing.T) {
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
 	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 
-	assert.FluentBitLogPipelineHealthy(t.Context(), pipelineName)
-	assert.LogPipelineHasCondition(t.Context(), pipelineName, metav1.Condition{
+	assert.FluentBitLogPipelineHealthy(t, pipelineName)
+	assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionTrue,
 		Reason: conditions.ReasonTLSCertificateAboutToExpire,
@@ -180,5 +180,5 @@ func TestMTLSAboutToExpireCert_FluentBit(t *testing.T) {
 		Reason: conditions.ReasonTLSCertificateAboutToExpire,
 	})
 
-	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend, genNs)
+	assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
 }

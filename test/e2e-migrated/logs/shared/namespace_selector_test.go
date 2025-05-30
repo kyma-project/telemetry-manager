@@ -135,11 +135,11 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 				assert.DaemonSetReady(t.Context(), kitkyma.LogAgentName)
 			}
 
-			assert.OTelLogPipelineHealthy(t.Context(), includePipelineName)
-			assert.OTelLogPipelineHealthy(t.Context(), excludePipelineName)
+			assert.OTelLogPipelineHealthy(t, includePipelineName)
+			assert.OTelLogPipelineHealthy(t, excludePipelineName)
 
-			assert.OTelLogsFromNamespaceDelivered(t.Context(), backend1, gen1Ns)
-			assert.OTelLogsFromNamespaceNotDelivered(t.Context(), backend2, gen2Ns)
+			assert.OTelLogsFromNamespaceDelivered(t, backend1, gen1Ns)
+			assert.OTelLogsFromNamespaceNotDelivered(t, backend2, gen2Ns)
 		})
 	}
 }
@@ -189,14 +189,14 @@ func TestNamespaceSelector_FluentBit(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.FluentBitLogPipelineHealthy(t.Context(), includePipelineName)
-	assert.FluentBitLogPipelineHealthy(t.Context(), excludePipelineName)
+	assert.FluentBitLogPipelineHealthy(t, includePipelineName)
+	assert.FluentBitLogPipelineHealthy(t, excludePipelineName)
 
 	assert.DeploymentReady(t.Context(), backend1.NamespacedName())
 	assert.DeploymentReady(t.Context(), backend2.NamespacedName())
 
 	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 
-	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend1, gen1Ns)
-	assert.FluentBitLogsFromNamespaceNotDelivered(t.Context(), backend2, gen2Ns)
+	assert.FluentBitLogsFromNamespaceDelivered(t, backend1, gen1Ns)
+	assert.FluentBitLogsFromNamespaceNotDelivered(t, backend2, gen2Ns)
 }

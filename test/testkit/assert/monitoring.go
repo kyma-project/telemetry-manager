@@ -1,7 +1,6 @@
 package assert
 
 import (
-	"context"
 	"net/http"
 	"time"
 
@@ -14,19 +13,25 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-func EmitsFluentBitMetrics(ctx context.Context, metricsURL string) {
-	HTTPResponseEventuallyMatches(ctx, metricsURL, HaveFlatMetricFamilies(
+func EmitsFluentBitMetrics(t TestingT, metricsURL string) {
+	t.Helper()
+
+	HTTPResponseEventuallyMatches(t, metricsURL, HaveFlatMetricFamilies(
 		ContainElement(HaveName(ContainSubstring("fluentbit"))),
 	))
 }
 
-func EmitsOTelCollectorMetrics(ctx context.Context, metricsURL string) {
-	HTTPResponseEventuallyMatches(ctx, metricsURL, HaveFlatMetricFamilies(
+func EmitsOTelCollectorMetrics(t TestingT, metricsURL string) {
+	t.Helper()
+
+	HTTPResponseEventuallyMatches(t, metricsURL, HaveFlatMetricFamilies(
 		ContainElement(HaveName(ContainSubstring("otelcol"))),
 	))
 }
 
-func EmitsManagerMetrics(ctx context.Context, matchers ...types.GomegaMatcher) {
+func EmitsManagerMetrics(t TestingT, matchers ...types.GomegaMatcher) {
+	t.Helper()
+
 	Eventually(func(g Gomega) {
 		metricsPath := "metrics"
 		telemetryManagerMetricsURL := suite.ProxyClient.ProxyURLForService(
@@ -34,7 +39,7 @@ func EmitsManagerMetrics(ctx context.Context, matchers ...types.GomegaMatcher) {
 			kitkyma.TelemetryManagerMetricsServiceName.Name,
 			metricsPath,
 			kitkyma.TelemetryManagerMetricsPort)
-		resp, err := suite.ProxyClient.GetWithContext(ctx, telemetryManagerMetricsURL)
+		resp, err := suite.ProxyClient.GetWithContext(t.Context(), telemetryManagerMetricsURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 

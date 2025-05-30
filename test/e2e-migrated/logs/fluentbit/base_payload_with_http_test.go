@@ -51,14 +51,12 @@ func TestBasePayloadWithHTTPOutput(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.FluentBitLogPipelineHealthy(t.Context(), pipelineName)
+	assert.FluentBitLogPipelineHealthy(t, pipelineName)
 	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
 	assert.DeploymentReady(t.Context(), logProducer.NamespacedName())
 
-	assert.BackendDataEventuallyMatches(
-		t.Context(),
-		backend,
+	assert.BackendDataEventuallyMatches(t, backend,
 		fluentbit.HaveFlatLogs(HaveEach(SatisfyAll(
 			fluentbit.HaveAttributes(HaveKey("@timestamp")),
 			fluentbit.HaveDateISO8601Format(BeTrue()),
@@ -66,9 +64,7 @@ func TestBasePayloadWithHTTPOutput(t *testing.T) {
 		"Should have @timestamp and date attributes",
 	)
 
-	assert.BackendDataEventuallyMatches(
-		t.Context(),
-		backend,
+	assert.BackendDataEventuallyMatches(t, backend,
 		fluentbit.HaveFlatLogs(HaveEach(
 			fluentbit.HaveKubernetesAttributes(SatisfyAll(
 				HaveKey("pod_name"),
@@ -80,9 +76,7 @@ func TestBasePayloadWithHTTPOutput(t *testing.T) {
 		"Should have typical Kubernetes attributes set by the kubernetes filter",
 	)
 
-	assert.BackendDataEventuallyMatches(
-		t.Context(),
-		backend,
+	assert.BackendDataEventuallyMatches(t, backend,
 		fluentbit.HaveFlatLogs(HaveEach(
 			fluentbit.HaveKubernetesAttributes(SatisfyAll(
 				HaveKeyWithValue("container_name", stdloggen.DefaultContainerName),
@@ -93,27 +87,21 @@ func TestBasePayloadWithHTTPOutput(t *testing.T) {
 		"Should have Kubernetes attributes with corresponding values set by the kubernetes filter",
 	)
 
-	assert.BackendDataEventuallyMatches(
-		t.Context(),
-		backend,
+	assert.BackendDataEventuallyMatches(t, backend,
 		fluentbit.HaveFlatLogs(HaveEach(
 			fluentbit.HaveAttributes(HaveKey("cluster_identifier")),
 		)),
 		"Should have cluster identifier set by record_modifier filter",
 	)
 
-	assert.BackendDataEventuallyMatches(
-		t.Context(),
-		backend,
+	assert.BackendDataEventuallyMatches(t, backend,
 		fluentbit.HaveFlatLogs(HaveEach(
 			fluentbit.HaveLogBody(Not(BeEmpty())),
 		)),
 		"Should have not-empty log body",
 	)
 
-	assert.BackendDataEventuallyMatches(
-		t.Context(),
-		backend,
+	assert.BackendDataEventuallyMatches(t, backend,
 		fluentbit.HaveFlatLogs(HaveEach(
 			fluentbit.HaveAttributes(HaveKeyWithValue("stream", "stdout")),
 		)),

@@ -57,7 +57,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsAgentBackpressur
 		})
 
 		It("Should have a running logpipeline", func() {
-			assert.OTelLogPipelineHealthy(suite.Ctx, pipelineName)
+			assert.OTelLogPipelineHealthy(GinkgoT(), pipelineName)
 		})
 
 		It("Should have a running log agent daemonset", func() {
@@ -77,7 +77,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsAgentBackpressur
 		})
 
 		It("Should wait for the log flow to gradually become unhealthy", func() {
-			assert.LogPipelineConditionReasonsTransition(suite.Ctx, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
+			assert.LogPipelineConditionReasonsTransition(GinkgoT(), pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 				{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
 				{Reason: conditions.ReasonSelfMonAgentBufferFillingUp, Status: metav1.ConditionFalse},
 				{Reason: conditions.ReasonSelfMonAgentSomeDataDropped, Status: metav1.ConditionFalse},

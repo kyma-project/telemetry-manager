@@ -98,20 +98,20 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 
 	for i, pipeline := range pipelines {
 		if i%2 == 0 {
-			assert.FluentBitLogPipelineHealthy(t.Context(), pipeline.GetName())
+			assert.FluentBitLogPipelineHealthy(t, pipeline.GetName())
 		} else {
-			assert.OTelLogPipelineHealthy(t.Context(), pipeline.GetName())
+			assert.OTelLogPipelineHealthy(t, pipeline.GetName())
 		}
 	}
 
 	t.Log("Attempting to create the 6th pipeline (FluentBit)")
 	require.NoError(t, kitk8s.CreateObjects(t.Context(), &additionalFBPipeline))
-	assert.LogPipelineHasCondition(t.Context(), additionalFBPipeline.GetName(), metav1.Condition{
+	assert.LogPipelineHasCondition(t, additionalFBPipeline.GetName(), metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonMaxPipelinesExceeded,
 	})
-	assert.LogPipelineHasCondition(t.Context(), additionalFBPipeline.GetName(), metav1.Condition{
+	assert.LogPipelineHasCondition(t, additionalFBPipeline.GetName(), metav1.Condition{
 		Type:   conditions.TypeFlowHealthy,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonSelfMonConfigNotGenerated,
@@ -121,29 +121,29 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 
 	deletePipeline := pipelines[0]
 	require.NoError(t, kitk8s.DeleteObjects(t.Context(), deletePipeline))
-	assert.FluentBitLogPipelineHealthy(t.Context(), additionalFBPipeline.GetName())
+	assert.FluentBitLogPipelineHealthy(t, additionalFBPipeline.GetName())
 
 	t.Log("Attempting to create the 6th pipeline (OTel)")
 	require.NoError(t, kitk8s.CreateObjects(t.Context(), &additionalOTelPipeline))
-	assert.LogPipelineHasCondition(t.Context(), additionalOTelPipeline.GetName(), metav1.Condition{
+	assert.LogPipelineHasCondition(t, additionalOTelPipeline.GetName(), metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonMaxPipelinesExceeded,
 	})
-	assert.LogPipelineHasCondition(t.Context(), additionalOTelPipeline.GetName(), metav1.Condition{
+	assert.LogPipelineHasCondition(t, additionalOTelPipeline.GetName(), metav1.Condition{
 		Type:   conditions.TypeFlowHealthy,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonSelfMonConfigNotGenerated,
 	})
 
 	t.Log("Verifying logs are delivered for valid pipelines")
-	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend, generatorNs)
+	assert.FluentBitLogsFromNamespaceDelivered(t, backend, generatorNs)
 
 	t.Log("Deleting one previously healthy pipeline and expecting the additional OTel pipeline to be healthy")
 
 	deletePipeline = pipelines[1]
 	require.NoError(t, kitk8s.DeleteObjects(t.Context(), deletePipeline))
-	assert.FluentBitLogPipelineHealthy(t.Context(), additionalFBPipeline.GetName())
+	assert.FluentBitLogPipelineHealthy(t, additionalFBPipeline.GetName())
 }
 
 func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
@@ -197,30 +197,30 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 	t.Log("Asserting 5 pipelines are healthy")
 
 	for _, pipeline := range pipelines {
-		assert.OTelLogPipelineHealthy(t.Context(), pipeline.GetName())
+		assert.OTelLogPipelineHealthy(t, pipeline.GetName())
 	}
 
 	t.Log("Attempting to create the 6th pipeline")
 	require.NoError(t, kitk8s.CreateObjects(t.Context(), &additionalPipeline))
-	assert.LogPipelineHasCondition(t.Context(), additionalPipeline.GetName(), metav1.Condition{
+	assert.LogPipelineHasCondition(t, additionalPipeline.GetName(), metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonMaxPipelinesExceeded,
 	})
-	assert.LogPipelineHasCondition(t.Context(), additionalPipeline.GetName(), metav1.Condition{
+	assert.LogPipelineHasCondition(t, additionalPipeline.GetName(), metav1.Condition{
 		Type:   conditions.TypeFlowHealthy,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonSelfMonConfigNotGenerated,
 	})
 
 	t.Log("Verifying logs are delivered for valid pipelines")
-	assert.OTelLogsFromNamespaceDelivered(t.Context(), backend, genNs)
+	assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
 
 	t.Log("Deleting one previously healthy pipeline and expecting the additional pipeline to be healthy")
 
 	deletePipeline := pipelines[0]
 	require.NoError(t, kitk8s.DeleteObjects(t.Context(), deletePipeline))
-	assert.OTelLogPipelineHealthy(t.Context(), additionalPipeline.GetName())
+	assert.OTelLogPipelineHealthy(t, additionalPipeline.GetName())
 }
 
 func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
@@ -274,28 +274,28 @@ func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
 	t.Log("Asserting 5 pipelines are healthy")
 
 	for _, pipeline := range pipelines {
-		assert.FluentBitLogPipelineHealthy(t.Context(), pipeline.GetName())
+		assert.FluentBitLogPipelineHealthy(t, pipeline.GetName())
 	}
 
 	t.Log("Attempting to create the 6th pipeline")
 	require.NoError(t, kitk8s.CreateObjects(t.Context(), &additionalPipeline))
-	assert.LogPipelineHasCondition(t.Context(), additionalPipeline.GetName(), metav1.Condition{
+	assert.LogPipelineHasCondition(t, additionalPipeline.GetName(), metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonMaxPipelinesExceeded,
 	})
-	assert.LogPipelineHasCondition(t.Context(), additionalPipeline.GetName(), metav1.Condition{
+	assert.LogPipelineHasCondition(t, additionalPipeline.GetName(), metav1.Condition{
 		Type:   conditions.TypeFlowHealthy,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonSelfMonConfigNotGenerated,
 	})
 
 	t.Log("Verifying logs are delivered for valid pipelines")
-	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend, generatorNs)
+	assert.FluentBitLogsFromNamespaceDelivered(t, backend, generatorNs)
 
 	t.Log("Deleting one previously healthy pipeline and expecting the additional pipeline to be healthy")
 
 	deletePipeline := pipelines[0]
 	require.NoError(t, kitk8s.DeleteObjects(t.Context(), deletePipeline))
-	assert.FluentBitLogPipelineHealthy(t.Context(), additionalPipeline.GetName())
+	assert.FluentBitLogPipelineHealthy(t, additionalPipeline.GetName())
 }

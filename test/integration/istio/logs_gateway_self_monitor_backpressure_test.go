@@ -59,7 +59,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsGatewayBackpress
 		})
 
 		It("Should have a running logpipeline", func() {
-			assert.OTelLogPipelineHealthy(suite.Ctx, pipelineName)
+			assert.OTelLogPipelineHealthy(GinkgoT(), pipelineName)
 		})
 
 		It("Should have a running log gateway deployment", func() {
@@ -79,7 +79,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsGatewayBackpress
 		})
 
 		It("Should wait for the log flow to gradually become unhealthy", func() {
-			assert.LogPipelineConditionReasonsTransition(suite.Ctx, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
+			assert.LogPipelineConditionReasonsTransition(GinkgoT(), pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 				{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
 				{Reason: conditions.ReasonSelfMonGatewaySomeDataDropped, Status: metav1.ConditionFalse},
 			})
