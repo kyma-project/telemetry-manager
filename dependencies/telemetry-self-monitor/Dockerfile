@@ -23,13 +23,11 @@ RUN mv /prometheus-${PROMETHEUS_VERSION} /prometheus
 
 WORKDIR /prometheus
 COPY plugins.yml plugins.yml
-COPY .promu.yml .promu.yml
 
-# the crossbuild functionality requires to run docker in docker
-# that's why we use the plain "make build" command. Only the plain build should use the targetarch, not the utilities, that's why the make call is divided into its parts, see
+# Only the plain build should use the targetarch, not the utilities like plugins, that's why the make call is divided into its parts, see
 # https://github.com/prometheus/prometheus/blob/f1db64f4c513f9b0abaed6cac96646fadfe485ca/Makefile#L163C8-L163C51
-RUN make assets npm_licenses assets-compress plugins
-RUN GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} make common-build
+RUN make plugin
+RUN GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} make assets npm_licenses assets-compress common-build
 
 FROM scratch
 
