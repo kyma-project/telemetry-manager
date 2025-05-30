@@ -23,11 +23,9 @@ RUN mv /prometheus-${PROMETHEUS_VERSION} /prometheus
 
 WORKDIR /prometheus
 COPY plugins.yml plugins.yml
+COPY .promu.yml .promu.yml
 
-# Only support for linux OS
-RUN if [ "${TARGETOS}" != "linux" ]; then echo "Unsupported OS: ${TARGETOS}"; exit 1; fi
-
-RUN make DOCKER_ARCHS=${TARGETARCH} build
+RUN GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} make build
 
 FROM scratch
 
