@@ -28,6 +28,7 @@ type BuildOptions struct {
 	CloudProvider                   string
 	Enrichments                     processors.Enrichments
 	InternalMetricCompatibilityMode bool
+	ModuleVersion                   string
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {
