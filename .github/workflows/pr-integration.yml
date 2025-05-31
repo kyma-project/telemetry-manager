@@ -36,6 +36,7 @@ on:
       - "test/integration/istio/*.go"
       - ".github/workflows/pr-integration.yml"
       - ".github/template/**"
+      - ".env"
 
   workflow_dispatch:
 
