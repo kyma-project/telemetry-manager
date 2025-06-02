@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
@@ -64,11 +63,11 @@ const (
 	typeLogPipeline
 )
 
-func MakeRules(compatibilityMode bool) RuleGroups {
+func MakeRules() RuleGroups {
 	var rules []Rule
 
 	metricGatewayRuleBuilder := otelCollectorRuleBuilder{
-		dataType:    ruleDataType(typeMetricPipeline, compatibilityMode),
+		dataType:    ruleDataType(typeMetricPipeline),
 		serviceName: otelcollector.MetricGatewayName + "-metrics",
 		namePrefix:  ruleNamePrefix(typeMetricPipeline),
 	}
@@ -76,14 +75,14 @@ func MakeRules(compatibilityMode bool) RuleGroups {
 	rules = append(rules, metricGatewayRuleBuilder.gatewayRules()...)
 
 	traceGatewayRuleBuilder := otelCollectorRuleBuilder{
-		dataType:    ruleDataType(typeTracePipeline, compatibilityMode),
+		dataType:    ruleDataType(typeTracePipeline),
 		serviceName: otelcollector.TraceGatewayName + "-metrics",
 		namePrefix:  ruleNamePrefix(typeTracePipeline),
 	}
 	rules = append(rules, traceGatewayRuleBuilder.gatewayRules()...)
 
 	logGatewayRuleBuilder := otelCollectorRuleBuilder{
-		dataType:    ruleDataType(typeLogPipeline, compatibilityMode),
+		dataType:    ruleDataType(typeLogPipeline),
 		serviceName: otelcollector.LogGatewayName + "-metrics",
 		namePrefix:  ruleNamePrefix(typeLogPipeline),
 	}
@@ -91,7 +90,7 @@ func MakeRules(compatibilityMode bool) RuleGroups {
 	rules = append(rules, logGatewayRuleBuilder.gatewayRules()...)
 
 	logAgentRuleBuilder := otelCollectorRuleBuilder{
-		dataType:    ruleDataType(typeLogPipeline, compatibilityMode),
+		dataType:    ruleDataType(typeLogPipeline),
 		serviceName: otelcollector.LogAgentName + "-metrics",
 		namePrefix:  ruleNamePrefix(typeLogPipeline),
 	}
@@ -111,7 +110,7 @@ func MakeRules(compatibilityMode bool) RuleGroups {
 	}
 }
 
-func ruleDataType(t pipelineType, compatibilityMode bool) string {
+func ruleDataType(t pipelineType) string {
 	var dataTypeSuffix string
 
 	switch t {
@@ -121,10 +120,6 @@ func ruleDataType(t pipelineType, compatibilityMode bool) string {
 		dataTypeSuffix = "spans"
 	case typeLogPipeline:
 		dataTypeSuffix = "log_records"
-	}
-
-	if !compatibilityMode {
-		return fmt.Sprintf("%s_total", dataTypeSuffix)
 	}
 
 	return dataTypeSuffix

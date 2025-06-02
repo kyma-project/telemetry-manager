@@ -66,34 +66,6 @@ For further examples, see the [samples](https://github.com/kyma-project/telemetr
 
 For details, see the [Telemetry specification file](https://github.com/kyma-project/telemetry-manager/blob/main/apis/operator/v1alpha1/telemetry_types.go).
 
-### Annotations
-
-Backward compatibility for internal metrics in OpenTelemetry:
-OpenTelemetry Collector 0.119.0 introduces breaking changes for internal metrics exposed through the Prometheus endpoint, such as the following:
-
-- The metric name changes. For example, the counter metrics append a `_total` suffix.
-- The metric unit is appended to the metric name. For example, a counter metric `request_duration` with unit `milliseconds` is exposed as `request_duration_milliseconds_total`.
-- The internal metric exporter creates an `otel_scope_info` metric containing the metrics instrumentation scope, and also add labels about instrumentation scope to all metric points.
-
-To maintain backward compatibility, the Telemetry Manager introduces the annotation `telemetry.kyma-project.io/internal-metrics-compatibility-mode` to control the internal metrics suffix. By default, the backward compatibility mode is disabled.
-
-> [!CAUTION]
-> If you are accessing the internal metrics endpoints directly, you must take action:
-> It is recommended to keep backward compatibility mode disabled and use the pipeline status instead. However, if you must access the OTel metrics directly, adapt your approach to match the new format.
-> The backward compatibility annotation is a temporary solution so you have time to update your approach. It is scheduled for removal in a future module update.
-
-To enable the backward compatibility mode, set the annotation `telemetry.kyma-project.io/internal-metrics-compatibility-mode: true` in the Telemetry CR.
-
-```yaml
-apiVersion: operator.kyma-project.io/v1alpha1
-kind: Telemetry
-metadata:
-  name: default
-  namespace: kyma-system
-  annotations:
-    telemetry.kyma-project.io/internal-metrics-compatibility-mode: "true"
-```
-
 <!-- The table below was generated automatically -->
 <!-- Some special tags (html comments) are at the end of lines due to markdown requirements. -->
 <!-- The content between "TABLE-START" and "TABLE-END" will be replaced -->

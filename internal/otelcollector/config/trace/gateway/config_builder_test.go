@@ -254,44 +254,23 @@ func TestBuildConfig(t *testing.T) {
 	})
 
 	t.Run("marshaling", func(t *testing.T) {
-		tests := []struct {
-			name              string
-			goldenFileName    string
-			withOTLPInput     bool
-			compatibilityMode bool
-		}{
-			{
-				name:              "Compatibility mode disabled",
-				goldenFileName:    "config.yaml",
-				compatibilityMode: false,
-			},
-			{
-				name:              "Compatibility mode enabled",
-				goldenFileName:    "config_compatibility_enabled.yaml",
-				compatibilityMode: true,
-			},
-		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				config, _, err := sut.Build(t.Context(), []telemetryv1alpha1.TracePipeline{
-					testutils.NewTracePipelineBuilder().WithName("test").Build(),
-				}, BuildOptions{
-					ClusterName:                     "${KUBERNETES_SERVICE_HOST}",
-					CloudProvider:                   "test-cloud-provider",
-					InternalMetricCompatibilityMode: tt.compatibilityMode,
-				})
-				require.NoError(t, err)
 
-				configYAML, err := yaml.Marshal(config)
-				require.NoError(t, err, "failed to marshal config")
+		config, _, err := sut.Build(t.Context(), []telemetryv1alpha1.TracePipeline{
+			testutils.NewTracePipelineBuilder().WithName("test").Build(),
+		}, BuildOptions{
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
+			CloudProvider: "test-cloud-provider",
+		})
+		require.NoError(t, err)
 
-				goldenFilePath := filepath.Join("testdata", tt.goldenFileName)
-				goldenFile, err := os.ReadFile(goldenFilePath)
-				require.NoError(t, err, "failed to load golden file")
+		configYAML, err := yaml.Marshal(config)
+		require.NoError(t, err, "failed to marshal config")
 
-				require.NoError(t, err)
-				require.Equal(t, string(goldenFile), string(configYAML))
-			})
-		}
+		goldenFilePath := filepath.Join("testdata", "config.yaml")
+		goldenFile, err := os.ReadFile(goldenFilePath)
+		require.NoError(t, err, "failed to load golden file")
+
+		require.NoError(t, err)
+		require.Equal(t, string(goldenFile), string(configYAML))
 	})
 }
