@@ -97,7 +97,7 @@ The default protocol for shipping the data to a backend is GRPC, but you can cho
         endpoint:
           value: https://backend.example.com:4318
   ```
-
+  
 ### 2. Enable Istio Tracing
 
 By default, the tracing feature of the Istio module is disabled to avoid increased network utilization if there is no TracePipeline.
@@ -438,7 +438,7 @@ To detect and fix such situations, check the [pipeline status](./resources/04-tr
 - **Throughput**: Assuming an average span with 40 attributes with 64 characters, the maximum throughput is 4200 span/sec ~= 15.000.000 spans/hour. If this limit is exceded, spans are refused. To increase the maximum throughput, manually scale out the gateway by increasing the number of replicas.
 - **Unavailability of Output**: For up to 5 minutes, a retry for data is attempted when the destination is unavailable. After that, data is dropped.
 - **No Guaranteed Delivery**: The used buffers are volatile. If the OTel Collector instance crashes, trace data can be lost.
-- **Multiple TracePipeline Support**: The maximum amount of TracePipeline resources is 3.
+- **Multiple TracePipeline Support**: The maximum amount of TracePipeline resources is 5.
 - **System Span Filtering**: System-related spans reported by Istio are filtered out without the opt-out option, for example:
   - Any communication of applications to the Telemetry gateways
   - Any communication from the gateways to backends
@@ -447,7 +447,7 @@ To detect and fix such situations, check the [pipeline status](./resources/04-tr
 
 ### No Spans Arrive at the Backend
 
-**Symptom**: In the TracePipeline status, the `TelemetryFlowHealthy` condition has status **AllDataDropped**.
+**Symptom**: In the TracePipeline status, the `TelemetryFlowHealthy` condition has status **GatewayAllTelemetryDataDropped**.
 
 **Cause**: Incorrect backend endpoint configuration (such as using the wrong authentication credentials), or the backend is unreachable.
 
@@ -462,7 +462,7 @@ To detect and fix such situations, check the [pipeline status](./resources/04-tr
 **Symptom**:
 
 - The backend is reachable and the connection is properly configured, but some spans are refused.
-- In the TracePipeline status, the `TelemetryFlowHealthy` condition has status **SomeDataDropped**.
+- In the TracePipeline status, the `TelemetryFlowHealthy` condition has status **GatewaySomeTelemetryDataDropped**.
 
 **Cause**: It can happen due to a variety of reasons - for example, the backend is limiting the ingestion rate.
 
@@ -512,9 +512,9 @@ If you just want to see traces for one particular request, you can manually forc
 
 ### Gateway Buffer Filling Up
 
-**Symptom**: In the TracePipeline status, the `TelemetryFlowHealthy` condition has status **BufferFillingUp**.
+**Symptom**: In the TracePipeline status, the `TelemetryFlowHealthy` condition has status **GatewayBufferFillingUp**.
 
-**Cause**: The backend export rate is too low compared to the gateway ingestion rate.
+**Cause**: The backend ingestion rate is too low compared to the gateway export rate.
 
 **Solution**:
 

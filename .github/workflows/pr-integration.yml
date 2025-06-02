@@ -32,9 +32,11 @@ on:
       - "!**_test.go"
       - "!docs/**"
       - "test/e2e/*.go"
+      - "test/e2e-migrated/*.go"
       - "test/integration/istio/*.go"
       - ".github/workflows/pr-integration.yml"
       - ".github/template/**"
+      - ".env"
 
   workflow_dispatch:
 
@@ -54,14 +56,11 @@ jobs:
       fail-fast: false
       matrix:
         ginkgo-labels:
-          - logs-fluentbit
-          - logs-otel
           - "metrics && set_a"
           - "metrics && set_b"
           - "metrics && set_c"
           - traces
           - telemetry
-          - max-pipeline
           - misc
     runs-on: ubuntu-latest
     steps:
@@ -71,14 +70,13 @@ jobs:
       - name: Prepare test
         uses: "./.github/template/prepare-test"
         with:
-          release: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deploy Test Prerequisites
         uses: "./.github/template/deploy-test-prerequisites"
 
       - name: Run tests
-        run: bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags e2e --label-filter="${{ matrix.ginkgo-labels }} && !experimental" -r test/e2e
+        run: bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags e2e --label-filter="${{ matrix.ginkgo-labels }} && !experimental &&!max-pipeline" -r test/e2e
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"
@@ -93,8 +91,38 @@ jobs:
       fail-fast: false
       matrix:
         ginkgo-labels:
-          - logs-fluentbit
-          - logs-otel
+          - metrics
+          - traces
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Prepare test
+        uses: "./.github/template/prepare-test"
+        with:
+          experimental: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy Test Prerequisites
+        uses: "./.github/template/deploy-test-prerequisites"
+
+      - name: Run tests
+        run: bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags e2e --label-filter="${{ matrix.ginkgo-labels }} && experimental &&!max-pipeline" -r test/e2e
+
+      - name: Finalize test
+        uses: "./.github/template/finalize-test"
+        if: success() || failure()
+        with:
+          failure: failure()
+          job-name: ${{ github.job }}-${{ matrix.ginkgo-labels }}
+
+  e2e-max-pipeline:
+    needs: setup
+    strategy:
+      fail-fast: false
+      matrix:
+        ginkgo-labels:
           - metrics
           - traces
     runs-on: ubuntu-latest
@@ -111,7 +139,7 @@ jobs:
         uses: "./.github/template/deploy-test-prerequisites"
 
       - name: Run tests
-        run: bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags e2e --label-filter="${{ matrix.ginkgo-labels }} && experimental" -r test/e2e
+        run: bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags e2e --label-filter="${{ matrix.ginkgo-labels }} && max-pipeline" -r test/e2e
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"
@@ -130,7 +158,6 @@ jobs:
       - name: Prepare Test
         uses: "./.github/template/prepare-test"
         with:
-          release: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deploy Istio Module
@@ -156,7 +183,7 @@ jobs:
       fail-fast: false
       matrix:
         signal-type:
-          - logs
+          - fluentbit
           - metrics
           - traces
         scenario:
@@ -171,7 +198,6 @@ jobs:
       - name: Prepare Test
         uses: "./.github/template/prepare-test"
         with:
-          release: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deploy Test Prerequisites
@@ -210,11 +236,9 @@ jobs:
       fail-fast: false
       matrix:
         signal-type:
-          - logs
-          - metrics
-          - traces
+          - log-agent
+          - log-gateway
         scenario:
-          - healthy
           - backpressure
           - outage
     runs-on: ubuntu-latest
@@ -225,6 +249,7 @@ jobs:
       - name: Prepare Test
         uses: "./.github/template/prepare-test"
         with:
+          experimental: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deploy Test Prerequisites
@@ -256,3 +281,48 @@ jobs:
         with:
           failure: failure()
           job-name: ${{ github.job }}-${{ matrix.signal-type }}-${{ matrix.scenario }}
+
+  e2e-migrated:
+    needs: setup
+    strategy:
+      fail-fast: false
+      matrix:
+        labels:
+          - name: fluent-bit
+            mode: release
+          - name: fluent-bit
+            mode: experimental
+          - name: log-agent
+            mode: experimental
+          - name: log-gateway
+            mode: experimental
+          - name: max-pipeline
+            mode: experimental
+          - name: max-pipeline-fluent-bit
+            mode: release
+          - name: max-pipeline-otel
+            mode: experimental
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Prepare Test
+        uses: "./.github/template/prepare-test"
+        with:
+          experimental: ${{ matrix.labels.mode == 'experimental' }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy Test Prerequisites
+        uses: "./.github/template/deploy-test-prerequisites"
+
+      - name: Run tests
+        run: |
+          go test -v -timeout=20m ./test/e2e-migrated/logs/... -- -labels=${{ matrix.labels.name }}
+
+      - name: Finalize Test
+        uses: "./.github/template/finalize-test"
+        if: success() || failure()
+        with:
+          failure: failure()
+          job-name: ${{ github.job }}-${{ matrix.labels }}

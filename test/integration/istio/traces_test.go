@@ -17,7 +17,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -50,11 +50,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		objs = append(objs, kitk8s.NewNamespace(istiofiedBackendNs, kitk8s.WithIstioInjection()).K8sObject())
 		objs = append(objs, kitk8s.NewNamespace(appNs).K8sObject())
 
-		backend1 := backend.New(backendNs, backend.SignalTypeTraces)
+		backend1 := kitbackend.New(backendNs, kitbackend.SignalTypeTraces)
 		objs = append(objs, backend1.K8sObjects()...)
 		backendExportURL = backend1.ExportURL(suite.ProxyClient)
 
-		backend2 := backend.New(istiofiedBackendNs, backend.SignalTypeTraces)
+		backend2 := kitbackend.New(istiofiedBackendNs, kitbackend.SignalTypeTraces)
 		objs = append(objs, backend2.K8sObjects()...)
 		istiofiedBackendExportURL = backend2.ExportURL(suite.ProxyClient)
 
@@ -93,14 +93,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have a trace backend running", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: backendNs})
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: istiofiedBackendNs})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: istiofiedBackendNs})
 		})
 
 		It("Should have sample app running with Istio sidecar", func() {
@@ -113,12 +113,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		})
 
 		It("Should have a running trace gateway deployment", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.TraceGatewayName)
+			assert.DeploymentReady(suite.Ctx, kitkyma.TraceGatewayName)
 		})
 
 		It("Should have the trace pipelines running", func() {
-			assert.TracePipelineHealthy(suite.Ctx, suite.K8sClient, pipeline1Name)
-			assert.TracePipelineHealthy(suite.Ctx, suite.K8sClient, pipeline2Name)
+			assert.TracePipelineHealthy(suite.Ctx, pipeline1Name)
+			assert.TracePipelineHealthy(suite.Ctx, pipeline2Name)
 		})
 
 		It("Trace gateway with should answer requests", func() {
@@ -173,7 +173,7 @@ func verifySidecarPresent(namespace string, labelSelector map[string]string) {
 			Namespace:     namespace,
 		}
 
-		hasIstioSidecar, err := assert.HasContainer(suite.Ctx, suite.K8sClient, listOptions, "istio-proxy")
+		hasIstioSidecar, err := assert.HasContainer(suite.Ctx, listOptions, "istio-proxy")
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(hasIstioSidecar).To(BeTrueBecause("Istio sidecar not present"))
 	}, periodic.EventuallyTimeout*2, periodic.DefaultInterval).Should(Succeed())
@@ -185,7 +185,7 @@ func verifyAppIsRunning(namespace string, labelSelector map[string]string) {
 		Namespace:     namespace,
 	}
 
-	assert.PodsReady(suite.Ctx, suite.K8sClient, listOptions)
+	assert.PodsReady(suite.Ctx, listOptions)
 }
 
 func verifyIstioSpans(backendURL, namespace string) {

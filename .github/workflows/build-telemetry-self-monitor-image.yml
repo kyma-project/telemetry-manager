@@ -70,6 +70,8 @@ jobs:
       context: dependencies/telemetry-self-monitor
       build-args: ${{ needs.envs.outputs.build-args }}
       tags: ${{ needs.envs.outputs.build-tag }}
+      build-engine: buildx
+      platforms: "linux/amd64,linux/arm64"
   list-images:
     needs: build-image
     runs-on: ubuntu-latest

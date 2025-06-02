@@ -12,7 +12,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
@@ -33,7 +33,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 			var objs []client.Object
 			objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-			backend1 := backend.New(mockNs, backend.SignalTypeTraces, backend.WithName(backend1Name))
+			backend1 := kitbackend.New(mockNs, kitbackend.SignalTypeTraces, kitbackend.WithName(backend1Name))
 			objs = append(objs, backend1.K8sObjects()...)
 			backend1ExportURL = backend1.ExportURL(suite.ProxyClient)
 
@@ -43,7 +43,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 				Build()
 			objs = append(objs, &tracePipeline1)
 
-			backend2 := backend.New(mockNs, backend.SignalTypeTraces, backend.WithName(backend2Name))
+			backend2 := kitbackend.New(mockNs, kitbackend.SignalTypeTraces, kitbackend.WithName(backend2Name))
 			objs = append(objs, backend2.K8sObjects()...)
 			backend2ExportURL = backend2.ExportURL(suite.ProxyClient)
 
@@ -61,23 +61,23 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have running pipelines", func() {
-			assert.TracePipelineHealthy(suite.Ctx, suite.K8sClient, pipeline1Name)
-			assert.TracePipelineHealthy(suite.Ctx, suite.K8sClient, pipeline2Name)
+			assert.TracePipelineHealthy(suite.Ctx, pipeline1Name)
+			assert.TracePipelineHealthy(suite.Ctx, pipeline2Name)
 		})
 
 		It("Should have a running trace gateway deployment", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.TraceGatewayName)
+			assert.DeploymentReady(suite.Ctx, kitkyma.TraceGatewayName)
 		})
 
 		It("Should have a trace backend running", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
 		})
 
 		It("Should verify traces from telemetrygen are delivered", func() {

@@ -38,6 +38,7 @@ Together with the module release, prepare a new release of the [opentelemetry-co
 7. To make sure that the release tags point to the HEAD commit of the `telemetry-manager/{RELEASE_BRANCH}` branch, rebase the upstream branch into the local branch after the merge was successful.
 
    ```bash
+   git fetch upstream
    git rebase upstream/{RELEASE_BRANCH} {RELEASE_BRANCH}
    ```
 

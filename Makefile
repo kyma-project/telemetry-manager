@@ -114,6 +114,7 @@ manifests: $(CONTROLLER_GEN) $(YQ) $(YAMLFMT) ## Generate WebhookConfiguration, 
 	## Remove empty x-kubernetes-validations arrays from logpipeline crd that can be caused by previous yq manipulations
 	$(YQ) eval 'del(.. | select(select(has("x-kubernetes-validations"))."x-kubernetes-validations" | length == 0)."x-kubernetes-validations")' -i ./config/crd/bases/telemetry.kyma-project.io_logpipelines.yaml
 	$(YQ) eval 'del(.. | select(has("log")).log)' -i ./config/crd/bases/operator.kyma-project.io_telemetries.yaml
+	$(YQ) eval 'del(.. | select(has("enrichments")).enrichments)' -i ./config/crd/bases/operator.kyma-project.io_telemetries.yaml
 	$(YAMLFMT)
 
 .PHONY: manifests-experimental
@@ -149,11 +150,11 @@ tidy: ## Check if there any dirty change for go mod tidy.
 .PHONY: test
 test: $(GINKGO) manifests generate fmt vet tidy ## Run tests.
 	$(GINKGO) run test/testkit/matchers/...
-	GOFIPS140=latest go test ./... -coverprofile cover.out
+	GOFIPS140=latest go test $$(go list ./... | grep -v /test/) -coverprofile cover.out
 
 .PHONY: check-coverage
 check-coverage: $(GO_TEST_COVERAGE) ## Check tests coverage.
-	GOFIPS140=latest go test ./... -short -coverprofile=cover.out -covermode=atomic -coverpkg=./...
+	GOFIPS140=latest go test $$(go list ./... | grep -v /test/) -short -coverprofile=cover.out -covermode=atomic -coverpkg=./...
 	$(GO_TEST_COVERAGE) --config=./.testcoverage.yml
 
 

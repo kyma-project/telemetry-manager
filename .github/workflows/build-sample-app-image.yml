@@ -48,6 +48,8 @@ jobs:
       dockerfile: Dockerfile
       context: docs/user/integration/sample-app
       tags: ${{ needs.envs.outputs.tags }}
+      build-engine: buildx
+      platforms: "linux/amd64,linux/arm64"
   list-images:
     needs: build-image
     runs-on: ubuntu-latest

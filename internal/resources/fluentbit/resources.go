@@ -21,7 +21,7 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
-	"github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
+	fbports "github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 )
@@ -275,7 +275,7 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string) *appsv1.DaemonSet {
 	annotations := make(map[string]string)
 	annotations[commonresources.AnnotationKeyChecksumConfig] = checksum
-	annotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = fmt.Sprintf("%v,%v", ports.HTTP, ports.ExporterMetrics)
+	annotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = fmt.Sprintf("%v,%v", fbports.HTTP, fbports.ExporterMetrics)
 
 	podLabels := Labels()
 	maps.Copy(podLabels, aad.extraPodLabels)
@@ -304,7 +304,7 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 						commonresources.WithCapabilities("FOWNER"),
 						commonresources.WithEnvVarsFromSecret(fmt.Sprintf("%s-env", LogAgentName)),
 						commonresources.WithRunAsRoot(),
-						commonresources.WithPort("http", ports.HTTP),
+						commonresources.WithPort("http", fbports.HTTP),
 						commonresources.WithProbes(aad.fluentBitLivenessProbe(), aad.fluentBitReadinessProbe()),
 						commonresources.WithResources(aad.fluentBitResources()),
 						commonresources.WithVolumeMounts(aad.fluentBitVolumeMounts()),
@@ -314,7 +314,7 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 							"--storage-path=/data/flb-storage/",
 							"--metric-name=telemetry_fsbuffer_usage_bytes",
 						}),
-						commonresources.WithPort("http-metrics", ports.ExporterMetrics),
+						commonresources.WithPort("http-metrics", fbports.ExporterMetrics),
 						commonresources.WithResources(aad.exporterResources()),
 						commonresources.WithVolumeMounts(aad.exporterVolumeMounts()),
 					),
@@ -497,7 +497,7 @@ func makeMetricsService(name types.NamespacedName) *corev1.Service {
 			Labels:    serviceLabels,
 			Annotations: map[string]string{
 				commonresources.AnnotationKeyPrometheusScrape: "true",
-				commonresources.AnnotationKeyPrometheusPort:   strconv.Itoa(ports.HTTP),
+				commonresources.AnnotationKeyPrometheusPort:   strconv.Itoa(fbports.HTTP),
 				commonresources.AnnotationKeyPrometheusScheme: "http",
 				commonresources.AnnotationKeyPrometheusPath:   "/api/v2/metrics/prometheus",
 			},
@@ -507,7 +507,7 @@ func makeMetricsService(name types.NamespacedName) *corev1.Service {
 				{
 					Name:       "http",
 					Protocol:   "TCP",
-					Port:       int32(ports.HTTP),
+					Port:       int32(fbports.HTTP),
 					TargetPort: intstr.FromString("http"),
 				},
 			},
@@ -527,7 +527,7 @@ func makeExporterMetricsService(name types.NamespacedName) *corev1.Service {
 			Labels:    serviceLabels,
 			Annotations: map[string]string{
 				commonresources.AnnotationKeyPrometheusScrape: "true",
-				commonresources.AnnotationKeyPrometheusPort:   strconv.Itoa(ports.ExporterMetrics),
+				commonresources.AnnotationKeyPrometheusPort:   strconv.Itoa(fbports.ExporterMetrics),
 				commonresources.AnnotationKeyPrometheusScheme: "http",
 			},
 		},
@@ -536,7 +536,7 @@ func makeExporterMetricsService(name types.NamespacedName) *corev1.Service {
 				{
 					Name:       "http-metrics",
 					Protocol:   "TCP",
-					Port:       int32(ports.ExporterMetrics),
+					Port:       int32(fbports.ExporterMetrics),
 					TargetPort: intstr.FromString("http-metrics"),
 				},
 			},
@@ -571,7 +571,7 @@ func makeConfigMap(name types.NamespacedName) *corev1.ConfigMap {
 
 @INCLUDE dynamic/*.conf
 `
-	fluentBitConfig = strings.Replace(fluentBitConfig, "{{ HTTP_PORT }}", strconv.Itoa(ports.HTTP), 1)
+	fluentBitConfig = strings.Replace(fluentBitConfig, "{{ HTTP_PORT }}", strconv.Itoa(fbports.HTTP), 1)
 
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -622,13 +622,27 @@ func makeParserConfigmap(name types.NamespacedName) *corev1.ConfigMap {
 func makeLuaConfigMap(name types.NamespacedName) *corev1.ConfigMap {
 	//nolint:dupword // Ignore lua syntax code duplications.
 	luaFilter := `
-function kubernetes_map_keys(tag, timestamp, record)
+function enrich_app_name(tag, timestamp, record)
   if record.kubernetes == nil then
     return 0
   end
+  enrich_app_name_internal(record.kubernetes)
+  return 2, timestamp, record
+end
+function dedot_and_enrich_app_name(tag, timestamp, record)
+  if record.kubernetes == nil then
+    return 0
+  end
+  enrich_app_name_internal(record.kubernetes)
   map_keys(record.kubernetes.annotations)
   map_keys(record.kubernetes.labels)
-  return 1, timestamp, record
+  return 2, timestamp, record
+end
+function enrich_app_name_internal(table)
+  if table.labels == nil then
+    return 0
+  end
+  table["app_name"] = table.labels["app.kubernetes.io/name"] or table.labels["app"]
 end
 function map_keys(table)
   if table == nil then

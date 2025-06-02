@@ -19,8 +19,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
@@ -42,7 +42,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		backend := backend.New(mockNs, backend.SignalTypeLogs)
+		backend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsFluentBit)
 		objs = append(objs, backend.K8sObjects()...)
 		backendExportURL = backend.ExportURL(suite.ProxyClient)
 
@@ -97,18 +97,18 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 				k8sObjects = append(k8sObjects, overrides)
 			}
 
-			Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 		})
-		Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+		Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 	})
 
 	Context("When a logpipeline with HTTP output exists", Ordered, func() {
 		It("Should have a running logpipeline", func() {
-			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+			assert.FluentBitLogPipelineHealthy(suite.Ctx, pipelineName)
 		})
 
 		It("Should have a log backend running", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
 		})
 
 		It("Should have INFO level logs in the backend", func() {
@@ -117,9 +117,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					HaveFlatFluentBitLogs(ContainElement(SatisfyAll(
-						HavePodName(ContainSubstring("telemetry-manager")),
-						HaveLevel(Equal("INFO")),
+					fluentbit.HaveFlatLogs(ContainElement(SatisfyAll(
+						fluentbit.HavePodName(ContainSubstring("telemetry-manager")),
+						fluentbit.HaveLevel(Equal("INFO")),
 					))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
@@ -131,10 +131,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					HaveFlatFluentBitLogs(Not(ContainElement(SatisfyAll(
-						HavePodName(ContainSubstring("telemetry-manager")),
-						HaveLevel(Equal("DEBUG")),
-						HaveTimestamp(BeTemporally(">=", now)),
+					fluentbit.HaveFlatLogs(Not(ContainElement(SatisfyAll(
+						fluentbit.HavePodName(ContainSubstring("telemetry-manager")),
+						fluentbit.HaveLevel(Equal("DEBUG")),
+						fluentbit.HaveTimestamp(BeTemporally(">=", now)),
 					)))),
 				))
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
@@ -142,7 +142,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 
 		It("Should add the overrides configmap and modify the log pipeline", func() {
 			overrides = kitk8s.NewOverrides().WithLogLevel(kitk8s.DEBUG).K8sObject()
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, overrides)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, overrides)).Should(Succeed())
 
 			lookupKey := types.NamespacedName{
 				Name: pipelineName,
@@ -167,10 +167,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					HaveFlatFluentBitLogs(ContainElement(SatisfyAll(
-						HavePodName(ContainSubstring("telemetry-manager")),
-						HaveLevel(Equal("DEBUG")),
-						HaveTimestamp(BeTemporally(">=", now)),
+					fluentbit.HaveFlatLogs(ContainElement(SatisfyAll(
+						fluentbit.HavePodName(ContainSubstring("telemetry-manager")),
+						fluentbit.HaveLevel(Equal("DEBUG")),
+						fluentbit.HaveTimestamp(BeTemporally(">=", now)),
 					))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
