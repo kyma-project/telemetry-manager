@@ -83,7 +83,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		})
 
 		It("Should have the log pipeline running", func() {
-			assert.FluentBitLogPipelineHealthy(suite.Ctx, pipelineName)
+			assert.FluentBitLogPipelineHealthy(GinkgoT(), pipelineName)
 		})
 
 		It("Should have a running log agent daemonset", func() {

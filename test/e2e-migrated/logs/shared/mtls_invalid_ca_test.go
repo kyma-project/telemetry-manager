@@ -73,13 +73,13 @@ func TestMTLSInvalidCA_OTel(t *testing.T) {
 			})
 			Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-			assert.LogPipelineHasCondition(t.Context(), pipelineName, metav1.Condition{
+			assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonTLSConfigurationInvalid,
 			})
 
-			assert.LogPipelineHasCondition(t.Context(), pipelineName, metav1.Condition{
+			assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
 				Type:   conditions.TypeFlowHealthy,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonSelfMonConfigNotGenerated,
@@ -133,13 +133,13 @@ func TestMTLSInvalidCA_FluentBit(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.LogPipelineHasCondition(t.Context(), pipelineName, metav1.Condition{
+	assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonTLSConfigurationInvalid,
 	})
 
-	assert.LogPipelineHasCondition(t.Context(), pipelineName, metav1.Condition{
+	assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
 		Type:   conditions.TypeFlowHealthy,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonSelfMonConfigNotGenerated,

@@ -52,19 +52,21 @@ func TestKeepAnnotations(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.FluentBitLogPipelineHealthy(t.Context(), pipelineName)
+	assert.FluentBitLogPipelineHealthy(t, pipelineName)
 	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
 	assert.DeploymentReady(t.Context(), logProducer.NamespacedName())
 
-	assert.BackendDataEventuallyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(
-		ContainElement(SatisfyAll(
+	assert.BackendDataEventuallyMatches(t, backend,
+		fluentbit.HaveFlatLogs(ContainElement(
 			fluentbit.HaveKubernetesAnnotations(HaveKeyWithValue("release", "v1.0.0")),
-		))))
+		)),
+	)
 
-	assert.BackendDataConsistentlyMatches(t.Context(), backend, fluentbit.HaveFlatLogs(
-		ContainElement(SatisfyAll(
+	assert.BackendDataConsistentlyMatches(t, backend,
+		fluentbit.HaveFlatLogs(ContainElement(SatisfyAll(
 			fluentbit.HaveKubernetesLabels(BeEmpty()),
 			fluentbit.HaveKubernetesAttributes(Not(HaveKey("app_name"))),
-		))))
+		))),
+	)
 }

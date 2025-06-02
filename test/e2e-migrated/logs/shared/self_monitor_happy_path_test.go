@@ -81,7 +81,7 @@ func TestSelfMonitorHappyPath_OTel(t *testing.T) {
 			})
 			Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-			assert.OTelLogPipelineHealthy(t.Context(), pipelineName)
+			assert.OTelLogPipelineHealthy(t, pipelineName)
 
 			assert.DeploymentReady(t.Context(), kitkyma.LogGatewayName)
 			assert.DeploymentReady(t.Context(), backend.NamespacedName())
@@ -90,7 +90,7 @@ func TestSelfMonitorHappyPath_OTel(t *testing.T) {
 				assert.DaemonSetReady(t.Context(), kitkyma.LogAgentName)
 			}
 
-			assert.OTelLogsFromNamespaceDelivered(t.Context(), backend, genNs)
+			assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
 
 			assert.SelfMonitorIsHealthyForPipeline(t.Context(), suite.K8sClient, pipelineName)
 		})
@@ -129,13 +129,13 @@ func TestSelfMonitorHappyPath_FluentBit(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.FluentBitLogPipelineHealthy(t.Context(), pipelineName)
+	assert.FluentBitLogPipelineHealthy(t, pipelineName)
 
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
 	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 	assert.DeploymentReady(t.Context(), kitkyma.SelfMonitorName)
 
-	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend, genNs)
+	assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
 
 	assert.SelfMonitorIsHealthyForPipeline(t.Context(), suite.K8sClient, pipelineName)
 }
