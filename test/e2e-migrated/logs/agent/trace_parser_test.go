@@ -63,11 +63,9 @@ func TestTraceParser(t *testing.T) {
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
 	assert.DaemonSetReady(t.Context(), kitkyma.LogAgentName)
 
-	assert.OTelLogPipelineHealthy(t.Context(), pipelineName)
+	assert.OTelLogPipelineHealthy(t, pipelineName)
 
-	assert.BackendDataEventuallyMatches(
-		t.Context(),
-		backend,
+	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatLogs(ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("scenario", "traceIdFullOnly")),
 			HaveTraceID(Equal("255c2212dd02c02ac59a923ff07aec74")),
@@ -81,9 +79,7 @@ func TestTraceParser(t *testing.T) {
 		"Scenario traceIdFullOnly should parse all trace_id attributes and remove them",
 	)
 
-	assert.BackendDataEventuallyMatches(
-		t.Context(),
-		backend,
+	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatLogs(ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("scenario", "traceparentOnly")),
 			HaveTraceID(Equal("80e1afed08e019fc1110464cfa66635c")),
@@ -97,9 +93,7 @@ func TestTraceParser(t *testing.T) {
 		"Scenario traceparentOnly should parse the traceparent attribute and remove it",
 	)
 
-	assert.BackendDataConsistentlyMatches(
-		t.Context(),
-		backend,
+	assert.BackendDataConsistentlyMatches(t, backend,
 		HaveFlatLogs(ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("scenario", "traceIdPartialOnly")),
 			HaveTraceID(BeEmpty()),
@@ -111,9 +105,7 @@ func TestTraceParser(t *testing.T) {
 		"Scenario traceIdPartialOnly should not parse any trace attribute and keep the span_id",
 	)
 
-	assert.BackendDataConsistentlyMatches(
-		t.Context(),
-		backend,
+	assert.BackendDataConsistentlyMatches(t, backend,
 		HaveFlatLogs(ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("scenario", "traceIdAndTraceparent")),
 			HaveTraceID(Equal("255c2212dd02c02ac59a923ff07aec74")),
@@ -127,9 +119,7 @@ func TestTraceParser(t *testing.T) {
 		"Scenario traceIdAndTraceparent should parse trace attributes, and remove them, and keep traceparent attribute",
 	)
 
-	assert.BackendDataConsistentlyMatches(
-		t.Context(),
-		backend,
+	assert.BackendDataConsistentlyMatches(t, backend,
 		HaveFlatLogs(ContainElement(SatisfyAll(
 			HaveLogBody(Equal(stdloggen.DefaultLine)),
 			HaveTraceID(BeEmpty()),

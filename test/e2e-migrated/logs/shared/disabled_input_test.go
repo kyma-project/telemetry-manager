@@ -70,11 +70,9 @@ func TestDisabledInput_OTel(t *testing.T) {
 	// If OTLP input is disabled, THEN the logs pushed the gateway should not be sent to the backend
 	assert.DeploymentReady(t.Context(), kitkyma.LogGatewayName)
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
-	assert.OTelLogPipelineHealthy(t.Context(), pipelineName)
+	assert.OTelLogPipelineHealthy(t, pipelineName)
 
-	assert.BackendDataConsistentlyMatches(t.Context(), backend, HaveFlatLogs(
-		BeEmpty(),
-	))
+	assert.BackendDataConsistentlyMatches(t, backend, HaveFlatLogs(BeEmpty()))
 }
 
 func TestDisabledInput_FluentBit(t *testing.T) {

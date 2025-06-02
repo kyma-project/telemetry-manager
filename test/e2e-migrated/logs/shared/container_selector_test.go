@@ -73,16 +73,16 @@ func TestContainerSelector_OTel(t *testing.T) {
 
 	assert.DaemonSetReady(t.Context(), kitkyma.LogAgentName)
 
-	assert.OTelLogPipelineHealthy(t.Context(), includePipelineName)
-	assert.OTelLogPipelineHealthy(t.Context(), excludePipelineName)
+	assert.OTelLogPipelineHealthy(t, includePipelineName)
+	assert.OTelLogPipelineHealthy(t, excludePipelineName)
 
 	// backend1 - only container1 should be delivered
-	assert.OTelLogsFromContainerDelivered(t.Context(), backend1, container1)
-	assert.OTelLogsFromContainerNotDelivered(t.Context(), backend1, container2)
+	assert.OTelLogsFromContainerDelivered(t, backend1, container1)
+	assert.OTelLogsFromContainerNotDelivered(t, backend1, container2)
 
 	// backend2 - only container2 should be delivered
-	assert.OTelLogsFromContainerNotDelivered(t.Context(), backend2, container1)
-	assert.OTelLogsFromContainerDelivered(t.Context(), backend2, container2)
+	assert.OTelLogsFromContainerNotDelivered(t, backend2, container1)
+	assert.OTelLogsFromContainerDelivered(t, backend2, container2)
 }
 
 func TestContainerSelector_FluentBit(t *testing.T) {
@@ -136,14 +136,14 @@ func TestContainerSelector_FluentBit(t *testing.T) {
 	assert.DeploymentReady(t.Context(), backend2.NamespacedName())
 	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 
-	assert.FluentBitLogPipelineHealthy(t.Context(), includePipelineName)
-	assert.FluentBitLogPipelineHealthy(t.Context(), excludePipelineName)
+	assert.FluentBitLogPipelineHealthy(t, includePipelineName)
+	assert.FluentBitLogPipelineHealthy(t, excludePipelineName)
 
 	// backend1 - only container1 should be delivered
-	assert.FluentBitLogsFromContainerDelivered(t.Context(), backend1, container1)
-	assert.FluentBitLogsFromContainerNotDelivered(t.Context(), backend1, container2)
+	assert.FluentBitLogsFromContainerDelivered(t, backend1, container1)
+	assert.FluentBitLogsFromContainerNotDelivered(t, backend1, container2)
 
 	// backend2 - only container2 should be delivered
-	assert.FluentBitLogsFromContainerNotDelivered(t.Context(), backend2, container1)
-	assert.FluentBitLogsFromContainerDelivered(t.Context(), backend2, container2)
+	assert.FluentBitLogsFromContainerNotDelivered(t, backend2, container1)
+	assert.FluentBitLogsFromContainerDelivered(t, backend2, container2)
 }
