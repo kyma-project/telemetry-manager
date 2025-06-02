@@ -186,7 +186,6 @@ func TestBuildAgentConfig(t *testing.T) {
 		})
 	})
 	t.Run("marshaling", func(t *testing.T) {
-
 		collectorConfig, _, err := sut.Build(t.Context(), []telemetryv1alpha1.LogPipeline{
 			testutils.NewLogPipelineBuilder().WithName("test").
 				WithApplicationInput(true).WithKeepOriginalBody(true).

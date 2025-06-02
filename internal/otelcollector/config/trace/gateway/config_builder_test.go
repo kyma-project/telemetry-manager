@@ -254,7 +254,6 @@ func TestBuildConfig(t *testing.T) {
 	})
 
 	t.Run("marshaling", func(t *testing.T) {
-
 		config, _, err := sut.Build(t.Context(), []telemetryv1alpha1.TracePipeline{
 			testutils.NewTracePipelineBuilder().WithName("test").Build(),
 		}, BuildOptions{
