@@ -63,11 +63,10 @@ func TestSeverityParser(t *testing.T) {
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
 	assert.DaemonSetReady(t.Context(), kitkyma.LogAgentName)
 
-	assert.OTelLogPipelineHealthy(t.Context(), pipelineName)
+	assert.OTelLogPipelineHealthy(t, pipelineName)
 
-	assert.BackendDataEventuallyMatches(
-		t.Context(),
-		backend, HaveFlatLogs(ContainElement(SatisfyAll(
+	assert.BackendDataEventuallyMatches(t, backend,
+		HaveFlatLogs(ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("scenario", "levelAndINFO")),
 			HaveSeverityNumber(Equal(9)),
 			HaveSeverityText(Equal("INFO")),
@@ -76,9 +75,7 @@ func TestSeverityParser(t *testing.T) {
 		"Scenario levelAndINFO should parse level attribute and remove it",
 	)
 
-	assert.BackendDataEventuallyMatches(
-		t.Context(),
-		backend,
+	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatLogs(ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("scenario", "levelAndWarning")),
 			HaveSeverityNumber(Equal(13)),
@@ -88,9 +85,7 @@ func TestSeverityParser(t *testing.T) {
 		"Scenario levelAndWarning should parse level attribute and remove it",
 	)
 
-	assert.BackendDataEventuallyMatches(
-		t.Context(),
-		backend,
+	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatLogs(ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("scenario", "log.level")),
 			HaveSeverityText(Equal("WARN")),
@@ -99,9 +94,8 @@ func TestSeverityParser(t *testing.T) {
 		"Scenario log.level should parse log.level attribute and remove it",
 	)
 
-	assert.BackendDataEventuallyMatches(
-		t.Context(),
-		backend, HaveFlatLogs(ContainElement(SatisfyAll(
+	assert.BackendDataEventuallyMatches(t, backend,
+		HaveFlatLogs(ContainElement(SatisfyAll(
 			HaveLogBody(Equal(stdloggen.DefaultLine)),
 			HaveSeverityNumber(Equal(0)), // default value
 			HaveSeverityText(BeEmpty()),

@@ -36,6 +36,8 @@ on:
       - "test/integration/istio/*.go"
       - ".github/workflows/pr-integration.yml"
       - ".github/template/**"
+      - ".env"
+      - ".k3d-kyma.yaml"
 
   workflow_dispatch:
 

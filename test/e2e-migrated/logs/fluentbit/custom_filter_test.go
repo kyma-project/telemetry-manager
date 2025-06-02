@@ -79,10 +79,10 @@ func TestCustomFilterAllowed(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.FluentBitLogPipelineHealthy(t.Context(), pipelineName)
-	assert.LogPipelineUnsupportedMode(t.Context(), pipelineName, true)
+	assert.FluentBitLogPipelineHealthy(t, pipelineName)
+	assert.LogPipelineUnsupportedMode(t, pipelineName, true)
 	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
-	assert.FluentBitLogsFromNamespaceDelivered(t.Context(), backend, includeNs)
-	assert.FluentBitLogsFromNamespaceNotDelivered(t.Context(), backend, excludeNs)
+	assert.FluentBitLogsFromNamespaceDelivered(t, backend, includeNs)
+	assert.FluentBitLogsFromNamespaceNotDelivered(t, backend, excludeNs)
 }
