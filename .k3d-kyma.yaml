@@ -9,11 +9,6 @@ servers: 1
 agents: 0
 kubeAPI:
   hostPort: '6550'
-registries:
-  create:
-    name: kyma
-    hostPort: '5001'
-    image: europe-docker.pkg.dev/kyma-project/prod/external/library/registry:2
 
 options:
   k3s:
