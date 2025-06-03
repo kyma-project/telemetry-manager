@@ -1,6 +1,6 @@
 //go:build e2e
 
-package metrics
+package traces
 
 import (
 	"net/http"
@@ -15,22 +15,22 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelTraces, suite.LabelExperimental), Ordered, func() {
 	const (
 		k8sLabelKeyPrefix = "k8s.pod.label"
-		logLabelKeyPrefix = "metric.test.prefix"
+		logLabelKeyPrefix = "trace.test.prefix"
 
-		labelKeyExactMatch     = "metric.test.exact.should.match"
+		labelKeyExactMatch     = "trace.test.exact.should.match"
 		labelKeyPrefixMatch1   = logLabelKeyPrefix + ".should.match1"
 		labelKeyPrefixMatch2   = logLabelKeyPrefix + ".should.match2"
-		labelKeyShouldNotMatch = "metric.test.label.should.not.match"
+		labelKeyShouldNotMatch = "trace.test.label.should.not.match"
 
 		labelValueExactMatch     = "exact_match"
 		labelValuePrefixMatch1   = "prefix_match1"
@@ -50,11 +50,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		backend = kitbackend.New(mockNs, kitbackend.SignalTypeMetrics)
+		backend = kitbackend.New(mockNs, kitbackend.SignalTypeTraces)
 		backendExportURL = backend.ExportURL(suite.ProxyClient)
 		objs = append(objs, backend.K8sObjects()...)
 
-		metricPipeline := testutils.NewMetricPipelineBuilder().
+		tracePipeline := testutils.NewTracePipelineBuilder().
 			WithName(pipelineName).
 			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).Build()
 
@@ -65,14 +65,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 			labelKeyShouldNotMatch: labelValueShouldNotMatch,
 		}
 
-		objs = append(objs, telemetrygen.NewPod(mockNs, telemetrygen.SignalTypeMetrics).WithLabels(genLabels).K8sObject(),
-			&metricPipeline,
+		objs = append(objs, telemetrygen.NewPod(mockNs, telemetrygen.SignalTypeTraces).WithLabels(genLabels).K8sObject(),
+			&tracePipeline,
 		)
 
 		return objs
 	}
 
-	Context("When a metricpipeline exists", Ordered, func() {
+	Context("When a tracepipeline exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
@@ -83,8 +83,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 
 		})
 
-		It("Should have a running metric gateway deployment", func() {
-			assert.DeploymentReady(suite.Ctx, kitkyma.MetricGatewayName)
+		It("Should have a running trace gateway deployment", func() {
+			assert.DeploymentReady(suite.Ctx, kitkyma.TraceGatewayName)
 		})
 
 		It("Should configure label enrichments", func() {
@@ -95,10 +95,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 			telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{
 				ExtractPodLabels: []operatorv1alpha1.PodLabel{
 					{
-						Key: "metric.test.exact.should.match",
+						Key: "trace.test.exact.should.match",
 					},
 					{
-						KeyPrefix: "metric.test.prefix",
+						KeyPrefix: "trace.test.prefix",
 					},
 				},
 			}
@@ -107,24 +107,24 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 			Expect(err).To(Not(HaveOccurred()))
 		})
 
-		It("Should have a metrics backend running", func() {
+		It("Should have a trace backend running", func() {
 			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
 		})
 
-		It("Should have a running pipeline", func() {
-			assert.MetricPipelineHealthy(suite.Ctx, pipelineName)
+		It("Should have a running trace pipeline", func() {
+			assert.TracePipelineHealthy(suite.Ctx, pipelineName)
 		})
 
 		It("Should deliver telemetrygen metrics", func() {
-			assert.MetricsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, mockNs, telemetrygen.MetricNames)
+			assert.TracesFromNamespaceDelivered(suite.ProxyClient, backendExportURL, mockNs)
 		})
 
-		It("Should verify label enrichments for metrics", func() {
+		It("Should verify label enrichments for traces", func() {
 			Eventually(func(g Gomega) {
 				resp, err := suite.ProxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(HaveFlatMetrics(ContainElement(
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatTraces(ContainElement(
 					HaveResourceAttributes(SatisfyAll(
 						HaveKeyWithValue(k8sLabelKeyPrefix+"."+labelKeyExactMatch, labelValueExactMatch),
 						HaveKeyWithValue(k8sLabelKeyPrefix+"."+labelKeyPrefixMatch1, labelValuePrefixMatch1),
