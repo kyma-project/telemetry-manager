@@ -91,7 +91,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 			assert.DeploymentReady(suite.Ctx, kitkyma.MetricGatewayName)
 		})
 
-		It("Should reject scaling below minimum", Label(suite.LabelUpgrade), func() {
+		It("Should configure label enrichments", Label(suite.LabelUpgrade), func() {
 			var telemetry operatorv1alpha1.Telemetry
 			err := suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)
 			Expect(err).NotTo(HaveOccurred())
@@ -123,7 +123,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 			assert.MetricsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, mockNs, telemetrygen.MetricNames)
 		})
 
-		It("Should verify istio logs are present", func() {
+		It("Should verify label enrichments for metrics", func() {
 			Eventually(func(g Gomega) {
 				resp, err := suite.ProxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
