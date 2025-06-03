@@ -16,7 +16,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/processors"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
@@ -249,7 +248,7 @@ func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetr
 	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, gateway.BuildOptions{
 		ClusterName:   clusterInfo.ClusterName,
 		CloudProvider: clusterInfo.CloudProvider,
-		Enrichments:   r.getEnrichmentsFromTelemetry(ctx),
+		Enrichments:   telemetryutils.GetEnrichmentsFromTelemetry(ctx, r.Client, r.telemetryNamespace),
 	})
 
 	if err != nil {
@@ -295,7 +294,7 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 		AgentNamespace:              r.telemetryNamespace,
 		ClusterName:                 k8sutils.GetGardenerShootInfo(ctx, r.Client).ClusterName,
 		CloudProvider:               k8sutils.GetGardenerShootInfo(ctx, r.Client).CloudProvider,
-		Enrichments:                 r.getEnrichmentsFromTelemetry(ctx),
+		Enrichments:                 telemetryutils.GetEnrichmentsFromTelemetry(ctx, r.Client, r.telemetryNamespace),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to build agent config: %w", err)
@@ -342,36 +341,6 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 	}
 
 	return defaultReplicaCount
-}
-
-func (r *Reconciler) getEnrichmentsFromTelemetry(ctx context.Context) processors.Enrichments {
-	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.telemetryNamespace)
-	if err != nil {
-		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: using default enrichments configuration")
-		return processors.Enrichments{}
-	}
-
-	if telemetry.Spec.Enrichments != nil {
-		mapPodLabels := func(values []operatorv1alpha1.PodLabel, fn func(operatorv1alpha1.PodLabel) processors.PodLabel) []processors.PodLabel {
-			var result []processors.PodLabel
-			for i := range values {
-				result = append(result, fn(values[i]))
-			}
-
-			return result
-		}
-
-		return processors.Enrichments{
-			PodLabels: mapPodLabels(telemetry.Spec.Enrichments.ExtractPodLabels, func(value operatorv1alpha1.PodLabel) processors.PodLabel {
-				return processors.PodLabel{
-					Key:       value.Key,
-					KeyPrefix: value.KeyPrefix,
-				}
-			}),
-		}
-	}
-
-	return processors.Enrichments{}
 }
 
 func getGatewayPorts() []int32 {

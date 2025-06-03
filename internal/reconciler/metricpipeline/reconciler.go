@@ -288,6 +288,7 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 		InstrumentationScopeVersion: r.moduleVersion,
 		ClusterName:                 shootInfo.ClusterName,
 		CloudProvider:               shootInfo.CloudProvider,
+		Enrichments:                 telemetryutils.GetEnrichmentsFromTelemetry(ctx, r.Client, r.telemetryNamespace),
 	})
 
 	if err != nil {

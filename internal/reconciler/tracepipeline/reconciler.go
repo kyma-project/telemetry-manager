@@ -245,6 +245,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, gateway.BuildOptions{
 		ClusterName:   clusterInfo.ClusterName,
 		CloudProvider: clusterInfo.CloudProvider,
+		Enrichments:   telemetryutils.GetEnrichmentsFromTelemetry(ctx, r.Client, r.telemetryNamespace),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)
