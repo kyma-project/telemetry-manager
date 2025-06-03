@@ -97,7 +97,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration, suite.LabelExperiment
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
-		It("Should verify istio OTLP logs are present", func() {
+		It("Should verify istio OTLP access logs are present", func() {
 			Eventually(func(g Gomega) {
 				resp, err := suite.ProxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -112,7 +112,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration, suite.LabelExperiment
 						Equal("main"),
 						MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
 					)),
-					Not(log.HaveResourceAttributes(HaveKey(BeElementOf([]string{"cluster_name", "log_name", "zone_name", "node_name"})))),
+
+					log.HaveResourceAttributes(Not(SatisfyAny(
+						HaveKey("cluster_name"),
+						HaveKey("log_name"),
+						HaveKey("zone_name"),
+						HaveKey("node_name")))),
 				)))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
