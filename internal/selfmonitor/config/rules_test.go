@@ -101,7 +101,7 @@ func TestMatchesLogPipelineRule(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := MatchesFluentBitLogPipelineRule(test.labelSet, test.unprefixedRuleName, test.pipelineName)
+			result := MatchesLogPipelineRule(test.labelSet, test.unprefixedRuleName, test.pipelineName)
 			require.Equal(t, test.expectedResult, result)
 		})
 	}

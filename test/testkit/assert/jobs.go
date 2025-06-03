@@ -10,11 +10,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-func JobReady(ctx context.Context, k8sClient client.Client, name types.NamespacedName) {
+func JobReady(ctx context.Context, name types.NamespacedName) {
 	Eventually(func(g Gomega) {
-		ready, err := isJobSuccessful(ctx, k8sClient, name)
+		ready, err := isJobSuccessful(ctx, suite.K8sClient, name)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(ready).To(BeTrueBecause("Job not ready"))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())

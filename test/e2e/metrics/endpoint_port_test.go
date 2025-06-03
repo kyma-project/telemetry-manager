@@ -68,19 +68,19 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetC), 
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should set ConfigurationGenerated condition to False in pipelines", func() {
-			assert.MetricPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineNameInvalid, metav1.Condition{
+			assert.MetricPipelineHasCondition(suite.Ctx, pipelineNameInvalid, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonEndpointInvalid,
 			})
 
-			assert.MetricPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineNameMissingGRPC, metav1.Condition{
+			assert.MetricPipelineHasCondition(suite.Ctx, pipelineNameMissingGRPC, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonEndpointInvalid,
@@ -88,7 +88,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetC), 
 		})
 
 		It("Should set ConfigurationGenerated condition to True in pipelines with missing port and HTTP protocol", func() {
-			assert.MetricPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineNameMissingHTTP, metav1.Condition{
+			assert.MetricPipelineHasCondition(suite.Ctx, pipelineNameMissingHTTP, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonGatewayConfigured,

@@ -72,11 +72,6 @@ func (h *validateHandler) validateLogPipeline(ctx context.Context, logPipeline *
 		return err
 	}
 
-	if err := validatePipelineLimit(logPipeline, &logPipelines); err != nil {
-		log.Error(err, "Maximum number of log pipelines reached")
-		return err
-	}
-
 	if err := validateSpec(logPipeline); err != nil {
 		log.Error(err, "Log pipeline spec validation failed")
 		return err

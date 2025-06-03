@@ -12,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -22,7 +23,7 @@ import (
 var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 
 	Context("When reaching the pipeline limit", Ordered, func() {
-		const maxNumberOfMetricPipelines = 3
+		const maxNumberOfMetricPipelines = telemetrycontrollers.MaxPipelineCount
 
 		var (
 			pipelinesNames       = make([]string, 0, maxNumberOfMetricPipelines)
@@ -54,14 +55,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 					return obj.GetName() == pipelineCreatedFirst.GetName() // first pipeline is deleted separately in one of the specs
 				})
 				k8sObjectsToDelete = append(k8sObjectsToDelete, pipelineCreatedLater)
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjectsToDelete...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjectsToDelete...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have only running pipelines", func() {
 			for _, pipelineName := range pipelinesNames {
-				assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+				assert.MetricPipelineHealthy(suite.Ctx, pipelineName)
 			}
 		})
 
@@ -72,15 +73,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 				pipelineCreatedLater = &pipeline
 				pipelinesNames = append(pipelinesNames, pipelineName)
 
-				Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, &pipeline)).Should(Succeed())
+				Expect(kitk8s.CreateObjects(suite.Ctx, &pipeline)).Should(Succeed())
 
-				assert.MetricPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
+				assert.MetricPipelineHasCondition(suite.Ctx, pipelineName, metav1.Condition{
 					Type:   conditions.TypeConfigurationGenerated,
 					Status: metav1.ConditionFalse,
 					Reason: conditions.ReasonMaxPipelinesExceeded,
 				})
 
-				assert.MetricPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
+				assert.MetricPipelineHasCondition(suite.Ctx, pipelineName, metav1.Condition{
 					Type:   conditions.TypeFlowHealthy,
 					Status: metav1.ConditionFalse,
 					Reason: conditions.ReasonSelfMonConfigNotGenerated,
@@ -90,10 +91,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 
 		It("Should have only running pipeline", func() {
 			By("Deleting a pipeline", func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, pipelineCreatedFirst)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, pipelineCreatedFirst)).Should(Succeed())
 
 				for _, pipeline := range pipelinesNames[1:] {
-					assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, pipeline)
+					assert.MetricPipelineHealthy(suite.Ctx, pipeline)
 				}
 			})
 		})

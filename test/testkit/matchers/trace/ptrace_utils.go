@@ -16,8 +16,8 @@ type FlatTrace struct {
 	ResourceAttributes, SpanAttributes map[string]string
 }
 
-func unmarshalTraces(jsonlMetrics []byte) ([]ptrace.Traces, error) {
-	return matchers.UnmarshalSignals[ptrace.Traces](jsonlMetrics, func(buf []byte) (ptrace.Traces, error) {
+func unmarshalTraces(jsonTraces []byte) ([]ptrace.Traces, error) {
+	return matchers.UnmarshalOTLPJSONData(jsonTraces, func(buf []byte) (ptrace.Traces, error) {
 		var unmarshaler ptrace.JSONUnmarshaler
 		return unmarshaler.UnmarshalTraces(buf)
 	})
@@ -48,8 +48,8 @@ func flattenTraces(td ptrace.Traces) []FlatTrace {
 				span := scopeSpans.Spans().At(k)
 				flatTraces = append(flatTraces, FlatTrace{
 					Name:               span.Name(),
-					ResourceAttributes: attributeToMap(resourceSpans.Resource().Attributes()),
-					SpanAttributes:     attributeToMap(span.Attributes()),
+					ResourceAttributes: attributesToMap(resourceSpans.Resource().Attributes()),
+					SpanAttributes:     attributesToMap(span.Attributes()),
 				})
 			}
 		}
@@ -58,8 +58,8 @@ func flattenTraces(td ptrace.Traces) []FlatTrace {
 	return flatTraces
 }
 
-// attributeToMap converts pdata.AttributeMap to a map using the string representation of the values.
-func attributeToMap(attrs pcommon.Map) map[string]string {
+// attributesToMap converts pdata.AttributeMap to a map using the string representation of the values.
+func attributesToMap(attrs pcommon.Map) map[string]string {
 	attrMap := make(map[string]string)
 
 	attrs.Range(func(k string, v pcommon.Value) bool {

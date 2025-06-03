@@ -27,11 +27,11 @@ func TestCreateRecordModifierFilter(t *testing.T) {
 	require.Equal(t, expected, actual, "Fluent Bit Permanent parser config is invalid")
 }
 
-func TestCreateLuaDedotFilterWithDefinedHostAndDedotSet(t *testing.T) {
+func TestCreateLuaFilterWithDefinedHostAndDedot(t *testing.T) {
 	expected := `[FILTER]
     name   lua
     match  foo.*
-    call   kubernetes_map_keys
+    call   dedot_and_enrich_app_name
     script /fluent-bit/scripts/filter-script.lua
 
 `
@@ -47,11 +47,11 @@ func TestCreateLuaDedotFilterWithDefinedHostAndDedotSet(t *testing.T) {
 		},
 	}
 
-	actual := createLuaDedotFilter(logPipeline)
+	actual := createLuaFilter(logPipeline)
 	require.Equal(t, expected, actual)
 }
 
-func TestCreateLuaDedotFilterWithUndefinedHost(t *testing.T) {
+func TestCreateLuaFilterWithUndefinedHostAndDedot(t *testing.T) {
 	logPipeline := &telemetryv1alpha1.LogPipeline{
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Output: telemetryv1alpha1.LogPipelineOutput{
@@ -60,12 +60,20 @@ func TestCreateLuaDedotFilterWithUndefinedHost(t *testing.T) {
 		},
 	}
 
-	actual := createLuaDedotFilter(logPipeline)
+	actual := createLuaFilter(logPipeline)
 	require.Equal(t, "", actual)
 }
 
-func TestCreateLuaDedotFilterWithDedotFalse(t *testing.T) {
+func TestCreateLuaFilterWithDedotFalse(t *testing.T) {
+	expected := `[FILTER]
+    name   lua
+    match  foo.*
+    call   enrich_app_name
+    script /fluent-bit/scripts/filter-script.lua
+
+`
 	logPipeline := &telemetryv1alpha1.LogPipeline{
+		ObjectMeta: metav1.ObjectMeta{Name: "foo"},
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Output: telemetryv1alpha1.LogPipelineOutput{
 				HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
@@ -76,16 +84,38 @@ func TestCreateLuaDedotFilterWithDedotFalse(t *testing.T) {
 		},
 	}
 
-	actual := createLuaDedotFilter(logPipeline)
-	require.Equal(t, "", actual)
+	actual := createLuaFilter(logPipeline)
+	require.Equal(t, expected, actual)
+}
+
+func TestCreateTimestampModifyFilter(t *testing.T) {
+	expected := `[FILTER]
+    name  modify
+    match foo.*
+    copy  time @timestamp
+
+`
+	logPipeline := &telemetryv1alpha1.LogPipeline{
+		ObjectMeta: metav1.ObjectMeta{Name: "foo"},
+		Spec: telemetryv1alpha1.LogPipelineSpec{
+			Output: telemetryv1alpha1.LogPipelineOutput{
+				HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
+					Host: telemetryv1alpha1.ValueType{Value: "localhost"},
+				},
+			},
+		},
+	}
+
+	actual := createTimestampModifyFilter(logPipeline)
+	require.Equal(t, expected, actual)
 }
 
 func TestMergeSectionsConfig(t *testing.T) {
 	excludePath := strings.Join([]string{
 		"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
-		"/var/log/containers/*system-logs-agent*_kyma-system_collector-*.log",
-		"/var/log/containers/*system-logs-collector*_kyma-system_collector-*.log",
-		"/var/log/containers/telemetry-log-agent_kyma-system_collector-*.log",
+		"/var/log/containers/*system-logs-agent-*_kyma-system_collector-*.log",
+		"/var/log/containers/*system-logs-collector-*_kyma-system_collector-*.log",
+		"/var/log/containers/telemetry-log-agent-*_kyma-system_collector-*.log",
 		"/var/log/containers/*_*_container1-*.log",
 		"/var/log/containers/*_*_container2-*.log",
 	}, ",")
@@ -137,7 +167,7 @@ func TestMergeSectionsConfig(t *testing.T) {
 [FILTER]
     name   lua
     match  foo.*
-    call   kubernetes_map_keys
+    call   dedot_and_enrich_app_name
     script /fluent-bit/scripts/filter-script.lua
 
 [OUTPUT]
@@ -209,9 +239,9 @@ func TestMergeSectionsConfig(t *testing.T) {
 
 func TestMergeSectionsConfigCustomOutput(t *testing.T) {
 	excludePath := strings.Join([]string{
-		"/var/log/containers/*system-logs-agent*_kyma-system_collector-*.log",
-		"/var/log/containers/*system-logs-collector*_kyma-system_collector-*.log",
-		"/var/log/containers/telemetry-log-agent_kyma-system_collector-*.log",
+		"/var/log/containers/*system-logs-agent-*_kyma-system_collector-*.log",
+		"/var/log/containers/*system-logs-collector-*_kyma-system_collector-*.log",
+		"/var/log/containers/telemetry-log-agent-*_kyma-system_collector-*.log",
 	}, ",")
 	expected := fmt.Sprintf(`[INPUT]
     name             tail

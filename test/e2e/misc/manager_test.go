@@ -3,10 +3,13 @@
 package misc
 
 import (
+	"strings"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	schedulingv1 "k8s.io/api/scheduling/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -61,20 +64,30 @@ var _ = Describe(suite.ID(), func() {
 
 		It("Should have a webhook service", Label(suite.LabelTelemetry), func() {
 			var service corev1.Service
-			key := types.NamespacedName{
-				Name:      "telemetry-manager-webhook",
-				Namespace: kitkyma.SystemNamespaceName,
-			}
-			err := suite.K8sClient.Get(suite.Ctx, key, &service)
+			err := suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryManagerWebhookServiceName, &service)
 			Expect(err).NotTo(HaveOccurred())
 
-			Eventually(func() []corev1.EndpointAddress {
-				var endpoints corev1.Endpoints
-				err := suite.K8sClient.Get(suite.Ctx, key, &endpoints)
+			Eventually(func() []string {
+				var endpointsList discoveryv1.EndpointSliceList
+				err := suite.K8sClient.List(suite.Ctx, &endpointsList, client.InNamespace(kitkyma.SystemNamespaceName))
 				Expect(err).NotTo(HaveOccurred())
-				Expect(endpoints.Subsets).NotTo(BeEmpty())
-				return endpoints.Subsets[0].Addresses
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).ShouldNot(BeEmpty())
+
+				var webhookEndpoints *discoveryv1.EndpointSlice
+				for _, endpoints := range endpointsList.Items {
+					// EndpointSlice names are prefixed with the service name
+					if strings.HasPrefix(endpoints.Name, kitkyma.TelemetryManagerWebhookServiceName.Name) {
+						webhookEndpoints = &endpoints
+						break
+					}
+				}
+				Expect(webhookEndpoints).NotTo(BeNil())
+
+				var addresses []string
+				for _, endpoint := range webhookEndpoints.Endpoints {
+					addresses = append(addresses, endpoint.Addresses...)
+				}
+				return addresses
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).ShouldNot(BeEmpty(), "Webhook service endpoints should have IP addresses assigned")
 		})
 
 		It("Should have a metrics service", Label(suite.LabelTelemetry), func() {
@@ -85,15 +98,30 @@ var _ = Describe(suite.ID(), func() {
 			Expect(service.Annotations).Should(HaveKeyWithValue("prometheus.io/scrape", "true"))
 			Expect(service.Annotations).Should(HaveKeyWithValue("prometheus.io/port", "8080"))
 
-			Eventually(func() []corev1.EndpointAddress {
-				var endpoints corev1.Endpoints
-				err := suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryManagerMetricsServiceName, &endpoints)
+			Eventually(func() []string {
+				var endpointsList discoveryv1.EndpointSliceList
+				err := suite.K8sClient.List(suite.Ctx, &endpointsList, client.InNamespace(kitkyma.SystemNamespaceName))
 				Expect(err).NotTo(HaveOccurred())
-				return endpoints.Subsets[0].Addresses
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).ShouldNot(BeEmpty())
+
+				var metricsEndpoints *discoveryv1.EndpointSlice
+				for _, endpoints := range endpointsList.Items {
+					// EndpointSlice names are prefixed with the service name
+					if strings.HasPrefix(endpoints.Name, kitkyma.TelemetryManagerMetricsServiceName.Name) {
+						metricsEndpoints = &endpoints
+						break
+					}
+				}
+				Expect(metricsEndpoints).NotTo(BeNil())
+
+				var addresses []string
+				for _, endpoint := range metricsEndpoints.Endpoints {
+					addresses = append(addresses, endpoint.Addresses...)
+				}
+				return addresses
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).ShouldNot(BeEmpty(), "Metrics service endpoints should have IP addresses assigned")
 		})
 
-		It("Should have LogPipelines CRD", Label(suite.LabelLogsFluentBit), func() {
+		It("Should have LogPipelines CRD", Label(suite.LabelFluentBit), func() {
 			var crd apiextensionsv1.CustomResourceDefinition
 			key := types.NamespacedName{
 				Name: "logpipelines.telemetry.kyma-project.io",
@@ -103,7 +131,7 @@ var _ = Describe(suite.ID(), func() {
 			Expect(crd.Spec.Scope).To(Equal(apiextensionsv1.ClusterScoped))
 		})
 
-		It("Should have LogParsers CRD", Label(suite.LabelLogsFluentBit), func() {
+		It("Should have LogParsers CRD", Label(suite.LabelFluentBit), func() {
 			var crd apiextensionsv1.CustomResourceDefinition
 			key := types.NamespacedName{
 				Name: "logparsers.telemetry.kyma-project.io",
@@ -153,7 +181,7 @@ var _ = Describe(suite.ID(), func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("Should have a Busola extension for LogPipelines CRD", Label(suite.LabelLogsFluentBit), func() {
+		It("Should have a Busola extension for LogPipelines CRD", Label(suite.LabelFluentBit), func() {
 			var cm corev1.ConfigMap
 			key := types.NamespacedName{
 				Name:      "telemetry-logpipelines",

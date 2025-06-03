@@ -73,15 +73,26 @@ type AgentConfigBuilder_Build_Call struct {
 }
 
 // Build is a helper method to define mock.On call
-//   - ctx
-//   - reconcilablePipelines
+//   - ctx context.Context
+//   - reconcilablePipelines []v1alpha1.LogPipeline
 func (_e *AgentConfigBuilder_Expecter) Build(ctx interface{}, reconcilablePipelines interface{}) *AgentConfigBuilder_Build_Call {
 	return &AgentConfigBuilder_Build_Call{Call: _e.mock.On("Build", ctx, reconcilablePipelines)}
 }
 
 func (_c *AgentConfigBuilder_Build_Call) Run(run func(ctx context.Context, reconcilablePipelines []v1alpha1.LogPipeline)) *AgentConfigBuilder_Build_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].([]v1alpha1.LogPipeline))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 []v1alpha1.LogPipeline
+		if args[1] != nil {
+			arg1 = args[1].([]v1alpha1.LogPipeline)
+		}
+		run(
+			arg0,
+			arg1,
+		)
 	})
 	return _c
 }

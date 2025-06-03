@@ -2,10 +2,10 @@ module-name: telemetry
 kind: kyma
 bdba:
   - europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:main
-  - europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20250326-a6475925
-  - europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:3.2.10
-  - europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.124.0-main
-  - europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:3.2.0-825b449
+  - europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20250528-dfa5b526
+  - europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:4.0.3
+  - europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.127.0-main
+  - europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:3.4.1-be41b59
 mend:
   language: golang-mod
   exclude:

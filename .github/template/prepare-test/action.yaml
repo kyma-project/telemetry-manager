@@ -2,8 +2,8 @@ name: Prepare test
 description: Prepares everything for integration test execution
 
 inputs:
-  release:
-    description: Deploy manager in release mode
+  experimental:
+    description: Deploy manager in experimental mode
     required: false
   github-token:
     description: Github token to use for github access
@@ -32,12 +32,12 @@ runs:
         IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
 
     - name: Deploy module release
-      if: ${{ inputs.release }}
+      if: ${{ !inputs.experimental }}
       shell: bash
       run: make --debug deploy
 
     - name: Deploy module experimental
-      if: ${{ !inputs.release }}
+      if: ${{ inputs.experimental }}
       shell: bash
       run: make --debug deploy-experimental
 
@@ -48,10 +48,6 @@ runs:
     - name: Wait for manager readiness
       shell: bash
       run: kubectl -n kyma-system wait pods -l app.kubernetes.io/instance=telemetry,app.kubernetes.io/name=manager --for=condition=Ready=true --timeout=90s
-
-    - name: Create Telemtry CR
-      shell: bash
-      run: kubectl apply -f config/samples/operator_v1alpha1_telemetry.yaml -n kyma-system
 
     - name: Print cluster info
       shell: bash

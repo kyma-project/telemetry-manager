@@ -18,36 +18,67 @@ data:
         name: Type
         isSelected: true
         widget: Text
-      - name: Unsupported-Mode
-        source: status.unsupportedMode
-        widget: Badge
-        highlights:
-          positive:
-            - 'false'
-          critical:
-            - 'true'
-    body:
-      - source: status.conditions
-        widget: Table
-        name: Reconciliation Conditions
-        children:
-          - source: type
-            name: Type
-          - source: status
-            name: Status
-            widget: Badge
-            highlights:
+    status:
+      body:
+        - name: Supported Mode
+          widget: Badge
+          source: $not(status.unsupportedMode)
+          highlights:
+            positive:
+              - 'true'
+            critical:
+              - 'false'
+        - name: Condition details
+          widget: ConditionList
+          source: status.conditions
+          highlights:
+            - type: AgentHealthy
               positive:
                 - 'True'
               critical:
                 - 'False'
-          - source: reason
-            name: Reason
-          - source: message
-            name: Message
-          - source: '$readableTimestamp(lastTransitionTime)'
-            name: Last transition
-            sort: true
+              warning:
+                - 'Unknown'
+            - type: ConfigurationGenerated
+              positive:
+                - 'True'
+              critical:
+                - 'False'
+              warning:
+                - 'Unknown'
+            - type: TelemetryFlowHealthy
+              positive:
+                - 'True'
+              critical:
+                - 'False'
+              warning:
+                - 'Unknown'
+          customContent:
+            - value:
+                widget: Badge
+                source: $filter(status.conditions, function($c){$c.type = 'AgentHealthy'}).reason
+              header: Reason
+              type: AgentHealthy
+            - value: $readableTimestamp($filter(status.conditions, function($c){$c.type = 'AgentHealthy'}).lastTransitionTime)
+              header: Last transition time
+              type: AgentHealthy
+            - value:
+                widget: Badge
+                source: $filter(status.conditions, function($c){$c.type = 'ConfigurationGenerated'}).reason
+              header: Reason
+              type: ConfigurationGenerated
+            - value: $readableTimestamp($filter(status.conditions, function($c){$c.type = 'ConfigurationGenerated'}).lastTransitionTime)
+              header: Last transition time
+              type: ConfigurationGenerated
+            - value:
+                widget: Badge
+                source: $filter(status.conditions, function($c){$c.type = 'TelemetryFlowHealthy'}).reason
+              header: Reason
+              type: TelemetryFlowHealthy
+            - value: $readableTimestamp($filter(status.conditions, function($c){$c.type = 'TelemetryFlowHealthy'}).lastTransitionTime)
+              header: Last transition time
+              type: TelemetryFlowHealthy
+    body:
       - widget: Panel
         name: Applications
         children:
@@ -193,6 +224,10 @@ data:
                     placeholder: '443'
                   - name: URI
                     source: spec.output.http.uri
+    resourceGraph:
+      colorVariant: 2
+      dataSources:
+        - source: relatedSecrets
   form: |
     - path: spec.input
       widget: FormGroup
@@ -439,3 +474,16 @@ data:
               - 'True'
             critical:
               - 'False'
+  dataSources: |-
+    relatedSecrets:
+      resource:
+        kind: Secret
+        version: v1
+      filter: |-
+          $item.metadata.name =  $root.spec.output.http.user.valueFrom.secretKeyRef.name or
+          $item.metadata.name = $root.spec.output.http.password.valueFrom.secretKeyRef.name or
+          $item.metadata.name = $root.spec.output.http.host.valueFrom.secretKeyRef.name or
+          $item.metadata.name = $root.spec.output.http.url.valueFrom.secretKeyRef.name or
+          $item.metadata.name = $root.spec.output.http.tls.ca.valueFrom.secretKeyRef.name or
+          $item.metadata.name = $root.spec.output.http.tls.cert.valueFrom.secretKeyRef.name or
+          $item.metadata.name = $root.spec.output.http.tls.key.valueFrom.secretKeyRef.name

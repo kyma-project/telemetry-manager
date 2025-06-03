@@ -7,12 +7,92 @@ metadata:
     busola.io/extension-version: "0.5"
   name: module
 data:
-  details: |
+  dataSources: |-
+    logPipelines:
+      resource:
+        group: telemetry.kyma-project.io
+        version: v1alpha1
+        kind: LogPipeline
+    metricPipelines:
+      resource:
+        group: telemetry.kyma-project.io
+        version: v1alpha1
+        kind: MetricPipeline
+    tracePipelines:
+      resource:
+        group: telemetry.kyma-project.io
+        version: v1alpha1
+        kind: TracePipeline
+  details: |-
     header:
       - name: State
         source: status.state
         widget: Badge
-
+    status:
+      body:
+        - name: OTLP Endpoints
+          widget: Panel
+          source: status.endpoints
+          fullWidth: true
+          children:
+            - name: Traces GRPC
+              source: traces.grpc
+            - name: Traces HTTP
+              source: traces.http
+            - name: Metrics GRPC
+              source: metrics.grpc
+            - name: Metrics HTTP
+              source: metrics.http
+        - name: Condition details
+          widget: ConditionList
+          source: status.conditions
+          highlights:
+            - type: LogComponentsHealthy
+              positive:
+                - 'True'
+              critical:
+                - 'False'
+              warning:
+                - 'Unknown'
+            - type: MetricComponentsHealthy
+              positive:
+                - 'True'
+              critical:
+                - 'False'
+              warning:
+                - 'Unknown'
+            - type: TraceComponentsHealthy
+              positive:
+                - 'True'
+              critical:
+                - 'False'
+              warning:
+                - 'Unknown'
+          customContent:
+            - value:
+                widget: Badge
+                source: $filter(status.conditions, function($c){$c.type = 'LogComponentsHealthy'}).reason
+              header: Reason
+              type: LogComponentsHealthy
+            - value: $readableTimestamp($filter(status.conditions, function($c){$c.type = 'LogComponentsHealthy'}).lastTransitionTime)
+              header: Last transition time
+              type: LogComponentsHealthy
+            - value:
+                widget: Badge
+                source: $filter(status.conditions, function($c){$c.type = 'MetricComponentsHealthy'}).reason
+              header: Reason
+              type: MetricComponentsHealthy
+            - value: $readableTimestamp($filter(status.conditions, function($c){$c.type = 'MetricComponentsHealthy'}).lastTransitionTime)
+              header: Last transition time
+              type: MetricComponentsHealthy
+            - value:
+                widget: Badge
+                source: $filter(status.conditions, function($c){$c.type = 'TraceComponentsHealthy'}).reason
+              header: Reason
+              type: TraceComponentsHealthy
+            - value: $readableTimestamp($filter(status.conditions, function($c){$c.type = 'TraceComponentsHealthy'}).lastTransitionTime)
+              header: Last transition time
+              type: TraceComponentsHealthy
     body:
       - name: Traces
         widget: Panel
@@ -30,38 +110,12 @@ data:
           source: spec.metric.gateway.scaling.static.replicas
         - name: Scaling Type
           source: spec.metric.gateway.scaling.type
-      - name: Status
-        widget: Panel
-        children:
-        - source: status.endpoints.traces.grpc
-          name: OTLP GRPC Trace Endpoint
-        - source: status.endpoints.traces.http
-          name: OTLP HTTP Trace Endpoint
-        - source: status.endpoints.metrics.grpc
-          name: OTLP GRPC Metric Endpoint
-        - source: status.endpoints.metrics.http
-          name: OTLP HTTP Metric Endpoint
-      - source: status.conditions
-        widget: Table
-        name: Reconciliation Conditions
-        children:
-          - source: type
-            name: Type
-          - source: status
-            name: Status
-            widget: Badge
-            highlights:
-              positive:
-                - 'True'
-              critical:
-                - 'False'
-          - source: reason
-            name: Reason
-          - source: message
-            name: Message
-          - source: '$readableTimestamp(lastTransitionTime)'
-            name: Last transition
-            sort: true
+    resourceGraph:
+      colorVariant: 2
+      dataSources:
+        - source: logPipelines
+        - source: metricPipelines
+        - source: tracePipelines
   form: |
     - advanced: true
       defaultExpanded: false

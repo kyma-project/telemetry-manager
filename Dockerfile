@@ -1,5 +1,9 @@
 # Build the manager binary
-FROM golang:1.24.2-alpine3.21 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.24.3-alpine3.21 AS builder
+
+ARG TARGETOS
+ARG TARGETARCH
+ARG BUILD_COMMIT_SHA
 
 WORKDIR /telemetry-manager-workspace
 # Copy the Go Modules manifests
@@ -16,7 +20,15 @@ COPY webhook/ webhook/
 
 RUN apk add --no-cache git
 # Clean up unused (test) dependencies and build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go mod tidy && go build -ldflags="-X main.version=$(git rev-parse --short HEAD)" -a -o manager main.go
+RUN go mod tidy && \
+  export TAG=$(git describe --tags) && \
+  export COMMIT=${BUILD_COMMIT_SHA} && \
+  CGO_ENABLED=0 \
+  GOOS=${TARGETOS:-linux} \
+  GOARCH=${TARGETARCH} \
+  go build \
+    -ldflags="-X main.version=$(git rev-parse --short HEAD)" \
+    -a -o manager main.go
 
 FROM scratch
 

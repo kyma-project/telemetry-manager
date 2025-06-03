@@ -13,17 +13,21 @@ packages:
     interfaces:
       FlowHealthProber:
       OverridesHandler:
+      PipelineSyncer:
   github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit:
     interfaces:
       AgentApplierDeleter:
       AgentConfigBuilder:
+      PipelineLock:
   github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel:
     interfaces:
       AgentApplierDeleter:
       AgentConfigBuilder:
-      FlowHealthProber:
+      GatewayFlowHealthProber:
+      AgentFlowHealthProber:
       GatewayApplierDeleter:
       GatewayConfigBuilder:
+      PipelineLock:
   github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline:
     interfaces:
       AgentApplierDeleter:
@@ -33,6 +37,7 @@ packages:
       GatewayConfigBuilder:
       OverridesHandler:
       PipelineLock:
+      PipelineSyncer:
   github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry:
     interfaces:
       ComponentHealthChecker:
@@ -45,6 +50,7 @@ packages:
       GatewayConfigBuilder:
       OverridesHandler:
       PipelineLock:
+      PipelineSyncer:
   github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober:
     interfaces:
       alertGetter:

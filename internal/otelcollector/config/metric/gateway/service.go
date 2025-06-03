@@ -49,7 +49,7 @@ func makeReceiversIDs() []string {
 
 	receivers = append(receivers, "otlp")
 
-	receivers = append(receivers, "singleton_receiver_creator/kymastats")
+	receivers = append(receivers, "kymastats")
 
 	return receivers
 }

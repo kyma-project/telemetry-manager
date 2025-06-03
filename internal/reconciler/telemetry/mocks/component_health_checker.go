@@ -8,7 +8,7 @@ import (
 	"context"
 
 	mock "github.com/stretchr/testify/mock"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // NewComponentHealthChecker creates a new instance of ComponentHealthChecker. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
@@ -72,15 +72,26 @@ type ComponentHealthChecker_Check_Call struct {
 }
 
 // Check is a helper method to define mock.On call
-//   - ctx
-//   - telemetryInDeletion
+//   - ctx context.Context
+//   - telemetryInDeletion bool
 func (_e *ComponentHealthChecker_Expecter) Check(ctx interface{}, telemetryInDeletion interface{}) *ComponentHealthChecker_Check_Call {
 	return &ComponentHealthChecker_Check_Call{Call: _e.mock.On("Check", ctx, telemetryInDeletion)}
 }
 
 func (_c *ComponentHealthChecker_Check_Call) Run(run func(ctx context.Context, telemetryInDeletion bool)) *ComponentHealthChecker_Check_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(bool))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 bool
+		if args[1] != nil {
+			arg1 = args[1].(bool)
+		}
+		run(
+			arg0,
+			arg1,
+		)
 	})
 	return _c
 }

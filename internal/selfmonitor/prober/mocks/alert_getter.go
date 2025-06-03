@@ -7,7 +7,7 @@ package mocks
 import (
 	"context"
 
-	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
+	"github.com/prometheus/client_golang/api/prometheus/v1"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -70,14 +70,20 @@ type AlertGetter_Alerts_Call struct {
 }
 
 // Alerts is a helper method to define mock.On call
-//   - ctx
+//   - ctx context.Context
 func (_e *AlertGetter_Expecter) Alerts(ctx interface{}) *AlertGetter_Alerts_Call {
 	return &AlertGetter_Alerts_Call{Call: _e.mock.On("Alerts", ctx)}
 }
 
 func (_c *AlertGetter_Alerts_Call) Run(run func(ctx context.Context)) *AlertGetter_Alerts_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }

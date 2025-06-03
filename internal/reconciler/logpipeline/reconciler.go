@@ -18,14 +18,17 @@ package logpipeline
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 )
@@ -35,7 +38,7 @@ var (
 )
 
 type FlowHealthProber interface {
-	Probe(ctx context.Context, pipelineName string) (prober.LogPipelineProbeResult, error)
+	Probe(ctx context.Context, pipelineName string) (prober.FluentBitProbeResult, error)
 }
 
 type LogPipelineReconciler interface {
@@ -47,17 +50,24 @@ type OverridesHandler interface {
 	LoadOverrides(ctx context.Context) (*overrides.Config, error)
 }
 
+type PipelineSyncer interface {
+	TryAcquireLock(ctx context.Context, owner metav1.Object) error
+}
+
 type Reconciler struct {
 	client.Client
 
 	overridesHandler OverridesHandler
 	reconcilers      map[logpipelineutils.Mode]LogPipelineReconciler
+
+	pipelineSyncer PipelineSyncer
 }
 
 func New(
 	client client.Client,
 
 	overridesHandler OverridesHandler,
+	pipelineSyncer PipelineSyncer,
 	reconcilers ...LogPipelineReconciler,
 ) *Reconciler {
 	reconcilersMap := make(map[logpipelineutils.Mode]LogPipelineReconciler)
@@ -69,6 +79,7 @@ func New(
 		Client:           client,
 		overridesHandler: overridesHandler,
 		reconcilers:      reconcilersMap,
+		pipelineSyncer:   pipelineSyncer,
 	}
 }
 
@@ -90,7 +101,16 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	outputType := GetOutputType(&pipeline)
+	if err := r.pipelineSyncer.TryAcquireLock(ctx, &pipeline); err != nil {
+		if errors.Is(err, resourcelock.ErrMaxPipelinesExceeded) {
+			logf.FromContext(ctx).V(1).Error(err, "Skipping reconciliation: max pipelines exceeded")
+			return ctrl.Result{}, nil
+		}
+
+		return ctrl.Result{}, err
+	}
+
+	outputType := logpipelineutils.GetOutputType(&pipeline)
 	reconciler, ok := r.reconcilers[outputType]
 
 	if !ok {
@@ -100,29 +120,4 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	err = reconciler.Reconcile(ctx, &pipeline)
 
 	return ctrl.Result{}, err
-}
-
-func GetOutputType(t *telemetryv1alpha1.LogPipeline) logpipelineutils.Mode {
-	if t.Spec.Output.OTLP != nil {
-		return logpipelineutils.OTel
-	}
-
-	return logpipelineutils.FluentBit
-}
-
-func GetPipelinesForType(ctx context.Context, client client.Client, mode logpipelineutils.Mode) ([]telemetryv1alpha1.LogPipeline, error) {
-	var allPipelines telemetryv1alpha1.LogPipelineList
-	if err := client.List(ctx, &allPipelines); err != nil {
-		return nil, fmt.Errorf("failed to get all log pipelines while syncing Fluent Bit ConfigMaps: %w", err)
-	}
-
-	var filteredList []telemetryv1alpha1.LogPipeline
-
-	for _, lp := range allPipelines.Items {
-		if GetOutputType(&lp) == mode {
-			filteredList = append(filteredList, lp)
-		}
-	}
-
-	return filteredList, nil
 }

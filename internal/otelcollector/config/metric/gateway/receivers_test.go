@@ -31,7 +31,7 @@ func TestReceivers(t *testing.T) {
 		require.Equal(t, "${MY_POD_IP}:4317", otlpReceiver.Protocols.GRPC.Endpoint)
 	})
 
-	t.Run("singleton kyma stats receiver creator", func(t *testing.T) {
+	t.Run("kyma stats receiver", func(t *testing.T) {
 		gatewayNamespace := "test-namespace"
 
 		collectorConfig, _, err := sut.Build(
@@ -45,13 +45,7 @@ func TestReceivers(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		singletonKymaStatsReceiverCreator := collectorConfig.Receivers.SingletonKymaStatsReceiverCreator
-		require.NotNil(t, singletonKymaStatsReceiverCreator)
-		require.Equal(t, "serviceAccount", singletonKymaStatsReceiverCreator.AuthType)
-		require.Equal(t, "telemetry-metric-gateway-kymastats", singletonKymaStatsReceiverCreator.LeaderElection.LeaseName)
-		require.Equal(t, gatewayNamespace, singletonKymaStatsReceiverCreator.LeaderElection.LeaseNamespace)
-
-		kymaStatsReceiver := singletonKymaStatsReceiverCreator.SingletonKymaStatsReceiver.KymaStatsReceiver
+		kymaStatsReceiver := collectorConfig.Receivers.KymaStatsReceiver
 		require.Equal(t, "serviceAccount", kymaStatsReceiver.AuthType)
 		require.Equal(t, "30s", kymaStatsReceiver.CollectionInterval)
 		require.Len(t, kymaStatsReceiver.Resources, 4)

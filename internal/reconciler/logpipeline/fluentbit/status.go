@@ -15,6 +15,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
+	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
@@ -89,9 +90,13 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 }
 
 func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (status metav1.ConditionStatus, reason string, message string) {
-	err := r.pipelineValidator.validate(ctx, pipeline)
+	err := r.pipelineValidator.Validate(ctx, pipeline)
 	if err == nil {
 		return metav1.ConditionTrue, conditions.ReasonAgentConfigured, conditions.MessageForFluentBitLogPipeline(conditions.ReasonAgentConfigured)
+	}
+
+	if errors.Is(err, resourcelock.ErrMaxPipelinesExceeded) {
+		return metav1.ConditionFalse, conditions.ReasonMaxPipelinesExceeded, conditions.ConvertErrToMsg(err)
 	}
 
 	if errors.Is(err, secretref.ErrSecretRefNotFound) || errors.Is(err, secretref.ErrSecretKeyNotFound) || errors.Is(err, secretref.ErrSecretRefMissingFields) {
@@ -135,7 +140,7 @@ func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *
 	probeResult, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
 	if err != nil {
 		logf.FromContext(ctx).Error(err, "Failed to probe flow health")
-		return metav1.ConditionUnknown, conditions.ReasonSelfMonProbingFailed
+		return metav1.ConditionUnknown, conditions.ReasonSelfMonAgentProbingFailed
 	}
 
 	logf.FromContext(ctx).V(1).Info("Probed flow health", "result", probeResult)
@@ -148,16 +153,16 @@ func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *
 	return metav1.ConditionFalse, reason
 }
 
-func flowHealthReasonFor(probeResult prober.LogPipelineProbeResult) string {
+func flowHealthReasonFor(probeResult prober.FluentBitProbeResult) string {
 	switch {
 	case probeResult.AllDataDropped:
-		return conditions.ReasonSelfMonAllDataDropped
+		return conditions.ReasonSelfMonAgentAllDataDropped
 	case probeResult.SomeDataDropped:
-		return conditions.ReasonSelfMonSomeDataDropped
+		return conditions.ReasonSelfMonAgentSomeDataDropped
 	case probeResult.NoLogsDelivered:
-		return conditions.ReasonSelfMonNoLogsDelivered
+		return conditions.ReasonSelfMonAgentNoLogsDelivered
 	case probeResult.BufferFillingUp:
-		return conditions.ReasonSelfMonBufferFillingUp
+		return conditions.ReasonSelfMonAgentBufferFillingUp
 	default:
 		return conditions.ReasonSelfMonFlowHealthy
 	}

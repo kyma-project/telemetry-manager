@@ -70,7 +70,7 @@ func makeNamespaceFilterConfig(namespaceSelector *telemetryv1alpha1.NamespaceSel
 		includeNamespacesExpr := ottlexpr.JoinWithAnd(
 			// Ensure the k8s.namespace.name resource attribute is not nil,
 			// so we don't drop logs without a namespace label
-			ottlexpr.ResourceAttributeNotNil(ottlexpr.K8sNamespaceName),
+			ottlexpr.ResourceAttributeIsNotNil(ottlexpr.K8sNamespaceName),
 
 			// Logs are dropped if the filter expression evaluates to true,
 			// so we negate the match against included namespaces to keep only those
@@ -93,4 +93,16 @@ func makeNamespacesConditions(namespaces []string) []string {
 	}
 
 	return namespacesConditions
+}
+
+func makeDropIfInputSourceOTLPConfig() *FilterProcessor {
+	return &FilterProcessor{
+		Logs: FilterProcessorLogs{
+			Log: []string{
+				// Drop all logs; the filter processor requires at least one valid condition expression,
+				// to drop all logs, we use a condition that is always true for any log
+				ottlexpr.JoinWithOr(ottlexpr.IsNotNil("log.observed_time"), ottlexpr.IsNotNil("log.time")),
+			},
+		},
+	}
 }

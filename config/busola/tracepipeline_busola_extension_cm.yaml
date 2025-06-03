@@ -17,28 +17,59 @@ data:
         name: Type
         isSelected: true
         widget: Text
-    body:
-      - source: status.conditions
-        widget: Table
-        name: Reconciliation Conditions
-        children:
-          - source: type
-            name: Type
-          - source: status
-            name: Status
-            widget: Badge
-            highlights:
+    status:
+      body:
+        - name: Condition details
+          widget: ConditionList
+          source: status.conditions
+          highlights:
+            - type: GatewayHealthy
               positive:
                 - 'True'
               critical:
                 - 'False'
-          - source: reason
-            name: Reason
-          - source: message
-            name: Message
-          - source: '$readableTimestamp(lastTransitionTime)'
-            name: Last transition
-            sort: true
+              warning:
+                - 'Unknown'
+            - type: ConfigurationGenerated
+              positive:
+                - 'True'
+              critical:
+                - 'False'
+              warning:
+                - 'Unknown'
+            - type: TelemetryFlowHealthy
+              positive:
+                - 'True'
+              critical:
+                - 'False'
+              warning:
+                - 'Unknown'
+          customContent:
+            - value:
+                widget: Badge
+                source: $filter(status.conditions, function($c){$c.type = 'GatewayHealthy'}).reason
+              header: Reason
+              type: GatewayHealthy
+            - value: $readableTimestamp($filter(status.conditions, function($c){$c.type = 'GatewayHealthy'}).lastTransitionTime)
+              header: Last transition time
+              type: GatewayHealthy
+            - value:
+                widget: Badge
+                source: $filter(status.conditions, function($c){$c.type = 'ConfigurationGenerated'}).reason
+              header: Reason
+              type: ConfigurationGenerated
+            - value: $readableTimestamp($filter(status.conditions, function($c){$c.type = 'ConfigurationGenerated'}).lastTransitionTime)
+              header: Last transition time
+              type: ConfigurationGenerated
+            - value:
+                widget: Badge
+                source: $filter(status.conditions, function($c){$c.type = 'TelemetryFlowHealthy'}).reason
+              header: Reason
+              type: TelemetryFlowHealthy
+            - value: $readableTimestamp($filter(status.conditions, function($c){$c.type = 'TelemetryFlowHealthy'}).lastTransitionTime)
+              header: Last transition time
+              type: TelemetryFlowHealthy
+    body:
       - widget: Panel
         name: Output
         children:
@@ -168,6 +199,10 @@ data:
                 children:
                   - name: Protocol
                     source: spec.output.otlp.protocol
+    resourceGraph:
+      colorVariant: 2
+      dataSources:
+        - source: relatedSecrets
   form: |
     - path: spec.output
       widget: FormGroup
@@ -383,3 +418,16 @@ data:
               - 'True'
             critical:
               - 'False'
+  dataSources: |-
+    relatedSecrets:
+      resource:
+        kind: Secret
+        version: v1
+      filter: |-
+          $item.metadata.name =  $root.spec.output.otlp.authentication.basic.user.valueFrom.secretKeyRef.name or
+          $item.metadata.name =  $root.spec.output.otlp.authentication.basic.password.valueFrom.secretKeyRef.name or
+          $item.metadata.name = $root.spec.output.otlp.endpoint.valueFrom.secretKeyRef.name or
+          $item.metadata.name = $root.spec.output.otlp.headers.valueFrom.secretKeyRef.name or
+          $item.metadata.name = $root.spec.output.otlp.tls.ca.valueFrom.secretKeyRef.name or
+          $item.metadata.name = $root.spec.output.otlp.tls.cert.valueFrom.secretKeyRef.name or
+          $item.metadata.name = $root.spec.output.otlp.tls.key.valueFrom.secretKeyRef.name

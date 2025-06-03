@@ -24,7 +24,7 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/metrics/runtime"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
@@ -67,7 +67,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 			// PipelineB should deliver only deployment, daemonset, statefulset and job metrics
 			// PipelineC should deliver default resource metrics (currently all resource metrics are enabled by default)
 
-			backendResourceMetricsEnabledA := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithName(backendResourceMetricsEnabledNameA))
+			backendResourceMetricsEnabledA := kitbackend.New(mockNs, kitbackend.SignalTypeMetrics, kitbackend.WithName(backendResourceMetricsEnabledNameA))
 			objs = append(objs, backendResourceMetricsEnabledA.K8sObjects()...)
 			backendResourceMetricsEnabledURLA = backendResourceMetricsEnabledA.ExportURL(suite.ProxyClient)
 
@@ -86,7 +86,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 				Build()
 			objs = append(objs, &pipelineResourceMetricsEnabledA)
 
-			backendResourceMetricsEnabledB := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithName(backendResourceMetricsEnabledNameB))
+			backendResourceMetricsEnabledB := kitbackend.New(mockNs, kitbackend.SignalTypeMetrics, kitbackend.WithName(backendResourceMetricsEnabledNameB))
 			objs = append(objs, backendResourceMetricsEnabledB.K8sObjects()...)
 			backendResourceMetricsEnabledURLB = backendResourceMetricsEnabledB.ExportURL(suite.ProxyClient)
 
@@ -105,7 +105,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 				Build()
 			objs = append(objs, &pipelineResourceMetricsEnabledB)
 
-			backendResourceMetricsEnabledC := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithName(backendResourceMetricsEnabledNameC))
+			backendResourceMetricsEnabledC := kitbackend.New(mockNs, kitbackend.SignalTypeMetrics, kitbackend.WithName(backendResourceMetricsEnabledNameC))
 			objs = append(objs, backendResourceMetricsEnabledC.K8sObjects()...)
 			backendResourceMetricsEnabledURLC = backendResourceMetricsEnabledC.ExportURL(suite.ProxyClient)
 			pipelineResourceMetricsEnabledC := testutils.NewMetricPipelineBuilder().
@@ -140,47 +140,45 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have healthy pipelines", func() {
-			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineResourceMetricsEnabledNameA)
-			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineResourceMetricsEnabledNameB)
+			assert.MetricPipelineHealthy(suite.Ctx, pipelineResourceMetricsEnabledNameA)
+			assert.MetricPipelineHealthy(suite.Ctx, pipelineResourceMetricsEnabledNameB)
 		})
 
 		It("Ensures the metric gateway deployment is ready", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(suite.Ctx, kitkyma.MetricGatewayName)
 		})
 
 		It("Ensures the metric agent daemonset is ready", func() {
-			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.MetricAgentName)
+			assert.DaemonSetReady(suite.Ctx, kitkyma.MetricAgentName)
 		})
 
 		It("Should have metrics backends running", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backendResourceMetricsEnabledNameA, Namespace: mockNs})
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backendResourceMetricsEnabledNameB, Namespace: mockNs})
-			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backendResourceMetricsEnabledNameA, Namespace: mockNs})
-			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backendResourceMetricsEnabledNameB, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: backendResourceMetricsEnabledNameA, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: backendResourceMetricsEnabledNameB, Namespace: mockNs})
 
 		})
 
 		It("should have workloads created properly", func() {
-			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: DeploymentName, Namespace: mockNs})
-			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: DaemonSetName, Namespace: mockNs})
-			assert.StatefulSetReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: StatefulSetName, Namespace: mockNs})
-			assert.JobReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: JobName, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: DeploymentName, Namespace: mockNs})
+			assert.DaemonSetReady(suite.Ctx, types.NamespacedName{Name: DaemonSetName, Namespace: mockNs})
+			assert.StatefulSetReady(suite.Ctx, types.NamespacedName{Name: StatefulSetName, Namespace: mockNs})
+			assert.JobReady(suite.Ctx, types.NamespacedName{Name: JobName, Namespace: mockNs})
 		})
 
 		It("Should have pods mounting volumes running", func() {
-			assert.PodReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: podMountingPVCName, Namespace: mockNs})
-			assert.PodReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: podMountingEmptyDirName, Namespace: mockNs})
+			assert.PodReady(suite.Ctx, types.NamespacedName{Name: podMountingPVCName, Namespace: mockNs})
+			assert.PodReady(suite.Ctx, types.NamespacedName{Name: podMountingEmptyDirName, Namespace: mockNs})
 		})
 
 		It("Ensures accessibility of metric agent metrics endpoint", func() {
 			agentMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.MetricAgentMetricsService.Namespace, kitkyma.MetricAgentMetricsService.Name, "metrics", ports.Metrics)
-			assert.EmitsOTelCollectorMetrics(suite.ProxyClient, agentMetricsURL)
+			assert.EmitsOTelCollectorMetrics(GinkgoT(), agentMetricsURL)
 		})
 
 		It("Ensures the metric agent network policy exists", func() {
