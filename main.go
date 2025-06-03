@@ -188,7 +188,7 @@ func setupControllersAndWebhooks(mgr manager.Manager, bi BuildInfo) error {
 		return fmt.Errorf("failed to enable trace pipeline controller: %w", err)
 	}
 
-	if err := setupMetricPipelineController(mgr, MetricPipelineReconcile); err != nil {
+	if err := setupMetricPipelineController(mgr, MetricPipelineReconcile, bi.GitTag); err != nil {
 		return fmt.Errorf("failed to enable metric pipeline controller: %w", err)
 	}
 
@@ -417,7 +417,7 @@ func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetr
 	return nil
 }
 
-func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent, version string) error {
+func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent, moduleVersion string) error {
 	if featureflags.IsEnabled(featureflags.V1Beta1) {
 		setupLog.Info("Registering conversion webhooks for LogPipelines")
 		utilruntime.Must(telemetryv1beta1.AddToScheme(scheme))
@@ -450,7 +450,7 @@ func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan
 			RestConfig:                  mgr.GetConfig(),
 			SelfMonitorName:             selfMonitorName,
 			TelemetryNamespace:          telemetryNamespace,
-			ModuleVersion:               version,
+			ModuleVersion:               moduleVersion,
 		},
 	)
 	if err != nil {
@@ -502,7 +502,7 @@ func setupTracePipelineController(mgr manager.Manager, reconcileTriggerChan <-ch
 	return nil
 }
 
-func setupMetricPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
+func setupMetricPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent, moduleVersion string) error {
 	setupLog.Info("Setting up metricpipeline controller")
 
 	metricPipelineController, err := telemetrycontrollers.NewMetricPipelineController(
@@ -511,7 +511,7 @@ func setupMetricPipelineController(mgr manager.Manager, reconcileTriggerChan <-c
 		telemetrycontrollers.MetricPipelineControllerConfig{
 			MetricAgentPriorityClassName:   highPriorityClassName,
 			MetricGatewayPriorityClassName: normalPriorityClassName,
-			ModuleVersion:                  revision,
+			ModuleVersion:                  moduleVersion,
 			OTelCollectorImage:             otelCollectorImage,
 			RestConfig:                     mgr.GetConfig(),
 			SelfMonitorName:                selfMonitorName,
