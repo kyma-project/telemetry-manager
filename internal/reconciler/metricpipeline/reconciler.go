@@ -284,11 +284,10 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
 
 	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, gateway.BuildOptions{
-		GatewayNamespace:                r.telemetryNamespace,
-		InstrumentationScopeVersion:     r.moduleVersion,
-		ClusterName:                     shootInfo.ClusterName,
-		CloudProvider:                   shootInfo.CloudProvider,
-		InternalMetricCompatibilityMode: telemetryutils.GetCompatibilityModeFromTelemetry(ctx, r.Client, r.telemetryNamespace),
+		GatewayNamespace:            r.telemetryNamespace,
+		InstrumentationScopeVersion: r.moduleVersion,
+		ClusterName:                 shootInfo.ClusterName,
+		CloudProvider:               shootInfo.CloudProvider,
 	})
 
 	if err != nil {
@@ -331,11 +330,10 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
 	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
 	agentConfig := r.agentConfigBuilder.Build(allPipelines, agent.BuildOptions{
-		IstioEnabled:                    isIstioActive,
-		IstioCertPath:                   otelcollector.IstioCertPath,
-		InstrumentationScopeVersion:     r.moduleVersion,
-		AgentNamespace:                  r.telemetryNamespace,
-		InternalMetricCompatibilityMode: telemetryutils.GetCompatibilityModeFromTelemetry(ctx, r.Client, r.telemetryNamespace),
+		IstioEnabled:                isIstioActive,
+		IstioCertPath:               otelcollector.IstioCertPath,
+		InstrumentationScopeVersion: r.moduleVersion,
+		AgentNamespace:              r.telemetryNamespace,
 	})
 
 	agentConfigYAML, err := yaml.Marshal(agentConfig)

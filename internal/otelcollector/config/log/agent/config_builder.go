@@ -31,13 +31,11 @@ type BuildOptions struct {
 	ClusterName                 string
 	CloudProvider               string
 	Enrichments                 processors.Enrichments
-
-	InternalMetricCompatibilityMode bool
 }
 
 func (b *Builder) Build(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {
 	cfg := &Config{
-		Service:    config.DefaultService(make(config.Pipelines), opts.InternalMetricCompatibilityMode),
+		Service:    config.DefaultService(make(config.Pipelines)),
 		Extensions: makeExtensionsConfig(),
 		Receivers:  make(Receivers),
 		Processors: makeProcessorsConfig(opts),

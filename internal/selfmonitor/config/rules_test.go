@@ -9,19 +9,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func TestMakeRulesCompatibilityMode(t *testing.T) {
-	rules := MakeRules(true)
-	rulesYAML, err := yaml.Marshal(rules)
-	require.NoError(t, err)
-
-	goldenFilePath := filepath.Join("testdata", "rules_compatibility.yaml")
-	goldenFile, err := os.ReadFile(goldenFilePath)
-	require.NoError(t, err, "failed to load golden file")
-	require.Equal(t, string(goldenFile), string(rulesYAML))
-}
-
 func TestMakeRules(t *testing.T) {
-	rules := MakeRules(false)
+	rules := MakeRules()
 	rulesYAML, err := yaml.Marshal(rules)
 	require.NoError(t, err)
 
