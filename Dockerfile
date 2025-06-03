@@ -19,15 +19,18 @@ COPY internal/ internal/
 COPY webhook/ webhook/
 
 RUN apk add --no-cache git
+RUN git config --global --add safe.directory /telemetry-manager-workspace && git describe --tags
+
 # Clean up unused (test) dependencies and build
 RUN go mod tidy && \
   export TAG=$(git describe --tags) && \
   export COMMIT=${BUILD_COMMIT_SHA} && \
+  export CLEAN=$(git diff -s --exit-code && echo "true" || echo "false") && \
   CGO_ENABLED=0 \
   GOOS=${TARGETOS:-linux} \
   GOARCH=${TARGETARCH} \
   go build \
-    -ldflags="-X main.version=$(git rev-parse --short HEAD)" \
+    -ldflags="-X main.revision=${COMMIT} -X main.tag=${TAG} -X main.clean=${CLEAN}" \
     -a -o manager main.go
 
 FROM scratch
