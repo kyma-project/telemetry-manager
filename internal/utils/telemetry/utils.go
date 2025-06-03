@@ -36,22 +36,18 @@ func GetEnrichmentsFromTelemetry(ctx context.Context, client client.Client, name
 	}
 
 	if telemetry.Spec.Enrichments != nil {
-		mapPodLabels := func(values []operatorv1alpha1.PodLabel, fn func(operatorv1alpha1.PodLabel) processors.PodLabel) []processors.PodLabel {
-			var result []processors.PodLabel
-			for i := range values {
-				result = append(result, fn(values[i]))
-			}
+		labels := telemetry.Spec.Enrichments.ExtractPodLabels
+		podLabels := make([]processors.PodLabel, 0, len(labels))
 
-			return result
+		for _, label := range labels {
+			podLabels = append(podLabels, processors.PodLabel{
+				Key:       label.Key,
+				KeyPrefix: label.KeyPrefix,
+			})
 		}
 
 		return processors.Enrichments{
-			PodLabels: mapPodLabels(telemetry.Spec.Enrichments.ExtractPodLabels, func(value operatorv1alpha1.PodLabel) processors.PodLabel {
-				return processors.PodLabel{
-					Key:       value.Key,
-					KeyPrefix: value.KeyPrefix,
-				}
-			}),
+			PodLabels: podLabels,
 		}
 	}
 
