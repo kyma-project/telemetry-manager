@@ -61,6 +61,17 @@ func ForceDeleteObjects(ctx context.Context, resources ...client.Object) error {
 	return nil
 }
 
+// UpdateObjects updates k8s objects passed as a slice.
+func UpdateObjects(ctx context.Context, resources ...client.Object) error {
+	for _, resource := range resources {
+		if err := suite.K8sClient.Update(ctx, resource); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func labelMatches(labels Labels, label, value string) bool {
 	l, ok := labels[label]
 	if !ok {
