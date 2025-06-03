@@ -39,11 +39,10 @@ type runtimeResourcesEnabled struct {
 }
 
 type BuildOptions struct {
-	IstioEnabled                    bool
-	IstioCertPath                   string
-	InstrumentationScopeVersion     string
-	AgentNamespace                  string
-	InternalMetricCompatibilityMode bool
+	IstioEnabled                bool
+	IstioCertPath               string
+	InstrumentationScopeVersion string
+	AgentNamespace              string
 }
 
 func (b *Builder) Build(pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) *Config {
@@ -58,7 +57,6 @@ func (b *Builder) Build(pipelines []telemetryv1alpha1.MetricPipeline, opts Build
 	return &Config{
 		Base: *config.DefaultBaseConfig(
 			makePipelinesConfig(inputs),
-			opts.InternalMetricCompatibilityMode,
 			config.WithK8sLeaderElector("serviceAccount", "telemetry-metric-agent-k8scluster", opts.AgentNamespace),
 		),
 		Receivers:  makeReceiversConfig(inputs, opts),

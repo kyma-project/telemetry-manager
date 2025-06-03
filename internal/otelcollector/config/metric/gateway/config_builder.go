@@ -24,18 +24,16 @@ type Builder struct {
 }
 
 type BuildOptions struct {
-	GatewayNamespace                string
-	InstrumentationScopeVersion     string
-	ClusterName                     string
-	CloudProvider                   string
-	InternalMetricCompatibilityMode bool
+	GatewayNamespace            string
+	InstrumentationScopeVersion string
+	ClusterName                 string
+	CloudProvider               string
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {
 	cfg := &Config{
 		Base: *config.DefaultBaseConfig(
 			make(config.Pipelines),
-			opts.InternalMetricCompatibilityMode,
 			config.WithK8sLeaderElector("serviceAccount", "telemetry-metric-gateway-kymastats", opts.GatewayNamespace)),
 		Receivers:  makeReceiversConfig(),
 		Processors: makeProcessorsConfig(opts),
