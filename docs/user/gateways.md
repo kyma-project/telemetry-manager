@@ -4,7 +4,7 @@ The Telemetry gateways in Kyma take care of data enrichment, filtering, and disp
 
 ## Features
 
-The traces, metrics, and logs (OTLP-only) features, are based on a gateway, which is provisioned as soon as you define any pipeline resource. All telemetry data of the related domain passes the gateway, so it acts as a central point and provides the following benefits:
+The traces, metrics, and (OTLP-based) logs features are based on a gateway, which is provisioned as soon as you define any pipeline resource. All telemetry data of the related domain passes the gateway, so it acts as a central point and provides the following benefits:
 
 - [Data Enrichment](#data-enrichment) to achieve a certain data quality
 - Filtering to apply namespace filtering and remove noisy system data (individually for logs, traces, and metrics)
