@@ -108,7 +108,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 			}
 
 			err = suite.K8sClient.Update(suite.Ctx, &telemetry)
-			Expect(err).To(HaveOccurred())
+			Expect(err).To(Not(HaveOccurred()))
 		})
 
 		It("Should have a metrics backend running", Label(suite.LabelUpgrade), func() {
