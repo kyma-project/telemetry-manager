@@ -137,11 +137,13 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 	}
 
 	secretsInChecksum := []corev1.Secret{}
+
 	if opts.CollectorEnvVars != nil {
 		secret := makeSecret(name, commonresources.LabelValueK8sComponentAgent, opts.CollectorEnvVars)
 		if err := k8sutils.CreateOrUpdateSecret(ctx, c, secret); err != nil {
 			return fmt.Errorf("failed to create env secret: %w", err)
 		}
+
 		secretsInChecksum = append(secretsInChecksum, *secret)
 	}
 
