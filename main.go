@@ -330,7 +330,7 @@ func parseFlags() {
 	flag.Parse()
 }
 
-func prepareBuildInfo(version, tag, clean string) (BuildInfo, error) {
+func prepareBuildInfo(revision, tag, clean string) (BuildInfo, error) {
 	info, ok := debug.ReadBuildInfo()
 	if !ok {
 		return BuildInfo{}, fmt.Errorf("failed to read build info")
@@ -338,14 +338,14 @@ func prepareBuildInfo(version, tag, clean string) (BuildInfo, error) {
 
 	const shortSHALenght = 7
 
-	if len(version) >= shortSHALenght {
-		version = version[:shortSHALenght]
+	if len(revision) >= shortSHALenght {
+		revision = revision[:shortSHALenght]
 	}
 
 	bi := BuildInfo{
 		GoVersion:       info.GoVersion,
 		RepositoryClean: clean,
-		GitRevision:     version,
+		GitRevision:     revision,
 		GitTag:          tag,
 	}
 
