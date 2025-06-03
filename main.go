@@ -44,6 +44,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/metrics"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
@@ -137,7 +138,6 @@ func main() {
 }
 
 func run() error {
-
 	parseFlags()
 	initializeFeatureFlags()
 
@@ -275,13 +275,16 @@ func setupManager() (manager.Manager, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to setup manager: %w", err)
 	}
+
 	return mgr, nil
 }
 
 func logBuildAndProcessInfo(bi BuildInfo) {
-	buildinfo := promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "telemetry_build_info",
-		Help: "Build information of the Telemetry Manager",
+	buildInfoGauge := promauto.With(metrics.Registry).NewGauge(prometheus.GaugeOpts{
+		Namespace: "telemetry",
+		Subsystem: "",
+		Name:      "build_info",
+		Help:      "Build information of the Telemetry Manager",
 		ConstLabels: map[string]string{
 			"git_revision":     bi.GitRevision,
 			"git_tag":          bi.GitTag,
@@ -290,17 +293,18 @@ func logBuildAndProcessInfo(bi BuildInfo) {
 			"repository_clean": bi.RepositoryClean,
 		},
 	})
-	buildinfo.Set(1)
+	buildInfoGauge.Set(1)
 
-	features := promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "telemetry_feature_flags",
-		Help: "Enabled feature flags in the Telemetry Manager",
+	featureFlagsGaugeVec := promauto.With(metrics.Registry).NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: "telemetry",
+		Name:      "feature_flags_info",
+		Help:      "Enabled feature flags in the Telemetry Manager",
 	}, []string{"flag"})
 
 	setupLog.Info("Starting Telemetry Manager", "GitRevision", bi.GitRevision, "GitTag", bi.GitTag, "GoVersion", bi.GoVersion, "BuildDate", bi.BuildDate, "RepositoryClean", bi.RepositoryClean)
 
 	for _, flg := range featureflags.EnabledFlags() {
-		features.WithLabelValues(flg.String()).Set(1)
+		featureFlagsGaugeVec.WithLabelValues(flg.String()).Set(1)
 		setupLog.Info("Enabled feature flag", "flag", flg)
 	}
 }
@@ -330,6 +334,12 @@ func prepareBuildInfo(version, tag, clean string) (BuildInfo, error) {
 	info, ok := debug.ReadBuildInfo()
 	if !ok {
 		return BuildInfo{}, fmt.Errorf("failed to read build info")
+	}
+
+	const shortSHALenght = 7
+
+	if len(version) >= shortSHALenght {
+		version = version[:shortSHALenght]
 	}
 
 	bi := BuildInfo{

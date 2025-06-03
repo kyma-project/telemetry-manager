@@ -10,15 +10,11 @@ var compatibilityModeGauge = prometheus.NewGauge(prometheus.GaugeOpts{
 	Help: "Indicates if the OpenTelemetry internal metrics compatibility mode is enabled (1) or disabled (0)",
 })
 
-type telemetryMetricsEmitter struct{}
-
-//nolint:unparam // No good explanation why this linter is firing here
-func newTelemetryMetricsEmitter() telemetryMetricsEmitter {
+func setupCompatibilityModeMetric() {
 	metrics.Registry.MustRegister(compatibilityModeGauge)
-	return telemetryMetricsEmitter{}
 }
 
-func (e telemetryMetricsEmitter) updateCompatibilityModeMetric(compatibilityMode bool) {
+func updateCompatibilityModeMetric(compatibilityMode bool) {
 	if compatibilityMode {
 		compatibilityModeGauge.Set(1)
 	} else {
