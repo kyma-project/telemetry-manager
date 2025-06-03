@@ -544,7 +544,7 @@ To detect and fix such situations, check the [pipeline status](./resources/02-lo
 - **Multiple LogPipeline Support**: The maximum amount of LogPipeline resources is 5.
 
 > **(*) Note:**
-> For exact numbers and benchmarking results, please refer to: [CLS Performance Test Results in the Telemetry Manager repository](https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/benchmarks/cls-performance.md).
+> For exact numbers and benchmarking results, see [CLS Performance Test Results in the Telemetry Manager repository](https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/benchmarks/cls-performance.md).
 
 ## Troubleshooting
 
