@@ -4,7 +4,6 @@
 
 | Metric                                                          | Description                                                                                   |
 |-----------------------------------------------------------------|:----------------------------------------------------------------------------------------------|
-| **telemetry_otelcol_metrics_compatibility_mode** | Indicates if the OpenTelemetry internal metrics compatibility mode is enabled (1) or disabled (0) |
 | **telemetry_self_monitor_prober_in_flight_requests** | The current number of in-flight requests initiated by the self-monitoring prober. |
 | **telemetry_self_monitor_prober_requests_total** | Total number of requests initiated by the self-monitoring prober. |
 | **telemetry_self_monitor_prober_duration_seconds** | A histogram of latencies for requests initiated by the self-monitoring prober. |

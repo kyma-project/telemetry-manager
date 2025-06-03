@@ -270,25 +270,16 @@ func TestMakeConfig(t *testing.T) {
 			goldenFileName      string
 			overwriteGoldenFile bool
 			withOTLPInput       bool
-			compatibilityMode   bool
 		}{
 			{
-				name:              "OTLP Endpoint enabled",
-				goldenFileName:    "config.yaml",
-				withOTLPInput:     true,
-				compatibilityMode: false,
+				name:           "OTLP Endpoint enabled",
+				goldenFileName: "config.yaml",
+				withOTLPInput:  true,
 			},
 			{
-				name:              "OTLP Endpoint disabled",
-				goldenFileName:    "config_otlp_disabled.yaml",
-				withOTLPInput:     false,
-				compatibilityMode: false,
-			},
-			{
-				name:              "Compatibility mode enabled",
-				goldenFileName:    "config_compatibility_enabled.yaml",
-				withOTLPInput:     true,
-				compatibilityMode: true,
+				name:           "OTLP Endpoint disabled",
+				goldenFileName: "config_otlp_disabled.yaml",
+				withOTLPInput:  false,
 			},
 		}
 		for _, tt := range tests {
@@ -302,9 +293,8 @@ func TestMakeConfig(t *testing.T) {
 							WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 					},
 					BuildOptions{
-						ClusterName:                     "${KUBERNETES_SERVICE_HOST}",
-						CloudProvider:                   "test-cloud-provider",
-						InternalMetricCompatibilityMode: tt.compatibilityMode,
+						ClusterName:   "${KUBERNETES_SERVICE_HOST}",
+						CloudProvider: "test-cloud-provider",
 					},
 				)
 				require.NoError(t, err)
