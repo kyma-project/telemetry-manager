@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -122,7 +123,7 @@ func ruleDataType(t pipelineType) string {
 		dataTypeSuffix = "log_records"
 	}
 
-	return dataTypeSuffix
+	return fmt.Sprintf("%s_total", dataTypeSuffix)
 }
 
 func ruleNamePrefix(t pipelineType) string {
