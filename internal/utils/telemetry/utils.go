@@ -36,10 +36,10 @@ func GetEnrichmentsFromTelemetry(ctx context.Context, client client.Client, name
 	}
 
 	if telemetry.Spec.Enrichments != nil {
-		labels := telemetry.Spec.Enrichments.ExtractPodLabels
-		podLabels := make([]processors.PodLabel, 0, len(labels))
+		enrichmentLabels := telemetry.Spec.Enrichments.ExtractPodLabels
+		podLabels := make([]processors.PodLabel, 0, len(enrichmentLabels))
 
-		for _, label := range labels {
+		for _, label := range enrichmentLabels {
 			podLabels = append(podLabels, processors.PodLabel{
 				Key:       label.Key,
 				KeyPrefix: label.KeyPrefix,
