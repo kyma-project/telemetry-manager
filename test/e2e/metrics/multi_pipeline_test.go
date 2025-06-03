@@ -5,7 +5,6 @@ package metrics
 import (
 	"io"
 	"net/http"
-	"os"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -188,7 +187,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetC), 
 })
 
 func checkInstrumentationScopeAndVersion(g Gomega, body []byte, scope1, scope2 string) {
-	os.WriteFile("blargh", body, 0644)
 	g.Expect(body).To(HaveFlatMetrics(HaveEach(
 		SatisfyAny(
 			SatisfyAll(

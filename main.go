@@ -1,7 +1,7 @@
 /*
 Copyright 2021.
 
-Licensed under the Apache License, Version 2.0 (the "License");
+Licensed under the Apache License, GitTag 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
@@ -21,7 +21,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"runtime/debug"
 	"time"
 
 	"github.com/go-logr/zapr"
@@ -53,6 +52,7 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/controllers/operator"
 	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
+	"github.com/kyma-project/telemetry-manager/internal/build"
 	"github.com/kyma-project/telemetry-manager/internal/featureflags"
 	"github.com/kyma-project/telemetry-manager/internal/images"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
@@ -80,10 +80,6 @@ var (
 	setupLog           = ctrl.Log.WithName("setup")
 	telemetryNamespace string
 
-	revision = "main"
-	tag      = "latest"
-	clean    = "false"
-
 	// Operator flags
 	certDir                   string
 	enableV1Beta1LogPipelines bool
@@ -110,14 +106,6 @@ const (
 	pprofPort       = 6060
 	webhookPort     = 9443
 )
-
-type BuildInfo struct {
-	GitRevision     string `json:"gitRevision"`
-	GitTag          string `json:"gitTag"`
-	GoVersion       string `json:"goVersion"`
-	BuildDate       string `json:"buildDate"`
-	RepositoryClean string `json:"repositoryclean"`
-}
 
 //nolint:gochecknoinits // Runtime's scheme addition is required.
 func init() {
@@ -151,19 +139,14 @@ func run() error {
 
 	ctrl.SetLogger(zapr.NewLogger(zapLogger))
 
-	bi, err := prepareBuildInfo(revision, tag, clean)
-	if err != nil {
-		return err
-	}
-
-	logBuildAndProcessInfo(bi)
+	logBuildAndProcessInfo()
 
 	mgr, err := setupManager()
 	if err != nil {
 		return err
 	}
 
-	err = setupControllersAndWebhooks(mgr, bi)
+	err = setupControllersAndWebhooks(mgr)
 	if err != nil {
 		return err
 	}
@@ -177,7 +160,7 @@ func run() error {
 	return nil
 }
 
-func setupControllersAndWebhooks(mgr manager.Manager, bi BuildInfo) error {
+func setupControllersAndWebhooks(mgr manager.Manager) error {
 	var (
 		TracePipelineReconcile  = make(chan event.GenericEvent)
 		MetricPipelineReconcile = make(chan event.GenericEvent)
@@ -188,11 +171,11 @@ func setupControllersAndWebhooks(mgr manager.Manager, bi BuildInfo) error {
 		return fmt.Errorf("failed to enable trace pipeline controller: %w", err)
 	}
 
-	if err := setupMetricPipelineController(mgr, MetricPipelineReconcile, bi.GitTag); err != nil {
+	if err := setupMetricPipelineController(mgr, MetricPipelineReconcile); err != nil {
 		return fmt.Errorf("failed to enable metric pipeline controller: %w", err)
 	}
 
-	if err := setupLogPipelineController(mgr, LogPipelineReconcile, bi.GitTag); err != nil {
+	if err := setupLogPipelineController(mgr, LogPipelineReconcile); err != nil {
 		return fmt.Errorf("failed to enable log pipeline controller: %w", err)
 	}
 
@@ -279,19 +262,13 @@ func setupManager() (manager.Manager, error) {
 	return mgr, nil
 }
 
-func logBuildAndProcessInfo(bi BuildInfo) {
+func logBuildAndProcessInfo() {
 	buildInfoGauge := promauto.With(metrics.Registry).NewGauge(prometheus.GaugeOpts{
-		Namespace: "telemetry",
-		Subsystem: "",
-		Name:      "build_info",
-		Help:      "Build information of the Telemetry Manager",
-		ConstLabels: map[string]string{
-			"git_revision":     bi.GitRevision,
-			"git_tag":          bi.GitTag,
-			"go_version":       bi.GoVersion,
-			"build_date":       bi.BuildDate,
-			"repository_clean": bi.RepositoryClean,
-		},
+		Namespace:   "telemetry",
+		Subsystem:   "",
+		Name:        "build_info",
+		Help:        "Build information of the Telemetry Manager",
+		ConstLabels: build.AsLabels(),
 	})
 	buildInfoGauge.Set(1)
 
@@ -301,7 +278,7 @@ func logBuildAndProcessInfo(bi BuildInfo) {
 		Help:      "Enabled feature flags in the Telemetry Manager",
 	}, []string{"flag"})
 
-	setupLog.Info("Starting Telemetry Manager", "GitRevision", bi.GitRevision, "GitTag", bi.GitTag, "GoVersion", bi.GoVersion, "BuildDate", bi.BuildDate, "RepositoryClean", bi.RepositoryClean)
+	setupLog.Info("Starting Telemetry Manager", "GitCommit", build.GitCommit(), "GitTag", build.GitTag(), "GitTreeState", build.GitTreeState(), "GoVersion", build.GoVersion())
 
 	for _, flg := range featureflags.EnabledFlags() {
 		featureFlagsGaugeVec.WithLabelValues(flg.String()).Set(1)
@@ -328,28 +305,6 @@ func parseFlags() {
 	flag.StringVar(&selfMonitorImage, "self-monitor-image", images.DefaultSelfMonitorImage, "Image for self-monitor")
 
 	flag.Parse()
-}
-
-func prepareBuildInfo(revision, tag, clean string) (BuildInfo, error) {
-	info, ok := debug.ReadBuildInfo()
-	if !ok {
-		return BuildInfo{}, fmt.Errorf("failed to read build info")
-	}
-
-	const shortSHALenght = 7
-
-	if len(revision) >= shortSHALenght {
-		revision = revision[:shortSHALenght]
-	}
-
-	bi := BuildInfo{
-		GoVersion:       info.GoVersion,
-		RepositoryClean: clean,
-		GitRevision:     revision,
-		GitTag:          tag,
-	}
-
-	return bi, nil
 }
 
 func setupAdmissionsWebhooks(mgr manager.Manager) error {
@@ -417,7 +372,7 @@ func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetr
 	return nil
 }
 
-func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent, moduleVersion string) error {
+func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
 	if featureflags.IsEnabled(featureflags.V1Beta1) {
 		setupLog.Info("Registering conversion webhooks for LogPipelines")
 		utilruntime.Must(telemetryv1beta1.AddToScheme(scheme))
@@ -450,7 +405,7 @@ func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan
 			RestConfig:                  mgr.GetConfig(),
 			SelfMonitorName:             selfMonitorName,
 			TelemetryNamespace:          telemetryNamespace,
-			ModuleVersion:               moduleVersion,
+			ModuleVersion:               build.GitTag(),
 		},
 	)
 	if err != nil {
@@ -502,7 +457,7 @@ func setupTracePipelineController(mgr manager.Manager, reconcileTriggerChan <-ch
 	return nil
 }
 
-func setupMetricPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent, moduleVersion string) error {
+func setupMetricPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
 	setupLog.Info("Setting up metricpipeline controller")
 
 	metricPipelineController, err := telemetrycontrollers.NewMetricPipelineController(
@@ -511,7 +466,7 @@ func setupMetricPipelineController(mgr manager.Manager, reconcileTriggerChan <-c
 		telemetrycontrollers.MetricPipelineControllerConfig{
 			MetricAgentPriorityClassName:   highPriorityClassName,
 			MetricGatewayPriorityClassName: normalPriorityClassName,
-			ModuleVersion:                  moduleVersion,
+			ModuleVersion:                  build.GitTag(),
 			OTelCollectorImage:             otelCollectorImage,
 			RestConfig:                     mgr.GetConfig(),
 			SelfMonitorName:                selfMonitorName,

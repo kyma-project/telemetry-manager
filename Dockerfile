@@ -25,12 +25,14 @@ RUN git config --global --add safe.directory /telemetry-manager-workspace && git
 RUN go mod tidy && \
   export TAG=$(git describe --tags) && \
   export COMMIT=${BUILD_COMMIT_SHA} && \
-  export CLEAN=$(git diff -s --exit-code && echo "true" || echo "false") && \
+  export TREESTATE=$(git diff -s --exit-code && echo "clean" || echo "modified") && \
   CGO_ENABLED=0 \
   GOOS=${TARGETOS:-linux} \
   GOARCH=${TARGETARCH} \
   go build \
-    -ldflags="-X main.revision=${COMMIT} -X main.tag=${TAG} -X main.clean=${CLEAN}" \
+    -ldflags="-X github.com/kyma-project/telemetry-manager/internal/build.gitCommit=${COMMIT} \
+    -X github.com/kyma-project/telemetry-manager/internal/build.gitTag=${TAG} \
+    -X github.com/kyma-project/telemetry-manager/internal/build.gitTreeState=${TREESTATE}" \
     -a -o manager main.go
 
 FROM scratch
