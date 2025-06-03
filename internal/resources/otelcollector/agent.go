@@ -136,11 +136,13 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
+	secretsInChecksum := []corev1.Secret{}
 	if opts.CollectorEnvVars != nil {
-		secret := makeSecret(name, commonresources.LabelValueK8sComponentGateway, opts.CollectorEnvVars)
+		secret := makeSecret(name, commonresources.LabelValueK8sComponentAgent, opts.CollectorEnvVars)
 		if err := k8sutils.CreateOrUpdateSecret(ctx, c, secret); err != nil {
 			return fmt.Errorf("failed to create env secret: %w", err)
 		}
+		secretsInChecksum = append(secretsInChecksum, *secret)
 	}
 
 	configMap := makeConfigMap(name, commonresources.LabelValueK8sComponentAgent, opts.CollectorConfigYAML)
@@ -148,7 +150,7 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 		return fmt.Errorf("failed to create configmap: %w", err)
 	}
 
-	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{})
+	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, secretsInChecksum)
 	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, aad.makeAgentDaemonSet(configChecksum)); err != nil {
 		return fmt.Errorf("failed to create daemonset: %w", err)
 	}
