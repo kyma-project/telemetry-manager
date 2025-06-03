@@ -537,14 +537,13 @@ To detect and fix such situations, check the [pipeline status](./resources/02-lo
 
 ## Limitations
 
-- **Throughput**: When tested with a typical remote backend, such as SAP Cloud Logging backend, the Telemetry module can process approximately 12,200 logs per second (LPS) using its default configuration with two log gateway instances. While a backend like the [SAP Cloud Logging backend (Large instance), supports up to 30,000 LPS](https://pages.github.tools.sap/perfx/cloud-logging-service/plans-and-prices/#performance-limitations), the log gateway becomes the limiting factor in this setup (*). To ensure availability, the log gateway runs with multiple instances. If you want to increase the maximum throughput, manually scale out the gateway by increasing the number of replicas to 4 instances, which raises the throughput to about 20,600 LPS. See [Module Configuration and Status](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration). Further scaling yields diminishing returns, as additional logs may be dropped.
+- **Throughput**:
+  - When pushing OTLP logs of an average size of 2KB to the log gateway, using its default configuration (two instances), the Telemetry module can process approximately 12,200 logs per second (LPS). To ensure availability, the log gateway runs with multiple instances. To support scenarios like a [`Large` instance of SAP Cloud Logging (up to 30,000 LPS)](https://pages.github.tools.sap/perfx/cloud-logging-service/plans-and-prices/#performance-limitations), manually scale out the gateway by increasing the number of replicas to 4 instances, which raises the throughput to about 20,600 LPS. See [Module Configuration and Status](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration). Further scaling yields diminishing returns, as additional logs may be dropped.
+  - For tailing logs from stdout using the `runtime` input, the log agent is used instead, which runs one instance per node. When writing logs of an average size of 1,000 lines per log record to stdout, a single log agent instance can process approximately 10,000 LPS.
 - **Load Balancing With Istio**: By design, the connections to the gateway are long-living connections (because OTLP is based on gRPC and HTTP/2). For optimal scaling of the gateway, the clients or applications must balance the connections across the available instances, which is automatically achieved if you use an Istio sidecar. If your application has no Istio sidecar, the data is always sent to one instance of the gateway.
 - **Unavailability of Output**: For up to 5 minutes, a retry for data is attempted when the destination is unavailable. After that, data is dropped.
 - **No Guaranteed Delivery**: The used buffers are volatile. If the gateway or agent instances crash, logs data can be lost.
 - **Multiple LogPipeline Support**: The maximum amount of LogPipeline resources is 5.
-
-> **(*) Note:**
-> For exact numbers and benchmarking results, please refer to: [CLS Performance Test Results in the Telemetry Manager repository](https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/benchmarks/cls-performance.md).
 
 ## Troubleshooting
 
