@@ -25,6 +25,8 @@ import (
 	"time"
 
 	"github.com/go-logr/zapr"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.uber.org/zap/zapcore"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -277,9 +279,28 @@ func setupManager() (manager.Manager, error) {
 }
 
 func logBuildAndProcessInfo(bi BuildInfo) {
+	buildinfo := promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "telemetry_build_info",
+		Help: "Build information of the Telemetry Manager",
+		ConstLabels: map[string]string{
+			"git_revision":     bi.GitRevision,
+			"git_tag":          bi.GitTag,
+			"go_version":       bi.GoVersion,
+			"build_date":       bi.BuildDate,
+			"repository_clean": bi.RepositoryClean,
+		},
+	})
+	buildinfo.Set(1)
+
+	features := promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "telemetry_feature_flags",
+		Help: "Enabled feature flags in the Telemetry Manager",
+	}, []string{"flag"})
+
 	setupLog.Info("Starting Telemetry Manager", "GitRevision", bi.GitRevision, "GitTag", bi.GitTag, "GoVersion", bi.GoVersion, "BuildDate", bi.BuildDate, "RepositoryClean", bi.RepositoryClean)
 
 	for _, flg := range featureflags.EnabledFlags() {
+		features.WithLabelValues(flg.String()).Set(1)
 		setupLog.Info("Enabled feature flag", "flag", flg)
 	}
 }
