@@ -3,7 +3,6 @@
 package istio
 
 import (
-	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"net/http"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -17,13 +16,14 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/istio"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelIntegration, suite.LabelExperimental), Ordered, func() {
 	const (
 		sampleAppNs = "istio-permissive-mtls"
 	)

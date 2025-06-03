@@ -44,5 +44,5 @@ var AccessLogOTLPLogAttributeKeys = []string{
 	/* TODO: Enable these attributes after added to the istio telemetry extension configuration
 	"network.protocol.name",
 	"network.protocol.version",
-	 */
+	*/
 }
