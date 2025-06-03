@@ -63,11 +63,8 @@ type MetricExporter struct {
 }
 
 type PrometheusMetricExporter struct {
-	Host              string `yaml:"host"`
-	Port              int32  `yaml:"port"`
-	WithoutScopeInfo  bool   `yaml:"without_scope_info,omitempty"`
-	WithoutTypeSuffix bool   `yaml:"without_type_suffix,omitempty"`
-	WithoutUnits      bool   `yaml:"without_units,omitempty"`
+	Host string `yaml:"host"`
+	Port int32  `yaml:"port"`
 }
 
 type Logs struct {
@@ -75,10 +72,10 @@ type Logs struct {
 	Encoding string `yaml:"encoding"`
 }
 
-func DefaultBaseConfig(pipelines Pipelines, compatibilityMode bool, opts ...ConfigOption) *Base {
+func DefaultBaseConfig(pipelines Pipelines, opts ...ConfigOption) *Base {
 	baseConfig := &Base{
 		DefaultExtensions(),
-		DefaultService(pipelines, compatibilityMode),
+		DefaultService(pipelines),
 	}
 
 	for _, opt := range opts {
@@ -101,7 +98,7 @@ func WithK8sLeaderElector(authType, leaseName, leaseNamespace string) ConfigOpti
 	}
 }
 
-func DefaultService(pipelines Pipelines, compatibilityMode bool) Service {
+func DefaultService(pipelines Pipelines) Service {
 	telemetry := Telemetry{
 		Metrics: Metrics{
 			Readers: []MetricReader{
@@ -109,11 +106,8 @@ func DefaultService(pipelines Pipelines, compatibilityMode bool) Service {
 					Pull: PullMetricReader{
 						Exporter: MetricExporter{
 							Prometheus: PrometheusMetricExporter{
-								Host:              fmt.Sprintf("${%s}", EnvVarCurrentPodIP),
-								Port:              ports.Metrics,
-								WithoutScopeInfo:  compatibilityMode,
-								WithoutTypeSuffix: compatibilityMode,
-								WithoutUnits:      compatibilityMode,
+								Host: fmt.Sprintf("${%s}", EnvVarCurrentPodIP),
+								Port: ports.Metrics,
 							},
 						},
 					},
