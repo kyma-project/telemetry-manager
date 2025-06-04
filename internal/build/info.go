@@ -34,6 +34,7 @@ func GitCommit() string {
 	if gitCommit == "" {
 		return "unknown"
 	}
+
 	const shortSHALength = 7
 	if len(gitCommit) > shortSHALength {
 		return gitCommit[:shortSHALength]
