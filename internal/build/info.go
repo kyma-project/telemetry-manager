@@ -31,6 +31,9 @@ func GitTag() string {
 }
 
 func GitCommit() string {
+	if gitCommit == "" {
+		return "unknown"
+	}
 	const shortSHALength = 7
 	if len(gitCommit) > shortSHALength {
 		return gitCommit[:shortSHALength]
@@ -39,8 +42,10 @@ func GitCommit() string {
 	return gitCommit
 }
 
+var readBuildInfo = debug.ReadBuildInfo
+
 func GoVersion() string {
-	buildInfo, ok := debug.ReadBuildInfo()
+	buildInfo, ok := readBuildInfo()
 	if !ok {
 		return "unknown"
 	}
