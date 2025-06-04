@@ -67,6 +67,26 @@ The Telemetry gateways automatically enrich your data by adding the following at
   - Deployment/DaemonSet/StatefulSet/Job name
   - Namespace
   - Cluster name
+- `k8s.pod.label.<label_key>` attributes: In addition to the predefined enrichments, the Telemetry gateways support uer-defined enrichments of telemetry data based on Pod labels. Users can configure specific label keys or label key prefixes to include in the enrichment process. This allows for the capture of custom application metadata that may be relevant for filtering, grouping, or correlation purposes. All matching Pod labels are added to the telemetry data as resource attributes, using original label key format `k8s.pod.label.<label_key>`.
+
+The following example configuration shows how to enrich telemetry data with Pod labels that match the specified keys or key prefixes:
+```yaml
+apiVersion: operator.kyma-project.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: default
+  namespace: kyma-system
+spec:
+  enrichments:
+    extractPodLabels:
+      - key: my.pod.label.exact.key
+      - keyPrefix: my.pod.label.prefix
+```
+
+The above configuration enriches the telemetry data with the following resource attributes:
+`k8s.pod.label.my.pod.label.exact.key`: The value of the exact label key `my.pod.label.exact.key` from the Pod.
+`k8s.pod.label.my.pod.label.prefix.*`: All labels that start with the prefix `my.pod.label.prefix` from the Pod, where `*` is replaced by the actual label key.
+
 - Cloud provider attributes: If data is available, the gateway automatically adds [cloud provider](https://opentelemetry.io/docs/specs/semconv/resource/cloud/) attributes to the telemetry data.
   - `cloud.provider`: Cloud provider name
   - `cloud.region`: Region where the Node runs (from Node label `topology.kubernetes.io/region`)
@@ -74,6 +94,8 @@ The Telemetry gateways automatically enrich your data by adding the following at
 - Host attributes: If data is available, the gateway automatically adds [host](https://opentelemetry.io/docs/specs/semconv/resource/host/) attributes to the telemetry data:
   - `host.type`: Machine type of the Node (from Node label `node.kubernetes.io/instance-type`)
   - `host.arch`: CPU architecture of the system the Node is running on (from Node label `kubernetes.io/arch`)
+
+
 
 ## Istio Support
 
