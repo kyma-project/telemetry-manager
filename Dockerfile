@@ -24,13 +24,15 @@ COPY webhook/ webhook/
 # was called. For example, if we call make docker-build in a local env which has the Apple Silicon M1 SO
 # the docker BUILDPLATFORM arg will be linux/arm64 when for Apple x86 it will be linux/amd64. Therefore,
 # by leaving it empty we can ensure that the container and binary shipped on it will have the same platform.
-RUN go mod tidy && CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o manager main.go
+RUN go mod tidy && CGO_ENABLED=0 GOFIPS=latest GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o manager main.go
 
 FROM scratch
 
 LABEL org.opencontainers.image.source="https://github.com/kyma-project/telemetry-manager"
 
 WORKDIR /
+
+ENV GODEBUG=fips140=only
 
 COPY --from=builder /telemetry-manager-workspace/manager .
 
