@@ -58,6 +58,8 @@ provision-gardener: $(JQ) ## Provision gardener cluster with latest k8s version
 	mkdir -p ~/.kube
 	mv ${GARDENER_CLUSTER_NAME}_kubeconfig.yaml ~/.kube/config
 
+	kubectl create ns kyma-system
+
 .PHONY: deprovision-gardener
 deprovision-gardener:## Deprovision gardener cluster
 	kubectl --kubeconfig=${GARDENER_SA_PATH} annotate shoot ${GARDENER_CLUSTER_NAME} confirmation.gardener.cloud/deletion=true
