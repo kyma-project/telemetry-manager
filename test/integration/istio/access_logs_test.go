@@ -23,7 +23,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelGardener), Ordered, func() {
 	const (
 		// creating mocks in a specially prepared namespace that allows calling workloads in the mesh via API server proxy
 		sampleAppNs = "istio-permissive-mtls"

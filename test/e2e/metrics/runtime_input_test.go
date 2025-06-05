@@ -1,3 +1,5 @@
+//go:build e2e
+
 package metrics
 
 import (
@@ -209,7 +211,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 				backendContainsDesiredMetricAttributes(suite.ProxyClient, backendResourceMetricsEnabledURLA, podNetworkIOMetric, runtime.PodMetricsAttributes[podNetworkIOMetric])
 			})
 
-			It("Should deliver node metrics with expected resource attributes and metric attributes", func() {
+			It("Should deliver node metrics with expected resource attributes and metric attributes", Label(suite.LabelGardener), func() {
 				backendContainsMetricsDeliveredForResource(suite.ProxyClient, backendResourceMetricsEnabledURLA, runtime.NodeMetricsNames)
 				backendContainsDesiredResourceAttributes(suite.ProxyClient, backendResourceMetricsEnabledURLA, "k8s.node.cpu.usage", runtime.NodeMetricsResourceAttributes)
 

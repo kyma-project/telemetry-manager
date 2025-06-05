@@ -23,7 +23,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelGardener), Ordered, func() {
 	const (
 		appName          = "app-1"
 		istiofiedAppName = "app-2"
