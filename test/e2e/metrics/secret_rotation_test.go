@@ -1,6 +1,6 @@
 //go:build e2e
 
-package traces
+package metrics
 
 import (
 	. "github.com/onsi/ginkgo/v2"
@@ -17,9 +17,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
-	Context("When tracepipeline referecing a secret with incorrect endpoint exists", Ordered, func() {
-		const endpointKey = "traces-endpoint"
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), func() {
+	Context("When metricpipeline referecing a secret with incorrect endpoint exists", Ordered, func() {
+		const endpointKey = "metrics-endpoint"
 
 		var (
 			mockNs       = suite.ID()
@@ -28,18 +28,18 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		)
 
 		// Initially, create a secret with an incorrect endpoint
-		secret := kitk8s.NewOpaqueSecret("traces-secret-rotation", kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, "http://localhost:4000"))
-		tracePipeline := testutils.NewTracePipelineBuilder().
+		secret := kitk8s.NewOpaqueSecret("metrics-secret-rotation", kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, "http://localhost:4000"))
+		metricPipeline := testutils.NewMetricPipelineBuilder().
 			WithName(pipelineName).
 			WithOTLPOutput(testutils.OTLPEndpointFromSecret(secret.Name(), secret.Namespace(), endpointKey)).
 			Build()
-		backend = kitbackend.New(mockNs, kitbackend.SignalTypeTraces)
+		backend = kitbackend.New(mockNs, kitbackend.SignalTypeMetrics)
 
 		resources := []client.Object{
 			kitk8s.NewNamespace(mockNs).K8sObject(),
 			secret.K8sObject(),
-			&tracePipeline,
-			telemetrygen.NewPod(mockNs, telemetrygen.SignalTypeTraces).K8sObject(),
+			&metricPipeline,
+			telemetrygen.NewPod(mockNs, telemetrygen.SignalTypeMetrics).K8sObject(),
 		}
 		resources = append(resources, backend.K8sObjects()...)
 
@@ -51,32 +51,32 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			})
 		})
 
-		It("Should have a running trace gateway deployment", func() {
-			assert.DeploymentReady(suite.Ctx, kitkyma.TraceGatewayName)
+		It("Should have a running metrics gateway deployment", func() {
+			assert.DeploymentReady(suite.Ctx, kitkyma.MetricGatewayName)
 		})
 
-		It("Should have a trace backend running", func() {
+		It("Should have a metrics backend running", func() {
 			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have a running pipeline", func() {
-			assert.TracePipelineHealthy(suite.Ctx, pipelineName)
+			assert.MetricPipelineHealthy(suite.Ctx, pipelineName)
 		})
 
-		It("Should initially not deliver telemetrygen traces to the backend due to the incorrect endpoint in the secret", func() {
-			assert.TracesFromNamespacesNotDelivered(suite.ProxyClient, backend.ExportURL(suite.ProxyClient), []string{mockNs})
+		It("Should initially not deliver telemetrygen metrics to the backend due to the incorrect endpoint in the secret", func() {
+			assert.MetricsFromNamespaceNotDelivered(suite.ProxyClient, backend.ExportURL(suite.ProxyClient), mockNs)
 		})
 
-		It("Should deliver telemetrygen traces to the backend", func() {
+		It("Should deliver telemetrygen metrics to the backend", func() {
 			By("Updating secret with the correct endpoint", func() {
 				secret.UpdateSecret(kitk8s.WithStringData(endpointKey, backend.Endpoint()))
 				Expect(kitk8s.UpdateObjects(suite.Ctx, secret.K8sObject())).Should(Succeed())
 			})
 
-			assert.DeploymentReady(suite.Ctx, kitkyma.TraceGatewayName)
-			assert.TracePipelineHealthy(suite.Ctx, pipelineName)
+			assert.DeploymentReady(suite.Ctx, kitkyma.MetricGatewayName)
+			assert.MetricPipelineHealthy(suite.Ctx, pipelineName)
 
-			assert.TracesFromNamespaceDelivered(suite.ProxyClient, backend.ExportURL(suite.ProxyClient), mockNs)
+			assert.MetricsFromNamespaceDelivered(suite.ProxyClient, backend.ExportURL(suite.ProxyClient), mockNs, telemetrygen.MetricNames)
 		})
 	})
 
