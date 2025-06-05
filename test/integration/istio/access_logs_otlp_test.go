@@ -23,7 +23,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label("ttt"), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelIntegration, suite.LabelExperimental), Ordered, func() {
 	const (
 		sampleAppNs = "istio-permissive-mtls"
 	)
@@ -132,6 +132,7 @@ var _ = Describe(suite.ID(), Label("ttt"), Ordered, func() {
 					Not(log.HaveResourceAttributes(HaveKey("log_name"))),
 					Not(log.HaveResourceAttributes(HaveKey("zone_name"))),
 					Not(log.HaveResourceAttributes(HaveKey("node_name"))),
+					Not(log.HaveAttributes(HaveKey("kyma.module"))),
 				)))))
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
