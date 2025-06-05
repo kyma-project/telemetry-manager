@@ -1,5 +1,12 @@
-# More info: https://docs.docker.com/engine/reference/builder/#dockerignore-file
-# Ignore all files which are not go type
-!**/*.go
-!**/*.mod
-!**/*.sum
+# Exclude everything by default
+**
+
+# Allow only the files and directories that are copied in the Dockerfile
+!go.mod
+!go.sum
+!.git
+!main.go
+!apis/
+!controllers/
+!internal/
+!webhook/
