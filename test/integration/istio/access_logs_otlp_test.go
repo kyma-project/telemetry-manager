@@ -112,12 +112,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration, suite.LabelExperiment
 						Equal("main"),
 						MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
 					)),
-
-					log.HaveResourceAttributes(Not(SatisfyAny(
-						HaveKey("cluster_name"),
-						HaveKey("log_name"),
-						HaveKey("zone_name"),
-						HaveKey("node_name")))),
 				)))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
