@@ -24,10 +24,11 @@ func TestAgent_ApplyResources(t *testing.T) {
 	priorityClassName := "normal"
 
 	tests := []struct {
-		name           string
-		sut            *AgentApplierDeleter
-		goldenFilePath string
-		saveGoldenFile bool
+		name             string
+		sut              *AgentApplierDeleter
+		goldenFilePath   string
+		saveGoldenFile   bool
+		collectorEnvVars map[string][]byte
 	}{
 		{
 			name:           "metric agent",
@@ -38,7 +39,9 @@ func TestAgent_ApplyResources(t *testing.T) {
 			name:           "log agent",
 			sut:            NewLogAgentApplierDeleter(image, namespace, priorityClassName),
 			goldenFilePath: "testdata/log-agent.yaml",
-		},
+			collectorEnvVars: map[string][]byte{
+				"DUMMY_ENV_VAR": []byte("foo"),
+			}},
 	}
 
 	for _, tt := range tests {
@@ -60,6 +63,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 			err := tt.sut.ApplyResources(t.Context(), fakeClient, AgentApplyOptions{
 				AllowedPorts:        []int32{5555, 6666},
 				CollectorConfigYAML: "dummy",
+				CollectorEnvVars:    tt.collectorEnvVars,
 			})
 			require.NoError(t, err)
 
