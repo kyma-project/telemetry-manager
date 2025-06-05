@@ -283,12 +283,19 @@ func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
 
+	var enrichments *operatorv1alpha1.EnrichmentSpec
+
+	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.telemetryNamespace)
+	if err == nil {
+		enrichments = t.Spec.Enrichments
+	}
+
 	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, gateway.BuildOptions{
 		GatewayNamespace:            r.telemetryNamespace,
 		InstrumentationScopeVersion: r.moduleVersion,
 		ClusterName:                 shootInfo.ClusterName,
 		CloudProvider:               shootInfo.CloudProvider,
-		Enrichments:                 telemetryutils.GetEnrichmentsFromTelemetry(ctx, r.Client, r.telemetryNamespace),
+		Enrichments:                 enrichments,
 	})
 
 	if err != nil {

@@ -246,10 +246,17 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, allPipelines []telemetryv1alpha1.LogPipeline) error {
 	clusterInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
 
+	var enrichments *operatorv1alpha1.EnrichmentSpec
+
+	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.telemetryNamespace)
+	if err == nil {
+		enrichments = t.Spec.Enrichments
+	}
+
 	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, gateway.BuildOptions{
 		ClusterName:   clusterInfo.ClusterName,
 		CloudProvider: clusterInfo.CloudProvider,
-		Enrichments:   telemetryutils.GetEnrichmentsFromTelemetry(ctx, r.Client, r.telemetryNamespace),
+		Enrichments:   enrichments,
 		ModuleVersion: r.moduleVersion,
 	})
 
@@ -291,12 +298,19 @@ func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetr
 }
 
 func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, allPipelines []telemetryv1alpha1.LogPipeline) error {
+	var enrichments *operatorv1alpha1.EnrichmentSpec
+
+	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.telemetryNamespace)
+	if err == nil {
+		enrichments = t.Spec.Enrichments
+	}
+
 	agentConfig, envVars, err := r.agentConfigBuilder.Build(ctx, allPipelines, agent.BuildOptions{
 		InstrumentationScopeVersion: r.moduleVersion,
 		AgentNamespace:              r.telemetryNamespace,
 		ClusterName:                 k8sutils.GetGardenerShootInfo(ctx, r.Client).ClusterName,
 		CloudProvider:               k8sutils.GetGardenerShootInfo(ctx, r.Client).CloudProvider,
-		Enrichments:                 telemetryutils.GetEnrichmentsFromTelemetry(ctx, r.Client, r.telemetryNamespace),
+		Enrichments:                 enrichments,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to build agent config: %w", err)
