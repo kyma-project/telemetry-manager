@@ -102,6 +102,7 @@ jobs:
         shell: bash
         run: bin/ginkgo run --junit-report=junit-report-e2e.xml --tags e2e --label-filter="gardener" -r test/e2e
 
+      # Always run deprovision unless workflow was cancelled
       - name: Deprovision Gardener
         shell: bash
         if: ${{ !cancelled() }}
