@@ -84,8 +84,6 @@ The Telemetry gateways automatically enrich your data by adding the following at
        - key: "<myExactLabelKey>" # for example, "app.kubernetes.io/name"
        - keyPrefix: "<myLabelPrefix>" # for example, "app.kubernetes.io"
    ```
-
-
 - Cloud provider attributes: If data is available, the gateway automatically adds [cloud provider](https://opentelemetry.io/docs/specs/semconv/resource/cloud/) attributes to the telemetry data.
   - `cloud.provider`: Cloud provider name
   - `cloud.region`: Region where the Node runs (from Node label `topology.kubernetes.io/region`)
