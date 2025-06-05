@@ -92,6 +92,20 @@ func MetricPipelineHealthy(ctx context.Context, pipelineName string) {
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
+func MetricPipelineHasConditionWithT(t TestingT, pipelineName string, expectedCond metav1.Condition) {
+	t.Helper()
+	
+	Eventually(func(g Gomega) {
+		var pipeline telemetryv1alpha1.MetricPipeline
+		key := types.NamespacedName{Name: pipelineName}
+		g.Expect(suite.K8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
+		condition := meta.FindStatusCondition(pipeline.Status.Conditions, expectedCond.Type)
+		g.Expect(condition).NotTo(BeNil())
+		g.Expect(condition.Reason).To(Equal(expectedCond.Reason))
+		g.Expect(condition.Status).To(Equal(expectedCond.Status))
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+}
+
 func MetricPipelineHasCondition(ctx context.Context, pipelineName string, expectedCond metav1.Condition) {
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.MetricPipeline
