@@ -23,7 +23,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelIntegration, suite.LabelExperimental), Ordered, func() {
+var _ = Describe(suite.ID(), Label("ttt"), Ordered, func() {
 	const (
 		sampleAppNs = "istio-permissive-mtls"
 	)
@@ -120,6 +120,20 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration, suite.LabelExperiment
 						HaveKey("node_name")))),
 				)))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Should verify istio cluster attributes are not present", func() {
+			Consistently(func(g Gomega) {
+				resp, err := suite.ProxyClient.Get(backendExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(log.HaveFlatLogs(HaveEach(SatisfyAll(
+					Not(log.HaveResourceAttributes(HaveKey("cluster_name"))),
+					Not(log.HaveResourceAttributes(HaveKey("log_name"))),
+					Not(log.HaveResourceAttributes(HaveKey("zone_name"))),
+					Not(log.HaveResourceAttributes(HaveKey("node_name"))),
+				)))))
+			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
 })
