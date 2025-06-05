@@ -31,6 +31,7 @@ func makePipelineServiceConfig(pipeline *telemetryv1alpha1.LogPipeline) config.P
 		"resource/insert-cluster-attributes",
 		"service_enrichment",
 		"resource/drop-kyma-attributes",
+		"istio_enrichment",
 		"batch",
 	)
 
