@@ -13,7 +13,6 @@ func makeProcessorsConfig(opts BuildOptions) Processors {
 		},
 		K8sAttributes:           processors.K8sAttributesProcessorConfig(processors.Enrichments{}),
 		InsertClusterAttributes: processors.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.CloudProvider),
-		DropNoisySpans:          makeDropNoisySpansConfig(),
 		ResolveServiceName:      processors.MakeResolveServiceNameConfig(),
 		DropKymaAttributes:      processors.DropKymaAttributesProcessorConfig(),
 	}
