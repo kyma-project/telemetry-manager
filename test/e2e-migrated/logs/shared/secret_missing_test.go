@@ -97,21 +97,21 @@ func TestSecretMissing_OTel(t *testing.T) {
 func TestSecretMissing_FluentBit(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelFluentBit)
 
-	const endpointKey = "logs-endpoint"
+	const hostKey = "logs-host"
 
 	var (
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
 	)
 
-	secret := kitk8s.NewOpaqueSecret("logs-missing", kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, "http://localhost:4317"))
+	secret := kitk8s.NewOpaqueSecret("logs-missing", kitkyma.DefaultNamespaceName, kitk8s.WithStringData(hostKey, "localhost"))
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithHTTPOutput(testutils.HTTPHostFromSecret(
 			secret.Name(),
 			secret.Namespace(),
-			endpointKey,
+			hostKey,
 		)).
 		Build()
 

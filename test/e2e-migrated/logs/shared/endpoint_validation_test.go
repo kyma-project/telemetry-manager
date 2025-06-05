@@ -94,8 +94,8 @@ func TestEndpointInvalid_FluentBit(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelFluentBit)
 
 	const (
-		endpointKey     = "endpoint"
-		invalidEndpoint = "'http://example.com'"
+		hostKey     = "host"
+		invalidHost = "'http://example.com'"
 	)
 
 	var (
@@ -107,13 +107,13 @@ func TestEndpointInvalid_FluentBit(t *testing.T) {
 
 	pipelineInvalidEndpointValue := testutils.NewLogPipelineBuilder().
 		WithName(pipelineNameValue).
-		WithHTTPOutput(testutils.HTTPHost(invalidEndpoint)).
+		WithHTTPOutput(testutils.HTTPHost(invalidHost)).
 		Build()
 
-	secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, invalidEndpoint))
+	secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(hostKey, invalidHost))
 	pipelineInvalidEndpointValueFrom := testutils.NewLogPipelineBuilder().
 		WithName(pipelineNameValueFromSecret).
-		WithHTTPOutput(testutils.HTTPHostFromSecret(secret.Name(), secret.Namespace(), endpointKey)).
+		WithHTTPOutput(testutils.HTTPHostFromSecret(secret.Name(), secret.Namespace(), hostKey)).
 		Build()
 
 	resourcesToSucceedCreation := []client.Object{
