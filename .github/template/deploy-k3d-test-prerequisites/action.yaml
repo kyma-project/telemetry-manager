@@ -13,3 +13,8 @@ runs:
     - name: Create Network Policy
       shell: bash
       run: kubectl apply -f config/networking/networkpolicy-deny-all.yaml -n kyma-system
+
+    # Deploying to simulate a Gardener ConfigMap "shoot-info" to simulate cloud provider attributes
+    - name: Create Gardener `shoot-info` ConfigMap
+      shell: bash
+      run: kubectl apply -f config/samples/shoot_info_cm.yaml
