@@ -4,6 +4,8 @@ permissions:
   contents: read
 
 env:
+  GIT_COMMIT_SHA: $(git rev-parse --short=8 HEAD)
+  GIT_COMMIT_DATE: $(git show -s --format=%cd --date=format:'v%Y%m%d' ${GIT_COMMIT_SHA})
   IMG: europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA}
 
 on:
@@ -42,7 +44,7 @@ jobs:
           IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/prod/telemetry-manager"
           # sets trigger to SHA if used in merge_group, but to ref_name if used in push
           # even if ref_name is available in merge_group event, it will be neglected
-          TRIGGER: "${{ github.event.merge_group.head_sha || github.ref_name }}"
+          TRIGGER: "${{ github.event.merge_group.head_sha || $GIT_COMMIT_DATE-$GIT_COMMIT_SHA }}"
           QUERY_INTERVAL: 30
 
       # save gardener kubeconfig to a temp file in order to pass it to the command
