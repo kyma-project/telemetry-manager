@@ -246,12 +246,13 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 
 func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, allPipelines []telemetryv1alpha1.LogPipeline) error {
 	clusterInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
+
 	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, gateway.BuildOptions{
 		ClusterName:   clusterInfo.ClusterName,
 		CloudProvider: clusterInfo.CloudProvider,
 		Enrichments:   r.getEnrichmentsFromTelemetry(ctx),
+		ModuleVersion: r.moduleVersion,
 	})
-
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)
 	}
