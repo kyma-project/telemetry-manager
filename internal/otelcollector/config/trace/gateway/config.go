@@ -21,13 +21,12 @@ type Processors struct {
 
 	K8sAttributes           *config.K8sAttributesProcessor     `yaml:"k8sattributes,omitempty"`
 	InsertClusterAttributes *config.ResourceProcessor          `yaml:"resource/insert-cluster-attributes,omitempty"`
-	DropNoisySpans          FilterProcessor                    `yaml:"filter/drop-noisy-spans"`
+	IstioNoiseFilter        *IstioNoiseFilter                  `yaml:"istio_noise_filter,omitempty"`
 	ResolveServiceName      *config.ServiceEnrichmentProcessor `yaml:"service_enrichment,omitempty"`
 	DropKymaAttributes      *config.ResourceProcessor          `yaml:"resource/drop-kyma-attributes,omitempty"`
 }
 
-type FilterProcessor struct {
-	Traces Traces `yaml:"traces"`
+type IstioNoiseFilter struct {
 }
 
 type Traces struct {

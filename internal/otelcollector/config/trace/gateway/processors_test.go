@@ -85,22 +85,4 @@ func TestProcessors(t *testing.T) {
 
 		require.Equal(t, "connection", collectorConfig.Processors.K8sAttributes.PodAssociation[2].Sources[0].From)
 	})
-
-	t.Run("filter processor", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().Build()}, BuildOptions{
-			ClusterName:   "test-cluster",
-			CloudProvider: "test-cloud-provider",
-		})
-		require.NoError(t, err)
-
-		require.Equal(t, 9, len(collectorConfig.Processors.DropNoisySpans.Traces.Span), "Span filter list size is wrong")
-		require.Contains(t, collectorConfig.Processors.DropNoisySpans.Traces.Span, toFromTelemetryFluentBit, "toFromTelemetryFluentBit span filter is missing")
-		require.Contains(t, collectorConfig.Processors.DropNoisySpans.Traces.Span, toFromTelemetryTraceGateway, "toFromTelemetryTraceGateway span filter is missing")
-		require.Contains(t, collectorConfig.Processors.DropNoisySpans.Traces.Span, toFromTelemetryMetricGateway, "toFromTelemetryMetricGateway span filter is missing")
-		require.Contains(t, collectorConfig.Processors.DropNoisySpans.Traces.Span, toFromTelemetryMetricAgent, "toFromTelemetryMetricAgent span filter is missing")
-		require.Contains(t, collectorConfig.Processors.DropNoisySpans.Traces.Span, toIstioGatewayWithHealthz, "toIstioGatewayWitHealthz span filter is missing")
-		require.Contains(t, collectorConfig.Processors.DropNoisySpans.Traces.Span, toTelemetryTraceService, "toTelemetryTraceService span filter is missing")
-		require.Contains(t, collectorConfig.Processors.DropNoisySpans.Traces.Span, fromVMScrapeAgent, "fromVmScrapeAgent span filter is missing")
-		require.Contains(t, collectorConfig.Processors.DropNoisySpans.Traces.Span, fromTelemetryMetricAgent, "fromTelemetryMetricAgent span filter is missing")
-	})
 }
