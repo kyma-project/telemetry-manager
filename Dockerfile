@@ -23,7 +23,7 @@ RUN git config --global --add safe.directory /telemetry-manager-workspace && git
 
 # Clean up unused (test) dependencies and build
 RUN go mod tidy && \
-  export TAG=$(git describe --tags) && \
+  export TAG=$(basename $(git describe --all)) && \
   export COMMIT=${BUILD_COMMIT_SHA} && \
   export TREESTATE=$(git diff -s --exit-code && echo "clean" || echo "modified") && \
   CGO_ENABLED=0 \
