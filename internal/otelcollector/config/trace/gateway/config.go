@@ -21,7 +21,7 @@ type Processors struct {
 
 	K8sAttributes           *config.K8sAttributesProcessor     `yaml:"k8sattributes,omitempty"`
 	InsertClusterAttributes *config.ResourceProcessor          `yaml:"resource/insert-cluster-attributes,omitempty"`
-	IstioNoiseFilter        *IstioNoiseFilter                  `yaml:"istio_noise_filter"`
+	IstioNoiseFilter        *IstioNoiseFilter                  `yaml:"istio_noise_filter,omitempty"`
 	ResolveServiceName      *config.ServiceEnrichmentProcessor `yaml:"service_enrichment,omitempty"`
 	DropKymaAttributes      *config.ResourceProcessor          `yaml:"resource/drop-kyma-attributes,omitempty"`
 }
