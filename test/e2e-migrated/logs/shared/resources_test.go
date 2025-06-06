@@ -59,10 +59,7 @@ func TestResources_OTel(t *testing.T) {
 		t.Run(tc.label, func(t *testing.T) {
 			suite.RegisterTestCase(t, tc.label)
 
-			const (
-				endpointKey = "endpoint"
-				endpoint    = "http://localhost:123"
-			)
+			const endpointKey = "endpoint"
 
 			var (
 				uniquePrefix = unique.Prefix(tc.label)
@@ -70,7 +67,7 @@ func TestResources_OTel(t *testing.T) {
 				secretName   = uniquePrefix()
 			)
 
-			secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, endpoint))
+			secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, "http://localhost:123"))
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithInput(tc.input).
 				WithName(pipelineName).
@@ -94,10 +91,7 @@ func TestResources_OTel(t *testing.T) {
 func TestResources_FluentBit(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelFluentBit)
 
-	const (
-		endpointKey = "endpoint"
-		endpoint    = "http://localhost:123"
-	)
+	const hostKey = "host"
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -119,13 +113,13 @@ func TestResources_FluentBit(t *testing.T) {
 		}
 	)
 
-	secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, endpoint))
+	secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(hostKey, "localhost"))
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithHTTPOutput(testutils.HTTPHostFromSecret(
 			secret.Name(),
 			kitkyma.DefaultNamespaceName,
-			endpointKey)).
+			hostKey)).
 		Build()
 
 	t.Cleanup(func() {
