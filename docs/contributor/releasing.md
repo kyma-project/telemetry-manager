@@ -1,5 +1,8 @@
 # Releasing
 
+## Automated releases (WIP)
+![](assets/release-workflow.png)
+
 ## Release Process
 
 This release process covers the steps to release new major and minor versions for the Kyma Telemetry module.
