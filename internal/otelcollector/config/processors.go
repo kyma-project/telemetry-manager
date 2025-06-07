@@ -31,7 +31,7 @@ type ExtractK8sMetadata struct {
 
 type ExtractLabel struct {
 	From     string `yaml:"from"`
-	Key      string `yaml:"key"`
+	Key      string `yaml:"key,omitempty"`
 	TagName  string `yaml:"tag_name"`
 	KeyRegex string `yaml:"key_regex,omitempty"`
 }

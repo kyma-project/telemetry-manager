@@ -8,10 +8,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/processors"
 )
 
 type BuilderConfig struct {
@@ -30,7 +30,7 @@ type BuildOptions struct {
 	AgentNamespace              string
 	ClusterName                 string
 	CloudProvider               string
-	Enrichments                 processors.Enrichments
+	Enrichments                 *operatorv1alpha1.EnrichmentSpec
 }
 
 func (b *Builder) Build(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {

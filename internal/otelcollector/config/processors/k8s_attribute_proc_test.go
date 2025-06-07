@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
 
@@ -75,8 +76,8 @@ func TestK8sAttributesProcessorConfig(t *testing.T) {
 		},
 	}
 
-	config := K8sAttributesProcessorConfig(Enrichments{
-		PodLabels: []PodLabel{
+	config := K8sAttributesProcessorConfig(&operatorv1alpha1.EnrichmentSpec{
+		ExtractPodLabels: []operatorv1alpha1.PodLabel{
 			{Key: "", KeyPrefix: "app.kubernetes.io/name"},
 			{Key: "app", KeyPrefix: ""},
 		},
@@ -93,20 +94,20 @@ func TestK8sAttributesProcessorConfig(t *testing.T) {
 func TestBuildPodLabelEnrichments(t *testing.T) {
 	tests := []struct {
 		name     string
-		presets  Enrichments
+		presets  *operatorv1alpha1.EnrichmentSpec
 		expected []config.ExtractLabel
 	}{
 		{
 			name: "Enrichments disabled",
-			presets: Enrichments{
-				PodLabels: []PodLabel{},
+			presets: &operatorv1alpha1.EnrichmentSpec{
+				ExtractPodLabels: []operatorv1alpha1.PodLabel{},
 			},
 			expected: []config.ExtractLabel{},
 		},
 		{
 			name: "Enrichments enabled with key",
-			presets: Enrichments{
-				PodLabels: []PodLabel{
+			presets: &operatorv1alpha1.EnrichmentSpec{
+				ExtractPodLabels: []operatorv1alpha1.PodLabel{
 					{Key: "app"},
 				},
 			},
@@ -120,8 +121,8 @@ func TestBuildPodLabelEnrichments(t *testing.T) {
 		},
 		{
 			name: "Enrichments enabled with key prefix",
-			presets: Enrichments{
-				PodLabels: []PodLabel{
+			presets: &operatorv1alpha1.EnrichmentSpec{
+				ExtractPodLabels: []operatorv1alpha1.PodLabel{
 					{KeyPrefix: "app.kubernetes.io"},
 				},
 			},
@@ -135,8 +136,8 @@ func TestBuildPodLabelEnrichments(t *testing.T) {
 		},
 		{
 			name: "Enrichments enabled with multiple labels",
-			presets: Enrichments{
-				PodLabels: []PodLabel{
+			presets: &operatorv1alpha1.EnrichmentSpec{
+				ExtractPodLabels: []operatorv1alpha1.PodLabel{
 					{Key: "app"},
 					{KeyPrefix: "app.kubernetes.io"},
 				},
