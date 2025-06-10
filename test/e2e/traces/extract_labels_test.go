@@ -78,10 +78,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces, suite.LabelExperimental), 
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
-				if telemetry != nil {
-					telemetry.Spec.Enrichments = nil
-					Expect(suite.K8sClient.Update(suite.Ctx, &telemetry)).To(Succeed())
-				}
+
+				telemetry.Spec.Enrichments = nil
+				Expect(suite.K8sClient.Update(suite.Ctx, &telemetry)).To(Succeed())
+
 			})
 
 			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
