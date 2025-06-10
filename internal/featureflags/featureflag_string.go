@@ -11,9 +11,9 @@ func _() {
 	_ = x[V1Beta1-0]
 }
 
-const _FeatureFlag_name = "V1Beta1LogPipelineOTLP"
+const _FeatureFlag_name = "V1Beta1"
 
-var _FeatureFlag_index = [...]uint8{0, 7, 22}
+var _FeatureFlag_index = [...]uint8{0, 7}
 
 func (i FeatureFlag) String() string {
 	if i < 0 || i >= FeatureFlag(len(_FeatureFlag_index)-1) {
