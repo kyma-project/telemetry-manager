@@ -29,6 +29,11 @@ func NewOpaqueSecret(name, namespace string, opts ...testkit.OptFunc) *Secret {
 	}
 }
 
+func (s *Secret) UpdateSecret(opts ...testkit.OptFunc) {
+	options := processSecretOptions(opts...)
+	s.stringData = options.stringData
+}
+
 func (s *Secret) K8sObject() *corev1.Secret {
 	var labels Labels
 	if s.persistent {
