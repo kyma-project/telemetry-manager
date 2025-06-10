@@ -288,7 +288,6 @@ func logBuildAndProcessInfo() {
 
 func initializeFeatureFlags() {
 	featureflags.Set(featureflags.V1Beta1, enableV1Beta1LogPipelines)
-	featureflags.Set(featureflags.LogPipelineOTLP, enableLogPipelinesOTLP)
 }
 
 func parseFlags() {

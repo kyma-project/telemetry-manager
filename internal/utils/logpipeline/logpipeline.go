@@ -7,7 +7,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/featureflags"
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 )
 
@@ -60,7 +59,7 @@ func pluginCount(o *telemetryv1alpha1.LogPipelineOutput) int {
 		plugins++
 	}
 
-	if featureflags.IsEnabled(featureflags.LogPipelineOTLP) && IsOTLPDefined(o) {
+	if IsOTLPDefined(o) {
 		plugins++
 	}
 

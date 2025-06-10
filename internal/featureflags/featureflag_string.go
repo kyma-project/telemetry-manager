@@ -9,7 +9,6 @@ func _() {
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
 	_ = x[V1Beta1-0]
-	_ = x[LogPipelineOTLP-1]
 }
 
 const _FeatureFlag_name = "V1Beta1LogPipelineOTLP"
