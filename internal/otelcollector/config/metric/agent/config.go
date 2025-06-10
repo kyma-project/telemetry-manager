@@ -216,13 +216,13 @@ const (
 type Processors struct {
 	config.BaseProcessors `yaml:",inline"`
 
-	DeleteServiceName                 *config.ResourceProcessor  `yaml:"resource/delete-service-name,omitempty"`
-	IstioNoiseFilter                  *config.IstioNoiseFilterProcessor   `yaml:"istio_noise_filter,omitempty"`
-	SetInstrumentationScopeRuntime    *metric.TransformProcessor `yaml:"transform/set-instrumentation-scope-runtime,omitempty"`
-	SetInstrumentationScopePrometheus *metric.TransformProcessor `yaml:"transform/set-instrumentation-scope-prometheus,omitempty"`
-	SetInstrumentationScopeIstio      *metric.TransformProcessor `yaml:"transform/set-instrumentation-scope-istio,omitempty"`
-	InsertSkipEnrichmentAttribute     *metric.TransformProcessor `yaml:"transform/insert-skip-enrichment-attribute,omitempty"`
-	DropNonPVCVolumesMetrics          *FilterProcessor           `yaml:"filter/drop-non-pvc-volumes-metrics,omitempty"`
+	DeleteServiceName                 *config.ResourceProcessor         `yaml:"resource/delete-service-name,omitempty"`
+	IstioNoiseFilter                  *config.IstioNoiseFilterProcessor `yaml:"istio_noise_filter,omitempty"`
+	SetInstrumentationScopeRuntime    *metric.TransformProcessor        `yaml:"transform/set-instrumentation-scope-runtime,omitempty"`
+	SetInstrumentationScopePrometheus *metric.TransformProcessor        `yaml:"transform/set-instrumentation-scope-prometheus,omitempty"`
+	SetInstrumentationScopeIstio      *metric.TransformProcessor        `yaml:"transform/set-instrumentation-scope-istio,omitempty"`
+	InsertSkipEnrichmentAttribute     *metric.TransformProcessor        `yaml:"transform/insert-skip-enrichment-attribute,omitempty"`
+	DropNonPVCVolumesMetrics          *FilterProcessor                  `yaml:"filter/drop-non-pvc-volumes-metrics,omitempty"`
 }
 
 type Exporters struct {
