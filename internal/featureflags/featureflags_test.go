@@ -18,13 +18,13 @@ func TestEnabledFlags(t *testing.T) {
 	Enable(V1Beta1)
 
 	flags := EnabledFlags()
-	assert.Len(t, flags, 2)
+	assert.Len(t, flags, 1)
 	assert.Contains(t, flags, V1Beta1)
 
 	Disable(V1Beta1)
 
 	flags = EnabledFlags()
-	assert.Len(t, flags, 1)
+	assert.Len(t, flags, 0)
 }
 
 func TestFeatureFlag_String(t *testing.T) {
