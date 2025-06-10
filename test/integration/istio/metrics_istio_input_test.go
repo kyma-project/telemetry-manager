@@ -186,9 +186,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 			assert.MetricsFromNamespaceNotDelivered(suite.ProxyClient, backendExportURL, app2Ns)
 		})
 
-		It("Should verify that istio metric with source_workload=telemetry-metric-gateway does not exist", func() {
-			verifyMetricIsNotPresent(backendExportURL, "source_workload", "telemetry-telemetry-gateway")
+		It("Should verify that istio metric with source_workload=telemetry-metric-agent does not exist", func() {
+			verifyMetricIsNotPresent(backendExportURL, "source_workload", "telemetry-metric-agent")
 		})
+
 		It("Should verify that istio metric with destination_workload=telemetry-metric-gateway does not exist", func() {
 			verifyMetricIsNotPresent(backendExportURL, "destination_workload", "telemetry-metric-gateway")
 		})
