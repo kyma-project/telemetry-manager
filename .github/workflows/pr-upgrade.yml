@@ -53,7 +53,8 @@ jobs:
         run: |
           git fetch --tags
           git config core.sparseCheckout true
-          echo -e "!.github/templates" >> .git/info/sparse-checkout
+          echo -e "!.github/template" >> .git/info/sparse-checkout
+          echo -e "/*" >> .git/info/sparse-checkout
           LATEST_TAG=$(git tag --sort=-creatordate | sed -n 1p)
           echo "Using tag ${LATEST_TAG}"
           git checkout ${LATEST_TAG}
