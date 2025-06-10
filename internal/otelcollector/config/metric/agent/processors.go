@@ -33,7 +33,7 @@ func makeProcessorsConfig(inputs inputSources, instrumentationScopeVersion strin
 		}
 
 		if inputs.istio {
-			processorsConfig.IstioNoiseFilter = &config.IstioNoiseFilter{}
+			processorsConfig.IstioNoiseFilter = &config.IstioNoiseFilterProcessor{}
 			processorsConfig.SetInstrumentationScopeIstio = metric.MakeInstrumentationScopeProcessor(instrumentationScopeVersion, metric.InputSourceIstio)
 		}
 	}

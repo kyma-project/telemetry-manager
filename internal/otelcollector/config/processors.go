@@ -61,5 +61,5 @@ type TransformProcessorStatements struct {
 	Conditions []string `yaml:"conditions,omitempty"`
 }
 
-type IstioNoiseFilter struct {
+type IstioNoiseFilterProcessor struct {
 }

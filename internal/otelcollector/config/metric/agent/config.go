@@ -217,7 +217,7 @@ type Processors struct {
 	config.BaseProcessors `yaml:",inline"`
 
 	DeleteServiceName                 *config.ResourceProcessor  `yaml:"resource/delete-service-name,omitempty"`
-	IstioNoiseFilter                  *config.IstioNoiseFilter   `yaml:"istio_noise_filter,omitempty"`
+	IstioNoiseFilter                  *config.IstioNoiseFilterProcessor   `yaml:"istio_noise_filter,omitempty"`
 	SetInstrumentationScopeRuntime    *metric.TransformProcessor `yaml:"transform/set-instrumentation-scope-runtime,omitempty"`
 	SetInstrumentationScopePrometheus *metric.TransformProcessor `yaml:"transform/set-instrumentation-scope-prometheus,omitempty"`
 	SetInstrumentationScopeIstio      *metric.TransformProcessor `yaml:"transform/set-instrumentation-scope-istio,omitempty"`
