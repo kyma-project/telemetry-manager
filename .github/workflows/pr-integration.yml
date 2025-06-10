@@ -351,7 +351,7 @@ jobs:
 
       - name: Run tests
         run: |
-          go test -v -timeout=20m ./test/e2e-migrated/logs/... -- -labels=${{ matrix.labels.name }}
+          go test -v -timeout=20m ./test/e2e-migrated/... -- -labels=${{ matrix.labels.name }}
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
