@@ -166,7 +166,7 @@ jobs:
         run: hack/deploy-istio.sh
 
       - name: Deploy Test Prerequisites
-        uses: "./.github/template/deploy-test-prerequisites"
+        uses: "./.github/template/deploy-k3d-test-prerequisites"
 
       - name: Run tests
         run: |
