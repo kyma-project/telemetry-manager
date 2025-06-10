@@ -39,17 +39,27 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration, suite.LabelExperiment
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs, kitk8s.WithIstioInjection()).K8sObject())
 
-		backend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsOTel)
-		objs = append(objs, backend.K8sObjects()...)
-		backendExportURL = backend.ExportURL(suite.ProxyClient)
+		backendLogs := kitbackend.New(mockNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithName("access-logs"))
+		objs = append(objs, backendLogs.K8sObjects()...)
+		backendExportURL = backendLogs.ExportURL(suite.ProxyClient)
+
+		backendTraces := kitbackend.New(mockNs, kitbackend.SignalTypeTraces, kitbackend.WithName("traces"))
+		objs = append(objs, backendTraces.K8sObjects()...)
+		backendExportURL = backendTraces.ExportURL(suite.ProxyClient)
 
 		logPipeline := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
 			WithApplicationInput(false).
-			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+			WithOTLPOutput(testutils.OTLPEndpoint(backendLogs.Endpoint())).
+			Build()
+
+		tracePipeline := testutils.NewTracePipelineBuilder().
+			WithName(pipelineName).
+			WithOTLPOutput(testutils.OTLPEndpoint(backendTraces.Endpoint())).
 			Build()
 
 		objs = append(objs, &logPipeline)
+		objs = append(objs, &tracePipeline)
 
 		// Abusing metrics provider for istio access logs
 		sampleApp := prommetricgen.New(sampleAppNs, prommetricgen.WithName("otlp-access-log-emitter"))
@@ -136,9 +146,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration, suite.LabelExperiment
 				resp, err := suite.ProxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(log.HaveFlatLogs(Not(ContainElement(SatisfyAny(
-					log.HaveAttributes(HaveKeyWithValue("server.address", "telemetry-otlp-logs.kyma-system:4317")),
-				))))))
+				g.Expect(resp).To(HaveHTTPBody(log.HaveFlatLogs(Not(ContainElement(
+					// Istio noise filter should remove access logs about sending proxy span to the trace gateway
+					log.HaveAttributes(HaveKeyWithValue("server.address", "telemetry-otlp-traces.kyma-system:4317")),
+				)))))
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
