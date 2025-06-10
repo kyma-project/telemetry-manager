@@ -33,7 +33,7 @@ func makeProcessorsConfig(inputs inputSources, instrumentationScopeVersion strin
 		}
 
 		if inputs.istio {
-			processorsConfig.DropInternalCommunication = makeFilterToDropMetricsForTelemetryComponents()
+			processorsConfig.IstioNoiseFilter = &config.IstioNoiseFilter{}
 			processorsConfig.SetInstrumentationScopeIstio = metric.MakeInstrumentationScopeProcessor(instrumentationScopeVersion, metric.InputSourceIstio)
 		}
 	}
