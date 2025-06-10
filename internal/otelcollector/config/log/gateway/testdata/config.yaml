@@ -15,6 +15,7 @@ service:
                 - resource/insert-cluster-attributes
                 - service_enrichment
                 - resource/drop-kyma-attributes
+                - istio_enrichment
                 - batch
             exporters:
                 - otlp/test
@@ -112,6 +113,8 @@ processors:
         attributes:
             - action: delete
               pattern: kyma.*
+    istio_enrichment:
+        scope_version: 1.0.0
 exporters:
     otlp/test:
         endpoint: ${OTLP_ENDPOINT_TEST}

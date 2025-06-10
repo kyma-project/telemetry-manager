@@ -31,6 +31,7 @@ on:
       - ".github/workflows/pr-upgrade.yml"
       - ".github/template/**"
       - ".env"
+      - ".k3d-kyma.yaml"
   workflow_dispatch:
 
 jobs:

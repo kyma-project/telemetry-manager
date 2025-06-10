@@ -3,15 +3,14 @@ FROM --platform=$BUILDPLATFORM golang:1.24.3-alpine3.21 AS builder
 
 ARG TARGETOS
 ARG TARGETARCH
+ARG BUILD_COMMIT_SHA
 
 WORKDIR /telemetry-manager-workspace
 # Copy the Go Modules manifests
 COPY go.mod go.mod
 COPY go.sum go.sum
-# cache deps before building and copying source so that we don't need to re-download as much
-# and so that source changes don't invalidate our downloaded layer
-RUN go mod download
-
+# Copy the git config needed for git describe
+COPY .git .git
 # Copy the go source
 COPY main.go main.go
 COPY apis/ apis/
@@ -19,12 +18,22 @@ COPY controllers/ controllers/
 COPY internal/ internal/
 COPY webhook/ webhook/
 
+RUN apk add --no-cache git
+RUN git config --global --add safe.directory /telemetry-manager-workspace && git describe --tags
+
 # Clean up unused (test) dependencies and build
-# the GOARCH has not a default value to allow the binary be built according to the host where the command
-# was called. For example, if we call make docker-build in a local env which has the Apple Silicon M1 SO
-# the docker BUILDPLATFORM arg will be linux/arm64 when for Apple x86 it will be linux/amd64. Therefore,
-# by leaving it empty we can ensure that the container and binary shipped on it will have the same platform.
-RUN go mod tidy && CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o manager main.go
+RUN go mod tidy && \
+  export TAG=$(git describe --tags) && \
+  export COMMIT=${BUILD_COMMIT_SHA} && \
+  export TREESTATE=$(git diff -s --exit-code && echo "clean" || echo "modified") && \
+  CGO_ENABLED=0 \
+  GOOS=${TARGETOS:-linux} \
+  GOARCH=${TARGETARCH} \
+  go build \
+    -ldflags="-X github.com/kyma-project/telemetry-manager/internal/build.gitCommit=${COMMIT} \
+    -X github.com/kyma-project/telemetry-manager/internal/build.gitTag=${TAG} \
+    -X github.com/kyma-project/telemetry-manager/internal/build.gitTreeState=${TREESTATE}" \
+    -a -o manager main.go
 
 FROM scratch
 
