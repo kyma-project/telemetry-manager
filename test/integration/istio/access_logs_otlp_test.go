@@ -28,11 +28,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration, suite.LabelExperiment
 	)
 
 	var (
-		mockNs       = suite.ID()
-		pipelineName = suite.ID()
-		logBackend   *kitbackend.Backend
-		traceBackend *kitbackend.Backend
-		metricPodURL string
+		mockNs              = suite.ID()
+		pipelineName        = suite.ID()
+		logBackend          *kitbackend.Backend
+		logBackendExportURL string
+		metricPodURL        string
 	)
 
 	makeResources := func() []client.Object {
@@ -41,9 +41,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration, suite.LabelExperiment
 
 		logBackend = kitbackend.New(mockNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithName("access-logs"))
 		objs = append(objs, logBackend.K8sObjects()...)
-
-		traceBackend = kitbackend.New(mockNs, kitbackend.SignalTypeTraces, kitbackend.WithName("traces"))
-		objs = append(objs, traceBackend.K8sObjects()...)
+		logBackendExportURL = logBackend.ExportURL(suite.ProxyClient)
 
 		logPipeline := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
@@ -51,18 +49,23 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration, suite.LabelExperiment
 			WithOTLPOutput(testutils.OTLPEndpoint(logBackend.Endpoint())).
 			Build()
 
-		tracePipeline := testutils.NewTracePipelineBuilder().
-			WithName(pipelineName).
-			WithOTLPOutput(testutils.OTLPEndpoint(traceBackend.Endpoint())).
-			Build()
-
 		objs = append(objs, &logPipeline)
-		objs = append(objs, &tracePipeline)
 
 		// Abusing metrics provider for istio access logs
 		sampleApp := prommetricgen.New(sampleAppNs, prommetricgen.WithName("otlp-access-log-emitter"))
 		objs = append(objs, sampleApp.Pod().K8sObject())
 		metricPodURL = suite.ProxyClient.ProxyURLForPod(sampleAppNs, sampleApp.Name(), sampleApp.MetricsEndpoint(), sampleApp.MetricsPort())
+
+		// Deploy a TracePipeline sending spans to the trace backend to verify that
+		// the istio noise filter is applied
+		traceBackend := kitbackend.New(mockNs, kitbackend.SignalTypeTraces, kitbackend.WithName("traces"))
+		objs = append(objs, traceBackend.K8sObjects()...)
+
+		tracePipeline := testutils.NewTracePipelineBuilder().
+			WithName(pipelineName).
+			WithOTLPOutput(testutils.OTLPEndpoint(traceBackend.Endpoint())).
+			Build()
+		objs = append(objs, &tracePipeline)
 
 		return objs
 	}
@@ -111,7 +114,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration, suite.LabelExperiment
 
 		It("Should verify istio OTLP access logs are present", func() {
 			Eventually(func(g Gomega) {
-				resp, err := suite.ProxyClient.Get(logBackend.ExportURL(suite.ProxyClient))
+				resp, err := suite.ProxyClient.Get(logBackendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(log.HaveFlatLogs(HaveEach(SatisfyAll(
@@ -130,7 +133,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration, suite.LabelExperiment
 
 		It("Should verify istio cluster attributes are not present", func() {
 			Consistently(func(g Gomega) {
-				resp, err := suite.ProxyClient.Get(logBackend.ExportURL(suite.ProxyClient))
+				resp, err := suite.ProxyClient.Get(logBackendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(log.HaveFlatLogs(HaveEach(SatisfyAll(
@@ -145,7 +148,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration, suite.LabelExperiment
 
 		It("Should verify istio noise filter is applied", func() {
 			Consistently(func(g Gomega) {
-				resp, err := suite.ProxyClient.Get(logBackend.ExportURL(suite.ProxyClient))
+				resp, err := suite.ProxyClient.Get(logBackendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(log.HaveFlatLogs(Not(ContainElement(
