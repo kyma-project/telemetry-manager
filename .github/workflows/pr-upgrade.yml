@@ -48,15 +48,12 @@ jobs:
         shell: bash
         run: make provision-k3d
 
-      - name: Deploy Test Prerequisites
-        uses: "./.github/template/deploy-k3d-test-prerequisites"
-
       - name: Deploy with latest tag
         shell: bash
         run: |
           git fetch --tags
           git config core.sparseCheckout true
-          echo -e "!./.github/templates" >> .git/info/sparse-checkout
+          echo -e "!.github/templates" >> .git/info/sparse-checkout
           LATEST_TAG=$(git tag --sort=-creatordate | sed -n 1p)
           echo "Using tag ${LATEST_TAG}"
           git checkout ${LATEST_TAG}
@@ -64,6 +61,9 @@ jobs:
           GIT_COMMIT_DATE=$(git show -s --format=%cd --date=format:'v%Y%m%d' ${GIT_COMMIT_SHA})
           echo "Deploying Manager using image europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA}"
           IMG=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA} make deploy-experimental
+
+      - name: Deploy Test Prerequisites
+        uses: "./.github/template/deploy-k3d-test-prerequisites"
 
       - name: Wait for manager readiness
         shell: bash
