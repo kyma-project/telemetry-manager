@@ -52,9 +52,6 @@ jobs:
         shell: bash
         run: |
           git fetch --tags
-          git config core.sparseCheckout true
-          echo -e "!.github/template" >> .git/info/sparse-checkout
-          echo -e "/*" >> .git/info/sparse-checkout
           LATEST_TAG=$(git tag --sort=-creatordate | sed -n 1p)
           echo "Using tag ${LATEST_TAG}"
           git checkout ${LATEST_TAG}
@@ -64,7 +61,7 @@ jobs:
           IMG=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA} make deploy-experimental
 
       - name: Deploy Test Prerequisites
-        uses: "./.github/template/deploy-k3d-test-prerequisites"
+        uses: "./.github/template/deploy-test-prerequisites"
 
       - name: Wait for manager readiness
         shell: bash

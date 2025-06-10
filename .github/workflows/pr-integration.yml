@@ -74,7 +74,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deploy Test Prerequisites
-        uses: "./.github/template/deploy-k3d-test-prerequisites"
+        uses: "./.github/template/deploy-test-prerequisites"
 
       - name: Run tests
         run: bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags e2e --label-filter="${{ matrix.ginkgo-labels }} && !experimental &&!max-pipeline" -r test/e2e
@@ -106,7 +106,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deploy Test Prerequisites
-        uses: "./.github/template/deploy-k3d-test-prerequisites"
+        uses: "./.github/template/deploy-test-prerequisites"
 
       - name: Run tests
         run: bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags e2e --label-filter="${{ matrix.ginkgo-labels }} && experimental &&!max-pipeline" -r test/e2e
@@ -137,7 +137,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deploy Test Prerequisites
-        uses: "./.github/template/deploy-k3d-test-prerequisites"
+        uses: "./.github/template/deploy-test-prerequisites"
 
       - name: Run tests
         run: bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags e2e --label-filter="${{ matrix.ginkgo-labels }} && max-pipeline" -r test/e2e
@@ -166,7 +166,7 @@ jobs:
         run: hack/deploy-istio.sh
 
       - name: Deploy Test Prerequisites
-        uses: "./.github/template/deploy-k3d-test-prerequisites"
+        uses: "./.github/template/deploy-test-prerequisites"
 
       - name: Run tests
         run: |
@@ -195,7 +195,7 @@ jobs:
         run: hack/deploy-istio.sh
 
       - name: Deploy Test Prerequisites
-        uses: "./.github/template/deploy-k3d-test-prerequisites"
+        uses: "./.github/template/deploy-test-prerequisites"
 
       - name: Run tests
         run: |
@@ -233,7 +233,7 @@ jobs:
 
       - name: Deploy Test Prerequisites
         if: ${{ matrix.scenario == 'healthy' }}
-        uses: "./.github/template/deploy-k3d-test-prerequisites"
+        uses: "./.github/template/deploy-test-prerequisites"
 
       - name: Run tests without Istio
         if: ${{ matrix.scenario == 'healthy' }}
@@ -247,7 +247,7 @@ jobs:
 
       - name: Deploy Test Prerequisites
         if: ${{ matrix.scenario != 'healthy' }}
-        uses: "./.github/template/deploy-k3d-test-prerequisites"
+        uses: "./.github/template/deploy-test-prerequisites"
 
       - name: Run tests with Istio
         if: ${{ matrix.scenario != 'healthy' }}
@@ -285,7 +285,7 @@ jobs:
 
       - name: Deploy Test Prerequisites
         if: ${{ matrix.scenario == 'healthy' }}
-        uses: "./.github/template/deploy-k3d-test-prerequisites"
+        uses: "./.github/template/deploy-test-prerequisites"
 
       - name: Run tests without Istio
         if: ${{ matrix.scenario == 'healthy' }}
@@ -299,7 +299,7 @@ jobs:
 
       - name: Deploy Test Prerequisites
         if: ${{ matrix.scenario != 'healthy' }}
-        uses: "./.github/template/deploy-k3d-test-prerequisites"
+        uses: "./.github/template/deploy-test-prerequisites"
 
       - name: Run tests with Istio
         if: ${{ matrix.scenario != 'healthy' }}
@@ -345,7 +345,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deploy Test Prerequisites
-        uses: "./.github/template/deploy-k3d-test-prerequisites"
+        uses: "./.github/template/deploy-test-prerequisites"
 
       - name: Run tests
         run: |
