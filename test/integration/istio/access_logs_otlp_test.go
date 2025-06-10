@@ -137,7 +137,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration, suite.LabelExperiment
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(log.HaveFlatLogs(Not(ContainElement(SatisfyAny(
-					log.HaveAttributes(HaveKeyWithValue("server.address", "http://telemetry-otlp-logs.kyma-system.svc.cluster.local:4318/v1/logs")),
+					log.HaveAttributes(HaveKeyWithValue("server.address", "telemetry-otlp-logs.kyma-system:4317")),
 				))))))
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
