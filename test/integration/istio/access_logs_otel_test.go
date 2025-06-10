@@ -37,7 +37,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration, suite.LabelExperiment
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
-		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
+		objs = append(objs, kitk8s.NewNamespace(mockNs, kitk8s.WithIstioInjection()).K8sObject())
 
 		backend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsOTel)
 		objs = append(objs, backend.K8sObjects()...)
@@ -128,6 +128,20 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration, suite.LabelExperiment
 					Not(log.HaveResourceAttributes(HaveKey("node_name"))),
 					Not(log.HaveAttributes(HaveKey("kyma.module"))),
 				)))))
+			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Should verify istio noise filter is applied", func() {
+			Consistently(func(g Gomega) {
+				resp, err := suite.ProxyClient.Get(backendExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(log.HaveFlatLogs(Not(ContainElement(SatisfyAll(
+					// Identify istio-proxy access logs by kyma.module=istio attribute
+					log.HaveAttributes(HaveKeyWithValue("kyma.module", "istio")),
+					// All access logs to telemetry-otlp-logs should be dropped
+					log.HaveAttributes(HaveKeyWithValue("server.address", "http://telemetry-otlp-logs.kyma-system.svc.cluster.local:4318/v1/logs")),
+				))))))
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
