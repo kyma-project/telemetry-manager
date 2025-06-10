@@ -77,7 +77,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces, suite.LabelExperimental), 
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
-				cleanupTelemetryConfig()
+				resetTelemetryToDefault()
 
 			})
 
@@ -140,7 +140,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces, suite.LabelExperimental), 
 	})
 })
 
-func cleanupTelemetryConfig() {
+func resetTelemetryToDefault() {
 	var telemetry operatorv1alpha1.Telemetry
 
 	Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
