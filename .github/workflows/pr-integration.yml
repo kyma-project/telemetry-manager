@@ -333,6 +333,8 @@ jobs:
             mode: release
           - name: max-pipeline-otel
             mode: experimental
+          - name: metrics
+            mode: release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
