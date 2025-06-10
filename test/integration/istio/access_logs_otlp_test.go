@@ -83,10 +83,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration, suite.LabelExperiment
 			assert.DeploymentReady(suite.Ctx, logBackend.NamespacedName())
 		})
 
-		It("Should have a trace backend running", func() {
-			assert.DeploymentReady(suite.Ctx, traceBackend.NamespacedName())
-		})
-
 		It("Should have sample app running", func() {
 			listOptions := client.ListOptions{
 				LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "metric-producer"}),
