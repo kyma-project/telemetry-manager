@@ -80,7 +80,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration, suite.LabelExperiment
 			kitk8s.NewNamespace(app1Ns, kitk8s.WithIstioInjection()).K8sObject(),
 			kitk8s.NewNamespace(app2Ns, kitk8s.WithIstioInjection()).K8sObject())
 
-		metricBackend := kitbackend.New(mockNs, kitbackend.SignalTypeMetrics, kitbackend.WithName("metrics"))
+		metricBackend = kitbackend.New(mockNs, kitbackend.SignalTypeMetrics, kitbackend.WithName("metrics"))
 		objs = append(objs, metricBackend.K8sObjects()...)
 		metricBackendExportURL = metricBackend.ExportURL(suite.ProxyClient)
 
