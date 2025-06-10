@@ -3,6 +3,7 @@ package processors
 import (
 	"fmt"
 
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
 
@@ -11,16 +12,12 @@ const (
 	kymaAppName      = "kyma.app_name"
 )
 
-type Enrichments struct {
-	PodLabels []PodLabel
-}
-
 type PodLabel struct {
 	Key       string
 	KeyPrefix string
 }
 
-func K8sAttributesProcessorConfig(enrichments Enrichments) *config.K8sAttributesProcessor {
+func K8sAttributesProcessorConfig(enrichments *operatorv1alpha1.EnrichmentSpec) *config.K8sAttributesProcessor {
 	k8sAttributes := []string{
 		"k8s.pod.name",
 		"k8s.node.name",
@@ -90,11 +87,11 @@ func extractLabels() []config.ExtractLabel {
 	}
 }
 
-func buildExtractPodLabels(enrichments Enrichments) []config.ExtractLabel {
+func buildExtractPodLabels(enrichments *operatorv1alpha1.EnrichmentSpec) []config.ExtractLabel {
 	extractPodLabels := make([]config.ExtractLabel, 0)
 
-	if len(enrichments.PodLabels) > 0 {
-		for _, label := range enrichments.PodLabels {
+	if enrichments != nil && len(enrichments.ExtractPodLabels) > 0 {
+		for _, label := range enrichments.ExtractPodLabels {
 			labelConfig := config.ExtractLabel{
 				From:    "pod",
 				TagName: "k8s.pod.label.$0",
