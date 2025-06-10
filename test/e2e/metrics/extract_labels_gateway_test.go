@@ -43,6 +43,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 		pipelineName     = suite.ID()
 		backend          *kitbackend.Backend
 		backendExportURL string
+		telemetry        operatorv1alpha1.Telemetry
 	)
 
 	makeResources := func() []client.Object {
@@ -77,6 +78,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
+				if telemetry != nil {
+					telemetry.Spec.Enrichments = nil
+					Expect(suite.K8sClient.Update(suite.Ctx, &telemetry)).To(Succeed())
+				}
 			})
 
 			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
@@ -88,7 +93,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 		})
 
 		It("Should configure label enrichments", func() {
-			var telemetry operatorv1alpha1.Telemetry
 			err := suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)
 			Expect(err).NotTo(HaveOccurred())
 

@@ -77,6 +77,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 
 				genNs        = uniquePrefix("gen")
 				pipelineName = uniquePrefix()
+				telemetry    operatorv1alpha1.Telemetry
 			)
 
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
@@ -95,7 +96,6 @@ func TestExtractLabels_OTel(t *testing.T) {
 			}
 
 			Eventually(func(g Gomega) int {
-				var telemetry operatorv1alpha1.Telemetry
 				err := suite.K8sClient.Get(t.Context(), kitkyma.TelemetryName, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
 
@@ -124,6 +124,8 @@ func TestExtractLabels_OTel(t *testing.T) {
 
 			t.Cleanup(func() {
 				require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+				telemetry.Spec.Enrichments = nil
+				require.NoError(t, suite.K8sClient.Update(context.Background(), &telemetry)) //nolint:usetesting // Remove ctx from Update
 			})
 			Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
