@@ -136,10 +136,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration, suite.LabelExperiment
 				resp, err := suite.ProxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(log.HaveFlatLogs(Not(ContainElement(SatisfyAll(
-					// Identify istio-proxy access logs by kyma.module=istio attribute
-					log.HaveAttributes(HaveKeyWithValue("kyma.module", "istio")),
-					// All access logs to telemetry-otlp-logs should be dropped
+				g.Expect(resp).To(HaveHTTPBody(log.HaveFlatLogs(Not(ContainElement(SatisfyAny(
 					log.HaveAttributes(HaveKeyWithValue("server.address", "http://telemetry-otlp-logs.kyma-system.svc.cluster.local:4318/v1/logs")),
 				))))))
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
