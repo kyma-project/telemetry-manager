@@ -15,6 +15,7 @@ func makeProcessorsConfig(opts BuildOptions) Processors {
 			MemoryLimiter: makeMemoryLimiterConfig(),
 		},
 		SetObsTimeIfZero:        makeSetObsTimeIfZeroProcessorConfig(),
+		IstioNoiseFilter:        &config.IstioNoiseFilterProcessor{},
 		K8sAttributes:           processors.K8sAttributesProcessorConfig(opts.Enrichments),
 		InsertClusterAttributes: processors.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.CloudProvider),
 		ResolveServiceName:      processors.MakeResolveServiceNameConfig(),

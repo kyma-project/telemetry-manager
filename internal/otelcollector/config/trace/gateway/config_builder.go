@@ -106,7 +106,7 @@ func makePipelineConfig(exporterIDs ...string) config.Pipeline {
 		Processors: []string{
 			"memory_limiter",
 			"k8sattributes",
-			"filter/drop-noisy-spans",
+			"istio_noise_filter",
 			"resource/insert-cluster-attributes",
 			"service_enrichment",
 			"resource/drop-kyma-attributes",
