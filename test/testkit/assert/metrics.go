@@ -94,7 +94,7 @@ func MetricPipelineHealthy(ctx context.Context, pipelineName string) {
 
 func MetricPipelineHasConditionWithT(t TestingT, pipelineName string, expectedCond metav1.Condition) {
 	t.Helper()
-	
+
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.MetricPipeline
 		key := types.NamespacedName{Name: pipelineName}

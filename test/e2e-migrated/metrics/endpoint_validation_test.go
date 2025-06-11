@@ -2,6 +2,13 @@ package metrics
 
 import (
 	"context"
+	"testing"
+
+	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -9,15 +16,11 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
-	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
 )
 
 func TestValidateEndpoint(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelMetrics)
+
 	const (
 		endpointKey         = "endpoint"
 		invalidEndpoint     = "'http://example.com'"
@@ -34,6 +37,7 @@ func TestValidateEndpoint(t *testing.T) {
 		pipelineNameMissingHTTP         = uniquePrefix("missing-port-http")
 		secretName                      = uniquePrefix()
 	)
+
 	pipelineInvalidEndpoint := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineNameInvalidEndpoint).
 		WithOTLPOutput(
@@ -114,5 +118,4 @@ func TestValidateEndpoint(t *testing.T) {
 		Status: metav1.ConditionTrue,
 		Reason: conditions.ReasonGatewayConfigured,
 	})
-
 }
