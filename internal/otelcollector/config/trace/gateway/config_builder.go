@@ -8,6 +8,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
@@ -25,6 +26,7 @@ type Builder struct {
 type BuildOptions struct {
 	ClusterName   string
 	CloudProvider string
+	Enrichments   *operatorv1alpha1.EnrichmentSpec
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.TracePipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {
@@ -104,7 +106,7 @@ func makePipelineConfig(exporterIDs ...string) config.Pipeline {
 		Processors: []string{
 			"memory_limiter",
 			"k8sattributes",
-			"filter/drop-noisy-spans",
+			"istio_noise_filter",
 			"resource/insert-cluster-attributes",
 			"service_enrichment",
 			"resource/drop-kyma-attributes",
