@@ -458,7 +458,7 @@ If you have more than one backend, you can specify from which `input` logs are p
 
 By default, `otlp` input is enabled.
 
-To drop the push-based OTLP logs that are received by the Log gateway, define a LogPipeline that has the `otlp` section disabled as an input:
+To drop the push-based OTLP logs that are received by the log gateway, define a LogPipeline that has the `otlp` section disabled as an input:
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -537,12 +537,14 @@ To detect and fix such situations, check the [pipeline status](./resources/02-lo
 
 ## Limitations
 
-- **Throughput**: The maximum throughput is limited.
-- **Load Balancing With Istio**: To ensure availability, the log gateway runs with multiple instances. If you want to increase the maximum throughput, use manual scaling and enter a higher number of instances.
-  By design, the connections to the gateway are long-living connections (because OTLP is based on gRPC and HTTP/2). For optimal scaling of the gateway, the clients or applications must balance the connections across the available instances, which is automatically achieved if you use an Istio sidecar. If your application has no Istio sidecar, the data is always sent to one instance of the gateway.
+- **Throughput**:
+  - When pushing OTLP logs of an average size of 2KB to the log gateway, using its default configuration (two instances), the Telemetry module can process approximately 12,000 logs per second (LPS). To ensure availability, the log gateway runs with multiple instances. For higher throughput, manually scale out the gateway by increasing the number of replicas. See [Module Configuration and Status](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration). Ensure that the chosen scaling factor does not exceed the maximum throughput of the backend, as it may refuse logs if the rate is too high.
+  - For example, to scale out the gateway for scenarios like a `Large` instance of SAP Cloud Logging (up to 30,000 LPS), you can raise the throughput to about 20,000 LPS by increasing the number of replicas to 4 instances.
+  - The log agent, running one instance per node, handles tailing logs from stdout using the `runtime` input. When writing logs of an average size of 2KB to stdout, a single log agent instance can process approximately 9,000 LPS.
+- **Load Balancing With Istio**: By design, the connections to the gateway are long-living connections (because OTLP is based on gRPC and HTTP/2). For optimal scaling of the gateway, the clients or applications must balance the connections across the available instances, which is automatically achieved if you use an Istio sidecar. If your application has no Istio sidecar, the data is always sent to one instance of the gateway.
 - **Unavailability of Output**: For up to 5 minutes, a retry for data is attempted when the destination is unavailable. After that, data is dropped.
 - **No Guaranteed Delivery**: The used buffers are volatile. If the gateway or agent instances crash, logs data can be lost.
-- **Multiple LogPipeline Support**: The maximum amount of LogPipeline resources is 3.
+- **Multiple LogPipeline Support**: The maximum amount of LogPipeline resources is 5.
 
 ## Troubleshooting
 
@@ -601,4 +603,4 @@ To detect and fix such situations, check the [pipeline status](./resources/02-lo
 
 **Cause**: Gateway cannot receive logs at the given rate.
 
-**Solution**: Manually scale out the gateway by increasing the number of replicas for the Log gateway. See [Module Configuration and Status](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
+**Solution**: Manually scale out the gateway by increasing the number of replicas for the log gateway. See [Module Configuration and Status](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
