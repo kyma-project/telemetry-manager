@@ -60,3 +60,6 @@ type TransformProcessorStatements struct {
 	Statements []string `yaml:"statements"`
 	Conditions []string `yaml:"conditions,omitempty"`
 }
+
+type IstioNoiseFilterProcessor struct {
+}
