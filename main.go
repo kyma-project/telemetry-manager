@@ -83,7 +83,6 @@ var (
 	// Operator flags
 	certDir                   string
 	enableV1Beta1LogPipelines bool
-	enableLogPipelinesOTLP    bool
 
 	highPriorityClassName   string
 	normalPriorityClassName string
@@ -292,7 +291,6 @@ func initializeFeatureFlags() {
 
 func parseFlags() {
 	flag.BoolVar(&enableV1Beta1LogPipelines, "enable-v1beta1-log-pipelines", false, "Enable v1beta1 log pipelines CRD")
-	flag.BoolVar(&enableLogPipelinesOTLP, "enable-log-pipelines-otlp", false, "Enable otlp input and output for log pipelines")
 	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
 
 	flag.StringVar(&highPriorityClassName, "high-priority-class-name", "", "High priority class name used by managed DaemonSets")
