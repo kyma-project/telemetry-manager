@@ -254,7 +254,7 @@ func makePipelinesConfig(inputs inputSources) config.Pipelines {
 	if inputs.istio {
 		pipelinesConfig["metrics/istio"] = config.Pipeline{
 			Receivers:  []string{"prometheus/istio"},
-			Processors: []string{"memory_limiter", "filter/drop-internal-communication", "resource/delete-service-name", "transform/set-instrumentation-scope-istio", "batch"},
+			Processors: []string{"memory_limiter", "istio_noise_filter", "resource/delete-service-name", "transform/set-instrumentation-scope-istio", "batch"},
 			Exporters:  []string{"otlp"},
 		}
 	}
