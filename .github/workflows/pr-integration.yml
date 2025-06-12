@@ -169,7 +169,7 @@ jobs:
 
       - name: Run tests
         run: |
-          bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags istio --label-filter="foo" test/integration/istio
+          bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags istio --label-filter="integration && !experimental" test/integration/istio
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
