@@ -3,6 +3,9 @@
 package istio
 
 import (
+	"istio.io/api/telemetry/v1alpha1"
+	v1 "istio.io/client-go/pkg/apis/telemetry/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"net/http"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -75,7 +78,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
+				resetAccessLogsProvider()
 			})
+			enableOTLPAccessLogsProvider()
 			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 		})
 
@@ -155,3 +160,39 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		})
 	})
 })
+
+func enableOTLPAccessLogsProvider() {
+	var telemetry v1.Telemetry
+	err := suite.K8sClient.Get(suite.Ctx, types.NamespacedName{
+		Name:      "access-config",
+		Namespace: "istio-system",
+	}, &telemetry)
+	Expect(err).NotTo(HaveOccurred())
+
+	telemetry.Spec.AccessLogging[0].Providers = []*v1alpha1.ProviderRef{
+		{
+			Name: "kyma-logs",
+		},
+	}
+
+	err = suite.K8sClient.Update(suite.Ctx, &telemetry)
+	Expect(err).NotTo(HaveOccurred())
+}
+
+func resetAccessLogsProvider() {
+	var telemetry v1.Telemetry
+	err := suite.K8sClient.Get(suite.Ctx, types.NamespacedName{
+		Name:      "access-config",
+		Namespace: "istio-system",
+	}, &telemetry)
+	Expect(err).NotTo(HaveOccurred())
+
+	telemetry.Spec.AccessLogging[0].Providers = []*v1alpha1.ProviderRef{
+		{
+			Name: "stdout-json",
+		},
+	}
+
+	err = suite.K8sClient.Update(suite.Ctx, &telemetry)
+	Expect(err).NotTo(HaveOccurred())
+}
