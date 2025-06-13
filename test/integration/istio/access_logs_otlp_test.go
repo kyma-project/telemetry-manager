@@ -3,14 +3,14 @@
 package istio
 
 import (
-	"istio.io/api/telemetry/v1alpha1"
-	v1 "istio.io/client-go/pkg/apis/telemetry/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"net/http"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"istio.io/api/telemetry/v1alpha1"
+	v1 "istio.io/client-go/pkg/apis/telemetry/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
