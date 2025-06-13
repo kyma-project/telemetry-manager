@@ -22,7 +22,6 @@ spec:
   accessLogging:
     - providers:
         - name: stdout-json
-        - name: kyma-logs
   tracing:
     - providers:
         - name: "kyma-traces"
