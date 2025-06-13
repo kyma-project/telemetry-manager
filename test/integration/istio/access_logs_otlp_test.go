@@ -7,8 +7,8 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"istio.io/api/telemetry/v1alpha1"
-	v1 "istio.io/client-go/pkg/apis/telemetry/v1"
+	istiotelemetryv1alpha1 "istio.io/api/telemetry/v1alpha1"
+	istiotelemetryclientv1 "istio.io/client-go/pkg/apis/telemetry/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -162,14 +162,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 })
 
 func enableOTLPAccessLogsProvider() {
-	var telemetry v1.Telemetry
+	var telemetry istiotelemetryclientv1.Telemetry
 	err := suite.K8sClient.Get(suite.Ctx, types.NamespacedName{
 		Name:      "access-config",
 		Namespace: "istio-system",
 	}, &telemetry)
 	Expect(err).NotTo(HaveOccurred())
 
-	telemetry.Spec.AccessLogging[0].Providers = []*v1alpha1.ProviderRef{
+	telemetry.Spec.AccessLogging[0].Providers = []*istiotelemetryv1alpha1.ProviderRef{
 		{
 			Name: "kyma-logs",
 		},
@@ -180,14 +180,14 @@ func enableOTLPAccessLogsProvider() {
 }
 
 func resetAccessLogsProvider() {
-	var telemetry v1.Telemetry
+	var telemetry istiotelemetryclientv1.Telemetry
 	err := suite.K8sClient.Get(suite.Ctx, types.NamespacedName{
 		Name:      "access-config",
 		Namespace: "istio-system",
 	}, &telemetry)
 	Expect(err).NotTo(HaveOccurred())
 
-	telemetry.Spec.AccessLogging[0].Providers = []*v1alpha1.ProviderRef{
+	telemetry.Spec.AccessLogging[0].Providers = []*istiotelemetryv1alpha1.ProviderRef{
 		{
 			Name: "stdout-json",
 		},
