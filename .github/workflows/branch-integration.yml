@@ -109,6 +109,7 @@ jobs:
         run: make deprovision-gardener
         env:
           GARDENER_SA_PATH: /tmp/gardener-sa.yaml
+          GARDENER_K8S_VERSION: ${{ matrix.k8s_version }}
 
       - name: Upload Report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
