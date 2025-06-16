@@ -119,7 +119,7 @@ func TestSecretRotation_OTel(t *testing.T) {
 	}
 }
 
-func TestSecretRotation_FluentBit(t *testing.T) {
+func TestSecretRotation_FluentBit_Dummy(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelFluentBit)
 
 	const hostKey = "logs-host"
@@ -180,5 +180,4 @@ func TestSecretRotation_FluentBit(t *testing.T) {
 
 	t.Log("After the secret is updated with the correct host, the logs should be delivered to the backend")
 	assert.FluentBitLogsFromNamespaceDelivered(t, backend, generatorNs)
-
 }
