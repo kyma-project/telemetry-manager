@@ -8,7 +8,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -29,24 +28,25 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelExperimental)
 	)
 
 	var (
-		mockNs           = suite.ID()
-		pipelineName     = suite.ID()
-		backendExportURL string
-		metricPodURL     string
+		mockNs              = suite.ID()
+		pipelineName        = suite.ID()
+		logBackend          *kitbackend.Backend
+		logBackendExportURL string
+		metricPodURL        string
 	)
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
-		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
+		objs = append(objs, kitk8s.NewNamespace(mockNs, kitk8s.WithIstioInjection()).K8sObject())
 
-		backend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsOTel)
-		objs = append(objs, backend.K8sObjects()...)
-		backendExportURL = backend.ExportURL(suite.ProxyClient)
+		logBackend = kitbackend.New(mockNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithName("access-logs"))
+		objs = append(objs, logBackend.K8sObjects()...)
+		logBackendExportURL = logBackend.ExportURL(suite.ProxyClient)
 
 		logPipeline := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
 			WithApplicationInput(false).
-			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+			WithOTLPOutput(testutils.OTLPEndpoint(logBackend.Endpoint())).
 			Build()
 
 		objs = append(objs, &logPipeline)
@@ -55,6 +55,17 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelExperimental)
 		sampleApp := prommetricgen.New(sampleAppNs, prommetricgen.WithName("otlp-access-log-emitter"))
 		objs = append(objs, sampleApp.Pod().K8sObject())
 		metricPodURL = suite.ProxyClient.ProxyURLForPod(sampleAppNs, sampleApp.Name(), sampleApp.MetricsEndpoint(), sampleApp.MetricsPort())
+
+		// Deploy a TracePipeline sending spans to the trace backend to verify that
+		// the istio noise filter is applied
+		traceBackend := kitbackend.New(mockNs, kitbackend.SignalTypeTraces, kitbackend.WithName("traces"))
+		objs = append(objs, traceBackend.K8sObjects()...)
+
+		tracePipeline := testutils.NewTracePipelineBuilder().
+			WithName(pipelineName).
+			WithOTLPOutput(testutils.OTLPEndpoint(traceBackend.Endpoint())).
+			Build()
+		objs = append(objs, &tracePipeline)
 
 		return objs
 	}
@@ -69,7 +80,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelExperimental)
 		})
 
 		It("Should have a log backend running", func() {
-			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, logBackend.NamespacedName())
 		})
 
 		It("Should have sample app running", func() {
@@ -99,7 +110,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelExperimental)
 
 		It("Should verify istio OTLP access logs are present", func() {
 			Eventually(func(g Gomega) {
-				resp, err := suite.ProxyClient.Get(backendExportURL)
+				resp, err := suite.ProxyClient.Get(logBackendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(log.HaveFlatLogs(HaveEach(SatisfyAll(
@@ -118,7 +129,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelExperimental)
 
 		It("Should verify istio cluster attributes are not present", func() {
 			Consistently(func(g Gomega) {
-				resp, err := suite.ProxyClient.Get(backendExportURL)
+				resp, err := suite.ProxyClient.Get(logBackendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(log.HaveFlatLogs(HaveEach(SatisfyAll(
@@ -127,6 +138,18 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelExperimental)
 					Not(log.HaveResourceAttributes(HaveKey("zone_name"))),
 					Not(log.HaveResourceAttributes(HaveKey("node_name"))),
 					Not(log.HaveAttributes(HaveKey("kyma.module"))),
+				)))))
+			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Should verify istio noise filter is applied", func() {
+			Consistently(func(g Gomega) {
+				resp, err := suite.ProxyClient.Get(logBackendExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(log.HaveFlatLogs(Not(ContainElement(
+					// Istio noise filter should remove access logs about sending proxy span to the trace gateway
+					log.HaveAttributes(HaveKeyWithValue("server.address", "telemetry-otlp-traces.kyma-system:4317")),
 				)))))
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})

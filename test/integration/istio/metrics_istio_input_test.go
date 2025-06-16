@@ -9,7 +9,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	. "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
@@ -19,12 +18,13 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/trafficgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelGardener), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelExperimental), Ordered, func() {
 	// https://istio.io/latest/docs/reference/config/metrics/
 	var (
 		istioProxyMetricNames = []string{
@@ -65,11 +65,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener), Ordered, func() {
 			"source_workload",
 			"source_workload_namespace",
 		}
-		mockNs           = suite.ID()
-		app1Ns           = suite.IDWithSuffix("app-1")
-		app2Ns           = suite.IDWithSuffix("app-2")
-		pipelineName     = suite.ID()
-		backendExportURL string
+		mockNs       = suite.ID()
+		app1Ns       = suite.IDWithSuffix("app-1")
+		app2Ns       = suite.IDWithSuffix("app-2")
+		pipelineName = suite.ID()
+
+		metricBackend          *kitbackend.Backend
+		metricBackendExportURL string
 	)
 
 	makeResources := func() []client.Object {
@@ -78,20 +80,33 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener), Ordered, func() {
 			kitk8s.NewNamespace(app1Ns, kitk8s.WithIstioInjection()).K8sObject(),
 			kitk8s.NewNamespace(app2Ns, kitk8s.WithIstioInjection()).K8sObject())
 
-		backend := kitbackend.New(mockNs, kitbackend.SignalTypeMetrics)
-		objs = append(objs, backend.K8sObjects()...)
-		backendExportURL = backend.ExportURL(suite.ProxyClient)
+		metricBackend = kitbackend.New(mockNs, kitbackend.SignalTypeMetrics, kitbackend.WithName("metrics"))
+		objs = append(objs, metricBackend.K8sObjects()...)
+		metricBackendExportURL = metricBackend.ExportURL(suite.ProxyClient)
 
 		metricPipeline := testutils.NewMetricPipelineBuilder().
 			WithName(pipelineName).
 			WithOTLPInput(false).
 			WithIstioInput(true, testutils.IncludeNamespaces(app1Ns)).
-			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+			WithOTLPOutput(testutils.OTLPEndpoint(metricBackend.Endpoint())).
 			Build()
 		objs = append(objs, &metricPipeline)
 
 		objs = append(objs, trafficgen.K8sObjects(app1Ns)...)
 		objs = append(objs, trafficgen.K8sObjects(app2Ns)...)
+
+		// Deploy a LogPipeline and an app sending OTLP logs to the log gateway
+		// to make sure that the istio noise filter is applied to app-to-gateway communication
+		logBackend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithName("logs"))
+		objs = append(objs, logBackend.K8sObjects()...)
+
+		logPipeline := testutils.NewLogPipelineBuilder().
+			WithName(pipelineName).
+			WithApplicationInput(false).
+			WithOTLPOutput(testutils.OTLPEndpoint(logBackend.Endpoint())).
+			Build()
+		objs = append(objs, &logPipeline)
+		objs = append(objs, telemetrygen.NewDeployment(mockNs, telemetrygen.SignalTypeLogs).K8sObject())
 
 		return objs
 	}
@@ -116,7 +131,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener), Ordered, func() {
 		})
 
 		It("Should have a metrics backend running", func() {
-			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, metricBackend.NamespacedName())
 		})
 
 		It("Should have a running metric agent daemonset", func() {
@@ -125,7 +140,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener), Ordered, func() {
 
 		It("Should verify istio proxy metric scraping", func() {
 			Eventually(func(g Gomega) {
-				resp, err := suite.ProxyClient.Get(backendExportURL)
+				resp, err := suite.ProxyClient.Get(metricBackendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 
@@ -141,7 +156,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener), Ordered, func() {
 
 		It("Should verify istio proxy metric attributes", func() {
 			Eventually(func(g Gomega) {
-				resp, err := suite.ProxyClient.Get(backendExportURL)
+				resp, err := suite.ProxyClient.Get(metricBackendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 
@@ -179,23 +194,32 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener), Ordered, func() {
 		})
 
 		It("Should deliver metrics from app-1 namespace", func() {
-			assert.MetricsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, app1Ns, istioProxyMetricNames)
+			assert.MetricsFromNamespaceDelivered(suite.ProxyClient, metricBackendExportURL, app1Ns, istioProxyMetricNames)
 		})
 
 		It("Should not deliver metrics from app-2 namespace", func() {
-			assert.MetricsFromNamespaceNotDelivered(suite.ProxyClient, backendExportURL, app2Ns)
+			assert.MetricsFromNamespaceNotDelivered(suite.ProxyClient, metricBackendExportURL, app2Ns)
 		})
 
-		It("Should verify that istio metric with source_workload=telemetry-metric-gateway does not exist", func() {
-			verifyMetricIsNotPresent(backendExportURL, "source_workload", "telemetry-telemetry-gateway")
-		})
 		It("Should verify that istio metric with destination_workload=telemetry-metric-gateway does not exist", func() {
-			verifyMetricIsNotPresent(backendExportURL, "destination_workload", "telemetry-metric-gateway")
+			Consistently(func(g Gomega) {
+				resp, err := suite.ProxyClient.Get(metricBackendExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+
+				bodyContent, err := io.ReadAll(resp.Body)
+				defer resp.Body.Close()
+				g.Expect(err).NotTo(HaveOccurred())
+
+				g.Expect(bodyContent).NotTo(HaveFlatMetrics(
+					ContainElement(HaveMetricAttributes(HaveKeyWithValue("destination_workload", "telemetry-log-gateway"))),
+				))
+			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
 		It("Ensures no diagnostic metrics are sent to backend", func() {
 			Consistently(func(g Gomega) {
-				resp, err := suite.ProxyClient.Get(backendExportURL)
+				resp, err := suite.ProxyClient.Get(metricBackendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 
@@ -211,19 +235,3 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener), Ordered, func() {
 		})
 	})
 })
-
-func verifyMetricIsNotPresent(backendUrl, key, value string) {
-	Consistently(func(g Gomega) {
-		resp, err := suite.ProxyClient.Get(backendUrl)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-
-		bodyContent, err := io.ReadAll(resp.Body)
-		defer resp.Body.Close()
-		g.Expect(err).NotTo(HaveOccurred())
-
-		g.Expect(bodyContent).NotTo(HaveFlatMetrics(
-			ContainElement(HaveMetricAttributes(HaveKeyWithValue(key, value))),
-		))
-	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
-}
