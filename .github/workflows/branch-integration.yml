@@ -32,11 +32,12 @@ jobs:
       - name: Setup Golang
         uses: "./.github/template/setup-golang"
 
-      - name: Set environment variables
+      - name: Prepare environment variables
         run: |
           echo "GIT_COMMIT_SHA=$(git rev-parse --short=8 HEAD)" >> $GITHUB_ENV
           echo "GIT_COMMIT_DATE=$(git show -s --format=%cd --date=format:'v%Y%m%d' HEAD)" >> $GITHUB_ENV
-          echo "TAG=$(git show -s --format=%cd --date=format:'v%Y%m%d' HEAD)-$(git rev-parse --short=8 HEAD)" >> $GITHUB_ENV
+          echo "TAG=$GIT_COMMIT_DATE-$GIT_COMMIT_SHA" >> $GITHUB_ENV
+          echo "IMG=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:$TAG" >> $GITHUB_ENV
 
       # wait for the build to succeed so that the manager image is available
       - name: Wait for the image to be available in the registry
