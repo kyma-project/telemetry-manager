@@ -1,4 +1,4 @@
-name: Branch Integration
+name: Gardener Integration
 
 permissions:
   contents: read
