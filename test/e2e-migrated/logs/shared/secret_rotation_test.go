@@ -180,4 +180,5 @@ func TestSecretRotation_FluentBit(t *testing.T) {
 
 	t.Log("After the secret is updated with the correct host, the logs should be delivered to the backend")
 	assert.FluentBitLogsFromNamespaceDelivered(t, backend, generatorNs)
+
 }
