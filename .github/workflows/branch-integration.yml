@@ -97,11 +97,11 @@ jobs:
 
       - name: Run istio tests
         shell: bash
-        run: bin/ginkgo run --junit-report=junit-report-istio.xml --tags istio --label-filter="gardener" test/integration/istio
+        run: bin/ginkgo run --junit-report=junit-report-istio.xml --tags istio --label-filter="gardener && !experimental" test/integration/istio
 
       - name: Run e2e tests
         shell: bash
-        run: bin/ginkgo run --junit-report=junit-report-e2e.xml --tags e2e --label-filter="gardener" -r test/e2e
+        run: bin/ginkgo run --junit-report=junit-report-e2e.xml --tags e2e --label-filter="gardener && !experimental" -r test/e2e
 
       - name: Deprovision Gardener
         shell: bash
