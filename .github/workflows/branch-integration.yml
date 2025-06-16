@@ -34,10 +34,13 @@ jobs:
 
       - name: Prepare environment variables
         run: |
-          echo "GIT_COMMIT_SHA=$(git rev-parse --short=8 HEAD)" >> $GITHUB_ENV
-          echo "GIT_COMMIT_DATE=$(git show -s --format=%cd --date=format:'v%Y%m%d' HEAD)" >> $GITHUB_ENV
-          echo "TAG=$GIT_COMMIT_DATE-$GIT_COMMIT_SHA" >> $GITHUB_ENV
-          echo "IMG=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:$TAG" >> $GITHUB_ENV
+          GIT_COMMIT_SHA=$(git rev-parse --short=8 HEAD)
+          GIT_COMMIT_DATE=$(git show -s --format=%cd --date=format:'v%Y%m%d' HEAD)
+          TAG="$GIT_COMMIT_DATE-$GIT_COMMIT_SHA"
+          IMG="europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:$TAG"
+
+          echo "TAG=$TAG" >> $GITHUB_ENV
+          echo "IMG=$IMG" >> $GITHUB_ENV
 
       # wait for the build to succeed so that the manager image is available
       - name: Wait for the image to be available in the registry
