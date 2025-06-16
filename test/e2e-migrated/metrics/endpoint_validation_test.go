@@ -112,7 +112,7 @@ func TestValidateEndpoint(t *testing.T) {
 		})
 	}
 
-	t.Log("Should set ConfigurationGenerated conditionShould set ConfigurationGenerated condition to True in pipelines with missing port and HTTP protocol")
+	t.Log("Should set ConfigurationGenerated condition to True in pipelines with missing port and HTTP protocol")
 	assert.MetricPipelineHasConditionWithT(t, pipelineNameMissingHTTP, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionTrue,
