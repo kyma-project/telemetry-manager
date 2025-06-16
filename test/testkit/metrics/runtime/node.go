@@ -19,6 +19,7 @@ var (
 	NodeMetricsResourceAttributes = []string{
 		"k8s.cluster.name",
 		"k8s.node.name",
+		"cloud.provider",
 	}
 
 	NodeMetricsAttributes = map[string][]string{
