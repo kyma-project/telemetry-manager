@@ -81,7 +81,7 @@ jobs:
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"
-        if: success() || failure()
+        if: ${{ !cancelled()  }}
         with:
           failure: failure()
           job-name: ${{ github.job }}-${{ matrix.ginkgo-labels }}
@@ -113,7 +113,7 @@ jobs:
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"
-        if: success() || failure()
+        if: ${{ !cancelled()  }}
         with:
           failure: failure()
           job-name: ${{ github.job }}-${{ matrix.ginkgo-labels }}
@@ -144,7 +144,7 @@ jobs:
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"
-        if: success() || failure()
+        if: ${{ !cancelled()  }}
         with:
           failure: failure()
           job-name: ${{ github.job }}-${{ matrix.ginkgo-labels }}
@@ -174,7 +174,7 @@ jobs:
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
-        if: success() || failure()
+        if: ${{ !cancelled()  }}
         with:
           failure: failure()
           job-name: ${{ github.job }}
@@ -203,7 +203,7 @@ jobs:
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
-        if: success() || failure()
+        if: ${{ !cancelled()  }}
         with:
           failure: failure()
           job-name: ${{ github.job }}
@@ -256,7 +256,7 @@ jobs:
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
-        if: success() || failure()
+        if: ${{ !cancelled()  }}
         with:
           failure: failure()
           job-name: ${{ github.job }}-${{ matrix.signal-type }}-${{ matrix.scenario }}
@@ -308,7 +308,7 @@ jobs:
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
-        if: success() || failure()
+        if: ${{ !cancelled()  }}
         with:
           failure: failure()
           job-name: ${{ github.job }}-${{ matrix.signal-type }}-${{ matrix.scenario }}
@@ -353,7 +353,7 @@ jobs:
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
-        if: success() || failure()
+        if: ${{ !cancelled()  }}
         with:
           failure: failure()
           job-name: ${{ github.job }}-${{ matrix.labels }}
