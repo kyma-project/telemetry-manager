@@ -305,11 +305,14 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 		enrichments = t.Spec.Enrichments
 	}
 
+	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
+	clusterName := r.getClusterNameFromTelemetry(ctx, shootInfo.ClusterName)
+
 	agentConfig, envVars, err := r.agentConfigBuilder.Build(ctx, allPipelines, agent.BuildOptions{
 		InstrumentationScopeVersion: r.moduleVersion,
 		AgentNamespace:              r.telemetryNamespace,
-		ClusterName:                 k8sutils.GetGardenerShootInfo(ctx, r.Client).ClusterName,
-		CloudProvider:               k8sutils.GetGardenerShootInfo(ctx, r.Client).CloudProvider,
+		ClusterName:                 clusterName,
+		CloudProvider:               shootInfo.CloudProvider,
 		Enrichments:                 enrichments,
 	})
 	if err != nil {
@@ -357,6 +360,23 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 	}
 
 	return defaultReplicaCount
+}
+
+func (r *Reconciler) getClusterNameFromTelemetry(ctx context.Context, defaultName string) string {
+	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.telemetryNamespace)
+	if err != nil {
+		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: using default shoot name as cluster name")
+		return defaultName
+	}
+
+	if telemetry.Spec.Enrichments != nil &&
+		telemetry.Spec.Enrichments.Cluster != nil &&
+		telemetry.Spec.Enrichments.Cluster.Name != "" {
+		return telemetry.Spec.Enrichments.Cluster.Name
+	}
+
+	return defaultName
+
 }
 
 func getGatewayPorts() []int32 {
