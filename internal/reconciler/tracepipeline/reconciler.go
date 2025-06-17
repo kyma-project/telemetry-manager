@@ -329,5 +329,4 @@ func (r *Reconciler) getClusterNameFromTelemetry(ctx context.Context, defaultNam
 	}
 
 	return defaultName
-
 }
