@@ -11,6 +11,7 @@ service:
             processors:
                 - memory_limiter
                 - transform/set-observed-time-if-zero
+                - istio_noise_filter
                 - k8sattributes
                 - resource/insert-cluster-attributes
                 - service_enrichment
@@ -56,6 +57,7 @@ processors:
                 - set(log.observed_time, Now())
               conditions:
                 - log.observed_time_unix_nano == 0
+    istio_noise_filter: {}
     k8sattributes:
         auth_type: serviceAccount
         passthrough: false
