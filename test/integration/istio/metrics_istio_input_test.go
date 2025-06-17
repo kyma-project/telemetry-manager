@@ -24,7 +24,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelExperimental), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio, suite.LabelExperimental), Ordered, func() {
 	// https://istio.io/latest/docs/reference/config/metrics/
 	var (
 		istioProxyMetricNames = []string{

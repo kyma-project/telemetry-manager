@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelGardener), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Ordered, func() {
 	const (
 		metricProducer1Name = "metric-producer-1"
 		metricProducer2Name = "metric-producer-2"
