@@ -93,7 +93,7 @@ jobs:
         shell: bash
         run: kubectl apply -f config/samples/operator_v1alpha1_telemetry.yaml -n kyma-system
 
-      # Deploying to simulate a typical setup on a Kyma cluster
+      # Deploying  a deny-all Network Policy to simulate a typical setup on a Kyma cluster
       - name: Create Network Policy
         shell: bash
         run: kubectl apply -f config/networking/networkpolicy-deny-all.yaml -n kyma-system
@@ -102,7 +102,7 @@ jobs:
         shell: bash
         run: bin/ginkgo run --junit-report=junit-report-istio.xml --tags istio --label-filter="gardener && !experimental" test/integration/istio
 
-      - name: Run e2e tests
+      - name: Run a subset of e2e tests
         shell: bash
         run: bin/ginkgo run --junit-report=junit-report-e2e.xml --tags e2e --label-filter="gardener && !experimental" -r test/e2e
 
