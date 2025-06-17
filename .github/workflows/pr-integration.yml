@@ -303,6 +303,9 @@ jobs:
             mode: release
           - name: max-pipeline-otel
             mode: release
+          - name: metrics
+            mode: release
+
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -319,7 +322,7 @@ jobs:
 
       - name: Run tests
         run: |
-          go test -v -timeout=20m ./test/e2e-migrated/logs/... -- -labels=${{ matrix.labels.name }}
+          go test -v -timeout=20m ./test/e2e-migrated/... -- -labels=${{ matrix.labels.name }}
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
