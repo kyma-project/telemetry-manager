@@ -1,6 +1,6 @@
 module github.com/kyma-project/telemetry-manager/internal/tools
 
-go 1.24.3
+go 1.24.4
 
 require (
 	github.com/bombsimon/wsl/v4 v4.7.0
@@ -14,7 +14,7 @@ require (
 	github.com/mikefarah/yq/v4 v4.45.4
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/vektra/mockery/v3 v3.4.0
-	github.com/vladopajic/go-test-coverage/v2 v2.14.3
+	github.com/vladopajic/go-test-coverage/v2 v2.15.0
 	github.com/yeya24/promlinter v0.3.0
 	golang.org/x/tools v0.34.0
 	gopkg.in/yaml.v3 v3.0.1
