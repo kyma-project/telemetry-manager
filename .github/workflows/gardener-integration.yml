@@ -34,7 +34,7 @@ jobs:
       - name: Prepare environment variables
         run: |
           GIT_COMMIT_SHA=$(git rev-parse --short=8 HEAD)
-          GIT_COMMIT_DATE=$(git show -s --format=%cd --date=format:'v%Y%m%d' HEAD)
+          GIT_COMMIT_DATE=$(git show -s --format=%cd --date=format:'v%Y%m%d' $(GIT_COMMIT_SHA))
           TAG="$GIT_COMMIT_DATE-$GIT_COMMIT_SHA"
           IMG="europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:$TAG"
 
@@ -47,8 +47,8 @@ jobs:
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/prod/telemetry-manager"
-          # sets trigger to SHA if used in merge_group, but to ref_name if used in push
-          # even if ref_name is available in merge_group event, it will be neglected
+          # sets trigger to SHA if used in merge_group, but to env.TAG if used in push
+          # even if env.TAG is available in merge_group event, it will be neglected
           TRIGGER: "${{ github.event.merge_group.head_sha || env.TAG }}"
           QUERY_INTERVAL: 30
 
