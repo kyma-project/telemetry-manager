@@ -3,7 +3,6 @@ package suite
 import (
 	istionetworkingclientv1 "istio.io/client-go/pkg/apis/networking/v1"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
-	istiotelemetryclientv1 "istio.io/client-go/pkg/apis/telemetry/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -28,5 +27,4 @@ func init() {
 	utilruntime.Must(telemetryv1beta1.AddToScheme(scheme))
 	utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
 	utilruntime.Must(istionetworkingclientv1.AddToScheme(scheme))
-	utilruntime.Must(istiotelemetryclientv1.AddToScheme(scheme))
 }

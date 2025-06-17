@@ -4,8 +4,6 @@ With application logs, you can debug an application and derive the internal stat
 
 ## Overview
 
-> Note: This feature is experimental and not available in the regular release. The API is subject to change and might not meet productive criteria.
-
 The Telemetry module provides a log gateway for push-based collection of logs using OTLP and, optionally, an agent for the collection of logs of any container printing logs to the `stdout/stderr` channel running in the Kyma runtime. Kyma modules like [Istio](https://kyma-project.io/#/istio/user/README) contribute access logs. The Telemetry module enriches the data and and ships them to your chosen backend (see [vendors for OTLP-based backends](https://opentelemetry.io/ecosystem/vendors/)).
 
 You can configure the log gateway and agent with external systems using runtime configuration with a dedicated Kubernetes API ([CRD](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions)) named LogPipeline.
