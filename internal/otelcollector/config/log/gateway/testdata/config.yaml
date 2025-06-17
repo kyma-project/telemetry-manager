@@ -11,10 +11,12 @@ service:
             processors:
                 - memory_limiter
                 - transform/set-observed-time-if-zero
+                - istio_noise_filter
                 - k8sattributes
                 - resource/insert-cluster-attributes
                 - service_enrichment
                 - resource/drop-kyma-attributes
+                - istio_enrichment
                 - batch
             exporters:
                 - otlp/test
@@ -55,6 +57,7 @@ processors:
                 - set(log.observed_time, Now())
               conditions:
                 - log.observed_time_unix_nano == 0
+    istio_noise_filter: {}
     k8sattributes:
         auth_type: serviceAccount
         passthrough: false
@@ -112,6 +115,8 @@ processors:
         attributes:
             - action: delete
               pattern: kyma.*
+    istio_enrichment:
+        scope_version: 1.0.0
 exporters:
     otlp/test:
         endpoint: ${OTLP_ENDPOINT_TEST}

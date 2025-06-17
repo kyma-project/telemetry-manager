@@ -285,12 +285,19 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 
 	clusterName := r.getClusterNameFromTelemetry(ctx, shootInfo.ClusterName)
 
+	var enrichments *operatorv1alpha1.EnrichmentSpec
+
+	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.telemetryNamespace)
+	if err == nil {
+		enrichments = t.Spec.Enrichments
+	}
+
 	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, gateway.BuildOptions{
-		GatewayNamespace:                r.telemetryNamespace,
-		InstrumentationScopeVersion:     r.moduleVersion,
-		ClusterName:                     clusterName,
-		CloudProvider:                   shootInfo.CloudProvider,
-		InternalMetricCompatibilityMode: telemetryutils.GetCompatibilityModeFromTelemetry(ctx, r.Client, r.telemetryNamespace),
+		GatewayNamespace:            r.telemetryNamespace,
+		InstrumentationScopeVersion: r.moduleVersion,
+		ClusterName:                 clusterName,
+		CloudProvider:               shootInfo.CloudProvider,
+		Enrichments:                 enrichments,
 	})
 
 	if err != nil {
@@ -333,11 +340,10 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
 	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
 	agentConfig := r.agentConfigBuilder.Build(allPipelines, agent.BuildOptions{
-		IstioEnabled:                    isIstioActive,
-		IstioCertPath:                   otelcollector.IstioCertPath,
-		InstrumentationScopeVersion:     r.moduleVersion,
-		AgentNamespace:                  r.telemetryNamespace,
-		InternalMetricCompatibilityMode: telemetryutils.GetCompatibilityModeFromTelemetry(ctx, r.Client, r.telemetryNamespace),
+		IstioEnabled:                isIstioActive,
+		IstioCertPath:               otelcollector.IstioCertPath,
+		InstrumentationScopeVersion: r.moduleVersion,
+		AgentNamespace:              r.telemetryNamespace,
 	})
 
 	agentConfigYAML, err := yaml.Marshal(agentConfig)

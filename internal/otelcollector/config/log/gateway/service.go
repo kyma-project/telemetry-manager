@@ -14,6 +14,7 @@ func makePipelineServiceConfig(pipeline *telemetryv1alpha1.LogPipeline) config.P
 		"memory_limiter",
 		// Record observed time at the beginning of the pipeline
 		"transform/set-observed-time-if-zero",
+		"istio_noise_filter",
 		"k8sattributes",
 	}
 
@@ -31,6 +32,7 @@ func makePipelineServiceConfig(pipeline *telemetryv1alpha1.LogPipeline) config.P
 		"resource/insert-cluster-attributes",
 		"service_enrichment",
 		"resource/drop-kyma-attributes",
+		"istio_enrichment",
 		"batch",
 	)
 

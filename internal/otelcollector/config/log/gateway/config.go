@@ -21,11 +21,13 @@ type Processors struct {
 	config.BaseProcessors `yaml:",inline"`
 
 	SetObsTimeIfZero        *log.TransformProcessor            `yaml:"transform/set-observed-time-if-zero,omitempty"`
+	IstioNoiseFilter        *config.IstioNoiseFilterProcessor  `yaml:"istio_noise_filter,omitempty"`
 	K8sAttributes           *config.K8sAttributesProcessor     `yaml:"k8sattributes,omitempty"`
 	InsertClusterAttributes *config.ResourceProcessor          `yaml:"resource/insert-cluster-attributes,omitempty"`
 	ResolveServiceName      *config.ServiceEnrichmentProcessor `yaml:"service_enrichment,omitempty"`
 	DropKymaAttributes      *config.ResourceProcessor          `yaml:"resource/drop-kyma-attributes,omitempty"`
 	DropIfInputSourceOTLP   *FilterProcessor                   `yaml:"filter/drop-if-input-source-otlp,omitempty"`
+	IstioEnrichment         *IstioEnrichmentProcessor          `yaml:"istio_enrichment,omitempty"`
 
 	// NamespaceFilters contains filter processors, which need different configurations per pipeline
 	NamespaceFilters NamespaceFilters `yaml:",inline,omitempty"`
@@ -45,4 +47,8 @@ type Exporters map[string]Exporter
 
 type Exporter struct {
 	OTLP *config.OTLPExporter `yaml:",inline,omitempty"`
+}
+
+type IstioEnrichmentProcessor struct {
+	ScopeVersion string `yaml:"scope_version,omitempty"`
 }

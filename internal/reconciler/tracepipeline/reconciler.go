@@ -242,10 +242,17 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, allPipelines []telemetryv1alpha1.TracePipeline) error {
 	clusterInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
 
+	var enrichments *operatorv1alpha1.EnrichmentSpec
+
+	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.telemetryNamespace)
+	if err == nil {
+		enrichments = t.Spec.Enrichments
+	}
+
 	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, gateway.BuildOptions{
-		ClusterName:                     clusterInfo.ClusterName,
-		CloudProvider:                   clusterInfo.CloudProvider,
-		InternalMetricCompatibilityMode: telemetryutils.GetCompatibilityModeFromTelemetry(ctx, r.Client, r.telemetryNamespace),
+		ClusterName:   clusterInfo.ClusterName,
+		CloudProvider: clusterInfo.CloudProvider,
+		Enrichments:   enrichments,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)

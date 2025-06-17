@@ -11,9 +11,9 @@ func makeProcessorsConfig(opts BuildOptions) Processors {
 			Batch:         makeBatchProcessorConfig(),
 			MemoryLimiter: makeMemoryLimiterConfig(),
 		},
-		K8sAttributes:           processors.K8sAttributesProcessorConfig(processors.Enrichments{}),
+		K8sAttributes:           processors.K8sAttributesProcessorConfig(opts.Enrichments),
+		IstioNoiseFilter:        &config.IstioNoiseFilterProcessor{},
 		InsertClusterAttributes: processors.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.CloudProvider),
-		DropNoisySpans:          makeDropNoisySpansConfig(),
 		ResolveServiceName:      processors.MakeResolveServiceNameConfig(),
 		DropKymaAttributes:      processors.DropKymaAttributesProcessorConfig(),
 	}

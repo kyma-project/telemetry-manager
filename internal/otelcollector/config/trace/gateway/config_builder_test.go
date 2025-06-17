@@ -206,7 +206,7 @@ func TestBuildConfig(t *testing.T) {
 
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[0], "memory_limiter")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[1], "k8sattributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[2], "filter/drop-noisy-spans")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[2], "istio_noise_filter")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[3], "resource/insert-cluster-attributes")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[4], "service_enrichment")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[5], "resource/drop-kyma-attributes")
@@ -232,7 +232,7 @@ func TestBuildConfig(t *testing.T) {
 		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-1"].Receivers, "otlp")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[0], "memory_limiter")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[1], "k8sattributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[2], "filter/drop-noisy-spans")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[2], "istio_noise_filter")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[3], "resource/insert-cluster-attributes")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[4], "service_enrichment")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[5], "resource/drop-kyma-attributes")
@@ -243,7 +243,7 @@ func TestBuildConfig(t *testing.T) {
 		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-2"].Receivers, "otlp")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[0], "memory_limiter")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[1], "k8sattributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[2], "filter/drop-noisy-spans")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[2], "istio_noise_filter")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[3], "resource/insert-cluster-attributes")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[4], "service_enrichment")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[5], "resource/drop-kyma-attributes")
@@ -254,44 +254,22 @@ func TestBuildConfig(t *testing.T) {
 	})
 
 	t.Run("marshaling", func(t *testing.T) {
-		tests := []struct {
-			name              string
-			goldenFileName    string
-			withOTLPInput     bool
-			compatibilityMode bool
-		}{
-			{
-				name:              "Compatibility mode disabled",
-				goldenFileName:    "config.yaml",
-				compatibilityMode: false,
-			},
-			{
-				name:              "Compatibility mode enabled",
-				goldenFileName:    "config_compatibility_enabled.yaml",
-				compatibilityMode: true,
-			},
-		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				config, _, err := sut.Build(t.Context(), []telemetryv1alpha1.TracePipeline{
-					testutils.NewTracePipelineBuilder().WithName("test").Build(),
-				}, BuildOptions{
-					ClusterName:                     "${KUBERNETES_SERVICE_HOST}",
-					CloudProvider:                   "test-cloud-provider",
-					InternalMetricCompatibilityMode: tt.compatibilityMode,
-				})
-				require.NoError(t, err)
+		config, _, err := sut.Build(t.Context(), []telemetryv1alpha1.TracePipeline{
+			testutils.NewTracePipelineBuilder().WithName("test").Build(),
+		}, BuildOptions{
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
+			CloudProvider: "test-cloud-provider",
+		})
+		require.NoError(t, err)
 
-				configYAML, err := yaml.Marshal(config)
-				require.NoError(t, err, "failed to marshal config")
+		configYAML, err := yaml.Marshal(config)
+		require.NoError(t, err, "failed to marshal config")
 
-				goldenFilePath := filepath.Join("testdata", tt.goldenFileName)
-				goldenFile, err := os.ReadFile(goldenFilePath)
-				require.NoError(t, err, "failed to load golden file")
+		goldenFilePath := filepath.Join("testdata", "config.yaml")
+		goldenFile, err := os.ReadFile(goldenFilePath)
+		require.NoError(t, err, "failed to load golden file")
 
-				require.NoError(t, err)
-				require.Equal(t, string(goldenFile), string(configYAML))
-			})
-		}
+		require.NoError(t, err)
+		require.Equal(t, string(goldenFile), string(configYAML))
 	})
 }

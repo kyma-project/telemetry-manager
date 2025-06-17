@@ -62,6 +62,7 @@ func TestBuildConfig(t *testing.T) {
 			testutils.NewLogPipelineBuilder().WithName("test-insecure").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build()}, BuildOptions{
 			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 			CloudProvider: "test-cloud-provider",
+			ModuleVersion: "1.0.0",
 		})
 		require.NoError(t, err)
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-insecure")
@@ -209,11 +210,13 @@ func TestBuildConfig(t *testing.T) {
 
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[0], "memory_limiter")
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[1], "transform/set-observed-time-if-zero")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[2], "k8sattributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[3], "resource/insert-cluster-attributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[4], "service_enrichment")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[5], "resource/drop-kyma-attributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[6], "batch")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[2], "istio_noise_filter")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[3], "k8sattributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[4], "resource/insert-cluster-attributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[5], "service_enrichment")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[6], "resource/drop-kyma-attributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[7], "istio_enrichment")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[8], "batch")
 
 		require.Contains(t, collectorConfig.Service.Pipelines["logs/test"].Exporters, "otlp/test")
 	})
@@ -235,67 +238,50 @@ func TestBuildConfig(t *testing.T) {
 		require.Contains(t, collectorConfig.Service.Pipelines["logs/test-1"].Receivers, "otlp")
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[0], "memory_limiter")
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[1], "transform/set-observed-time-if-zero")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[2], "k8sattributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[3], "resource/insert-cluster-attributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[4], "service_enrichment")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[5], "resource/drop-kyma-attributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[6], "batch")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[2], "istio_noise_filter")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[3], "k8sattributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[4], "resource/insert-cluster-attributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[5], "service_enrichment")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[6], "resource/drop-kyma-attributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[7], "istio_enrichment")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[8], "batch")
 
 		require.Contains(t, collectorConfig.Service.Pipelines, "logs/test-2")
 		require.Contains(t, collectorConfig.Service.Pipelines["logs/test-2"].Exporters, "otlp/test-2")
 		require.Contains(t, collectorConfig.Service.Pipelines["logs/test-2"].Receivers, "otlp")
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[0], "memory_limiter")
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[1], "transform/set-observed-time-if-zero")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[2], "k8sattributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[3], "resource/insert-cluster-attributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[4], "service_enrichment")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[5], "resource/drop-kyma-attributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[6], "batch")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[2], "istio_noise_filter")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[3], "k8sattributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[4], "resource/insert-cluster-attributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[5], "service_enrichment")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[6], "resource/drop-kyma-attributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[7], "istio_enrichment")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[8], "batch")
 
 		require.Contains(t, envVars, "OTLP_ENDPOINT_TEST_1")
 		require.Contains(t, envVars, "OTLP_ENDPOINT_TEST_2")
 	})
 
 	t.Run("marshaling", func(t *testing.T) {
-		tests := []struct {
-			name              string
-			goldenFileName    string
-			withOTLPInput     bool
-			compatibilityMode bool
-		}{
-			{
-				name:              "compatibility mode disabled",
-				goldenFileName:    "config.yaml",
-				compatibilityMode: false,
-			},
-			{
-				name:              "compatibility mode enabled",
-				goldenFileName:    "config_compatibility_enabled.yaml",
-				compatibilityMode: true,
-			},
-		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				config, _, err := sut.Build(t.Context(), []telemetryv1alpha1.LogPipeline{
-					testutils.NewLogPipelineBuilder().WithName("test").WithOTLPOutput().Build(),
-				}, BuildOptions{
-					ClusterName:                     "${KUBERNETES_SERVICE_HOST}",
-					CloudProvider:                   "test-cloud-provider",
-					InternalMetricCompatibilityMode: tt.compatibilityMode,
-				})
-				require.NoError(t, err)
+		config, _, err := sut.Build(t.Context(), []telemetryv1alpha1.LogPipeline{
+			testutils.NewLogPipelineBuilder().WithName("test").WithOTLPOutput().Build(),
+		}, BuildOptions{
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
+			CloudProvider: "test-cloud-provider",
+			ModuleVersion: "1.0.0",
+		})
+		require.NoError(t, err)
 
-				configYAML, err := yaml.Marshal(config)
-				require.NoError(t, err, "failed to marshal config")
+		configYAML, err := yaml.Marshal(config)
+		require.NoError(t, err, "failed to marshal config")
 
-				goldenFilePath := filepath.Join("testdata", tt.goldenFileName)
-				goldenFile, err := os.ReadFile(goldenFilePath)
-				require.NoError(t, err, "failed to load golden file")
+		goldenFilePath := filepath.Join("testdata", "config.yaml")
+		goldenFile, err := os.ReadFile(goldenFilePath)
+		require.NoError(t, err, "failed to load golden file")
 
-				require.NoError(t, err)
-				require.Equal(t, string(goldenFile), string(configYAML))
-			})
-		}
+		require.NoError(t, err)
+		require.Equal(t, string(goldenFile), string(configYAML))
 	})
 
 	t.Run("failed to make otlp exporter config", func(t *testing.T) {
@@ -321,12 +307,14 @@ func TestBuildConfig(t *testing.T) {
 
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[0], "memory_limiter")
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[1], "transform/set-observed-time-if-zero")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[2], "k8sattributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[3], "filter/drop-if-input-source-otlp")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[4], "resource/insert-cluster-attributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[5], "service_enrichment")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[6], "resource/drop-kyma-attributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[7], "batch")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[2], "istio_noise_filter")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[3], "k8sattributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[4], "filter/drop-if-input-source-otlp")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[5], "resource/insert-cluster-attributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[6], "service_enrichment")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[7], "resource/drop-kyma-attributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[8], "istio_enrichment")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[9], "batch")
 
 		require.Contains(t, collectorConfig.Service.Pipelines["logs/test"].Exporters, "otlp/test")
 	})
@@ -348,12 +336,14 @@ func TestBuildConfig(t *testing.T) {
 
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-otlp-disabled"].Processors[0], "memory_limiter")
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-otlp-disabled"].Processors[1], "transform/set-observed-time-if-zero")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-otlp-disabled"].Processors[2], "k8sattributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-otlp-disabled"].Processors[3], "filter/drop-if-input-source-otlp")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-otlp-disabled"].Processors[4], "resource/insert-cluster-attributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-otlp-disabled"].Processors[5], "service_enrichment")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-otlp-disabled"].Processors[6], "resource/drop-kyma-attributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-otlp-disabled"].Processors[7], "batch")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-otlp-disabled"].Processors[2], "istio_noise_filter")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-otlp-disabled"].Processors[3], "k8sattributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-otlp-disabled"].Processors[4], "filter/drop-if-input-source-otlp")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-otlp-disabled"].Processors[5], "resource/insert-cluster-attributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-otlp-disabled"].Processors[6], "service_enrichment")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-otlp-disabled"].Processors[7], "resource/drop-kyma-attributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-otlp-disabled"].Processors[8], "istio_enrichment")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-otlp-disabled"].Processors[9], "batch")
 
 		require.Contains(t, collectorConfig.Service.Pipelines["logs/test-otlp-disabled"].Exporters, "otlp/test-otlp-disabled")
 
@@ -362,11 +352,13 @@ func TestBuildConfig(t *testing.T) {
 
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-otlp-enabled"].Processors[0], "memory_limiter")
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-otlp-enabled"].Processors[1], "transform/set-observed-time-if-zero")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-otlp-enabled"].Processors[2], "k8sattributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-otlp-enabled"].Processors[3], "resource/insert-cluster-attributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-otlp-enabled"].Processors[4], "service_enrichment")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-otlp-enabled"].Processors[5], "resource/drop-kyma-attributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-otlp-enabled"].Processors[6], "batch")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-otlp-enabled"].Processors[2], "istio_noise_filter")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-otlp-enabled"].Processors[3], "k8sattributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-otlp-enabled"].Processors[4], "resource/insert-cluster-attributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-otlp-enabled"].Processors[5], "service_enrichment")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-otlp-enabled"].Processors[6], "resource/drop-kyma-attributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-otlp-enabled"].Processors[7], "istio_enrichment")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-otlp-enabled"].Processors[8], "batch")
 
 		require.Contains(t, collectorConfig.Service.Pipelines["logs/test-otlp-enabled"].Exporters, "otlp/test-otlp-enabled")
 	})

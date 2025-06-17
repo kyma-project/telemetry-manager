@@ -7,6 +7,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
@@ -24,18 +25,17 @@ type Builder struct {
 }
 
 type BuildOptions struct {
-	GatewayNamespace                string
-	InstrumentationScopeVersion     string
-	ClusterName                     string
-	CloudProvider                   string
-	InternalMetricCompatibilityMode bool
+	GatewayNamespace            string
+	InstrumentationScopeVersion string
+	ClusterName                 string
+	CloudProvider               string
+	Enrichments                 *operatorv1alpha1.EnrichmentSpec
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {
 	cfg := &Config{
 		Base: *config.DefaultBaseConfig(
 			make(config.Pipelines),
-			opts.InternalMetricCompatibilityMode,
 			config.WithK8sLeaderElector("serviceAccount", "telemetry-metric-gateway-kymastats", opts.GatewayNamespace)),
 		Receivers:  makeReceiversConfig(),
 		Processors: makeProcessorsConfig(opts),

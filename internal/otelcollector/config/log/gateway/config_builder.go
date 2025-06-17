@@ -7,10 +7,10 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/processors"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 )
@@ -24,16 +24,16 @@ type Builder struct {
 }
 
 type BuildOptions struct {
-	ClusterName                     string
-	CloudProvider                   string
-	Enrichments                     processors.Enrichments
-	InternalMetricCompatibilityMode bool
+	ClusterName   string
+	CloudProvider string
+	Enrichments   *operatorv1alpha1.EnrichmentSpec
+	ModuleVersion string
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {
 	cfg := &Config{
 		Base: config.Base{
-			Service:    config.DefaultService(make(config.Pipelines), opts.InternalMetricCompatibilityMode),
+			Service:    config.DefaultService(make(config.Pipelines)),
 			Extensions: config.DefaultExtensions(),
 		},
 		Receivers:  makeReceiversConfig(),
