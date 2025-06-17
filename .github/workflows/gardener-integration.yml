@@ -98,7 +98,7 @@ jobs:
         shell: bash
         run: kubectl apply -f config/networking/networkpolicy-deny-all.yaml -n kyma-system
 
-      - name: Run istio tests
+      - name: Run a subset of istio tests
         shell: bash
         run: bin/ginkgo run --junit-report=junit-report-istio.xml --tags istio --label-filter="gardener && !experimental" test/integration/istio
 
