@@ -54,6 +54,15 @@ spec:
                   Enrichments specifies optional enrichments for the telemetry data.
                   This field is optional.
                 properties:
+                  cluster:
+                    description: Cluster provides user-defined cluster definitions to be used in resource attribute enrichment.
+                    properties:
+                      name:
+                        description: Name specifies a custom cluster name for resource attribute k8s.cluster.name.
+                        type: string
+                    required:
+                    - name
+                    type: object
                   extractPodLabels:
                     description: |-
                       ExtractPodLabels specifies the list of Pod labels to be used for enrichment.
