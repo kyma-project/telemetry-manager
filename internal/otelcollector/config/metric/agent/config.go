@@ -35,7 +35,6 @@ type KubeletStatsReceiver struct {
 }
 
 type NetworkInterfacesEnablerConfig struct {
-	PodMetrics  bool `yaml:"pod"`
 	NodeMetrics bool `yaml:"node"`
 }
 
