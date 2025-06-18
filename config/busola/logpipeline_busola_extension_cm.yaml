@@ -12,8 +12,7 @@ data:
       - source: >-
           $each(spec.output, function($v, $k) {$v.url.value or
           $v.url.valueFrom.secretKeyRef.name or $v.host.value or
-          $v.host.valueFrom.secretKeyRef.name or $v.endpoint.value or
-          $v.endpoint.valueFrom.secretKeyRef.name ? $k})
+          $v.host.valueFrom.secretKeyRef.name ? $k})
         placeholder: custom
         type: string
         name: Type
@@ -82,7 +81,6 @@ data:
     body:
       - widget: Panel
         name: Applications
-        visibility: spec.input.application.enabled
         children:
           - widget: Panel
             name: Namespaces
@@ -117,21 +115,6 @@ data:
                 source: spec.input.application.dropLabels
               - name: Keep Original Log Body
                 source: spec.input.application.keepOriginalBody
-      - widget: Panel
-        name: OTLP
-        visibility: spec.input.otlp.enabled
-        children:
-          - widget: Panel
-            name: Namespaces
-            children:
-              - name: Include
-                widget: JoinedArray
-                source: spec.input.otlp.namespaces.include
-                separator: ', '
-              - name: Exclude
-                widget: JoinedArray
-                source: spec.input.otlp.namespaces.exclude
-                separator: ', '
       - widget: Panel
         name: Output
         children:
@@ -245,7 +228,7 @@ data:
             widget: Panel
             visibility: $exists(spec.output.otlp)
             children:
-              - name: Endpoint
+              - name: Host
                 widget: Panel
                 children:
                   - name: Value
@@ -256,60 +239,424 @@ data:
                     source: spec.output.otlp.endpoint.valueFrom.secretKeyRef
                     kind: Secret
                     visibility: $exists(spec.output.otlp.endpoint.valueFrom.secretKeyRef.name)
-              - name: TLS Settings
-                widget: Panel
-                children:
-                  - name: Disabled
-                    source: spec.output.otlp.tls.disabled
-                    placeholder: 'false'
-                  - name: Skip certificate validation
-                    source: spec.output.http.tls.skipCertificateValidation
-                    placeholder: 'false'
-                  - name: Ca
-                    widget: Panel
-                    visibility: $exists(spec.output.http.tls.ca)
-                    source: spec.output.http.tls.ca
-                    children:
-                      - name: Value
-                        source: value
-                        visibility: $exists(value)
-                      - name: Value From Secret
-                        widget: ResourceRefs
-                        source: valueFrom.secretKeyRef
-                        kind: Secret
-                        visibility: $exists(valueFrom.secretKeyRef.name)
-                  - name: Cert
-                    widget: Panel
-                    visibility: $exists(spec.output.http.tls.cert)
-                    source: spec.output.http.tls.cert
-                    children:
-                      - name: Value
-                        source: value
-                        visibility: $exists(value)
-                      - name: Value From Secret
-                        widget: ResourceRefs
-                        source: valueFrom.secretKeyRef
-                        kind: Secret
-                        visibility: $exists(valueFrom.secretKeyRef.name)
-                  - name: Key
-                    widget: Panel
-                    visibility: $exists(spec.output.http.tls.key)
-                    source: spec.output.http.tls.key
-                    children:
-                      - name: Value
-                        source: value
-                        visibility: $exists(value)
-                      - name: Value From Secret
-                        widget: ResourceRefs
-                        source: valueFrom.secretKeyRef
-                        kind: Secret
-                        visibility: $exists(valueFrom.secretKeyRef.name)
-
+            
     resourceGraph:
       colorVariant: 2
       dataSources:
         - source: relatedSecrets
-  form: "- path: spec.input\n  widget: FormGroup\n  defaultExpanded: true\n  simple: true\n  children:\n    - name: Application\n      path: application\n      widget: FormGroup\n      defaultExpanded: true\n      simple: true\n      children:\n        - name: Enabled\n          path: enabled\n        - name: Include Namespaces\n          widget: SimpleList\n          path: namespaces.include\n          defaultExpanded: true\n          inputInfo: Include container logs from selected namespaces\n          children:\n            - path: '[]'\n        - name: Exclude Namespaces\n          widget: SimpleList\n          path: namespaces.exclude\n          children:\n            - path: '[]'\n        - name: Include System Namespaces\n          path: namespaces.system\n        - name: Include Containers\n          widget: SimpleList\n          path: containers.include\n        - name: Exclude Containers\n          widget: SimpleList\n          path: containers.exclude\n        - name: Keep Annotations\n          path: keepAnnotations\n        - name: Drop Labels\n          path: dropLabels\n        - name: Keep Original Log Body\n          path: keepOriginalBody\n    - name: Otlp\n      path: otlp\n      widget: FormGroup\n      children:\n        - name: Disabled\n          path: disabled\n        - name: Include Namespaces\n          widget: SimpleList\n          path: namespaces.include\n          defaultExpanded: true\n          inputInfo: Include container logs from selected namespaces\n          children:\n            - path: '[]'\n        - name: Exclude Namespaces\n          widget: SimpleList\n          path: namespaces.exclude\n          children:\n            - path: '[]'\n- name: Filters\n  widget: SimpleList\n  path: spec.filters\n  children:\n    - widget: FormGroup\n      path: '[]'\n      children:\n        - widget: CodeEditor\n          path: custom\n- path: spec.output\n  widget: FormGroup\n  defaultExpanded: true\n  simple: true\n  children:\n    - name: Custom\n      path: custom\n      widget: CodeEditor\n      advanced: true\n      inputInfo: >-\n        Note: If you use a custom output, you put the LogPipeline in unsupported\n        mode\n        (https://kyma-project.io/#/telemetry-manager/user/02-logs?id=unsupported-mode)\n    - name: HTTP\n      path: http\n      widget: FormGroup\n      defaultExpanded: true\n      simple: true\n      children:\n        - name: Host\n          path: host\n          simple: true\n          widget: FormGroup\n          children:\n            - name: Value\n              path: value\n              simple: true\n              widget: Text\n            - name: Secret Reference\n              path: valueFrom.secretKeyRef\n              simple: true\n              widget: ResourceRef\n              resource:\n                kind: secret\n                version: v1\n              children:\n                - path: key\n                  simple: true\n                  enum: $keys($secret.data)\n        - name: User\n          path: user\n          simple: true\n          widget: FormGroup\n          children:\n            - name: Value\n              path: value\n              simple: true\n              widget: Text\n            - name: Secret Reference\n              path: valueFrom.secretKeyRef\n              simple: true\n              widget: ResourceRef\n              resource:\n                kind: secret\n                version: v1\n              children:\n                - path: key\n                  simple: true\n                  enum: $keys($secret.data)\n        - name: Password\n          path: password\n          simple: true\n          widget: FormGroup\n          children:\n            - name: Value\n              path: value\n              simple: true\n              widget: Text\n            - name: Secret Reference\n              path: valueFrom.secretKeyRef\n              simple: true\n              widget: ResourceRef\n              resource:\n                kind: secret\n                version: v1\n              children:\n                - path: key\n                  simple: true\n                  enum: $keys($secret.data)\n        - name: TLS\n          widget: FormGroup\n          path: tls\n          children:\n            - name: Disabled\n              path: disabled\n            - name: Skip Certificate Validation\n              path: skipCertificateValidation\n            - name: CA\n              path: ca\n              widget: FormGroup\n              simple: true\n              children:\n                - name: Value\n                  path: value\n                  widget: Text\n                  simple: true\n                - name: Secret Reference\n                  path: valueFrom.secretKeyRef\n                  widget: ResourceRef\n                  simple: true\n                  resource:\n                    kind: secret\n                    version: v1\n                  children:\n                    - simple: true\n                      path: key\n                      enum: $keys($secret.data)\n            - name: Cert\n              path: cert\n              widget: FormGroup\n              simple: true\n              children:\n                - name: Value\n                  path: value\n                  widget: Text\n                  simple: true\n                - name: Secret Reference\n                  path: valueFrom.secretKeyRef\n                  widget: ResourceRef\n                  simple: true\n                  resource:\n                    kind: secret\n                    version: v1\n                  children:\n                    - simple: true\n                      path: key\n                      enum: $keys($secret.data)\n            - name: Key\n              path: key\n              widget: FormGroup\n              simple: true\n              children:\n                - name: Value\n                  path: value\n                  widget: Text\n                  simple: true\n                - name: Secret Reference\n                  path: valueFrom.secretKeyRef\n                  widget: ResourceRef\n                  simple: true\n                  resource:\n                    kind: secret\n                    version: v1\n                  children:\n                    - simple: true\n                      path: key\n                      enum: $keys($secret.data)\n        - name: URI\n          path: uri\n          widget: Text\n        - name: Port\n          path: port\n          widget: Text\n        - name: Compress\n          path: compress\n          widget: Text\n        - name: Format\n          path: format\n          widget: Text\n        - name: Dedot\n          simple: true\n          path: dedot\n    - name: OTLP\n      path: otlp\n      widget: FormGroup\n      defaultExpanded: true\n      simple: true\n      children:\n        - name: Protocol\n          path: protocol\n          simple: true\n          widget: Text\n        - name: Endpoint\n          path: endpoint\n          simple: true\n          widget: FormGroup\n          children:\n            - name: Value\n              path: value\n              simple: true\n              widget: Text\n            - name: Secret Reference\n              path: valueFrom.secretKeyRef\n              simple: true\n              widget: ResourceRef\n              resource:\n                kind: secret\n                version: v1\n              children:\n                - path: key\n                  simple: true\n                  enum: $keys($secret.data)\n        - name: Path\n          path: path\n          simple: true\n          widget: Text\n        - name: Authentication\n          path: authentication\n          widget: FormGroup\n          simple: true\n          children:\n            - name: Basic\n              path: basic\n              simple: true\n              widget: FormGroup\n              children:\n                - name: User\n                  path: user\n                  simple: true\n                  widget: FormGroup\n                  children:\n                    - name: Value\n                      path: value\n                      simple: true\n                      widget: Text\n                    - name: Secret Reference\n                      path: valueFrom.secretKeyRef\n                      simple: true\n                      widget: ResourceRef\n                      resource:\n                        kind: secret\n                        version: v1\n                      children:\n                      - path: key\n                        simple: true\n                        enum: $keys($secret.data)\n                - name: Password\n                  path: password\n                  simple: true\n                  widget: FormGroup\n                  children:\n                    - name: Value\n                      path: value\n                      simple: true\n                      widget: Text \n                    - name: Secret Reference\n                      path: valueFrom.secretKeyRef\n                      simple: true\n                      widget: ResourceRef\n                      resource:\n                        kind: secret\n                        version: v1\n                      children:\n                        - path: key\n                          simple: true\n                          enum: $keys($secret.data)\n        - name: Headers\n          path: headers\n          widget: GenericList\n          children:\n            - name: Name\n              path: '[].name'\n              simple: true\n              widget: Text\n            - widget: Text\n              name: Value\n              path: '[].value'\n              simple: true\n            - widget: FormGroup\n              name: From Secret\n              path: '[].valueFrom'\n              children:\n                - name: Secret Reference\n                  path: secretKeyRef\n                  simple: true\n                  widget: ResourceRef\n                  resource:\n                    kind: secret\n                    version: v1\n                  children:\n                    - path: key\n                      simple: true\n                      enum: $keys($secret.data)\n            - name: Prefix\n              path: '[].prefix'\n              simple: true\n              widget: Text\n        - name: TLS\n          path: tls\n          widget: FormGroup\n          simple: true\n          children:\n            - name: Insecure\n              path: insecure\n            - name: InsecureSkipVerify\n              path: insecureSkipVerify\n            - name: CA\n              path: ca\n              simple: true\n              widget: FormGroup\n              children:\n                - name: Value\n                  path: value\n                  simple: true\n                  widget: Text\n                - name: Secret Reference\n                  path: valueFrom.secretKeyRef\n                  simple: true\n                  widget: ResourceRef\n                  resource:\n                    kind: secret\n                    version: v1\n                  children:\n                    - path: key\n                      simple: true\n                      enum: $keys($secret.data)\n            - name: Cert\n              path: cert\n              simple: true\n              widget: FormGroup\n              children:\n                - name: Value\n                  path: value\n                  simple: true\n                  widget: Text\n                - name: Secret Reference\n                  path: valueFrom.secretKeyRef\n                  simple: true\n                  widget: ResourceRef\n                  resource:\n                    kind: secret\n                    version: v1\n                  children:\n                    - path: key\n                      simple: true\n                      enum: $keys($secret.data)\n            - name: Key\n              path: key\n              simple: true\n              widget: FormGroup\n              children:\n                - name: Value\n                  path: value\n                  simple: true\n                  widget: Text\n                - name: Secret Reference\n                  path: valueFrom.secretKeyRef\n                  simple: true\n                  widget: ResourceRef\n                  resource:\n                    kind: secret\n                    version: v1\n                  children:\n                    - path: key\n                      simple: true\n                      enum: $keys($secret.data)\n"
+  form: |
+    - path: spec.input
+      widget: FormGroup
+      defaultExpanded: true
+      simple: true
+      children:
+        - name: Application
+          path: application
+          widget: FormGroup
+          defaultExpanded: true
+          simple: true
+          children:
+            - name: Enabled
+              path: enabled
+            - name: Include Namespaces
+              widget: SimpleList
+              path: namespaces.include
+              defaultExpanded: true
+              inputInfo: Include container logs from selected namespaces
+              children:
+                - path: '[]'
+            - name: Exclude Namespaces
+              widget: SimpleList
+              path: namespaces.exclude
+              children:
+                - path: '[]'
+            - name: Include System Namespaces
+              path: namespaces.system
+            - name: Include Containers
+              widget: SimpleList
+              path: containers.include
+            - name: Exclude Containers
+              widget: SimpleList
+              path: containers.exclude
+            - name: Keep Annotations
+              path: keepAnnotations
+            - name: Drop Labels
+              path: dropLabels
+            - name: Keep Original Log Body
+              path: keepOriginalBody
+        - name: Otlp
+          path: otlp
+          widget: FormGroup
+          children:
+            - name: Disabled
+              path: disabled
+            - name: Include Namespaces
+              widget: SimpleList
+              path: namespaces.include
+              defaultExpanded: true
+              inputInfo: Include container logs from selected namespaces
+              children:
+                - path: '[]'
+            - name: Exclude Namespaces
+              widget: SimpleList
+              path: namespaces.exclude
+              children:
+                - path: '[]'
+    - name: Filters
+      widget: SimpleList
+      path: spec.filters
+      children:
+        - widget: FormGroup
+          path: '[]'
+          children:
+            - widget: CodeEditor
+              path: custom
+    - path: spec.output
+      widget: FormGroup
+      defaultExpanded: true
+      simple: true
+      children:
+        - name: Custom
+          path: custom
+          widget: CodeEditor
+          advanced: true
+          inputInfo: >-
+            Note: If you use a custom output, you put the LogPipeline in unsupported
+            mode
+            (https://kyma-project.io/#/telemetry-manager/user/02-logs?id=unsupported-mode)
+        - name: HTTP
+          path: http
+          widget: FormGroup
+          defaultExpanded: true
+          simple: true
+          children:
+            - name: Host
+              path: host
+              simple: true
+              widget: FormGroup
+              children:
+                - name: Value
+                  path: value
+                  simple: true
+                  widget: Text
+                - name: Secret Reference
+                  path: valueFrom.secretKeyRef
+                  simple: true
+                  widget: ResourceRef
+                  resource:
+                    kind: secret
+                    version: v1
+                  children:
+                    - path: key
+                      simple: true
+                      enum: $keys($secret.data)
+            - name: User
+              path: user
+              simple: true
+              widget: FormGroup
+              children:
+                - name: Value
+                  path: value
+                  simple: true
+                  widget: Text
+                - name: Secret Reference
+                  path: valueFrom.secretKeyRef
+                  simple: true
+                  widget: ResourceRef
+                  resource:
+                    kind: secret
+                    version: v1
+                  children:
+                    - path: key
+                      simple: true
+                      enum: $keys($secret.data)
+            - name: Password
+              path: password
+              simple: true
+              widget: FormGroup
+              children:
+                - name: Value
+                  path: value
+                  simple: true
+                  widget: Text
+                - name: Secret Reference
+                  path: valueFrom.secretKeyRef
+                  simple: true
+                  widget: ResourceRef
+                  resource:
+                    kind: secret
+                    version: v1
+                  children:
+                    - path: key
+                      simple: true
+                      enum: $keys($secret.data)
+            - name: TLS
+              widget: FormGroup
+              path: tls
+              children:
+                - name: Disabled
+                  path: disabled
+                - name: Skip Certificate Validation
+                  path: skipCertificateValidation
+                - name: CA
+                  path: ca
+                  widget: FormGroup
+                  simple: true
+                  children:
+                    - name: Value
+                      path: value
+                      widget: Text
+                      simple: true
+                    - name: Secret Reference
+                      path: valueFrom.secretKeyRef
+                      widget: ResourceRef
+                      simple: true
+                      resource:
+                        kind: secret
+                        version: v1
+                      children:
+                        - simple: true
+                          path: key
+                          enum: $keys($secret.data)
+                - name: Cert
+                  path: cert
+                  widget: FormGroup
+                  simple: true
+                  children:
+                    - name: Value
+                      path: value
+                      widget: Text
+                      simple: true
+                    - name: Secret Reference
+                      path: valueFrom.secretKeyRef
+                      widget: ResourceRef
+                      simple: true
+                      resource:
+                        kind: secret
+                        version: v1
+                      children:
+                        - simple: true
+                          path: key
+                          enum: $keys($secret.data)
+                - name: Key
+                  path: key
+                  widget: FormGroup
+                  simple: true
+                  children:
+                    - name: Value
+                      path: value
+                      widget: Text
+                      simple: true
+                    - name: Secret Reference
+                      path: valueFrom.secretKeyRef
+                      widget: ResourceRef
+                      simple: true
+                      resource:
+                        kind: secret
+                        version: v1
+                      children:
+                        - simple: true
+                          path: key
+                          enum: $keys($secret.data)
+            - name: URI
+              path: uri
+              widget: Text
+            - name: Port
+              path: port
+              widget: Text
+            - name: Compress
+              path: compress
+              widget: Text
+            - name: Format
+              path: format
+              widget: Text
+            - name: Dedot
+              simple: true
+              path: dedot
+        - name: OTLP
+          path: otlp
+          widget: FormGroup
+          defaultExpanded: true
+          simple: true
+          children:
+            - name: Protocol
+              path: protocol
+              simple: true
+              widget: Text
+            - name: Endpoint
+              path: endpoint
+              simple: true
+              widget: FormGroup
+              children:
+                - name: Value
+                  path: value
+                  simple: true
+                  widget: Text
+                - name: Secret Reference
+                  path: valueFrom.secretKeyRef
+                  simple: true
+                  widget: ResourceRef
+                  resource:
+                    kind: secret
+                    version: v1
+                  children:
+                    - path: key
+                      simple: true
+                      enum: $keys($secret.data)
+            - name: Path
+              path: path
+              simple: true
+              widget: Text
+            - name: Authentication
+              path: authentication
+              widget: FormGroup
+              simple: true
+              children:
+                - name: Basic
+                  path: basic
+                  simple: true
+                  widget: FormGroup
+                  children:
+                    - name: User
+                      path: user
+                      simple: true
+                      widget: FormGroup
+                      children:
+                        - name: Value
+                          path: value
+                          simple: true
+                          widget: Text
+                        - name: Secret Reference
+                          path: valueFrom.secretKeyRef
+                          simple: true
+                          widget: ResourceRef
+                          resource:
+                            kind: secret
+                            version: v1
+                          children:
+                          - path: key
+                            simple: true
+                            enum: $keys($secret.data)
+                    - name: Password
+                      path: password
+                      simple: true
+                      widget: FormGroup
+                      children:
+                        - name: Value
+                          path: value
+                          simple: true
+                          widget: Text 
+                        - name: Secret Reference
+                          path: valueFrom.secretKeyRef
+                          simple: true
+                          widget: ResourceRef
+                          resource:
+                            kind: secret
+                            version: v1
+                          children:
+                            - path: key
+                              simple: true
+                              enum: $keys($secret.data)
+            - name: Headers
+              path: headers
+              widget: GenericList
+              children:
+                - name: Name
+                  path: '[].name'
+                  simple: true
+                  widget: Text
+                - widget: Text
+                  name: Value
+                  path: '[].value'
+                  simple: true
+                - widget: FormGroup
+                  name: From Secret
+                  path: '[].valueFrom'
+                  children:
+                    - name: Secret Reference
+                      path: secretKeyRef
+                      simple: true
+                      widget: ResourceRef
+                      resource:
+                        kind: secret
+                        version: v1
+                      children:
+                        - path: key
+                          simple: true
+                          enum: $keys($secret.data)
+                - name: Prefix
+                  path: '[].prefix'
+                  simple: true
+                  widget: Text
+            - name: TLS
+              path: tls
+              widget: FormGroup
+              simple: true
+              children:
+                - name: Insecure
+                  path: insecure
+                - name: InsecureSkipVerify
+                  path: insecureSkipVerify
+                - name: CA
+                  path: ca
+                  simple: true
+                  widget: FormGroup
+                  children:
+                    - name: Value
+                      path: value
+                      simple: true
+                      widget: Text
+                    - name: Secret Reference
+                      path: valueFrom.secretKeyRef
+                      simple: true
+                      widget: ResourceRef
+                      resource:
+                        kind: secret
+                        version: v1
+                      children:
+                        - path: key
+                          simple: true
+                          enum: $keys($secret.data)
+                - name: Cert
+                  path: cert
+                  simple: true
+                  widget: FormGroup
+                  children:
+                    - name: Value
+                      path: value
+                      simple: true
+                      widget: Text
+                    - name: Secret Reference
+                      path: valueFrom.secretKeyRef
+                      simple: true
+                      widget: ResourceRef
+                      resource:
+                        kind: secret
+                        version: v1
+                      children:
+                        - path: key
+                          simple: true
+                          enum: $keys($secret.data)
+                - name: Key
+                  path: key
+                  simple: true
+                  widget: FormGroup
+                  children:
+                    - name: Value
+                      path: value
+                      simple: true
+                      widget: Text
+                    - name: Secret Reference
+                      path: valueFrom.secretKeyRef
+                      simple: true
+                      widget: ResourceRef
+                      resource:
+                        kind: secret
+                        version: v1
+                      children:
+                        - path: key
+                          simple: true
+                          enum: $keys($secret.data)
   general: |-
     resource:
       kind: LogPipeline
@@ -325,8 +672,7 @@ data:
     - source: >-
         $each(spec.output, function($v, $k) {$v.url.value or
         $v.url.valueFrom.secretKeyRef.name or $v.host.value or
-        $v.host.valueFrom.secretKeyRef.name or $v.endpoint.value or
-        $v.endpoint.valueFrom.secretKeyRef.name ? $k})
+        $v.host.valueFrom.secretKeyRef.name ? $k})
       placeholder: custom
       type: string
       name: Type
@@ -335,7 +681,6 @@ data:
     - name: Unsupported-Mode
       source: status.unsupportedMode
       widget: Badge
-      placeHolder: 'false'
       highlights:
         positive:
           - 'false'
