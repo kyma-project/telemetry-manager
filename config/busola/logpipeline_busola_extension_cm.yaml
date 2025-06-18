@@ -12,7 +12,8 @@ data:
       - source: >-
           $each(spec.output, function($v, $k) {$v.url.value or
           $v.url.valueFrom.secretKeyRef.name or $v.host.value or
-          $v.host.valueFrom.secretKeyRef.name ? $k})
+          $v.host.valueFrom.secretKeyRef.name or $v.endpoint.value or
+          $v.endpoint.valueFrom.secretKeyRef.name ? $k})
         placeholder: custom
         type: string
         name: Type
@@ -81,6 +82,7 @@ data:
     body:
       - widget: Panel
         name: Applications
+        visibility: spec.input.application.enabled
         children:
           - widget: Panel
             name: Namespaces
@@ -115,6 +117,21 @@ data:
                 source: spec.input.application.dropLabels
               - name: Keep Original Log Body
                 source: spec.input.application.keepOriginalBody
+      - widget: Panel
+        name: OTLP
+        visibility: spec.input.otlp.enabled
+        children:
+          - widget: Panel
+            name: Namespaces
+            children:
+              - name: Include
+                widget: JoinedArray
+                source: spec.input.otlp.namespaces.include
+                separator: ', '
+              - name: Exclude
+                widget: JoinedArray
+                source: spec.input.otlp.namespaces.exclude
+                separator: ', '
       - widget: Panel
         name: Output
         children:
@@ -239,7 +256,7 @@ data:
                     source: spec.output.otlp.endpoint.valueFrom.secretKeyRef
                     kind: Secret
                     visibility: $exists(spec.output.otlp.endpoint.valueFrom.secretKeyRef.name)
-            
+
     resourceGraph:
       colorVariant: 2
       dataSources:
@@ -284,7 +301,7 @@ data:
               path: dropLabels
             - name: Keep Original Log Body
               path: keepOriginalBody
-        - name: Otlp
+        - name: OTLP
           path: otlp
           widget: FormGroup
           children:
@@ -545,7 +562,7 @@ data:
                         - name: Value
                           path: value
                           simple: true
-                          widget: Text 
+                          widget: Text
                         - name: Secret Reference
                           path: valueFrom.secretKeyRef
                           simple: true
@@ -672,7 +689,8 @@ data:
     - source: >-
         $each(spec.output, function($v, $k) {$v.url.value or
         $v.url.valueFrom.secretKeyRef.name or $v.host.value or
-        $v.host.valueFrom.secretKeyRef.name ? $k})
+        $v.host.valueFrom.secretKeyRef.name or $v.endpoint.value or
+        $v.endpoint.valueFrom.secretKeyRef.name ? $k})
       placeholder: custom
       type: string
       name: Type
