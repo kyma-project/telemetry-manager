@@ -12,8 +12,8 @@ WORKDIR /telemetry-manager-workspace
 # Copy the Go Modules manifests
 COPY go.mod go.sum ./
 # Copy the go source
-
 RUN go mod download
+# Added for test purposes
 
 COPY main.go main.go
 COPY apis/ apis/
