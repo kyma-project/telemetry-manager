@@ -1,6 +1,6 @@
-//go:build istio
+//go:build e2e
 
-package istio
+package metrics
 
 import (
 	"fmt"
@@ -26,7 +26,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Label(suite.LabelMetrics), Label(suite.LabelSetB), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelMetrics, suite.LabelSetB), Ordered, func() {
 	Context("When metric pipelines with cloud provider resources metrics exist", Ordered, func() {
 		var (
 			mockNs = suite.ID()
@@ -41,7 +41,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Label(suite.LabelMet
 		makeResources := func() []client.Object {
 			var objs []client.Object
 			objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
-			objs = append(objs, kitk8s.NewConfigMap("shoot-info", "kube-system").WithData("shootName", "kyma-telemetry").WithData("provider", "k3d").WithLabel(kitk8s.PersistentLabelName, "true").K8sObject())
 
 			backend := kitbackend.New(mockNs, kitbackend.SignalTypeMetrics, kitbackend.WithName(backendName))
 			objs = append(objs, backend.K8sObjects()...)
