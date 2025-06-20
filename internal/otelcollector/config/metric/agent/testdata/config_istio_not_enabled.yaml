@@ -78,12 +78,10 @@ receivers:
                 enabled: false
             k8s.node.memory.page_faults:
                 enabled: false
-            k8s.node.network.io:
-                enabled: false
-            k8s.node.network.errors:
-                enabled: false
         extra_metadata_labels:
             - k8s.volume.type
+        collect_all_network_interfaces:
+            node: true
     k8s_cluster:
         auth_type: serviceAccount
         collection_interval: 30s
