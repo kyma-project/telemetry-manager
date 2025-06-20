@@ -32,7 +32,7 @@ runs:
         IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
 
     - name: Deploy module release
-      if: ${{ inputs.experimental == 'false'}}
+      if: ${{ !inputs.experimental || inputs.experimental == 'false'}}
       shell: bash
       run: make --debug deploy
 

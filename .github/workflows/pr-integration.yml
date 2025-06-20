@@ -298,11 +298,11 @@ jobs:
           - name: log-gateway
             mode: release
           - name: max-pipeline
-            mode: experimental
+            mode: release
           - name: max-pipeline-fluent-bit
             mode: release
           - name: max-pipeline-otel
-            mode: experimental
+            mode: release
           - name: metrics
             mode: release
     runs-on: ubuntu-latest
