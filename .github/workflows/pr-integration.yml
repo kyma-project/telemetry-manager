@@ -81,7 +81,7 @@ jobs:
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"
-        if: success() || failure()
+        if: ${{ !cancelled()  }}
         with:
           failure: failure()
           job-name: ${{ github.job }}-${{ matrix.ginkgo-labels }}
@@ -113,7 +113,7 @@ jobs:
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"
-        if: success() || failure()
+        if: ${{ !cancelled()  }}
         with:
           failure: failure()
           job-name: ${{ github.job }}-${{ matrix.ginkgo-labels }}
@@ -144,7 +144,7 @@ jobs:
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"
-        if: success() || failure()
+        if: ${{ !cancelled()  }}
         with:
           failure: failure()
           job-name: ${{ github.job }}-${{ matrix.ginkgo-labels }}
@@ -169,11 +169,11 @@ jobs:
 
       - name: Run tests
         run: |
-          bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags istio --label-filter="integration && !experimental" test/integration/istio
+          bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags istio --label-filter="istio && !experimental" test/integration/istio
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
-        if: success() || failure()
+        if: ${{ !cancelled()  }}
         with:
           failure: failure()
           job-name: ${{ github.job }}
@@ -226,7 +226,7 @@ jobs:
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
-        if: success() || failure()
+        if: ${{ !cancelled()  }}
         with:
           failure: failure()
           job-name: ${{ github.job }}-${{ matrix.signal-type }}-${{ matrix.scenario }}
@@ -278,7 +278,7 @@ jobs:
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
-        if: success() || failure()
+        if: ${{ !cancelled()  }}
         with:
           failure: failure()
           job-name: ${{ github.job }}-${{ matrix.signal-type }}-${{ matrix.scenario }}
@@ -325,7 +325,7 @@ jobs:
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
-        if: success() || failure()
+        if: ${{ !cancelled()  }}
         with:
           failure: failure()
           job-name: ${{ github.job }}-${{ matrix.labels }}
