@@ -124,7 +124,144 @@ data:
         - source: logPipelines
         - source: metricPipelines
         - source: tracePipelines
-  form: "- advanced: true\n  defaultExpanded: false\n  readOnly: false\n  decodable: false\n  path: spec.log\n  name: Logs\n  widget: FormGroup\n  children:\n    - advanced: true\n      defaultExpanded: false\n      readOnly: false\n      decodable: false\n      path: gateway\n      name: Gateway\n      widget: FormGroup\n      children:\n        - advanced: true\n          defaultExpanded: false\n          readOnly: false\n          decodable: false\n          path: scaling\n          name: Scaling\n          widget: FormGroup\n          children:\n            - path: type\n              override: false\n              enum:\n                - None\n            - advanced: true\n              defaultExpanded: false\n              readOnly: false\n              decodable: false\n              visibility: \"$item.spec.log.gateway.scaling.type = 'Static'\"\n              path: static\n              name: Static\n              widget: FormGroup\n              children:\n                - advanced: true\n                  defaultExpanded: false\n                  readOnly: false\n                  decodable: false\n                  path: replicas\n                  name: Replicas\n                  simple: false\n                  widget: Number\n                  type: Number\n- advanced: true\n  defaultExpanded: false\n  readOnly: false\n  decodable: false\n  path: spec.trace\n  name: Traces\n  widget: FormGroup\n  children:\n    - advanced: true\n      defaultExpanded: false\n      readOnly: false\n      decodable: false\n      path: gateway\n      name: Gateway\n      widget: FormGroup\n      children:\n        - advanced: true\n          defaultExpanded: false\n          readOnly: false\n          decodable: false\n          path: scaling\n          name: Scaling\n          widget: FormGroup\n          children:\n            - path: type\n              override: false\n              enum:\n                - None\n            - advanced: true\n              defaultExpanded: false\n              readOnly: false\n              decodable: false\n              visibility: \"$item.spec.trace.gateway.scaling.type = 'Static'\"\n              path: static\n              name: Static\n              widget: FormGroup\n              children:\n                - advanced: true\n                  defaultExpanded: false\n                  readOnly: false\n                  decodable: false\n                  path: replicas\n                  name: Replicas\n                  simple: false\n                  widget: Number\n                  type: Number  \n- advanced: true\n  defaultExpanded: false\n  readOnly: false\n  decodable: false\n  path: spec.metric\n  name: Metrics\n  widget: FormGroup\n  children:\n    - advanced: true\n      defaultExpanded: false\n      readOnly: false\n      decodable: false\n      path: gateway\n      name: Gateway\n      widget: FormGroup\n      children:\n        - advanced: true\n          defaultExpanded: false\n          readOnly: false\n          decodable: false\n          path: scaling\n          name: Scaling\n          widget: FormGroup\n          children:\n            - path: type\n              override: false\n              enum:\n                - None\n            - advanced: true\n              defaultExpanded: false\n              readOnly: false\n              decodable: false\n              visibility: \"$item.spec.metric.gateway.scaling.type = 'Static'\"\n              path: static\n              name: Static\n              widget: FormGroup\n              children:\n                - advanced: true\n                  defaultExpanded: false\n                  readOnly: false\n                  decodable: false\n                  path: replicas\n                  name: Replicas\n                  simple: false\n                  widget: Number\n"
+  form: |
+    - advanced: true
+      defaultExpanded: false
+      readOnly: false
+      decodable: false
+      path: spec.log
+      name: Logs
+      widget: FormGroup
+      children:
+        - advanced: true
+          defaultExpanded: false
+          readOnly: false
+          decodable: false
+          path: gateway
+          name: Gateway
+          widget: FormGroup
+          children:
+            - advanced: true
+              defaultExpanded: false
+              readOnly: false
+              decodable: false
+              path: scaling
+              name: Scaling
+              widget: FormGroup
+              children:
+                - path: type
+                  override: false
+                  enum:
+                    - None
+                - advanced: true
+                  defaultExpanded: false
+                  readOnly: false
+                  decodable: false
+                  visibility: "$item.spec.log.gateway.scaling.type = 'Static'"
+                  path: static
+                  name: Static
+                  widget: FormGroup
+                  children:
+                    - advanced: true
+                      defaultExpanded: false
+                      readOnly: false
+                      decodable: false
+                      path: replicas
+                      name: Replicas
+                      simple: false
+                      widget: Number
+                      type: Number
+    - advanced: true
+      defaultExpanded: false
+      readOnly: false
+      decodable: false
+      path: spec.trace
+      name: Traces
+      widget: FormGroup
+      children:
+        - advanced: true
+          defaultExpanded: false
+          readOnly: false
+          decodable: false
+          path: gateway
+          name: Gateway
+          widget: FormGroup
+          children:
+            - advanced: true
+              defaultExpanded: false
+              readOnly: false
+              decodable: false
+              path: scaling
+              name: Scaling
+              widget: FormGroup
+              children:
+                - path: type
+                  override: false
+                  enum:
+                    - None
+                - advanced: true
+                  defaultExpanded: false
+                  readOnly: false
+                  decodable: false
+                  visibility: "$item.spec.trace.gateway.scaling.type = 'Static'"
+                  path: static
+                  name: Static
+                  widget: FormGroup
+                  children:
+                    - advanced: true
+                      defaultExpanded: false
+                      readOnly: false
+                      decodable: false
+                      path: replicas
+                      name: Replicas
+                      simple: false
+                      widget: Number
+                      type: Number
+    - advanced: true
+      defaultExpanded: false
+      readOnly: false
+      decodable: false
+      path: spec.metric
+      name: Metrics
+      widget: FormGroup
+      children:
+        - advanced: true
+          defaultExpanded: false
+          readOnly: false
+          decodable: false
+          path: gateway
+          name: Gateway
+          widget: FormGroup
+          children:
+            - advanced: true
+              defaultExpanded: false
+              readOnly: false
+              decodable: false
+              path: scaling
+              name: Scaling
+              widget: FormGroup
+              children:
+                - path: type
+                  override: false
+                  enum:
+                    - None
+                - advanced: true
+                  defaultExpanded: false
+                  readOnly: false
+                  decodable: false
+                  visibility: "$item.spec.metric.gateway.scaling.type = 'Static'"
+                  path: static
+                  name: Static
+                  widget: FormGroup
+                  children:
+                    - advanced: true
+                      defaultExpanded: false
+                      readOnly: false
+                      decodable: false
+                      path: replicas
+                      name: Replicas
+                      simple: false
+                      widget: Number
   general: |
     resource:
       kind: Telemetry
