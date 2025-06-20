@@ -18,6 +18,8 @@ COPY controllers/ controllers/
 COPY internal/ internal/
 COPY webhook/ webhook/
 
+COPY .git .git
+
 RUN apk add --no-cache git
 RUN git config --global --add safe.directory /telemetry-manager-workspace && git describe --tags
 
