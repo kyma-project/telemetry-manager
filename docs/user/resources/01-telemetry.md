@@ -77,6 +77,10 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 
 | Parameter | Type | Description |
 | ---- | ----------- | ---- |
+| **enrichments**  | object | Enrichments specifies optional enrichments for the telemetry data. This field is optional. |
+| **enrichments.&#x200b;extractPodLabels**  | \[\]object | ExtractPodLabels specifies the list of Pod labels to be used for enrichment. This field is optional. |
+| **enrichments.&#x200b;extractPodLabels.&#x200b;key**  | string | Key specifies the exact label key to be used. This field is optional. |
+| **enrichments.&#x200b;extractPodLabels.&#x200b;keyPrefix**  | string | KeyPrefix specifies a prefix for label keys to be used. This field is optional. |
 | **log**  | object | LogSpec defines the behavior of the log gateway LogSpec contains the configuration for the log gateway, including the gateway settings and optional log data enrichments. |
 | **log.&#x200b;gateway**  | object | Gateway specifies the settings for the log gateway. |
 | **log.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type. |
