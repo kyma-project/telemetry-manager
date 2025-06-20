@@ -13,10 +13,6 @@ runs:
   using: "composite"
 
   steps:
-    - name: Denug input experimental
-      shell: bash
-      run: echo "Hello ${{ inputs.experimental }}"
-
     - name: Setup Golang
       uses: "./.github/template/setup-golang"
 
@@ -36,12 +32,12 @@ runs:
         IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
 
     - name: Deploy module release
-      if: ${{ !inputs.experimental }}
+      if: ${{ inputs.experimental == 'false'}}
       shell: bash
       run: make --debug deploy
 
     - name: Deploy module experimental
-      if: ${{ inputs.experimental }}
+      if: ${{ inputs.experimental == 'true' }}
       shell: bash
       run: make --debug deploy-experimental
 
