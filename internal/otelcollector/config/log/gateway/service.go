@@ -24,7 +24,7 @@ func makePipelineServiceConfig(pipeline *telemetryv1alpha1.LogPipeline) config.P
 
 	// Add namespace filters after k8sattributes processor because they depend on the
 	// k8s.namespace.name resource attribute
-	if pipeline.Spec.Input.OTLP != nil && shouldFilterByNamespace(pipeline.Spec.Input.OTLP.Namespaces) {
+	if pipeline.Spec.Input.OTLP != nil && !pipeline.Spec.Input.OTLP.Disabled && shouldFilterByNamespace(pipeline.Spec.Input.OTLP.Namespaces) {
 		processorIDs = append(processorIDs, formatNamespaceFilterID(pipeline.Name))
 	}
 

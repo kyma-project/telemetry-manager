@@ -7,7 +7,10 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	istiotelemetryv1alpha1 "istio.io/api/telemetry/v1alpha1"
+	istiotelemetryclientv1 "istio.io/client-go/pkg/apis/telemetry/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -22,7 +25,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio, suite.LabelExperimental), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Ordered, func() {
 	const (
 		sampleAppNs = "istio-permissive-mtls"
 	)
@@ -75,6 +78,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio, suite.
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
+				// TODO: Remove this once the bug https://github.com/kyma-project/istio/issues/1481 fixed
+				resetAccessLogsProvider()
 			})
 			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 		})
@@ -98,6 +103,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio, suite.
 
 		It("Should have a running log gateway deployment", func() {
 			assert.DeploymentReady(suite.Ctx, kitkyma.LogGatewayName)
+		})
+
+		// TODO: Remove this once the bug https://github.com/kyma-project/istio/issues/1481 fixed
+		It("Should have a istio telemetry otlp access log", func() {
+			enableOTLPAccessLogsProvider()
 		})
 
 		It("Should invoke the metrics endpoint to generate access logs", func() {
@@ -155,3 +165,44 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio, suite.
 		})
 	})
 })
+
+// TODO: Remove this once the bug https://github.com/kyma-project/istio/issues/1481 fixed
+func enableOTLPAccessLogsProvider() {
+	var telemetry istiotelemetryclientv1.Telemetry
+	err := suite.K8sClient.Get(suite.Ctx, types.NamespacedName{
+		Name:      "access-config",
+		Namespace: "istio-system",
+	}, &telemetry)
+	Expect(err).NotTo(HaveOccurred())
+
+	telemetry.Spec.AccessLogging[0].Providers = []*istiotelemetryv1alpha1.ProviderRef{
+		{
+			Name: "kyma-logs",
+		},
+	}
+
+	err = suite.K8sClient.Update(suite.Ctx, &telemetry)
+	Expect(err).NotTo(HaveOccurred())
+}
+
+// TODO: Remove this once the bug https://github.com/kyma-project/istio/issues/1481 fixed
+func resetAccessLogsProvider() {
+	var telemetry istiotelemetryclientv1.Telemetry
+	err := suite.K8sClient.Get(suite.Ctx, types.NamespacedName{
+		Name:      "access-config",
+		Namespace: "istio-system",
+	}, &telemetry)
+	Expect(err).NotTo(HaveOccurred())
+
+	telemetry.Spec.AccessLogging[0].Providers = []*istiotelemetryv1alpha1.ProviderRef{
+		{
+			Name: "stdout-json",
+		},
+		{
+			Name: "kyma-logs",
+		},
+	}
+
+	err = suite.K8sClient.Update(suite.Ctx, &telemetry)
+	Expect(err).NotTo(HaveOccurred())
+}

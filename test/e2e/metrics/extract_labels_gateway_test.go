@@ -22,7 +22,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 	const (
 		k8sLabelKeyPrefix = "k8s.pod.label"
 		logLabelKeyPrefix = "metric.test.prefix"

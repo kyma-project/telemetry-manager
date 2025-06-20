@@ -149,36 +149,6 @@ jobs:
           failure: failure()
           job-name: ${{ github.job }}-${{ matrix.ginkgo-labels }}
 
-  e2e-istio-experimental:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-
-      - name: Prepare Test
-        uses: "./.github/template/prepare-test"
-        with:
-          experimental: true
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Deploy Istio Module
-        run: hack/deploy-istio.sh
-
-      - name: Deploy Test Prerequisites
-        uses: "./.github/template/deploy-test-prerequisites"
-
-      - name: Run tests
-        run: |
-          bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags istio --label-filter="istio && experimental" test/integration/istio
-
-      - name: Finalize Test
-        uses: "./.github/template/finalize-test"
-        if: ${{ !cancelled()  }}
-        with:
-          failure: failure()
-          job-name: ${{ github.job }}
-
   e2e-istio:
     needs: setup
     runs-on: ubuntu-latest
@@ -321,18 +291,22 @@ jobs:
         labels:
           - name: fluent-bit
             mode: release
-          - name: fluent-bit
+          - name: fluent-bit-experimental
+            mode: experimental
+          - name: log-agent-experimental
+            mode: experimental
+          - name: log-gateway-experimental
             mode: experimental
           - name: log-agent
-            mode: experimental
+            mode: release
           - name: log-gateway
-            mode: experimental
+            mode: release
           - name: max-pipeline
-            mode: experimental
+            mode: release
           - name: max-pipeline-fluent-bit
             mode: release
           - name: max-pipeline-otel
-            mode: experimental
+            mode: release
           - name: metrics
             mode: release
     runs-on: ubuntu-latest
@@ -345,6 +319,7 @@ jobs:
         with:
           experimental: ${{ matrix.labels.mode == 'experimental' }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
 
       - name: Deploy Test Prerequisites
         uses: "./.github/template/deploy-test-prerequisites"
