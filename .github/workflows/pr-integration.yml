@@ -291,7 +291,11 @@ jobs:
         labels:
           - name: fluent-bit
             mode: release
-          - name: fluent-bit
+          - name: fluent-bit-experimental
+            mode: experimental
+          - name: log-agent-experimental
+            mode: experimental
+          - name: log-gateway-experimental
             mode: experimental
           - name: log-agent
             mode: release
