@@ -18,8 +18,8 @@ require (
 	golang.org/x/net v0.41.0
 	google.golang.org/protobuf v1.36.6
 	gopkg.in/yaml.v3 v3.0.1
-	istio.io/api v1.26.1
-	istio.io/client-go v1.26.1
+	istio.io/api v1.26.2-0.20250616094816-cb08ed2587d4
+	istio.io/client-go v1.26.2
 	k8s.io/api v0.33.1
 	k8s.io/apiextensions-apiserver v0.33.1
 	k8s.io/apimachinery v0.33.1
