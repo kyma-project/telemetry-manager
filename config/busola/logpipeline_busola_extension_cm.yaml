@@ -10,11 +10,7 @@ data:
   details: |-
     header:
       - source: >-
-          $each(spec.output, function($v, $k) {$v.url.value or
-          $v.url.valueFrom.secretKeyRef.name or $v.host.value or
-          $v.host.valueFrom.secretKeyRef.name or $v.endpoint.value or
-          $v.endpoint.valueFrom.secretKeyRef.name ? $k})
-        placeholder: custom
+           $each(spec.output, function($v, $k) { $exists($v) ? $k })
         type: string
         name: Type
         isSelected: true
@@ -631,11 +627,7 @@ data:
       {{[LogPipeline custom resource](https://kyma-project.io/#/telemetry-manager/user/resources/02-logpipeline)}} configures a custom Log Pipeline.
   list: |-
     - source: >-
-        $each(spec.output, function($v, $k) {$v.url.value or
-        $v.url.valueFrom.secretKeyRef.name or $v.host.value or
-        $v.host.valueFrom.secretKeyRef.name or $v.endpoint.value or
-        $v.endpoint.valueFrom.secretKeyRef.name ? $k})
-      placeholder: custom
+         $each(spec.output, function($v, $k) { $exists($v) ? $k })
       type: string
       name: Type
       isSelected: true
