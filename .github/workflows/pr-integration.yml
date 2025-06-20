@@ -316,7 +316,7 @@ jobs:
       - name: Prepare Test
         uses: "./.github/template/prepare-test"
         with:
-          experimental: ${{ matrix.labels.mode == 'experimental' }}
+          experimental: ${{ matrix.labels.mode == 'experimental' && 'true' || 'false' }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
 
