@@ -3,9 +3,6 @@ FROM --platform=$BUILDPLATFORM golang:1.24.4-alpine3.21 AS builder
 
 ARG TARGETOS
 ARG TARGETARCH
-ARG COMMIT
-ARG TAG
-ARG TREESTATE
 ARG BUILD_COMMIT_SHA
 
 WORKDIR /telemetry-manager-workspace
@@ -21,8 +18,14 @@ COPY controllers/ controllers/
 COPY internal/ internal/
 COPY webhook/ webhook/
 
+RUN apk add --no-cache git
+RUN git config --global --add safe.directory /telemetry-manager-workspace && git describe --tags
+
 # Clean up unused (test) dependencies and build
-RUN CGO_ENABLED=0 \
+RUN export TAG=$(git describe --tags) && \
+    export COMMIT=${BUILD_COMMIT_SHA} && \
+    export TREESTATE=$(git diff -s --exit-code && echo "clean" || echo "modified") && \
+    CGO_ENABLED=0 \
     GOOS=${TARGETOS:-linux} \
     GOARCH=${TARGETARCH} \
     go build \
