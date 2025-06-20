@@ -13,6 +13,10 @@ runs:
   using: "composite"
 
   steps:
+    - name: Denug input experimental
+      shell: bash
+      run: echo "Hello ${{ inputs.experimental }}"
+
     - name: Setup Golang
       uses: "./.github/template/setup-golang"
 
