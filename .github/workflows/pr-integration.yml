@@ -297,6 +297,10 @@ jobs:
             mode: release
           - name: log-gateway
             mode: release
+          - name: log-agent
+            mode: experimental
+          - name: log-gateway
+            mode: experimental
           - name: max-pipeline
             mode: experimental
           - name: max-pipeline-fluent-bit
