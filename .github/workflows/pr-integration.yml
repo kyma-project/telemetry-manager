@@ -38,6 +38,7 @@ on:
       - ".github/template/**"
       - ".env"
       - ".k3d-kyma.yaml"
+      - "Dockerfile"
 
   workflow_dispatch:
 
