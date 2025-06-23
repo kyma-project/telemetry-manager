@@ -602,3 +602,11 @@ To detect and fix such situations, check the [pipeline status](./resources/02-lo
 **Cause**: Gateway cannot receive logs at the given rate.
 
 **Solution**: Manually scale out the gateway by increasing the number of replicas for the log gateway. See [Module Configuration and Status](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
+
+### No access logs are present in backend with push based OTLP LogPipeline
+
+**Symptom**: Istio telmetry resource is configured to use [push based OTLP LogPipeline](#istio) and the logpipeline with OTLP push based output is healthy. But access logs do not arrive in backend.
+
+**Cause**: Istio has not been able to discover the OTLP endpoint.
+
+**Solution**: Recreate [istio telemetry resource](#istio).
