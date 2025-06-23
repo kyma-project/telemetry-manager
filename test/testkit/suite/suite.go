@@ -143,8 +143,11 @@ const (
 	// [please avoid adding tests to this category if it already fits in a more specific one]
 	LabelMisc = "misc"
 
-	// Istio test label
-	LabelIntegration = "integration"
+	// Istio Integration test label
+	LabelIstio = "istio"
+
+	// Gardener Integration test label
+	LabelGardener = "gardener"
 
 	// Upgrade tests preserve K8s objects between test runs.
 	LabelUpgrade = "upgrade"

@@ -4,5 +4,5 @@
 package testkit
 
 const (
-	DefaultTelemetryGenImage = "ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.126.0"
+	DefaultTelemetryGenImage = "ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.128.0"
 )
