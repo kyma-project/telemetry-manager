@@ -170,7 +170,6 @@ data:
                       name: Replicas
                       simple: false
                       widget: Number
-                      type: Number
     - advanced: true
       defaultExpanded: false
       readOnly: false
@@ -216,7 +215,6 @@ data:
                       name: Replicas
                       simple: false
                       widget: Number
-                      type: Number
     - advanced: true
       defaultExpanded: false
       readOnly: false
@@ -262,6 +260,21 @@ data:
                       name: Replicas
                       simple: false
                       widget: Number
+    - path: spec.enrichments
+      name: Enrichments
+      widget: FormGroup
+      children:
+        - name: Pod Labels
+          widget: GenericList
+          path: extractPodLabels
+          children:
+            - name: Key
+              widget: Text
+              path: '[].key'
+            - name: Key Prefix
+              widget: Text
+              path: '[].keyPrefix'
+
   general: |
     resource:
       kind: Telemetry
