@@ -58,7 +58,7 @@ provision-gardener: $(JQ) ## Provision gardener cluster with latest k8s version
 	mkdir -p ~/.kube
 	mv ${GARDENER_CLUSTER_NAME}_kubeconfig.yaml ~/.kube/config
 
-	kubectl create ns kyma-system
+	kubectl create namespace kyma-system --dry-run=client -o yaml | kubectl apply -f -
 
 .PHONY: deprovision-gardener
 deprovision-gardener:## Deprovision gardener cluster
