@@ -4,8 +4,6 @@ With application logs, you can debug an application and derive the internal stat
 
 ## Overview
 
-> Note: This feature is experimental and not available in the regular release. The API is subject to change and might not meet productive criteria.
-
 The Telemetry module provides a log gateway for push-based collection of logs using OTLP and, optionally, an agent for the collection of logs of any container printing logs to the `stdout/stderr` channel running in the Kyma runtime. Kyma modules like [Istio](https://kyma-project.io/#/istio/user/README) contribute access logs. The Telemetry module enriches the data and and ships them to your chosen backend (see [vendors for OTLP-based backends](https://opentelemetry.io/ecosystem/vendors/)).
 
 You can configure the log gateway and agent with external systems using runtime configuration with a dedicated Kubernetes API ([CRD](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions)) named LogPipeline.
@@ -604,3 +602,11 @@ To detect and fix such situations, check the [pipeline status](./resources/02-lo
 **Cause**: Gateway cannot receive logs at the given rate.
 
 **Solution**: Manually scale out the gateway by increasing the number of replicas for the log gateway. See [Module Configuration and Status](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
+
+### No Access Logs With Push-Based OTLP LogPipeline
+
+**Symptom**: The Istio telemetry resource uses a push-based OTLP LogPipeline (see [Istio](#istio). Even though this pipeline is healthy, access logs do not arrive in backend.
+
+**Cause**: Istio cannot discover the OTLP endpoint.
+
+**Solution**: Recreate the [Istio telemetry resource](#istio).
