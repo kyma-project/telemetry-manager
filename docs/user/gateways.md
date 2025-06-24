@@ -67,7 +67,7 @@ The Telemetry gateways automatically enrich your data by adding the following at
   - Deployment/DaemonSet/StatefulSet/Job name
   - Namespace
   - Cluster name
-- `k8s.pod.label.<label_key>` attributes: In addition to the predefined enrichments, the [Telemetry gateways support user-defined enrichments](resources/01-telemetry.md) of telemetry data based on Pod labels. Users can configure specific label keys or label key prefixes to include in the enrichment process. This allows for the capture of custom application metadata that may be relevant for filtering, grouping, or correlation purposes. All matching Pod labels are added to the telemetry data as resource attributes, using the label key format `k8s.pod.label.<label_key>`.
+- `k8s.pod.label.<label_key>` attributes: In addition to the predefined enrichments, the Telemetry gateways support user-defined enrichments of telemetry data based on Pod labels (see [Telemetry CRD](resources/01-telemetry.md)). By configuring specific label keys or label key prefixes to include in the enrichment process, you can capture custom application metadata that may be relevant for filtering, grouping, or correlation purposes. All matching Pod labels are added to the telemetry data as resource attributes, using the label key format `k8s.pod.label.<label_key>`.
 
    The following example configuration enriches the telemetry data with Pod labels that match the specified keys or key prefixes:
    - `k8s.pod.label.app.kubernetes.io/name`: The value of the exact label key `app.kubernetes.io/name` from the Pod.
