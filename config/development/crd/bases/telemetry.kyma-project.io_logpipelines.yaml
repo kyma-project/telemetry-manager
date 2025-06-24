@@ -131,7 +131,7 @@ spec:
                     description: Configures an endpoint to receive logs from a OTLP source.
                     properties:
                       disabled:
-                        description: If disabled, push-based OTLP signals are not collected. The default is `false`.
+                        description: If set to `true`, no push-based OTLP signals are collected. The default is `false`.
                         type: boolean
                       namespaces:
                         description: Describes whether push-based OTLP signals from specific namespaces are selected. System namespaces are enabled by default.
@@ -186,10 +186,10 @@ spec:
                                     description: The name of the attribute of the Secret holding the referenced value.
                                     type: string
                                   name:
-                                    description: The name of the Secret containing the referenced value
+                                    description: The name of the Secret containing the referenced value.
                                     type: string
                                   namespace:
-                                    description: The name of the Namespace containing the Secret with the referenced value.
+                                    description: The name of the namespace containing the Secret with the referenced value.
                                     type: string
                                 required:
                                 - key
@@ -214,10 +214,10 @@ spec:
                                     description: The name of the attribute of the Secret holding the referenced value.
                                     type: string
                                   name:
-                                    description: The name of the Secret containing the referenced value
+                                    description: The name of the Secret containing the referenced value.
                                     type: string
                                   namespace:
-                                    description: The name of the Namespace containing the Secret with the referenced value.
+                                    description: The name of the namespace containing the Secret with the referenced value.
                                     type: string
                                 required:
                                 - key
@@ -248,10 +248,10 @@ spec:
                                         description: The name of the attribute of the Secret holding the referenced value.
                                         type: string
                                       name:
-                                        description: The name of the Secret containing the referenced value
+                                        description: The name of the Secret containing the referenced value.
                                         type: string
                                       namespace:
-                                        description: The name of the Namespace containing the Secret with the referenced value.
+                                        description: The name of the namespace containing the Secret with the referenced value.
                                         type: string
                                     required:
                                     - key
@@ -276,10 +276,10 @@ spec:
                                         description: The name of the attribute of the Secret holding the referenced value.
                                         type: string
                                       name:
-                                        description: The name of the Secret containing the referenced value
+                                        description: The name of the Secret containing the referenced value.
                                         type: string
                                       namespace:
-                                        description: The name of the Namespace containing the Secret with the referenced value.
+                                        description: The name of the namespace containing the Secret with the referenced value.
                                         type: string
                                     required:
                                     - key
@@ -307,10 +307,10 @@ spec:
                                         description: The name of the attribute of the Secret holding the referenced value.
                                         type: string
                                       name:
-                                        description: The name of the Secret containing the referenced value
+                                        description: The name of the Secret containing the referenced value.
                                         type: string
                                       namespace:
-                                        description: The name of the Namespace containing the Secret with the referenced value.
+                                        description: The name of the namespace containing the Secret with the referenced value.
                                         type: string
                                     required:
                                     - key
@@ -345,10 +345,10 @@ spec:
                                     description: The name of the attribute of the Secret holding the referenced value.
                                     type: string
                                   name:
-                                    description: The name of the Secret containing the referenced value
+                                    description: The name of the Secret containing the referenced value.
                                     type: string
                                   namespace:
-                                    description: The name of the Namespace containing the Secret with the referenced value.
+                                    description: The name of the namespace containing the Secret with the referenced value.
                                     type: string
                                 required:
                                 - key
@@ -383,10 +383,10 @@ spec:
                                             description: The name of the attribute of the Secret holding the referenced value.
                                             type: string
                                           name:
-                                            description: The name of the Secret containing the referenced value
+                                            description: The name of the Secret containing the referenced value.
                                             type: string
                                           namespace:
-                                            description: The name of the Namespace containing the Secret with the referenced value.
+                                            description: The name of the namespace containing the Secret with the referenced value.
                                             type: string
                                         required:
                                         - key
@@ -411,10 +411,10 @@ spec:
                                             description: The name of the attribute of the Secret holding the referenced value.
                                             type: string
                                           name:
-                                            description: The name of the Secret containing the referenced value
+                                            description: The name of the Secret containing the referenced value.
                                             type: string
                                           namespace:
-                                            description: The name of the Namespace containing the Secret with the referenced value.
+                                            description: The name of the namespace containing the Secret with the referenced value.
                                             type: string
                                         required:
                                         - key
@@ -444,10 +444,10 @@ spec:
                                     description: The name of the attribute of the Secret holding the referenced value.
                                     type: string
                                   name:
-                                    description: The name of the Secret containing the referenced value
+                                    description: The name of the Secret containing the referenced value.
                                     type: string
                                   namespace:
-                                    description: The name of the Namespace containing the Secret with the referenced value.
+                                    description: The name of the namespace containing the Secret with the referenced value.
                                     type: string
                                 required:
                                 - key
@@ -479,10 +479,10 @@ spec:
                                       description: The name of the attribute of the Secret holding the referenced value.
                                       type: string
                                     name:
-                                      description: The name of the Secret containing the referenced value
+                                      description: The name of the Secret containing the referenced value.
                                       type: string
                                     namespace:
-                                      description: The name of the Namespace containing the Secret with the referenced value.
+                                      description: The name of the namespace containing the Secret with the referenced value.
                                       type: string
                                   required:
                                   - key
@@ -495,7 +495,7 @@ spec:
                           type: object
                         type: array
                       path:
-                        description: Defines OTLP export URL path (only for the HTTP protocol). This value overrides auto-appended paths /v1/metrics and /v1/traces
+                        description: Defines OTLP export URL path (only for the HTTP protocol). This value overrides auto-appended paths `/v1/metrics` and `/v1/traces`
                         type: string
                       protocol:
                         description: Defines the OTLP protocol (http or grpc). Default is grpc.
@@ -523,10 +523,10 @@ spec:
                                         description: The name of the attribute of the Secret holding the referenced value.
                                         type: string
                                       name:
-                                        description: The name of the Secret containing the referenced value
+                                        description: The name of the Secret containing the referenced value.
                                         type: string
                                       namespace:
-                                        description: The name of the Namespace containing the Secret with the referenced value.
+                                        description: The name of the namespace containing the Secret with the referenced value.
                                         type: string
                                     required:
                                     - key
@@ -551,10 +551,10 @@ spec:
                                         description: The name of the attribute of the Secret holding the referenced value.
                                         type: string
                                       name:
-                                        description: The name of the Secret containing the referenced value
+                                        description: The name of the Secret containing the referenced value.
                                         type: string
                                       namespace:
-                                        description: The name of the Namespace containing the Secret with the referenced value.
+                                        description: The name of the namespace containing the Secret with the referenced value.
                                         type: string
                                     required:
                                     - key
@@ -585,10 +585,10 @@ spec:
                                         description: The name of the attribute of the Secret holding the referenced value.
                                         type: string
                                       name:
-                                        description: The name of the Secret containing the referenced value
+                                        description: The name of the Secret containing the referenced value.
                                         type: string
                                       namespace:
-                                        description: The name of the Namespace containing the Secret with the referenced value.
+                                        description: The name of the namespace containing the Secret with the referenced value.
                                         type: string
                                     required:
                                     - key
@@ -634,10 +634,10 @@ spec:
                               description: The name of the attribute of the Secret holding the referenced value.
                               type: string
                             name:
-                              description: The name of the Secret containing the referenced value
+                              description: The name of the Secret containing the referenced value.
                               type: string
                             namespace:
-                              description: The name of the Namespace containing the Secret with the referenced value.
+                              description: The name of the namespace containing the Secret with the referenced value.
                               type: string
                           required:
                           - key
@@ -901,10 +901,10 @@ spec:
                                     description: The name of the attribute of the Secret holding the referenced value.
                                     type: string
                                   name:
-                                    description: The name of the Secret containing the referenced value
+                                    description: The name of the Secret containing the referenced value.
                                     type: string
                                   namespace:
-                                    description: The name of the Namespace containing the Secret with the referenced value.
+                                    description: The name of the namespace containing the Secret with the referenced value.
                                     type: string
                                 required:
                                 - key
@@ -929,10 +929,10 @@ spec:
                                     description: The name of the attribute of the Secret holding the referenced value.
                                     type: string
                                   name:
-                                    description: The name of the Secret containing the referenced value
+                                    description: The name of the Secret containing the referenced value.
                                     type: string
                                   namespace:
-                                    description: The name of the Namespace containing the Secret with the referenced value.
+                                    description: The name of the namespace containing the Secret with the referenced value.
                                     type: string
                                 required:
                                 - key
@@ -963,10 +963,10 @@ spec:
                                         description: The name of the attribute of the Secret holding the referenced value.
                                         type: string
                                       name:
-                                        description: The name of the Secret containing the referenced value
+                                        description: The name of the Secret containing the referenced value.
                                         type: string
                                       namespace:
-                                        description: The name of the Namespace containing the Secret with the referenced value.
+                                        description: The name of the namespace containing the Secret with the referenced value.
                                         type: string
                                     required:
                                     - key
@@ -991,10 +991,10 @@ spec:
                                         description: The name of the attribute of the Secret holding the referenced value.
                                         type: string
                                       name:
-                                        description: The name of the Secret containing the referenced value
+                                        description: The name of the Secret containing the referenced value.
                                         type: string
                                       namespace:
-                                        description: The name of the Namespace containing the Secret with the referenced value.
+                                        description: The name of the namespace containing the Secret with the referenced value.
                                         type: string
                                     required:
                                     - key
@@ -1022,10 +1022,10 @@ spec:
                                         description: The name of the attribute of the Secret holding the referenced value.
                                         type: string
                                       name:
-                                        description: The name of the Secret containing the referenced value
+                                        description: The name of the Secret containing the referenced value.
                                         type: string
                                       namespace:
-                                        description: The name of the Namespace containing the Secret with the referenced value.
+                                        description: The name of the namespace containing the Secret with the referenced value.
                                         type: string
                                     required:
                                     - key
@@ -1060,10 +1060,10 @@ spec:
                                     description: The name of the attribute of the Secret holding the referenced value.
                                     type: string
                                   name:
-                                    description: The name of the Secret containing the referenced value
+                                    description: The name of the Secret containing the referenced value.
                                     type: string
                                   namespace:
-                                    description: The name of the Namespace containing the Secret with the referenced value.
+                                    description: The name of the namespace containing the Secret with the referenced value.
                                     type: string
                                 required:
                                 - key
@@ -1098,10 +1098,10 @@ spec:
                                             description: The name of the attribute of the Secret holding the referenced value.
                                             type: string
                                           name:
-                                            description: The name of the Secret containing the referenced value
+                                            description: The name of the Secret containing the referenced value.
                                             type: string
                                           namespace:
-                                            description: The name of the Namespace containing the Secret with the referenced value.
+                                            description: The name of the namespace containing the Secret with the referenced value.
                                             type: string
                                         required:
                                         - key
@@ -1126,10 +1126,10 @@ spec:
                                             description: The name of the attribute of the Secret holding the referenced value.
                                             type: string
                                           name:
-                                            description: The name of the Secret containing the referenced value
+                                            description: The name of the Secret containing the referenced value.
                                             type: string
                                           namespace:
-                                            description: The name of the Namespace containing the Secret with the referenced value.
+                                            description: The name of the namespace containing the Secret with the referenced value.
                                             type: string
                                         required:
                                         - key
@@ -1159,10 +1159,10 @@ spec:
                                     description: The name of the attribute of the Secret holding the referenced value.
                                     type: string
                                   name:
-                                    description: The name of the Secret containing the referenced value
+                                    description: The name of the Secret containing the referenced value.
                                     type: string
                                   namespace:
-                                    description: The name of the Namespace containing the Secret with the referenced value.
+                                    description: The name of the namespace containing the Secret with the referenced value.
                                     type: string
                                 required:
                                 - key
@@ -1194,10 +1194,10 @@ spec:
                                       description: The name of the attribute of the Secret holding the referenced value.
                                       type: string
                                     name:
-                                      description: The name of the Secret containing the referenced value
+                                      description: The name of the Secret containing the referenced value.
                                       type: string
                                     namespace:
-                                      description: The name of the Namespace containing the Secret with the referenced value.
+                                      description: The name of the namespace containing the Secret with the referenced value.
                                       type: string
                                   required:
                                   - key
@@ -1210,7 +1210,7 @@ spec:
                           type: object
                         type: array
                       path:
-                        description: Defines OTLP export URL path (only for the HTTP protocol). This value overrides auto-appended paths /v1/metrics and /v1/traces
+                        description: Defines OTLP export URL path (only for the HTTP protocol). This value overrides auto-appended paths `/v1/metrics` and `/v1/traces`
                         type: string
                       protocol:
                         description: Defines the OTLP protocol (http or grpc). Default is grpc.
@@ -1237,10 +1237,10 @@ spec:
                                         description: The name of the attribute of the Secret holding the referenced value.
                                         type: string
                                       name:
-                                        description: The name of the Secret containing the referenced value
+                                        description: The name of the Secret containing the referenced value.
                                         type: string
                                       namespace:
-                                        description: The name of the Namespace containing the Secret with the referenced value.
+                                        description: The name of the namespace containing the Secret with the referenced value.
                                         type: string
                                     required:
                                     - key
@@ -1265,10 +1265,10 @@ spec:
                                         description: The name of the attribute of the Secret holding the referenced value.
                                         type: string
                                       name:
-                                        description: The name of the Secret containing the referenced value
+                                        description: The name of the Secret containing the referenced value.
                                         type: string
                                       namespace:
-                                        description: The name of the Namespace containing the Secret with the referenced value.
+                                        description: The name of the namespace containing the Secret with the referenced value.
                                         type: string
                                     required:
                                     - key
@@ -1296,10 +1296,10 @@ spec:
                                         description: The name of the attribute of the Secret holding the referenced value.
                                         type: string
                                       name:
-                                        description: The name of the Secret containing the referenced value
+                                        description: The name of the Secret containing the referenced value.
                                         type: string
                                       namespace:
-                                        description: The name of the Namespace containing the Secret with the referenced value.
+                                        description: The name of the namespace containing the Secret with the referenced value.
                                         type: string
                                     required:
                                     - key
@@ -1348,10 +1348,10 @@ spec:
                               description: The name of the attribute of the Secret holding the referenced value.
                               type: string
                             name:
-                              description: The name of the Secret containing the referenced value
+                              description: The name of the Secret containing the referenced value.
                               type: string
                             namespace:
-                              description: The name of the Namespace containing the Secret with the referenced value.
+                              description: The name of the namespace containing the Secret with the referenced value.
                               type: string
                           required:
                           - key
