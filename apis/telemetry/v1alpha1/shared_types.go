@@ -16,7 +16,7 @@ type SecretKeyRef struct {
 	// The name of the Secret containing the referenced value
 	// +kubebuilder:validation:Required
 	Name string `json:"name,omitempty"`
-	// The name of the Namespace containing the Secret with the referenced value.
+	// The name of the namespace containing the Secret with the referenced value.
 	// +kubebuilder:validation:Required
 	Namespace string `json:"namespace,omitempty"`
 	// The name of the attribute of the Secret holding the referenced value.
