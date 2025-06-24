@@ -131,7 +131,7 @@ spec:
                     description: Configures an endpoint to receive logs from a OTLP source.
                     properties:
                       disabled:
-                        description: If disabled, push-based OTLP signals are not collected. The default is `false`.
+                        description: If set to `true`, no push-based OTLP signals are collected. The default is `false`.
                         type: boolean
                       namespaces:
                         description: Describes whether push-based OTLP signals from specific namespaces are selected. System namespaces are enabled by default.

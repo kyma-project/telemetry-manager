@@ -98,7 +98,7 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 | **input.&#x200b;application.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include only the container logs of the specified Namespace names. |
 | **input.&#x200b;application.&#x200b;namespaces.&#x200b;system**  | boolean | Set to `true` if collecting from all Namespaces must also include the system Namespaces like kube-system, istio-system, and kyma-system. |
 | **input.&#x200b;otlp**  | object | Configures an endpoint to receive logs from a OTLP source. |
-| **input.&#x200b;otlp.&#x200b;disabled**  | boolean | If disabled, push-based OTLP signals are not collected. The default is `false`. |
+| **input.&#x200b;otlp.&#x200b;disabled**  | boolean | If set to `true`, no push-based OTLP signals are collected. The default is `false`. |
 | **input.&#x200b;otlp.&#x200b;namespaces**  | object | Describes whether push-based OTLP signals from specific namespaces are selected. System namespaces are enabled by default. |
 | **input.&#x200b;otlp.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude signals from the specified Namespace names only. |
 | **input.&#x200b;otlp.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include signals from the specified Namespace names only. |
