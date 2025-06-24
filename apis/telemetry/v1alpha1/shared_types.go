@@ -13,7 +13,7 @@ type ValueFromSource struct {
 }
 
 type SecretKeyRef struct {
-	// The name of the Secret containing the referenced value
+	// The name of the Secret containing the referenced value.
 	// +kubebuilder:validation:Required
 	Name string `json:"name,omitempty"`
 	// The name of the namespace containing the Secret with the referenced value.

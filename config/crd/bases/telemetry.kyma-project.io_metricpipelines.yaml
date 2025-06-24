@@ -269,7 +269,7 @@ spec:
                                             description: The name of the attribute of the Secret holding the referenced value.
                                             type: string
                                           name:
-                                            description: The name of the Secret containing the referenced value
+                                            description: The name of the Secret containing the referenced value.
                                             type: string
                                           namespace:
                                             description: The name of the namespace containing the Secret with the referenced value.
@@ -297,7 +297,7 @@ spec:
                                             description: The name of the attribute of the Secret holding the referenced value.
                                             type: string
                                           name:
-                                            description: The name of the Secret containing the referenced value
+                                            description: The name of the Secret containing the referenced value.
                                             type: string
                                           namespace:
                                             description: The name of the namespace containing the Secret with the referenced value.
@@ -330,7 +330,7 @@ spec:
                                     description: The name of the attribute of the Secret holding the referenced value.
                                     type: string
                                   name:
-                                    description: The name of the Secret containing the referenced value
+                                    description: The name of the Secret containing the referenced value.
                                     type: string
                                   namespace:
                                     description: The name of the namespace containing the Secret with the referenced value.
@@ -365,7 +365,7 @@ spec:
                                       description: The name of the attribute of the Secret holding the referenced value.
                                       type: string
                                     name:
-                                      description: The name of the Secret containing the referenced value
+                                      description: The name of the Secret containing the referenced value.
                                       type: string
                                     namespace:
                                       description: The name of the namespace containing the Secret with the referenced value.
@@ -409,7 +409,7 @@ spec:
                                         description: The name of the attribute of the Secret holding the referenced value.
                                         type: string
                                       name:
-                                        description: The name of the Secret containing the referenced value
+                                        description: The name of the Secret containing the referenced value.
                                         type: string
                                       namespace:
                                         description: The name of the namespace containing the Secret with the referenced value.
@@ -437,7 +437,7 @@ spec:
                                         description: The name of the attribute of the Secret holding the referenced value.
                                         type: string
                                       name:
-                                        description: The name of the Secret containing the referenced value
+                                        description: The name of the Secret containing the referenced value.
                                         type: string
                                       namespace:
                                         description: The name of the namespace containing the Secret with the referenced value.
@@ -471,7 +471,7 @@ spec:
                                         description: The name of the attribute of the Secret holding the referenced value.
                                         type: string
                                       name:
-                                        description: The name of the Secret containing the referenced value
+                                        description: The name of the Secret containing the referenced value.
                                         type: string
                                       namespace:
                                         description: The name of the namespace containing the Secret with the referenced value.
