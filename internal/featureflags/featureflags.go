@@ -4,7 +4,6 @@ type FeatureFlag int
 
 const (
 	V1Beta1 FeatureFlag = iota
-	LogPipelineOTLP
 )
 
 var f = &map[FeatureFlag]bool{}
