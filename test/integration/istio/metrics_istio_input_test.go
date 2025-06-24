@@ -118,7 +118,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio, suite.
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 			})
-
 			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
 		})
 
