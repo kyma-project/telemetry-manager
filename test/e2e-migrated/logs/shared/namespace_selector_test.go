@@ -171,8 +171,7 @@ func TestNamespaceSelector_FluentBit(t *testing.T) {
 		WithHTTPOutput(testutils.HTTPHost(backend2.Host()), testutils.HTTPPort(backend2.Port())).
 		Build()
 
-	var resources []client.Object
-	resources = append(resources,
+	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(gen1Ns).K8sObject(),
 		kitk8s.NewNamespace(gen2Ns).K8sObject(),
@@ -180,7 +179,7 @@ func TestNamespaceSelector_FluentBit(t *testing.T) {
 		&excludeGen2Pipeline,
 		stdloggen.NewDeployment(gen1Ns).K8sObject(),
 		stdloggen.NewDeployment(gen2Ns).K8sObject(),
-	)
+	}
 	resources = append(resources, backend1.K8sObjects()...)
 	resources = append(resources, backend2.K8sObjects()...)
 

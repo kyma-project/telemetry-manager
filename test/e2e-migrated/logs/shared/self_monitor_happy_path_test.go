@@ -115,13 +115,12 @@ func TestSelfMonitorHappyPath_FluentBit(t *testing.T) {
 		WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 		Build()
 
-	var resources []client.Object
-	resources = append(resources,
+	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
 		&pipeline,
 		stdloggen.NewDeployment(genNs).K8sObject(),
-	)
+	}
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {

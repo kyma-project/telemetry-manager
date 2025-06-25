@@ -38,13 +38,12 @@ func TestInstrumentationScope(t *testing.T) {
 		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 		Build()
 
-	var resources []client.Object
-	resources = append(resources,
+	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
 		stdloggen.NewDeployment(genNs).K8sObject(),
 		&pipeline,
-	)
+	}
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
