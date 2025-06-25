@@ -67,13 +67,12 @@ func TestSelfMonitorHappyPath_OTel(t *testing.T) {
 				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 				Build()
 
-			var resources []client.Object
-			resources = append(resources,
+			resources := []client.Object{
 				kitk8s.NewNamespace(backendNs).K8sObject(),
 				kitk8s.NewNamespace(genNs).K8sObject(),
 				&pipeline,
 				tc.logGeneratorBuilder(genNs),
-			)
+			}
 			resources = append(resources, backend.K8sObjects()...)
 
 			t.Cleanup(func() {

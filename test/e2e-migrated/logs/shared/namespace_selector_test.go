@@ -109,8 +109,7 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 				WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
 				Build()
 
-			var resources []client.Object
-			resources = append(resources,
+			resources := []client.Object{
 				kitk8s.NewNamespace(backendNs).K8sObject(),
 				kitk8s.NewNamespace(gen1Ns).K8sObject(),
 				kitk8s.NewNamespace(gen2Ns).K8sObject(),
@@ -118,7 +117,7 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 				&excludePipeline,
 				tc.logGeneratorBuilder(gen1Ns),
 				tc.logGeneratorBuilder(gen2Ns),
-			)
+			}
 			resources = append(resources, backend1.K8sObjects()...)
 			resources = append(resources, backend2.K8sObjects()...)
 
