@@ -77,6 +77,16 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 
 | Parameter | Type | Description |
 | ---- | ----------- | ---- |
+| **enrichments**  | object | Enrichments specifies optional enrichments for the telemetry data. This field is optional. |
+| **enrichments.&#x200b;extractPodLabels**  | \[\]object | ExtractPodLabels specifies the list of Pod labels to be used for enrichment. This field is optional. |
+| **enrichments.&#x200b;extractPodLabels.&#x200b;key**  | string | Key specifies the exact label key to be used. This field is optional. |
+| **enrichments.&#x200b;extractPodLabels.&#x200b;keyPrefix**  | string | KeyPrefix specifies a prefix for label keys to be used. This field is optional. |
+| **log**  | object | LogSpec defines the behavior of the log gateway. |
+| **log.&#x200b;gateway**  | object | Gateway specifies the settings for the log gateway. |
+| **log.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type. |
+| **log.&#x200b;gateway.&#x200b;scaling.&#x200b;static**  | object | Static is a scaling strategy enabling you to define a custom amount of replicas to be used for the gateway. Present only if Type = StaticScalingStrategyType. |
+| **log.&#x200b;gateway.&#x200b;scaling.&#x200b;static.&#x200b;replicas**  | integer | Replicas defines a static number of Pods to run the gateway. Minimum is 1. |
+| **log.&#x200b;gateway.&#x200b;scaling.&#x200b;type**  | string | Type of scaling strategy. Default is none, using a fixed amount of replicas. |
 | **metric**  | object | MetricSpec defines the behavior of the metric gateway |
 | **metric.&#x200b;gateway**  | object |  |
 | **metric.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type. |

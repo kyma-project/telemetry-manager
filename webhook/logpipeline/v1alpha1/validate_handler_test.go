@@ -13,7 +13,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/featureflags"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -87,9 +86,6 @@ func TestHandle(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				featureflags.Enable(featureflags.LogPipelineOTLP)
-				defer featureflags.Disable(featureflags.LogPipelineOTLP)
-
 				logPipeline := testutils.NewLogPipelineBuilder().Build()
 				logPipeline.Spec.Output = *tt.output
 				logPipeline.Spec.Input = *tt.input

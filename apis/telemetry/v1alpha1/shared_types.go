@@ -13,10 +13,10 @@ type ValueFromSource struct {
 }
 
 type SecretKeyRef struct {
-	// The name of the Secret containing the referenced value
+	// The name of the Secret containing the referenced value.
 	// +kubebuilder:validation:Required
 	Name string `json:"name,omitempty"`
-	// The name of the Namespace containing the Secret with the referenced value.
+	// The name of the namespace containing the Secret with the referenced value.
 	// +kubebuilder:validation:Required
 	Namespace string `json:"namespace,omitempty"`
 	// The name of the attribute of the Secret holding the referenced value.
@@ -39,7 +39,7 @@ type OTLPOutput struct {
 	// Defines the host and port (<host>:<port>) of an OTLP endpoint.
 	// +kubebuilder:validation:Required
 	Endpoint ValueType `json:"endpoint"`
-	// Defines OTLP export URL path (only for the HTTP protocol). This value overrides auto-appended paths /v1/metrics and /v1/traces
+	// Defines OTLP export URL path (only for the HTTP protocol). This value overrides auto-appended paths `/v1/metrics` and `/v1/traces`
 	Path string `json:"path,omitempty"`
 	// Defines authentication options for the OTLP output
 	Authentication *AuthenticationOptions `json:"authentication,omitempty"`
@@ -88,7 +88,7 @@ type OTLPTLS struct {
 
 // OTLPInput defines the collection of push-based metrics that use the OpenTelemetry protocol.
 type OTLPInput struct {
-	// If disabled, push-based OTLP signals are not collected. The default is `false`.
+	// If set to `true`, no push-based OTLP signals are collected. The default is `false`.
 	Disabled bool `json:"disabled,omitempty"`
 	// Describes whether push-based OTLP signals from specific namespaces are selected. System namespaces are enabled by default.
 	// +optional

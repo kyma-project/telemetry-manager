@@ -5,7 +5,7 @@ go 1.24.4
 require (
 	github.com/bombsimon/wsl/v4 v4.7.0
 	github.com/golangci/golangci-lint/v2 v2.1.6
-	github.com/google/yamlfmt v0.17.0
+	github.com/google/yamlfmt v0.17.2
 	github.com/hairyhenderson/gomplate/v4 v4.3.2
 	github.com/itchyny/gojq v0.12.17
 	github.com/joho/godotenv v1.5.1
