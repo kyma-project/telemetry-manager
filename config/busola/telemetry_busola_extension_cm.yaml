@@ -94,6 +94,14 @@ data:
               header: Last transition time
               type: TraceComponentsHealthy
     body:
+      - name: Logs
+        widget: Panel
+        visibility: $exists(spec.log.gateway.scaling.static.replicas)
+        children:
+        - name: Gateway Replicas
+          source: spec.log.gateway.scaling.static.replicas
+        - name: Scaling Type
+          source: spec.log.gateway.scaling.type
       - name: Traces
         widget: Panel
         visibility: $exists(spec.trace.gateway.scaling.static.replicas)
@@ -117,6 +125,51 @@ data:
         - source: metricPipelines
         - source: tracePipelines
   form: |
+    - advanced: true
+      defaultExpanded: false
+      readOnly: false
+      decodable: false
+      path: spec.log
+      name: Logs
+      widget: FormGroup
+      children:
+        - advanced: true
+          defaultExpanded: false
+          readOnly: false
+          decodable: false
+          path: gateway
+          name: Gateway
+          widget: FormGroup
+          children:
+            - advanced: true
+              defaultExpanded: false
+              readOnly: false
+              decodable: false
+              path: scaling
+              name: Scaling
+              widget: FormGroup
+              children:
+                - path: type
+                  override: false
+                  enum:
+                    - None
+                - advanced: true
+                  defaultExpanded: false
+                  readOnly: false
+                  decodable: false
+                  visibility: "$item.spec.log.gateway.scaling.type = 'Static'"
+                  path: static
+                  name: Static
+                  widget: FormGroup
+                  children:
+                    - advanced: true
+                      defaultExpanded: false
+                      readOnly: false
+                      decodable: false
+                      path: replicas
+                      name: Replicas
+                      simple: false
+                      widget: Number
     - advanced: true
       defaultExpanded: false
       readOnly: false
@@ -161,7 +214,7 @@ data:
                       path: replicas
                       name: Replicas
                       simple: false
-                      widget: Text
+                      widget: Number
     - advanced: true
       defaultExpanded: false
       readOnly: false
@@ -206,7 +259,21 @@ data:
                       path: replicas
                       name: Replicas
                       simple: false
-                      widget: Text
+                      widget: Number
+    - path: spec.enrichments
+      name: Enrichments
+      widget: FormGroup
+      children:
+        - name: Pod Labels
+          widget: GenericList
+          path: extractPodLabels
+          children:
+            - name: Key
+              widget: Text
+              path: '[].key'
+            - name: Key Prefix
+              widget: Text
+              path: '[].keyPrefix'
 
   general: |
     resource:
