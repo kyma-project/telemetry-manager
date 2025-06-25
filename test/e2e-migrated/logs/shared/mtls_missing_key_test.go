@@ -20,7 +20,7 @@ const (
 	notFoundError         = "not found"
 )
 
-func TestMTLSMissingValues_OTel(t *testing.T) {
+func TestMTLSMissingKey_OTel(t *testing.T) {
 	tests := []struct {
 		label string
 		input telemetryv1alpha1.LogPipelineInput
@@ -71,7 +71,7 @@ func TestMTLSMissingValues_OTel(t *testing.T) {
 	}
 }
 
-func TestMTLSMissingValues_FluentBit(t *testing.T) {
+func TestMTLSMissingKey_FluentBit(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelFluentBit)
 
 	var (
@@ -85,7 +85,7 @@ func TestMTLSMissingValues_FluentBit(t *testing.T) {
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithTLS(*serverCerts))
 
-	pipelineMissingKey := testutils.NewLogPipelineBuilder().
+	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithHTTPOutput(
 			testutils.HTTPHost(backend.Host()),
@@ -97,7 +97,7 @@ func TestMTLSMissingValues_FluentBit(t *testing.T) {
 		Build()
 
 	resources := []client.Object{
-		&pipelineMissingKey,
+		&pipeline,
 	}
 
 	t.Cleanup(func() {

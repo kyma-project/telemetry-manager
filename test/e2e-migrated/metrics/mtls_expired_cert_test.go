@@ -18,7 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestMTLSCertKeyPairDontMatch(t *testing.T) {
+func TestMTLSExpiredCert(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelMetrics)
 
 	var (
@@ -27,22 +27,21 @@ func TestMTLSCertKeyPairDontMatch(t *testing.T) {
 		backendNs    = uniquePrefix("backend")
 	)
 
-	serverCertsDefault, clientCertsDefault, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
+	expiredServerCerts, expiredClientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).
+		WithExpiredClientCert().
+		Build()
 	Expect(err).ToNot(HaveOccurred())
 
-	_, clientCertsCreatedAgain, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
-	Expect(err).ToNot(HaveOccurred())
-
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithTLS(*serverCertsDefault))
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithTLS(*expiredServerCerts))
 
 	pipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineName).
 		WithOTLPOutput(
 			testutils.OTLPEndpoint(backend.Endpoint()),
 			testutils.OTLPClientTLSFromString(
-				clientCertsDefault.CaCertPem.String(),
-				clientCertsDefault.ClientCertPem.String(),
-				clientCertsCreatedAgain.ClientKeyPem.String(), // Use different key
+				expiredClientCerts.CaCertPem.String(),
+				expiredClientCerts.ClientCertPem.String(),
+				expiredClientCerts.ClientKeyPem.String(),
 			),
 		).
 		Build()
@@ -59,7 +58,7 @@ func TestMTLSCertKeyPairDontMatch(t *testing.T) {
 	assert.MetricPipelineHasCondition(suite.Ctx, pipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
-		Reason: conditions.ReasonTLSConfigurationInvalid,
+		Reason: conditions.ReasonTLSCertificateExpired,
 	})
 
 	assert.MetricPipelineHasCondition(suite.Ctx, pipelineName, metav1.Condition{
@@ -72,6 +71,6 @@ func TestMTLSCertKeyPairDontMatch(t *testing.T) {
 	assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
 		Type:   conditions.TypeMetricComponentsHealthy,
 		Status: metav1.ConditionFalse,
-		Reason: conditions.ReasonTLSConfigurationInvalid,
+		Reason: conditions.ReasonTLSCertificateExpired,
 	})
 }

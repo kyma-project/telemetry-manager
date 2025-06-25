@@ -18,7 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestMTLSCertKeyPairDontMatch(t *testing.T) {
+func TestMTLSInvalidCA(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelMetrics)
 
 	var (
@@ -27,22 +27,21 @@ func TestMTLSCertKeyPairDontMatch(t *testing.T) {
 		backendNs    = uniquePrefix("backend")
 	)
 
-	serverCertsDefault, clientCertsDefault, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
+	invalidServerCerts, invalidClientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).
+		WithInvalidCA().
+		Build()
 	Expect(err).ToNot(HaveOccurred())
 
-	_, clientCertsCreatedAgain, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
-	Expect(err).ToNot(HaveOccurred())
-
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithTLS(*serverCertsDefault))
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithTLS(*invalidServerCerts))
 
 	pipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineName).
 		WithOTLPOutput(
 			testutils.OTLPEndpoint(backend.Endpoint()),
 			testutils.OTLPClientTLSFromString(
-				clientCertsDefault.CaCertPem.String(),
-				clientCertsDefault.ClientCertPem.String(),
-				clientCertsCreatedAgain.ClientKeyPem.String(), // Use different key
+				invalidClientCerts.CaCertPem.String(),
+				invalidClientCerts.ClientCertPem.String(),
+				invalidClientCerts.ClientKeyPem.String(),
 			),
 		).
 		Build()
