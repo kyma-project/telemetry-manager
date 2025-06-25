@@ -45,6 +45,7 @@ func TestExtractLabels(t *testing.T) {
 
 		genNs        = uniquePrefix("gen")
 		pipelineName = uniquePrefix()
+		telemetry    operatorv1alpha1.Telemetry
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)
@@ -52,7 +53,8 @@ func TestExtractLabels(t *testing.T) {
 	pipeline := testutils.NewMetricPipelineBuilder().
 		WithOTLPInput(true).
 		WithName(pipelineName).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).Build()
+		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+		Build()
 
 	genLabels := map[string]string{
 		labelKeyExactMatch:     labelValueExactMatch,
@@ -61,29 +63,20 @@ func TestExtractLabels(t *testing.T) {
 		labelKeyShouldNotMatch: labelValueShouldNotMatch,
 	}
 
-	t.Log("Patch the telemetry resource to extract pod labels")
-	var telemetry operatorv1alpha1.Telemetry
-	err := suite.K8sClient.Get(t.Context(), kitkyma.TelemetryName, &telemetry)
-	Expect(err).NotTo(HaveOccurred())
-
+	Expect(suite.K8sClient.Get(t.Context(), kitkyma.TelemetryName, &telemetry)).NotTo(HaveOccurred())
 	telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{
 		ExtractPodLabels: []operatorv1alpha1.PodLabel{
-			{
-				Key: "metric.test.exact.should.match",
-			},
-			{
-				KeyPrefix: "metric.test.prefix",
-			},
+			{Key: "metric.test.exact.should.match"},
+			{KeyPrefix: "metric.test.prefix"},
 		},
 	}
-	err = suite.K8sClient.Update(t.Context(), &telemetry)
-	Expect(err).NotTo(HaveOccurred())
+	Expect(suite.K8sClient.Update(t.Context(), &telemetry)).NotTo(HaveOccurred(), "should update Telemetry resource with enrichment configuration")
 
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
 		&pipeline,
-		telemetrygen.NewPod(genNs, telemetrygen.SignalTypeLogs).WithLabels(genLabels).K8sObject(),
+		telemetrygen.NewPod(genNs, telemetrygen.SignalTypeMetrics).WithLabels(genLabels).K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
 
