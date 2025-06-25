@@ -63,10 +63,9 @@ func TestMTLSInvalidCA_OTel(t *testing.T) {
 					)).
 				Build()
 
-			var resources []client.Object
-			resources = append(resources,
+			resources := []client.Object{
 				&pipeline,
-			)
+			}
 
 			t.Cleanup(func() {
 				require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
@@ -123,10 +122,9 @@ func TestMTLSInvalidCA_FluentBit(t *testing.T) {
 			)).
 		Build()
 
-	var resources []client.Object
-	resources = append(resources,
+	resources := []client.Object{
 		&pipeline,
-	)
+	}
 
 	t.Cleanup(func() {
 		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects

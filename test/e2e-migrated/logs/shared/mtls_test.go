@@ -74,13 +74,12 @@ func TestMTLS_OTel(t *testing.T) {
 						clientCerts.ClientKeyPem.String()),
 				).Build()
 
-			var resources []client.Object
-			resources = append(resources,
+			resources := []client.Object{
 				kitk8s.NewNamespace(backendNs).K8sObject(),
 				kitk8s.NewNamespace(genNs).K8sObject(),
 				&pipeline,
 				tc.logGeneratorBuilder(genNs),
-			)
+			}
 			resources = append(resources, backend.K8sObjects()...)
 
 			t.Cleanup(func() {
@@ -128,13 +127,12 @@ func TestMTLS_FluentBit(t *testing.T) {
 		).
 		Build()
 
-	var resources []client.Object
-	resources = append(resources,
+	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
 		&pipeline,
 		stdloggen.NewDeployment(genNs).K8sObject(),
-	)
+	}
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {

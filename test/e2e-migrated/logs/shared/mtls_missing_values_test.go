@@ -59,10 +59,9 @@ func TestMTLSMissingValues_OTel(t *testing.T) {
 					}),
 				).Build()
 
-			var resources []client.Object
-			resources = append(resources,
+			resources := []client.Object{
 				&pipelineMissingKey,
-			)
+			}
 
 			t.Cleanup(func() {
 				Expect(kitk8s.DeleteObjects(context.Background(), resources...)).Should(MatchError(ContainSubstring(notFoundError))) //nolint:usetesting // Remove ctx from DeleteObjects
@@ -97,10 +96,9 @@ func TestMTLSMissingValues_FluentBit(t *testing.T) {
 		).
 		Build()
 
-	var resources []client.Object
-	resources = append(resources,
+	resources := []client.Object{
 		&pipelineMissingKey,
-	)
+	}
 
 	t.Cleanup(func() {
 		Expect(kitk8s.DeleteObjects(context.Background(), resources...)).Should(MatchError(ContainSubstring(notFoundError))) //nolint:usetesting // Remove ctx from DeleteObjects
