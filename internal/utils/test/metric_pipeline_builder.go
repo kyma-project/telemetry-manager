@@ -6,6 +6,7 @@ import (
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
@@ -36,6 +37,120 @@ func NewMetricPipelineBuilder() *MetricPipelineBuilder {
 	}
 }
 
+// TODO: Remove ---
+func buildMetricPipelineInput(
+	enablePrometheus bool, prometheusOpts []NamespaceSelectorOptions,
+	enableRuntime bool, runtimeOpts []NamespaceSelectorOptions,
+	enableIstio bool, istioOpts []NamespaceSelectorOptions,
+	enableOTLP bool, otlpOpts []NamespaceSelectorOptions,
+) telemetryv1alpha1.MetricPipelineInput {
+	input := telemetryv1alpha1.MetricPipelineInput{}
+
+	if enablePrometheus {
+		input.Prometheus = &telemetryv1alpha1.MetricPipelinePrometheusInput{
+			Enabled:    ptr.To(true),
+			Namespaces: &telemetryv1alpha1.NamespaceSelector{},
+		}
+		for _, opt := range prometheusOpts {
+			opt(input.Prometheus.Namespaces)
+		}
+	} else {
+		input.Prometheus = &telemetryv1alpha1.MetricPipelinePrometheusInput{
+			Enabled: ptr.To(false),
+		}
+	}
+
+	if enableRuntime {
+		input.Runtime = &telemetryv1alpha1.MetricPipelineRuntimeInput{
+			Enabled:    ptr.To(true),
+			Namespaces: &telemetryv1alpha1.NamespaceSelector{},
+		}
+		for _, opt := range runtimeOpts {
+			opt(input.Runtime.Namespaces)
+		}
+	} else {
+		input.Runtime = &telemetryv1alpha1.MetricPipelineRuntimeInput{
+			Enabled: ptr.To(false),
+		}
+	}
+
+	if enableIstio {
+		input.Istio = &telemetryv1alpha1.MetricPipelineIstioInput{
+			Enabled:    ptr.To(true),
+			Namespaces: &telemetryv1alpha1.NamespaceSelector{},
+		}
+		for _, opt := range istioOpts {
+			opt(input.Istio.Namespaces)
+		}
+	} else {
+		input.Istio = &telemetryv1alpha1.MetricPipelineIstioInput{
+			Enabled: ptr.To(false),
+		}
+	}
+
+	if enableOTLP {
+		input.OTLP = &telemetryv1alpha1.OTLPInput{
+			Disabled:   false,
+			Namespaces: &telemetryv1alpha1.NamespaceSelector{},
+		}
+		for _, opt := range otlpOpts {
+			opt(input.OTLP.Namespaces)
+		}
+	} else {
+		input.OTLP = &telemetryv1alpha1.OTLPInput{
+			Disabled: true,
+		}
+	}
+
+	return input
+}
+
+func BuildMetricPipelineNoInput() telemetryv1alpha1.MetricPipelineInput {
+	return buildMetricPipelineInput(
+		false, nil,
+		false, nil,
+		false, nil,
+		false, nil,
+	)
+}
+
+func BuildMetricPipelinePrometheusInput(opts ...NamespaceSelectorOptions) telemetryv1alpha1.MetricPipelineInput {
+	return buildMetricPipelineInput(
+		true, opts,
+		false, nil,
+		false, nil,
+		false, nil,
+	)
+}
+
+func BuildMetricPipelineRuntimeInput(opts ...NamespaceSelectorOptions) telemetryv1alpha1.MetricPipelineInput {
+	return buildMetricPipelineInput(
+		false, nil,
+		true, opts,
+		false, nil,
+		false, nil,
+	)
+}
+
+func BuildMetricPipelineIstioInput(opts ...NamespaceSelectorOptions) telemetryv1alpha1.MetricPipelineInput {
+	return buildMetricPipelineInput(
+		false, nil,
+		false, nil,
+		true, opts,
+		false, nil,
+	)
+}
+
+func BuildMetricPipelineOTLPInput(opts ...NamespaceSelectorOptions) telemetryv1alpha1.MetricPipelineInput {
+	return buildMetricPipelineInput(
+		false, nil,
+		false, nil,
+		false, nil,
+		true, opts,
+	)
+}
+// -----
+
 func (b *MetricPipelineBuilder) WithName(name string) *MetricPipelineBuilder {
 	b.name = name
 	return b
@@ -48,6 +163,22 @@ func (b *MetricPipelineBuilder) WithLabels(labels map[string]string) *MetricPipe
 
 func (b *MetricPipelineBuilder) WithAnnotations(annotations map[string]string) *MetricPipelineBuilder {
 	b.annotations = annotations
+	return b
+}
+
+func (b *MetricPipelineBuilder) WithInput(input telemetryv1alpha1.MetricPipelineInput) *MetricPipelineBuilder {
+	if input.Runtime != nil {
+		b.inRuntime = input.Runtime
+	}
+	if input.Prometheus != nil {
+		b.inPrometheus = input.Prometheus
+	}
+	if input.Istio != nil {
+		b.inIstio = input.Istio
+	}
+	if input.OTLP != nil {
+		b.inOTLP = input.OTLP
+	}
 	return b
 }
 

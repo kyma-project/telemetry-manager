@@ -17,6 +17,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
@@ -39,6 +40,19 @@ func MetricsFromNamespaceDelivered(proxyClient *apiserverproxy.Client, backendEx
 		err = resp.Body.Close()
 		g.Expect(err).NotTo(HaveOccurred())
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+}
+
+func MetricsFromNamespaceDeliveredWithT(t TestingT, backend *kitbackend.Backend, namespace string, metricNames []string) {
+	t.Helper()
+
+	BackendDataEventuallyMatches(
+		t,
+		backend,
+		HaveFlatMetrics(ContainElement(SatisfyAll(
+			HaveName(BeElementOf(metricNames)),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)),
+		))),
+	)
 }
 
 func MetricsFromNamespaceNotDelivered(proxyClient *apiserverproxy.Client, backendExportURL, namespace string) {

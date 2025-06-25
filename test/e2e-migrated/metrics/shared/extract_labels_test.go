@@ -2,13 +2,16 @@ package shared
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -22,14 +25,18 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestExtractLabels_OTel(t *testing.T) {
+func TestExtractLabels(t *testing.T) {
 	tests := []struct {
 		label                  string
+		inputBuilder           func(includeNs string) telemetryv1alpha1.MetricPipelineInput
 		metricGeneratorBuilder func(ns string, labels map[string]string) client.Object
 		expectAgent            bool
 	}{
 		{
 			label: suite.LabelMetricAgent,
+			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
+				return testutils.BuildMetricPipelinePrometheusInput(testutils.IncludeNamespaces(includeNs))
+			},
 			metricGeneratorBuilder: func(ns string, labels map[string]string) client.Object {
 				return prommetricgen.New(ns).Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).
 					WithLabels(labels).
@@ -39,10 +46,13 @@ func TestExtractLabels_OTel(t *testing.T) {
 		},
 		{
 			label: suite.LabelMetricGateway,
-
+			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
+				return testutils.BuildMetricPipelineNoInput()
+			},
 			metricGeneratorBuilder: func(ns string, labels map[string]string) client.Object {
 				return telemetrygen.NewPod(ns, telemetrygen.SignalTypeMetrics).WithLabels(labels).K8sObject()
 			},
+			expectAgent: false,
 		},
 	}
 
@@ -68,31 +78,24 @@ func TestExtractLabels_OTel(t *testing.T) {
 			var (
 				uniquePrefix = unique.Prefix(tc.label)
 				backendNs    = uniquePrefix("backend")
-
 				genNs        = uniquePrefix("gen")
 				pipelineName = uniquePrefix()
 				telemetry    operatorv1alpha1.Telemetry
 			)
 
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)
-
-			pipelineBuilder := testutils.NewMetricPipelineBuilder().
+			metricProducer := prommetricgen.New(genNs).Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).
+				WithLabel(labelKeyExactMatch, labelValueExactMatch).
+				WithLabel(labelKeyPrefixMatch1, labelValuePrefixMatch1).
+				WithLabel(labelKeyPrefixMatch2, labelValuePrefixMatch2).
+				WithLabel(labelKeyShouldNotMatch, labelValueShouldNotMatch).
+				K8sObject()
+			pipeline := testutils.NewMetricPipelineBuilder().
+				WithInput(tc.inputBuilder(genNs)).
 				WithName(pipelineName).
-				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint()))
+				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).Build()
 
-			if tc.expectAgent {
-				pipelineBuilder.WithPrometheusInput(true, testutils.IncludeNamespaces(genNs))
-			}
-
-			pipeline := pipelineBuilder.Build()
-
-			genLabels := map[string]string{
-				labelKeyExactMatch:     labelValueExactMatch,
-				labelKeyPrefixMatch1:   labelValuePrefixMatch1,
-				labelKeyPrefixMatch2:   labelValuePrefixMatch2,
-				labelKeyShouldNotMatch: labelValueShouldNotMatch,
-			}
-
+			// Configure label enrichments (new)
 			Eventually(func(g Gomega) int {
 				err := suite.K8sClient.Get(t.Context(), kitkyma.TelemetryName, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -109,6 +112,10 @@ func TestExtractLabels_OTel(t *testing.T) {
 				}
 				err = suite.K8sClient.Update(t.Context(), &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
+
+				if telemetry.Spec.Enrichments == nil {
+					return 0
+				}
 				return len(telemetry.Spec.Enrichments.ExtractPodLabels)
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(2))
 
@@ -116,37 +123,74 @@ func TestExtractLabels_OTel(t *testing.T) {
 				kitk8s.NewNamespace(backendNs).K8sObject(),
 				kitk8s.NewNamespace(genNs).K8sObject(),
 				&pipeline,
-				tc.metricGeneratorBuilder(genNs, genLabels),
+				metricProducer,
 			}
 			resources = append(resources, backend.K8sObjects()...)
 
 			t.Cleanup(func() {
 				require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
-
-				Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
-				telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{}
-				require.NoError(t, suite.K8sClient.Update(context.Background(), &telemetry)) //nolint:usetesting // Remove ctx from Update
+				resetTelemetryToDefault()
 			})
 			Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
+			//  Check deployed resources
+			assert.DeploymentReady(suite.Ctx, kitkyma.MetricGatewayName)
 			if tc.expectAgent {
-				assert.DaemonSetReady(t.Context(), kitkyma.MetricAgentName)
+				assert.DaemonSetReady(suite.Ctx, kitkyma.MetricAgentName)
 			}
+			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})
+			assert.MetricPipelineHealthy(suite.Ctx, pipelineName)
 
-			assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
-			assert.DeploymentReady(t.Context(), backend.NamespacedName())
-			assert.MetricPipelineHealthy(t.Context(), pipelineName)
+			// Configure label enrichments (old)
+			// err := suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)
+			// Expect(err).NotTo(HaveOccurred())
+			// telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{
+			// 	ExtractPodLabels: []operatorv1alpha1.PodLabel{
+			// 		{
+			// 			Key: "metric.test.exact.should.match",
+			// 		},
+			// 		{
+			// 			KeyPrefix: "metric.test.prefix",
+			// 		},
+			// 	},
+			// }
+			// err = suite.K8sClient.Update(suite.Ctx, &telemetry)
+			// Expect(err).To(Not(HaveOccurred()))
 
-			assert.BackendDataEventuallyMatches(t, backend,
-				HaveFlatMetrics(ContainElement(
+			// Verify label enrichments for metrics (old)
+			backendExportURL := backend.ExportURL(suite.ProxyClient)
+			Eventually(func(g Gomega) {
+				resp, err := suite.ProxyClient.Get(backendExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatMetrics(ContainElement(
 					HaveResourceAttributes(SatisfyAll(
 						HaveKeyWithValue(k8sLabelKeyPrefix+"."+labelKeyExactMatch, labelValueExactMatch),
 						HaveKeyWithValue(k8sLabelKeyPrefix+"."+labelKeyPrefixMatch1, labelValuePrefixMatch1),
 						HaveKeyWithValue(k8sLabelKeyPrefix+"."+labelKeyPrefixMatch2, labelValuePrefixMatch2),
 						Not(HaveKeyWithValue(k8sLabelKeyPrefix+"."+labelKeyShouldNotMatch, labelValueShouldNotMatch)),
 					)),
-				)),
-			)
+				))))
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+
+			// Verify label enrichments for metrics (new)
+			// assert.BackendDataEventuallyMatches(t, backend,
+			// 	HaveFlatMetrics(ContainElement(
+			// 		HaveResourceAttributes(SatisfyAll(
+			// 			HaveKeyWithValue(k8sLabelKeyPrefix+"."+labelKeyExactMatch, labelValueExactMatch),
+			// 			HaveKeyWithValue(k8sLabelKeyPrefix+"."+labelKeyPrefixMatch1, labelValuePrefixMatch1),
+			// 			HaveKeyWithValue(k8sLabelKeyPrefix+"."+labelKeyPrefixMatch2, labelValuePrefixMatch2),
+			// 			Not(HaveKeyWithValue(k8sLabelKeyPrefix+"."+labelKeyShouldNotMatch, labelValueShouldNotMatch)),
+			// 		)),
+			// 	)))
 		})
 	}
+}
+
+func resetTelemetryToDefault() {
+	var telemetry operatorv1alpha1.Telemetry
+
+	Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
+	telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{}
+	Expect(suite.K8sClient.Update(suite.Ctx, &telemetry)).Should(Succeed())
 }
