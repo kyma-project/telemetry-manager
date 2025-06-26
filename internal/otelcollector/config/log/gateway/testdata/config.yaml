@@ -11,8 +11,8 @@ service:
             processors:
                 - memory_limiter
                 - transform/set-observed-time-if-zero
-                - istio_noise_filter
                 - k8sattributes
+                - istio_noise_filter
                 - resource/insert-cluster-attributes
                 - service_enrichment
                 - resource/drop-kyma-attributes
@@ -57,7 +57,6 @@ processors:
                 - set(log.observed_time, Now())
               conditions:
                 - log.observed_time_unix_nano == 0
-    istio_noise_filter: {}
     k8sattributes:
         auth_type: serviceAccount
         passthrough: false
@@ -99,6 +98,7 @@ processors:
                   name: k8s.pod.uid
             - sources:
                 - from: connection
+    istio_noise_filter: {}
     resource/insert-cluster-attributes:
         attributes:
             - action: insert
