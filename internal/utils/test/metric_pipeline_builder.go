@@ -149,6 +149,7 @@ func BuildMetricPipelineOTLPInput(opts ...NamespaceSelectorOptions) telemetryv1a
 		true, opts,
 	)
 }
+
 // -----
 
 func (b *MetricPipelineBuilder) WithName(name string) *MetricPipelineBuilder {
@@ -170,15 +171,19 @@ func (b *MetricPipelineBuilder) WithInput(input telemetryv1alpha1.MetricPipeline
 	if input.Runtime != nil {
 		b.inRuntime = input.Runtime
 	}
+
 	if input.Prometheus != nil {
 		b.inPrometheus = input.Prometheus
 	}
+
 	if input.Istio != nil {
 		b.inIstio = input.Istio
 	}
+
 	if input.OTLP != nil {
 		b.inOTLP = input.OTLP
 	}
+
 	return b
 }
 

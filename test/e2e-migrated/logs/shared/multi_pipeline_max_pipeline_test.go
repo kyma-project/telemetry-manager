@@ -31,7 +31,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	var (
 		uniquePrefix               = unique.Prefix()
 		backendNs                  = uniquePrefix("backend")
-		genNs                = uniquePrefix("gen")
+		genNs                      = uniquePrefix("gen")
 		pipelineBase               = uniquePrefix()
 		additionalFBPipelineName   = fmt.Sprintf("%s-limit-exceeding-fb", pipelineBase)
 		additionalOTelPipelineName = fmt.Sprintf("%s-limit-exceeding-otel", pipelineBase)
@@ -229,7 +229,7 @@ func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
 	var (
 		uniquePrefix           = unique.Prefix()
 		backendNs              = uniquePrefix("backend")
-		genNs            = uniquePrefix("gen")
+		genNs                  = uniquePrefix("gen")
 		pipelineBase           = uniquePrefix()
 		additionalPipelineName = fmt.Sprintf("%s-limit-exceeding", pipelineBase)
 		pipelines              []client.Object
