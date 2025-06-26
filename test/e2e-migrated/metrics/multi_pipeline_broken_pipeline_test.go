@@ -18,37 +18,42 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestMTLS(t *testing.T) {
+func TestMultiPipelineBroken(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelMetrics)
 
-	var (
-		uniquePrefix = unique.Prefix()
-		pipelineName = uniquePrefix()
-		genNs        = uniquePrefix("gen")
-		backendNs    = uniquePrefix("backend")
+	const (
+		endpointKey     = "metric-endpoint"
+		brokenHostname  = "metric-rcv-hostname-broken"
+		unreachableHost = "http://unreachable:4317"
 	)
 
-	serverCerts, clientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
-	Expect(err).ToNot(HaveOccurred())
+	var (
+		uniquePrefix        = unique.Prefix()
+		healthyPipelineName = uniquePrefix("healthy")
+		brokenPipelineName  = uniquePrefix("broken")
+		backendNs           = uniquePrefix("backend")
+		genNs               = uniquePrefix("gen")
+	)
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithTLS(*serverCerts))
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)
+	healthyPipeline := testutils.NewMetricPipelineBuilder().
+		WithName(healthyPipelineName).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+		Build()
 
-	pipeline := testutils.NewMetricPipelineBuilder().
-		WithName(pipelineName).
-		WithOTLPOutput(
-			testutils.OTLPEndpoint(backend.Endpoint()),
-			testutils.OTLPClientTLSFromString(
-				clientCerts.CaCertPem.String(),
-				clientCerts.ClientCertPem.String(),
-				clientCerts.ClientKeyPem.String(),
-			),
-		).
+	unreachableHostSecret := kitk8s.NewOpaqueSecret(brokenHostname, kitkyma.DefaultNamespaceName,
+		kitk8s.WithStringData(endpointKey, unreachableHost))
+	brokenPipeline := testutils.NewMetricPipelineBuilder().
+		WithName(brokenPipelineName).
+		WithOTLPOutput(testutils.OTLPEndpointFromSecret(unreachableHostSecret.Name(), unreachableHostSecret.Namespace(), endpointKey)).
 		Build()
 
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
-		&pipeline,
+		unreachableHostSecret.K8sObject(),
+		&healthyPipeline,
+		&brokenPipeline,
 		telemetrygen.NewPod(genNs, telemetrygen.SignalTypeMetrics).K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
@@ -58,7 +63,8 @@ func TestMTLS(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.MetricPipelineHealthy(t.Context(), pipelineName)
+	assert.MetricPipelineHealthy(t.Context(), healthyPipelineName)
+	assert.MetricPipelineHealthy(t.Context(), brokenPipelineName)
 	assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
 	assert.MetricsFromNamespaceDeliveredWithT(t, backend, genNs, telemetrygen.MetricNames)

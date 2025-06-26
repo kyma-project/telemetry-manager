@@ -6,6 +6,11 @@ import (
 	"net/http"
 	"testing"
 
+	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -16,10 +21,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
-	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/require"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestKymaInput(t *testing.T) {
@@ -73,7 +74,6 @@ func TestKymaInput(t *testing.T) {
 
 		// Check the "kyma.resource.status.conditions" metric for the "TraceComponentsHealthy" condition type
 		checkTelemtryModuleMetricsConditions(t, g, bodyContent, "TraceComponentsHealthy")
-
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 
 	Eventually(func(g Gomega) {
@@ -93,7 +93,6 @@ func TestKymaInput(t *testing.T) {
 
 		// Check the "kyma.resource.status.conditions" type GatewayHealthy for metricpipeline with annotation
 		checkMetricPipelineMetricsConditions(t, g, bodyContent, "GatewayHealthy", pipelineName)
-
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 

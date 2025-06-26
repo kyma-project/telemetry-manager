@@ -52,7 +52,7 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 			var (
 				uniquePrefix = unique.Prefix(tc.label)
 				pipelineName = uniquePrefix("pipeline")
-				genNs  = uniquePrefix("gen")
+				genNs        = uniquePrefix("gen")
 				backendNs    = uniquePrefix("backend")
 			)
 

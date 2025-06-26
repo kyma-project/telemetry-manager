@@ -98,7 +98,7 @@ func TestSinglePipeline_FluentBit(t *testing.T) {
 	var (
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
-		genNs  = uniquePrefix("gen")
+		genNs        = uniquePrefix("gen")
 		backendNs    = uniquePrefix("backend")
 	)
 
