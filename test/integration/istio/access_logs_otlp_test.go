@@ -157,10 +157,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Order
 				resp, err := suite.ProxyClient.Get(logBackendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(log.HaveFlatLogs(Not(ContainElement(
-					// Istio noise filter should remove access logs about sending proxy span to the trace gateway
-					log.HaveAttributes(HaveKeyWithValue("server.address", "telemetry-otlp-traces.kyma-system:4317")),
-				)))))
+				g.Expect(resp).To(HaveHTTPBody(log.HaveFlatLogs(
+					Not(ContainElement(
+						SatisfyAny(
+							log.HaveResourceAttributes(HaveKeyWithValue("k8s.deployment.name", "telemetry-otlp-traces")),
+							log.HaveAttributes(HaveKeyWithValue("server.address", "telemetry-otlp-traces.kyma-system:4317")),
+						),
+					)),
+				)))
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
