@@ -78,12 +78,12 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 
 	t.Log("Attempting to create the 6th pipeline")
 	require.NoError(t, kitk8s.CreateObjects(t.Context(), &additionalPipeline))
-	assert.MetricPipelineHasCondition(suite.Ctx, additionalPipelineName, metav1.Condition{
+	assert.MetricPipelineHasCondition(t.Context(), additionalPipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonMaxPipelinesExceeded,
 	})
-	assert.MetricPipelineHasCondition(suite.Ctx, additionalPipelineName, metav1.Condition{
+	assert.MetricPipelineHasCondition(t.Context(), additionalPipelineName, metav1.Condition{
 		Type:   conditions.TypeFlowHealthy,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonSelfMonConfigNotGenerated,

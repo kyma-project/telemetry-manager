@@ -70,6 +70,18 @@ func MetricsFromNamespaceNotDelivered(proxyClient *apiserverproxy.Client, backen
 	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
+func MetricsFromNamespaceNotDeliveredWithT(t TestingT, backend *kitbackend.Backend, namespace string) {
+	t.Helper()
+
+	BackendDataConsistentlyMatches(
+		t,
+		backend,
+		HaveFlatMetrics(
+			Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)))),
+		),
+	)
+}
+
 func MetricsWithScopeAndNamespaceNotDelivered(proxyClient *apiserverproxy.Client, backendExportURL, scope, namespace string) {
 	Consistently(func(g Gomega) {
 		resp, err := proxyClient.Get(backendExportURL)
