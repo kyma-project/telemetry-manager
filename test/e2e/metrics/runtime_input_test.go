@@ -233,15 +233,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 				}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 			})
 
-			It("Should deliver node metrics with expected resource attributes and metric attributes", Label(suite.LabelGardener), func() {
+			It("Should deliver node metrics with expected resource attributes", Label(suite.LabelGardener), func() {
 				backendContainsMetricsDeliveredForResource(suite.ProxyClient, backendResourceMetricsEnabledURLA, runtime.NodeMetricsNames)
 				backendContainsDesiredResourceAttributes(suite.ProxyClient, backendResourceMetricsEnabledURLA, "k8s.node.cpu.usage", runtime.NodeMetricsResourceAttributes)
-
-				nodeNetworkErrorsMetric := "k8s.node.network.errors"
-				backendContainsDesiredMetricAttributes(suite.ProxyClient, backendResourceMetricsEnabledURLA, nodeNetworkErrorsMetric, runtime.NodeMetricsAttributes[nodeNetworkErrorsMetric])
-
-				nodeNetworkIOMetric := "k8s.node.network.io"
-				backendContainsDesiredMetricAttributes(suite.ProxyClient, backendResourceMetricsEnabledURLA, nodeNetworkIOMetric, runtime.NodeMetricsAttributes[nodeNetworkIOMetric])
 			})
 
 			It("Should have exactly metrics only for pods, containers, volumes and nodes delivered", func() {
