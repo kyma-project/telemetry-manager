@@ -127,7 +127,7 @@ func TestSecretRotation_FluentBit(t *testing.T) {
 	var (
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
-		generatorNs  = uniquePrefix("gen")
+		genNs  = uniquePrefix("gen")
 		backendNs    = uniquePrefix("backend")
 	)
 
@@ -150,8 +150,8 @@ func TestSecretRotation_FluentBit(t *testing.T) {
 
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(generatorNs).K8sObject(),
-		stdloggen.NewDeployment(generatorNs).K8sObject(),
+		kitk8s.NewNamespace(genNs).K8sObject(),
+		stdloggen.NewDeployment(genNs).K8sObject(),
 		&pipeline,
 		secret.K8sObject(),
 	}
@@ -168,7 +168,7 @@ func TestSecretRotation_FluentBit(t *testing.T) {
 	assert.FluentBitLogPipelineHealthy(t, pipelineName)
 
 	t.Log("Initially, the logs should not be delivered to the backend due to the incorrect host in the secret")
-	assert.FluentBitLogsFromNamespaceNotDelivered(t, backend, generatorNs)
+	assert.FluentBitLogsFromNamespaceNotDelivered(t, backend, genNs)
 
 	// Update the secret to have the correct backend host
 	secret.UpdateSecret(kitk8s.WithStringData(hostKey, backend.Host()))
@@ -179,5 +179,5 @@ func TestSecretRotation_FluentBit(t *testing.T) {
 	assert.FluentBitLogPipelineHealthy(t, pipelineName)
 
 	t.Log("After the secret is updated with the correct host, the logs should be delivered to the backend")
-	assert.FluentBitLogsFromNamespaceDelivered(t, backend, generatorNs)
+	assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
 }

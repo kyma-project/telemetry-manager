@@ -25,7 +25,7 @@ func TestUpgrade(t *testing.T) {
 	var (
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
-		generatorNs  = uniquePrefix("gen")
+		genNs  = uniquePrefix("gen")
 		backendNs    = uniquePrefix("backend")
 	)
 
@@ -38,8 +38,8 @@ func TestUpgrade(t *testing.T) {
 
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(generatorNs).K8sObject(),
-		stdloggen.NewDeployment(generatorNs).K8sObject(),
+		kitk8s.NewNamespace(genNs).K8sObject(),
+		stdloggen.NewDeployment(genNs).K8sObject(),
 		&pipeline,
 	}
 	resources = append(resources, backend.K8sObjects()...)
@@ -51,7 +51,7 @@ func TestUpgrade(t *testing.T) {
 		assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 
 		assert.FluentBitLogPipelineHealthy(t, pipelineName)
-		assert.FluentBitLogsFromNamespaceDelivered(t, backend, generatorNs)
+		assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
 	})
 
 	t.Run("after upgrade", func(t *testing.T) {
@@ -63,6 +63,6 @@ func TestUpgrade(t *testing.T) {
 		assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 
 		assert.FluentBitLogPipelineHealthy(t, pipelineName)
-		assert.FluentBitLogsFromNamespaceDelivered(t, backend, generatorNs)
+		assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
 	})
 }
