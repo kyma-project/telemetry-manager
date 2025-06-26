@@ -74,7 +74,7 @@ func TestMTLSAboutToExpireCert(t *testing.T) {
 	})
 
 	assert.TelemetryHasState(t.Context(), operatorv1alpha1.StateWarning)
-	assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
+	assert.TelemetryHasCondition(t.Context(), suite.K8sClient, metav1.Condition{
 		Type:   conditions.TypeMetricComponentsHealthy,
 		Status: metav1.ConditionTrue,
 		Reason: conditions.ReasonTLSCertificateAboutToExpire,

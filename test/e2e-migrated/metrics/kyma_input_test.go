@@ -49,9 +49,9 @@ func TestKymaInput(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.DeploymentReady(suite.Ctx, kitkyma.MetricGatewayName)
-	assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: backendName, Namespace: backendNs})
-	assert.MetricPipelineHealthy(suite.Ctx, pipelineName)
+	assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
+	assert.DeploymentReady(t.Context(), types.NamespacedName{Name: backendName, Namespace: backendNs})
+	assert.MetricPipelineHealthy(t.Context(), pipelineName)
 
 	Eventually(func(g Gomega) {
 		backendURL := backend.ExportURL(suite.ProxyClient)

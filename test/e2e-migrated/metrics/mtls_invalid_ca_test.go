@@ -55,20 +55,20 @@ func TestMTLSInvalidCA(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.MetricPipelineHasCondition(suite.Ctx, pipelineName, metav1.Condition{
+	assert.MetricPipelineHasCondition(t.Context(), pipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonTLSConfigurationInvalid,
 	})
 
-	assert.MetricPipelineHasCondition(suite.Ctx, pipelineName, metav1.Condition{
+	assert.MetricPipelineHasCondition(t.Context(), pipelineName, metav1.Condition{
 		Type:   conditions.TypeFlowHealthy,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonSelfMonConfigNotGenerated,
 	})
 
-	assert.TelemetryHasState(suite.Ctx, operatorv1alpha1.StateWarning)
-	assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
+	assert.TelemetryHasState(t.Context(), operatorv1alpha1.StateWarning)
+	assert.TelemetryHasCondition(t.Context(), suite.K8sClient, metav1.Condition{
 		Type:   conditions.TypeMetricComponentsHealthy,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonTLSConfigurationInvalid,

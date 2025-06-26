@@ -14,7 +14,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -58,8 +57,8 @@ func TestMTLS(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.MetricPipelineHealthy(suite.Ctx, pipelineName)
-	assert.DeploymentReady(suite.Ctx, kitkyma.MetricGatewayName)
-	assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})
+	assert.MetricPipelineHealthy(t.Context(), pipelineName)
+	assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
+	assert.DeploymentReady(t.Context(), backend.NamespacedName())
 	assert.MetricsFromNamespaceDeliveredWithT(t, backend, genNs, telemetrygen.MetricNames)
 }

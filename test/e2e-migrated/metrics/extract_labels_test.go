@@ -6,7 +6,6 @@ import (
 
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
@@ -83,15 +82,15 @@ func TestExtractLabels(t *testing.T) {
 	t.Cleanup(func() {
 		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 
-		Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
+		Expect(suite.K8sClient.Get(t.Context(), kitkyma.TelemetryName, &telemetry)).Should(Succeed())
 		telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{}
 		require.NoError(t, suite.K8sClient.Update(context.Background(), &telemetry)) //nolint:usetesting // Remove ctx from Update
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.DeploymentReady(suite.Ctx, kitkyma.MetricGatewayName)
-	assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})
-	assert.MetricPipelineHealthy(suite.Ctx, pipelineName)
+	assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
+	assert.DeploymentReady(t.Context(), backend.NamespacedName())
+	assert.MetricPipelineHealthy(t.Context(), pipelineName)
 
 	// Verify that at least one log entry contains the expected labels, rather than requiring all entries to match.
 	// This approach accounts for potential delays in the k8sattributes processor syncing with the API server during startup,

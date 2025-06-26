@@ -23,6 +23,6 @@ func TestRejectPipelineCreation(t *testing.T) {
 		WithOTLPOutput(testutils.OTLPEndpoint("mock-endpoint:4817"), testutils.OTLPEndpointPath("/v1/mock/metrics"), testutils.OTLPProtocol("grpc")).
 		Build()
 
-	Expect(kitk8s.CreateObjects(suite.Ctx, &metricPipelineDefaultGRPCWithPath)).ShouldNot(Succeed())
-	Expect(kitk8s.CreateObjects(suite.Ctx, &metricPipelineWithGRPCAndPath)).ShouldNot(Succeed())
+	Expect(kitk8s.CreateObjects(t.Context(), &metricPipelineDefaultGRPCWithPath)).ShouldNot(Succeed())
+	Expect(kitk8s.CreateObjects(t.Context(), &metricPipelineWithGRPCAndPath)).ShouldNot(Succeed())
 }
