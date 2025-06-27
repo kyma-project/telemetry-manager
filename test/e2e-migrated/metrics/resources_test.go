@@ -75,3 +75,42 @@ func TestResources(t *testing.T) {
 	assert.ResourcesNotExist(t.Context(), gatewayResources...)
 	assert.ResourcesNotExist(t.Context(), agentResources...)
 }
+
+// TODO: Merge this test with the one above (TestResources) when the feature flag --kyma-input-allowed is removed
+func TestResourcesExperimental(t *testing.T) {
+	suite.RegisterTestCase(t, suite.LabelMetrics, suite.LabelExperimental)
+
+	const (
+		endpointKey   = "metrics-endpoint"
+		endpointValue = "http://localhost:4317"
+	)
+
+	var (
+		uniquePrefix = unique.Prefix()
+		pipelineName = uniquePrefix()
+		secretName   = uniquePrefix()
+
+		experimentalResources = []assert.Resource{
+			assert.NewResource(&rbacv1.Role{}, kitkyma.MetricGatewayRole),
+			assert.NewResource(&rbacv1.RoleBinding{}, kitkyma.MetricGatewayRoleBinding),
+		}
+	)
+
+	secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, endpointValue))
+	pipeline := testutils.NewMetricPipelineBuilder().
+		WithName(pipelineName).
+		WithOTLPOutput(testutils.OTLPEndpointFromSecret(secret.Name(), secret.Namespace(), endpointKey)).
+		WithRuntimeInput(true).
+		Build()
+
+	t.Cleanup(func() {
+		require.NoError(t, kitk8s.DeleteObjects(context.Background(), &pipeline)) //nolint:usetesting // Remove ctx from DeleteObjects
+	})
+	Expect(kitk8s.CreateObjects(t.Context(), &pipeline, secret.K8sObject())).Should(Succeed())
+
+	assert.ResourcesExist(t.Context(), experimentalResources...)
+
+	t.Log("When MetricPipeline becomes non-reconcilable, experimental resources should be cleaned up")
+	Expect(suite.K8sClient.Delete(t.Context(), secret.K8sObject())).Should(Succeed())
+	assert.ResourcesNotExist(t.Context(), experimentalResources...)
+}
