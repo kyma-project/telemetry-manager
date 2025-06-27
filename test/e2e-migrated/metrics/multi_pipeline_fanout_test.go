@@ -24,7 +24,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestMultiPipeline(t *testing.T) {
+func TestMultiPipelineFanout(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelMetrics)
 
 	var (
@@ -88,7 +88,6 @@ func TestMultiPipeline(t *testing.T) {
 	assert.DeploymentReady(t.Context(), backendRuntime.NamespacedName())
 	assert.DeploymentReady(t.Context(), backendPrometheus.NamespacedName())
 
-	t.Log("Ensures runtime metrics are sent to runtime backend")
 	Eventually(func(g Gomega) {
 		resp, err := suite.ProxyClient.Get(backendRuntimeExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
@@ -101,7 +100,6 @@ func TestMultiPipeline(t *testing.T) {
 		checkInstrumentationScopeAndVersion(t, g, bodyContent, InstrumentationScopeRuntime, InstrumentationScopeKyma)
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 
-	t.Log("Ensures runtime metrics are not sent to prometheus backend")
 	Eventually(func(g Gomega) {
 		resp, err := suite.ProxyClient.Get(backendPrometheusExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
@@ -110,7 +108,7 @@ func TestMultiPipeline(t *testing.T) {
 		defer resp.Body.Close()
 		g.Expect(err).NotTo(HaveOccurred())
 
-		g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNames(Not(ContainElements(runtime.DefaultMetricsNames)))), "No runtime metrics must be sent to prometheus backend")
+		g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNames(Not(ContainElements(runtime.DefaultMetricsNames)))), "Unwanted runtime metrics sent to prometheus backend")
 
 		g.Expect(bodyContent).NotTo(HaveFlatMetrics(
 			SatisfyAll(
@@ -125,7 +123,6 @@ func TestMultiPipeline(t *testing.T) {
 		), "scope '%v' must not be sent to the prometheus backend", InstrumentationScopeRuntime)
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 
-	t.Log("Ensures prometheus metrics are sent to prometheus backend")
 	Eventually(func(g Gomega) {
 		resp, err := suite.ProxyClient.Get(backendPrometheusExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
@@ -140,7 +137,6 @@ func TestMultiPipeline(t *testing.T) {
 		checkInstrumentationScopeAndVersion(t, g, bodyContent, InstrumentationScopePrometheus, InstrumentationScopeKyma)
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 
-	t.Log("Ensures prometheus metrics are not sent to runtime backend")
 	Eventually(func(g Gomega) {
 		resp, err := suite.ProxyClient.Get(backendRuntimeExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
@@ -149,7 +145,7 @@ func TestMultiPipeline(t *testing.T) {
 		defer resp.Body.Close()
 		g.Expect(err).NotTo(HaveOccurred())
 
-		g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNames(Not(ContainElements(prommetricgen.CustomMetricNames())))), "No prometheus metrics must be sent to runtime backend")
+		g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNames(Not(ContainElements(prommetricgen.CustomMetricNames())))), "Unwanted prometheus metrics sent to runtime backend")
 
 		g.Expect(bodyContent).NotTo(HaveFlatMetrics(SatisfyAny(
 			SatisfyAll(

@@ -74,7 +74,8 @@ func TestKymaInput(t *testing.T) {
 
 		// Check the "kyma.resource.status.conditions" metric for the "TraceComponentsHealthy" condition type
 		checkTelemtryModuleMetricsConditions(t, g, bodyContent, "TraceComponentsHealthy")
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval,
+		"Missing telemetry module status metrics").Should(Succeed())
 
 	Eventually(func(g Gomega) {
 		backendURL := backend.ExportURL(suite.ProxyClient)
@@ -93,7 +94,8 @@ func TestKymaInput(t *testing.T) {
 
 		// Check the "kyma.resource.status.conditions" type GatewayHealthy for metricpipeline with annotation
 		checkMetricPipelineMetricsConditions(t, g, bodyContent, "GatewayHealthy", pipelineName)
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval,
+		"Missing condition metrics").Should(Succeed())
 }
 
 func checkTelemetryModuleMetricState(t *testing.T, g Gomega, body []byte) {

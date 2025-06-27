@@ -3,8 +3,6 @@ package metrics
 import (
 	"context"
 	"fmt"
-	"io"
-	"net/http"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -21,12 +19,10 @@ import (
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-// FIXME: Attribute "cloud.provider" not found
 func TestCloudProviderAttributes(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelMetrics)
 
@@ -91,19 +87,10 @@ func TestCloudProviderAttributes(t *testing.T) {
 func backendContainsDesiredCloudResourceAttributes(t *testing.T, backend *kitbackend.Backend, attribute string) {
 	t.Helper()
 
-	Eventually(func(g Gomega) {
-		backendURL := backend.ExportURL(suite.ProxyClient)
-		resp, err := suite.ProxyClient.Get(backendURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-
-		bodyContent, err := io.ReadAll(resp.Body)
-		defer resp.Body.Close()
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(bodyContent).To(HaveFlatMetrics(
+	assert.BackendDataEventuallyMatches(t, backend,
+		HaveFlatMetrics(
 			ContainElement(SatisfyAll(
 				HaveResourceAttributes(HaveKey(attribute)),
 			)),
-		))
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed(), fmt.Sprintf("could not find metrics matching resource attribute %s", attribute))
+		), fmt.Sprintf("could not find metrics matching resource attribute %s", attribute))
 }

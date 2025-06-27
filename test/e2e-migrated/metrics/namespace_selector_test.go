@@ -20,7 +20,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestMultiPipelineNamespaceSelector(t *testing.T) {
+func TestNamespaceSelector(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelMetrics)
 
 	var (

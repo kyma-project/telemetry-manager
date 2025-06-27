@@ -62,7 +62,6 @@ func TestPrometheusInput(t *testing.T) {
 	assert.DeploymentReady(suite.Ctx, backend.NamespacedName())
 	assert.MetricPipelineHealthy(suite.Ctx, pipelineName)
 
-	t.Log("Ensures custom metric scraped via annotated pods are sent to backend")
 	Eventually(func(g Gomega) {
 		backendURL := backend.ExportURL(suite.ProxyClient)
 		resp, err := suite.ProxyClient.Get(backendURL)
@@ -93,9 +92,8 @@ func TestPrometheusInput(t *testing.T) {
 				prommetricgen.MetricPromhttpMetricHandlerRequestsTotalLabelVal,
 				prommetricgen.ScrapingURLParamVal)),
 		))))
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed(), "Annotated Pods scraping failed")
 
-	t.Log("Ensures custom metric scraped via annotated services are sent to backend")
 	Eventually(func(g Gomega) {
 		backendURL := backend.ExportURL(suite.ProxyClient)
 		resp, err := suite.ProxyClient.Get(backendURL)
@@ -125,19 +123,20 @@ func TestPrometheusInput(t *testing.T) {
 				prommetricgen.MetricPromhttpMetricHandlerRequestsTotalLabelVal,
 				prommetricgen.ScrapingURLParamVal)),
 		))))
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed(), "Annotated Services scraping failed")
 
-	t.Log("Ensures no runtime metrics are sent to backend")
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatMetrics(
 			Not(ContainElement(HaveName(BeElementOf(runtime.DefaultMetricsNames)))),
-		))
+		), "Unwanted runtime metrics sent to backend")
 
-	t.Log("Ensures no kubeletstats metrics from system namespaces are sent to backend")
-	assert.MetricsWithScopeAndNamespaceNotDeliveredWithT(t, backend, metric.InstrumentationScopePrometheus, kitkyma.SystemNamespaceName)
+	assert.MetricsWithScopeAndNamespaceNotDeliveredWithT(t, backend,
+		metric.InstrumentationScopePrometheus,
+		kitkyma.SystemNamespaceName,
+		"Unwanted kubeletstats metrics from system namespace sent to backend")
 
 	t.Log("Ensures no diagnostic metrics are sent to backend")
 	assert.BackendDataConsistentlyMatches(t, backend, HaveFlatMetrics(
 		Not(ContainElement(HaveName(BeElementOf(diagnosticMetrics...)))),
-	))
+	), "Unwanted diagnostic metrics sent to backend")
 }
