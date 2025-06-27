@@ -26,7 +26,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-// FIXME: line 85
+// FIXME: Attribute "cloud.provider" not found
 func TestCloudProviderAttributes(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelMetrics)
 

@@ -12,13 +12,22 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestMTLS(t *testing.T) {
+var diagnosticMetrics = []any{
+	"up",
+	"scrape_duration_seconds",
+	"scrape_samples_scraped",
+	"scrape_samples_post_metric_relabeling",
+	"scrape_series_added",
+}
+
+func TestPrometheusInputDiagnosticMetric(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelMetrics)
 
 	var (
@@ -28,28 +37,22 @@ func TestMTLS(t *testing.T) {
 		genNs        = uniquePrefix("gen")
 	)
 
-	serverCerts, clientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
-	Expect(err).ToNot(HaveOccurred())
-
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithTLS(*serverCerts))
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)
+	metricProducer := prommetricgen.New(genNs)
 
 	pipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineName).
-		WithOTLPOutput(
-			testutils.OTLPEndpoint(backend.Endpoint()),
-			testutils.OTLPClientTLSFromString(
-				clientCerts.CaCertPem.String(),
-				clientCerts.ClientCertPem.String(),
-				clientCerts.ClientKeyPem.String(),
-			),
-		).
+		WithPrometheusInput(true).
+		WithPrometheusInputDiagnosticMetrics(true).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 		Build()
 
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
 		&pipeline,
-		telemetrygen.NewPod(genNs, telemetrygen.SignalTypeMetrics).K8sObject(),
+		metricProducer.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
+		metricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
 
@@ -58,8 +61,11 @@ func TestMTLS(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.MetricPipelineHealthy(t.Context(), pipelineName)
 	assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
-	assert.MetricsFromNamespaceDeliveredWithT(t, backend, genNs, telemetrygen.MetricNames)
+	assert.DaemonSetReady(t.Context(), kitkyma.MetricAgentName)
+	assert.MetricPipelineHealthy(t.Context(), pipelineName)
+	assert.BackendDataEventuallyMatches(t, backend,
+		HaveFlatMetrics(HaveUniqueNames(
+			ContainElements(diagnosticMetrics...))))
 }

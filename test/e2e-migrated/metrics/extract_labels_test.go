@@ -40,10 +40,9 @@ func TestExtractLabels(t *testing.T) {
 
 	var (
 		uniquePrefix = unique.Prefix()
-		backendNs    = uniquePrefix("backend")
-
-		genNs        = uniquePrefix("gen")
 		pipelineName = uniquePrefix()
+		backendNs    = uniquePrefix("backend")
+		genNs        = uniquePrefix("gen")
 		telemetry    operatorv1alpha1.Telemetry
 	)
 

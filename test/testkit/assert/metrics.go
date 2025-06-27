@@ -98,6 +98,19 @@ func MetricsWithScopeAndNamespaceNotDelivered(proxyClient *apiserverproxy.Client
 	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
+func MetricsWithScopeAndNamespaceNotDeliveredWithT(t TestingT, backend *kitbackend.Backend, scope, namespace string) {
+	t.Helper()
+
+	BackendDataConsistentlyMatches(
+		t,
+		backend,
+		HaveFlatMetrics(Not(ContainElement(SatisfyAll(
+			HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)),
+			HaveResourceAttributes(HaveKeyWithValue("service", scope)),
+		)))),
+	)
+}
+
 func MetricPipelineHealthy(ctx context.Context, pipelineName string) {
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.MetricPipeline

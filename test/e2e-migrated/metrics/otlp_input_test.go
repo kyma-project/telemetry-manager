@@ -18,7 +18,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestMTLS(t *testing.T) {
+func TestOTLPInput(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelMetrics)
 
 	var (
@@ -28,27 +28,18 @@ func TestMTLS(t *testing.T) {
 		genNs        = uniquePrefix("gen")
 	)
 
-	serverCerts, clientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
-	Expect(err).ToNot(HaveOccurred())
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithTLS(*serverCerts))
-
-	pipeline := testutils.NewMetricPipelineBuilder().
+	pipelineWithoutOTLP := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineName).
-		WithOTLPOutput(
-			testutils.OTLPEndpoint(backend.Endpoint()),
-			testutils.OTLPClientTLSFromString(
-				clientCerts.CaCertPem.String(),
-				clientCerts.ClientCertPem.String(),
-				clientCerts.ClientKeyPem.String(),
-			),
-		).
+		WithOTLPInput(false).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 		Build()
 
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
-		&pipeline,
+		&pipelineWithoutOTLP,
 		telemetrygen.NewPod(genNs, telemetrygen.SignalTypeMetrics).K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
@@ -58,8 +49,7 @@ func TestMTLS(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.MetricPipelineHealthy(t.Context(), pipelineName)
 	assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
-	assert.MetricsFromNamespaceDeliveredWithT(t, backend, genNs, telemetrygen.MetricNames)
+	assert.MetricsFromNamespaceNotDeliveredWithT(t, backend, genNs)
 }

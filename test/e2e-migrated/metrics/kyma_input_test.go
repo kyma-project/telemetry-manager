@@ -28,9 +28,9 @@ func TestKymaInput(t *testing.T) {
 
 	var (
 		uniquePrefix = unique.Prefix()
+		pipelineName = uniquePrefix()
 		backendNs    = uniquePrefix("backend")
-		backendName  = uniquePrefix("for-kyma-input")
-		pipelineName = uniquePrefix("with-annotation")
+		backendName  = uniquePrefix("be")
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithName(backendName))

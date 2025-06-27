@@ -24,19 +24,21 @@ func TestMultiPipelineNamespaceSelector(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelMetrics)
 
 	var (
-		uniquePrefix = unique.Prefix()
-		app1Ns       = uniquePrefix("app1")
-		app2Ns       = uniquePrefix("app2")
-		backendNs    = uniquePrefix("backend")
-		backend1Name = uniquePrefix("backend1")
-		backend2Name = uniquePrefix("backend2")
+		uniquePrefix            = unique.Prefix()
+		app1Ns                  = uniquePrefix("app1")
+		app2Ns                  = uniquePrefix("app2")
+		backendNs               = uniquePrefix("backend")
+		backend1Name            = uniquePrefix("backend1")
+		backend2Name            = uniquePrefix("backend2")
+		pipelineNameIncludeApp1 = uniquePrefix("include-app1")
+		pipelineNameExcludeApp1 = uniquePrefix("exclude-app1")
 	)
 
 	backend1 := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithName(backend1Name))
 	backend2 := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithName(backend2Name))
 
 	pipelineIncludeApp1Ns := testutils.NewMetricPipelineBuilder().
-		WithName("include-"+app1Ns).
+		WithName(pipelineNameIncludeApp1).
 		WithPrometheusInput(true, testutils.IncludeNamespaces(app1Ns)).
 		WithRuntimeInput(true, testutils.IncludeNamespaces(app1Ns)).
 		WithOTLPInput(true, testutils.IncludeNamespaces(app1Ns)).
@@ -44,7 +46,7 @@ func TestMultiPipelineNamespaceSelector(t *testing.T) {
 		Build()
 
 	pipelineExcludeApp1Ns := testutils.NewMetricPipelineBuilder().
-		WithName("exclude-"+app1Ns).
+		WithName(pipelineNameExcludeApp1).
 		WithPrometheusInput(true, testutils.ExcludeNamespaces(app1Ns)).
 		WithRuntimeInput(true, testutils.ExcludeNamespaces(app1Ns)).
 		WithOTLPInput(true, testutils.ExcludeNamespaces(app1Ns)).
