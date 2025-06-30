@@ -39,14 +39,18 @@ func TestSecretMissing_OTel(t *testing.T) {
 		t.Run(tc.label, func(t *testing.T) {
 			suite.RegisterTestCase(t, tc.label)
 
-			const endpointKey = "logs-endpoint"
+			const (
+				endpointKey   = "logs-endpoint"
+				endpointValue = "http://localhost:4317"
+			)
 
 			var (
 				uniquePrefix = unique.Prefix(tc.label)
 				pipelineName = uniquePrefix()
+				secretName   = uniquePrefix()
 			)
 
-			secret := kitk8s.NewOpaqueSecret("logs-missing", kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, "http://localhost:4317"))
+			secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, endpointValue))
 
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
@@ -97,14 +101,18 @@ func TestSecretMissing_OTel(t *testing.T) {
 func TestSecretMissing_FluentBit(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelFluentBit)
 
-	const hostKey = "logs-host"
+	const (
+		hostKey   = "logs-host"
+		hostValue = "localhost"
+	)
 
 	var (
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
+		secretName   = uniquePrefix()
 	)
 
-	secret := kitk8s.NewOpaqueSecret("logs-missing", kitkyma.DefaultNamespaceName, kitk8s.WithStringData(hostKey, "localhost"))
+	secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(hostKey, hostValue))
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).

@@ -13,16 +13,22 @@ import (
 func TestRejectPipelineCreation(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelMetrics)
 
-	metricPipelineDefaultGRPCWithPath := testutils.NewMetricPipelineBuilder().
-		WithName("metricpipeline-default-reject-with-path").
+	defaultGRPCWithPathPipeline := testutils.NewMetricPipelineBuilder().
+		WithName("default-reject-with-path").
 		WithOTLPOutput(testutils.OTLPEndpoint("mock-endpoint:4817"), testutils.OTLPEndpointPath("/v1/mock/metrics")).
 		Build()
 
-	metricPipelineWithGRPCAndPath := testutils.NewMetricPipelineBuilder().
-		WithName("metricpipeline-reject-with-grpc-and-path").
+	withGRPCAndPathPipeline := testutils.NewMetricPipelineBuilder().
+		WithName("reject-with-grpc-and-path").
 		WithOTLPOutput(testutils.OTLPEndpoint("mock-endpoint:4817"), testutils.OTLPEndpointPath("/v1/mock/metrics"), testutils.OTLPProtocol("grpc")).
 		Build()
 
-	Expect(kitk8s.CreateObjects(t.Context(), &metricPipelineDefaultGRPCWithPath)).ShouldNot(Succeed())
-	Expect(kitk8s.CreateObjects(t.Context(), &metricPipelineWithGRPCAndPath)).ShouldNot(Succeed())
+	misconfiguredSecretRefPipeline := testutils.NewMetricPipelineBuilder().
+		WithName("misconfigured-secretref").
+		WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("name", "namespace", "", "")).
+		Build()
+
+	Expect(kitk8s.CreateObjects(t.Context(), &defaultGRPCWithPathPipeline)).ShouldNot(Succeed())
+	Expect(kitk8s.CreateObjects(t.Context(), &withGRPCAndPathPipeline)).ShouldNot(Succeed())
+	Expect(kitk8s.CreateObjects(t.Context(), &misconfiguredSecretRefPipeline)).ShouldNot(Succeed())
 }
