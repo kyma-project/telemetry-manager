@@ -50,6 +50,7 @@ func TestUpdateStatus(t *testing.T) {
 		require.NoError(t, err)
 
 		var updatedParser telemetryv1alpha1.LogParser
+
 		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: parserName}, &updatedParser)
 
 		agentHealthyCond := meta.FindStatusCondition(updatedParser.Status.Conditions, conditions.TypeAgentHealthy)
@@ -89,6 +90,7 @@ func TestUpdateStatus(t *testing.T) {
 		require.NoError(t, err)
 
 		var updatedParser telemetryv1alpha1.LogParser
+
 		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: parserName}, &updatedParser)
 
 		agentHealthyCond := meta.FindStatusCondition(updatedParser.Status.Conditions, conditions.TypeAgentHealthy)

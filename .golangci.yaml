@@ -25,6 +25,7 @@ linters:
     - mirror
     - nestif
     - nlreturn
+    - noinlineerr
     - nonamedreturns
     - paralleltest
     - perfsprint
@@ -37,6 +38,7 @@ linters:
     - tparallel
     - varnamelen
     - wrapcheck
+    - wsl
   settings:
     dupl:
       threshold: 100
@@ -198,8 +200,10 @@ linters:
         - github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric
         - github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace
         - github.com/kyma-project/telemetry-manager/test/testkit/matchers/prometheus
-    wsl:
-      allow-trailing-comment: true
+    wsl_v5:
+      allow-first-in-block: true
+      allow-whole-block: false
+      branch-max-lines: 2
   exclusions:
     generated: lax
     presets:

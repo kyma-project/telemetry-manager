@@ -60,6 +60,7 @@ func TestMTLSMissingValues_OTel(t *testing.T) {
 				).Build()
 
 			var resources []client.Object
+
 			resources = append(resources,
 				&pipelineMissingKey,
 			)
@@ -98,6 +99,7 @@ func TestMTLSMissingValues_FluentBit(t *testing.T) {
 		Build()
 
 	var resources []client.Object
+
 	resources = append(resources,
 		&pipelineMissingKey,
 	)

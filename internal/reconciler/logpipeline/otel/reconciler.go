@@ -133,7 +133,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, pipeline *telemetryv1alpha1.
 	logf.FromContext(ctx).V(1).Info("Reconciling LogPipeline")
 
 	err := r.doReconcile(ctx, pipeline)
-
 	if statusErr := r.updateStatus(ctx, pipeline.Name); statusErr != nil {
 		if err != nil {
 			err = fmt.Errorf("failed while updating status: %w: %w", statusErr, err)
@@ -259,7 +258,6 @@ func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetr
 		Enrichments:   enrichments,
 		ModuleVersion: r.moduleVersion,
 	})
-
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)
 	}
