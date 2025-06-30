@@ -49,6 +49,7 @@ func (p *serverCertProviderImpl) provideCert(ctx context.Context, config serverC
 	var err error
 
 	var serverCertPEM, serverKeyPEM []byte
+
 	serverCertPEM, serverKeyPEM, err = p.storage.load()
 
 	var shouldCreateNew bool

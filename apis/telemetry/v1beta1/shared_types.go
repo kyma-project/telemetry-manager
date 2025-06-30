@@ -65,10 +65,11 @@ type BasicAuthOptions struct {
 }
 
 type Header struct {
-	// Defines the header name.
-	Name string `json:"name"`
 	// Defines the header value.
 	ValueType `json:",inline"`
+
+	// Defines the header name.
+	Name string `json:"name"`
 	// Defines an optional header value prefix. The prefix is separated from the value by a space character.
 	Prefix string `json:"prefix,omitempty"`
 }

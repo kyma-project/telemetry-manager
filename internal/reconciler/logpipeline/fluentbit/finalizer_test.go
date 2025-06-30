@@ -24,6 +24,7 @@ func TestEnsureFinalizers(t *testing.T) {
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
+
 		_ = client.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		require.True(t, controllerutil.ContainsFinalizer(&updatedPipeline, sectionsFinalizer))
@@ -51,6 +52,7 @@ func TestEnsureFinalizers(t *testing.T) {
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
+
 		_ = client.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		require.True(t, controllerutil.ContainsFinalizer(&updatedPipeline, sectionsFinalizer))
@@ -77,6 +79,7 @@ func TestCleanupFinalizers(t *testing.T) {
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
+
 		_ = client.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		require.False(t, controllerutil.ContainsFinalizer(&updatedPipeline, sectionsFinalizer))
@@ -100,6 +103,7 @@ func TestCleanupFinalizers(t *testing.T) {
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
+
 		_ = client.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		require.False(t, controllerutil.ContainsFinalizer(&updatedPipeline, sectionsFinalizer))

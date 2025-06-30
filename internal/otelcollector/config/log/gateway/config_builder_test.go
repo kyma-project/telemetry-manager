@@ -34,6 +34,7 @@ func TestBuildConfig(t *testing.T) {
 		require.NoError(t, err)
 
 		const endpointEnvVar = "OTLP_ENDPOINT_TEST"
+
 		expectedEndpoint := fmt.Sprintf("${%s}", endpointEnvVar)
 
 		require.Contains(t, collectorConfig.Exporters, "otlp/test")

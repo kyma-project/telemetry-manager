@@ -32,6 +32,7 @@ func TestEndpointAndPath(t *testing.T) {
 		Build()
 
 	var resources []client.Object
+
 	resources = append(resources,
 		&metricPipelineWithGRPCAndWithoutPath,
 		&metricPipelineWithHTTPAndPath,

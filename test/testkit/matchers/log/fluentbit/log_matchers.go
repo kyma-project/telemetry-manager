@@ -58,8 +58,8 @@ func HaveAttributes(matcher types.GomegaMatcher) types.GomegaMatcher {
 func HaveTimestamp(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(fl FlatLog) time.Time {
 		ts := fl.Attributes["timestamp"]
-		timestamp, err := time.Parse(time.RFC3339, ts)
 
+		timestamp, err := time.Parse(time.RFC3339, ts)
 		if err != nil {
 			panic(err)
 		}

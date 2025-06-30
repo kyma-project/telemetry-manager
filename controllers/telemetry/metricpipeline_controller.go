@@ -211,6 +211,7 @@ func (r *MetricPipelineController) createRequestsForAllPipelines(ctx context.Con
 
 	for i := range pipelines.Items {
 		var pipeline = pipelines.Items[i]
+
 		requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 	}
 
