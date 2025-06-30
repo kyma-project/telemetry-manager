@@ -50,15 +50,14 @@ func TestContainerSelector_OTel(t *testing.T) {
 		WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
 		Build()
 
-	var resources []client.Object
-	resources = append(resources,
+	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
 		&includePipeline,
 		&excludePipeline,
 		stdloggen.NewDeployment(genNs, stdloggen.WithContainer(container1)).WithName("gen-1").K8sObject(),
 		stdloggen.NewDeployment(genNs, stdloggen.WithContainer(container2)).WithName("gen-2").K8sObject(),
-	)
+	}
 	resources = append(resources, backend1.K8sObjects()...)
 	resources = append(resources, backend2.K8sObjects()...)
 
@@ -115,15 +114,14 @@ func TestContainerSelector_FluentBit(t *testing.T) {
 		WithHTTPOutput(testutils.HTTPHost(backend2.Host()), testutils.HTTPPort(backend2.Port())).
 		Build()
 
-	var resources []client.Object
-	resources = append(resources,
+	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
 		&includePipeline,
 		&excludePipeline,
 		stdloggen.NewDeployment(genNs, stdloggen.WithContainer(container1)).WithName("gen-1").K8sObject(),
 		stdloggen.NewDeployment(genNs, stdloggen.WithContainer(container2)).WithName("gen-2").K8sObject(),
-	)
+	}
 	resources = append(resources, backend1.K8sObjects()...)
 	resources = append(resources, backend2.K8sObjects()...)
 

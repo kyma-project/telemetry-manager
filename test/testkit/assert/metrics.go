@@ -17,6 +17,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
@@ -41,6 +42,19 @@ func MetricsFromNamespaceDelivered(proxyClient *apiserverproxy.Client, backendEx
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
+func MetricsFromNamespaceDeliveredWithT(t TestingT, backend *kitbackend.Backend, namespace string, metricNames []string) {
+	t.Helper()
+
+	BackendDataEventuallyMatches(
+		t,
+		backend,
+		HaveFlatMetrics(ContainElement(SatisfyAll(
+			HaveName(BeElementOf(metricNames)),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)),
+		))),
+	)
+}
+
 func MetricsFromNamespaceNotDelivered(proxyClient *apiserverproxy.Client, backendExportURL, namespace string) {
 	Consistently(func(g Gomega) {
 		resp, err := proxyClient.Get(backendExportURL)
@@ -54,6 +68,18 @@ func MetricsFromNamespaceNotDelivered(proxyClient *apiserverproxy.Client, backen
 		err = resp.Body.Close()
 		g.Expect(err).NotTo(HaveOccurred())
 	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+}
+
+func MetricsFromNamespaceNotDeliveredWithT(t TestingT, backend *kitbackend.Backend, namespace string) {
+	t.Helper()
+
+	BackendDataConsistentlyMatches(
+		t,
+		backend,
+		HaveFlatMetrics(
+			Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)))),
+		),
+	)
 }
 
 func MetricsWithScopeAndNamespaceNotDelivered(proxyClient *apiserverproxy.Client, backendExportURL, scope, namespace string) {
@@ -70,6 +96,20 @@ func MetricsWithScopeAndNamespaceNotDelivered(proxyClient *apiserverproxy.Client
 		err = resp.Body.Close()
 		g.Expect(err).NotTo(HaveOccurred())
 	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+}
+
+func MetricsWithScopeAndNamespaceNotDeliveredWithT(t TestingT, backend *kitbackend.Backend, scope, namespace string, optionalDescription ...any) {
+	t.Helper()
+
+	BackendDataConsistentlyMatches(
+		t,
+		backend,
+		HaveFlatMetrics(Not(ContainElement(SatisfyAll(
+			HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)),
+			HaveResourceAttributes(HaveKeyWithValue("service", scope)),
+		)))),
+		optionalDescription...,
+	)
 }
 
 func MetricPipelineHealthy(ctx context.Context, pipelineName string) {

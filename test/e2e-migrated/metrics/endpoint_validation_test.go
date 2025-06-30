@@ -72,15 +72,14 @@ func TestValidateEndpoint(t *testing.T) {
 		).
 		Build()
 
-	var resources []client.Object
-	resources = append(resources,
+	resources := []client.Object{
 		secret.K8sObject(),
 		&pipelineInvalidEndpoint,
 		&pipelineInvalidEndpointValueFrom,
 		&pipelineInvalidPortEndpoint,
 		&pipelineMissingPortEndpoint,
 		&pipelineMissingPortHTTP,
-	)
+	}
 
 	t.Cleanup(func() {
 		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects

@@ -67,8 +67,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 		WithOTLPOutput(testutils.OTLPEndpoint(backendDropOriginal.Endpoint())).
 		Build()
 
-	var resources []client.Object
-	resources = append(resources,
+	resources := []client.Object{
 		kitk8s.NewNamespace(sourceNsKeepOriginal).K8sObject(),
 		kitk8s.NewNamespace(sourceNsDropOriginal).K8sObject(),
 		kitk8s.NewNamespace(backendNsKeepOriginal).K8sObject(),
@@ -82,7 +81,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 		stdloggen.NewDeployment(sourceNsDropOriginal,
 			stdloggen.AppendLogLines(logLines...),
 		).K8sObject(),
-	)
+	}
 	resources = append(resources, backendKeepOriginal.K8sObjects()...)
 	resources = append(resources, backendDropOriginal.K8sObjects()...)
 
@@ -216,8 +215,7 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 		WithHTTPOutput(testutils.HTTPHost(backendDropOriginal.Host()), testutils.HTTPPort(backendDropOriginal.Port())).
 		Build()
 
-	var resources []client.Object
-	resources = append(resources,
+	resources := []client.Object{
 		kitk8s.NewNamespace(sourceNsKeepOriginal).K8sObject(),
 		kitk8s.NewNamespace(sourceNsDropOriginal).K8sObject(),
 		kitk8s.NewNamespace(backendNsKeepOriginal).K8sObject(),
@@ -232,7 +230,7 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 			sourceNsDropOriginal,
 			stdloggen.AppendLogLines(logLines...),
 		).K8sObject(),
-	)
+	}
 	resources = append(resources, backendKeepOriginal.K8sObjects()...)
 	resources = append(resources, backendDropOriginal.K8sObjects()...)
 
