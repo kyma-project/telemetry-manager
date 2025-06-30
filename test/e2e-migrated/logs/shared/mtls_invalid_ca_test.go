@@ -64,6 +64,7 @@ func TestMTLSInvalidCA_OTel(t *testing.T) {
 				Build()
 
 			var resources []client.Object
+
 			resources = append(resources,
 				&pipeline,
 			)
@@ -124,6 +125,7 @@ func TestMTLSInvalidCA_FluentBit(t *testing.T) {
 		Build()
 
 	var resources []client.Object
+
 	resources = append(resources,
 		&pipeline,
 	)

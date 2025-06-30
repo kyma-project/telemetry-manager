@@ -27,6 +27,7 @@ type pipelineDefaults struct {
 // FluentBit builder configuration
 type builderConfig struct {
 	pipelineDefaults
+
 	collectAgentLogs bool
 }
 

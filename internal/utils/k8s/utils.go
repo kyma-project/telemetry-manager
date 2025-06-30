@@ -365,8 +365,8 @@ func mergeMapsByPrefix(newMap map[string]string, oldMap map[string]string, prefi
 
 func GetOrCreateConfigMap(ctx context.Context, c client.Client, name types.NamespacedName, labels map[string]string) (corev1.ConfigMap, error) {
 	cm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: name.Name, Namespace: name.Namespace, Labels: labels}}
-	err := c.Get(ctx, client.ObjectKeyFromObject(&cm), &cm)
 
+	err := c.Get(ctx, client.ObjectKeyFromObject(&cm), &cm)
 	if err == nil {
 		return cm, nil
 	}
@@ -383,8 +383,8 @@ func GetOrCreateConfigMap(ctx context.Context, c client.Client, name types.Names
 
 func GetOrCreateSecret(ctx context.Context, c client.Client, name types.NamespacedName, labels map[string]string) (corev1.Secret, error) {
 	secret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name.Name, Namespace: name.Namespace, Labels: labels}}
-	err := c.Get(ctx, client.ObjectKeyFromObject(&secret), &secret)
 
+	err := c.Get(ctx, client.ObjectKeyFromObject(&secret), &secret)
 	if err == nil {
 		return secret, nil
 	}

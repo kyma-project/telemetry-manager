@@ -30,7 +30,8 @@ func init() {
 type MetricPipelineList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []MetricPipeline `json:"items"`
+
+	Items []MetricPipeline `json:"items"`
 }
 
 // +kubebuilder:object:root=true

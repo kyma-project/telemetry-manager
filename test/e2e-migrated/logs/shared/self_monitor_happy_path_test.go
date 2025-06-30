@@ -68,6 +68,7 @@ func TestSelfMonitorHappyPath_OTel(t *testing.T) {
 				Build()
 
 			var resources []client.Object
+
 			resources = append(resources,
 				kitk8s.NewNamespace(backendNs).K8sObject(),
 				kitk8s.NewNamespace(genNs).K8sObject(),
@@ -116,6 +117,7 @@ func TestSelfMonitorHappyPath_FluentBit(t *testing.T) {
 		Build()
 
 	var resources []client.Object
+
 	resources = append(resources,
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),

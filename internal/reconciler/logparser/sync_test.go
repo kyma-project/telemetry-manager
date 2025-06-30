@@ -56,6 +56,7 @@ Format regex`},
 	require.NoError(t, err)
 
 	var cm corev1.ConfigMap
+
 	err = sut.Get(ctx, testConfig.ParsersConfigMap, &cm)
 	require.NoError(t, err)
 

@@ -73,6 +73,7 @@ func TestValidateEndpoint(t *testing.T) {
 		Build()
 
 	var resources []client.Object
+
 	resources = append(resources,
 		secret.K8sObject(),
 		&pipelineInvalidEndpoint,

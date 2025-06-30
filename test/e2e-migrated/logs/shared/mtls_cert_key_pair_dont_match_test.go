@@ -65,6 +65,7 @@ func TestMTLSCertKeyDontMatch_OTel(t *testing.T) {
 				Build()
 
 			var resources []client.Object
+
 			resources = append(resources,
 				&pipeline,
 			)
@@ -126,6 +127,7 @@ func TestMTLSCertKeyDontMatch_FluentBit(t *testing.T) {
 		Build()
 
 	var resources []client.Object
+
 	resources = append(resources,
 		&pipeline,
 	)

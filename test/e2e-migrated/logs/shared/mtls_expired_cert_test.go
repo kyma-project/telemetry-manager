@@ -64,6 +64,7 @@ func TestMTLSExpiredCert_OTel(t *testing.T) {
 				Build()
 
 			var resources []client.Object
+
 			resources = append(resources,
 				&pipeline,
 			)
@@ -125,6 +126,7 @@ func TestMTLSExpiredCert_FluentBit(t *testing.T) {
 		Build()
 
 	var resources []client.Object
+
 	resources = append(resources,
 		&pipeline,
 	)

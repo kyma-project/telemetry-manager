@@ -157,7 +157,8 @@ type Telemetry struct {
 type TelemetryList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Telemetry `json:"items"`
+
+	Items []Telemetry `json:"items"`
 }
 
 //nolint:gochecknoinits // SchemeBuilder's registration is required.
