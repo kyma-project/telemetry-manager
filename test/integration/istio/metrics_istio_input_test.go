@@ -70,7 +70,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio, suite.
 		app2Ns       = suite.IDWithSuffix("app-2")
 		pipelineName = suite.ID()
 
-		metricBackend          *kitbackend.Backend
+		metricBackend *kitbackend.Backend
 	)
 
 	makeResources := func() []client.Object {
