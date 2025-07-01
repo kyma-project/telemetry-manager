@@ -56,6 +56,7 @@ import (
 // TracePipelineController reconciles a TracePipeline object
 type TracePipelineController struct {
 	client.Client
+
 	reconcileTriggerChan <-chan event.GenericEvent
 	reconciler           *tracepipeline.Reconciler
 }
@@ -191,6 +192,7 @@ func (r *TracePipelineController) createRequestsForAllPipelines(ctx context.Cont
 
 	for i := range pipelines.Items {
 		var pipeline = pipelines.Items[i]
+
 		requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 	}
 

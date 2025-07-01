@@ -38,6 +38,7 @@ type IstioStatusChecker interface {
 
 type Reconciler struct {
 	client.Client
+
 	telemetryNamespace  string
 	agentConfigBuilder  AgentConfigBuilder
 	agentApplierDeleter AgentApplierDeleter
@@ -90,7 +91,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, pipeline *telemetryv1alpha1.
 	logf.FromContext(ctx).V(1).Info("Reconciling LogPipeline")
 
 	err := r.doReconcile(ctx, pipeline)
-
 	if statusErr := r.updateStatus(ctx, pipeline.Name); statusErr != nil {
 		if err != nil {
 			err = fmt.Errorf("failed while updating status: %w: %w", statusErr, err)
@@ -156,7 +156,6 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}
 
 	reconcilablePipelines, err := r.getReconcilablePipelines(ctx, allPipelines)
-
 	if err != nil {
 		return fmt.Errorf("failed to fetch reconcilable log pipelines: %w", err)
 	}

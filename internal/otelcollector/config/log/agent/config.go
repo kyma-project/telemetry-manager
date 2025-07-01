@@ -79,7 +79,8 @@ type OperatorAttribute struct {
 }
 
 type Processors struct {
-	config.BaseProcessors          `yaml:",inline"`
+	config.BaseProcessors `yaml:",inline"`
+
 	SetInstrumentationScopeRuntime *log.TransformProcessor            `yaml:"transform/set-instrumentation-scope-runtime,omitempty"`
 	K8sAttributes                  *config.K8sAttributesProcessor     `yaml:"k8sattributes,omitempty"`
 	InsertClusterAttributes        *config.ResourceProcessor          `yaml:"resource/insert-cluster-attributes,omitempty"`
@@ -94,7 +95,8 @@ type Exporter struct {
 
 type Extensions struct {
 	config.Extensions `yaml:",inline"`
-	FileStorage       *FileStorage `yaml:"file_storage,omitempty"`
+
+	FileStorage *FileStorage `yaml:"file_storage,omitempty"`
 }
 
 type FileStorage struct {

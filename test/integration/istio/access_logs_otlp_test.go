@@ -173,6 +173,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Order
 // TODO: Remove this once the bug https://github.com/kyma-project/istio/issues/1481 fixed
 func enableOTLPAccessLogsProvider() {
 	var telemetry istiotelemetryclientv1.Telemetry
+
 	err := suite.K8sClient.Get(suite.Ctx, types.NamespacedName{
 		Name:      "access-config",
 		Namespace: "istio-system",
@@ -192,6 +193,7 @@ func enableOTLPAccessLogsProvider() {
 // TODO: Remove this once the bug https://github.com/kyma-project/istio/issues/1481 fixed
 func resetAccessLogsProvider() {
 	var telemetry istiotelemetryclientv1.Telemetry
+
 	err := suite.K8sClient.Get(suite.Ctx, types.NamespacedName{
 		Name:      "access-config",
 		Namespace: "istio-system",

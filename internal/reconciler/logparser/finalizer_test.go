@@ -25,6 +25,7 @@ func TestEnsureFinalizer(t *testing.T) {
 		require.NoError(t, err)
 
 		var updatedParser telemetryv1alpha1.LogParser
+
 		_ = client.Get(ctx, types.NamespacedName{Name: parser.Name}, &updatedParser)
 
 		require.True(t, controllerutil.ContainsFinalizer(&updatedParser, finalizer))
@@ -77,6 +78,7 @@ func TestCleanupFinalizer(t *testing.T) {
 		require.NoError(t, err)
 
 		var updatedParser telemetryv1alpha1.LogPipeline
+
 		_ = client.Get(ctx, types.NamespacedName{Name: parser.Name}, &updatedParser)
 
 		require.False(t, controllerutil.ContainsFinalizer(&updatedParser, finalizer))

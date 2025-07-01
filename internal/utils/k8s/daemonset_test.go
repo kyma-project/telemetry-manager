@@ -23,6 +23,7 @@ func TestSetAnnotation(t *testing.T) {
 	require.NoError(t, err)
 
 	var updatedDaemonSet appsv1.DaemonSet
+
 	_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"}, &updatedDaemonSet)
 	require.Len(t, updatedDaemonSet.Spec.Template.Annotations, 1)
 	require.Contains(t, updatedDaemonSet.Spec.Template.Annotations, "foo")
