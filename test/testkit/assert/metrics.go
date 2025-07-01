@@ -112,7 +112,6 @@ func MetricsWithScopeAndNamespaceNotDeliveredWithT(t TestingT, backend *kitbacke
 	)
 }
 
-// TODO: Pass t directly
 func MetricPipelineHealthy(ctx context.Context, pipelineName string) {
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.MetricPipeline
