@@ -25,8 +25,8 @@ func TestLogParser(t *testing.T) {
 	var (
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
-		genNs        = uniquePrefix("gen")
 		backendNs    = uniquePrefix("backend")
+		genNs        = uniquePrefix("gen")
 
 		parser = `Format regex
 Regex  ^(?<user>[^ ]*) (?<pass>[^ ]*)$

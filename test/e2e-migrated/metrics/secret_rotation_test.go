@@ -30,8 +30,8 @@ func TestSecretRotation(t *testing.T) {
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
 		secretName   = uniquePrefix()
-		genNs        = uniquePrefix("gen")
 		backendNs    = uniquePrefix("backend")
+		genNs        = uniquePrefix("gen")
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)

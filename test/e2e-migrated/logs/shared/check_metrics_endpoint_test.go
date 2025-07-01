@@ -51,9 +51,9 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 
 			var (
 				uniquePrefix = unique.Prefix(tc.label)
-				pipelineName = uniquePrefix("pipeline")
-				genNs        = uniquePrefix("gen")
+				pipelineName = uniquePrefix()
 				backendNs    = uniquePrefix("backend")
+				genNs        = uniquePrefix("gen")
 			)
 
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)

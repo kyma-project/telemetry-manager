@@ -60,8 +60,8 @@ func TestSecretRotation_OTel(t *testing.T) {
 				uniquePrefix = unique.Prefix(tc.label)
 				pipelineName = uniquePrefix()
 				secretName   = uniquePrefix()
-				genNs        = uniquePrefix("gen")
 				backendNs    = uniquePrefix("backend")
+				genNs        = uniquePrefix("gen")
 			)
 
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
@@ -131,8 +131,8 @@ func TestSecretRotation_FluentBit(t *testing.T) {
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
 		secretName   = uniquePrefix()
-		genNs        = uniquePrefix("gen")
 		backendNs    = uniquePrefix("backend")
+		genNs        = uniquePrefix("gen")
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)

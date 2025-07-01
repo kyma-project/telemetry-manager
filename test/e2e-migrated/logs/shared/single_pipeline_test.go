@@ -53,9 +53,9 @@ func TestSinglePipeline_OTel(t *testing.T) {
 
 			var (
 				uniquePrefix = unique.Prefix(tc.label)
-				pipelineName = uniquePrefix("pipeline")
-				genNs        = uniquePrefix("gen")
+				pipelineName = uniquePrefix()
 				backendNs    = uniquePrefix("backend")
+				genNs        = uniquePrefix("gen")
 			)
 
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
@@ -98,8 +98,8 @@ func TestSinglePipeline_FluentBit(t *testing.T) {
 	var (
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
-		genNs        = uniquePrefix("gen")
 		backendNs    = uniquePrefix("backend")
+		genNs        = uniquePrefix("gen")
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)

@@ -101,10 +101,9 @@ func TestMTLSExpiredCert_FluentBit(t *testing.T) {
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
 		backendNs    = uniquePrefix("backend")
-		backendName  = kitbackend.DefaultName
 	)
 
-	expiredServerCerts, expiredClientCerts, err := testutils.NewCertBuilder(backendName, backendNs).
+	expiredServerCerts, expiredClientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).
 		WithExpiredClientCert().
 		Build()
 	Expect(err).ToNot(HaveOccurred())

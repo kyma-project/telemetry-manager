@@ -54,8 +54,8 @@ func TestMTLS_OTel(t *testing.T) {
 			var (
 				uniquePrefix = unique.Prefix(tc.label)
 				pipelineName = uniquePrefix()
-				genNs        = uniquePrefix("gen")
 				backendNs    = uniquePrefix("backend")
+				genNs        = uniquePrefix("gen")
 			)
 
 			serverCerts, clientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
@@ -106,8 +106,8 @@ func TestMTLS_FluentBit(t *testing.T) {
 	var (
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
-		genNs        = uniquePrefix("gen")
 		backendNs    = uniquePrefix("backend")
+		genNs        = uniquePrefix("gen")
 	)
 
 	serverCerts, clientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()

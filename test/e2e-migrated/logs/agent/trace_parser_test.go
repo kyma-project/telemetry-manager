@@ -24,9 +24,9 @@ func TestTraceParser(t *testing.T) {
 
 	var (
 		uniquePrefix = unique.Prefix()
-		genNs        = uniquePrefix("generator")
-		backendNs    = uniquePrefix("backend")
 		pipelineName = uniquePrefix()
+		backendNs    = uniquePrefix("backend")
+		genNs        = uniquePrefix("gen")
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)

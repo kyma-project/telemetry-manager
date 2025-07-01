@@ -54,9 +54,9 @@ func TestSelfMonitorHappyPath_OTel(t *testing.T) {
 
 			var (
 				uniquePrefix = unique.Prefix(tc.label)
-				genNs        = uniquePrefix("gen")
 				pipelineName = uniquePrefix()
 				backendNs    = uniquePrefix("backend")
+				genNs        = uniquePrefix("gen")
 			)
 
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
@@ -101,9 +101,9 @@ func TestSelfMonitorHappyPath_FluentBit(t *testing.T) {
 
 	var (
 		uniquePrefix = unique.Prefix()
-		genNs        = uniquePrefix("gen")
 		pipelineName = uniquePrefix()
 		backendNs    = uniquePrefix("backend")
+		genNs        = uniquePrefix("gen")
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
