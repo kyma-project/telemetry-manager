@@ -11,36 +11,34 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-// LogPipeline upgrade test flow
-// Metric and TracePipeline tests are still written in the old style and will be
-// migrated to the new style in the future.
-func TestUpgrade(t *testing.T) {
+// MetricPipeline upgrade test flow
+func TestMetricsUpgrade(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelUpgrade)
 
 	var (
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
-		genNs        = uniquePrefix("gen")
 		backendNs    = uniquePrefix("backend")
+		genNs        = uniquePrefix("gen")
 	)
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)
 
-	pipeline := testutils.NewLogPipelineBuilder().
+	pipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineName).
-		WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 		Build()
 
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
-		stdloggen.NewDeployment(genNs).K8sObject(),
 		&pipeline,
+		telemetrygen.NewPod(genNs, telemetrygen.SignalTypeMetrics).K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
 
@@ -48,21 +46,17 @@ func TestUpgrade(t *testing.T) {
 		require.NoError(t, kitk8s.CreateObjects(t.Context(), resources...))
 
 		assert.DeploymentReady(t.Context(), backend.NamespacedName())
-		assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
+		assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
 
-		assert.FluentBitLogPipelineHealthy(t, pipelineName)
-		assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
+		assert.MetricPipelineHealthy(t.Context(), pipelineName)
+		assert.MetricsFromNamespaceDeliveredWithT(t, backend, genNs, telemetrygen.MetricNames)
 	})
 
 	t.Run("after upgrade", func(t *testing.T) {
-		// TODO(skhalash): uncomment after 1.42 release
-		// t.Cleanup(func() {
-		// 	require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
-		// })
 		assert.DeploymentReady(t.Context(), backend.NamespacedName())
-		assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
+		assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
 
-		assert.FluentBitLogPipelineHealthy(t, pipelineName)
-		assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
+		assert.MetricPipelineHealthy(t.Context(), pipelineName)
+		assert.MetricsFromNamespaceDeliveredWithT(t, backend, genNs, telemetrygen.MetricNames)
 	})
 }
