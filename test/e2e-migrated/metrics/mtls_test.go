@@ -61,5 +61,5 @@ func TestMTLS(t *testing.T) {
 	assert.MetricPipelineHealthy(t.Context(), pipelineName)
 	assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
-	assert.MetricsFromNamespaceDeliveredWithT(t, backend, genNs, telemetrygen.MetricNames)
+	assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
 }

@@ -64,7 +64,7 @@ func TestNoInput(t *testing.T) {
 	assert.MetricPipelineHealthy(t.Context(), pipelineNameNoInput)
 	assert.MetricPipelineHealthy(t.Context(), pipelineNameWithInput)
 
-	assert.MetricPipelineHasCondition(t.Context(), pipelineNameNoInput, metav1.Condition{
+	assert.MetricPipelineHasCondition(t, pipelineNameNoInput, metav1.Condition{
 		Type:   conditions.TypeAgentHealthy,
 		Status: metav1.ConditionTrue,
 		Reason: conditions.ReasonMetricAgentNotRequired,

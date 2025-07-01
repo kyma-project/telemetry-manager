@@ -49,7 +49,7 @@ func TestMetricsUpgrade(t *testing.T) {
 		assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
 
 		assert.MetricPipelineHealthy(t.Context(), pipelineName)
-		assert.MetricsFromNamespaceDeliveredWithT(t, backend, genNs, telemetrygen.MetricNames)
+		assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
 	})
 
 	t.Run("after upgrade", func(t *testing.T) {
@@ -57,6 +57,6 @@ func TestMetricsUpgrade(t *testing.T) {
 		assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
 
 		assert.MetricPipelineHealthy(t.Context(), pipelineName)
-		assert.MetricsFromNamespaceDeliveredWithT(t, backend, genNs, telemetrygen.MetricNames)
+		assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
 	})
 }

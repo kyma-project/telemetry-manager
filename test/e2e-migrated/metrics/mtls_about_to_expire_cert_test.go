@@ -67,7 +67,7 @@ func TestMTLSAboutToExpireCert(t *testing.T) {
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
 
 	assert.MetricPipelineHealthy(t.Context(), pipelineName)
-	assert.MetricPipelineHasConditionWithT(t, pipelineName, metav1.Condition{
+	assert.MetricPipelineHasCondition(t, pipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionTrue,
 		Reason: conditions.ReasonTLSCertificateAboutToExpire,
@@ -80,5 +80,5 @@ func TestMTLSAboutToExpireCert(t *testing.T) {
 		Reason: conditions.ReasonTLSCertificateAboutToExpire,
 	})
 
-	assert.MetricsFromNamespaceDeliveredWithT(t, backend, genNs, telemetrygen.MetricNames)
+	assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
 }

@@ -92,19 +92,19 @@ func TestValidateEndpoint(t *testing.T) {
 		pipelineNameInvalidPortEndpoint,
 		pipelineNameMissingPortEndpoint,
 	} {
-		assert.MetricPipelineHasConditionWithT(t, pipelineName, metav1.Condition{
+		assert.MetricPipelineHasCondition(t, pipelineName, metav1.Condition{
 			Type:   conditions.TypeConfigurationGenerated,
 			Status: metav1.ConditionFalse,
 			Reason: conditions.ReasonEndpointInvalid,
 		})
 
-		assert.MetricPipelineHasConditionWithT(t, pipelineName, metav1.Condition{
+		assert.MetricPipelineHasCondition(t, pipelineName, metav1.Condition{
 			Type:   conditions.TypeConfigurationGenerated,
 			Status: metav1.ConditionFalse,
 			Reason: conditions.ReasonEndpointInvalid,
 		})
 
-		assert.MetricPipelineHasConditionWithT(t, pipelineName, metav1.Condition{
+		assert.MetricPipelineHasCondition(t, pipelineName, metav1.Condition{
 			Type:   conditions.TypeConfigurationGenerated,
 			Status: metav1.ConditionFalse,
 			Reason: conditions.ReasonEndpointInvalid,
@@ -112,7 +112,7 @@ func TestValidateEndpoint(t *testing.T) {
 	}
 
 	t.Log("Should set ConfigurationGenerated condition to True in pipelines with missing port and HTTP protocol")
-	assert.MetricPipelineHasConditionWithT(t, pipelineNameMissingHTTP, metav1.Condition{
+	assert.MetricPipelineHasCondition(t, pipelineNameMissingHTTP, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionTrue,
 		Reason: conditions.ReasonGatewayConfigured,

@@ -160,7 +160,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), 
 		})
 
 		It("Should deliver telemetrygen metrics", Label(suite.LabelUpgrade), func() {
-			assert.MetricsFromNamespaceDelivered(suite.ProxyClient, backend.ExportURL(suite.ProxyClient), mockNs, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(GinkgoT(), backend, mockNs, telemetrygen.MetricNames)
 		})
 
 		It("Should be able to get metric gateway metrics endpoint", Label(suite.LabelUpgrade), func() {

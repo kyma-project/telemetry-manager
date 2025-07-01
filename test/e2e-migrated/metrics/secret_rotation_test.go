@@ -66,7 +66,7 @@ func TestSecretRotation(t *testing.T) {
 	assert.DeploymentReady(suite.Ctx, backend.NamespacedName())
 
 	assert.MetricPipelineHealthy(suite.Ctx, pipelineName)
-	assert.MetricsFromNamespaceNotDeliveredWithT(t, backend, genNs)
+	assert.MetricsFromNamespaceNotDelivered(t, backend, genNs)
 
 	// Update the secret to have the correct backend endpoint
 	secret.UpdateSecret(kitk8s.WithStringData(endpointKey, backend.Endpoint()))
@@ -74,5 +74,5 @@ func TestSecretRotation(t *testing.T) {
 
 	assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
 	assert.MetricPipelineHealthy(suite.Ctx, pipelineName)
-	assert.MetricsFromNamespaceDeliveredWithT(t, backend, genNs, telemetrygen.MetricNames)
+	assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
 }

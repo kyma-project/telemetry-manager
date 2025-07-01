@@ -78,19 +78,19 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 
 	t.Log("Attempting to create the 6th pipeline")
 	require.NoError(t, kitk8s.CreateObjects(t.Context(), &additionalPipeline))
-	assert.MetricPipelineHasCondition(t.Context(), additionalPipelineName, metav1.Condition{
+	assert.MetricPipelineHasCondition(t, additionalPipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonMaxPipelinesExceeded,
 	})
-	assert.MetricPipelineHasCondition(t.Context(), additionalPipelineName, metav1.Condition{
+	assert.MetricPipelineHasCondition(t, additionalPipelineName, metav1.Condition{
 		Type:   conditions.TypeFlowHealthy,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonSelfMonConfigNotGenerated,
 	})
 
 	t.Log("Verifying logs are delivered for valid pipelines")
-	assert.MetricsFromNamespaceDeliveredWithT(t, backend, genNs, telemetrygen.MetricNames)
+	assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
 
 	t.Log("Deleting one previously healthy pipeline and expecting the additional pipeline to be healthy")
 

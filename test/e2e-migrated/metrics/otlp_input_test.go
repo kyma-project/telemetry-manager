@@ -51,5 +51,5 @@ func TestOTLPInput(t *testing.T) {
 
 	assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
-	assert.MetricsFromNamespaceNotDeliveredWithT(t, backend, genNs)
+	assert.MetricsFromNamespaceNotDelivered(t, backend, genNs)
 }

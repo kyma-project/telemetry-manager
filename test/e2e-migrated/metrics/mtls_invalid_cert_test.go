@@ -56,13 +56,13 @@ func TestMTLSInvalidCert(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.MetricPipelineHasCondition(t.Context(), pipelineName, metav1.Condition{
+	assert.MetricPipelineHasCondition(t, pipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonTLSConfigurationInvalid,
 	})
 
-	assert.MetricPipelineHasCondition(t.Context(), pipelineName, metav1.Condition{
+	assert.MetricPipelineHasCondition(t, pipelineName, metav1.Condition{
 		Type:   conditions.TypeFlowHealthy,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonSelfMonConfigNotGenerated,

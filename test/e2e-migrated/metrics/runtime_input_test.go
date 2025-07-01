@@ -186,7 +186,7 @@ func TestRuntimeInput(t *testing.T) {
 				)),
 			)),
 		))
-	assert.MetricsWithScopeAndNamespaceNotDeliveredWithT(t, backendC, metric.InstrumentationScopeRuntime, kitkyma.SystemNamespaceName)
+	assert.MetricsWithScopeAndNamespaceNotDelivered(t, backendC, metric.InstrumentationScopeRuntime, kitkyma.SystemNamespaceName)
 	backendConsistsOfMetricsDeliveredForResource(t, backendC, runtime.DefaultMetricsNames)
 }
 

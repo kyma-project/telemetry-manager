@@ -130,7 +130,7 @@ func TestPrometheusInput(t *testing.T) {
 			Not(ContainElement(HaveName(BeElementOf(runtime.DefaultMetricsNames)))),
 		), "Unwanted runtime metrics sent to backend")
 
-	assert.MetricsWithScopeAndNamespaceNotDeliveredWithT(t, backend,
+	assert.MetricsWithScopeAndNamespaceNotDelivered(t, backend,
 		metric.InstrumentationScopePrometheus,
 		kitkyma.SystemNamespaceName,
 		"Unwanted kubeletstats metrics from system namespace sent to backend")

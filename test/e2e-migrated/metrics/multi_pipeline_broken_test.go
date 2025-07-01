@@ -61,10 +61,10 @@ func TestMultiPipelineBroken(t *testing.T) {
 	assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
 
 	assert.MetricPipelineHealthy(t.Context(), healthyPipelineName)
-	assert.MetricPipelineHasCondition(t.Context(), brokenPipeline.Name, metav1.Condition{
+	assert.MetricPipelineHasCondition(t, brokenPipeline.Name, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonReferencedSecretMissing,
 	})
-	assert.MetricsFromNamespaceDeliveredWithT(t, backend, genNs, telemetrygen.MetricNames)
+	assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
 }
