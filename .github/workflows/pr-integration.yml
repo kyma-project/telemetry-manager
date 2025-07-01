@@ -309,6 +309,8 @@ jobs:
             mode: release
           - name: metrics
             mode: release
+          - name: metrics-experimental
+            mode: experimental
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -319,7 +321,6 @@ jobs:
         with:
           experimental: ${{ matrix.labels.mode == 'experimental' }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-
 
       - name: Deploy Test Prerequisites
         uses: "./.github/template/deploy-test-prerequisites"
