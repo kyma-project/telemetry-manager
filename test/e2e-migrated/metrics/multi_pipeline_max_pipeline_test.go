@@ -27,9 +27,9 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	const maxNumberOfMetricPipelines = telemetrycontrollers.MaxPipelineCount
 
 	var (
-		uniquePrefix = unique.Prefix()
-		backendNs    = uniquePrefix("backend-metrics")
-		genNs        = uniquePrefix("gen-metrics")
+		uniquePrefix = unique.Prefix("metrics")
+		backendNs    = uniquePrefix("backend")
+		genNs        = uniquePrefix("gen")
 
 		pipelineBase           = uniquePrefix()
 		additionalPipelineName = fmt.Sprintf("%s-limit-exceeding", pipelineBase)

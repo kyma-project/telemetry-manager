@@ -29,9 +29,9 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelMaxPipeline)
 
 	var (
-		uniquePrefix = unique.Prefix()
-		backendNs    = uniquePrefix("backend-logs")
-		genNs        = uniquePrefix("gen-logs")
+		uniquePrefix = unique.Prefix("logs")
+		backendNs    = uniquePrefix("backend")
+		genNs        = uniquePrefix("gen")
 
 		pipelineBase               = uniquePrefix()
 		additionalFBPipelineName   = fmt.Sprintf("%s-limit-exceeding-fb", pipelineBase)
