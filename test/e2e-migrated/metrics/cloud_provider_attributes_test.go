@@ -2,7 +2,6 @@ package metrics
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -76,21 +75,16 @@ func TestCloudProviderAttributes(t *testing.T) {
 	assert.DeploymentReady(t.Context(), types.NamespacedName{Name: deploymentName, Namespace: mockNs})
 	agentMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.MetricAgentMetricsService.Namespace, kitkyma.MetricAgentMetricsService.Name, "metrics", ports.Metrics)
 	assert.EmitsOTelCollectorMetrics(t, agentMetricsURL)
-	backendContainsDesiredCloudResourceAttributes(t, backend, "cloud.region")
-	backendContainsDesiredCloudResourceAttributes(t, backend, "cloud.availability_zone")
-	backendContainsDesiredCloudResourceAttributes(t, backend, "host.type")
-	backendContainsDesiredCloudResourceAttributes(t, backend, "host.arch")
-	backendContainsDesiredCloudResourceAttributes(t, backend, "k8s.cluster.name")
-	backendContainsDesiredCloudResourceAttributes(t, backend, "cloud.provider")
-}
-
-func backendContainsDesiredCloudResourceAttributes(t *testing.T, backend *kitbackend.Backend, attribute string) {
-	t.Helper()
-
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatMetrics(
-			ContainElement(SatisfyAll(
-				HaveResourceAttributes(HaveKey(attribute)),
-			)),
-		), fmt.Sprintf("could not find metrics matching resource attribute %s", attribute))
+			ContainElement(HaveResourceAttributes(SatisfyAll(
+				HaveKey("cloud.region"),
+				HaveKey("cloud.availability_zone"),
+				HaveKey("host.type"),
+				HaveKey("host.arch"),
+				HaveKey("k8s.cluster.name"),
+				HaveKey("cloud.provider"),
+			))),
+		), "Could not find metrics matching resource attributes",
+	)
 }
