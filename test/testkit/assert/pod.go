@@ -34,7 +34,7 @@ func isPodReady(ctx context.Context, k8sClient client.Client, name types.Namespa
 
 	err := k8sClient.Get(ctx, name, &pod)
 	if err != nil {
-		return false, fmt.Errorf("failed to get Pod: %w", err)
+		return false, fmt.Errorf("failed to get Pod %s: %w", name.String(), err)
 	}
 
 	for _, containerStatus := range pod.Status.ContainerStatuses {

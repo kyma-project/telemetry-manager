@@ -36,7 +36,7 @@ func isDaemonSetReady(ctx context.Context, k8sClient client.Client, name types.N
 
 	err := k8sClient.Get(ctx, name, &daemonSet)
 	if err != nil {
-		return false, fmt.Errorf("failed to get DaemonSet: %w", err)
+		return false, fmt.Errorf("failed to get DaemonSet %s: %w", name.String(), err)
 	}
 
 	listOptions := client.ListOptions{

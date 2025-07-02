@@ -26,7 +26,7 @@ func isJobSuccessful(ctx context.Context, k8sClient client.Client, name types.Na
 
 	err := k8sClient.Get(ctx, name, &job)
 	if err != nil {
-		return false, fmt.Errorf("failed to get Job: %w", err)
+		return false, fmt.Errorf("failed to get Job %s: %w", name.String(), err)
 	}
 
 	return job.Status.Active > 0, nil

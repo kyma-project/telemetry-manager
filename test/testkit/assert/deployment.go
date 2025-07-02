@@ -27,7 +27,7 @@ func isDeploymentReady(ctx context.Context, k8sClient client.Client, name types.
 
 	err := k8sClient.Get(ctx, name, &deployment)
 	if err != nil {
-		return false, fmt.Errorf("failed to get Deployment: %w", err)
+		return false, fmt.Errorf("failed to get Deployment %s: %w", name.String(), err)
 	}
 
 	listOptions := client.ListOptions{
