@@ -37,6 +37,7 @@ func TestResources_OTel(t *testing.T) {
 				assert.NewResource(&corev1.Service{}, kitkyma.LogAgentMetricsService),
 				assert.NewResource(&networkingv1.NetworkPolicy{}, kitkyma.LogAgentNetworkPolicy),
 				assert.NewResource(&corev1.ConfigMap{}, kitkyma.LogAgentConfigMap),
+				assert.NewResource(&corev1.Service{}, kitkyma.LogGatewayOTLPService),
 			},
 		},
 		{
