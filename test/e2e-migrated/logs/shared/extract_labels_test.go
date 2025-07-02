@@ -113,7 +113,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 			t.Cleanup(func() {
 				require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 
-				Expect(suite.K8sClient.Get(t.Context(), kitkyma.TelemetryName, &telemetry)).Should(Succeed())
+				Expect(suite.K8sClient.Get(context.Background(), kitkyma.TelemetryName, &telemetry)).Should(Succeed()) //nolint:usetesting // Remove ctx from Get
 				telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{}
 				require.NoError(t, suite.K8sClient.Update(context.Background(), &telemetry)) //nolint:usetesting // Remove ctx from Update
 			})
