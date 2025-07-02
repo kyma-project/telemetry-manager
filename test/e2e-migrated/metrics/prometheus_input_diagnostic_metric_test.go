@@ -67,5 +67,7 @@ func TestPrometheusInputDiagnosticMetric(t *testing.T) {
 	assert.MetricPipelineHealthy(t.Context(), pipelineName)
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatMetrics(HaveUniqueNames(
-			ContainElements(diagnosticMetrics...))))
+			ContainElements(diagnosticMetrics...),
+		)),
+	)
 }

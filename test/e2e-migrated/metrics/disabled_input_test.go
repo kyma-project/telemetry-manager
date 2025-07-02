@@ -18,7 +18,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestOTLPInput(t *testing.T) {
+func TestDisabledInput(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelMetrics)
 
 	var (
@@ -51,5 +51,7 @@ func TestOTLPInput(t *testing.T) {
 
 	assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
+	assert.MetricPipelineHealthy(t.Context(), pipelineName)
+
 	assert.MetricsFromNamespaceNotDelivered(t, backend, genNs)
 }

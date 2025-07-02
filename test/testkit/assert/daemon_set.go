@@ -19,7 +19,7 @@ func DaemonSetReady(ctx context.Context, name types.NamespacedName) {
 	Eventually(func(g Gomega) {
 		ready, err := isDaemonSetReady(ctx, suite.K8sClient, name)
 		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(ready).To(BeTrueBecause("DaemonSet not ready"))
+		g.Expect(ready).To(BeTrueBecause("DaemonSet not ready: %s", name.String()))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
@@ -36,7 +36,7 @@ func isDaemonSetReady(ctx context.Context, k8sClient client.Client, name types.N
 
 	err := k8sClient.Get(ctx, name, &daemonSet)
 	if err != nil {
-		return false, fmt.Errorf("failed to get daemonset: %w", err)
+		return false, fmt.Errorf("failed to get DaemonSet: %w", err)
 	}
 
 	listOptions := client.ListOptions{

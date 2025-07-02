@@ -17,7 +17,7 @@ func JobReady(ctx context.Context, name types.NamespacedName) {
 	Eventually(func(g Gomega) {
 		ready, err := isJobSuccessful(ctx, suite.K8sClient, name)
 		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(ready).To(BeTrueBecause("Job not ready"))
+		g.Expect(ready).To(BeTrueBecause("Job not ready: %s", name.String()))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
@@ -26,7 +26,7 @@ func isJobSuccessful(ctx context.Context, k8sClient client.Client, name types.Na
 
 	err := k8sClient.Get(ctx, name, &job)
 	if err != nil {
-		return false, fmt.Errorf("failed to get job: %w", err)
+		return false, fmt.Errorf("failed to get Job: %w", err)
 	}
 
 	return job.Status.Active > 0, nil
