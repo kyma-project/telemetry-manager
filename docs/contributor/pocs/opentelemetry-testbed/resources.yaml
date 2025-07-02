@@ -33,7 +33,7 @@ spec:
                 topologyKey: kubernetes.io/hostname
               weight: 100
       containers:
-        - image: mostafashorim300/loadgenerator:v4
+        - image: mostafashorim300/loadgenerator:v5
           imagePullPolicy: IfNotPresent
           name: loadgenerator
           resources:
