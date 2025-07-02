@@ -6,8 +6,10 @@ import (
 
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -30,8 +32,11 @@ func TestDisabledInput(t *testing.T) {
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)
 
-	pipelineWithoutOTLP := testutils.NewMetricPipelineBuilder().
+	pipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineName).
+		WithPrometheusInput(false).
+		WithRuntimeInput(false).
+		WithIstioInput(false).
 		WithOTLPInput(false).
 		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 		Build()
@@ -39,7 +44,7 @@ func TestDisabledInput(t *testing.T) {
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
-		&pipelineWithoutOTLP,
+		&pipeline,
 		telemetrygen.NewPod(genNs, telemetrygen.SignalTypeMetrics).K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
@@ -52,6 +57,15 @@ func TestDisabledInput(t *testing.T) {
 	assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
 	assert.MetricPipelineHealthy(t.Context(), pipelineName)
+	
+	// If Runtime input is disabled, THEN the metric agent must not be deployed
+	assert.DaemonSetNotFound(t.Context(), kitkyma.MetricAgentName)
+	assert.MetricPipelineHasCondition(t, pipelineName, metav1.Condition{
+		Type:   conditions.TypeAgentHealthy,
+		Status: metav1.ConditionTrue,
+		Reason: conditions.ReasonMetricAgentNotRequired,
+	})
 
+	// If OTLP input is disabled, THEN the metrics pushed to the gateway should not be sent to the backend
 	assert.MetricsFromNamespaceNotDelivered(t, backend, genNs)
 }
