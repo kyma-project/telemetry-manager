@@ -29,9 +29,10 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelMaxPipeline)
 
 	var (
-		uniquePrefix               = unique.Prefix()
-		backendNs                  = uniquePrefix("backend")
-		genNs                      = uniquePrefix("gen")
+		uniquePrefix = unique.Prefix()
+		backendNs    = uniquePrefix("backend-logs")
+		genNs        = uniquePrefix("gen-logs")
+
 		pipelineBase               = uniquePrefix()
 		additionalFBPipelineName   = fmt.Sprintf("%s-limit-exceeding-fb", pipelineBase)
 		additionalOTelPipelineName = fmt.Sprintf("%s-limit-exceeding-otel", pipelineBase)
@@ -150,9 +151,10 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelMaxPipelineOTel)
 
 	var (
-		uniquePrefix           = unique.Prefix()
-		backendNs              = uniquePrefix("backend")
-		genNs                  = uniquePrefix("gen")
+		uniquePrefix = unique.Prefix()
+		backendNs    = uniquePrefix("backend")
+		genNs        = uniquePrefix("gen")
+
 		pipelineBase           = uniquePrefix()
 		additionalPipelineName = fmt.Sprintf("%s-limit-exceeding", pipelineBase)
 		pipelines              []client.Object
@@ -227,9 +229,10 @@ func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelMaxPipelineFluentBit)
 
 	var (
-		uniquePrefix           = unique.Prefix()
-		backendNs              = uniquePrefix("backend")
-		genNs                  = uniquePrefix("gen")
+		uniquePrefix = unique.Prefix()
+		backendNs    = uniquePrefix("backend")
+		genNs        = uniquePrefix("gen")
+
 		pipelineBase           = uniquePrefix()
 		additionalPipelineName = fmt.Sprintf("%s-limit-exceeding", pipelineBase)
 		pipelines              []client.Object

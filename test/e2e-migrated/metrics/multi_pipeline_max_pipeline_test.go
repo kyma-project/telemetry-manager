@@ -28,8 +28,8 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 
 	var (
 		uniquePrefix = unique.Prefix()
-		backendNs    = uniquePrefix("backend")
-		genNs        = uniquePrefix("gen")
+		backendNs    = uniquePrefix("backend-metrics")
+		genNs        = uniquePrefix("gen-metrics")
 
 		pipelineBase           = uniquePrefix()
 		additionalPipelineName = fmt.Sprintf("%s-limit-exceeding", pipelineBase)
