@@ -22,7 +22,7 @@ import (
 )
 
 func TestMultiPipelineMaxPipeline(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelMetrics, suite.LabelMaxPipeline)
+	suite.RegisterTestCase(t, suite.LabelMaxPipeline)
 
 	const maxNumberOfMetricPipelines = telemetrycontrollers.MaxPipelineCount
 
