@@ -56,7 +56,7 @@ func TestDisabledInput_OTel(t *testing.T) {
 		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
-	
+
 	assert.DeploymentReady(t.Context(), kitkyma.LogGatewayName)
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
 	assert.OTelLogPipelineHealthy(t, pipelineName)
