@@ -27,7 +27,7 @@ func isStatefulSetReady(ctx context.Context, k8sClient client.Client, name types
 
 	err := k8sClient.Get(ctx, name, &statefulSet)
 	if err != nil {
-		return false, fmt.Errorf("failed to get StatefulSet %s: %w",name.String(), err)
+		return false, fmt.Errorf("failed to get StatefulSet %s: %w", name.String(), err)
 	}
 
 	listOptions := client.ListOptions{
