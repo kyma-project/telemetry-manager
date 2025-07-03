@@ -25,7 +25,7 @@ func main() {
 
 	dataProvider := testbed.NewPerfTestDataProvider(options)
 	// dataSender := testbed.NewOTLPLogsDataSender(host, port)
-	dataSender := NewFileLogWriter()
+	dataSender := NewStdoutLogGenerator()
 	loadGenerator, err := testbed.NewLoadGenerator(dataProvider, dataSender)
 	if err != nil {
 		panic(fmt.Errorf("failed to create load generator: %w", err))

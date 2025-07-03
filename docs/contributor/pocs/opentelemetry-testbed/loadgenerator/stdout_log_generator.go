@@ -15,25 +15,25 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/testbed/testbed"
 )
 
-type FileLogWriter struct{}
+type stdoutLogGenerator struct{}
 
-// Ensure FileLogWriter implements LogDataSender.
-var _ testbed.LogDataSender = (*FileLogWriter)(nil)
+// Ensure stdoutLogGenerator implements LogDataSender.
+var _ testbed.LogDataSender = (*stdoutLogGenerator)(nil)
 
-// NewFileLogWriter creates a new data sender that will write log entries to stdout
-func NewFileLogWriter() *FileLogWriter {
-	return &FileLogWriter{}
+// NewStdoutLogGenerator creates a new data sender that will write log entries to stdout
+func NewStdoutLogGenerator() *stdoutLogGenerator {
+	return &stdoutLogGenerator{}
 }
 
-func (f *FileLogWriter) Capabilities() consumer.Capabilities {
+func (f *stdoutLogGenerator) Capabilities() consumer.Capabilities {
 	return consumer.Capabilities{MutatesData: false}
 }
 
-func (f *FileLogWriter) Start() error {
+func (f *stdoutLogGenerator) Start() error {
 	return nil
 }
 
-func (f *FileLogWriter) ConsumeLogs(_ context.Context, logs plog.Logs) error {
+func (f *stdoutLogGenerator) ConsumeLogs(_ context.Context, logs plog.Logs) error {
 	for i := 0; i < logs.ResourceLogs().Len(); i++ {
 		for j := 0; j < logs.ResourceLogs().At(i).ScopeLogs().Len(); j++ {
 			ills := logs.ResourceLogs().At(i).ScopeLogs().At(j)
@@ -45,7 +45,7 @@ func (f *FileLogWriter) ConsumeLogs(_ context.Context, logs plog.Logs) error {
 	return nil
 }
 
-func (f *FileLogWriter) convertLogToTextLine(lr plog.LogRecord) string {
+func (f *stdoutLogGenerator) convertLogToTextLine(lr plog.LogRecord) string {
 	sb := strings.Builder{}
 
 	// Timestamp
@@ -81,17 +81,17 @@ func (f *FileLogWriter) convertLogToTextLine(lr plog.LogRecord) string {
 	return sb.String()
 }
 
-func (f *FileLogWriter) Flush() {
+func (f *stdoutLogGenerator) Flush() {
 }
 
-func (f *FileLogWriter) GenConfigYAMLStr() string {
+func (f *stdoutLogGenerator) GenConfigYAMLStr() string {
 	return ""
 }
 
-func (f *FileLogWriter) ProtocolName() string {
+func (f *stdoutLogGenerator) ProtocolName() string {
 	return "filelog"
 }
 
-func (f *FileLogWriter) GetEndpoint() net.Addr {
+func (f *stdoutLogGenerator) GetEndpoint() net.Addr {
 	return nil
 }
