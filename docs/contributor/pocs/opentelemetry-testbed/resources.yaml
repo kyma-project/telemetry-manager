@@ -41,3 +41,63 @@ spec:
               memory: 256Mi
             requests:
               memory: 256Mi
+---
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: LogPipeline
+metadata:
+  name: load-test-1
+spec:
+  output:
+    otlp:
+      tls:
+        insecure: true
+        insecureSkipVerify: true
+      endpoint:
+        value: http://log-receiver.log-load-test:4317
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: log-receiver
+  name: log-receiver
+  namespace: log-load-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: log-receiver
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: log-receiver
+    spec:
+      containers:
+        - image: mostafashorim300/mockbackend:v8
+          imagePullPolicy: Always
+          name: mockbackend
+          resources:
+            limits:
+              memory: 1024Mi
+            requests:
+              memory: 1024Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: log-receiver
+  name: log-receiver
+  namespace: log-load-test
+spec:
+  ports:
+    - name: grpc-otlp
+      port: 4317
+      protocol: TCP
+      targetPort: 4317
+    - name: http-otlp
+      port: 4318
+      protocol: TCP
+      targetPort: 4318
+  selector:
+    app.kubernetes.io/name: log-receiver
