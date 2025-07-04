@@ -74,10 +74,10 @@ func TestServiceName(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.DeploymentReady(suite.Ctx, kitkyma.MetricGatewayName)
-	assert.DaemonSetReady(suite.Ctx, kitkyma.MetricAgentName)
-	assert.DeploymentReady(suite.Ctx, backend.NamespacedName())
-	assert.MetricPipelineHealthy(suite.Ctx, pipelineName)
+	assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
+	assert.DaemonSetReady(t.Context(), kitkyma.MetricAgentName)
+	assert.DeploymentReady(t.Context(), backend.NamespacedName())
+	assert.MetricPipelineHealthy(t.Context(), pipelineName)
 	assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
 
 	verifyServiceNameAttr := func(givenPodPrefix, expectedServiceName string) {
