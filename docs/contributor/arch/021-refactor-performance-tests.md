@@ -10,7 +10,7 @@ Currently, [performance tests](../benchmarks/README.md) are written in bash whic
 
 Since we are going to rewrite the performance tests in Golang, this is a good point of time to check if it is usefule to use components from the [Opentelemetry Collector Testbed](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/testbed).
 
-A [POC](../pocs/opentelemetry-testbed/) has been implemented for using the `LoadGenerator` and `MockBackend` from the Opentelemetry Collector Testbed. The setups in the POC for testing the Log Gateway and Log Agent are shown respectively in the diagrams below:
+A [POC](../pocs/opentelemetry-testbed/) has been implemented for using the `LoadGenerator` and `MockBackend` from the Opentelemetry Collector Testbed. The performance tests in opentelemetry-collector-contrib repo are executed locally on a machine (all components run as processes and not containers). In our use case, we want test the images which will be running at the end as containers in production kubernetes clusters. So, in order to test our Telemetry module with the `LoadGenerator` and `MockBackend`, these 2 components are dockerized and running as pods in the POC . The setups in the POC for testing the Log Gateway and Log Agent are shown respectively in the diagrams below:
 
 ![arch](./../assets/opentelemetry-testbed-log-gateway-setup.svg)
 
@@ -40,3 +40,5 @@ The extra metric (data items sent/received) that we can get from using the compo
 ![arch](./../assets/log-gateway-perf-test-setup.svg)
 
 ![arch](./../assets/log-agent-perf-test-setup.svg)
+
+- For testing the Log Agent, it would be better to use a JSON log generator in which we can add custom attributes. This will allow us to test the perfromance of the [operators](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/filelogreceiver#operators) we use in the filelog receiver in the Log Agent. The operators currently used can be found in the [golden test file](https://github.com/kyma-project/telemetry-manager/blob/main/internal/otelcollector/config/log/agent/testdata/config.yaml#L59) for the Log Agent.  
