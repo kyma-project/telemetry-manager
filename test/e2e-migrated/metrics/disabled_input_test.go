@@ -57,6 +57,7 @@ func TestDisabledInput(t *testing.T) {
 	assert.MetricPipelineHealthy(t.Context(), pipelineName)
 	assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
 	assert.DeploymentReady(t.Context(), backend.NamespacedName())
+	assert.BackendReachable(t, backend)
 
 	// If Runtime input is disabled, THEN the metric agent must not be deployed
 	assert.DaemonSetNotFound(t.Context(), kitkyma.MetricAgentName)
