@@ -19,7 +19,6 @@ import (
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -73,10 +72,9 @@ func TestExtractLabels_OTel(t *testing.T) {
 
 			var (
 				uniquePrefix = unique.Prefix(tc.label)
-				backendNs    = uniquePrefix("backend")
-
-				genNs        = uniquePrefix("gen")
 				pipelineName = uniquePrefix()
+				backendNs    = uniquePrefix("backend")
+				genNs        = uniquePrefix("gen")
 				telemetry    operatorv1alpha1.Telemetry
 			)
 
@@ -95,24 +93,14 @@ func TestExtractLabels_OTel(t *testing.T) {
 				labelKeyShouldNotMatch: labelValueShouldNotMatch,
 			}
 
-			Eventually(func(g Gomega) int {
-				err := suite.K8sClient.Get(t.Context(), kitkyma.TelemetryName, &telemetry)
-				g.Expect(err).NotTo(HaveOccurred())
-
-				telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{
-					ExtractPodLabels: []operatorv1alpha1.PodLabel{
-						{
-							Key: "log.test.exact.should.match",
-						},
-						{
-							KeyPrefix: "log.test.prefix",
-						},
-					},
-				}
-				err = suite.K8sClient.Update(t.Context(), &telemetry)
-				g.Expect(err).NotTo(HaveOccurred())
-				return len(telemetry.Spec.Enrichments.ExtractPodLabels)
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(2))
+			Expect(suite.K8sClient.Get(t.Context(), kitkyma.TelemetryName, &telemetry)).NotTo(HaveOccurred())
+			telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{
+				ExtractPodLabels: []operatorv1alpha1.PodLabel{
+					{Key: "log.test.exact.should.match"},
+					{KeyPrefix: "log.test.prefix"},
+				},
+			}
+			Expect(suite.K8sClient.Update(t.Context(), &telemetry)).NotTo(HaveOccurred(), "should update Telemetry resource with enrichment configuration")
 
 			resources := []client.Object{
 				kitk8s.NewNamespace(backendNs).K8sObject(),
@@ -125,7 +113,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 			t.Cleanup(func() {
 				require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 
-				Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
+				Expect(suite.K8sClient.Get(context.Background(), kitkyma.TelemetryName, &telemetry)).Should(Succeed()) //nolint:usetesting // Remove ctx from Get
 				telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{}
 				require.NoError(t, suite.K8sClient.Update(context.Background(), &telemetry)) //nolint:usetesting // Remove ctx from Update
 			})

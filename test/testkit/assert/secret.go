@@ -30,7 +30,7 @@ func secretExists(ctx context.Context, k8sClient client.Client, name types.Names
 
 	err := k8sClient.Get(ctx, name, &secret)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get secret: %w", err)
+		return nil, fmt.Errorf("failed to get secret %s: %w", name.String(), err)
 	}
 
 	return &secret, nil

@@ -186,6 +186,11 @@ func makePrometheusAnnotations(scheme ScrapingScheme) map[string]string {
 	return annotations
 }
 
+func (p *Pod) WithLabels(labels map[string]string) *Pod {
+	maps.Copy(p.labels, labels)
+	return p
+}
+
 func (p *Pod) K8sObject() *corev1.Pod {
 	labels := p.labels
 	maps.Copy(labels, selectorLabels)

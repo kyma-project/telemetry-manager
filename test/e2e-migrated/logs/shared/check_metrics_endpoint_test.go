@@ -51,9 +51,9 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 
 			var (
 				uniquePrefix = unique.Prefix(tc.label)
-				pipelineName = uniquePrefix("pipeline")
-				generatorNs  = uniquePrefix("gen")
+				pipelineName = uniquePrefix()
 				backendNs    = uniquePrefix("backend")
+				genNs        = uniquePrefix("gen")
 			)
 
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
@@ -66,9 +66,9 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 
 			resources := []client.Object{
 				kitk8s.NewNamespace(backendNs).K8sObject(),
-				kitk8s.NewNamespace(generatorNs).K8sObject(),
+				kitk8s.NewNamespace(genNs).K8sObject(),
 				&pipeline,
-				tc.logGeneratorBuilder(generatorNs),
+				tc.logGeneratorBuilder(genNs),
 			}
 
 			t.Cleanup(func() {

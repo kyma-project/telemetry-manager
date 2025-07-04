@@ -29,9 +29,10 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelMaxPipeline)
 
 	var (
-		uniquePrefix               = unique.Prefix()
-		backendNs                  = uniquePrefix("backend")
-		generatorNs                = uniquePrefix("gen")
+		uniquePrefix = unique.Prefix("logs")
+		backendNs    = uniquePrefix("backend")
+		genNs        = uniquePrefix("gen")
+
 		pipelineBase               = uniquePrefix()
 		additionalFBPipelineName   = fmt.Sprintf("%s-limit-exceeding-fb", pipelineBase)
 		additionalOTelPipelineName = fmt.Sprintf("%s-limit-exceeding-otel", pipelineBase)
@@ -77,8 +78,8 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(generatorNs).K8sObject(),
-		stdloggen.NewDeployment(generatorNs).K8sObject(),
+		kitk8s.NewNamespace(genNs).K8sObject(),
+		stdloggen.NewDeployment(genNs).K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
 
@@ -137,7 +138,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	})
 
 	t.Log("Verifying logs are delivered for valid pipelines")
-	assert.FluentBitLogsFromNamespaceDelivered(t, backend, generatorNs)
+	assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
 
 	t.Log("Deleting one previously healthy pipeline and expecting the additional OTel pipeline to be healthy")
 
@@ -150,9 +151,10 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelMaxPipelineOTel)
 
 	var (
-		uniquePrefix           = unique.Prefix()
-		backendNs              = uniquePrefix("backend")
-		genNs                  = uniquePrefix("gen")
+		uniquePrefix = unique.Prefix()
+		backendNs    = uniquePrefix("backend")
+		genNs        = uniquePrefix("gen")
+
 		pipelineBase           = uniquePrefix()
 		additionalPipelineName = fmt.Sprintf("%s-limit-exceeding", pipelineBase)
 		pipelines              []client.Object
@@ -227,9 +229,10 @@ func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelMaxPipelineFluentBit)
 
 	var (
-		uniquePrefix           = unique.Prefix()
-		backendNs              = uniquePrefix("backend")
-		generatorNs            = uniquePrefix("gen")
+		uniquePrefix = unique.Prefix()
+		backendNs    = uniquePrefix("backend")
+		genNs        = uniquePrefix("gen")
+
 		pipelineBase           = uniquePrefix()
 		additionalPipelineName = fmt.Sprintf("%s-limit-exceeding", pipelineBase)
 		pipelines              []client.Object
@@ -255,8 +258,8 @@ func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
 
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(generatorNs).K8sObject(),
-		stdloggen.NewDeployment(generatorNs).K8sObject(),
+		kitk8s.NewNamespace(genNs).K8sObject(),
+		stdloggen.NewDeployment(genNs).K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
 
@@ -291,7 +294,7 @@ func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
 	})
 
 	t.Log("Verifying logs are delivered for valid pipelines")
-	assert.FluentBitLogsFromNamespaceDelivered(t, backend, generatorNs)
+	assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
 
 	t.Log("Deleting one previously healthy pipeline and expecting the additional pipeline to be healthy")
 

@@ -63,11 +63,9 @@ func TestMTLSExpiredCert_OTel(t *testing.T) {
 					)).
 				Build()
 
-			var resources []client.Object
-
-			resources = append(resources,
+			resources := []client.Object{
 				&pipeline,
-			)
+			}
 
 			t.Cleanup(func() {
 				require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
@@ -103,10 +101,9 @@ func TestMTLSExpiredCert_FluentBit(t *testing.T) {
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
 		backendNs    = uniquePrefix("backend")
-		backendName  = kitbackend.DefaultName
 	)
 
-	expiredServerCerts, expiredClientCerts, err := testutils.NewCertBuilder(backendName, backendNs).
+	expiredServerCerts, expiredClientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).
 		WithExpiredClientCert().
 		Build()
 	Expect(err).ToNot(HaveOccurred())
@@ -125,11 +122,9 @@ func TestMTLSExpiredCert_FluentBit(t *testing.T) {
 			)).
 		Build()
 
-	var resources []client.Object
-
-	resources = append(resources,
+	resources := []client.Object{
 		&pipeline,
-	)
+	}
 
 	t.Cleanup(func() {
 		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects

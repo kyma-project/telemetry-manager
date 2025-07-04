@@ -72,16 +72,14 @@ func TestValidateEndpoint(t *testing.T) {
 		).
 		Build()
 
-	var resources []client.Object
-
-	resources = append(resources,
+	resources := []client.Object{
 		secret.K8sObject(),
 		&pipelineInvalidEndpoint,
 		&pipelineInvalidEndpointValueFrom,
 		&pipelineInvalidPortEndpoint,
 		&pipelineMissingPortEndpoint,
 		&pipelineMissingPortHTTP,
-	)
+	}
 
 	t.Cleanup(func() {
 		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
@@ -94,19 +92,19 @@ func TestValidateEndpoint(t *testing.T) {
 		pipelineNameInvalidPortEndpoint,
 		pipelineNameMissingPortEndpoint,
 	} {
-		assert.MetricPipelineHasConditionWithT(t, pipelineName, metav1.Condition{
+		assert.MetricPipelineHasCondition(t, pipelineName, metav1.Condition{
 			Type:   conditions.TypeConfigurationGenerated,
 			Status: metav1.ConditionFalse,
 			Reason: conditions.ReasonEndpointInvalid,
 		})
 
-		assert.MetricPipelineHasConditionWithT(t, pipelineName, metav1.Condition{
+		assert.MetricPipelineHasCondition(t, pipelineName, metav1.Condition{
 			Type:   conditions.TypeConfigurationGenerated,
 			Status: metav1.ConditionFalse,
 			Reason: conditions.ReasonEndpointInvalid,
 		})
 
-		assert.MetricPipelineHasConditionWithT(t, pipelineName, metav1.Condition{
+		assert.MetricPipelineHasCondition(t, pipelineName, metav1.Condition{
 			Type:   conditions.TypeConfigurationGenerated,
 			Status: metav1.ConditionFalse,
 			Reason: conditions.ReasonEndpointInvalid,
@@ -114,7 +112,7 @@ func TestValidateEndpoint(t *testing.T) {
 	}
 
 	t.Log("Should set ConfigurationGenerated condition to True in pipelines with missing port and HTTP protocol")
-	assert.MetricPipelineHasConditionWithT(t, pipelineNameMissingHTTP, metav1.Condition{
+	assert.MetricPipelineHasCondition(t, pipelineNameMissingHTTP, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionTrue,
 		Reason: conditions.ReasonGatewayConfigured,

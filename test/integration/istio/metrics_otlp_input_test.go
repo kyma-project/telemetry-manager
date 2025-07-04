@@ -29,10 +29,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Order
 		backendNs          = suite.ID()
 		istiofiedBackendNs = suite.IDWithSuffix("istiofied")
 
-		pipeline1Name             = suite.IDWithSuffix("1")
-		pipeline2Name             = suite.IDWithSuffix("2")
-		backendExportURL          string
-		istiofiedBackendExportURL string
+		pipeline1Name    = suite.IDWithSuffix("1")
+		pipeline2Name    = suite.IDWithSuffix("2")
+		backend          *kitbackend.Backend
+		istiofiedBackend *kitbackend.Backend
 	)
 
 	makeResources := func() []client.Object {
@@ -42,23 +42,21 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Order
 		objs = append(objs, kitk8s.NewNamespace(istiofiedBackendNs, kitk8s.WithIstioInjection()).K8sObject())
 
 		// Mocks namespace objects
-		backend1 := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)
-		objs = append(objs, backend1.K8sObjects()...)
-		backendExportURL = backend1.ExportURL(suite.ProxyClient)
+		backend = kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)
+		objs = append(objs, backend.K8sObjects()...)
 
-		backend2 := kitbackend.New(istiofiedBackendNs, kitbackend.SignalTypeMetrics)
-		objs = append(objs, backend2.K8sObjects()...)
-		istiofiedBackendExportURL = backend2.ExportURL(suite.ProxyClient)
+		istiofiedBackend = kitbackend.New(istiofiedBackendNs, kitbackend.SignalTypeMetrics)
+		objs = append(objs, istiofiedBackend.K8sObjects()...)
 
 		metricPipeline := testutils.NewMetricPipelineBuilder().
 			WithName(pipeline1Name).
-			WithOTLPOutput(testutils.OTLPEndpoint(backend1.Endpoint())).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 			Build()
 		objs = append(objs, &metricPipeline)
 
 		metricPipelineIstiofiedBackend := testutils.NewMetricPipelineBuilder().
 			WithName(pipeline2Name).
-			WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
+			WithOTLPOutput(testutils.OTLPEndpoint(istiofiedBackend.Endpoint())).
 			Build()
 
 		objs = append(objs, &metricPipelineIstiofiedBackend)
@@ -105,11 +103,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Order
 		})
 
 		It("Should push metrics successfully", func() {
-			assert.MetricsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, backendNs, telemetrygen.MetricNames)
-			assert.MetricsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, istiofiedBackendNs, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(GinkgoT(), backend, backendNs, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(GinkgoT(), backend, istiofiedBackendNs, telemetrygen.MetricNames)
 
-			assert.MetricsFromNamespaceDelivered(suite.ProxyClient, istiofiedBackendExportURL, backendNs, telemetrygen.MetricNames)
-			assert.MetricsFromNamespaceDelivered(suite.ProxyClient, istiofiedBackendExportURL, istiofiedBackendNs, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(GinkgoT(), istiofiedBackend, backendNs, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(GinkgoT(), istiofiedBackend, istiofiedBackendNs, telemetrygen.MetricNames)
 
 		})
 	})

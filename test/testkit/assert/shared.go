@@ -11,6 +11,19 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
+func BackendReachable(t TestingT, backend *kitbackend.Backend) {
+	t.Helper()
+
+	queryURL := suite.ProxyClient.ProxyURLForService(backend.Namespace(), backend.Name(), kitbackend.QueryPath, kitbackend.QueryPort)
+
+	Eventually(func(g Gomega) {
+		resp, err := suite.ProxyClient.GetWithContext(t.Context(), queryURL)
+		g.Expect(err).NotTo(HaveOccurred())
+		defer resp.Body.Close()
+		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+}
+
 func BackendDataEventuallyMatches(t TestingT, backend *kitbackend.Backend, httpBodyMatcher types.GomegaMatcher, optionalDescription ...any) {
 	t.Helper()
 

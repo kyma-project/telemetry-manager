@@ -36,9 +36,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 	)
 
 	var (
-		traceBackendURL  string
-		metricBackendURL string
+		traceBackendURL string
 
+		metricBackend           *kitbackend.Backend
 		logBackend              *kitbackend.Backend
 		otelCollectorLogBackend *kitbackend.Backend
 		fluentBitLogBackend     *kitbackend.Backend
@@ -72,8 +72,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 		var objs []client.Object
 
 		// backend
-		metricBackend := kitbackend.New(namespace, kitbackend.SignalTypeMetrics, kitbackend.WithName(backendName))
-		metricBackendURL = metricBackend.ExportURL(suite.ProxyClient)
+		metricBackend = kitbackend.New(namespace, kitbackend.SignalTypeMetrics, kitbackend.WithName(backendName))
 		objs = append(objs, metricBackend.K8sObjects()...)
 
 		// pipeline
@@ -183,7 +182,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 		})
 
 		It("Should push metrics successfully", func() {
-			assert.MetricsFromNamespaceDelivered(suite.ProxyClient, metricBackendURL, namespace, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(GinkgoT(), metricBackend, namespace, telemetrygen.MetricNames)
 		})
 
 		It("Should push traces successfully", func() {

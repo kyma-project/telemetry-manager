@@ -17,7 +17,7 @@ func PodReady(ctx context.Context, name types.NamespacedName) {
 	Eventually(func(g Gomega) {
 		ready, err := isPodReady(ctx, suite.K8sClient, name)
 		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(ready).To(BeTrueBecause("Pod not ready"))
+		g.Expect(ready).To(BeTrueBecause("Pod not ready: %s", name.String()))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
@@ -34,7 +34,7 @@ func isPodReady(ctx context.Context, k8sClient client.Client, name types.Namespa
 
 	err := k8sClient.Get(ctx, name, &pod)
 	if err != nil {
-		return false, fmt.Errorf("failed to get pod: %w", err)
+		return false, fmt.Errorf("failed to get Pod %s: %w", name.String(), err)
 	}
 
 	for _, containerStatus := range pod.Status.ContainerStatuses {
@@ -51,7 +51,7 @@ func arePodsReady(ctx context.Context, k8sClient client.Client, listOptions clie
 
 	err := k8sClient.List(ctx, &pods, &listOptions)
 	if err != nil {
-		return false, fmt.Errorf("failed to list pods: %w", err)
+		return false, fmt.Errorf("failed to list Pods: %w", err)
 	}
 
 	for _, pod := range pods.Items {
@@ -81,7 +81,7 @@ func HasContainer(ctx context.Context, listOptions client.ListOptions, container
 
 	err := suite.K8sClient.List(ctx, &pods, &listOptions)
 	if err != nil {
-		return false, fmt.Errorf("failed to list pods: %w", err)
+		return false, fmt.Errorf("failed to list Pods: %w", err)
 	}
 
 	for _, pod := range pods.Items {
