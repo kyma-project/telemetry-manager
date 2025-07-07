@@ -76,9 +76,8 @@ func TestServiceName(t *testing.T) {
 
 	assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
 	assert.DaemonSetReady(t.Context(), kitkyma.MetricAgentName)
-	assert.DeploymentReady(t.Context(), backend.NamespacedName())
-	assert.BackendReachable(t, backend)
 	assert.MetricPipelineHealthy(t.Context(), pipelineName)
+	assert.BackendReachable(t, backend)
 	assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
 
 	verifyServiceNameAttr := func(givenPodPrefix, expectedServiceName string) {

@@ -59,8 +59,8 @@ func TestPrometheusInput(t *testing.T) {
 
 	assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
 	assert.DaemonSetReady(t.Context(), kitkyma.MetricAgentName)
-	assert.DeploymentReady(t.Context(), backend.NamespacedName())
 	assert.MetricPipelineHealthy(t.Context(), pipelineName)
+	assert.BackendReachable(t, backend)
 
 	Eventually(func(g Gomega) {
 		backendURL := backend.ExportURL(suite.ProxyClient)

@@ -67,8 +67,8 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	require.NoError(t, kitk8s.CreateObjects(t.Context(), resources...))
 	require.NoError(t, kitk8s.CreateObjects(t.Context(), pipelines...))
 
-	assert.DeploymentReady(t.Context(), backend.NamespacedName())
 	assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
+	assert.BackendReachable(t, backend)
 
 	t.Log("Asserting 5 pipelines are healthy")
 

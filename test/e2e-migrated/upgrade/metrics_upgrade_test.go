@@ -45,18 +45,16 @@ func TestMetricsUpgrade(t *testing.T) {
 	t.Run("before upgrade", func(t *testing.T) {
 		require.NoError(t, kitk8s.CreateObjects(t.Context(), resources...))
 
-		assert.DeploymentReady(t.Context(), backend.NamespacedName())
 		assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
-
 		assert.MetricPipelineHealthy(t.Context(), pipelineName)
+		assert.BackendReachable(t, backend)
 		assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
 	})
 
 	t.Run("after upgrade", func(t *testing.T) {
-		assert.DeploymentReady(t.Context(), backend.NamespacedName())
 		assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
-
 		assert.MetricPipelineHealthy(t.Context(), pipelineName)
+		assert.BackendReachable(t, backend)
 		assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
 	})
 }

@@ -69,10 +69,12 @@ func TestCloudProviderAttributes(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.MetricPipelineHealthy(t.Context(), pipelineName)
 	assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
-	assert.DeploymentReady(t.Context(), backend.NamespacedName())
+	assert.MetricPipelineHealthy(t.Context(), pipelineName)
+	assert.BackendReachable(t, backend)
+
 	assert.DeploymentReady(t.Context(), types.NamespacedName{Name: deploymentName, Namespace: mockNs})
+
 	agentMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.MetricAgentMetricsService.Namespace, kitkyma.MetricAgentMetricsService.Name, "metrics", ports.Metrics)
 	assert.EmitsOTelCollectorMetrics(t, agentMetricsURL)
 	assert.BackendDataEventuallyMatches(t, backend,

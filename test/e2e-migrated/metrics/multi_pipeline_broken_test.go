@@ -57,10 +57,10 @@ func TestMultiPipelineBroken(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.DeploymentReady(t.Context(), backend.NamespacedName())
 	assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
-
 	assert.MetricPipelineHealthy(t.Context(), healthyPipelineName)
+	assert.BackendReachable(t, backend)
+
 	assert.MetricPipelineHasCondition(t, brokenPipeline.Name, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,

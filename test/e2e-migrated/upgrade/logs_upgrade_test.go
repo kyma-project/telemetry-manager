@@ -45,10 +45,9 @@ func TestLogsUpgrade(t *testing.T) {
 	t.Run("before upgrade", func(t *testing.T) {
 		require.NoError(t, kitk8s.CreateObjects(t.Context(), resources...))
 
-		assert.DeploymentReady(t.Context(), backend.NamespacedName())
 		assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
-
 		assert.FluentBitLogPipelineHealthy(t, pipelineName)
+		assert.BackendReachable(t, backend)
 		assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
 	})
 
@@ -59,10 +58,9 @@ func TestLogsUpgrade(t *testing.T) {
 		genNs = "upgrade-gen"
 		// ---
 
-		assert.DeploymentReady(t.Context(), backend.NamespacedName())
 		assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
-
 		assert.FluentBitLogPipelineHealthy(t, pipelineName)
+		assert.BackendReachable(t, backend)
 		assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
 	})
 }

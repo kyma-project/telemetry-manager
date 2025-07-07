@@ -62,9 +62,10 @@ func TestPrometheusInputDiagnosticMetric(t *testing.T) {
 	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
 	assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
-	assert.DeploymentReady(t.Context(), backend.NamespacedName())
 	assert.DaemonSetReady(t.Context(), kitkyma.MetricAgentName)
 	assert.MetricPipelineHealthy(t.Context(), pipelineName)
+	assert.BackendReachable(t, backend)
+
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatMetrics(HaveUniqueNames(
 			ContainElements(diagnosticMetrics...),

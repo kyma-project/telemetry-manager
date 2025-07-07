@@ -48,10 +48,9 @@ func TestSinglePipeline(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
-	assert.DeploymentReady(t.Context(), backend.NamespacedName())
-	assert.BackendReachable(t, backend)
 	assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
 	assert.MetricPipelineHealthy(t.Context(), pipelineName)
+	assert.BackendReachable(t, backend)
 	assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
 
 	gatewayMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.MetricGatewayMetricsService.Namespace, kitkyma.MetricGatewayMetricsService.Name, "metrics", ports.Metrics)

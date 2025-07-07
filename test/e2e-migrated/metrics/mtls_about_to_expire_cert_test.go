@@ -64,9 +64,9 @@ func TestMTLSAboutToExpireCert(t *testing.T) {
 	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
 	assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
-	assert.DeploymentReady(t.Context(), backend.NamespacedName())
-
 	assert.MetricPipelineHealthy(t.Context(), pipelineName)
+	assert.BackendReachable(t, backend)
+
 	assert.MetricPipelineHasCondition(t, pipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionTrue,
