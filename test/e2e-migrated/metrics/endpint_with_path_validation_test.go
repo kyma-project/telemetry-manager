@@ -13,7 +13,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-func TestEndpointAndPath(t *testing.T) {
+func TestEndpointWithPathValidation(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelMetrics)
 
 	metricPipelineWithGRPCAndWithoutPath := testutils.NewMetricPipelineBuilder().
