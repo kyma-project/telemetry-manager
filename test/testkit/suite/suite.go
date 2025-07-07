@@ -103,16 +103,19 @@ func sanitizeSpecID(filePath string) string {
 
 const (
 	// Test suites labels
-	LabelLogsFluentBit        = "logs-fluentbit"
-	LabelLogAgent             = "log-agent"
-	LabelLogGateway           = "log-gateway"
-	LabelFluentBit            = "fluent-bit"
-	LabelTraces               = "traces"
-	LabelMetrics              = "metrics"
-	LabelTelemetry            = "telemetry"
-	LabelMaxPipeline          = "max-pipeline"
-	LabelMaxPipelineOTel      = "max-pipeline-otel"
-	LabelMaxPipelineFluentBit = "max-pipeline-fluent-bit"
+	LabelLogsFluentBit          = "logs-fluentbit"
+	LabelLogAgent               = "log-agent"
+	LabelLogGateway             = "log-gateway"
+	LabelFluentBit              = "fluent-bit"
+	LabelLogAgentExperimental   = "log-agent-experimental"
+	LabelLogGatewayExperimental = "log-gateway-experimental"
+	LabelFluentBitExperimental  = "fluent-bit-experimental"
+	LabelTraces                 = "traces"
+	LabelMetrics                = "metrics"
+	LabelTelemetry              = "telemetry"
+	LabelMaxPipeline            = "max-pipeline"
+	LabelMaxPipelineOTel        = "max-pipeline-otel"
+	LabelMaxPipelineFluentBit   = "max-pipeline-fluent-bit"
 
 	// Test "sub-suites" labels
 	LabelExperimental = "experimental"
@@ -141,8 +144,11 @@ const (
 	// [please avoid adding tests to this category if it already fits in a more specific one]
 	LabelMisc = "misc"
 
-	// Istio test label
-	LabelIntegration = "integration"
+	// Istio Integration test label
+	LabelIstio = "istio"
+
+	// Gardener Integration test label
+	LabelGardener = "gardener"
 
 	// Upgrade tests preserve K8s objects between test runs.
 	LabelUpgrade = "upgrade"

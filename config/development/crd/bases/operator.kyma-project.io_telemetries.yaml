@@ -92,9 +92,7 @@ spec:
                     type: array
                 type: object
               log:
-                description: |-
-                  LogSpec defines the behavior of the log gateway
-                  LogSpec contains the configuration for the log gateway, including the gateway settings and optional log data enrichments.
+                description: LogSpec defines the behavior of the log gateway.
                 properties:
                   gateway:
                     description: Gateway specifies the settings for the log gateway.

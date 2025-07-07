@@ -264,6 +264,7 @@ func TestUpdateLogPipelineWithWebhookConfig(t *testing.T) {
 	require.NotEmpty(t, crdCABundle)
 
 	var chainChecker certChainCheckerImpl
+
 	certValid, err := chainChecker.checkRoot(t.Context(), serverCert, crdCABundle)
 	require.NoError(t, err)
 	require.True(t, certValid)
@@ -303,6 +304,7 @@ func TestUpdateWebhookConfig(t *testing.T) {
 	require.NoError(t, err)
 
 	var chainChecker certChainCheckerImpl
+
 	certValid, err := chainChecker.checkRoot(t.Context(), newServerCert, updatedValidatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
 	require.NoError(t, err)
 	require.True(t, certValid)
@@ -354,6 +356,7 @@ func TestCreateSecret(t *testing.T) {
 	require.NoError(t, err)
 
 	var secret corev1.Secret
+
 	err = client.Get(t.Context(), config.CASecretName, &secret)
 	require.NoError(t, err)
 
@@ -386,10 +389,12 @@ func TestReuseExistingCertificate(t *testing.T) {
 	require.NoError(t, err)
 
 	var newValidatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
+
 	err = client.Get(t.Context(), config.ValidatingWebhookName, &newValidatingWebhookConfiguration)
 	require.NoError(t, err)
 
 	var newMutatingWebhookConfiguration admissionregistrationv1.MutatingWebhookConfiguration
+
 	err = client.Get(t.Context(), config.MutatingWebhookName, &newMutatingWebhookConfiguration)
 	require.NoError(t, err)
 
@@ -397,6 +402,7 @@ func TestReuseExistingCertificate(t *testing.T) {
 	require.NoError(t, err)
 
 	var updatedValidatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
+
 	err = client.Get(t.Context(), config.ValidatingWebhookName, &updatedValidatingWebhookConfiguration)
 	require.NoError(t, err)
 
@@ -406,6 +412,7 @@ func TestReuseExistingCertificate(t *testing.T) {
 		updatedValidatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
 
 	var updatedMutatingWebhookConfiguration admissionregistrationv1.MutatingWebhookConfiguration
+
 	err = client.Get(t.Context(), config.MutatingWebhookName, &updatedMutatingWebhookConfiguration)
 	require.NoError(t, err)
 

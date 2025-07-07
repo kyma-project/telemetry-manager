@@ -19,8 +19,8 @@ type metricComponentsChecker struct {
 
 func (m *metricComponentsChecker) Check(ctx context.Context, telemetryInDeletion bool) (*metav1.Condition, error) {
 	var metricPipelines telemetryv1alpha1.MetricPipelineList
-	err := m.client.List(ctx, &metricPipelines)
 
+	err := m.client.List(ctx, &metricPipelines)
 	if err != nil {
 		return &metav1.Condition{}, fmt.Errorf("failed to get list of MetricPipelines: %w", err)
 	}

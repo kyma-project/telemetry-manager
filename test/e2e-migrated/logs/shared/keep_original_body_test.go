@@ -68,6 +68,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 		Build()
 
 	var resources []client.Object
+
 	resources = append(resources,
 		kitk8s.NewNamespace(sourceNsKeepOriginal).K8sObject(),
 		kitk8s.NewNamespace(sourceNsDropOriginal).K8sObject(),
@@ -217,6 +218,7 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 		Build()
 
 	var resources []client.Object
+
 	resources = append(resources,
 		kitk8s.NewNamespace(sourceNsKeepOriginal).K8sObject(),
 		kitk8s.NewNamespace(sourceNsDropOriginal).K8sObject(),

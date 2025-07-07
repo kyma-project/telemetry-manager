@@ -102,6 +102,7 @@ func ExporterID(protocol string, pipelineName string) string {
 
 func makeTLSConfig(output *telemetryv1alpha1.OTLPOutput, otlpEndpointValue, pipelineName string) config.TLS {
 	var cfg config.TLS
+
 	cfg.Insecure = isInsecureOutput(otlpEndpointValue)
 
 	if output.TLS == nil {

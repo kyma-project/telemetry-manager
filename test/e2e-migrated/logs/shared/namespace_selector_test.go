@@ -110,6 +110,7 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 				Build()
 
 			var resources []client.Object
+
 			resources = append(resources,
 				kitk8s.NewNamespace(backendNs).K8sObject(),
 				kitk8s.NewNamespace(gen1Ns).K8sObject(),
@@ -172,6 +173,7 @@ func TestNamespaceSelector_FluentBit(t *testing.T) {
 		Build()
 
 	var resources []client.Object
+
 	resources = append(resources,
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(gen1Ns).K8sObject(),

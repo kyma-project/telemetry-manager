@@ -25,6 +25,7 @@ linters:
     - mirror
     - nestif
     - nlreturn
+    - noinlineerr
     - nonamedreturns
     - paralleltest
     - perfsprint
@@ -37,6 +38,7 @@ linters:
     - tparallel
     - varnamelen
     - wrapcheck
+    - wsl
   settings:
     dupl:
       threshold: 100
@@ -110,6 +112,10 @@ linters:
           alias: istiosecurityclientv1
         - pkg: istio.io/api/type/v1beta1
           alias: istiotypev1beta1
+        - pkg: istio.io/client-go/pkg/apis/telemetry/v1
+          alias: istiotelemetryclientv1
+        - pkg: istio.io/api/telemetry/v1alpha1
+          alias: istiotelemetryv1alpha1
         - pkg: k8s.io/api/(\w+)/(v[\w\d]+)
           alias: $1$2
         - pkg: k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1
@@ -194,8 +200,10 @@ linters:
         - github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric
         - github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace
         - github.com/kyma-project/telemetry-manager/test/testkit/matchers/prometheus
-    wsl:
-      allow-trailing-comment: true
+    wsl_v5:
+      allow-first-in-block: true
+      allow-whole-block: false
+      branch-max-lines: 2
   exclusions:
     generated: lax
     presets:

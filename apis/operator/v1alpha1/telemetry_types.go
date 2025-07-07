@@ -70,8 +70,7 @@ type TraceGatewaySpec struct {
 	Scaling Scaling `json:"scaling,omitempty"`
 }
 
-// LogSpec defines the behavior of the log gateway
-// LogSpec contains the configuration for the log gateway, including the gateway settings and optional log data enrichments.
+// LogSpec defines the behavior of the log gateway.
 type LogSpec struct {
 	// Gateway specifies the settings for the log gateway.
 	Gateway LogGatewaySpec `json:"gateway,omitempty"`
@@ -158,7 +157,8 @@ type Telemetry struct {
 type TelemetryList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Telemetry `json:"items"`
+
+	Items []Telemetry `json:"items"`
 }
 
 //nolint:gochecknoinits // SchemeBuilder's registration is required.

@@ -17,6 +17,7 @@ const parsersConfigMapKey = "parsers.conf"
 
 type syncer struct {
 	client.Client
+
 	config Config
 }
 

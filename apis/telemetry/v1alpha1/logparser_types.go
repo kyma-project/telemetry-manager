@@ -30,7 +30,8 @@ func init() {
 type LogParserList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []LogParser `json:"items"`
+
+	Items []LogParser `json:"items"`
 }
 
 // +kubebuilder:object:root=true
@@ -43,6 +44,7 @@ type LogParserList struct {
 type LogParser struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
+
 	// Defines the desired state of LogParser.
 	Spec LogParserSpec `json:"spec,omitempty"`
 	// Shows the observed state of the LogParser.

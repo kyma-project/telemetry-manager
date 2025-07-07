@@ -20,7 +20,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsGatewayBackpressure, suite.LabelExperimental), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsGatewayBackpressure), Ordered, func() {
 	var (
 		mockNs       = "istio-permissive-mtls"
 		pipelineName = suite.ID()

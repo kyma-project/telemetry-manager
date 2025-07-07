@@ -724,7 +724,7 @@ To check that the pipeline is running, wait until the status conditions of the M
 ```bash
 kubectl get metricpipeline
 NAME      CONFIGURATION GENERATED   GATEWAY HEALTHY   AGENT HEALTHY   FLOW HEALTHY
-backend   True                      True              True            True        
+backend   True                      True              True            True
 ```
 
 ## Operations
@@ -824,7 +824,7 @@ kind: NetworkPolicy
 metadata:
   name: allow-traffic-from-agent
 spec:
-  podSelector: 
+  podSelector:
     matchLabels:
       app.kubernetes.io/name: "annotated-workload" # <your workload here>
   ingress:

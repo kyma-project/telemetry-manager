@@ -105,6 +105,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
+
 		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		requireHasStatusCondition(t, updatedPipeline,
@@ -173,6 +174,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
+
 		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		requireHasStatusCondition(t, updatedPipeline,
@@ -241,6 +243,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
+
 		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		requireHasStatusCondition(t, updatedPipeline,
@@ -312,6 +315,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
+
 		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		requireHasStatusCondition(t, updatedPipeline,
@@ -385,6 +389,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
+
 		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		requireHasStatusCondition(t, updatedPipeline,
@@ -458,6 +463,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
+
 		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		requireHasStatusCondition(t, updatedPipeline,
@@ -535,6 +541,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
+
 		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		requireHasStatusCondition(t, updatedPipeline,
@@ -603,6 +610,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
+
 		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		requireHasStatusCondition(t, updatedPipeline,
@@ -675,6 +683,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
+
 		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		requireHasStatusCondition(t, updatedPipeline,
@@ -845,6 +854,7 @@ func TestReconcile(t *testing.T) {
 				require.NoError(t, err)
 
 				var updatedPipeline telemetryv1alpha1.MetricPipeline
+
 				_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 				requireHasStatusCondition(t, updatedPipeline,
@@ -987,6 +997,7 @@ func TestReconcile(t *testing.T) {
 				require.NoError(t, err)
 
 				var updatedPipeline telemetryv1alpha1.MetricPipeline
+
 				_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 				requireHasStatusCondition(t, updatedPipeline,
@@ -1080,6 +1091,7 @@ func TestReconcile(t *testing.T) {
 		require.True(t, errors.Is(err, serverErr))
 
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
+
 		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		requireHasStatusCondition(t, updatedPipeline,
@@ -1158,6 +1170,7 @@ func TestReconcile(t *testing.T) {
 		require.True(t, errors.Is(err, serverErr))
 
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
+
 		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		requireHasStatusCondition(t, updatedPipeline,
@@ -1301,6 +1314,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
+
 		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		requireHasStatusCondition(t, updatedPipeline,
@@ -1390,6 +1404,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err2)
 
 		var updatedPipeline1 telemetryv1alpha1.MetricPipeline
+
 		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline1.Name}, &updatedPipeline1)
 
 		requireHasStatusCondition(t, updatedPipeline1,
@@ -1625,6 +1640,7 @@ func TestReconcile(t *testing.T) {
 				require.NoError(t, err)
 
 				var updatedPipeline telemetryv1alpha1.MetricPipeline
+
 				_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 				if tt.probeGatewayErr != nil {

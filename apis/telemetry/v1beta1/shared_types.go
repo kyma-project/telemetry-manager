@@ -13,10 +13,10 @@ type ValueFromSource struct {
 }
 
 type SecretKeyRef struct {
-	// The name of the Secret containing the referenced value
+	// The name of the Secret containing the referenced value.
 	// +kubebuilder:validation:Required
 	Name string `json:"name,omitempty"`
-	// The name of the Namespace containing the Secret with the referenced value.
+	// The name of the namespace containing the Secret with the referenced value.
 	// +kubebuilder:validation:Required
 	Namespace string `json:"namespace,omitempty"`
 	// The name of the attribute of the Secret holding the referenced value.
@@ -40,7 +40,7 @@ type OTLPOutput struct {
 	// Defines the host and port (<host>:<port>) of an OTLP endpoint.
 	// +kubebuilder:validation:Required
 	Endpoint ValueType `json:"endpoint"`
-	// Defines OTLP export URL path (only for the HTTP protocol). This value overrides auto-appended paths /v1/metrics and /v1/traces
+	// Defines OTLP export URL path (only for the HTTP protocol). This value overrides auto-appended paths `/v1/metrics` and `/v1/traces`
 	Path string `json:"path,omitempty"`
 	// Defines authentication options for the OTLP output
 	Authentication *AuthenticationOptions `json:"authentication,omitempty"`
@@ -65,10 +65,11 @@ type BasicAuthOptions struct {
 }
 
 type Header struct {
-	// Defines the header name.
-	Name string `json:"name"`
 	// Defines the header value.
 	ValueType `json:",inline"`
+
+	// Defines the header name.
+	Name string `json:"name"`
 	// Defines an optional header value prefix. The prefix is separated from the value by a space character.
 	Prefix string `json:"prefix,omitempty"`
 }

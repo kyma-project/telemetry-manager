@@ -288,8 +288,8 @@ metadata:
   namespace: kyma-system
 ---
 apiVersion: v1
-data:
-  OTLP_ENDPOINT_SAMPLE: aHR0cDovL3RyYWNlLXNpbmsudHJhY2Utc2luazo0MzE3
+stringData:
+  OTLP_ENDPOINT_SAMPLE: "http://trace-sink.trace-sink:4317"
 kind: Secret
 metadata:
   labels:
@@ -371,4 +371,3 @@ subjects:
   - kind: ServiceAccount
     name: telemetry-trace-agent
     namespace: kyma-system
-

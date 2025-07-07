@@ -41,7 +41,7 @@ endif
 provision-gardener: $(JQ) ## Provision gardener cluster with latest k8s version
 	echo "Using k8s version '${GARDENER_K8S_VERSION_FULL}' and hibernation hour '${HIBERNATION_HOUR}' for shoot '${GARDENER_CLUSTER_NAME}'"
 
-	envsubst < hack/shoot_gcp.yaml > /tmp/shoot.yaml 
+	envsubst < hack/shoot_gcp.yaml > /tmp/shoot.yaml
 	cat /tmp/shoot.yaml | kubectl --kubeconfig "${GARDENER_SA_PATH}" apply -f -
 
 	echo "waiting fo cluster to be ready..."
@@ -57,6 +57,8 @@ provision-gardener: $(JQ) ## Provision gardener cluster with latest k8s version
 	# replace the default kubeconfig
 	mkdir -p ~/.kube
 	mv ${GARDENER_CLUSTER_NAME}_kubeconfig.yaml ~/.kube/config
+
+	kubectl create namespace kyma-system --dry-run=client -o yaml | kubectl apply -f -
 
 .PHONY: deprovision-gardener
 deprovision-gardener:## Deprovision gardener cluster

@@ -298,7 +298,6 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 		CloudProvider:               shootInfo.CloudProvider,
 		Enrichments:                 enrichments,
 	})
-
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)
 	}
