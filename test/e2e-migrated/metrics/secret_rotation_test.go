@@ -62,9 +62,9 @@ func TestSecretRotation(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
+	assert.BackendReachable(t, backend)
 	assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
 	assert.MetricPipelineHealthy(t.Context(), pipelineName)
-	assert.BackendReachable(t, backend)
 	assert.MetricsFromNamespaceNotDelivered(t, backend, genNs)
 
 	// Update the secret to have the correct backend endpoint

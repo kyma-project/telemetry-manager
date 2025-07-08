@@ -87,9 +87,9 @@ func TestExtractLabels(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
+	assert.BackendReachable(t, backend)
 	assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
 	assert.MetricPipelineHealthy(t.Context(), pipelineName)
-	assert.BackendReachable(t, backend)
 
 	// Verify that at least one log entry contains the expected labels, rather than requiring all entries to match.
 	// This approach accounts for potential delays in the k8sattributes processor syncing with the API server during startup,
