@@ -1,5 +1,5 @@
 # Start from the official Golang image for building
-FROM golang:1.24.4-alpine3.21 AS builder
+FROM golang:1.24.4-alpine AS builder
 
 WORKDIR /app
 
@@ -14,7 +14,7 @@ COPY . .
 RUN go build -o loadgenerator .
 
 # Use a minimal base image for running
-FROM alpine:3.22
+FROM alpine:latest
 
 WORKDIR /app
 
