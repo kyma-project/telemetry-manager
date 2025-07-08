@@ -13,7 +13,7 @@ The Log feature is optional. If you don't want to use it, simply don't set up a 
 
 - Before you can collect logs from a component, it must emit the logs. Typically, it uses a logger framework for the used language runtime (like Node.js) and prints them to the `stdout` or `stderr` channel ([Kubernetes: How nodes handle container logs](https://kubernetes.io/docs/concepts/cluster-administration/logging/#how-nodes-handle-container-logs)). Alternatively, you can use the [OTel SDK](https://opentelemetry.io/docs/languages/) to use the [push-based OTLP format](https://opentelemetry.io/docs/specs/otlp/).
 
-- If you want to emit the logs to the `stdout/stderr` channel, use structured logs in a JSON format with a logger library like log4J. With that, the log agent can parse your log and enrich all JSON attributes as log attributes, and a backend use that.
+- If you want to emit the logs to the `stdout/stderr` channel, use structured logs in a JSON format with a logger library like log4J. With that, the log agent can parse your log and enrich all JSON attributes as log attributes, and a backend can use that.
 
 - If you prefer the push-based alternative with OTLP, also use a logger library like log4J. However, you additionally instrument that logger and bridge it to the OTel SDK. For details, see [OpenTelemetry: New First-Party Application Logs](https://opentelemetry.io/docs/specs/otel/logs/#new-first-party-application-logs).
 
@@ -87,7 +87,7 @@ spec:
 
 #### **HTTP**
 
-For HTTP, use the `protocol` attribute:
+For HTTP, use the **protocol** attribute:
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -382,11 +382,11 @@ After the tailing, the created OTLP record looks like the following example:
 }
 ```
 
-All information identifying the source of the log (like the Container, Pod and namespace name) are enriched as resource attributes following the [Kubernetes conventions](https://opentelemetry.io/docs/specs/semconv/resource/k8s/). Further metadata - like the original file name and channel - are enriched as log attributes following the [log attribute conventions](https://opentelemetry.io/docs/specs/semconv/general/logs/). The `time` value provided in the container runtime log entry is used as `time` attribute in the new OTel record, as it is very close to the actual time when the log happened. Additionally, the `observedTime` is set with the time when the agent actual read the log record as recommended by the [OTel log specification](https://opentelemetry.io/docs/specs/otel/logs/data-model/#field-observedtimestamp). The log payload is moved to the OTLP `body` field.
+All information identifying the source of the log (like the Container, Pod and namespace name) are enriched as resource attributes following the [Kubernetes conventions](https://opentelemetry.io/docs/specs/semconv/resource/k8s/). Further metadata - like the original file name and channel - are enriched as log attributes following the [log attribute conventions](https://opentelemetry.io/docs/specs/semconv/general/logs/). The **time** value provided in the container runtime log entry is used as **time** attribute in the new OTel record, as it is very close to the actual time when the log happened. Additionally, the **observedTime** is set with the time when the agent actual read the log record as recommended by the [OTel log specification](https://opentelemetry.io/docs/specs/otel/logs/data-model/#field-observedtimestamp). The log payload is moved to the OTLP **body** field.
 
 #### JSON Parsing
 
-If the value of the `body` is a JSON document, the value is parsed and all JSON root attributes are enriched as additional log attributes. The original body is moved into the `log.original` attribute (managed with the LogPipeline attribute `input.application.keepOriginalBody: true`).
+If the value of the **body** is a JSON document, the value is parsed and all JSON root attributes are enriched as additional log attributes. The original body is moved into the **log.original** attribute (managed with the LogPipeline attribute **input.application.keepOriginalBody**: `true`).
 
 The resulting OTLP record looks like the following example:
 
@@ -415,20 +415,20 @@ The resulting OTLP record looks like the following example:
 
 #### Severity Parsing
 
-Typically, a log message has a log level written to a field `level`. Based on that, the agent tries to parse the log attribute `level` with a [severity parser](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/stanza/docs/operators/severity_parser.md). If that is successful, the log attribute is transformed into the OTel attributes `severityText` and `severityNumber`.
+Typically, a log message has a log level written to a field `level`. Based on that, the agent tries to parse the log attribute **level** with a [severity parser](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/stanza/docs/operators/severity_parser.md). If that is successful, the log attribute is transformed into the OTel attributes **severityText** and **severityNumber**.
 
 #### Trace Parsing
 
 OTLP natively supports attaching trace context to log records. If possible, the log agent parses the following log attributes according to the [W3C-Tracecontext specification](https://www.w3.org/TR/trace-context/#traceparent-header):
 
-- `trace_id`
-- `span_id`
-- `trace_flags`
-- `traceparent`
+- **trace_id**
+- **span_id**
+- **trace_flags**
+- **traceparent**
 
 #### Log Body Determination
 
-Because the actual log message is typically located in the `body` attribute, the agent moves a log attribute called `message` (or `msg`) into the `body`.
+Because the actual log message is typically located in the **body** attribute, the agent moves a log attribute called **message** (or **msg**) into the **body**.
 
 At this point, before further enrichment, the resulting overall log record looks like the following example:
 
