@@ -20,7 +20,7 @@ import (
 )
 
 func TestMTLSInvalidCA(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelMetrics)
+	suite.RegisterTestCase(t, suite.LabelMetricsSetA)
 
 	var (
 		uniquePrefix = unique.Prefix()

@@ -11,7 +11,7 @@ import (
 )
 
 func TestRejectPipelineCreation(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelMetrics)
+	suite.RegisterTestCase(t, suite.LabelMetricsSetC)
 
 	defaultGRPCWithPathPipeline := testutils.NewMetricPipelineBuilder().
 		WithName("default-reject-with-path").

@@ -19,7 +19,7 @@ import (
 )
 
 func TestMTLS(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelMetrics)
+	suite.RegisterTestCase(t, suite.LabelMetricsSetB)
 
 	var (
 		uniquePrefix = unique.Prefix()

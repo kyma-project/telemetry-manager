@@ -19,7 +19,7 @@ import (
 )
 
 func TestEndpointInvalid(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelMetrics)
+	suite.RegisterTestCase(t, suite.LabelMetricsSetA)
 
 	const (
 		endpointKey         = "endpoint"

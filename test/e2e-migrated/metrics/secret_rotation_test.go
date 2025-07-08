@@ -19,7 +19,7 @@ import (
 )
 
 func TestSecretRotation(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelMetrics)
+	suite.RegisterTestCase(t, suite.LabelMetricsSetC)
 
 	const (
 		endpointKey   = "metrics-endpoint"

@@ -2,6 +2,7 @@ package assert
 
 import (
 	"net/http"
+	"time"
 
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
@@ -11,17 +12,20 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
+// TODO(TeodorSAP): Move to a specific package together with all K8S resources ready checks
+// TODO(TeodorSAP): Use custom timeouts as functional options for every helper function in this package.
 func BackendReachable(t TestingT, backend *kitbackend.Backend) {
 	t.Helper()
 
+	const queryInterval = time.Second * 5
+
 	queryURL := suite.ProxyClient.ProxyURLForService(backend.Namespace(), backend.Name(), kitbackend.QueryPath, kitbackend.QueryPort)
-	// HTTPResponseEventuallyMatches(t, queryURL, Not(BeNil()), "Backend should be reachable at %s", queryURL)
 	Eventually(func(g Gomega) {
 		resp, err := suite.ProxyClient.GetWithContext(t.Context(), queryURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		defer resp.Body.Close()
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed(), "Backend should be reachable at %s", queryURL)
+	}, periodic.EventuallyTimeout, queryInterval).Should(Succeed(), "Backend should be reachable at %s", queryURL)
 }
 
 func BackendDataEventuallyMatches(t TestingT, backend *kitbackend.Backend, httpBodyMatcher types.GomegaMatcher, optionalDescription ...any) {

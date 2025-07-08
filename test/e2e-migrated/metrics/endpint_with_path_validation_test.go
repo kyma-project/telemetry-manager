@@ -14,7 +14,7 @@ import (
 )
 
 func TestEndpointWithPathValidation(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelMetrics)
+	suite.RegisterTestCase(t, suite.LabelMetricsSetA)
 
 	metricPipelineWithGRPCAndWithoutPath := testutils.NewMetricPipelineBuilder().
 		WithName("metricpipeline-accept-with-grpc-and-no-path").

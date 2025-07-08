@@ -114,6 +114,9 @@ const (
 
 	// Metrics labels
 	LabelMetrics             = "metrics"
+	LabelMetricsSetA         = "metrics-set-a"
+	LabelMetricsSetB         = "metrics-set-b"
+	LabelMetricsSetC         = "metrics-set-c"
 	LabelMetricsExperimental = "metrics-experimental"
 
 	// Traces labels
