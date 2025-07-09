@@ -14,7 +14,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -26,6 +25,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
+// TODO(TeodorSAP): Delete this file after 1.44 release (only kept because of the upgrade test flow)
 var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), Ordered, func() {
 	var (
 		mockNs       = suite.ID()
@@ -64,20 +64,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), 
 			})
 
 			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
-
-			// TODO(skhalash): remove this block after 1.42 release
-			// This is a workaround to compensate for a bug resulting in a missing backend host secret after the pre-upgrade test run
-			if suite.IsUpgrade() {
-				var pipeline telemetryv1alpha1.MetricPipeline
-				suite.K8sClient.Get(suite.Ctx, types.NamespacedName{Name: pipelineName}, &pipeline)
-				output := pipeline.Spec.Output.OTLP
-				if output != nil && output.Endpoint.ValueFrom != nil && output.Endpoint.ValueFrom.SecretKeyRef != nil {
-					output.Endpoint.Value = backend.Endpoint()
-					output.Endpoint.ValueFrom = nil
-					pipeline.Spec.Output.OTLP = output
-					Expect(suite.K8sClient.Update(suite.Ctx, &pipeline)).To(Succeed())
-				}
-			}
 		})
 
 		It("Should have a running metric gateway deployment", Label(suite.LabelUpgrade), func() {
@@ -174,7 +160,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), 
 		})
 
 		It("Should deliver telemetrygen metrics", Label(suite.LabelUpgrade), func() {
-			assert.MetricsFromNamespaceDelivered(suite.ProxyClient, backend.ExportURL(suite.ProxyClient), mockNs, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(GinkgoT(), backend, mockNs, telemetrygen.MetricNames)
 		})
 
 		It("Should be able to get metric gateway metrics endpoint", Label(suite.LabelUpgrade), func() {

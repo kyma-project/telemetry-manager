@@ -13,8 +13,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-func TestEndpointAndPath(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelMetrics)
+func TestEndpointWithPathValidation(t *testing.T) {
+	suite.RegisterTestCase(t, suite.LabelMetricsSetA)
 
 	metricPipelineWithGRPCAndWithoutPath := testutils.NewMetricPipelineBuilder().
 		WithName("metricpipeline-accept-with-grpc-and-no-path").
@@ -31,13 +31,11 @@ func TestEndpointAndPath(t *testing.T) {
 		WithOTLPOutput(testutils.OTLPEndpoint("mock-endpoint:4817"), testutils.OTLPProtocol("http")).
 		Build()
 
-	var resources []client.Object
-
-	resources = append(resources,
+	resources := []client.Object{
 		&metricPipelineWithGRPCAndWithoutPath,
 		&metricPipelineWithHTTPAndPath,
 		&metricPipelineWithHTTPAndWithoutPath,
-	)
+	}
 
 	t.Cleanup(func() {
 		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects

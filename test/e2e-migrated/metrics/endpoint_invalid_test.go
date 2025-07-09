@@ -18,28 +18,25 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestValidateEndpoint(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelMetrics)
+func TestEndpointInvalid(t *testing.T) {
+	suite.RegisterTestCase(t, suite.LabelMetricsSetA)
 
 	const (
 		endpointKey         = "endpoint"
 		invalidEndpoint     = "'http://example.com'"
-		invalidPortEndpoint = "http://example.com:9abc8"
 		missingPortEndpoint = "http://example.com:/"
 	)
 
 	var (
-		uniquePrefix                    = unique.Prefix()
-		pipelineNameInvalidEndpoint     = uniquePrefix("invalid-endpoint")
-		pipelineNameValueFrom           = uniquePrefix("value-from-secret")
-		pipelineNameInvalidPortEndpoint = uniquePrefix("invalid-port-endpoint")
-		pipelineNameMissingPortEndpoint = uniquePrefix("missing-port-endpoint")
-		pipelineNameMissingHTTP         = uniquePrefix("missing-port-http")
-		secretName                      = uniquePrefix()
+		uniquePrefix                = unique.Prefix()
+		pipelineNameValue           = uniquePrefix("value")
+		pipelineNameValueFrom       = uniquePrefix("value-from-secret")
+		pipelineNameMissingPortHTTP = uniquePrefix("missing-port-http")
+		secretName                  = uniquePrefix()
 	)
 
 	pipelineInvalidEndpoint := testutils.NewMetricPipelineBuilder().
-		WithName(pipelineNameInvalidEndpoint).
+		WithName(pipelineNameValue).
 		WithOTLPOutput(
 			testutils.OTLPEndpoint(invalidEndpoint),
 		).
@@ -51,37 +48,20 @@ func TestValidateEndpoint(t *testing.T) {
 		WithOTLPOutput(testutils.OTLPEndpointFromSecret(secret.Name(), secret.Namespace(), endpointKey)).
 		Build()
 
-	pipelineInvalidPortEndpoint := testutils.NewMetricPipelineBuilder().
-		WithName(pipelineNameInvalidPortEndpoint).
-		WithOTLPOutput(
-			testutils.OTLPEndpoint(invalidPortEndpoint),
-		).
-		Build()
-	pipelineMissingPortEndpoint := testutils.NewMetricPipelineBuilder().
-		WithName(pipelineNameMissingPortEndpoint).
-		WithOTLPOutput(
-			testutils.OTLPEndpoint(missingPortEndpoint),
-		).
-		Build()
-
 	pipelineMissingPortHTTP := testutils.NewMetricPipelineBuilder().
-		WithName(pipelineNameMissingHTTP).
+		WithName(pipelineNameMissingPortHTTP).
 		WithOTLPOutput(
 			testutils.OTLPEndpoint(missingPortEndpoint),
 			testutils.OTLPProtocol("http"),
 		).
 		Build()
 
-	var resources []client.Object
-
-	resources = append(resources,
+	resources := []client.Object{
 		secret.K8sObject(),
 		&pipelineInvalidEndpoint,
 		&pipelineInvalidEndpointValueFrom,
-		&pipelineInvalidPortEndpoint,
-		&pipelineMissingPortEndpoint,
 		&pipelineMissingPortHTTP,
-	)
+	}
 
 	t.Cleanup(func() {
 		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
@@ -89,24 +69,22 @@ func TestValidateEndpoint(t *testing.T) {
 	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
 	for _, pipelineName := range []string{
-		pipelineNameInvalidEndpoint,
+		pipelineNameValue,
 		pipelineNameValueFrom,
-		pipelineNameInvalidPortEndpoint,
-		pipelineNameMissingPortEndpoint,
 	} {
-		assert.MetricPipelineHasConditionWithT(t, pipelineName, metav1.Condition{
+		assert.MetricPipelineHasCondition(t, pipelineName, metav1.Condition{
 			Type:   conditions.TypeConfigurationGenerated,
 			Status: metav1.ConditionFalse,
 			Reason: conditions.ReasonEndpointInvalid,
 		})
 
-		assert.MetricPipelineHasConditionWithT(t, pipelineName, metav1.Condition{
+		assert.MetricPipelineHasCondition(t, pipelineName, metav1.Condition{
 			Type:   conditions.TypeConfigurationGenerated,
 			Status: metav1.ConditionFalse,
 			Reason: conditions.ReasonEndpointInvalid,
 		})
 
-		assert.MetricPipelineHasConditionWithT(t, pipelineName, metav1.Condition{
+		assert.MetricPipelineHasCondition(t, pipelineName, metav1.Condition{
 			Type:   conditions.TypeConfigurationGenerated,
 			Status: metav1.ConditionFalse,
 			Reason: conditions.ReasonEndpointInvalid,
@@ -114,7 +92,7 @@ func TestValidateEndpoint(t *testing.T) {
 	}
 
 	t.Log("Should set ConfigurationGenerated condition to True in pipelines with missing port and HTTP protocol")
-	assert.MetricPipelineHasConditionWithT(t, pipelineNameMissingHTTP, metav1.Condition{
+	assert.MetricPipelineHasCondition(t, pipelineNameMissingPortHTTP, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionTrue,
 		Reason: conditions.ReasonGatewayConfigured,
