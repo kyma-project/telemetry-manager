@@ -121,7 +121,7 @@ When the status of the applied LogPipeline resource turns to `Running`, the unde
    kubectl -n ${K8S_NAMESPACE} port-forward svc/$(kubectl  get svc -n ${K8S_NAMESPACE} -l app.kubernetes.io/name=loki -ojsonpath='{.items[0].metadata.name}') 3100
    ```
 
-1. To get the latest logs from Loki, replace the `{NANOSECONDS}` placeholder with the result of the previous command, and run a [range query](https://grafana.com/docs/loki/latest/reference/loki-http-api/#query-logs-within-a-range-of-time) returning the last 100 items:
+1. To get the latest logs from Loki, run a [range query](https://grafana.com/docs/loki/latest/reference/loki-http-api/#query-logs-within-a-range-of-time) returning the last 100 items:
 
    ```bash
    curl -G -s  "http://localhost:3100/loki/api/v1/query_range" \
