@@ -20,7 +20,7 @@ Learn how to use [Loki](https://github.com/grafana/loki/tree/main/production/hel
 - [Prerequisites](#prerequisites)
 - [Preparation](#preparation)
 - [Loki Installation](#loki-installation)
-- [Kyma Telemetry Integration](#kyma-telemtry-integration)
+- [Kyma Telemetry Integration](#kyma-telemetry-integration)
 - [Grafana installation](#grafana-installation)
 - [Grafana Exposure](#grafana-exposure)
 
