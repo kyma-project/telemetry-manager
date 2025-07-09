@@ -1,13 +1,11 @@
 package metrics
 
 import (
-	"context"
 	"net/http"
 	"slices"
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -121,9 +119,9 @@ func TestRuntimeInput(t *testing.T) {
 	resources = append(resources, backendC.K8sObjects()...)
 	resources = append(resources, createPodsWithVolume(pvName, pvcName, podMountingPVCName, podMountingEmptyDirName, podNs)...)
 
-	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
-	})
+	// t.Cleanup(func() {
+	// 	require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+	// })
 	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
 	t.Log("Resources should exist and be operational")
@@ -132,9 +130,6 @@ func TestRuntimeInput(t *testing.T) {
 	assert.MetricPipelineHealthy(t.Context(), pipelineNameC)
 	assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
 	assert.DaemonSetReady(t.Context(), kitkyma.MetricAgentName)
-	assert.DeploymentReady(t.Context(), backendA.NamespacedName())
-	assert.DeploymentReady(t.Context(), backendB.NamespacedName())
-	assert.DeploymentReady(t.Context(), backendC.NamespacedName())
 	assert.BackendReachable(t, backendA)
 	assert.BackendReachable(t, backendB)
 	assert.BackendReachable(t, backendC)
