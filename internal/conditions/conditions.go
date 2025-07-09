@@ -88,6 +88,8 @@ var fluentBitLogPipelineMessages = map[string]string{
 }
 
 var otelLogPipelineMessages = map[string]string{
+	ReasonEndpointInvalid: "OTLP output endpoint invalid: %s",
+
 	ReasonGatewayConfigured: "LogPipeline specification is successfully applied to the configuration of Log gateway",
 	ReasonGatewayNotReady:   "Log gateway Deployment is not ready",
 	ReasonGatewayReady:      "Log gateway Deployment is ready",
