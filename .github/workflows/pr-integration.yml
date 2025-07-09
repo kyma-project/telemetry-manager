@@ -333,6 +333,10 @@ jobs:
         run: |
           go test -v -timeout=20m ./test/e2e-migrated/... -- -labels=${{ matrix.labels.name }}
 
+      - name: Get runtime-input-gen pods # TODO: REMOVE THIS (TEST PURPOSE ONLY)
+        if: ${{ matrix.labels.name == 'metrics-set-c' }}
+        run: kubectl get po -n runtime-input-gen -oyaml
+
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
         if: ${{ !cancelled()  }}
