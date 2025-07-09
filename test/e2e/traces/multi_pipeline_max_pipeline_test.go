@@ -54,14 +54,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 					return obj.GetName() == pipelineCreatedFirst.GetName() // first pipeline is deleted separately in one of the specs
 				})
 				k8sObjectsToDelete = append(k8sObjectsToDelete, pipelineCreatedLater)
-				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjectsToDelete...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(GinkgoT(), k8sObjectsToDelete...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(GinkgoT(), k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have only running pipelines", func() {
 			for _, pipelineName := range pipelinesNames {
-				assert.TracePipelineHealthy(suite.Ctx, pipelineName)
+				assert.TracePipelineHealthy(GinkgoT(), pipelineName)
 			}
 		})
 
@@ -72,15 +72,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 				pipelineCreatedLater = &pipeline
 				pipelinesNames = append(pipelinesNames, pipelineName)
 
-				Expect(kitk8s.CreateObjects(suite.Ctx, &pipeline)).Should(Succeed())
+				Expect(kitk8s.CreateObjects(GinkgoT(), &pipeline)).Should(Succeed())
 
-				assert.TracePipelineHasCondition(suite.Ctx, pipelineName, metav1.Condition{
+				assert.TracePipelineHasCondition(GinkgoT(), pipelineName, metav1.Condition{
 					Type:   conditions.TypeConfigurationGenerated,
 					Status: metav1.ConditionFalse,
 					Reason: conditions.ReasonMaxPipelinesExceeded,
 				})
 
-				assert.TracePipelineHasCondition(suite.Ctx, pipelineName, metav1.Condition{
+				assert.TracePipelineHasCondition(GinkgoT(), pipelineName, metav1.Condition{
 					Type:   conditions.TypeFlowHealthy,
 					Status: metav1.ConditionFalse,
 					Reason: conditions.ReasonSelfMonConfigNotGenerated,
@@ -90,10 +90,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 
 		It("Should have only running pipelines", func() {
 			By("Deleting a pipeline", func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, pipelineCreatedFirst)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(GinkgoT(), pipelineCreatedFirst)).Should(Succeed())
 
 				for _, pipeline := range pipelinesNames[1:] {
-					assert.TracePipelineHealthy(suite.Ctx, pipeline)
+					assert.TracePipelineHealthy(GinkgoT(), pipeline)
 				}
 			})
 		})

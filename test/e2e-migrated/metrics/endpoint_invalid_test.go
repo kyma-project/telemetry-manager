@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"context"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -64,9 +63,9 @@ func TestEndpointInvalid(t *testing.T) {
 	}
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(t, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
 	for _, pipelineName := range []string{
 		pipelineNameValue,

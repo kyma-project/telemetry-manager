@@ -1,24 +1,26 @@
 package k8s
 
 import (
-	"context"
 	"reflect"
 
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/test/testkit"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
 // CreateObjects creates k8s objects passed as a slice.
-func CreateObjects(ctx context.Context, resources ...client.Object) error {
+func CreateObjects(t testkit.T, resources ...client.Object) error {
+	t.Helper()
+
 	for _, resource := range resources {
 		// Skip object creation if it already exists.
 		if labelMatches(resource.GetLabels(), PersistentLabelName, "true") {
 			//nolint:errcheck // The value is guaranteed to be of type client.Object.
 			existingResource := reflect.New(reflect.ValueOf(resource).Elem().Type()).Interface().(client.Object)
 			if err := suite.K8sClient.Get(
-				ctx,
+				t.Context(),
 				types.NamespacedName{Name: resource.GetName(), Namespace: resource.GetNamespace()},
 				existingResource,
 			); err == nil {
@@ -26,7 +28,7 @@ func CreateObjects(ctx context.Context, resources ...client.Object) error {
 			}
 		}
 
-		if err := suite.K8sClient.Create(ctx, resource); err != nil {
+		if err := suite.K8sClient.Create(t.Context(), resource); err != nil {
 			return err
 		}
 	}
@@ -35,14 +37,14 @@ func CreateObjects(ctx context.Context, resources ...client.Object) error {
 }
 
 // DeleteObjects deletes k8s objects passed as a slice.
-func DeleteObjects(ctx context.Context, resources ...client.Object) error {
+func DeleteObjects(t testkit.T, resources ...client.Object) error {
 	for _, r := range resources {
 		// Skip object deletion for persistent ones.
 		if labelMatches(r.GetLabels(), PersistentLabelName, "true") {
 			continue
 		}
 
-		if err := suite.K8sClient.Delete(ctx, r); err != nil {
+		if err := suite.K8sClient.Delete(t.Context(), r); err != nil {
 			return err
 		}
 	}
@@ -51,9 +53,9 @@ func DeleteObjects(ctx context.Context, resources ...client.Object) error {
 }
 
 // ForceDeleteObjects deletes k8s objects including persistent ones.
-func ForceDeleteObjects(ctx context.Context, resources ...client.Object) error {
+func ForceDeleteObjects(t testkit.T, resources ...client.Object) error {
 	for _, r := range resources {
-		if err := suite.K8sClient.Delete(ctx, r); err != nil {
+		if err := suite.K8sClient.Delete(t.Context(), r); err != nil {
 			return err
 		}
 	}
@@ -62,9 +64,9 @@ func ForceDeleteObjects(ctx context.Context, resources ...client.Object) error {
 }
 
 // UpdateObjects updates k8s objects passed as a slice.
-func UpdateObjects(ctx context.Context, resources ...client.Object) error {
+func UpdateObjects(t testkit.T, resources ...client.Object) error {
 	for _, resource := range resources {
-		if err := suite.K8sClient.Update(ctx, resource); err != nil {
+		if err := suite.K8sClient.Update(t.Context(), resource); err != nil {
 			return err
 		}
 	}

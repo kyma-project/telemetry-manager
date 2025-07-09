@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"context"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -79,15 +78,15 @@ func TestResources_OTel(t *testing.T) {
 				Build()
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(context.Background(), &pipeline)) //nolint:usetesting // Remove ctx from DeleteObjects
+				require.NoError(t, kitk8s.DeleteObjects(t, &pipeline)) //nolint:usetesting // Remove ctx from DeleteObjects
 			})
-			Expect(kitk8s.CreateObjects(t.Context(), &pipeline, secret.K8sObject())).Should(Succeed())
+			Expect(kitk8s.CreateObjects(t, &pipeline, secret.K8sObject())).Should(Succeed())
 
-			assert.ResourcesExist(t.Context(), tc.resources...)
+			assert.ResourcesExist(t, tc.resources...)
 			// FIXME: Currently failing (resources are not deleted when pipeline becomes non-reconcilable)
 			// t.Log("When LogPipeline becomes non-reconcilable, resources should be cleaned up")
-			// Expect(suite.K8sClient.Delete(t.Context(), secret.K8sObject())).Should(Succeed())
-			// assert.ResourcesNotExist(t.Context(), tc.resources...)
+			// Expect(suite.K8sClient.Delete(t, secret.K8sObject())).Should(Succeed())
+			// assert.ResourcesNotExist(t, tc.resources...)
 		})
 	}
 }
@@ -127,13 +126,13 @@ func TestResources_FluentBit(t *testing.T) {
 		Build()
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), &pipeline)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(t, &pipeline)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), &pipeline, secret.K8sObject())).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, &pipeline, secret.K8sObject())).Should(Succeed())
 
-	assert.ResourcesExist(t.Context(), reources...)
+	assert.ResourcesExist(t, reources...)
 
 	// When pipeline becomes non-reconcilable...
 	Expect(suite.K8sClient.Delete(t.Context(), secret.K8sObject())).Should(Succeed())
-	assert.ResourcesNotExist(t.Context(), reources...)
+	assert.ResourcesNotExist(t, reources...)
 }

@@ -47,13 +47,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(GinkgoT(), k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(GinkgoT(), k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have a secret with endpoint and path", func() {
-			assert.SecretHasKeyValue(suite.Ctx, kitkyma.TraceGatewaySecretName, endpointDataKey, endpoint+path)
+			assert.SecretHasKeyValue(GinkgoT(), kitkyma.TraceGatewaySecretName, endpointDataKey, endpoint+path)
 		})
 	})
 

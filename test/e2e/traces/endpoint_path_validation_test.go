@@ -41,29 +41,29 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 
 		BeforeAll(func() {
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx,
+				Expect(kitk8s.DeleteObjects(GinkgoT(),
 					&tracePipelineWithGRPCAndWithoutPath, &tracePipelineWithHTTPAndPath, &tracePipelineWithHTTPAndWithoutPath)).Should(Succeed())
 			})
 		})
 
 		It("Should reject a TracePipeline with path and default protocol", func() {
-			Expect(kitk8s.CreateObjects(suite.Ctx, &tracePipelineDefaultGRPCWithPath)).ShouldNot(Succeed())
+			Expect(kitk8s.CreateObjects(GinkgoT(), &tracePipelineDefaultGRPCWithPath)).ShouldNot(Succeed())
 		})
 
 		It("Should reject a TracePipeline with path and gRPC protocol", func() {
-			Expect(kitk8s.CreateObjects(suite.Ctx, &tracePipelineWithGRPCAndPath)).ShouldNot(Succeed())
+			Expect(kitk8s.CreateObjects(GinkgoT(), &tracePipelineWithGRPCAndPath)).ShouldNot(Succeed())
 		})
 
 		It("Should accept a TracePipeline with no path and gRPC protocol", func() {
-			Expect(kitk8s.CreateObjects(suite.Ctx, &tracePipelineWithGRPCAndWithoutPath)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(GinkgoT(), &tracePipelineWithGRPCAndWithoutPath)).Should(Succeed())
 		})
 
 		It("Should accept a TracePipeline with no path and HTTP protocol", func() {
-			Expect(kitk8s.CreateObjects(suite.Ctx, &tracePipelineWithHTTPAndWithoutPath)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(GinkgoT(), &tracePipelineWithHTTPAndWithoutPath)).Should(Succeed())
 		})
 
 		It("Should accept a TracePipeline with path and HTTP protocol", func() {
-			Expect(kitk8s.CreateObjects(suite.Ctx, &tracePipelineWithHTTPAndPath)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(GinkgoT(), &tracePipelineWithHTTPAndPath)).Should(Succeed())
 		})
 	})
 })

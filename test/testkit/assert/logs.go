@@ -12,6 +12,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/test/testkit"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -19,7 +20,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-func FluentBitLogsFromContainerDelivered(t TestingT, backend *kitbackend.Backend, expectedContainerName string, optionalDescription ...any) {
+func FluentBitLogsFromContainerDelivered(t testkit.T, backend *kitbackend.Backend, expectedContainerName string, optionalDescription ...any) {
 	t.Helper()
 
 	BackendDataEventuallyMatches(
@@ -30,7 +31,7 @@ func FluentBitLogsFromContainerDelivered(t TestingT, backend *kitbackend.Backend
 	)
 }
 
-func FluentBitLogsFromContainerNotDelivered(t TestingT, backend *kitbackend.Backend, expectedContainerName string, optionalDescription ...any) {
+func FluentBitLogsFromContainerNotDelivered(t testkit.T, backend *kitbackend.Backend, expectedContainerName string, optionalDescription ...any) {
 	t.Helper()
 
 	BackendDataConsistentlyMatches(
@@ -41,7 +42,7 @@ func FluentBitLogsFromContainerNotDelivered(t TestingT, backend *kitbackend.Back
 	)
 }
 
-func FluentBitLogsFromPodDelivered(t TestingT, backend *kitbackend.Backend, expectedPodNamePrefix string, optionalDescription ...any) {
+func FluentBitLogsFromPodDelivered(t testkit.T, backend *kitbackend.Backend, expectedPodNamePrefix string, optionalDescription ...any) {
 	t.Helper()
 
 	BackendDataEventuallyMatches(
@@ -52,7 +53,7 @@ func FluentBitLogsFromPodDelivered(t TestingT, backend *kitbackend.Backend, expe
 	)
 }
 
-func FluentBitLogsFromNamespaceDelivered(t TestingT, backend *kitbackend.Backend, namespace string, optionalDescription ...any) {
+func FluentBitLogsFromNamespaceDelivered(t testkit.T, backend *kitbackend.Backend, namespace string, optionalDescription ...any) {
 	t.Helper()
 
 	BackendDataEventuallyMatches(
@@ -63,7 +64,7 @@ func FluentBitLogsFromNamespaceDelivered(t TestingT, backend *kitbackend.Backend
 	)
 }
 
-func FluentBitLogsFromNamespaceNotDelivered(t TestingT, backend *kitbackend.Backend, namespace string, optionalDescription ...any) {
+func FluentBitLogsFromNamespaceNotDelivered(t testkit.T, backend *kitbackend.Backend, namespace string, optionalDescription ...any) {
 	t.Helper()
 
 	BackendDataConsistentlyMatches(
@@ -74,7 +75,7 @@ func FluentBitLogsFromNamespaceNotDelivered(t TestingT, backend *kitbackend.Back
 	)
 }
 
-func OTelLogsFromContainerDelivered(t TestingT, backend *kitbackend.Backend, containerName string, optionalDescription ...any) {
+func OTelLogsFromContainerDelivered(t testkit.T, backend *kitbackend.Backend, containerName string, optionalDescription ...any) {
 	t.Helper()
 
 	BackendDataEventuallyMatches(
@@ -85,7 +86,7 @@ func OTelLogsFromContainerDelivered(t TestingT, backend *kitbackend.Backend, con
 	)
 }
 
-func OTelLogsFromContainerNotDelivered(t TestingT, backend *kitbackend.Backend, containerName string, optionalDescription ...any) {
+func OTelLogsFromContainerNotDelivered(t testkit.T, backend *kitbackend.Backend, containerName string, optionalDescription ...any) {
 	t.Helper()
 
 	BackendDataConsistentlyMatches(
@@ -96,7 +97,7 @@ func OTelLogsFromContainerNotDelivered(t TestingT, backend *kitbackend.Backend, 
 	)
 }
 
-func OTelLogsFromNamespaceDelivered(t TestingT, backend *kitbackend.Backend, namespace string, optionalDescription ...any) {
+func OTelLogsFromNamespaceDelivered(t testkit.T, backend *kitbackend.Backend, namespace string, optionalDescription ...any) {
 	t.Helper()
 
 	BackendDataEventuallyMatches(
@@ -107,7 +108,7 @@ func OTelLogsFromNamespaceDelivered(t TestingT, backend *kitbackend.Backend, nam
 	)
 }
 
-func OTelLogsFromNamespaceNotDelivered(t TestingT, backend *kitbackend.Backend, namespace string, optionalDescription ...any) {
+func OTelLogsFromNamespaceNotDelivered(t testkit.T, backend *kitbackend.Backend, namespace string, optionalDescription ...any) {
 	t.Helper()
 
 	BackendDataConsistentlyMatches(
@@ -119,7 +120,7 @@ func OTelLogsFromNamespaceNotDelivered(t TestingT, backend *kitbackend.Backend, 
 }
 
 //nolint:dupl //LogPipelineHealthy and MetricPipelineHealthy have similarities, but they are not the same
-func FluentBitLogPipelineHealthy(t TestingT, pipelineName string) {
+func FluentBitLogPipelineHealthy(t testkit.T, pipelineName string) {
 	t.Helper()
 
 	Eventually(func(g Gomega) {
@@ -133,7 +134,7 @@ func FluentBitLogPipelineHealthy(t TestingT, pipelineName string) {
 }
 
 //nolint:dupl //LogPipelineOtelHealthy and LogPipelineHealthy have similarities, but they are not the same
-func OTelLogPipelineHealthy(t TestingT, pipelineName string) {
+func OTelLogPipelineHealthy(t testkit.T, pipelineName string) {
 	t.Helper()
 
 	Eventually(func(g Gomega) {
@@ -154,7 +155,7 @@ func statusConditionHealthy(g Gomega, pipeline telemetryv1alpha1.LogPipeline, co
 }
 
 //nolint:dupl // This provides a better readability for the test as we can test the TLS condition in a clear way
-func LogPipelineHasCondition(t TestingT, pipelineName string, expectedCond metav1.Condition) {
+func LogPipelineHasCondition(t testkit.T, pipelineName string, expectedCond metav1.Condition) {
 	t.Helper()
 
 	Eventually(func(g Gomega) {
@@ -169,7 +170,7 @@ func LogPipelineHasCondition(t TestingT, pipelineName string, expectedCond metav
 }
 
 //nolint:dupl //LogPipelineConditionReasonsTransition,TracePipelineConditionReasonsTransition, MetricPipelineConditionReasonsTransition have similarities, but they are not the same
-func LogPipelineConditionReasonsTransition(t TestingT, pipelineName, condType string, expected []ReasonStatus) {
+func LogPipelineConditionReasonsTransition(t testkit.T, pipelineName, condType string, expected []ReasonStatus) {
 	t.Helper()
 
 	var currCond *metav1.Condition
@@ -193,7 +194,7 @@ func LogPipelineConditionReasonsTransition(t TestingT, pipelineName, condType st
 	}
 }
 
-func LogPipelineUnsupportedMode(t TestingT, pipelineName string, isUnsupportedMode bool) {
+func LogPipelineUnsupportedMode(t testkit.T, pipelineName string, isUnsupportedMode bool) {
 	t.Helper()
 
 	Eventually(func(g Gomega) {

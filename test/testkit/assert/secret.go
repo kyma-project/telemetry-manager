@@ -1,7 +1,6 @@
 package assert
 
 import (
-	"context"
 	"fmt"
 
 	. "github.com/onsi/gomega"
@@ -9,13 +8,16 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/test/testkit"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-func SecretHasKeyValue(ctx context.Context, name types.NamespacedName, dataKey, dataValue string) {
+func SecretHasKeyValue(t testkit.T, name types.NamespacedName, dataKey, dataValue string) {
+	t.Helper()
+
 	Eventually(func(g Gomega) {
-		secret, err := secretExists(ctx, suite.K8sClient, name)
+		secret, err := secretExists(t, suite.K8sClient, name)
 		g.Expect(err).NotTo(HaveOccurred())
 
 		secretValue, found := secret.Data[dataKey]
@@ -25,10 +27,11 @@ func SecretHasKeyValue(ctx context.Context, name types.NamespacedName, dataKey, 
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func secretExists(ctx context.Context, k8sClient client.Client, name types.NamespacedName) (*corev1.Secret, error) {
-	var secret corev1.Secret
+func secretExists(t testkit.T, k8sClient client.Client, name types.NamespacedName) (*corev1.Secret, error) {
+	t.Helper()
 
-	err := k8sClient.Get(ctx, name, &secret)
+	var secret corev1.Secret
+	err := k8sClient.Get(t.Context(), name, &secret)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get secret %s: %w", name.String(), err)
 	}

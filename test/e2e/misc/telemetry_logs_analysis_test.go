@@ -146,35 +146,35 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 			K8sObjects = append(K8sObjects, objs...)
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, K8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(GinkgoT(), K8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, K8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(GinkgoT(), K8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have running metric and trace gateways", func() {
-			assert.DeploymentReady(suite.Ctx, kitkyma.MetricGatewayName)
-			assert.DeploymentReady(suite.Ctx, kitkyma.TraceGatewayName)
+			assert.DeploymentReady(GinkgoT(), kitkyma.MetricGatewayName)
+			assert.DeploymentReady(GinkgoT(), kitkyma.TraceGatewayName)
 		})
 
 		It("Should have running backends", func() {
-			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Namespace: namespace, Name: logBackendName})
-			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Namespace: namespace, Name: metricBackendName})
-			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Namespace: namespace, Name: traceBackendName})
+			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Namespace: namespace, Name: logBackendName})
+			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Namespace: namespace, Name: metricBackendName})
+			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Namespace: namespace, Name: traceBackendName})
 
-			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Namespace: namespace, Name: otelCollectorLogBackendName})
-			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Namespace: namespace, Name: fluentBitLogBackendName})
-			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Namespace: namespace, Name: selfMonitorLogBackendName})
+			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Namespace: namespace, Name: otelCollectorLogBackendName})
+			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Namespace: namespace, Name: fluentBitLogBackendName})
+			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Namespace: namespace, Name: selfMonitorLogBackendName})
 		})
 
 		It("Should have running agents", func() {
-			assert.DaemonSetReady(suite.Ctx, kitkyma.MetricAgentName)
-			assert.DaemonSetReady(suite.Ctx, kitkyma.FluentBitDaemonSetName)
+			assert.DaemonSetReady(GinkgoT(), kitkyma.MetricAgentName)
+			assert.DaemonSetReady(GinkgoT(), kitkyma.FluentBitDaemonSetName)
 		})
 
 		It("Should have running pipelines", func() {
 			assert.FluentBitLogPipelineHealthy(GinkgoT(), logBackendName)
-			assert.MetricPipelineHealthy(suite.Ctx, metricBackendName)
-			assert.TracePipelineHealthy(suite.Ctx, traceBackendName)
+			assert.MetricPipelineHealthy(GinkgoT(), metricBackendName)
+			assert.TracePipelineHealthy(GinkgoT(), traceBackendName)
 
 			assert.FluentBitLogPipelineHealthy(GinkgoT(), otelCollectorLogBackendName)
 			assert.FluentBitLogPipelineHealthy(GinkgoT(), fluentBitLogBackendName)
