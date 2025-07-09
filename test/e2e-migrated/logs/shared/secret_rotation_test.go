@@ -51,19 +51,23 @@ func TestSecretRotation_OTel(t *testing.T) {
 		t.Run(tc.label, func(t *testing.T) {
 			suite.RegisterTestCase(t, tc.label)
 
-			const endpointKey = "logs-endpoint"
+			const (
+				endpointKey   = "logs-endpoint"
+				endpointValue = "http://localhost:4000"
+			)
 
 			var (
 				uniquePrefix = unique.Prefix(tc.label)
-				pipelineName = uniquePrefix("pipeline")
-				genNs        = uniquePrefix("gen")
+				pipelineName = uniquePrefix()
+				secretName   = uniquePrefix()
 				backendNs    = uniquePrefix("backend")
+				genNs        = uniquePrefix("gen")
 			)
 
-			// Initially, create a secret with an incorrect endpoint
-			secret := kitk8s.NewOpaqueSecret("otel-logs-secret-rotation", kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, "http://localhost:4000"))
-
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
+
+			// Initially, create a secret with an incorrect endpoint
+			secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, endpointValue))
 
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
@@ -97,8 +101,6 @@ func TestSecretRotation_OTel(t *testing.T) {
 			}
 
 			assert.OTelLogPipelineHealthy(t, pipelineName)
-
-			t.Log("Initially, the logs should not be delivered to the backend due to the incorrect endpoint in the secret")
 			assert.OTelLogsFromNamespaceNotDelivered(t, backend, genNs)
 
 			// Update the secret to have the correct backend endpoint
@@ -112,8 +114,6 @@ func TestSecretRotation_OTel(t *testing.T) {
 			}
 
 			assert.OTelLogPipelineHealthy(t, pipelineName)
-
-			t.Log("After the secret is updated with the correct endpoint, the logs should be delivered to the backend")
 			assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
 		})
 	}
@@ -122,19 +122,23 @@ func TestSecretRotation_OTel(t *testing.T) {
 func TestSecretRotation_FluentBit(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelFluentBit)
 
-	const hostKey = "logs-host"
+	const (
+		hostKey   = "logs-host"
+		hostValue = "localhost"
+	)
 
 	var (
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
-		generatorNs  = uniquePrefix("gen")
+		secretName   = uniquePrefix()
 		backendNs    = uniquePrefix("backend")
+		genNs        = uniquePrefix("gen")
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
 
 	// Initially, create a secret with an incorrect host
-	secret := kitk8s.NewOpaqueSecret("fluentbit-secret-rotation", kitkyma.DefaultNamespaceName, kitk8s.WithStringData(hostKey, "localhost"))
+	secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(hostKey, hostValue))
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
@@ -150,8 +154,8 @@ func TestSecretRotation_FluentBit(t *testing.T) {
 
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(generatorNs).K8sObject(),
-		stdloggen.NewDeployment(generatorNs).K8sObject(),
+		kitk8s.NewNamespace(genNs).K8sObject(),
+		stdloggen.NewDeployment(genNs).K8sObject(),
 		&pipeline,
 		secret.K8sObject(),
 	}
@@ -166,18 +170,13 @@ func TestSecretRotation_FluentBit(t *testing.T) {
 	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 
 	assert.FluentBitLogPipelineHealthy(t, pipelineName)
-
-	t.Log("Initially, the logs should not be delivered to the backend due to the incorrect host in the secret")
-	assert.FluentBitLogsFromNamespaceNotDelivered(t, backend, generatorNs)
+	assert.FluentBitLogsFromNamespaceNotDelivered(t, backend, genNs)
 
 	// Update the secret to have the correct backend host
 	secret.UpdateSecret(kitk8s.WithStringData(hostKey, backend.Host()))
 	require.NoError(t, kitk8s.UpdateObjects(t.Context(), secret.K8sObject()))
 
 	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
-
 	assert.FluentBitLogPipelineHealthy(t, pipelineName)
-
-	t.Log("After the secret is updated with the correct host, the logs should be delivered to the backend")
-	assert.FluentBitLogsFromNamespaceDelivered(t, backend, generatorNs)
+	assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
 }

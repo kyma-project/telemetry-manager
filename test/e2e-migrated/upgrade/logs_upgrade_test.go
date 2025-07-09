@@ -17,16 +17,14 @@ import (
 )
 
 // LogPipeline upgrade test flow
-// Metric and TracePipeline tests are still written in the old style and will be
-// migrated to the new style in the future.
-func TestUpgrade(t *testing.T) {
+func TestLogsUpgrade(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelUpgrade)
 
 	var (
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
-		generatorNs  = uniquePrefix("gen")
 		backendNs    = uniquePrefix("backend")
+		genNs        = uniquePrefix("gen")
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
@@ -38,31 +36,31 @@ func TestUpgrade(t *testing.T) {
 
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(generatorNs).K8sObject(),
-		stdloggen.NewDeployment(generatorNs).K8sObject(),
+		kitk8s.NewNamespace(genNs).K8sObject(),
 		&pipeline,
+		stdloggen.NewDeployment(genNs).K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Run("before upgrade", func(t *testing.T) {
 		require.NoError(t, kitk8s.CreateObjects(t.Context(), resources...))
 
-		assert.DeploymentReady(t.Context(), backend.NamespacedName())
 		assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
-
 		assert.FluentBitLogPipelineHealthy(t, pipelineName)
-		assert.FluentBitLogsFromNamespaceDelivered(t, backend, generatorNs)
+		assert.BackendReachable(t, backend)
+		assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
 	})
 
 	t.Run("after upgrade", func(t *testing.T) {
-		// TODO(skhalash): uncomment after 1.42 release
-		// t.Cleanup(func() {
-		// 	require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
-		// })
-		assert.DeploymentReady(t.Context(), backend.NamespacedName())
-		assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
+		// TODO(TeodorSAP): Delete this block after 1.44 release ---
+		pipelineName = "upgrade"
+		backend = kitbackend.New("upgrade-backend", kitbackend.SignalTypeLogsFluentBit)
+		genNs = "upgrade-gen"
+		// ---
 
+		assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
 		assert.FluentBitLogPipelineHealthy(t, pipelineName)
-		assert.FluentBitLogsFromNamespaceDelivered(t, backend, generatorNs)
+		assert.BackendReachable(t, backend)
+		assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
 	})
 }
