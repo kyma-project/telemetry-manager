@@ -25,9 +25,9 @@ func TestInstrumentationScope(t *testing.T) {
 
 	var (
 		uniquePrefix = unique.Prefix()
-		genNs        = uniquePrefix("generator")
-		backendNs    = uniquePrefix("backend")
 		pipelineName = uniquePrefix()
+		backendNs    = uniquePrefix("backend")
+		genNs        = uniquePrefix("gen")
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
@@ -38,14 +38,12 @@ func TestInstrumentationScope(t *testing.T) {
 		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 		Build()
 
-	var resources []client.Object
-
-	resources = append(resources,
+	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
 		stdloggen.NewDeployment(genNs).K8sObject(),
 		&pipeline,
-	)
+	}
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {

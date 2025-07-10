@@ -53,9 +53,9 @@ func TestSinglePipeline_OTel(t *testing.T) {
 
 			var (
 				uniquePrefix = unique.Prefix(tc.label)
-				pipelineName = uniquePrefix("pipeline")
-				genNs        = uniquePrefix("gen")
+				pipelineName = uniquePrefix()
 				backendNs    = uniquePrefix("backend")
+				genNs        = uniquePrefix("gen")
 			)
 
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
@@ -98,8 +98,8 @@ func TestSinglePipeline_FluentBit(t *testing.T) {
 	var (
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
-		generatorNs  = uniquePrefix("gen")
 		backendNs    = uniquePrefix("backend")
+		genNs        = uniquePrefix("gen")
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
@@ -111,8 +111,8 @@ func TestSinglePipeline_FluentBit(t *testing.T) {
 
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(generatorNs).K8sObject(),
-		stdloggen.NewDeployment(generatorNs).K8sObject(),
+		kitk8s.NewNamespace(genNs).K8sObject(),
+		stdloggen.NewDeployment(genNs).K8sObject(),
 		&pipeline,
 	}
 	resources = append(resources, backend.K8sObjects()...)
@@ -128,5 +128,5 @@ func TestSinglePipeline_FluentBit(t *testing.T) {
 	assert.FluentBitLogPipelineHealthy(t, pipelineName)
 	assert.LogPipelineUnsupportedMode(t, pipelineName, false)
 
-	assert.FluentBitLogsFromNamespaceDelivered(t, backend, generatorNs)
+	assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
 }
