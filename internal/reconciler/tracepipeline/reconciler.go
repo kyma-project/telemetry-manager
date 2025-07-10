@@ -244,6 +244,7 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, allPipelines []telemetryv1alpha1.TracePipeline) error {
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
 	clusterName := r.getClusterNameFromTelemetry(ctx, shootInfo.ClusterName)
+
 	clusterUID, err := r.getK8sClusterUID(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get kube-system namespace for cluster UID: %w", err)
@@ -345,7 +346,7 @@ func (r *Reconciler) getK8sClusterUID(ctx context.Context) (string, error) {
 		Name: "kube-system",
 	}
 
-	err := r.Client.Get(ctx, kubeSystemNs, &kubeSystem)
+	err := r.Get(ctx, kubeSystemNs, &kubeSystem)
 	if err != nil {
 		return "", err
 	}
