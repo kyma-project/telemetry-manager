@@ -331,7 +331,11 @@ jobs:
 
       - name: Run tests
         run: |
-          go test -v -timeout=20m ./test/e2e-migrated/... -- -labels=${{ matrix.labels.name }}
+          go test -v -timeout=20m ./test/e2e-migrated/... -- -labels=${{ matrix.labels.name }} || echo "TEST_FAILED=true" >> $GITHUB_ENV
+
+      - name: Get runtime-input test data # TODO: REMOVE THIS (TEST PURPOSE ONLY)
+        if: ${{ env.TEST_FAILED == 'true' }}
+        run: |
           echo "===== YAML Files ====="
           kubectl get po -n runtime-input-gen -oyaml
           echo "===== Deployment Logs ====="
@@ -342,7 +346,7 @@ jobs:
           kubectl logs -n runtime-input-gen sts/runtime-input
           echo "===== Job Logs ====="
           kubectl logs -n runtime-input-gen job/runtime-input
-          
+
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
         if: ${{ !cancelled()  }}
