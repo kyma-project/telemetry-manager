@@ -50,10 +50,10 @@ func TestRuntimeInput(t *testing.T) {
 		genNs     = uniquePrefix("gen")
 		podNs     = uniquePrefix("pod")
 
-		deploymentName  = uniquePrefix()
-		statefulSetName = uniquePrefix()
-		daemonSetName   = uniquePrefix()
-		jobName         = uniquePrefix()
+		deploymentName  = uniquePrefix("deployment")
+		statefulSetName = uniquePrefix("statefulset")
+		daemonSetName   = uniquePrefix("daemonset")
+		jobName         = uniquePrefix("job")
 
 		pvName                  = uniquePrefix()
 		pvcName                 = uniquePrefix()
