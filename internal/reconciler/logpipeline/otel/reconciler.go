@@ -243,7 +243,8 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 }
 
 func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, allPipelines []telemetryv1alpha1.LogPipeline) error {
-	clusterInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
+	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
+	clusterName := r.getClusterNameFromTelemetry(ctx, shootInfo.ClusterName)
 
 	var enrichments *operatorv1alpha1.EnrichmentSpec
 
@@ -253,8 +254,8 @@ func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetr
 	}
 
 	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, gateway.BuildOptions{
-		ClusterName:   clusterInfo.ClusterName,
-		CloudProvider: clusterInfo.CloudProvider,
+		ClusterName:   clusterName,
+		CloudProvider: shootInfo.CloudProvider,
 		Enrichments:   enrichments,
 		ModuleVersion: r.moduleVersion,
 	})
