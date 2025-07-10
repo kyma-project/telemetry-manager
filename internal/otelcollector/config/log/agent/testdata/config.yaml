@@ -213,6 +213,8 @@ processors:
               key: k8s.cluster.name
               value: test-cluster
             - action: insert
+              key: k8s.cluster.uid
+            - action: insert
               key: cloud.provider
               value: azure
     service_enrichment:

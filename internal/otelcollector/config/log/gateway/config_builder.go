@@ -25,6 +25,7 @@ type Builder struct {
 
 type BuildOptions struct {
 	ClusterName   string
+	ClusterUID    string
 	CloudProvider string
 	Enrichments   *operatorv1alpha1.EnrichmentSpec
 	ModuleVersion string
