@@ -332,10 +332,6 @@ jobs:
       - name: Run tests
         run: |
           go test -v -timeout=20m ./test/e2e-migrated/... -- -labels=${{ matrix.labels.name }}
-
-      - name: Get runtime-input test data # TODO: REMOVE THIS (TEST PURPOSE ONLY)
-        if: ${{ matrix.labels.name == 'metrics-set-c' }}
-        run: |
           echo "===== YAML Files ====="
           kubectl get po -n runtime-input-gen -oyaml
           echo "===== Deployment Logs ====="
@@ -346,7 +342,6 @@ jobs:
           kubectl logs -n runtime-input-gen sts/runtime-input
           echo "===== Job Logs ====="
           kubectl logs -n runtime-input-gen job/runtime-input
-
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
         if: ${{ !cancelled()  }}
