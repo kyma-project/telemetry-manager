@@ -138,7 +138,9 @@ func newMetricReader(ctx context.Context) (metric.Reader, error) {
 	endpointEnv := os.Getenv("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT")
 
 	if exporterEnv == "prometheus" {
-		reader, err := prometheus.New()
+		reader, err := prometheus.New(
+			prometheus.WithoutUnits(),
+		)
 		if err != nil {
 			return nil, fmt.Errorf("creating prometheus metric reader: %w", err)
 		}
