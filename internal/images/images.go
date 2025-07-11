@@ -6,6 +6,6 @@ package images
 const (
 	DefaultFluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20250528-dfa5b526"
 	DefaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:4.0.4"
-	DefaultOTelCollectorImage     = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.128.0-main"
+	DefaultOTelCollectorImage     = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.129.0-main"
 	DefaultSelfMonitorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:3.4.1-be41b59"
 )
