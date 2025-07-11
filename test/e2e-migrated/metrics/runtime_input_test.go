@@ -36,6 +36,15 @@ func TestRuntimeInput(t *testing.T) {
 	const (
 		podNetworkErrorsMetric = "k8s.pod.network.errors"
 		podNetworkIOMetric     = "k8s.pod.network.io"
+
+		backendNameA = "backend-a"
+		backendNameB = "backend-b"
+		backendNameC = "backend-c"
+
+		deploymentName  = "deployment"
+		statefulSetName = "statefulset"
+		daemonSetName   = "daemonset"
+		jobName         = "job"
 	)
 
 	var (
@@ -44,18 +53,9 @@ func TestRuntimeInput(t *testing.T) {
 		pipelineNameB = uniquePrefix("b")
 		pipelineNameC = uniquePrefix("c")
 
-		backendNameA = uniquePrefix("backend-a")
-		backendNameB = uniquePrefix("backend-b")
-		backendNameC = uniquePrefix("backend-c")
-
 		backendNs = uniquePrefix("backend")
 		genNs     = uniquePrefix("gen")
 		podNs     = uniquePrefix("pod")
-
-		deploymentName  = uniquePrefix()
-		statefulSetName = uniquePrefix()
-		daemonSetName   = uniquePrefix()
-		jobName         = uniquePrefix()
 
 		pvName                  = uniquePrefix()
 		pvcName                 = uniquePrefix()
