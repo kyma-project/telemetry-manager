@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"context"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -70,10 +69,10 @@ func TestEndpointInvalid_OTel(t *testing.T) {
 			}
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(context.Background(), resourcesToSucceedCreation...)) //nolint:usetesting // Remove ctx from DeleteObjects
+				require.NoError(t, kitk8s.DeleteObjects(t, resourcesToSucceedCreation...)) //nolint:usetesting // Remove ctx from DeleteObjects
 			})
 
-			Expect(kitk8s.CreateObjects(t.Context(), resourcesToSucceedCreation...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(t, resourcesToSucceedCreation...)).Should(Succeed())
 
 			assert.LogPipelineHasCondition(t, pipelineNameValueFromSecret, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
@@ -126,10 +125,10 @@ func TestEndpointInvalid_FluentBit(t *testing.T) {
 	}
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resourcesToSucceedCreation...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(t, resourcesToSucceedCreation...)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), resourcesToSucceedCreation...)).Should(Succeed())
-	Expect(kitk8s.CreateObjects(t.Context(), resourcesToFailCreation...)).Should(MatchError(ContainSubstring("invalid hostname")))
+	Expect(kitk8s.CreateObjects(t, resourcesToSucceedCreation...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, resourcesToFailCreation...)).Should(MatchError(ContainSubstring("invalid hostname")))
 
 	assert.LogPipelineHasCondition(t, pipelineNameValueFromSecret, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,

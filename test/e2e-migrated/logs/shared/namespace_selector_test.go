@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"context"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -122,16 +121,16 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 			resources = append(resources, backend2.K8sObjects()...)
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+				require.NoError(t, kitk8s.DeleteObjects(t, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 			})
-			Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
-			assert.DeploymentReady(t.Context(), kitkyma.LogGatewayName)
-			assert.DeploymentReady(t.Context(), backend1.NamespacedName())
-			assert.DeploymentReady(t.Context(), backend2.NamespacedName())
+			assert.DeploymentReady(t, kitkyma.LogGatewayName)
+			assert.DeploymentReady(t, backend1.NamespacedName())
+			assert.DeploymentReady(t, backend2.NamespacedName())
 
 			if tc.expectAgent {
-				assert.DaemonSetReady(t.Context(), kitkyma.LogAgentName)
+				assert.DaemonSetReady(t, kitkyma.LogAgentName)
 			}
 
 			assert.OTelLogPipelineHealthy(t, includePipelineName)
@@ -183,17 +182,17 @@ func TestNamespaceSelector_FluentBit(t *testing.T) {
 	resources = append(resources, backend2.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(t, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
 	assert.FluentBitLogPipelineHealthy(t, includePipelineName)
 	assert.FluentBitLogPipelineHealthy(t, excludePipelineName)
 
-	assert.DeploymentReady(t.Context(), backend1.NamespacedName())
-	assert.DeploymentReady(t.Context(), backend2.NamespacedName())
+	assert.DeploymentReady(t, backend1.NamespacedName())
+	assert.DeploymentReady(t, backend2.NamespacedName())
 
-	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
+	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 
 	assert.FluentBitLogsFromNamespaceDelivered(t, backend1, gen1Ns)
 	assert.FluentBitLogsFromNamespaceNotDelivered(t, backend2, gen2Ns)

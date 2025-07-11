@@ -1,7 +1,6 @@
 package assert
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -14,6 +13,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/test/testkit"
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
@@ -46,11 +46,13 @@ func TracesFromNamespacesNotDelivered(proxyClient *apiserverproxy.Client, backen
 	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-func TracePipelineHealthy(ctx context.Context, pipelineName string) {
+func TracePipelineHealthy(t testkit.T, pipelineName string) {
+	t.Helper()
+
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.TracePipeline
 		key := types.NamespacedName{Name: pipelineName}
-		g.Expect(suite.K8sClient.Get(ctx, key, &pipeline)).To(Succeed())
+		g.Expect(suite.K8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
 
 		gatewayHealthy := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeGatewayHealthy)
 		g.Expect(gatewayHealthy).NotTo(BeNil())
@@ -62,11 +64,13 @@ func TracePipelineHealthy(ctx context.Context, pipelineName string) {
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func TracePipelineHasCondition(ctx context.Context, pipelineName string, expectedCond metav1.Condition) {
+func TracePipelineHasCondition(t testkit.T, pipelineName string, expectedCond metav1.Condition) {
+	t.Helper()
+
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.TracePipeline
 		key := types.NamespacedName{Name: pipelineName}
-		g.Expect(suite.K8sClient.Get(ctx, key, &pipeline)).To(Succeed())
+		g.Expect(suite.K8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
 		condition := meta.FindStatusCondition(pipeline.Status.Conditions, expectedCond.Type)
 		g.Expect(condition).NotTo(BeNil())
 		g.Expect(condition.Reason).To(Equal(expectedCond.Reason))
@@ -75,15 +79,16 @@ func TracePipelineHasCondition(ctx context.Context, pipelineName string, expecte
 }
 
 //nolint:dupl //LogPipelineConditionReasonsTransition,TracePipelineConditionReasonsTransition, MetricPipelineConditionReasonsTransition have similarities, but they are not the same
-func TracePipelineConditionReasonsTransition(ctx context.Context, pipelineName, condType string, expected []ReasonStatus) {
-	var currCond *metav1.Condition
+func TracePipelineConditionReasonsTransition(t testkit.T, pipelineName, condType string, expected []ReasonStatus) {
+	t.Helper()
 
+	var currCond *metav1.Condition
 	for _, expected := range expected {
 		// Wait for the current condition to match the expected condition
 		Eventually(func(g Gomega) ReasonStatus {
 			var pipeline telemetryv1alpha1.TracePipeline
 			key := types.NamespacedName{Name: pipelineName}
-			err := suite.K8sClient.Get(ctx, key, &pipeline)
+			err := suite.K8sClient.Get(t.Context(), key, &pipeline)
 			g.Expect(err).To(Succeed())
 			currCond = meta.FindStatusCondition(pipeline.Status.Conditions, condType)
 			if currCond == nil {

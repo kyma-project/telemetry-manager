@@ -43,9 +43,9 @@ func TestLogsUpgrade(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Run("before upgrade", func(t *testing.T) {
-		require.NoError(t, kitk8s.CreateObjects(t.Context(), resources...))
+		require.NoError(t, kitk8s.CreateObjects(t, resources...))
 
-		assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
+		assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 		assert.FluentBitLogPipelineHealthy(t, pipelineName)
 		assert.BackendReachable(t, backend)
 		assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
@@ -58,7 +58,7 @@ func TestLogsUpgrade(t *testing.T) {
 		genNs = "upgrade-gen"
 		// ---
 
-		assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
+		assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 		assert.FluentBitLogPipelineHealthy(t, pipelineName)
 		assert.BackendReachable(t, backend)
 		assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)

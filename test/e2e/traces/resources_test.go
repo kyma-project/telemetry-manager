@@ -33,58 +33,58 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 
 		BeforeAll(func() {
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, &tracePipeline)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(GinkgoT(), &tracePipeline)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, &tracePipeline, secret.K8sObject())).Should(Succeed())
+			Expect(kitk8s.CreateObjects(GinkgoT(), &tracePipeline, secret.K8sObject())).Should(Succeed())
 		})
 
 		It("Should have a ServiceAccount owned by the TracePipeline", func() {
 			var serviceAccount corev1.ServiceAccount
-			assert.HasOwnerReference(suite.Ctx, &serviceAccount, kitkyma.TraceGatewayServiceAccount, ownerReferenceKind, pipelineName)
+			assert.HasOwnerReference(GinkgoT(), &serviceAccount, kitkyma.TraceGatewayServiceAccount, ownerReferenceKind, pipelineName)
 		})
 
 		It("Should have a ClusterRole owned by the TracePipeline", func() {
 			var clusterRole rbacv1.ClusterRole
-			assert.HasOwnerReference(suite.Ctx, &clusterRole, kitkyma.TraceGatewayClusterRole, ownerReferenceKind, pipelineName)
+			assert.HasOwnerReference(GinkgoT(), &clusterRole, kitkyma.TraceGatewayClusterRole, ownerReferenceKind, pipelineName)
 		})
 
 		It("Should have a ClusterRoleBinding owned by the TracePipeline", func() {
 			var clusterRoleBinding rbacv1.ClusterRoleBinding
-			assert.HasOwnerReference(suite.Ctx, &clusterRoleBinding, kitkyma.TraceGatewayClusterRoleBinding, ownerReferenceKind, pipelineName)
+			assert.HasOwnerReference(GinkgoT(), &clusterRoleBinding, kitkyma.TraceGatewayClusterRoleBinding, ownerReferenceKind, pipelineName)
 		})
 
 		It("Should have a Metrics service owned by the TracePipeline", func() {
 			var service corev1.Service
-			assert.HasOwnerReference(suite.Ctx, &service, kitkyma.TraceGatewayMetricsService, ownerReferenceKind, pipelineName)
+			assert.HasOwnerReference(GinkgoT(), &service, kitkyma.TraceGatewayMetricsService, ownerReferenceKind, pipelineName)
 		})
 
 		It("Should have a Network Policy owned by the TracePipeline", func() {
 			var networkPolicy networkingv1.NetworkPolicy
-			assert.HasOwnerReference(suite.Ctx, &networkPolicy, kitkyma.TraceGatewayNetworkPolicy, ownerReferenceKind, pipelineName)
+			assert.HasOwnerReference(GinkgoT(), &networkPolicy, kitkyma.TraceGatewayNetworkPolicy, ownerReferenceKind, pipelineName)
 		})
 
 		It("Should have a Secret owned by the TracePipeline", func() {
 			var secret corev1.Secret
-			assert.HasOwnerReference(suite.Ctx, &secret, kitkyma.TraceGatewaySecretName, ownerReferenceKind, pipelineName)
+			assert.HasOwnerReference(GinkgoT(), &secret, kitkyma.TraceGatewaySecretName, ownerReferenceKind, pipelineName)
 		})
 
 		It("Should have a ConfigMap owned by the TracePipeline", func() {
 			var configMap corev1.ConfigMap
-			assert.HasOwnerReference(suite.Ctx, &configMap, kitkyma.TraceGatewayConfigMap, ownerReferenceKind, pipelineName)
+			assert.HasOwnerReference(GinkgoT(), &configMap, kitkyma.TraceGatewayConfigMap, ownerReferenceKind, pipelineName)
 		})
 
 		It("Should have a Deployment owned by the TracePipeline", func() {
 			var deployment appsv1.Deployment
-			assert.HasOwnerReference(suite.Ctx, &deployment, kitkyma.TraceGatewayName, ownerReferenceKind, pipelineName)
+			assert.HasOwnerReference(GinkgoT(), &deployment, kitkyma.TraceGatewayName, ownerReferenceKind, pipelineName)
 		})
 
 		It("Should have an OTLP Service owned by the TracePipeline", func() {
 			var service corev1.Service
-			assert.HasOwnerReference(suite.Ctx, &service, kitkyma.TraceGatewayOTLPService, ownerReferenceKind, pipelineName)
+			assert.HasOwnerReference(GinkgoT(), &service, kitkyma.TraceGatewayOTLPService, ownerReferenceKind, pipelineName)
 		})
 
 		It("Should have a Deployment with correct pod priority class", func() {
-			assert.DeploymentHasPriorityClass(suite.Ctx, kitkyma.TraceGatewayName, "telemetry-priority-class")
+			assert.DeploymentHasPriorityClass(GinkgoT(), kitkyma.TraceGatewayName, "telemetry-priority-class")
 		})
 
 		It("Should clean up gateway resources when pipeline becomes non-reconcilable", func() {

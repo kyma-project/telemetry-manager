@@ -31,7 +31,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 				WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("name", "namespace", "", "")).
 				Build()
 			Consistently(func(g Gomega) {
-				g.Expect(kitk8s.CreateObjects(suite.Ctx, &tracePipeline)).ShouldNot(Succeed())
+				g.Expect(kitk8s.CreateObjects(GinkgoT(), &tracePipeline)).ShouldNot(Succeed())
 			}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 	})

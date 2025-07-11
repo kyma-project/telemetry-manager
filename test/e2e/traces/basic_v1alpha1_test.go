@@ -61,9 +61,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(GinkgoT(), k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(GinkgoT(), k8sObjects...)).Should(Succeed())
 
 			// TODO(skhalash): remove this block after 1.42 release
 			// This is a workaround to compensate for a bug resulting in a missing backend host secret after the pre-upgrade test run
@@ -81,7 +81,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should have a running trace gateway deployment", Label(suite.LabelUpgrade), func() {
-			assert.DeploymentReady(suite.Ctx, kitkyma.TraceGatewayName)
+			assert.DeploymentReady(GinkgoT(), kitkyma.TraceGatewayName)
 		})
 
 		It("Should have 2 trace gateway replicas", Label(suite.LabelUpgrade), func() {
@@ -175,11 +175,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should have a trace backend running", Label(suite.LabelUpgrade), func() {
-			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have a running pipeline", Label(suite.LabelUpgrade), func() {
-			assert.TracePipelineHealthy(suite.Ctx, pipelineName)
+			assert.TracePipelineHealthy(GinkgoT(), pipelineName)
 		})
 
 		It("Should deliver telemetrygen traces", Label(suite.LabelUpgrade), func() {
