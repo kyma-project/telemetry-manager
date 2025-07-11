@@ -6,9 +6,9 @@
 | - | - |
 | Signal types | logs |
 | Backend type | custom in-cluster |
-| OTLP-native | no |
+| OTLP-native | yes |
 
-Learn how to use [Loki](https://github.com/grafana/loki/tree/main/production/helm/loki) as a logging backend with Kyma's [LogPipeline](../../02-logs.md) or with [Promtail](https://grafana.com/docs/loki/latest/clients/promtail/).
+Learn how to use [Loki](https://github.com/grafana/loki/tree/main/production/helm/loki) in [OTLP mode](https://grafana.com/docs/loki/latest/send-data/otel/) as a logging backend with Kyma's [LogPipeline](../../logs.md).
 
 > [!WARNING]
 > This guide uses Grafana Loki, which is distributed under [AGPL-3.0](https://github.com/grafana/loki/blob/main/LICENSE) only. Using components that have this license might affect the license of your project. Inform yourself about the license used by Grafana Loki under [https://grafana.com/licensing/](https://grafana.com/licensing/)).
@@ -20,7 +20,7 @@ Learn how to use [Loki](https://github.com/grafana/loki/tree/main/production/hel
 - [Prerequisites](#prerequisites)
 - [Preparation](#preparation)
 - [Loki Installation](#loki-installation)
-- [Log agent installation](#log-agent-installation)
+- [Kyma Telemetry Integration](#kyma-telemetry-integration)
 - [Grafana installation](#grafana-installation)
 - [Grafana Exposure](#grafana-exposure)
 
@@ -84,26 +84,11 @@ Check that the `loki` Pod has been created in the Namespace and is in the `Runni
 kubectl -n ${K8S_NAMESPACE} get pod -l app.kubernetes.io/name=loki
 ```
 
-## Log Agent Installation
+## Kyma Telemetry Integration
 
-### Install the Log Agent
+### Create a LogPipeline Resource
 
-To ingest the application logs from within your cluster to Loki, you can either choose an installation based on [Promtail](https://grafana.com/docs/loki/latest/clients/promtail/), which is the log collector recommended by Loki and provides a ready-to-use setup. Alternatively, you can use Kyma's LogPipeline feature based on Fluent Bit.
-
-<!-- tabs:start -->
-
-#### **Install Promtail**
-
-To install Promtail pointing it to the previously installed Loki instance, run:
-
-```bash
-helm upgrade --install --create-namespace -n ${K8S_NAMESPACE} promtail grafana/promtail -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/loki/promtail-values.yaml --set "config.clients[0].url=https://${HELM_LOKI_RELEASE}.${K8S_NAMESPACE}.svc.cluster.local:3100/loki/api/v1/push"
-```
-
-#### **Install Fluent Bit with Kyma's LogPipeline**
-
-> [!WARNING]
-> This setup uses an unsupported output plugin for the LogPipeline.
+To ingest the application logs from within your cluster to Loki, use Kyma's LogPipeline feature based on OTLP. It enables the `application` input to automatically tail application logs from `stdout/stderr`. If you want to push logs natively, additionally use the [log gateway endpoint](https://kyma-project.io/#/telemetry-manager/user/logs?id=_1-create-a-logpipeline).
 
 Apply the LogPipeline:
 
@@ -116,24 +101,17 @@ Apply the LogPipeline:
    spec:
       input:
          application:
-            namespaces:
-              system: true
+            enabled: true
       output:
-         custom: |
-            name   loki
-            host   ${HELM_LOKI_RELEASE}.${K8S_NAMESPACE}.svc.cluster.local
-            port   3100
-            auto_kubernetes_labels off
-            labels job=fluentbit, container=\$kubernetes['container_name'], namespace=\$kubernetes['namespace_name'], pod=\$kubernetes['pod_name'], node=\$kubernetes['host'], app=\$kubernetes['labels']['app'],app=\$kubernetes['labels']['app.kubernetes.io/name']
+         otlp:
+            protocol: http
+            endpoint:
+               value: http://${HELM_LOKI_RELEASE}.${K8S_NAMESPACE}.svc.cluster.local:3100
+            path: otlp
    EOF
    ```
 
-When the status of the applied LogPipeline resource turns into `Running`, the underlying Fluent Bit is reconfigured and log shipment to your Loki instance is active.
-
-> [!NOTE]
-> The used output plugin configuration uses a static label map to assign labels of a Pod to Loki log streams. It's not recommended to activate the `auto_kubernetes_labels` feature for using all labels of a Pod because this lowers the performance. Follow [Loki's labelling best practices](https://grafana.com/docs/loki/latest/best-practices/) for a tailor-made setup that fits your workload configuration.
-
-<!-- tabs:end -->
+When the status of the applied LogPipeline resource turns to `Running`, the underlying collector is reconfigured and log shipment to your Loki instance is active.
 
 ### Verify the Setup by Accessing Logs Using the Loki API
 
@@ -143,20 +121,12 @@ When the status of the applied LogPipeline resource turns into `Running`, the un
    kubectl -n ${K8S_NAMESPACE} port-forward svc/$(kubectl  get svc -n ${K8S_NAMESPACE} -l app.kubernetes.io/name=loki -ojsonpath='{.items[0].metadata.name}') 3100
    ```
 
-1. Loki queries need a query parameter **time**, provided in nanoseconds. To get the current nanoseconds in Linux or macOS, run:
+1. To get the latest logs from Loki, run a [range query](https://grafana.com/docs/loki/latest/reference/loki-http-api/#query-logs-within-a-range-of-time) returning the last 100 items:
 
    ```bash
-   date +%s
-   ```
-
-1. To get the latest logs from Loki, replace the `{NANOSECONDS}` placeholder with the result of the previous command, and run:
-
-   ```bash
-   curl -G -s  "http://localhost:3100/loki/api/v1/query" \
+   curl -G -s  "http://localhost:3100/loki/api/v1/query_range" \
      --data-urlencode \
-     'query={job="fluentbit"}' \
-     --data-urlencode \
-     'time={NANOSECONDS}'
+     'query={service_name!=""}' \
    ```
 
 ## Grafana Installation

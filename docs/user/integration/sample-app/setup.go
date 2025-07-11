@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -19,7 +20,6 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
 var (
@@ -68,10 +68,9 @@ func newOtelResource() (*resource.Resource, error) {
 	// Ensure default SDK resources and the required service name are set.
 	res, err := resource.New(
 		context.Background(),
-		resource.WithSchemaURL(semconv.SchemaURL),
-		resource.WithAttributes(semconv.ServiceName("sample-app")), // Default service name which might get overriden by OTEL_SERVICE_NAME.
-		resource.WithFromEnv(),                                     // Discover and provide attributes from OTEL_RESOURCE_ATTRIBUTES and OTEL_SERVICE_NAME environment variables.
-		resource.WithTelemetrySDK(),                                // Discover and provide information about the OpenTelemetry SDK used.
+		resource.WithAttributes(attribute.String("service.name", "sample-app")), // Default service name which might get overriden by OTEL_SERVICE_NAME.
+		resource.WithFromEnv(),      // Discover and provide attributes from OTEL_RESOURCE_ATTRIBUTES and OTEL_SERVICE_NAME environment variables.
+		resource.WithTelemetrySDK(), // Discover and provide information about the OpenTelemetry SDK used.
 	)
 
 	if err != nil {
@@ -139,7 +138,9 @@ func newMetricReader(ctx context.Context) (metric.Reader, error) {
 	endpointEnv := os.Getenv("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT")
 
 	if exporterEnv == "prometheus" {
-		reader, err := prometheus.New()
+		reader, err := prometheus.New(
+			prometheus.WithoutUnits(),
+		)
 		if err != nil {
 			return nil, fmt.Errorf("creating prometheus metric reader: %w", err)
 		}
