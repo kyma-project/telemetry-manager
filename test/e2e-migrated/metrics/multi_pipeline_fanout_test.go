@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"context"
 	"io"
 	"net/http"
 	"testing"
@@ -78,15 +77,15 @@ func TestMultiPipelineFanout(t *testing.T) {
 	resources = append(resources, backendPrometheus.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(resources...))
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
-	assert.MetricPipelineHealthy(t.Context(), pipelineRuntimeName)
-	assert.MetricPipelineHealthy(t.Context(), pipelinePrometheusName)
-	assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
-	assert.DeploymentReady(t.Context(), backendRuntime.NamespacedName())
-	assert.DeploymentReady(t.Context(), backendPrometheus.NamespacedName())
+	assert.MetricPipelineHealthy(t, pipelineRuntimeName)
+	assert.MetricPipelineHealthy(t, pipelinePrometheusName)
+	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.DeploymentReady(t, backendRuntime.NamespacedName())
+	assert.DeploymentReady(t, backendPrometheus.NamespacedName())
 
 	Eventually(func(g Gomega) {
 		resp, err := suite.ProxyClient.Get(backendRuntimeExportURL)

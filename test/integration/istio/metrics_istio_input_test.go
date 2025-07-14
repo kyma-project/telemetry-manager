@@ -114,25 +114,25 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio, suite.
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(GinkgoT(), k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have a running metric gateway deployment", func() {
-			assert.DeploymentReady(suite.Ctx, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(GinkgoT(), kitkyma.MetricGatewayName)
 		})
 
 		It("Should have a running metric agent daemonset", func() {
-			assert.DaemonSetReady(suite.Ctx, kitkyma.MetricAgentName)
+			assert.DaemonSetReady(GinkgoT(), kitkyma.MetricAgentName)
 		})
 
 		It("Should have a metrics backend running", func() {
-			assert.DeploymentReady(suite.Ctx, metricBackend.NamespacedName())
+			assert.DeploymentReady(GinkgoT(), metricBackend.NamespacedName())
 		})
 
 		It("Should have a running metric agent daemonset", func() {
-			assert.DaemonSetReady(suite.Ctx, kitkyma.MetricAgentName)
+			assert.DaemonSetReady(GinkgoT(), kitkyma.MetricAgentName)
 		})
 
 		It("Should verify istio proxy metric scraping", func() {

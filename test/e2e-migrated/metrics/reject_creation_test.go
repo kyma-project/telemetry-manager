@@ -28,7 +28,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 		WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("name", "namespace", "", "")).
 		Build()
 
-	Expect(kitk8s.CreateObjects(t.Context(), &defaultGRPCWithPathPipeline)).ShouldNot(Succeed())
-	Expect(kitk8s.CreateObjects(t.Context(), &withGRPCAndPathPipeline)).ShouldNot(Succeed())
-	Expect(kitk8s.CreateObjects(t.Context(), &misconfiguredSecretRefPipeline)).ShouldNot(Succeed())
+	Expect(kitk8s.CreateObjects(t, &defaultGRPCWithPathPipeline)).ShouldNot(Succeed())
+	Expect(kitk8s.CreateObjects(t, &withGRPCAndPathPipeline)).ShouldNot(Succeed())
+	Expect(kitk8s.CreateObjects(t, &misconfiguredSecretRefPipeline)).ShouldNot(Succeed())
 }

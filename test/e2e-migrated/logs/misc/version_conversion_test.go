@@ -1,7 +1,6 @@
 package misc
 
 import (
-	"context"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -71,9 +70,9 @@ func TestVersionConversion(t *testing.T) {
 		&v1Beta1LogPipeline,
 	}
 
-	kitk8s.CreateObjects(t.Context(), resources...)
+	kitk8s.CreateObjects(t, resources...)
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(resources...))
 	})
 
 	var v1Alpha1AsV1Beta1 telemetryv1beta1.LogPipeline

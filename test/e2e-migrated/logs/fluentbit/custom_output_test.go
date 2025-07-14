@@ -1,7 +1,6 @@
 package fluentbit
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -51,14 +50,14 @@ func TestCustomOutput(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(resources...))
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
 	assert.FluentBitLogPipelineHealthy(t, pipelineName)
 	assert.LogPipelineUnsupportedMode(t, pipelineName, true)
-	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
-	assert.DeploymentReady(t.Context(), backend.NamespacedName())
+	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
+	assert.DeploymentReady(t, backend.NamespacedName())
 	assert.FluentBitLogsFromPodDelivered(t, backend, stdloggen.DefaultName)
 
 	assert.BackendDataEventuallyMatches(t, backend,

@@ -52,9 +52,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsAgentOutage), Or
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(GinkgoT(), k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have a running logpipeline", func() {
@@ -62,19 +62,19 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsAgentOutage), Or
 		})
 
 		It("Should have a running log agent daemonset", func() {
-			assert.DaemonSetReady(suite.Ctx, kitkyma.LogAgentName)
+			assert.DaemonSetReady(GinkgoT(), kitkyma.LogAgentName)
 		})
 
 		It("Should have a running self-monitor", func() {
-			assert.DeploymentReady(suite.Ctx, kitkyma.SelfMonitorName)
+			assert.DeploymentReady(GinkgoT(), kitkyma.SelfMonitorName)
 		})
 
 		It("Should have a log backend running", func() {
-			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
+			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
 		})
 
 		It("Should have a log producer running", func() {
-			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Namespace: mockNs, Name: floggen.DefaultName})
+			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Namespace: mockNs, Name: floggen.DefaultName})
 		})
 
 		It("Should wait for the log flow to gradually become unhealthy", func() {
@@ -84,8 +84,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsAgentOutage), Or
 				{Reason: conditions.ReasonSelfMonAgentAllDataDropped, Status: metav1.ConditionFalse},
 			})
 
-			assert.TelemetryHasState(suite.Ctx, operatorv1alpha1.StateWarning)
-			assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
+			assert.TelemetryHasState(GinkgoT(), operatorv1alpha1.StateWarning)
+			assert.TelemetryHasCondition(GinkgoT(), suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeLogComponentsHealthy,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonSelfMonAgentAllDataDropped,

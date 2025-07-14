@@ -80,7 +80,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Order
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(k8sObjects...)).Should(Succeed())
 				for _, resource := range k8sObjects {
 					Eventually(func(g Gomega) {
 						key := types.NamespacedName{Name: resource.GetName(), Namespace: resource.GetNamespace()}
@@ -90,16 +90,16 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Order
 				}
 			})
 
-			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(GinkgoT(), k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have a running metric gateway deployment", func() {
-			assert.DeploymentReady(suite.Ctx, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(GinkgoT(), kitkyma.MetricGatewayName)
 		})
 
 		It("Should have a metrics backend running", func() {
-			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})
-			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: istiofiedBackendNs})
+			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})
+			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Name: kitbackend.DefaultName, Namespace: istiofiedBackendNs})
 		})
 
 		It("Should push metrics successfully", func() {

@@ -151,7 +151,7 @@ var _ = Describe(suite.ID(), func() {
 			Expect(crd.Spec.Scope).To(Equal(apiextensionsv1.ClusterScoped))
 		})
 
-		It("Should have MetricPipelines CRD", Label(suite.LabelMetrics), Label(suite.LabelSetA), func() {
+		It("Should have MetricPipelines CRD", Label(suite.LabelMetrics), func() {
 			var crd apiextensionsv1.CustomResourceDefinition
 			key := types.NamespacedName{
 				Name: "metricpipelines.telemetry.kyma-project.io",
@@ -171,7 +171,7 @@ var _ = Describe(suite.ID(), func() {
 			Expect(crd.Spec.Scope).To(Equal(apiextensionsv1.NamespaceScoped))
 		})
 
-		It("Should have a Busola extension for MetricPipelines CRD", Label(suite.LabelMetrics), Label(suite.LabelSetA), func() {
+		It("Should have a Busola extension for MetricPipelines CRD", Label(suite.LabelMetrics), func() {
 			var cm corev1.ConfigMap
 			key := types.NamespacedName{
 				Name:      "telemetry-metricpipelines",

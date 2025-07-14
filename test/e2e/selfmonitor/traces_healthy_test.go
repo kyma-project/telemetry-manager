@@ -59,13 +59,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesHealthy), Orde
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(GinkgoT(), k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have a running self-monitor", func() {
-			assert.DeploymentReady(suite.Ctx, kitkyma.SelfMonitorName)
+			assert.DeploymentReady(GinkgoT(), kitkyma.SelfMonitorName)
 		})
 
 		It("Should have a network policy deployed", func() {
@@ -92,11 +92,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesHealthy), Orde
 		})
 
 		It("Should have a running pipeline", func() {
-			assert.TracePipelineHealthy(suite.Ctx, pipelineName)
+			assert.TracePipelineHealthy(GinkgoT(), pipelineName)
 		})
 
 		It("Should have a running trace gateway deployment", func() {
-			assert.DeploymentReady(suite.Ctx, kitkyma.TraceGatewayName)
+			assert.DeploymentReady(GinkgoT(), kitkyma.TraceGatewayName)
 		})
 
 		It("Should deliver telemetrygen traces", func() {

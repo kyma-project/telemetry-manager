@@ -64,13 +64,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Order
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(GinkgoT(), k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have a log backend running", func() {
-			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have sample app running", func() {
@@ -79,7 +79,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Order
 				Namespace:     sampleAppNs,
 			}
 
-			assert.PodsReady(suite.Ctx, listOptions)
+			assert.PodsReady(GinkgoT(), listOptions)
 		})
 
 		It("Should have the log pipeline running", func() {
@@ -87,7 +87,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Order
 		})
 
 		It("Should have a running log agent daemonset", func() {
-			assert.DaemonSetReady(suite.Ctx, kitkyma.FluentBitDaemonSetName)
+			assert.DaemonSetReady(GinkgoT(), kitkyma.FluentBitDaemonSetName)
 		})
 
 		It("Should invoke the metrics endpoint to generate access logs", func() {

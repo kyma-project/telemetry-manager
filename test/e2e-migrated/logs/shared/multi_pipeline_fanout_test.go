@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -84,12 +83,12 @@ func TestMultiPipelineFanout_OTel(t *testing.T) {
 			resources = append(resources, backend2.K8sObjects()...)
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+				require.NoError(t, kitk8s.DeleteObjects(resources...))
 			})
-			require.NoError(t, kitk8s.CreateObjects(t.Context(), resources...))
+			require.NoError(t, kitk8s.CreateObjects(t, resources...))
 
-			assert.DeploymentReady(t.Context(), backend1.NamespacedName())
-			assert.DeploymentReady(t.Context(), backend2.NamespacedName())
+			assert.DeploymentReady(t, backend1.NamespacedName())
+			assert.DeploymentReady(t, backend2.NamespacedName())
 
 			assert.FluentBitLogPipelineHealthy(t, pipeline1.Name)
 			assert.FluentBitLogPipelineHealthy(t, pipeline2.Name)
@@ -137,12 +136,12 @@ func TestMultiPipelineFanout_FluentBit(t *testing.T) {
 	resources = append(resources, backend2.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(resources...))
 	})
-	require.NoError(t, kitk8s.CreateObjects(t.Context(), resources...))
+	require.NoError(t, kitk8s.CreateObjects(t, resources...))
 
-	assert.DeploymentReady(t.Context(), backend1.NamespacedName())
-	assert.DeploymentReady(t.Context(), backend2.NamespacedName())
+	assert.DeploymentReady(t, backend1.NamespacedName())
+	assert.DeploymentReady(t, backend2.NamespacedName())
 
 	assert.FluentBitLogPipelineHealthy(t, pipeline1.Name)
 	assert.FluentBitLogPipelineHealthy(t, pipeline2.Name)
