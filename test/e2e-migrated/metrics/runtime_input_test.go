@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"context"
 	"net/http"
 	"slices"
 	"testing"
@@ -122,25 +121,25 @@ func TestRuntimeInput(t *testing.T) {
 	resources = append(resources, createPodsWithVolume(pvName, pvcName, podMountingPVCName, podMountingEmptyDirName, podNs)...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(resources...))
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
 	t.Log("Resources should exist and be operational")
-	assert.MetricPipelineHealthy(t.Context(), pipelineNameA)
-	assert.MetricPipelineHealthy(t.Context(), pipelineNameB)
-	assert.MetricPipelineHealthy(t.Context(), pipelineNameC)
-	assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
-	assert.DaemonSetReady(t.Context(), kitkyma.MetricAgentName)
+	assert.MetricPipelineHealthy(t, pipelineNameA)
+	assert.MetricPipelineHealthy(t, pipelineNameB)
+	assert.MetricPipelineHealthy(t, pipelineNameC)
+	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 	assert.BackendReachable(t, backendA)
 	assert.BackendReachable(t, backendB)
 	assert.BackendReachable(t, backendC)
-	assert.DeploymentReady(t.Context(), types.NamespacedName{Name: deploymentName, Namespace: genNs})
-	assert.DaemonSetReady(t.Context(), types.NamespacedName{Name: daemonSetName, Namespace: genNs})
-	assert.StatefulSetReady(t.Context(), types.NamespacedName{Name: statefulSetName, Namespace: genNs})
-	assert.JobReady(t.Context(), types.NamespacedName{Name: jobName, Namespace: genNs})
-	assert.PodReady(t.Context(), types.NamespacedName{Name: podMountingPVCName, Namespace: podNs})
-	assert.PodReady(t.Context(), types.NamespacedName{Name: podMountingEmptyDirName, Namespace: podNs})
+	assert.DeploymentReady(t, types.NamespacedName{Name: deploymentName, Namespace: genNs})
+	assert.DaemonSetReady(t, types.NamespacedName{Name: daemonSetName, Namespace: genNs})
+	assert.StatefulSetReady(t, types.NamespacedName{Name: statefulSetName, Namespace: genNs})
+	assert.JobReady(t, types.NamespacedName{Name: jobName, Namespace: genNs})
+	assert.PodReady(t, types.NamespacedName{Name: podMountingPVCName, Namespace: podNs})
+	assert.PodReady(t, types.NamespacedName{Name: podMountingEmptyDirName, Namespace: podNs})
 	agentMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.MetricAgentMetricsService.Namespace, kitkyma.MetricAgentMetricsService.Name, "metrics", ports.Metrics)
 	assert.EmitsOTelCollectorMetrics(t, agentMetricsURL)
 

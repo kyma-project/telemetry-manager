@@ -1,7 +1,6 @@
 package assert
 
 import (
-	"context"
 	"fmt"
 
 	. "github.com/onsi/gomega"
@@ -9,22 +8,27 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/test/testkit"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-func JobReady(ctx context.Context, name types.NamespacedName) {
+func JobReady(t testkit.T, name types.NamespacedName) {
+	t.Helper()
+
 	Eventually(func(g Gomega) {
-		ready, err := isJobSuccessful(ctx, suite.K8sClient, name)
+		ready, err := isJobSuccessful(t, suite.K8sClient, name)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(ready).To(BeTrueBecause("Job not ready: %s", name.String()))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func isJobSuccessful(ctx context.Context, k8sClient client.Client, name types.NamespacedName) (bool, error) {
+func isJobSuccessful(t testkit.T, k8sClient client.Client, name types.NamespacedName) (bool, error) {
+	t.Helper()
+
 	var job batchv1.Job
 
-	err := k8sClient.Get(ctx, name, &job)
+	err := k8sClient.Get(t.Context(), name, &job)
 	if err != nil {
 		return false, fmt.Errorf("failed to get Job %s: %w", name.String(), err)
 	}
