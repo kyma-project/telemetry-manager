@@ -37,6 +37,7 @@ func isPodReady(t testkit.T, k8sClient client.Client, name types.NamespacedName)
 	t.Helper()
 
 	var pod corev1.Pod
+
 	err := k8sClient.Get(t.Context(), name, &pod)
 	if err != nil {
 		return false, fmt.Errorf("failed to get Pod %s: %w", name.String(), err)
@@ -55,6 +56,7 @@ func arePodsReady(t testkit.T, k8sClient client.Client, listOptions client.ListO
 	t.Helper()
 
 	var pods corev1.PodList
+
 	err := k8sClient.List(t.Context(), &pods, &listOptions)
 	if err != nil {
 		return false, fmt.Errorf("failed to list Pods: %w", err)
@@ -86,6 +88,7 @@ func HasContainer(t testkit.T, listOptions client.ListOptions, containerName str
 	t.Helper()
 
 	var pods corev1.PodList
+
 	err := suite.K8sClient.List(t.Context(), &pods, &listOptions)
 	if err != nil {
 		return false, fmt.Errorf("failed to list Pods: %w", err)

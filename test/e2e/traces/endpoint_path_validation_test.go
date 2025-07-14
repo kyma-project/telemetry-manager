@@ -41,8 +41,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 
 		BeforeAll(func() {
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(GinkgoT(),
-					&tracePipelineWithGRPCAndWithoutPath, &tracePipelineWithHTTPAndPath, &tracePipelineWithHTTPAndWithoutPath)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(&tracePipelineWithGRPCAndWithoutPath, &tracePipelineWithHTTPAndPath, &tracePipelineWithHTTPAndWithoutPath)).
+					Should(Succeed())
 			})
 		})
 

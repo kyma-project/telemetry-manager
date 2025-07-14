@@ -83,10 +83,10 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(t, resources...))            //nolint:usetesting // Remove ctx from DeleteObjects
-		require.NoError(t, kitk8s.DeleteObjects(t, pipelines[2:]...))        //nolint:usetesting // Remove ctx from DeleteObjects
-		require.NoError(t, kitk8s.DeleteObjects(t, &additionalFBPipeline))   //nolint:usetesting // Remove ctx from DeleteObjects
-		require.NoError(t, kitk8s.DeleteObjects(t, &additionalOTelPipeline)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(resources...))
+		require.NoError(t, kitk8s.DeleteObjects(pipelines[2:]...))
+		require.NoError(t, kitk8s.DeleteObjects(&additionalFBPipeline))
+		require.NoError(t, kitk8s.DeleteObjects(&additionalOTelPipeline))
 	})
 	require.NoError(t, kitk8s.CreateObjects(t, resources...))
 	require.NoError(t, kitk8s.CreateObjects(t, pipelines...))
@@ -120,7 +120,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	t.Log("Deleting one previously healthy pipeline and expecting the additional FluentBit pipeline to be healthy")
 
 	deletePipeline := pipelines[0]
-	require.NoError(t, kitk8s.DeleteObjects(t, deletePipeline))
+	require.NoError(t, kitk8s.DeleteObjects(deletePipeline))
 	assert.FluentBitLogPipelineHealthy(t, additionalFBPipeline.GetName())
 
 	t.Log("Attempting to create the 6th pipeline (OTel)")
@@ -142,7 +142,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	t.Log("Deleting one previously healthy pipeline and expecting the additional OTel pipeline to be healthy")
 
 	deletePipeline = pipelines[1]
-	require.NoError(t, kitk8s.DeleteObjects(t, deletePipeline))
+	require.NoError(t, kitk8s.DeleteObjects(deletePipeline))
 	assert.FluentBitLogPipelineHealthy(t, additionalFBPipeline.GetName())
 }
 
@@ -185,9 +185,9 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(t, resources...))        //nolint:usetesting // Remove ctx from DeleteObjects
-		require.NoError(t, kitk8s.DeleteObjects(t, pipelines[1:]...))    //nolint:usetesting // Remove ctx from DeleteObjects
-		require.NoError(t, kitk8s.DeleteObjects(t, &additionalPipeline)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(resources...))
+		require.NoError(t, kitk8s.DeleteObjects(pipelines[1:]...))
+		require.NoError(t, kitk8s.DeleteObjects(&additionalPipeline))
 	})
 	require.NoError(t, kitk8s.CreateObjects(t, resources...))
 	require.NoError(t, kitk8s.CreateObjects(t, pipelines...))
@@ -220,7 +220,7 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 	t.Log("Deleting one previously healthy pipeline and expecting the additional pipeline to be healthy")
 
 	deletePipeline := pipelines[0]
-	require.NoError(t, kitk8s.DeleteObjects(t, deletePipeline))
+	require.NoError(t, kitk8s.DeleteObjects(deletePipeline))
 	assert.OTelLogPipelineHealthy(t, additionalPipeline.GetName())
 }
 
@@ -263,9 +263,9 @@ func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(t, resources...))        //nolint:usetesting // Remove ctx from DeleteObjects
-		require.NoError(t, kitk8s.DeleteObjects(t, pipelines[1:]...))    //nolint:usetesting // Remove ctx from DeleteObjects
-		require.NoError(t, kitk8s.DeleteObjects(t, &additionalPipeline)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(resources...))
+		require.NoError(t, kitk8s.DeleteObjects(pipelines[1:]...))
+		require.NoError(t, kitk8s.DeleteObjects(&additionalPipeline))
 	})
 	require.NoError(t, kitk8s.CreateObjects(t, resources...))
 	require.NoError(t, kitk8s.CreateObjects(t, pipelines...))
@@ -298,6 +298,6 @@ func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
 	t.Log("Deleting one previously healthy pipeline and expecting the additional pipeline to be healthy")
 
 	deletePipeline := pipelines[0]
-	require.NoError(t, kitk8s.DeleteObjects(t, deletePipeline))
+	require.NoError(t, kitk8s.DeleteObjects(deletePipeline))
 	assert.FluentBitLogPipelineHealthy(t, additionalPipeline.GetName())
 }

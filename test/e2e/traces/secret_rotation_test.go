@@ -47,7 +47,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			Expect(kitk8s.CreateObjects(GinkgoT(), resources...)).Should(Succeed())
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(GinkgoT(), resources...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(resources...)).Should(Succeed())
 			})
 		})
 

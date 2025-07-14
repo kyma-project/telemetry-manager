@@ -63,7 +63,7 @@ func TestEndpointInvalid(t *testing.T) {
 	}
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(t, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(resources...))
 	})
 	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 

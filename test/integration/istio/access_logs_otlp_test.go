@@ -77,7 +77,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Order
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(GinkgoT(), k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(k8sObjects...)).Should(Succeed())
 				// TODO: Remove this once the bug https://github.com/kyma-project/istio/issues/1481 fixed
 				resetAccessLogsProvider()
 			})

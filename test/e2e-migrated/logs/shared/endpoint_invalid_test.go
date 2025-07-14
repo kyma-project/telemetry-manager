@@ -69,7 +69,7 @@ func TestEndpointInvalid_OTel(t *testing.T) {
 			}
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(t, resourcesToSucceedCreation...)) //nolint:usetesting // Remove ctx from DeleteObjects
+				require.NoError(t, kitk8s.DeleteObjects(resourcesToSucceedCreation...))
 			})
 
 			Expect(kitk8s.CreateObjects(t, resourcesToSucceedCreation...)).Should(Succeed())
@@ -125,7 +125,7 @@ func TestEndpointInvalid_FluentBit(t *testing.T) {
 	}
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(t, resourcesToSucceedCreation...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(resourcesToSucceedCreation...))
 	})
 	Expect(kitk8s.CreateObjects(t, resourcesToSucceedCreation...)).Should(Succeed())
 	Expect(kitk8s.CreateObjects(t, resourcesToFailCreation...)).Should(MatchError(ContainSubstring("invalid hostname")))

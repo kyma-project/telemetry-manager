@@ -116,8 +116,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			k8sSucceedingObjects, k8sFailingObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(GinkgoT(), k8sSucceedingObjects...)).Should(Succeed())
-				Expect(kitk8s.DeleteObjects(GinkgoT(), k8sFailingObjects...)).
+				Expect(kitk8s.DeleteObjects(k8sSucceedingObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(k8sFailingObjects...)).
 					Should(MatchError(ContainSubstring(notFoundError)))
 			})
 			Expect(kitk8s.CreateObjects(GinkgoT(), k8sSucceedingObjects...)).Should(Succeed())

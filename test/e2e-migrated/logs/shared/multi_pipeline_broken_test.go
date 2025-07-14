@@ -84,7 +84,7 @@ func TestMultiPipelineBroken_OTel(t *testing.T) {
 			resources = append(resources, backend.K8sObjects()...)
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(t, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+				require.NoError(t, kitk8s.DeleteObjects(resources...))
 			})
 			require.NoError(t, kitk8s.CreateObjects(t, resources...))
 
@@ -142,7 +142,7 @@ func TestMultiPipelineBroken_FluentBit(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(t, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(resources...))
 	})
 	require.NoError(t, kitk8s.CreateObjects(t, resources...))
 

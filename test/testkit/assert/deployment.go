@@ -28,6 +28,7 @@ func isDeploymentReady(t testkit.T, k8sClient client.Client, name types.Namespac
 	t.Helper()
 
 	var deployment appsv1.Deployment
+
 	err := k8sClient.Get(t.Context(), name, &deployment)
 	if err != nil {
 		return false, fmt.Errorf("failed to get Deployment %s: %w", name.String(), err)

@@ -64,7 +64,7 @@ func TestResources(t *testing.T) {
 		Build()
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(t, &pipeline)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(&pipeline))
 	})
 	Expect(kitk8s.CreateObjects(t, &pipeline, secret.K8sObject())).Should(Succeed())
 

@@ -63,7 +63,7 @@ func TestMTLSMissingKey_OTel(t *testing.T) {
 			}
 
 			t.Cleanup(func() {
-				Expect(kitk8s.DeleteObjects(t, resources...)).Should(MatchError(ContainSubstring(notFoundError))) //nolint:usetesting // Remove ctx from DeleteObjects
+				Expect(kitk8s.DeleteObjects(resources...)).Should(MatchError(ContainSubstring(notFoundError)))
 			})
 			Expect(kitk8s.CreateObjects(t, resources...)).Should(MatchError(ContainSubstring(tlsCrdValidationError)))
 		})
@@ -100,7 +100,7 @@ func TestMTLSMissingKey_FluentBit(t *testing.T) {
 	}
 
 	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(t, resources...)).Should(MatchError(ContainSubstring(notFoundError))) //nolint:usetesting // Remove ctx from DeleteObjects
+		Expect(kitk8s.DeleteObjects(resources...)).Should(MatchError(ContainSubstring(notFoundError)))
 	})
 	Expect(kitk8s.CreateObjects(t, resources...)).Should(MatchError(ContainSubstring(tlsCrdValidationError)))
 }

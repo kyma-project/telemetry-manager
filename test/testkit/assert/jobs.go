@@ -27,6 +27,7 @@ func isJobSuccessful(t testkit.T, k8sClient client.Client, name types.Namespaced
 	t.Helper()
 
 	var job batchv1.Job
+
 	err := k8sClient.Get(t.Context(), name, &job)
 	if err != nil {
 		return false, fmt.Errorf("failed to get Job %s: %w", name.String(), err)

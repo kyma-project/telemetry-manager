@@ -61,7 +61,7 @@ func TestContainerSelector_OTel(t *testing.T) {
 	resources = append(resources, backend2.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(t, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(resources...))
 	})
 	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
@@ -125,7 +125,7 @@ func TestContainerSelector_FluentBit(t *testing.T) {
 	resources = append(resources, backend2.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(t, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(resources...))
 	})
 	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 

@@ -54,7 +54,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 					return obj.GetName() == pipelineCreatedFirst.GetName() // first pipeline is deleted separately in one of the specs
 				})
 				k8sObjectsToDelete = append(k8sObjectsToDelete, pipelineCreatedLater)
-				Expect(kitk8s.DeleteObjects(GinkgoT(), k8sObjectsToDelete...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(k8sObjectsToDelete...)).Should(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(GinkgoT(), k8sObjects...)).Should(Succeed())
 		})
@@ -90,7 +90,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 
 		It("Should have only running pipelines", func() {
 			By("Deleting a pipeline", func() {
-				Expect(kitk8s.DeleteObjects(GinkgoT(), pipelineCreatedFirst)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(pipelineCreatedFirst)).Should(Succeed())
 
 				for _, pipeline := range pipelinesNames[1:] {
 					assert.TracePipelineHealthy(GinkgoT(), pipeline)

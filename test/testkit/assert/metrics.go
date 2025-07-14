@@ -104,6 +104,7 @@ func MetricPipelineConditionReasonsTransition(t testkit.T, pipelineName, condTyp
 	t.Helper()
 
 	var currCond *metav1.Condition
+
 	for _, expected := range expected {
 		// Wait for the current condition to match the expected condition
 		Eventually(func(g Gomega) ReasonStatus {

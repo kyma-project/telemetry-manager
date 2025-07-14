@@ -111,7 +111,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 			resources = append(resources, backend.K8sObjects()...)
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(t, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+				require.NoError(t, kitk8s.DeleteObjects(resources...))
 
 				Expect(suite.K8sClient.Get(context.Background(), kitkyma.TelemetryName, &telemetry)).Should(Succeed()) //nolint:usetesting // Remove ctx from Get
 				telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{}
@@ -192,7 +192,7 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 	resources = append(resources, backendDropped.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(t, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(resources...))
 	})
 	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 

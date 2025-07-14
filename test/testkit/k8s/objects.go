@@ -37,14 +37,16 @@ func CreateObjects(t testkit.T, resources ...client.Object) error {
 }
 
 // DeleteObjects deletes k8s objects passed as a slice.
-func DeleteObjects(t testkit.T, resources ...client.Object) error {
+// This function directly uses suite.Ctx, since in go test the context gets canceled before deletion sometimes,
+// with suite.Ctx being the closest one to the test context.
+func DeleteObjects(resources ...client.Object) error {
 	for _, r := range resources {
 		// Skip object deletion for persistent ones.
 		if labelMatches(r.GetLabels(), PersistentLabelName, "true") {
 			continue
 		}
 
-		if err := suite.K8sClient.Delete(t.Context(), r); err != nil {
+		if err := suite.K8sClient.Delete(suite.Ctx, r); err != nil {
 			return err
 		}
 	}

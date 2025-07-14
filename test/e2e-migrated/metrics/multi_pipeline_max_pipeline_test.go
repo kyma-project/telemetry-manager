@@ -59,9 +59,9 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(t, resources...))        //nolint:usetesting // Remove ctx from DeleteObjects
-		require.NoError(t, kitk8s.DeleteObjects(t, pipelines[1:]...))    //nolint:usetesting // Remove ctx from DeleteObjects
-		require.NoError(t, kitk8s.DeleteObjects(t, &additionalPipeline)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(resources...))
+		require.NoError(t, kitk8s.DeleteObjects(pipelines[1:]...))
+		require.NoError(t, kitk8s.DeleteObjects(&additionalPipeline))
 	})
 	require.NoError(t, kitk8s.CreateObjects(t, resources...))
 	require.NoError(t, kitk8s.CreateObjects(t, pipelines...))
@@ -94,6 +94,6 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	t.Log("Deleting one previously healthy pipeline and expecting the additional pipeline to be healthy")
 
 	deletePipeline := pipelines[0]
-	require.NoError(t, kitk8s.DeleteObjects(t, deletePipeline))
+	require.NoError(t, kitk8s.DeleteObjects(deletePipeline))
 	assert.MetricPipelineHealthy(t, additionalPipeline.GetName())
 }

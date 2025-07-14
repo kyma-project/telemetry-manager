@@ -31,6 +31,7 @@ func secretExists(t testkit.T, k8sClient client.Client, name types.NamespacedNam
 	t.Helper()
 
 	var secret corev1.Secret
+
 	err := k8sClient.Get(t.Context(), name, &secret)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get secret %s: %w", name.String(), err)

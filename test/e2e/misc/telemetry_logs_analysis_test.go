@@ -146,7 +146,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 			K8sObjects = append(K8sObjects, objs...)
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(GinkgoT(), K8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(K8sObjects...)).Should(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(GinkgoT(), K8sObjects...)).Should(Succeed())
 		})

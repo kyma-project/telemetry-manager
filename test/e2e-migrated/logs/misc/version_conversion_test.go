@@ -72,7 +72,7 @@ func TestVersionConversion(t *testing.T) {
 
 	kitk8s.CreateObjects(t, resources...)
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(t, resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(resources...))
 	})
 
 	var v1Alpha1AsV1Beta1 telemetryv1beta1.LogPipeline

@@ -28,6 +28,7 @@ func isStatefulSetReady(t testkit.T, k8sClient client.Client, name types.Namespa
 	t.Helper()
 
 	var statefulSet appsv1.StatefulSet
+
 	err := k8sClient.Get(t.Context(), name, &statefulSet)
 	if err != nil {
 		return false, fmt.Errorf("failed to get StatefulSet %s: %w", name.String(), err)

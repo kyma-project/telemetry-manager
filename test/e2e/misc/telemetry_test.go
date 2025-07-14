@@ -37,7 +37,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 			tracePipeline := testutils.NewTracePipelineBuilder().WithName(tracePipelineName).Build()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(GinkgoT(), &tracePipeline)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(&tracePipeline)).Should(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(GinkgoT(), &tracePipeline)).Should(Succeed())
 		})
@@ -64,7 +64,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 			metricPipeline := testutils.NewMetricPipelineBuilder().WithName(metricPipelineName).Build()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(GinkgoT(), &metricPipeline)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(&metricPipeline)).Should(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(GinkgoT(), &metricPipeline)).Should(Succeed())
 		})
@@ -92,7 +92,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 				Build()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(GinkgoT(), &tracePipeline)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(&tracePipeline)).Should(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(GinkgoT(), &tracePipeline)).Should(Succeed())
 		})
@@ -259,7 +259,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 
 		It("Should delete Telemetry", func() {
 			By("Deleting the orphaned LogPipeline", func() {
-				Expect(kitk8s.DeleteObjects(GinkgoT(), &logPipeline)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(&logPipeline)).Should(Succeed())
 			})
 
 			Eventually(func(g Gomega) {
