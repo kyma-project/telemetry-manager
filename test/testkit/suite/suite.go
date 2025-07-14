@@ -118,6 +118,7 @@ const (
 	LabelMetricsSetB         = "metrics-set-b"
 	LabelMetricsSetC         = "metrics-set-c"
 	LabelMetricsExperimental = "metrics-experimental"
+	LabelMaxPipelineMetrics  = "max-pipeline-metrics"
 
 	// Traces labels
 	LabelTraces = "traces"
@@ -128,9 +129,6 @@ const (
 	// Test "sub-suites" labels
 	LabelExperimental = "experimental"
 	LabelMaxPipeline  = "max-pipeline"
-	LabelSetA         = "set_a"
-	LabelSetB         = "set_b"
-	LabelSetC         = "set_c"
 	LabelSignalPush   = "signal-push"
 	LabelSignalPull   = "signal-pull"
 	LabelSkip         = "skip"

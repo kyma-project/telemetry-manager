@@ -1,7 +1,6 @@
 package assert
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -13,13 +12,14 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/test/testkit"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-func MetricsFromNamespaceDelivered(t TestingT, backend *kitbackend.Backend, namespace string, metricNames []string) {
+func MetricsFromNamespaceDelivered(t testkit.T, backend *kitbackend.Backend, namespace string, metricNames []string) {
 	t.Helper()
 
 	BackendDataEventuallyMatches(
@@ -32,7 +32,7 @@ func MetricsFromNamespaceDelivered(t TestingT, backend *kitbackend.Backend, name
 	)
 }
 
-func MetricsFromNamespaceNotDelivered(t TestingT, backend *kitbackend.Backend, namespace string) {
+func MetricsFromNamespaceNotDelivered(t testkit.T, backend *kitbackend.Backend, namespace string) {
 	t.Helper()
 
 	BackendDataConsistentlyMatches(
@@ -44,7 +44,7 @@ func MetricsFromNamespaceNotDelivered(t TestingT, backend *kitbackend.Backend, n
 	)
 }
 
-func MetricsWithScopeAndNamespaceNotDelivered(t TestingT, backend *kitbackend.Backend, scope, namespace string, optionalDescription ...any) {
+func MetricsWithScopeAndNamespaceNotDelivered(t testkit.T, backend *kitbackend.Backend, scope, namespace string, optionalDescription ...any) {
 	t.Helper()
 
 	BackendDataConsistentlyMatches(
@@ -58,11 +58,13 @@ func MetricsWithScopeAndNamespaceNotDelivered(t TestingT, backend *kitbackend.Ba
 	)
 }
 
-func MetricPipelineHealthy(ctx context.Context, pipelineName string) {
+func MetricPipelineHealthy(t testkit.T, pipelineName string) {
+	t.Helper()
+
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.MetricPipeline
 		key := types.NamespacedName{Name: pipelineName}
-		g.Expect(suite.K8sClient.Get(ctx, key, &pipeline)).To(Succeed())
+		g.Expect(suite.K8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
 
 		agentHealthy := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeAgentHealthy)
 		g.Expect(agentHealthy).NotTo(BeNil())
@@ -78,7 +80,7 @@ func MetricPipelineHealthy(ctx context.Context, pipelineName string) {
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func MetricPipelineHasCondition(t TestingT, pipelineName string, expectedCond metav1.Condition) {
+func MetricPipelineHasCondition(t testkit.T, pipelineName string, expectedCond metav1.Condition) {
 	t.Helper()
 
 	Eventually(func(g Gomega) {
@@ -98,7 +100,9 @@ type ReasonStatus struct {
 }
 
 //nolint:dupl //LogPipelineConditionReasonsTransition,TracePipelineConditionReasonsTransition, MetricPipelineConditionReasonsTransition have similarities, but they are not the same
-func MetricPipelineConditionReasonsTransition(ctx context.Context, pipelineName, condType string, expected []ReasonStatus) {
+func MetricPipelineConditionReasonsTransition(t testkit.T, pipelineName, condType string, expected []ReasonStatus) {
+	t.Helper()
+
 	var currCond *metav1.Condition
 
 	for _, expected := range expected {
@@ -106,7 +110,7 @@ func MetricPipelineConditionReasonsTransition(ctx context.Context, pipelineName,
 		Eventually(func(g Gomega) ReasonStatus {
 			var pipeline telemetryv1alpha1.MetricPipeline
 			key := types.NamespacedName{Name: pipelineName}
-			err := suite.K8sClient.Get(ctx, key, &pipeline)
+			err := suite.K8sClient.Get(t.Context(), key, &pipeline)
 			g.Expect(err).To(Succeed())
 			currCond = meta.FindStatusCondition(pipeline.Status.Conditions, condType)
 			if currCond == nil {

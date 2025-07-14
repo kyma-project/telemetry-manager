@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"context"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -65,15 +64,15 @@ func TestResources(t *testing.T) {
 		Build()
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), &pipeline)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(&pipeline))
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), &pipeline, secret.K8sObject())).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, &pipeline, secret.K8sObject())).Should(Succeed())
 
-	assert.ResourcesExist(t.Context(), gatewayResources...)
-	assert.ResourcesExist(t.Context(), agentResources...)
+	assert.ResourcesExist(t, gatewayResources...)
+	assert.ResourcesExist(t, agentResources...)
 
 	t.Log("When MetricPipeline becomes non-reconcilable, resources should be cleaned up")
 	Expect(suite.K8sClient.Delete(t.Context(), secret.K8sObject())).Should(Succeed())
-	assert.ResourcesNotExist(t.Context(), gatewayResources...)
-	assert.ResourcesNotExist(t.Context(), agentResources...)
+	assert.ResourcesNotExist(t, gatewayResources...)
+	assert.ResourcesNotExist(t, agentResources...)
 }

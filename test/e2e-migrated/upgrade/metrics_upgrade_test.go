@@ -43,17 +43,17 @@ func TestMetricsUpgrade(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Run("before upgrade", func(t *testing.T) {
-		require.NoError(t, kitk8s.CreateObjects(t.Context(), resources...))
+		require.NoError(t, kitk8s.CreateObjects(t, resources...))
 
-		assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
-		assert.MetricPipelineHealthy(t.Context(), pipelineName)
+		assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+		assert.MetricPipelineHealthy(t, pipelineName)
 		assert.BackendReachable(t, backend)
 		assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
 	})
 
 	t.Run("after upgrade", func(t *testing.T) {
-		assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
-		assert.MetricPipelineHealthy(t.Context(), pipelineName)
+		assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+		assert.MetricPipelineHealthy(t, pipelineName)
 		assert.BackendReachable(t, backend)
 		assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
 	})

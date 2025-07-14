@@ -1,7 +1,6 @@
 package assert
 
 import (
-	"context"
 	"fmt"
 
 	. "github.com/onsi/gomega"
@@ -9,30 +8,37 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/test/testkit"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-func PodReady(ctx context.Context, name types.NamespacedName) {
+func PodReady(t testkit.T, name types.NamespacedName) {
+	t.Helper()
+
 	Eventually(func(g Gomega) {
-		ready, err := isPodReady(ctx, suite.K8sClient, name)
+		ready, err := isPodReady(t, suite.K8sClient, name)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(ready).To(BeTrueBecause("Pod not ready: %s", name.String()))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func PodsReady(ctx context.Context, listOptions client.ListOptions) {
+func PodsReady(t testkit.T, listOptions client.ListOptions) {
+	t.Helper()
+
 	Eventually(func(g Gomega) {
-		ready, err := arePodsReady(ctx, suite.K8sClient, listOptions)
+		ready, err := arePodsReady(t, suite.K8sClient, listOptions)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(ready).To(BeTrueBecause("Pods are not ready"))
 	}, 2*periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func isPodReady(ctx context.Context, k8sClient client.Client, name types.NamespacedName) (bool, error) {
+func isPodReady(t testkit.T, k8sClient client.Client, name types.NamespacedName) (bool, error) {
+	t.Helper()
+
 	var pod corev1.Pod
 
-	err := k8sClient.Get(ctx, name, &pod)
+	err := k8sClient.Get(t.Context(), name, &pod)
 	if err != nil {
 		return false, fmt.Errorf("failed to get Pod %s: %w", name.String(), err)
 	}
@@ -46,10 +52,12 @@ func isPodReady(ctx context.Context, k8sClient client.Client, name types.Namespa
 	return true, nil
 }
 
-func arePodsReady(ctx context.Context, k8sClient client.Client, listOptions client.ListOptions) (bool, error) {
+func arePodsReady(t testkit.T, k8sClient client.Client, listOptions client.ListOptions) (bool, error) {
+	t.Helper()
+
 	var pods corev1.PodList
 
-	err := k8sClient.List(ctx, &pods, &listOptions)
+	err := k8sClient.List(t.Context(), &pods, &listOptions)
 	if err != nil {
 		return false, fmt.Errorf("failed to list Pods: %w", err)
 	}
@@ -76,10 +84,12 @@ func generateContainerError(podName string, containerStatus corev1.ContainerStat
 	return fmt.Errorf("pod %s has a container %s that is not running. Additional info: %s", podName, containerStatus.Name, additionalInfo)
 }
 
-func HasContainer(ctx context.Context, listOptions client.ListOptions, containerName string) (bool, error) {
+func HasContainer(t testkit.T, listOptions client.ListOptions, containerName string) (bool, error) {
+	t.Helper()
+
 	var pods corev1.PodList
 
-	err := suite.K8sClient.List(ctx, &pods, &listOptions)
+	err := suite.K8sClient.List(t.Context(), &pods, &listOptions)
 	if err != nil {
 		return false, fmt.Errorf("failed to list Pods: %w", err)
 	}

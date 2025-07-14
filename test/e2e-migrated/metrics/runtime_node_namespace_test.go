@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"context"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -74,18 +73,18 @@ func TestRuntimeNodeNamespace(t *testing.T) {
 	resources = append(resources, excludeBackend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(resources...))
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
 	assert.BackendReachable(t, includeBacked)
 	assert.BackendReachable(t, excludeBackend)
-	assert.DeploymentReady(t.Context(), kitkyma.MetricGatewayName)
-	assert.DaemonSetReady(t.Context(), kitkyma.MetricAgentName)
-	assert.DeploymentReady(t.Context(), includeBacked.NamespacedName())
-	assert.DeploymentReady(t.Context(), excludeBackend.NamespacedName())
-	assert.MetricPipelineHealthy(t.Context(), includePipelineName)
-	assert.MetricPipelineHealthy(t.Context(), excludePipelineName)
+	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.DaemonSetReady(t, kitkyma.MetricAgentName)
+	assert.DeploymentReady(t, includeBacked.NamespacedName())
+	assert.DeploymentReady(t, excludeBackend.NamespacedName())
+	assert.MetricPipelineHealthy(t, includePipelineName)
+	assert.MetricPipelineHealthy(t, excludePipelineName)
 
 	assert.BackendDataEventuallyMatches(t, includeBacked,
 		HaveFlatMetrics(HaveUniqueNamesForRuntimeScope(ConsistOf(runtime.NodeMetricsNames))),

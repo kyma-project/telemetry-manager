@@ -93,14 +93,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Order
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(GinkgoT(), k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have a trace backend running", func() {
-			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})
-			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: istiofiedBackendNs})
+			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})
+			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Name: kitbackend.DefaultName, Namespace: istiofiedBackendNs})
 		})
 
 		It("Should have sample app running with Istio sidecar", func() {
@@ -113,12 +113,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Order
 		})
 
 		It("Should have a running trace gateway deployment", func() {
-			assert.DeploymentReady(suite.Ctx, kitkyma.TraceGatewayName)
+			assert.DeploymentReady(GinkgoT(), kitkyma.TraceGatewayName)
 		})
 
 		It("Should have the trace pipelines running", func() {
-			assert.TracePipelineHealthy(suite.Ctx, pipeline1Name)
-			assert.TracePipelineHealthy(suite.Ctx, pipeline2Name)
+			assert.TracePipelineHealthy(GinkgoT(), pipeline1Name)
+			assert.TracePipelineHealthy(GinkgoT(), pipeline2Name)
 		})
 
 		It("Trace gateway with should answer requests", func() {
@@ -173,7 +173,7 @@ func verifySidecarPresent(namespace string, labelSelector map[string]string) {
 			Namespace:     namespace,
 		}
 
-		hasIstioSidecar, err := assert.HasContainer(suite.Ctx, listOptions, "istio-proxy")
+		hasIstioSidecar, err := assert.HasContainer(GinkgoT(), listOptions, "istio-proxy")
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(hasIstioSidecar).To(BeTrueBecause("Istio sidecar not present"))
 	}, periodic.EventuallyTimeout*2, periodic.DefaultInterval).Should(Succeed())
@@ -185,7 +185,7 @@ func verifyAppIsRunning(namespace string, labelSelector map[string]string) {
 		Namespace:     namespace,
 	}
 
-	assert.PodsReady(suite.Ctx, listOptions)
+	assert.PodsReady(GinkgoT(), listOptions)
 }
 
 func verifyIstioSpans(backendURL, namespace string) {

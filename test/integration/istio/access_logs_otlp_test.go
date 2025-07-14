@@ -77,15 +77,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Order
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(k8sObjects...)).Should(Succeed())
 				// TODO: Remove this once the bug https://github.com/kyma-project/istio/issues/1481 fixed
 				resetAccessLogsProvider()
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(GinkgoT(), k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have a log backend running", func() {
-			assert.DeploymentReady(suite.Ctx, logBackend.NamespacedName())
+			assert.DeploymentReady(GinkgoT(), logBackend.NamespacedName())
 		})
 
 		It("Should have sample app running", func() {
@@ -94,7 +94,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Order
 				Namespace:     sampleAppNs,
 			}
 
-			assert.PodsReady(suite.Ctx, listOptions)
+			assert.PodsReady(GinkgoT(), listOptions)
 		})
 
 		It("Should have the log pipeline running", func() {
@@ -102,7 +102,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Order
 		})
 
 		It("Should have a running log gateway deployment", func() {
-			assert.DeploymentReady(suite.Ctx, kitkyma.LogGatewayName)
+			assert.DeploymentReady(GinkgoT(), kitkyma.LogGatewayName)
 		})
 
 		// TODO: Remove this once the bug https://github.com/kyma-project/istio/issues/1481 fixed

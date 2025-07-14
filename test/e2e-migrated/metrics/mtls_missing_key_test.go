@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"context"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -50,7 +49,7 @@ func TestMTLSMissingKey(t *testing.T) {
 	}
 
 	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(context.Background(), resources...)).Should(MatchError(ContainSubstring(notFoundError))) //nolint:usetesting // Remove ctx from DeleteObjects
+		Expect(kitk8s.DeleteObjects(resources...)).Should(MatchError(ContainSubstring(notFoundError)))
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(MatchError(ContainSubstring(tlsCrdValidationError)))
+	Expect(kitk8s.CreateObjects(t, resources...)).Should(MatchError(ContainSubstring(tlsCrdValidationError)))
 }

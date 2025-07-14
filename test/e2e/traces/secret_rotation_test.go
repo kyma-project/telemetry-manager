@@ -44,23 +44,23 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		resources = append(resources, backend.K8sObjects()...)
 
 		BeforeAll(func() {
-			Expect(kitk8s.CreateObjects(suite.Ctx, resources...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(GinkgoT(), resources...)).Should(Succeed())
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, resources...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(resources...)).Should(Succeed())
 			})
 		})
 
 		It("Should have a running trace gateway deployment", func() {
-			assert.DeploymentReady(suite.Ctx, kitkyma.TraceGatewayName)
+			assert.DeploymentReady(GinkgoT(), kitkyma.TraceGatewayName)
 		})
 
 		It("Should have a trace backend running", func() {
-			assert.DeploymentReady(suite.Ctx, types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have a running pipeline", func() {
-			assert.TracePipelineHealthy(suite.Ctx, pipelineName)
+			assert.TracePipelineHealthy(GinkgoT(), pipelineName)
 		})
 
 		It("Should initially not deliver telemetrygen traces to the backend due to the incorrect endpoint in the secret", func() {
@@ -70,11 +70,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		It("Should deliver telemetrygen traces to the backend", func() {
 			By("Updating secret with the correct endpoint", func() {
 				secret.UpdateSecret(kitk8s.WithStringData(endpointKey, backend.Endpoint()))
-				Expect(kitk8s.UpdateObjects(suite.Ctx, secret.K8sObject())).Should(Succeed())
+				Expect(kitk8s.UpdateObjects(GinkgoT(), secret.K8sObject())).Should(Succeed())
 			})
 
-			assert.DeploymentReady(suite.Ctx, kitkyma.TraceGatewayName)
-			assert.TracePipelineHealthy(suite.Ctx, pipelineName)
+			assert.DeploymentReady(GinkgoT(), kitkyma.TraceGatewayName)
+			assert.TracePipelineHealthy(GinkgoT(), pipelineName)
 
 			assert.TracesFromNamespaceDelivered(suite.ProxyClient, backend.ExportURL(suite.ProxyClient), mockNs)
 		})

@@ -70,25 +70,25 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(GinkgoT(), k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should set ConfigurationGenerated condition to False in pipelines", func() {
-			assert.TracePipelineHasCondition(suite.Ctx, pipelineNameValue, metav1.Condition{
+			assert.TracePipelineHasCondition(GinkgoT(), pipelineNameValue, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonEndpointInvalid,
 			})
 
-			assert.TracePipelineHasCondition(suite.Ctx, pipelineNameValueFrom, metav1.Condition{
+			assert.TracePipelineHasCondition(GinkgoT(), pipelineNameValueFrom, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonEndpointInvalid,
 			})
 
-			assert.TracePipelineHasCondition(suite.Ctx, pipelineNameHTTP, metav1.Condition{
+			assert.TracePipelineHasCondition(GinkgoT(), pipelineNameHTTP, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonEndpointInvalid,
