@@ -128,9 +128,6 @@ const (
 	// Test "sub-suites" labels
 	LabelExperimental = "experimental"
 	LabelMaxPipeline  = "max-pipeline"
-	LabelSetA         = "set_a"
-	LabelSetB         = "set_b"
-	LabelSetC         = "set_c"
 	LabelSignalPush   = "signal-push"
 	LabelSignalPull   = "signal-pull"
 	LabelSkip         = "skip"

@@ -57,9 +57,7 @@ jobs:
       fail-fast: false
       matrix:
         ginkgo-labels:
-          - "metrics && set_a"
-          - "metrics && set_b"
-          - "metrics && set_c"
+          - "metrics"
           - traces
           - telemetry
           - misc

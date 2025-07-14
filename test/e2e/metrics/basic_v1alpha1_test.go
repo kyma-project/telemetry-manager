@@ -26,7 +26,7 @@ import (
 )
 
 // TODO(TeodorSAP): Delete this file after 1.44 release (only kept because of the upgrade test flow)
-var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 	var (
 		mockNs       = suite.ID()
 		pipelineName = suite.ID()
