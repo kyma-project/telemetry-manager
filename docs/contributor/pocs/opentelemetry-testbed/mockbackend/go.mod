@@ -8,7 +8,7 @@ require (
 	go.opentelemetry.io/collector/component/componenttest v0.129.0
 	go.opentelemetry.io/collector/config/confignet v1.35.0
 	go.opentelemetry.io/collector/config/configoptional v0.129.0
-	go.opentelemetry.io/collector/confmap v1.35.0
+	go.opentelemetry.io/collector/confmap v1.36.0
 	go.opentelemetry.io/collector/consumer v1.35.0
 	go.opentelemetry.io/collector/receiver v1.35.0
 	go.opentelemetry.io/collector/receiver/otlpreceiver v0.129.0
@@ -155,7 +155,7 @@ require (
 	go.opentelemetry.io/collector/extension/extensiontest v0.129.0 // indirect
 	go.opentelemetry.io/collector/extension/xextension v0.129.0 // indirect
 	go.opentelemetry.io/collector/extension/zpagesextension v0.129.0 // indirect
-	go.opentelemetry.io/collector/featuregate v1.35.0 // indirect
+	go.opentelemetry.io/collector/featuregate v1.36.0 // indirect
 	go.opentelemetry.io/collector/internal/fanoutconsumer v0.129.0 // indirect
 	go.opentelemetry.io/collector/internal/memorylimiter v0.129.0 // indirect
 	go.opentelemetry.io/collector/internal/sharedcomponent v0.129.0 // indirect
@@ -205,6 +205,7 @@ require (
 	go.opentelemetry.io/proto/otlp v1.6.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
+	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.39.0 // indirect
 	golang.org/x/exp v0.0.0-20250408133849-7e4ce0ab07d0 // indirect
 	golang.org/x/net v0.41.0 // indirect
