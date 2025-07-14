@@ -305,6 +305,8 @@ jobs:
             mode: release
           - name: max-pipeline-otel
             mode: release
+          - name: max-pipeline-metrics
+            mode: release
           - name: metrics-set-a
             mode: release
           - name: metrics-set-b

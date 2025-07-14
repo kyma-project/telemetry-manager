@@ -118,6 +118,7 @@ const (
 	LabelMetricsSetB         = "metrics-set-b"
 	LabelMetricsSetC         = "metrics-set-c"
 	LabelMetricsExperimental = "metrics-experimental"
+	LabelMaxPipelineMetrics  = "max-pipeline-metrics"
 
 	// Traces labels
 	LabelTraces = "traces"
