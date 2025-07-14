@@ -1,6 +1,7 @@
 package k8s
 
 import (
+	"context"
 	"reflect"
 
 	"k8s.io/apimachinery/pkg/types"
@@ -37,8 +38,7 @@ func CreateObjects(t testkit.T, resources ...client.Object) error {
 }
 
 // DeleteObjects deletes k8s objects passed as a slice.
-// This function directly uses suite.Ctx, since in go test the context gets canceled before deletion sometimes,
-// with suite.Ctx being the closest one to the test context.
+// This function directly uses context.Background(), since in go test the context gets canceled before deletion sometimes,
 func DeleteObjects(resources ...client.Object) error {
 	for _, r := range resources {
 		// Skip object deletion for persistent ones.
@@ -46,7 +46,7 @@ func DeleteObjects(resources ...client.Object) error {
 			continue
 		}
 
-		if err := suite.K8sClient.Delete(suite.Ctx, r); err != nil {
+		if err := suite.K8sClient.Delete(context.Background(), r); err != nil {
 			return err
 		}
 	}
