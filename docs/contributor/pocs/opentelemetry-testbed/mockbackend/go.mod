@@ -6,7 +6,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/testbed v0.129.0
 	github.com/prometheus/client_golang v1.22.0
 	go.opentelemetry.io/collector/component/componenttest v0.129.0
-	go.opentelemetry.io/collector/config/confignet v1.35.0
+	go.opentelemetry.io/collector/config/confignet v1.36.0
 	go.opentelemetry.io/collector/config/configoptional v0.129.0
 	go.opentelemetry.io/collector/confmap v1.35.0
 	go.opentelemetry.io/collector/consumer v1.35.0
