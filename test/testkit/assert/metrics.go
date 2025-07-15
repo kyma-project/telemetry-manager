@@ -1,10 +1,7 @@
 package assert
 
 import (
-	"context"
 	"fmt"
-	"io"
-	"net/http"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -15,68 +12,59 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
+	"github.com/kyma-project/telemetry-manager/test/testkit"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-func MetricsFromNamespaceDelivered(proxyClient *apiserverproxy.Client, backendExportURL, namespace string, metricNames []string) {
-	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(backendExportURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		bodyContent, err := io.ReadAll(resp.Body)
-		defer resp.Body.Close()
-		g.Expect(err).NotTo(HaveOccurred())
+func MetricsFromNamespaceDelivered(t testkit.T, backend *kitbackend.Backend, namespace string, metricNames []string) {
+	t.Helper()
 
-		g.Expect(bodyContent).To(
-			HaveFlatMetrics(ContainElement(SatisfyAll(
-				HaveName(BeElementOf(metricNames)),
-				HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)),
-			))),
-		)
-		err = resp.Body.Close()
-		g.Expect(err).NotTo(HaveOccurred())
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+	BackendDataEventuallyMatches(
+		t,
+		backend,
+		HaveFlatMetrics(ContainElement(SatisfyAll(
+			HaveName(BeElementOf(metricNames)),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)),
+		))),
+	)
 }
 
-func MetricsFromNamespaceNotDelivered(proxyClient *apiserverproxy.Client, backendExportURL, namespace string) {
-	Consistently(func(g Gomega) {
-		resp, err := proxyClient.Get(backendExportURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(
-			HaveFlatMetrics(
-				Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)))),
-			),
-		))
-		err = resp.Body.Close()
-		g.Expect(err).NotTo(HaveOccurred())
-	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+func MetricsFromNamespaceNotDelivered(t testkit.T, backend *kitbackend.Backend, namespace string) {
+	t.Helper()
+
+	BackendDataConsistentlyMatches(
+		t,
+		backend,
+		HaveFlatMetrics(
+			Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)))),
+		),
+	)
 }
 
-func MetricsWithScopeAndNamespaceNotDelivered(proxyClient *apiserverproxy.Client, backendExportURL, scope, namespace string) {
-	Consistently(func(g Gomega) {
-		resp, err := proxyClient.Get(backendExportURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(
-			HaveFlatMetrics(Not(ContainElement(SatisfyAll(
-				HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)),
-				HaveResourceAttributes(HaveKeyWithValue("service", scope)),
-			)))),
-		))
-		err = resp.Body.Close()
-		g.Expect(err).NotTo(HaveOccurred())
-	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+func MetricsWithScopeAndNamespaceNotDelivered(t testkit.T, backend *kitbackend.Backend, scope, namespace string, optionalDescription ...any) {
+	t.Helper()
+
+	BackendDataConsistentlyMatches(
+		t,
+		backend,
+		HaveFlatMetrics(Not(ContainElement(SatisfyAll(
+			HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)),
+			HaveResourceAttributes(HaveKeyWithValue("service", scope)),
+		)))),
+		optionalDescription...,
+	)
 }
 
-func MetricPipelineHealthy(ctx context.Context, pipelineName string) {
+func MetricPipelineHealthy(t testkit.T, pipelineName string) {
+	t.Helper()
+
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.MetricPipeline
 		key := types.NamespacedName{Name: pipelineName}
-		g.Expect(suite.K8sClient.Get(ctx, key, &pipeline)).To(Succeed())
+		g.Expect(suite.K8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
 
 		agentHealthy := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeAgentHealthy)
 		g.Expect(agentHealthy).NotTo(BeNil())
@@ -92,7 +80,7 @@ func MetricPipelineHealthy(ctx context.Context, pipelineName string) {
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func MetricPipelineHasConditionWithT(t TestingT, pipelineName string, expectedCond metav1.Condition) {
+func MetricPipelineHasCondition(t testkit.T, pipelineName string, expectedCond metav1.Condition) {
 	t.Helper()
 
 	Eventually(func(g Gomega) {
@@ -106,25 +94,15 @@ func MetricPipelineHasConditionWithT(t TestingT, pipelineName string, expectedCo
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func MetricPipelineHasCondition(ctx context.Context, pipelineName string, expectedCond metav1.Condition) {
-	Eventually(func(g Gomega) {
-		var pipeline telemetryv1alpha1.MetricPipeline
-		key := types.NamespacedName{Name: pipelineName}
-		g.Expect(suite.K8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-		condition := meta.FindStatusCondition(pipeline.Status.Conditions, expectedCond.Type)
-		g.Expect(condition).NotTo(BeNil())
-		g.Expect(condition.Reason).To(Equal(expectedCond.Reason))
-		g.Expect(condition.Status).To(Equal(expectedCond.Status))
-	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
-}
-
 type ReasonStatus struct {
 	Reason string
 	Status metav1.ConditionStatus
 }
 
 //nolint:dupl //LogPipelineConditionReasonsTransition,TracePipelineConditionReasonsTransition, MetricPipelineConditionReasonsTransition have similarities, but they are not the same
-func MetricPipelineConditionReasonsTransition(ctx context.Context, pipelineName, condType string, expected []ReasonStatus) {
+func MetricPipelineConditionReasonsTransition(t testkit.T, pipelineName, condType string, expected []ReasonStatus) {
+	t.Helper()
+
 	var currCond *metav1.Condition
 
 	for _, expected := range expected {
@@ -132,7 +110,7 @@ func MetricPipelineConditionReasonsTransition(ctx context.Context, pipelineName,
 		Eventually(func(g Gomega) ReasonStatus {
 			var pipeline telemetryv1alpha1.MetricPipeline
 			key := types.NamespacedName{Name: pipelineName}
-			err := suite.K8sClient.Get(ctx, key, &pipeline)
+			err := suite.K8sClient.Get(t.Context(), key, &pipeline)
 			g.Expect(err).To(Succeed())
 			currCond = meta.FindStatusCondition(pipeline.Status.Conditions, condType)
 			if currCond == nil {

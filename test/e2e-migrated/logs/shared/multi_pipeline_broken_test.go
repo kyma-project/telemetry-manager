@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -54,23 +53,23 @@ func TestMultiPipelineBroken_OTel(t *testing.T) {
 			suite.RegisterTestCase(t, tc.label)
 
 			var (
-				uniquePrefix   = unique.Prefix(tc.label)
-				backendNs      = uniquePrefix("backend")
-				genNs          = uniquePrefix("gen")
-				goodPipeline   = uniquePrefix("good")
-				brokenPipeline = uniquePrefix("broken")
+				uniquePrefix        = unique.Prefix(tc.label)
+				healthyPipelineName = uniquePrefix("healthy")
+				brokenPipelineName  = uniquePrefix("broken")
+				backendNs           = uniquePrefix("backend")
+				genNs               = uniquePrefix("gen")
 			)
 
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
 
-			pipelineGood := testutils.NewLogPipelineBuilder().
-				WithName(goodPipeline).
+			healthyPipeline := testutils.NewLogPipelineBuilder().
+				WithName(healthyPipelineName).
 				WithInput(tc.inputBuilder(genNs)).
 				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 				Build()
 
-			pipelineBroken := testutils.NewLogPipelineBuilder().
-				WithName(brokenPipeline).
+			brokenPipeline := testutils.NewLogPipelineBuilder().
+				WithName(brokenPipelineName).
 				WithInput(tc.inputBuilder(genNs)).
 				WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("dummy", "dummy", "user", "password")). // broken pipeline references a secret that does not exist
 				Build()
@@ -78,26 +77,26 @@ func TestMultiPipelineBroken_OTel(t *testing.T) {
 			resources := []client.Object{
 				kitk8s.NewNamespace(backendNs).K8sObject(),
 				kitk8s.NewNamespace(genNs).K8sObject(),
-				&pipelineGood,
-				&pipelineBroken,
+				&healthyPipeline,
+				&brokenPipeline,
 				tc.logGeneratorBuilder(genNs),
 			}
 			resources = append(resources, backend.K8sObjects()...)
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+				require.NoError(t, kitk8s.DeleteObjects(resources...))
 			})
-			require.NoError(t, kitk8s.CreateObjects(t.Context(), resources...))
+			require.NoError(t, kitk8s.CreateObjects(t, resources...))
 
-			assert.DeploymentReady(t.Context(), backend.NamespacedName())
-			assert.DeploymentReady(t.Context(), kitkyma.LogGatewayName)
+			assert.DeploymentReady(t, backend.NamespacedName())
+			assert.DeploymentReady(t, kitkyma.LogGatewayName)
 
 			if tc.expectAgent {
-				assert.DaemonSetReady(t.Context(), kitkyma.LogAgentName)
+				assert.DaemonSetReady(t, kitkyma.LogAgentName)
 			}
 
-			assert.OTelLogPipelineHealthy(t, pipelineGood.Name)
-			assert.LogPipelineHasCondition(t, pipelineBroken.Name, metav1.Condition{
+			assert.OTelLogPipelineHealthy(t, healthyPipeline.Name)
+			assert.LogPipelineHasCondition(t, brokenPipeline.Name, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonReferencedSecretMissing,
@@ -112,23 +111,23 @@ func TestMultiPipelineBroken_FluentBit(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelFluentBit)
 
 	var (
-		uniquePrefix   = unique.Prefix()
-		backendNs      = uniquePrefix("backend")
-		genNs          = uniquePrefix("gen")
-		goodPipeline   = uniquePrefix("good")
-		brokenPipeline = uniquePrefix("broken")
+		uniquePrefix        = unique.Prefix()
+		healthyPipelineName = uniquePrefix("healthy")
+		brokenPipelineName  = uniquePrefix("broken")
+		backendNs           = uniquePrefix("backend")
+		genNs               = uniquePrefix("gen")
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
 
-	pipelineGood := testutils.NewLogPipelineBuilder().
-		WithName(goodPipeline).
+	healthyPipeline := testutils.NewLogPipelineBuilder().
+		WithName(healthyPipelineName).
 		WithApplicationInput(true).
 		WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 		Build()
 
-	pipelineBroken := testutils.NewLogPipelineBuilder().
-		WithName(brokenPipeline).
+	brokenPipeline := testutils.NewLogPipelineBuilder().
+		WithName(brokenPipelineName).
 		WithApplicationInput(true).
 		WithHTTPOutput(testutils.HTTPHostFromSecret("dummy", "dummy", "dummy")). // broken pipeline ref
 		Build()
@@ -136,26 +135,25 @@ func TestMultiPipelineBroken_FluentBit(t *testing.T) {
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
-		&pipelineGood,
-		&pipelineBroken,
+		&healthyPipeline,
+		&brokenPipeline,
 		stdloggen.NewDeployment(genNs).K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(resources...))
 	})
-	require.NoError(t, kitk8s.CreateObjects(t.Context(), resources...))
+	require.NoError(t, kitk8s.CreateObjects(t, resources...))
 
-	assert.DeploymentReady(t.Context(), backend.NamespacedName())
-	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
+	assert.DeploymentReady(t, backend.NamespacedName())
+	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 
-	assert.FluentBitLogPipelineHealthy(t, pipelineGood.Name)
-	assert.LogPipelineHasCondition(t, pipelineBroken.Name, metav1.Condition{
+	assert.FluentBitLogPipelineHealthy(t, healthyPipeline.Name)
+	assert.LogPipelineHasCondition(t, brokenPipeline.Name, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonReferencedSecretMissing,
 	})
-
 	assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
 }

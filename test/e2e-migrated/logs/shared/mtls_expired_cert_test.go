@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"context"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -63,16 +62,14 @@ func TestMTLSExpiredCert_OTel(t *testing.T) {
 					)).
 				Build()
 
-			var resources []client.Object
-
-			resources = append(resources,
+			resources := []client.Object{
 				&pipeline,
-			)
+			}
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+				require.NoError(t, kitk8s.DeleteObjects(resources...))
 			})
-			Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
 			assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
@@ -86,8 +83,8 @@ func TestMTLSExpiredCert_OTel(t *testing.T) {
 				Reason: conditions.ReasonSelfMonConfigNotGenerated,
 			})
 
-			assert.TelemetryHasState(t.Context(), operatorv1alpha1.StateWarning)
-			assert.TelemetryHasCondition(t.Context(), suite.K8sClient, metav1.Condition{
+			assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+			assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeLogComponentsHealthy,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonTLSCertificateExpired,
@@ -103,10 +100,9 @@ func TestMTLSExpiredCert_FluentBit(t *testing.T) {
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
 		backendNs    = uniquePrefix("backend")
-		backendName  = kitbackend.DefaultName
 	)
 
-	expiredServerCerts, expiredClientCerts, err := testutils.NewCertBuilder(backendName, backendNs).
+	expiredServerCerts, expiredClientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).
 		WithExpiredClientCert().
 		Build()
 	Expect(err).ToNot(HaveOccurred())
@@ -125,16 +121,14 @@ func TestMTLSExpiredCert_FluentBit(t *testing.T) {
 			)).
 		Build()
 
-	var resources []client.Object
-
-	resources = append(resources,
+	resources := []client.Object{
 		&pipeline,
-	)
+	}
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(resources...))
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
 	assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
@@ -148,8 +142,8 @@ func TestMTLSExpiredCert_FluentBit(t *testing.T) {
 		Reason: conditions.ReasonSelfMonConfigNotGenerated,
 	})
 
-	assert.TelemetryHasState(t.Context(), operatorv1alpha1.StateWarning)
-	assert.TelemetryHasCondition(t.Context(), suite.K8sClient, metav1.Condition{
+	assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+	assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
 		Type:   conditions.TypeLogComponentsHealthy,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonTLSCertificateExpired,

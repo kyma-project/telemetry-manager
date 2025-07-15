@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"context"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -50,29 +49,27 @@ func TestContainerSelector_OTel(t *testing.T) {
 		WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
 		Build()
 
-	var resources []client.Object
-
-	resources = append(resources,
+	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
 		&includePipeline,
 		&excludePipeline,
 		stdloggen.NewDeployment(genNs, stdloggen.WithContainer(container1)).WithName("gen-1").K8sObject(),
 		stdloggen.NewDeployment(genNs, stdloggen.WithContainer(container2)).WithName("gen-2").K8sObject(),
-	)
+	}
 	resources = append(resources, backend1.K8sObjects()...)
 	resources = append(resources, backend2.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(resources...))
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
-	assert.DeploymentReady(t.Context(), kitkyma.LogGatewayName)
-	assert.DeploymentReady(t.Context(), backend1.NamespacedName())
-	assert.DeploymentReady(t.Context(), backend2.NamespacedName())
+	assert.DeploymentReady(t, kitkyma.LogGatewayName)
+	assert.DeploymentReady(t, backend1.NamespacedName())
+	assert.DeploymentReady(t, backend2.NamespacedName())
 
-	assert.DaemonSetReady(t.Context(), kitkyma.LogAgentName)
+	assert.DaemonSetReady(t, kitkyma.LogAgentName)
 
 	assert.OTelLogPipelineHealthy(t, includePipelineName)
 	assert.OTelLogPipelineHealthy(t, excludePipelineName)
@@ -116,27 +113,25 @@ func TestContainerSelector_FluentBit(t *testing.T) {
 		WithHTTPOutput(testutils.HTTPHost(backend2.Host()), testutils.HTTPPort(backend2.Port())).
 		Build()
 
-	var resources []client.Object
-
-	resources = append(resources,
+	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
 		&includePipeline,
 		&excludePipeline,
 		stdloggen.NewDeployment(genNs, stdloggen.WithContainer(container1)).WithName("gen-1").K8sObject(),
 		stdloggen.NewDeployment(genNs, stdloggen.WithContainer(container2)).WithName("gen-2").K8sObject(),
-	)
+	}
 	resources = append(resources, backend1.K8sObjects()...)
 	resources = append(resources, backend2.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(resources...))
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
-	assert.DeploymentReady(t.Context(), backend1.NamespacedName())
-	assert.DeploymentReady(t.Context(), backend2.NamespacedName())
-	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
+	assert.DeploymentReady(t, backend1.NamespacedName())
+	assert.DeploymentReady(t, backend2.NamespacedName())
+	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 
 	assert.FluentBitLogPipelineHealthy(t, includePipelineName)
 	assert.FluentBitLogPipelineHealthy(t, excludePipelineName)

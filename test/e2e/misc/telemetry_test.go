@@ -37,9 +37,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 			tracePipeline := testutils.NewTracePipelineBuilder().WithName(tracePipelineName).Build()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, &tracePipeline)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(&tracePipeline)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, &tracePipeline)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(GinkgoT(), &tracePipeline)).Should(Succeed())
 		})
 
 		It("Should have Telemetry with TracePipeline endpoints", func() {
@@ -64,9 +64,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 			metricPipeline := testutils.NewMetricPipelineBuilder().WithName(metricPipelineName).Build()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, &metricPipeline)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(&metricPipeline)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, &metricPipeline)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(GinkgoT(), &metricPipeline)).Should(Succeed())
 		})
 
 		It("Should have Telemetry with MetricPipeline endpoints", func() {
@@ -92,14 +92,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 				Build()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, &tracePipeline)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(&tracePipeline)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, &tracePipeline)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(GinkgoT(), &tracePipeline)).Should(Succeed())
 		})
 
 		It("Should have Telemetry with warning state", func() {
-			assert.TelemetryHasState(suite.Ctx, operatorv1alpha1.StateWarning)
-			assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
+			assert.TelemetryHasState(GinkgoT(), operatorv1alpha1.StateWarning)
+			assert.TelemetryHasCondition(GinkgoT(), suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeTraceComponentsHealthy,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonReferencedSecretMissing,
@@ -182,7 +182,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 
 		BeforeAll(func() {
 			Eventually(func(g Gomega) {
-				g.Expect(kitk8s.CreateObjects(suite.Ctx, &logPipeline)).Should(Succeed())
+				g.Expect(kitk8s.CreateObjects(GinkgoT(), &logPipeline)).Should(Succeed())
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
@@ -190,7 +190,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 			// Recreate Telemetry for remaining tests
 			Eventually(func(g Gomega) {
 				newTelemetry := []client.Object{kitk8s.NewTelemetry("default", "kyma-system").K8sObject()}
-				g.Expect(kitk8s.CreateObjects(suite.Ctx, newTelemetry...)).Should(Succeed())
+				g.Expect(kitk8s.CreateObjects(GinkgoT(), newTelemetry...)).Should(Succeed())
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 
 			Eventually(func(g Gomega) {
@@ -219,7 +219,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 			By("Deleting telemetry", func() {
 				var telemetry operatorv1alpha1.Telemetry
 				Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
-				Expect(kitk8s.ForceDeleteObjects(suite.Ctx, &telemetry)).Should(Succeed())
+				Expect(kitk8s.ForceDeleteObjects(GinkgoT(), &telemetry)).Should(Succeed())
 			})
 
 			Eventually(func(g Gomega) {
@@ -259,7 +259,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 
 		It("Should delete Telemetry", func() {
 			By("Deleting the orphaned LogPipeline", func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, &logPipeline)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(&logPipeline)).Should(Succeed())
 			})
 
 			Eventually(func(g Gomega) {
