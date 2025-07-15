@@ -31,7 +31,6 @@ service:
         - transform/set-instrumentation-scope-prometheus
       exporters:
         - routing/prometheus-input
-
     metrics/sample-1-prometheus-backend-output:
       receivers:
         - routing/enrichment
@@ -41,7 +40,7 @@ service:
         - batch
       exporters:
         - otlp/sample-1
-    metrics/sample-2-promethues-backend-output:
+    metrics/sample-2-prometheus-backend-output:
       receivers:
         - routing/enrichment
       processors:
@@ -50,8 +49,6 @@ service:
         - batch
       exporters:
         - otlp/sample-2
-
-
     metrics/istio-input:
       receivers:
         - prometheus/istio
@@ -60,10 +57,8 @@ service:
         - resource/delete-service-name
         - istio_noise_filter
         - transform/set-instrumentation-scope-istio
-
       exporters:
         - routing/istio-input
-
     metrics/sample-1-istio-backend-output:
       receivers:
         - routing/enrichment
@@ -87,6 +82,7 @@ service:
     metrics/sample-2-runtime-backend-output:
       receivers:
         - routing/enrichment
+        - routing/runtime-input
       processors:
         - resource/delete-skip-enrichment-attribute
         - filter/sample-2-filter-by-namespace-runtime-input
@@ -96,6 +92,7 @@ service:
     metrics/sample-1-runtime-backend-output:
       receivers:
         - routing/enrichment
+        - routing/runtime-input
       processors:
         - resource/delete-skip-enrichment-attribute
         - filter/sample-1-filter-by-namespace-runtime-input
@@ -114,7 +111,6 @@ service:
         - transform/insert-skip-enrichment-attribute
       exporters:
         - routing/runtime-input
-
   telemetry:
     metrics:
       readers:
@@ -130,7 +126,6 @@ service:
     - health_check
     - pprof
     - k8s_leader_elector
-
 receivers:
   kubeletstats:
     collection_interval: 30s
@@ -390,7 +385,6 @@ receivers:
               selectors:
                 - role: pod
                   field: spec.nodeName=${MY_NODE_NAME}
-
 processors:
   batch:
     send_batch_size: 1024
@@ -417,7 +411,6 @@ processors:
       - action: delete
         key: io.kyma-project.telemetry.skip_enrichment
   istio_noise_filter: {}
-
   transform/set-instrumentation-scope-runtime:
     error_mode: ignore
     metric_statements:
@@ -426,14 +419,12 @@ processors:
           - set(scope.name, "io.kyma-project.telemetry/runtime") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
           - set(scope.version, "1.6.0-1181-g2696a2e9") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
           - set(scope.name, "io.kyma-project.telemetry/runtime") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
-
   transform/set-instrumentation-scope-istio:
     error_mode: ignore
     metric_statements:
       - statements:
           - set(scope.version, "1.6.0-1181-g2696a2e9") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
           - set(scope.name, "io.kyma-project.telemetry/istio") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
-
   transform/set-instrumentation-scope-prometheus:
     error_mode: ignore
     metric_statements:
@@ -453,23 +444,19 @@ processors:
           - IsMatch(metric.name, "^k8s.daemonset.*")
           - IsMatch(metric.name, "^k8s.deployment.*")
           - IsMatch(metric.name, "^k8s.job.*")
-
   filter/drop-non-pvc-volumes-metrics:
     metrics:
       metric:
         - resource.attributes["k8s.volume.name"] != nil and resource.attributes["k8s.volume.type"] != "persistentVolumeClaim"
-
   filter/drop-diagnostic-metrics-if-input-source-prometheus:
     metrics:
       metric:
         - instrumentation_scope.name == "io.kyma-project.telemetry/prometheus" and (name == "up" or name == "scrape_duration_seconds" or name == "scrape_samples_scraped" or name == "scrape_samples_post_metric_relabeling" or name == "scrape_series_added")
-
   resource/insert-cluster-attributes:
     attributes:
       - action: insert
         key: k8s.cluster.name
         value: ${KUBERNETES_SERVICE_HOST}
-
   filter/sample-2-filter-by-namespace-runtime-input:
     metrics:
       metric:
@@ -494,7 +481,6 @@ processors:
     metrics:
       metric:
         - resource.attributes["kyma.input.name"] == "prometheus" and not(resource.attributes["k8s.namespace.name"] == "kyma-system" or resource.attributes["k8s.namespace.name"] == "kube-system" or resource.attributes["k8s.namespace.name"] == "istio-system" or resource.attributes["k8s.namespace.name"] == "compass-system")
-
   filter/drop-envoy-metrics-if-disabled:
     metrics:
       metric:
@@ -502,8 +488,7 @@ processors:
   filter/drop-diagnostic-metrics-if-input-source-istio:
     metrics:
       metric:
-        - instrumentation_scope.name == "io.kyma-project.telemetry/istio" and (name == "up" or name == "scrape_duration_seconds" or name == "scrape_samples_scraped" or name == "scrape_samples_post_metric_relabeling" or name == "scrape_series
-
+        - instrumentation_scope.name == "io.kyma-project.telemetry/istio" and (name == "up" or name == "scrape_duration_seconds" or name == "scrape_samples_scraped" or name == "scrape_samples_post_metric_relabeling" or name == "scrape_series")
   k8sattributes:
     auth_type: serviceAccount
     passthrough: false
@@ -571,7 +556,6 @@ exporters:
       max_interval: 30s
       max_elapsed_time: 300s
 connectors:
-
   routing/runtime-input:
     error_mode: ignore
     default_pipelines:
@@ -583,8 +567,18 @@ connectors:
           - metrics/sample-1-runtime-backend-output
   routing/prometheus-input:
     error_mode: ignore
+    table:
+      - pipelines:
+          - metrics/enrichment
+        condition: name != ""
+        context: metric
   routing/istio-input:
     error_mode: ignore
+    table:
+      - pipelines:
+          - metrics/enrichment
+        condition: name != ""
+        context: metric
   routing/enrichment:
     error_mode: ignore
     table:
@@ -592,13 +586,14 @@ connectors:
         pipelines:
           - metrics/sample-1-istio-backend-output
           - metrics/sample-2-istio-backend-output
+        context: metric
       - statement: route() where instrumentation_scope.name == "io.kyma-project.telemetry/prometheus"
         pipelines:
           - metrics/sample-1-prometheus-backend-output
           - metrics/sample-2-prometheus-backend-output
+        context: metric
       - statement: route() where instrumentation_scope.name == "io.kyma-project.telemetry/runtime"
         pipelines:
           - metrics/sample-2-runtime-backend-output
           - metrics/sample-1-runtime-backend-output
-        
-      
+        context: metric
