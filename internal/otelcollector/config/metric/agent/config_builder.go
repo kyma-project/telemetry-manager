@@ -269,7 +269,7 @@ func makeRuntimePipelineProcessorsIDs(runtimeResources runtimeResourcesEnabled) 
 		processors = append(processors, "filter/drop-non-pvc-volumes-metrics")
 	}
 
-	processors = append(processors, "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "batch")
+	processors = append(processors, "filter/drop-virtual-network-interfaces", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "batch")
 
 	return processors
 }

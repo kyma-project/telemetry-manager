@@ -226,6 +226,7 @@ type Processors struct {
 	SetInstrumentationScopeIstio      *metric.TransformProcessor        `yaml:"transform/set-instrumentation-scope-istio,omitempty"`
 	InsertSkipEnrichmentAttribute     *metric.TransformProcessor        `yaml:"transform/insert-skip-enrichment-attribute,omitempty"`
 	DropNonPVCVolumesMetrics          *FilterProcessor                  `yaml:"filter/drop-non-pvc-volumes-metrics,omitempty"`
+	DropVirtualNetworkInterfaces      *FilterProcessor                  `yaml:"filter/drop-virtual-network-interfaces,omitempty"`
 }
 
 type Exporters struct {
@@ -237,5 +238,6 @@ type FilterProcessor struct {
 }
 
 type FilterProcessorMetrics struct {
-	Metric []string `yaml:"metric,omitempty"`
+	Metric    []string `yaml:"metric,omitempty"`
+	Datapoint []string `yaml:"datapoint,omitempty"`
 }
