@@ -1,19 +1,21 @@
 package traces
 
 import (
-	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
-	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
-	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
+	"testing"
+
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"testing"
+
+	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
+	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
 func TestResources(t *testing.T) {
