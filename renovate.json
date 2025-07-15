@@ -68,6 +68,17 @@
       "matchUpdateTypes": ["minor", "patch"],
       "matchCurrentVersion": "!/^0/",
       "automerge": true
+    },
+    {
+      "matchManagers": [
+        "gomod"
+      ],
+      "groupName": "All opentelemetry collector packages",
+      "matchSourceUrls": [
+        "https://go.opentelemetry.io/collector{/,}**",
+        "https://github.com/open-telemetry/opentelemetry-collector{/,}**",
+        "https://github.com/open-telemetry/opentelemetry-collector-contrib{/,}**"
+      ]
     }
   ],
     "customManagers": [
