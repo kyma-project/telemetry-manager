@@ -56,11 +56,11 @@ func TestMultiPipelineFanout(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
+	assert.BackendReachable(t, backend1)
+	assert.BackendReachable(t, backend2)
+	assert.DeploymentReady(t, kitkyma.TraceGatewayName)
 	assert.TracePipelineHealthy(t, pipeline1Name)
 	assert.TracePipelineHealthy(t, pipeline2Name)
-	assert.DeploymentReady(t, kitkyma.TraceGatewayName)
-	assert.DeploymentReady(t, backend1.NamespacedName())
-	assert.DeploymentReady(t, backend2.NamespacedName())
 
 	assert.TracesFromNamespaceDeliveredWithT(t, backend1, genNs)
 	assert.TracesFromNamespaceDeliveredWithT(t, backend2, genNs)

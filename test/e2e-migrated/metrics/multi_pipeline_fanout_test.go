@@ -79,11 +79,11 @@ func TestMultiPipelineFanout(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
+	assert.BackendReachable(t, backendRuntime)
+	assert.BackendReachable(t, backendPrometheus)
+	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 	assert.MetricPipelineHealthy(t, pipelineRuntimeName)
 	assert.MetricPipelineHealthy(t, pipelinePrometheusName)
-	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
-	assert.DeploymentReady(t, backendRuntime.NamespacedName())
-	assert.DeploymentReady(t, backendPrometheus.NamespacedName())
 
 	Eventually(func(g Gomega) {
 		resp, err := suite.ProxyClient.Get(backendRuntimeExportURL)
