@@ -94,7 +94,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	assert.DeploymentReady(t, backend.NamespacedName())
 	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 
-	t.Log("Asserting 5 pipelines are healthy")
+	t.Log("Asserting all pipelines are healthy")
 
 	for i, pipeline := range pipelines {
 		if i%2 == 0 {
@@ -104,7 +104,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 		}
 	}
 
-	t.Log("Attempting to create the 6th pipeline (FluentBit)")
+	t.Log("Attempting to create the exceeding pipeline (FluentBit)")
 	require.NoError(t, kitk8s.CreateObjects(t, &additionalFBPipeline))
 	assert.LogPipelineHasCondition(t, additionalFBPipeline.GetName(), metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
@@ -123,7 +123,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	require.NoError(t, kitk8s.DeleteObjects(deletePipeline))
 	assert.FluentBitLogPipelineHealthy(t, additionalFBPipeline.GetName())
 
-	t.Log("Attempting to create the 6th pipeline (OTel)")
+	t.Log("Attempting to create the exceeding pipeline (OTel)")
 	require.NoError(t, kitk8s.CreateObjects(t, &additionalOTelPipeline))
 	assert.LogPipelineHasCondition(t, additionalOTelPipeline.GetName(), metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
@@ -195,13 +195,13 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 	assert.DeploymentReady(t, backend.NamespacedName())
 	assert.DeploymentReady(t, kitkyma.LogGatewayName)
 
-	t.Log("Asserting 5 pipelines are healthy")
+	t.Log("Asserting all pipelines are healthy")
 
 	for _, pipeline := range pipelines {
 		assert.OTelLogPipelineHealthy(t, pipeline.GetName())
 	}
 
-	t.Log("Attempting to create the 6th pipeline")
+	t.Log("Attempting to create the exceeding pipeline")
 	require.NoError(t, kitk8s.CreateObjects(t, &additionalPipeline))
 	assert.LogPipelineHasCondition(t, additionalPipeline.GetName(), metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
@@ -273,13 +273,13 @@ func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
 	assert.DeploymentReady(t, backend.NamespacedName())
 	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 
-	t.Log("Asserting 5 pipelines are healthy")
+	t.Log("Asserting all pipelines are healthy")
 
 	for _, pipeline := range pipelines {
 		assert.FluentBitLogPipelineHealthy(t, pipeline.GetName())
 	}
 
-	t.Log("Attempting to create the 6th pipeline")
+	t.Log("Attempting to create the exceeding pipeline")
 	require.NoError(t, kitk8s.CreateObjects(t, &additionalPipeline))
 	assert.LogPipelineHasCondition(t, additionalPipeline.GetName(), metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,

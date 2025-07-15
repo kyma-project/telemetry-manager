@@ -32,12 +32,10 @@ func TestMultiPipelineFanout(t *testing.T) {
 		genNs                  = uniquePrefix("gen")
 		pipelineRuntimeName    = uniquePrefix("runtime")
 		pipelinePrometheusName = uniquePrefix("prometheus")
-		backendRuntimeName     = uniquePrefix("backend-runtime")
-		backendPrometheusName  = uniquePrefix("backend-prometheus")
 	)
 
-	backendRuntime := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithName(backendRuntimeName))
-	backendPrometheus := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithName(backendPrometheusName))
+	backendRuntime := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithName("backend-runtime"))
+	backendPrometheus := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithName("backend-prometheus"))
 	backendRuntimeExportURL := backendRuntime.ExportURL(suite.ProxyClient)
 	backendPrometheusExportURL := backendPrometheus.ExportURL(suite.ProxyClient)
 

@@ -121,7 +121,9 @@ const (
 	LabelMaxPipelineMetrics  = "max-pipeline-metrics"
 
 	// Traces labels
-	LabelTraces = "traces"
+	LabelTraces             = "traces"
+	LabelTracesExperimental = "traces-experimental"
+	LabelMaxPipelineTraces  = "max-pipeline-traces"
 
 	// Telemetry labels
 	LabelTelemetry = "telemetry"

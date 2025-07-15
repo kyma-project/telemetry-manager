@@ -1,4 +1,4 @@
-package metrics
+package traces
 
 import (
 	"fmt"
@@ -21,12 +21,12 @@ import (
 )
 
 func TestMultiPipelineMaxPipeline(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelMaxPipelineMetrics)
+	suite.RegisterTestCase(t, suite.LabelMaxPipelineTraces)
 
-	const maxNumberOfMetricPipelines = telemetrycontrollers.MaxPipelineCount
+	const maxNumberOfTracePipelines = telemetrycontrollers.MaxPipelineCount
 
 	var (
-		uniquePrefix = unique.Prefix("metrics")
+		uniquePrefix = unique.Prefix("traces")
 		backendNs    = uniquePrefix("backend")
 		genNs        = uniquePrefix("gen")
 
@@ -35,18 +35,18 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 		pipelines              []client.Object
 	)
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces)
 
-	for i := range maxNumberOfMetricPipelines {
+	for i := range maxNumberOfTracePipelines {
 		pipelineName := fmt.Sprintf("%s-%d", pipelineBase, i)
-		pipeline := testutils.NewMetricPipelineBuilder().
+		pipeline := testutils.NewTracePipelineBuilder().
 			WithName(pipelineName).
 			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 			Build()
 		pipelines = append(pipelines, &pipeline)
 	}
 
-	additionalPipeline := testutils.NewMetricPipelineBuilder().
+	additionalPipeline := testutils.NewTracePipelineBuilder().
 		WithName(additionalPipelineName).
 		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 		Build()
@@ -54,7 +54,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
-		telemetrygen.NewPod(genNs, telemetrygen.SignalTypeMetrics).K8sObject(),
+		telemetrygen.NewPod(genNs, telemetrygen.SignalTypeTraces).K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
 
@@ -67,33 +67,33 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	require.NoError(t, kitk8s.CreateObjects(t, pipelines...))
 
 	assert.BackendReachable(t, backend)
-	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.DeploymentReady(t, kitkyma.TraceGatewayName)
 
 	t.Log("Asserting all pipelines are healthy")
 
 	for _, pipeline := range pipelines {
-		assert.MetricPipelineHealthy(t, pipeline.GetName())
+		assert.TracePipelineHealthy(t, pipeline.GetName())
 	}
 
 	t.Log("Attempting to create the exceeding pipeline")
 	require.NoError(t, kitk8s.CreateObjects(t, &additionalPipeline))
-	assert.MetricPipelineHasCondition(t, additionalPipelineName, metav1.Condition{
+	assert.TracePipelineHasCondition(t, additionalPipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonMaxPipelinesExceeded,
 	})
-	assert.MetricPipelineHasCondition(t, additionalPipelineName, metav1.Condition{
+	assert.TracePipelineHasCondition(t, additionalPipelineName, metav1.Condition{
 		Type:   conditions.TypeFlowHealthy,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonSelfMonConfigNotGenerated,
 	})
 
-	t.Log("Verifying logs are delivered for valid pipelines")
-	assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
+	t.Log("Verifying traces are delivered for valid pipelines")
+	assert.TracesFromNamespaceDeliveredWithT(t, backend, genNs)
 
 	t.Log("Deleting one previously healthy pipeline and expecting the additional pipeline to be healthy")
 
 	deletePipeline := pipelines[0]
 	require.NoError(t, kitk8s.DeleteObjects(deletePipeline))
-	assert.MetricPipelineHealthy(t, additionalPipeline.GetName())
+	assert.TracePipelineHealthy(t, additionalPipeline.GetName())
 }
