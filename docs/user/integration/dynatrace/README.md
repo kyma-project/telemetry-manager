@@ -181,7 +181,7 @@ There are several approaches to ingest custom metrics to Dynatrace, each with di
 - Use a MetricPipeline to push metrics directly.
 
   > [!NOTE]
-  > The Dynatrace OTLP API does [not support](https://docs.dynatrace.com/docs/shortlink/opentelemetry-metrics-limitations#limitations) the full OTLP specification and needs custom transformation. A MetricPipeline does not support these transformation features, so that only metrics can be ingested that don't hit the limitations. At the moment, metrics of type "Histogram" and "Summary" are not supported. Furthermore, "Sum"s must use "delta" aggregation temporality.
+  > The Dynatrace OTLP API does [not support](https://docs.dynatrace.com/docs/shortlink/opentelemetry-metrics-limitations#limitations) metrics in "cumulative" aggregation temporality (default temporarilty in OTel). The metrics need a custom transformation in case they are not emmitted already in the expected "delta" temporarility. A MetricPipeline does not support these transformation features.
 
   Use this setup when your application pushes metrics to the telemetry metric service natively with OTLP, and if you have explicitly enabled "delta" aggregation temporality. You cannot enable additional inputs for the MetricPipeline.
 
@@ -223,7 +223,7 @@ There are several approaches to ingest custom metrics to Dynatrace, each with di
 
   This approach adds the required transformation by running an additional custom OTel Collector. The Telemetry Metric gateway is configured to ship the metrics to the custom collector, and the collector transforms them before shipping the data to the Dynatrace endpoint. This approach enables support for all metric types and inputs for the MetricPipeline. However, you must operate the additional OTel Collector in a custom way.
 
-  1. Deploy the custom OTel Collector using Helm:
+  1. Deploy the custom OTel Collector using Helm with a custom [values.yaml](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/dynatrace/exporter-values.yaml):
 
         ```bash
         helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
