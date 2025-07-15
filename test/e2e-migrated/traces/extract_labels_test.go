@@ -2,6 +2,12 @@ package traces
 
 import (
 	"context"
+	"testing"
+
+	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/require"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -12,10 +18,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
-	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/require"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
 )
 
 func TestExtractLabels(t *testing.T) {

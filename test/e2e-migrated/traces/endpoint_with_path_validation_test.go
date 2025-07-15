@@ -1,13 +1,15 @@
 package traces
 
 import (
-	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
-	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"testing"
+
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
+
+	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
+	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
 func TestEndpointWithPathValidation(t *testing.T) {
@@ -47,10 +49,9 @@ func TestEndpointWithPathValidation(t *testing.T) {
 	t.Cleanup(func() {
 		require.NoError(t, kitk8s.DeleteObjects(resources...))
 	})
-	
+
 	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
 	Expect(kitk8s.CreateObjects(t, &tracePipelineWithGRPCAndPath)).ShouldNot(Succeed())
 	Expect(kitk8s.CreateObjects(t, &tracePipelineDefaultGRPCWithPath)).ShouldNot(Succeed())
-
 }
