@@ -1,0 +1,206 @@
+extensions:
+  health_check:
+    endpoint: ${MY_POD_IP}:13133
+  pprof:
+    endpoint: 127.0.0.1:1777
+  k8s_leader_elector:
+    auth_type: serviceAccount
+    lease_name: telemetry-metric-gateway-kymastats
+    lease_namespace: kyma-system
+service:
+  pipelines:
+    metrics/enrichment:
+      receivers:
+        - routing/prometheus-input
+        - routing/istio-input
+        - routing/runtime-input
+        - routing/otlp-input
+      processors:
+        - k8sattributes
+        - resource/insert-cluster-attributes
+        - service_enrichment
+        - resource/drop-kyma-attributes
+      exporters:
+        - routing/enrichment
+    metrics/otlp-input:
+      receivers:
+        - otlp
+        - kymastats
+      processors:
+        - memory_limiter
+        - transform/set-instrumentation-scope-kyma
+      exporters:
+        - routing/otlp-input
+    metrics/backend-2-output:
+      receivers:
+        - routing/enrichment
+
+      processors:
+        - filter/sample-2-filter-by-namespace
+        - batch
+      exporters:
+        - otlp/sample-2
+
+
+    metrics/backend-1-output:
+      receivers:
+        - routing/enrichment
+      processors:
+        - filter/sample-1-filter-by-namespace
+        - batch
+      exporters:
+        - otlp/sample-1
+  telemetry:
+    metrics:
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: ${MY_POD_IP}
+                port: 8888
+    logs:
+      level: info
+      encoding: json
+  extensions:
+    - health_check
+    - pprof
+    - k8s_leader_elector
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: ${MY_POD_IP}:4318
+      grpc:
+        endpoint: ${MY_POD_IP}:4317
+  kymastats:
+    auth_type: serviceAccount
+    collection_interval: 30s
+    resources:
+      - group: operator.kyma-project.io
+        version: v1alpha1
+        resource: telemetries
+      - group: telemetry.kyma-project.io
+        version: v1alpha1
+        resource: logpipelines
+      - group: telemetry.kyma-project.io
+        version: v1alpha1
+        resource: metricpipelines
+      - group: telemetry.kyma-project.io
+        version: v1alpha1
+        resource: tracepipelines
+    k8s_leader_elector: k8s_leader_elector
+processors:
+  batch:
+    send_batch_size: 1024
+    timeout: 10s
+    send_batch_max_size: 1024
+  memory_limiter:
+    check_interval: 1s
+    limit_percentage: 75
+    spike_limit_percentage: 15
+  k8sattributes:
+    auth_type: serviceAccount
+    passthrough: false
+    extract:
+      metadata:
+        - k8s.pod.name
+        - k8s.node.name
+        - k8s.namespace.name
+        - k8s.deployment.name
+        - k8s.statefulset.name
+        - k8s.daemonset.name
+        - k8s.cronjob.name
+        - k8s.job.name
+      labels:
+        - from: pod
+          key: app.kubernetes.io/name
+          tag_name: kyma.kubernetes_io_app_name
+        - from: pod
+          key: app
+          tag_name: kyma.app_name
+        - from: node
+          key: topology.kubernetes.io/region
+          tag_name: cloud.region
+        - from: node
+          key: topology.kubernetes.io/zone
+          tag_name: cloud.availability_zone
+        - from: node
+          key: node.kubernetes.io/instance-type
+          tag_name: host.type
+        - from: node
+          key: kubernetes.io/arch
+          tag_name: host.arch
+    pod_association:
+      - sources:
+          - from: resource_attribute
+            name: k8s.pod.ip
+      - sources:
+          - from: resource_attribute
+            name: k8s.pod.uid
+      - sources:
+          - from: connection
+  resource/insert-cluster-attributes:
+    attributes:
+      - action: insert
+        key: k8s.cluster.name
+
+  service_enrichment:
+    resource_attributes:
+      - kyma.kubernetes_io_app_name
+      - kyma.app_name
+  resource/drop-kyma-attributes:
+    attributes:
+      - action: delete
+        pattern: kyma.*
+  transform/set-instrumentation-scope-kyma:
+    error_mode: ignore
+    metric_statements:
+      - statements:
+          - set(scope.version, "1.6.0-1181-g2696a2e9") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
+          - set(scope.name, "io.kyma-project.telemetry/kyma") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
+  filter/sample-2-filter-by-namespace:
+    metrics:
+      metric:
+        - resource.attributes["kyma.input.name"] == "prometheus" and not(resource.attributes["k8s.namespace.name"] == "kyma-system" or resource.attributes["k8s.namespace.name"] == "kube-system" or resource.attributes["k8s.namespace.name"] == "istio-system" or resource.attributes["k8s.namespace.name"] == "compass-system")
+  filter/sample-1-filter-by-namespace:
+    metrics:
+      metric:
+        - resource.attributes["kyma.input.name"] == "prometheus" and not(resource.attributes["k8s.namespace.name"] == "kyma-system" or resource.attributes["k8s.namespace.name"] == "kube-system" or resource.attributes["k8s.namespace.name"] == "istio-system" or resource.attributes["k8s.namespace.name"] == "compass-system")
+exporters:
+  otlp/sample-1:
+    endpoint: ${OTLP_ENDPOINT_SAMPLE}
+    tls:
+      insecure: true
+    sending_queue:
+      enabled: true
+      queue_size: 128
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
+  otlp/sample-2:
+    endpoint: ${OTLP_ENDPOINT_SAMPLE_2}
+    tls:
+      insecure: true
+    sending_queue:
+      enabled: true
+      queue_size: 128
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
+connectors:
+  routing/runtime-input:
+    error_mode: ignore
+  routing/prometheus-input:
+    error_mode: ignore
+  routing/istio-input:
+    error_mode: ignore
+  routing/otlp-input:
+    error_mode: ignore
+
+  routing/enrichment:
+    error_mode: ignore
+
