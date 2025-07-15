@@ -287,7 +287,12 @@ jobs:
       fail-fast: false
       matrix:
         labels:
+          # LOGS
           - name: fluent-bit
+            mode: release
+          - name: log-agent
+            mode: release
+          - name: log-gateway
             mode: release
           - name: fluent-bit-experimental
             mode: experimental
@@ -295,18 +300,13 @@ jobs:
             mode: experimental
           - name: log-gateway-experimental
             mode: experimental
-          - name: log-agent
+          - name: logs-max-pipeline
             mode: release
-          - name: log-gateway
+          - name: fluent-bit-max-pipeline
             mode: release
-          - name: max-pipeline
+          - name: otel-max-pipeline
             mode: release
-          - name: max-pipeline-fluent-bit
-            mode: release
-          - name: max-pipeline-otel
-            mode: release
-          - name: max-pipeline-metrics
-            mode: release
+          # METRICS
           - name: metrics-set-a
             mode: release
           - name: metrics-set-b
@@ -315,6 +315,15 @@ jobs:
             mode: release
           - name: metrics-experimental
             mode: experimental
+          - name: metrics-max-pipeline
+            mode: release
+          # TRACES
+          - name: traces
+            mode: release
+          - name: traces-experimental
+            mode: experimental
+          - name: traces-max-pipeline
+            mode: release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
