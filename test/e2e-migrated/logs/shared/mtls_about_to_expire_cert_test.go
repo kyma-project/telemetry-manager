@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"context"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -80,26 +79,24 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 					)).
 				Build()
 
-			var resources []client.Object
-
-			resources = append(resources,
+			resources := []client.Object{
 				kitk8s.NewNamespace(backendNs).K8sObject(),
 				kitk8s.NewNamespace(genNs).K8sObject(),
 				&pipeline,
 				tc.logGeneratorBuilder(genNs),
-			)
+			}
 			resources = append(resources, backend.K8sObjects()...)
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+				require.NoError(t, kitk8s.DeleteObjects(resources...))
 			})
-			Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
-			assert.DeploymentReady(t.Context(), kitkyma.LogGatewayName)
-			assert.DeploymentReady(t.Context(), backend.NamespacedName())
+			assert.DeploymentReady(t, kitkyma.LogGatewayName)
+			assert.DeploymentReady(t, backend.NamespacedName())
 
 			if tc.expectAgent {
-				assert.DaemonSetReady(t.Context(), kitkyma.LogAgentName)
+				assert.DaemonSetReady(t, kitkyma.LogAgentName)
 			}
 
 			assert.FluentBitLogPipelineHealthy(t, pipelineName)
@@ -109,8 +106,8 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 				Reason: conditions.ReasonTLSCertificateAboutToExpire,
 			})
 
-			assert.TelemetryHasState(t.Context(), operatorv1alpha1.StateWarning)
-			assert.TelemetryHasCondition(t.Context(), suite.K8sClient, metav1.Condition{
+			assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+			assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeLogComponentsHealthy,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonTLSCertificateAboutToExpire,
@@ -150,23 +147,21 @@ func TestMTLSAboutToExpireCert_FluentBit(t *testing.T) {
 			)).
 		Build()
 
-	var resources []client.Object
-
-	resources = append(resources,
+	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
 		&pipeline,
 		stdloggen.NewDeployment(genNs).K8sObject(),
-	)
+	}
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(resources...))
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
-	assert.DeploymentReady(t.Context(), backend.NamespacedName())
-	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
+	assert.DeploymentReady(t, backend.NamespacedName())
+	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 
 	assert.FluentBitLogPipelineHealthy(t, pipelineName)
 	assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
@@ -175,8 +170,8 @@ func TestMTLSAboutToExpireCert_FluentBit(t *testing.T) {
 		Reason: conditions.ReasonTLSCertificateAboutToExpire,
 	})
 
-	assert.TelemetryHasState(t.Context(), operatorv1alpha1.StateWarning)
-	assert.TelemetryHasCondition(t.Context(), suite.K8sClient, metav1.Condition{
+	assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+	assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
 		Type:   conditions.TypeLogComponentsHealthy,
 		Status: metav1.ConditionTrue,
 		Reason: conditions.ReasonTLSCertificateAboutToExpire,

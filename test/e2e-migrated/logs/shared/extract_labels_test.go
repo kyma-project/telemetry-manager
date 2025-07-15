@@ -19,7 +19,6 @@ import (
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -73,10 +72,9 @@ func TestExtractLabels_OTel(t *testing.T) {
 
 			var (
 				uniquePrefix = unique.Prefix(tc.label)
-				backendNs    = uniquePrefix("backend")
-
-				genNs        = uniquePrefix("gen")
 				pipelineName = uniquePrefix()
+				backendNs    = uniquePrefix("backend")
+				genNs        = uniquePrefix("gen")
 				telemetry    operatorv1alpha1.Telemetry
 			)
 
@@ -95,24 +93,14 @@ func TestExtractLabels_OTel(t *testing.T) {
 				labelKeyShouldNotMatch: labelValueShouldNotMatch,
 			}
 
-			Eventually(func(g Gomega) int {
-				err := suite.K8sClient.Get(t.Context(), kitkyma.TelemetryName, &telemetry)
-				g.Expect(err).NotTo(HaveOccurred())
-
-				telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{
-					ExtractPodLabels: []operatorv1alpha1.PodLabel{
-						{
-							Key: "log.test.exact.should.match",
-						},
-						{
-							KeyPrefix: "log.test.prefix",
-						},
-					},
-				}
-				err = suite.K8sClient.Update(t.Context(), &telemetry)
-				g.Expect(err).NotTo(HaveOccurred())
-				return len(telemetry.Spec.Enrichments.ExtractPodLabels)
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(2))
+			Expect(suite.K8sClient.Get(t.Context(), kitkyma.TelemetryName, &telemetry)).NotTo(HaveOccurred())
+			telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{
+				ExtractPodLabels: []operatorv1alpha1.PodLabel{
+					{Key: "log.test.exact.should.match"},
+					{KeyPrefix: "log.test.prefix"},
+				},
+			}
+			Expect(suite.K8sClient.Update(t.Context(), &telemetry)).NotTo(HaveOccurred(), "should update Telemetry resource with enrichment configuration")
 
 			resources := []client.Object{
 				kitk8s.NewNamespace(backendNs).K8sObject(),
@@ -123,20 +111,20 @@ func TestExtractLabels_OTel(t *testing.T) {
 			resources = append(resources, backend.K8sObjects()...)
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+				require.NoError(t, kitk8s.DeleteObjects(resources...))
 
-				Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
+				Expect(suite.K8sClient.Get(context.Background(), kitkyma.TelemetryName, &telemetry)).Should(Succeed()) //nolint:usetesting // Remove ctx from Get
 				telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{}
 				require.NoError(t, suite.K8sClient.Update(context.Background(), &telemetry)) //nolint:usetesting // Remove ctx from Update
 			})
-			Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
 			if tc.expectAgent {
-				assert.DaemonSetReady(t.Context(), kitkyma.LogAgentName)
+				assert.DaemonSetReady(t, kitkyma.LogAgentName)
 			}
 
-			assert.DeploymentReady(t.Context(), kitkyma.LogGatewayName)
-			assert.DeploymentReady(t.Context(), backend.NamespacedName())
+			assert.DeploymentReady(t, kitkyma.LogGatewayName)
+			assert.DeploymentReady(t, backend.NamespacedName())
 			assert.OTelLogPipelineHealthy(t, pipelineName)
 			assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
 
@@ -204,16 +192,16 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 	resources = append(resources, backendDropped.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(resources...))
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
 	assert.FluentBitLogPipelineHealthy(t, pipelineNameNotDropped)
 	assert.FluentBitLogPipelineHealthy(t, pipelineNameDropped)
-	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
-	assert.DeploymentReady(t.Context(), backendNotDropped.NamespacedName())
-	assert.DeploymentReady(t.Context(), backendDropped.NamespacedName())
-	assert.DeploymentReady(t.Context(), logProducer.NamespacedName())
+	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
+	assert.DeploymentReady(t, backendNotDropped.NamespacedName())
+	assert.DeploymentReady(t, backendDropped.NamespacedName())
+	assert.DeploymentReady(t, logProducer.NamespacedName())
 
 	// Scenario 1: Labels not dropped
 	assert.FluentBitLogsFromNamespaceDelivered(t, backendNotDropped, genNs)

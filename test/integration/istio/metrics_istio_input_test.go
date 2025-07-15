@@ -70,8 +70,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio, suite.
 		app2Ns       = suite.IDWithSuffix("app-2")
 		pipelineName = suite.ID()
 
-		metricBackend          *kitbackend.Backend
-		metricBackendExportURL string
+		metricBackend *kitbackend.Backend
 	)
 
 	makeResources := func() []client.Object {
@@ -82,7 +81,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio, suite.
 
 		metricBackend = kitbackend.New(mockNs, kitbackend.SignalTypeMetrics, kitbackend.WithName("metrics"))
 		objs = append(objs, metricBackend.K8sObjects()...)
-		metricBackendExportURL = metricBackend.ExportURL(suite.ProxyClient)
 
 		metricPipeline := testutils.NewMetricPipelineBuilder().
 			WithName(pipelineName).
@@ -116,30 +114,31 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio, suite.
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(suite.Ctx, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(GinkgoT(), k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have a running metric gateway deployment", func() {
-			assert.DeploymentReady(suite.Ctx, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(GinkgoT(), kitkyma.MetricGatewayName)
 		})
 
 		It("Should have a running metric agent daemonset", func() {
-			assert.DaemonSetReady(suite.Ctx, kitkyma.MetricAgentName)
+			assert.DaemonSetReady(GinkgoT(), kitkyma.MetricAgentName)
 		})
 
 		It("Should have a metrics backend running", func() {
-			assert.DeploymentReady(suite.Ctx, metricBackend.NamespacedName())
+			assert.DeploymentReady(GinkgoT(), metricBackend.NamespacedName())
 		})
 
 		It("Should have a running metric agent daemonset", func() {
-			assert.DaemonSetReady(suite.Ctx, kitkyma.MetricAgentName)
+			assert.DaemonSetReady(GinkgoT(), kitkyma.MetricAgentName)
 		})
 
 		It("Should verify istio proxy metric scraping", func() {
 			Eventually(func(g Gomega) {
-				resp, err := suite.ProxyClient.Get(metricBackendExportURL)
+				backendURL := metricBackend.ExportURL(suite.ProxyClient)
+				resp, err := suite.ProxyClient.Get(backendURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 
@@ -155,7 +154,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio, suite.
 
 		It("Should verify istio proxy metric attributes", func() {
 			Eventually(func(g Gomega) {
-				resp, err := suite.ProxyClient.Get(metricBackendExportURL)
+				backendURL := metricBackend.ExportURL(suite.ProxyClient)
+				resp, err := suite.ProxyClient.Get(backendURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 
@@ -193,16 +193,17 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio, suite.
 		})
 
 		It("Should deliver metrics from app-1 namespace", func() {
-			assert.MetricsFromNamespaceDelivered(suite.ProxyClient, metricBackendExportURL, app1Ns, istioProxyMetricNames)
+			assert.MetricsFromNamespaceDelivered(GinkgoT(), metricBackend, app1Ns, istioProxyMetricNames)
 		})
 
 		It("Should not deliver metrics from app-2 namespace", func() {
-			assert.MetricsFromNamespaceNotDelivered(suite.ProxyClient, metricBackendExportURL, app2Ns)
+			assert.MetricsFromNamespaceNotDelivered(GinkgoT(), metricBackend, app2Ns)
 		})
 
 		It("Should verify that istio metric with destination_workload=telemetry-metric-gateway does not exist", func() {
 			Consistently(func(g Gomega) {
-				resp, err := suite.ProxyClient.Get(metricBackendExportURL)
+				backendURL := metricBackend.ExportURL(suite.ProxyClient)
+				resp, err := suite.ProxyClient.Get(backendURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 
@@ -218,7 +219,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio, suite.
 
 		It("Ensures no diagnostic metrics are sent to backend", func() {
 			Consistently(func(g Gomega) {
-				resp, err := suite.ProxyClient.Get(metricBackendExportURL)
+				backendURL := metricBackend.ExportURL(suite.ProxyClient)
+				resp, err := suite.ProxyClient.Get(backendURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 

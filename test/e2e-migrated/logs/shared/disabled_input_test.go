@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"context"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -29,13 +28,10 @@ func TestDisabledInput_OTel(t *testing.T) {
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
 		backendNs    = uniquePrefix("backend")
-
-		genNs = uniquePrefix("gen")
+		genNs        = uniquePrefix("gen")
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
-
-	loggen := telemetrygen.NewPod(genNs, telemetrygen.SignalTypeLogs)
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
@@ -50,28 +46,28 @@ func TestDisabledInput_OTel(t *testing.T) {
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
 		&pipeline,
-		loggen.K8sObject(),
+		telemetrygen.NewPod(genNs, telemetrygen.SignalTypeLogs).K8sObject(),
 	}
 
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(resources...))
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
-	// If Application input is disabled, THEN the log agent deployed and DaemonSet must not exist
+	assert.DeploymentReady(t, kitkyma.LogGatewayName)
+	assert.DeploymentReady(t, backend.NamespacedName())
+	assert.OTelLogPipelineHealthy(t, pipelineName)
+
+	// If Application input is disabled, THEN the log agent must not be deployed
 	Eventually(func(g Gomega) {
 		var daemonSet appsv1.DaemonSet
 		err := suite.K8sClient.Get(t.Context(), kitkyma.LogAgentName, &daemonSet)
 		g.Expect(apierrors.IsNotFound(err)).To(BeTrue(), "Log agent DaemonSet must not exist")
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 
-	// If OTLP input is disabled, THEN the logs pushed the gateway should not be sent to the backend
-	assert.DeploymentReady(t.Context(), kitkyma.LogGatewayName)
-	assert.DeploymentReady(t.Context(), backend.NamespacedName())
-	assert.OTelLogPipelineHealthy(t, pipelineName)
-
+	// If OTLP input is disabled, THEN the logs pushed to the gateway should not be sent to the backend
 	assert.BackendDataConsistentlyMatches(t, backend, HaveFlatLogs(BeEmpty()))
 }
 
@@ -102,9 +98,9 @@ func TestDisabledInput_FluentBit(t *testing.T) {
 	}
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(resources...))
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
 	Eventually(func(g Gomega) {
 		var daemonSet appsv1.DaemonSet

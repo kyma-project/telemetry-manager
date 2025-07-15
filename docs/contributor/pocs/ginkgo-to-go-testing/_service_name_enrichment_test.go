@@ -23,6 +23,7 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -108,12 +109,11 @@ func TestOTelLogPipeline_ServiceNameEnrichment(t *testing.T) {
 				).
 				Build()
 
-			var resources []client.Object
-			resources = append(resources,
+			resources := []client.Object{
 				kitk8s.NewNamespace(mockNs).K8sObject(),
 				&pipeline,
 				tc.logProducerFunc(genName, mockNs),
-			)
+			}
 			resources = append(resources, backend.K8sObjects()...)
 
 			t.Cleanup(func() {

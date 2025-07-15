@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"golang.org/x/net/context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -29,9 +28,10 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelMaxPipeline)
 
 	var (
-		uniquePrefix               = unique.Prefix()
-		backendNs                  = uniquePrefix("backend")
-		generatorNs                = uniquePrefix("gen")
+		uniquePrefix = unique.Prefix("logs")
+		backendNs    = uniquePrefix("backend")
+		genNs        = uniquePrefix("gen")
+
 		pipelineBase               = uniquePrefix()
 		additionalFBPipelineName   = fmt.Sprintf("%s-limit-exceeding-fb", pipelineBase)
 		additionalOTelPipelineName = fmt.Sprintf("%s-limit-exceeding-otel", pipelineBase)
@@ -77,22 +77,22 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(generatorNs).K8sObject(),
-		stdloggen.NewDeployment(generatorNs).K8sObject(),
+		kitk8s.NewNamespace(genNs).K8sObject(),
+		stdloggen.NewDeployment(genNs).K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...))            //nolint:usetesting // Remove ctx from DeleteObjects
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), pipelines[2:]...))        //nolint:usetesting // Remove ctx from DeleteObjects
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), &additionalFBPipeline))   //nolint:usetesting // Remove ctx from DeleteObjects
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), &additionalOTelPipeline)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(resources...))
+		require.NoError(t, kitk8s.DeleteObjects(pipelines[2:]...))
+		require.NoError(t, kitk8s.DeleteObjects(&additionalFBPipeline))
+		require.NoError(t, kitk8s.DeleteObjects(&additionalOTelPipeline))
 	})
-	require.NoError(t, kitk8s.CreateObjects(t.Context(), resources...))
-	require.NoError(t, kitk8s.CreateObjects(t.Context(), pipelines...))
+	require.NoError(t, kitk8s.CreateObjects(t, resources...))
+	require.NoError(t, kitk8s.CreateObjects(t, pipelines...))
 
-	assert.DeploymentReady(t.Context(), backend.NamespacedName())
-	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
+	assert.DeploymentReady(t, backend.NamespacedName())
+	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 
 	t.Log("Asserting 5 pipelines are healthy")
 
@@ -105,7 +105,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	}
 
 	t.Log("Attempting to create the 6th pipeline (FluentBit)")
-	require.NoError(t, kitk8s.CreateObjects(t.Context(), &additionalFBPipeline))
+	require.NoError(t, kitk8s.CreateObjects(t, &additionalFBPipeline))
 	assert.LogPipelineHasCondition(t, additionalFBPipeline.GetName(), metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
@@ -120,11 +120,11 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	t.Log("Deleting one previously healthy pipeline and expecting the additional FluentBit pipeline to be healthy")
 
 	deletePipeline := pipelines[0]
-	require.NoError(t, kitk8s.DeleteObjects(t.Context(), deletePipeline))
+	require.NoError(t, kitk8s.DeleteObjects(deletePipeline))
 	assert.FluentBitLogPipelineHealthy(t, additionalFBPipeline.GetName())
 
 	t.Log("Attempting to create the 6th pipeline (OTel)")
-	require.NoError(t, kitk8s.CreateObjects(t.Context(), &additionalOTelPipeline))
+	require.NoError(t, kitk8s.CreateObjects(t, &additionalOTelPipeline))
 	assert.LogPipelineHasCondition(t, additionalOTelPipeline.GetName(), metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
@@ -137,12 +137,12 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	})
 
 	t.Log("Verifying logs are delivered for valid pipelines")
-	assert.FluentBitLogsFromNamespaceDelivered(t, backend, generatorNs)
+	assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
 
 	t.Log("Deleting one previously healthy pipeline and expecting the additional OTel pipeline to be healthy")
 
 	deletePipeline = pipelines[1]
-	require.NoError(t, kitk8s.DeleteObjects(t.Context(), deletePipeline))
+	require.NoError(t, kitk8s.DeleteObjects(deletePipeline))
 	assert.FluentBitLogPipelineHealthy(t, additionalFBPipeline.GetName())
 }
 
@@ -150,9 +150,10 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelMaxPipelineOTel)
 
 	var (
-		uniquePrefix           = unique.Prefix()
-		backendNs              = uniquePrefix("backend")
-		genNs                  = uniquePrefix("gen")
+		uniquePrefix = unique.Prefix()
+		backendNs    = uniquePrefix("backend")
+		genNs        = uniquePrefix("gen")
+
 		pipelineBase           = uniquePrefix()
 		additionalPipelineName = fmt.Sprintf("%s-limit-exceeding", pipelineBase)
 		pipelines              []client.Object
@@ -184,15 +185,15 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...))        //nolint:usetesting // Remove ctx from DeleteObjects
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), pipelines[1:]...))    //nolint:usetesting // Remove ctx from DeleteObjects
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), &additionalPipeline)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(resources...))
+		require.NoError(t, kitk8s.DeleteObjects(pipelines[1:]...))
+		require.NoError(t, kitk8s.DeleteObjects(&additionalPipeline))
 	})
-	require.NoError(t, kitk8s.CreateObjects(t.Context(), resources...))
-	require.NoError(t, kitk8s.CreateObjects(t.Context(), pipelines...))
+	require.NoError(t, kitk8s.CreateObjects(t, resources...))
+	require.NoError(t, kitk8s.CreateObjects(t, pipelines...))
 
-	assert.DeploymentReady(t.Context(), backend.NamespacedName())
-	assert.DeploymentReady(t.Context(), kitkyma.LogGatewayName)
+	assert.DeploymentReady(t, backend.NamespacedName())
+	assert.DeploymentReady(t, kitkyma.LogGatewayName)
 
 	t.Log("Asserting 5 pipelines are healthy")
 
@@ -201,7 +202,7 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 	}
 
 	t.Log("Attempting to create the 6th pipeline")
-	require.NoError(t, kitk8s.CreateObjects(t.Context(), &additionalPipeline))
+	require.NoError(t, kitk8s.CreateObjects(t, &additionalPipeline))
 	assert.LogPipelineHasCondition(t, additionalPipeline.GetName(), metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
@@ -219,7 +220,7 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 	t.Log("Deleting one previously healthy pipeline and expecting the additional pipeline to be healthy")
 
 	deletePipeline := pipelines[0]
-	require.NoError(t, kitk8s.DeleteObjects(t.Context(), deletePipeline))
+	require.NoError(t, kitk8s.DeleteObjects(deletePipeline))
 	assert.OTelLogPipelineHealthy(t, additionalPipeline.GetName())
 }
 
@@ -227,9 +228,10 @@ func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelMaxPipelineFluentBit)
 
 	var (
-		uniquePrefix           = unique.Prefix()
-		backendNs              = uniquePrefix("backend")
-		generatorNs            = uniquePrefix("gen")
+		uniquePrefix = unique.Prefix()
+		backendNs    = uniquePrefix("backend")
+		genNs        = uniquePrefix("gen")
+
 		pipelineBase           = uniquePrefix()
 		additionalPipelineName = fmt.Sprintf("%s-limit-exceeding", pipelineBase)
 		pipelines              []client.Object
@@ -255,21 +257,21 @@ func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
 
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(generatorNs).K8sObject(),
-		stdloggen.NewDeployment(generatorNs).K8sObject(),
+		kitk8s.NewNamespace(genNs).K8sObject(),
+		stdloggen.NewDeployment(genNs).K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...))        //nolint:usetesting // Remove ctx from DeleteObjects
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), pipelines[1:]...))    //nolint:usetesting // Remove ctx from DeleteObjects
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), &additionalPipeline)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(resources...))
+		require.NoError(t, kitk8s.DeleteObjects(pipelines[1:]...))
+		require.NoError(t, kitk8s.DeleteObjects(&additionalPipeline))
 	})
-	require.NoError(t, kitk8s.CreateObjects(t.Context(), resources...))
-	require.NoError(t, kitk8s.CreateObjects(t.Context(), pipelines...))
+	require.NoError(t, kitk8s.CreateObjects(t, resources...))
+	require.NoError(t, kitk8s.CreateObjects(t, pipelines...))
 
-	assert.DeploymentReady(t.Context(), backend.NamespacedName())
-	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
+	assert.DeploymentReady(t, backend.NamespacedName())
+	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 
 	t.Log("Asserting 5 pipelines are healthy")
 
@@ -278,7 +280,7 @@ func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
 	}
 
 	t.Log("Attempting to create the 6th pipeline")
-	require.NoError(t, kitk8s.CreateObjects(t.Context(), &additionalPipeline))
+	require.NoError(t, kitk8s.CreateObjects(t, &additionalPipeline))
 	assert.LogPipelineHasCondition(t, additionalPipeline.GetName(), metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
@@ -291,11 +293,11 @@ func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
 	})
 
 	t.Log("Verifying logs are delivered for valid pipelines")
-	assert.FluentBitLogsFromNamespaceDelivered(t, backend, generatorNs)
+	assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
 
 	t.Log("Deleting one previously healthy pipeline and expecting the additional pipeline to be healthy")
 
 	deletePipeline := pipelines[0]
-	require.NoError(t, kitk8s.DeleteObjects(t.Context(), deletePipeline))
+	require.NoError(t, kitk8s.DeleteObjects(deletePipeline))
 	assert.FluentBitLogPipelineHealthy(t, additionalPipeline.GetName())
 }

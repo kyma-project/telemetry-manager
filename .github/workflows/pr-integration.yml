@@ -31,9 +31,9 @@ on:
       - "!config/busola/**"
       - "!**_test.go"
       - "!docs/**"
-      - "test/e2e/*.go"
-      - "test/e2e-migrated/*.go"
-      - "test/integration/istio/*.go"
+      - "test/e2e/**.go"
+      - "test/e2e-migrated/**.go"
+      - "test/integration/istio/**.go"
       - ".github/workflows/pr-integration.yml"
       - ".github/template/**"
       - ".env"
@@ -57,9 +57,7 @@ jobs:
       fail-fast: false
       matrix:
         ginkgo-labels:
-          - "metrics && set_a"
-          - "metrics && set_b"
-          - "metrics && set_c"
+          - "metrics"
           - traces
           - telemetry
           - misc
@@ -307,8 +305,16 @@ jobs:
             mode: release
           - name: max-pipeline-otel
             mode: release
-          - name: metrics
+          - name: max-pipeline-metrics
             mode: release
+          - name: metrics-set-a
+            mode: release
+          - name: metrics-set-b
+            mode: release
+          - name: metrics-set-c
+            mode: release
+          - name: metrics-experimental
+            mode: experimental
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -319,7 +325,6 @@ jobs:
         with:
           experimental: ${{ matrix.labels.mode == 'experimental' }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-
 
       - name: Deploy Test Prerequisites
         uses: "./.github/template/deploy-test-prerequisites"

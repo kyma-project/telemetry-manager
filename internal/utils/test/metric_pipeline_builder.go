@@ -51,6 +51,26 @@ func (b *MetricPipelineBuilder) WithAnnotations(annotations map[string]string) *
 	return b
 }
 
+func (b *MetricPipelineBuilder) WithInput(input telemetryv1alpha1.MetricPipelineInput) *MetricPipelineBuilder {
+	if input.Runtime != nil {
+		b.inRuntime = input.Runtime
+	}
+
+	if input.Prometheus != nil {
+		b.inPrometheus = input.Prometheus
+	}
+
+	if input.Istio != nil {
+		b.inIstio = input.Istio
+	}
+
+	if input.OTLP != nil {
+		b.inOTLP = input.OTLP
+	}
+
+	return b
+}
+
 func (b *MetricPipelineBuilder) WithRuntimeInput(enable bool, opts ...NamespaceSelectorOptions) *MetricPipelineBuilder {
 	if b.inRuntime == nil {
 		b.inRuntime = &telemetryv1alpha1.MetricPipelineRuntimeInput{}

@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"context"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -50,6 +49,7 @@ func TestResources_OTel(t *testing.T) {
 				assert.NewResource(&rbacv1.ClusterRole{}, kitkyma.LogGatewayClusterRole),
 				assert.NewResource(&rbacv1.ClusterRoleBinding{}, kitkyma.LogGatewayClusterRoleBinding),
 				assert.NewResource(&networkingv1.NetworkPolicy{}, kitkyma.LogGatewayNetworkPolicy),
+				assert.NewResource(&corev1.Secret{}, kitkyma.LogGatewaySecretName),
 				assert.NewResource(&corev1.ConfigMap{}, kitkyma.LogGatewayConfigMap),
 				assert.NewResource(&corev1.Service{}, kitkyma.LogGatewayOTLPService),
 			},
@@ -59,7 +59,10 @@ func TestResources_OTel(t *testing.T) {
 		t.Run(tc.label, func(t *testing.T) {
 			suite.RegisterTestCase(t, tc.label)
 
-			const endpointKey = "endpoint"
+			const (
+				endpointKey   = "endpoint"
+				endpointValue = "http://localhost:1234"
+			)
 
 			var (
 				uniquePrefix = unique.Prefix(tc.label)
@@ -67,7 +70,7 @@ func TestResources_OTel(t *testing.T) {
 				secretName   = uniquePrefix()
 			)
 
-			secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, "http://localhost:123"))
+			secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, endpointValue))
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithInput(tc.input).
 				WithName(pipelineName).
@@ -75,15 +78,15 @@ func TestResources_OTel(t *testing.T) {
 				Build()
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(context.Background(), &pipeline)) //nolint:usetesting // Remove ctx from DeleteObjects
+				require.NoError(t, kitk8s.DeleteObjects(&pipeline))
 			})
-			Expect(kitk8s.CreateObjects(t.Context(), &pipeline, secret.K8sObject())).Should(Succeed())
+			Expect(kitk8s.CreateObjects(t, &pipeline, secret.K8sObject())).Should(Succeed())
 
-			assert.ResourcesExist(t.Context(), tc.resources...)
+			assert.ResourcesExist(t, tc.resources...)
 			// FIXME: Currently failing (resources are not deleted when pipeline becomes non-reconcilable)
-			// When pipeline becomes non-reconcilable...
-			// Expect(suite.K8sClient.Delete(t.Context(), secret.K8sObject())).Should(Succeed())
-			// assert.ResourcesNotExist(t.Context(), tc.resources...)
+			// t.Log("When LogPipeline becomes non-reconcilable, resources should be cleaned up")
+			// Expect(suite.K8sClient.Delete(t, secret.K8sObject())).Should(Succeed())
+			// assert.ResourcesNotExist(t, tc.resources...)
 		})
 	}
 }
@@ -123,13 +126,13 @@ func TestResources_FluentBit(t *testing.T) {
 		Build()
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), &pipeline)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(&pipeline))
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), &pipeline, secret.K8sObject())).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, &pipeline, secret.K8sObject())).Should(Succeed())
 
-	assert.ResourcesExist(t.Context(), reources...)
+	assert.ResourcesExist(t, reources...)
 
 	// When pipeline becomes non-reconcilable...
 	Expect(suite.K8sClient.Delete(t.Context(), secret.K8sObject())).Should(Succeed())
-	assert.ResourcesNotExist(t.Context(), reources...)
+	assert.ResourcesNotExist(t, reources...)
 }

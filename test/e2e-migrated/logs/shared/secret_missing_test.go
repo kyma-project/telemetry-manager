@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"context"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -39,14 +38,18 @@ func TestSecretMissing_OTel(t *testing.T) {
 		t.Run(tc.label, func(t *testing.T) {
 			suite.RegisterTestCase(t, tc.label)
 
-			const endpointKey = "logs-endpoint"
+			const (
+				endpointKey   = "logs-endpoint"
+				endpointValue = "http://localhost:4317"
+			)
 
 			var (
 				uniquePrefix = unique.Prefix(tc.label)
 				pipelineName = uniquePrefix()
+				secretName   = uniquePrefix()
 			)
 
-			secret := kitk8s.NewOpaqueSecret("logs-missing", kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, "http://localhost:4317"))
+			secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, endpointValue))
 
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
@@ -63,9 +66,9 @@ func TestSecretMissing_OTel(t *testing.T) {
 			}
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+				require.NoError(t, kitk8s.DeleteObjects(resources...))
 			})
-			Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
 			assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
@@ -79,15 +82,15 @@ func TestSecretMissing_OTel(t *testing.T) {
 				Reason: conditions.ReasonSelfMonConfigNotGenerated,
 			})
 
-			assert.TelemetryHasState(t.Context(), operatorv1alpha1.StateWarning)
-			assert.TelemetryHasCondition(t.Context(), suite.K8sClient, metav1.Condition{
+			assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+			assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeLogComponentsHealthy,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonReferencedSecretMissing,
 			})
 
 			// Create the secret and make sure the pipeline heals
-			Expect(kitk8s.CreateObjects(t.Context(), secret.K8sObject())).Should(Succeed())
+			Expect(kitk8s.CreateObjects(t, secret.K8sObject())).Should(Succeed())
 
 			assert.OTelLogPipelineHealthy(t, pipelineName)
 		})
@@ -97,14 +100,18 @@ func TestSecretMissing_OTel(t *testing.T) {
 func TestSecretMissing_FluentBit(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelFluentBit)
 
-	const hostKey = "logs-host"
+	const (
+		hostKey   = "logs-host"
+		hostValue = "localhost"
+	)
 
 	var (
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
+		secretName   = uniquePrefix()
 	)
 
-	secret := kitk8s.NewOpaqueSecret("logs-missing", kitkyma.DefaultNamespaceName, kitk8s.WithStringData(hostKey, "localhost"))
+	secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(hostKey, hostValue))
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
@@ -120,9 +127,9 @@ func TestSecretMissing_FluentBit(t *testing.T) {
 	}
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(resources...))
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
 	assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
@@ -136,15 +143,15 @@ func TestSecretMissing_FluentBit(t *testing.T) {
 		Reason: conditions.ReasonSelfMonConfigNotGenerated,
 	})
 
-	assert.TelemetryHasState(t.Context(), operatorv1alpha1.StateWarning)
-	assert.TelemetryHasCondition(t.Context(), suite.K8sClient, metav1.Condition{
+	assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+	assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
 		Type:   conditions.TypeLogComponentsHealthy,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonReferencedSecretMissing,
 	})
 
 	// Create the secret and make sure the pipeline heals
-	Expect(kitk8s.CreateObjects(t.Context(), secret.K8sObject())).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, secret.K8sObject())).Should(Succeed())
 
 	assert.FluentBitLogPipelineHealthy(t, pipelineName)
 }

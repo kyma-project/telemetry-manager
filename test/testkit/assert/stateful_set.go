@@ -1,7 +1,6 @@
 package assert
 
 import (
-	"context"
 	"fmt"
 
 	. "github.com/onsi/gomega"
@@ -10,24 +9,29 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/test/testkit"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-func StatefulSetReady(ctx context.Context, name types.NamespacedName) {
+func StatefulSetReady(t testkit.T, name types.NamespacedName) {
+	t.Helper()
+
 	Eventually(func(g Gomega) {
-		ready, err := isStatefulSetReady(ctx, suite.K8sClient, name)
+		ready, err := isStatefulSetReady(t, suite.K8sClient, name)
 		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(ready).To(BeTrueBecause("statefulSet not ready"))
+		g.Expect(ready).To(BeTrueBecause("StatefulSet not ready: %s", name.String()))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func isStatefulSetReady(ctx context.Context, k8sClient client.Client, name types.NamespacedName) (bool, error) {
+func isStatefulSetReady(t testkit.T, k8sClient client.Client, name types.NamespacedName) (bool, error) {
+	t.Helper()
+
 	var statefulSet appsv1.StatefulSet
 
-	err := k8sClient.Get(ctx, name, &statefulSet)
+	err := k8sClient.Get(t.Context(), name, &statefulSet)
 	if err != nil {
-		return false, fmt.Errorf("failed to get statefulSet: %w", err)
+		return false, fmt.Errorf("failed to get StatefulSet %s: %w", name.String(), err)
 	}
 
 	listOptions := client.ListOptions{
@@ -35,5 +39,5 @@ func isStatefulSetReady(ctx context.Context, k8sClient client.Client, name types
 		Namespace:     name.Namespace,
 	}
 
-	return arePodsReady(ctx, k8sClient, listOptions)
+	return arePodsReady(t, k8sClient, listOptions)
 }

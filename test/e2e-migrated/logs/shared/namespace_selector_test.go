@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"context"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -109,9 +108,7 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 				WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
 				Build()
 
-			var resources []client.Object
-
-			resources = append(resources,
+			resources := []client.Object{
 				kitk8s.NewNamespace(backendNs).K8sObject(),
 				kitk8s.NewNamespace(gen1Ns).K8sObject(),
 				kitk8s.NewNamespace(gen2Ns).K8sObject(),
@@ -119,21 +116,21 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 				&excludePipeline,
 				tc.logGeneratorBuilder(gen1Ns),
 				tc.logGeneratorBuilder(gen2Ns),
-			)
+			}
 			resources = append(resources, backend1.K8sObjects()...)
 			resources = append(resources, backend2.K8sObjects()...)
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+				require.NoError(t, kitk8s.DeleteObjects(resources...))
 			})
-			Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
-			assert.DeploymentReady(t.Context(), kitkyma.LogGatewayName)
-			assert.DeploymentReady(t.Context(), backend1.NamespacedName())
-			assert.DeploymentReady(t.Context(), backend2.NamespacedName())
+			assert.DeploymentReady(t, kitkyma.LogGatewayName)
+			assert.DeploymentReady(t, backend1.NamespacedName())
+			assert.DeploymentReady(t, backend2.NamespacedName())
 
 			if tc.expectAgent {
-				assert.DaemonSetReady(t.Context(), kitkyma.LogAgentName)
+				assert.DaemonSetReady(t, kitkyma.LogAgentName)
 			}
 
 			assert.OTelLogPipelineHealthy(t, includePipelineName)
@@ -172,9 +169,7 @@ func TestNamespaceSelector_FluentBit(t *testing.T) {
 		WithHTTPOutput(testutils.HTTPHost(backend2.Host()), testutils.HTTPPort(backend2.Port())).
 		Build()
 
-	var resources []client.Object
-
-	resources = append(resources,
+	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(gen1Ns).K8sObject(),
 		kitk8s.NewNamespace(gen2Ns).K8sObject(),
@@ -182,22 +177,22 @@ func TestNamespaceSelector_FluentBit(t *testing.T) {
 		&excludeGen2Pipeline,
 		stdloggen.NewDeployment(gen1Ns).K8sObject(),
 		stdloggen.NewDeployment(gen2Ns).K8sObject(),
-	)
+	}
 	resources = append(resources, backend1.K8sObjects()...)
 	resources = append(resources, backend2.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(resources...))
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
 	assert.FluentBitLogPipelineHealthy(t, includePipelineName)
 	assert.FluentBitLogPipelineHealthy(t, excludePipelineName)
 
-	assert.DeploymentReady(t.Context(), backend1.NamespacedName())
-	assert.DeploymentReady(t.Context(), backend2.NamespacedName())
+	assert.DeploymentReady(t, backend1.NamespacedName())
+	assert.DeploymentReady(t, backend2.NamespacedName())
 
-	assert.DaemonSetReady(t.Context(), kitkyma.FluentBitDaemonSetName)
+	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 
 	assert.FluentBitLogsFromNamespaceDelivered(t, backend1, gen1Ns)
 	assert.FluentBitLogsFromNamespaceNotDelivered(t, backend2, gen2Ns)

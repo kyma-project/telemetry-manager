@@ -1,7 +1,6 @@
 package agent
 
 import (
-	"context"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -25,9 +24,9 @@ func TestInstrumentationScope(t *testing.T) {
 
 	var (
 		uniquePrefix = unique.Prefix()
-		genNs        = uniquePrefix("generator")
-		backendNs    = uniquePrefix("backend")
 		pipelineName = uniquePrefix()
+		backendNs    = uniquePrefix("backend")
+		genNs        = uniquePrefix("gen")
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
@@ -38,24 +37,22 @@ func TestInstrumentationScope(t *testing.T) {
 		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 		Build()
 
-	var resources []client.Object
-
-	resources = append(resources,
+	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
 		stdloggen.NewDeployment(genNs).K8sObject(),
 		&pipeline,
-	)
+	}
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(context.Background(), resources...)) //nolint:usetesting // Remove ctx from DeleteObjects
+		require.NoError(t, kitk8s.DeleteObjects(resources...))
 	})
-	Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
-	assert.DeploymentReady(t.Context(), kitkyma.LogGatewayName)
-	assert.DeploymentReady(t.Context(), backend.NamespacedName())
-	assert.DaemonSetReady(t.Context(), kitkyma.LogAgentName)
+	assert.DeploymentReady(t, kitkyma.LogGatewayName)
+	assert.DeploymentReady(t, backend.NamespacedName())
+	assert.DaemonSetReady(t, kitkyma.LogAgentName)
 
 	assert.OTelLogPipelineHealthy(t, pipelineName)
 
