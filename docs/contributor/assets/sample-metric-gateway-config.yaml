@@ -11,9 +11,6 @@ service:
   pipelines:
     metrics/enrichment:
       receivers:
-        - routing/prometheus-input
-        - routing/istio-input
-        - routing/runtime-input
         - routing/otlp-input
       processors:
         - k8sattributes
@@ -34,14 +31,11 @@ service:
     metrics/backend-2-output:
       receivers:
         - routing/enrichment
-
       processors:
         - filter/sample-2-filter-by-namespace
         - batch
       exporters:
         - otlp/sample-2
-
-
     metrics/backend-1-output:
       receivers:
         - routing/enrichment
@@ -143,7 +137,7 @@ processors:
     attributes:
       - action: insert
         key: k8s.cluster.name
-
+        value: ${KUBERNETES_SERVICE_HOST}
   service_enrichment:
     resource_attributes:
       - kyma.kubernetes_io_app_name
@@ -180,7 +174,7 @@ exporters:
       max_interval: 30s
       max_elapsed_time: 300s
   otlp/sample-2:
-    endpoint: ${OTLP_ENDPOINT_SAMPLE_2}
+    endpoint: ${OTLP_ENDPOINT_SAMPLE}
     tls:
       insecure: true
     sending_queue:
@@ -192,15 +186,18 @@ exporters:
       max_interval: 30s
       max_elapsed_time: 300s
 connectors:
-  routing/runtime-input:
-    error_mode: ignore
-  routing/prometheus-input:
-    error_mode: ignore
-  routing/istio-input:
-    error_mode: ignore
   routing/otlp-input:
     error_mode: ignore
-
+    table:
+      - pipelines:
+          - metrics/enrichment
+        condition: name != ""
+        context: metric
   routing/enrichment:
     error_mode: ignore
-
+    table:
+      - pipelines:
+          - metrics/backend-1-output
+          - metrics/backend-2-output
+        condition: name != ""
+        context: metric
