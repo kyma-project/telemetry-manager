@@ -31,7 +31,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 		genNs        = uniquePrefix("gen")
 
 		pipelineBase           = uniquePrefix()
-		additionalPipelineName = fmt.Sprintf("%s-limit-exceeding", pipelineBase)
+		additionalPipelineName = fmt.Sprintf("%s-limit-exceeded", pipelineBase)
 		pipelines              []client.Object
 	)
 
@@ -75,7 +75,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 		assert.TracePipelineHealthy(t, pipeline.GetName())
 	}
 
-	t.Log("Attempting to create the exceeding pipeline")
+	t.Log("Attempting to create a pipeline that exceeds the maximum allowed number of pipelines")
 	require.NoError(t, kitk8s.CreateObjects(t, &additionalPipeline))
 	assert.TracePipelineHasCondition(t, additionalPipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
