@@ -23,7 +23,7 @@ The decoupling of the agent from the gateway can be done based on receiver type 
   - It would define a dedicated input stage for the input types OTLP, Prometheus, Istio, or Runtime.
   - It would define a single enrichment stage for all inputs.
  
-It would define a dedicated output stage for each input type and output combination. The connections between all those stages performed with `routing` processors. The enrichment pipeline will be shared across all inputs and outputs, allowing for maximum reuse of components.
+It would define a dedicated output stage for each input type and output combination. The connections between all those stages performed with `routing` connectors. The enrichment pipeline will be shared across all inputs and outputs, allowing for maximum reuse of components.
 
 ![enrichment](./../assets/metric-enrichment.png)
 
