@@ -28,7 +28,7 @@ service:
         - transform/set-instrumentation-scope-kyma
       exporters:
         - routing/otlp-input
-    metrics/backend-2-output:
+    metrics/cls-2-output:
       receivers:
         - routing/enrichment
       processors:
@@ -36,7 +36,7 @@ service:
         - batch
       exporters:
         - otlp/sample-2
-    metrics/backend-1-output:
+    metrics/cls-1-output:
       receivers:
         - routing/enrichment
       processors:
@@ -197,7 +197,7 @@ connectors:
     error_mode: ignore
     table:
       - pipelines:
-          - metrics/backend-1-output
-          - metrics/backend-2-output
+          - metrics/cls-1-output
+          - metrics/cls-2-output
         condition: name != ""
         context: metric

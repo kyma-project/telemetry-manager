@@ -31,7 +31,7 @@ service:
         - transform/set-instrumentation-scope-prometheus
       exporters:
         - routing/prometheus-input
-    metrics/sample-1-prometheus-backend-output:
+    metrics/prometheus-cls-1-backend-output:
       receivers:
         - routing/enrichment
       processors:
@@ -40,7 +40,7 @@ service:
         - batch
       exporters:
         - otlp/sample-1
-    metrics/sample-2-prometheus-backend-output:
+    metrics/prometheus-cls-2-backend-output:
       receivers:
         - routing/enrichment
       processors:
@@ -59,7 +59,7 @@ service:
         - transform/set-instrumentation-scope-istio
       exporters:
         - routing/istio-input
-    metrics/sample-1-istio-backend-output:
+    metrics/istio-cls-1-backend-output:
       receivers:
         - routing/enrichment
       processors:
@@ -69,7 +69,7 @@ service:
         - batch
       exporters:
         - otlp/sample-1
-    metrics/sample-2-istio-backend-output:
+    metrics/istio-cls-2-backend-output:
       receivers:
         - routing/enrichment
       processors:
@@ -79,7 +79,7 @@ service:
         - batch
       exporters:
         - otlp/sample-2
-    metrics/sample-2-runtime-backend-output:
+    metrics/runtime-cls-2-backend-output:
       receivers:
         - routing/enrichment
         - routing/runtime-input
@@ -89,7 +89,7 @@ service:
         - batch
       exporters:
         - otlp/sample-2
-    metrics/sample-1-runtime-backend-output:
+    metrics/runtime-cls-1-backend-output:
       receivers:
         - routing/enrichment
         - routing/runtime-input
@@ -563,8 +563,8 @@ connectors:
     table:
       - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
         pipelines:
-          - metrics/sample-2-runtime-backend-output
-          - metrics/sample-1-runtime-backend-output
+          - metrics/runtime-cls-2-backend-output
+          - metrics/runtime-cls-1-backend-output
   routing/prometheus-input:
     error_mode: ignore
     table:
@@ -584,16 +584,16 @@ connectors:
     table:
       - statement: route() where instrumentation_scope.name == "io.kyma-project.telemetry/istio"
         pipelines:
-          - metrics/sample-1-istio-backend-output
-          - metrics/sample-2-istio-backend-output
+          - metrics/istio-cls-1-backend-output
+          - metrics/istio-cls-2-backend-output
         context: metric
       - statement: route() where instrumentation_scope.name == "io.kyma-project.telemetry/prometheus"
         pipelines:
-          - metrics/sample-1-prometheus-backend-output
-          - metrics/sample-2-prometheus-backend-output
+          - metrics/prometheus-cls-1-backend-output
+          - metrics/prometheus-cls-2-backend-output
         context: metric
       - statement: route() where instrumentation_scope.name == "io.kyma-project.telemetry/runtime"
         pipelines:
-          - metrics/sample-2-runtime-backend-output
-          - metrics/sample-1-runtime-backend-output
+          - metrics/runtime-cls-2-backend-output
+          - metrics/runtime-cls-1-backend-output
         context: metric
