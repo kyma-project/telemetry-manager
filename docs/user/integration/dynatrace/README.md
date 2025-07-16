@@ -181,7 +181,7 @@ There are several approaches to ingest custom metrics to Dynatrace, each with di
 - Use a MetricPipeline to push metrics directly.
 
   > [!NOTE]
-  > The Dynatrace OTLP API does [not support](https://docs.dynatrace.com/docs/shortlink/opentelemetry-metrics-limitations#limitations) metrics in "cumulative" aggregation temporality (default temporarilty in OTel). The metrics need a custom transformation in case they are not emmitted already in the expected "delta" temporarility. A MetricPipeline does not support these transformation features.
+  > The Dynatrace OTLP API exclusively supports "delta" [aggregation temporality](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/getting-started/metrics/limitations#aggregation-temporality). If your metrics are emitted in any other temporality (such as "cumulative", the default temporality in OTel), you must set up the transformation with a custom OTel Collector Deployment in addition to your MetricPipeline.
 
   Use this setup when your application pushes metrics to the telemetry metric service natively with OTLP, and if you have explicitly enabled "delta" aggregation temporality. You cannot enable additional inputs for the MetricPipeline.
 
