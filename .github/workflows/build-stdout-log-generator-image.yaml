@@ -1,0 +1,58 @@
+name: Build Stdout Log Generator Image
+
+permissions:
+  contents: read
+
+on:
+  pull_request_target:
+    paths:
+      - "dependencies/stdout-log-generator/**"
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+  push:
+    branches:
+      - main
+    paths:
+      - "dependencies/stdout-log-generator/**"
+  workflow_dispatch:
+
+jobs:
+  envs:
+    runs-on: ubuntu-latest
+    outputs:
+      tags: ${{ steps.create-tags.outputs.tags }}
+
+    steps:
+      - name: create tags
+        id: create-tags
+        run: |
+          if [[ $GITHUB_EVENT_NAME == 'push' || $GITHUB_EVENT_NAME == 'merge_group' ]]; then
+            echo 'TAGS=latest' >> "$GITHUB_OUTPUT"
+          else
+            {
+              echo 'tags<<TAGS'
+              echo 'PR-${{ github.event.pull_request.number }}'
+              echo '${{ github.event.pull_request.head.sha }}'
+              echo 'TAGS'
+            } >> "$GITHUB_OUTPUT"
+          fi
+
+  build-image:
+    permissions:
+      id-token: write # Required for requesting the JWT token
+      contents: read
+    needs: envs
+    uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main
+    with:
+      name: stdout-log-generator
+      dockerfile: Dockerfile
+      context: dependencies/stdout-log-generator
+      tags: ${{ needs.envs.outputs.tags }}
+      build-engine: buildx
+      platforms: "linux/amd64,linux/arm64"
+  list-images:
+    needs: build-image
+    runs-on: ubuntu-latest
+    steps:
+      - name: List images
+        run: |
+          echo "${{ needs.build-image.outputs.images }}"
