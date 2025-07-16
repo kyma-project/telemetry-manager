@@ -20,47 +20,42 @@ The decoupling of the agent from the gateway can be done based on receiver type 
 
 - **Receiver type**: This approach would require a separate enrichment and output stage for each receiver type. This lead to unnecessary duplication of components as they share the same data path and thus increasing configuration complexity.
 - **Input type**: This approach, for all metric pipelines
-  - It would define a dedicated input stage for the input types OTLP, Prometheus, Istio, or Runtime.
-  - It would define a single enrichment stage for all inputs.
+  - It would define a dedicated input pipeline for the input types OTLP, Prometheus, Istio, or Runtime.
+  - It would define a single enrichment pipeline for all inputs.
  
-It would define a dedicated output stage for each input type and output combination. The connections between all those stages performed with `routing` connectors. The enrichment pipeline will be shared across all inputs and outputs, allowing for maximum reuse of components.
+It would define a dedicated output pipeline for the input type. All these pipelines are connected with `routing` connectors. The enrichment pipeline will be shared across all inputs and outputs, allowing for maximum reuse of components.
 
 ![enrichment](./../assets/metric-enrichment.png)
 
-The new agent pipeline configuration is built in three stages:
+The new agent configuration consists of three pipelines:
 
-1. **Input**: Defines input-specific pipeline configurations, including input-specific receivers, processors, and an input-specific router to connect to the next stages.
-2. **Enrichment**: Defines enrichment-specific pipeline configurations, including enrichment-specific processors and a router to connect to the next stages.
+1. **Input**: Defines input-specific pipeline configurations, including input-specific receivers, processors, and an input-specific router to connect to the next pipeline. The input pipeline exists for each defined input type once (Prometheus, Istio, or Runtime) and shared across all defined MetricPipelines.
+2. **Enrichment**: Defines enrichment-specific pipeline configurations, including enrichment-specific processors and a router to connect to the next pipeline. The enrichment pipeline is shared across all the inputs.
 3. **Output**: Defines output for a specific MetricPipeline configurations, including processors and exporters (such as namespace filtering).
-
-The input stage exists for each defined input type once (such as Prometheus, Istio, or Runtime) and shared across all MetricPipelines.
-The enrichment stage is shared across all inputs, while the output stage is a MetricPipeline and configured backend specific.
-The new configuration focuses on maximum reuse of components to conserve resources and maintain simplicity.
-
-This approach offers the benefit that most components are reused rather than redundantly defined, which reduces both the configuration complexity and the number of components running in the collector. This allows us to avoid complex cross-pipeline filtering in multi-pipeline scenarios, such as dropping input-specific metrics.
 
 ![config](./../assets/metric-agent-pipelines.png)
 
 See a [sample configuration for the new agent](./../assets/sample-metric-agent-config.yaml).
 
-The metric gateway, like the agent, will also be built in three stages:
+The metric gateway, like the agent, consists of three pipelines::
 1. **Input**: Defines OTLP-input-specific pipeline configuration, and performs enrichment.
-2. **Enrichment**: Defines enrichment-specific pipeline configurations, including enrichment-specific processors and a router to connect to the next stages.
-3. **Output**: Defines output for a specific MetricPipeline configuration, performs MetricPipeline specific namespace filtering, and export the data.
+2. **Enrichment**: Defines enrichment-specific pipeline configurations, including enrichment-specific processors and a router to connect to the next pipeline. The enrichment pipeline is shared across all the inputs.
+3. **Output**: Defines output for a specific MetricPipeline configurations, including processors and exporters (such as namespace filtering).
 
 ![gaetway](./../assets/metric-gateway-pipelines.png)
 
-The gateway will be simplified to support only the OTLP receiver and OTLP exporter. It will handle enrichment and filtering exclusively for OTLP input. An exception is the `kymastats` receiver, which will remain on the gateway for now. That's because, unlike other receivers on the agents, it does not collect data from node-specific resources.
+ - The gateway will be simplified to support only the OTLP receiver and OTLP exporter. It will handle enrichment and filtering exclusively for OTLP input. 
+ - An exception is the `kymastats` receiver, which will remain on the gateway for now. That's because: 
+   - Unlike other receivers on the agents, it does not collect data from node-specific resources.
+   - Currently, the gateway is deployed by default, `kymastats` receiver is enabled by default, moving it to the agent would always require an agent deployment, which will increase resource footprint.
 
 See a [sample configuration for the new gateway](./../assets/sample-metric-gateway-config.yaml).
 
 ## Conclusion
 
-1. The new MetricPipeline configuration architecture is split into three stages: input, enrichment, and output. This approach allows for a clear separation of concerns and simplifies the configuration.
-2. The input stage is defined for each input type, allowing for input-specific processing. The input pipeline configurations are grouped by input type rather than by receiver type, because all receivers in the same input type share the same enrichment and output stages. Creating a separate input stage for each receiver type would lead to unnecessary duplication of components and configuration complexity.
-3. The enrichment stage is shared across all inputs and outputs, allowing for maximum reuse of components and resource efficiency, otherwise, especially in multi-pipeline scenarios the `k8sattribute` processor will have own resource cache per data pipeline which can result high memory usage.
-4. The output stage is MetricPipeline specific, allowing for instance-specific enrichment, filtering, and data export.
-5. In multi-pipeline scenarios, each receiver appears only once per input type and processes a combined data stream. Filtering is performed at the output stage to ensure only relevant data is exported.
-6. In multi-pipeline scenarios, cross-MetricPipeline filtering is no longer needed, as each MetricPipeline has its own pipeline output configuration.
-
-
+1. The new MetricPipeline configuration architecture is split into three pipelines: input, enrichment, and output. This approach allows for a clear separation of concerns and simplifies the configuration.
+2. The input pipeline is defined for each input type, allowing for input-specific processing. The input pipeline configurations are grouped by input type rather than by receiver type, because all receivers in the same input type share the same data path. Creating a separate input pipeline for each receiver type would lead to unnecessary duplication of components and configuration complexity.
+3. The enrichment pipeline is shared across all inputs and outputs, allowing for maximum reuse of components and resource efficiency, otherwise, especially in multi-pipeline scenarios the `k8sattribute` processor will have own resource cache per data pipeline which can result high memory usage.
+4. The output stage is MetricPipeline specific, allowing for backend specific enrichment, filtering, and data export.
+5. In multi-pipeline scenarios, each receiver appears only once per input type and processes a combined data stream. Filtering is performed in the output pipeline to ensure only relevant data is exported.
+6. In multi-pipeline scenarios, cross-MetricPipeline filtering is no longer needed, as each output pipeline processing only own data.
