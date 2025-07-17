@@ -79,11 +79,11 @@ func TestObservedTime_OTel(t *testing.T) {
 			})
 			Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
+			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.LogGatewayName)
 			assert.OTelLogPipelineHealthy(t, pipelineName)
-			assert.DeploymentReady(t, backend.NamespacedName())
-
 			assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
+
 			assert.BackendDataConsistentlyMatches(t, backend,
 				HaveFlatLogs(HaveEach(SatisfyAll(
 					HaveTimestamp(Not(BeEmpty())),

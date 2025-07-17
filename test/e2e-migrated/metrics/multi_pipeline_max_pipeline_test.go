@@ -21,7 +21,7 @@ import (
 )
 
 func TestMultiPipelineMaxPipeline(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelMaxPipelineMetrics)
+	suite.RegisterTestCase(t, suite.LabelMetricsMaxPipeline)
 
 	const maxNumberOfMetricPipelines = telemetrycontrollers.MaxPipelineCount
 
@@ -31,7 +31,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 		genNs        = uniquePrefix("gen")
 
 		pipelineBase           = uniquePrefix()
-		additionalPipelineName = fmt.Sprintf("%s-limit-exceeding", pipelineBase)
+		additionalPipelineName = fmt.Sprintf("%s-limit-exceeded", pipelineBase)
 		pipelines              []client.Object
 	)
 
@@ -69,13 +69,13 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	assert.BackendReachable(t, backend)
 	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 
-	t.Log("Asserting 5 pipelines are healthy")
+	t.Log("Asserting all pipelines are healthy")
 
 	for _, pipeline := range pipelines {
 		assert.MetricPipelineHealthy(t, pipeline.GetName())
 	}
 
-	t.Log("Attempting to create the 6th pipeline")
+	t.Log("Attempting to create a pipeline that exceeds the maximum allowed number of pipelines")
 	require.NoError(t, kitk8s.CreateObjects(t, &additionalPipeline))
 	assert.MetricPipelineHasCondition(t, additionalPipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,

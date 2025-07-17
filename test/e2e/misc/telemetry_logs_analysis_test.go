@@ -36,24 +36,23 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 	)
 
 	var (
-		traceBackendURL string
-
-		metricBackend           *kitbackend.Backend
 		logBackend              *kitbackend.Backend
+		metricBackend           *kitbackend.Backend
+		traceBackend            *kitbackend.Backend
 		otelCollectorLogBackend *kitbackend.Backend
 		fluentBitLogBackend     *kitbackend.Backend
 		selfMonitorLogBackend   *kitbackend.Backend
-		namespace               = suite.ID()
-		gomegaMaxLength         = format.MaxLength
-		logLevelsRegexp         = "ERROR|error|WARNING|warning|WARN|warn"
+
+		namespace       = suite.ID()
+		gomegaMaxLength = format.MaxLength
+		logLevelsRegexp = "ERROR|error|WARNING|warning|WARN|warn"
 	)
 
 	makeResourcesTracePipeline := func(backendName string) []client.Object {
 		var objs []client.Object
 
 		// backend
-		traceBackend := kitbackend.New(namespace, kitbackend.SignalTypeTraces, kitbackend.WithName(backendName))
-		traceBackendURL = traceBackend.ExportURL(suite.ProxyClient)
+		traceBackend = kitbackend.New(namespace, kitbackend.SignalTypeTraces, kitbackend.WithName(backendName))
 		objs = append(objs, traceBackend.K8sObjects()...)
 
 		// pipeline
@@ -186,7 +185,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 		})
 
 		It("Should push traces successfully", func() {
-			assert.TracesFromNamespaceDelivered(suite.ProxyClient, traceBackendURL, namespace)
+			assert.TracesFromNamespaceDelivered(GinkgoT(), traceBackend, namespace)
 		})
 
 		It("Should collect logs successfully", func() {

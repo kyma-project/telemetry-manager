@@ -57,10 +57,10 @@ Types user:string pass:string`
 	})
 	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
-	assert.FluentBitLogPipelineHealthy(t, pipelineName)
+	assert.BackendReachable(t, backend)
 	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
-	assert.DeploymentReady(t, backend.NamespacedName())
 	assert.DeploymentReady(t, logProducer.NamespacedName())
+	assert.FluentBitLogPipelineHealthy(t, pipelineName)
 
 	assert.BackendDataEventuallyMatches(t, backend,
 		fluentbit.HaveFlatLogs(ContainElement(SatisfyAll(

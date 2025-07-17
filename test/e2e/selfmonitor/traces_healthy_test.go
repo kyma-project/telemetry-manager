@@ -28,9 +28,9 @@ import (
 
 var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesHealthy), Ordered, func() {
 	var (
-		mockNs           = suite.ID()
-		pipelineName     = suite.ID()
-		backendExportURL string
+		mockNs       = suite.ID()
+		pipelineName = suite.ID()
+		backend      *kitbackend.Backend
 	)
 
 	makeResources := func() []client.Object {
@@ -38,9 +38,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesHealthy), Orde
 
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		backend := kitbackend.New(mockNs, kitbackend.SignalTypeTraces)
+		backend = kitbackend.New(mockNs, kitbackend.SignalTypeTraces)
 		objs = append(objs, backend.K8sObjects()...)
-		backendExportURL = backend.ExportURL(suite.ProxyClient)
 
 		tracePipeline := testutils.NewTracePipelineBuilder().
 			WithName(pipelineName).
@@ -100,7 +99,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesHealthy), Orde
 		})
 
 		It("Should deliver telemetrygen traces", func() {
-			assert.TracesFromNamespaceDelivered(suite.ProxyClient, backendExportURL, kitkyma.DefaultNamespaceName)
+			assert.TracesFromNamespaceDelivered(GinkgoT(), backend, kitkyma.DefaultNamespaceName)
 		})
 
 		It("The telemetryFlowHealthy condition should be true", func() {
