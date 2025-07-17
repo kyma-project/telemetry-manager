@@ -26,6 +26,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
+// TODO(TeodorSAP): Delete this file after 1.44 release (only kept because of the upgrade test flow)
 var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 	var (
 		mockNs       = suite.ID()

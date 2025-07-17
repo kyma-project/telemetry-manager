@@ -109,8 +109,9 @@ const (
 	LabelLogAgentExperimental   = "log-agent-experimental"
 	LabelLogGatewayExperimental = "log-gateway-experimental"
 	LabelFluentBitExperimental  = "fluent-bit-experimental"
-	LabelMaxPipelineOTel        = "max-pipeline-otel"
-	LabelMaxPipelineFluentBit   = "max-pipeline-fluent-bit"
+	LabelOTelMaxPipeline        = "otel-max-pipeline"
+	LabelFluentBitMaxPipeline   = "fluent-bit-max-pipeline"
+	LabelLogsMaxPipeline        = "logs-max-pipeline"
 
 	// Metrics labels
 	LabelMetrics             = "metrics"
@@ -118,19 +119,18 @@ const (
 	LabelMetricsSetB         = "metrics-set-b"
 	LabelMetricsSetC         = "metrics-set-c"
 	LabelMetricsExperimental = "metrics-experimental"
-	LabelMaxPipelineMetrics  = "max-pipeline-metrics"
+	LabelMetricsMaxPipeline  = "metrics-max-pipeline"
 
 	// Traces labels
-	LabelTraces = "traces"
+	LabelTraces             = "traces"
+	LabelTracesExperimental = "traces-experimental"
+	LabelTracesMaxPipeline  = "traces-max-pipeline"
 
 	// Telemetry labels
 	LabelTelemetry = "telemetry"
 
 	// Test "sub-suites" labels
 	LabelExperimental = "experimental"
-	LabelMaxPipeline  = "max-pipeline"
-	LabelSignalPush   = "signal-push"
-	LabelSignalPull   = "signal-pull"
 	LabelSkip         = "skip"
 
 	// Self-monitoring test labels

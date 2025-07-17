@@ -16,9 +16,34 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit"
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
+
+func TracesFromNamespaceDeliveredWithT(t testkit.T, backend *kitbackend.Backend, namespace string) {
+	t.Helper()
+
+	BackendDataEventuallyMatches(
+		t,
+		backend,
+		HaveFlatTraces(ContainElement(HaveResourceAttributes(
+			HaveKeyWithValue("k8s.namespace.name", namespace),
+		))),
+	)
+}
+
+func TracesFromNamespacesNotDeliveredWithT(t testkit.T, backend *kitbackend.Backend, namespaces []string) {
+	t.Helper()
+
+	BackendDataConsistentlyMatches(
+		t,
+		backend,
+		HaveFlatTraces(Not(ContainElement(HaveResourceAttributes(
+			HaveKeyWithValue("k8s.namespace.name", BeElementOf(namespaces)),
+		)))),
+	)
+}
 
 func TracesFromNamespaceDelivered(proxyClient *apiserverproxy.Client, backendExportURL, namespace string) {
 	Eventually(func(g Gomega) {

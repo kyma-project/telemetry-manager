@@ -73,10 +73,10 @@ func TestNamespaceSelector(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
-	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.BackendReachable(t, backend1)
+	assert.BackendReachable(t, backend2)
 	assert.DaemonSetReady(t, kitkyma.MetricAgentName)
-	assert.DeploymentReady(t, backend1.NamespacedName())
-	assert.DeploymentReady(t, backend2.NamespacedName())
+	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 
 	assert.MetricsFromNamespaceDelivered(t, backend1, app1Ns, runtime.DefaultMetricsNames)
 	assert.MetricsFromNamespaceDelivered(t, backend1, app1Ns, prommetricgen.CustomMetricNames())

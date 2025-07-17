@@ -25,7 +25,7 @@ import (
 const maxNumberOfLogPipelines = telemetrycontrollers.MaxPipelineCount
 
 func TestMultiPipelineMaxPipeline(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelMaxPipeline)
+	suite.RegisterTestCase(t, suite.LabelLogsMaxPipeline)
 
 	var (
 		uniquePrefix = unique.Prefix("logs")
@@ -33,8 +33,8 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 		genNs        = uniquePrefix("gen")
 
 		pipelineBase               = uniquePrefix()
-		additionalFBPipelineName   = fmt.Sprintf("%s-limit-exceeding-fb", pipelineBase)
-		additionalOTelPipelineName = fmt.Sprintf("%s-limit-exceeding-otel", pipelineBase)
+		additionalFBPipelineName   = fmt.Sprintf("%s-limit-exceeded-fb", pipelineBase)
+		additionalOTelPipelineName = fmt.Sprintf("%s-limit-exceeded-otel", pipelineBase)
 		pipelines                  []client.Object
 	)
 
@@ -94,7 +94,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	assert.DeploymentReady(t, backend.NamespacedName())
 	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 
-	t.Log("Asserting 5 pipelines are healthy")
+	t.Log("Asserting all pipelines are healthy")
 
 	for i, pipeline := range pipelines {
 		if i%2 == 0 {
@@ -104,7 +104,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 		}
 	}
 
-	t.Log("Attempting to create the 6th pipeline (FluentBit)")
+	t.Log("Attempting to create a FluentBit pipeline that exceeds the maximum allowed number of pipelines")
 	require.NoError(t, kitk8s.CreateObjects(t, &additionalFBPipeline))
 	assert.LogPipelineHasCondition(t, additionalFBPipeline.GetName(), metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
@@ -123,7 +123,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	require.NoError(t, kitk8s.DeleteObjects(deletePipeline))
 	assert.FluentBitLogPipelineHealthy(t, additionalFBPipeline.GetName())
 
-	t.Log("Attempting to create the 6th pipeline (OTel)")
+	t.Log("Attempting to create a OTel pipeline that exceeds the maximum allowed number of pipelines")
 	require.NoError(t, kitk8s.CreateObjects(t, &additionalOTelPipeline))
 	assert.LogPipelineHasCondition(t, additionalOTelPipeline.GetName(), metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
@@ -147,7 +147,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 }
 
 func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelMaxPipelineOTel)
+	suite.RegisterTestCase(t, suite.LabelOTelMaxPipeline)
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -155,7 +155,7 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 		genNs        = uniquePrefix("gen")
 
 		pipelineBase           = uniquePrefix()
-		additionalPipelineName = fmt.Sprintf("%s-limit-exceeding", pipelineBase)
+		additionalPipelineName = fmt.Sprintf("%s-limit-exceeded", pipelineBase)
 		pipelines              []client.Object
 	)
 
@@ -195,13 +195,13 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 	assert.DeploymentReady(t, backend.NamespacedName())
 	assert.DeploymentReady(t, kitkyma.LogGatewayName)
 
-	t.Log("Asserting 5 pipelines are healthy")
+	t.Log("Asserting all pipelines are healthy")
 
 	for _, pipeline := range pipelines {
 		assert.OTelLogPipelineHealthy(t, pipeline.GetName())
 	}
 
-	t.Log("Attempting to create the 6th pipeline")
+	t.Log("Attempting to create a pipeline that exceeds the maximum allowed number of pipelines")
 	require.NoError(t, kitk8s.CreateObjects(t, &additionalPipeline))
 	assert.LogPipelineHasCondition(t, additionalPipeline.GetName(), metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
@@ -225,7 +225,7 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 }
 
 func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelMaxPipelineFluentBit)
+	suite.RegisterTestCase(t, suite.LabelFluentBitMaxPipeline)
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -233,7 +233,7 @@ func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
 		genNs        = uniquePrefix("gen")
 
 		pipelineBase           = uniquePrefix()
-		additionalPipelineName = fmt.Sprintf("%s-limit-exceeding", pipelineBase)
+		additionalPipelineName = fmt.Sprintf("%s-limit-exceeded", pipelineBase)
 		pipelines              []client.Object
 	)
 
@@ -273,13 +273,13 @@ func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
 	assert.DeploymentReady(t, backend.NamespacedName())
 	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 
-	t.Log("Asserting 5 pipelines are healthy")
+	t.Log("Asserting all pipelines are healthy")
 
 	for _, pipeline := range pipelines {
 		assert.FluentBitLogPipelineHealthy(t, pipeline.GetName())
 	}
 
-	t.Log("Attempting to create the 6th pipeline")
+	t.Log("Attempting to create a pipeline that exceeds the maximum allowed number of pipelines")
 	require.NoError(t, kitk8s.CreateObjects(t, &additionalPipeline))
 	assert.LogPipelineHasCondition(t, additionalPipeline.GetName(), metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
