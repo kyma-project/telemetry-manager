@@ -89,7 +89,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	})
 
 	t.Log("Verifying traces are delivered for valid pipelines")
-	assert.TracesFromNamespaceDeliveredWithT(t, backend, genNs)
+	assert.TracesFromNamespaceDelivered(t, backend, genNs)
 
 	t.Log("Deleting one previously healthy pipeline and expecting the additional pipeline to be healthy")
 
