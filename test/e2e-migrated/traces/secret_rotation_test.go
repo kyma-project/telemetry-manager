@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -57,9 +56,9 @@ func TestSecretRotation(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(resources...))
+		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 	})
-	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
 	assert.DeploymentReady(t, kitkyma.TraceGatewayName)
@@ -68,7 +67,7 @@ func TestSecretRotation(t *testing.T) {
 
 	// Update the secret to have the correct backend endpoint
 	secret.UpdateSecret(kitk8s.WithStringData(endpointKey, backend.Endpoint()))
-	require.NoError(t, kitk8s.UpdateObjects(t, secret.K8sObject()))
+	Expect(t, kitk8s.UpdateObjects(t, secret.K8sObject())).To(Succeed())
 
 	assert.DeploymentReady(t, kitkyma.TraceGatewayName)
 	assert.TracePipelineHealthy(t, pipelineName)

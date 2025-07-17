@@ -3,7 +3,7 @@ package shared
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -88,9 +88,9 @@ func TestSecretRotation_OTel(t *testing.T) {
 			resources = append(resources, backend.K8sObjects()...)
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(resources...))
+				Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 			})
-			require.NoError(t, kitk8s.CreateObjects(t, resources...))
+			Expect(t, kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.LogGatewayName)
@@ -104,7 +104,7 @@ func TestSecretRotation_OTel(t *testing.T) {
 
 			// Update the secret to have the correct backend endpoint
 			secret.UpdateSecret(kitk8s.WithStringData(endpointKey, backend.Endpoint()))
-			require.NoError(t, kitk8s.UpdateObjects(t, secret.K8sObject()))
+			Expect(t, kitk8s.UpdateObjects(t, secret.K8sObject())).To(Succeed())
 
 			assert.DeploymentReady(t, kitkyma.LogGatewayName)
 
@@ -161,9 +161,9 @@ func TestSecretRotation_FluentBit(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(resources...))
+		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 	})
-	require.NoError(t, kitk8s.CreateObjects(t, resources...))
+	Expect(t, kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
 	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
@@ -172,7 +172,7 @@ func TestSecretRotation_FluentBit(t *testing.T) {
 
 	// Update the secret to have the correct backend host
 	secret.UpdateSecret(kitk8s.WithStringData(hostKey, backend.Host()))
-	require.NoError(t, kitk8s.UpdateObjects(t, secret.K8sObject()))
+	Expect(t, kitk8s.UpdateObjects(t, secret.K8sObject())).To(Succeed())
 
 	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 	assert.FluentBitLogPipelineHealthy(t, pipelineName)

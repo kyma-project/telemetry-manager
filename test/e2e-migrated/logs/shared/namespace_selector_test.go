@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -92,7 +91,7 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 			// and potentially overloading the backend.
 			var nsList corev1.NamespaceList
 
-			Expect(suite.K8sClient.List(t.Context(), &nsList)).Should(Succeed())
+			Expect(suite.K8sClient.List(t.Context(), &nsList)).To(Succeed())
 
 			excludeNss := []string{gen2Ns}
 
@@ -121,9 +120,9 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 			resources = append(resources, backend2.K8sObjects()...)
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(resources...))
+				Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.BackendReachable(t, backend1)
 			assert.BackendReachable(t, backend2)
@@ -182,9 +181,9 @@ func TestNamespaceSelector_FluentBit(t *testing.T) {
 	resources = append(resources, backend2.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(resources...))
+		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 	})
-	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend1)
 	assert.BackendReachable(t, backend2)

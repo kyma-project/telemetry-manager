@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -78,14 +77,14 @@ func TestResources_OTel(t *testing.T) {
 				Build()
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(&pipeline))
+				Expect(t, kitk8s.DeleteObjects(&pipeline)).To(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(t, &pipeline, secret.K8sObject())).Should(Succeed())
+			Expect(kitk8s.CreateObjects(t, &pipeline, secret.K8sObject())).To(Succeed())
 
 			assert.ResourcesExist(t, tc.resources...)
 			// FIXME: Currently failing (resources are not deleted when pipeline becomes non-reconcilable)
 			// t.Log("When LogPipeline becomes non-reconcilable, resources should be cleaned up")
-			// Expect(suite.K8sClient.Delete(t, secret.K8sObject())).Should(Succeed())
+			// Expect(suite.K8sClient.Delete(t, secret.K8sObject())).To(Succeed())
 			// assert.ResourcesNotExist(t, tc.resources...)
 		})
 	}
@@ -126,13 +125,13 @@ func TestResources_FluentBit(t *testing.T) {
 		Build()
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(&pipeline))
+		Expect(t, kitk8s.DeleteObjects(&pipeline)).To(Succeed())
 	})
-	Expect(kitk8s.CreateObjects(t, &pipeline, secret.K8sObject())).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, &pipeline, secret.K8sObject())).To(Succeed())
 
 	assert.ResourcesExist(t, reources...)
 
 	// When pipeline becomes non-reconcilable...
-	Expect(suite.K8sClient.Delete(t.Context(), secret.K8sObject())).Should(Succeed())
+	Expect(suite.K8sClient.Delete(t.Context(), secret.K8sObject())).To(Succeed())
 	assert.ResourcesNotExist(t, reources...)
 }

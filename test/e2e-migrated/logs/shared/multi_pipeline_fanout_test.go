@@ -3,7 +3,7 @@ package shared
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -83,9 +83,9 @@ func TestMultiPipelineFanout_OTel(t *testing.T) {
 			resources = append(resources, backend2.K8sObjects()...)
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(resources...))
+				Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 			})
-			require.NoError(t, kitk8s.CreateObjects(t, resources...))
+			Expect(t, kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.BackendReachable(t, backend1)
 			assert.BackendReachable(t, backend2)
@@ -134,9 +134,9 @@ func TestMultiPipelineFanout_FluentBit(t *testing.T) {
 	resources = append(resources, backend2.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(resources...))
+		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 	})
-	require.NoError(t, kitk8s.CreateObjects(t, resources...))
+	Expect(t, kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend1)
 	assert.BackendReachable(t, backend2)

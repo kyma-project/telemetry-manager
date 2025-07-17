@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	. "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
@@ -75,9 +74,9 @@ func TestMultiPipelineFanout(t *testing.T) {
 	resources = append(resources, backendPrometheus.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(resources...))
+		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 	})
-	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backendRuntime)
 	assert.BackendReachable(t, backendPrometheus)
@@ -95,7 +94,7 @@ func TestMultiPipelineFanout(t *testing.T) {
 
 		g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNamesForRuntimeScope(ConsistOf(runtime.ContainerMetricsNames))), "Not all required runtime metrics are sent to runtime backend")
 		checkInstrumentationScopeAndVersion(t, g, bodyContent, InstrumentationScopeRuntime, InstrumentationScopeKyma)
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).To(Succeed())
 
 	Eventually(func(g Gomega) {
 		resp, err := suite.ProxyClient.Get(backendPrometheusExportURL)
@@ -118,7 +117,7 @@ func TestMultiPipelineFanout(t *testing.T) {
 					))),
 			),
 		), "scope '%v' must not be sent to the prometheus backend", InstrumentationScopeRuntime)
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).To(Succeed())
 
 	Eventually(func(g Gomega) {
 		resp, err := suite.ProxyClient.Get(backendPrometheusExportURL)
@@ -132,7 +131,7 @@ func TestMultiPipelineFanout(t *testing.T) {
 		g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNames(ContainElements(prommetricgen.CustomMetricNames()))), "Not all required prometheus metrics are sent to prometheus backend")
 
 		checkInstrumentationScopeAndVersion(t, g, bodyContent, InstrumentationScopePrometheus, InstrumentationScopeKyma)
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).To(Succeed())
 
 	Eventually(func(g Gomega) {
 		resp, err := suite.ProxyClient.Get(backendRuntimeExportURL)
@@ -156,7 +155,7 @@ func TestMultiPipelineFanout(t *testing.T) {
 			),
 		),
 		), "'%v' must not be sent to the runtime backend", InstrumentationScopePrometheus)
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).To(Succeed())
 }
 
 func checkInstrumentationScopeAndVersion(t *testing.T, g Gomega, body []byte, scope1, scope2 string) {
