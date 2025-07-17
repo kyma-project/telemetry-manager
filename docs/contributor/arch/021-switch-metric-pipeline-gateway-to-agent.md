@@ -51,7 +51,7 @@ See a [sample configuration for the new gateway](./../assets/sample-metric-gatew
 
 ## Conclusion
 
-1. The new MetricPipeline configuration architecture is split into three pipelines: input, enrichment, and output. This approach clearly separates concerns and simplifies the configuration.
+1. The new MetricPipeline configuration architecture is split into three pipelines: input, enrichment, and output.
 2. The input pipeline is defined for each input type, allowing for input-specific processing. The input pipeline configurations are grouped by input type rather than by receiver type, because all receivers in the same input type share the same data path. Creating a separate input pipeline for each receiver type would lead to unnecessary duplication of components and configuration complexity.
 3. The enrichment pipeline is shared across all inputs and outputs, allowing for maximum reuse of components and resource efficiency. Otherwise, especially in multi-pipeline scenarios, the `k8sattribute` processor would need its own resource cache per data pipeline, which can lead to high memory usage.
 4. The output stage is specific for each MetricPipeline, supporting backend-specific enrichment, filtering, and data export.
