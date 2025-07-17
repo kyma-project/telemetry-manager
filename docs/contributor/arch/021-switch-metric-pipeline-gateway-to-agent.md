@@ -36,7 +36,7 @@ The new agent configuration consists of three pipelines:
 See a [sample configuration for the new agent](./../assets/sample-metric-agent-config.yaml).
 
 The metric gateway, like the agent, consists of three pipelines::
-1. **Input**: Defines OTLP-input-specific pipeline configuration, and performs enrichment.
+1. **Input**: Defines OTLP-input-specific pipeline configuration, and performs input-specific enrichment.
 2. **Enrichment**: Defines enrichment-specific pipeline configurations, including enrichment-specific processors and a router to connect to the next pipeline. The enrichment pipeline is shared across all the inputs.
 3. **Output**: Defines output for a specific MetricPipeline configuration, including processors and exporters (such as namespace filtering).
 
