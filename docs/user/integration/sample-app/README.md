@@ -25,7 +25,7 @@ For examples using the OTel SDK in a different language, refer to the official [
 
 The sample app is a small webserver written in Golang, which exposes two endpoints `forward` and `terminate`. When calling the endpoints via HTTP, metrics are counted up and spans are emitted using OTLP exporters. Furthermore, structured logs are written to `stdout`.
 
-The application is located in the [`telemetry-manager`](https://github.com/kyma-project/telemetry-manager/tree/main/docs/user/integration/sample-app) repository.
+The application is located in the [`telemetry-manager`](https://github.com/kyma-project/telemetry-manager/tree/main/dependencies/sample-app) repository.
 
 ### Setup
 
@@ -63,7 +63,7 @@ The `main.go` file initializes the Golang `slog` logger, which is consistently u
 
 By default, the exporters are configured to print to stdout, so that you can run the app from local.
 
-1. Checkout the `telemetry-manager` repo and go to the folder `docs/user/integration/sample-app`.
+1. Checkout the `telemetry-manager` repo and go to the folder `dependencies/sample-app`.
 
 1. Build and start the application:
 
@@ -99,7 +99,7 @@ By default, the exporters are configured to print to stdout, so that you can run
 1. Deploy the service using the prepared Deployment manifest and image:
 
     ```bash
-    kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/docs/user/integration/sample-app/deployment/deployment.yaml -n $K8S_SAMPLE_NAMESPACE
+    kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/dependencies/sample-app/deployment/deployment.yaml -n $K8S_SAMPLE_NAMESPACE
     ```
 
 1. Verify the application:
@@ -120,5 +120,5 @@ By default, the exporters are configured to print to stdout, so that you can run
 Run the following commands to completely remove the sample app from the cluster:
 
 ```bash
-kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/docs/user/integration/sample-app/deployment/deployment.yaml -n $K8S_SAMPLE_NAMESPACE
+kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/dependencies/sample-app/deployment/deployment.yaml -n $K8S_SAMPLE_NAMESPACE
 ```
