@@ -57,10 +57,9 @@ func TestTraceParser(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
+	assert.BackendReachable(t, backend)
 	assert.DeploymentReady(t, kitkyma.LogGatewayName)
-	assert.DeploymentReady(t, backend.NamespacedName())
 	assert.DaemonSetReady(t, kitkyma.LogAgentName)
-
 	assert.OTelLogPipelineHealthy(t, pipelineName)
 
 	assert.BackendDataEventuallyMatches(t, backend,

@@ -92,8 +92,8 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 			})
 			Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
+			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.LogGatewayName)
-			assert.DeploymentReady(t, backend.NamespacedName())
 
 			if tc.expectAgent {
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
@@ -160,10 +160,10 @@ func TestMTLSAboutToExpireCert_FluentBit(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
-	assert.DeploymentReady(t, backend.NamespacedName())
+	assert.BackendReachable(t, backend)
 	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
-
 	assert.FluentBitLogPipelineHealthy(t, pipelineName)
+
 	assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionTrue,

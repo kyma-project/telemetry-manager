@@ -86,8 +86,8 @@ func TestMTLS_OTel(t *testing.T) {
 			})
 			Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
+			assert.BackendReachable(t, backend)
 			assert.OTelLogPipelineHealthy(t, pipelineName)
-			assert.DeploymentReady(t, backend.NamespacedName())
 			assert.DeploymentReady(t, kitkyma.LogGatewayName)
 
 			if tc.expectAgent {
@@ -139,8 +139,8 @@ func TestMTLS_FluentBit(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
+	assert.BackendReachable(t, backend)
 	assert.FluentBitLogPipelineHealthy(t, pipelineName)
-	assert.DeploymentReady(t, backend.NamespacedName())
 	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 	assert.FluentBitLogsFromNamespaceDelivered(t, backend, backendNs)
 }

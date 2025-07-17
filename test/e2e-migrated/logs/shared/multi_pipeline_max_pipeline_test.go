@@ -91,7 +91,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	require.NoError(t, kitk8s.CreateObjects(t, resources...))
 	require.NoError(t, kitk8s.CreateObjects(t, pipelines...))
 
-	assert.DeploymentReady(t, backend.NamespacedName())
+	assert.BackendReachable(t, backend)
 	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 
 	t.Log("Asserting all pipelines are healthy")
@@ -192,7 +192,7 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 	require.NoError(t, kitk8s.CreateObjects(t, resources...))
 	require.NoError(t, kitk8s.CreateObjects(t, pipelines...))
 
-	assert.DeploymentReady(t, backend.NamespacedName())
+	assert.BackendReachable(t, backend)
 	assert.DeploymentReady(t, kitkyma.LogGatewayName)
 
 	t.Log("Asserting all pipelines are healthy")
@@ -270,7 +270,7 @@ func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
 	require.NoError(t, kitk8s.CreateObjects(t, resources...))
 	require.NoError(t, kitk8s.CreateObjects(t, pipelines...))
 
-	assert.DeploymentReady(t, backend.NamespacedName())
+	assert.BackendReachable(t, backend)
 	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 
 	t.Log("Asserting all pipelines are healthy")
