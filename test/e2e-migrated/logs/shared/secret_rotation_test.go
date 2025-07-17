@@ -90,7 +90,7 @@ func TestSecretRotation_OTel(t *testing.T) {
 			t.Cleanup(func() {
 				Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 			})
-			Expect(t, kitk8s.CreateObjects(t, resources...)).To(Succeed())
+			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.LogGatewayName)
@@ -104,7 +104,7 @@ func TestSecretRotation_OTel(t *testing.T) {
 
 			// Update the secret to have the correct backend endpoint
 			secret.UpdateSecret(kitk8s.WithStringData(endpointKey, backend.Endpoint()))
-			Expect(t, kitk8s.UpdateObjects(t, secret.K8sObject())).To(Succeed())
+			Expect(kitk8s.UpdateObjects(t, secret.K8sObject())).To(Succeed())
 
 			assert.DeploymentReady(t, kitkyma.LogGatewayName)
 
@@ -163,7 +163,7 @@ func TestSecretRotation_FluentBit(t *testing.T) {
 	t.Cleanup(func() {
 		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 	})
-	Expect(t, kitk8s.CreateObjects(t, resources...)).To(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
 	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
@@ -172,7 +172,7 @@ func TestSecretRotation_FluentBit(t *testing.T) {
 
 	// Update the secret to have the correct backend host
 	secret.UpdateSecret(kitk8s.WithStringData(hostKey, backend.Host()))
-	Expect(t, kitk8s.UpdateObjects(t, secret.K8sObject())).To(Succeed())
+	Expect(kitk8s.UpdateObjects(t, secret.K8sObject())).To(Succeed())
 
 	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 	assert.FluentBitLogPipelineHealthy(t, pipelineName)

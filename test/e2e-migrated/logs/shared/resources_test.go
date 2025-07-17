@@ -77,7 +77,7 @@ func TestResources_OTel(t *testing.T) {
 				Build()
 
 			t.Cleanup(func() {
-				Expect(t, kitk8s.DeleteObjects(&pipeline)).To(Succeed())
+				Expect(kitk8s.DeleteObjects(&pipeline)).To(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(t, &pipeline, secret.K8sObject())).To(Succeed())
 
@@ -125,7 +125,7 @@ func TestResources_FluentBit(t *testing.T) {
 		Build()
 
 	t.Cleanup(func() {
-		Expect(t, kitk8s.DeleteObjects(&pipeline)).To(Succeed())
+		Expect(kitk8s.DeleteObjects(&pipeline)).To(Succeed())
 	})
 	Expect(kitk8s.CreateObjects(t, &pipeline, secret.K8sObject())).To(Succeed())
 

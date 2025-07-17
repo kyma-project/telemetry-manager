@@ -67,7 +67,7 @@ func TestSecretRotation(t *testing.T) {
 
 	// Update the secret to have the correct backend endpoint
 	secret.UpdateSecret(kitk8s.WithStringData(endpointKey, backend.Endpoint()))
-	Expect(t, kitk8s.UpdateObjects(t, secret.K8sObject())).To(Succeed())
+	Expect(kitk8s.UpdateObjects(t, secret.K8sObject())).To(Succeed())
 
 	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 	assert.MetricPipelineHealthy(t, pipelineName)

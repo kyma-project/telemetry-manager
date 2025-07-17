@@ -86,7 +86,7 @@ func TestMultiPipelineBroken_OTel(t *testing.T) {
 			t.Cleanup(func() {
 				Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 			})
-			Expect(t, kitk8s.CreateObjects(t, resources...)).To(Succeed())
+			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.LogGatewayName)
@@ -144,7 +144,7 @@ func TestMultiPipelineBroken_FluentBit(t *testing.T) {
 	t.Cleanup(func() {
 		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 	})
-	Expect(t, kitk8s.CreateObjects(t, resources...)).To(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
 	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)

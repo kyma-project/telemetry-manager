@@ -73,7 +73,7 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 			t.Cleanup(func() {
 				Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 			})
-			Expect(t, kitk8s.CreateObjects(t, resources...)).To(Succeed())
+			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.DeploymentReady(t, kitkyma.LogGatewayName)
 
@@ -113,7 +113,7 @@ func TestMetricsEndpoint_FluentBit(t *testing.T) {
 	t.Cleanup(func() {
 		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 	})
-	Expect(t, kitk8s.CreateObjects(t, resources...)).To(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 

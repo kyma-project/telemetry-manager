@@ -60,11 +60,11 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 
 	t.Cleanup(func() {
 		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-		Expect(t, kitk8s.DeleteObjects(pipelines[1:]...)).To(Succeed())
-		Expect(t, kitk8s.DeleteObjects(&additionalPipeline)).To(Succeed())
+		Expect(kitk8s.DeleteObjects(pipelines[1:]...)).To(Succeed())
+		Expect(kitk8s.DeleteObjects(&additionalPipeline)).To(Succeed())
 	})
-	Expect(t, kitk8s.CreateObjects(t, resources...)).To(Succeed())
-	Expect(t, kitk8s.CreateObjects(t, pipelines...)).To(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
+	Expect(kitk8s.CreateObjects(t, pipelines...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
 	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
@@ -76,7 +76,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	}
 
 	t.Log("Attempting to create a pipeline that exceeds the maximum allowed number of pipelines")
-	Expect(t, kitk8s.CreateObjects(t, &additionalPipeline)).To(Succeed())
+	Expect(kitk8s.CreateObjects(t, &additionalPipeline)).To(Succeed())
 	assert.MetricPipelineHasCondition(t, additionalPipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
@@ -94,6 +94,6 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	t.Log("Deleting one previously healthy pipeline and expecting the additional pipeline to be healthy")
 
 	deletePipeline := pipelines[0]
-	Expect(t, kitk8s.DeleteObjects(deletePipeline)).To(Succeed())
+	Expect(kitk8s.DeleteObjects(deletePipeline)).To(Succeed())
 	assert.MetricPipelineHealthy(t, additionalPipeline.GetName())
 }

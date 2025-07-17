@@ -68,7 +68,7 @@ func TestEndpointInvalid_OTel(t *testing.T) {
 			}
 
 			t.Cleanup(func() {
-				Expect(t, kitk8s.DeleteObjects(resourcesToSucceedCreation...)).To(Succeed())
+				Expect(kitk8s.DeleteObjects(resourcesToSucceedCreation...)).To(Succeed())
 			})
 
 			Expect(kitk8s.CreateObjects(t, resourcesToSucceedCreation...)).To(Succeed())
@@ -124,7 +124,7 @@ func TestEndpointInvalid_FluentBit(t *testing.T) {
 	}
 
 	t.Cleanup(func() {
-		Expect(t, kitk8s.DeleteObjects(resourcesToSucceedCreation...)).To(Succeed())
+		Expect(kitk8s.DeleteObjects(resourcesToSucceedCreation...)).To(Succeed())
 	})
 	Expect(kitk8s.CreateObjects(t, resourcesToSucceedCreation...)).To(Succeed())
 	Expect(kitk8s.CreateObjects(t, resourcesToFailCreation...)).Should(MatchError(ContainSubstring("invalid hostname")))

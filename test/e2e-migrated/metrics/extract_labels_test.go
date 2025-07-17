@@ -82,7 +82,7 @@ func TestExtractLabels(t *testing.T) {
 
 		Expect(suite.K8sClient.Get(context.Background(), kitkyma.TelemetryName, &telemetry)).To(Succeed()) //nolint:usetesting // Remove ctx from Get
 		telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{}
-		Expect(t, suite.K8sClient.Update(context.Background(), &telemetry)).To(Succeed()) //nolint:usetesting // Remove ctx from Update
+		Expect(suite.K8sClient.Update(context.Background(), &telemetry)).To(Succeed()) //nolint:usetesting // Remove ctx from Update
 	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 

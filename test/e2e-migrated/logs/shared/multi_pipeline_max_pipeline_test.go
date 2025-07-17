@@ -84,12 +84,12 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 
 	t.Cleanup(func() {
 		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-		Expect(t, kitk8s.DeleteObjects(pipelines[2:]...)).To(Succeed())
-		Expect(t, kitk8s.DeleteObjects(&additionalFBPipeline)).To(Succeed())
-		Expect(t, kitk8s.DeleteObjects(&additionalOTelPipeline)).To(Succeed())
+		Expect(kitk8s.DeleteObjects(pipelines[2:]...)).To(Succeed())
+		Expect(kitk8s.DeleteObjects(&additionalFBPipeline)).To(Succeed())
+		Expect(kitk8s.DeleteObjects(&additionalOTelPipeline)).To(Succeed())
 	})
-	Expect(t, kitk8s.CreateObjects(t, resources...)).To(Succeed())
-	Expect(t, kitk8s.CreateObjects(t, pipelines...)).To(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
+	Expect(kitk8s.CreateObjects(t, pipelines...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
 	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
@@ -105,7 +105,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	}
 
 	t.Log("Attempting to create a FluentBit pipeline that exceeds the maximum allowed number of pipelines")
-	Expect(t, kitk8s.CreateObjects(t, &additionalFBPipeline)).To(Succeed())
+	Expect(kitk8s.CreateObjects(t, &additionalFBPipeline)).To(Succeed())
 	assert.LogPipelineHasCondition(t, additionalFBPipeline.GetName(), metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
@@ -120,11 +120,11 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	t.Log("Deleting one previously healthy pipeline and expecting the additional FluentBit pipeline to be healthy")
 
 	deletePipeline := pipelines[0]
-	Expect(t, kitk8s.DeleteObjects(deletePipeline)).To(Succeed())
+	Expect(kitk8s.DeleteObjects(deletePipeline)).To(Succeed())
 	assert.FluentBitLogPipelineHealthy(t, additionalFBPipeline.GetName())
 
 	t.Log("Attempting to create a OTel pipeline that exceeds the maximum allowed number of pipelines")
-	Expect(t, kitk8s.CreateObjects(t, &additionalOTelPipeline)).To(Succeed())
+	Expect(kitk8s.CreateObjects(t, &additionalOTelPipeline)).To(Succeed())
 	assert.LogPipelineHasCondition(t, additionalOTelPipeline.GetName(), metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
@@ -142,7 +142,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	t.Log("Deleting one previously healthy pipeline and expecting the additional OTel pipeline to be healthy")
 
 	deletePipeline = pipelines[1]
-	Expect(t, kitk8s.DeleteObjects(deletePipeline)).To(Succeed())
+	Expect(kitk8s.DeleteObjects(deletePipeline)).To(Succeed())
 	assert.FluentBitLogPipelineHealthy(t, additionalFBPipeline.GetName())
 }
 
@@ -186,11 +186,11 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 
 	t.Cleanup(func() {
 		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-		Expect(t, kitk8s.DeleteObjects(pipelines[1:]...)).To(Succeed())
-		Expect(t, kitk8s.DeleteObjects(&additionalPipeline)).To(Succeed())
+		Expect(kitk8s.DeleteObjects(pipelines[1:]...)).To(Succeed())
+		Expect(kitk8s.DeleteObjects(&additionalPipeline)).To(Succeed())
 	})
-	Expect(t, kitk8s.CreateObjects(t, resources...)).To(Succeed())
-	Expect(t, kitk8s.CreateObjects(t, pipelines...)).To(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
+	Expect(kitk8s.CreateObjects(t, pipelines...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
 	assert.DeploymentReady(t, kitkyma.LogGatewayName)
@@ -202,7 +202,7 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 	}
 
 	t.Log("Attempting to create a pipeline that exceeds the maximum allowed number of pipelines")
-	Expect(t, kitk8s.CreateObjects(t, &additionalPipeline)).To(Succeed())
+	Expect(kitk8s.CreateObjects(t, &additionalPipeline)).To(Succeed())
 	assert.LogPipelineHasCondition(t, additionalPipeline.GetName(), metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
@@ -220,7 +220,7 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 	t.Log("Deleting one previously healthy pipeline and expecting the additional pipeline to be healthy")
 
 	deletePipeline := pipelines[0]
-	Expect(t, kitk8s.DeleteObjects(deletePipeline)).To(Succeed())
+	Expect(kitk8s.DeleteObjects(deletePipeline)).To(Succeed())
 	assert.OTelLogPipelineHealthy(t, additionalPipeline.GetName())
 }
 
@@ -264,11 +264,11 @@ func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
 
 	t.Cleanup(func() {
 		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-		Expect(t, kitk8s.DeleteObjects(pipelines[1:]...)).To(Succeed())
-		Expect(t, kitk8s.DeleteObjects(&additionalPipeline)).To(Succeed())
+		Expect(kitk8s.DeleteObjects(pipelines[1:]...)).To(Succeed())
+		Expect(kitk8s.DeleteObjects(&additionalPipeline)).To(Succeed())
 	})
-	Expect(t, kitk8s.CreateObjects(t, resources...)).To(Succeed())
-	Expect(t, kitk8s.CreateObjects(t, pipelines...)).To(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
+	Expect(kitk8s.CreateObjects(t, pipelines...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
 	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
@@ -280,7 +280,7 @@ func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
 	}
 
 	t.Log("Attempting to create a pipeline that exceeds the maximum allowed number of pipelines")
-	Expect(t, kitk8s.CreateObjects(t, &additionalPipeline)).To(Succeed())
+	Expect(kitk8s.CreateObjects(t, &additionalPipeline)).To(Succeed())
 	assert.LogPipelineHasCondition(t, additionalPipeline.GetName(), metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
@@ -298,6 +298,6 @@ func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
 	t.Log("Deleting one previously healthy pipeline and expecting the additional pipeline to be healthy")
 
 	deletePipeline := pipelines[0]
-	Expect(t, kitk8s.DeleteObjects(deletePipeline)).To(Succeed())
+	Expect(kitk8s.DeleteObjects(deletePipeline)).To(Succeed())
 	assert.FluentBitLogPipelineHealthy(t, additionalPipeline.GetName())
 }
