@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -59,12 +59,12 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(resources...))
-		require.NoError(t, kitk8s.DeleteObjects(pipelines[1:]...))
-		require.NoError(t, kitk8s.DeleteObjects(&additionalPipeline))
+		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
+		Expect(kitk8s.DeleteObjects(pipelines[1:]...)).To(Succeed())
+		Expect(kitk8s.DeleteObjects(&additionalPipeline)).To(Succeed())
 	})
-	require.NoError(t, kitk8s.CreateObjects(t, resources...))
-	require.NoError(t, kitk8s.CreateObjects(t, pipelines...))
+	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
+	Expect(kitk8s.CreateObjects(t, pipelines...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
 	assert.DeploymentReady(t, kitkyma.TraceGatewayName)
@@ -76,7 +76,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	}
 
 	t.Log("Attempting to create a pipeline that exceeds the maximum allowed number of pipelines")
-	require.NoError(t, kitk8s.CreateObjects(t, &additionalPipeline))
+	Expect(kitk8s.CreateObjects(t, &additionalPipeline)).To(Succeed())
 	assert.TracePipelineHasCondition(t, additionalPipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
@@ -94,6 +94,6 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	t.Log("Deleting one previously healthy pipeline and expecting the additional pipeline to be healthy")
 
 	deletePipeline := pipelines[0]
-	require.NoError(t, kitk8s.DeleteObjects(deletePipeline))
+	Expect(kitk8s.DeleteObjects(deletePipeline)).To(Succeed())
 	assert.TracePipelineHealthy(t, additionalPipeline.GetName())
 }

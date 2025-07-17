@@ -45,7 +45,7 @@ func TestSecretrefMisconfigured_OTel(t *testing.T) {
 
 			Consistently(func(g Gomega) {
 				g.Expect(kitk8s.CreateObjects(t, &pipeline)).ShouldNot(Succeed())
-			}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
+			}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).To(Succeed())
 		})
 	}
 }
@@ -65,5 +65,5 @@ func TestSecretrefMisconfigured_FluentBit(t *testing.T) {
 
 	Consistently(func(g Gomega) {
 		g.Expect(kitk8s.CreateObjects(t, &pipeline)).ShouldNot(Succeed())
-	}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
+	}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).To(Succeed())
 }
