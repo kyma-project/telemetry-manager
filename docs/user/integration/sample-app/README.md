@@ -63,7 +63,7 @@ The `main.go` file initializes the Golang `slog` logger, which is consistently u
 
 By default, the exporters are configured to print to stdout, so that you can run the app from local.
 
-1. Checkout the `telemetry-manager` repo and go to the folder `docs/user/integration/sample-app`.
+1. Checkout the `telemetry-manager` repo and go to the folder `dependencies/sample-app`.
 
 1. Build and start the application:
 
