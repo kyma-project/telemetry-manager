@@ -206,6 +206,6 @@ type PodLabel struct {
 
 // Cluster allows for a custom definition of cluster details to use for telemetry resource attributes.
 type Cluster struct {
-	// Name specifies a custom cluster name for resource attribute k8s.cluster.name.
+	// Name specifies a custom cluster name for resource attribute `k8s.cluster.name`.
 	Name string `json:"name"`
 }
