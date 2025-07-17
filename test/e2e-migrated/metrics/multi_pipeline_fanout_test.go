@@ -32,12 +32,10 @@ func TestMultiPipelineFanout(t *testing.T) {
 		genNs                  = uniquePrefix("gen")
 		pipelineRuntimeName    = uniquePrefix("runtime")
 		pipelinePrometheusName = uniquePrefix("prometheus")
-		backendRuntimeName     = uniquePrefix("backend-runtime")
-		backendPrometheusName  = uniquePrefix("backend-prometheus")
 	)
 
-	backendRuntime := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithName(backendRuntimeName))
-	backendPrometheus := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithName(backendPrometheusName))
+	backendRuntime := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithName("backend-runtime"))
+	backendPrometheus := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithName("backend-prometheus"))
 	backendRuntimeExportURL := backendRuntime.ExportURL(suite.ProxyClient)
 	backendPrometheusExportURL := backendPrometheus.ExportURL(suite.ProxyClient)
 
@@ -81,11 +79,11 @@ func TestMultiPipelineFanout(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
+	assert.BackendReachable(t, backendRuntime)
+	assert.BackendReachable(t, backendPrometheus)
+	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 	assert.MetricPipelineHealthy(t, pipelineRuntimeName)
 	assert.MetricPipelineHealthy(t, pipelinePrometheusName)
-	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
-	assert.DeploymentReady(t, backendRuntime.NamespacedName())
-	assert.DeploymentReady(t, backendPrometheus.NamespacedName())
 
 	Eventually(func(g Gomega) {
 		resp, err := suite.ProxyClient.Get(backendRuntimeExportURL)
