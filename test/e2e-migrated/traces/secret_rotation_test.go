@@ -64,7 +64,7 @@ func TestSecretRotation(t *testing.T) {
 	assert.BackendReachable(t, backend)
 	assert.DeploymentReady(t, kitkyma.TraceGatewayName)
 	assert.TracePipelineHealthy(t, pipelineName)
-	assert.TracesFromNamespacesNotDeliveredWithT(t, backend, []string{genNs})
+	assert.TracesFromNamespacesNotDelivered(t, backend, []string{genNs})
 
 	// Update the secret to have the correct backend endpoint
 	secret.UpdateSecret(kitk8s.WithStringData(endpointKey, backend.Endpoint()))
@@ -72,5 +72,5 @@ func TestSecretRotation(t *testing.T) {
 
 	assert.DeploymentReady(t, kitkyma.TraceGatewayName)
 	assert.TracePipelineHealthy(t, pipelineName)
-	assert.TracesFromNamespaceDeliveredWithT(t, backend, genNs)
+	assert.TracesFromNamespaceDelivered(t, backend, genNs)
 }

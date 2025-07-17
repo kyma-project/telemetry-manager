@@ -78,7 +78,7 @@ func TestSinglePipeline_OTel(t *testing.T) {
 			})
 			require.NoError(t, kitk8s.CreateObjects(t, resources...))
 
-			assert.DeploymentReady(t, backend.NamespacedName())
+			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.LogGatewayName)
 
 			if tc.expectAgent {
@@ -121,11 +121,9 @@ func TestSinglePipeline_FluentBit(t *testing.T) {
 	})
 	require.NoError(t, kitk8s.CreateObjects(t, resources...))
 
-	assert.DeploymentReady(t, backend.NamespacedName())
+	assert.BackendReachable(t, backend)
 	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
-
 	assert.FluentBitLogPipelineHealthy(t, pipelineName)
 	assert.LogPipelineUnsupportedMode(t, pipelineName, false)
-
 	assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
 }

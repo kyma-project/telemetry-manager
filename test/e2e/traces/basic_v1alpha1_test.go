@@ -184,7 +184,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should deliver telemetrygen traces", Label(suite.LabelUpgrade), func() {
-			assert.TracesFromNamespaceDelivered(suite.ProxyClient, backend.ExportURL(suite.ProxyClient), mockNs)
+			assert.TracesFromNamespaceDelivered(GinkgoT(), backend, mockNs)
 		})
 
 		It("Should be able to get trace gateway metrics endpoint", Label(suite.LabelUpgrade), func() {

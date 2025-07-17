@@ -123,8 +123,8 @@ func TestExtractLabels_OTel(t *testing.T) {
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
 			}
 
+			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.LogGatewayName)
-			assert.DeploymentReady(t, backend.NamespacedName())
 			assert.OTelLogPipelineHealthy(t, pipelineName)
 			assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
 
@@ -196,12 +196,12 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
+	assert.BackendReachable(t, backendNotDropped)
+	assert.BackendReachable(t, backendDropped)
+	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
+	assert.DeploymentReady(t, logProducer.NamespacedName())
 	assert.FluentBitLogPipelineHealthy(t, pipelineNameNotDropped)
 	assert.FluentBitLogPipelineHealthy(t, pipelineNameDropped)
-	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
-	assert.DeploymentReady(t, backendNotDropped.NamespacedName())
-	assert.DeploymentReady(t, backendDropped.NamespacedName())
-	assert.DeploymentReady(t, logProducer.NamespacedName())
 
 	// Scenario 1: Labels not dropped
 	assert.FluentBitLogsFromNamespaceDelivered(t, backendNotDropped, genNs)

@@ -62,6 +62,6 @@ func TestMultiPipelineFanout(t *testing.T) {
 	assert.TracePipelineHealthy(t, pipeline1Name)
 	assert.TracePipelineHealthy(t, pipeline2Name)
 
-	assert.TracesFromNamespaceDeliveredWithT(t, backend1, genNs)
-	assert.TracesFromNamespaceDeliveredWithT(t, backend2, genNs)
+	assert.TracesFromNamespaceDelivered(t, backend1, genNs)
+	assert.TracesFromNamespaceDelivered(t, backend2, genNs)
 }

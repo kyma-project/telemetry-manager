@@ -125,8 +125,8 @@ func TestServiceName_OTel(t *testing.T) {
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
 			}
 
+			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.LogGatewayName)
-			assert.DeploymentReady(t, backend.NamespacedName())
 			assert.OTelLogPipelineHealthy(t, pipelineName)
 			assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
 

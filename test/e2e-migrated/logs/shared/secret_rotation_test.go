@@ -92,7 +92,7 @@ func TestSecretRotation_OTel(t *testing.T) {
 			})
 			require.NoError(t, kitk8s.CreateObjects(t, resources...))
 
-			assert.DeploymentReady(t, backend.NamespacedName())
+			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.LogGatewayName)
 
 			if tc.expectAgent {
@@ -165,9 +165,8 @@ func TestSecretRotation_FluentBit(t *testing.T) {
 	})
 	require.NoError(t, kitk8s.CreateObjects(t, resources...))
 
-	assert.DeploymentReady(t, backend.NamespacedName())
+	assert.BackendReachable(t, backend)
 	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
-
 	assert.FluentBitLogPipelineHealthy(t, pipelineName)
 	assert.FluentBitLogsFromNamespaceNotDelivered(t, backend, genNs)
 

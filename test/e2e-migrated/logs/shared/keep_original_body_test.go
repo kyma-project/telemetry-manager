@@ -89,14 +89,12 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
+	assert.BackendReachable(t, backendKeepOriginal)
+	assert.BackendReachable(t, backendDropOriginal)
 	assert.DeploymentReady(t, kitkyma.LogGatewayName)
-	assert.DeploymentReady(t, backendKeepOriginal.NamespacedName())
-	assert.DeploymentReady(t, backendDropOriginal.NamespacedName())
 	assert.DaemonSetReady(t, kitkyma.LogAgentName)
-
 	assert.OTelLogPipelineHealthy(t, pipelineKeepOriginalName)
 	assert.OTelLogPipelineHealthy(t, pipelineDropOriginalName)
-
 	assert.OTelLogsFromNamespaceDelivered(t, backendDropOriginal, sourceNsDropOriginal)
 
 	assert.BackendDataEventuallyMatches(t, backendDropOriginal,
@@ -238,13 +236,11 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
-	assert.DeploymentReady(t, backendKeepOriginal.NamespacedName())
-	assert.DeploymentReady(t, backendDropOriginal.NamespacedName())
+	assert.BackendReachable(t, backendKeepOriginal)
+	assert.BackendReachable(t, backendDropOriginal)
 	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
-
 	assert.FluentBitLogPipelineHealthy(t, pipelineKeepOriginalName)
 	assert.FluentBitLogPipelineHealthy(t, pipelineDropOriginalName)
-
 	assert.FluentBitLogsFromNamespaceDelivered(t, backendDropOriginal, sourceNsDropOriginal)
 
 	assert.BackendDataConsistentlyMatches(t, backendDropOriginal,

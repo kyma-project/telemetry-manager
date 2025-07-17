@@ -63,9 +63,10 @@ func TestAppName(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
-	assert.FluentBitLogPipelineHealthy(t, pipelineName)
+	assert.BackendReachable(t, backend)
 	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
-	assert.DeploymentReady(t, backend.NamespacedName())
+	assert.FluentBitLogPipelineHealthy(t, pipelineName)
+
 	assert.DeploymentReady(t, logProducerNone.NamespacedName())
 	assert.DeploymentReady(t, logProducerAppOnly.NamespacedName())
 	assert.DeploymentReady(t, logProducerNameOnly.NamespacedName())

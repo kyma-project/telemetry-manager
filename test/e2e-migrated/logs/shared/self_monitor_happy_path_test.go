@@ -79,10 +79,9 @@ func TestSelfMonitorHappyPath_OTel(t *testing.T) {
 			})
 			Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
-			assert.OTelLogPipelineHealthy(t, pipelineName)
-
+			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.LogGatewayName)
-			assert.DeploymentReady(t, backend.NamespacedName())
+			assert.OTelLogPipelineHealthy(t, pipelineName)
 
 			if tc.expectAgent {
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
@@ -126,12 +125,10 @@ func TestSelfMonitorHappyPath_FluentBit(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
-	assert.FluentBitLogPipelineHealthy(t, pipelineName)
-
-	assert.DeploymentReady(t, backend.NamespacedName())
+	assert.BackendReachable(t, backend)
 	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 	assert.DeploymentReady(t, kitkyma.SelfMonitorName)
-
+	assert.FluentBitLogPipelineHealthy(t, pipelineName)
 	assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
 
 	assert.SelfMonitorIsHealthyForPipeline(t, suite.K8sClient, pipelineName)
