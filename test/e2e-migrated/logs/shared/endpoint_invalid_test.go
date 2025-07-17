@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -69,10 +68,10 @@ func TestEndpointInvalid_OTel(t *testing.T) {
 			}
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(resourcesToSucceedCreation...))
+				Expect(kitk8s.DeleteObjects(resourcesToSucceedCreation...)).To(Succeed())
 			})
 
-			Expect(kitk8s.CreateObjects(t, resourcesToSucceedCreation...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(t, resourcesToSucceedCreation...)).To(Succeed())
 
 			assert.LogPipelineHasCondition(t, pipelineNameValueFromSecret, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
@@ -125,9 +124,9 @@ func TestEndpointInvalid_FluentBit(t *testing.T) {
 	}
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(resourcesToSucceedCreation...))
+		Expect(kitk8s.DeleteObjects(resourcesToSucceedCreation...)).To(Succeed())
 	})
-	Expect(kitk8s.CreateObjects(t, resourcesToSucceedCreation...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, resourcesToSucceedCreation...)).To(Succeed())
 	Expect(kitk8s.CreateObjects(t, resourcesToFailCreation...)).Should(MatchError(ContainSubstring("invalid hostname")))
 
 	assert.LogPipelineHasCondition(t, pipelineNameValueFromSecret, metav1.Condition{

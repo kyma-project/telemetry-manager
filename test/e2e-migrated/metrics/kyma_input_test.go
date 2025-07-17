@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -45,9 +44,9 @@ func TestKymaInput(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(resources...))
+		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 	})
-	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 	assert.DeploymentReady(t, types.NamespacedName{Name: backendName, Namespace: backendNs})
@@ -74,7 +73,7 @@ func TestKymaInput(t *testing.T) {
 		// Check the "kyma.resource.status.conditions" metric for the "TraceComponentsHealthy" condition type
 		checkTelemtryModuleMetricsConditions(t, g, bodyContent, "TraceComponentsHealthy")
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval,
-		"Missing telemetry module status metrics").Should(Succeed())
+		"Missing telemetry module status metrics").To(Succeed())
 
 	Eventually(func(g Gomega) {
 		backendURL := backend.ExportURL(suite.ProxyClient)
@@ -94,7 +93,7 @@ func TestKymaInput(t *testing.T) {
 		// Check the "kyma.resource.status.conditions" type GatewayHealthy for metricpipeline with annotation
 		checkMetricPipelineMetricsConditions(t, g, bodyContent, "GatewayHealthy", pipelineName)
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval,
-		"Missing condition metrics").Should(Succeed())
+		"Missing condition metrics").To(Succeed())
 }
 
 func checkTelemetryModuleMetricState(t *testing.T, g Gomega, body []byte) {
