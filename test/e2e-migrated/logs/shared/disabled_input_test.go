@@ -56,8 +56,8 @@ func TestDisabledInput_OTel(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
+	assert.BackendReachable(t, backend)
 	assert.DeploymentReady(t, kitkyma.LogGatewayName)
-	assert.DeploymentReady(t, backend.NamespacedName())
 	assert.OTelLogPipelineHealthy(t, pipelineName)
 
 	// If Application input is disabled, THEN the log agent must not be deployed

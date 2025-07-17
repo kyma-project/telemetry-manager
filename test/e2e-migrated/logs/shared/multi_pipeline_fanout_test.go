@@ -87,12 +87,10 @@ func TestMultiPipelineFanout_OTel(t *testing.T) {
 			})
 			require.NoError(t, kitk8s.CreateObjects(t, resources...))
 
-			assert.DeploymentReady(t, backend1.NamespacedName())
-			assert.DeploymentReady(t, backend2.NamespacedName())
-
+			assert.BackendReachable(t, backend1)
+			assert.BackendReachable(t, backend2)
 			assert.FluentBitLogPipelineHealthy(t, pipeline1.Name)
 			assert.FluentBitLogPipelineHealthy(t, pipeline2.Name)
-
 			assert.OTelLogsFromNamespaceDelivered(t, backend1, genNs)
 			assert.OTelLogsFromNamespaceDelivered(t, backend2, genNs)
 		})
@@ -140,12 +138,10 @@ func TestMultiPipelineFanout_FluentBit(t *testing.T) {
 	})
 	require.NoError(t, kitk8s.CreateObjects(t, resources...))
 
-	assert.DeploymentReady(t, backend1.NamespacedName())
-	assert.DeploymentReady(t, backend2.NamespacedName())
-
+	assert.BackendReachable(t, backend1)
+	assert.BackendReachable(t, backend2)
 	assert.FluentBitLogPipelineHealthy(t, pipeline1.Name)
 	assert.FluentBitLogPipelineHealthy(t, pipeline2.Name)
-
 	assert.FluentBitLogsFromNamespaceDelivered(t, backend1, genNs)
 	assert.FluentBitLogsFromNamespaceDelivered(t, backend2, genNs)
 }

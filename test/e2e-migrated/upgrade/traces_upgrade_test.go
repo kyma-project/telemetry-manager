@@ -48,13 +48,13 @@ func TestTracesUpgrade(t *testing.T) {
 		assert.DeploymentReady(t, kitkyma.TraceGatewayName)
 		assert.TracePipelineHealthy(t, pipelineName)
 		assert.BackendReachable(t, backend)
-		assert.TracesFromNamespaceDeliveredWithT(t, backend, genNs)
+		assert.TracesFromNamespaceDelivered(t, backend, genNs)
 	})
 
 	t.Run("after upgrade", func(t *testing.T) {
 		assert.DeploymentReady(t, kitkyma.TraceGatewayName)
 		assert.TracePipelineHealthy(t, pipelineName)
 		assert.BackendReachable(t, backend)
-		assert.TracesFromNamespaceDeliveredWithT(t, backend, genNs)
+		assert.TracesFromNamespaceDelivered(t, backend, genNs)
 	})
 }

@@ -65,5 +65,5 @@ func TestMultiPipelineBroken(t *testing.T) {
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonReferencedSecretMissing,
 	})
-	assert.TracesFromNamespaceDeliveredWithT(t, backend, genNs)
+	assert.TracesFromNamespaceDelivered(t, backend, genNs)
 }

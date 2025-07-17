@@ -155,9 +155,9 @@ func TestNoisyFilters(t *testing.T) {
 	assert.DeploymentReady(t, kitkyma.TraceGatewayName)
 	assert.TracePipelineHealthy(t, pipelineName)
 
-	assert.TracesFromNamespaceDeliveredWithT(t, backend, regularSpansNs)
+	assert.TracesFromNamespaceDelivered(t, backend, regularSpansNs)
 
-	assert.TracesFromNamespacesNotDeliveredWithT(t, backend, []string{
+	assert.TracesFromNamespacesNotDelivered(t, backend, []string{
 		vmaScrapeSpansNs,
 		healthzSpansNs,
 		fluentBitSpansNs,

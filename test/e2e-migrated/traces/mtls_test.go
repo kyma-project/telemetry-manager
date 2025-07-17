@@ -60,5 +60,5 @@ func TestMTLS(t *testing.T) {
 	assert.BackendReachable(t, backend)
 	assert.DeploymentReady(t, kitkyma.TraceGatewayName)
 	assert.TracePipelineHealthy(t, pipelineName)
-	assert.TracesFromNamespaceDeliveredWithT(t, backend, genNs)
+	assert.TracesFromNamespaceDelivered(t, backend, genNs)
 }
