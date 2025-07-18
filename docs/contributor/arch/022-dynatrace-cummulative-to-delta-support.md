@@ -1,4 +1,4 @@
-# 22. Add support for Dynatrace cumulative to delta metrics
+# 22. Add Support for Dynatrace Cumulative-to-Delta Metrics
 
 Date: 2025-07-18
 
@@ -7,15 +7,14 @@ Date: 2025-07-18
 Proposed
 
 ## Context
-Telemetry module provides support for pushing metrics to Dynatrace. However, Dynatrace has [limitations](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/getting-started/metrics/limitations#aggregation-temporality) with respect to
-metrics, mainly it supports only delta metrics. For this purpose, telemetry metric pipeline should provide a way to convert cumulative metrics to delta metrics before sending them to Dynatrace.
 
+The telemetry module provides support for pushing metrics to Dynatrace. However, Dynatrace has [limitations](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/getting-started/metrics/limitations#aggregation-temporality) with respect to metric ingestion; specifically, it primarily supports only delta metrics. Therefore, the telemetry metric pipeline should provide a mechanism to convert cumulative metrics into delta metrics before sending them to Dynatrace.
 
 ## Proposal
-OpenTelemetry provides a [CumulativeToDelta processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/cumulativetodeltaprocessor#cumulative-to-delta-processor) that can be used to convert cumulative metrics to delta metrics. This processor should be added to the metric pipeline configuration before sending metrics to Dynatrace.
-This option should be exposed to the user such that it can be enabled or disabled in the metric pipeline api.
 
-The api option could be added at an appropriate place so that it is applied to all Dynatrace metric pipelines. After deliberation following is the proposed api change:
+OpenTelemetry provides a [CumulativeToDelta processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/cumulativetodeltaprocessor#cumulative-to-delta-processor) that can be used to convert cumulative metrics into delta metrics. This processor should be incorporated into the metric pipeline configuration prior to exporting metrics to Dynatrace. This option should be exposed to users so that it can be enabled or disabled through the metric pipeline API.
+
+The API option could be added at an appropriate location to ensure it applies uniformly to all Dynatrace metric pipelines. Following deliberation, the proposed API change is as follows:
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -30,7 +29,7 @@ spec:
       enabled: true
     istio:
       enabled: true
-  CumulativeToDelta: 
+  cumulativeToDelta:
     enabled: true
   transform: {}
   filter: {}
@@ -40,15 +39,13 @@ spec:
         value: http://foo.bar:4317
 ```
 
-It is added under the `spec` section of the `MetricPipeline` resource, which is a logical place to add this option in current setup. 
-The `cumulativeToDelta` field is a boolean that indicates whether the CumulativeToDelta processor should be applied to the metrics before sending them to Dynatrace. 
+It is added under the `spec` section of the `MetricPipeline` resource, which is a logical placement within the current configuration. The `cumulativeToDelta` has a field `enabled`, is a boolean indicating whether the CumulativeToDelta processor should be applied to the metrics before they are sent to Dynatrace.
 
-Adding under `filter`, `transform` sections would not be appropriate, as it is shared across all signal types. Adding it there would lead to confusion for users. We would need unnecessary additional logic to validate the signal type.
+Placing this field under the `filter` or `transform` sections would be inappropriate, as those sections are shared across all signal types. Doing so would cause user confusion and require unnecessary additional logic to validate the signal type.
 
-Adding it under `output` section would not be appropriate either, as this a transformation processor and not a configuration option for the output. The OTLP output is shared across all signal types so we cannot add it there.
+Adding it under the `output` section would also be unsuitable, as this field relates to a transformation processor, not a configuration option for output. Moreover, the OTLP output is shared across all signal types, making it an improper location for this setting.
 
 ## Conclusion
-
-- The CumulativeToDelta processor will be added  under the `spec` section of the `MetricPipeline` resource.
-- To ensure metric data consistency and sampling efficiency, the cumulativeToDelta processor will be added at the end of pipeline chain, before the exporter.
-- CumulativeToDelta processor will handle all the metrics of `sum` and `histogram` type by default.
+- The CumulativeToDelta processor will be added under the `spec` section of the `MetricPipeline` resource.
+- To ensure metric data consistency and sampling efficiency, the CumulativeToDelta processor will be added at the end of the pipeline chain, immediately before the exporter.
+- The CumulativeToDelta processor will, by default, handle all metrics of the `sum` and `histogram` types.
