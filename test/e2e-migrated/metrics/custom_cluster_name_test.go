@@ -51,7 +51,9 @@ func TestCustomClusterName(t *testing.T) {
 			Name: clusterName,
 		},
 	}
-	Expect(suite.K8sClient.Update(t.Context(), &telemetry)).NotTo(HaveOccurred(), "should update Telemetry resource with cluster name")
+	Eventually(func(g Gomega) {
+		Expect(suite.K8sClient.Update(t.Context(), &telemetry)).NotTo(HaveOccurred(), "should update Telemetry resource with cluster name")
+	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 
 	Expect(suite.K8sClient.Get(t.Context(), types.NamespacedName{Name: "kube-system"}, &kubeSystemNs)).NotTo(HaveOccurred(), "should get the kube-system namespace")
 	clusterUID := string(kubeSystemNs.UID)

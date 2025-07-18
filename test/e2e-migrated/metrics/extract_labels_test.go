@@ -68,7 +68,9 @@ func TestExtractLabels(t *testing.T) {
 			{KeyPrefix: "metric.test.prefix"},
 		},
 	}
-	Expect(suite.K8sClient.Update(t.Context(), &telemetry)).NotTo(HaveOccurred(), "should update Telemetry resource with enrichment configuration")
+	Eventually(func(g Gomega) {
+		Expect(suite.K8sClient.Update(t.Context(), &telemetry)).NotTo(HaveOccurred(), "should update Telemetry resource with enrichment configuration")
+	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
