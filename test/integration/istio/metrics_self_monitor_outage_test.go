@@ -27,12 +27,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsOutage), Orde
 	var (
 		mockNs       = "istio-permissive-mtls"
 		pipelineName = suite.ID()
+		backend      *kitbackend.Backend
 	)
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
 
-		backend := kitbackend.New(mockNs, kitbackend.SignalTypeMetrics, kitbackend.WithReplicas(0))
+		backend = kitbackend.New(mockNs, kitbackend.SignalTypeMetrics, kitbackend.WithReplicas(0))
 		objs = append(objs, backend.K8sObjects()...)
 
 		metricPipeline := testutils.NewMetricPipelineBuilder().
@@ -97,7 +98,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsOutage), Orde
 		})
 
 		It("Should have a metrics backend running", func() {
-			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
+			assert.BackendReachable(GinkgoT(), backend)
 		})
 
 		It("Should have a telemetrygen running", func() {

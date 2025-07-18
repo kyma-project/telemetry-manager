@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
@@ -48,8 +47,8 @@ func TestKymaInput(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
+	assert.BackendReachable(t, backend)
 	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
-	assert.DeploymentReady(t, types.NamespacedName{Name: backendName, Namespace: backendNs})
 	assert.MetricPipelineHealthy(t, pipelineName)
 
 	Eventually(func(g Gomega) {

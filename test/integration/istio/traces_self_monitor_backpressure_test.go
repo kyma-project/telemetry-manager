@@ -24,12 +24,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesBackpressure),
 	var (
 		mockNs       = "istio-permissive-mtls"
 		pipelineName = suite.ID()
+		backend      *kitbackend.Backend
 	)
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
 
-		backend := kitbackend.New(mockNs, kitbackend.SignalTypeTraces, kitbackend.WithAbortFaultInjection(75))
+		backend = kitbackend.New(mockNs, kitbackend.SignalTypeTraces, kitbackend.WithAbortFaultInjection(75))
 		objs = append(objs, backend.K8sObjects()...)
 
 		tracePipeline := testutils.NewTracePipelineBuilder().
@@ -69,7 +70,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesBackpressure),
 		})
 
 		It("Should have a trace backend running", func() {
-			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
+			assert.BackendReachable(GinkgoT(), backend)
 		})
 
 		It("Should have a telemetrygen running", func() {

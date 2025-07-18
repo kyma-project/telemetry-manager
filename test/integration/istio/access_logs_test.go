@@ -8,7 +8,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -32,6 +31,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Order
 	var (
 		mockNs           = suite.ID()
 		pipelineName     = suite.ID()
+		backend          *kitbackend.Backend
 		backendExportURL string
 		metricPodURL     string
 	)
@@ -40,7 +40,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Order
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		backend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsFluentBit)
+		backend = kitbackend.New(mockNs, kitbackend.SignalTypeLogsFluentBit)
 		objs = append(objs, backend.K8sObjects()...)
 		backendExportURL = backend.ExportURL(suite.ProxyClient)
 
@@ -70,7 +70,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Order
 		})
 
 		It("Should have a log backend running", func() {
-			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
+			assert.BackendReachable(GinkgoT(), backend)
 		})
 
 		It("Should have sample app running", func() {
