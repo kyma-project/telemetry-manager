@@ -95,6 +95,8 @@ processors:
               key: k8s.cluster.name
               value: ${KUBERNETES_SERVICE_HOST}
             - action: insert
+              key: k8s.cluster.uid
+            - action: insert
               key: cloud.provider
               value: test-cloud-provider
     istio_noise_filter: {}

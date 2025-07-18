@@ -28,6 +28,7 @@ type BuildOptions struct {
 	GatewayNamespace            string
 	InstrumentationScopeVersion string
 	ClusterName                 string
+	ClusterUID                  string
 	CloudProvider               string
 	Enrichments                 *operatorv1alpha1.EnrichmentSpec
 }
