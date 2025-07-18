@@ -8,7 +8,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -32,6 +31,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Order
 		mockNs           = suite.ID()
 		app1Ns           = suite.IDWithSuffix("app-1")
 		pipelineName     = suite.ID()
+		backend          *kitbackend.Backend
 		backendExportURL string
 	)
 
@@ -40,7 +40,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Order
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject(),
 			kitk8s.NewNamespace(app1Ns, kitk8s.WithIstioInjection()).K8sObject())
 
-		backend := kitbackend.New(mockNs, kitbackend.SignalTypeMetrics)
+		backend = kitbackend.New(mockNs, kitbackend.SignalTypeMetrics)
 		objs = append(objs, backend.K8sObjects()...)
 		backendExportURL = backend.ExportURL(suite.ProxyClient)
 
@@ -77,7 +77,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Order
 		})
 
 		It("Should have a metrics backend running", func() {
-			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
+			assert.BackendReachable(GinkgoT(), backend)
 		})
 
 		It("Should have a running metric agent daemonset", func() {
