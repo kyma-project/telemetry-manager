@@ -24,13 +24,18 @@ type Receivers struct {
 }
 
 type KubeletStatsReceiver struct {
-	CollectionInterval  string                    `yaml:"collection_interval"`
-	AuthType            string                    `yaml:"auth_type"`
-	Endpoint            string                    `yaml:"endpoint"`
-	InsecureSkipVerify  bool                      `yaml:"insecure_skip_verify"`
-	MetricGroups        []MetricGroupType         `yaml:"metric_groups"`
-	Metrics             KubeletStatsMetricsConfig `yaml:"metrics"`
-	ExtraMetadataLabels []string                  `yaml:"extra_metadata_labels,omitempty"`
+	CollectionInterval          string                         `yaml:"collection_interval"`
+	AuthType                    string                         `yaml:"auth_type"`
+	Endpoint                    string                         `yaml:"endpoint"`
+	InsecureSkipVerify          bool                           `yaml:"insecure_skip_verify"`
+	MetricGroups                []MetricGroupType              `yaml:"metric_groups"`
+	Metrics                     KubeletStatsMetricsConfig      `yaml:"metrics"`
+	ExtraMetadataLabels         []string                       `yaml:"extra_metadata_labels,omitempty"`
+	CollectAllNetworkInterfaces NetworkInterfacesEnablerConfig `yaml:"collect_all_network_interfaces"`
+}
+
+type NetworkInterfacesEnablerConfig struct {
+	NodeMetrics bool `yaml:"node"`
 }
 
 type MetricConfig struct {
@@ -47,8 +52,6 @@ type KubeletStatsMetricsConfig struct {
 	K8sNodeCPUTime               MetricConfig `yaml:"k8s.node.cpu.time"`
 	K8sNodeMemoryMajorPageFaults MetricConfig `yaml:"k8s.node.memory.major_page_faults"`
 	K8sNodeMemoryPageFaults      MetricConfig `yaml:"k8s.node.memory.page_faults"`
-	K8sNodeNetworkIO             MetricConfig `yaml:"k8s.node.network.io"`
-	K8sNodeNetworkErrors         MetricConfig `yaml:"k8s.node.network.errors"`
 }
 
 type MetricGroupType string
@@ -223,6 +226,7 @@ type Processors struct {
 	SetInstrumentationScopeIstio      *metric.TransformProcessor        `yaml:"transform/set-instrumentation-scope-istio,omitempty"`
 	InsertSkipEnrichmentAttribute     *metric.TransformProcessor        `yaml:"transform/insert-skip-enrichment-attribute,omitempty"`
 	DropNonPVCVolumesMetrics          *FilterProcessor                  `yaml:"filter/drop-non-pvc-volumes-metrics,omitempty"`
+	DropVirtualNetworkInterfaces      *FilterProcessor                  `yaml:"filter/drop-virtual-network-interfaces,omitempty"`
 }
 
 type Exporters struct {
@@ -234,5 +238,6 @@ type FilterProcessor struct {
 }
 
 type FilterProcessorMetrics struct {
-	Metric []string `yaml:"metric,omitempty"`
+	Metric    []string `yaml:"metric,omitempty"`
+	Datapoint []string `yaml:"datapoint,omitempty"`
 }
