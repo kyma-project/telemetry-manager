@@ -162,6 +162,9 @@ func TestRuntimeInput(t *testing.T) {
 		HaveFlatMetrics(Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.volume.type", "emptyDir"))))),
 	)
 
+	backendContainsDesiredNetworkInterfaces(t, backendA, nodeNetworkIOMetric)
+	backendContainsDesiredNetworkInterfaces(t, backendA, nodeNetworkErrorsMetric)
+
 	exportedMetrics := slices.Concat(runtime.PodMetricsNames, runtime.ContainerMetricsNames, runtime.VolumeMetricsNames, runtime.NodeMetricsNames)
 	backendConsistsOfMetricsDeliveredForResource(t, backendA, exportedMetrics)
 
@@ -360,5 +363,29 @@ func backendContainsDesiredMetricAttributes(t *testing.T, backend *kitbackend.Ba
 				HaveMetricAttributes(HaveKeys(ConsistOf(metricAttributes))),
 			)),
 		), "Failed to find metric %s with metric attributes %v", metricName, metricAttributes,
+	)
+}
+
+func backendContainsDesiredNetworkInterfaces(t *testing.T, backend *kitbackend.Backend, metricName string) {
+	t.Helper()
+
+	// Check that required interface exists
+	assert.BackendDataEventuallyMatches(t, backend,
+		HaveFlatMetrics(
+			ContainElement(SatisfyAll(
+				HaveName(Equal(metricName)),
+				HaveMetricAttributes(HaveKeyWithValue("interface", MatchRegexp("^(eth|en).*"))),
+			)),
+		), "Failed to find network interface eth0 with metric attributes %v", metricName,
+	)
+
+	// Check that no other interfaces exist
+	assert.BackendDataEventuallyMatches(t, backend,
+		HaveFlatMetrics(
+			Not(ContainElement(SatisfyAll(
+				HaveName(Equal(metricName)),
+				HaveMetricAttributes(HaveKeyWithValue("interface", Not(MatchRegexp("^(eth|en).*")))),
+			))),
+		), "Found unexpected network interface other than eth0 with metric attributes %v", metricName,
 	)
 }
