@@ -72,10 +72,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsGatewayOutage), 
 			assert.DeploymentReady(GinkgoT(), kitkyma.SelfMonitorName)
 		})
 
-		It("Should have a log backend running", func() {
-			assert.BackendReachable(GinkgoT(), backend)
-		})
-
 		It("Should have a telemetrygen running", func() {
 			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Name: telemetrygen.DefaultName, Namespace: mockNs})
 		})

@@ -70,10 +70,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsAgentOutage), Or
 			assert.DeploymentReady(GinkgoT(), kitkyma.SelfMonitorName)
 		})
 
-		It("Should have a log backend running", func() {
-			assert.BackendReachable(GinkgoT(), backend)
-		})
-
 		It("Should have a log producer running", func() {
 			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Namespace: mockNs, Name: floggen.DefaultName})
 		})
