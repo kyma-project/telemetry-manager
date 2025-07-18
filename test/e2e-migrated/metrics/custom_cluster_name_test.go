@@ -69,10 +69,10 @@ func TestCustomClusterName(t *testing.T) {
 
 		Expect(suite.K8sClient.Get(context.Background(), kitkyma.TelemetryName, &telemetry)).Should(Succeed()) //nolint:usetesting // Remove ctx from Get
 		telemetry.Spec.Enrichments.Cluster = &operatorv1alpha1.Cluster{}
+
 		Eventually(func(g Gomega) {
 			Expect(suite.K8sClient.Update(context.Background(), &telemetry)).To(Succeed()) //nolint:usetesting // Remove ctx from Update
 		}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-
 	})
 	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
