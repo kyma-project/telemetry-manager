@@ -33,6 +33,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 	var (
 		mockNs           = suite.ID()
 		pipelineName     = suite.ID()
+		backend          *kitbackend.Backend
 		backendExportURL string
 		overrides        *corev1.ConfigMap
 		now              time.Time
@@ -42,7 +43,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		backend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsFluentBit)
+		backend = kitbackend.New(mockNs, kitbackend.SignalTypeLogsFluentBit)
 		objs = append(objs, backend.K8sObjects()...)
 		backendExportURL = backend.ExportURL(suite.ProxyClient)
 
@@ -108,7 +109,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 		})
 
 		It("Should have a log backend running", func() {
-			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
+			assert.BackendReachable(GinkgoT(), backend)
 		})
 
 		It("Should have INFO level logs in the backend", func() {

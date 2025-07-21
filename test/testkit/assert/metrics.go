@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
@@ -122,4 +123,16 @@ func MetricPipelineConditionReasonsTransition(t testkit.T, pipelineName, condTyp
 
 		fmt.Fprintf(GinkgoWriter, "Transitioned to [%s]%s\n", currCond.Status, currCond.Reason)
 	}
+}
+
+//nolint:dupl // TODO: Find a generic approach to merge this helper function with the other ones for the other telemetry types
+func MetricPipelineSelfMonitorIsHealthy(t testkit.T, k8sClient client.Client, pipelineName string) {
+	t.Helper()
+
+	Eventually(func(g Gomega) {
+		var pipeline telemetryv1alpha1.MetricPipeline
+		key := types.NamespacedName{Name: pipelineName}
+		g.Expect(k8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
+		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeFlowHealthy)).To(BeTrueBecause("Flow not healthy"))
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }

@@ -8,7 +8,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	. "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
@@ -30,6 +29,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Order
 		httpsAnnotatedMetricProducerName = suite.IDWithSuffix("producer-https")
 		httpAnnotatedMetricProducerName  = suite.IDWithSuffix("producer-http")
 		unannotatedMetricProducerName    = suite.IDWithSuffix("producer")
+		backend                          *kitbackend.Backend
 	)
 	var backendExportURL string
 
@@ -39,7 +39,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Order
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 		// Mocks namespace objects
-		backend := kitbackend.New(mockNs, kitbackend.SignalTypeMetrics)
+		backend = kitbackend.New(mockNs, kitbackend.SignalTypeMetrics)
 		objs = append(objs, backend.K8sObjects()...)
 		backendExportURL = backend.ExportURL(suite.ProxyClient)
 
@@ -87,7 +87,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Order
 		})
 
 		It("Should have a metrics backend running", func() {
-			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Name: kitbackend.DefaultName, Namespace: mockNs})
+			assert.BackendReachable(GinkgoT(), backend)
 		})
 
 		Context("Verify metric scraping works with annotating pods and services", Ordered, func() {

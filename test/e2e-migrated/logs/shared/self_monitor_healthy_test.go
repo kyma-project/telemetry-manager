@@ -18,7 +18,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestSelfMonitorHappyPath_OTel(t *testing.T) {
+func TestSelfMonitorHealthy_OTel(t *testing.T) {
 	tests := []struct {
 		label               string
 		inputBuilder        func(includeNs string) telemetryv1alpha1.LogPipelineInput
@@ -87,13 +87,12 @@ func TestSelfMonitorHappyPath_OTel(t *testing.T) {
 			}
 
 			assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
-
-			assert.SelfMonitorIsHealthyForPipeline(t, suite.K8sClient, pipelineName)
+			assert.LogPipelineSelfMonitorIsHealthy(t, suite.K8sClient, pipelineName)
 		})
 	}
 }
 
-func TestSelfMonitorHappyPath_FluentBit(t *testing.T) {
+func TestSelfMonitorHealthy_FluentBit(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelFluentBit)
 
 	var (
@@ -129,6 +128,5 @@ func TestSelfMonitorHappyPath_FluentBit(t *testing.T) {
 	assert.DeploymentReady(t, kitkyma.SelfMonitorName)
 	assert.FluentBitLogPipelineHealthy(t, pipelineName)
 	assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
-
-	assert.SelfMonitorIsHealthyForPipeline(t, suite.K8sClient, pipelineName)
+	assert.LogPipelineSelfMonitorIsHealthy(t, suite.K8sClient, pipelineName)
 }
