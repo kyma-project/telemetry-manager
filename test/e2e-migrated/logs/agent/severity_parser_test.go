@@ -12,7 +12,7 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -27,6 +27,22 @@ func TestSeverityParser(t *testing.T) {
 		genNs        = uniquePrefix("gen")
 	)
 
+	levelINFOScenario := map[string]string{
+		"scenario": "level-info",
+		"level":    "INFO",
+	}
+	levelWarningScenario := map[string]string{
+		"scenario": "level-warning",
+		"level":    "warning",
+	}
+	logLevelScenario := map[string]string{
+		"scenario":  "log.level",
+		"log.level": "WARN",
+	}
+	noLevelScenario := map[string]string{
+		"scenario": "no-level",
+	}
+
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
@@ -38,15 +54,10 @@ func TestSeverityParser(t *testing.T) {
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
-		stdloggen.NewDeployment(
-			genNs,
-			stdloggen.AppendLogLines(
-				`{"scenario": "levelAndINFO", "level": "INFO"}`,
-				`{"scenario": "levelAndWarning", "level": "warning"}`,
-				`{"scenario": "log.level", "log.level":"WARN"}`,
-				`{"scenario": "noLevel"}`,
-			),
-		).K8sObject(),
+		stdoutloggen.NewDeploymentWithName(levelINFOScenario["scenario"], genNs, stdoutloggen.WithFields(levelINFOScenario)).K8sObject(),
+		stdoutloggen.NewDeploymentWithName(levelWarningScenario["scenario"], genNs, stdoutloggen.WithFields(levelWarningScenario)).K8sObject(),
+		stdoutloggen.NewDeploymentWithName(logLevelScenario["scenario"], genNs, stdoutloggen.WithFields(logLevelScenario)).K8sObject(),
+		stdoutloggen.NewDeploymentWithName(noLevelScenario["scenario"], genNs, stdoutloggen.WithFields(noLevelScenario)).K8sObject(),
 		&pipeline,
 	}
 	resources = append(resources, backend.K8sObjects()...)
@@ -63,22 +74,22 @@ func TestSeverityParser(t *testing.T) {
 
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatLogs(ContainElement(SatisfyAll(
-			HaveAttributes(HaveKeyWithValue("scenario", "levelAndINFO")),
+			HaveAttributes(HaveKeyWithValue("scenario", "level-info")),
 			HaveSeverityNumber(Equal(9)),
 			HaveSeverityText(Equal("INFO")),
 			HaveAttributes(Not(HaveKey("level"))),
 		))),
-		"Scenario levelAndINFO should parse level attribute and remove it",
+		"Scenario level-info should parse level attribute and remove it",
 	)
 
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatLogs(ContainElement(SatisfyAll(
-			HaveAttributes(HaveKeyWithValue("scenario", "levelAndWarning")),
+			HaveAttributes(HaveKeyWithValue("scenario", "level-warning")),
 			HaveSeverityNumber(Equal(13)),
 			HaveSeverityText(Equal("warning")),
 			HaveAttributes(Not(HaveKey("level"))),
 		))),
-		"Scenario levelAndWarning should parse level attribute and remove it",
+		"Scenario level-warning should parse level attribute and remove it",
 	)
 
 	assert.BackendDataEventuallyMatches(t, backend,
@@ -92,7 +103,7 @@ func TestSeverityParser(t *testing.T) {
 
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatLogs(ContainElement(SatisfyAll(
-			HaveLogBody(Equal(stdloggen.DefaultLine)),
+			HaveAttributes(HaveKeyWithValue("scenario", "no-level")),
 			HaveSeverityNumber(Equal(0)), // default value
 			HaveSeverityText(BeEmpty()),
 		))),
