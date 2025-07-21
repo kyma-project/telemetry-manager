@@ -22,7 +22,7 @@ func TestSinglePipelineV1Beta1(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelExperimental)
 
 	var (
-		uniquePrefix = unique.Prefix()
+		uniquePrefix = unique.Prefix("traces")
 		pipelineName = uniquePrefix()
 		backendNs    = uniquePrefix("backend")
 		genNs        = uniquePrefix("gen")
