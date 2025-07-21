@@ -53,10 +53,10 @@ func TestSeverityParser(t *testing.T) {
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
-		stdoutloggen.NewDeploymentWithName(levelINFOScenario["scenario"], genNs, stdoutloggen.WithFields(levelINFOScenario)).K8sObject(),
-		stdoutloggen.NewDeploymentWithName(levelWarningScenario["scenario"], genNs, stdoutloggen.WithFields(levelWarningScenario)).K8sObject(),
-		stdoutloggen.NewDeploymentWithName(logLevelScenario["scenario"], genNs, stdoutloggen.WithFields(logLevelScenario)).K8sObject(),
-		stdoutloggen.NewDeploymentWithName(defaultScenario["scenario"], genNs, stdoutloggen.WithFields(defaultScenario)).K8sObject(),
+		stdoutloggen.NewDeployment(genNs, stdoutloggen.WithFields(levelINFOScenario)).WithName(levelINFOScenario["scenario"]).K8sObject(),
+		stdoutloggen.NewDeployment(genNs, stdoutloggen.WithFields(levelWarningScenario)).WithName(levelWarningScenario["scenario"]).K8sObject(),
+		stdoutloggen.NewDeployment(genNs, stdoutloggen.WithFields(logLevelScenario)).WithName(logLevelScenario["scenario"]).K8sObject(),
+		stdoutloggen.NewDeployment(genNs, stdoutloggen.WithFields(defaultScenario)).WithName(defaultScenario["scenario"]).K8sObject(),
 		&pipeline,
 	}
 	resources = append(resources, backend.K8sObjects()...)

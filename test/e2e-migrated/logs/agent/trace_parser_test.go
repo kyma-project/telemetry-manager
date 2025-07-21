@@ -61,11 +61,11 @@ func TestTraceParser(t *testing.T) {
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
-		stdoutloggen.NewDeploymentWithName(traceIdFullOnlyScenario["scenario"], genNs, stdoutloggen.WithFields(traceIdFullOnlyScenario)).K8sObject(),
-		stdoutloggen.NewDeploymentWithName(traceparentOnlyScenario["scenario"], genNs, stdoutloggen.WithFields(traceparentOnlyScenario)).K8sObject(),
-		stdoutloggen.NewDeploymentWithName(traceIdPartialOnlyScenario["scenario"], genNs, stdoutloggen.WithFields(traceIdPartialOnlyScenario)).K8sObject(),
-		stdoutloggen.NewDeploymentWithName(traceIdAndTraceparentScenario["scenario"], genNs, stdoutloggen.WithFields(traceIdAndTraceparentScenario)).K8sObject(),
-		stdoutloggen.NewDeploymentWithName(defaultScenario["scenario"], genNs, stdoutloggen.WithFields(defaultScenario)).K8sObject(),
+		stdoutloggen.NewDeployment(genNs, stdoutloggen.WithFields(traceIdFullOnlyScenario)).WithName(traceIdFullOnlyScenario["scenario"]).K8sObject(),
+		stdoutloggen.NewDeployment(genNs, stdoutloggen.WithFields(traceparentOnlyScenario)).WithName(traceparentOnlyScenario["scenario"]).K8sObject(),
+		stdoutloggen.NewDeployment(genNs, stdoutloggen.WithFields(traceIdPartialOnlyScenario)).WithName(traceIdPartialOnlyScenario["scenario"]).K8sObject(),
+		stdoutloggen.NewDeployment(genNs, stdoutloggen.WithFields(traceIdAndTraceparentScenario)).WithName(traceIdAndTraceparentScenario["scenario"]).K8sObject(),
+		stdoutloggen.NewDeployment(genNs, stdoutloggen.WithFields(defaultScenario)).WithName(defaultScenario["scenario"]).K8sObject(),
 		&pipeline,
 	}
 	resources = append(resources, backend.K8sObjects()...)
