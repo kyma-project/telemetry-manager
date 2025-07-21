@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -123,9 +122,9 @@ func TestRuntimeInput(t *testing.T) {
 	resources = append(resources, createPodsWithVolume(pvName, pvcName, podMountingPVCName, podMountingEmptyDirName, podNs)...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(resources...))
+		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 	})
-	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	t.Log("Resources should exist and be operational")
 	assert.MetricPipelineHealthy(t, pipelineNameA)

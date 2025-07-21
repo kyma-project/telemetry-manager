@@ -34,6 +34,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Order
 		mockNs              = suite.ID()
 		pipelineName        = suite.ID()
 		logBackend          *kitbackend.Backend
+		traceBackend        *kitbackend.Backend
 		logBackendExportURL string
 		metricPodURL        string
 	)
@@ -61,7 +62,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Order
 
 		// Deploy a TracePipeline sending spans to the trace backend to verify that
 		// the istio noise filter is applied
-		traceBackend := kitbackend.New(mockNs, kitbackend.SignalTypeTraces, kitbackend.WithName("traces"))
+		traceBackend = kitbackend.New(mockNs, kitbackend.SignalTypeTraces, kitbackend.WithName("traces"))
 		objs = append(objs, traceBackend.K8sObjects()...)
 
 		tracePipeline := testutils.NewTracePipelineBuilder().
@@ -84,8 +85,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Order
 			Expect(kitk8s.CreateObjects(GinkgoT(), k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a log backend running", func() {
-			assert.DeploymentReady(GinkgoT(), logBackend.NamespacedName())
+		It("Should have reachable backends", func() {
+			assert.BackendReachable(GinkgoT(), logBackend)
+			assert.BackendReachable(GinkgoT(), traceBackend)
 		})
 
 		It("Should have sample app running", func() {

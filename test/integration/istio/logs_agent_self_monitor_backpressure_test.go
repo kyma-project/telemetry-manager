@@ -24,11 +24,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsAgentBackpressur
 	var (
 		mockNs       = "istio-permissive-mtls"
 		pipelineName = suite.ID()
+		backend      *kitbackend.Backend
 	)
 
 	makeResources := func() []client.Object {
 
-		backend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithAbortFaultInjection(85))
+		backend = kitbackend.New(mockNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithAbortFaultInjection(85))
 
 		logProducer := floggen.NewDeployment(mockNs).WithReplicas(3)
 
@@ -69,7 +70,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsAgentBackpressur
 		})
 
 		It("Should have a log backend running", func() {
-			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
+			assert.BackendReachable(GinkgoT(), backend)
 		})
 
 		It("Should have a log producer running", func() {

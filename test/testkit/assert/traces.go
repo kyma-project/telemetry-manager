@@ -2,7 +2,6 @@ package assert
 
 import (
 	"fmt"
-	"net/http"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -10,40 +9,39 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/test/testkit"
-	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-func TracesFromNamespaceDelivered(proxyClient *apiserverproxy.Client, backendExportURL, namespace string) {
-	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(backendExportURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(
-			HaveFlatTraces(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)))),
-		))
-		err = resp.Body.Close()
-		g.Expect(err).NotTo(HaveOccurred())
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+func TracesFromNamespaceDelivered(t testkit.T, backend *kitbackend.Backend, namespace string) {
+	t.Helper()
+
+	BackendDataEventuallyMatches(
+		t,
+		backend,
+		HaveFlatTraces(ContainElement(HaveResourceAttributes(
+			HaveKeyWithValue("k8s.namespace.name", namespace),
+		))),
+	)
 }
 
-func TracesFromNamespacesNotDelivered(proxyClient *apiserverproxy.Client, backendExportURL string, namespaces []string) {
-	Consistently(func(g Gomega) {
-		resp, err := proxyClient.Get(backendExportURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(
-			HaveFlatTraces(Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", BeElementOf(namespaces)))))),
-		))
-		err = resp.Body.Close()
-		g.Expect(err).NotTo(HaveOccurred())
-	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+func TracesFromNamespacesNotDelivered(t testkit.T, backend *kitbackend.Backend, namespaces []string) {
+	t.Helper()
+
+	BackendDataConsistentlyMatches(
+		t,
+		backend,
+		HaveFlatTraces(Not(ContainElement(HaveResourceAttributes(
+			HaveKeyWithValue("k8s.namespace.name", BeElementOf(namespaces)),
+		)))),
+	)
 }
 
 func TracePipelineHealthy(t testkit.T, pipelineName string) {
@@ -101,4 +99,16 @@ func TracePipelineConditionReasonsTransition(t testkit.T, pipelineName, condType
 
 		fmt.Fprintf(GinkgoWriter, "Transitioned to [%s]%s\n", currCond.Status, currCond.Reason)
 	}
+}
+
+//nolint:dupl // TODO: Find a generic approach to merge this helper function with the other ones for the other telemetry types
+func TracePipelineSelfMonitorIsHealthy(t testkit.T, k8sClient client.Client, pipelineName string) {
+	t.Helper()
+
+	Eventually(func(g Gomega) {
+		var pipeline telemetryv1alpha1.TracePipeline
+		key := types.NamespacedName{Name: pipelineName}
+		g.Expect(k8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
+		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeFlowHealthy)).To(BeTrueBecause("Flow not healthy"))
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }

@@ -3,7 +3,7 @@ package upgrade
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -43,7 +43,7 @@ func TestLogsUpgrade(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Run("before upgrade", func(t *testing.T) {
-		require.NoError(t, kitk8s.CreateObjects(t, resources...))
+		Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 		assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 		assert.FluentBitLogPipelineHealthy(t, pipelineName)

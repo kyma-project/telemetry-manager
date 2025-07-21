@@ -3,7 +3,7 @@ package shared
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -74,11 +74,11 @@ func TestSinglePipeline_OTel(t *testing.T) {
 			resources = append(resources, backend.K8sObjects()...)
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(resources...))
+				Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 			})
-			require.NoError(t, kitk8s.CreateObjects(t, resources...))
+			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-			assert.DeploymentReady(t, backend.NamespacedName())
+			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.LogGatewayName)
 
 			if tc.expectAgent {
@@ -117,15 +117,13 @@ func TestSinglePipeline_FluentBit(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(resources...))
+		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 	})
-	require.NoError(t, kitk8s.CreateObjects(t, resources...))
+	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-	assert.DeploymentReady(t, backend.NamespacedName())
+	assert.BackendReachable(t, backend)
 	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
-
 	assert.FluentBitLogPipelineHealthy(t, pipelineName)
 	assert.LogPipelineUnsupportedMode(t, pipelineName, false)
-
 	assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
 }

@@ -71,6 +71,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio, suite.
 		pipelineName = suite.ID()
 
 		metricBackend *kitbackend.Backend
+		logBackend    *kitbackend.Backend
 	)
 
 	makeResources := func() []client.Object {
@@ -95,7 +96,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio, suite.
 
 		// Deploy a LogPipeline and an app sending OTLP logs to the log gateway
 		// to make sure that the istio noise filter is applied to app-to-gateway communication
-		logBackend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithName("logs"))
+		logBackend = kitbackend.New(mockNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithName("logs"))
 		objs = append(objs, logBackend.K8sObjects()...)
 
 		logPipeline := testutils.NewLogPipelineBuilder().
@@ -127,8 +128,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio, suite.
 			assert.DaemonSetReady(GinkgoT(), kitkyma.MetricAgentName)
 		})
 
-		It("Should have a metrics backend running", func() {
-			assert.DeploymentReady(GinkgoT(), metricBackend.NamespacedName())
+		It("Should have reachable backends", func() {
+			assert.BackendReachable(GinkgoT(), metricBackend)
+			assert.BackendReachable(GinkgoT(), logBackend)
 		})
 
 		It("Should have a running metric agent daemonset", func() {

@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -52,12 +51,12 @@ func TestDisabledInput_OTel(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(resources...))
+		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 	})
-	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
+	assert.BackendReachable(t, backend)
 	assert.DeploymentReady(t, kitkyma.LogGatewayName)
-	assert.DeploymentReady(t, backend.NamespacedName())
 	assert.OTelLogPipelineHealthy(t, pipelineName)
 
 	// If Application input is disabled, THEN the log agent must not be deployed
@@ -65,7 +64,7 @@ func TestDisabledInput_OTel(t *testing.T) {
 		var daemonSet appsv1.DaemonSet
 		err := suite.K8sClient.Get(t.Context(), kitkyma.LogAgentName, &daemonSet)
 		g.Expect(apierrors.IsNotFound(err)).To(BeTrue(), "Log agent DaemonSet must not exist")
-	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).To(Succeed())
 
 	// If OTLP input is disabled, THEN the logs pushed to the gateway should not be sent to the backend
 	assert.BackendDataConsistentlyMatches(t, backend, HaveFlatLogs(BeEmpty()))
@@ -98,13 +97,13 @@ func TestDisabledInput_FluentBit(t *testing.T) {
 	}
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(resources...))
+		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 	})
-	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	Eventually(func(g Gomega) {
 		var daemonSet appsv1.DaemonSet
 		err := suite.K8sClient.Get(t.Context(), kitkyma.FluentBitDaemonSetName, &daemonSet)
 		g.Expect(apierrors.IsNotFound(err)).To(BeTrue(), "Fluent Bit DaemonSet must not exist")
-	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).To(Succeed())
 }

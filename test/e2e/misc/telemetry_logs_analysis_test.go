@@ -9,7 +9,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/format"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -36,24 +35,23 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 	)
 
 	var (
-		traceBackendURL string
-
-		metricBackend           *kitbackend.Backend
 		logBackend              *kitbackend.Backend
+		metricBackend           *kitbackend.Backend
+		traceBackend            *kitbackend.Backend
 		otelCollectorLogBackend *kitbackend.Backend
 		fluentBitLogBackend     *kitbackend.Backend
 		selfMonitorLogBackend   *kitbackend.Backend
-		namespace               = suite.ID()
-		gomegaMaxLength         = format.MaxLength
-		logLevelsRegexp         = "ERROR|error|WARNING|warning|WARN|warn"
+
+		namespace       = suite.ID()
+		gomegaMaxLength = format.MaxLength
+		logLevelsRegexp = "ERROR|error|WARNING|warning|WARN|warn"
 	)
 
 	makeResourcesTracePipeline := func(backendName string) []client.Object {
 		var objs []client.Object
 
 		// backend
-		traceBackend := kitbackend.New(namespace, kitbackend.SignalTypeTraces, kitbackend.WithName(backendName))
-		traceBackendURL = traceBackend.ExportURL(suite.ProxyClient)
+		traceBackend = kitbackend.New(namespace, kitbackend.SignalTypeTraces, kitbackend.WithName(backendName))
 		objs = append(objs, traceBackend.K8sObjects()...)
 
 		// pipeline
@@ -156,14 +154,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 			assert.DeploymentReady(GinkgoT(), kitkyma.TraceGatewayName)
 		})
 
-		It("Should have running backends", func() {
-			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Namespace: namespace, Name: logBackendName})
-			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Namespace: namespace, Name: metricBackendName})
-			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Namespace: namespace, Name: traceBackendName})
-
-			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Namespace: namespace, Name: otelCollectorLogBackendName})
-			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Namespace: namespace, Name: fluentBitLogBackendName})
-			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Namespace: namespace, Name: selfMonitorLogBackendName})
+		It("Should have reachable backends", func() {
+			assert.BackendReachable(GinkgoT(), logBackend)
+			assert.BackendReachable(GinkgoT(), metricBackend)
+			assert.BackendReachable(GinkgoT(), traceBackend)
+			assert.BackendReachable(GinkgoT(), otelCollectorLogBackend)
+			assert.BackendReachable(GinkgoT(), fluentBitLogBackend)
+			assert.BackendReachable(GinkgoT(), selfMonitorLogBackend)
 		})
 
 		It("Should have running agents", func() {
@@ -186,7 +183,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 		})
 
 		It("Should push traces successfully", func() {
-			assert.TracesFromNamespaceDelivered(suite.ProxyClient, traceBackendURL, namespace)
+			assert.TracesFromNamespaceDelivered(GinkgoT(), traceBackend, namespace)
 		})
 
 		It("Should collect logs successfully", func() {

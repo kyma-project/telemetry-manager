@@ -1,4 +1,4 @@
-module github.com/kyma-project/telemetry-manager/docs/user/integration/sample-app
+module github.com/kyma-project/telemetry-manager/dependencies/sample-app
 
 go 1.24.5
 
