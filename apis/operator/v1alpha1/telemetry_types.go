@@ -184,7 +184,7 @@ type EnrichmentSpec struct {
 	// This field is optional.
 	ExtractPodLabels []PodLabel `json:"extractPodLabels,omitempty"`
 
-	// Cluster provides user-defined cluster definitions to be used in resource attribute enrichment.
+	// Cluster provides user-defined cluster definitions to enrich resource attributes.
 	// +optional
 	Cluster *Cluster `json:"cluster,omitempty"`
 }
@@ -204,7 +204,7 @@ type PodLabel struct {
 	KeyPrefix string `json:"keyPrefix,omitempty"`
 }
 
-// Cluster allows for a custom definition of cluster details to use for telemetry resource attributes.
+// Use Cluster to define custom cluster details to enrich your telemetry resource attributes.
 type Cluster struct {
 	// Name specifies a custom cluster name for the resource attribute `k8s.cluster.name`.
 	Name string `json:"name"`
