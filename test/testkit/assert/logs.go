@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
@@ -202,5 +203,17 @@ func LogPipelineUnsupportedMode(t testkit.T, pipelineName string, isUnsupportedM
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(suite.K8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
 		g.Expect(*pipeline.Status.UnsupportedMode).To(Equal(isUnsupportedMode))
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+}
+
+//nolint:dupl // TODO: Find a generic approach to merge this helper function with the other ones for the other telemetry types
+func LogPipelineSelfMonitorIsHealthy(t testkit.T, k8sClient client.Client, pipelineName string) {
+	t.Helper()
+
+	Eventually(func(g Gomega) {
+		var pipeline telemetryv1alpha1.LogPipeline
+		key := types.NamespacedName{Name: pipelineName}
+		g.Expect(k8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
+		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeFlowHealthy)).To(BeTrueBecause("Flow not healthy"))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }

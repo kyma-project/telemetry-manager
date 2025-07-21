@@ -9,7 +9,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/format"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -155,14 +154,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 			assert.DeploymentReady(GinkgoT(), kitkyma.TraceGatewayName)
 		})
 
-		It("Should have running backends", func() {
-			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Namespace: namespace, Name: logBackendName})
-			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Namespace: namespace, Name: metricBackendName})
-			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Namespace: namespace, Name: traceBackendName})
-
-			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Namespace: namespace, Name: otelCollectorLogBackendName})
-			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Namespace: namespace, Name: fluentBitLogBackendName})
-			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Namespace: namespace, Name: selfMonitorLogBackendName})
+		It("Should have reachable backends", func() {
+			assert.BackendReachable(GinkgoT(), logBackend)
+			assert.BackendReachable(GinkgoT(), metricBackend)
+			assert.BackendReachable(GinkgoT(), traceBackend)
+			assert.BackendReachable(GinkgoT(), otelCollectorLogBackend)
+			assert.BackendReachable(GinkgoT(), fluentBitLogBackend)
+			assert.BackendReachable(GinkgoT(), selfMonitorLogBackend)
 		})
 
 		It("Should have running agents", func() {

@@ -25,11 +25,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsGatewayOutage), 
 	var (
 		mockNs       = "istio-permissive-mtls"
 		pipelineName = suite.ID()
+		backend      *kitbackend.Backend
 	)
 
 	makeResources := func() []client.Object {
 
-		backend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithReplicas(0))
+		backend = kitbackend.New(mockNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithReplicas(0))
 
 		logGenerator := telemetrygen.NewDeployment(mockNs, telemetrygen.SignalTypeLogs,
 			telemetrygen.WithRate(800),
@@ -69,10 +70,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsGatewayOutage), 
 
 		It("Should have a running self-monitor", func() {
 			assert.DeploymentReady(GinkgoT(), kitkyma.SelfMonitorName)
-		})
-
-		It("Should have a log backend running", func() {
-			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
 		})
 
 		It("Should have a telemetrygen running", func() {
