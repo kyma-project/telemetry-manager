@@ -97,9 +97,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Order
 			assert.DeploymentReady(GinkgoT(), kitkyma.MetricGatewayName)
 		})
 
-		It("Should have a metrics backend running", func() {
-			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})
-			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Name: kitbackend.DefaultName, Namespace: istiofiedBackendNs})
+		It("Should have reachable backends", func() {
+			assert.BackendReachable(GinkgoT(), backend)
+			assert.BackendReachable(GinkgoT(), istiofiedBackend)
 		})
 
 		It("Should push metrics successfully", func() {

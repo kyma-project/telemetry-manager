@@ -25,13 +25,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsFluentBitOutage)
 	var (
 		mockNs       = suite.ID()
 		pipelineName = suite.ID()
+		backend      *kitbackend.Backend
 	)
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs, kitk8s.WithIstioInjection()).K8sObject())
 
-		backend := kitbackend.New(mockNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithReplicas(0))
+		backend = kitbackend.New(mockNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithReplicas(0))
 
 		logProducer := floggen.NewDeployment(mockNs).WithReplicas(2)
 
@@ -66,10 +67,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsFluentBitOutage)
 
 		It("Should have a running log agent daemonset", func() {
 			assert.DaemonSetReady(GinkgoT(), kitkyma.FluentBitDaemonSetName)
-		})
-
-		It("Should have a log backend running", func() {
-			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Namespace: mockNs, Name: kitbackend.DefaultName})
 		})
 
 		It("Should have a log producer running", func() {
