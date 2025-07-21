@@ -78,7 +78,7 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 | Parameter | Type | Description |
 | ---- | ----------- | ---- |
 | **enrichments**  | object | Enrichments specifies optional enrichments for the telemetry data. This field is optional. |
-| **enrichments.&#x200b;cluster**  | object | Cluster provides user-defined cluster definitions to be used in resource attribute enrichment. |
+| **enrichments.&#x200b;cluster**  | object | Cluster provides user-defined cluster definitions to enrich resource attributes. |
 | **enrichments.&#x200b;cluster.&#x200b;name** (required) | string | Name specifies a custom cluster name for the resource attribute `k8s.cluster.name`. |
 | **enrichments.&#x200b;extractPodLabels**  | \[\]object | ExtractPodLabels specifies the list of Pod labels to be used for enrichment. This field is optional. |
 | **enrichments.&#x200b;extractPodLabels.&#x200b;key**  | string | Key specifies the exact label key to be used. This field is optional. |

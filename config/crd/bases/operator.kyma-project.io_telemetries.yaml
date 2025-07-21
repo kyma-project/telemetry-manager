@@ -55,7 +55,7 @@ spec:
                   This field is optional.
                 properties:
                   cluster:
-                    description: Cluster provides user-defined cluster definitions to be used in resource attribute enrichment.
+                    description: Cluster provides user-defined cluster definitions to enrich resource attributes.
                     properties:
                       name:
                         description: Name specifies a custom cluster name for the resource attribute `k8s.cluster.name`.
