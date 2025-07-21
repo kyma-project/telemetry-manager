@@ -21,27 +21,26 @@ func TestSeverityParser(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelLogAgent)
 
 	var (
-		uniquePrefix = unique.Prefix()
-		pipelineName = uniquePrefix()
-		backendNs    = uniquePrefix("backend")
-		genNs        = uniquePrefix("gen")
+		uniquePrefix      = unique.Prefix()
+		pipelineName      = uniquePrefix()
+		backendNs         = uniquePrefix("backend")
+		genNs             = uniquePrefix("gen")
+		levelINFOScenario = map[string]string{
+			"scenario": "level-info",
+			"level":    "INFO",
+		}
+		levelWarningScenario = map[string]string{
+			"scenario": "level-warning",
+			"level":    "warning",
+		}
+		logLevelScenario = map[string]string{
+			"scenario":  "log.level",
+			"log.level": "WARN",
+		}
+		defaultScenario = map[string]string{
+			"scenario": "default",
+		}
 	)
-
-	levelINFOScenario := map[string]string{
-		"scenario": "level-info",
-		"level":    "INFO",
-	}
-	levelWarningScenario := map[string]string{
-		"scenario": "level-warning",
-		"level":    "warning",
-	}
-	logLevelScenario := map[string]string{
-		"scenario":  "log.level",
-		"log.level": "WARN",
-	}
-	noLevelScenario := map[string]string{
-		"scenario": "no-level",
-	}
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
 	pipeline := testutils.NewLogPipelineBuilder().
@@ -57,7 +56,7 @@ func TestSeverityParser(t *testing.T) {
 		stdoutloggen.NewDeploymentWithName(levelINFOScenario["scenario"], genNs, stdoutloggen.WithFields(levelINFOScenario)).K8sObject(),
 		stdoutloggen.NewDeploymentWithName(levelWarningScenario["scenario"], genNs, stdoutloggen.WithFields(levelWarningScenario)).K8sObject(),
 		stdoutloggen.NewDeploymentWithName(logLevelScenario["scenario"], genNs, stdoutloggen.WithFields(logLevelScenario)).K8sObject(),
-		stdoutloggen.NewDeploymentWithName(noLevelScenario["scenario"], genNs, stdoutloggen.WithFields(noLevelScenario)).K8sObject(),
+		stdoutloggen.NewDeploymentWithName(defaultScenario["scenario"], genNs, stdoutloggen.WithFields(defaultScenario)).K8sObject(),
 		&pipeline,
 	}
 	resources = append(resources, backend.K8sObjects()...)
@@ -103,7 +102,7 @@ func TestSeverityParser(t *testing.T) {
 
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatLogs(ContainElement(SatisfyAll(
-			HaveAttributes(HaveKeyWithValue("scenario", "no-level")),
+			HaveAttributes(HaveKeyWithValue("scenario", "default")),
 			HaveSeverityNumber(Equal(0)), // default value
 			HaveSeverityText(BeEmpty()),
 		))),
