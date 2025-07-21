@@ -28,7 +28,7 @@ func TestSinglePipelineV1Beta1_OTel(t *testing.T) {
 		expectAgent         bool
 	}{
 		{
-			label: suite.LabelLogAgentExperimental,
+			label: suite.LabelExperimental,
 			input: testutils.BuildLogPipelineV1Beta1RuntimeInput(),
 			logGeneratorBuilder: func(ns string) client.Object {
 				return stdloggen.NewDeployment(ns).K8sObject()
@@ -36,7 +36,7 @@ func TestSinglePipelineV1Beta1_OTel(t *testing.T) {
 			expectAgent: true,
 		},
 		{
-			label: suite.LabelLogGatewayExperimental,
+			label: suite.LabelExperimental,
 			input: testutils.BuildLogPipelineV1Beta1OTLPInput(),
 			logGeneratorBuilder: func(ns string) client.Object {
 				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
@@ -106,7 +106,7 @@ func TestSinglePipelineV1Beta1_OTel(t *testing.T) {
 }
 
 func TestSinglePipelineV1Beta1_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBitExperimental)
+	suite.RegisterTestCase(t, suite.LabelExperimental)
 
 	var (
 		uniquePrefix = unique.Prefix()
