@@ -103,28 +103,23 @@ func sanitizeSpecID(filePath string) string {
 
 const (
 	// Logs labels
-	LabelLogAgent               = "log-agent"
-	LabelLogGateway             = "log-gateway"
-	LabelFluentBit              = "fluent-bit"
-	LabelLogAgentExperimental   = "log-agent-experimental"
-	LabelLogGatewayExperimental = "log-gateway-experimental"
-	LabelFluentBitExperimental  = "fluent-bit-experimental"
-	LabelOTelMaxPipeline        = "otel-max-pipeline"
-	LabelFluentBitMaxPipeline   = "fluent-bit-max-pipeline"
-	LabelLogsMaxPipeline        = "logs-max-pipeline"
+	LabelLogAgent             = "log-agent"
+	LabelLogGateway           = "log-gateway"
+	LabelFluentBit            = "fluent-bit"
+	LabelOTelMaxPipeline      = "otel-max-pipeline"
+	LabelFluentBitMaxPipeline = "fluent-bit-max-pipeline"
+	LabelLogsMaxPipeline      = "logs-max-pipeline"
 
 	// Metrics labels
-	LabelMetrics             = "metrics"
-	LabelMetricsSetA         = "metrics-set-a"
-	LabelMetricsSetB         = "metrics-set-b"
-	LabelMetricsSetC         = "metrics-set-c"
-	LabelMetricsExperimental = "metrics-experimental"
-	LabelMetricsMaxPipeline  = "metrics-max-pipeline"
+	LabelMetrics            = "metrics"
+	LabelMetricsSetA        = "metrics-set-a"
+	LabelMetricsSetB        = "metrics-set-b"
+	LabelMetricsSetC        = "metrics-set-c"
+	LabelMetricsMaxPipeline = "metrics-max-pipeline"
 
 	// Traces labels
-	LabelTraces             = "traces"
-	LabelTracesExperimental = "traces-experimental"
-	LabelTracesMaxPipeline  = "traces-max-pipeline"
+	LabelTraces            = "traces"
+	LabelTracesMaxPipeline = "traces-max-pipeline"
 
 	// Telemetry labels
 	LabelTelemetry = "telemetry"

@@ -52,12 +52,6 @@ func TestLogsUpgrade(t *testing.T) {
 	})
 
 	t.Run("after upgrade", func(t *testing.T) {
-		// TODO(TeodorSAP): Delete this block after 1.44 release ---
-		pipelineName = "upgrade"
-		backend = kitbackend.New("upgrade-backend", kitbackend.SignalTypeLogsFluentBit)
-		genNs = "upgrade-gen"
-		// ---
-
 		assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 		assert.FluentBitLogPipelineHealthy(t, pipelineName)
 		assert.BackendReachable(t, backend)
