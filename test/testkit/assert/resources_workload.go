@@ -64,6 +64,7 @@ func PodsHaveContainer(t testkit.T, listOptions client.ListOptions, containerNam
 	t.Helper()
 
 	var pods corev1.PodList
+
 	err := suite.K8sClient.List(t.Context(), &pods, &listOptions)
 	if err != nil {
 		return false, fmt.Errorf("failed to list Pods: %w", err)
@@ -98,6 +99,7 @@ func isDeploymentReady(t testkit.T, name types.NamespacedName) (bool, error) {
 	t.Helper()
 
 	var deployment appsv1.Deployment
+
 	err := suite.K8sClient.Get(t.Context(), name, &deployment)
 	if err != nil {
 		return false, fmt.Errorf("failed to get Deployment %s: %w", name.String(), err)
@@ -115,6 +117,7 @@ func isDaemonSetReady(t testkit.T, name types.NamespacedName) (bool, error) {
 	t.Helper()
 
 	var daemonSet appsv1.DaemonSet
+
 	err := suite.K8sClient.Get(t.Context(), name, &daemonSet)
 	if err != nil {
 		return false, fmt.Errorf("failed to get DaemonSet %s: %w", name.String(), err)
@@ -132,6 +135,7 @@ func isStatefulSetReady(t testkit.T, name types.NamespacedName) (bool, error) {
 	t.Helper()
 
 	var statefulSet appsv1.StatefulSet
+
 	err := suite.K8sClient.Get(t.Context(), name, &statefulSet)
 	if err != nil {
 		return false, fmt.Errorf("failed to get StatefulSet %s: %w", name.String(), err)
@@ -149,6 +153,7 @@ func isJobSuccessful(t testkit.T, name types.NamespacedName) (bool, error) {
 	t.Helper()
 
 	var job batchv1.Job
+
 	err := suite.K8sClient.Get(t.Context(), name, &job)
 	if err != nil {
 		return false, fmt.Errorf("failed to get Job %s: %w", name.String(), err)
@@ -161,6 +166,7 @@ func isPodReady(t testkit.T, name types.NamespacedName) (bool, error) {
 	t.Helper()
 
 	var pod corev1.Pod
+
 	err := suite.K8sClient.Get(t.Context(), name, &pod)
 	if err != nil {
 		return false, fmt.Errorf("failed to get Pod %s: %w", name.String(), err)
@@ -179,6 +185,7 @@ func arePodsReady(t testkit.T, listOptions client.ListOptions) (bool, error) {
 	t.Helper()
 
 	var pods corev1.PodList
+
 	err := suite.K8sClient.List(t.Context(), &pods, &listOptions)
 	if err != nil {
 		return false, fmt.Errorf("failed to list Pods: %w", err)
