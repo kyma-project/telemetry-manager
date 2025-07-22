@@ -67,12 +67,7 @@ jobs:
         shell: bash
         run: kubectl -n kyma-system rollout status deployment telemetry-manager --timeout=90s
 
-      - name: Run ginkgo tests on latest tag
-        shell: bash
-        run: |
-          bin/ginkgo run --junit-report=junit-report-latest-version.xml --tags e2e --flake-attempts=5 --label-filter="upgrade || operational" -v -r test/e2e
-
-      - name: Run vanilla go tests on latest tag
+      - name: Run tests on latest tag
         shell: bash
         run: |
           go test -v -timeout=10m -run=TestLogsUpgrade/before_upgrade ./test/e2e-migrated/upgrade/...
@@ -107,13 +102,7 @@ jobs:
         shell: bash
         run: kubectl -n kyma-system rollout status deployment telemetry-manager --timeout=90s
 
-      - name: Run test on current revision
-        shell: bash
-        run: |
-          make install-tools # delete after the tools via go modules are released
-          bin/ginkgo run --junit-report=junit-report-current-version.xml --tags e2e --flake-attempts=5 --label-filter="upgrade" -v -r test/e2e
-
-      - name: Run vanilla go tests on current revision
+      - name: Run tests on current revision
         shell: bash
         run: |
           go test -v -timeout=10m -run=TestLogsUpgrade/after_upgrade ./test/e2e-migrated/upgrade/...
