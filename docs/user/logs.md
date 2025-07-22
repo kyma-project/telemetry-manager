@@ -521,9 +521,9 @@ metadata:
   name: mesh-default
   namespace: istio-system
 spec:
-  tracing:
-  - providers:
-    - name: "kyma-logs"
+  accessLogging:
+    - providers:
+        - name: kyma-logs
 ```
 
 ## Operations
