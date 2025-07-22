@@ -179,12 +179,6 @@ jobs:
             mode: release
           - name: log-gateway
             mode: release
-          - name: fluent-bit-experimental
-            mode: experimental
-          - name: log-agent-experimental
-            mode: experimental
-          - name: log-gateway-experimental
-            mode: experimental
           - name: logs-max-pipeline
             mode: release
           - name: fluent-bit-max-pipeline
@@ -198,17 +192,16 @@ jobs:
             mode: release
           - name: metrics-set-c
             mode: release
-          - name: metrics-experimental
-            mode: experimental
           - name: metrics-max-pipeline
             mode: release
           # TRACES
           - name: traces
             mode: release
-          - name: traces-experimental
-            mode: experimental
           - name: traces-max-pipeline
             mode: release
+          # OTHER
+          - name: experimental
+            mode: experimental
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
