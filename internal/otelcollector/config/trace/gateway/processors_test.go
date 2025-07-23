@@ -18,17 +18,21 @@ func TestProcessors(t *testing.T) {
 	t.Run("insert cluster attributes processor", func(t *testing.T) {
 		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().Build()}, BuildOptions{
 			ClusterName:   "test-cluster",
+			ClusterUID:    "test-cluster-uid",
 			CloudProvider: "test-cloud-provider",
 		})
 		require.NoError(t, err)
 
-		require.Equal(t, 2, len(collectorConfig.Processors.InsertClusterAttributes.Attributes))
+		require.Equal(t, 3, len(collectorConfig.Processors.InsertClusterAttributes.Attributes))
 		require.Equal(t, "insert", collectorConfig.Processors.InsertClusterAttributes.Attributes[0].Action)
 		require.Equal(t, "k8s.cluster.name", collectorConfig.Processors.InsertClusterAttributes.Attributes[0].Key)
 		require.Equal(t, "test-cluster", collectorConfig.Processors.InsertClusterAttributes.Attributes[0].Value)
 		require.Equal(t, "insert", collectorConfig.Processors.InsertClusterAttributes.Attributes[1].Action)
-		require.Equal(t, "cloud.provider", collectorConfig.Processors.InsertClusterAttributes.Attributes[1].Key)
-		require.Equal(t, "test-cloud-provider", collectorConfig.Processors.InsertClusterAttributes.Attributes[1].Value)
+		require.Equal(t, "k8s.cluster.uid", collectorConfig.Processors.InsertClusterAttributes.Attributes[1].Key)
+		require.Equal(t, "test-cluster-uid", collectorConfig.Processors.InsertClusterAttributes.Attributes[1].Value)
+		require.Equal(t, "insert", collectorConfig.Processors.InsertClusterAttributes.Attributes[2].Action)
+		require.Equal(t, "cloud.provider", collectorConfig.Processors.InsertClusterAttributes.Attributes[2].Key)
+		require.Equal(t, "test-cloud-provider", collectorConfig.Processors.InsertClusterAttributes.Attributes[2].Value)
 	})
 
 	t.Run("memory limit processors", func(t *testing.T) {
