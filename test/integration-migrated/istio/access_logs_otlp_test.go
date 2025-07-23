@@ -28,8 +28,6 @@ import (
 func TestAccessLogsOTLP(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelIstio)
 
-	const sampleAppNs = "istio-permissive-mtls"
-
 	var (
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
@@ -45,8 +43,8 @@ func TestAccessLogsOTLP(t *testing.T) {
 		WithOTLPOutput(testutils.OTLPEndpoint(logBackend.Endpoint())).
 		Build()
 
-	sampleApp := prommetricgen.New(sampleAppNs, prommetricgen.WithName(uniquePrefix("otlp-access-log-emitter")))
-	metricPodURL := suite.ProxyClient.ProxyURLForPod(sampleAppNs, sampleApp.Name(), sampleApp.MetricsEndpoint(), sampleApp.MetricsPort())
+	sampleApp := prommetricgen.New(permissiveNs, prommetricgen.WithName(uniquePrefix("otlp-access-log-emitter")))
+	metricPodURL := suite.ProxyClient.ProxyURLForPod(permissiveNs, sampleApp.Name(), sampleApp.MetricsEndpoint(), sampleApp.MetricsPort())
 
 	tracePipeline := testutils.NewTracePipelineBuilder().
 		WithName(pipelineName).
@@ -73,7 +71,7 @@ func TestAccessLogsOTLP(t *testing.T) {
 
 	listOptions := client.ListOptions{
 		LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "metric-producer"}),
-		Namespace:     sampleAppNs,
+		Namespace:     permissiveNs,
 	}
 	assert.PodsReady(t, listOptions)
 	assert.OTelLogPipelineHealthy(t, pipelineName)
@@ -84,7 +82,9 @@ func TestAccessLogsOTLP(t *testing.T) {
 		resp, err := suite.ProxyClient.Get(metricPodURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed(), "Should invoke the metrics endpoint to generate access logs")
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed(),
+		"Should invoke the metrics endpoint to generate access logs",
+	)
 
 	assert.BackendDataEventuallyMatches(t, logBackend,
 		HaveFlatLogs(ContainElement(SatisfyAll(
