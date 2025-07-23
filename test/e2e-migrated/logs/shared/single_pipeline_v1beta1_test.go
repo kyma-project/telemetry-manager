@@ -22,22 +22,22 @@ import (
 
 func TestSinglePipelineV1Beta1_OTel(t *testing.T) {
 	tests := []struct {
-		label               string
+		prefix              string
 		input               telemetryv1beta1.LogPipelineInput
 		logGeneratorBuilder func(ns string) client.Object
 		expectAgent         bool
 	}{
 		{
-			label: suite.LabelLogAgentExperimental,
-			input: testutils.BuildLogPipelineV1Beta1RuntimeInput(),
+			prefix: "agent",
+			input:  testutils.BuildLogPipelineV1Beta1RuntimeInput(),
 			logGeneratorBuilder: func(ns string) client.Object {
 				return stdloggen.NewDeployment(ns).K8sObject()
 			},
 			expectAgent: true,
 		},
 		{
-			label: suite.LabelLogGatewayExperimental,
-			input: testutils.BuildLogPipelineV1Beta1OTLPInput(),
+			prefix: "gateway",
+			input:  testutils.BuildLogPipelineV1Beta1OTLPInput(),
 			logGeneratorBuilder: func(ns string) client.Object {
 				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
 			},
@@ -45,11 +45,11 @@ func TestSinglePipelineV1Beta1_OTel(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label)
+		t.Run(tc.prefix, func(t *testing.T) {
+			suite.RegisterTestCase(t, suite.LabelExperimental)
 
 			var (
-				uniquePrefix = unique.Prefix(tc.label)
+				uniquePrefix = unique.Prefix("logs", tc.prefix)
 				pipelineName = uniquePrefix("pipeline")
 				genNs        = uniquePrefix("gen")
 				backendNs    = uniquePrefix("backend")
@@ -106,10 +106,10 @@ func TestSinglePipelineV1Beta1_OTel(t *testing.T) {
 }
 
 func TestSinglePipelineV1Beta1_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBitExperimental)
+	suite.RegisterTestCase(t, suite.LabelExperimental)
 
 	var (
-		uniquePrefix = unique.Prefix()
+		uniquePrefix = unique.Prefix("logs")
 		pipelineName = uniquePrefix()
 		genNs        = uniquePrefix("gen")
 		backendNs    = uniquePrefix("backend")
