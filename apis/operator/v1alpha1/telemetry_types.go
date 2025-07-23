@@ -183,6 +183,10 @@ type EnrichmentSpec struct {
 	// ExtractPodLabels specifies the list of Pod labels to be used for enrichment.
 	// This field is optional.
 	ExtractPodLabels []PodLabel `json:"extractPodLabels,omitempty"`
+
+	// Cluster provides user-defined cluster definitions to enrich resource attributes.
+	// +optional
+	Cluster *Cluster `json:"cluster,omitempty"`
 }
 
 // +kubebuilder:validation:XValidation:rule="(has(self.key) || has(self.keyPrefix))", message="Either 'key' or 'keyPrefix' must be specified"
@@ -198,4 +202,10 @@ type PodLabel struct {
 	// KeyPrefix specifies a prefix for label keys to be used.
 	// This field is optional.
 	KeyPrefix string `json:"keyPrefix,omitempty"`
+}
+
+// Use Cluster to define custom cluster details to enrich your telemetry resource attributes.
+type Cluster struct {
+	// Name specifies a custom cluster name for the resource attribute `k8s.cluster.name`.
+	Name string `json:"name"`
 }

@@ -174,7 +174,7 @@ func verifySidecarPresent(namespace string, labelSelector map[string]string) {
 			Namespace:     namespace,
 		}
 
-		hasIstioSidecar, err := assert.HasContainer(GinkgoT(), listOptions, "istio-proxy")
+		hasIstioSidecar, err := assert.PodsHaveContainer(GinkgoT(), listOptions, "istio-proxy")
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(hasIstioSidecar).To(BeTrueBecause("Istio sidecar not present"))
 	}, periodic.EventuallyTimeout*2, periodic.DefaultInterval).Should(Succeed())

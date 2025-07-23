@@ -18,6 +18,7 @@ var (
 
 	NodeMetricsResourceAttributes = []string{
 		"k8s.cluster.name",
+		"k8s.cluster.uid",
 		"k8s.node.name",
 		"cloud.provider",
 	}
