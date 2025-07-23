@@ -37,7 +37,7 @@ func InsertClusterAttributesProcessorConfig(clusterName, clusterUID, cloudProvid
 			{
 				Action: "insert",
 				Key:    "k8s.cluster.uid",
-				Value:  "",
+				Value:  clusterUID,
 			},
 		},
 	}
