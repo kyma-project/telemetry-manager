@@ -18,6 +18,7 @@ import (
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -92,14 +93,17 @@ func TestExtractLabels_OTel(t *testing.T) {
 				labelKeyShouldNotMatch: labelValueShouldNotMatch,
 			}
 
-			Expect(suite.K8sClient.Get(t.Context(), kitkyma.TelemetryName, &telemetry)).NotTo(HaveOccurred())
-			telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{
-				ExtractPodLabels: []operatorv1alpha1.PodLabel{
-					{Key: "log.test.exact.should.match"},
-					{KeyPrefix: "log.test.prefix"},
-				},
-			}
-			Expect(suite.K8sClient.Update(t.Context(), &telemetry)).NotTo(HaveOccurred(), "should update Telemetry resource with enrichment configuration")
+			Eventually(func(g Gomega) {
+				g.Expect(suite.K8sClient.Get(t.Context(), kitkyma.TelemetryName, &telemetry)).NotTo(HaveOccurred())
+				telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{
+					ExtractPodLabels: []operatorv1alpha1.PodLabel{
+						{Key: "log.test.exact.should.match"},
+						{KeyPrefix: "log.test.prefix"},
+					},
+				}
+				g.Expect(suite.K8sClient.Update(t.Context(), &telemetry)).NotTo(HaveOccurred(), "should update Telemetry resource with enrichment configuration")
+
+			}, periodic.EventuallyTimeout, periodic.TelemetryInterval)
 
 			resources := []client.Object{
 				kitk8s.NewNamespace(backendNs).K8sObject(),
@@ -111,10 +115,11 @@ func TestExtractLabels_OTel(t *testing.T) {
 
 			t.Cleanup(func() {
 				Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-
-				Expect(suite.K8sClient.Get(context.Background(), kitkyma.TelemetryName, &telemetry)).To(Succeed()) //nolint:usetesting // Remove ctx from Get
-				telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{}
-				Expect(suite.K8sClient.Update(context.Background(), &telemetry)).To(Succeed()) //nolint:usetesting // Remove ctx from Update
+				Eventually(func(g Gomega) {
+					g.Expect(suite.K8sClient.Get(context.Background(), kitkyma.TelemetryName, &telemetry)).To(Succeed()) //nolint:usetesting // Remove ctx from Get
+					telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{}
+					g.Expect(suite.K8sClient.Update(context.Background(), &telemetry)).To(Succeed()) //nolint:usetesting // Remove ctx from Update
+				}, periodic.EventuallyTimeout, periodic.TelemetryInterval)
 			})
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
