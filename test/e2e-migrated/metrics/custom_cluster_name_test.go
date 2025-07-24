@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
@@ -20,23 +22,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestExtractLabels(t *testing.T) {
+func TestCustomClusterName(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelMetricsSetA)
-
-	const (
-		k8sLabelKeyPrefix    = "k8s.pod.label"
-		metricLabelKeyPrefix = "metric.test.prefix"
-
-		labelKeyExactMatch     = "metric.test.exact.should.match"
-		labelKeyPrefixMatch1   = metricLabelKeyPrefix + ".should.match1"
-		labelKeyPrefixMatch2   = metricLabelKeyPrefix + ".should.match2"
-		labelKeyShouldNotMatch = "metric.test.label.should.not.match"
-
-		labelValueExactMatch     = "exact_match"
-		labelValuePrefixMatch1   = "prefix_match1"
-		labelValuePrefixMatch2   = "prefix_match2"
-		labelValueShouldNotMatch = "should_not_match"
-	)
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -44,6 +31,9 @@ func TestExtractLabels(t *testing.T) {
 		backendNs    = uniquePrefix("backend")
 		genNs        = uniquePrefix("gen")
 		telemetry    operatorv1alpha1.Telemetry
+		kubeSystemNs corev1.Namespace
+
+		clusterName = "cluster-name"
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)
@@ -54,29 +44,24 @@ func TestExtractLabels(t *testing.T) {
 		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 		Build()
 
-	genLabels := map[string]string{
-		labelKeyExactMatch:     labelValueExactMatch,
-		labelKeyPrefixMatch1:   labelValuePrefixMatch1,
-		labelKeyPrefixMatch2:   labelValuePrefixMatch2,
-		labelKeyShouldNotMatch: labelValueShouldNotMatch,
-	}
-
 	Eventually(func(g Gomega) {
 		g.Expect(suite.K8sClient.Get(t.Context(), kitkyma.TelemetryName, &telemetry)).NotTo(HaveOccurred())
 		telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{
-			ExtractPodLabels: []operatorv1alpha1.PodLabel{
-				{Key: "metric.test.exact.should.match"},
-				{KeyPrefix: "metric.test.prefix"},
+			Cluster: &operatorv1alpha1.Cluster{
+				Name: clusterName,
 			},
 		}
-		g.Expect(suite.K8sClient.Update(t.Context(), &telemetry)).NotTo(HaveOccurred(), "should update Telemetry resource with enrichment configuration")
+		g.Expect(suite.K8sClient.Update(t.Context(), &telemetry)).NotTo(HaveOccurred(), "should update Telemetry resource with cluster name")
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+
+	Expect(suite.K8sClient.Get(t.Context(), types.NamespacedName{Name: "kube-system"}, &kubeSystemNs)).NotTo(HaveOccurred(), "should get the kube-system namespace")
+	clusterUID := string(kubeSystemNs.UID)
 
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
 		&pipeline,
-		telemetrygen.NewPod(genNs, telemetrygen.SignalTypeMetrics).WithLabels(genLabels).K8sObject(),
+		telemetrygen.NewPod(genNs, telemetrygen.SignalTypeMetrics).K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
 
@@ -84,27 +69,22 @@ func TestExtractLabels(t *testing.T) {
 		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 
 		Eventually(func(g Gomega) {
-			g.Expect(suite.K8sClient.Get(context.Background(), kitkyma.TelemetryName, &telemetry)).To(Succeed()) //nolint:usetesting // Remove ctx from Get
-			telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{}
+			g.Expect(suite.K8sClient.Get(context.Background(), kitkyma.TelemetryName, &telemetry)).Should(Succeed()) //nolint:usetesting // Remove ctx from Get
+			telemetry.Spec.Enrichments.Cluster = &operatorv1alpha1.Cluster{}
 			g.Expect(suite.K8sClient.Update(context.Background(), &telemetry)).To(Succeed()) //nolint:usetesting // Remove ctx from Update
 		}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 	})
-	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
 	assert.BackendReachable(t, backend)
 	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 	assert.MetricPipelineHealthy(t, pipelineName)
 
-	// Verify that at least one log entry contains the expected labels, rather than requiring all entries to match.
-	// This approach accounts for potential delays in the k8sattributes processor syncing with the API server during startup,
-	// which can result in some logs not being enriched and causing test flakiness.
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatMetrics(ContainElement(
 			HaveResourceAttributes(SatisfyAll(
-				HaveKeyWithValue(k8sLabelKeyPrefix+"."+labelKeyExactMatch, labelValueExactMatch),
-				HaveKeyWithValue(k8sLabelKeyPrefix+"."+labelKeyPrefixMatch1, labelValuePrefixMatch1),
-				HaveKeyWithValue(k8sLabelKeyPrefix+"."+labelKeyPrefixMatch2, labelValuePrefixMatch2),
-				Not(HaveKeyWithValue(k8sLabelKeyPrefix+"."+labelKeyShouldNotMatch, labelValueShouldNotMatch)),
+				HaveKeyWithValue("k8s.cluster.name", clusterName),
+				HaveKeyWithValue("k8s.cluster.uid", clusterUID),
 			)),
 		)),
 	)

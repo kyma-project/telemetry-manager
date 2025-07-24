@@ -4,7 +4,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
 
-func InsertClusterAttributesProcessorConfig(clusterName, cloudProvider string) *config.ResourceProcessor {
+func InsertClusterAttributesProcessorConfig(clusterName, clusterUID, cloudProvider string) *config.ResourceProcessor {
 	if cloudProvider != "" {
 		return &config.ResourceProcessor{
 			Attributes: []config.AttributeAction{
@@ -12,6 +12,11 @@ func InsertClusterAttributesProcessorConfig(clusterName, cloudProvider string) *
 					Action: "insert",
 					Key:    "k8s.cluster.name",
 					Value:  clusterName,
+				},
+				{
+					Action: "insert",
+					Key:    "k8s.cluster.uid",
+					Value:  clusterUID,
 				},
 				{
 					Action: "insert",
@@ -28,6 +33,11 @@ func InsertClusterAttributesProcessorConfig(clusterName, cloudProvider string) *
 				Action: "insert",
 				Key:    "k8s.cluster.name",
 				Value:  clusterName,
+			},
+			{
+				Action: "insert",
+				Key:    "k8s.cluster.uid",
+				Value:  clusterUID,
 			},
 		},
 	}

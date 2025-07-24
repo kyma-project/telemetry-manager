@@ -13,7 +13,7 @@ func makeProcessorsConfig(opts BuildOptions) Processors {
 		},
 		K8sAttributes:           processors.K8sAttributesProcessorConfig(opts.Enrichments),
 		IstioNoiseFilter:        &config.IstioNoiseFilterProcessor{},
-		InsertClusterAttributes: processors.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.CloudProvider),
+		InsertClusterAttributes: processors.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.ClusterUID, opts.CloudProvider),
 		ResolveServiceName:      processors.MakeResolveServiceNameConfig(),
 		DropKymaAttributes:      processors.DropKymaAttributesProcessorConfig(),
 	}

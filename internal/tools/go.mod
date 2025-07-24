@@ -11,7 +11,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/k3d-io/k3d/v5 v5.8.3
 	github.com/kyma-project/kyma/hack/table-gen v0.0.0-20250404123224-5afb7a10791b
-	github.com/mikefarah/yq/v4 v4.46.1
+	github.com/mikefarah/yq/v4 v4.47.1
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/vektra/mockery/v3 v3.5.1
 	github.com/vladopajic/go-test-coverage/v2 v2.16.0
@@ -19,7 +19,7 @@ require (
 	golang.org/x/tools v0.35.0
 	gopkg.in/yaml.v3 v3.0.1
 	sigs.k8s.io/controller-tools v0.18.0
-	sigs.k8s.io/kustomize/kustomize/v5 v5.7.0
+	sigs.k8s.io/kustomize/kustomize/v5 v5.7.1
 )
 
 require (
@@ -112,7 +112,6 @@ require (
 	github.com/brunoga/deep v1.2.4 // indirect
 	github.com/butuzov/ireturn v0.4.0 // indirect
 	github.com/butuzov/mirror v1.3.0 // indirect
-	github.com/carapace-sh/carapace-shlex v1.0.1 // indirect
 	github.com/catenacyber/perfsprint v0.9.1 // indirect
 	github.com/ccojocar/zxcvbn-go v1.0.4 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
@@ -473,9 +472,9 @@ require (
 	mvdan.cc/gofumpt v0.8.0 // indirect
 	mvdan.cc/unparam v0.0.0-20250301125049-0df0534333a4 // indirect
 	sigs.k8s.io/json v0.0.0-20241010143419-9aa6b5e7a4b3 // indirect
-	sigs.k8s.io/kustomize/api v0.20.0 // indirect
-	sigs.k8s.io/kustomize/cmd/config v0.20.0 // indirect
-	sigs.k8s.io/kustomize/kyaml v0.20.0 // indirect
+	sigs.k8s.io/kustomize/api v0.20.1 // indirect
+	sigs.k8s.io/kustomize/cmd/config v0.20.1 // indirect
+	sigs.k8s.io/kustomize/kyaml v0.20.1 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.6.0 // indirect
 	sigs.k8s.io/yaml v1.5.0 // indirect

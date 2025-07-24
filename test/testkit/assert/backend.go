@@ -13,7 +13,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-// TODO(TeodorSAP): Move to a specific package together with all K8S resources ready checks
 // TODO(TeodorSAP): Use custom timeouts as functional options for every helper function in this package.
 func BackendReachable(t testkit.T, backend *kitbackend.Backend) {
 	t.Helper()
