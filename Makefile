@@ -132,8 +132,8 @@ generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) $(YQ) $(YAMLFMT) $(POPULATE_I
 	$(YQ) eval '.spec.template.spec.containers[] |= (select(.name == "manager") | .env[] |= (select(.name == "FLUENT_BIT_EXPORTER_IMAGE") | .value = ${FLUENT_BIT_EXPORTER_IMG}))' -i config/manager/manager.yaml
 	$(YQ) eval '.spec.template.spec.containers[] |= (select(.name == "manager") | .env[] |= (select(.name == "OTEL_COLLECTOR_IMAGE") | .value = ${OTEL_COLLECTOR_IMG}))' -i config/manager/manager.yaml
 	$(YQ) eval '.spec.template.spec.containers[] |= (select(.name == "manager") | .env[] |= (select(.name == "SELF_MONITOR_IMAGE") | .value = ${SELF_MONITOR_IMG}))' -i config/manager/manager.yaml
-	${YAMLFMT}
-
+	$(YAMLFMT)
+	$(POPULATE_IMAGES)
 .PHONY: fmt
 fmt: ## Run go fmt against code.
 	go fmt ./...
