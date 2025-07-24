@@ -59,8 +59,8 @@ func TestExtractLabels(t *testing.T) {
 		labelKeyPrefixMatch2:   labelValuePrefixMatch2,
 		labelKeyShouldNotMatch: labelValueShouldNotMatch,
 	}
-	Eventually(func(g Gomega) {
 
+	Eventually(func(g Gomega) {
 		g.Expect(suite.K8sClient.Get(t.Context(), kitkyma.TelemetryName, &telemetry)).NotTo(HaveOccurred())
 		telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{
 			ExtractPodLabels: []operatorv1alpha1.PodLabel{
