@@ -103,7 +103,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 				}
 				g.Expect(suite.K8sClient.Update(t.Context(), &telemetry)).NotTo(HaveOccurred(), "should update Telemetry resource with enrichment configuration")
 
-			}, periodic.EventuallyTimeout, periodic.TelemetryInterval)
+			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 
 			resources := []client.Object{
 				kitk8s.NewNamespace(backendNs).K8sObject(),
@@ -119,7 +119,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 					g.Expect(suite.K8sClient.Get(context.Background(), kitkyma.TelemetryName, &telemetry)).To(Succeed()) //nolint:usetesting // Remove ctx from Get
 					telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{}
 					g.Expect(suite.K8sClient.Update(context.Background(), &telemetry)).To(Succeed()) //nolint:usetesting // Remove ctx from Update
-				}, periodic.EventuallyTimeout, periodic.TelemetryInterval)
+				}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
