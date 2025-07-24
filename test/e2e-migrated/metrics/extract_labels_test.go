@@ -61,16 +61,15 @@ func TestExtractLabels(t *testing.T) {
 		labelKeyShouldNotMatch: labelValueShouldNotMatch,
 	}
 
-	Expect(suite.K8sClient.Get(t.Context(), kitkyma.TelemetryName, &telemetry)).NotTo(HaveOccurred())
-	telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{
-		ExtractPodLabels: []operatorv1alpha1.PodLabel{
-			{Key: "metric.test.exact.should.match"},
-			{KeyPrefix: "metric.test.prefix"},
-		},
-	}
-
 	Eventually(func(g Gomega) {
-		Expect(suite.K8sClient.Update(t.Context(), &telemetry)).NotTo(HaveOccurred(), "should update Telemetry resource with enrichment configuration")
+		g.Expect(suite.K8sClient.Get(t.Context(), kitkyma.TelemetryName, &telemetry)).NotTo(HaveOccurred())
+		telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{
+			ExtractPodLabels: []operatorv1alpha1.PodLabel{
+				{Key: "metric.test.exact.should.match"},
+				{KeyPrefix: "metric.test.prefix"},
+			},
+		}
+		g.Expect(suite.K8sClient.Update(t.Context(), &telemetry)).NotTo(HaveOccurred(), "should update Telemetry resource with enrichment configuration")
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 
 	resources := []client.Object{
@@ -84,11 +83,10 @@ func TestExtractLabels(t *testing.T) {
 	t.Cleanup(func() {
 		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 
-		Expect(suite.K8sClient.Get(context.Background(), kitkyma.TelemetryName, &telemetry)).To(Succeed()) //nolint:usetesting // Remove ctx from Get
-		telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{}
-
 		Eventually(func(g Gomega) {
-			Expect(suite.K8sClient.Update(context.Background(), &telemetry)).To(Succeed()) //nolint:usetesting // Remove ctx from Update
+			g.Expect(suite.K8sClient.Get(context.Background(), kitkyma.TelemetryName, &telemetry)).To(Succeed()) //nolint:usetesting // Remove ctx from Get
+			telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{}
+			g.Expect(suite.K8sClient.Update(context.Background(), &telemetry)).To(Succeed()) //nolint:usetesting // Remove ctx from Update
 		}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
