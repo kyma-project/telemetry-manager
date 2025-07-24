@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -51,13 +50,13 @@ func TestResources(t *testing.T) {
 		Build()
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(&pipeline))
+		Expect(kitk8s.DeleteObjects(&pipeline)).To(Succeed())
 	})
-	Expect(kitk8s.CreateObjects(t, &pipeline, secret.K8sObject())).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, &pipeline, secret.K8sObject())).To(Succeed())
 
 	assert.ResourcesExist(t, gatewayResources...)
 
 	t.Log("When TracePipeline becomes non-reconcilable, resources should be cleaned up")
-	Expect(suite.K8sClient.Delete(t.Context(), secret.K8sObject())).Should(Succeed())
+	Expect(suite.K8sClient.Delete(t.Context(), secret.K8sObject())).To(Succeed())
 	assert.ResourcesNotExist(t, gatewayResources...)
 }

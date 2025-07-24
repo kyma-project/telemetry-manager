@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -66,9 +65,9 @@ func TestSecretMissing_OTel(t *testing.T) {
 			}
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(resources...))
+				Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
@@ -90,7 +89,7 @@ func TestSecretMissing_OTel(t *testing.T) {
 			})
 
 			// Create the secret and make sure the pipeline heals
-			Expect(kitk8s.CreateObjects(t, secret.K8sObject())).Should(Succeed())
+			Expect(kitk8s.CreateObjects(t, secret.K8sObject())).To(Succeed())
 
 			assert.OTelLogPipelineHealthy(t, pipelineName)
 		})
@@ -127,9 +126,9 @@ func TestSecretMissing_FluentBit(t *testing.T) {
 	}
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(resources...))
+		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 	})
-	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
@@ -151,7 +150,7 @@ func TestSecretMissing_FluentBit(t *testing.T) {
 	})
 
 	// Create the secret and make sure the pipeline heals
-	Expect(kitk8s.CreateObjects(t, secret.K8sObject())).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, secret.K8sObject())).To(Succeed())
 
 	assert.FluentBitLogPipelineHealthy(t, pipelineName)
 }

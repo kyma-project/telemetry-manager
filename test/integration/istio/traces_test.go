@@ -8,7 +8,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
@@ -36,6 +35,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Order
 		appNs                     = suite.IDWithSuffix("app")
 		pipeline1Name             = suite.IDWithSuffix("1")
 		pipeline2Name             = suite.IDWithSuffix("2")
+		backend                   *kitbackend.Backend
+		istiofiedBackend          *kitbackend.Backend
 		backendExportURL          string
 		istiofiedBackendExportURL string
 		appURL                    string
@@ -50,23 +51,23 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Order
 		objs = append(objs, kitk8s.NewNamespace(istiofiedBackendNs, kitk8s.WithIstioInjection()).K8sObject())
 		objs = append(objs, kitk8s.NewNamespace(appNs).K8sObject())
 
-		backend1 := kitbackend.New(backendNs, kitbackend.SignalTypeTraces)
-		objs = append(objs, backend1.K8sObjects()...)
-		backendExportURL = backend1.ExportURL(suite.ProxyClient)
+		backend = kitbackend.New(backendNs, kitbackend.SignalTypeTraces)
+		objs = append(objs, backend.K8sObjects()...)
+		backendExportURL = backend.ExportURL(suite.ProxyClient)
 
-		backend2 := kitbackend.New(istiofiedBackendNs, kitbackend.SignalTypeTraces)
-		objs = append(objs, backend2.K8sObjects()...)
-		istiofiedBackendExportURL = backend2.ExportURL(suite.ProxyClient)
+		istiofiedBackend = kitbackend.New(istiofiedBackendNs, kitbackend.SignalTypeTraces)
+		objs = append(objs, istiofiedBackend.K8sObjects()...)
+		istiofiedBackendExportURL = istiofiedBackend.ExportURL(suite.ProxyClient)
 
 		istioTracePipeline := testutils.NewTracePipelineBuilder().
 			WithName(pipeline2Name).
-			WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
+			WithOTLPOutput(testutils.OTLPEndpoint(istiofiedBackend.Endpoint())).
 			Build()
 		objs = append(objs, &istioTracePipeline)
 
 		tracePipeline := testutils.NewTracePipelineBuilder().
 			WithName(pipeline1Name).
-			WithOTLPOutput(testutils.OTLPEndpoint(backend1.Endpoint())).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 			Build()
 		objs = append(objs, &tracePipeline)
 
@@ -98,9 +99,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelGardener, suite.LabelIstio), Order
 			Expect(kitk8s.CreateObjects(GinkgoT(), k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a trace backend running", func() {
-			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Name: kitbackend.DefaultName, Namespace: backendNs})
-			assert.DeploymentReady(GinkgoT(), types.NamespacedName{Name: kitbackend.DefaultName, Namespace: istiofiedBackendNs})
+		It("Should have reachable backends", func() {
+			assert.BackendReachable(GinkgoT(), backend)
+			assert.BackendReachable(GinkgoT(), istiofiedBackend)
 		})
 
 		It("Should have sample app running with Istio sidecar", func() {
@@ -173,7 +174,7 @@ func verifySidecarPresent(namespace string, labelSelector map[string]string) {
 			Namespace:     namespace,
 		}
 
-		hasIstioSidecar, err := assert.HasContainer(GinkgoT(), listOptions, "istio-proxy")
+		hasIstioSidecar, err := assert.PodsHaveContainer(GinkgoT(), listOptions, "istio-proxy")
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(hasIstioSidecar).To(BeTrueBecause("Istio sidecar not present"))
 	}, periodic.EventuallyTimeout*2, periodic.DefaultInterval).Should(Succeed())

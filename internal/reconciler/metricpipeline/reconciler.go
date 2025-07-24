@@ -6,7 +6,9 @@ import (
 	"fmt"
 
 	"gopkg.in/yaml.v3"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -282,6 +284,12 @@ func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 
 func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
+	clusterName := r.getClusterNameFromTelemetry(ctx, shootInfo.ClusterName)
+
+	clusterUID, err := r.getK8sClusterUID(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get kube-system namespace for cluster UID: %w", err)
+	}
 
 	var enrichments *operatorv1alpha1.EnrichmentSpec
 
@@ -293,7 +301,8 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, gateway.BuildOptions{
 		GatewayNamespace:            r.telemetryNamespace,
 		InstrumentationScopeVersion: r.moduleVersion,
-		ClusterName:                 shootInfo.ClusterName,
+		ClusterName:                 clusterName,
+		ClusterUID:                  clusterUID,
 		CloudProvider:               shootInfo.CloudProvider,
 		Enrichments:                 enrichments,
 	})
@@ -382,6 +391,37 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 	}
 
 	return defaultReplicaCount
+}
+
+func (r *Reconciler) getClusterNameFromTelemetry(ctx context.Context, defaultName string) string {
+	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.telemetryNamespace)
+	if err != nil {
+		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: using default shoot name as cluster name")
+		return defaultName
+	}
+
+	if telemetry.Spec.Enrichments != nil &&
+		telemetry.Spec.Enrichments.Cluster != nil &&
+		telemetry.Spec.Enrichments.Cluster.Name != "" {
+		return telemetry.Spec.Enrichments.Cluster.Name
+	}
+
+	return defaultName
+}
+
+func (r *Reconciler) getK8sClusterUID(ctx context.Context) (string, error) {
+	var kubeSystem corev1.Namespace
+
+	kubeSystemNs := types.NamespacedName{
+		Name: "kube-system",
+	}
+
+	err := r.Get(ctx, kubeSystemNs, &kubeSystem)
+	if err != nil {
+		return "", err
+	}
+
+	return string(kubeSystem.UID), nil
 }
 
 func getAgentPorts() []int32 {

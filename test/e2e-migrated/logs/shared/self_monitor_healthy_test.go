@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -19,7 +18,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestSelfMonitorHappyPath_OTel(t *testing.T) {
+func TestSelfMonitorHealthy_OTel(t *testing.T) {
 	tests := []struct {
 		label               string
 		inputBuilder        func(includeNs string) telemetryv1alpha1.LogPipelineInput
@@ -75,9 +74,9 @@ func TestSelfMonitorHappyPath_OTel(t *testing.T) {
 			resources = append(resources, backend.K8sObjects()...)
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(resources...))
+				Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.LogGatewayName)
@@ -88,13 +87,12 @@ func TestSelfMonitorHappyPath_OTel(t *testing.T) {
 			}
 
 			assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
-
-			assert.SelfMonitorIsHealthyForPipeline(t, suite.K8sClient, pipelineName)
+			assert.LogPipelineSelfMonitorIsHealthy(t, suite.K8sClient, pipelineName)
 		})
 	}
 }
 
-func TestSelfMonitorHappyPath_FluentBit(t *testing.T) {
+func TestSelfMonitorHealthy_FluentBit(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelFluentBit)
 
 	var (
@@ -121,15 +119,14 @@ func TestSelfMonitorHappyPath_FluentBit(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(resources...))
+		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 	})
-	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
 	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 	assert.DeploymentReady(t, kitkyma.SelfMonitorName)
 	assert.FluentBitLogPipelineHealthy(t, pipelineName)
 	assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
-
-	assert.SelfMonitorIsHealthyForPipeline(t, suite.K8sClient, pipelineName)
+	assert.LogPipelineSelfMonitorIsHealthy(t, suite.K8sClient, pipelineName)
 }

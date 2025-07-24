@@ -3,7 +3,7 @@ package shared
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -71,9 +71,9 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 			}
 
 			t.Cleanup(func() {
-				require.NoError(t, kitk8s.DeleteObjects(resources...))
+				Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 			})
-			require.NoError(t, kitk8s.CreateObjects(t, resources...))
+			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.DeploymentReady(t, kitkyma.LogGatewayName)
 
@@ -111,9 +111,9 @@ func TestMetricsEndpoint_FluentBit(t *testing.T) {
 	}
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(resources...))
+		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 	})
-	require.NoError(t, kitk8s.CreateObjects(t, resources...))
+	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 

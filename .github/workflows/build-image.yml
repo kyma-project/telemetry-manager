@@ -12,7 +12,6 @@ on:
       - "release-[0-9]+.[0-9]+"
     paths-ignore:
       - "docs/**"
-      - "dependencies/**"
       - "**/*.md"
       - "OWNERS"
       - "CODEOWNERS"
@@ -31,8 +30,6 @@ on:
       - "CODEOWNERS"
       - "external-images.yaml"
 
-
-
 jobs:
   envs:
     runs-on: ubuntu-latest
@@ -44,7 +41,12 @@ jobs:
         id: create-tags
         run: |
           if [[ $GITHUB_EVENT_NAME == 'push' ]]; then
-            echo 'TAGS=${{ github.ref_name }}' >> "$GITHUB_OUTPUT"
+            {
+              echo "TAGS<<EOTAGS"
+              echo "${{ github.ref_name }}"
+              echo "${{ github.ref_name }}-experimental"
+              echo "EOTAGS"
+            } >> "$GITHUB_OUTPUT"
           elif [[ $GITHUB_EVENT_NAME == 'merge_group' ]]; then
               echo 'TAGS=${{ github.event.merge_group.head_sha }}' >> "$GITHUB_OUTPUT"
           else

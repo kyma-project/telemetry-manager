@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -20,10 +19,10 @@ import (
 )
 
 func TestSinglePipelineV1Beta1(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelTracesExperimental)
+	suite.RegisterTestCase(t, suite.LabelExperimental)
 
 	var (
-		uniquePrefix = unique.Prefix()
+		uniquePrefix = unique.Prefix("traces")
 		pipelineName = uniquePrefix()
 		backendNs    = uniquePrefix("backend")
 		genNs        = uniquePrefix("gen")
@@ -54,9 +53,9 @@ func TestSinglePipelineV1Beta1(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(resources...))
+		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 	})
-	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
 	assert.DeploymentReady(t, kitkyma.TraceGatewayName)
