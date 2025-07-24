@@ -90,11 +90,13 @@ help: ## Display this help.
 lint-fix: $(GOLANGCI_LINT) $(WSL)
 	-$(WSL) --fix ./...
 	$(GOLANGCI_LINT) run --fix
+	cd $(TOOLS_MOD_DIR) && $(GOLANGCI_LINT) run --config $(SRC_ROOT)/.golangci.yaml --fix
 
 lint: $(GOLANGCI_LINT)
 	go version
 	$(GOLANGCI_LINT) version
-	GO111MODULE=on $(GOLANGCI_LINT) run
+	$(GOLANGCI_LINT) run
+	cd $(TOOLS_MOD_DIR) && $(GOLANGCI_LINT) run --config $(SRC_ROOT)/.golangci.yaml
 
 .PHONY: crd-docs-gen
 crd-docs-gen: $(TABLE_GEN) manifests## Generates CRD spec into docs folder

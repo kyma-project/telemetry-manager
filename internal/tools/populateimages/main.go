@@ -1,6 +1,3 @@
-//go:build tools
-// +build tools
-
 package main
 
 import (
@@ -62,6 +59,8 @@ func main() {
 	}
 }
 
+const TWO = 2
+
 func run() error {
 	data, err := godotenv.Read(filepath.Join(".", ".env"))
 	if err != nil {
@@ -83,7 +82,6 @@ func run() error {
 }
 
 func generateFile(path, tmpl string, data map[string]string) error {
-
 	f, err := os.Create(path)
 	if err != nil {
 		return err
@@ -137,7 +135,8 @@ func generateSecScanConfig(data map[string]string) error {
 	}
 
 	enc := yaml.NewEncoder(file)
-	enc.SetIndent(2)
+	enc.SetIndent(TWO)
+
 	err = enc.Encode(secScanCfg)
 	if err != nil {
 		return fmt.Errorf("error encoding: %w", err)
