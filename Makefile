@@ -3,6 +3,10 @@ include .env
 
 # Environment Variables
 IMG ?= $(ENV_IMG)
+FLUENT_BIT_EXPORTER_IMG?= $(ENV_FLUENTBIT_EXPORTER_IMAGE)
+FLUENT_BIT_IMG ?= $(ENV_FLUENTBIT_IMAGE)
+OTEL_COLLECTOR_IMG ?= $(ENV_OTEL_COLLECTOR_IMAGE)
+SELF_MONITOR_IMG?= $(ENV_SELFMONITOR_IMAGE)
 K3S_IMAGE ?= $(ENV_K3S_IMAGE)
 
 # Operating system architecture
@@ -117,13 +121,16 @@ manifests-experimental: $(CONTROLLER_GEN) $(YAMLFMT) ## Generate WebhookConfigur
 	$(YAMLFMT)
 
 .PHONY: generate
-generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) $(POPULATE_IMAGES) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) $(YQ) $(YAMLFMT) $(POPULATE_IMAGES) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 	$(MOCKERY)
 	$(STRINGER) --type Mode internal/utils/logpipeline/logpipeline.go
 	$(STRINGER) --type FeatureFlag internal/featureflags/featureflags.go
-	$(POPULATE_IMAGES)
-
+	$(YQ) eval '.spec.template.spec.containers[] |= (select(.name == "manager") | .env[] |= (select(.name == "FLUENT_BIT_IMAGE") | .value = ${FLUENT_BIT_IMG}))' -i config/manager/manager.yaml
+	$(YQ) eval '.spec.template.spec.containers[] |= (select(.name == "manager") | .env[] |= (select(.name == "FLUENT_BIT_EXPORTER_IMAGE") | .value = ${FLUENT_BIT_EXPORTER_IMG}))' -i config/manager/manager.yaml
+	$(YQ) eval '.spec.template.spec.containers[] |= (select(.name == "manager") | .env[] |= (select(.name == "OTEL_COLLECTOR_IMAGE") | .value = ${OTEL_COLLECTOR_IMG}))' -i config/manager/manager.yaml
+	$(YQ) eval '.spec.template.spec.containers[] |= (select(.name == "manager") | .env[] |= (select(.name == "SELF_MONITOR_IMAGE") | .value = ${SELF_MONITOR_IMG}))' -i config/manager/manager.yaml
+	${YAMLFMT}
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
