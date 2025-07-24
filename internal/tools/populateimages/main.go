@@ -30,7 +30,13 @@ const (
 package testkit
 
 const (
+<<<<<<< HEAD
 	DefaultTelemetryGenImage = "{{ .DEFAULT_TEST_TELEMETRYGEN_IMAGE }}"
+||||||| parent of 2f47f610 (fix formatting)
+    DefaultTelemetryGenImage = "{{ .DEFAULT_TEST_TELEMETRYGEN_IMAGE }}"
+=======
+        DefaultTelemetryGenImage = "{{ .DEFAULT_TEST_TELEMETRYGEN_IMAGE }}"
+>>>>>>> 2f47f610 (fix formatting)
 )
 `,
 }
