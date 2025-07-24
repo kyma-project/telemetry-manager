@@ -294,11 +294,6 @@ func parseFlags() {
 
 	flag.StringVar(&highPriorityClassName, "high-priority-class-name", "", "High priority class name used by managed DaemonSets")
 	flag.StringVar(&normalPriorityClassName, "normal-priority-class-name", "", "Normal priority class name used by managed Deployments")
-	//
-	//flag.StringVar(&fluentBitExporterImage, "fluent-bit-exporter-image", images.DefaultFluentBitExporterImage, "Image for exporting fluent bit filesystem usage")
-	//flag.StringVar(&fluentBitImage, "fluent-bit-image", images.DefaultFluentBitImage, "Image for fluent-bit")
-	//flag.StringVar(&otelCollectorImage, "otel-collector-image", images.DefaultOTelCollectorImage, "Image for OpenTelemetry Collector")
-	//flag.StringVar(&selfMonitorImage, "self-monitor-image", images.DefaultSelfMonitorImage, "Image for self-monitor")
 
 	flag.Parse()
 }
