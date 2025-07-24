@@ -30,7 +30,7 @@ const (
 package testkit
 
 const (
-        DefaultTelemetryGenImage = "{{ .DEFAULT_TEST_TELEMETRYGEN_IMAGE }}"
+	DefaultTelemetryGenImage = "{{ .DEFAULT_TEST_TELEMETRYGEN_IMAGE }}"
 )
 `,
 }
