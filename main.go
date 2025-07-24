@@ -54,7 +54,6 @@ import (
 	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/build"
 	"github.com/kyma-project/telemetry-manager/internal/featureflags"
-	"github.com/kyma-project/telemetry-manager/internal/images"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
@@ -295,11 +294,11 @@ func parseFlags() {
 
 	flag.StringVar(&highPriorityClassName, "high-priority-class-name", "", "High priority class name used by managed DaemonSets")
 	flag.StringVar(&normalPriorityClassName, "normal-priority-class-name", "", "Normal priority class name used by managed Deployments")
-
-	flag.StringVar(&fluentBitExporterImage, "fluent-bit-exporter-image", images.DefaultFluentBitExporterImage, "Image for exporting fluent bit filesystem usage")
-	flag.StringVar(&fluentBitImage, "fluent-bit-image", images.DefaultFluentBitImage, "Image for fluent-bit")
-	flag.StringVar(&otelCollectorImage, "otel-collector-image", images.DefaultOTelCollectorImage, "Image for OpenTelemetry Collector")
-	flag.StringVar(&selfMonitorImage, "self-monitor-image", images.DefaultSelfMonitorImage, "Image for self-monitor")
+	//
+	//flag.StringVar(&fluentBitExporterImage, "fluent-bit-exporter-image", images.DefaultFluentBitExporterImage, "Image for exporting fluent bit filesystem usage")
+	//flag.StringVar(&fluentBitImage, "fluent-bit-image", images.DefaultFluentBitImage, "Image for fluent-bit")
+	//flag.StringVar(&otelCollectorImage, "otel-collector-image", images.DefaultOTelCollectorImage, "Image for OpenTelemetry Collector")
+	//flag.StringVar(&selfMonitorImage, "self-monitor-image", images.DefaultSelfMonitorImage, "Image for self-monitor")
 
 	flag.Parse()
 }
@@ -369,6 +368,25 @@ func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetr
 	return nil
 }
 
+func getImagesFromEnv() error {
+	requiredEnvVars := map[string]*string{
+		"FLUENT_BIT_IMAGE":          &fluentBitImage,
+		"FLUENT_BIT_EXPORTER_IMAGE": &fluentBitExporterImage,
+		"OTEL_COLLECTOR_IMAGE":      &otelCollectorImage,
+		"SELF_MONITOR_IMAGE":        &selfMonitorImage,
+	}
+
+	for k, v := range requiredEnvVars {
+		val := os.Getenv(k)
+		if val == "" {
+			return fmt.Errorf("required environment variable %s not set", k)
+		}
+		*v = val
+	}
+	return nil
+
+}
+
 func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
 	if featureflags.IsEnabled(featureflags.V1Beta1) {
 		setupLog.Info("Registering conversion webhooks for LogPipelines")
@@ -388,6 +406,10 @@ func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan
 	}
 
 	setupLog.Info("Setting up logpipeline controller")
+
+	if err := getImagesFromEnv(); err != nil {
+		return err
+	}
 
 	logPipelineController, err := telemetrycontrollers.NewLogPipelineController(
 		mgr.GetClient(),
