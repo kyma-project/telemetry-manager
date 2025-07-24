@@ -286,13 +286,15 @@ You can set up ingestion of metrics from applications and the Istio service mesh
 
 For easier access from the Kyma dashboard, add links to the navigation under **SAP Cloud Logging**, and add deep links to the **Pod**, **Deployment**, and **Namespace** views.
 
-1. If you are using the OTLP output in your LogPipeline, apply the ConfigMap:
+1. Depending on the output you use in your LogPipeline, apply the ConfigMap.
+
+   - For OTLP, run:
 
     ```bash
     kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/kyma-dashboard-configmap.yaml
     ```
 
-1. If you are using the HTTP output in your LogPipeline, apply the ConfigMap:
+   - For HTTP, run:
 
     ```bash
     kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/kyma-dashboard-http-configmap.yaml
