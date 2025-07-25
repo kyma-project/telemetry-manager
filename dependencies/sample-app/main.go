@@ -116,7 +116,7 @@ func randomEnergy() float64 {
 
 // randBool generates a random bool
 func randBool() bool {
-	return (2) == 1 //nolint:gosec,mnd // G404: Use of weak random number generator
+	return rand.Intn(2) == 1 //nolint:gosec,mnd // G404: Use of weak random number generator
 }
 
 // forwardHandler handles the incoming request by forwarding it to the terminate endpoint
