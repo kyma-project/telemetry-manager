@@ -25,6 +25,7 @@ SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
 SRC_ROOT := $(shell git rev-parse --show-toplevel)
+DEPENDENCIES_DIR := $(SRC_ROOT)/dependencies
 TOOLS_MOD_DIR    := $(SRC_ROOT)/internal/tools
 TOOLS_MOD_REGEX  := "\s+_\s+\".*\""
 TOOLS_PKG_NAMES  := $(shell grep -E $(TOOLS_MOD_REGEX) < $(TOOLS_MOD_DIR)/tools.go | tr -d " _\"")
@@ -55,13 +56,14 @@ YAMLFMT          := $(TOOLS_BIN_DIR)/yamlfmt
 STRINGER         := $(TOOLS_BIN_DIR)/stringer
 WSL              := $(TOOLS_BIN_DIR)/wsl
 K3D              := $(TOOLS_BIN_DIR)/k3d
-POPULATE_IMAGES  := $(TOOLS_BIN_DIR)/populate-images
 PROMLINTER       := $(TOOLS_BIN_DIR)/promlinter
 GOMPLATE         := $(TOOLS_BIN_DIR)/gomplate
 
+POPULATE_IMAGES  := $(TOOLS_BIN_DIR)/populate-images
+
 .PHONY: $(POPULATE_IMAGES)
 $(POPULATE_IMAGES):
-	cd $(TOOLS_MOD_DIR)/populateimages && go build -o $(POPULATE_IMAGES) main.go
+	cd $(DEPENDENCIES_DIR)/populateimages && go build -o $(POPULATE_IMAGES) main.go
 
 # Sub-makefile
 include hack/make/provision.mk
@@ -86,7 +88,6 @@ help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 
-DEPENDENCIES_DIR := dependencies
 
 # Find dependency folders that contain go.mod
 GO_MODULE_DIRS := $(shell find $(DEPENDENCIES_DIR) -mindepth 1 -maxdepth 1 -type d -exec test -f "{}/go.mod" \; -print)
