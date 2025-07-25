@@ -127,6 +127,10 @@ func run() error {
 	parseFlags()
 	initializeFeatureFlags()
 
+	if err := getImagesFromEnv(); err != nil {
+		return err
+	}
+
 	overrides.AtomicLevel().SetLevel(zapcore.InfoLevel)
 
 	zapLogger, err := loggerutils.New(overrides.AtomicLevel())
@@ -376,10 +380,11 @@ func getImagesFromEnv() error {
 		if val == "" {
 			return fmt.Errorf("required environment variable %s not set", k)
 		}
+
 		*v = val
 	}
-	return nil
 
+	return nil
 }
 
 func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
@@ -401,10 +406,6 @@ func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan
 	}
 
 	setupLog.Info("Setting up logpipeline controller")
-
-	if err := getImagesFromEnv(); err != nil {
-		return err
-	}
 
 	logPipelineController, err := telemetrycontrollers.NewLogPipelineController(
 		mgr.GetClient(),
