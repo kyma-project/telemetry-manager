@@ -8,7 +8,7 @@ Proposed
 
 ## Context
 
-The telemetry module supports exporting metrics to Dynatrace. However, Dynatrace has [limited support](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/getting-started/metrics/limitations#aggregation-temporality) for cumulative metrics and primarily accepts delta metrics. To ensure compatibility, the telemetry metric pipeline should allow converting cumulative metrics to delta format prior to export.
+The telemetry module supports exporting metrics to Dynatrace. However, Dynatrace has [limited support](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/getting-started/metrics/limitations#temporality-temporality) for cumulative metrics and primarily accepts delta metrics. To ensure compatibility, the telemetry metric pipeline should allow converting cumulative metrics to delta format prior to export.
 
 ## Proposal
 
@@ -16,7 +16,7 @@ OpenTelemetry offers a [CumulativeToDelta processor](https://github.com/open-tel
 
 Two options are proposed for where this configuration could be added:
 
-Option 1: Add `aggregationTemporality` under `spec.transform`
+Option 1: Add `temporality` under `spec.transform`
 
 This places the setting within the transformation section of the pipeline, where users define other metric transformations.
 
@@ -34,7 +34,7 @@ spec:
     istio:
       enabled: true
   transform:
-    aggregationTemporality: cumulative # or delta or none (default)
+    temporality: cumulative # or delta or none (default)
     rules:
       - conditions:
           - ...
@@ -58,7 +58,7 @@ spec:
     - Requires additional documentation and clarity around transform semantics.
     - The shared transform API may require rethinking for multi-signal support.
 
-Option 2: Add `aggregationTemporality` under `spec.output.otlp`
+Option 2: Add `temporality` under `spec.output.otlp`
 
 This locates the setting within the backend-specific output configuration, directly associating it with the Dynatrace OTLP exporter.
 
@@ -85,7 +85,7 @@ spec:
   filter: {}
   output:
     otlp:
-      aggregationTemporality: cumulative # or delta or none (default)
+      temporality: cumulative # or delta or none (default)
       endpoint:
         value: http://foo.bar:4317
 ```
@@ -103,10 +103,13 @@ spec:
 
 ## Conclusion
 
-Both API placement options offer valid paths for enabling aggregation temporality configuration, but they come with trade-offs in clarity, usability, and architectural alignment.
+Both API placement options provide valid mechanisms for configuring aggregation temporality conversion, each with trade-offs in usability, clarity, and architectural alignment.
 
-Option 1 (under `spec.transform`) is more appropriate from a semantic and architectural perspective, as the conversion from cumulative to delta is clearly a data transformation. It aligns with OpenTelemetry's processor model and offers better extensibility for future transformations. However, it may require adjustments to the current transform/filter API and additional guidance for users.
+The API name `temporality` selected, instead of more verbose alternatives like `aggregationTemporality` or `metricTemporality` because `temporality` is a fundamental concept in how metrics are collected, stored, and reported. This highlights that temporality itself—not just a sub-aspect like aggregation or metric-specific handling—is central to the design of metrics systems.
+Using the concise name `temporality` reflects that this is a core abstraction, not just an implementation detail or a modifier of another concept. It keeps the API clean and focused while preserving semantic clarity. Any user familiar with metrics will understand `temporality` in context—whereas adding prefixes like `aggregation`, `metric`, `delta`, or `cumulative` would be redundant and unnecessarily verbose.
 
-Option 2 (under `spec.output.otlp`) is more intuitive for users who think in terms of backend-specific configurations but risks diluting the separation of concerns between transformation and export.
+Option 1 (placing the setting under `spec.transform`) is semantically correct and aligns well with the OpenTelemetry processor model. It treats the cumulative-to-delta conversion as a transformation step and enables potential reuse for other metric manipulations. However, it introduces complexity for users unfamiliar with transformation pipelines and may require reworking the shared transform/filter API to support multi-signal scenarios more cleanly.
 
-Recommendation: Proceed with Option 1 and improve user experience through clear documentation and validation. This approach better preserves architectural clarity while still providing the necessary flexibility for users targeting Dynatrace and other backends with specific temporality constraints.
+Option 2 (placing the setting under `spec.output.otlp`) offers a more user-friendly and pragmatic approach. It keeps the configuration close to where users expect backend-specific behavior and avoids forcing all users to understand the transformation pipeline. While it introduces a mild violation of separation-of-concerns, this trade-off is acceptable given the clear mapping between the configuration and the needs of a specific exporter like Dynatrace.
+
+Recommendation: Proceed with Option 2, placing the `temporality` configuration under `spec.output.otlp`. This approach prioritizes usability and clarity for the user, especially in real-world scenarios where exporters impose specific metric format constraints. To mitigate any potential confusion, the implementation should include validation and clear documentation explaining that this setting only applies to metric signals and has no effect on logs or traces.
