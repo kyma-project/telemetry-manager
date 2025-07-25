@@ -47,7 +47,7 @@ function ensure_istio_telemetry() {
 
     if is_istio_telemetry_crd_available; then
       echo "Istio crd available, trying to apply telemetry..."
-      apply_istio_telemetry
+      apply_istio_telemetry || true
     fi
 
     if is_istio_telemetry_apply_successful; then
