@@ -24,15 +24,13 @@ func TestMetricsIstioEnvoyMultiPipeline(t *testing.T) {
 
 	var (
 		uniquePrefix = unique.Prefix()
-		mockNs       = uniquePrefix()
+		backendNs    = uniquePrefix()
 		app1Ns       = uniquePrefix("app-1")
 		app2Ns       = uniquePrefix("app-2")
-		backend1Name = "backend-1"
-		backend2Name = "backend-2"
 	)
 
-	backend1 := kitbackend.New(mockNs, kitbackend.SignalTypeMetrics, kitbackend.WithName(backend1Name))
-	backend2 := kitbackend.New(mockNs, kitbackend.SignalTypeMetrics, kitbackend.WithName(backend2Name))
+	backend1 := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithName("backend-1"))
+	backend2 := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithName("backend-2"))
 
 	pipelineIncludeApp1Ns := testutils.NewMetricPipelineBuilder().
 		WithName("pipeline-envoy").
@@ -49,7 +47,7 @@ func TestMetricsIstioEnvoyMultiPipeline(t *testing.T) {
 		Build()
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(mockNs).K8sObject(),
+		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(app1Ns, kitk8s.WithIstioInjection()).K8sObject(),
 		kitk8s.NewNamespace(app2Ns, kitk8s.WithIstioInjection()).K8sObject(),
 		&pipelineIncludeApp1Ns,

@@ -22,9 +22,9 @@ func TestIstioInputEnvoyMetrics(t *testing.T) {
 
 	var (
 		uniquePrefix     = unique.Prefix()
-		mockNs           = uniquePrefix()
-		app1Ns           = uniquePrefix("app-1")
 		pipelineName     = uniquePrefix()
+		backendNs        = uniquePrefix("backend")
+		app1Ns           = uniquePrefix("app-1")
 		envoyMetricNames = []string{
 			"envoy_cluster_version",
 			"envoy_cluster_upstream_rq_total",
@@ -32,7 +32,7 @@ func TestIstioInputEnvoyMetrics(t *testing.T) {
 		}
 	)
 
-	backend := kitbackend.New(mockNs, kitbackend.SignalTypeMetrics)
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)
 
 	metricPipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineName).
@@ -42,7 +42,7 @@ func TestIstioInputEnvoyMetrics(t *testing.T) {
 		Build()
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(mockNs).K8sObject(),
+		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(app1Ns, kitk8s.WithIstioInjection()).K8sObject(),
 		&metricPipeline,
 	}

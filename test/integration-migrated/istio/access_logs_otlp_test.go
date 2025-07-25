@@ -81,6 +81,7 @@ func TestAccessLogsOTLP(t *testing.T) {
 	Eventually(func(g Gomega) {
 		resp, err := suite.ProxyClient.Get(metricPodURL)
 		g.Expect(err).NotTo(HaveOccurred())
+		defer resp.Body.Close()
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed(),
 		"Should invoke the metrics endpoint to generate access logs",
@@ -119,6 +120,8 @@ func TestAccessLogsOTLP(t *testing.T) {
 
 // TODO: Remove this once the bug https://github.com/kyma-project/istio/issues/1481 fixed
 func enableOTLPAccessLogsProvider(t *testing.T) {
+	t.Helper()
+
 	var telemetry istiotelemetryclientv1.Telemetry
 
 	err := suite.K8sClient.Get(suite.Ctx, types.NamespacedName{
@@ -135,6 +138,8 @@ func enableOTLPAccessLogsProvider(t *testing.T) {
 
 // TODO: Remove this once the bug https://github.com/kyma-project/istio/issues/1481 fixed
 func resetAccessLogsProvider(t *testing.T) {
+	t.Helper()
+
 	var telemetry istiotelemetryclientv1.Telemetry
 
 	err := suite.K8sClient.Get(suite.Ctx, types.NamespacedName{
