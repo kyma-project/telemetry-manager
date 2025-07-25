@@ -86,17 +86,49 @@ help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 
-##@ Development
-lint-fix: $(GOLANGCI_LINT) $(WSL)
-	-$(WSL) --fix ./...
-	$(GOLANGCI_LINT) run --fix
-	cd $(TOOLS_MOD_DIR) && $(GOLANGCI_LINT) run --config $(SRC_ROOT)/.golangci.yaml --fix
+DEPENDENCIES_DIR := dependencies
 
-lint: $(GOLANGCI_LINT)
-	go version
-	$(GOLANGCI_LINT) version
-	$(GOLANGCI_LINT) run
-	cd $(TOOLS_MOD_DIR) && $(GOLANGCI_LINT) run --config $(SRC_ROOT)/.golangci.yaml
+# Find dependency folders that contain go.mod
+GO_MODULE_DIRS := $(shell find $(DEPENDENCIES_DIR) -mindepth 1 -maxdepth 1 -type d -exec test -f "{}/go.mod" \; -print)
+MODULE_NAMES := $(notdir $(GO_MODULE_DIRS))
+
+# All standard and fix lint targets
+LINT_TARGETS := $(addprefix lint-,$(MODULE_NAMES))
+LINT_FIX_TARGETS := $(addprefix lint-fix-,$(MODULE_NAMES))
+
+# Declare phony targets for shell completion
+
+# Lint the root module
+lint-manager:
+	@echo "Linting root module..."
+	@$(GOLANGCI_LINT) run --config $(SRC_ROOT)/.golangci.yaml
+
+# Lint the root module with --fix
+lint-fix-manager:
+	@echo "Linting root module (with fix)..."
+	@$(GOLANGCI_LINT) run --config $(SRC_ROOT)/.golangci.yaml --fix
+
+# Pattern rule for standard lint targets
+$(LINT_TARGETS):
+	@modname=$(@:lint-%=%); \
+	echo "Linting $$modname..."; \
+	cd $(DEPENDENCIES_DIR)/$$modname && $(GOLANGCI_LINT) run --config $(SRC_ROOT)/.golangci.yaml
+
+# Pattern rule for fix lint targets
+$(LINT_FIX_TARGETS):
+	@modname=$(@:lint-fix-%=%); \
+	echo "Linting $$modname (with fix)..."; \
+	cd $(DEPENDENCIES_DIR)/$$modname && $(GOLANGCI_LINT) run --config $(SRC_ROOT)/.golangci.yaml --fix
+
+# Lint everything
+lint: lint-manager $(LINT_TARGETS)
+	@echo "All lint checks completed."
+
+# Lint everything with fix
+lint-fix: lint-fix-manager $(LINT_FIX_TARGETS)
+	@echo "All lint fix checks completed."
+
+.PHONY: lint-manager lint-fix-manager lint lint-fix $(LINT_TARGETS) $(LINT_FIX_TARGETS)
 
 .PHONY: crd-docs-gen
 crd-docs-gen: $(TABLE_GEN) manifests## Generates CRD spec into docs folder

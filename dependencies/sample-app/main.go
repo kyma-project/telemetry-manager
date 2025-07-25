@@ -22,7 +22,9 @@ import (
 )
 
 const (
-	serverPort = 8080
+	serverPort        = 8080
+	clientTimeout     = 30 * time.Second
+	serverReadTimeout = 3 * time.Second
 )
 
 var (
@@ -71,7 +73,7 @@ func initMetrics() error {
 		metric.WithUnit("celsius"),
 		metric.WithFloat64Callback(func(ctx context.Context, o metric.Float64Observer) error {
 			o.Observe(randomTemp())
-			//as there is no async histogram, use this callbacl to also record the other meters
+			// as there is no async histogram, use this callbacl to also record the other meters
 			hdErrorsMeter.Add(ctx, 1, metric.WithAttributes(hdErrorsAttributeSdb))
 			cpuEnergyMeter.Record(ctx, randomEnergy(), metric.WithAttributes(cpuEnergyAttribute1))
 			return nil
@@ -92,38 +94,40 @@ func initMetrics() error {
 	return nil
 }
 
-func initTerminateEndpoint() {
+func initTerminateEndpoint(ctx context.Context) {
 	var ok bool
 	if terminateEndpoint, ok = os.LookupEnv("TERMINATE_ENDPOINT"); !ok {
 		terminateEndpoint = fmt.Sprintf("localhost:%d", serverPort)
 	}
-	logger.Info("Using terminate endpoint: " + terminateEndpoint)
+
+	logger.InfoContext(ctx, "Using terminate endpoint: "+terminateEndpoint)
 }
 
 // randomTemp generates the temperature ranging from 60 to 90
 func randomTemp() float64 {
-	return math.Round(rand.Float64()*300)/10 + 60
+	return math.Round(rand.Float64()*300)/10 + 60 //nolint:gosec,mnd // G404: Use of weak random number generator
 }
 
 // randomEnergy generates the energy ranging from 0 to 100
 func randomEnergy() float64 {
-	return math.Round(rand.Float64() * 100)
+	const maxEnergy = 100.0
+	return math.Round(rand.Float64() * maxEnergy) //nolint:gosec // G404: Use of weak random number generator
 }
 
 // randBool generates a random bool
 func randBool() bool {
-	return rand.Intn(2) == 1
+	return (2) == 1 //nolint:gosec,mnd // G404: Use of weak random number generator
 }
 
 // forwardHandler handles the incoming request by forwarding it to the terminate endpoint
 func forwardHandler(w http.ResponseWriter, r *http.Request) {
-
 	// Initialize a new span for the current trace
 	ctx, span := tracer.Start(r.Context(), "forward")
 	defer span.End()
 
 	// Forward the request to the terminate endpoint using the instrumented HTTP client, so that trace context gets propagated
 	requestURL := fmt.Sprintf("http://%s/terminate", terminateEndpoint)
+
 	res, err := otelhttp.Get(ctx, requestURL)
 	if err != nil {
 		logger.ErrorContext(ctx, "client: error making http request", slog.String("error", err.Error()), slog.String("traceId", span.SpanContext().TraceID().String()))
@@ -137,6 +141,7 @@ func forwardHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer res.Body.Close()
+
 	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
 		logger.ErrorContext(ctx, "client: could not read response body", slog.String("error", err.Error()), slog.String("traceId", span.SpanContext().TraceID().String()))
@@ -150,7 +155,7 @@ func forwardHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if res.StatusCode/100 != 2 {
+	if !isSuccess(res.StatusCode) {
 		logger.ErrorContext(ctx, "client: received error response code", slog.String("status", res.Status), slog.String("traceId", span.SpanContext().TraceID().String()))
 		span.SetStatus(codes.Error, "error")
 	} else {
@@ -161,12 +166,16 @@ func forwardHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(resBody))
 }
 
+func isSuccess(status int) bool {
+	return status >= http.StatusOK && status < http.StatusMultipleChoices
+}
+
 // terminateHandler handles the incoming request by terminating it randomly with a success or error response
 func terminateHandler(w http.ResponseWriter, r *http.Request) {
-
 	// Initialize a new span for the current trace with enriched attributes
 	ctx, span := tracer.Start(r.Context(), "terminate")
 	defer span.End()
+
 	span.SetAttributes(hdErrorsAttributeSda, cpuEnergyAttribute0)
 
 	// Record metric and enrich it with attributes
@@ -177,7 +186,8 @@ func terminateHandler(w http.ResponseWriter, r *http.Request) {
 		span.RecordError(fmt.Errorf("random logic decided to fail the request"))
 		span.SetStatus(codes.Error, "error")
 
-		hdErrorsMeter.Add(ctx, 5, metric.WithAttributes(hdErrorsAttributeSda))
+		const asRandomAsItGets = 5
+		hdErrorsMeter.Add(ctx, asRandomAsItGets, metric.WithAttributes(hdErrorsAttributeSda))
 
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "Error")
@@ -186,16 +196,18 @@ func terminateHandler(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+
 	logger.InfoContext(ctx, "Terminated successful", slog.String("traceId", span.SpanContext().TraceID().String()))
 
-	hdErrorsMeter.Add(ctx, 1, metric.WithAttributes(hdErrorsAttributeSda))
+	const notQuiteAsRandomAsItGets = 1
+	hdErrorsMeter.Add(ctx, notQuiteAsRandomAsItGets, metric.WithAttributes(hdErrorsAttributeSda))
 	fmt.Fprintf(w, "Success")
 }
 
 func run() error {
 	ctx := context.Background()
 
-	logger.Info("Setting up OTel SDK")
+	logger.InfoContext(ctx, "Setting up OTel SDK")
 
 	// Instantiate the trace and metric providers
 	res, err := newOtelResource()
@@ -207,18 +219,25 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("creating trace exporter: %w", err)
 	}
+
 	tp := newTraceProvider(te, res)
 
 	mr, err := newMetricReader(ctx)
 	if err != nil {
 		return fmt.Errorf("creating meter provider: %w", err)
 	}
+
 	mp := newMeterProvider(mr, res)
 
 	// Handle shutdown properly so nothing leaks.
 	defer func() {
-		_ = tp.Shutdown(ctx)
-		_ = mp.Shutdown(ctx)
+		if err := tp.Shutdown(ctx); err != nil {
+			logger.ErrorContext(ctx, "Error shutting down trace provider", slog.String("error", err.Error()))
+		}
+
+		if err := mp.Shutdown(ctx); err != nil {
+			logger.ErrorContext(ctx, "Error shutting down meter provider", slog.String("error", err.Error()))
+		}
 	}()
 
 	// Register the trace and metric providers
@@ -233,7 +252,7 @@ func run() error {
 		return fmt.Errorf("error initializing metrics: %w", err)
 	}
 
-	otelSDKLogger, err := newOTelSDKLogger()
+	otelSDKLogger, err := newOTelSDKLogger(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating OTel SDK logger: %w", err)
 	}
@@ -241,10 +260,10 @@ func run() error {
 	otel.SetLogger(*otelSDKLogger)
 
 	// Configure the HTTP server
-	http.DefaultClient.Timeout = 30 * time.Second
+	http.DefaultClient.Timeout = clientTimeout
 
 	// Initialize the forward handler with the terminate endpoint to use
-	initTerminateEndpoint()
+	initTerminateEndpoint(ctx)
 
 	// Wrap the handler with OpenTelemetry instrumentation
 	wrappedForwardHandler := otelhttp.NewHandler(http.HandlerFunc(forwardHandler), "auto-forward")
@@ -262,12 +281,19 @@ func run() error {
 		),
 		"metrics"))
 
-	//Start the HTTP server
-	logger.Info("Starting server on port " + strconv.Itoa(serverPort))
-	err = http.ListenAndServe(fmt.Sprintf(":%d", serverPort), nil)
+	// Start the HTTP server
+	logger.InfoContext(ctx, "Starting server on port "+strconv.Itoa(serverPort))
+
+	server := &http.Server{
+		Addr:              ":1234",
+		ReadHeaderTimeout: serverReadTimeout,
+	}
+
+	err = server.ListenAndServe()
 	if err != nil {
 		return fmt.Errorf("error starting server: %w", err)
 	}
+
 	return nil
 }
 
@@ -284,13 +310,14 @@ func newURLParamCounterMiddleware(next http.Handler) http.Handler {
 				),
 			)
 		}
+
 		next.ServeHTTP(w, r)
 	})
 }
 
 func main() {
 	if err := run(); err != nil {
-		logger.Error("Error running server", slog.String("error", err.Error()))
+		logger.ErrorContext(context.Background(), "Error running server", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 }
