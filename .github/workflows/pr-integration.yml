@@ -202,6 +202,9 @@ jobs:
           # OTHER
           - name: experimental
             mode: experimental
+          # INTEGRATION
+          - name: istio
+            mode: integration
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -213,12 +216,22 @@ jobs:
           experimental: ${{ matrix.labels.mode == 'experimental' }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Deploy Istio Module
+        if: ${{ matrix.labels.name == 'istio' &&  matrix.labels.mode == 'integration' }}
+        run: hack/deploy-istio.sh
+
       - name: Deploy Test Prerequisites
         uses: "./.github/template/deploy-test-prerequisites"
 
-      - name: Run tests
+      - name: Run e2e tests
+        if: ${{ matrix.labels.mode != 'integration' }}
         run: |
           go test -v -timeout=20m ./test/e2e-migrated/... -- -labels=${{ matrix.labels.name }}
+
+      - name: Run integration tests
+        if: ${{ matrix.labels.mode == 'integration' }}
+        run: |
+          go test -v -timeout=20m ./test/integration/... -- -labels=${{ matrix.labels.name }}
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
