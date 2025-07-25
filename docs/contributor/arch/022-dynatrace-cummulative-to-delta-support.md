@@ -113,3 +113,5 @@ Option 1 (placing the setting under `spec.transform`) is semantically correct an
 Option 2 (placing the setting under `spec.output.otlp`) offers a more user-friendly and pragmatic approach. It keeps the configuration close to where users expect backend-specific behavior and avoids forcing all users to understand the transformation pipeline. While it introduces a mild violation of separation-of-concerns, this trade-off is acceptable given the clear mapping between the configuration and the needs of a specific exporter like Dynatrace.
 
 Recommendation: Proceed with Option 2, placing the `temporality` configuration under `spec.output.otlp`. This approach prioritizes usability and clarity for the user, especially in real-world scenarios where exporters impose specific metric format constraints. To mitigate any potential confusion, the implementation should include validation and clear documentation explaining that this setting only applies to metric signals and has no effect on logs or traces.
+
+To ensure data consistency and sampling efficiency, the `temporality` processors will be near the end of the pipeline chain, before the exporters.
