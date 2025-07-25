@@ -261,7 +261,7 @@ Follow these steps to set up the required environment:
 9. Deploy the modified Telemetry Manager:
 
    ```shell
-    export IMG=$DEV_IMAGE_REPO
+    export IMAGE=$DEV_IMAGE_REPO
     make docker-build
     make docker-push
     make install

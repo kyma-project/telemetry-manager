@@ -55,7 +55,7 @@ For development, use the following commands:
 - Build container image and deploy to cluster in current kubeconfig context
 
   ```bash
-  export IMG=<my container repo>
+  export IMAGE=<my container repo>
   make docker-build
   make docker-push
   kubectl create ns kyma-system
