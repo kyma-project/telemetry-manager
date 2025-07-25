@@ -99,7 +99,7 @@ spec:
   - Users may not expect transformation logic to appear here. 
   - Similar to `Option 1`, it introduces complexity and documentation requirements. 
   - May not align well with the separation of concerns in the telemetry pipeline design.
-  - The `output.otlp` API designed to share across all signal types, which may lead to confusion if users expect it to apply only to metrics.
+  - The `output.otlp` API is designed to share across all signal types `logs`, `traces`, and `metrics`, which may lead to confusion if users expect it to apply only to metrics.
 
 ## Conclusion
 
