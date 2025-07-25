@@ -34,7 +34,7 @@ spec:
     istio:
       enabled: true
   transform:
-    temporality: cumulative # or delta or none (default)
+    temporality: cumulative # or delta
     rules:
       - conditions:
           - ...
@@ -85,7 +85,7 @@ spec:
   filter: {}
   output:
     otlp:
-      temporality: cumulative # or delta or none (default)
+      temporality: cumulative # or delta
       endpoint:
         value: http://foo.bar:4317
 ```
