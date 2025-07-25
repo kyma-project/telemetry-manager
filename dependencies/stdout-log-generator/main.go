@@ -24,7 +24,7 @@ var logsGenerated = prometheus.NewCounter(
 )
 
 const (
-	defaultByteSize = 2 << 10
+	defaultByteSize = 1 << 11
 )
 
 func main() {
