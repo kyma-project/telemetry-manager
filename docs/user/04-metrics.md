@@ -860,3 +860,36 @@ spec:
 **Cause**: Gateway cannot receive metrics at the given rate.
 
 **Solution**: Manually scale out the gateway by increasing the number of replicas for the metric gateway. See [Module Configuration and Status](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
+
+### Scrape metrics from System Namespaces
+
+**Symptom**: Metrics from system namespaces are not scraped
+
+**Cause**: By default metrics from system namespaces are not scraped.
+
+**Solution**: To scrape metrics from system namespaces, add `namespaces {}` to the respective input section. eg:
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: MetricPipeline
+metadata:
+  name: <pipeline-name>
+spec:
+  input:
+    istio:
+      enabled: true
+      namespaces: {}
+    prometheus:
+      enabled: true
+      namespaces: {}
+    runtime:
+      enabled: true
+      namespaces: {}
+  output:
+    otlp:
+      endpoint:
+        value: <your-backend-endpoint>
+```
+
+
+
+
