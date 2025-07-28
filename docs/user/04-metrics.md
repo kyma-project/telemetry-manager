@@ -889,7 +889,3 @@ spec:
       endpoint:
         value: <your-backend-endpoint>
 ```
-
-
-
-
