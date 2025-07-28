@@ -2,7 +2,11 @@ include .env
 -include .env.overrides
 
 # Environment Variables
-IMG ?= $(ENV_IMG)
+MANAGER_IMAGE ?= $(ENV_IMAGE)
+FLUENT_BIT_EXPORTER_IMAGE?= $(ENV_FLUENTBIT_EXPORTER_IMAGE)
+FLUENT_BIT_IMAGE ?= $(ENV_FLUENTBIT_IMAGE)
+OTEL_COLLECTOR_IMAGE ?= $(ENV_OTEL_COLLECTOR_IMAGE)
+SELF_MONITOR_IMAGE?= $(ENV_SELFMONITOR_IMAGE)
 K3S_IMAGE ?= $(ENV_K3S_IMAGE)
 
 # Operating system architecture
@@ -25,6 +29,7 @@ SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
 SRC_ROOT := $(shell git rev-parse --show-toplevel)
+DEPENDENCIES_DIR := $(SRC_ROOT)/dependencies
 TOOLS_MOD_DIR    := $(SRC_ROOT)/internal/tools
 TOOLS_MOD_REGEX  := "\s+_\s+\".*\""
 TOOLS_PKG_NAMES  := $(shell grep -E $(TOOLS_MOD_REGEX) < $(TOOLS_MOD_DIR)/tools.go | tr -d " _\"")
@@ -53,15 +58,16 @@ YQ               := $(TOOLS_BIN_DIR)/yq
 JQ               := $(TOOLS_BIN_DIR)/gojq
 YAMLFMT          := $(TOOLS_BIN_DIR)/yamlfmt
 STRINGER         := $(TOOLS_BIN_DIR)/stringer
-WSL		 := $(TOOLS_BIN_DIR)/wsl
+WSL              := $(TOOLS_BIN_DIR)/wsl
 K3D              := $(TOOLS_BIN_DIR)/k3d
-POPULATE_IMAGES  := $(TOOLS_BIN_DIR)/populate-images
 PROMLINTER       := $(TOOLS_BIN_DIR)/promlinter
 GOMPLATE         := $(TOOLS_BIN_DIR)/gomplate
 
+POPULATE_IMAGES  := $(TOOLS_BIN_DIR)/populate-images
+
 .PHONY: $(POPULATE_IMAGES)
 $(POPULATE_IMAGES):
-	cd $(TOOLS_MOD_DIR)/populateimages && go build -o $(POPULATE_IMAGES) main.go
+	cd $(DEPENDENCIES_DIR)/populateimages && go build -o $(POPULATE_IMAGES) main.go
 
 # Sub-makefile
 include hack/make/provision.mk
@@ -86,15 +92,48 @@ help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 
-##@ Development
-lint-fix: $(GOLANGCI_LINT) $(WSL)
-	-$(WSL) --fix ./...
-	$(GOLANGCI_LINT) run --fix
 
-lint: $(GOLANGCI_LINT)
-	go version
-	$(GOLANGCI_LINT) version
-	GO111MODULE=on $(GOLANGCI_LINT) run
+# Find dependency folders that contain go.mod
+GO_MODULE_DIRS := $(shell find $(DEPENDENCIES_DIR) -mindepth 1 -maxdepth 1 -type d -exec test -f "{}/go.mod" \; -print)
+MODULE_NAMES := $(notdir $(GO_MODULE_DIRS))
+
+# All standard and fix lint targets
+LINT_TARGETS := $(addprefix lint-,$(MODULE_NAMES))
+LINT_FIX_TARGETS := $(addprefix lint-fix-,$(MODULE_NAMES))
+
+# Declare phony targets for shell completion
+
+# Lint the root module
+lint-manager:
+	@echo "Linting root module..."
+	@$(GOLANGCI_LINT) run --config $(SRC_ROOT)/.golangci.yaml
+
+# Lint the root module with --fix
+lint-fix-manager:
+	@echo "Linting root module (with fix)..."
+	@$(GOLANGCI_LINT) run --config $(SRC_ROOT)/.golangci.yaml --fix
+
+# Pattern rule for standard lint targets
+$(LINT_TARGETS):
+	@modname=$(@:lint-%=%); \
+	echo "Linting $$modname..."; \
+	cd $(DEPENDENCIES_DIR)/$$modname && $(GOLANGCI_LINT) run --config $(SRC_ROOT)/.golangci.yaml
+
+# Pattern rule for fix lint targets
+$(LINT_FIX_TARGETS):
+	@modname=$(@:lint-fix-%=%); \
+	echo "Linting $$modname (with fix)..."; \
+	cd $(DEPENDENCIES_DIR)/$$modname && $(GOLANGCI_LINT) run --config $(SRC_ROOT)/.golangci.yaml --fix
+
+# Lint everything
+lint: lint-manager $(LINT_TARGETS)
+	@echo "All lint checks completed."
+
+# Lint everything with fix
+lint-fix: lint-fix-manager $(LINT_FIX_TARGETS)
+	@echo "All lint fix checks completed."
+
+.PHONY: lint-manager lint-fix-manager lint lint-fix $(LINT_TARGETS) $(LINT_FIX_TARGETS)
 
 .PHONY: crd-docs-gen
 crd-docs-gen: $(TABLE_GEN) manifests## Generates CRD spec into docs folder
@@ -116,15 +155,19 @@ manifests-experimental: $(CONTROLLER_GEN) $(YAMLFMT) ## Generate WebhookConfigur
 	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook crd paths="./..." output:crd:artifacts:config=config/development/crd/bases
 	$(YAMLFMT)
 
+
 .PHONY: generate
-generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) $(POPULATE_IMAGES) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) $(YQ) $(YAMLFMT) $(POPULATE_IMAGES) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 	$(MOCKERY)
 	$(STRINGER) --type Mode internal/utils/logpipeline/logpipeline.go
 	$(STRINGER) --type FeatureFlag internal/featureflags/featureflags.go
+	$(YQ) eval '.spec.template.spec.containers[] |= (select(.name == "manager") | .env[] |= (select(.name == "FLUENT_BIT_IMAGE") | .value = ${FLUENT_BIT_IMAGE}))' -i config/manager/manager.yaml
+	$(YQ) eval '.spec.template.spec.containers[] |= (select(.name == "manager") | .env[] |= (select(.name == "FLUENT_BIT_EXPORTER_IMAGE") | .value = ${FLUENT_BIT_EXPORTER_IMAGE}))' -i config/manager/manager.yaml
+	$(YQ) eval '.spec.template.spec.containers[] |= (select(.name == "manager") | .env[] |= (select(.name == "OTEL_COLLECTOR_IMAGE") | .value = ${OTEL_COLLECTOR_IMAGE}))' -i config/manager/manager.yaml
+	$(YQ) eval '.spec.template.spec.containers[] |= (select(.name == "manager") | .env[] |= (select(.name == "SELF_MONITOR_IMAGE") | .value = ${SELF_MONITOR_IMAGE}))' -i config/manager/manager.yaml
+	$(YAMLFMT)
 	$(POPULATE_IMAGES)
-
-
 .PHONY: fmt
 fmt: ## Run go fmt against code.
 	go fmt ./...
@@ -178,11 +221,11 @@ run: gen-webhook-cert manifests generate fmt vet tidy ## Run a controller from y
 
 .PHONY: docker-build
 docker-build: ## Build docker image with the manager.
-	docker build -t ${IMG} .
+	docker build -t ${MANAGER_IMAGE} .
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
-	docker push ${IMG}
+	docker push ${MANAGER_IMAGE}
 
 
 ##@ Deployment
@@ -205,7 +248,7 @@ uninstall: manifests $(KUSTOMIZE) ## Uninstall CRDs from the K8s cluster specifi
 
 .PHONY: deploy
 deploy: manifests $(KUSTOMIZE) ## Deploy resources based on the release (default) variant to the K8s cluster specified in ~/.kube/config.
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	cd config/manager && $(KUSTOMIZE) edit set image controller=${MANAGER_IMAGE}
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
 .PHONY: undeploy
@@ -214,7 +257,7 @@ undeploy: $(KUSTOMIZE) ## Undeploy resources based on the release (default) vari
 
 .PHONY: deploy-experimental
 deploy-experimental: manifests-experimental $(KUSTOMIZE) ## Deploy resources based on the development variant to the K8s cluster specified in ~/.kube/config.
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	cd config/manager && $(KUSTOMIZE) edit set image controller=${MANAGER_IMAGE}
 	$(KUSTOMIZE) build config/development | kubectl apply -f -
 
 .PHONY: undeploy-experimental
