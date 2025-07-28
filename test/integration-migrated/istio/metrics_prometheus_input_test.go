@@ -26,29 +26,29 @@ func TestMetricsPrometheusInput(t *testing.T) {
 	var (
 		uniquePrefix                     = unique.Prefix()
 		pipelineName                     = uniquePrefix()
-		backendkNs                       = uniquePrefix("backend")
-		genkNs                           = uniquePrefix("gen")
+		backendNs                        = uniquePrefix("backend")
+		genNs                            = uniquePrefix("gen")
 		httpsAnnotatedMetricProducerName = uniquePrefix("producer-https")
 		httpAnnotatedMetricProducerName  = uniquePrefix("producer-http")
 		unannotatedMetricProducerName    = uniquePrefix("producer")
 	)
 
-	backend := kitbackend.New(backendkNs, kitbackend.SignalTypeMetrics)
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)
 	backendExportURL := backend.ExportURL(suite.ProxyClient)
 
-	httpsAnnotatedMetricProducer := prommetricgen.New(genkNs, prommetricgen.WithName(httpsAnnotatedMetricProducerName))
-	httpAnnotatedMetricProducer := prommetricgen.New(genkNs, prommetricgen.WithName(httpAnnotatedMetricProducerName))
-	unannotatedMetricProducer := prommetricgen.New(genkNs, prommetricgen.WithName(unannotatedMetricProducerName))
+	httpsAnnotatedMetricProducer := prommetricgen.New(genNs, prommetricgen.WithName(httpsAnnotatedMetricProducerName))
+	httpAnnotatedMetricProducer := prommetricgen.New(genNs, prommetricgen.WithName(httpAnnotatedMetricProducerName))
+	unannotatedMetricProducer := prommetricgen.New(genNs, prommetricgen.WithName(unannotatedMetricProducerName))
 
 	metricPipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineName).
-		WithPrometheusInput(true, testutils.IncludeNamespaces(genkNs)).
+		WithPrometheusInput(true, testutils.IncludeNamespaces(genNs)).
 		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 		Build()
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(backendkNs).K8sObject(),
-		kitk8s.NewNamespace(genkNs).K8sObject(),
+		kitk8s.NewNamespace(backendNs).K8sObject(),
+		kitk8s.NewNamespace(genNs).K8sObject(),
 		&metricPipeline,
 		httpsAnnotatedMetricProducer.Pod().WithSidecarInjection().WithPrometheusAnnotations(prommetricgen.SchemeHTTPS).K8sObject(),
 		httpsAnnotatedMetricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTPS).K8sObject(),
