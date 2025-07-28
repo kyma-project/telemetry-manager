@@ -861,7 +861,7 @@ spec:
 
 **Solution**: Manually scale out the gateway by increasing the number of replicas for the metric gateway. See [Module Configuration and Status](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
 
-### Scrape metrics from System Namespaces
+### Scrape metrics from system namespaces
 
 **Symptom**: Metrics from system namespaces are not scraped
 
