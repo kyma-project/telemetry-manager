@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -14,13 +15,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// TODO: Implement a table-driven test for the healthy self-monitoring scenario, covering all telemetry data types.
 func TestHealthy(t *testing.T) {
 	tests := []struct {
-		name                       string
+		prefix                     string
 		signalType                 kitbackend.SignalType
 		pipeline                   func(includeNs string, backend *kitbackend.Backend) client.Object
 		generator                  func(ns string) client.Object
@@ -29,7 +28,7 @@ func TestHealthy(t *testing.T) {
 		selfMonitorIsHealthy       func()
 	}{
 		{
-			name: logsOTelAgentPrefix,
+			prefix:     logsOTelAgentPrefix,
 			signalType: kitbackend.SignalTypeLogsOTel,
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
@@ -55,7 +54,7 @@ func TestHealthy(t *testing.T) {
 			},
 		},
 		{
-			name: logsOTelGatewayPrefix,
+			prefix:     logsOTelGatewayPrefix,
 			signalType: kitbackend.SignalTypeLogsOTel,
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
@@ -80,7 +79,7 @@ func TestHealthy(t *testing.T) {
 			},
 		},
 		{
-			name: logsFluentbitPrefix,
+			prefix:     logsFluentbitPrefix,
 			signalType: kitbackend.SignalTypeLogsFluentBit,
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
@@ -104,14 +103,62 @@ func TestHealthy(t *testing.T) {
 				assert.LogPipelineSelfMonitorIsHealthy(t, suite.K8sClient, logsFluentbitPrefix)
 			},
 		},
+		{
+			prefix:     metricsPrefix,
+			signalType: kitbackend.SignalTypeMetrics,
+			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
+				p := testutils.NewMetricPipelineBuilder().
+					WithName(metricsPrefix).
+					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+					Build()
+				return &p
+			},
+			generator: func(ns string) client.Object {
+				return telemetrygen.NewPod(ns, telemetrygen.SignalTypeMetrics).K8sObject()
+			},
+			resourcesReady: func() {
+				assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+				assert.MetricPipelineHealthy(t, metricsPrefix)
+			},
+			dataFromNamespaceDelivered: func(ns string, backend *kitbackend.Backend) {
+				assert.MetricsFromNamespaceDelivered(t, backend, ns, telemetrygen.MetricNames)
+			},
+			selfMonitorIsHealthy: func() {
+				assert.MetricPipelineSelfMonitorIsHealthy(t, suite.K8sClient, metricsPrefix)
+			},
+		},
+		{
+			prefix:     tracesPrefix,
+			signalType: kitbackend.SignalTypeTraces,
+			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
+				p := testutils.NewTracePipelineBuilder().
+					WithName(tracesPrefix).
+					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+					Build()
+				return &p
+			},
+			generator: func(ns string) client.Object {
+				return telemetrygen.NewPod(ns, telemetrygen.SignalTypeTraces).K8sObject()
+			},
+			resourcesReady: func() {
+				assert.DeploymentReady(t, kitkyma.TraceGatewayName)
+				assert.TracePipelineHealthy(t, tracesPrefix)
+			},
+			dataFromNamespaceDelivered: func(ns string, backend *kitbackend.Backend) {
+				assert.TracesFromNamespaceDelivered(t, backend, ns)
+			},
+			selfMonitorIsHealthy: func() {
+				assert.TracePipelineSelfMonitorIsHealthy(t, suite.K8sClient, tracesPrefix)
+			},
+		},
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.prefix, func(t *testing.T) {
 			suite.RegisterTestCase(t, suite.LabelSelfMonitoringHealthy)
 
 			var (
-				uniquePrefix = unique.Prefix(tc.name)
+				uniquePrefix = unique.Prefix(tc.prefix)
 				backendNs    = uniquePrefix("backend")
 				genNs        = uniquePrefix("gen")
 			)
