@@ -8,7 +8,7 @@ Proposed
 
 ## Context
 
-The telemetry module supports exporting metrics to Dynatrace. However, Dynatrace has [limited support](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/getting-started/metrics/limitations#temporality-temporality) for cumulative metrics and primarily accepts delta metrics. To ensure compatibility, the telemetry metric pipeline should allow converting cumulative metrics to delta format prior to export.
+The telemetry module supports exporting metrics to Dynatrace. However, Dynatrace has [limited support](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/getting-started/metrics/limitations#aggregation-temporality) for cumulative metrics and primarily accepts delta metrics. To ensure compatibility, the telemetry metric pipeline should allow converting cumulative metrics to delta format prior to export.
 
 ## Proposal
 
@@ -98,8 +98,8 @@ spec:
   - Adds ambiguity to the purpose of the output section, which traditionally doesn’t handle transformations. 
   - Users may not expect transformation logic to appear here. 
   - Similar to `Option 1`, it introduces complexity and documentation requirements. 
-  - May not align well with the separation of concerns in the telemetry pipeline design.
-  - The `output.otlp` API is designed to share across all signal types `logs`, `traces`, and `metrics`, which may lead to confusion if users expect it to apply only to metrics.
+  - It may not align well with the separation of concerns in the telemetry pipeline design.
+  - The `output.otlp` API is designed to share across all telemetry signal types `logs`, `traces`, and `metrics`, which may lead to confusion if users expect it to apply only to metrics.
 
 ## Conclusion
 
