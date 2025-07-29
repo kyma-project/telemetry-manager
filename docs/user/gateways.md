@@ -62,14 +62,14 @@ The Telemetry gateways automatically enrich your data by adding the following at
   3. Deployment/DaemonSet/StatefulSet/Job name
   4. Pod name
   5. If none of the above is available, the value is `unknown_service`
-- `k8s.pod.name`: The kubernetes pod name of the pod which emmitted the data
-- `k8s.pod.uid`: The kubernetes pod id of the pod which emmitted the data
-- `k8s.<workload kind>.name`: The kubernetes workload name where the emmitting pod belongs to. Workload is either Deployment, DaemonSet, StatefulSet, Job or CronJob
-- `k8s.namespace.name`: The kubernetes namespace name where the emmitting pod is associated with
-- `k8s.cluster.name`: A logical identifer of the cluster which by default is the API Server URL. Users can set a custom name by configuring the `enrichments.cluster.name` field in the [Telemetry CRD](resources/01-telemetry.md).
+- `k8s.pod.name`: The Kubernetes Pod name of the Pod that emitted the data
+- `k8s.pod.uid`: The Kubernetes Pod id of the Pod that emitted the data
+- `k8s.<workload kind>.name`: The Kubernetes workload name to which the emitting Pod belongs. Workload is either Deployment, DaemonSet, StatefulSet, Job or CronJob
+- `k8s.namespace.name`: The Kubernetes namespace name with which the emitting Pod is associated
+- `k8s.cluster.name`: A logical identifier of the cluster, which, by default, is the API Server URL. Users can set a custom name by configuring the `enrichments.cluster.name` field in the [Telemetry CRD](resources/01-telemetry.md)
 - `k8s.cluster.uid`: A unique identifier of the cluster, realized by the UID of the "kube-system" namespace
-- `k8s.node.name`: The kubernetes node name where the emmitting pod is scheduled to.
-- `k8s.node.uid`: The kubernetes node id where the emmitting pod belongs to.
+- `k8s.node.name`: The Kubernetes node name to which the emitting Pod is scheduled.
+- `k8s.node.uid`: The Kubernetes Node id to which the emitting Pod belongs
 - `k8s.pod.label.<label_key>` attributes: In addition to the predefined enrichments, the Telemetry gateways support user-defined enrichments of telemetry data based on Pod labels (see [Telemetry CRD](resources/01-telemetry.md)). By configuring specific label keys or label key prefixes to include in the enrichment process, you can capture custom application metadata that may be relevant for filtering, grouping, or correlation purposes. All matching Pod labels are added to the telemetry data as resource attributes, using the label key format `k8s.pod.label.<label_key>`.
 
    The following example configuration enriches the telemetry data with Pod labels that match the specified keys or key prefixes:
