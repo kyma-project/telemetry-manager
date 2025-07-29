@@ -218,9 +218,6 @@ jobs:
 
       - name: Debug network interfaces and metrics
         run: |
-          echo "=== k3d cluster info ==="
-          k3d cluster list
-
           echo "=== Node network interfaces ==="
           docker exec k3d-kyma-server-0 ip link show
           docker exec k3d-kyma-server-0 cat /proc/net/dev
