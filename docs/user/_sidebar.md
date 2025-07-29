@@ -1,12 +1,11 @@
 <!-- markdown-link-check-disable -->
 - [Back to Kyma Home](/)
 - [Kyma Telemetry Module](/telemetry-manager/user/README.md)
-- [Telemetry Manager](/telemetry-manager/user/01-manager.md)
-- [Gateways](/telemetry-manager/user/gateways.md)
-- [Application Logs (Fluent Bit)](/telemetry-manager/user/02-logs.md)
-- [Application Logs (OTLP)](/telemetry-manager/user/logs.md)
-- [Traces](/telemetry-manager/user/03-traces.md)
-- [Metrics](/telemetry-manager/user/04-metrics.md)
+- [Architecture](/telemetry-manager/user/architecture.md)
+- [Pipeline API](/telemetry-manager/user/pipelines.md)
+- [Logs](/telemetry-manager/user/logs.md)
+- [Traces](/telemetry-manager/user/traces.md)
+- [Metrics](/telemetry-manager/user/metrics.md)
 - [Integration Guides](/telemetry-manager/user/integration/README.md)
   - [SAP Cloud Logging](/telemetry-manager/user/integration/sap-cloud-logging/README.md)
   - [Dynatrace](/telemetry-manager/user/integration/dynatrace/README.md)
@@ -21,4 +20,5 @@
   - [LogPipeline](/telemetry-manager/user/resources/02-logpipeline.md)
   - [TracePipeline](/telemetry-manager/user/resources/04-tracepipeline.md)
   - [MetricPipeline](/telemetry-manager/user/resources/05-metricpipeline.md)
+- [Logs (Fluent Bit)](/telemetry-manager/user/02-logs.md)
 <!-- markdown-link-check-enable -->
