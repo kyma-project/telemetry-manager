@@ -3,7 +3,6 @@ run:
   build-tags:
     - e2e
     - istio
-    - tools
   modules-download-mode: readonly
 linters:
   default: all
@@ -11,6 +10,7 @@ linters:
     - cyclop
     - depguard
     - err113
+    - errchkjson
     - exhaustruct
     - forcetypeassert
     - funlen

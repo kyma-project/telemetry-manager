@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -45,15 +44,14 @@ func TestCustomClusterName(t *testing.T) {
 		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 		Build()
 
-	Expect(suite.K8sClient.Get(t.Context(), kitkyma.TelemetryName, &telemetry)).NotTo(HaveOccurred())
-	telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{
-		Cluster: &operatorv1alpha1.Cluster{
-			Name: clusterName,
-		},
-	}
-
 	Eventually(func(g Gomega) {
-		Expect(suite.K8sClient.Update(t.Context(), &telemetry)).NotTo(HaveOccurred(), "should update Telemetry resource with cluster name")
+		g.Expect(suite.K8sClient.Get(t.Context(), kitkyma.TelemetryName, &telemetry)).NotTo(HaveOccurred())
+		telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{
+			Cluster: &operatorv1alpha1.Cluster{
+				Name: clusterName,
+			},
+		}
+		g.Expect(suite.K8sClient.Update(t.Context(), &telemetry)).NotTo(HaveOccurred(), "should update Telemetry resource with cluster name")
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 
 	Expect(suite.K8sClient.Get(t.Context(), types.NamespacedName{Name: "kube-system"}, &kubeSystemNs)).NotTo(HaveOccurred(), "should get the kube-system namespace")
@@ -68,13 +66,12 @@ func TestCustomClusterName(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(resources...))
-
-		Expect(suite.K8sClient.Get(context.Background(), kitkyma.TelemetryName, &telemetry)).Should(Succeed()) //nolint:usetesting // Remove ctx from Get
-		telemetry.Spec.Enrichments.Cluster = &operatorv1alpha1.Cluster{}
+		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 
 		Eventually(func(g Gomega) {
-			Expect(suite.K8sClient.Update(context.Background(), &telemetry)).To(Succeed()) //nolint:usetesting // Remove ctx from Update
+			g.Expect(suite.K8sClient.Get(context.Background(), kitkyma.TelemetryName, &telemetry)).Should(Succeed()) //nolint:usetesting // Remove ctx from Get
+			telemetry.Spec.Enrichments.Cluster = &operatorv1alpha1.Cluster{}
+			g.Expect(suite.K8sClient.Update(context.Background(), &telemetry)).To(Succeed()) //nolint:usetesting // Remove ctx from Update
 		}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 	})
 	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
