@@ -1,7 +1,6 @@
 package istio
 
 import (
-	"io"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -14,7 +13,6 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/trafficgen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -27,6 +25,7 @@ func TestMetricsIstioEnvoyMultiPipeline(t *testing.T) {
 		backendNs    = uniquePrefix()
 		app1Ns       = uniquePrefix("app-1")
 		app2Ns       = uniquePrefix("app-2")
+		metricNames  = []string{"envoy_cluster_version", "envoy_cluster_upstream_rq_total", "envoy_cluster_upstream_cx_total"}
 	)
 
 	backend1 := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithName("backend-1"))
@@ -68,29 +67,15 @@ func TestMetricsIstioEnvoyMultiPipeline(t *testing.T) {
 	assert.BackendReachable(t, backend1)
 	assert.BackendReachable(t, backend2)
 
-	Eventually(func(g Gomega) {
-		backend1ExportURL := backend1.ExportURL(suite.ProxyClient)
-		resp, err := suite.ProxyClient.Get(backend1ExportURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(200))
-		bodyContent, err := io.ReadAll(resp.Body)
-		defer resp.Body.Close()
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(bodyContent).To(HaveFlatMetrics(
-			ContainElement(HaveName(BeElementOf([]string{"envoy_cluster_version", "envoy_cluster_upstream_rq_total", "envoy_cluster_upstream_cx_total"}))),
-		))
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+	assert.BackendDataEventuallyMatches(t, backend1,
+		HaveFlatMetrics(
+			ContainElement(HaveName(BeElementOf(metricNames))),
+		),
+	)
 
-	Eventually(func(g Gomega) {
-		backend2ExportURL := backend2.ExportURL(suite.ProxyClient)
-		resp, err := suite.ProxyClient.Get(backend2ExportURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(200))
-		bodyContent, err := io.ReadAll(resp.Body)
-		defer resp.Body.Close()
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(bodyContent).To(HaveFlatMetrics(
-			Not(ContainElement(HaveName(BeElementOf([]string{"envoy_cluster_version", "envoy_cluster_upstream_rq_total", "envoy_cluster_upstream_cx_total"})))),
-		))
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+	assert.BackendDataEventuallyMatches(t, backend2,
+		HaveFlatMetrics(
+			Not(ContainElement(HaveName(BeElementOf(metricNames)))),
+		),
+	)
 }
