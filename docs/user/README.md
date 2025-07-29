@@ -29,6 +29,13 @@ To support telemetry for your applications, the Telemetry module provides the fo
 - Opt-out of features for advanced scenarios: At any time, you can opt out for each data type, and use custom tooling to collect and ship the telemetry data.
 - SAP BTP as first-class integration: Integration into SAP BTP Observability services, such as SAP Cloud Logging, is prioritized. For more information, see [Integrate with SAP Cloud Logging](integration/sap-cloud-logging/README.md).
 
+The Telemetry API provides a hardened setup of an OTel Collector and also abstracts the underlying OTel Collector concept. Such abstraction has the following benefits:
+
+- Compatibility: An abstraction layer supports compatibility when underlying features change.
+- Migratability: Smooth migration experiences when switching underlying technologies or architectures.
+- Native Kubernetes support: API provided by Kyma Telemetry supports an easy integration with Secrets, for example, served by the [SAP BTP Service Operator](https://github.com/SAP/sap-btp-service-operator#readme). Telemetry Manager takes care of the full lifecycle.
+- Focus: The user doesn't need to understand the underlying concepts.
+
 ## Scope
 
 The Telemetry module focuses only on the signals of application logs, distributed traces, and metrics. Other kinds of signals are not considered. Also, audit logs are not in scope.
