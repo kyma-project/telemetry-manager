@@ -155,8 +155,8 @@ func TestRuntimeInput(t *testing.T) {
 	backendContainsDesiredResourceAttributes(t, backendA, "k8s.node.cpu.usage", runtime.NodeMetricsResourceAttributes)
 	backendContainsDesiredMetricAttributes(t, backendA, podNetworkErrorsMetric, runtime.PodMetricsAttributes[podNetworkErrorsMetric])
 	backendContainsDesiredMetricAttributes(t, backendA, podNetworkIOMetric, runtime.PodMetricsAttributes[podNetworkIOMetric])
-	backendContainsDesiredMetricAttributes(t, backendA, podNetworkErrorsMetric, runtime.NodeMetricsAttributes[nodeNetworkErrorsMetric])
-	backendContainsDesiredMetricAttributes(t, backendA, podNetworkIOMetric, runtime.NodeMetricsAttributes[nodeNetworkIOMetric])
+	backendContainsDesiredMetricAttributes(t, backendA, nodeNetworkErrorsMetric, runtime.NodeMetricsAttributes[nodeNetworkErrorsMetric])
+	backendContainsDesiredMetricAttributes(t, backendA, nodeNetworkIOMetric, runtime.NodeMetricsAttributes[nodeNetworkIOMetric])
 	assert.BackendDataConsistentlyMatches(t, backendA,
 		HaveFlatMetrics(Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.volume.type", "emptyDir"))))),
 	)
