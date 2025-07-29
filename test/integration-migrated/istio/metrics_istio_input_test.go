@@ -2,7 +2,6 @@ package istio
 
 import (
 	"fmt"
-	"io"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -17,7 +16,6 @@ import (
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/trafficgen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -32,7 +30,50 @@ func TestMetricsIstioInput(t *testing.T) {
 		genNs        = uniquePrefix("gen")
 		app1Ns       = uniquePrefix("app-1")
 		app2Ns       = uniquePrefix("app-2")
+		istioMetrics = []string{
+			"istio_requests_total",
+			"istio_request_duration_milliseconds",
+			"istio_request_bytes",
+			"istio_response_bytes",
+			"istio_request_messages_total",
+			"istio_response_messages_total",
+			"istio_tcp_sent_bytes_total",
+			"istio_tcp_received_bytes_total",
+			"istio_tcp_connections_opened_total",
+			"istio_tcp_connections_closed_total",
+		}
+		metrics = map[string]string{
+			"connection_security_policy":     "mutual_tls",
+			"destination_app":                "destination",
+			"destination_canonical_revision": "",
+			"destination_canonical_service":  "",
+			"destination_cluster":            "",
+			"destination_principal":          fmt.Sprintf("spiffe://cluster.local/ns/%s/sa/default", app1Ns),
+			"destination_service_name":       "destination",
+			"destination_service_namespace":  app1Ns,
+			"destination_service":            fmt.Sprintf("destination.%s.svc.cluster.local", app1Ns),
+			"destination_version":            "",
+			"destination_workload_namespace": "",
+			"destination_workload":           "destination",
+			"grpc_response_status":           "",
+			"request_protocol":               "http",
+			"response_code":                  "200",
+			"response_flags":                 "",
+			"source_app":                     "",
+			"source_canonical_revision":      "",
+			"source_canonical_service":       "",
+			"source_cluster":                 "",
+			"source_principal":               fmt.Sprintf("spiffe://cluster.local/ns/%s/sa/default", app1Ns),
+			"source_version":                 "",
+			"source_workload_namespace":      app1Ns,
+			"source_workload":                "source",
+		}
 	)
+
+	metricsKeys := make([]string, 0, len(metrics))
+	for k := range metrics {
+		metricsKeys = append(metricsKeys, k)
+	}
 
 	metricBackend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithName("metrics"))
 	logBackend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithName("logs"))
@@ -74,129 +115,45 @@ func TestMetricsIstioInput(t *testing.T) {
 	assert.BackendReachable(t, metricBackend)
 	assert.BackendReachable(t, logBackend)
 
-	Eventually(func(g Gomega) {
-		backendURL := metricBackend.ExportURL(suite.ProxyClient)
-		resp, err := suite.ProxyClient.Get(backendURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(200))
-		bodyContent, err := io.ReadAll(resp.Body)
-		defer resp.Body.Close()
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(bodyContent).To(HaveFlatMetrics(
-			ContainElement(HaveName(BeElementOf([]string{
-				"istio_requests_total",
-				"istio_request_duration_milliseconds",
-				"istio_request_bytes",
-				"istio_response_bytes",
-				"istio_request_messages_total",
-				"istio_response_messages_total",
-				"istio_tcp_sent_bytes_total",
-				"istio_tcp_received_bytes_total",
-				"istio_tcp_connections_opened_total",
-				"istio_tcp_connections_closed_total",
-			}))),
-		))
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+	assert.BackendDataEventuallyMatches(t, metricBackend, HaveFlatMetrics(
+		ContainElement(HaveName(BeElementOf(istioMetrics))),
+	))
 
-	Eventually(func(g Gomega) {
-		backendURL := metricBackend.ExportURL(suite.ProxyClient)
-		resp, err := suite.ProxyClient.Get(backendURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(200))
-		bodyContent, err := io.ReadAll(resp.Body)
-		defer resp.Body.Close()
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(bodyContent).To(HaveFlatMetrics(
-			SatisfyAll(
-				ContainElement(HaveResourceAttributes(SatisfyAll(
-					HaveKeyWithValue("k8s.namespace.name", app1Ns),
-					HaveKeyWithValue("k8s.pod.name", "destination"),
-					HaveKeyWithValue("k8s.container.name", "istio-proxy"),
-					HaveKeyWithValue("service.name", "destination"),
-				))),
-				ContainElement(HaveMetricAttributes(SatisfyAll(
-					HaveKey(BeElementOf([]string{
-						"connection_security_policy",
-						"destination_app",
-						"destination_canonical_revision",
-						"destination_canonical_service",
-						"destination_cluster",
-						"destination_principal",
-						"destination_service",
-						"destination_service_name",
-						"destination_service_namespace",
-						"destination_version",
-						"destination_workload",
-						"destination_workload_namespace",
-						"grpc_response_status",
-						"request_protocol",
-						"response_code",
-						"response_flags",
-						"source_app",
-						"source_canonical_revision",
-						"source_canonical_service",
-						"source_cluster",
-						"source_principal",
-						"source_version",
-						"source_workload",
-						"source_workload_namespace",
-					})),
-					HaveKeyWithValue("source_workload_namespace", app1Ns),
-					HaveKeyWithValue("destination_workload", "destination"),
-					HaveKeyWithValue("destination_app", "destination"),
-					HaveKeyWithValue("destination_service_name", "destination"),
-					HaveKeyWithValue("destination_service", fmt.Sprintf("destination.%s.svc.cluster.local", app1Ns)),
-					HaveKeyWithValue("destination_service_namespace", app1Ns),
-					HaveKeyWithValue("destination_principal", fmt.Sprintf("spiffe://cluster.local/ns/%s/sa/default", app1Ns)),
-					HaveKeyWithValue("source_workload", "source"),
-					HaveKeyWithValue("source_principal", fmt.Sprintf("spiffe://cluster.local/ns/%s/sa/default", app1Ns)),
-					HaveKeyWithValue("response_code", "200"),
-					HaveKeyWithValue("request_protocol", "http"),
-					HaveKeyWithValue("connection_security_policy", "mutual_tls"),
-				))),
-				ContainElement(HaveScopeName(ContainSubstring(InstrumentationScopeIstio))),
-			),
-		))
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+	assert.BackendDataEventuallyMatches(t, metricBackend, HaveFlatMetrics(
+		SatisfyAll(
+			ContainElement(HaveResourceAttributes(SatisfyAll(
+				HaveKeyWithValue("k8s.namespace.name", app1Ns),
+				HaveKeyWithValue("k8s.pod.name", "destination"),
+				HaveKeyWithValue("k8s.container.name", "istio-proxy"),
+				HaveKeyWithValue("service.name", "destination"),
+			))),
+			ContainElement(HaveMetricAttributes(SatisfyAll(
+				HaveKey(BeElementOf(metricsKeys)),
+				HaveKeyWithValue("connection_security_policy", metrics["connection_security_policy"]),
+				HaveKeyWithValue("destination_app", metrics["destination_app"]),
+				HaveKeyWithValue("destination_principal", metrics["destination_principal"]),
+				HaveKeyWithValue("destination_service_name", metrics["destination_service_name"]),
+				HaveKeyWithValue("destination_service_namespace", metrics["destination_service_namespace"]),
+				HaveKeyWithValue("destination_service", metrics["destination_service"]),
+				HaveKeyWithValue("destination_workload", metrics["destination_workload"]),
+				HaveKeyWithValue("request_protocol", metrics["request_protocol"]),
+				HaveKeyWithValue("response_code", metrics["response_code"]),
+				HaveKeyWithValue("source_principal", metrics["source_principal"]),
+				HaveKeyWithValue("source_workload_namespace", metrics["source_workload_namespace"]),
+				HaveKeyWithValue("source_workload", metrics["source_workload"]),
+			))),
+			ContainElement(HaveScopeName(ContainSubstring(InstrumentationScopeIstio))),
+		),
+	))
 
-	assert.MetricsFromNamespaceDelivered(t, metricBackend, app1Ns, []string{
-		"istio_requests_total",
-		"istio_request_duration_milliseconds",
-		"istio_request_bytes",
-		"istio_response_bytes",
-		"istio_request_messages_total",
-		"istio_response_messages_total",
-		"istio_tcp_sent_bytes_total",
-		"istio_tcp_received_bytes_total",
-		"istio_tcp_connections_opened_total",
-		"istio_tcp_connections_closed_total",
-	})
+	assert.MetricsFromNamespaceDelivered(t, metricBackend, app1Ns, istioMetrics)
 	assert.MetricsFromNamespaceNotDelivered(t, metricBackend, app2Ns)
 
-	Consistently(func(g Gomega) {
-		backendURL := metricBackend.ExportURL(suite.ProxyClient)
-		resp, err := suite.ProxyClient.Get(backendURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(200))
-		bodyContent, err := io.ReadAll(resp.Body)
-		defer resp.Body.Close()
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(bodyContent).NotTo(HaveFlatMetrics(
-			ContainElement(HaveMetricAttributes(HaveKeyWithValue("destination_workload", "telemetry-log-gateway"))),
-		))
-	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+	assert.BackendDataConsistentlyMatches(t, metricBackend, HaveFlatMetrics(
+		Not(ContainElement(HaveMetricAttributes(HaveKeyWithValue("destination_workload", "telemetry-log-gateway")))),
+	))
 
-	Consistently(func(g Gomega) {
-		backendURL := metricBackend.ExportURL(suite.ProxyClient)
-		resp, err := suite.ProxyClient.Get(backendURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(200))
-		bodyContent, err := io.ReadAll(resp.Body)
-		defer resp.Body.Close()
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(bodyContent).To(HaveFlatMetrics(
-			Not(
-				ContainElement(HaveName(BeElementOf([]string{"up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added"})))),
-		))
-	}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+	assert.BackendDataConsistentlyMatches(t, metricBackend, HaveFlatMetrics(
+		Not(ContainElement(HaveName(BeElementOf([]string{"up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added"})))),
+	))
 }
