@@ -44,10 +44,7 @@ func TestTracesRoutingIstio(t *testing.T) {
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces)
-	backendExportURL := backend.ExportURL(suite.ProxyClient)
-
 	istiofiedBackend := kitbackend.New(istiofiedBackendNs, kitbackend.SignalTypeTraces)
-	istiofiedBackendExportURL := istiofiedBackend.ExportURL(suite.ProxyClient)
 
 	tracePipeline := testutils.NewTracePipelineBuilder().
 		WithName(pipeline1Name).
@@ -91,9 +88,9 @@ func TestTracesRoutingIstio(t *testing.T) {
 	assert.BackendReachable(t, backend)
 	assert.BackendReachable(t, istiofiedBackend)
 
-	verifyAppIsRunning(t, istiofiedAppNs, map[string]string{"app.kubernetes.io/name": "metric-producer"})
-	verifySidecarPresent(t, istiofiedAppNs, map[string]string{"app.kubernetes.io/name": "metric-producer"})
-	verifyAppIsRunning(t, appNs, map[string]string{"app.kubernetes.io/name": "metric-producer"})
+	assertAppIsRunning(t, istiofiedAppNs, map[string]string{"app.kubernetes.io/name": "metric-producer"})
+	assertSidecarPresent(t, istiofiedAppNs, map[string]string{"app.kubernetes.io/name": "metric-producer"})
+	assertAppIsRunning(t, appNs, map[string]string{"app.kubernetes.io/name": "metric-producer"})
 	assert.DeploymentReady(t, kitkyma.TraceGatewayName)
 	assert.TracePipelineHealthy(t, pipeline1Name)
 	assert.TracePipelineHealthy(t, pipeline2Name)
@@ -114,17 +111,17 @@ func TestTracesRoutingIstio(t *testing.T) {
 		}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 	}
 
-	verifyIstioSpans(t, backendExportURL, istiofiedAppNs)
-	verifyIstioSpans(t, istiofiedBackendExportURL, istiofiedAppNs)
-	verifyCustomAppSpans(t, backendExportURL, istiofiedAppName, istiofiedAppNs)
-	verifyCustomAppSpans(t, istiofiedBackendExportURL, istiofiedAppName, istiofiedAppNs)
-	verifyCustomAppSpans(t, backendExportURL, appName, appNs)
-	verifyCustomAppSpans(t, istiofiedBackendExportURL, appName, appNs)
-	verifyNoIstioNoiseSpans(t, backendExportURL)
-	verifyNoIstioNoiseSpans(t, istiofiedBackendExportURL)
+	assertIstioSpans(t, backend, istiofiedAppNs)
+	assertIstioSpans(t, istiofiedBackend, istiofiedAppNs)
+	assertCustomAppSpans(t, backend, istiofiedAppName, istiofiedAppNs)
+	assertCustomAppSpans(t, istiofiedBackend, istiofiedAppName, istiofiedAppNs)
+	assertCustomAppSpans(t, backend, appName, appNs)
+	assertCustomAppSpans(t, istiofiedBackend, appName, appNs)
+	assertNoIstioNoiseSpans(t, backend)
+	assertNoIstioNoiseSpans(t, istiofiedBackend)
 }
 
-func verifySidecarPresent(t testkit.T, namespace string, labelSelector map[string]string) {
+func assertSidecarPresent(t testkit.T, namespace string, labelSelector map[string]string) {
 	t.Helper()
 
 	Eventually(func(g Gomega) {
@@ -139,7 +136,7 @@ func verifySidecarPresent(t testkit.T, namespace string, labelSelector map[strin
 	}, periodic.EventuallyTimeout*2, periodic.DefaultInterval).Should(Succeed())
 }
 
-func verifyAppIsRunning(t testkit.T, namespace string, labelSelector map[string]string) {
+func assertAppIsRunning(t testkit.T, namespace string, labelSelector map[string]string) {
 	t.Helper()
 
 	listOptions := client.ListOptions{
@@ -150,54 +147,40 @@ func verifyAppIsRunning(t testkit.T, namespace string, labelSelector map[string]
 	assert.PodsReady(t, listOptions)
 }
 
-func verifyIstioSpans(t testkit.T, backendURL, namespace string) {
+func assertIstioSpans(t testkit.T, backend *kitbackend.Backend, namespace string) {
 	t.Helper()
 
-	Eventually(func(g Gomega) {
-		resp, err := suite.ProxyClient.Get(backendURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		defer resp.Body.Close()
-
-		g.Expect(resp).To(HaveHTTPBody(HaveFlatTraces(ContainElement(SatisfyAll(
+	assert.BackendDataEventuallyMatches(t, backend,
+		HaveFlatTraces(ContainElement(SatisfyAll(
 			// Identify istio-proxy traces by component=proxy attribute
 			HaveSpanAttributes(HaveKeyWithValue("component", "proxy")),
 			HaveSpanAttributes(HaveKeyWithValue("istio.namespace", namespace)),
-		)))))
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		))),
+	)
 }
 
-func verifyNoIstioNoiseSpans(t testkit.T, backendURL string) {
+func assertNoIstioNoiseSpans(t testkit.T, backend *kitbackend.Backend) {
 	t.Helper()
 
-	Eventually(func(g Gomega) {
-		resp, err := suite.ProxyClient.Get(backendURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		defer resp.Body.Close()
-
-		g.Expect(resp).NotTo(HaveHTTPBody(HaveFlatTraces(ContainElement(SatisfyAll(
+	assert.BackendDataEventuallyMatches(t, backend,
+		Not(HaveFlatTraces(ContainElement(SatisfyAll(
 			// Identify istio-proxy traces by component=proxy attribute
 			HaveSpanAttributes(HaveKeyWithValue("component", "proxy")),
 			// All calls to telemetry-otlp-traces should be dropped
 			HaveSpanAttributes(HaveKeyWithValue("http.url", "http://telemetry-otlp-traces.kyma-system.svc.cluster.local:4318/v1/traces")),
-		)))))
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		)))),
+	)
 }
 
-func verifyCustomAppSpans(t testkit.T, backendURL, name, namespace string) {
+func assertCustomAppSpans(t testkit.T, backend *kitbackend.Backend, name, namespace string) {
 	t.Helper()
 
-	Eventually(func(g Gomega) {
-		resp, err := suite.ProxyClient.Get(backendURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(HaveFlatTraces(ContainElement(SatisfyAll(
+	assert.BackendDataEventuallyMatches(t, backend,
+		HaveFlatTraces(ContainElement(SatisfyAll(
 			// Identify sample app by serviceName attribute
 			HaveResourceAttributes(HaveKeyWithValue("service.name", "metric-producer")),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", name)),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)),
-		)))))
-		defer resp.Body.Close()
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		))),
+	)
 }

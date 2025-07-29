@@ -28,7 +28,7 @@ func FluentBitLogsFromContainerDelivered(t testkit.T, backend *kitbackend.Backen
 		t,
 		backend,
 		fluentbit.HaveFlatLogs(ContainElement(fluentbit.HaveContainerName(Equal(expectedContainerName)))),
-		optionalDescription...,
+		WithOptionalDescription(optionalDescription...),
 	)
 }
 
@@ -39,7 +39,7 @@ func FluentBitLogsFromContainerNotDelivered(t testkit.T, backend *kitbackend.Bac
 		t,
 		backend,
 		fluentbit.HaveFlatLogs(Not(ContainElement(fluentbit.HaveContainerName(Equal(expectedContainerName))))),
-		optionalDescription...,
+		WithOptionalDescription(optionalDescription...),
 	)
 }
 
@@ -50,7 +50,7 @@ func FluentBitLogsFromPodDelivered(t testkit.T, backend *kitbackend.Backend, exp
 		t,
 		backend,
 		fluentbit.HaveFlatLogs(ContainElement(fluentbit.HavePodName(ContainSubstring(expectedPodNamePrefix)))),
-		optionalDescription...,
+		WithOptionalDescription(optionalDescription...),
 	)
 }
 
@@ -61,7 +61,7 @@ func FluentBitLogsFromNamespaceDelivered(t testkit.T, backend *kitbackend.Backen
 		t,
 		backend,
 		fluentbit.HaveFlatLogs(ContainElement(fluentbit.HaveNamespace(Equal(namespace)))),
-		optionalDescription...,
+		WithOptionalDescription(optionalDescription...),
 	)
 }
 
@@ -72,7 +72,7 @@ func FluentBitLogsFromNamespaceNotDelivered(t testkit.T, backend *kitbackend.Bac
 		t,
 		backend,
 		fluentbit.HaveFlatLogs(Not(ContainElement(fluentbit.HaveNamespace(Equal(namespace))))),
-		optionalDescription...,
+		WithOptionalDescription(optionalDescription...),
 	)
 }
 
@@ -83,7 +83,7 @@ func OTelLogsFromContainerDelivered(t testkit.T, backend *kitbackend.Backend, co
 		t,
 		backend,
 		HaveFlatLogs(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.container.name", containerName)))),
-		optionalDescription...,
+		WithOptionalDescription(optionalDescription...),
 	)
 }
 
@@ -94,7 +94,7 @@ func OTelLogsFromContainerNotDelivered(t testkit.T, backend *kitbackend.Backend,
 		t,
 		backend,
 		HaveFlatLogs(Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.container.name", containerName))))),
-		optionalDescription...,
+		WithOptionalDescription(optionalDescription...),
 	)
 }
 
@@ -105,7 +105,7 @@ func OTelLogsFromNamespaceDelivered(t testkit.T, backend *kitbackend.Backend, na
 		t,
 		backend,
 		HaveFlatLogs(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)))),
-		optionalDescription...,
+		WithOptionalDescription(optionalDescription...),
 	)
 }
 
@@ -116,7 +116,7 @@ func OTelLogsFromNamespaceNotDelivered(t testkit.T, backend *kitbackend.Backend,
 		t,
 		backend,
 		HaveFlatLogs(Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace))))),
-		optionalDescription...,
+		WithOptionalDescription(optionalDescription...),
 	)
 }
 

@@ -77,6 +77,6 @@ func TestAccessLogsFluentBit(t *testing.T) {
 		HaveFlatLogs(ContainElement(
 			HaveAttributes(HaveKey(BeElementOf(istio.AccessLogAttributeKeys))),
 		)),
-		"Istio access logs should be present",
+		assert.WithOptionalDescription("Istio access logs should be present"),
 	)
 }

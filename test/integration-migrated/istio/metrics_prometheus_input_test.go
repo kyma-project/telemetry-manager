@@ -1,7 +1,6 @@
 package istio
 
 import (
-	"io"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -34,7 +33,6 @@ func TestMetricsPrometheusInput(t *testing.T) {
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)
-	backendExportURL := backend.ExportURL(suite.ProxyClient)
 
 	httpsAnnotatedMetricProducer := prommetricgen.New(genNs, prommetricgen.WithName(httpsAnnotatedMetricProducerName))
 	httpAnnotatedMetricProducer := prommetricgen.New(genNs, prommetricgen.WithName(httpAnnotatedMetricProducerName))
@@ -68,73 +66,50 @@ func TestMetricsPrometheusInput(t *testing.T) {
 	assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 	assert.BackendReachable(t, backend)
 
-	podMetricsShouldNotBeDelivered := func(proxyURL, podName string) {
-		Consistently(func(g Gomega) {
-			resp, err := suite.ProxyClient.Get(proxyURL)
-			g.Expect(err).NotTo(HaveOccurred())
-			g.Expect(resp).To(HaveHTTPStatus(200))
-			bodyContent, err := io.ReadAll(resp.Body)
-			resp.Body.Close()
-			g.Expect(err).NotTo(HaveOccurred())
-			g.Expect(bodyContent).To(HaveFlatMetrics(
-				Not(ContainElement(SatisfyAll(
-					HaveName(BeElementOf(prommetricgen.CustomMetricNames())),
-					Not(HaveMetricAttributes(HaveKey("service"))),
-					HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", podName)),
-				))),
-			))
-		}, 3*periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
-	}
+	podMetricsShouldNotBeDelivered(t, backend, httpsAnnotatedMetricProducerName)
+	podScrapedMetricsShouldBeDelivered(t, backend, httpAnnotatedMetricProducerName)
+	podScrapedMetricsShouldBeDelivered(t, backend, unannotatedMetricProducerName)
+	serviceScrapedMetricsShouldBeDelivered(t, backend, httpsAnnotatedMetricProducerName)
+	serviceScrapedMetricsShouldBeDelivered(t, backend, httpAnnotatedMetricProducerName)
+	serviceScrapedMetricsShouldBeDelivered(t, backend, unannotatedMetricProducerName)
+}
 
-	podScrapedMetricsShouldBeDelivered := func(proxyURL, podName string) {
-		Eventually(func(g Gomega) {
-			resp, err := suite.ProxyClient.Get(proxyURL)
-			g.Expect(err).NotTo(HaveOccurred())
-			g.Expect(resp).To(HaveHTTPStatus(200))
-			bodyContent, err := io.ReadAll(resp.Body)
-			defer resp.Body.Close()
-			g.Expect(err).NotTo(HaveOccurred())
-			g.Expect(bodyContent).To(HaveFlatMetrics(
-				ContainElement(SatisfyAll(
-					HaveName(BeElementOf(prommetricgen.CustomMetricNames())),
-					Not(HaveMetricAttributes(HaveKey("service"))),
-					HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", podName)),
-					HaveScopeName(Equal(InstrumentationScopePrometheus)),
-					HaveScopeVersion(SatisfyAny(
-						Equal("main"),
-						MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
-					)),
-				)),
-			))
-		}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-	}
+func podMetricsShouldNotBeDelivered(t *testing.T, backend *kitbackend.Backend, podName string) {
+	assert.BackendDataConsistentlyMatches(t, backend, HaveFlatMetrics(
+		Not(ContainElement(SatisfyAll(
+			HaveName(BeElementOf(prommetricgen.CustomMetricNames())),
+			Not(HaveMetricAttributes(HaveKey("service"))),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", podName)),
+		)))), assert.WithCustomTimeout(3*periodic.TelemetryConsistentlyTimeout),
+	)
+}
 
-	serviceScrapedMetricsShouldBeDelivered := func(proxyURL, serviceName string) {
-		Eventually(func(g Gomega) {
-			resp, err := suite.ProxyClient.Get(proxyURL)
-			g.Expect(err).NotTo(HaveOccurred())
-			g.Expect(resp).To(HaveHTTPStatus(200))
-			bodyContent, err := io.ReadAll(resp.Body)
-			defer resp.Body.Close()
-			g.Expect(err).NotTo(HaveOccurred())
-			g.Expect(bodyContent).To(HaveFlatMetrics(
-				ContainElement(SatisfyAll(
-					HaveName(BeElementOf(prommetricgen.CustomMetricNames())),
-					HaveMetricAttributes(HaveKeyWithValue("service", serviceName)),
-					HaveScopeName(Equal(InstrumentationScopePrometheus)),
-					HaveScopeVersion(SatisfyAny(
-						Equal("main"),
-						MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
-					)),
-				)),
-			))
-		}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-	}
+func podScrapedMetricsShouldBeDelivered(t *testing.T, backend *kitbackend.Backend, podName string) {
+	assert.BackendDataConsistentlyMatches(t, backend, HaveFlatMetrics(
+		ContainElement(SatisfyAll(
+			HaveName(BeElementOf(prommetricgen.CustomMetricNames())),
+			Not(HaveMetricAttributes(HaveKey("service"))),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", podName)),
+			HaveScopeName(Equal(InstrumentationScopePrometheus)),
+			HaveScopeVersion(SatisfyAny(
+				Equal("main"),
+				MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
+			)),
+		)),
+	),
+	)
+}
 
-	podMetricsShouldNotBeDelivered(backendExportURL, httpsAnnotatedMetricProducerName)
-	podScrapedMetricsShouldBeDelivered(backendExportURL, httpAnnotatedMetricProducerName)
-	podScrapedMetricsShouldBeDelivered(backendExportURL, unannotatedMetricProducerName)
-	serviceScrapedMetricsShouldBeDelivered(backendExportURL, httpsAnnotatedMetricProducerName)
-	serviceScrapedMetricsShouldBeDelivered(backendExportURL, httpAnnotatedMetricProducerName)
-	serviceScrapedMetricsShouldBeDelivered(backendExportURL, unannotatedMetricProducerName)
+func serviceScrapedMetricsShouldBeDelivered(t *testing.T, backend *kitbackend.Backend, serviceName string) {
+	assert.BackendDataEventuallyMatches(t, backend, HaveFlatMetrics(
+		ContainElement(SatisfyAll(
+			HaveName(BeElementOf(prommetricgen.CustomMetricNames())),
+			HaveMetricAttributes(HaveKeyWithValue("service", serviceName)),
+			HaveScopeName(Equal(InstrumentationScopePrometheus)),
+			HaveScopeVersion(SatisfyAny(
+				Equal("main"),
+				MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
+			)),
+		)),
+	))
 }

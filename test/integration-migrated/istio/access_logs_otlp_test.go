@@ -97,7 +97,7 @@ func TestAccessLogsOTLP(t *testing.T) {
 				Equal("main"),
 				MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
 			)),
-		))), "Istio OTLP access logs should be present",
+		))), assert.WithOptionalDescription("Istio OTLP access logs should be present"),
 	)
 
 	assert.BackendDataConsistentlyMatches(t, logBackend,
@@ -107,14 +107,14 @@ func TestAccessLogsOTLP(t *testing.T) {
 			Not(HaveResourceAttributes(HaveKey("zone_name"))),
 			Not(HaveResourceAttributes(HaveKey("node_name"))),
 			Not(HaveAttributes(HaveKey("kyma.module"))),
-		))), "Istio cluster attributes should not be present",
+		))), assert.WithOptionalDescription("Istio cluster attributes should not be present"),
 	)
 
 	assert.BackendDataConsistentlyMatches(t, logBackend,
 		HaveFlatLogs(Not(ContainElement(SatisfyAny(
 			HaveResourceAttributes(HaveKeyWithValue("k8s.deployment.name", "telemetry-otlp-traces")),
 			HaveAttributes(HaveKeyWithValue("server.address", "telemetry-otlp-traces.kyma-system:4317")),
-		)))), "Istio noise filter should be applied",
+		)))), assert.WithOptionalDescription("Istio noise filter should be applied"),
 	)
 }
 
