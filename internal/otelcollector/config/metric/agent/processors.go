@@ -14,7 +14,6 @@ func makeProcessorsConfig(inputs inputSources, instrumentationScopeVersion strin
 			Batch:         makeBatchProcessorConfig(),
 			MemoryLimiter: makeMemoryLimiterConfig(),
 		},
-		DropVirtualNetworkInterfaces: makeDropVirtualNetworkInterfacesProcessor(),
 	}
 
 	if inputs.runtime || inputs.prometheus || inputs.istio {
