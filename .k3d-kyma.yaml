@@ -6,7 +6,7 @@ metadata:
 image: europe-docker.pkg.dev/kyma-project/prod/external/rancher/k3s:v1.31.7-k3s1 # refers to the image used by k3d
 
 servers: 1
-agents: 0
+agents: 1
 kubeAPI:
   hostPort: '6550'
 
