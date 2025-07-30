@@ -10,7 +10,7 @@ set -o pipefail # prevents errors in a pipeline from being masked
 readonly LOCALBIN=${LOCALBIN:-$(pwd)/bin}
 readonly KUSTOMIZE=${KUSTOMIZE:-$LOCALBIN/kustomize}
 readonly GORELEASER_VERSION="${GORELEASER_VERSION:-$ENV_GORELEASER_VERSION}"
-readonly IMAGE="${IMAGE:-$ENV_IMAGE}"
+readonly IMAGE="${IMAGE:-$ENV_MANAGER_IMAGE}"
 readonly IMAGE_EXPERIMENTAL=${IMAGE}-experimental
 readonly CURRENT_VERSION="$1"
 
