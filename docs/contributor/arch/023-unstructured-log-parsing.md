@@ -138,7 +138,7 @@ transform:
         - merge_maps(log.attributes, log.cache, "upsert") where Len(log.cache) > 0
         - set(log.attributes["parsed"], true) where Len(log.cache) > 0
 
-    # Try parse the body as custom parser (python)
+    # Try to parse the body as custom parser (python)
     - conditions:
         - log.attributes["parsed"] == nil
       statements:
