@@ -170,6 +170,7 @@ func randomString(n int) string {
 
 	b := make([]byte, n)
 	for i := range b {
+		//nolint:gosec // no need for cryptographic security here
 		b[i] = letters[rand.Intn(len(letters))]
 	}
 
