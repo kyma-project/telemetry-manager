@@ -130,7 +130,7 @@ func TestBackpressure(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.kind, func(t *testing.T) {
-			suite.RegisterTestCase(t, suite.LabelSelfMonitoringHealthy)
+			suite.RegisterTestCase(t, suite.LabelSelfMonitoringBackpressure)
 
 			var (
 				uniquePrefix = unique.Prefix(tc.kind)
