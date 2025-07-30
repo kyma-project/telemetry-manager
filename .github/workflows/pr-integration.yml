@@ -82,6 +82,7 @@ jobs:
           failure: failure()
           job-name: ${{ github.job }}-${{ matrix.ginkgo-labels }}
 
+  # TODO: DELETE & rename istio-migrated (incoming)
   e2e-istio:
     needs: setup
     runs-on: ubuntu-latest

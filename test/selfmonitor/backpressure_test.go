@@ -168,7 +168,8 @@ func TestBackpressure(t *testing.T) {
 func assertSomeDataDropped(t *testing.T, testKind string) {
 	t.Helper()
 
-	assert.MetricPipelineConditionReasonsTransition(t, testKind, conditions.TypeFlowHealthy, []assert.ReasonStatus{
+	conditionReasonsTransition := assertConditionReasonsTransition(testKind)
+	conditionReasonsTransition(t, testKind, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 		{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
 		{Reason: someDataDroppedConditionReason(testKind), Status: metav1.ConditionFalse},
 	})

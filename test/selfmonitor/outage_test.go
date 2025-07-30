@@ -12,6 +12,7 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
+	"github.com/kyma-project/telemetry-manager/test/testkit"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -174,7 +175,8 @@ func TestOutage(t *testing.T) {
 func assertBufferFillingUp(t *testing.T, testKind string) {
 	t.Helper()
 
-	assert.MetricPipelineConditionReasonsTransition(t, testKind, conditions.TypeFlowHealthy, []assert.ReasonStatus{
+	conditionReasonsTransition := assertConditionReasonsTransition(testKind)
+	conditionReasonsTransition(t, testKind, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 		{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
 		{Reason: bufferFillingUpConditionReason(testKind), Status: metav1.ConditionFalse},
 	})
@@ -201,7 +203,8 @@ func stopGenerator(t *testing.T, generator *appsv1.Deployment) {
 func assertAllDataDropped(t *testing.T, testKind string) {
 	t.Helper()
 
-	assert.MetricPipelineConditionReasonsTransition(t, testKind, conditions.TypeFlowHealthy, []assert.ReasonStatus{
+	conditionReasonsTransition := assertConditionReasonsTransition(testKind)
+	conditionReasonsTransition(t, testKind, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 		{Reason: allDataDroppedConditionReason(testKind), Status: metav1.ConditionFalse},
 	})
 
@@ -229,6 +232,21 @@ func assertMetricInstrumentation(t *testing.T) {
 		HaveName(Equal("telemetry_self_monitor_prober_requests_total")),
 		HaveMetricValue(BeNumerically(">", 0)),
 	)
+}
+
+type conditionReasonsTransitionFunc func(t testkit.T, pipelineName string, condType string, expected []assert.ReasonStatus)
+
+func assertConditionReasonsTransition(testKind string) conditionReasonsTransitionFunc {
+	switch signalType(testKind) {
+	case kitbackend.SignalTypeLogsFluentBit, kitbackend.SignalTypeLogsOTel:
+		return assert.LogPipelineConditionReasonsTransition
+	case kitbackend.SignalTypeMetrics:
+		return assert.MetricPipelineConditionReasonsTransition
+	case kitbackend.SignalTypeTraces:
+		return assert.TracePipelineConditionReasonsTransition
+	default:
+		return nil
+	}
 }
 
 func componentsHealthyConditionType(testKind string) string {
