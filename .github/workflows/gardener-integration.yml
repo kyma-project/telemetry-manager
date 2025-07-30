@@ -36,10 +36,10 @@ jobs:
           GIT_COMMIT_SHA=$(git rev-parse --short=8 HEAD)
           GIT_COMMIT_DATE=$(git show -s --format=%cd --date=format:'v%Y%m%d' $(GIT_COMMIT_SHA))
           TAG="$GIT_COMMIT_DATE-$GIT_COMMIT_SHA"
-          IMAGE="europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:$TAG"
+          MANAGER_IMAGE="europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:$TAG"
 
           echo "TAG=$TAG" >> $GITHUB_ENV
-          echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+          echo "MANAGER_IMAGE=$MANAGER_IMAGE" >> $GITHUB_ENV
 
       # wait for the build to succeed so that the manager image is available
       - name: Wait for the image to be available in the registry
