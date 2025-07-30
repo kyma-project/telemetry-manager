@@ -117,7 +117,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        signal-type:
+        kind:
           - logs-fluentbit
           - logs-otel-agent
           - logs-otel-gateway
@@ -147,14 +147,14 @@ jobs:
 
       - name: Run tests
         run: |
-          go test -v -timeout=20m ./test/selfmonitor/... -- -labels="selfmonitor-${{ matrix.scenario }}-${{ matrix.signal-type }}"
+          go test -v -timeout=20m ./test/selfmonitor/... -- -labels="selfmonitor-${{ matrix.scenario }}-${{ matrix.kind }}"
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"
         if: ${{ !cancelled()  }}
         with:
           failure: failure()
-          job-name: ${{ github.job }}-${{ matrix.scenario }}
+          job-name: ${{ github.job }}-${{ matrix.scenario }}-${{ matrix.kind }}
 
   e2e-migrated:
     needs: setup
