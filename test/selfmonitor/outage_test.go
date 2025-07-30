@@ -197,7 +197,7 @@ func stopGenerator(t *testing.T, generator *appsv1.Deployment) {
 	Expect(err).NotTo(HaveOccurred())
 }
 
-// Waits for the flow to gradually become unhealthy
+// Waits for the flow to gradually become unhealthy (i.e. all data dropped)
 func assertAllDataDropped(t *testing.T, testKind string) {
 	t.Helper()
 
