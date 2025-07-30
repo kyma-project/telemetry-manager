@@ -17,7 +17,7 @@ Fluent Bit supports various parsing mechanisms:
 * Multiline Parsing: Through custom multiline filter.
 * Built-in Parsers: For common log formats like JSON, Nginx, Apache, etc.
 
-Limitations of Fluent Bit Approach
+Limitations of the Fluent Bit Approach
 * Requires manual annotation of each pod to enable parsing.
 * Limited support for mixed log formats within the same workload (needs further validation).
 * Uses inconsistent APIs for different parsing types, which can confuse users.
