@@ -59,17 +59,14 @@ spec:
     parsers:
       - name: backend-parser
         namespaceSelector:
-          matchLabels:
-            role: backend
-          matchExpressions:
-            - key: operator.kyma-project.io/managed-by
-              operator: NotIn
-              values:
-                - kyma
+          name: backend-namespace
+          # nameRegex: backend-namespace-.*
         podSelector:
+          name: buttercup-app
           nameRegex: buttercup-app-.*
         containerSelector:
           name: server
+          # nameRegex: server-.*
         multiline:
           type: builtin
           builtin: java
@@ -124,8 +121,8 @@ To ensure consistent enrichment across built-in and custom parsers:
 ## Action Plan
 
 1. **Re-implement** the existing Stanza JSON parsing logic in the `transform` processor using OTTL.
-2. **Support container-bound parsing** with optional multiline parsing via the `recombine` operator.
-3. **Implement regex-based parsing** using OTTL expressions in the `transform` processor.
+2. **Implement multiline log parsing** using the `recombine` operator.
+3. **Implement regex-based log parsing** using the `transform` processor.
 
 ## Example: Transform Processor Configuration
 
@@ -133,7 +130,7 @@ To ensure consistent enrichment across built-in and custom parsers:
 transform:
   error_mode: ignore
   log_statements:
-    # Attempt JSON parsing
+    # Try parse the body as JSON
     - conditions:
         - log.attributes["parsed"] == nil
       statements:
@@ -141,14 +138,14 @@ transform:
         - merge_maps(log.attributes, log.cache, "upsert") where Len(log.cache) > 0
         - set(log.attributes["parsed"], true) where Len(log.cache) > 0
 
-    # Attempt custom regex parsing (e.g., Python traceback)
+    # Try parse the body as custom parser (python)
     - conditions:
         - log.attributes["parsed"] == nil
       statements:
         - merge_maps(log.attributes, ExtractPatterns(log.body, "File\\s+\"(?P<filepath>[^\"]+)\""), "upsert")
-        - set(log.attributes["parsed"], true) where Len(log.attributes) > 0
+        - merge_maps(log.attributes, log.cache, "upsert") where Len(log.cache) > 0
+        - set(log.attributes["parsed"], true) where Len(log.cache) > 0
 
-    # Apply common enrichment logic
     - conditions:
         - log.attributes["parsed"] != nil
       statements:
@@ -162,8 +159,17 @@ transform:
         - set(log.severity_number, SEVERITY_NUMBER_DEBUG) where IsMatch(log.attributes["level"], "(?i)debug")
         - set(log.severity_text, ToUpperCase(log.attributes["level"])) where log.severity_number > 0
         - merge_maps(log.attributes, ExtractPatterns(log.attributes["traceparent"], "^(?P<trace_id>[0-9a-f]{32})-(?P<span_id>[0-9a-f]{16})-(?P<trace_flags>[0-9a-f]{2})$"), "upsert") where log.attributes["traceparent"] != nil
-        - set(log.trace_id, log.attributes["trace_id"]) where log.attributes["trace_id"] != nil
-        - set(log.span_id, log.attributes["span_id"]) where log.attributes["span_id"] != nil
-        - set(log.flags, log.attributes["trace_flags"]) where log.attributes["trace_flags"] != nil
+        - set(log.trace_id, log.attributes["trace_id"]) where log.attributes["trace_id"] != nil where log.attributes["traceparent"] == nil
+        - set(log.span_id, log.attributes["span_id"]) where log.attributes["span_id"] != nil where log.attributes["traceparent"] == nil
+        - set(log.flags, log.attributes["trace_flags"]) where log.attributes["trace_flags"] != nil where log.attributes["traceparent"] == nil
         - delete_matching_keys(log.attributes, "^(level|log.level|message|msg|parsed|span_id|trace_flags|trace_id|traceparent)$")
 ```
+
+### Validation
+
+Since we give users the flexibility to define custom parsers, we must ensure that custom parsers are well-formed and do not break the pipeline.
+We can achieve this by:
+* Validating parsers at the API level (e.g., using a validation webhook).
+* Reflect broken parsers in the Telemetry status, allowing users to see which parsers are valid or broken.
+
+**Decision**: Implement API-level validation for parsers using a validation webhook to give a user immediate feedback on parser correctness. User using Kyma Dashboard will also see the status of parsers in the Telemetry resource.
