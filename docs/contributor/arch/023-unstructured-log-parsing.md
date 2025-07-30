@@ -88,7 +88,7 @@ Parsers should be applicable using the following options:
 * Namespace/pod/container name or regex
 * Pod/namespace label selectors (future enhancement)
 
-To support label selectors, the Kubernetes metadata must be enriched before parsing—thus, **parsing must happen after the `k8sattributes` processor**.
+To support label selectors, the Kubernetes metadata must be enriched before parsing. Thus, **parsing must happen after the `k8sattributes` processor**.
 
 ### Parser Implementation
 
