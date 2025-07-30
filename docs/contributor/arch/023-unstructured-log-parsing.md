@@ -172,7 +172,7 @@ We can achieve this by:
 * Validating parsers at the API level (e.g., using a validation webhook).
 * Reflect broken parsers in the Telemetry status, allowing users to see which parsers are valid or broken.
 
-**Decision**: Implement API-level validation for parsers using a validation webhook to give a user immediate feedback on parser correctness. User using Kyma Dashboard will also see the status of parsers in the Telemetry resource.
+**Decision**: Implement API-level validation for parsers using a validation webhook to give a user immediate feedback on parser correctness. Users using Kyma Dashboard will also see the status of parsers in the Telemetry resource.
 
 ## References
 
