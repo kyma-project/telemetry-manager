@@ -6,8 +6,8 @@ set -o errexit  # exit immediately when a command fails.
 set -E          # needs to be set if we want the ERR trap
 set -o pipefail # prevents errors in a pipeline from being masked
 
-IMAGE=localhost:5001/telemetry-manager:latest
-export IMAGE
+MANAGER_IMAGE=localhost:5001/telemetry-manager:latest
+export MANAGER_IMAGE
 
 make docker-build
 make docker-push
