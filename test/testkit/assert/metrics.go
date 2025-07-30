@@ -55,7 +55,7 @@ func MetricsWithScopeAndNamespaceNotDelivered(t testkit.T, backend *kitbackend.B
 			HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)),
 			HaveResourceAttributes(HaveKeyWithValue("service", scope)),
 		)))),
-		optionalDescription...,
+		WithOptionalDescription(optionalDescription...),
 	)
 }
 
