@@ -68,7 +68,7 @@ func TestSeverityParser(t *testing.T) {
 			HaveSeverityText(Equal("INFO")),
 			HaveAttributes(Not(HaveKey("level"))),
 		))),
-		"Scenario levelAndINFO should parse level attribute and remove it",
+		assert.WithOptionalDescription("Scenario levelAndINFO should parse level attribute and remove it"),
 	)
 
 	assert.BackendDataEventuallyMatches(t, backend,
@@ -78,7 +78,7 @@ func TestSeverityParser(t *testing.T) {
 			HaveSeverityText(Equal("warning")),
 			HaveAttributes(Not(HaveKey("level"))),
 		))),
-		"Scenario levelAndWarning should parse level attribute and remove it",
+		assert.WithOptionalDescription("Scenario levelAndWarning should parse level attribute and remove it"),
 	)
 
 	assert.BackendDataEventuallyMatches(t, backend,
@@ -87,7 +87,7 @@ func TestSeverityParser(t *testing.T) {
 			HaveSeverityText(Equal("WARN")),
 			HaveAttributes(Not(HaveKey("log.level"))),
 		))),
-		"Scenario log.level should parse log.level attribute and remove it",
+		assert.WithOptionalDescription("Scenario log.level should parse log.level attribute and remove it"),
 	)
 
 	assert.BackendDataEventuallyMatches(t, backend,
@@ -96,6 +96,6 @@ func TestSeverityParser(t *testing.T) {
 			HaveSeverityNumber(Equal(0)), // default value
 			HaveSeverityText(BeEmpty()),
 		))),
-		"Default scenario should not have any severity",
+		assert.WithOptionalDescription("Default scenario should not have any severity"),
 	)
 }

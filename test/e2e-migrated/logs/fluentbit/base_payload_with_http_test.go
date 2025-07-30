@@ -59,7 +59,7 @@ func TestBasePayloadWithHTTPOutput(t *testing.T) {
 			fluentbit.HaveAttributes(HaveKey("@timestamp")),
 			fluentbit.HaveDateISO8601Format(BeTrue()),
 		))),
-		"Should have @timestamp and date attributes",
+		assert.WithOptionalDescription("Should have @timestamp and date attributes"),
 	)
 
 	assert.BackendDataEventuallyMatches(t, backend,
@@ -71,7 +71,7 @@ func TestBasePayloadWithHTTPOutput(t *testing.T) {
 				HaveKey("host"),
 			)),
 		)),
-		"Should have typical Kubernetes attributes set by the kubernetes filter",
+		assert.WithOptionalDescription("Should have typical Kubernetes attributes set by the kubernetes filter"),
 	)
 
 	assert.BackendDataEventuallyMatches(t, backend,
@@ -82,27 +82,27 @@ func TestBasePayloadWithHTTPOutput(t *testing.T) {
 				HaveKeyWithValue("namespace_name", genNs),
 			)),
 		)),
-		"Should have Kubernetes attributes with corresponding values set by the kubernetes filter",
+		assert.WithOptionalDescription("Should have Kubernetes attributes with corresponding values set by the kubernetes filter"),
 	)
 
 	assert.BackendDataEventuallyMatches(t, backend,
 		fluentbit.HaveFlatLogs(HaveEach(
 			fluentbit.HaveAttributes(HaveKey("cluster_identifier")),
 		)),
-		"Should have cluster identifier set by record_modifier filter",
+		assert.WithOptionalDescription("Should have cluster identifier set by record_modifier filter"),
 	)
 
 	assert.BackendDataEventuallyMatches(t, backend,
 		fluentbit.HaveFlatLogs(HaveEach(
 			fluentbit.HaveLogBody(Not(BeEmpty())),
 		)),
-		"Should have not-empty log body",
+		assert.WithOptionalDescription("Should have not-empty log body"),
 	)
 
 	assert.BackendDataEventuallyMatches(t, backend,
 		fluentbit.HaveFlatLogs(HaveEach(
 			fluentbit.HaveAttributes(HaveKeyWithValue("stream", "stdout")),
 		)),
-		"Should have stream attribute",
+		assert.WithOptionalDescription("Should have stream attribute"),
 	)
 }
