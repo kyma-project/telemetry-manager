@@ -47,7 +47,6 @@ jobs:
       dockerfile: Dockerfile
       context: dependencies/stdout-log-generator
       tags: ${{ needs.envs.outputs.tags }}
-      build-engine: buildx
       platforms: "linux/amd64,linux/arm64"
   list-images:
     needs: build-image
