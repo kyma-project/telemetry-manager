@@ -43,7 +43,12 @@ func main() {
 	bytesFlag := pflag.IntP("bytes", "b", defaultByteSize, "Size of each log in bytes")
 	logsPerSecondFlag := pflag.IntP("rate", "r", 1, "Approximately how many logs per second each worker should generate. Zero means no throttling")
 	workersFlag := pflag.IntP("workers", "w", 1, "Number of workers (goroutines) to run")
-	fieldsFlag := pflag.StringToStringP("fields", "f", map[string]string{}, "Custom fields in key=value format (comma-separated or repeated). These fields will be included in each log record (e.g. --fields key1=value1,key2=value2 or --fields key1=value1 --fields key2=value2)")
+	fieldsFlag := pflag.StringToStringP("fields", "f", map[string]string{},
+		fmt.Sprintf(`Custom fields in key=value format (comma-separated or repeated). These fields will be included in each %s log record (e.g. --fields key1=value1,key2=value2 or --fields key1=value1 --fields key2=value2). This flag is only relevant when the format is %s.`, jsonFormat, jsonFormat),
+	)
+	textFlag := pflag.StringP("text", "t", "",
+		fmt.Sprintf(`Custom text to be logged in each %s log. This flag will be ignored if the "bytes" flag is provided in which random text will be logged having the size provieded by the "bytes" flag. This flag is only relevant when the format is %s.`, plaintextFormat, plaintextFormat),
+	)
 
 	pflag.Parse()
 
@@ -79,7 +84,7 @@ func main() {
 		case jsonFormat:
 			go generateJSONLogs(*bytesFlag, limitPerSecond, *fieldsFlag)
 		case plaintextFormat:
-			go generatePlaintextLogs(*bytesFlag, limitPerSecond)
+			go generatePlaintextLogs(*bytesFlag, limitPerSecond, *textFlag)
 		default:
 			log.Fatalf("Unexpected log format: %s", format)
 		}
@@ -132,11 +137,19 @@ func generateJSONLogs(logSize int, limitPerSecond rate.Limit, fields map[string]
 	}
 }
 
-func generatePlaintextLogs(logSize int, limitPerSecond rate.Limit) string {
+func generatePlaintextLogs(logSize int, limitPerSecond rate.Limit, customText string) string {
 	limiter := rate.NewLimiter(limitPerSecond, 1)
 
 	for {
-		plaintextLog := randomString(logSize)
+		var plaintextLog string
+
+		if customText != "" {
+			// Use the custom text if provided
+			plaintextLog = customText
+		} else {
+			// Generate random text if no custom text is provided
+			plaintextLog = randomString(logSize)
+		}
 
 		//nolint:forbidigo // actual printing of the prepared plaintextLog
 		fmt.Println(plaintextLog)
