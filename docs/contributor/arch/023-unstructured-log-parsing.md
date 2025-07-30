@@ -32,7 +32,7 @@ Because LogPipeline resources have output (backend) affinity and parsers have in
 ### Workload Selection
 Parsers must be tightly bound to a specific workload to ensure consistent application regardless of which pipeline is used.
 It should be possible to bind parsers to workloads in a flexible way, allowing for:
- * Broad targeting via namespace selectors
+ * Broad targeting with namespace selectors
  * Fine-grained targeting at the namespace → pod → container level
  * Optional label-based selectors for advanced use cases
 
