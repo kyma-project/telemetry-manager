@@ -18,6 +18,12 @@ metadata:
   namespace: kyma-system
   generation: 2
 spec:
+  enrichments:
+    cluster:
+      name: "clusterName"
+    extractPodLabels:
+      - key: "app.kubernetes.io/name"
+      - keyPrefix: "app.kubernetes.io"
   trace:
     gateway:
       scaling:
