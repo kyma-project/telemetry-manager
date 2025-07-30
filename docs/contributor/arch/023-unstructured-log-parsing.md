@@ -100,7 +100,7 @@ To support label selectors, the Kubernetes metadata must be enriched before pars
   * `filelog` receiver (limited flexibility)
   * `logtransform` receiver (more flexible, supports selectors, but currently alpha and not production-ready)
 
-**Decision:** Defer label-selector-based parsing until `recombine` is available in the `transform` processor. For now, only support name and name regex-based selection. If many users request it, as a temporary workaround, we may consider using the `logtransform` receiver.
+**Decision:** Defer label-selector-based parsing until `recombine` is available in the `transform` processor. For now, only support name and name regex-based selection. If many users request it, we may consider using the `logtransform` receiver as a temporary workaround.
 
 #### Regex Parsing
 
