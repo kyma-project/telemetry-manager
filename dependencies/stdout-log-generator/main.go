@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"log"
 	"maps"
+	"math/rand"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -24,7 +24,7 @@ var logsGenerated = prometheus.NewCounter(
 )
 
 const (
-	defaultByteSize = 1 << 11
+	defaultByteSize = 1 << 11 // 2 KiB = 2 * 2^10 = 2^11
 )
 
 func main() {
@@ -90,8 +90,8 @@ func generateLogs(logSize int, limitPerSecond rate.Limit, fields map[string]stri
 			log.Fatalf("The size of the JSON log with custom fields and a timestamp is larger than the requested log size\n")
 		}
 
-		// Pad the body until the JSON log reaches the target size
-		logRecord["body"] = strings.Repeat("a", bodyLen)
+		// Pad the body with random characters until the JSON log reaches the target size
+		logRecord["body"] = randomString(bodyLen)
 
 		logJson, err = json.Marshal(logRecord)
 		if err != nil {
@@ -107,4 +107,15 @@ func generateLogs(logSize int, limitPerSecond rate.Limit, fields map[string]stri
 			log.Printf("Error waiting for rate limiter: %v\n", err)
 		}
 	}
+}
+
+// randomString returns a string of the given length consisting of random alphanumeric characters
+func randomString(n int) string {
+	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+
+	return string(b)
 }
