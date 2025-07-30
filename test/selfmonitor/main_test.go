@@ -5,15 +5,16 @@ import (
 	"os"
 	"testing"
 
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
 const (
-	logsOTelAgentPrefix   = "logs-otel-agent"
-	logsOTelGatewayPrefix = "logs-otel-gateway"
-	logsFluentbitPrefix   = "logs-fluentbit"
-	metricsPrefix         = "metrics"
-	tracesPrefix          = "traces"
+	kindLogsOTelAgent   string = "logs-otel-agent"
+	kindLogsOTelGateway string = "logs-otel-gateway"
+	kindLogsFluentbit   string = "logs-fluentbit"
+	kindMetrics         string = "metrics"
+	kindTraces          string = "traces"
 )
 
 func TestMain(m *testing.M) {
@@ -25,4 +26,19 @@ func TestMain(m *testing.M) {
 	}
 
 	m.Run()
+}
+
+func signalType(testKind string) kitbackend.SignalType {
+	switch testKind {
+	case kindLogsOTelAgent, kindLogsOTelGateway:
+		return kitbackend.SignalTypeLogsOTel
+	case kindLogsFluentbit:
+		return kitbackend.SignalTypeLogsFluentBit
+	case kindMetrics:
+		return kitbackend.SignalTypeMetrics
+	case kindTraces:
+		return kitbackend.SignalTypeTraces
+	default:
+		return ""
+	}
 }

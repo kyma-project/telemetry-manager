@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
+	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -19,157 +20,153 @@ import (
 
 func TestHealthy(t *testing.T) {
 	tests := []struct {
-		prefix                     string
-		signalType                 kitbackend.SignalType
+		kind                       string
 		pipeline                   func(includeNs string, backend *kitbackend.Backend) client.Object
-		generator                  func(ns string) client.Object
+		generator                  func(ns string) *appsv1.Deployment
 		resourcesReady             func()
 		dataFromNamespaceDelivered func(ns string, backend *kitbackend.Backend)
 		selfMonitorIsHealthy       func()
 	}{
 		{
-			prefix:     logsOTelAgentPrefix,
-			signalType: kitbackend.SignalTypeLogsOTel,
+			kind: kindLogsOTelAgent,
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
-					WithName(logsOTelAgentPrefix).
+					WithName(kindLogsOTelAgent).
 					WithInput(testutils.BuildLogPipelineApplicationInput(testutils.ExtIncludeNamespaces(includeNs))).
 					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 					Build()
 				return &p
 			},
-			generator: func(ns string) client.Object {
+			generator: func(ns string) *appsv1.Deployment {
 				return stdloggen.NewDeployment(ns).K8sObject()
 			},
 			resourcesReady: func() {
 				assert.DeploymentReady(t, kitkyma.LogGatewayName)
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
-				assert.OTelLogPipelineHealthy(t, logsOTelAgentPrefix)
+				assert.OTelLogPipelineHealthy(t, kindLogsOTelAgent)
 			},
 			dataFromNamespaceDelivered: func(ns string, backend *kitbackend.Backend) {
 				assert.OTelLogsFromNamespaceDelivered(t, backend, ns)
 			},
 			selfMonitorIsHealthy: func() {
-				assert.LogPipelineSelfMonitorIsHealthy(t, suite.K8sClient, logsOTelAgentPrefix)
+				assert.LogPipelineSelfMonitorIsHealthy(t, suite.K8sClient, kindLogsOTelAgent)
 			},
 		},
 		{
-			prefix:     logsOTelGatewayPrefix,
-			signalType: kitbackend.SignalTypeLogsOTel,
+			kind: kindLogsOTelGateway,
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
-					WithName(logsOTelGatewayPrefix).
+					WithName(kindLogsOTelGateway).
 					WithInput(testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))).
 					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 					Build()
 				return &p
 			},
-			generator: func(ns string) client.Object {
+			generator: func(ns string) *appsv1.Deployment {
 				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
 			},
 			resourcesReady: func() {
 				assert.DeploymentReady(t, kitkyma.LogGatewayName)
-				assert.OTelLogPipelineHealthy(t, logsOTelGatewayPrefix)
+				assert.OTelLogPipelineHealthy(t, kindLogsOTelGateway)
 			},
 			dataFromNamespaceDelivered: func(ns string, backend *kitbackend.Backend) {
 				assert.OTelLogsFromNamespaceDelivered(t, backend, ns)
 			},
 			selfMonitorIsHealthy: func() {
-				assert.LogPipelineSelfMonitorIsHealthy(t, suite.K8sClient, logsOTelGatewayPrefix)
+				assert.LogPipelineSelfMonitorIsHealthy(t, suite.K8sClient, kindLogsOTelGateway)
 			},
 		},
 		{
-			prefix:     logsFluentbitPrefix,
-			signalType: kitbackend.SignalTypeLogsFluentBit,
+			kind: kindLogsFluentbit,
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
-					WithName(logsFluentbitPrefix).
+					WithName(kindLogsFluentbit).
 					WithApplicationInput(true, testutils.ExtIncludeNamespaces(includeNs)).
 					WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 					Build()
 				return &p
 			},
-			generator: func(ns string) client.Object {
+			generator: func(ns string) *appsv1.Deployment {
 				return stdloggen.NewDeployment(ns).K8sObject()
 			},
 			resourcesReady: func() {
 				assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
-				assert.FluentBitLogPipelineHealthy(t, logsFluentbitPrefix)
+				assert.FluentBitLogPipelineHealthy(t, kindLogsFluentbit)
 			},
 			dataFromNamespaceDelivered: func(ns string, backend *kitbackend.Backend) {
 				assert.FluentBitLogsFromNamespaceDelivered(t, backend, ns)
 			},
 			selfMonitorIsHealthy: func() {
-				assert.LogPipelineSelfMonitorIsHealthy(t, suite.K8sClient, logsFluentbitPrefix)
+				assert.LogPipelineSelfMonitorIsHealthy(t, suite.K8sClient, kindLogsFluentbit)
 			},
 		},
 		{
-			prefix:     metricsPrefix,
-			signalType: kitbackend.SignalTypeMetrics,
+			kind: kindMetrics,
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewMetricPipelineBuilder().
-					WithName(metricsPrefix).
+					WithName(kindMetrics).
 					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 					Build()
 				return &p
 			},
-			generator: func(ns string) client.Object {
-				return telemetrygen.NewPod(ns, telemetrygen.SignalTypeMetrics).K8sObject()
+			generator: func(ns string) *appsv1.Deployment {
+				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeMetrics).K8sObject()
 			},
 			resourcesReady: func() {
 				assert.DeploymentReady(t, kitkyma.MetricGatewayName)
-				assert.MetricPipelineHealthy(t, metricsPrefix)
+				assert.MetricPipelineHealthy(t, kindMetrics)
 			},
 			dataFromNamespaceDelivered: func(ns string, backend *kitbackend.Backend) {
 				assert.MetricsFromNamespaceDelivered(t, backend, ns, telemetrygen.MetricNames)
 			},
 			selfMonitorIsHealthy: func() {
-				assert.MetricPipelineSelfMonitorIsHealthy(t, suite.K8sClient, metricsPrefix)
+				assert.MetricPipelineSelfMonitorIsHealthy(t, suite.K8sClient, kindMetrics)
 			},
 		},
 		{
-			prefix:     tracesPrefix,
-			signalType: kitbackend.SignalTypeTraces,
+			kind: kindTraces,
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewTracePipelineBuilder().
-					WithName(tracesPrefix).
+					WithName(kindTraces).
 					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 					Build()
 				return &p
 			},
-			generator: func(ns string) client.Object {
-				return telemetrygen.NewPod(ns, telemetrygen.SignalTypeTraces).K8sObject()
+			generator: func(ns string) *appsv1.Deployment {
+				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeTraces).K8sObject()
 			},
 			resourcesReady: func() {
 				assert.DeploymentReady(t, kitkyma.TraceGatewayName)
-				assert.TracePipelineHealthy(t, tracesPrefix)
+				assert.TracePipelineHealthy(t, kindTraces)
 			},
 			dataFromNamespaceDelivered: func(ns string, backend *kitbackend.Backend) {
 				assert.TracesFromNamespaceDelivered(t, backend, ns)
 			},
 			selfMonitorIsHealthy: func() {
-				assert.TracePipelineSelfMonitorIsHealthy(t, suite.K8sClient, tracesPrefix)
+				assert.TracePipelineSelfMonitorIsHealthy(t, suite.K8sClient, kindTraces)
 			},
 		},
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.prefix, func(t *testing.T) {
+		t.Run(tc.kind, func(t *testing.T) {
 			suite.RegisterTestCase(t, suite.LabelSelfMonitoringHealthy)
 
 			var (
-				uniquePrefix = unique.Prefix(tc.prefix)
+				uniquePrefix = unique.Prefix(tc.kind)
 				backendNs    = uniquePrefix("backend")
 				genNs        = uniquePrefix("gen")
 			)
 
-			backend := kitbackend.New(backendNs, tc.signalType)
+			backend := kitbackend.New(backendNs, signalType(tc.kind))
+			pipeline := tc.pipeline(genNs, backend)
+			generator := tc.generator(genNs)
 
 			resources := []client.Object{
 				kitk8s.NewNamespace(backendNs).K8sObject(),
 				kitk8s.NewNamespace(genNs).K8sObject(),
-				tc.pipeline(genNs, backend),
-				tc.generator(genNs),
+				pipeline,
+				generator,
 			}
 			resources = append(resources, backend.K8sObjects()...)
 

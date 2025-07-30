@@ -132,6 +132,8 @@ const (
 	LabelSelfMonitoringHealthy                   = "self-mon-healthy"
 	LabelSelfMonitoringBackpressure              = "self-mon-backpressure"
 	LabelSelfMonitoringOutage                    = "self-mon-outage"
+
+	// TODO(TeodorSAP): Delete after the migration to the new self-monitoring test suite
 	LabelSelfMonitoringLogsFluentBitBackpressure = "self-mon-fluentbit-backpressure"
 	LabelSelfMonitoringLogsFluentBitOutage       = "self-mon-fluentbit-outage"
 	LabelSelfMonitoringLogsAgentBackpressure     = "self-mon-log-agent-backpressure"
