@@ -216,12 +216,6 @@ jobs:
       - name: Deploy Test Prerequisites
         uses: "./.github/template/deploy-test-prerequisites"
 
-      - name: Debug network interfaces and metrics
-        run: |
-          echo "=== Node network interfaces ==="
-          docker exec k3d-kyma-server-0 ip link show
-          docker exec k3d-kyma-server-0 cat /proc/net/dev
-
       - name: Run tests
         run: |
           go test -v -timeout=20m ./test/e2e-migrated/... -- -labels=${{ matrix.labels.name }}
