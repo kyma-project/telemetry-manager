@@ -83,7 +83,7 @@ spec:
 
 ### Selector Support
 
-Parsers should be applicable via:
+Parsers should be applicable using the following options:
 
 * Namespace/pod/container name or regex
 * Pod/namespace label selectors (future enhancement)
