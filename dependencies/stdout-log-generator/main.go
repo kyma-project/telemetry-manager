@@ -71,9 +71,9 @@ func generateLogs(logSize int, limitPerSecond rate.Limit, fields map[string]stri
 		logRecord := make(map[string]string)
 		maps.Copy(logRecord, fields)
 
-		// Add a timestamp and initially an empty body to the log record
+		// Add a timestamp and initially an empty padding to the log record
 		logRecord["timestamp"] = time.Now().Format(time.RFC3339)
-		logRecord["body"] = ""
+		logRecord["padding"] = ""
 
 		logJson, err := json.Marshal(logRecord)
 		if err != nil {
@@ -81,17 +81,15 @@ func generateLogs(logSize int, limitPerSecond rate.Limit, fields map[string]stri
 		}
 
 		// Check if the size of the JSON log is already larger than the target size
-		overhead := len(logJson) - len(`""`) // subtract the empty body quotes in logJson
-
-		const quotes = 2 // number of quotes around every string in json
-
-		bodyLen := logSize - overhead - quotes
-		if bodyLen < 0 {
+		const quotes = 2                          // number of quotes around every string in json
+		overhead := len(logJson) - quotes         // subtract the existing quotes for the current empty string in the padding field
+		paddingLen := logSize - overhead - quotes // number of characters generated in the padding should exclude the quotes which will be added for the padding field
+		if paddingLen < 0 {
 			log.Fatalf("The size of the JSON log with custom fields and a timestamp is larger than the requested log size\n")
 		}
 
-		// Pad the body with random characters until the JSON log reaches the target size
-		logRecord["body"] = randomString(bodyLen)
+		// Pad with random characters until the JSON log reaches the target size
+		logRecord["padding"] = randomString(paddingLen)
 
 		logJson, err = json.Marshal(logRecord)
 		if err != nil {
