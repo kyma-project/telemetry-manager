@@ -115,7 +115,7 @@ To support label selectors, the Kubernetes metadata must be enriched before pars
 
 To ensure consistent enrichment across built-in and custom parsers:
 
-* Reuse existing transformation logic (e.g., extracting `message`, `level`, `traceparent`, etc.)
+* Reuse existing transformation logic (for example, extracting `message`, `level`, `traceparent`, etc.)
 * Implement in `transform` processor using OTTL expressions.
 
 ## Action Plan
