@@ -95,7 +95,7 @@ To support label selectors, the Kubernetes metadata must be enriched before pars
 #### Multiline Parsing
 
 * Currently only feasible with the `recombine` operator in Stanza.
-* Can be placed in:
+* Multiline parsing can be placed in one of the following receivers:
 
   * `filelog` receiver (limited flexibility)
   * `logtransform` receiver (more flexible, supports selectors, but currently alpha and not production-ready)
