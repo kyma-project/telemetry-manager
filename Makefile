@@ -2,7 +2,11 @@ include .env
 -include .env.overrides
 
 # Environment Variables
-IMG ?= $(ENV_IMG)
+MANAGER_IMAGE ?= $(ENV_MANAGER_IMAGE)
+FLUENT_BIT_EXPORTER_IMAGE?= $(ENV_FLUENTBIT_EXPORTER_IMAGE)
+FLUENT_BIT_IMAGE ?= $(ENV_FLUENTBIT_IMAGE)
+OTEL_COLLECTOR_IMAGE ?= $(ENV_OTEL_COLLECTOR_IMAGE)
+SELF_MONITOR_IMAGE?= $(ENV_SELFMONITOR_IMAGE)
 K3S_IMAGE ?= $(ENV_K3S_IMAGE)
 
 # Operating system architecture
@@ -151,15 +155,19 @@ manifests-experimental: $(CONTROLLER_GEN) $(YAMLFMT) ## Generate WebhookConfigur
 	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook crd paths="./..." output:crd:artifacts:config=config/development/crd/bases
 	$(YAMLFMT)
 
+
 .PHONY: generate
-generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) $(POPULATE_IMAGES) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) $(YQ) $(YAMLFMT) $(POPULATE_IMAGES) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 	$(MOCKERY)
 	$(STRINGER) --type Mode internal/utils/logpipeline/logpipeline.go
 	$(STRINGER) --type FeatureFlag internal/featureflags/featureflags.go
+	$(YQ) eval '.spec.template.spec.containers[] |= (select(.name == "manager") | .env[] |= (select(.name == "FLUENT_BIT_IMAGE") | .value = ${FLUENT_BIT_IMAGE}))' -i config/manager/manager.yaml
+	$(YQ) eval '.spec.template.spec.containers[] |= (select(.name == "manager") | .env[] |= (select(.name == "FLUENT_BIT_EXPORTER_IMAGE") | .value = ${FLUENT_BIT_EXPORTER_IMAGE}))' -i config/manager/manager.yaml
+	$(YQ) eval '.spec.template.spec.containers[] |= (select(.name == "manager") | .env[] |= (select(.name == "OTEL_COLLECTOR_IMAGE") | .value = ${OTEL_COLLECTOR_IMAGE}))' -i config/manager/manager.yaml
+	$(YQ) eval '.spec.template.spec.containers[] |= (select(.name == "manager") | .env[] |= (select(.name == "SELF_MONITOR_IMAGE") | .value = ${SELF_MONITOR_IMAGE}))' -i config/manager/manager.yaml
+	$(YAMLFMT)
 	$(POPULATE_IMAGES)
-
-
 .PHONY: fmt
 fmt: ## Run go fmt against code.
 	go fmt ./...
@@ -213,11 +221,11 @@ run: gen-webhook-cert manifests generate fmt vet tidy ## Run a controller from y
 
 .PHONY: docker-build
 docker-build: ## Build docker image with the manager.
-	docker build -t ${IMG} .
+	docker build -t ${MANAGER_IMAGE} .
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
-	docker push ${IMG}
+	docker push ${MANAGER_IMAGE}
 
 
 ##@ Deployment
@@ -240,7 +248,7 @@ uninstall: manifests $(KUSTOMIZE) ## Uninstall CRDs from the K8s cluster specifi
 
 .PHONY: deploy
 deploy: manifests $(KUSTOMIZE) ## Deploy resources based on the release (default) variant to the K8s cluster specified in ~/.kube/config.
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	cd config/manager && $(KUSTOMIZE) edit set image controller=${MANAGER_IMAGE}
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
 .PHONY: undeploy
@@ -249,7 +257,7 @@ undeploy: $(KUSTOMIZE) ## Undeploy resources based on the release (default) vari
 
 .PHONY: deploy-experimental
 deploy-experimental: manifests-experimental $(KUSTOMIZE) ## Deploy resources based on the development variant to the K8s cluster specified in ~/.kube/config.
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	cd config/manager && $(KUSTOMIZE) edit set image controller=${MANAGER_IMAGE}
 	$(KUSTOMIZE) build config/development | kubectl apply -f -
 
 .PHONY: undeploy-experimental

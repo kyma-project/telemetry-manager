@@ -285,7 +285,7 @@ func run() error {
 	logger.InfoContext(ctx, "Starting server on port "+strconv.Itoa(serverPort))
 
 	server := &http.Server{
-		Addr:              ":1234",
+		Addr:              fmt.Sprintf(":%d", serverPort),
 		ReadHeaderTimeout: serverReadTimeout,
 	}
 
