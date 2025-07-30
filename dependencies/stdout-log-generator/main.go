@@ -111,8 +111,10 @@ func generateJSONLogs(logSize int, limitPerSecond rate.Limit, fields map[string]
 		}
 
 		// Check if the size of the JSON log is already larger than the target size
-		const quotes = 2                          // number of quotes around every string in JSON
-		overhead := len(JSONLog) - quotes         // subtract the existing quotes for the current empty string in the padding field
+		const quotes = 2 // number of quotes around every string in JSON
+
+		overhead := len(JSONLog) - quotes // subtract the existing quotes for the current empty string in the padding field
+
 		paddingLen := logSize - overhead - quotes // number of characters generated in the padding should exclude the quotes which will be added for the padding field
 		if paddingLen < 0 {
 			log.Fatalf("The size of the JSON log with custom fields and a timestamp is larger than the requested log size\n")
@@ -165,6 +167,7 @@ func generatePlaintextLogs(logSize int, limitPerSecond rate.Limit, customText st
 // randomString returns a string of the given length consisting of random alphanumeric characters
 func randomString(n int) string {
 	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
 	b := make([]byte, n)
 	for i := range b {
 		b[i] = letters[rand.Intn(len(letters))]
