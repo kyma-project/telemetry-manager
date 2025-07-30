@@ -170,7 +170,7 @@ transform:
 Since we give users the flexibility to define custom parsers, we must ensure that custom parsers are well-formed and do not break the pipeline.
 We can achieve this by:
 * Validating parsers at the API level (e.g., using a validation webhook).
-* Reflect broken parsers in the Telemetry status, allowing users to see which parsers are valid or broken.
+* Reflect broken parsers in the Telemetry status, so that users can see which parsers are valid or broken.
 
 **Decision**: Implement API-level validation for parsers using a validation webhook to give a user immediate feedback on parser correctness. Users using Kyma Dashboard will also see the status of parsers in the Telemetry resource.
 
