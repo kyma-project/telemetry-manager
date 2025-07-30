@@ -104,7 +104,7 @@ To support label selectors, the Kubernetes metadata must be enriched before pars
 
 #### Regex Parsing
 
-* Implementable via:
+* Implementable with one of the following options:
 
   * `regex_parser` operator (basic)
   * `transform` processor + OTTL expressions (preferred, more flexible and future-proof)
