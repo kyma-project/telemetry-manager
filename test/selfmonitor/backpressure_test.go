@@ -175,7 +175,7 @@ func TestBackpressure(t *testing.T) {
 			})
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-			assert.BackendReachable(t, backend) // TODO(TeodorSAP): This might need to be removed, since backend is faulty in this test case
+			assert.BackendReachable(t, backend)
 			tc.resourcesReady()
 
 			assert.DeploymentReady(t, kitkyma.SelfMonitorName)

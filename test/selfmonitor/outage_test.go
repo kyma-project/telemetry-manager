@@ -19,6 +19,7 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/prometheus"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/floggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -36,54 +37,54 @@ type testCaseOutage struct {
 
 func TestOutage(t *testing.T) {
 	tests := []testCaseOutage{
-		// {
-		// 	kind: kindLogsOTelAgent,
-		// 	pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
-		// 		p := testutils.NewLogPipelineBuilder().
-		// 			WithName(kindLogsOTelAgent).
-		// 			WithInput(testutils.BuildLogPipelineApplicationInput(testutils.ExtIncludeNamespaces(includeNs))).
-		// 			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
-		// 			Build()
-		// 		return &p
-		// 	},
-		// 	generator: func(ns string) *appsv1.Deployment {
-		// 		return floggen.NewDeployment(ns).WithReplicas(3).K8sObject()
-		// 	},
-		// 	resourcesReady: func() {
-		// 		assert.DeploymentReady(t, kitkyma.LogGatewayName)
-		// 		assert.DaemonSetReady(t, kitkyma.LogAgentName)
-		// 		assert.OTelLogPipelineHealthy(t, kindLogsOTelAgent)
-		// 	},
-		// 	conditionReasonsTransition:     assert.LogPipelineConditionReasonsTransition,
-		// 	bufferFillingUpConditionReason: conditions.ReasonSelfMonAgentBufferFillingUp,
-		// 	allDataDroppedConditionReason:  conditions.ReasonSelfMonAgentAllDataDropped,
-		// 	componentsHealthyConditionType: conditions.TypeLogComponentsHealthy,
-		// },
-		// {
-		// 	kind: kindLogsOTelGateway,
-		// 	pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
-		// 		p := testutils.NewLogPipelineBuilder().
-		// 			WithName(kindLogsOTelGateway).
-		// 			WithInput(testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))).
-		// 			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
-		// 			Build()
-		// 		return &p
-		// 	},
-		// 	generator: func(ns string) *appsv1.Deployment {
-		// 		return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs,
-		// 			telemetrygen.WithRate(800),
-		// 			telemetrygen.WithWorkers(5)).
-		// 			K8sObject()
-		// 	},
-		// 	resourcesReady: func() {
-		// 		assert.DeploymentReady(t, kitkyma.LogGatewayName)
-		// 		assert.OTelLogPipelineHealthy(t, kindLogsOTelGateway)
-		// 	},
-		// 	conditionReasonsTransition:     assert.LogPipelineConditionReasonsTransition,
-		// 	bufferFillingUpConditionReason: conditions.ReasonSelfMonGatewayBufferFillingUp,
-		// 	allDataDroppedConditionReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
-		// 	componentsHealthyConditionType: conditions.TypeLogComponentsHealthy,
-		// },
+		{
+			kind: kindLogsOTelAgent,
+			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
+				p := testutils.NewLogPipelineBuilder().
+					WithName(kindLogsOTelAgent).
+					WithInput(testutils.BuildLogPipelineApplicationInput(testutils.ExtIncludeNamespaces(includeNs))).
+					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+					Build()
+				return &p
+			},
+			generator: func(ns string) *appsv1.Deployment {
+				return floggen.NewDeployment(ns).WithReplicas(3).K8sObject()
+			},
+			resourcesReady: func() {
+				assert.DeploymentReady(t, kitkyma.LogGatewayName)
+				assert.DaemonSetReady(t, kitkyma.LogAgentName)
+				assert.OTelLogPipelineHealthy(t, kindLogsOTelAgent)
+			},
+			conditionReasonsTransition:     assert.LogPipelineConditionReasonsTransition,
+			bufferFillingUpConditionReason: conditions.ReasonSelfMonAgentBufferFillingUp,
+			allDataDroppedConditionReason:  conditions.ReasonSelfMonAgentAllDataDropped,
+			componentsHealthyConditionType: conditions.TypeLogComponentsHealthy,
+		},
+		{
+			kind: kindLogsOTelGateway,
+			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
+				p := testutils.NewLogPipelineBuilder().
+					WithName(kindLogsOTelGateway).
+					WithInput(testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))).
+					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+					Build()
+				return &p
+			},
+			generator: func(ns string) *appsv1.Deployment {
+				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs,
+					telemetrygen.WithRate(800),
+					telemetrygen.WithWorkers(5)).
+					K8sObject()
+			},
+			resourcesReady: func() {
+				assert.DeploymentReady(t, kitkyma.LogGatewayName)
+				assert.OTelLogPipelineHealthy(t, kindLogsOTelGateway)
+			},
+			conditionReasonsTransition:     assert.LogPipelineConditionReasonsTransition,
+			bufferFillingUpConditionReason: conditions.ReasonSelfMonGatewayBufferFillingUp,
+			allDataDroppedConditionReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
+			componentsHealthyConditionType: conditions.TypeLogComponentsHealthy,
+		},
 		{
 			kind: kindLogsFluentbit,
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
@@ -95,7 +96,7 @@ func TestOutage(t *testing.T) {
 				return &p
 			},
 			generator: func(ns string) *appsv1.Deployment {
-				return floggen.NewDeployment(ns).K8sObject()
+				return floggen.NewDeployment(ns).WithReplicas(2).K8sObject()
 			},
 			resourcesReady: func() {
 				assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
@@ -106,56 +107,56 @@ func TestOutage(t *testing.T) {
 			allDataDroppedConditionReason:  conditions.ReasonSelfMonAgentAllDataDropped,
 			componentsHealthyConditionType: conditions.TypeLogComponentsHealthy,
 		},
-		// {
-		// 	kind: kindMetrics,
-		// 	pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
-		// 		p := testutils.NewMetricPipelineBuilder().
-		// 			WithName(kindMetrics).
-		// 			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
-		// 			Build()
-		// 		return &p
-		// 	},
-		// 	generator: func(ns string) *appsv1.Deployment {
-		// 		return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeMetrics,
-		// 			telemetrygen.WithRate(10_000_000),
-		// 			telemetrygen.WithWorkers(50),
-		// 			telemetrygen.WithInterval("30s")).
-		// 			WithReplicas(2).
-		// 			K8sObject()
-		// 	},
-		// 	resourcesReady: func() {
-		// 		assert.DeploymentReady(t, kitkyma.MetricGatewayName)
-		// 		assert.MetricPipelineHealthy(t, kindMetrics)
-		// 	},
-		// 	conditionReasonsTransition:     assert.MetricPipelineConditionReasonsTransition,
-		// 	bufferFillingUpConditionReason: conditions.ReasonSelfMonGatewayBufferFillingUp,
-		// 	allDataDroppedConditionReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
-		// 	componentsHealthyConditionType: conditions.TypeMetricComponentsHealthy,
-		// },
-		// {
-		// 	kind: kindTraces,
-		// 	pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
-		// 		p := testutils.NewTracePipelineBuilder().
-		// 			WithName(kindTraces).
-		// 			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
-		// 			Build()
-		// 		return &p
-		// 	},
-		// 	generator: func(ns string) *appsv1.Deployment {
-		// 		return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeTraces,
-		// 			telemetrygen.WithRate(80),
-		// 			telemetrygen.WithWorkers(10)).
-		// 			K8sObject()
-		// 	},
-		// 	resourcesReady: func() {
-		// 		assert.DeploymentReady(t, kitkyma.TraceGatewayName)
-		// 		assert.TracePipelineHealthy(t, kindTraces)
-		// 	},
-		// 	conditionReasonsTransition:     assert.TracePipelineConditionReasonsTransition,
-		// 	bufferFillingUpConditionReason: conditions.ReasonSelfMonGatewayBufferFillingUp,
-		// 	allDataDroppedConditionReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
-		// 	componentsHealthyConditionType: conditions.TypeTraceComponentsHealthy,
-		// },
+		{
+			kind: kindMetrics,
+			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
+				p := testutils.NewMetricPipelineBuilder().
+					WithName(kindMetrics).
+					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+					Build()
+				return &p
+			},
+			generator: func(ns string) *appsv1.Deployment {
+				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeMetrics,
+					telemetrygen.WithRate(10_000_000),
+					telemetrygen.WithWorkers(50),
+					telemetrygen.WithInterval("30s")).
+					WithReplicas(2).
+					K8sObject()
+			},
+			resourcesReady: func() {
+				assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+				assert.MetricPipelineHealthy(t, kindMetrics)
+			},
+			conditionReasonsTransition:     assert.MetricPipelineConditionReasonsTransition,
+			bufferFillingUpConditionReason: conditions.ReasonSelfMonGatewayBufferFillingUp,
+			allDataDroppedConditionReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
+			componentsHealthyConditionType: conditions.TypeMetricComponentsHealthy,
+		},
+		{
+			kind: kindTraces,
+			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
+				p := testutils.NewTracePipelineBuilder().
+					WithName(kindTraces).
+					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+					Build()
+				return &p
+			},
+			generator: func(ns string) *appsv1.Deployment {
+				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeTraces,
+					telemetrygen.WithRate(80),
+					telemetrygen.WithWorkers(10)).
+					K8sObject()
+			},
+			resourcesReady: func() {
+				assert.DeploymentReady(t, kitkyma.TraceGatewayName)
+				assert.TracePipelineHealthy(t, kindTraces)
+			},
+			conditionReasonsTransition:     assert.TracePipelineConditionReasonsTransition,
+			bufferFillingUpConditionReason: conditions.ReasonSelfMonGatewayBufferFillingUp,
+			allDataDroppedConditionReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
+			componentsHealthyConditionType: conditions.TypeTraceComponentsHealthy,
+		},
 	}
 
 	for _, tc := range tests {
@@ -188,8 +189,12 @@ func TestOutage(t *testing.T) {
 			tc.resourcesReady()
 
 			assert.DeploymentReady(t, kitkyma.SelfMonitorName)
-			assertBufferFillingUp(t, tc)
-			stopGenerator(t, generator)
+
+			if tc.kind == kindMetrics || tc.kind == kindTraces {
+				assertBufferFillingUp(t, tc)
+				stopGenerator(t, generator)
+			}
+
 			assertAllDataDropped(t, tc)
 			assertMetricInstrumentation(t)
 		})
