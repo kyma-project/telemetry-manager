@@ -166,6 +166,55 @@ jobs:
           failure: failure()
           job-name: ${{ github.job }}-${{ matrix.signal-type }}-${{ matrix.scenario }}
 
+  e2e-self-mon-migrated:
+    needs: setup
+    strategy:
+      fail-fast: false
+      matrix:
+        scenario:
+          - healthy
+          - backpressure
+          - outage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Prepare Test
+        uses: "./.github/template/prepare-test"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy Test Prerequisites
+        if: ${{ matrix.scenario == 'healthy' }}Í
+        uses: "./.github/template/deploy-test-prerequisites"
+
+      - name: Run tests without Istio
+        if: ${{ matrix.scenario == 'healthy' }}
+        run: |
+          go test -v -timeout=20m ./test/selfmonitor/... -- -labels="self-mon-${{ matrix.scenario }}"
+
+      # we need Istio for fault injection to simulate backpressure and outages
+      - name: Deploy Istio Module
+        if: ${{ matrix.scenario != 'healthy' }}
+        run: hack/deploy-istio.sh
+
+      - name: Deploy Test Prerequisites
+        if: ${{ matrix.scenario != 'healthy' }}
+        uses: "./.github/template/deploy-test-prerequisites"
+
+      - name: Run tests with Istio
+        if: ${{ matrix.scenario != 'healthy' }}
+        run: |
+          go test -v -timeout=20m ./test/selfmonitor/... -- -labels="self-mon-${{ matrix.scenario }}"
+
+      - name: Finalize Test
+        uses: "./.github/template/finalize-test"
+        if: ${{ !cancelled()  }}
+        with:
+          failure: failure()
+          job-name: ${{ github.job }}-${{ matrix.signal-type }}-${{ matrix.scenario }}
+
   e2e-migrated:
     needs: setup
     strategy:
