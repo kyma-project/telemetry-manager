@@ -173,3 +173,7 @@ We can achieve this by:
 * Reflect broken parsers in the Telemetry status, allowing users to see which parsers are valid or broken.
 
 **Decision**: Implement API-level validation for parsers using a validation webhook to give a user immediate feedback on parser correctness. User using Kyma Dashboard will also see the status of parsers in the Telemetry resource.
+
+## References
+
+1. Built-in multiline parsers in Fluent Bit: https://github.com/fluent/fluent-bit/tree/master/src/multiline
