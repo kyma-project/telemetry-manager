@@ -27,7 +27,7 @@ Limitations of the Fluent Bit Approach
 The OTel-based solution should fulfill the following requirements:
 
 ### Parser Definition
-Since LogPipeline have output (backend) affinity and parsers have input (workload) affinity, parsers must not be defined in the LogPipeline. Ideally, they should be defined in a separate resource. However, for now, we want to avoid introducing a new API and define parsers in the Telemetry CR.
+Because LogPipeline resources have output (backend) affinity and parsers have input (workload) affinity, parsers must not be defined in the LogPipeline. Ideally, they should be defined in a separate resource. However, for now, we want to avoid introducing a new API, and thus define parsers in the Telemetry CR.
 
 ### Workload Selection
 Parsers must be tightly bound to a specific workload to ensure consistent application regardless of which pipeline is used.
