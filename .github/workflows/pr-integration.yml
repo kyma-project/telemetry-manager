@@ -82,36 +82,6 @@ jobs:
           failure: failure()
           job-name: ${{ github.job }}-${{ matrix.ginkgo-labels }}
 
-  # TODO: DELETE & rename istio-migrated (incoming)
-  e2e-istio:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-
-      - name: Prepare test
-        uses: "./.github/template/prepare-test"
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Deploy Istio module
-        run: hack/deploy-istio.sh
-
-      - name: Deploy test prerequisites
-        uses: "./.github/template/deploy-test-prerequisites"
-
-      - name: Run tests
-        run: |
-          bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags istio --label-filter="istio && !experimental" test/integration/istio
-
-      - name: Finalize test
-        uses: "./.github/template/finalize-test"
-        if: ${{ !cancelled()  }}
-        with:
-          failure: failure()
-          job-name: ${{ github.job }}
-
   e2e-selfmonitor:
     needs: setup
     strategy:
@@ -221,7 +191,7 @@ jobs:
       - name: Run integration e2e tests
         if: ${{ matrix.labels.mode == 'integration' }}
         run: |
-          go test -v -timeout=20m ./test/integration-migrated/... -- -labels=${{ matrix.labels.name }}
+          go test -v -timeout=20m ./test/integration/... -- -labels=${{ matrix.labels.name }}
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"

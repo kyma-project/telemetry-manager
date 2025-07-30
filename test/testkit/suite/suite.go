@@ -128,24 +128,10 @@ const (
 	LabelExperimental = "experimental"
 	LabelSkip         = "skip"
 
-	// Self-monitoring test labels
+	// Selfmonitor test labels
 	LabelSelfMonitorHealthy      = "selfmonitor-healthy"
 	LabelSelfMonitorBackpressure = "selfmonitor-backpressure"
 	LabelSelfMonitorOutage       = "selfmonitor-outage"
-
-	// TODO(TeodorSAP): Delete after the migration to the new self-monitoring test suite
-	LabelSelfMonitoringLogsFluentBitBackpressure = "self-mon-fluentbit-backpressure"
-	LabelSelfMonitoringLogsFluentBitOutage       = "self-mon-fluentbit-outage"
-	LabelSelfMonitoringLogsAgentBackpressure     = "self-mon-log-agent-backpressure"
-	LabelSelfMonitoringLogsAgentOutage           = "self-mon-log-agent-outage"
-	LabelSelfMonitoringLogsGatewayBackpressure   = "self-mon-log-gateway-backpressure"
-	LabelSelfMonitoringLogsGatewayOutage         = "self-mon-log-gateway-outage"
-	LabelSelfMonitoringTracesHealthy             = "self-mon-traces-healthy"
-	LabelSelfMonitoringTracesBackpressure        = "self-mon-traces-backpressure"
-	LabelSelfMonitoringTracesOutage              = "self-mon-traces-outage"
-	LabelSelfMonitoringMetricsHealthy            = "self-mon-metrics-healthy"
-	LabelSelfMonitoringMetricsBackpressure       = "self-mon-metrics-backpressure"
-	LabelSelfMonitoringMetricsOutage             = "self-mon-metrics-outage"
 
 	// Miscellaneous test label (for edge-cases and unrelated tests)
 	// [please avoid adding tests to this category if it already fits in a more specific one]
