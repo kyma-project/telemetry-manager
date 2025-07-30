@@ -18,15 +18,17 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
+type testCaseHealthy struct {
+	kind                       string
+	pipeline                   func(includeNs string, backend *kitbackend.Backend) client.Object
+	generator                  func(ns string) *appsv1.Deployment
+	resourcesReady             func()
+	dataFromNamespaceDelivered func(ns string, backend *kitbackend.Backend)
+	selfMonitorIsHealthy       func()
+}
+
 func TestHealthy(t *testing.T) {
-	tests := []struct {
-		kind                       string
-		pipeline                   func(includeNs string, backend *kitbackend.Backend) client.Object
-		generator                  func(ns string) *appsv1.Deployment
-		resourcesReady             func()
-		dataFromNamespaceDelivered func(ns string, backend *kitbackend.Backend)
-		selfMonitorIsHealthy       func()
-	}{
+	tests := []testCaseHealthy{
 		{
 			kind: kindLogsOTelAgent,
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
@@ -150,7 +152,7 @@ func TestHealthy(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.kind, func(t *testing.T) {
-			suite.RegisterTestCase(t, suite.LabelSelfMonitoringHealthy)
+			suite.RegisterTestCase(t, label(suite.LabelSelfMonitorHealthy, tc.kind))
 
 			var (
 				uniquePrefix = unique.Prefix(tc.kind)

@@ -1,10 +1,13 @@
 package selfmonitor
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"testing"
 
+	"github.com/kyma-project/telemetry-manager/test/testkit"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
@@ -17,6 +20,8 @@ const (
 	kindTraces          string = "traces"
 )
 
+type conditionReasonsTransitionFunc func(t testkit.T, pipelineName string, condType string, expected []assert.ReasonStatus)
+
 func TestMain(m *testing.M) {
 	const errorCode = 1
 
@@ -26,6 +31,10 @@ func TestMain(m *testing.M) {
 	}
 
 	m.Run()
+}
+
+func label(selfmonitorLabel, testKind string) string {
+	return fmt.Sprintf("%s-%s", selfmonitorLabel, testKind)
 }
 
 func signalType(testKind string) kitbackend.SignalType {

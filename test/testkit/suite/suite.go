@@ -129,9 +129,9 @@ const (
 	LabelSkip         = "skip"
 
 	// Self-monitoring test labels
-	LabelSelfMonitoringHealthy      = "selfmonitor-healthy"
-	LabelSelfMonitoringBackpressure = "selfmonitor-backpressure"
-	LabelSelfMonitoringOutage       = "selfmonitor-outage"
+	LabelSelfMonitorHealthy      = "selfmonitor-healthy"
+	LabelSelfMonitorBackpressure = "selfmonitor-backpressure"
+	LabelSelfMonitorOutage       = "selfmonitor-outage"
 
 	// TODO(TeodorSAP): Delete after the migration to the new self-monitoring test suite
 	LabelSelfMonitoringLogsFluentBitBackpressure = "self-mon-fluentbit-backpressure"

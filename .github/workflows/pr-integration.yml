@@ -117,6 +117,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        signal-type:
+          - logs-fluentbit
+          - logs-otel-agent
+          - logs-otel-gateway
+          - metrics
+          - traces
         scenario:
           - healthy
           - backpressure
@@ -141,7 +147,7 @@ jobs:
 
       - name: Run tests
         run: |
-          go test -v -timeout=20m ./test/selfmonitor/... -- -labels="selfmonitor-${{ matrix.scenario }}"
+          go test -v -timeout=20m ./test/selfmonitor/... -- -labels="selfmonitor-${{ matrix.scenario }}-${{ matrix.signal-type }}"
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"
