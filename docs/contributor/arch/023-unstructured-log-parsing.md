@@ -167,7 +167,7 @@ transform:
 
 ### Validation
 
-Since we give users the flexibility to define custom parsers, we must ensure that custom parsers are well-formed and do not break the pipeline.
+Because we give users the flexibility to define custom parsers, we must ensure that custom parsers are well-formed and do not break the pipeline.
 We can achieve this by:
 * Validating parsers at the API level (for example, using a validation webhook).
 * Reflect broken parsers in the Telemetry status, so that users can see which parsers are valid or broken.
