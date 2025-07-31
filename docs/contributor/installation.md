@@ -17,7 +17,7 @@ make run
 ## Install Telemetry Manager in Your Cluster From Sources
 
 ```bash
-export IMAGE=<my container repo>
+export MANAGER_IMAGE=<my container repo>
 make docker-build
 make docker-push
 kubectl create ns kyma-system

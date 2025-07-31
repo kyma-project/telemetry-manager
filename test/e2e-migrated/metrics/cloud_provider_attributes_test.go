@@ -85,6 +85,6 @@ func TestCloudProviderAttributes(t *testing.T) {
 				HaveKey("k8s.cluster.name"),
 				HaveKey("cloud.provider"),
 			))),
-		), "Could not find metrics matching resource attributes",
+		), assert.WithOptionalDescription("Could not find metrics matching resource attributes"),
 	)
 }
