@@ -1,10 +1,10 @@
+---
+title: Telemetry API v1beta1
+status: Accepted
+date: 2024-01-02
+---
+
 # 6. Telemetry API v1beta1
-
-Date: 2024-01-02
-
-## Status
-
-Accepted
 
 ## Context
 

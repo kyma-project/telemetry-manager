@@ -1,10 +1,10 @@
+---
+title: Telemetry Flow Health Status API
+status: Accepted
+date: 2024-02-15
+---
+
 # 8. Telemetry Flow Health Status API
-
-Date: 2024-15-02
-
-## Status
-
-Accepted
 
 ## Context: Key Events in the Telemetry Flow
 

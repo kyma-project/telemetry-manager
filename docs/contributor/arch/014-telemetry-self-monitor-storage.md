@@ -1,10 +1,11 @@
+---
+title: Telemetry Self-Monitoring Storage
+status: Accepted
+date: 2024-10-09
+---
+
 # 14. Telemetry Self-Monitoring Storage
 
-Date: 2024-10-09
-
-## Status
-
-Accepted
 
 ## Context
 

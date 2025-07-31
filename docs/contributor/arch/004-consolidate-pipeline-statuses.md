@@ -1,10 +1,10 @@
+---
+title: Consolidate Telemetry Pipeline Statuses
+status: Accepted
+date: 2024-01-02
+---
+
 # 4. Consolidate Telemetry Pipeline Statuses
-
-Date: 2024-01-02
-
-## Status
-
-Accepted
 
 ## Context
 

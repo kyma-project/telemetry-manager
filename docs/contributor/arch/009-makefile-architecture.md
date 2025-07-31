@@ -1,10 +1,10 @@
+---
+title: Makefile Simplified Architecture
+status: Accepted
+date: 2024-02-28
+---
+
 # 9. Makefile: Simplified Architecture
-
-Date: 2024-28-02
-
-## Status
-
-Accepted
 
 ## Context: Cluttered Makefile Targets
 
