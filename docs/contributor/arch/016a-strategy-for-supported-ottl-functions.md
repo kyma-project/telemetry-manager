@@ -4,7 +4,7 @@ Date: 25.7.2025
 
 ## Status
 
-Open
+Accepted
 
 ## Context
 

@@ -2,6 +2,10 @@
 
 Date: 2025-07-03
 
+## Status
+
+Accepted
+
 ## Context
 
 Currently, [performance tests](../benchmarks/README.md) are written in bash which makes them hard to maintain. Our goal is to rewrite them in Golang so that they become easier to read, update and debug.
