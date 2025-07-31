@@ -126,7 +126,7 @@ func TestPrometheusInput(t *testing.T) {
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatMetrics(
 			Not(ContainElement(HaveName(BeElementOf(runtime.DefaultMetricsNames)))),
-		), "Unwanted runtime metrics sent to backend")
+		), assert.WithOptionalDescription("Unwanted runtime metrics sent to backend"))
 
 	assert.MetricsWithScopeAndNamespaceNotDelivered(t, backend,
 		metric.InstrumentationScopePrometheus,
@@ -136,5 +136,5 @@ func TestPrometheusInput(t *testing.T) {
 	t.Log("Ensures no diagnostic metrics are sent to backend")
 	assert.BackendDataConsistentlyMatches(t, backend, HaveFlatMetrics(
 		Not(ContainElement(HaveName(BeElementOf(diagnosticMetrics...)))),
-	), "Unwanted diagnostic metrics sent to backend")
+	), assert.WithOptionalDescription("Unwanted diagnostic metrics sent to backend"))
 }

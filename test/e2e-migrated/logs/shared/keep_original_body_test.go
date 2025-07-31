@@ -103,7 +103,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 			HaveAttributes(Not(HaveKey("message"))),
 			HaveAttributes(Not(HaveKey("log.original"))),
 		))),
-		"Scenario keepOriginalBody=false with JSON logs and 'message' should have attributes, the 'message' moved into the body, and no attribute 'log.original'",
+		assert.WithOptionalDescription("Scenario keepOriginalBody=false with JSON logs and 'message' should have attributes, the 'message' moved into the body, and no attribute 'log.original'"),
 	)
 
 	assert.BackendDataEventuallyMatches(t, backendDropOriginal,
@@ -113,7 +113,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 			HaveAttributes(Not(HaveKey("msg"))),
 			HaveAttributes(Not(HaveKey("log.original"))),
 		))),
-		"Scenario keepOriginalBody=false with JSON logs and 'msg' should have attributes, the 'msg' moved into the body, and no attribute 'log.original'",
+		assert.WithOptionalDescription("Scenario keepOriginalBody=false with JSON logs and 'msg' should have attributes, the 'msg' moved into the body, and no attribute 'log.original'"),
 	)
 
 	assert.BackendDataEventuallyMatches(t, backendDropOriginal,
@@ -123,7 +123,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 			HaveAttributes(HaveKeyWithValue("body", "c-body")),
 			HaveAttributes(Not(HaveKey("log.original"))),
 		))),
-		"Scenario keepOriginalBody=false with JSON logs should have attributes, the body empty, and no attribute 'log.original'",
+		assert.WithOptionalDescription("Scenario keepOriginalBody=false with JSON logs should have attributes, the body empty, and no attribute 'log.original'"),
 	)
 
 	assert.BackendDataEventuallyMatches(t, backendDropOriginal,
@@ -132,7 +132,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 			HaveAttributes(Not(HaveKey("log.original"))),
 			HaveAttributes(Not(HaveKey("scenario"))),
 		))),
-		"Scenario keepOriginalBody=false with plain logs should have no attributes, the body filled, and no attribute 'log.original'",
+		assert.WithOptionalDescription("Scenario keepOriginalBody=false with plain logs should have no attributes, the body filled, and no attribute 'log.original'"),
 	)
 
 	assert.OTelLogsFromNamespaceDelivered(t, backendKeepOriginal, sourceNsKeepOriginal)
@@ -144,7 +144,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 			HaveAttributes(Not(HaveKey("message"))),
 			HaveAttributes(HaveKey("log.original")),
 		))),
-		"Scenario keepOriginalBody=true with JSON logs and 'message' should have attributes, the 'message' moved into the body, and have attribute 'log.original'",
+		assert.WithOptionalDescription("Scenario keepOriginalBody=true with JSON logs and 'message' should have attributes, the 'message' moved into the body, and have attribute 'log.original'"),
 	)
 
 	assert.BackendDataEventuallyMatches(t, backendKeepOriginal,
@@ -154,7 +154,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 			HaveAttributes(Not(HaveKey("msg"))),
 			HaveAttributes(HaveKey("log.original")),
 		))),
-		"Scenario keepOriginalBody=true with JSON logs and 'msg' should have attributes, the 'msg' moved into the body, and have attribute 'log.original'",
+		assert.WithOptionalDescription("Scenario keepOriginalBody=true with JSON logs and 'msg' should have attributes, the 'msg' moved into the body, and have attribute 'log.original'"),
 	)
 
 	assert.BackendDataEventuallyMatches(t, backendKeepOriginal,
@@ -164,7 +164,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 			HaveAttributes(HaveKeyWithValue("body", "c-body")),
 			HaveAttributes(HaveKey("log.original")),
 		))),
-		"Scenario keepOriginalBody=true with JSON logs should have attributes, the body empty, and have attribute 'log.original'",
+		assert.WithOptionalDescription("Scenario keepOriginalBody=true with JSON logs should have attributes, the body empty, and have attribute 'log.original'"),
 	)
 
 	assert.BackendDataEventuallyMatches(t, backendKeepOriginal,
@@ -173,7 +173,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 			HaveAttributes(Not(HaveKey("log.original"))),
 			HaveAttributes(Not(HaveKey("scenario"))),
 		))),
-		"Scenario keepOriginalBody=true with plain logs should have no attributes, the body filled, and no attribute 'log.original'",
+		assert.WithOptionalDescription("Scenario keepOriginalBody=true with plain logs should have no attributes, the body filled, and no attribute 'log.original'"),
 	)
 }
 
@@ -247,7 +247,7 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 			fluentbit.HaveAttributes(HaveKeyWithValue("scenario", "msg")),
 			fluentbit.HaveLogBody(BeEmpty()),
 		))),
-		"Scenario keepOriginalBody=false with JSON logs should parse attributes and not have a body",
+		assert.WithOptionalDescription("Scenario keepOriginalBody=false with JSON logs should parse attributes and not have a body"),
 	)
 
 	assert.BackendDataEventuallyMatches(t, backendDropOriginal,
@@ -255,7 +255,7 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 			fluentbit.HaveAttributes(Not(HaveKey("scenario"))),
 			fluentbit.HaveLogBody(Equal(stdloggen.DefaultLine)),
 		))),
-		"Scenario keepOriginalBody=false with plain logs should not have attributes and have a body",
+		assert.WithOptionalDescription("Scenario keepOriginalBody=false with plain logs should not have attributes and have a body"),
 	)
 
 	assert.FluentBitLogsFromNamespaceDelivered(t, backendKeepOriginal, sourceNsKeepOriginal)
@@ -265,7 +265,7 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 			fluentbit.HaveAttributes(HaveKeyWithValue("scenario", "msg")),
 			fluentbit.HaveLogBody(Not(BeEmpty())),
 		))),
-		"Scenario keepOriginalBody=true with JSON logs should parse attributes and have a body",
+		assert.WithOptionalDescription("Scenario keepOriginalBody=true with JSON logs should parse attributes and have a body"),
 	)
 
 	assert.BackendDataEventuallyMatches(t, backendKeepOriginal,
@@ -273,6 +273,6 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 			fluentbit.HaveAttributes(Not(HaveKey("scenario"))),
 			fluentbit.HaveLogBody(Equal(stdloggen.DefaultLine)),
 		))),
-		"Scenario keepOriginalBody=true with plain logs should not have attributes and have a body",
+		assert.WithOptionalDescription("Scenario keepOriginalBody=true with plain logs should not have attributes and have a body"),
 	)
 }
