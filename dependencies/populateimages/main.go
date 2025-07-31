@@ -18,7 +18,7 @@ var templates = map[string]string{
 package testkit
 
 const (
-	DefaultTelemetryGenImage  = "{{ .DEFAULT_TEST_TELEMETRYGEN_IMAGE }}"
+	DefaultTelemetryGenImage  = "{{ .ENV_TEST_TELEMETRYGEN_IMAGE }}"
 	DefaultOTelCollectorImage = "{{ .ENV_OTEL_COLLECTOR_IMAGE }}"
 )
 `,
@@ -93,8 +93,8 @@ func generateSecScanConfig(data map[string]string) error {
 	defer file.Close()
 
 	imgs := []string{
-		data["ENV_IMAGE"],
-		data["ENV_IMAGE"] + "-experimental",
+		data["ENV_MANAGER_IMAGE"],
+		data["ENV_MANAGER_IMAGE"] + "-experimental",
 		data["ENV_FLUENTBIT_EXPORTER_IMAGE"],
 		data["ENV_FLUENTBIT_IMAGE"],
 		data["ENV_OTEL_COLLECTOR_IMAGE"],

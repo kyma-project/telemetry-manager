@@ -84,6 +84,6 @@ func TestServiceName(t *testing.T) {
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatTraces(
 			Not(ContainElement(HaveResourceAttributes(HaveKey(ContainSubstring("kyma"))))),
-		), "Should have no kyma resource attributes",
+		), assert.WithOptionalDescription("Should have no kyma resource attributes"),
 	)
 }
