@@ -63,8 +63,9 @@ type MetricExporter struct {
 }
 
 type PrometheusMetricExporter struct {
-	Host string `yaml:"host"`
-	Port int32  `yaml:"port"`
+	Host         string `yaml:"host"`
+	Port         int32  `yaml:"port"`
+	WithoutUnits bool   `yaml:"without_units,omitempty"`
 }
 
 type Logs struct {
@@ -108,6 +109,7 @@ func DefaultService(pipelines Pipelines) Service {
 							Prometheus: PrometheusMetricExporter{
 								Host: fmt.Sprintf("${%s}", EnvVarCurrentPodIP),
 								Port: ports.Metrics,
+								WithoutUnits: true,
 							},
 						},
 					},

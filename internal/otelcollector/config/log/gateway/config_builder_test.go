@@ -162,6 +162,7 @@ func TestBuildConfig(t *testing.T) {
 						Prometheus: config.PrometheusMetricExporter{
 							Host: "${MY_POD_IP}",
 							Port: ports.Metrics,
+							WithoutUnits: true,
 						},
 					},
 				},
