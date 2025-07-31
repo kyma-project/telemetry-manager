@@ -107,8 +107,8 @@ func DefaultService(pipelines Pipelines) Service {
 					Pull: PullMetricReader{
 						Exporter: MetricExporter{
 							Prometheus: PrometheusMetricExporter{
-								Host: fmt.Sprintf("${%s}", EnvVarCurrentPodIP),
-								Port: ports.Metrics,
+								Host:         fmt.Sprintf("${%s}", EnvVarCurrentPodIP),
+								Port:         ports.Metrics,
 								WithoutUnits: true,
 							},
 						},

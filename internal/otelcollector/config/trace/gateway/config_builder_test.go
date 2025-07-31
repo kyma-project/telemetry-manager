@@ -155,8 +155,8 @@ func TestBuildConfig(t *testing.T) {
 				Pull: config.PullMetricReader{
 					Exporter: config.MetricExporter{
 						Prometheus: config.PrometheusMetricExporter{
-							Host: "${MY_POD_IP}",
-							Port: ports.Metrics,
+							Host:         "${MY_POD_IP}",
+							Port:         ports.Metrics,
 							WithoutUnits: true,
 						},
 					},
