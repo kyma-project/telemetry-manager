@@ -131,5 +131,6 @@ func TestTelemetryLogs(t *testing.T) {
 				ContainSubstring("interrupted due to shutdown:"),
 			),
 		)),
-	)))), "log backend should not contain telemetry pod logs with levels ERROR, WARNING or WARN")
+	)))),
+		assert.WithOptionalDescription("log backend should not contain telemetry pod logs with levels ERROR, WARNING or WARN"))
 }

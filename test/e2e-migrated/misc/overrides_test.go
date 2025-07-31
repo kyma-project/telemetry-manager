@@ -68,7 +68,7 @@ func TestOverrides(t *testing.T) {
 			fluentbit.HavePodName(ContainSubstring("telemetry-manager")),
 			fluentbit.HaveLevel(Equal("INFO")),
 		))),
-		"should have logs from the telemetry-manager pod with INFO level")
+		assert.WithOptionalDescription("should have logs from the telemetry-manager pod with INFO level"))
 
 	assert.BackendDataConsistentlyMatches(t, backend,
 		fluentbit.HaveFlatLogs(Not(ContainElement(SatisfyAll(
@@ -76,7 +76,7 @@ func TestOverrides(t *testing.T) {
 			fluentbit.HaveLevel(Equal("DEBUG")),
 			fluentbit.HaveTimestamp(BeTemporally(">=", time.Now().UTC())),
 		)))),
-		"should NOT have logs from the telemetry-manager pod with DEBUG level")
+		assert.WithOptionalDescription("should NOT have logs from the telemetry-manager pod with DEBUG level"))
 
 	// Verify that after overrides config we have DEBUG logs
 	overrides = kitk8s.NewOverrides().WithLogLevel(kitk8s.DEBUG).K8sObject()
@@ -89,7 +89,8 @@ func TestOverrides(t *testing.T) {
 			fluentbit.HavePodName(ContainSubstring("telemetry-manager")),
 			fluentbit.HaveLevel(Equal("DEBUG")),
 			fluentbit.HaveTimestamp(BeTemporally(">=", time.Now().UTC())),
-		))), "should have logs from the telemetry-manager pod with DEBUG level")
+		))),
+		assert.WithOptionalDescription("should have logs from the telemetry-manager pod with DEBUG level"))
 
 	// Verify that Pipeline reconciliation is disabled for all pipelines
 	assertPipelineReconciliationDisabled(suite.Ctx, suite.K8sClient, kitkyma.FluentBitConfigMap, appNameLabelKey)
