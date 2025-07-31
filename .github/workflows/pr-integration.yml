@@ -199,6 +199,9 @@ jobs:
             mode: release
           - name: traces-max-pipeline
             mode: release
+          # TELEMETRY
+          - name: telemetry
+            mode: release
           # OTHER
           - name: experimental
             mode: experimental
