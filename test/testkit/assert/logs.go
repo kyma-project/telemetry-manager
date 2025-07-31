@@ -127,7 +127,7 @@ func OTelLogsFromPodNotDelivered(t testkit.T, backend *kitbackend.Backend, podNa
 		t,
 		backend,
 		HaveFlatLogs(Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", ContainSubstring(podNamePrefix)))))),
-		optionalDescription...,
+		WithOptionalDescription(optionalDescription...),
 	)
 }
 
@@ -138,7 +138,7 @@ func OTelLogsFromPodDelivered(t testkit.T, backend *kitbackend.Backend, podNameP
 		t,
 		backend,
 		HaveFlatLogs(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", ContainSubstring(podNamePrefix))))),
-		optionalDescription...,
+		WithOptionalDescription(optionalDescription...),
 	)
 }
 

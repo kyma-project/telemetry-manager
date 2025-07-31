@@ -2,6 +2,15 @@ package misc
 
 import (
 	"context"
+	"testing"
+	"time"
+
+	. "github.com/onsi/gomega"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -12,18 +21,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
-	. "github.com/onsi/gomega"
-	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"testing"
-	"time"
 )
 
 func TestOverrides(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelTelemetry)
+
 	const (
 		appNameLabelKey = "app.kubernetes.io/name"
 	)
@@ -117,6 +119,7 @@ func assertTelemetryReconciliationDisabled(ctx context.Context, k8sClient client
 	key := types.NamespacedName{
 		Name: webhookName,
 	}
+
 	var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
 	Expect(k8sClient.Get(ctx, key, &validatingWebhookConfiguration)).To(Succeed())
 
@@ -134,13 +137,16 @@ func triggerLogPipelineReconcilation(pipelineName string) {
 	lookupKey := types.NamespacedName{
 		Name: pipelineName,
 	}
+
 	var logPipeline telemetryv1alpha1.LogPipeline
+
 	err := suite.K8sClient.Get(suite.Ctx, lookupKey, &logPipeline)
 	Expect(err).ToNot(HaveOccurred())
 
 	if logPipeline.Annotations == nil {
 		logPipeline.Annotations = map[string]string{}
 	}
+
 	logPipeline.Annotations["test-annotation"] = "test-value"
 
 	// Update the logPipeline to trigger the reconciliation loop, so that new DEBUG logs are generated

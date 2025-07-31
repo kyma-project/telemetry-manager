@@ -2,10 +2,9 @@ package misc
 
 import (
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
-	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"strings"
+	"testing"
+
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	discoveryv1 "k8s.io/api/discovery/v1"
@@ -14,8 +13,11 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
-	"testing"
+
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
 func TestManager(t *testing.T) {
@@ -50,12 +52,13 @@ func TestManager(t *testing.T) {
 		Eventually(func() []string {
 			var svc corev1.Service
 			err := suite.K8sClient.Get(suite.Ctx, service, &svc)
+			Expect(err).NotTo(HaveOccurred())
 
 			if service == kitkyma.TelemetryManagerMetricsServiceName {
 				Expect(svc.Annotations).Should(HaveKeyWithValue("prometheus.io/scrape", "true"))
 				Expect(svc.Annotations).Should(HaveKeyWithValue("prometheus.io/port", "8080"))
 			}
-			
+
 			var endpointsList discoveryv1.EndpointSliceList
 			err = suite.K8sClient.List(suite.Ctx, &endpointsList, client.InNamespace(kitkyma.SystemNamespaceName))
 			Expect(err).NotTo(HaveOccurred())

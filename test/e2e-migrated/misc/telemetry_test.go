@@ -2,6 +2,14 @@ package misc
 
 import (
 	"fmt"
+	"testing"
+
+	. "github.com/onsi/gomega"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -12,12 +20,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
-	. "github.com/onsi/gomega"
-	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
 )
 
 func TestTelemetry(t *testing.T) {
@@ -36,8 +38,8 @@ func TestTelemetry(t *testing.T) {
 		metricHTTPEndpoint = "http://telemetry-otlp-metrics.kyma-system:4318"
 
 		// TODO: Uncomment when https://github.com/kyma-project/telemetry-manager/issues/2336 is fixed
-		//logGRPCEndpoint = "http://telemetry-otlp-logs.kyma-system:4317"
-		//logHTTPEndpoint = "http://telemetry-otlp-logs.kyma-system:4318"
+		// logGRPCEndpoint = "http://telemetry-otlp-logs.kyma-system:4317"
+		// logHTTPEndpoint = "http://telemetry-otlp-logs.kyma-system:4318"
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces)
@@ -55,6 +57,7 @@ func TestTelemetry(t *testing.T) {
 	}
 
 	resources = append(resources, backend.K8sObjects()...)
+
 	t.Cleanup(func() {
 		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 	})
@@ -102,7 +105,7 @@ func TestTelemetryWarning(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-	//assert for misconfigured trace pipeline we have correct telemetry state and condition
+	// assert for misconfigured trace pipeline we have correct telemetry state and condition
 	Eventually(func(g Gomega) {
 		assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
 		assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
@@ -111,7 +114,6 @@ func TestTelemetryWarning(t *testing.T) {
 			Reason: conditions.ReasonReferencedSecretMissing,
 		})
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
-
 }
 
 // Decide how to execute it as we delete the telemetry CR in the end of the test
@@ -123,6 +125,7 @@ func TestTelemetryDeletionBlocking(t *testing.T) {
 		pipelineName = uniquePrefix()
 		backendNs    = uniquePrefix("backend")
 	)
+
 	logBackend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
 	logPipeline := testutils.NewLogPipelineBuilder().WithName(pipelineName).Build()
 
@@ -247,6 +250,5 @@ func assertTelemetryCRDeletionIsBlocked(logPipelineName string) {
 			g.Expect(expectedCond.Message).Should(Equal(actualCond.Message), "Condition: %+v", actualCond)
 			g.Expect(actualCond.LastTransitionTime).NotTo(BeZero())
 		}
-
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
