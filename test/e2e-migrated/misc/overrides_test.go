@@ -102,7 +102,6 @@ func TestOverrides(t *testing.T) {
 
 	// Delete the overrides configmap at the end of the test
 	Expect(kitk8s.DeleteObjects(overrides)).Should(Succeed())
-
 }
 
 func assertPipelineReconciliationDisabled(ctx context.Context, k8sClient client.Client, configMapNamespacedName types.NamespacedName, labelKey string) {
