@@ -1,6 +1,7 @@
 package misc
 
 import (
+	"fmt"
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -23,11 +24,10 @@ func TestTelemetry(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelTelemetry)
 
 	var (
-		uniquePrefix          = unique.Prefix()
-		pipelineName          = uniquePrefix()
-		pipelineMisconfigured = uniquePrefix("misconfigured")
-		backendNs             = uniquePrefix("backend")
-		genNs                 = uniquePrefix("gen")
+		uniquePrefix = unique.Prefix()
+		pipelineName = uniquePrefix()
+		backendNs    = uniquePrefix("trace-backend")
+		genNs        = uniquePrefix("gen")
 
 		traceGRPCEndpoint = "http://telemetry-otlp-traces.kyma-system:4317"
 		traceHTTPEndpoint = "http://telemetry-otlp-traces.kyma-system:4318"
@@ -35,23 +35,16 @@ func TestTelemetry(t *testing.T) {
 		metricGRPCEndpoint = "http://telemetry-otlp-metrics.kyma-system:4317"
 		metricHTTPEndpoint = "http://telemetry-otlp-metrics.kyma-system:4318"
 
+		// TODO: Uncomment when https://github.com/kyma-project/telemetry-manager/issues/2336 is fixed
 		//logGRPCEndpoint = "http://telemetry-otlp-logs.kyma-system:4317"
 		//logHTTPEndpoint = "http://telemetry-otlp-logs.kyma-system:4318"
 	)
 
-	traceBackend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces)
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces)
+
 	tracePipeline := testutils.NewTracePipelineBuilder().WithName(pipelineName).Build()
-
-	metricBackend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)
 	metricPipeline := testutils.NewMetricPipelineBuilder().WithName(pipelineName).Build()
-
-	logBackend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
 	logPipeline := testutils.NewLogPipelineBuilder().WithName(pipelineName).Build()
-
-	misconfiguredTracePipeline := testutils.NewTracePipelineBuilder().
-		WithName(pipelineMisconfigured).
-		WithOTLPOutput(testutils.OTLPEndpointFromSecret("non-existent-secret", kitkyma.DefaultNamespaceName, "endpoint")).
-		Build()
 
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
@@ -59,13 +52,9 @@ func TestTelemetry(t *testing.T) {
 		&tracePipeline,
 		&metricPipeline,
 		&logPipeline,
-		&misconfiguredTracePipeline,
 	}
 
-	resources = append(resources, traceBackend.K8sObjects()...)
-	resources = append(resources, metricBackend.K8sObjects()...)
-	resources = append(resources, logBackend.K8sObjects()...)
-
+	resources = append(resources, backend.K8sObjects()...)
 	t.Cleanup(func() {
 		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 	})
@@ -84,21 +73,87 @@ func TestTelemetry(t *testing.T) {
 		g.Expect(telemetry.Status.GatewayEndpoints.Metrics.HTTP).Should(Equal(metricHTTPEndpoint))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 
-	// assert for misconfigured trace pipeline we have correct telemetry state and condition
-	assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
-	assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
-		Type:   conditions.TypeTraceComponentsHealthy,
-		Status: metav1.ConditionFalse,
-		Reason: conditions.ReasonReferencedSecretMissing,
-	})
-
 	assertValidatingWebhookConfiguration()
 	assertWebhookCA()
 	assertWebhookSecretReconcilation()
 }
 
-func TestTelemetryDeletionBlocking(t *testing.T) {
+func TestTelemetryWarning(t *testing.T) {
+	suite.RegisterTestCase(t, suite.LabelTelemetry)
 
+	var (
+		uniquePrefix = unique.Prefix("warning")
+		pipelineName = uniquePrefix()
+		backendNs    = uniquePrefix("backend")
+	)
+
+	misconfiguredTracePipeline := testutils.NewTracePipelineBuilder().
+		WithName(pipelineName).
+		WithOTLPOutput(testutils.OTLPEndpointFromSecret("non-existent-secret", kitkyma.DefaultNamespaceName, "endpoint")).
+		Build()
+
+	resources := []client.Object{
+		kitk8s.NewNamespace(backendNs).K8sObject(),
+		&misconfiguredTracePipeline,
+	}
+	t.Logf("pipeline: %s", misconfiguredTracePipeline.Name)
+	t.Cleanup(func() {
+		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
+	})
+	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
+
+	//assert for misconfigured trace pipeline we have correct telemetry state and condition
+	Eventually(func(g Gomega) {
+		assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+		assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
+			Type:   conditions.TypeTraceComponentsHealthy,
+			Status: metav1.ConditionFalse,
+			Reason: conditions.ReasonReferencedSecretMissing,
+		})
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+
+}
+
+// Decide how to execute it as we delete the telemetry CR in the end of the test
+func TestTelemetryDeletionBlocking(t *testing.T) {
+	suite.RegisterTestCase(t, suite.LabelTelemetry)
+
+	var (
+		uniquePrefix = unique.Prefix("delete-blocking")
+		pipelineName = uniquePrefix()
+		backendNs    = uniquePrefix("backend")
+	)
+	logBackend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
+	logPipeline := testutils.NewLogPipelineBuilder().WithName(pipelineName).Build()
+
+	resources := []client.Object{
+		kitk8s.NewNamespace(backendNs).K8sObject(),
+		&logPipeline,
+	}
+	resources = append(resources, logBackend.K8sObjects()...)
+
+	t.Cleanup(func() {
+		Expect(kitk8s.DeleteObjects(resources...)).Should(MatchError(ContainSubstring("not found")))
+	})
+	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
+
+	var telemetry operatorv1alpha1.Telemetry
+	Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
+	Expect(kitk8s.ForceDeleteObjects(t, &telemetry)).Should(Succeed())
+
+	assertTelemetryCRDeletionIsBlocked(pipelineName)
+	// Delete the log pipeline to unblock the deletion of Telemetry CR
+	Expect(kitk8s.DeleteObjects(&logPipeline)).Should(Succeed())
+
+	Eventually(func(g Gomega) {
+		var telemetry operatorv1alpha1.Telemetry
+		g.Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)).ShouldNot(Succeed())
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+
+	Eventually(func(g Gomega) {
+		var secret corev1.Secret
+		g.Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.WebhookCertSecret, &secret)).Should(Succeed())
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).ShouldNot(Succeed())
 }
 
 func assertValidatingWebhookConfiguration() {
@@ -157,5 +212,41 @@ func assertWebhookSecretReconcilation() {
 		g.Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.WebhookCertSecret, &secret)).Should(Succeed())
 		g.Expect(secret.OwnerReferences).Should(HaveLen(1))
 		g.Expect(secret.UID).ShouldNot(Equal(oldUID))
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+}
+
+func assertTelemetryCRDeletionIsBlocked(logPipelineName string) {
+	Eventually(func(g Gomega) {
+		var telemetry operatorv1alpha1.Telemetry
+		g.Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
+		g.Expect(telemetry.Finalizers).Should(HaveLen(1))
+		g.Expect(telemetry.Finalizers[0]).Should(Equal("telemetry.kyma-project.io/finalizer"))
+		g.Expect(telemetry.Status.State).Should(Equal(operatorv1alpha1.StateWarning))
+		expectedConditions := map[string]metav1.Condition{
+			conditions.TypeLogComponentsHealthy: {
+				Status:  "False",
+				Reason:  "ResourceBlocksDeletion",
+				Message: fmt.Sprintf("The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogPipelines (%s)", logPipelineName),
+			},
+			conditions.TypeMetricComponentsHealthy: {
+				Status:  "True",
+				Reason:  "NoPipelineDeployed",
+				Message: "No pipelines have been deployed",
+			},
+			conditions.TypeTraceComponentsHealthy: {
+				Status:  "True",
+				Reason:  "NoPipelineDeployed",
+				Message: "No pipelines have been deployed",
+			},
+		}
+		g.Expect(telemetry.Status.Conditions).Should(HaveLen(3))
+		for _, actualCond := range telemetry.Status.Conditions {
+			expectedCond := expectedConditions[actualCond.Type]
+			g.Expect(expectedCond.Status).Should(Equal(actualCond.Status), "Condition: %+v", actualCond)
+			g.Expect(expectedCond.Reason).Should(Equal(actualCond.Reason), "Condition: %+v", actualCond)
+			g.Expect(expectedCond.Message).Should(Equal(actualCond.Message), "Condition: %+v", actualCond)
+			g.Expect(actualCond.LastTransitionTime).NotTo(BeZero())
+		}
+
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }

@@ -7,13 +7,12 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
+	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 	. "github.com/onsi/gomega"
-
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -34,7 +33,6 @@ func TestOverrides(t *testing.T) {
 		pipelineName = uniquePrefix()
 		backendNs    = uniquePrefix("backend")
 		overrides    *corev1.ConfigMap
-		now          time.Time
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
@@ -56,37 +54,6 @@ func TestOverrides(t *testing.T) {
 
 	resources = append(resources, backend.K8sObjects()...)
 
-	assertPipelineReconciliationDisabled := func(ctx context.Context, k8sClient client.Client, configMapNamespacedName types.NamespacedName, labelKey string) {
-		var configMap corev1.ConfigMap
-		Expect(k8sClient.Get(ctx, configMapNamespacedName, &configMap)).To(Succeed())
-
-		delete(configMap.Labels, labelKey)
-		Expect(k8sClient.Update(ctx, &configMap)).To(Succeed())
-
-		// The deleted label should not be restored, since the reconciliation is disabled by the overrides configmap
-		Consistently(func(g Gomega) {
-			g.Expect(k8sClient.Get(ctx, configMapNamespacedName, &configMap)).To(Succeed())
-			g.Expect(configMap.Labels[labelKey]).To(BeZero())
-		}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed(), "Pipeline reconciliation should be disabled")
-	}
-
-	assertTelemetryReconciliationDisabled := func(ctx context.Context, k8sClient client.Client, webhookName string) {
-		key := types.NamespacedName{
-			Name: webhookName,
-		}
-		var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
-		Expect(k8sClient.Get(ctx, key, &validatingWebhookConfiguration)).To(Succeed())
-
-		validatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle = []byte{}
-		Expect(k8sClient.Update(ctx, &validatingWebhookConfiguration)).To(Succeed())
-
-		// The deleted CA bundle should not be restored, since the reconciliation is disabled by the overrides configmap
-		Consistently(func(g Gomega) {
-			g.Expect(k8sClient.Get(ctx, key, &validatingWebhookConfiguration)).To(Succeed())
-			g.Expect(validatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle).To(BeEmpty())
-		}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed(), "Telemetry reconciliation should be disabled")
-	}
-
 	t.Cleanup(func() {
 		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 	})
@@ -95,37 +62,71 @@ func TestOverrides(t *testing.T) {
 	// Verify that before overrides we don't have any DEBUG logs
 	assert.FluentBitLogPipelineHealthy(t, pipelineName)
 	assert.BackendReachable(t, backend)
+
 	assert.BackendDataEventuallyMatches(t, backend,
-		HaveFlatLogs(ContainElement(SatisfyAll(
-			HavePodName(ContainSubstring("telemetry-manager")),
-			HaveLevel(Equal("INFO")),
+		fluentbit.HaveFlatLogs(ContainElement(SatisfyAll(
+			fluentbit.HavePodName(ContainSubstring("telemetry-manager")),
+			fluentbit.HaveLevel(Equal("INFO")),
 		))),
 		"should have logs from the telemetry-manager pod with INFO level")
+
 	assert.BackendDataConsistentlyMatches(t, backend,
-		HaveFlatLogs(Not(ContainElement(SatisfyAll(
-			HavePodName(ContainSubstring("telemetry-manager")),
-			HaveLevel(Equal("DEBUG")),
-			HaveTimestamp(BeTemporally(">=", now)),
+		fluentbit.HaveFlatLogs(Not(ContainElement(SatisfyAll(
+			fluentbit.HavePodName(ContainSubstring("telemetry-manager")),
+			fluentbit.HaveLevel(Equal("DEBUG")),
+			fluentbit.HaveTimestamp(BeTemporally(">=", time.Now().UTC())),
 		)))),
 		"should NOT have logs from the telemetry-manager pod with DEBUG level")
 
 	// Verify that after overrides config we have DEBUG logs
 	overrides = kitk8s.NewOverrides().WithLogLevel(kitk8s.DEBUG).K8sObject()
 	Expect(kitk8s.CreateObjects(t, overrides)).Should(Succeed())
+
 	triggerLogPipelineReconcilation(pipelineName)
-	assert.BackendDataConsistentlyMatches(t, backend,
-		HaveFlatLogs(ContainElement(SatisfyAll(
-			HavePodName(ContainSubstring("telemetry-manager")),
-			HaveLevel(Equal("DEBUG")),
-			HaveTimestamp(BeTemporally(">=", now)),
-		))),
-		"should have logs from the telemetry-manager pod with DEBUG level")
+
+	assert.BackendDataEventuallyMatches(t, backend,
+		fluentbit.HaveFlatLogs(ContainElement(SatisfyAll(
+			fluentbit.HavePodName(ContainSubstring("telemetry-manager")),
+			fluentbit.HaveLevel(Equal("DEBUG")),
+			fluentbit.HaveTimestamp(BeTemporally(">=", time.Now().UTC())),
+		))), "should have logs from the telemetry-manager pod with DEBUG level")
 
 	// Verify that Pipeline reconciliation is disabled for all pipelines
 	assertPipelineReconciliationDisabled(suite.Ctx, suite.K8sClient, kitkyma.FluentBitConfigMap, appNameLabelKey)
 	assertPipelineReconciliationDisabled(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayConfigMap, appNameLabelKey)
 	assertPipelineReconciliationDisabled(suite.Ctx, suite.K8sClient, kitkyma.TraceGatewayConfigMap, appNameLabelKey)
 	assertTelemetryReconciliationDisabled(suite.Ctx, suite.K8sClient, kitkyma.ValidatingWebhookName)
+}
+
+func assertPipelineReconciliationDisabled(ctx context.Context, k8sClient client.Client, configMapNamespacedName types.NamespacedName, labelKey string) {
+	var configMap corev1.ConfigMap
+	Expect(k8sClient.Get(ctx, configMapNamespacedName, &configMap)).To(Succeed())
+
+	delete(configMap.Labels, labelKey)
+	Expect(k8sClient.Update(ctx, &configMap)).To(Succeed())
+
+	// The deleted label should not be restored, since the reconciliation is disabled by the overrides configmap
+	Consistently(func(g Gomega) {
+		g.Expect(k8sClient.Get(ctx, configMapNamespacedName, &configMap)).To(Succeed())
+		g.Expect(configMap.Labels[labelKey]).To(BeZero())
+	}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed(), "Pipeline reconciliation should be disabled")
+}
+
+func assertTelemetryReconciliationDisabled(ctx context.Context, k8sClient client.Client, webhookName string) {
+	key := types.NamespacedName{
+		Name: webhookName,
+	}
+	var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
+	Expect(k8sClient.Get(ctx, key, &validatingWebhookConfiguration)).To(Succeed())
+
+	validatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle = []byte{}
+	Expect(k8sClient.Update(ctx, &validatingWebhookConfiguration)).To(Succeed())
+
+	// The deleted CA bundle should not be restored, since the reconciliation is disabled by the overrides configmap
+	Consistently(func(g Gomega) {
+		g.Expect(k8sClient.Get(ctx, key, &validatingWebhookConfiguration)).To(Succeed())
+		g.Expect(validatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle).To(BeEmpty())
+	}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed(), "Telemetry reconciliation should be disabled")
 }
 
 func triggerLogPipelineReconcilation(pipelineName string) {
