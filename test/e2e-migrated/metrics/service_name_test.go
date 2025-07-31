@@ -100,12 +100,12 @@ func TestServiceName(t *testing.T) {
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatMetrics(
 			ContainElement(HaveResourceAttributes(HaveKeyWithValue("service.name", kitkyma.MetricGatewayBaseName))),
-		), "Should have metrics with service.name set to telemetry-metric-gateway",
+		), assert.WithOptionalDescription("Should have metrics with service.name set to telemetry-metric-gateway"),
 	)
 
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatMetrics(
 			ContainElement(HaveResourceAttributes(HaveKeyWithValue("service.name", kitkyma.MetricAgentBaseName))),
-		), "Should have metrics with service.name set to telemetry-metric-agent",
+		), assert.WithOptionalDescription("Should have metrics with service.name set to telemetry-metric-agent"),
 	)
 }

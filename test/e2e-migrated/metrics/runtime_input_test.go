@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"net/http"
 	"slices"
 	"testing"
 
@@ -299,57 +298,40 @@ func createPodsWithVolume(pvName, pvcName, podMountingPVCName, podMountingEmptyD
 	return objs
 }
 
-// Check for `ContainElements` for metrics present in the backend
+// Check with `ContainElements` for metrics present in the backend
 func backendContainsMetricsDeliveredForResource(t *testing.T, backend *kitbackend.Backend, resourceMetrics []string) {
 	t.Helper()
 
-	Eventually(func(g Gomega) {
-		backendURL := backend.ExportURL(suite.ProxyClient)
-		resp, err := suite.ProxyClient.Get(backendURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		defer resp.Body.Close()
-
-		g.Expect(resp).To(HaveHTTPBody(
-			HaveFlatMetrics(HaveUniqueNamesForRuntimeScope(ContainElements(resourceMetrics))),
-		))
-	}, 2*periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed(), "Failed to find metrics using ContainElements %v", resourceMetrics)
+	assert.BackendDataEventuallyMatches(t, backend,
+		HaveFlatMetrics(HaveUniqueNamesForRuntimeScope(ContainElements(resourceMetrics))),
+		assert.WithOptionalDescription("Failed to find metrics using ContainElements %v", resourceMetrics),
+		assert.WithCustomTimeout(2*periodic.TelemetryEventuallyTimeout),
+	)
 }
 
 // Check with `ConsistsOf` for metrics present in the backend
 func backendConsistsOfMetricsDeliveredForResource(t *testing.T, backend *kitbackend.Backend, resourceMetrics []string) {
 	t.Helper()
 
-	Eventually(func(g Gomega) {
-		backendURL := backend.ExportURL(suite.ProxyClient)
-		resp, err := suite.ProxyClient.Get(backendURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		defer resp.Body.Close()
-
-		g.Expect(resp).To(HaveHTTPBody(
-			HaveFlatMetrics(HaveUniqueNamesForRuntimeScope(ConsistOf(resourceMetrics))),
-		))
-	}, 2*periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed(), "Failed to find metrics using consistsOf %v", resourceMetrics)
+	assert.BackendDataEventuallyMatches(t, backend,
+		HaveFlatMetrics(HaveUniqueNamesForRuntimeScope(ConsistOf(resourceMetrics))),
+		assert.WithOptionalDescription("Failed to find metrics using ConsistOf %v", resourceMetrics),
+		assert.WithCustomTimeout(2*periodic.TelemetryEventuallyTimeout),
+	)
 }
 
 func backendContainsDesiredResourceAttributes(t *testing.T, backend *kitbackend.Backend, metricName string, resourceAttributes []string) {
 	t.Helper()
 
-	Eventually(func(g Gomega) {
-		backendURL := backend.ExportURL(suite.ProxyClient)
-		resp, err := suite.ProxyClient.Get(backendURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		defer resp.Body.Close()
-
-		g.Expect(resp).To(HaveHTTPBody(HaveFlatMetrics(
+	assert.BackendDataEventuallyMatches(t, backend,
+		HaveFlatMetrics(
 			ContainElement(SatisfyAll(
 				HaveName(Equal(metricName)),
 				HaveResourceAttributes(HaveKeys(ContainElements(resourceAttributes))),
 			)),
-		)))
-	}, 3*periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed(), "Failed to find metric %s with resource attributes %v", metricName, resourceAttributes)
+		), assert.WithOptionalDescription("Failed to find metric %s with resource attributes %v", metricName, resourceAttributes),
+		assert.WithCustomTimeout(3*periodic.TelemetryEventuallyTimeout),
+	)
 }
 
 func backendContainsDesiredMetricAttributes(t *testing.T, backend *kitbackend.Backend, metricName string, metricAttributes []string) {
@@ -361,7 +343,7 @@ func backendContainsDesiredMetricAttributes(t *testing.T, backend *kitbackend.Ba
 				HaveName(Equal(metricName)),
 				HaveMetricAttributes(HaveKeys(ConsistOf(metricAttributes))),
 			)),
-		), "Failed to find metric %s with metric attributes %v", metricName, metricAttributes,
+		), assert.WithOptionalDescription("Failed to find metric %s with metric attributes %v", metricName, metricAttributes),
 	)
 }
 

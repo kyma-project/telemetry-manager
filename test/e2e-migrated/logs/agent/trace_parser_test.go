@@ -72,7 +72,7 @@ func TestTraceParser(t *testing.T) {
 			HaveAttributes(Not(HaveKey("trace_flags"))),
 			HaveAttributes(Not(HaveKey("traceparent"))),
 		))),
-		"Scenario traceIdFullOnly should parse all trace_id attributes and remove them",
+		assert.WithOptionalDescription("Scenario traceIdFullOnly should parse all trace_id attributes and remove them"),
 	)
 
 	assert.BackendDataEventuallyMatches(t, backend,
@@ -86,7 +86,7 @@ func TestTraceParser(t *testing.T) {
 			HaveAttributes(Not(HaveKey("trace_flags"))),
 			HaveAttributes(Not(HaveKey("traceparent"))),
 		))),
-		"Scenario traceparentOnly should parse the traceparent attribute and remove it",
+		assert.WithOptionalDescription("Scenario traceparentOnly should parse the traceparent attribute and remove it"),
 	)
 
 	assert.BackendDataConsistentlyMatches(t, backend,
@@ -98,7 +98,7 @@ func TestTraceParser(t *testing.T) {
 			HaveAttributes(HaveKey("span_id")),
 			HaveAttributes(Not(HaveKey("traceparent"))),
 		))),
-		"Scenario traceIdPartialOnly should not parse any trace attribute and keep the span_id",
+		assert.WithOptionalDescription("Scenario traceIdPartialOnly should not parse any trace attribute and keep the span_id"),
 	)
 
 	assert.BackendDataConsistentlyMatches(t, backend,
@@ -112,7 +112,7 @@ func TestTraceParser(t *testing.T) {
 			HaveAttributes(Not(HaveKey("trace_flags"))),
 			HaveAttributes((HaveKeyWithValue("traceparent", "00-80e1afed08e019fc1110464cfa66635c-7a085853722dc6d2-01"))),
 		))),
-		"Scenario traceIdAndTraceparent should parse trace attributes, and remove them, and keep traceparent attribute",
+		assert.WithOptionalDescription("Scenario traceIdAndTraceparent should parse trace attributes, and remove them, and keep traceparent attribute"),
 	)
 
 	assert.BackendDataConsistentlyMatches(t, backend,
@@ -126,6 +126,6 @@ func TestTraceParser(t *testing.T) {
 			HaveAttributes(Not(HaveKey("trace_flags"))),
 			HaveAttributes(Not(HaveKey("traceparent"))),
 		))),
-		"Default scenario should not have any trace data",
+		assert.WithOptionalDescription("Default scenario should not have any trace data"),
 	)
 }
