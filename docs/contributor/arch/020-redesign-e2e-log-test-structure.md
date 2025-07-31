@@ -1,10 +1,10 @@
+---
+title: Redesign E2E Log Test Structure
+status: Accepted
+date: 2025-04-22
+---
+
 # 20. Redesign E2E Log Test Structure
-
-Date: 2025-04-22
-
-## Status
-
-Accepted
 
 ## Context
 

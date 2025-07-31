@@ -1,10 +1,10 @@
+---
+title: Decouple MetricPipeline Agent from Gateway
+status: Accepted
+date: 2025-07-10
+---
+
 # 21. Decouple MetricPipeline Agent from Gateway
-
-Date: 2025-07-10
-
-## Status
-
-Accepted
 
 ## Context
 

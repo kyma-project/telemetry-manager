@@ -1,10 +1,10 @@
+---
+title: Strategy for Supported OTTL Functions
+status: Accepted
+date: 2025-07-25
+---
+
 # 16a. Strategy for Supported OTTL Functions
-
-Date: 25.7.2025
-
-## Status
-
-Accepted
 
 ## Context
 

@@ -1,10 +1,10 @@
+---
+title: Integrate Prometheus With Telemetry Manager Using Alerting
+status: Accepted
+date: 2024-01-11
+---
+
 # 3. Integrate Prometheus With Telemetry Manager Using Alerting
-
-Date: 2024-01-11
-
-## Status
-
-Accepted
 
 ## Context
 
