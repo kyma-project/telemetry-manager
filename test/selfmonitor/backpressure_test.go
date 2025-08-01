@@ -21,18 +21,13 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-type testCaseBackpressure struct {
-	kind                           string
-	pipeline                       func(includeNs string, backend *kitbackend.Backend) client.Object
-	generator                      func(ns string) *appsv1.Deployment
-	resourcesReady                 func()
-	conditionReasonsTransition     conditionReasonsTransitionFunc
-	someDataDroppedConditionReason string
-	componentsHealthyConditionType string
-}
-
 func TestBackpressure(t *testing.T) {
-	tests := []testCaseBackpressure{
+	tests := []struct {
+		kind       string
+		pipeline   func(includeNs string, backend *kitbackend.Backend) client.Object
+		generator  func(ns string) *appsv1.Deployment
+		assertions func(t *testing.T)
+	}{
 		{
 			kind: kindLogsOTelAgent,
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
@@ -46,14 +41,21 @@ func TestBackpressure(t *testing.T) {
 			generator: func(ns string) *appsv1.Deployment {
 				return floggen.NewDeployment(ns).WithReplicas(3).K8sObject()
 			},
-			resourcesReady: func() {
+			assertions: func(t *testing.T) {
 				assert.DeploymentReady(t, kitkyma.LogGatewayName)
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
 				assert.OTelLogPipelineHealthy(t, kindLogsOTelAgent)
+				assert.LogPipelineConditionReasonsTransition(t, kindLogsOTelAgent, conditions.TypeFlowHealthy, []assert.ReasonStatus{
+					{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
+					{Reason: conditions.ReasonSelfMonAgentSomeDataDropped, Status: metav1.ConditionFalse},
+				})
+				assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+				assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
+					Type:   conditions.TypeLogComponentsHealthy,
+					Status: metav1.ConditionFalse,
+					Reason: conditions.ReasonSelfMonAgentSomeDataDropped,
+				})
 			},
-			conditionReasonsTransition:     assert.LogPipelineConditionReasonsTransition,
-			someDataDroppedConditionReason: conditions.ReasonSelfMonAgentSomeDataDropped,
-			componentsHealthyConditionType: conditions.TypeLogComponentsHealthy,
 		},
 		{
 			kind: kindLogsOTelGateway,
@@ -71,13 +73,20 @@ func TestBackpressure(t *testing.T) {
 					telemetrygen.WithWorkers(5)).
 					K8sObject()
 			},
-			resourcesReady: func() {
+			assertions: func(t *testing.T) {
 				assert.DeploymentReady(t, kitkyma.LogGatewayName)
 				assert.OTelLogPipelineHealthy(t, kindLogsOTelGateway)
+				assert.LogPipelineConditionReasonsTransition(t, kindLogsOTelGateway, conditions.TypeFlowHealthy, []assert.ReasonStatus{
+					{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
+					{Reason: conditions.ReasonSelfMonGatewaySomeDataDropped, Status: metav1.ConditionFalse},
+				})
+				assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+				assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
+					Type:   conditions.TypeLogComponentsHealthy,
+					Status: metav1.ConditionFalse,
+					Reason: conditions.ReasonSelfMonGatewaySomeDataDropped,
+				})
 			},
-			conditionReasonsTransition:     assert.LogPipelineConditionReasonsTransition,
-			someDataDroppedConditionReason: conditions.ReasonSelfMonGatewaySomeDataDropped,
-			componentsHealthyConditionType: conditions.TypeLogComponentsHealthy,
 		},
 		{
 			kind: kindLogsFluentbit,
@@ -92,13 +101,20 @@ func TestBackpressure(t *testing.T) {
 			generator: func(ns string) *appsv1.Deployment {
 				return floggen.NewDeployment(ns).WithReplicas(3).K8sObject()
 			},
-			resourcesReady: func() {
+			assertions: func(t *testing.T) {
 				assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 				assert.FluentBitLogPipelineHealthy(t, kindLogsFluentbit)
+				assert.LogPipelineConditionReasonsTransition(t, kindLogsFluentbit, conditions.TypeFlowHealthy, []assert.ReasonStatus{
+					{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
+					{Reason: conditions.ReasonSelfMonAgentSomeDataDropped, Status: metav1.ConditionFalse},
+				})
+				assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+				assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
+					Type:   conditions.TypeLogComponentsHealthy,
+					Status: metav1.ConditionFalse,
+					Reason: conditions.ReasonSelfMonAgentSomeDataDropped,
+				})
 			},
-			conditionReasonsTransition:     assert.LogPipelineConditionReasonsTransition,
-			someDataDroppedConditionReason: conditions.ReasonSelfMonAgentSomeDataDropped,
-			componentsHealthyConditionType: conditions.TypeLogComponentsHealthy,
 		},
 		{
 			kind: kindMetrics,
@@ -115,13 +131,20 @@ func TestBackpressure(t *testing.T) {
 					telemetrygen.WithWorkers(5)).
 					K8sObject()
 			},
-			resourcesReady: func() {
+			assertions: func(t *testing.T) {
 				assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 				assert.MetricPipelineHealthy(t, kindMetrics)
+				assert.MetricPipelineConditionReasonsTransition(t, kindMetrics, conditions.TypeFlowHealthy, []assert.ReasonStatus{
+					{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
+					{Reason: conditions.ReasonSelfMonGatewaySomeDataDropped, Status: metav1.ConditionFalse},
+				})
+				assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+				assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
+					Type:   conditions.TypeMetricComponentsHealthy,
+					Status: metav1.ConditionFalse,
+					Reason: conditions.ReasonSelfMonGatewaySomeDataDropped,
+				})
 			},
-			conditionReasonsTransition:     assert.MetricPipelineConditionReasonsTransition,
-			someDataDroppedConditionReason: conditions.ReasonSelfMonGatewaySomeDataDropped,
-			componentsHealthyConditionType: conditions.TypeMetricComponentsHealthy,
 		},
 		{
 			kind: kindTraces,
@@ -138,13 +161,21 @@ func TestBackpressure(t *testing.T) {
 					telemetrygen.WithWorkers(5)).
 					K8sObject()
 			},
-			resourcesReady: func() {
+			assertions: func(t *testing.T) {
 				assert.DeploymentReady(t, kitkyma.TraceGatewayName)
 				assert.TracePipelineHealthy(t, kindTraces)
+				assert.TracePipelineConditionReasonsTransition(t, kindTraces, conditions.TypeFlowHealthy, []assert.ReasonStatus{
+					{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
+					{Reason: conditions.ReasonSelfMonGatewaySomeDataDropped, Status: metav1.ConditionFalse},
+				})
+				assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+				assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
+					Type:   conditions.TypeTraceComponentsHealthy,
+					Status: metav1.ConditionFalse,
+					Reason: conditions.ReasonSelfMonGatewaySomeDataDropped,
+				})
+
 			},
-			conditionReasonsTransition:     assert.TracePipelineConditionReasonsTransition,
-			someDataDroppedConditionReason: conditions.ReasonSelfMonGatewaySomeDataDropped,
-			componentsHealthyConditionType: conditions.TypeTraceComponentsHealthy,
 		},
 	}
 
@@ -176,27 +207,9 @@ func TestBackpressure(t *testing.T) {
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.BackendReachable(t, backend)
-			tc.resourcesReady()
-
 			assert.DeploymentReady(t, kitkyma.SelfMonitorName)
-			assertSomeDataDropped(t, tc)
+
+			tc.assertions(t)
 		})
 	}
-}
-
-// Waits for the flow to gradually become unhealthy (i.e. some data dropped)
-func assertSomeDataDropped(t *testing.T, tc testCaseBackpressure) {
-	t.Helper()
-
-	tc.conditionReasonsTransition(t, tc.kind, conditions.TypeFlowHealthy, []assert.ReasonStatus{
-		{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
-		{Reason: tc.someDataDroppedConditionReason, Status: metav1.ConditionFalse},
-	})
-
-	assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
-	assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
-		Type:   tc.componentsHealthyConditionType,
-		Status: metav1.ConditionFalse,
-		Reason: tc.someDataDroppedConditionReason,
-	})
 }
