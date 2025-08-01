@@ -34,7 +34,7 @@ Types user:string pass:string`
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
-	logProducer := stdoutloggen.NewDeployment(genNs).
+	logProducer := stdoutloggen.NewDeployment(genNs, stdoutloggen.WithPlaintextFormat(), stdoutloggen.WithText("foo bar")).
 		WithAnnotation("fluentbit.io/parser", "my-regex-parser")
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
