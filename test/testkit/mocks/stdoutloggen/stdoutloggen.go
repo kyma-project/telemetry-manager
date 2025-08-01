@@ -72,7 +72,7 @@ func WithText(text string) Option {
 }
 
 func NewDeployment(namespace string, opts ...Option) *kitk8s.Deployment {
-	return kitk8s.NewDeployment(DefaultName, namespace).WithPodSpec(PodSpec(opts...)).WithLabel("app.kubernetes.io/name", DefaultName)
+	return kitk8s.NewDeployment(DefaultName, namespace).WithPodSpec(PodSpec(opts...))
 }
 
 func PodSpec(opts ...Option) corev1.PodSpec {
