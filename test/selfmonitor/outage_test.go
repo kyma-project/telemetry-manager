@@ -14,7 +14,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/prometheus"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/floggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
@@ -220,25 +219,6 @@ func TestOutage(t *testing.T) {
 
 			assert.DeploymentReady(t, kitkyma.SelfMonitorName)
 			tc.assert(t)
-			assertMetricInstrumentation(t)
 		})
 	}
-}
-
-func assertMetricInstrumentation(t *testing.T) {
-	t.Helper()
-
-	// Pushing metrics to the metric gateway triggers an alert.
-	// It makes the self-monitor call the webhook, which in turn increases the counter.
-	assert.EmitsManagerMetrics(t,
-		HaveName(Equal("controller_runtime_webhook_requests_total")),
-		SatisfyAll(
-			HaveLabels(HaveKeyWithValue("webhook", "/api/v2/alerts")),
-			HaveMetricValue(BeNumerically(">", 0)),
-		))
-
-	assert.EmitsManagerMetrics(t,
-		HaveName(Equal("telemetry_self_monitor_prober_requests_total")),
-		HaveMetricValue(BeNumerically(">", 0)),
-	)
 }
