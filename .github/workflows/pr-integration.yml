@@ -87,6 +87,8 @@ jobs:
           # TELEMETRY
           - name: telemetry
             mode: release
+          - name: misc
+            mode: release
           # OTHER
           - name: experimental
             mode: experimental
