@@ -47,6 +47,7 @@ func TestBackpressure(t *testing.T) {
 				assert.OTelLogPipelineHealthy(t, kindLogsOTelAgent)
 				assert.LogPipelineConditionReasonsTransition(t, kindLogsOTelAgent, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 					{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
+					{Reason: conditions.ReasonSelfMonAgentBufferFillingUp, Status: metav1.ConditionFalse},
 					{Reason: conditions.ReasonSelfMonAgentSomeDataDropped, Status: metav1.ConditionFalse},
 				})
 				assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
@@ -106,6 +107,7 @@ func TestBackpressure(t *testing.T) {
 				assert.FluentBitLogPipelineHealthy(t, kindLogsFluentbit)
 				assert.LogPipelineConditionReasonsTransition(t, kindLogsFluentbit, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 					{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
+					{Reason: conditions.ReasonSelfMonAgentBufferFillingUp, Status: metav1.ConditionFalse},
 					{Reason: conditions.ReasonSelfMonAgentSomeDataDropped, Status: metav1.ConditionFalse},
 				})
 				assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
@@ -166,6 +168,7 @@ func TestBackpressure(t *testing.T) {
 				assert.TracePipelineHealthy(t, kindTraces)
 				assert.TracePipelineConditionReasonsTransition(t, kindTraces, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 					{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
+
 					{Reason: conditions.ReasonSelfMonGatewaySomeDataDropped, Status: metav1.ConditionFalse},
 				})
 				assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
