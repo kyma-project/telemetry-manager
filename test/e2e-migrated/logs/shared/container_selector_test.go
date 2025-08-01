@@ -11,7 +11,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -53,8 +53,8 @@ func TestContainerSelector_OTel(t *testing.T) {
 		kitk8s.NewNamespace(genNs).K8sObject(),
 		&includePipeline,
 		&excludePipeline,
-		stdloggen.NewDeployment(genNs, stdloggen.WithContainer(container1)).WithName("gen-1").K8sObject(),
-		stdloggen.NewDeployment(genNs, stdloggen.WithContainer(container2)).WithName("gen-2").K8sObject(),
+		stdoutloggen.NewDeployment(genNs, stdoutloggen.WithContainer(container1)).WithName("gen-1").K8sObject(),
+		stdoutloggen.NewDeployment(genNs, stdoutloggen.WithContainer(container2)).WithName("gen-2").K8sObject(),
 	}
 	resources = append(resources, backend1.K8sObjects()...)
 	resources = append(resources, backend2.K8sObjects()...)
@@ -115,8 +115,8 @@ func TestContainerSelector_FluentBit(t *testing.T) {
 		kitk8s.NewNamespace(genNs).K8sObject(),
 		&includePipeline,
 		&excludePipeline,
-		stdloggen.NewDeployment(genNs, stdloggen.WithContainer(container1)).WithName("gen-1").K8sObject(),
-		stdloggen.NewDeployment(genNs, stdloggen.WithContainer(container2)).WithName("gen-2").K8sObject(),
+		stdoutloggen.NewDeployment(genNs, stdoutloggen.WithContainer(container1)).WithName("gen-1").K8sObject(),
+		stdoutloggen.NewDeployment(genNs, stdoutloggen.WithContainer(container2)).WithName("gen-2").K8sObject(),
 	}
 	resources = append(resources, backend1.K8sObjects()...)
 	resources = append(resources, backend2.K8sObjects()...)

@@ -12,7 +12,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
@@ -49,8 +49,8 @@ func TestCustomFilterAllowed(t *testing.T) {
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
-	logProducerInclude := stdloggen.NewDeployment(includeNs)
-	logProducerExclude := stdloggen.NewDeployment(excludeNs)
+	logProducerInclude := stdoutloggen.NewDeployment(includeNs)
+	logProducerExclude := stdoutloggen.NewDeployment(excludeNs)
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithCustomFilter(fmt.Sprintf(`

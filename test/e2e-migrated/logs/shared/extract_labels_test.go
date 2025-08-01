@@ -16,7 +16,7 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -36,7 +36,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 				return testutils.BuildLogPipelineApplicationInput(testutils.ExtIncludeNamespaces(includeNs))
 			},
 			logGeneratorBuilder: func(ns string, labels map[string]string) client.Object {
-				return stdloggen.NewDeployment(ns).WithLabels(labels).K8sObject()
+				return stdoutloggen.NewDeployment(ns).WithLabels(labels).K8sObject()
 			},
 			expectAgent: true,
 		},
@@ -163,7 +163,7 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 	backendNotDropped := kitbackend.New(notDroppedNs, kitbackend.SignalTypeLogsFluentBit)
 	backendDropped := kitbackend.New(droppedNs, kitbackend.SignalTypeLogsFluentBit)
 
-	logProducer := stdloggen.NewDeployment(genNs).
+	logProducer := stdoutloggen.NewDeployment(genNs).
 		WithLabel("env", "dev").
 		WithAnnotation("release", "v1.0.0")
 

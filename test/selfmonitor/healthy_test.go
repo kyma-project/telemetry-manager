@@ -12,7 +12,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
@@ -36,7 +36,7 @@ func TestHealthy(t *testing.T) {
 				return &p
 			},
 			generator: func(ns string) *appsv1.Deployment {
-				return stdloggen.NewDeployment(ns).K8sObject()
+				return stdoutloggen.NewDeployment(ns).K8sObject()
 			},
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend) {
 				assert.DeploymentReady(t, kitkyma.LogGatewayName)
@@ -77,7 +77,7 @@ func TestHealthy(t *testing.T) {
 				return &p
 			},
 			generator: func(ns string) *appsv1.Deployment {
-				return stdloggen.NewDeployment(ns).K8sObject()
+				return stdoutloggen.NewDeployment(ns).K8sObject()
 			},
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend) {
 				assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
