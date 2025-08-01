@@ -18,17 +18,13 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-type testCaseHealthy struct {
-	kind                       string
-	pipeline                   func(includeNs string, backend *kitbackend.Backend) client.Object
-	generator                  func(ns string) *appsv1.Deployment
-	resourcesReady             func()
-	dataFromNamespaceDelivered func(ns string, backend *kitbackend.Backend)
-	selfMonitorIsHealthy       func()
-}
-
 func TestHealthy(t *testing.T) {
-	tests := []testCaseHealthy{
+	tests := []struct {
+		kind      string
+		pipeline  func(includeNs string, backend *kitbackend.Backend) client.Object
+		generator func(ns string) *appsv1.Deployment
+		assert    func(t *testing.T, ns string, backend *kitbackend.Backend)
+	}{
 		{
 			kind: kindLogsOTelAgent,
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
@@ -42,15 +38,11 @@ func TestHealthy(t *testing.T) {
 			generator: func(ns string) *appsv1.Deployment {
 				return stdloggen.NewDeployment(ns).K8sObject()
 			},
-			resourcesReady: func() {
+			assert: func(t *testing.T, ns string, backend *kitbackend.Backend) {
 				assert.DeploymentReady(t, kitkyma.LogGatewayName)
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
 				assert.OTelLogPipelineHealthy(t, kindLogsOTelAgent)
-			},
-			dataFromNamespaceDelivered: func(ns string, backend *kitbackend.Backend) {
 				assert.OTelLogsFromNamespaceDelivered(t, backend, ns)
-			},
-			selfMonitorIsHealthy: func() {
 				assert.LogPipelineSelfMonitorIsHealthy(t, suite.K8sClient, kindLogsOTelAgent)
 			},
 		},
@@ -67,14 +59,10 @@ func TestHealthy(t *testing.T) {
 			generator: func(ns string) *appsv1.Deployment {
 				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
 			},
-			resourcesReady: func() {
+			assert: func(t *testing.T, ns string, backend *kitbackend.Backend) {
 				assert.DeploymentReady(t, kitkyma.LogGatewayName)
 				assert.OTelLogPipelineHealthy(t, kindLogsOTelGateway)
-			},
-			dataFromNamespaceDelivered: func(ns string, backend *kitbackend.Backend) {
 				assert.OTelLogsFromNamespaceDelivered(t, backend, ns)
-			},
-			selfMonitorIsHealthy: func() {
 				assert.LogPipelineSelfMonitorIsHealthy(t, suite.K8sClient, kindLogsOTelGateway)
 			},
 		},
@@ -91,14 +79,10 @@ func TestHealthy(t *testing.T) {
 			generator: func(ns string) *appsv1.Deployment {
 				return stdloggen.NewDeployment(ns).K8sObject()
 			},
-			resourcesReady: func() {
+			assert: func(t *testing.T, ns string, backend *kitbackend.Backend) {
 				assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 				assert.FluentBitLogPipelineHealthy(t, kindLogsFluentbit)
-			},
-			dataFromNamespaceDelivered: func(ns string, backend *kitbackend.Backend) {
 				assert.FluentBitLogsFromNamespaceDelivered(t, backend, ns)
-			},
-			selfMonitorIsHealthy: func() {
 				assert.LogPipelineSelfMonitorIsHealthy(t, suite.K8sClient, kindLogsFluentbit)
 			},
 		},
@@ -114,14 +98,10 @@ func TestHealthy(t *testing.T) {
 			generator: func(ns string) *appsv1.Deployment {
 				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeMetrics).K8sObject()
 			},
-			resourcesReady: func() {
+			assert: func(t *testing.T, ns string, backend *kitbackend.Backend) {
 				assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 				assert.MetricPipelineHealthy(t, kindMetrics)
-			},
-			dataFromNamespaceDelivered: func(ns string, backend *kitbackend.Backend) {
 				assert.MetricsFromNamespaceDelivered(t, backend, ns, telemetrygen.MetricNames)
-			},
-			selfMonitorIsHealthy: func() {
 				assert.MetricPipelineSelfMonitorIsHealthy(t, suite.K8sClient, kindMetrics)
 			},
 		},
@@ -137,14 +117,10 @@ func TestHealthy(t *testing.T) {
 			generator: func(ns string) *appsv1.Deployment {
 				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeTraces).K8sObject()
 			},
-			resourcesReady: func() {
+			assert: func(t *testing.T, ns string, backend *kitbackend.Backend) {
 				assert.DeploymentReady(t, kitkyma.TraceGatewayName)
 				assert.TracePipelineHealthy(t, kindTraces)
-			},
-			dataFromNamespaceDelivered: func(ns string, backend *kitbackend.Backend) {
 				assert.TracesFromNamespaceDelivered(t, backend, ns)
-			},
-			selfMonitorIsHealthy: func() {
 				assert.TracePipelineSelfMonitorIsHealthy(t, suite.K8sClient, kindTraces)
 			},
 		},
@@ -178,11 +154,9 @@ func TestHealthy(t *testing.T) {
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.BackendReachable(t, backend)
-			tc.resourcesReady()
-			tc.dataFromNamespaceDelivered(genNs, backend)
-
 			assert.DeploymentReady(t, kitkyma.SelfMonitorName)
-			tc.selfMonitorIsHealthy()
+
+			tc.assert(t, genNs, backend)
 		})
 	}
 }
