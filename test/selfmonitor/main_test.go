@@ -6,8 +6,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/kyma-project/telemetry-manager/test/testkit"
-	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
@@ -19,8 +17,6 @@ const (
 	kindMetrics         string = "metrics"
 	kindTraces          string = "traces"
 )
-
-type conditionReasonsTransitionFunc func(t testkit.T, pipelineName string, condType string, expected []assert.ReasonStatus)
 
 func TestMain(m *testing.M) {
 	const errorCode = 1

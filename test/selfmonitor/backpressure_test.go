@@ -177,7 +177,6 @@ func TestBackpressure(t *testing.T) {
 					Status: metav1.ConditionFalse,
 					Reason: conditions.ReasonSelfMonGatewaySomeDataDropped,
 				})
-
 			},
 		},
 	}

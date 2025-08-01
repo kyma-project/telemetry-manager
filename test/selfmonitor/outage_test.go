@@ -6,8 +6,6 @@ import (
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
@@ -24,25 +22,13 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-type testCaseOutage struct {
-	kind                           string
-	pipeline                       func(includeNs string, backend *kitbackend.Backend) client.Object
-	generator                      func(ns string) *appsv1.Deployment
-	resourcesReady                 func()
-	conditionReasonsTransition     conditionReasonsTransitionFunc
-	bufferFillingUpConditionReason string
-	allDataDroppedConditionReason  string
-	componentsHealthyConditionType string
-	assert                         func(t *testing.T)
-	// For OTEL based collectors we change the state from buffer filling up to all data dropped that's why we test before and after shutdown
-	// We want to test for BufferfillingUp condition that is why we are testing it in 2 steps once before generator shutdown and once after
-	// Also we need to shut down the generator as it would introduce flakiness because the Reason might switch between two different ones
-	assertBeforeGeneratorShutdown func(t *testing.T, ns string, backend *kitbackend.Backend)
-	assertAfterGeneratorShutdown  func(t *testing.T, ns string, backend *kitbackend.Backend)
-}
-
 func TestOutage(t *testing.T) {
-	tests := []testCaseOutage{
+	tests := []struct {
+		kind      string
+		pipeline  func(includeNs string, backend *kitbackend.Backend) client.Object
+		generator func(ns string) *appsv1.Deployment
+		assert    func(t *testing.T)
+	}{
 		{
 			kind: kindLogsOTelAgent,
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
@@ -56,15 +42,6 @@ func TestOutage(t *testing.T) {
 			generator: func(ns string) *appsv1.Deployment {
 				return floggen.NewDeployment(ns).WithReplicas(3).K8sObject()
 			},
-			resourcesReady: func() {
-				assert.DeploymentReady(t, kitkyma.LogGatewayName)
-				assert.DaemonSetReady(t, kitkyma.LogAgentName)
-				assert.OTelLogPipelineHealthy(t, kindLogsOTelAgent)
-			},
-			conditionReasonsTransition:     assert.LogPipelineConditionReasonsTransition,
-			bufferFillingUpConditionReason: conditions.ReasonSelfMonAgentBufferFillingUp,
-			allDataDroppedConditionReason:  conditions.ReasonSelfMonAgentAllDataDropped,
-			componentsHealthyConditionType: conditions.TypeLogComponentsHealthy,
 			assert: func(t *testing.T) {
 				assert.DeploymentReady(t, kitkyma.LogGatewayName)
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
@@ -99,14 +76,6 @@ func TestOutage(t *testing.T) {
 					telemetrygen.WithWorkers(5)).
 					K8sObject()
 			},
-			resourcesReady: func() {
-				assert.DeploymentReady(t, kitkyma.LogGatewayName)
-				assert.OTelLogPipelineHealthy(t, kindLogsOTelGateway)
-			},
-			conditionReasonsTransition:     assert.LogPipelineConditionReasonsTransition,
-			bufferFillingUpConditionReason: conditions.ReasonSelfMonGatewayBufferFillingUp,
-			allDataDroppedConditionReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
-			componentsHealthyConditionType: conditions.TypeLogComponentsHealthy,
 			assert: func(t *testing.T) {
 				assert.DeploymentReady(t, kitkyma.LogGatewayName)
 				assert.OTelLogPipelineHealthy(t, kindLogsOTelGateway)
@@ -136,14 +105,6 @@ func TestOutage(t *testing.T) {
 			generator: func(ns string) *appsv1.Deployment {
 				return floggen.NewDeployment(ns).WithReplicas(2).K8sObject()
 			},
-			resourcesReady: func() {
-				assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
-				assert.FluentBitLogPipelineHealthy(t, kindLogsFluentbit)
-			},
-			conditionReasonsTransition:     assert.LogPipelineConditionReasonsTransition,
-			bufferFillingUpConditionReason: conditions.ReasonSelfMonAgentBufferFillingUp,
-			allDataDroppedConditionReason:  conditions.ReasonSelfMonAgentAllDataDropped,
-			componentsHealthyConditionType: conditions.TypeLogComponentsHealthy,
 			assert: func(t *testing.T) {
 				assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 				assert.FluentBitLogPipelineHealthy(t, kindLogsFluentbit)
@@ -179,14 +140,6 @@ func TestOutage(t *testing.T) {
 					WithReplicas(2).
 					K8sObject()
 			},
-			resourcesReady: func() {
-				assert.DeploymentReady(t, kitkyma.MetricGatewayName)
-				assert.MetricPipelineHealthy(t, kindMetrics)
-			},
-			conditionReasonsTransition:     assert.MetricPipelineConditionReasonsTransition,
-			bufferFillingUpConditionReason: conditions.ReasonSelfMonGatewayBufferFillingUp,
-			allDataDroppedConditionReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
-			componentsHealthyConditionType: conditions.TypeMetricComponentsHealthy,
 			assert: func(t *testing.T) {
 				assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 				assert.MetricPipelineHealthy(t, kindMetrics)
@@ -219,14 +172,6 @@ func TestOutage(t *testing.T) {
 					telemetrygen.WithWorkers(10)).
 					K8sObject()
 			},
-			resourcesReady: func() {
-				assert.DeploymentReady(t, kitkyma.TraceGatewayName)
-				assert.TracePipelineHealthy(t, kindTraces)
-			},
-			conditionReasonsTransition:     assert.TracePipelineConditionReasonsTransition,
-			bufferFillingUpConditionReason: conditions.ReasonSelfMonGatewayBufferFillingUp,
-			allDataDroppedConditionReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
-			componentsHealthyConditionType: conditions.TypeTraceComponentsHealthy,
 			assert: func(t *testing.T) {
 				assert.DeploymentReady(t, kitkyma.TraceGatewayName)
 				assert.TracePipelineHealthy(t, kindTraces)
@@ -273,68 +218,11 @@ func TestOutage(t *testing.T) {
 			})
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-			//tc.resourcesReady()
-
 			assert.DeploymentReady(t, kitkyma.SelfMonitorName)
 			tc.assert(t)
-			//if tc.kind == kindMetrics || tc.kind == kindTraces {
-			//	assertBufferFillingUp(t, tc)
-			//	stopGenerator(t, generator)
-			//}
-			//
-			//assertAllDataDropped(t, tc)
-			//assertMetricInstrumentation(t)
+			assertMetricInstrumentation(t)
 		})
 	}
-}
-
-// Waits for the flow to report a full buffer
-func assertBufferFillingUp(t *testing.T, tc testCaseOutage) {
-	t.Helper()
-
-	tc.conditionReasonsTransition(t, tc.kind, conditions.TypeFlowHealthy, []assert.ReasonStatus{
-		{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
-		{Reason: tc.bufferFillingUpConditionReason, Status: metav1.ConditionFalse},
-	})
-
-	assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
-	assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
-		Type:   tc.componentsHealthyConditionType,
-		Status: metav1.ConditionFalse,
-		Reason: tc.bufferFillingUpConditionReason,
-	})
-}
-
-// Stops the generator.
-// This is sometimes needed (for metrics and traces) to give the flow time to report a full buffer
-func stopGenerator(t *testing.T, generator *appsv1.Deployment) {
-	t.Helper()
-
-	var gen appsv1.Deployment
-
-	genNamespacedName := types.NamespacedName{Namespace: generator.Namespace, Name: generator.Name}
-	err := suite.K8sClient.Get(t.Context(), genNamespacedName, &gen)
-	Expect(err).NotTo(HaveOccurred())
-
-	generator.Spec.Replicas = ptr.To(int32(0))
-	err = suite.K8sClient.Update(t.Context(), &gen)
-	Expect(err).NotTo(HaveOccurred())
-}
-
-// Waits for the flow to gradually become unhealthy (i.e. all data dropped)
-func assertAllDataDropped(t *testing.T, tc testCaseOutage) {
-	t.Helper()
-
-	tc.conditionReasonsTransition(t, tc.kind, conditions.TypeFlowHealthy, []assert.ReasonStatus{
-		{Reason: tc.allDataDroppedConditionReason, Status: metav1.ConditionFalse},
-	})
-
-	assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
-	assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
-		Type:   tc.componentsHealthyConditionType,
-		Status: metav1.ConditionFalse,
-		Reason: tc.allDataDroppedConditionReason,
-	})
 }
 
 func assertMetricInstrumentation(t *testing.T) {
