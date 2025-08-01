@@ -14,19 +14,19 @@ Follow these steps to set up the required environment:
    ```yaml
     alertmanager:
       enabled: false
-    
+
     prometheus-pushgateway:
       enabled: false
-    
+
     prometheus-node-exporter:
       enabled: false
-    
-    server:  
+
+    server:
       alertmanagers:
       - static_configs:
         - targets:
           - telemetry-manager-alerts-webhook.kyma-system:9090
-    
+
     serverFiles:
       alerting_rules.yml:
        groups:
@@ -39,18 +39,18 @@ Follow these steps to set up the required environment:
                  severity: page
                annotations:
                  description: '{{ $labels.instance }} of job {{ $labels.job }} has been down for more than 5 minutes.'
-                 summary: 'Instance {{ $labels.instance }} down' 
+                 summary: 'Instance {{ $labels.instance }} down'
       prometheus.yml:
         rule_files:
           - /etc/config/recording_rules.yml
           - /etc/config/alerting_rules.yml
-    
+
         scrape_configs:
           - job_name: prometheus
             static_configs:
               - targets:
                 - localhost:9090
-    
+
           - job_name: 'kubernetes-service-endpoints'
             honor_labels: true
             kubernetes_sd_configs:
@@ -110,21 +110,21 @@ Follow these steps to set up the required environment:
                 return
             }
             defer r.Body.Close()
-   
+
             // TODO: add more context about which objects have to reconciled
             reconcileTriggerChan <- event.GenericEvent{}
             w.WriteHeader(http.StatusOK)
         }
-        
+
         mux := http.NewServeMux()
         mux.HandleFunc("/api/v2/alerts", handler)
-    
+
         server := &http.Server{
             Addr:              ":9090",
             ReadHeaderTimeout: 10 * time.Second,
             Handler:           mux,
         }
-    
+
         if serverErr := server.ListenAndServe(); serverErr != nil {
             mutex.Lock()
             setupLog.Error(serverErr, "Cannot start webhook server")
@@ -145,7 +145,7 @@ Follow these steps to set up the required environment:
             reconcileTriggerChan: reconcileTriggerChan,
         }
     }
-    
+
     // SetupWithManager sets up the controller with the Manager.
     func (r *MetricPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
         // We use `Watches` instead of `Owns` to trigger a reconciliation also when owned objects without the controller flag are changed.
@@ -155,7 +155,7 @@ Follow these steps to set up the required environment:
                 handler.EnqueueRequestsFromMapFunc(r.mapPrometheusAlertEvent)).
             ...
     }
-    
+
     func (r *MetricPipelineReconciler) mapPrometheusAlertEvent(ctx context.Context, _ client.Object) []reconcile.Request {
         logf.FromContext(ctx).Info("Handling Prometheus alert event")
         requests, err := r.createRequestsForAllPipelines(ctx)
@@ -173,14 +173,14 @@ Follow these steps to set up the required environment:
         "context"
         "fmt"
         "time"
-    
+
         "github.com/prometheus/client_golang/api"
         promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
         logf "sigs.k8s.io/controller-runtime/pkg/log"
     )
-    
+
     const prometheusAPIURL = "http://prometheus-server.default:80"
-    
+
     func queryAlerts(ctx context.Context) error {
         client, err := api.NewClient(api.Config{
             Address: prometheusAPIURL,
@@ -188,18 +188,18 @@ Follow these steps to set up the required environment:
         if err != nil {
             return fmt.Errorf("failed to create Prometheus client: %w", err)
         }
-    
+
         v1api := promv1.NewAPI(client)
         ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
         defer cancel()
-    
+
         start := time.Now()
         alerts, err := v1api.Alerts(ctx)
-    
+
         if err != nil {
             return fmt.Errorf("failed to query Prometheus alerts: %w", err)
         }
-    
+
         logf.FromContext(ctx).Info("Prometheus alert query succeeded!",
             "elapsed_ms", time.Since(start).Milliseconds(),
             "alerts", alerts)
@@ -261,7 +261,7 @@ Follow these steps to set up the required environment:
 9. Deploy the modified Telemetry Manager:
 
    ```shell
-    export IMAGE=$DEV_IMAGE_REPO
+    export MANAGER_IMAGE=$DEV_IMAGE_REPO
     make docker-build
     make docker-push
     make install
