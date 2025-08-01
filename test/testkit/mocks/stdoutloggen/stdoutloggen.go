@@ -12,7 +12,7 @@ import (
 const (
 	DefaultName          = "stdoutloggen"
 	DefaultContainerName = "stdoutloggen"
-	DefaultImageName     = "europe-docker.pkg.dev/kyma-project/prod/stdout-log-generator:latest"
+	DefaultImageName     = "europe-docker.pkg.dev/kyma-project/dev/stdout-log-generator:PR-2344"
 )
 
 type Option func(*corev1.PodSpec)
