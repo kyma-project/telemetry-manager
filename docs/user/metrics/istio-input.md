@@ -69,12 +69,9 @@ spec:
 
 ## Envoy metrics
 
-If you are using the `istio` input by default only the metrics are collect starting with the prefix `istio_`. You can also collect Envoy metrics having the prefix `envoy_`. Envoy metrics provide insights into the performance and behavior of the Envoy proxy, such as request rates, latencies, and error counts. These metrics are useful for observability and troubleshooting service mesh traffic.
+If you are using the `istio` input, by default only the metrics are collect starting with the prefix `istio_`. You can also collect Envoy metrics having the prefix `envoy_`. Envoy metrics provide insights into the performance and behavior of the Envoy proxy, such as request rates, latencies, and error counts. These metrics are useful for observability and troubleshooting service mesh traffic.
 
 For details, see the list of available [Envoy metrics](https://www.envoyproxy.io/docs/envoy/latest/configuration/upstream/cluster_manager/cluster_stats) and [server metrics](https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/statistics).
-
-> [!NOTE]
-> Envoy metrics are only available for the `istio` input. Ensure that Istio sidecars are correctly injected into your workloads for Envoy metrics to be available.
 
 By default, Envoy metrics collection is disabled.
 
@@ -99,9 +96,9 @@ To activate Envoy metrics, enable the `envoyMetrics` section in the MetricPipeli
 
 ## Diagnostic Metrics
 
-The agent which is scraping the metrics instruments for every metric source operational metrics, such as `up`, `scrape_duration_seconds`, `scrape_samples_scraped`, `scrape_samples_post_metric_relabeling`, and `scrape_series_added`.
+When the metric agent is scraping metrics, it instruments operational metrics for every source of a metric, such as `up`, `scrape_duration_seconds`, `scrape_samples_scraped`, `scrape_samples_post_metric_relabeling`, and `scrape_series_added`.
 
-By default, they are disabled.
+By default, these operational metrics are disabled.
 
 If you want to use them for debugging and diagnostic purposes, you can activate them. To activate diagnostic metrics, define a MetricPipeline that has the `diagnosticMetrics` section defined.
 

@@ -58,7 +58,7 @@ The following example collects only DaemonSet, Deployment, StatefulSet, and Job 
 
 ## Metrics
 
-If Pod metrics are enabled, the following metrics are collected:
+If `pod` metrics are enabled, the following metrics are collected:
 
 - From the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver):
   - `k8s.pod.cpu.capacity`
@@ -77,7 +77,7 @@ If Pod metrics are enabled, the following metrics are collected:
 - From the [k8sclusterreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver):
   - `k8s.pod.phase`
 
-If container metrics are enabled, the following metrics are collected:
+If `container` metrics are enabled, the following metrics are collected:
 
 - From the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver):
   - `container.cpu.time`
@@ -98,7 +98,7 @@ If container metrics are enabled, the following metrics are collected:
   - `k8s.container.memory_limit`
   - `k8s.container.restarts`
 
-If Node metrics are enabled, the following metrics are collected:
+If `node` metrics are enabled, the following metrics are collected:
 
 - From the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver):
   - `k8s.node.cpu.usage`
@@ -110,7 +110,7 @@ If Node metrics are enabled, the following metrics are collected:
   - `k8s.node.memory.rss`
   - `k8s.node.memory.working_set`
 
-If Volume metrics are enabled, the following metrics are collected:
+If `volume` metrics are enabled, the following metrics are collected:
 
 - From the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver):
   - `k8s.volume.available`
@@ -119,13 +119,13 @@ If Volume metrics are enabled, the following metrics are collected:
   - `k8s.volume.inodes.free`
   - `k8s.volume.inodes.used`
 
-If Deployment metrics are enabled, the following metrics are collected:
+If `deployment` metrics are enabled, the following metrics are collected:
 
 - From the [k8sclusterreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver):
   - `k8s.deployment.available`
   - `k8s.deployment.desired`
 
-If DaemonSet metrics are enabled, the following metrics are collected:
+If `daemonset` metrics are enabled, the following metrics are collected:
 
 - From the [k8sclusterreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver):
   - `k8s.daemonset.current_scheduled_nodes`
@@ -133,7 +133,7 @@ If DaemonSet metrics are enabled, the following metrics are collected:
   - `k8s.daemonset.misscheduled_nodes`
   - `k8s.daemonset.ready_nodes`
 
-If StatefulSet metrics are enabled, the following metrics are collected:
+If `statefulset` metrics are enabled, the following metrics are collected:
 
 - From the [k8sclusterreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver):
   - `k8s.statefulset.current_pods`
@@ -141,7 +141,7 @@ If StatefulSet metrics are enabled, the following metrics are collected:
   - `k8s.statefulset.ready_pods`
   - `k8s.statefulset.updated_pods`
 
-If Job metrics are enabled, the following metrics are collected:
+If `job` metrics are enabled, the following metrics are collected:
 
 - From the [k8sclusterreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver):
   - `k8s.job.active_pods`
