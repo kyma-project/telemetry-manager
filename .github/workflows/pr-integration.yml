@@ -32,7 +32,7 @@ on:
       - "!**_test.go"
       - "!docs/**"
       - "test/e2e/**.go"
-      - "test/e2e-migrated/**.go"
+      - "../../test/e2e/**.go"
       - "test/integration/istio/**.go"
       - ".github/workflows/pr-integration.yml"
       - ".github/template/**"
@@ -95,7 +95,7 @@ jobs:
           failure: failure()
           job-name: ${{ github.job }}-${{ matrix.scenario }}-${{ matrix.kind }}
 
-  e2e-migrated:
+  e2e:
     needs: setup
     strategy:
       fail-fast: false
@@ -173,3 +173,9 @@ jobs:
         with:
           failure: failure()
           job-name: ${{ github.job }}-${{ matrix.labels }}
+
+      - name: Print logs from all pods in kyma-system namespace
+        if: failure()
+        run: |
+          kubectl get pods -n kyma-system -o name | xargs -I {} kubectl logs -n kyma-system {} || true
+          

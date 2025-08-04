@@ -26,7 +26,6 @@ on:
       - "!**_test.go"
       - "!docs/**"
       - "test/e2e/*.go"
-      - "test/e2e-migrated/*.go"
       - "test/integration/istio/*.go"
       - ".github/workflows/pr-upgrade.yml"
       - ".github/template/**"
