@@ -57,5 +57,35 @@ RUN setcap cap_dac_read_search+ep /usr/local/bin/telemetry-log-agent
 ## Decision
 
 For the cache directory, we will go with **Option b** and use the `file_storage` extension to create the directory in `/var/lib/telemetry-log-agent/file-log-receiver`. This avoids the need for an init container and simplifies the deployment.
+For the log reading permissions we will go with **Option a** and run the log-agent with `runAsGroup: 0` security context option. This allows the log-agent to read the logs without changing the permissions of the `/var/log/pods` directory.
+
+The final log-agent configuration will look like this:
+
+```yaml
+    spec:
+    ...
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsGroup: 0
+          runAsNonRoot: true
+          runAsUser: 1000
+          seccompProfile:
+            type: RuntimeDefault
+    ...
+        volumeMounts:
+        - mountPath: /var/lib/telemetry-log-agent
+          name: varlibfilelogreceiver
+    ...
+      volumes:
+      - hostPath:
+          path: /var/tmp
+          type: DirectoryOrCreate
+        name: varlibfilelogreceiver
+```
 
 
