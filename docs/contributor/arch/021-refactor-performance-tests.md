@@ -1,6 +1,10 @@
-# 21. Refactor Performance Tests
+---
+title: Refactor Performance Tests
+status: Accepted
+date: 2025-07-03
+---
 
-Date: 2025-07-03
+# 21. Refactor Performance Tests
 
 ## Context
 

@@ -1,10 +1,10 @@
+---
+title: Fluent Bit Configuration and File-System Buffer Usage
+status: Accepted
+date: 2023-11-23
+---
+
 # 2. Fluent Bit Configuration and File-System Buffer Usage
-
-Date: 2023-11-23
-
-## Status
-
-Accepted
 
 ## Context
 
