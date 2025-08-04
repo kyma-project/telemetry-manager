@@ -1,10 +1,10 @@
+---
+title: Transform and Filter Support for OpenTelemetry-based Pipelines
+status: Accepted
+date: 2024-10-10
+---
+
 # 16. Transform and Filter Support for OpenTelemetry-based Pipelines
-
-Date: 2024-10-10
-
-## Status
-
-Accepted
 
 ## Context
 

@@ -1,10 +1,10 @@
+---
+title: Do Not Make Prometheus Part of Istio Service Mesh
+status: Accepted
+date: 2024-01-30
+---
+
 # 5. Do Not Make Prometheus Part of Istio Service Mesh
-
-Date: 30.01.2024
-
-## Status
-
-Accepted
 
 ## Context
 

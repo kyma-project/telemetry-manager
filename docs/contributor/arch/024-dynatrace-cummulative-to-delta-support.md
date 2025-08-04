@@ -1,6 +1,10 @@
-# 24. Add Support for Dynatrace Cumulative-to-Delta Metrics
+---
+title: Add Support for Dynatrace Cumulative-to-Delta Metrics
+status: Accepted
+date: 2025-07-18
+---
 
-Date: 2025-07-18
+# 24. Add Support for Dynatrace Cumulative-to-Delta Metrics
 
 ## Context
 

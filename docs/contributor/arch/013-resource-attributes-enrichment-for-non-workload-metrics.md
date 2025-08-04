@@ -1,10 +1,10 @@
+---
+title: Resource Attributes Enrichment for Non-Workload Metrics
+status: Accepted
+date: 2024-09-10
+---
+
 # 13. Resource Attributes Enrichment for Non-Workload Metrics
-
-Date: 2024-09-10
-
-## Status
-
-Accepted
 
 ## Context
 
