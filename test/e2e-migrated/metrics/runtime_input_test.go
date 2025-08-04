@@ -357,7 +357,7 @@ func backendContainsDesiredNetworkInterfaces(t *testing.T, backend *kitbackend.B
 				HaveName(Equal(metricName)),
 				HaveMetricAttributes(HaveKeyWithValue("interface", MatchRegexp("^(eth|en).*"))),
 			)),
-		), "Failed to find network interface eth0 with metric attributes %v", metricName,
+		), assert.WithOptionalDescription("Failed to find network interface eth0 with metric attributes %v", metricName),
 	)
 
 	// Check that no other interfaces exist
@@ -367,6 +367,6 @@ func backendContainsDesiredNetworkInterfaces(t *testing.T, backend *kitbackend.B
 				HaveName(Equal(metricName)),
 				HaveMetricAttributes(HaveKeyWithValue("interface", Not(MatchRegexp("^(eth|en).*")))),
 			))),
-		), "Found unexpected network interface other than eth0 with metric attributes %v", metricName,
+		), assert.WithOptionalDescription("Found unexpected network interface other than eth0 with metric attributes %v", metricName),
 	)
 }
