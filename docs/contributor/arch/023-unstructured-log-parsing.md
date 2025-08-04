@@ -1,10 +1,9 @@
+---
+title: Unstructured Log Parsing
+status: Proposed
+date: 2025-07-30
+---
 # 23. Unstructured Log Parsing
-
-Date: 2025-07-30
-
-## Status
-
-Proposed
 
 ## Context
 
