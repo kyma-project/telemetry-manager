@@ -15,7 +15,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/floggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
@@ -39,7 +39,10 @@ func TestBackpressure(t *testing.T) {
 				return &p
 			},
 			generator: func(ns string) *appsv1.Deployment {
-				return floggen.NewDeployment(ns).WithReplicas(3).K8sObject()
+				return stdoutloggen.NewDeployment(ns,
+					stdoutloggen.WithRate(800),
+					stdoutloggen.WithWorkers(5),
+				).K8sObject()
 			},
 			assertions: func(t *testing.T) {
 				assert.DeploymentReady(t, kitkyma.LogGatewayName)
@@ -100,7 +103,9 @@ func TestBackpressure(t *testing.T) {
 				return &p
 			},
 			generator: func(ns string) *appsv1.Deployment {
-				return floggen.NewDeployment(ns).WithReplicas(3).K8sObject()
+				return stdoutloggen.NewDeployment(ns,
+					stdoutloggen.WithRate(1000),
+				).K8sObject()
 			},
 			assertions: func(t *testing.T) {
 				assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
