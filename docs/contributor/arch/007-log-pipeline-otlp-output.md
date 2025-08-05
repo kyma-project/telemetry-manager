@@ -1,10 +1,10 @@
+---
+title: LogPipeline OTLP Output
+status: Accepted
+date: 2024-02-02
+---
+
 # 7. LogPipeline OTLP Output
-
-Date: 2024-02-02
-
-## Status
-
-Accepted
 
 ## Context
 

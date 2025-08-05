@@ -1,10 +1,10 @@
+---
+title: Kyma Module Status Metrics
+status: Postponed
+date: 2024-04-19
+---
+
 # 11. Kyma Module Status Metrics
-
-Date: 2024-04-19
-
-## Status
-
-Postponed
 
 ## Context
 

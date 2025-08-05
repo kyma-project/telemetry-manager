@@ -32,7 +32,6 @@ on:
       - "!**_test.go"
       - "!docs/**"
       - "test/e2e/**.go"
-      - "test/e2e-migrated/**.go"
       - "test/integration/istio/**.go"
       - ".github/workflows/pr-integration.yml"
       - ".github/template/**"
@@ -50,37 +49,6 @@ jobs:
 
       - name: Setup Golang
         uses: ./.github/template/setup-golang
-
-  e2e:
-    needs: setup
-    strategy:
-      fail-fast: false
-      matrix:
-        ginkgo-labels:
-          - telemetry
-          - misc
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-
-      - name: Prepare test
-        uses: "./.github/template/prepare-test"
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Deploy test prerequisites
-        uses: "./.github/template/deploy-test-prerequisites"
-
-      - name: Run tests
-        run: bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags e2e --label-filter="${{ matrix.ginkgo-labels }} && !experimental &&!max-pipeline" -r test/e2e
-
-      - name: Finalize test
-        uses: "./.github/template/finalize-test"
-        if: ${{ !cancelled()  }}
-        with:
-          failure: failure()
-          job-name: ${{ github.job }}-${{ matrix.ginkgo-labels }}
 
   e2e-selfmonitor:
     needs: setup
@@ -126,7 +94,8 @@ jobs:
           failure: failure()
           job-name: ${{ github.job }}-${{ matrix.scenario }}-${{ matrix.kind }}
 
-  e2e-migrated:
+
+  e2e:
     needs: setup
     strategy:
       fail-fast: false
@@ -159,6 +128,12 @@ jobs:
             mode: release
           - name: traces-max-pipeline
             mode: release
+          # TELEMETRY
+          - name: telemetry
+            mode: release
+          # MISC
+          - name: misc
+            mode: release
           # OTHER
           - name: experimental
             mode: experimental
@@ -186,7 +161,7 @@ jobs:
       - name: Run normal e2e tests
         if: ${{ matrix.labels.mode != 'integration' }}
         run: |
-          go test -v -timeout=20m ./test/e2e-migrated/... -- -labels=${{ matrix.labels.name }}
+          go test -v -timeout=20m ./test/e2e/... -- -labels=${{ matrix.labels.name }}
 
       - name: Run integration e2e tests
         if: ${{ matrix.labels.mode == 'integration' }}
@@ -199,3 +174,9 @@ jobs:
         with:
           failure: failure()
           job-name: ${{ github.job }}-${{ matrix.labels }}
+
+      - name: Print logs from all pods in kyma-system namespace
+        if: failure()
+        run: |
+          for pod in $(kubectl get pods -n kyma-system -o name); do echo "=== $pod ==="; kubectl logs -n kyma-system $pod; done || true
+          
