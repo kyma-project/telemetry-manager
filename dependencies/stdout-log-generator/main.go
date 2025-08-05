@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"log"
 	"maps"
+	"math/rand"
 	"net/http"
 	"os"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/pflag"
-	"golang.org/x/exp/rand"
 	"golang.org/x/time/rate"
 )
 
@@ -103,6 +103,7 @@ func generateJSONLogs(logSize int, limitPerSecond rate.Limit, fields map[string]
 	if err != nil {
 		log.Fatalf("Error encoding log record to JSON: %v\n", err)
 	}
+
 	length := len(JSONLog)
 
 	// Check if the size of the JSON log is already larger than the target size
@@ -116,7 +117,6 @@ func generateJSONLogs(logSize int, limitPerSecond rate.Limit, fields map[string]
 	}
 
 	for {
-
 		// Pad with random characters until the JSON log reaches the target size
 		logRecord["padding"] = offsetString(paddingLen)
 
@@ -163,12 +163,14 @@ func offsetString(length int) string {
 	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	// Random starting offset
 	// Avoid getting a random character in each loop iteration for faster execution
+	//nolint:gosec //no need for cryptographic security here
 	start := rand.Intn(len(letters))
 
 	b := make([]byte, length)
-	for i := 0; i < length; i++ {
+	for i := range length {
 		pos := (start + start*i) % len(letters)
 		b[i] = letters[pos]
 	}
+
 	return string(b)
 }
