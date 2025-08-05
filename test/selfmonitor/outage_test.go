@@ -107,7 +107,7 @@ func TestOutage(t *testing.T) {
 			generator: func(ns string) *appsv1.Deployment {
 				return stdoutloggen.NewDeployment(ns,
 					stdoutloggen.WithRate(800),
-					stdoutloggen.WithWorkers(2),
+					stdoutloggen.WithWorkers(3),
 				).K8sObject()
 			},
 			assert: func(t *testing.T) {
