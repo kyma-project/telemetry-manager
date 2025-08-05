@@ -1,10 +1,10 @@
+---
+title: Switch from Gateways to a Central Agent
+status: Postponed
+date: 2025-02-17
+---
+
 # 19. Switch from Gateways to a Central Agent
-
-Date: 2025-02-17
-
-## Status
-
-Postponed
 
 ## Context
 

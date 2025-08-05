@@ -1,10 +1,10 @@
+---
+title: Leader Receiver Creator as Extension
+status: Accepted
+date: 2024-11-08
+---
+
 # 12b. Leader Receiver Creator as Extension
-
-Date: 2024-11-08
-
-## Status
-
-Accepted
 
 ## Context
 

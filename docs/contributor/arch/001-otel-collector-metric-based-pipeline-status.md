@@ -1,10 +1,10 @@
+---
+title: Trace/Metric Pipeline Status Based on OTel Collector Metrics
+status: Accepted
+date: 2023-08-11
+---
+
 # 1. Trace/Metric Pipeline Status Based on OTel Collector Metrics
-
-Date: 2023-08-11
-
-## Status
-
-Accepted
 
 ## Context
 
