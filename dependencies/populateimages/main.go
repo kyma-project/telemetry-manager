@@ -94,7 +94,6 @@ func generateSecScanConfig(data map[string]string) error {
 
 	imgs := []string{
 		data["ENV_MANAGER_IMAGE"],
-		data["ENV_MANAGER_IMAGE"] + "-experimental",
 		data["ENV_FLUENTBIT_EXPORTER_IMAGE"],
 		data["ENV_FLUENTBIT_IMAGE"],
 		data["ENV_OTEL_COLLECTOR_IMAGE"],
