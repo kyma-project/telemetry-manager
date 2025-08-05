@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"log"
 	"maps"
-	"math/rand"
 	"net/http"
-	"time"
+	"os"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/pflag"
+	"golang.org/x/exp/rand"
 	"golang.org/x/time/rate"
 )
 
@@ -96,40 +96,35 @@ func main() {
 func generateJSONLogs(logSize int, limitPerSecond rate.Limit, fields map[string]string) {
 	limiter := rate.NewLimiter(limitPerSecond, 1)
 
+	logRecord := map[string]string{"padding": ""}
+	maps.Copy(logRecord, fields)
+
+	JSONLog, err := json.Marshal(logRecord)
+	if err != nil {
+		log.Fatalf("Error encoding log record to JSON: %v\n", err)
+	}
+	length := len(JSONLog)
+
+	// Check if the size of the JSON log is already larger than the target size
+	const quotes = 2 // number of quotes around every string in JSON
+
+	overhead := length - quotes // subtract the existing quotes for the current empty string in the padding field
+
+	paddingLen := logSize - overhead - quotes // number of characters generated in the padding should exclude the quotes which will be added for the padding field
+	if paddingLen < 0 {
+		log.Fatalf("The size of the JSON log with custom fields is larger than the requested log size\n")
+	}
+
 	for {
-		// Create a log record with the provided fields
-		logRecord := make(map[string]string)
-		maps.Copy(logRecord, fields)
-
-		// Add a timestamp and initially an empty padding to the log record
-		logRecord["timestamp"] = time.Now().Format(time.RFC3339)
-		logRecord["padding"] = ""
-
-		JSONLog, err := json.Marshal(logRecord)
-		if err != nil {
-			log.Fatalf("Error marshaling log record: %v\n", err)
-		}
-
-		// Check if the size of the JSON log is already larger than the target size
-		const quotes = 2 // number of quotes around every string in JSON
-
-		overhead := len(JSONLog) - quotes // subtract the existing quotes for the current empty string in the padding field
-
-		paddingLen := logSize - overhead - quotes // number of characters generated in the padding should exclude the quotes which will be added for the padding field
-		if paddingLen < 0 {
-			log.Fatalf("The size of the JSON log with custom fields and a timestamp is larger than the requested log size\n")
-		}
 
 		// Pad with random characters until the JSON log reaches the target size
-		logRecord["padding"] = randomString(paddingLen)
+		logRecord["padding"] = offsetString(paddingLen)
 
-		JSONLog, err = json.Marshal(logRecord)
+		// Avoid using json.Marshal() here forfaster execution
+		err = json.NewEncoder(os.Stdout).Encode(logRecord)
 		if err != nil {
-			log.Fatalf("Error marshaling log record: %v\n", err)
+			log.Fatalf("Error encoding log record to JSON: %v\n", err)
 		}
-
-		//nolint:forbidigo // actual printing of the prepared JSONLog
-		fmt.Println(string(JSONLog))
 
 		logsGenerated.Inc()
 
@@ -150,7 +145,7 @@ func generatePlaintextLogs(logSize int, limitPerSecond rate.Limit, customText st
 			plaintextLog = customText
 		} else {
 			// Generate random text if no custom text is provided
-			plaintextLog = randomString(logSize)
+			plaintextLog = offsetString(logSize)
 		}
 
 		//nolint:forbidigo // actual printing of the prepared plaintextLog
@@ -164,15 +159,16 @@ func generatePlaintextLogs(logSize int, limitPerSecond rate.Limit, customText st
 	}
 }
 
-// randomString returns a string of the given length consisting of random alphanumeric characters
-func randomString(n int) string {
+func offsetString(length int) string {
 	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	// Random starting offset
+	// Avoid getting a random character in each loop iteration for faster execution
+	start := rand.Intn(len(letters))
 
-	b := make([]byte, n)
-	for i := range b {
-		//nolint:gosec // no need for cryptographic security here
-		b[i] = letters[rand.Intn(len(letters))]
+	b := make([]byte, length)
+	for i := 0; i < length; i++ {
+		pos := (start + start*i) % len(letters)
+		b[i] = letters[pos]
 	}
-
 	return string(b)
 }

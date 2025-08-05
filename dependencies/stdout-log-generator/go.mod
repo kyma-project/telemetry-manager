@@ -5,6 +5,7 @@ go 1.24.5
 require (
 	github.com/prometheus/client_golang v1.23.0
 	github.com/spf13/pflag v1.0.7
+	golang.org/x/exp v0.0.0-20250718183923-645b1fa84792
 	golang.org/x/time v0.12.0
 )
 
