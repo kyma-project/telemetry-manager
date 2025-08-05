@@ -104,7 +104,7 @@ func TestBackpressure(t *testing.T) {
 			},
 			generator: func(ns string) *appsv1.Deployment {
 				return stdoutloggen.NewDeployment(ns,
-					stdoutloggen.WithRate(1000),
+					stdoutloggen.WithRate(800),
 				).K8sObject()
 			},
 			assertions: func(t *testing.T) {
