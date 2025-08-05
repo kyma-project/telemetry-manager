@@ -97,7 +97,9 @@ func TestTelemetryLogs(t *testing.T) {
 	resources = append(resources, logBackend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
+		if !t.Failed() {
+			Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
+		}
 	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
