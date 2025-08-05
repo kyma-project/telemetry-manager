@@ -56,6 +56,10 @@ type TracePipeline struct {
 type TracePipelineSpec struct {
 	// Defines a destination for shipping trace data. Only one can be defined per pipeline.
 	Output TracePipelineOutput `json:"output"`
+
+	// Transforms specify a list of transformations to apply to telemetry data.
+	// +optional
+	Transforms []TransformSpec `json:"transforms,omitempty"`
 }
 
 // TracePipelineOutput defines the output configuration section.

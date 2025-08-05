@@ -62,6 +62,10 @@ type MetricPipelineSpec struct {
 
 	// Configures the metric gateway.
 	Output MetricPipelineOutput `json:"output,omitempty"`
+
+	// Transforms specify a list of transformations to apply to telemetry data.
+	// +optional
+	Transforms []TransformSpec `json:"transforms,omitempty"`
 }
 
 // MetricPipelineInput defines the input configuration section.
