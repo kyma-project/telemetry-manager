@@ -94,6 +94,7 @@ jobs:
           failure: failure()
           job-name: ${{ github.job }}-${{ matrix.scenario }}-${{ matrix.kind }}
 
+
   e2e:
     needs: setup
     strategy:
@@ -175,7 +176,7 @@ jobs:
           job-name: ${{ github.job }}-${{ matrix.labels }}
 
       - name: Print logs from all pods in kyma-system namespace
-        if: failure()
+        if: ${{ !failure() }}
         run: |
           kubectl get pods -n kyma-system -o name | xargs -I {} kubectl logs -n kyma-system {} || true
           
