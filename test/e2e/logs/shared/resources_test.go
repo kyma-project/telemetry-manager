@@ -99,7 +99,7 @@ func TestResources_FluentBit(t *testing.T) {
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
 		secretName   = uniquePrefix()
-		reources     = []assert.Resource{
+		resources    = []assert.Resource{
 			assert.NewResource(&appsv1.DaemonSet{}, kitkyma.FluentBitDaemonSetName),
 			assert.NewResource(&corev1.ServiceAccount{}, kitkyma.FluentBitServiceAccount),
 			assert.NewResource(&rbacv1.ClusterRole{}, kitkyma.FluentBitClusterRole),
@@ -129,9 +129,9 @@ func TestResources_FluentBit(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t, &pipeline, secret.K8sObject())).To(Succeed())
 
-	assert.ResourcesExist(t, reources...)
+	assert.ResourcesExist(t, resources...)
 
 	// When pipeline becomes non-reconcilable...
 	Expect(suite.K8sClient.Delete(t.Context(), secret.K8sObject())).To(Succeed())
-	assert.ResourcesNotExist(t, reources...)
+	assert.ResourcesNotExist(t, resources...)
 }
