@@ -5,11 +5,11 @@ To collect and export telemetry data from your Kyma cluster, define one or more 
 
 ## Structure
 
-All three pipelines are defined using Kubernetes CRDs. A CRD extends the Kubernetes API, enabling you to define new object types. In these cases, LogPipeline, TracePipeline, and MetricPipeline are the new object types you are working with.
+All three pipeline types are defined using Kubernetes CRDs. A CRD extends the Kubernetes API, enabling you to define new object types. In these cases, LogPipeline, TracePipeline, and MetricPipeline are the new object types you are working with.
 
-The pipelines use [OTLP](OpenTelemetry Protocol) as the primary method for ingesting and exporting data. OTLP is a standard for sending telemetry data to various backends, offering flexibility in your monitoring setup.
+The pipelines use [OTLP](https://opentelemetry.io/docs/specs/otel/protocol/)(OpenTelemetry Protocol) as the primary method for ingesting and exporting data. OTLP is a standard for sending telemetry data to various backends, offering flexibility in your monitoring setup.
 
-You specify the kind of pipeline and to which backend the data is sent. In the input section, define where the data is collected from.
+You specify the kind of pipeline and to which backend the data is sent. In the optional input section, define where the data is collected from.
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -30,7 +30,7 @@ spec:
 
 The [`otlp`](./otlp-input.md) input of a pipeline is enabled by default and will enable a cluster internal endpoint accepting OTLP data. For more details, see [`otlp` input](./otlp-input.md).
 
-Besides the OTLP input, different inputs are avaialble dependent on the pipeline type:
+Besides the [`otlp` input](./otlp-input.md), other inputs are avaialble dependent on the pipeline type:
 
 - LogPipeline: the [`application`](./../logs/application-input.md) input collects logs from your application containers' standard output (stdout) and standard error (stderr). It parses these logs, extracts useful information and transforms them into the OTLP format. Additional, Istio access log integration is available via the regular [`otlp`](./otlp-input.md) input.
 - TracePipeline: No dedicated inputs are available, however Istio trace integration is available via the regular [`otlp`](./otlp-input.md) input.

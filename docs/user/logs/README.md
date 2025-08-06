@@ -6,12 +6,12 @@ With application logs, you can debug an application and derive the internal stat
 
 The Telemetry module provides an API which configures a log gateway for push-based collection of logs using OTLP and, optionally, an agent for the collection of logs of any container printing logs to the `stdout/stderr` channel running in the Kyma runtime. Kyma modules like [Istio](https://kyma-project.io/#/istio/user/README) contribute access logs. The Telemetry module enriches the data and ships them to your chosen backend (see [Vendors who natively support OpenTelemetry](https://opentelemetry.io/ecosystem/vendors/)).
 
-You can configure the log gateway and agent with external systems using runtime configuration with a dedicated Kubernetes API ([CRD](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions)) named LogPipeline. Additional to the regular [pipeline features](./../pipelines/README.md), the following features are offered by LogPipelines:
+You can configure the log gateway and agent with external systems using runtime configuration with a dedicated Kubernetes API ([CRD](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions)) named LogPipeline. Additional to the regular [pipeline](./../pipelines/README.md) features, the following features are offered by LogPipelines:
 
 - [`application` input](./application-input.md): Activate collection of application logs from `stdout/stderr` channels of any container in the cluster using the [`application` input](./application-input.md)
 - Activate Istio access logs. For details, see [Istio](#istio).
 
-For an example with annotations, see [Sample LogPipeline](sample.md), check out the available parameters and attributes under [LogPipeline](./../resources/02-logpipeline.md).
+For an example, see [Sample LogPipeline](sample.md), check out the available parameters and attributes under [LogPipeline](./../resources/02-logpipeline.md).
 
 The Log feature is optional. If you don’t want to use it, simply don’t set up a LogPipeline.
 
@@ -42,7 +42,7 @@ output:
         value: http://myEndpoint:4317
 ```
 
-This example will accept traffic from the OTLP log endpoint filtered by system namespaces and will forward them to the configured backend. The following push URLs are set up:
+This example will accept traffic from the OTLP log endpoint, filtered by system namespaces, and will forward them to the configured backend. The following push URLs are set up:
 
 - GRPC: `http://telemetry-otlp-logs.kyma-system:4317`
 - HTTP: `http://telemetry-otlp-logs.kyma-system:4318`

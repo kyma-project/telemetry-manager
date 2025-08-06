@@ -45,6 +45,9 @@ Status:
     metrics:
       grpc: http://telemetry-otlp-metrics.kyma-system:4317
       http: http://telemetry-otlp-metrics.kyma-system:4318
+    logs:
+      grpc: http://telemetry-otlp-logs.kyma-system:4317
+      http: http://telemetry-otlp-logs.kyma-system:4318
   conditions:
     - lastTransitionTime: "2023-09-01T15:28:28Z"
       message: All log components are running

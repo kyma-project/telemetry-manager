@@ -60,7 +60,7 @@ For every pipeline kind, the signal specifics are described in more detail at:
 
 To learn about integration with SAP Cloud Logging, read [Integrate with SAP Cloud Logging](./integration/sap-cloud-logging/README.md). <!--- replace with Help Portal link once published? --->
 
-For integration with other backends, such as Dynatrace, see:
+For integration with other backends, see:
 
 - [Dynatrace](./integration/dynatrace/README.md)
 - [Prometheus](./integration/prometheus/README.md)

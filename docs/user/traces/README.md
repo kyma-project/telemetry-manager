@@ -11,7 +11,7 @@ You can configure the trace gateway with external systems using runtime configur
 - Activate Istio tracing. For details, see [Istio](#istio).
 - Collect traces from [Eventing](#eventing) and [Serverless Functions](#serverless).
 
-For an example with annotations, see [Sample TracePipeline](./sample.md) and check out the available parameters and attributes under [TracePipeline](./../resources/04-tracepipeline.md).
+For an example, see [Sample TracePipeline](./sample.md) and check out the available parameters and attributes under [TracePipeline](./../resources/04-tracepipeline.md).
 
 The Trace feature is optional. If you don't want to use it, simply don't set up a TracePipeline. For details, see Creating a Telemetry Pipeline.
 

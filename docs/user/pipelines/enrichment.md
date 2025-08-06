@@ -1,6 +1,6 @@
 # Enrichment
 
-The Telemetry collectors automatically enrich your data by adding the following attributes:
+All pipelines will enrich your data by adding the following attributes:
 
 - `service.name`: The logical name of the service that emits the telemetry data. The gateway ensures that this attribute always has a valid value.
   If not provided by the user, or if its value follows the pattern `unknown_service:<process.executable.name>` as described in the [specification](https://opentelemetry.io/docs/specs/semconv/resource/#service), then it is generated from Kubernetes metadata. The gateway determines the service name based on the following hierarchy of labels and names:

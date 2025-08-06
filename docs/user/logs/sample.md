@@ -36,7 +36,7 @@ spec:
       keepOriginalBody: true # Keep the original log message after JSON parsing
 
     otlp:
-      # disabled: true # Uncomment to disable push-based OTLP logs
+      disabled: false
       # Optionally filter by namespace and containers
       # namespaces: # set to {} to include all namespaces including system namespaces
       #   include:  # Include specific namespaces
