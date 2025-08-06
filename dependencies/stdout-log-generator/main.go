@@ -9,6 +9,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -25,10 +26,17 @@ const (
 )
 
 var (
-	logsGenerated = prometheus.NewCounter(
+	logsGeneratedTotal = prometheus.NewCounter(
 		prometheus.CounterOpts{
 			Name: "logs_generated_total",
 			Help: "Total number of logs generated",
+		},
+	)
+
+	logsGeneratedRate = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "logs_generated_rate",
+			Help: "Actual rate of logs generated per second",
 		},
 	)
 
@@ -39,10 +47,11 @@ var (
 )
 
 func main() {
+	startTime := time.Now()
+
 	formatFlag := pflag.StringP("format", "", string(jsonFormat), fmt.Sprintf("Log format (%s or %s)", jsonFormat, plaintextFormat))
 	bytesFlag := pflag.IntP("bytes", "b", defaultByteSize, "Size of each log in bytes")
 	logsPerSecondFlag := pflag.IntP("rate", "r", 1, "Approximately how many logs per second each worker should generate. Zero means no throttling")
-	workersFlag := pflag.IntP("workers", "w", 1, "Number of workers (goroutines) to run")
 	fieldsFlag := pflag.StringToStringP("fields", "f", map[string]string{},
 		fmt.Sprintf(`Custom fields in key=value format (comma-separated or repeated). These fields will be included in each %s log record (e.g. --fields key1=value1,key2=value2 or --fields key1=value1 --fields key2=value2). This flag is only relevant when the format is %s.`, jsonFormat, jsonFormat),
 	)
@@ -58,8 +67,8 @@ func main() {
 		log.Fatalf("Invalid format: %s. Allowed values are: %s, %s", format, jsonFormat, plaintextFormat)
 	}
 
-	// Register the metric
-	prometheus.MustRegister(logsGenerated)
+	// Register the metrics
+	prometheus.MustRegister(logsGeneratedTotal, logsGeneratedRate)
 
 	// Expose /metrics endpoint
 	go func() {
@@ -78,22 +87,21 @@ func main() {
 		limitPerSecond = rate.Inf
 	}
 
-	// Start workers
-	for range *workersFlag {
-		switch format {
-		case jsonFormat:
-			go generateJSONLogs(*bytesFlag, limitPerSecond, *fieldsFlag)
-		case plaintextFormat:
-			go generatePlaintextLogs(*bytesFlag, limitPerSecond, *textFlag)
-		default:
-			log.Fatalf("Unexpected log format: %s", format)
-		}
+	// Start generation of logs
+	switch format {
+	case jsonFormat:
+		generateJSONLogs(startTime, *bytesFlag, limitPerSecond, *fieldsFlag)
+	case plaintextFormat:
+		generatePlaintextLogs(startTime, *bytesFlag, limitPerSecond, *textFlag)
+	default:
+		log.Fatalf("Unexpected log format: %s", format)
 	}
 
 	select {}
 }
 
-func generateJSONLogs(logSize int, limitPerSecond rate.Limit, fields map[string]string) {
+func generateJSONLogs(startTime time.Time, logSize int, limitPerSecond rate.Limit, fields map[string]string) {
+	logsCounter := 0
 	limiter := rate.NewLimiter(limitPerSecond, 1)
 
 	logRecord := map[string]string{"padding": ""}
@@ -120,13 +128,15 @@ func generateJSONLogs(logSize int, limitPerSecond rate.Limit, fields map[string]
 		// Pad with random characters until the JSON log reaches the target size
 		logRecord["padding"] = offsetString(paddingLen)
 
-		// Avoid using json.Marshal() here forfaster execution
+		// Avoid using json.Marshal() here for faster execution
 		err = json.NewEncoder(os.Stdout).Encode(logRecord)
 		if err != nil {
 			log.Fatalf("Error encoding log record to JSON: %v\n", err)
 		}
+		logsCounter++
 
-		logsGenerated.Inc()
+		logsGeneratedTotal.Inc()
+		logsGeneratedRate.Set(float64(logsCounter) / time.Since(startTime).Seconds())
 
 		if err := limiter.Wait(context.Background()); err != nil {
 			log.Printf("Error waiting for rate limiter: %v\n", err)
@@ -134,7 +144,8 @@ func generateJSONLogs(logSize int, limitPerSecond rate.Limit, fields map[string]
 	}
 }
 
-func generatePlaintextLogs(logSize int, limitPerSecond rate.Limit, customText string) string {
+func generatePlaintextLogs(startTime time.Time, logSize int, limitPerSecond rate.Limit, customText string) string {
+	logsCounter := 0
 	limiter := rate.NewLimiter(limitPerSecond, 1)
 
 	for {
@@ -150,8 +161,10 @@ func generatePlaintextLogs(logSize int, limitPerSecond rate.Limit, customText st
 
 		//nolint:forbidigo // actual printing of the prepared plaintextLog
 		fmt.Println(plaintextLog)
+		logsCounter++
 
-		logsGenerated.Inc()
+		logsGeneratedTotal.Inc()
+		logsGeneratedRate.Set(float64(logsCounter) / time.Since(startTime).Seconds())
 
 		if err := limiter.Wait(context.Background()); err != nil {
 			log.Printf("Error waiting for rate limiter: %v\n", err)
