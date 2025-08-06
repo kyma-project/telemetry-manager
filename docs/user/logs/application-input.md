@@ -20,7 +20,7 @@ By default, input is collected from all namespaces, except the system namespaces
 
 ## Namespace and Container Filter
 
-To filter your application logs by namespace or container, use an input spec to restrict or specify which resources you want to include. For example, you can define the namespaces to include in the input collection, exclude namespaces from the input collection, or choose that only system namespaces are included. Learn more about the available [parameters and attributes](resources/02-logpipeline.md).
+To filter your application logs by namespace or container, use an input spec to restrict or specify which resources you want to include. For example, you can define the namespaces to include in the input collection, exclude namespaces from the input collection, or choose that only system namespaces are included. Learn more about the available [parameters and attributes](./../resources/02-logpipeline.md).
 
 The following pipeline collects input from all namespaces excluding `kyma-system` and only from the `istio-proxy` containers:
 

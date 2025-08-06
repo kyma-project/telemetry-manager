@@ -66,7 +66,7 @@ spec:
 
 ## Filters
 
-To filter metrics by namespaces, define a MetricPipeline that has the `namespaces` section defined in one of the inputs. For example, you can specify the namespaces from which metrics are collected or the namespaces from which metrics are dropped. Learn more about the available [parameters and attributes](resources/05-metricpipeline.md).
+To filter metrics by namespaces, define a MetricPipeline that has the `namespaces` section defined in one of the inputs. For example, you can specify the namespaces from which metrics are collected or the namespaces from which metrics are dropped. Learn more about the available [parameters and attributes](./../resources/05-metricpipeline.md).
 
 By default, the sidecars of all namespaces are getting collected excluding system namespaces. To include system namespaces as well, please explicitly configure an empty namespcae object: `namespaces: {}`.
 

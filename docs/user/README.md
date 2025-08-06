@@ -25,7 +25,7 @@ To support telemetry for your applications, the Telemetry module provides the fo
 - Tooling for collection, filtering, and shipment: Based on the [Open Telemetry Collector](https://opentelemetry.io/docs/collector/), you can configure basic pipelines to collect, enrich, filter and ship telemetry data.
 - Integration in a vendor-neutral way to a vendor-specific observability system: Based on the [OpenTelemetry protocol (OTLP)](https://opentelemetry.io/docs/reference/specification/protocol/), you can integrate backend systems.
 - Guidance for the instrumentation: Based on [Open Telemetry](https://opentelemetry.io/), you get community samples on how to instrument your code using the [Open Telemetry SDKs](https://opentelemetry.io/docs/instrumentation/) in nearly every programming language.
-- Enriching telemetry data by automatically adding metadata attributes (OTel resource attributes). This is done in compliance with established semantic conventions of OTel, ensuring that the enriched data adheres to industry best practices and is more meaningful for analysis. For details, see [Data Enrichment](gateways.md#data-enrichment).
+- Enriching telemetry data by automatically adding metadata attributes (OTel resource attributes). This is done in compliance with established semantic conventions of OTel, ensuring that the enriched data adheres to industry best practices and is more meaningful for analysis. For details, see [Data Enrichment](./pipelines/enrichment.md).
 - Opt-out of features for advanced scenarios: At any time, you can opt out for each data type, and use custom tooling to collect and ship the telemetry data.
 - SAP BTP as first-class integration: Integration into SAP BTP Observability services, such as SAP Cloud Logging, is prioritized. For more information, see [Integrate with SAP Cloud Logging](integration/sap-cloud-logging/README.md).
 
@@ -52,9 +52,9 @@ The API of the module consists of a Pipeline API available for every signal type
 
 For every pipeline kind, the signal specifics are described in more detail at:
 
-- [Logs](/telemetry-manager/user/logs.md)
-- [Traces](/telemetry-manager/user/traces.md)
-- [Metrics](/telemetry-manager/user/metrics.md)
+- [Logs](./logs/README.md)
+- [Traces](./traces/README.md)
+- [Metrics](./metrics/README.md)
 
 ## Integration Guides
 

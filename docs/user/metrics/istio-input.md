@@ -21,7 +21,7 @@ With this, the agent starts collecting all Istio metrics from Istio sidecars fro
 
 ## Filters
 
-To filter sidecars to collect by namespaces, define a MetricPipeline that has the `namespaces` section defined in one of the inputs. For example, you can specify the namespaces from which metrics are collected or the namespaces from which metrics are dropped. Learn more about the available [parameters and attributes](resources/05-metricpipeline.md).
+To filter sidecars to collect by namespaces, define a MetricPipeline that has the `namespaces` section defined in one of the inputs. For example, you can specify the namespaces from which metrics are collected or the namespaces from which metrics are dropped. Learn more about the available [parameters and attributes](./../resources/05-metricpipeline.md).
 
 By default, the sidecars of all namespaces are getting collected.
 

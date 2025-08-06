@@ -32,9 +32,9 @@ The [`otlp`](./otlp-input.md) input of a pipeline is enabled by default and will
 
 Besides the OTLP input, different inputs are avaialble dependent on the pipeline type:
 
-- LogPipeline: the [`application`](./../logs.md#1-create-a-logpipeline) input collects logs from your application containers' standard output (stdout) and standard error (stderr). It parses these logs, extracts useful information and transforms them into the OTLP format. Additional, Istio access log integration is available via the regular [`otlp`](./otlp-input.md) input.
+- LogPipeline: the [`application`](./../logs/application-input.md) input collects logs from your application containers' standard output (stdout) and standard error (stderr). It parses these logs, extracts useful information and transforms them into the OTLP format. Additional, Istio access log integration is available via the regular [`otlp`](./otlp-input.md) input.
 - TracePipeline: No dedicated inputs are available, however Istio trace integration is available via the regular [`otlp`](./otlp-input.md) input.
-- MetricPipeline: The [`prometheus`](./../metrics.md#1-create-a-logpipeline) input enables a pull-based metric collection in the Prometheus format using an annotation-based discovery. The [`runtime`](./../metrics.md#1-create-a-logpipeline) input supports the collection of Kubernetes runtime metrics (things like CPU/memory usage). You can also configure the collection of [`istio`](./../metrics.md#1-create-a-logpipeline) proxy metrics, providing detailed information about service mesh traffic.
+- MetricPipeline: The [`prometheus`](./../metrics/prometheus-input.md) input enables a pull-based metric collection in the Prometheus format using an annotation-based discovery. The [`runtime`](./../metrics/runtime-input.md) input supports the collection of Kubernetes runtime metrics (things like CPU/memory usage). You can also configure the collection of [`istio`](./../metrics/istio-input.md) proxy metrics, providing detailed information about service mesh traffic.
 
 ## Output
 
