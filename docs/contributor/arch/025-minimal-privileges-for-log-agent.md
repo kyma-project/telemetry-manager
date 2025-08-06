@@ -8,7 +8,7 @@ date: 2025-01-15
 
 ## Context
 
-The log-agent is a component that reads logs directly from the node filesystem and forwards it to a configured sink. It requires specific permissions to access the logs of pods in the cluster. The goal is to define the minimal set of privileges required for the log-agent to function correctly without granting excessive permissions.
+The log agent is a component that reads logs directly from the node filesystem and forwards it to a configured sink. It needs specific permissions to access the logs of Pods in the cluster. The goal is to define the minimal set of privileges required for the log agent to function correctly without granting excessive permissions.
 
 ## Current Situation
 
