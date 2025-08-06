@@ -617,6 +617,23 @@ spec:
                   rule: (!has(self.custom) && !has(self.otlp)) || ! (has(self.custom) && has(self.otlp))
                 - message: Exactly one output must be defined
                   rule: (!has(self.http) && !has(self.otlp)) || ! (has(self.http) && has(self.otlp))
+              transforms:
+                description: Transforms specify a list of transformations to apply to telemetry data.
+                items:
+                  description: TransformSpec defines a transformation to apply to telemetry data.
+                  properties:
+                    conditions:
+                      description: Conditions specify a list of multiple where clauses, which will be processed as global conditions for the accompanying set of statements. The conditions are ORed together, which means only one condition needs to evaluate to true in order for the statements (including their individual where clauses) to be executed.
+                      items:
+                        type: string
+                      type: array
+                    statements:
+                      description: Statements specify a list of OTTL statements to perform the transformation.
+                      items:
+                        type: string
+                      type: array
+                  type: object
+                type: array
               variables:
                 description: A list of mappings from Kubernetes Secret keys to environment variables. Mapped keys are mounted as environment variables, so that they are available as [Variables](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/variables) in the sections.
                 items:
@@ -661,6 +678,8 @@ spec:
               rule: '!(has(self.output.otlp) && has(self.files))'
             - message: variables not supported with otlp output
               rule: '!(has(self.output.otlp) && has(self.variables))'
+            - message: transforms is only supported with otlp output
+              rule: '!(!has(self.output.otlp) && has(self.transforms))'
           status:
             description: Shows the observed state of the LogPipeline
             properties:
