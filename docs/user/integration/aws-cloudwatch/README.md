@@ -24,7 +24,7 @@ Because CloudWatch do not support native OTLP ingestion for metrics and OTLP sup
   - [Set Up AWS Credentials](#set-up-aws-credentials)
     - [Create AWS IAM User](#create-aws-iam-user)
     - [Create a Secret with AWS Credentials](#create-a-secret-with-aws-credentials)
-  - [Deploy the AWS Distro](#deploy-the-aws-distro)
+  - [Deploy the custom collector](#deploy-the-custom-collector)
   - [Set Up Kyma Pipelines](#set-up-kyma-pipelines)
   - [Verify the Results](#verify-the-results)
 
