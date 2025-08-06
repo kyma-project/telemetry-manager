@@ -1,10 +1,11 @@
 package log
 
 import (
-	. "github.com/onsi/ginkgo/v2"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	. "github.com/onsi/gomega"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
+	"testing"
 )
 
 var fls = []FlatLog{
@@ -21,57 +22,50 @@ var fls = []FlatLog{
 	},
 }
 
-var _ = Describe("HaveFlatOtelLogs", func() {
-	It("should apply matcher to valid log data", func() {
-		td := plog.NewLogs()
-		Expect(mustMarshalOtelLogs(td)).Should(HaveFlatLogs(ContainElements()))
-	})
+func TestOtelLogs_verifyMatch(t *testing.T) {
+	suite.RegisterTestCase(t)
+	td := plog.NewLogs()
+	Expect(mustMarshalOtelLogs(td)).Should(HaveFlatLogs(ContainElements()), "Should apply matcher to valid log data")
+	Expect([]byte{}).Should(HaveFlatLogs(BeEmpty()), "Should fail when given empty byte slice")
 
-	It("should fail when given empty byte slice", func() {
-		Expect([]byte{}).Should(HaveFlatLogs(BeEmpty()))
-	})
+	resEmpty, err := HaveFlatLogs(BeEmpty()).Match(nil)
+	Expect(err).Should(HaveOccurred(), "Should return error for nil input")
+	Expect(resEmpty).Should(BeFalse(), "Success should be false for nil input")
 
-	It("should return error for nil input", func() {
-		success, err := HaveFlatLogs(BeEmpty()).Match(nil)
-		Expect(err).Should(HaveOccurred())
-		Expect(success).Should(BeFalse())
-	})
+	resInvalidInput, err := HaveFlatLogs(BeEmpty()).Match(struct{}{})
+	Expect(err).Should(HaveOccurred(), "should return error for invalid input type")
+	Expect(resInvalidInput).Should(BeFalse(), "Success should be false for invalid input type")
+}
 
-	It("should return error for invalid input type", func() {
-		success, err := HaveFlatLogs(BeEmpty()).Match(struct{}{})
-		Expect(err).Should(HaveOccurred())
-		Expect(success).Should(BeFalse())
-	})
+func TestOtelLogs_FlatLogStruct(t *testing.T) {
+	suite.RegisterTestCase(t)
 
-	It("should return a FlatLog struct", func() {
-		ld := plog.NewLogs()
-		rl := ld.ResourceLogs().AppendEmpty()
-		sl := rl.ScopeLogs().AppendEmpty()
-		lr := sl.LogRecords().AppendEmpty()
+	ld := plog.NewLogs()
+	rl := ld.ResourceLogs().AppendEmpty()
+	sl := rl.ScopeLogs().AppendEmpty()
+	lr := sl.LogRecords().AppendEmpty()
 
-		// set log body
-		lr.Body().SetStr("Test first log body")
-		testValTimestamp := pcommon.Timestamp(1234567890)
-		lr.SetObservedTimestamp(testValTimestamp)
-		lr.SetTimestamp(testValTimestamp)
+	// set log body
+	lr.Body().SetStr("Test first log body")
+	testValTimestamp := pcommon.Timestamp(1234567890)
+	lr.SetObservedTimestamp(testValTimestamp)
+	lr.SetTimestamp(testValTimestamp)
 
-		lr.Attributes().PutStr("foo", "bar")
+	lr.Attributes().PutStr("foo", "bar")
 
-		// set resource attributes
-		attrs := rl.Resource().Attributes()
-		attrs.PutStr("k8s.namespace.name", "default")
-		attrs.PutStr("k8s.pod.ip", "10.42.1.76")
-		attrs.PutStr("k8s.deployment.name", "backend")
+	// set resource attributes
+	attrs := rl.Resource().Attributes()
+	attrs.PutStr("k8s.namespace.name", "default")
+	attrs.PutStr("k8s.pod.ip", "10.42.1.76")
+	attrs.PutStr("k8s.deployment.name", "backend")
 
-		Expect(mustMarshalOtelLogs(ld)).Should(HaveFlatLogs(ContainElements(fls[0])))
-	})
-})
+	Expect(mustMarshalOtelLogs(ld)).Should(HaveFlatLogs(ContainElements(fls[0])), "Should return a FlatLog struct with expected values")
+}
 
-var _ = Describe("HaveResourceAttributes", func() {
-	It("should apply matcher", func() {
-		Expect(fls).Should(ContainElement(HaveResourceAttributes(HaveKey("k8s.deployment.name"))))
-	})
-})
+func TestOtelLogs_HaveResourceAttributes(t *testing.T) {
+	suite.RegisterTestCase(t)
+	Expect(fls).Should(ContainElement(HaveResourceAttributes(HaveKey("k8s.deployment.name"))), "Should apply matcher to resource attributes")
+}
 
 func mustMarshalOtelLogs(ld plog.Logs) []byte {
 	var marshaler plog.JSONMarshaler
