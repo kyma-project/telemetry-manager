@@ -14,12 +14,12 @@ var upstreamInstrumentationScopeName = map[InputSourceType]string{
 	InputSourceK8sCluster: "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver",
 }
 
-func MakeInstrumentationScopeProcessor(instrumentationScopeVersion string, inputSource ...InputSourceType) *TransformProcessor {
+func InstrumentationScopeProcessorConfig(instrumentationScopeVersion string, inputSource ...InputSourceType) *TransformProcessor {
 	statements := []string{}
 	transformProcessorStatements := []config.TransformProcessorStatements{}
 
 	for _, i := range inputSource {
-		statements = append(statements, makeInstrumentationStatement(i, instrumentationScopeVersion)...)
+		statements = append(statements, instrumentationStatement(i, instrumentationScopeVersion)...)
 
 		if i == InputSourcePrometheus {
 			transformProcessorStatements = append(transformProcessorStatements, config.TransformProcessorStatements{
@@ -38,7 +38,7 @@ func MakeInstrumentationScopeProcessor(instrumentationScopeVersion string, input
 	}
 }
 
-func makeInstrumentationStatement(inputSource InputSourceType, instrumentationScopeVersion string) []string {
+func instrumentationStatement(inputSource InputSourceType, instrumentationScopeVersion string) []string {
 	return []string{
 		fmt.Sprintf("set(scope.version, \"%s\") where scope.name == \"%s\"", instrumentationScopeVersion, upstreamInstrumentationScopeName[inputSource]),
 		fmt.Sprintf("set(scope.name, \"%s\") where scope.name == \"%s\"", InstrumentationScope[inputSource], upstreamInstrumentationScopeName[inputSource]),

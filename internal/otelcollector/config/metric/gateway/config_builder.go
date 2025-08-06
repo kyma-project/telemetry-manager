@@ -200,7 +200,7 @@ func declareNamespaceFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Co
 }
 
 func declareInstrumentationScopeTransform(cfg *Config, opts BuildOptions) {
-	cfg.Processors.SetInstrumentationScopeKyma = metric.MakeInstrumentationScopeProcessor(opts.InstrumentationScopeVersion, metric.InputSourceKyma)
+	cfg.Processors.SetInstrumentationScopeKyma = metric.InstrumentationScopeProcessorConfig(opts.InstrumentationScopeVersion, metric.InputSourceKyma)
 }
 
 func declareConnectors(pipelineName string, cfg *Config) {
