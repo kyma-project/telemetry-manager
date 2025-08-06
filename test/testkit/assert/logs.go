@@ -120,6 +120,28 @@ func OTelLogsFromNamespaceNotDelivered(t testkit.T, backend *kitbackend.Backend,
 	)
 }
 
+func OTelLogsFromPodNotDelivered(t testkit.T, backend *kitbackend.Backend, podNamePrefix string, optionalDescription ...any) {
+	t.Helper()
+
+	BackendDataConsistentlyMatches(
+		t,
+		backend,
+		HaveFlatLogs(Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", ContainSubstring(podNamePrefix)))))),
+		WithOptionalDescription(optionalDescription...),
+	)
+}
+
+func OTelLogsFromPodDelivered(t testkit.T, backend *kitbackend.Backend, podNamePrefix string, optionalDescription ...any) {
+	t.Helper()
+
+	BackendDataEventuallyMatches(
+		t,
+		backend,
+		HaveFlatLogs(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", ContainSubstring(podNamePrefix))))),
+		WithOptionalDescription(optionalDescription...),
+	)
+}
+
 //nolint:dupl //LogPipelineHealthy and MetricPipelineHealthy have similarities, but they are not the same
 func FluentBitLogPipelineHealthy(t testkit.T, pipelineName string) {
 	t.Helper()
