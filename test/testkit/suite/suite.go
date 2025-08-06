@@ -18,24 +18,17 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 )
 
-const (
-	GomegaMaxDepth  = 20
-	GomegaMaxLenght = 16_000
-)
-
 var (
 	Ctx         context.Context
 	K8sClient   client.Client
 	ProxyClient *apiserverproxy.Client
-
-	cancel context.CancelFunc
 )
 
-// BeforeSuiteFuncErr is designed to return an error instead of relying on Gomega matchers.
+// BeforeSuiteFunc is designed to return an error instead of relying on Gomega matchers.
 // This function is intended for use in a vanilla TestMain function within new e2e test suites.
 // Note that Gomega matchers cannot be utilized in the TestMain function.
-func BeforeSuiteFuncErr() error {
-	Ctx, cancel = context.WithCancel(context.Background()) //nolint:fatcontext // context is used in tests
+func BeforeSuiteFunc() error {
+	Ctx = context.Background() //nolint:fatcontext // context is used in tests
 
 	//TODO: set up stdout and stderr loggers
 	logf.SetLogger(logr.FromContextOrDiscard(Ctx))
@@ -56,28 +49,6 @@ func BeforeSuiteFuncErr() error {
 	}
 
 	return nil
-}
-
-// BeforeSuiteFunc is executed before each Ginkgo test suite
-func BeforeSuiteFunc() {
-	Expect(BeforeSuiteFuncErr()).Should(Succeed())
-}
-
-// AfterSuiteFunc is executed after each Ginkgo test suite
-func AfterSuiteFunc() {
-	cancel()
-}
-
-// ID returns the current test suite ID.
-// It is based on the file name of the test suite.
-// It is useful for generating unique names for resources created in the test suite (telemetry pipelines, mock namespaces, etc.).
-func ID() string {
-	_, filePath, _, ok := runtime.Caller(1)
-	if !ok {
-		panic("Cannot get the current file path")
-	}
-
-	return sanitizeSpecID(filePath)
 }
 
 // IDWithSuffix returns the current test suite ID with the provided suffix.
