@@ -1,10 +1,10 @@
+---
+title: Fault Tolerant OTel Logging Setup
+status: Accepted
+date: 2025-02-14
+---
+
 # 17. Fault Tolerant OTel Logging Setup
-
-Date: 2025-02-14
-
-## Status
-
-Accepted
 
 ## Context
 

@@ -109,6 +109,8 @@ If `node` metrics are enabled, the following metrics are collected:
   - `k8s.node.memory.usage`
   - `k8s.node.memory.rss`
   - `k8s.node.memory.working_set`
+  - `k8s.node.network.errors`,
+  - `k8s.node.network.io`,
 
 If `volume` metrics are enabled, the following metrics are collected:
 

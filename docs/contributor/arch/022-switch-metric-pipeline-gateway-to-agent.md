@@ -1,10 +1,10 @@
+---
+title: Decouple MetricPipeline Agent from Gateway
+status: Accepted
+date: 2025-07-10
+---
+
 # 21. Decouple MetricPipeline Agent from Gateway
-
-Date: 2025-07-10
-
-## Status
-
-Proposed
 
 ## Context
 
@@ -21,7 +21,7 @@ The decoupling of the agent from the gateway can be done based on receiver type 
 - **Receiver type**: This approach requires a separate enrichment and output stage for each receiver type. This leads to unnecessary duplication of components because they share the same data path, and thus increases configuration complexity.
 - **Input type**: This approach defines a single enrichment pipeline for all inputs, while supporting dedicated input and output pipelines for the input types (OTLP, Prometheus, Istio, or Runtime).
   All these pipelines are connected with `routing` connectors. The enrichment pipeline shared across all inputs and outputs, allowing for maximum reuse of components.
- 
+
 
 ![enrichment](./../assets/metric-enrichment.png)
 
@@ -42,8 +42,8 @@ The metric gateway, like the agent, consists of three pipelines::
 
 ![gaetway](./../assets/metric-gateway-pipelines.png)
 
- - The gateway will be simplified to support only the OTLP receiver and OTLP exporter. It will handle enrichment and filtering exclusively for OTLP input. 
- - An exception is the `kymastats` receiver, which remains on the gateway for now because of the following reasons: 
+ - The gateway will be simplified to support only the OTLP receiver and OTLP exporter. It will handle enrichment and filtering exclusively for OTLP input.
+ - An exception is the `kymastats` receiver, which remains on the gateway for now because of the following reasons:
    - Unlike other receivers on the agents, it does not collect data from node-specific resources.
    - Currently, the gateway is deployed by default, and the `kymastats` receiver is enabled by default. Moving it to the agent means that the agent also must be deployed by default, which increases resource footprint.
 

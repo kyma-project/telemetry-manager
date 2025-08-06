@@ -65,7 +65,8 @@ helm upgrade --install --create-namespace -n ${K8S_NAMESPACE} ${HELM_LOKI_RELEAS
   -f https://raw.githubusercontent.com/grafana/loki/main/production/helm/loki/single-binary-values.yaml \
   --set-string 'loki.podLabels.sidecar\.istio\.io/inject=true' \
   --set 'singleBinary.resources.requests.cpu=1' \
-  --set 'loki.auth_enabled=false'
+  --set 'loki.auth_enabled=false' \
+  --set 'log.storage.type: filesystem'
 ```
 
 The previous command uses an example [values.yaml](https://github.com/grafana/loki/blob/main/production/helm/loki/single-binary-values.yaml) from the Loki repository for setting up Loki in the 'SingleBinary' mode. Additionally, it applies:
@@ -73,6 +74,7 @@ The previous command uses an example [values.yaml](https://github.com/grafana/lo
 - Istio sidecar injection for the Loki instance
 - a reduced CPU request setting for smaller cluster setups
 - disabled multi-tenancy for easier setup
+- enabled filesystem storage for a demo setup (not recommended)
 
 Alternatively, you can create your own `values.yaml` file and adjust the command.
 
