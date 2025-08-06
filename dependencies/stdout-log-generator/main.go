@@ -133,6 +133,7 @@ func generateJSONLogs(startTime time.Time, logSize int, limitPerSecond rate.Limi
 		if err != nil {
 			log.Fatalf("Error encoding log record to JSON: %v\n", err)
 		}
+
 		logsCounter++
 
 		logsGeneratedTotal.Inc()
@@ -161,6 +162,7 @@ func generatePlaintextLogs(startTime time.Time, logSize int, limitPerSecond rate
 
 		//nolint:forbidigo // actual printing of the prepared plaintextLog
 		fmt.Println(plaintextLog)
+
 		logsCounter++
 
 		logsGeneratedTotal.Inc()
