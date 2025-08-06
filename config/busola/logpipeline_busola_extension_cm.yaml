@@ -270,13 +270,25 @@ data:
       widget: FormGroup
       defaultExpanded: true
       children:
+        - var: applicationInput
+          type: string
+          simple: true
+          defaultValue: "Enabled"
+          name: Application Input
+          enum: ["Disabled", "Enabled"]
+          trigger: [appChange]
         - name: Application
           path: application
           widget: FormGroup
+          visibility: '$applicationInput = "Enabled"'
           defaultExpanded: true
           children:
             - name: Enabled
               path: enabled
+              visibility: false
+              overwrite: false
+              subscribe:
+                appChange: '$applicationInput = "Enabled"'
             - name: Include Namespaces
               widget: SimpleList
               path: namespaces.include
@@ -303,12 +315,25 @@ data:
               path: dropLabels
             - name: Keep Original Log Body
               path: keepOriginalBody
+        - var: otlpInput
+          type: string
+          simple: true
+          defaultValue: "Disabled"
+          name: OTLP Input
+          enum: ["Disabled", "Enabled"]
+          trigger: [otlpChange]
         - name: OTLP
           path: otlp
+          visibility: '$otlpInput = "Enabled"'
+          defaultExpanded: true
           widget: FormGroup
           children:
             - name: Disabled
               path: disabled
+              visibility: false
+              overwrite: false
+              subscribe:
+                otlpChange: '$otlpInput = "Disabled"'
             - name: Include Namespaces
               widget: SimpleList
               path: namespaces.include
@@ -632,14 +657,14 @@ data:
       name: Type
       isSelected: true
       widget: Text
-    - name: Unsupported-Mode
-      source: status.unsupportedMode
+    - name: Supported-Mode
+      source: $not(status.unsupportedMode)
       widget: Badge
       highlights:
         positive:
-          - 'false'
-        critical:
           - 'true'
+        critical:
+          - 'false'
     - name: Status
       source: status.conditions
       widget: Columns
@@ -655,6 +680,18 @@ data:
               - 'True'
             critical:
               - 'False'
+  presets: |-
+    - name: Default
+      default: true
+      value:
+        spec:
+          input:
+            application:
+              enabled: true
+              keepOriginalBody: true
+          output:
+            otlp:
+              protocol: 'grpc'
   dataSources: |-
     relatedSecrets:
       resource:
