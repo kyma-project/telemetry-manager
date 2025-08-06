@@ -1,7 +1,6 @@
 package assert
 
 import (
-	"fmt"
 	"time"
 
 	. "github.com/onsi/gomega"
@@ -96,7 +95,7 @@ func TracePipelineConditionReasonsTransition(t testkit.T, pipelineName, condType
 			return ReasonStatus{Reason: currCond.Reason, Status: currCond.Status}
 		}, 10*time.Minute, periodic.DefaultInterval).Should(Equal(expected), "expected reason %s[%s] of type %s not reached", expected.Reason, expected.Status, condType)
 
-		fmt.Printf("Transitioned to [%s]%s\n", currCond.Status, currCond.Reason)
+		t.Logf("Transitioned to [%s]%s\n", currCond.Status, currCond.Reason)
 	}
 }
 
