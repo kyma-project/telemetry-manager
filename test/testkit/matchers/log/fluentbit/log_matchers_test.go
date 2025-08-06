@@ -1,12 +1,13 @@
 package fluentbit
 
 import (
-	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"testing"
 	"time"
 
 	. "github.com/onsi/gomega"
 	"go.opentelemetry.io/collector/pdata/plog"
+
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
 var testTime = time.Date(2023, 12, 07, 9, 36, 38, 0, time.UTC)
@@ -29,7 +30,7 @@ var flsFluentBit = []FlatLog{
 	},
 }
 
-func TestFluentBit_verifyMatch(t *testing.T) {
+func TestFluentBitMatchers_VerifyInput(t *testing.T) {
 	suite.RegisterTestCase(t)
 
 	ld := plog.NewLogs()
@@ -77,7 +78,7 @@ func TestFluentBit_FlatLogStruct(t *testing.T) {
 	Expect(mustMarshalFluentBitLogs(ld)).Should(HaveFlatLogs(ContainElement(flsFluentBit[0])), "Should contain required elements")
 }
 
-func TestFluentBit_HaveAttributeNames(t *testing.T) {
+func TestFluentBitMatchers(t *testing.T) {
 	suite.RegisterTestCase(t)
 	Expect(flsFluentBit).Should(ContainElement(HaveContainerName(Equal("test-container"))), "Container name should match")
 	Expect(flsFluentBit).Should(ContainElement(HaveNamespace(Equal("test-namespace"))), "Namespace should match")
@@ -100,7 +101,6 @@ func TestFluentBit_HaveAttributeNames(t *testing.T) {
 	Expect(flsFluentBit).Should(ContainElement(HaveKubernetesLabels(HaveKey("app.kubernetes.io/istio"))), "Should have Kubernetes label with key 'app.kubernetes.io/istio'")
 
 	Expect(flsFluentBit).Should(ContainElement(HaveLogBody(Equal("Test first log body"))), "Log body should match expected value")
-
 }
 
 func TestFluentBit_DateFormat(t *testing.T) {

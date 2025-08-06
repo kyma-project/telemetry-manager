@@ -4,10 +4,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	. "github.com/onsi/gomega"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
+
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
 var fms = []FlatMetric{
@@ -33,8 +34,9 @@ var fms = []FlatMetric{
 	},
 }
 
-func TestMetric_VerifyMatchers(t *testing.T) {
+func TestMetricMatchers_VerifyInput(t *testing.T) {
 	suite.RegisterTestCase(t)
+
 	md := pmetric.NewMetrics()
 	Expect(mustMarshalMetrics(md)).Should(HaveFlatMetrics(ContainElements()), "Should apply matcher to valid metrics data")
 
@@ -51,6 +53,7 @@ func TestMetric_VerifyMatchers(t *testing.T) {
 
 func TestMetric_FlatMetric(t *testing.T) {
 	suite.RegisterTestCase(t)
+
 	md := pmetric.NewMetrics()
 
 	rm := md.ResourceMetrics().AppendEmpty()
@@ -78,14 +81,14 @@ func TestMetric_FlatMetric(t *testing.T) {
 	Expect(mustMarshalMetrics(md)).Should(HaveFlatMetrics(ContainElement(fms[0])))
 }
 
-func TestMetric_TestMatchers(t *testing.T) {
+func TestMetricMatchers(t *testing.T) {
 	suite.RegisterTestCase(t)
-	Expect(fms).Should(HaveUniqueNames(ConsistOf("container.cpu.time", "container.cpu.usage")), "Should return unique names")
-	Expect(fms).Should(ContainElement(HaveResourceAttributes(HaveKey("k8s.cluster.name"))), "Should have the specified key in resource attributes")
-	Expect(fms).Should(ContainElement(HaveName(ContainSubstring("container"))), "Should return the correct name")
-	Expect(fms).Should(ContainElement(HaveType(Equal(pmetric.MetricTypeGauge.String()))), "Should return the correct type")
-	Expect(fms).Should(ContainElement(HaveScopeName(ContainSubstring("container"))), "Should contain the specified string in scope name")
-	Expect(fms).Should(ContainElement(HaveResourceAttributes(HaveKeys(ContainElements("k8s.cluster.name", "k8s.deployment.name")))), "Should have all the keys within the specified list in resource attributes")
+	Expect(fms).Should(HaveUniqueNames(ConsistOf("container.cpu.time", "container.cpu.usage")), "Should have unique metric names")
+	Expect(fms).Should(ContainElement(HaveResourceAttributes(HaveKey("k8s.cluster.name"))), "Should have key in resource attributes")
+	Expect(fms).Should(ContainElement(HaveName(ContainSubstring("container"))), "Should have name containing 'container'")
+	Expect(fms).Should(ContainElement(HaveType(Equal(pmetric.MetricTypeGauge.String()))), "Should have type Gauge")
+	Expect(fms).Should(ContainElement(HaveScopeName(ContainSubstring("container"))), "Should have scope name containing 'container'")
+	Expect(fms).Should(ContainElement(HaveResourceAttributes(HaveKeys(ContainElements("k8s.cluster.name", "k8s.deployment.name")))), "Should apply have Keys matcher to resource attributes")
 }
 
 func mustMarshalMetrics(md pmetric.Metrics) []byte {

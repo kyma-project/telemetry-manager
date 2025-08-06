@@ -1,10 +1,11 @@
 package trace
 
 import (
-	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"log"
 	"os"
 	"testing"
+
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
 func TestMain(m *testing.M) {

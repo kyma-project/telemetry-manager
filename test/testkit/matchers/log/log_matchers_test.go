@@ -1,11 +1,13 @@
 package log
 
 import (
-	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"testing"
+
 	. "github.com/onsi/gomega"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
-	"testing"
+
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
 var fls = []FlatLog{
@@ -22,8 +24,9 @@ var fls = []FlatLog{
 	},
 }
 
-func TestOtelLogs_verifyMatch(t *testing.T) {
+func TestOtelLogsMatchers_VerifyInput(t *testing.T) {
 	suite.RegisterTestCase(t)
+
 	td := plog.NewLogs()
 	Expect(mustMarshalOtelLogs(td)).Should(HaveFlatLogs(ContainElements()), "Should apply matcher to valid log data")
 	Expect([]byte{}).Should(HaveFlatLogs(BeEmpty()), "Should fail when given empty byte slice")
@@ -47,6 +50,7 @@ func TestOtelLogs_FlatLogStruct(t *testing.T) {
 
 	// set log body
 	lr.Body().SetStr("Test first log body")
+
 	testValTimestamp := pcommon.Timestamp(1234567890)
 	lr.SetObservedTimestamp(testValTimestamp)
 	lr.SetTimestamp(testValTimestamp)
@@ -62,9 +66,9 @@ func TestOtelLogs_FlatLogStruct(t *testing.T) {
 	Expect(mustMarshalOtelLogs(ld)).Should(HaveFlatLogs(ContainElements(fls[0])), "Should return a FlatLog struct with expected values")
 }
 
-func TestOtelLogs_HaveResourceAttributes(t *testing.T) {
+func TestOtelLogsMatchers(t *testing.T) {
 	suite.RegisterTestCase(t)
-	Expect(fls).Should(ContainElement(HaveResourceAttributes(HaveKey("k8s.deployment.name"))), "Should apply matcher to resource attributes")
+	Expect(fls).Should(ContainElement(HaveResourceAttributes(HaveKey("k8s.deployment.name"))), "Should have key in resource attributes")
 }
 
 func mustMarshalOtelLogs(ld plog.Logs) []byte {
