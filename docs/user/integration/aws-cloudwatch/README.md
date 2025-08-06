@@ -86,8 +86,9 @@ To connect the AWS Distro to the AWS services, create a Secret containing the cr
 ```sh
 helm upgrade --install -n $K8S_NAMESPACE $HELM_OTEL_AWS_RELEASE open-telemetry/opentelemetry-collector -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/aws-cloudwatch/values.yaml
 ```
-
+<!-- markdown-link-check-disable -->
 The previous command uses the [values.yaml](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/aws-cloudwatch/values.yaml) provided in this `aws-cloudwatch` folder, which contains customized settings deviating from the default settings. The customizations in the provided `values.yaml` cover the following areas:
+<!-- markdown-link-check-enable -->
 
 - Mount the values of Secret `aws-credentials` as environment variables
 - Configure the OTEL exporter for logs assuming a LogGroup `/logs/kyma` and LogStream `default`
@@ -98,7 +99,7 @@ The previous command uses the [values.yaml](https://raw.githubusercontent.com/ky
 
 Use the Kyma Telemetry module to enable ingestion of the signals from your workloads:
 
-1. Deploy a [LogPipeline]((./../../02-logs.md)):
+1. Deploy a [LogPipeline](./../../02-logs.md):
 
     ```bash
     kubectl apply -f - <<EOF
