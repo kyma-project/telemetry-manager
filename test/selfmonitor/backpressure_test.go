@@ -39,7 +39,7 @@ func TestBackpressure(t *testing.T) {
 				return &p
 			},
 			generator: func(ns string) *appsv1.Deployment {
-				return stdoutloggen.NewDeployment(ns, stdoutloggen.WithRate(800)).WithReplicas(5).K8sObject()
+				return stdoutloggen.NewDeployment(ns, stdoutloggen.WithRate(800)).WithReplicas(4).K8sObject()
 			},
 			assertions: func(t *testing.T) {
 				assert.DeploymentReady(t, kitkyma.LogGatewayName)
