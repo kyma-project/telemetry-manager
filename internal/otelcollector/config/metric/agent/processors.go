@@ -14,6 +14,7 @@ func makeProcessorsConfig(inputs inputSources, instrumentationScopeVersion strin
 			Batch:         makeBatchProcessorConfig(),
 			MemoryLimiter: makeMemoryLimiterConfig(),
 		},
+		DropVirtualNetworkInterfaces: makeDropVirtualNetworkInterfacesProcessor(),
 	}
 
 	if inputs.runtime || inputs.prometheus || inputs.istio {
@@ -115,4 +116,17 @@ func makeMetricNameConditionsWithIsMatch(metrics []string) []string {
 	}
 
 	return conditions
+}
+
+func makeDropVirtualNetworkInterfacesProcessor() *FilterProcessor {
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetrics{
+			Datapoint: []string{
+				ottlexpr.JoinWithAnd(
+					ottlexpr.IsMatch("metric.name", "^k8s.node.network.*"),
+					ottlexpr.Not(ottlexpr.IsMatch("attributes[\"interface\"]", "^(eth|en).*")),
+				),
+			},
+		},
+	}
 }
