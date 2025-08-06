@@ -78,7 +78,7 @@ The final log agent configuration will look like this:
             type: RuntimeDefault
     ...
         volumeMounts:
-        - mountPath: /var/lib/telemetry-log-agent
+        - mountPath: /var/tmp/telemetry-log-agent
           name: varlibfilelogreceiver
     ...
       volumes:
