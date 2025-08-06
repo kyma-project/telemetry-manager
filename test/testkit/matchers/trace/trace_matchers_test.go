@@ -1,9 +1,10 @@
 package trace
 
 import (
-	. "github.com/onsi/ginkgo/v2"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	. "github.com/onsi/gomega"
 	"go.opentelemetry.io/collector/pdata/ptrace"
+	"testing"
 )
 
 var fts = []FlatTrace{
@@ -35,70 +36,51 @@ var fts = []FlatTrace{
 	},
 }
 
-var _ = Describe("HaveFlatTraces", func() {
-	It("should apply matcher to valid trace data", func() {
-		td := ptrace.NewTraces()
-		Expect(mustMarshalTraces(td)).Should(HaveFlatTraces(ContainElements()))
-	})
+func TestFlatTraces_VerifyMatchers(t *testing.T) {
+	suite.RegisterTestCase(t)
 
-	It("should fail when given empty byte slice", func() {
-		Expect([]byte{}).Should(HaveFlatTraces(BeEmpty()))
-	})
+	td := ptrace.NewTraces()
+	Expect(mustMarshalTraces(td)).Should(HaveFlatTraces(ContainElements()), "Should apply matcher to valid trace data")
 
-	It("should return error for nil input", func() {
-		success, err := HaveFlatTraces(BeEmpty()).Match(nil)
-		Expect(err).Should(HaveOccurred())
-		Expect(success).Should(BeFalse())
-	})
+	Expect([]byte{}).Should(HaveFlatTraces(BeEmpty()), "Should fail when given empty byte slice")
 
-	It("should return error for invalid input type", func() {
-		success, err := HaveFlatTraces(BeEmpty()).Match(struct{}{})
-		Expect(err).Should(HaveOccurred())
-		Expect(success).Should(BeFalse())
-	})
+	nilInput, err := HaveFlatTraces(BeEmpty()).Match(nil)
+	Expect(err).Should(HaveOccurred(), "Should return error for nil input")
+	Expect(nilInput).Should(BeFalse(), "Success should be false for nil input")
 
-	It("should return a FlatTrace struct", func() {
-		td := ptrace.NewTraces()
-		// set resource attributes
-		rt := td.ResourceSpans().AppendEmpty()
-		attrs := rt.Resource().Attributes()
-		attrs.PutStr("service.name", "backend")
-		attrs.PutStr("k8s.pod.ip", "10.42.1.76")
-		attrs.PutStr("k8s.deployment.name", "backend")
+	invalidInput, err := HaveFlatTraces(BeEmpty()).Match(struct{}{})
+	Expect(err).Should(HaveOccurred(), "should return error for invalid input type")
+	Expect(invalidInput).Should(BeFalse(), "Success should be false for invalid input type")
+}
 
-		scope := rt.ScopeSpans().AppendEmpty()
+func TestFlatTraces_FlatTraceStruct(t *testing.T) {
+	td := ptrace.NewTraces()
+	// set resource attributes
+	rt := td.ResourceSpans().AppendEmpty()
+	attrs := rt.Resource().Attributes()
+	attrs.PutStr("service.name", "backend")
+	attrs.PutStr("k8s.pod.ip", "10.42.1.76")
+	attrs.PutStr("k8s.deployment.name", "backend")
 
-		// set span name
-		s := scope.Spans().AppendEmpty()
-		s.SetName("ingress")
+	scope := rt.ScopeSpans().AppendEmpty()
 
-		// set span attributes
-		s.Attributes().PutStr("response_size", "31")
-		s.Attributes().PutStr("upstream_cluster.name", "inbound|4317||")
-		s.Attributes().PutStr("istio.canonical_service", "backend")
+	// set span name
+	s := scope.Spans().AppendEmpty()
+	s.SetName("ingress")
 
-		Expect(mustMarshalTraces(td)).Should(HaveFlatTraces(ContainElements(fts[0])))
-	})
-})
+	// set span attributes
+	s.Attributes().PutStr("response_size", "31")
+	s.Attributes().PutStr("upstream_cluster.name", "inbound|4317||")
+	s.Attributes().PutStr("istio.canonical_service", "backend")
 
-var _ = Describe("HaveName", func() {
-	It("should apply matcher", func() {
-		Expect(fts).Should(ContainElement(HaveName(Equal("ingress"))))
-	})
-})
+	Expect(mustMarshalTraces(td)).Should(HaveFlatTraces(ContainElements(fts[0])), "Should return a FlatTrace struct with expected values")
+}
 
-var _ = Describe("HaveResourceAttributes", func() {
-	It("should apply matcher", func() {
-
-		Expect(fts).Should(ContainElement(HaveResourceAttributes(HaveKey("k8s.deployment.name"))))
-	})
-})
-
-var _ = Describe("HaveSpanAttributes", func() {
-	It("should apply matcher", func() {
-		Expect(fts).Should(ContainElement(HaveSpanAttributes(HaveKey("response_size"))))
-	})
-})
+func TestFlatTracesMatchers(t *testing.T) {
+	Expect(fts).Should(ContainElement(HaveName(Equal("ingress"))), "should apply matcher to span name")
+	Expect(fts).Should(ContainElement(HaveResourceAttributes(HaveKey("k8s.deployment.name"))), "should apply HaveKey matcher to resource attributes")
+	Expect(fts).Should(ContainElement(HaveSpanAttributes(HaveKey("response_size"))), "should apply HaveKey matcher to span attributes")
+}
 
 func mustMarshalTraces(td ptrace.Traces) []byte {
 	var marshaler ptrace.JSONMarshaler
