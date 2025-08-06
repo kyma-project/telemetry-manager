@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
-	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -146,13 +145,6 @@ const (
 	// Upgrade tests preserve K8s objects between test runs.
 	LabelUpgrade = "upgrade"
 )
-
-// IsUpgrade returns true if the test is invoked with an "upgrade" tag.
-func IsUpgrade() bool {
-	labelsFilter := GinkgoLabelFilter()
-
-	return labelsFilter != "" && Label(LabelUpgrade).MatchesLabelFilter(labelsFilter)
-}
 
 func RegisterTestCase(t *testing.T, labels ...string) {
 	RegisterTestingT(t)
