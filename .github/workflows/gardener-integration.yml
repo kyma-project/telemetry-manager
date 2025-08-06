@@ -104,6 +104,7 @@ jobs:
 
       - name: Run a subset of e2e tests
         shell: bash
+        run: go test -v -timeout=20m ./test/integration/... -- -labels=gardener
         run: bin/ginkgo run --junit-report=junit-report-e2e.xml --tags e2e --label-filter="gardener && !experimental" -r test/e2e
 
       - name: Deprovision Gardener
