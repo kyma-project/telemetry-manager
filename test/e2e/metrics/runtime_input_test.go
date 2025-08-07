@@ -28,11 +28,13 @@ import (
 )
 
 func TestRuntimeInput(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelMetricsSetC)
+	suite.RegisterTestCase(t, suite.LabelGardener, suite.LabelMetricsSetC)
 
 	const (
-		podNetworkErrorsMetric = "k8s.pod.network.errors"
-		podNetworkIOMetric     = "k8s.pod.network.io"
+		podNetworkErrorsMetric  = "k8s.pod.network.errors"
+		podNetworkIOMetric      = "k8s.pod.network.io"
+		nodeNetworkErrorsMetric = "k8s.node.network.errors"
+		nodeNetworkIOMetric     = "k8s.node.network.io"
 
 		backendNameA = "backend-a"
 		backendNameB = "backend-b"
@@ -152,9 +154,14 @@ func TestRuntimeInput(t *testing.T) {
 	backendContainsDesiredResourceAttributes(t, backendA, "k8s.node.cpu.usage", runtime.NodeMetricsResourceAttributes)
 	backendContainsDesiredMetricAttributes(t, backendA, podNetworkErrorsMetric, runtime.PodMetricsAttributes[podNetworkErrorsMetric])
 	backendContainsDesiredMetricAttributes(t, backendA, podNetworkIOMetric, runtime.PodMetricsAttributes[podNetworkIOMetric])
+	backendContainsDesiredMetricAttributes(t, backendA, nodeNetworkErrorsMetric, runtime.NodeMetricsAttributes[nodeNetworkErrorsMetric])
+	backendContainsDesiredMetricAttributes(t, backendA, nodeNetworkIOMetric, runtime.NodeMetricsAttributes[nodeNetworkIOMetric])
 	assert.BackendDataConsistentlyMatches(t, backendA,
 		HaveFlatMetrics(Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.volume.type", "emptyDir"))))),
 	)
+
+	backendContainsDesiredNetworkInterfaces(t, backendA, nodeNetworkIOMetric)
+	backendContainsDesiredNetworkInterfaces(t, backendA, nodeNetworkErrorsMetric)
 
 	exportedMetrics := slices.Concat(runtime.PodMetricsNames, runtime.ContainerMetricsNames, runtime.VolumeMetricsNames, runtime.NodeMetricsNames)
 	backendConsistsOfMetricsDeliveredForResource(t, backendA, exportedMetrics)
@@ -337,5 +344,29 @@ func backendContainsDesiredMetricAttributes(t *testing.T, backend *kitbackend.Ba
 				HaveMetricAttributes(HaveKeys(ConsistOf(metricAttributes))),
 			)),
 		), assert.WithOptionalDescription("Failed to find metric %s with metric attributes %v", metricName, metricAttributes),
+	)
+}
+
+func backendContainsDesiredNetworkInterfaces(t *testing.T, backend *kitbackend.Backend, metricName string) {
+	t.Helper()
+
+	// Check that required interface exists
+	assert.BackendDataEventuallyMatches(t, backend,
+		HaveFlatMetrics(
+			ContainElement(SatisfyAll(
+				HaveName(Equal(metricName)),
+				HaveMetricAttributes(HaveKeyWithValue("interface", MatchRegexp("^(eth|en).*"))),
+			)),
+		), assert.WithOptionalDescription("Failed to find network interface eth0 with metric attributes %v", metricName),
+	)
+
+	// Check that no other interfaces exist
+	assert.BackendDataEventuallyMatches(t, backend,
+		HaveFlatMetrics(
+			Not(ContainElement(SatisfyAll(
+				HaveName(Equal(metricName)),
+				HaveMetricAttributes(HaveKeyWithValue("interface", Not(MatchRegexp("^(eth|en).*")))),
+			))),
+		), assert.WithOptionalDescription("Found unexpected network interface other than eth0 with metric attributes %v", metricName),
 	)
 }
