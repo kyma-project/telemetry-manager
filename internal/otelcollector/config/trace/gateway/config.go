@@ -4,20 +4,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
 
-// newConfig constructs a global, pipeline-independent Base config for the metric agent collector.
-// It sets up default collector components, and returns a Config with initialized fields.
-func newConfig(opts BuildOptions) *Config {
-	return &Config{
-		Base: config.Base{
-			Service:    config.DefaultService(make(config.Pipelines)),
-			Extensions: config.DefaultExtensions(),
-		},
-		Receivers:  receiversConfig(),
-		Processors: processorsConfig(opts),
-		Exporters:  make(Exporters),
-	}
-}
-
 type Config struct {
 	config.Base `yaml:",inline"`
 

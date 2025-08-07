@@ -5,22 +5,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 )
 
-// newConfig constructs a global, pipeline-independent Base config for the metric gateway collector.
-// It sets up default service and extension components, and returns a Config with initialized fields.
-func newConfig(opts BuildOptions) *Config {
-	var cfg = Config{
-		Base: config.DefaultBaseConfig(make(config.Pipelines),
-			config.WithK8sLeaderElector("serviceAccount", "telemetry-metric-gateway-kymastats", opts.GatewayNamespace),
-		),
-		Receivers:  receiversConfig(),
-		Processors: processorsConfig(opts),
-		Exporters:  make(Exporters),
-		Connectors: make(Connectors),
-	}
-
-	return &cfg
-}
-
 type Config struct {
 	config.Base `yaml:",inline"`
 

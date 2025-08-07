@@ -9,6 +9,7 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/ottlexpr"
@@ -36,7 +37,7 @@ type BuildOptions struct {
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {
-	b.config = newConfig(opts)
+	b.config = b.baseConfig(opts)
 	b.envVars = make(otlpexporter.EnvVars)
 
 	// Iterate over each MetricPipeline CR and enrich the config with pipeline-specific components
@@ -54,6 +55,20 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 	}
 
 	return b.config, b.envVars, nil
+}
+
+// baseConfig creates the static/global base configuration for the metric gateway collector.
+// Pipeline-specific components are added later via addComponents method.
+func (b *Builder) baseConfig(opts BuildOptions) *Config {
+	return &Config{
+		Base: config.DefaultBaseConfig(make(config.Pipelines),
+			config.WithK8sLeaderElector("serviceAccount", "telemetry-metric-gateway-kymastats", opts.GatewayNamespace),
+		),
+		Receivers:  receiversConfig(),
+		Processors: processorsConfig(opts),
+		Exporters:  make(Exporters),
+		Connectors: make(Connectors),
+	}
 }
 
 // addComponents enriches a Config (receivers, processors, exporters etc.) with components for a given telemetryv1alpha1.MetricPipeline.

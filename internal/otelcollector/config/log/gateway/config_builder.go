@@ -35,7 +35,7 @@ type BuildOptions struct {
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {
-	b.config = newConfig(opts)
+	b.config = b.baseConfig(opts)
 	b.envVars = make(otlpexporter.EnvVars)
 
 	// Iterate over each LogPipeline CR and enrich the config with pipeline-specific components
@@ -52,6 +52,20 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPi
 	}
 
 	return b.config, b.envVars, nil
+}
+
+// baseConfig creates the static/global base configuration for the log gateway collector.
+// Pipeline-specific components are added later via addComponentsForLogPipeline method.
+func (b *Builder) baseConfig(opts BuildOptions) *Config {
+	return &Config{
+		Base: config.Base{
+			Service:    config.DefaultService(make(config.Pipelines)),
+			Extensions: config.DefaultExtensions(),
+		},
+		Receivers:  receiversConfig(),
+		Processors: processorsConfig(opts),
+		Exporters:  make(Exporters),
+	}
 }
 
 func receiversConfig() Receivers {

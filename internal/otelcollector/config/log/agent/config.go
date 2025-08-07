@@ -5,21 +5,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log"
 )
 
-// newConfig constructs a global, pipeline-independent Base config for the log gateway collector.
-// It sets up default collector components, and returns a Config with initialized fields.
-func newConfig(opts BuildOptions) *Config {
-	service := config.DefaultService(make(config.Pipelines))
-	service.Extensions = append(service.Extensions, "file_storage")
-
-	return &Config{
-		Service:    service,
-		Extensions: extensionsConfig(),
-		Receivers:  make(Receivers),
-		Processors: processorsConfig(opts),
-		Exporters:  make(Exporters),
-	}
-}
-
 type Config struct {
 	Service    config.Service `yaml:"service"`
 	Extensions Extensions     `yaml:"extensions"`

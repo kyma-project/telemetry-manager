@@ -10,6 +10,7 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 )
 
@@ -38,7 +39,7 @@ type BuildOptions struct {
 }
 
 func (b *Builder) Build(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {
-	b.config = newConfig(opts)
+	b.config = b.baseConfig(opts)
 	b.envVars = make(otlpexporter.EnvVars)
 
 	// Iterate over each LogPipeline CR and enrich the config with pipeline-specific components
@@ -54,6 +55,21 @@ func (b *Builder) Build(ctx context.Context, logPipelines []telemetryv1alpha1.Lo
 
 	// Return the assembled config and any environment variables needed for exporters
 	return b.config, b.envVars, nil
+}
+
+// baseConfig creates the static/global base configuration for the log agent collector.
+// Pipeline-specific components are added later via addComponentsForLogPipeline method.
+func (b *Builder) baseConfig(opts BuildOptions) *Config {
+	service := config.DefaultService(make(config.Pipelines))
+	service.Extensions = append(service.Extensions, "file_storage")
+
+	return &Config{
+		Service:    service,
+		Extensions: extensionsConfig(),
+		Receivers:  make(Receivers),
+		Processors: processorsConfig(opts),
+		Exporters:  make(Exporters),
+	}
 }
 
 // addComponentsForLogPipeline enriches a Config (exporters, processors, etc.) with components for a given telemetryv1alpha1.LogPipeline.
