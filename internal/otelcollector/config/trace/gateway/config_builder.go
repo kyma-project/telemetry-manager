@@ -43,14 +43,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Trace
 	for i := range pipelines {
 		pipeline := pipelines[i]
 
-		otlpExporterBuilder := otlpexporter.NewConfigBuilder(
-			b.Reader,
-			pipeline.Spec.Output.OTLP,
-			pipeline.Name,
-			queueSize,
-			otlpexporter.SignalTypeTrace,
-		)
-		if err := b.addComponentsForTracePipeline(ctx, otlpExporterBuilder, &pipeline); err != nil {
+		if err := b.addComponentsForTracePipeline(ctx, &pipeline, queueSize); err != nil {
 			return nil, nil, err
 		}
 
@@ -78,11 +71,19 @@ func receiversConfig() Receivers {
 }
 
 // addComponentsForTracePipeline enriches a Config (exporters, processors, etc.) with components for a given telemetryv1alpha1.TracePipeline.
-func (b *Builder) addComponentsForTracePipeline(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.TracePipeline) error {
-	return b.addOTLPExporter(ctx, otlpExporterBuilder, pipeline)
+func (b *Builder) addComponentsForTracePipeline(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, queueSize int) error {
+	return b.addOTLPExporter(ctx, pipeline, queueSize)
 }
 
-func (b *Builder) addOTLPExporter(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.TracePipeline) error {
+func (b *Builder) addOTLPExporter(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, queueSize int) error {
+	otlpExporterBuilder := otlpexporter.NewConfigBuilder(
+		b.Reader,
+		pipeline.Spec.Output.OTLP,
+		pipeline.Name,
+		queueSize,
+		otlpexporter.SignalTypeTrace,
+	)
+
 	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.MakeConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to make otlp exporter config: %w", err)

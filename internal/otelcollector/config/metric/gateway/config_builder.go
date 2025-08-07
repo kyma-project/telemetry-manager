@@ -45,14 +45,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 	for i := range pipelines {
 		pipeline := pipelines[i]
 
-		otlpExporterBuilder := otlpexporter.NewConfigBuilder(
-			b.Reader,
-			pipeline.Spec.Output.OTLP,
-			pipeline.Name,
-			queueSize,
-			otlpexporter.SignalTypeMetric,
-		)
-		if err := b.addComponentsForMetricPipeline(ctx, otlpExporterBuilder, &pipeline); err != nil {
+		if err := b.addComponentsForMetricPipeline(ctx, &pipeline, queueSize); err != nil {
 			return nil, nil, err
 		}
 
@@ -71,8 +64,8 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 // addComponentsForMetricPipeline enriches a Config (receivers, processors, exporters etc.) with components for a given telemetryv1alpha1.MetricPipeline.
 func (b *Builder) addComponentsForMetricPipeline(
 	ctx context.Context,
-	otlpExporterBuilder *otlpexporter.ConfigBuilder,
 	pipeline *telemetryv1alpha1.MetricPipeline,
+	queueSize int,
 ) error {
 	b.addDiagnosticMetricsDropFilters(pipeline)
 	b.addInputSourceFilters(pipeline)
@@ -80,7 +73,7 @@ func (b *Builder) addComponentsForMetricPipeline(
 	b.addNamespaceFilters(pipeline)
 	b.addConnectors(pipeline.Name)
 
-	return b.addOTLPExporter(ctx, otlpExporterBuilder, pipeline)
+	return b.addOTLPExporter(ctx, pipeline, queueSize)
 }
 
 func (b *Builder) addDiagnosticMetricsDropFilters(pipeline *telemetryv1alpha1.MetricPipeline) {
@@ -190,7 +183,15 @@ func (b *Builder) addConnectors(pipelineName string) {
 	b.config.Connectors[routingConnectorID] = routingConnectorConfig(pipelineName)
 }
 
-func (b *Builder) addOTLPExporter(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.MetricPipeline) error {
+func (b *Builder) addOTLPExporter(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, queueSize int) error {
+	otlpExporterBuilder := otlpexporter.NewConfigBuilder(
+		b.Reader,
+		pipeline.Spec.Output.OTLP,
+		pipeline.Name,
+		queueSize,
+		otlpexporter.SignalTypeMetric,
+	)
+
 	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.MakeConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to make otlp exporter config: %w", err)
