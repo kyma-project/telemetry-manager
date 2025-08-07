@@ -6,7 +6,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 )
 
-func makeRoutingConnectorConfig(pipelineName string) RoutingConnector {
+func routingConnectorConfig(pipelineName string) RoutingConnector {
 	attributesEnrichmentPipelineID := formatAttributesEnrichmentPipelineID(pipelineName)
 	outputPipelineID := formatOutputPipelineID(pipelineName)
 
