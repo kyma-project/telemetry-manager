@@ -100,11 +100,11 @@ jobs:
 
       - name: Run a subset of istio tests
         shell: bash
-        run: bin/ginkgo run --junit-report=junit-report-istio.xml --tags istio --label-filter="gardener && !experimental" test/integration/istio
+        run: go test -v -timeout=20m ./test/integration/... -- -labels=gardener
 
       - name: Run a subset of e2e tests
         shell: bash
-        run: bin/ginkgo run --junit-report=junit-report-e2e.xml --tags e2e --label-filter="gardener && !experimental" -r test/e2e
+        run: go test -v -timeout=20m ./test/e2e/... -- -labels=gardener
 
       - name: Deprovision Gardener
         shell: bash
