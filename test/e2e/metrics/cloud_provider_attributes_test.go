@@ -21,7 +21,7 @@ import (
 )
 
 func TestCloudProviderAttributes(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelMetricsSetA)
+	suite.RegisterTestCase(t, suite.LabelGardener, suite.LabelMetricsSetA)
 
 	var (
 		uniquePrefix   = unique.Prefix()

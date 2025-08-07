@@ -1,52 +1,42 @@
 package prometheus
 
 import (
-	. "github.com/onsi/ginkgo/v2"
+	"testing"
+
 	. "github.com/onsi/gomega"
+
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe("HaveFlatMetricFamilies", Label("metrics"), func() {
-	Context("with nil input", func() {
-		It("should error", func() {
-			success, err := HaveFlatMetricFamilies(ContainElement(HaveName(Equal("foo_metric")))).Match(nil)
-			Expect(err).Should(HaveOccurred())
-			Expect(success).Should(BeFalse())
-		})
-	})
+func TestPrometheusMetricMatchers_VerifyInputs(t *testing.T) {
+	suite.RegisterTestCase(t)
 
-	Context("with empty input", func() {
-		It("should fail", func() {
-			success, err := HaveFlatMetricFamilies(ContainElement(HaveName(Equal("foo_metric")))).Match([]byte{})
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(success).Should(BeFalse())
-		})
-	})
+	nilInput, err := HaveFlatMetricFamilies(ContainElement(HaveName(Equal("foo_metric")))).Match(nil)
+	Expect(err).Should(HaveOccurred(), "Should return error for nil input")
+	Expect(nilInput).Should(BeFalse(), "Success should be false for nil input")
 
-	Context("with invalid input", func() {
-		It("should fail", func() {
-			success, err := HaveFlatMetricFamilies(ContainElement(HaveName(Equal("foo_metric")))).Match([]byte{1, 2, 3})
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(success).Should(BeFalse())
-		})
-	})
+	emptyInput, err := HaveFlatMetricFamilies(ContainElement(HaveName(Equal("foo_metric")))).Match([]byte{})
+	Expect(err).ShouldNot(HaveOccurred(), "Should not return error for empty input")
+	Expect(emptyInput).Should(BeFalse(), "Success should be false for empty input")
 
-	Context("with HaveName", func() {
-		It("should apply matcher", func() {
-			fileBytes := `
+	invalidInput, err := HaveFlatMetricFamilies(ContainElement(HaveName(Equal("foo_metric")))).Match([]byte{1, 2, 3})
+	Expect(err).ShouldNot(HaveOccurred(), "Should not return error for invalid input")
+	Expect(invalidInput).Should(BeFalse(), "Success should be false for invalid input")
+}
+
+func TestPrometheusMetricMatchers(t *testing.T) {
+	suite.RegisterTestCase(t)
+
+	fileBytesHaveName := `
 # HELP fluentbit_uptime Number of seconds that Fluent Bit has been running.
 # TYPE fluentbit_uptime counter
 fluentbit_uptime{hostname="telemetry-fluent-bit-dglkf"} 5489
 # HELP fluentbit_input_bytes_total Number of input bytes.
 # TYPE fluentbit_input_bytes_total counter
 fluentbit_input_bytes_total{name="tele-tail"} 5217998`
-			Expect([]byte(fileBytes)).Should(HaveFlatMetricFamilies(ContainElement(HaveName(Equal("fluentbit_uptime")))))
-		})
-	})
-})
+	Expect([]byte(fileBytesHaveName)).Should(HaveFlatMetricFamilies(ContainElement(HaveName(Equal("fluentbit_uptime")))), "should have metric with name fluentbit_uptime")
 
-var _ = Describe("with HaveLabels", func() {
-	It("should apply matcher", func() {
-		fileBytes := `
+	fileBytesHaveLabels := `
 # HELP fluentbit_uptime Number of seconds that Fluent Bit has been running.
 # TYPE fluentbit_uptime counter
 fluentbit_uptime{hostname="telemetry-fluent-bit-dglkf"} 5489
@@ -54,16 +44,12 @@ fluentbit_uptime{hostname="telemetry-fluent-bit-dglkf"} 5489
 # TYPE fluentbit_input_bytes_total counter
 fluentbit_input_bytes_total{name="tele-tail"} 5000
 `
-		Expect([]byte(fileBytes)).Should(HaveFlatMetricFamilies(ContainElement(SatisfyAll(
-			HaveName(Equal("fluentbit_input_bytes_total")),
-			HaveLabels(HaveKeyWithValue("name", "tele-tail")),
-		))))
-	})
-})
+	Expect([]byte(fileBytesHaveLabels)).Should(HaveFlatMetricFamilies(ContainElement(SatisfyAll(
+		HaveName(Equal("fluentbit_input_bytes_total")),
+		HaveLabels(HaveKeyWithValue("name", "tele-tail")),
+	))), "Should have metric with name fluentbit_input_bytes_total and label name=tele-tail")
 
-var _ = Describe("with HaveValue", func() {
-	It("should apply matcher", func() {
-		fileBytes := `
+	fileBytesHaveValue := `
 # HELP fluentbit_uptime Number of seconds that Fluent Bit has been running.
 # TYPE fluentbit_uptime counter
 fluentbit_uptime{hostname="telemetry-fluent-bit-dglkf"} 5489
@@ -71,10 +57,9 @@ fluentbit_uptime{hostname="telemetry-fluent-bit-dglkf"} 5489
 # TYPE fluentbit_input_bytes_total counter
 fluentbit_input_bytes_total{name="tele-tail"} 5000
 `
-		Expect([]byte(fileBytes)).Should(HaveFlatMetricFamilies(ContainElement(SatisfyAll(
-			HaveName(Equal("fluentbit_input_bytes_total")),
-			HaveLabels(HaveKeyWithValue("name", "tele-tail")),
-			HaveMetricValue(BeNumerically(">=", 0)),
-		))))
-	})
-})
+	Expect([]byte(fileBytesHaveValue)).Should(HaveFlatMetricFamilies(ContainElement(SatisfyAll(
+		HaveName(Equal("fluentbit_input_bytes_total")),
+		HaveLabels(HaveKeyWithValue("name", "tele-tail")),
+		HaveMetricValue(BeNumerically(">=", 0)),
+	))), "Should have metric with name fluentbit_input_bytes_total, label name=tele-tail and value >= 0")
+}

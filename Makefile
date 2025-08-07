@@ -48,7 +48,6 @@ $(TOOLS_BIN_NAMES): $(TOOLS_BIN_DIR) $(TOOLS_MOD_DIR)/go.mod
 	cd $(TOOLS_MOD_DIR) && go build -o $@ -trimpath $(filter $(filter %/$(notdir $@),$(TOOLS_PKG_NAMES_CLEAN))%,$(TOOLS_PKG_NAMES))
 
 CONTROLLER_GEN   := $(TOOLS_BIN_DIR)/controller-gen
-GINKGO           := $(TOOLS_BIN_DIR)/ginkgo
 GOLANGCI_LINT    := $(TOOLS_BIN_DIR)/golangci-lint
 GO_TEST_COVERAGE := $(TOOLS_BIN_DIR)/go-test-coverage
 KUSTOMIZE        := $(TOOLS_BIN_DIR)/kustomize
@@ -185,8 +184,8 @@ tidy: ## Check if there any dirty change for go mod tidy.
 
 ##@ Testing
 .PHONY: test
-test: $(GINKGO) manifests generate fmt vet tidy ## Run tests.
-	$(GINKGO) run test/testkit/matchers/...
+test: manifests generate fmt vet tidy ## Run tests.
+	go test ./test/testkit/matchers/...
 	go test $$(go list ./... | grep -v /test/) -coverprofile cover.out
 
 .PHONY: check-coverage
