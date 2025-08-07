@@ -64,7 +64,7 @@ type LogPipelineSpec struct {
 	// Defines where to collect logs, including selector mechanisms.
 	Input   LogPipelineInput    `json:"input,omitempty"`
 	Filters []LogPipelineFilter `json:"filters,omitempty"`
-	// [Fluent Bit output](https://docs.fluentbit.io/manual/pipeline/outputs) where you want to push the logs. Only one output can be specified.
+	// Output where you want to push the logs. Only one output can be specified.
 	Output LogPipelineOutput      `json:"output,omitempty"`
 	Files  []LogPipelineFileMount `json:"files,omitempty"`
 	// A list of mappings from Kubernetes Secret keys to environment variables. Mapped keys are mounted as environment variables, so that they are available as [Variables](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/variables) in the sections.
