@@ -30,12 +30,16 @@ const (
 )
 
 type Config struct {
+	Logs        LogsConfig
 	Traces      TracesConfig
 	Metrics     MetricsConfig
 	Webhook     WebhookConfig
 	SelfMonitor SelfMonitorConfig
 }
 
+type LogsConfig struct {
+	Namespace string
+}
 type TracesConfig struct {
 	Namespace string
 }

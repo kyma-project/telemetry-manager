@@ -4,6 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/resources/common"
+	v1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"slices"
 
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -17,6 +21,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 )
 
+type ServiceEndpointsFetcher interface {
+	FetchEndpoints(ctx context.Context, config Config, telemetryInDeletion bool) (*v1.Endpoints, error)
+}
 type ComponentHealthChecker interface {
 	Check(ctx context.Context, telemetryInDeletion bool) (*metav1.Condition, error)
 }
@@ -85,17 +92,23 @@ func (r *Reconciler) updateOverallState(ctx context.Context, telemetry *operator
 }
 
 func (r *Reconciler) updateGatewayEndpoints(ctx context.Context, telemetry *operatorv1alpha1.Telemetry, telemetryInDeletion bool) error {
-	traceEndpoints, err := r.traceEndpoints(ctx, r.config, telemetryInDeletion)
+	logEndpoints, err := r.logEndpoints(ctx, r.config)
+	if err != nil {
+		return fmt.Errorf("failed to get log endpoints: %w", err)
+
+	}
+	traceEndpoints, err := r.traceEndpoints(ctx, r.config)
 	if err != nil {
 		return fmt.Errorf("failed to get trace endpoints: %w", err)
 	}
 
-	metricEndpoints, err := r.metricEndpoints(ctx, r.config, telemetryInDeletion)
+	metricEndpoints, err := r.metricEndpoints(ctx, r.config)
 	if err != nil {
 		return fmt.Errorf("failed to get metric endpoints: %w", err)
 	}
 
 	telemetry.Status.GatewayEndpoints = operatorv1alpha1.GatewayEndpoints{
+		Logs:    logEndpoints,
 		Traces:  traceEndpoints,
 		Metrics: metricEndpoints,
 	}
@@ -103,30 +116,74 @@ func (r *Reconciler) updateGatewayEndpoints(ctx context.Context, telemetry *oper
 	return nil
 }
 
-func (r *Reconciler) traceEndpoints(ctx context.Context, config Config, telemetryInDeletion bool) (*operatorv1alpha1.OTLPEndpoints, error) {
-	cond, err := r.healthCheckers.traces.Check(ctx, telemetryInDeletion)
+func (r *Reconciler) logEndpoints(ctx context.Context, config Config) (*operatorv1alpha1.OTLPEndpoints, error) {
+	pushEndpoint := types.NamespacedName{
+		Name:      otelcollector.LogOTLPServiceName,
+		Namespace: config.Logs.Namespace,
+	}
+
+	endPointsExist, err := r.checkServiceEndpointsExist(ctx, otelcollector.LogGatewayName, pushEndpoint)
 	if err != nil {
-		return nil, fmt.Errorf("failed to check trace components: %w", err)
+		return nil, fmt.Errorf("failed to check if log service endpoints exist: %w", err)
+	}
+	if !endPointsExist {
+		return nil, nil
 	}
 
-	if cond.Status != metav1.ConditionTrue || cond.Reason != conditions.ReasonComponentsRunning {
-		return nil, nil //nolint:nilnil //it is ok in this context, even if it is not go idiomatic
-	}
-
-	return makeOTLPEndpoints(otelcollector.TraceOTLPServiceName, config.Traces.Namespace), nil
+	return makeOTLPEndpoints(pushEndpoint.Name, pushEndpoint.Namespace), nil
 }
 
-func (r *Reconciler) metricEndpoints(ctx context.Context, config Config, telemetryInDeletion bool) (*operatorv1alpha1.OTLPEndpoints, error) {
-	cond, err := r.healthCheckers.metrics.Check(ctx, telemetryInDeletion)
+func (r *Reconciler) traceEndpoints(ctx context.Context, config Config) (*operatorv1alpha1.OTLPEndpoints, error) {
+	pushEndpoint := types.NamespacedName{
+		Name:      otelcollector.TraceOTLPServiceName,
+		Namespace: config.Traces.Namespace,
+	}
+	endPointsExist, err := r.checkServiceEndpointsExist(ctx, otelcollector.TraceGatewayName, pushEndpoint)
 	if err != nil {
-		return nil, fmt.Errorf("failed to check trace components: %w", err)
+		return nil, fmt.Errorf("failed to check if trace service endpoints exist: %w", err)
+	}
+	if !endPointsExist {
+		return nil, nil
 	}
 
-	if cond.Status != metav1.ConditionTrue || cond.Reason != conditions.ReasonComponentsRunning {
-		return nil, nil //nolint:nilnil //it is ok in this context, even if it is not go idiomatic
+	return makeOTLPEndpoints(pushEndpoint.Name, pushEndpoint.Namespace), nil
+}
+
+func (r *Reconciler) metricEndpoints(ctx context.Context, config Config) (*operatorv1alpha1.OTLPEndpoints, error) {
+	pushEndpoint := types.NamespacedName{
+		Name:      otelcollector.MetricOTLPServiceName,
+		Namespace: config.Metrics.Namespace}
+
+	endPointsExist, err := r.checkServiceEndpointsExist(ctx, otelcollector.MetricGatewayName, pushEndpoint)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check if metric service endpoints exist: %w", err)
+	}
+	if !endPointsExist {
+		return nil, nil
 	}
 
-	return makeOTLPEndpoints(otelcollector.MetricOTLPServiceName, config.Metrics.Namespace), nil
+	return makeOTLPEndpoints(pushEndpoint.Name, pushEndpoint.Namespace), nil
+}
+
+func (r *Reconciler) checkServiceEndpointsExist(ctx context.Context, gatewayName string, svcName types.NamespacedName) (bool, error) {
+	var service v1.Service
+	err := r.Client.Get(ctx, svcName, &service)
+
+	if err != nil {
+		return false, fmt.Errorf("failed to get log-otlp service: %w", err)
+	}
+
+	var endpointSlices discoveryv1.EndpointSliceList
+	err = r.Client.List(ctx, &endpointSlices, client.InNamespace(svcName.Namespace), client.MatchingLabels{
+		common.LabelKeyK8sName: gatewayName,
+	})
+	if err != nil {
+		return false, err
+	}
+	if len(endpointSlices.Items) == 0 {
+		return false, fmt.Errorf("no EndpointSlice found for service %s in namespace %s", svcName.Name, svcName.Namespace)
+	}
+	return true, nil
 }
 
 func makeOTLPEndpoints(serviceName, namespace string) *operatorv1alpha1.OTLPEndpoints {
