@@ -187,7 +187,7 @@ func (b *Builder) addOTLPExporter(ctx context.Context, pipeline *telemetryv1alph
 		otlpexporter.SignalTypeMetric,
 	)
 
-	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.MakeConfig(ctx)
+	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.OTLPExporterConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to make otlp exporter config: %w", err)
 	}
