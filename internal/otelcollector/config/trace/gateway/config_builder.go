@@ -49,9 +49,6 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Trace
 	// Iterate over each TracePipeline CR and enrich the config with pipeline-specific components
 	for i := range pipelines {
 		pipeline := pipelines[i]
-		if pipeline.DeletionTimestamp != nil {
-			continue
-		}
 
 		otlpExporterBuilder := otlpexporter.NewConfigBuilder(
 			b.Reader,
@@ -90,6 +87,10 @@ func receiversConfig() Receivers {
 
 // declareComponentsForTracePipeline enriches a Config (exporters, processors, etc.) with components for a given telemetryv1alpha1.TracePipeline.
 func declareComponentsForTracePipeline(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.TracePipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
+	return declareOTLPExporter(ctx, otlpExporterBuilder, pipeline, cfg, envVars)
+}
+
+func declareOTLPExporter(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.TracePipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
 	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.MakeConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to make otlp exporter config: %w", err)

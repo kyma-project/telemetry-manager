@@ -52,9 +52,6 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 	// Iterate over each MetricPipeline CR and enrich the config with pipeline-specific components
 	for i := range pipelines {
 		pipeline := pipelines[i]
-		if pipeline.DeletionTimestamp != nil {
-			continue
-		}
 
 		otlpExporterBuilder := otlpexporter.NewConfigBuilder(
 			b.Reader,

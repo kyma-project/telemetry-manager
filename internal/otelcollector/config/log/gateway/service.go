@@ -9,7 +9,7 @@ import (
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 )
 
-func makePipelineServiceConfig(pipeline *telemetryv1alpha1.LogPipeline) config.Pipeline {
+func servicePipelineConfig(pipeline *telemetryv1alpha1.LogPipeline) config.Pipeline {
 	processorIDs := []string{
 		"memory_limiter",
 		// Record observed time at the beginning of the pipeline
