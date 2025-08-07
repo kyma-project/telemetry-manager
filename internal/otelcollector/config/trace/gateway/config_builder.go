@@ -3,7 +3,6 @@ package gateway
 import (
 	"context"
 	"fmt"
-	"maps"
 	"sort"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -12,7 +11,6 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
 const (
@@ -47,7 +45,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Trace
 			queueSize,
 			otlpexporter.SignalTypeTrace,
 		)
-		if err := declareComponentsForTracePipeline(ctx, otlpExporterBuilder, &pipeline, cfg, envVars); err != nil {
+		if err := cfg.addTracePipelineComponents(ctx, otlpExporterBuilder, &pipeline, envVars); err != nil {
 			return nil, nil, err
 		}
 
@@ -57,40 +55,6 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Trace
 	}
 
 	return cfg, envVars, nil
-}
-
-func receiversConfig() Receivers {
-	return Receivers{
-		OTLP: config.OTLPReceiver{
-			Protocols: config.ReceiverProtocols{
-				HTTP: config.Endpoint{
-					Endpoint: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.OTLPHTTP),
-				},
-				GRPC: config.Endpoint{
-					Endpoint: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.OTLPGRPC),
-				},
-			},
-		},
-	}
-}
-
-// declareComponentsForTracePipeline enriches a Config (exporters, processors, etc.) with components for a given telemetryv1alpha1.TracePipeline.
-func declareComponentsForTracePipeline(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.TracePipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
-	return declareOTLPExporter(ctx, otlpExporterBuilder, pipeline, cfg, envVars)
-}
-
-func declareOTLPExporter(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.TracePipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
-	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.MakeConfig(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to make otlp exporter config: %w", err)
-	}
-
-	maps.Copy(envVars, otlpExporterEnvVars)
-
-	otlpExporterID := otlpexporter.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)
-	cfg.Exporters[otlpExporterID] = Exporter{OTLP: otlpExporterConfig}
-
-	return nil
 }
 
 func pipelineConfig(exporterIDs ...string) config.Pipeline {
