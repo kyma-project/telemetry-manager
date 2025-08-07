@@ -3,6 +3,7 @@ package gateway
 import (
 	"context"
 	"fmt"
+	"maps"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 )
 
 const (
@@ -46,7 +48,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPi
 			queueSize,
 			otlpexporter.SignalTypeLog,
 		)
-		if err := cfg.addLogPipelineComponents(ctx, otlpExporterBuilder, &pipeline, envVars); err != nil {
+		if err := declareComponentsForLogPipeline(ctx, otlpExporterBuilder, &pipeline, cfg, envVars); err != nil {
 			return nil, nil, err
 		}
 
@@ -71,4 +73,50 @@ func receiversConfig() Receivers {
 			},
 		},
 	}
+}
+
+// declareComponentsForLogPipeline enriches a Config (exporters, processors, etc.) with components for a given telemetryv1alpha1.LogPipeline.
+func declareComponentsForLogPipeline(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.LogPipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
+	declareNamespaceFilter(pipeline, cfg)
+	declareInputSourceFilters(pipeline, cfg)
+
+	return declareOTLPExporter(ctx, otlpExporterBuilder, pipeline, cfg, envVars)
+}
+
+func declareNamespaceFilter(pipeline *telemetryv1alpha1.LogPipeline, cfg *Config) {
+	otlpInput := pipeline.Spec.Input.OTLP
+	if otlpInput == nil || otlpInput.Disabled {
+		// no namespace filter needed
+		return
+	}
+
+	if cfg.Processors.NamespaceFilters == nil {
+		cfg.Processors.NamespaceFilters = make(NamespaceFilters)
+	}
+
+	if shouldFilterByNamespace(otlpInput.Namespaces) {
+		processorID := formatNamespaceFilterID(pipeline.Name)
+		cfg.Processors.NamespaceFilters[processorID] = namespaceFilterProcessorConfig(otlpInput.Namespaces)
+	}
+}
+
+func declareInputSourceFilters(pipeline *telemetryv1alpha1.LogPipeline, cfg *Config) {
+	input := pipeline.Spec.Input
+	if !logpipelineutils.IsOTLPInputEnabled(input) {
+		cfg.Processors.DropIfInputSourceOTLP = dropIfInputSourceOTLPProcessorConfig()
+	}
+}
+
+func declareOTLPExporter(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.LogPipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
+	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.MakeConfig(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to make otlp exporter config: %w", err)
+	}
+
+	maps.Copy(envVars, otlpExporterEnvVars)
+
+	otlpExporterID := formatOTLPExporterID(pipeline)
+	cfg.Exporters[otlpExporterID] = Exporter{OTLP: otlpExporterConfig}
+
+	return nil
 }

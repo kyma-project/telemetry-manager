@@ -1,14 +1,8 @@
 package agent
 
 import (
-	"context"
-	"fmt"
-	"maps"
-
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 )
 
 // newConfig constructs a global, pipeline-independent Base config for the log gateway collector.
@@ -26,42 +20,6 @@ func newConfig(opts BuildOptions) *Config {
 	}
 }
 
-// addLogPipelineComponents enriches a Config (exporters, processors, etc.) with components for a given telemetryv1alpha1.LogPipeline.
-func (cfg *Config) addLogPipelineComponents(
-	ctx context.Context,
-	otlpExporterBuilder *otlpexporter.ConfigBuilder,
-	pipeline *telemetryv1alpha1.LogPipeline,
-	envVars otlpexporter.EnvVars,
-) error {
-	cfg.addFileLogReceiver(pipeline)
-	return cfg.addOTLPExporter(ctx, otlpExporterBuilder, pipeline, envVars)
-}
-
-func (cfg *Config) addFileLogReceiver(pipeline *telemetryv1alpha1.LogPipeline) {
-	receiver := fileLogReceiverConfig(*pipeline)
-	otlpReceiverID := fmt.Sprintf("filelog/%s", pipeline.Name)
-	cfg.Receivers[otlpReceiverID] = Receiver{FileLog: receiver}
-}
-
-func (cfg *Config) addOTLPExporter(
-	ctx context.Context,
-	otlpExporterBuilder *otlpexporter.ConfigBuilder,
-	pipeline *telemetryv1alpha1.LogPipeline,
-	envVars otlpexporter.EnvVars,
-) error {
-	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.MakeConfig(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to make otlp exporter config: %w", err)
-	}
-
-	maps.Copy(envVars, otlpExporterEnvVars)
-
-	otlpExporterID := otlpexporter.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)
-	cfg.Exporters[otlpExporterID] = Exporter{OTLP: otlpExporterConfig}
-
-	return nil
-}
-
 type Config struct {
 	Service    config.Service `yaml:"service"`
 	Extensions Extensions     `yaml:"extensions"`
@@ -70,9 +28,7 @@ type Config struct {
 	Processors Processors `yaml:"processors"`
 	Exporters  Exporters  `yaml:"exporters"`
 }
-
 type Receivers map[string]Receiver
-
 type Receiver struct {
 	FileLog *FileLog `yaml:",inline,omitempty"`
 }
@@ -133,7 +89,6 @@ type Route struct {
 	Expression string `yaml:"expr,omitempty"`
 	Output     string `yaml:"output,omitempty"`
 }
-
 type OperatorAttribute struct {
 	ParseFrom string `yaml:"parse_from,omitempty"`
 }
@@ -149,7 +104,6 @@ type Processors struct {
 }
 
 type Exporters map[string]Exporter
-
 type Exporter struct {
 	OTLP *config.OTLPExporter `yaml:",inline,omitempty"`
 }

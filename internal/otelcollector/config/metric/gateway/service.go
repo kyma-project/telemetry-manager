@@ -4,10 +4,47 @@ import (
 	"fmt"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 )
+
+func inputPipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline) config.Pipeline {
+	return config.Pipeline{
+		Receivers:  []string{"otlp", "kymastats"},
+		Processors: []string{"memory_limiter"},
+		Exporters:  []string{formatRoutingConnectorID(pipeline.Name)},
+	}
+}
+
+func enrichmentPipelineConfig(pipelineName string) config.Pipeline {
+	return config.Pipeline{
+		Receivers:  []string{formatRoutingConnectorID(pipelineName)},
+		Processors: []string{"k8sattributes", "service_enrichment"},
+		Exporters:  []string{formatForwardConnectorID(pipelineName)},
+	}
+}
+
+func outputPipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline) config.Pipeline {
+	var processors []string
+
+	input := pipeline.Spec.Input
+
+	processors = append(processors, "transform/set-instrumentation-scope-kyma")
+	processors = append(processors, inputSourceFiltersIDs(input)...)
+	processors = append(processors, namespaceFiltersIDs(input, pipeline)...)
+	processors = append(processors, runtimeResourcesFiltersIDs(input)...)
+	processors = append(processors, diagnosticMetricFiltersIDs(input)...)
+
+	processors = append(processors, "resource/insert-cluster-attributes", "resource/delete-skip-enrichment-attribute", "resource/drop-kyma-attributes", "batch")
+
+	return config.Pipeline{
+		Receivers:  []string{formatRoutingConnectorID(pipeline.Name), formatForwardConnectorID(pipeline.Name)},
+		Processors: processors,
+		Exporters:  []string{formatOTLPExporterID(pipeline)},
+	}
+}
 
 func inputSourceFiltersIDs(input telemetryv1alpha1.MetricPipelineInput) []string {
 	var processors []string
