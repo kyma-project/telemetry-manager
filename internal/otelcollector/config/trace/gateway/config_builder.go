@@ -66,7 +66,6 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Trace
 		cfg.Service.Pipelines[pipelineID] = pipelineConfig(otlpexporter.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name))
 	}
 
-	// Return the assembled config and any environment variables needed for exporters
 	return cfg, envVars, nil
 }
 

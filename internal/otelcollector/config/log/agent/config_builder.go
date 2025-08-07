@@ -36,8 +36,10 @@ type BuildOptions struct {
 
 func (b *Builder) Build(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {
 	// Fill out the static parts of the config (service, extensions, processors, exporters)
+	service := config.DefaultService(make(config.Pipelines))
+	service.Extensions = append(service.Extensions, "file_storage")
 	cfg := &Config{
-		Service:    config.DefaultService(make(config.Pipelines)),
+		Service:    service,
 		Extensions: extensionsConfig(),
 		Receivers:  make(Receivers),
 		Processors: processorsConfig(opts),
@@ -62,7 +64,7 @@ func (b *Builder) Build(ctx context.Context, logPipelines []telemetryv1alpha1.Lo
 		}
 
 		pipelineID := fmt.Sprintf("logs/%s", pipeline.Name)
-		cfg.Service.Pipelines[pipelineID] = servicePipelineConfig(fmt.Sprintf("filelog/%s", pipeline.Name), otlpexporter.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name))
+		cfg.Service.Pipelines[pipelineID] = pipelineConfig(fmt.Sprintf("filelog/%s", pipeline.Name), otlpexporter.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name))
 	}
 
 	// Return the assembled config and any environment variables needed for exporters
@@ -71,28 +73,33 @@ func (b *Builder) Build(ctx context.Context, logPipelines []telemetryv1alpha1.Lo
 
 // declareComponentsForLogPipeline enriches a Config (exporters, processors, etc.) with components for a given telemetryv1alpha1.LogPipeline.
 func declareComponentsForLogPipeline(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.LogPipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
+	declareFileLogReceiver(pipeline, cfg)
+	return declareOTLPExporter(ctx, otlpExporterBuilder, pipeline, cfg, envVars)
+}
+
+func declareFileLogReceiver(pipeline *telemetryv1alpha1.LogPipeline, cfg *Config) {
+	receiver := fileLogReceiverConfig(*pipeline)
+
+	otlpReceiverID := fmt.Sprintf("filelog/%s", pipeline.Name)
+	cfg.Receivers[otlpReceiverID] = Receiver{FileLog: receiver}
+}
+
+func declareOTLPExporter(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.LogPipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
 	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.MakeConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to make otlp exporter config: %w", err)
 	}
-
-	receiver := fileLogReceiverConfig(*pipeline)
 
 	maps.Copy(envVars, otlpExporterEnvVars)
 
 	otlpExporterID := otlpexporter.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)
 	cfg.Exporters[otlpExporterID] = Exporter{OTLP: otlpExporterConfig}
 
-	otlpReceiverID := fmt.Sprintf("filelog/%s", pipeline.Name)
-	cfg.Receivers[otlpReceiverID] = Receiver{FileLog: receiver}
-
-	cfg.Service.Extensions = []string{"health_check", "pprof", "file_storage"}
-
 	return nil
 }
 
 // Each pipeline will have one receiver and one exporter
-func servicePipelineConfig(receiverID, exporterID string) config.Pipeline {
+func pipelineConfig(receiverID, exporterID string) config.Pipeline {
 	return config.Pipeline{
 		Receivers: []string{receiverID},
 		Processors: []string{

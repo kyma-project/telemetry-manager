@@ -73,7 +73,6 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 		cfg.Service.Pipelines[outputPipelineID] = outputPipelineConfig(&pipeline)
 	}
 
-	// Return the assembled config and any environment variables needed for exporters
 	return cfg, envVars, nil
 }
 
