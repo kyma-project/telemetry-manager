@@ -20,7 +20,7 @@ import (
 )
 
 func TestMetricsPrometheusInput(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelIstio)
+	suite.RegisterTestCase(t, suite.LabelGardener, suite.LabelIstio)
 
 	var (
 		uniquePrefix                     = unique.Prefix()

@@ -1,12 +1,14 @@
 package metric
 
 import (
+	"testing"
 	"time"
 
-	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
+
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
 var fms = []FlatMetric{
@@ -32,106 +34,62 @@ var fms = []FlatMetric{
 	},
 }
 
-var _ = Describe("HaveFlatMetrics", func() {
-	It("should apply matcher to valid metrics data", func() {
-		md := pmetric.NewMetrics()
-		Expect(mustMarshalMetrics(md)).Should(HaveFlatMetrics(ContainElements()))
-	})
+func TestMetricMatchers_VerifyInput(t *testing.T) {
+	suite.RegisterTestCase(t)
 
-	It("should fail when given empty byte slice", func() {
-		Expect([]byte{}).Should(HaveFlatMetrics(BeEmpty()))
-	})
+	md := pmetric.NewMetrics()
+	Expect(mustMarshalMetrics(md)).Should(HaveFlatMetrics(ContainElements()), "Should apply matcher to valid metrics data")
 
-	It("should return error for nil input", func() {
-		success, err := HaveFlatMetrics(BeEmpty()).Match(nil)
-		Expect(err).Should(HaveOccurred())
-		Expect(success).Should(BeFalse())
-	})
+	Expect([]byte{}).Should(HaveFlatMetrics(BeEmpty()), "Should fail when given empty byte slice")
 
-	It("should return error for invalid input type", func() {
-		success, err := HaveFlatMetrics(BeEmpty()).Match(struct{}{})
-		Expect(err).Should(HaveOccurred())
-		Expect(success).Should(BeFalse())
-	})
+	nilInput, err := HaveFlatMetrics(BeEmpty()).Match(nil)
+	Expect(err).Should(HaveOccurred(), "Should return error for nil input")
+	Expect(nilInput).Should(BeFalse(), "Success should be false for nil input")
 
-	It("should return a FlatMetric struct", func() {
-		md := pmetric.NewMetrics()
+	invalidInput, err := HaveFlatMetrics(BeEmpty()).Match(struct{}{})
+	Expect(err).Should(HaveOccurred(), "should return error for invalid input type")
+	Expect(invalidInput).Should(BeFalse(), "Success should be false for invalid input type")
+}
 
-		rm := md.ResourceMetrics().AppendEmpty()
-		attrs := rm.Resource().Attributes()
-		attrs.PutStr("k8s.cluster.name", "cluster-01")
-		attrs.PutStr("k8s.deployment.name", "nginx")
+func TestMetric_FlatMetric(t *testing.T) {
+	suite.RegisterTestCase(t)
 
-		s := rm.ScopeMetrics().AppendEmpty()
+	md := pmetric.NewMetrics()
 
-		s.Scope().SetName("runtime")
-		s.Scope().SetVersion("1.0")
-		s.Scope().Attributes().PutStr("baz", "qux")
+	rm := md.ResourceMetrics().AppendEmpty()
+	attrs := rm.Resource().Attributes()
+	attrs.PutStr("k8s.cluster.name", "cluster-01")
+	attrs.PutStr("k8s.deployment.name", "nginx")
 
-		m := s.Metrics().AppendEmpty()
-		m.SetName("container.cpu.time")
-		m.SetDescription("time of container cpu")
-		gauge := m.SetEmptyGauge()
-		pt := gauge.DataPoints().AppendEmpty()
+	s := rm.ScopeMetrics().AppendEmpty()
 
-		pt.SetStartTimestamp(pcommon.NewTimestampFromTime(time.Now()))
-		pt.SetTimestamp(pcommon.NewTimestampFromTime(time.Now()))
-		pt.SetDoubleValue(1.5)
-		pt.Attributes().PutStr("foo", "bar")
+	s.Scope().SetName("runtime")
+	s.Scope().SetVersion("1.0")
+	s.Scope().Attributes().PutStr("baz", "qux")
 
-		Expect(mustMarshalMetrics(md)).Should(HaveFlatMetrics(ContainElement(fms[0])))
-	})
-})
+	m := s.Metrics().AppendEmpty()
+	m.SetName("container.cpu.time")
+	m.SetDescription("time of container cpu")
+	gauge := m.SetEmptyGauge()
+	pt := gauge.DataPoints().AppendEmpty()
 
-var _ = Describe("HaveUniqueNames", func() {
-	It("should return unique names", func() {
-		Expect(fms).Should(HaveUniqueNames(ConsistOf("container.cpu.time", "container.cpu.usage")))
-	})
-})
+	pt.SetStartTimestamp(pcommon.NewTimestampFromTime(time.Now()))
+	pt.SetTimestamp(pcommon.NewTimestampFromTime(time.Now()))
+	pt.SetDoubleValue(1.5)
+	pt.Attributes().PutStr("foo", "bar")
 
-var _ = Describe("HaveResourceAttributes", func() {
-	It("should have the specified key", func() {
-		Expect(fms).Should(ContainElement(HaveResourceAttributes(HaveKey("k8s.cluster.name"))))
-	})
-})
+	Expect(mustMarshalMetrics(md)).Should(HaveFlatMetrics(ContainElement(fms[0])))
+}
 
-var _ = Describe("HaveName", func() {
-	It("should return the correct name", func() {
-		Expect(fms).Should(ContainElement(HaveName(ContainSubstring("container"))))
-	})
-})
-
-var _ = Describe("HaveType", func() {
-	It("should return the correct type", func() {
-		Expect(fms).Should(ContainElement(HaveType(Equal(pmetric.MetricTypeGauge.String()))))
-	})
-})
-
-var _ = Describe("HaveMetricAttributes", func() {
-	It("should have the specified key", func() {
-		Expect(fms).Should(
-			ContainElement(HaveMetricAttributes(HaveKey("foo"))),
-		)
-	})
-})
-
-var _ = Describe("HaveScopeName", func() {
-	It("should contain the specified string", func() {
-		Expect(fms).Should(ContainElement(HaveScopeName(ContainSubstring("container"))))
-	})
-})
-
-var _ = Describe("HaveScopeVersion", func() {
-	It("should contain the specified version", func() {
-		Expect(fms).Should(ContainElement(HaveScopeVersion(ContainSubstring("1.0"))))
-	})
-})
-
-var _ = Describe("HaveKeys", func() {
-	It("should have all the keys within the specified list", func() {
-		Expect(fms).Should(ContainElement(HaveResourceAttributes(HaveKeys(ContainElements("k8s.cluster.name", "k8s.deployment.name")))))
-	})
-})
+func TestMetricMatchers(t *testing.T) {
+	suite.RegisterTestCase(t)
+	Expect(fms).Should(HaveUniqueNames(ConsistOf("container.cpu.time", "container.cpu.usage")), "Should have unique metric names")
+	Expect(fms).Should(ContainElement(HaveResourceAttributes(HaveKey("k8s.cluster.name"))), "Should have key in resource attributes")
+	Expect(fms).Should(ContainElement(HaveName(ContainSubstring("container"))), "Should have name containing 'container'")
+	Expect(fms).Should(ContainElement(HaveType(Equal(pmetric.MetricTypeGauge.String()))), "Should have type Gauge")
+	Expect(fms).Should(ContainElement(HaveScopeName(ContainSubstring("container"))), "Should have scope name containing 'container'")
+	Expect(fms).Should(ContainElement(HaveResourceAttributes(HaveKeys(ContainElements("k8s.cluster.name", "k8s.deployment.name")))), "Should apply have Keys matcher to resource attributes")
+}
 
 func mustMarshalMetrics(md pmetric.Metrics) []byte {
 	var marshaler pmetric.JSONMarshaler
