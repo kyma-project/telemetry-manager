@@ -35,20 +35,11 @@ type BuildOptions struct {
 }
 
 func (b *Builder) Build(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {
-	// Fill out the static parts of the config (service, extensions, processors, exporters)
-	service := config.DefaultService(make(config.Pipelines))
-	service.Extensions = append(service.Extensions, "file_storage")
-	cfg := &Config{
-		Service:    service,
-		Extensions: extensionsConfig(),
-		Receivers:  make(Receivers),
-		Processors: processorsConfig(opts),
-		Exporters:  make(Exporters),
-	}
-
-	envVars := make(otlpexporter.EnvVars)
+	cfg := newConfig(opts)
 
 	// Iterate over each LogPipeline CR and enrich the config with pipeline-specific components
+	envVars := make(otlpexporter.EnvVars)
+
 	for i := range logPipelines {
 		pipeline := logPipelines[i]
 

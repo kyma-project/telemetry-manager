@@ -3,9 +3,25 @@ package agent
 import (
 	"time"
 
+	"k8s.io/apimachinery/pkg/types"
+
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 )
+
+// newConfig constructs a global, pipeline-independent Base config for the metric agent collector.
+// It sets up default collector components, and returns a Config with initialized fields.
+func newConfig(inputs inputSources, gatewayOTLPServiceName types.NamespacedName, opts BuildOptions) *Config {
+	return &Config{
+		Base: config.DefaultBaseConfig(
+			pipelinesConfig(inputs),
+			config.WithK8sLeaderElector("serviceAccount", "telemetry-metric-agent-k8scluster", opts.AgentNamespace),
+		),
+		Receivers:  receiversConfig(inputs, opts),
+		Processors: processorsConfig(inputs, opts.InstrumentationScopeVersion),
+		Exporters:  exportersConfig(gatewayOTLPServiceName),
+	}
+}
 
 type Config struct {
 	config.Base `yaml:",inline"`

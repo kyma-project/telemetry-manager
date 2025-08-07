@@ -32,23 +32,12 @@ type BuildOptions struct {
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {
-	// Fill out the static parts of the config (global receivers, processors, exporters)
-	cfg := &Config{
-		Base: config.Base{
-			Service:    config.DefaultService(make(config.Pipelines)),
-			Extensions: config.DefaultExtensions(),
-		},
-		Receivers:  receiversConfig(),
-		Processors: processorsConfig(opts),
-		Exporters:  make(Exporters),
-	}
-
-	envVars := make(otlpexporter.EnvVars)
-
-	// Calculate per-pipeline queue size for exporters
-	queueSize := maxQueueSize / len(pipelines)
+	cfg := newConfig(opts)
 
 	// Iterate over each LogPipeline CR and enrich the config with pipeline-specific components
+	queueSize := maxQueueSize / len(pipelines)
+	envVars := make(otlpexporter.EnvVars)
+
 	for i := range pipelines {
 		pipeline := pipelines[i]
 
@@ -68,7 +57,6 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPi
 		cfg.Service.Pipelines[pipelineID] = servicePipelineConfig(&pipeline)
 	}
 
-	// Return the assembled config and any environment variables needed for exporters
 	return cfg, envVars, nil
 }
 

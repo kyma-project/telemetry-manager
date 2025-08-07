@@ -31,22 +31,12 @@ type BuildOptions struct {
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.TracePipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {
-	// Fill out the static parts of the config (global receivers, processors, exporters)
-	cfg := &Config{
-		Base: config.Base{
-			Service:    config.DefaultService(make(config.Pipelines)),
-			Extensions: config.DefaultExtensions(),
-		},
-		Receivers:  receiversConfig(),
-		Processors: processorsConfig(opts),
-		Exporters:  make(Exporters),
-	}
-
-	envVars := make(otlpexporter.EnvVars)
-
-	queueSize := maxQueueSize / len(pipelines)
+	cfg := newConfig(opts)
 
 	// Iterate over each TracePipeline CR and enrich the config with pipeline-specific components
+	envVars := make(otlpexporter.EnvVars)
+	queueSize := maxQueueSize / len(pipelines)
+
 	for i := range pipelines {
 		pipeline := pipelines[i]
 

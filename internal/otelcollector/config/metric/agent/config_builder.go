@@ -56,15 +56,7 @@ func (b *Builder) Build(pipelines []telemetryv1alpha1.MetricPipeline, opts Build
 		envoy:            shouldEnableEnvoyMetricsScraping(pipelines),
 	}
 
-	return &Config{
-		Base: *config.DefaultBaseConfig(
-			pipelinesConfig(inputs),
-			config.WithK8sLeaderElector("serviceAccount", "telemetry-metric-agent-k8scluster", opts.AgentNamespace),
-		),
-		Receivers:  receiversConfig(inputs, opts),
-		Processors: processorsConfig(inputs, opts.InstrumentationScopeVersion),
-		Exporters:  exportersConfig(b.Config.GatewayOTLPServiceName),
-	}
+	return newConfig(inputs, b.Config.GatewayOTLPServiceName, opts)
 }
 
 func shouldEnableRuntimeMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {

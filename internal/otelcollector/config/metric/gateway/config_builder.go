@@ -9,7 +9,6 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/ottlexpr"
@@ -34,22 +33,12 @@ type BuildOptions struct {
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {
-	// Fill out the static parts of the config (global receivers, processors, exporters, connectors)
-	cfg := &Config{
-		Base: *config.DefaultBaseConfig(
-			make(config.Pipelines),
-			config.WithK8sLeaderElector("serviceAccount", "telemetry-metric-gateway-kymastats", opts.GatewayNamespace)),
-		Receivers:  receiversConfig(),
-		Processors: processorsConfig(opts),
-		Exporters:  make(Exporters),
-		Connectors: make(Connectors),
-	}
-
-	envVars := make(otlpexporter.EnvVars)
-
-	queueSize := maxQueueSize / len(pipelines)
+	cfg := newConfig(opts)
 
 	// Iterate over each MetricPipeline CR and enrich the config with pipeline-specific components
+	envVars := make(otlpexporter.EnvVars)
+	queueSize := maxQueueSize / len(pipelines)
+
 	for i := range pipelines {
 		pipeline := pipelines[i]
 
