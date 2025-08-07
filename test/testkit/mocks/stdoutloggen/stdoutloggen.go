@@ -81,11 +81,11 @@ func PodSpec(opts ...Option) corev1.PodSpec {
 				ImagePullPolicy: corev1.PullAlways,
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("150m"),
+						corev1.ResourceCPU:    resource.MustParse("100m"),
 						corev1.ResourceMemory: resource.MustParse("64Mi"),
 					},
 					Limits: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("300m"),
+						corev1.ResourceCPU:    resource.MustParse("1100m"),
 						corev1.ResourceMemory: resource.MustParse("128Mi"),
 					},
 				},
