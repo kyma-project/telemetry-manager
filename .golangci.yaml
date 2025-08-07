@@ -194,7 +194,6 @@ linters:
         - name: unexported-return
     staticcheck:
       dot-import-whitelist:
-        - github.com/onsi/ginkgo/v2
         - github.com/onsi/gomega
         - github.com/kyma-project/telemetry-manager/test/testkit/matchers/log
         - github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric
