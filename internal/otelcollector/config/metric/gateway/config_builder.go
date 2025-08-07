@@ -45,24 +45,19 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 	for i := range pipelines {
 		pipeline := pipelines[i]
 
-		if err := b.addComponentsForMetricPipeline(ctx, &pipeline, queueSize); err != nil {
+		if err := b.addComponents(ctx, &pipeline, queueSize); err != nil {
 			return nil, nil, err
 		}
 
-		// Assemble the service pipelines for this MetricPipeline
-		inputPipelineID := formatInputPipelineID(pipeline.Name)
-		enrichmentPipelineID := formatAttributesEnrichmentPipelineID(pipeline.Name)
-		outputPipelineID := formatOutputPipelineID(pipeline.Name)
-		b.config.Service.Pipelines[inputPipelineID] = inputPipelineConfig(&pipeline)
-		b.config.Service.Pipelines[enrichmentPipelineID] = enrichmentPipelineConfig(pipeline.Name)
-		b.config.Service.Pipelines[outputPipelineID] = outputPipelineConfig(&pipeline)
+		// Add input, output, and enrichment pipelines to the service config
+		b.addServicePipelines(&pipeline)
 	}
 
 	return b.config, b.envVars, nil
 }
 
-// addComponentsForMetricPipeline enriches a Config (receivers, processors, exporters etc.) with components for a given telemetryv1alpha1.MetricPipeline.
-func (b *Builder) addComponentsForMetricPipeline(
+// addComponents enriches a Config (receivers, processors, exporters etc.) with components for a given telemetryv1alpha1.MetricPipeline.
+func (b *Builder) addComponents(
 	ctx context.Context,
 	pipeline *telemetryv1alpha1.MetricPipeline,
 	queueSize int,

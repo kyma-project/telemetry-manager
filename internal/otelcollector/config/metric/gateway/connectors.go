@@ -7,8 +7,8 @@ import (
 )
 
 func routingConnectorConfig(pipelineName string) RoutingConnector {
-	attributesEnrichmentPipelineID := formatAttributesEnrichmentPipelineID(pipelineName)
-	outputPipelineID := formatOutputPipelineID(pipelineName)
+	attributesEnrichmentPipelineID := formatMetricEnrichmentPipelineID(pipelineName)
+	outputPipelineID := formatMetricOutputPipelineID(pipelineName)
 
 	return RoutingConnector{
 		DefaultPipelines: []string{attributesEnrichmentPipelineID},

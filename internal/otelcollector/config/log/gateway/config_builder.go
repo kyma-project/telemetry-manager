@@ -48,9 +48,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPi
 			return nil, nil, err
 		}
 
-		// Assemble the service pipeline for this LogPipeline
-		pipelineID := fmt.Sprintf("logs/%s", pipeline.Name)
-		b.config.Service.Pipelines[pipelineID] = servicePipelineConfig(&pipeline)
+		b.addServicePipelines(&pipeline)
 	}
 
 	return b.config, b.envVars, nil

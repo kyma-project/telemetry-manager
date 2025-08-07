@@ -10,6 +10,34 @@ import (
 	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 )
 
+// Service pipeline assembly
+
+func (b *Builder) addServicePipelines(pipeline *telemetryv1alpha1.MetricPipeline) {
+	inputPipelineID := formatMetricInputPipelineID(pipeline.Name)
+	enrichmentPipelineID := formatMetricEnrichmentPipelineID(pipeline.Name)
+	outputPipelineID := formatMetricOutputPipelineID(pipeline.Name)
+
+	b.config.Service.Pipelines[inputPipelineID] = inputPipelineConfig(pipeline)
+	b.config.Service.Pipelines[enrichmentPipelineID] = enrichmentPipelineConfig(pipeline.Name)
+	b.config.Service.Pipelines[outputPipelineID] = outputPipelineConfig(pipeline)
+}
+
+// Pipeline ID formatting functions
+
+func formatMetricInputPipelineID(pipelineName string) string {
+	return fmt.Sprintf("metrics/%s-input", pipelineName)
+}
+
+func formatMetricEnrichmentPipelineID(pipelineName string) string {
+	return fmt.Sprintf("metrics/%s-attributes-enrichment", pipelineName)
+}
+
+func formatMetricOutputPipelineID(pipelineName string) string {
+	return fmt.Sprintf("metrics/%s-output", pipelineName)
+}
+
+// Pipeline configuration functions
+
 func inputPipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline) config.Pipeline {
 	return config.Pipeline{
 		Receivers:  []string{"otlp", "kymastats"},
@@ -158,17 +186,7 @@ func formatRoutingConnectorID(pipelineName string) string {
 	return fmt.Sprintf("routing/%s", pipelineName)
 }
 
-func formatInputPipelineID(pipelineName string) string {
-	return fmt.Sprintf("metrics/%s-input", pipelineName)
-}
-
-func formatAttributesEnrichmentPipelineID(pipelineName string) string {
-	return fmt.Sprintf("metrics/%s-attributes-enrichment", pipelineName)
-}
-
-func formatOutputPipelineID(pipelineName string) string {
-	return fmt.Sprintf("metrics/%s-output", pipelineName)
-}
+// Helper functions
 
 func formatOTLPExporterID(pipeline *telemetryv1alpha1.MetricPipeline) string {
 	return otlpexporter.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)

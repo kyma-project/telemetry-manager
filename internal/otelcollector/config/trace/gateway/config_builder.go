@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"maps"
-	"sort"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -47,9 +46,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Trace
 			return nil, nil, err
 		}
 
-		// Assemble the service pipeline for this TracePipeline
-		pipelineID := fmt.Sprintf("traces/%s", pipeline.Name)
-		b.config.Service.Pipelines[pipelineID] = pipelineConfig(otlpexporter.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name))
+		b.addServicePipelines(&pipeline)
 	}
 
 	return b.config, b.envVars, nil
@@ -95,22 +92,4 @@ func (b *Builder) addOTLPExporter(ctx context.Context, pipeline *telemetryv1alph
 	b.config.Exporters[otlpExporterID] = Exporter{OTLP: otlpExporterConfig}
 
 	return nil
-}
-
-func pipelineConfig(exporterIDs ...string) config.Pipeline {
-	sort.Strings(exporterIDs)
-
-	return config.Pipeline{
-		Receivers: []string{"otlp"},
-		Processors: []string{
-			"memory_limiter",
-			"k8sattributes",
-			"istio_noise_filter",
-			"resource/insert-cluster-attributes",
-			"service_enrichment",
-			"resource/drop-kyma-attributes",
-			"batch",
-		},
-		Exporters: exporterIDs,
-	}
 }

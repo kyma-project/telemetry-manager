@@ -10,7 +10,6 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 )
 
@@ -50,8 +49,7 @@ func (b *Builder) Build(ctx context.Context, logPipelines []telemetryv1alpha1.Lo
 			return nil, nil, err
 		}
 
-		pipelineID := fmt.Sprintf("logs/%s", pipeline.Name)
-		b.config.Service.Pipelines[pipelineID] = pipelineConfig(fmt.Sprintf("filelog/%s", pipeline.Name), otlpexporter.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name))
+		b.addServicePipelines(&pipeline)
 	}
 
 	// Return the assembled config and any environment variables needed for exporters
@@ -91,20 +89,4 @@ func (b *Builder) addOTLPExporter(ctx context.Context, pipeline *telemetryv1alph
 	b.config.Exporters[otlpExporterID] = Exporter{OTLP: otlpExporterConfig}
 
 	return nil
-}
-
-// Each pipeline will have one receiver and one exporter
-func pipelineConfig(receiverID, exporterID string) config.Pipeline {
-	return config.Pipeline{
-		Receivers: []string{receiverID},
-		Processors: []string{
-			"memory_limiter",
-			"transform/set-instrumentation-scope-runtime",
-			"k8sattributes",
-			"resource/insert-cluster-attributes",
-			"service_enrichment",
-			"resource/drop-kyma-attributes",
-		},
-		Exporters: []string{exporterID},
-	}
 }

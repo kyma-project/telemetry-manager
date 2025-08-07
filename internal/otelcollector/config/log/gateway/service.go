@@ -9,6 +9,21 @@ import (
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 )
 
+// Service pipeline assembly
+
+func (b *Builder) addServicePipelines(pipeline *telemetryv1alpha1.LogPipeline) {
+	pipelineID := formatLogPipelineID(pipeline.Name)
+	b.config.Service.Pipelines[pipelineID] = servicePipelineConfig(pipeline)
+}
+
+// Pipeline ID formatting functions
+
+func formatLogPipelineID(pipelineName string) string {
+	return fmt.Sprintf("logs/%s", pipelineName)
+}
+
+// Pipeline configuration functions
+
 func servicePipelineConfig(pipeline *telemetryv1alpha1.LogPipeline) config.Pipeline {
 	processorIDs := []string{
 		"memory_limiter",
@@ -42,6 +57,8 @@ func servicePipelineConfig(pipeline *telemetryv1alpha1.LogPipeline) config.Pipel
 		Exporters:  []string{formatOTLPExporterID(pipeline)},
 	}
 }
+
+// Helper functions
 
 func shouldFilterByNamespace(namespaceSelector *telemetryv1alpha1.NamespaceSelector) bool {
 	return namespaceSelector != nil && (len(namespaceSelector.Include) > 0 || len(namespaceSelector.Exclude) > 0)
