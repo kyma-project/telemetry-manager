@@ -21,6 +21,9 @@ const (
 
 type Builder struct {
 	Reader client.Reader
+
+	config  *Config
+	envVars otlpexporter.EnvVars
 }
 
 type BuildOptions struct {
@@ -31,10 +34,10 @@ type BuildOptions struct {
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.TracePipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {
-	cfg := newConfig(opts)
+	b.config = newConfig(opts)
+	b.envVars = make(otlpexporter.EnvVars)
 
 	// Iterate over each TracePipeline CR and enrich the config with pipeline-specific components
-	envVars := make(otlpexporter.EnvVars)
 	queueSize := maxQueueSize / len(pipelines)
 
 	for i := range pipelines {
@@ -47,16 +50,16 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Trace
 			queueSize,
 			otlpexporter.SignalTypeTrace,
 		)
-		if err := declareComponentsForTracePipeline(ctx, otlpExporterBuilder, &pipeline, cfg, envVars); err != nil {
+		if err := b.addComponentsForTracePipeline(ctx, otlpExporterBuilder, &pipeline); err != nil {
 			return nil, nil, err
 		}
 
 		// Assemble the service pipeline for this TracePipeline
 		pipelineID := fmt.Sprintf("traces/%s", pipeline.Name)
-		cfg.Service.Pipelines[pipelineID] = pipelineConfig(otlpexporter.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name))
+		b.config.Service.Pipelines[pipelineID] = pipelineConfig(otlpexporter.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name))
 	}
 
-	return cfg, envVars, nil
+	return b.config, b.envVars, nil
 }
 
 func receiversConfig() Receivers {
@@ -74,21 +77,21 @@ func receiversConfig() Receivers {
 	}
 }
 
-// declareComponentsForTracePipeline enriches a Config (exporters, processors, etc.) with components for a given telemetryv1alpha1.TracePipeline.
-func declareComponentsForTracePipeline(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.TracePipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
-	return declareOTLPExporter(ctx, otlpExporterBuilder, pipeline, cfg, envVars)
+// addComponentsForTracePipeline enriches a Config (exporters, processors, etc.) with components for a given telemetryv1alpha1.TracePipeline.
+func (b *Builder) addComponentsForTracePipeline(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.TracePipeline) error {
+	return b.addOTLPExporter(ctx, otlpExporterBuilder, pipeline)
 }
 
-func declareOTLPExporter(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.TracePipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
+func (b *Builder) addOTLPExporter(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.TracePipeline) error {
 	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.MakeConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to make otlp exporter config: %w", err)
 	}
 
-	maps.Copy(envVars, otlpExporterEnvVars)
+	maps.Copy(b.envVars, otlpExporterEnvVars)
 
 	otlpExporterID := otlpexporter.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)
-	cfg.Exporters[otlpExporterID] = Exporter{OTLP: otlpExporterConfig}
+	b.config.Exporters[otlpExporterID] = Exporter{OTLP: otlpExporterConfig}
 
 	return nil
 }
