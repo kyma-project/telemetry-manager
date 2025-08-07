@@ -281,6 +281,7 @@ data:
           path: application
           widget: FormGroup
           visibility: '$applicationInput = "Enabled"'
+          overwrite: false
           defaultExpanded: true
           children:
             - name: Enabled
@@ -318,13 +319,14 @@ data:
         - var: otlpInput
           type: string
           simple: true
-          defaultValue: "Disabled"
+          defaultValue: "Enabled"
           name: OTLP Input
           enum: ["Disabled", "Enabled"]
           trigger: [otlpChange]
         - name: OTLP
           path: otlp
           visibility: '$otlpInput = "Enabled"'
+          overwrite: false
           defaultExpanded: true
           widget: FormGroup
           children:
@@ -359,9 +361,17 @@ data:
       widget: FormGroup
       defaultExpanded: true
       children:
+        - var: outputType
+          type: string
+          simple: true
+          defaultValue: "OTLP"
+          name: Output Type
+          enum: [HTTP, OTLP]
+          trigger: [outputtype]
         - name: Custom
           path: custom
           widget: CodeEditor
+          visibility: '$outputType = "HTTP"'
           advanced: true
           inputInfo: >-
             Note: If you use a custom output, you put the LogPipeline in unsupported
@@ -370,6 +380,7 @@ data:
         - name: HTTP
           path: http
           widget: FormGroup
+          visibility: '$outputType = "HTTP"'
           defaultExpanded: true
           children:
             - name: Host
@@ -493,6 +504,7 @@ data:
         - name: OTLP
           path: otlp
           widget: FormGroup
+          visibility: '$outputType = "OTLP"'
           defaultExpanded: true
           children:
             - name: Protocol
