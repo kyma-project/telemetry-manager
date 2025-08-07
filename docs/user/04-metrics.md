@@ -675,7 +675,7 @@ spec:
       endpoint:
         value: https://backend.example.com:4317
 ```
-To collect metrics with specific system namespaces add them to the `include` section of namespaces
+To collect metrics with specific system namespaces, add them to the `include` section of namespaces.
 
 > [!NOTE]
 > The default settings depend on the input:
