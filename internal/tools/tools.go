@@ -16,7 +16,6 @@ import (
 	_ "github.com/k3d-io/k3d/v5"
 	_ "github.com/kyma-project/kyma/hack/table-gen"
 	_ "github.com/mikefarah/yq/v4"
-	_ "github.com/onsi/ginkgo/v2/ginkgo"
 	_ "github.com/vektra/mockery/v3"
 	_ "github.com/vladopajic/go-test-coverage/v2"
 	_ "github.com/yeya24/promlinter/cmd/promlinter"

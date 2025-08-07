@@ -8,4 +8,5 @@ import "context"
 type T interface {
 	Context() context.Context
 	Helper()
+	Logf(format string, args ...any)
 }
