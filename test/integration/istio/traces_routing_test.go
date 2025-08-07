@@ -22,10 +22,10 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-// TestTracesIstio verifies trace delivery and Istio integration in a scenario with two trace backends and two trace generators (apps), each paired with a dedicated trace pipeline.
+// TestTracesRouting verifies trace delivery and Istio integration in a scenario with two trace backends and two trace generators (apps), each paired with a dedicated trace pipeline.
 // One backend and one app are deployed with Istio sidecar injection enabled (inside the mesh), while the other backend and app are deployed without Istio (outside the mesh).
 // The test validates that traces are correctly routed to the appropriate backends, Istio sidecar injection is functioning as expected, and only the desired spans are present in the collected traces.
-func TestTracesRoutingIstio(t *testing.T) {
+func TestTracesRouting(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelGardener, suite.LabelIstio)
 
 	const (

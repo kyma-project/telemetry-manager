@@ -94,7 +94,6 @@ jobs:
           failure: failure()
           job-name: ${{ github.job }}-${{ matrix.scenario }}-${{ matrix.kind }}
 
-
   e2e:
     needs: setup
     strategy:
@@ -179,4 +178,3 @@ jobs:
         if: failure()
         run: |
           for pod in $(kubectl get pods -n kyma-system -o name); do echo "=== $pod ==="; kubectl logs -n kyma-system $pod; done || true
-          

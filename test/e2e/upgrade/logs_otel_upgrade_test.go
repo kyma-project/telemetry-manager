@@ -16,12 +16,12 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-// LogPipeline (Fluentbit) upgrade test flow
-func TestLogsUpgrade(t *testing.T) {
+// LogPipeline (OTel) upgrade test flow
+func TestLogsOTelUpgrade(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelUpgrade)
 
 	var (
-		uniquePrefix = unique.Prefix()
+		uniquePrefix = unique.Prefix("otel")
 		pipelineName = uniquePrefix()
 		backendNs    = uniquePrefix("backend")
 		genNs        = uniquePrefix("gen")
@@ -31,7 +31,7 @@ func TestLogsUpgrade(t *testing.T) {
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
-		WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 		Build()
 
 	resources := []client.Object{
