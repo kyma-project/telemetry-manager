@@ -13,7 +13,7 @@
   - [Prometheus](/telemetry-manager/user/integration/prometheus/README.md)
   - [Loki](/telemetry-manager/user/integration/loki/README.md)
   - [Jaeger](/telemetry-manager/user/integration/jaeger/README.md)
-  - [Amazon CloudWatch and AWS X-Ray](/telemetry-manager/user/integration/aws-cloudwatch/README.md)
+  - [Amazon CloudWatch](/telemetry-manager/user/integration/aws-cloudwatch/README.md)
   - [OpenTelemetry Demo App](/telemetry-manager/user/integration/opentelemetry-demo/README.md)
   - [Sample App](/telemetry-manager/user/integration/sample-app/README.md)
 - [Resources](/telemetry-manager/user/resources/README.md)
