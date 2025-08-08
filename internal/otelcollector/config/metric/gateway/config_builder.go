@@ -22,6 +22,9 @@ const (
 
 type Builder struct {
 	Reader client.Reader
+
+	config  *Config
+	envVars otlpexporter.EnvVars
 }
 
 type BuildOptions struct {
@@ -34,221 +37,184 @@ type BuildOptions struct {
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {
-	cfg := &Config{
-		Base: *config.DefaultBaseConfig(
-			make(config.Pipelines),
-			config.WithK8sLeaderElector("serviceAccount", "telemetry-metric-gateway-kymastats", opts.GatewayNamespace)),
-		Receivers:  makeReceiversConfig(),
-		Processors: makeProcessorsConfig(opts),
-		Exporters:  make(Exporters),
-		Connectors: make(Connectors),
-	}
+	b.config = b.baseConfig(opts)
+	b.envVars = make(otlpexporter.EnvVars)
 
-	envVars := make(otlpexporter.EnvVars)
-
+	// Iterate over each MetricPipeline CR and enrich the config with pipeline-specific components
 	queueSize := maxQueueSize / len(pipelines)
 
 	for i := range pipelines {
 		pipeline := pipelines[i]
-		if pipeline.DeletionTimestamp != nil {
-			continue
-		}
 
-		otlpExporterBuilder := otlpexporter.NewConfigBuilder(
-			b.Reader,
-			pipeline.Spec.Output.OTLP,
-			pipeline.Name,
-			queueSize,
-			otlpexporter.SignalTypeMetric,
-		)
-		if err := declareComponentsForMetricPipeline(ctx, otlpExporterBuilder, &pipeline, cfg, envVars, opts); err != nil {
+		if err := b.addComponents(ctx, &pipeline, queueSize); err != nil {
 			return nil, nil, err
 		}
 
-		inputPipelineID := formatInputPipelineID(pipeline.Name)
-		attributesEnrichmentPipelineID := formatAttributesEnrichmentPipelineID(pipeline.Name)
-		outputPipelineID := formatOutputPipelineID(pipeline.Name)
-		cfg.Service.Pipelines[inputPipelineID] = makeInputPipelineServiceConfig(&pipeline)
-		cfg.Service.Pipelines[attributesEnrichmentPipelineID] = makeAttributesEnrichmentPipelineServiceConfig(pipeline.Name)
-		cfg.Service.Pipelines[outputPipelineID] = makeOutputPipelineServiceConfig(&pipeline)
+		// Add input, output, and enrichment pipelines to the service config
+		b.addServicePipelines(&pipeline)
 	}
 
-	return cfg, envVars, nil
+	return b.config, b.envVars, nil
 }
 
-// declareComponentsForMetricPipeline enriches a Config (receivers, processors, exporters etc.) with components for a given telemetryv1alpha1.MetricPipeline.
-func declareComponentsForMetricPipeline(
+// baseConfig creates the static/global base configuration for the metric gateway collector.
+// Pipeline-specific components are added later via addComponents method.
+func (b *Builder) baseConfig(opts BuildOptions) *Config {
+	return &Config{
+		Base: config.DefaultBaseConfig(make(config.Pipelines),
+			config.WithK8sLeaderElector("serviceAccount", "telemetry-metric-gateway-kymastats", opts.GatewayNamespace),
+		),
+		Receivers:  receiversConfig(),
+		Processors: processorsConfig(opts),
+		Exporters:  make(Exporters),
+		Connectors: make(Connectors),
+	}
+}
+
+// addComponents enriches a Config (receivers, processors, exporters etc.) with components for a given telemetryv1alpha1.MetricPipeline.
+func (b *Builder) addComponents(
 	ctx context.Context,
-	otlpExporterBuilder *otlpexporter.ConfigBuilder,
 	pipeline *telemetryv1alpha1.MetricPipeline,
-	cfg *Config,
-	envVars otlpexporter.EnvVars,
-	opts BuildOptions,
+	queueSize int,
 ) error {
-	declareKymaStatsReceiver(cfg)
-	declareDiagnosticMetricsDropFilters(pipeline, cfg)
-	declareInputSourceFilters(pipeline, cfg)
-	declareRuntimeResourcesFilters(pipeline, cfg)
-	declareNamespaceFilters(pipeline, cfg)
-	declareInstrumentationScopeTransform(cfg, opts)
-	declareConnectors(pipeline.Name, cfg)
+	b.addDiagnosticMetricsDropFilters(pipeline)
+	b.addInputSourceFilters(pipeline)
+	b.addRuntimeResourcesFilters(pipeline)
+	b.addNamespaceFilters(pipeline)
+	b.addConnectors(pipeline.Name)
 
-	return declareOTLPExporter(ctx, otlpExporterBuilder, pipeline, cfg, envVars)
+	return b.addOTLPExporter(ctx, pipeline, queueSize)
 }
 
-func declareKymaStatsReceiver(cfg *Config) {
-	cfg.Receivers.KymaStatsReceiver = makeKymaStatsReceiverConfig()
-}
-
-func declareDiagnosticMetricsDropFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {
+func (b *Builder) addDiagnosticMetricsDropFilters(pipeline *telemetryv1alpha1.MetricPipeline) {
 	input := pipeline.Spec.Input
 
 	if metricpipelineutils.IsPrometheusInputEnabled(input) && !metricpipelineutils.IsPrometheusDiagnosticInputEnabled(input) {
-		cfg.Processors.DropDiagnosticMetricsIfInputSourcePrometheus = makeDropDiagnosticMetricsForInput(inputSourceEquals(metric.InputSourcePrometheus))
+		b.config.Processors.DropDiagnosticMetricsIfInputSourcePrometheus = dropDiagnosticMetricsFilterConfig(inputSourceEquals(metric.InputSourcePrometheus))
 	}
 
 	if metricpipelineutils.IsIstioInputEnabled(input) && !metricpipelineutils.IsIstioDiagnosticInputEnabled(input) {
-		cfg.Processors.DropDiagnosticMetricsIfInputSourceIstio = makeDropDiagnosticMetricsForInput(inputSourceEquals(metric.InputSourceIstio))
+		b.config.Processors.DropDiagnosticMetricsIfInputSourceIstio = dropDiagnosticMetricsFilterConfig(inputSourceEquals(metric.InputSourceIstio))
 	}
 }
 
-func declareInputSourceFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {
+func (b *Builder) addInputSourceFilters(pipeline *telemetryv1alpha1.MetricPipeline) {
 	input := pipeline.Spec.Input
 
 	if !metricpipelineutils.IsRuntimeInputEnabled(input) {
-		cfg.Processors.DropIfInputSourceRuntime = makeDropIfInputSourceRuntimeConfig()
+		b.config.Processors.DropIfInputSourceRuntime = dropIfInputSourceRuntimeProcessorConfig()
 	}
 
 	if !metricpipelineutils.IsPrometheusInputEnabled(input) {
-		cfg.Processors.DropIfInputSourcePrometheus = makeDropIfInputSourcePrometheusConfig()
+		b.config.Processors.DropIfInputSourcePrometheus = dropIfInputSourcePrometheusProcessorConfig()
 	}
 
 	if !metricpipelineutils.IsIstioInputEnabled(input) {
-		cfg.Processors.DropIfInputSourceIstio = makeDropIfInputSourceIstioConfig()
+		b.config.Processors.DropIfInputSourceIstio = dropIfInputSourceIstioProcessorConfig()
 	}
 
 	if !metricpipelineutils.IsOTLPInputEnabled(input) {
-		cfg.Processors.DropIfInputSourceOTLP = makeDropIfInputSourceOTLPConfig()
+		b.config.Processors.DropIfInputSourceOTLP = dropIfInputSourceOTLPProcessorConfig()
 	}
 
 	if !metricpipelineutils.IsIstioInputEnabled(input) || !metricpipelineutils.IsEnvoyMetricsEnabled(input) {
-		cfg.Processors.DropIfEnvoyMetricsDisabled = makeDropIfEnvoyMetricsDisabledConfig()
+		b.config.Processors.DropIfEnvoyMetricsDisabled = dropIfEnvoyMetricsDisabledProcessorConfig()
 	}
 }
 
-func declareRuntimeResourcesFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {
+func (b *Builder) addRuntimeResourcesFilters(pipeline *telemetryv1alpha1.MetricPipeline) {
 	input := pipeline.Spec.Input
 
 	if metricpipelineutils.IsRuntimeInputEnabled(input) && !metricpipelineutils.IsRuntimePodInputEnabled(input) {
-		cfg.Processors.DropRuntimePodMetrics = makeDropRuntimePodMetricsConfig()
+		b.config.Processors.DropRuntimePodMetrics = dropRuntimePodMetricsProcessorConfig()
 	}
 
 	if metricpipelineutils.IsRuntimeInputEnabled(input) && !metricpipelineutils.IsRuntimeContainerInputEnabled(input) {
-		cfg.Processors.DropRuntimeContainerMetrics = makeDropRuntimeContainerMetricsConfig()
+		b.config.Processors.DropRuntimeContainerMetrics = dropRuntimeContainerMetricsProcessorConfig()
 	}
 
 	if metricpipelineutils.IsRuntimeInputEnabled(input) && !metricpipelineutils.IsRuntimeNodeInputEnabled(input) {
-		cfg.Processors.DropRuntimeNodeMetrics = makeDropRuntimeNodeMetricsConfig()
+		b.config.Processors.DropRuntimeNodeMetrics = dropRuntimeNodeMetricsProcessorConfig()
 	}
 
 	if metricpipelineutils.IsRuntimeInputEnabled(input) && !metricpipelineutils.IsRuntimeVolumeInputEnabled(input) {
-		cfg.Processors.DropRuntimeVolumeMetrics = makeDropRuntimeVolumeMetricsConfig()
+		b.config.Processors.DropRuntimeVolumeMetrics = dropRuntimeVolumeMetricsProcessorConfig()
 	}
 
 	if metricpipelineutils.IsRuntimeInputEnabled(input) && !metricpipelineutils.IsRuntimeDeploymentInputEnabled(input) {
-		cfg.Processors.DropRuntimeDeploymentMetrics = makeDropRuntimeDeploymentMetricsConfig()
+		b.config.Processors.DropRuntimeDeploymentMetrics = dropRuntimeDeploymentMetricsProcessorConfig()
 	}
 
 	if metricpipelineutils.IsRuntimeInputEnabled(input) && !metricpipelineutils.IsRuntimeStatefulSetInputEnabled(input) {
-		cfg.Processors.DropRuntimeStatefulSetMetrics = makeDropRuntimeStatefulSetMetricsConfig()
+		b.config.Processors.DropRuntimeStatefulSetMetrics = dropRuntimeStatefulSetMetricsProcessorConfig()
 	}
 
 	if metricpipelineutils.IsRuntimeInputEnabled(input) && !metricpipelineutils.IsRuntimeDaemonSetInputEnabled(input) {
-		cfg.Processors.DropRuntimeDaemonSetMetrics = makeDropRuntimeDaemonSetMetricsConfig()
+		b.config.Processors.DropRuntimeDaemonSetMetrics = dropRuntimeDaemonSetMetricsProcessorConfig()
 	}
 
 	if metricpipelineutils.IsRuntimeInputEnabled(input) && !metricpipelineutils.IsRuntimeJobInputEnabled(input) {
-		cfg.Processors.DropRuntimeJobMetrics = makeDropRuntimeJobMetricsConfig()
+		b.config.Processors.DropRuntimeJobMetrics = dropRuntimeJobMetricsProcessorConfig()
 	}
 }
 
-func declareNamespaceFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {
-	if cfg.Processors.NamespaceFilters == nil {
-		cfg.Processors.NamespaceFilters = make(NamespaceFilters)
+func (b *Builder) addNamespaceFilters(pipeline *telemetryv1alpha1.MetricPipeline) {
+	if b.config.Processors.NamespaceFilters == nil {
+		b.config.Processors.NamespaceFilters = make(NamespaceFilters)
 	}
 
 	input := pipeline.Spec.Input
 	if metricpipelineutils.IsRuntimeInputEnabled(input) && shouldFilterByNamespace(input.Runtime.Namespaces) {
 		processorID := formatNamespaceFilterID(pipeline.Name, metric.InputSourceRuntime)
-		cfg.Processors.NamespaceFilters[processorID] = makeFilterByNamespaceConfig(pipeline.Spec.Input.Runtime.Namespaces, inputSourceEquals(metric.InputSourceRuntime))
+		b.config.Processors.NamespaceFilters[processorID] = filterByNamespaceProcessorConfig(pipeline.Spec.Input.Runtime.Namespaces, inputSourceEquals(metric.InputSourceRuntime))
 	}
 
 	if metricpipelineutils.IsPrometheusInputEnabled(input) && shouldFilterByNamespace(input.Prometheus.Namespaces) {
 		processorID := formatNamespaceFilterID(pipeline.Name, metric.InputSourcePrometheus)
-		cfg.Processors.NamespaceFilters[processorID] = makeFilterByNamespaceConfig(pipeline.Spec.Input.Prometheus.Namespaces, ottlexpr.ResourceAttributeEquals(metric.KymaInputNameAttribute, metric.KymaInputPrometheus))
+		b.config.Processors.NamespaceFilters[processorID] = filterByNamespaceProcessorConfig(pipeline.Spec.Input.Prometheus.Namespaces, ottlexpr.ResourceAttributeEquals(metric.KymaInputNameAttribute, metric.KymaInputPrometheus))
 	}
 
 	if metricpipelineutils.IsIstioInputEnabled(input) && shouldFilterByNamespace(input.Istio.Namespaces) {
 		processorID := formatNamespaceFilterID(pipeline.Name, metric.InputSourceIstio)
-		cfg.Processors.NamespaceFilters[processorID] = makeFilterByNamespaceConfig(pipeline.Spec.Input.Istio.Namespaces, inputSourceEquals(metric.InputSourceIstio))
+		b.config.Processors.NamespaceFilters[processorID] = filterByNamespaceProcessorConfig(pipeline.Spec.Input.Istio.Namespaces, inputSourceEquals(metric.InputSourceIstio))
 	}
 
 	if metricpipelineutils.IsOTLPInputEnabled(input) && input.OTLP != nil && shouldFilterByNamespace(input.OTLP.Namespaces) {
 		processorID := formatNamespaceFilterID(pipeline.Name, metric.InputSourceOTLP)
-		cfg.Processors.NamespaceFilters[processorID] = makeFilterByNamespaceConfig(pipeline.Spec.Input.OTLP.Namespaces, otlpInputSource())
+		b.config.Processors.NamespaceFilters[processorID] = filterByNamespaceProcessorConfig(pipeline.Spec.Input.OTLP.Namespaces, otlpInputSource())
 	}
 }
 
-func declareInstrumentationScopeTransform(cfg *Config, opts BuildOptions) {
-	cfg.Processors.SetInstrumentationScopeKyma = metric.MakeInstrumentationScopeProcessor(opts.InstrumentationScopeVersion, metric.InputSourceKyma)
-}
-
-func declareConnectors(pipelineName string, cfg *Config) {
+func (b *Builder) addConnectors(pipelineName string) {
 	forwardConnectorID := formatForwardConnectorID(pipelineName)
-	cfg.Connectors[forwardConnectorID] = struct{}{}
+	b.config.Connectors[forwardConnectorID] = struct{}{}
 
 	routingConnectorID := formatRoutingConnectorID(pipelineName)
-	cfg.Connectors[routingConnectorID] = makeRoutingConnectorConfig(pipelineName)
+	b.config.Connectors[routingConnectorID] = routingConnectorConfig(pipelineName)
 }
 
-func declareOTLPExporter(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
-	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.MakeConfig(ctx)
+func (b *Builder) addOTLPExporter(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, queueSize int) error {
+	otlpExporterBuilder := otlpexporter.NewConfigBuilder(
+		b.Reader,
+		pipeline.Spec.Output.OTLP,
+		pipeline.Name,
+		queueSize,
+		otlpexporter.SignalTypeMetric,
+	)
+
+	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.OTLPExporterConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to make otlp exporter config: %w", err)
 	}
 
-	maps.Copy(envVars, otlpExporterEnvVars)
+	maps.Copy(b.envVars, otlpExporterEnvVars)
 
 	exporterID := otlpexporter.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)
-	cfg.Exporters[exporterID] = Exporter{OTLP: otlpExporterConfig}
+	b.config.Exporters[exporterID] = Exporter{OTLP: otlpExporterConfig}
 
 	return nil
 }
 
 func shouldFilterByNamespace(namespaceSelector *telemetryv1alpha1.NamespaceSelector) bool {
 	return namespaceSelector != nil && (len(namespaceSelector.Include) > 0 || len(namespaceSelector.Exclude) > 0)
-}
-
-func formatNamespaceFilterID(pipelineName string, inputSourceType metric.InputSourceType) string {
-	return fmt.Sprintf("filter/%s-filter-by-namespace-%s-input", pipelineName, inputSourceType)
-}
-
-func formatForwardConnectorID(pipelineName string) string {
-	return fmt.Sprintf("forward/%s", pipelineName)
-}
-
-func formatRoutingConnectorID(pipelineName string) string {
-	return fmt.Sprintf("routing/%s", pipelineName)
-}
-
-func formatInputPipelineID(pipelineName string) string {
-	return fmt.Sprintf("metrics/%s-input", pipelineName)
-}
-
-func formatAttributesEnrichmentPipelineID(pipelineName string) string {
-	return fmt.Sprintf("metrics/%s-attributes-enrichment", pipelineName)
-}
-
-func formatOutputPipelineID(pipelineName string) string {
-	return fmt.Sprintf("metrics/%s-output", pipelineName)
 }

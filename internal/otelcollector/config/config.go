@@ -72,14 +72,14 @@ type Logs struct {
 	Encoding string `yaml:"encoding"`
 }
 
-func DefaultBaseConfig(pipelines Pipelines, opts ...ConfigOption) *Base {
-	baseConfig := &Base{
+func DefaultBaseConfig(pipelines Pipelines, opts ...ConfigOption) Base {
+	baseConfig := Base{
 		DefaultExtensions(),
 		DefaultService(pipelines),
 	}
 
 	for _, opt := range opts {
-		opt(baseConfig)
+		opt(&baseConfig)
 	}
 
 	return baseConfig
