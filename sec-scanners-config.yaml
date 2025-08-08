@@ -22,3 +22,4 @@ checkmarx-one:
     - '**/test/**'
     - '**/*_test.go'
     - docs/**
+    - dependencies/**
