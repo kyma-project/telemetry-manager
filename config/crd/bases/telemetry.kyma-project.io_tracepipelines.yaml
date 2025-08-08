@@ -56,10 +56,10 @@ spec:
             description: Defines the desired state of TracePipeline
             properties:
               output:
-                description: Defines a destination for shipping trace data. Only one can be defined per pipeline.
+                description: Configures the output where the traces will be send to. Exactly one output must be specified.
                 properties:
                   otlp:
-                    description: Configures the underlying OTel Collector with an [OTLP exporter](https://github.com/open-telemetry/opentelemetry-collector/blob/main/exporter/otlpexporter/README.md). If you switch `protocol`to `http`, an [OTLP HTTP exporter](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/otlphttpexporter) is used.
+                    description: Defines an output using the OpenTelemetry protocol.
                     properties:
                       authentication:
                         description: Defines authentication options for the OTLP output

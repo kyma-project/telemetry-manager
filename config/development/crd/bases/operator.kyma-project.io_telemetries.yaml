@@ -50,9 +50,7 @@ spec:
             description: TelemetrySpec defines the desired state of Telemetry
             properties:
               enrichments:
-                description: |-
-                  Enrichments specifies optional enrichments for the telemetry data.
-                  This field is optional.
+                description: Configures optional enrichments of all telemetry data collected by pipelines.
                 properties:
                   cluster:
                     description: Cluster provides user-defined cluster definitions to enrich resource attributes.
@@ -92,10 +90,10 @@ spec:
                     type: array
                 type: object
               log:
-                description: LogSpec defines the behavior of the log gateway.
+                description: Configures module settings specific to the log features.
                 properties:
                   gateway:
-                    description: Gateway specifies the settings for the log gateway.
+                    description: Gateway specifies the settings for a gateway.
                     properties:
                       scaling:
                         description: Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
@@ -120,9 +118,10 @@ spec:
                     type: object
                 type: object
               metric:
-                description: MetricSpec defines the behavior of the metric gateway
+                description: Configures module settings specific to the metric features.
                 properties:
                   gateway:
+                    description: GatewaySpec defines settings of a gateway.
                     properties:
                       scaling:
                         description: Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
@@ -147,9 +146,10 @@ spec:
                     type: object
                 type: object
               trace:
-                description: TraceSpec defines the behavior of the trace gateway
+                description: Configures module settings specific to the trace features.
                 properties:
                   gateway:
+                    description: GatewaySpec defines settings of a gateway.
                     properties:
                       scaling:
                         description: Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.

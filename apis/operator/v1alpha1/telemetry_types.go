@@ -38,45 +38,41 @@ const (
 
 // TelemetrySpec defines the desired state of Telemetry
 type TelemetrySpec struct {
+	// Configures module settings specific to the trace features.
 	// +optional
 	Trace *TraceSpec `json:"trace,omitempty"`
 
+	// Configures module settings specific to the metric features.
 	// +optional
 	Metric *MetricSpec `json:"metric,omitempty"`
 
+	// Configures module settings specific to the log features.
 	// +optional
 	Log *LogSpec `json:"log,omitempty"`
 
-	// Enrichments specifies optional enrichments for the telemetry data.
-	// This field is optional.
+	// Configures optional enrichments of all telemetry data collected by pipelines.
+	// +optional
 	Enrichments *EnrichmentSpec `json:"enrichments,omitempty"`
 }
 
 // MetricSpec defines the behavior of the metric gateway
 type MetricSpec struct {
-	Gateway MetricGatewaySpec `json:"gateway,omitempty"`
-}
-
-type MetricGatewaySpec struct {
-	Scaling Scaling `json:"scaling,omitempty"`
+	Gateway GatewaySpec `json:"gateway,omitempty"`
 }
 
 // TraceSpec defines the behavior of the trace gateway
 type TraceSpec struct {
-	Gateway TraceGatewaySpec `json:"gateway,omitempty"`
+	Gateway GatewaySpec `json:"gateway,omitempty"`
 }
 
-type TraceGatewaySpec struct {
-	Scaling Scaling `json:"scaling,omitempty"`
-}
-
-// LogSpec defines the behavior of the log gateway.
+// LogSpec defines the behavior of a gateway.
 type LogSpec struct {
-	// Gateway specifies the settings for the log gateway.
-	Gateway LogGatewaySpec `json:"gateway,omitempty"`
+	// Gateway specifies the settings for a gateway.
+	Gateway GatewaySpec `json:"gateway,omitempty"`
 }
 
-type LogGatewaySpec struct {
+// GatewaySpec defines settings of a gateway.
+type GatewaySpec struct {
 	Scaling Scaling `json:"scaling,omitempty"`
 }
 

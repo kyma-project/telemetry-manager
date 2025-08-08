@@ -59,6 +59,7 @@ spec:
             description: Defines the desired state of LogPipeline
             properties:
               files:
+                description: A list of content snippets that are mounted as files in the Fluent Bit configuration, which can be linked in the `custom` filters and a `custom` output. Only available when using an output of type `http` and `custom`.
                 items:
                   description: Provides file content to be consumed by a LogPipeline configuration
                   properties:
@@ -69,19 +70,20 @@ spec:
                   type: object
                 type: array
               filters:
+                description: Configures custom Fluent-Bit `filters` to transform logs. Only available when using an output of type `http` and `custom`.
                 items:
-                  description: Describes a filtering option on the logs of the pipeline.
+                  description: LogPipelineFilter configures custom Fluent-Bit `filters` to transform logs. Only available when using an output of type `http` and `custom`.
                   properties:
                     custom:
-                      description: 'Custom filter definition in the Fluent Bit syntax. Note: If you use a `custom` filter, you put the LogPipeline in unsupported mode.'
+                      description: 'Defines a custom filter in the [Fluent Bit syntax](https://docs.fluentbit.io/manual/pipeline/outputs). Note: If you use a `custom` filter, you put the LogPipeline in unsupported mode. Only available when using an output of type `http` and `custom`.'
                       type: string
                   type: object
                 type: array
               input:
-                description: Defines where to collect logs, including selector mechanisms.
+                description: Configures additional inputs for log collection.
                 properties:
                   application:
-                    description: Configures in more detail from which containers application logs are enabled as input.
+                    description: Configures the log collection from application containers stdout/stderr by tailing the log files of the underlying container runtime.
                     properties:
                       containers:
                         description: Describes whether application logs from specific containers are selected. The options are mutually exclusive.
@@ -98,19 +100,19 @@ spec:
                             type: array
                         type: object
                       dropLabels:
-                        description: Defines whether to drop all Kubernetes labels. The default is `false`.
+                        description: Defines whether to drop all Kubernetes labels. The default is `false`. Only available when using an output of type `http` and `custom`. For an `otlp` output, use the label enrichement feature in the Telemetry resource instead.
                         type: boolean
                       enabled:
-                        description: If enabled, application logs are collected. The default is `true`.
+                        description: If enabled, application logs are collected from application containers stdout/stderr. The default is `true`.
                         type: boolean
                       keepAnnotations:
-                        description: Defines whether to keep all Kubernetes annotations. The default is `false`.
+                        description: Defines whether to keep all Kubernetes annotations. The default is `false`.  Only available when using an output of type `http` and `custom`.
                         type: boolean
                       keepOriginalBody:
-                        description: If the `log` attribute contains a JSON payload and it is successfully parsed, the `log` attribute will be retained if `KeepOriginalBody` is set to `true`. Otherwise, the log attribute will be removed from the log record. The default is `true`.
+                        description: If the log data is in JSON and it is successfully parsed, the original log data is retained if `KeepOriginalBody` is set to `true`. Otherwise, the original log data will be removed from the log record. The default is `true`.
                         type: boolean
                       namespaces:
-                        description: Describes whether application logs from specific Namespaces are selected. The options are mutually exclusive. System Namespaces are excluded by default from the collection.
+                        description: Describes whether application logs from specific Namespaces are selected. The options are mutually exclusive. System Namespaces are excluded by default. Use the `system` attribute with value `true` to enable them.
                         properties:
                           exclude:
                             description: Exclude the container logs of the specified Namespace names.
@@ -128,7 +130,7 @@ spec:
                         type: object
                     type: object
                   otlp:
-                    description: Configures an endpoint to receive logs from a OTLP source.
+                    description: Configures the push endpoint to receive logs from a OTLP source.
                     properties:
                       disabled:
                         description: If set to `true`, no push-based OTLP signals are collected. The default is `false`.
@@ -153,10 +155,10 @@ spec:
                     type: object
                 type: object
               output:
-                description: '[Fluent Bit output](https://docs.fluentbit.io/manual/pipeline/outputs) where you want to push the logs. Only one output can be specified.'
+                description: Configures the output where the logs will be send to. Exactly one output must be specified.
                 properties:
                   custom:
-                    description: 'Defines a custom output in the Fluent Bit syntax. Note: If you use a `custom` output, you put the LogPipeline in unsupported mode.'
+                    description: 'Defines a custom output in the [Fluent Bit syntax](https://docs.fluentbit.io/manual/pipeline/outputs) where you want to push the logs. Note: If you use a `custom` output, you put the LogPipeline in unsupported mode. Only available when using an output of type `http` and `custom`.'
                     type: string
                   http:
                     description: Configures an HTTP-based output compatible with the Fluent Bit HTTP output plugin.
@@ -171,7 +173,7 @@ spec:
                         description: Data format to be used in the HTTP request body. Default is `json`.
                         type: string
                       host:
-                        description: Defines the host of the HTTP receiver.
+                        description: Defines the host of the HTTP backend.
                         properties:
                           value:
                             description: The value as plain text.
@@ -227,10 +229,10 @@ spec:
                             type: object
                         type: object
                       port:
-                        description: Defines the port of the HTTP receiver. Default is 443.
+                        description: Defines the port of the HTTP backend. Default is 443.
                         type: string
                       tls:
-                        description: Configures TLS for the HTTP target server.
+                        description: Configures TLS for the HTTP backend.
                         properties:
                           ca:
                             description: Defines an optional CA certificate for server certificate verification when using TLS. The certificate must be provided in PEM format.
@@ -327,7 +329,7 @@ spec:
                         - message: Can define either both 'cert' and 'key', or neither
                           rule: has(self.cert) == has(self.key)
                       uri:
-                        description: Defines the URI of the HTTP receiver. Default is "/".
+                        description: Defines the URI of the HTTP backend. Default is "/".
                         type: string
                       user:
                         description: Defines the basic auth user.
@@ -618,7 +620,7 @@ spec:
                 - message: Exactly one output must be defined
                   rule: (!has(self.http) && !has(self.otlp)) || ! (has(self.http) && has(self.otlp))
               variables:
-                description: A list of mappings from Kubernetes Secret keys to environment variables. Mapped keys are mounted as environment variables, so that they are available as [Variables](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/variables) in the sections.
+                description: A list of mappings from Kubernetes Secret keys to environment variables. Mapped keys are mounted as environment variables, so that they are available as [Variables](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/variables) in the `custom` filters and a `custom` output. Only available when using an output of type `http` and `custom`.
                 items:
                   description: References a Kubernetes secret that should be provided as environment variable to Fluent Bit
                   properties:

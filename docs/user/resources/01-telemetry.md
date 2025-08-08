@@ -83,26 +83,26 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 
 | Parameter | Type | Description |
 | ---- | ----------- | ---- |
-| **enrichments**  | object | Enrichments specifies optional enrichments for the telemetry data. This field is optional. |
+| **enrichments**  | object | Configures optional enrichments of all telemetry data collected by pipelines. |
 | **enrichments.&#x200b;cluster**  | object | Cluster provides user-defined cluster definitions to enrich resource attributes. |
 | **enrichments.&#x200b;cluster.&#x200b;name** (required) | string | Name specifies a custom cluster name for the resource attribute `k8s.cluster.name`. |
 | **enrichments.&#x200b;extractPodLabels**  | \[\]object | ExtractPodLabels specifies the list of Pod labels to be used for enrichment. This field is optional. |
 | **enrichments.&#x200b;extractPodLabels.&#x200b;key**  | string | Key specifies the exact label key to be used. This field is optional. |
 | **enrichments.&#x200b;extractPodLabels.&#x200b;keyPrefix**  | string | KeyPrefix specifies a prefix for label keys to be used. This field is optional. |
-| **log**  | object | LogSpec defines the behavior of the log gateway. |
-| **log.&#x200b;gateway**  | object | Gateway specifies the settings for the log gateway. |
+| **log**  | object | Configures module settings specific to the log features. |
+| **log.&#x200b;gateway**  | object | Gateway specifies the settings for a gateway. |
 | **log.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type. |
 | **log.&#x200b;gateway.&#x200b;scaling.&#x200b;static**  | object | Static is a scaling strategy enabling you to define a custom amount of replicas to be used for the gateway. Present only if Type = StaticScalingStrategyType. |
 | **log.&#x200b;gateway.&#x200b;scaling.&#x200b;static.&#x200b;replicas**  | integer | Replicas defines a static number of Pods to run the gateway. Minimum is 1. |
 | **log.&#x200b;gateway.&#x200b;scaling.&#x200b;type**  | string | Type of scaling strategy. Default is none, using a fixed amount of replicas. |
-| **metric**  | object | MetricSpec defines the behavior of the metric gateway |
-| **metric.&#x200b;gateway**  | object |  |
+| **metric**  | object | Configures module settings specific to the metric features. |
+| **metric.&#x200b;gateway**  | object | GatewaySpec defines settings of a gateway. |
 | **metric.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type. |
 | **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;static**  | object | Static is a scaling strategy enabling you to define a custom amount of replicas to be used for the gateway. Present only if Type = StaticScalingStrategyType. |
 | **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;static.&#x200b;replicas**  | integer | Replicas defines a static number of Pods to run the gateway. Minimum is 1. |
 | **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;type**  | string | Type of scaling strategy. Default is none, using a fixed amount of replicas. |
-| **trace**  | object | TraceSpec defines the behavior of the trace gateway |
-| **trace.&#x200b;gateway**  | object |  |
+| **trace**  | object | Configures module settings specific to the trace features. |
+| **trace.&#x200b;gateway**  | object | GatewaySpec defines settings of a gateway. |
 | **trace.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type. |
 | **trace.&#x200b;gateway.&#x200b;scaling.&#x200b;static**  | object | Static is a scaling strategy enabling you to define a custom amount of replicas to be used for the gateway. Present only if Type = StaticScalingStrategyType. |
 | **trace.&#x200b;gateway.&#x200b;scaling.&#x200b;static.&#x200b;replicas**  | integer | Replicas defines a static number of Pods to run the gateway. Minimum is 1. |

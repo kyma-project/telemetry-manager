@@ -68,51 +68,51 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 
 | Parameter | Type | Description |
 | ---- | ----------- | ---- |
-| **input**  | object | Configures different inputs to send additional metrics to the metric gateway. |
-| **input.&#x200b;istio**  | object | Configures istio-proxy metrics scraping. |
-| **input.&#x200b;istio.&#x200b;diagnosticMetrics**  | object | Configures diagnostic metrics scraping. The diagnostic metrics are disabled by default. |
-| **input.&#x200b;istio.&#x200b;diagnosticMetrics.&#x200b;enabled**  | boolean | If enabled, diagnostic metrics are scraped. The default is `false`. |
+| **input**  | object | Configures additional inputs for metric collection. |
+| **input.&#x200b;istio**  | object | Configures collection of Istio metrics from applications running in the Istio service mesh. |
+| **input.&#x200b;istio.&#x200b;diagnosticMetrics**  | object | Configures collection of additional diagnostic metrics. The default is `false`. |
+| **input.&#x200b;istio.&#x200b;diagnosticMetrics.&#x200b;enabled**  | boolean | If enabled, diagnostic metrics are collected. The default is `false`. |
 | **input.&#x200b;istio.&#x200b;enabled**  | boolean | If enabled, istio-proxy metrics are scraped from Pods that have the istio-proxy sidecar injected. The default is `false`. |
-| **input.&#x200b;istio.&#x200b;envoyMetrics**  | object | EnvoyMetrics defines the configuration for scraping Envoy metrics. If enabled, Envoy metrics with prefix `envoy_` are scraped. The envoy metrics are disabled by default. |
-| **input.&#x200b;istio.&#x200b;envoyMetrics.&#x200b;enabled**  | boolean | If enabled, Envoy metrics with prefix `envoy_` are scraped. The default is `false`. |
-| **input.&#x200b;istio.&#x200b;namespaces**  | object | Describes whether istio-proxy metrics from specific namespaces are selected. System namespaces are enabled by default. |
+| **input.&#x200b;istio.&#x200b;envoyMetrics**  | object | If enabled, Envoy metrics with prefix `envoy_` are scraped additional. The default is `false`. |
+| **input.&#x200b;istio.&#x200b;envoyMetrics.&#x200b;enabled**  | boolean | If enabled, Envoy metrics with prefix `envoy_` are scraped additional. The default is `false`. |
+| **input.&#x200b;istio.&#x200b;namespaces**  | object | Configures the namespaces for which the collection should be activated. All namespaces including system namespaces are enabled by default. |
 | **input.&#x200b;istio.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude signals from the specified Namespace names only. |
 | **input.&#x200b;istio.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include signals from the specified Namespace names only. |
-| **input.&#x200b;otlp**  | object | Configures the collection of push-based metrics that use the OpenTelemetry protocol. |
+| **input.&#x200b;otlp**  | object | Configures the push endpoint to receive metrics from a OTLP source. |
 | **input.&#x200b;otlp.&#x200b;disabled**  | boolean | If set to `true`, no push-based OTLP signals are collected. The default is `false`. |
 | **input.&#x200b;otlp.&#x200b;namespaces**  | object | Describes whether push-based OTLP signals from specific namespaces are selected. System namespaces are enabled by default. |
 | **input.&#x200b;otlp.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude signals from the specified Namespace names only. |
 | **input.&#x200b;otlp.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include signals from the specified Namespace names only. |
-| **input.&#x200b;prometheus**  | object | Configures Prometheus scraping. |
-| **input.&#x200b;prometheus.&#x200b;diagnosticMetrics**  | object | Configures diagnostic metrics scraping. The diagnostic metrics are disabled by default. |
-| **input.&#x200b;prometheus.&#x200b;diagnosticMetrics.&#x200b;enabled**  | boolean | If enabled, diagnostic metrics are scraped. The default is `false`. |
-| **input.&#x200b;prometheus.&#x200b;enabled**  | boolean | If enabled, Services and Pods marked with `prometheus.io/scrape=true` annotation are scraped. The default is `false`. |
-| **input.&#x200b;prometheus.&#x200b;namespaces**  | object | Describes whether Prometheus metrics from specific namespaces are selected. System namespaces are disabled by default. |
+| **input.&#x200b;prometheus**  | object | Configures collection of application metrics in the pull-based Prometheus protocol using endpoint discovery based on annotations. |
+| **input.&#x200b;prometheus.&#x200b;diagnosticMetrics**  | object | Configures collection of additional diagnostic metrics. The default is `false`. |
+| **input.&#x200b;prometheus.&#x200b;diagnosticMetrics.&#x200b;enabled**  | boolean | If enabled, diagnostic metrics are collected. The default is `false`. |
+| **input.&#x200b;prometheus.&#x200b;enabled**  | boolean | If enabled, Services endpoints and Pods marked with `prometheus.io/scrape=true` annotation are scraped. The default is `false`. |
+| **input.&#x200b;prometheus.&#x200b;namespaces**  | object | Configures the namespaces for which the collection should be activated. All namespaces except the system namespaces are enabled by default, use an empty struct notation to enable all namespaces. |
 | **input.&#x200b;prometheus.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude signals from the specified Namespace names only. |
 | **input.&#x200b;prometheus.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include signals from the specified Namespace names only. |
-| **input.&#x200b;runtime**  | object | Configures runtime scraping. |
-| **input.&#x200b;runtime.&#x200b;enabled**  | boolean | If enabled, runtime metrics are scraped. The default is `false`. |
-| **input.&#x200b;runtime.&#x200b;namespaces**  | object | Describes whether runtime metrics from specific namespaces are selected. System namespaces are disabled by default. |
+| **input.&#x200b;runtime**  | object | Configures collection of Kubernetes runtime metrics. |
+| **input.&#x200b;runtime.&#x200b;enabled**  | boolean | If enabled, runtime metrics are collected. The default is `false`. |
+| **input.&#x200b;runtime.&#x200b;namespaces**  | object | Configures the namespaces for which the collection should be activated. All namespaces except the system namespaces are enabled by default, use an empty struct notation to enable all namespaces. |
 | **input.&#x200b;runtime.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude signals from the specified Namespace names only. |
 | **input.&#x200b;runtime.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include signals from the specified Namespace names only. |
-| **input.&#x200b;runtime.&#x200b;resources**  | object | Describes the Kubernetes resources for which runtime metrics are scraped. |
-| **input.&#x200b;runtime.&#x200b;resources.&#x200b;container**  | object | Configures container runtime metrics scraping. |
-| **input.&#x200b;runtime.&#x200b;resources.&#x200b;container.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource are scraped. The default is `true`. |
-| **input.&#x200b;runtime.&#x200b;resources.&#x200b;daemonset**  | object | Configures DaemonSet runtime metrics scraping. |
-| **input.&#x200b;runtime.&#x200b;resources.&#x200b;daemonset.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource are scraped. The default is `true`. |
-| **input.&#x200b;runtime.&#x200b;resources.&#x200b;deployment**  | object | Configures Deployment runtime metrics scraping. |
-| **input.&#x200b;runtime.&#x200b;resources.&#x200b;deployment.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource are scraped. The default is `true`. |
-| **input.&#x200b;runtime.&#x200b;resources.&#x200b;job**  | object | Configures Job runtime metrics scraping. |
-| **input.&#x200b;runtime.&#x200b;resources.&#x200b;job.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource are scraped. The default is `true`. |
-| **input.&#x200b;runtime.&#x200b;resources.&#x200b;node**  | object | Configures Node runtime metrics scraping. |
-| **input.&#x200b;runtime.&#x200b;resources.&#x200b;node.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource are scraped. The default is `true`. |
-| **input.&#x200b;runtime.&#x200b;resources.&#x200b;pod**  | object | Configures Pod runtime metrics scraping. |
-| **input.&#x200b;runtime.&#x200b;resources.&#x200b;pod.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource are scraped. The default is `true`. |
-| **input.&#x200b;runtime.&#x200b;resources.&#x200b;statefulset**  | object | Configures StatefulSet runtime metrics scraping. |
-| **input.&#x200b;runtime.&#x200b;resources.&#x200b;statefulset.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource are scraped. The default is `true`. |
-| **input.&#x200b;runtime.&#x200b;resources.&#x200b;volume**  | object | Configures Volume runtime metrics scraping. |
-| **input.&#x200b;runtime.&#x200b;resources.&#x200b;volume.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource are scraped. The default is `true`. |
-| **output**  | object | Configures the metric gateway. |
+| **input.&#x200b;runtime.&#x200b;resources**  | object | Configures the Kubernetes resource types for which metrics are collected. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;container**  | object | Configures container runtime metrics collection. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;container.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource type are collected. The default is `true`. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;daemonset**  | object | Configures DaemonSet runtime metrics collection. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;daemonset.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource type are collected. The default is `true`. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;deployment**  | object | Configures Deployment runtime metrics collection. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;deployment.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource type are collected. The default is `true`. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;job**  | object | Configures Job runtime metrics collection. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;job.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource type are collected. The default is `true`. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;node**  | object | Configures Node runtime metrics collection. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;node.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource type are collected. The default is `true`. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;pod**  | object | Configures Pod runtime metrics collection. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;pod.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource type are collected. The default is `true`. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;statefulset**  | object | Configures StatefulSet runtime metrics collection. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;statefulset.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource type are collected. The default is `true`. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;volume**  | object | Configures Volume runtime metrics collection. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;volume.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource type are collected. The default is `true`. |
+| **output**  | object | Configures the output where the metrics will be send to. Exactly one output must be specified. |
 | **output.&#x200b;otlp** (required) | object | Defines an output using the OpenTelemetry protocol. |
 | **output.&#x200b;otlp.&#x200b;authentication**  | object | Defines authentication options for the OTLP output |
 | **output.&#x200b;otlp.&#x200b;authentication.&#x200b;basic**  | object | Activates `Basic` authentication for the destination providing relevant Secrets. |
