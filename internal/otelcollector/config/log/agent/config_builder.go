@@ -75,6 +75,7 @@ func (b *Builder) baseConfig(opts BuildOptions) *Config {
 func (b *Builder) addComponentsForLogPipeline(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, queueSize int) error {
 	b.addFileLogReceiver(pipeline)
 	b.addTransformProcessors(pipeline)
+
 	return b.addOTLPExporter(ctx, pipeline, queueSize)
 }
 

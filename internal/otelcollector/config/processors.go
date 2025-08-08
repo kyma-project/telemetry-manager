@@ -108,6 +108,7 @@ func TransformSpecsToProcessorStatements(specs []telemetryv1alpha1.TransformSpec
 			Conditions: spec.Conditions,
 		})
 	}
+
 	return result
 }
 
