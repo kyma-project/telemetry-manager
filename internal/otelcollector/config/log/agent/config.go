@@ -90,7 +90,7 @@ type Processors struct {
 	DropKymaAttributes             *config.ResourceProcessor          `yaml:"resource/drop-kyma-attributes,omitempty"`
 
 	// OTel Collector components with dynamic IDs that are pipeline name based
-	Transforms map[string]*config.TransformProcessor `yaml:",inline,omitempty"`
+	Dynamic map[string]any `yaml:",inline,omitempty"`
 }
 
 type Exporters map[string]Exporter

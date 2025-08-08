@@ -186,6 +186,7 @@ func TestBuildAgentConfig(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines["logs/test2"].Exporters, "otlp/test2")
 		})
 	})
+
 	t.Run("marshaling", func(t *testing.T) {
 		tests := []struct {
 			name                string

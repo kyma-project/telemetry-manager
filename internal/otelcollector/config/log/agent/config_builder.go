@@ -95,7 +95,7 @@ func (b *Builder) addTransformProcessors(pipeline *telemetryv1alpha1.LogPipeline
 	transformProcessor := config.LogTransformProcessor(transformStatements)
 
 	processorID := formatUserDefinedTransformProcessorID(pipeline.Name)
-	b.config.Processors.Transforms[processorID] = transformProcessor
+	b.config.Processors.Dynamic[processorID] = transformProcessor
 }
 
 func (b *Builder) addOTLPExporter(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, queueSize int) error {
