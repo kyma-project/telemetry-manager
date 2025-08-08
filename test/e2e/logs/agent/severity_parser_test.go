@@ -31,7 +31,7 @@ func TestSeverityParser(t *testing.T) {
 		}
 		levelWarningScenario = map[string]string{
 			"scenario": "level-warning",
-			"level":    "warning",
+			"level":    "WARNING",
 		}
 		logLevelScenario = map[string]string{
 			"scenario":  "log.level",
@@ -85,7 +85,7 @@ func TestSeverityParser(t *testing.T) {
 		HaveFlatLogs(ContainElement(SatisfyAll(
 			HaveAttributes(HaveKeyWithValue("scenario", "level-warning")),
 			HaveSeverityNumber(Equal(13)),
-			HaveSeverityText(Equal("warning")),
+			HaveSeverityText(Equal("WARNING")),
 			HaveAttributes(Not(HaveKey("level"))),
 		))),
 		assert.WithOptionalDescription("Scenario level-warning should parse level attribute and remove it"),
