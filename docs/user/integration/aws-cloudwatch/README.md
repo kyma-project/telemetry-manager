@@ -10,7 +10,7 @@
 
 Learn how to use [Amazon CloudWatch](https://aws.amazon.com/cloudwatch) as backend for the Kyma Telemetry module.
 
-Because CloudWatch do not support native OTLP ingestion for metrics and OTLP support for logs and traces require the AWS specific [segv4](https://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-authenticating-requests.html) authentication, the telemetry module must first ingest the signals into a custom OTel Collector based on the [Contrib distribution](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-OTLPSimplesetup.html) of the collector. Then, thecustom collector converts the signals to the format required by CloudWatch and ingests them into CloudWatch.
+Because CloudWatch doesn't support native OTLP ingestion for metrics, and OTLP support for logs and traces need the AWS-specific [segv4](https://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-authenticating-requests.html) authentication, the Telemetry module must first ingest the signals into a custom OTel Collector based on the [Contrib distribution](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-OTLPSimplesetup.html) of the collector. Then, the custom collector converts the signals to the format required by CloudWatch and ingests them into CloudWatch.
 
 ![overview](../assets/cloudwatch.drawio.svg)
 
@@ -35,7 +35,7 @@ Because CloudWatch do not support native OTLP ingestion for metrics and OTLP sup
 - [Kubectl version that is within one minor version (older or newer) of `kube-apiserver`](https://kubernetes.io/releases/version-skew-policy/#kubectl)
 - AWS account with permissions to create new users and security policies
 - AWS CloudWatch configured with a [Log Group and Log Stream](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/Working-with-log-groups-and-streams.html)
-- AWS CloudWatch configred with [Transaction Search](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Transaction-Search.html) enabled
+- AWS CloudWatch configured with [Transaction Search](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Transaction-Search.html) enabled
 
 ## Prepare the Namespace
 
@@ -45,7 +45,7 @@ Because CloudWatch do not support native OTLP ingestion for metrics and OTLP sup
     export K8S_NAMESPACE="aws"
     ```
 
-1. If you haven't created a Namespace yet, do it now:
+1. If you haven't created a namespace yet, do it now:
 
     ```bash
     kubectl create namespace $K8S_NAMESPACE
@@ -56,7 +56,7 @@ Because CloudWatch do not support native OTLP ingestion for metrics and OTLP sup
 ### Create AWS IAM User
 
 1. In your AWS account, create an [IAM user](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users.html) and attach the policy **CloudWatchAgentServerPolicy**.
-1. For the [IAM user](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users.html) you just created, create an access key for an application running outside AWS. Copy and Save the **access key** and **secret access key**; you need them to [Create a Secret with AWS Credentials](#create-a-secret-with-aws-credentials).
+1. For the [IAM user](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users.html) you just created, create an access key for an application running outside AWS. Copy and save the **access key** and **secret access key**; you need them to [Create a Secret with AWS Credentials](#create-a-secret-with-aws-credentials).
 
 ### Create a Secret with AWS Credentials
 
@@ -66,9 +66,9 @@ To connect the AWS Distro to the AWS services, create a Secret containing the cr
    kubectl create secret generic aws-credentials -n $K8S_NAMESPACE --from-literal=AWS_ACCESS_KEY_ID={ACCESS_KEY} --from-literal=AWS_SECRET_ACCESS_KEY={SECRET_ACCESS_KEY} --from-literal=AWS_REGION={AWS_REGION}
    ```
 
-## Deploy the custom collector
+## Deploy the Custom Collector
 
-1. Export the Helm release name that you want to use. The release name must be unique for the chosen Namespace. Be aware that all resources in the cluster will be prefixed with that name. Run the following command:
+1. Export the Helm release name that you want to use. The release name must be unique for the chosen namespace. Be aware that all resources in the cluster will be prefixed with that name. Run the following command:
 
     ```bash
     export HELM_OTEL_AWS_RELEASE="aws"
@@ -87,12 +87,12 @@ To connect the AWS Distro to the AWS services, create a Secret containing the cr
 helm upgrade --install -n $K8S_NAMESPACE $HELM_OTEL_AWS_RELEASE open-telemetry/opentelemetry-collector -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/aws-cloudwatch/values.yaml
 ```
 <!-- markdown-link-check-disable -->
-The previous command uses the [values.yaml](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/aws-cloudwatch/values.yaml) provided in this `aws-cloudwatch` folder, which contains customized settings deviating from the default settings. The customizations in the provided `values.yaml` cover the following areas:
+The previous command uses the [values.yaml](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/aws-cloudwatch/values.yaml) provided in this `aws-cloudwatch` folder, which contains customized settings deviating from the default settings in the following ways:
 <!-- markdown-link-check-enable -->
 
 - Mount the values of Secret `aws-credentials` as environment variables
-- Configure the OTEL exporter for logs assuming a LogGroup `/logs/kyma` and LogStream `default`
-- Configure the OTEL exporter for traces
+- Configure the OTel exporter for logs assuming a LogGroup `/logs/kyma` and LogStream `default`
+- Configure the OTel exporter for traces
 - Configure the AWSEMF exporter for metrics
 
 ## Set Up Kyma Pipelines
@@ -160,6 +160,6 @@ Verify that the logs, traces and metrics are exported to CloudWatch.
 
 1. [Install the OpenTelemetry demo application](../opentelemetry-demo/README.md).
 2. Go to `https://{AWS_REGION}.console.aws.amazon.com/cloudwatch`. Replace `{AWS_REGION}` with the region that you have chosen when [creating the Secret with AWS credentials](#create-a-secret-with-aws-credentials).
-3. To verify the traces: under **Apllication Signals**, go to **Traces**.
+3. To verify the traces: under **Application Signals**, go to **Traces**.
 4. To verify the logs: under **Logs**, go to **Log groups** and select the log group and stream created as prerequisite and which is configured in the custom collector setup.
 5. To verify the metrics: under **Metrics**, go to **All metrics**.
