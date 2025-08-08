@@ -27,7 +27,7 @@ func TestLogsOTelUpgrade(t *testing.T) {
 		genNs        = uniquePrefix("gen")
 	)
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
@@ -45,16 +45,16 @@ func TestLogsOTelUpgrade(t *testing.T) {
 	t.Run("before upgrade", func(t *testing.T) {
 		Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-		assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
-		assert.FluentBitLogPipelineHealthy(t, pipelineName)
+		assert.DeploymentReady(t, kitkyma.LogGatewayName)
+		assert.OTelLogPipelineHealthy(t, pipelineName)
 		assert.BackendReachable(t, backend)
-		assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
+		assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
 	})
 
 	t.Run("after upgrade", func(t *testing.T) {
-		assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
-		assert.FluentBitLogPipelineHealthy(t, pipelineName)
+		assert.DeploymentReady(t, kitkyma.LogGatewayName)
+		assert.OTelLogPipelineHealthy(t, pipelineName)
 		assert.BackendReachable(t, backend)
-		assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
+		assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
 	})
 }
