@@ -3,7 +3,6 @@ package gateway
 import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/ottlexpr"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/processors"
 )
@@ -48,8 +47,8 @@ func memoryLimiterProcessorConfig() *config.MemoryLimiter {
 	}
 }
 
-func setObsTimeIfZeroProcessorConfig() *log.TransformProcessor {
-	return &log.TransformProcessor{
+func setObsTimeIfZeroProcessorConfig() *config.TransformProcessor {
+	return &config.TransformProcessor{
 		ErrorMode: "ignore",
 		LogStatements: []config.TransformProcessorStatements{
 			{

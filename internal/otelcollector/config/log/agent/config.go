@@ -2,7 +2,6 @@ package agent
 
 import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log"
 )
 
 type Config struct {
@@ -81,7 +80,7 @@ type OperatorAttribute struct {
 type Processors struct {
 	config.BaseProcessors `yaml:",inline"`
 
-	SetInstrumentationScopeRuntime *log.TransformProcessor            `yaml:"transform/set-instrumentation-scope-runtime,omitempty"`
+	SetInstrumentationScopeRuntime *config.TransformProcessor         `yaml:"transform/set-instrumentation-scope-runtime,omitempty"`
 	K8sAttributes                  *config.K8sAttributesProcessor     `yaml:"k8sattributes,omitempty"`
 	InsertClusterAttributes        *config.ResourceProcessor          `yaml:"resource/insert-cluster-attributes,omitempty"`
 	ResolveServiceName             *config.ServiceEnrichmentProcessor `yaml:"service_enrichment,omitempty"`

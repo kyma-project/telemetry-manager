@@ -56,6 +56,13 @@ type AttributeAction struct {
 	RegexPattern string `yaml:"pattern,omitempty"`
 }
 
+type TransformProcessor struct {
+	ErrorMode        string                         `yaml:"error_mode"`
+	LogStatements    []TransformProcessorStatements `yaml:"log_statements,omitempty"`
+	MetricStatements []TransformProcessorStatements `yaml:"metric_statements,omitempty"`
+	TraceStatements  []TransformProcessorStatements `yaml:"trace_statements,omitempty"`
+}
+
 type TransformProcessorStatements struct {
 	Statements []string `yaml:"statements"`
 	Conditions []string `yaml:"conditions,omitempty"`

@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/processors"
 )
 
@@ -35,8 +34,8 @@ func memoryLimiterProcessorConfig() *config.MemoryLimiter {
 	}
 }
 
-func instrumentationScopeRuntimeProcessorConfig(instrumentationScopeVersion string) *log.TransformProcessor {
-	return &log.TransformProcessor{
+func instrumentationScopeRuntimeProcessorConfig(instrumentationScopeVersion string) *config.TransformProcessor {
+	return &config.TransformProcessor{
 		ErrorMode: "ignore",
 		LogStatements: []config.TransformProcessorStatements{
 			{

@@ -71,7 +71,7 @@ func deleteServiceNameProcessorConfig() *config.ResourceProcessor {
 	}
 }
 
-func insertSkipEnrichmentAttributeProcessorConfig() *metric.TransformProcessor {
+func insertSkipEnrichmentAttributeProcessorConfig() *config.TransformProcessor {
 	metricsToSkipEnrichment := []string{
 		"node",
 		"statefulset",
@@ -80,7 +80,7 @@ func insertSkipEnrichmentAttributeProcessorConfig() *metric.TransformProcessor {
 		"job",
 	}
 
-	return &metric.TransformProcessor{
+	return &config.TransformProcessor{
 		ErrorMode: "ignore",
 		MetricStatements: []config.TransformProcessorStatements{
 			{
