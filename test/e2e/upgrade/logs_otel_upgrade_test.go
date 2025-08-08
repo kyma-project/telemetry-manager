@@ -11,50 +11,50 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-// LogPipeline (Fluentbit) upgrade test flow
-func TestLogsUpgrade(t *testing.T) {
+// LogPipeline (OTel) upgrade test flow
+func TestLogsOTelUpgrade(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelUpgrade)
 
 	var (
-		uniquePrefix = unique.Prefix()
+		uniquePrefix = unique.Prefix("otel")
 		pipelineName = uniquePrefix()
 		backendNs    = uniquePrefix("backend")
 		genNs        = uniquePrefix("gen")
 	)
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
-		WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 		Build()
 
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
 		&pipeline,
-		stdoutloggen.NewDeployment(genNs).K8sObject(),
+		stdloggen.NewDeployment(genNs).K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Run("before upgrade", func(t *testing.T) {
 		Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-		assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
-		assert.FluentBitLogPipelineHealthy(t, pipelineName)
+		assert.DeploymentReady(t, kitkyma.LogGatewayName)
+		assert.OTelLogPipelineHealthy(t, pipelineName)
 		assert.BackendReachable(t, backend)
-		assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
+		assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
 	})
 
 	t.Run("after upgrade", func(t *testing.T) {
-		assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
-		assert.FluentBitLogPipelineHealthy(t, pipelineName)
+		assert.DeploymentReady(t, kitkyma.LogGatewayName)
+		assert.OTelLogPipelineHealthy(t, pipelineName)
 		assert.BackendReachable(t, backend)
-		assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
+		assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
 	})
 }

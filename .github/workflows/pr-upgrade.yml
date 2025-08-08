@@ -34,7 +34,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  manager-upgrade:
+  upgrade:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -68,6 +68,8 @@ jobs:
 
       - name: Run tests on latest tag
         shell: bash
+        # TODO(TeodorSAP): Remove '...-migrated' after 1.46.0 release
+        # TODO(TeodorSAP): Add "go test -v -timeout=10m -run=TestLogsOTelUpgrade/before_upgrade ./test/e2e-migrated/upgrade/...""
         run: |
           go test -v -timeout=10m -run=TestLogsUpgrade/before_upgrade ./test/e2e-migrated/upgrade/...
           go test -v -timeout=10m -run=TestMetricsUpgrade/before_upgrade ./test/e2e-migrated/upgrade/...
@@ -103,6 +105,7 @@ jobs:
 
       - name: Run tests on current revision
         shell: bash
+        # TODO(TeodorSAP): Add "go test -v -timeout=10m -run=TestLogsOTelUpgrade/after_upgrade ./test/e2e/upgrade/...""
         run: |
           go test -v -timeout=10m -run=TestLogsUpgrade/after_upgrade ./test/e2e/upgrade/...
           go test -v -timeout=10m -run=TestMetricsUpgrade/after_upgrade ./test/e2e/upgrade/...
