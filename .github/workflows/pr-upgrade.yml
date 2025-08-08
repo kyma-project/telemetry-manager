@@ -34,7 +34,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  manager-upgrade:
+  upgrade:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
