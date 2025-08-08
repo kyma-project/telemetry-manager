@@ -165,7 +165,7 @@ type LogPipelineHTTPOutput struct {
 	// Format data format to be used in the HTTP request body. Either `gelf`, `json`, `json_stream`, `json_lines` or `msgpack`. Default is `json`.
 	Format string `json:"format,omitempty"`
 	// TLS configures TLS for the HTTP backend.
-	TLS OutputTLS `json:"tls,omitempty"`
+	TLSConfig OutputTLS `json:"tls,omitempty"`
 	// Dedot enables de-dotting of Kubernetes labels and annotations for compatibility with ElasticSearch based backends. Dots (.) will be replaced by underscores (_). Default is `false`.
 	Dedot bool `json:"dedot,omitempty"`
 }
