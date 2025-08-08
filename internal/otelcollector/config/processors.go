@@ -1,5 +1,9 @@
 package config
 
+const (
+	defaultTransformProcessorErrorMode = "ignore"
+)
+
 type BaseProcessors struct {
 	Batch         *BatchProcessor `yaml:"batch,omitempty"`
 	MemoryLimiter *MemoryLimiter  `yaml:"memory_limiter,omitempty"`
@@ -69,4 +73,28 @@ type TransformProcessorStatements struct {
 }
 
 type IstioNoiseFilterProcessor struct {
+}
+
+// LogTransformProcessor creates a TransformProcessor for logs with error_mode set to "ignore".
+func LogTransformProcessor(statements []TransformProcessorStatements) *TransformProcessor {
+	return &TransformProcessor{
+		ErrorMode:     defaultTransformProcessorErrorMode,
+		LogStatements: statements,
+	}
+}
+
+// MakeMetricTransformProcessor creates a TransformProcessor for metrics with error_mode set to "ignore".
+func MakeMetricTransformProcessor(statements []TransformProcessorStatements) *TransformProcessor {
+	return &TransformProcessor{
+		ErrorMode:        defaultTransformProcessorErrorMode,
+		MetricStatements: statements,
+	}
+}
+
+// MakeTraceTransformProcessor creates a TransformProcessor for traces with error_mode set to "ignore".
+func MakeTraceTransformProcessor(statements []TransformProcessorStatements) *TransformProcessor {
+	return &TransformProcessor{
+		ErrorMode:       defaultTransformProcessorErrorMode,
+		TraceStatements: statements,
+	}
 }

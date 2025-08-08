@@ -80,17 +80,10 @@ func insertSkipEnrichmentAttributeProcessorConfig() *config.TransformProcessor {
 		"job",
 	}
 
-	return &config.TransformProcessor{
-		ErrorMode: "ignore",
-		MetricStatements: []config.TransformProcessorStatements{
-			{
-				Statements: []string{
-					fmt.Sprintf("set(resource.attributes[\"%s\"], \"true\")", metric.SkipEnrichmentAttribute),
-				},
-				Conditions: metricNameConditionsWithIsMatch(metricsToSkipEnrichment),
-			},
-		},
-	}
+	return config.MakeMetricTransformProcessor([]config.TransformProcessorStatements{{
+		Conditions: metricNameConditionsWithIsMatch(metricsToSkipEnrichment),
+		Statements: []string{fmt.Sprintf("set(resource.attributes[\"%s\"], \"true\")", metric.SkipEnrichmentAttribute)},
+	}})
 }
 
 func dropNonPVCVolumesMetricsProcessorConfig() *FilterProcessor {

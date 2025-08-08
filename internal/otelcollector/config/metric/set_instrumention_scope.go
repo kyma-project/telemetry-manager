@@ -32,10 +32,7 @@ func InstrumentationScopeProcessorConfig(instrumentationScopeVersion string, inp
 		Statements: statements,
 	})
 
-	return &config.TransformProcessor{
-		ErrorMode:        "ignore",
-		MetricStatements: transformProcessorStatements,
-	}
+	return config.MakeMetricTransformProcessor(transformProcessorStatements)
 }
 
 func instrumentationStatement(inputSource InputSourceType, instrumentationScopeVersion string) []string {

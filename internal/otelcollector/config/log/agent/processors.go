@@ -35,15 +35,10 @@ func memoryLimiterProcessorConfig() *config.MemoryLimiter {
 }
 
 func instrumentationScopeRuntimeProcessorConfig(instrumentationScopeVersion string) *config.TransformProcessor {
-	return &config.TransformProcessor{
-		ErrorMode: "ignore",
-		LogStatements: []config.TransformProcessorStatements{
-			{
-				Statements: []string{
-					fmt.Sprintf("set(scope.version, %q)", instrumentationScopeVersion),
-					fmt.Sprintf("set(scope.name, %q)", InstrumentationScopeRuntime),
-				},
-			},
+	return config.LogTransformProcessor([]config.TransformProcessorStatements{{
+		Statements: []string{
+			fmt.Sprintf("set(scope.version, %q)", instrumentationScopeVersion),
+			fmt.Sprintf("set(scope.name, %q)", InstrumentationScopeRuntime),
 		},
-	}
+	}})
 }

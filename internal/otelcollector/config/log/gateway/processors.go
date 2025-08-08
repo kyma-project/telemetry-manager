@@ -48,17 +48,10 @@ func memoryLimiterProcessorConfig() *config.MemoryLimiter {
 }
 
 func setObsTimeIfZeroProcessorConfig() *config.TransformProcessor {
-	return &config.TransformProcessor{
-		ErrorMode: "ignore",
-		LogStatements: []config.TransformProcessorStatements{
-			{
-				Conditions: []string{
-					"log.observed_time_unix_nano == 0",
-				},
-				Statements: []string{"set(log.observed_time, Now())"},
-			},
-		},
-	}
+	return config.LogTransformProcessor([]config.TransformProcessorStatements{{
+		Conditions: []string{"log.observed_time_unix_nano == 0"},
+		Statements: []string{"set(log.observed_time, Now())"},
+	}})
 }
 
 func namespaceFilterProcessorConfig(namespaceSelector *telemetryv1alpha1.NamespaceSelector) *FilterProcessor {
