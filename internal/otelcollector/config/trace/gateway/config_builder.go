@@ -83,11 +83,11 @@ func receiversConfig() Receivers {
 
 // addComponentsForTracePipeline enriches a Config (exporters, processors, etc.) with components for a given telemetryv1alpha1.TracePipeline.
 func (b *Builder) addComponentsForTracePipeline(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, queueSize int) error {
-	b.addTransformProcessors(pipeline)
+	b.addUserDefinedTransformProcessor(pipeline)
 	return b.addOTLPExporter(ctx, pipeline, queueSize)
 }
 
-func (b *Builder) addTransformProcessors(pipeline *telemetryv1alpha1.TracePipeline) {
+func (b *Builder) addUserDefinedTransformProcessor(pipeline *telemetryv1alpha1.TracePipeline) {
 	if len(pipeline.Spec.Transforms) == 0 {
 		return
 	}
@@ -95,7 +95,7 @@ func (b *Builder) addTransformProcessors(pipeline *telemetryv1alpha1.TracePipeli
 	transformStatements := config.TransformSpecsToProcessorStatements(pipeline.Spec.Transforms)
 	transformProcessor := config.TraceTransformProcessor(transformStatements)
 
-	processorID := formatTransformProcessorID(pipeline.Name)
+	processorID := formatUserDefinedTransformProcessorID(pipeline.Name)
 	b.config.Processors.Transforms[processorID] = transformProcessor
 }
 

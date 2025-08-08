@@ -93,7 +93,7 @@ func (b *Builder) addTransformProcessors(pipeline *telemetryv1alpha1.LogPipeline
 	transformStatements := config.TransformSpecsToProcessorStatements(pipeline.Spec.Transforms)
 	transformProcessor := config.LogTransformProcessor(transformStatements)
 
-	processorID := formatTransformProcessorID(pipeline.Name)
+	processorID := formatUserDefinedTransformProcessorID(pipeline.Name)
 	b.config.Processors.Transforms[processorID] = transformProcessor
 }
 

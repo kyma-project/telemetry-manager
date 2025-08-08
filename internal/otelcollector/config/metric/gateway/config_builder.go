@@ -81,7 +81,7 @@ func (b *Builder) addComponents(
 	b.addInputSourceFilters(pipeline)
 	b.addRuntimeResourcesFilters(pipeline)
 	b.addNamespaceFilters(pipeline)
-	b.addTransformProcessors(pipeline)
+	b.addUserDefinedTransformProcessor(pipeline)
 	b.addConnectors(pipeline.Name)
 
 	return b.addOTLPExporter(ctx, pipeline, queueSize)
@@ -186,7 +186,7 @@ func (b *Builder) addNamespaceFilters(pipeline *telemetryv1alpha1.MetricPipeline
 	}
 }
 
-func (b *Builder) addTransformProcessors(pipeline *telemetryv1alpha1.MetricPipeline) {
+func (b *Builder) addUserDefinedTransformProcessor(pipeline *telemetryv1alpha1.MetricPipeline) {
 	if len(pipeline.Spec.Transforms) == 0 {
 		return
 	}
@@ -194,7 +194,7 @@ func (b *Builder) addTransformProcessors(pipeline *telemetryv1alpha1.MetricPipel
 	transformStatements := config.TransformSpecsToProcessorStatements(pipeline.Spec.Transforms)
 	transformProcessor := config.MetricTransformProcessor(transformStatements)
 
-	processorID := formatTransformProcessorID(pipeline.Name)
+	processorID := formatUserDefinedTransformProcessorID(pipeline.Name)
 	b.config.Processors.Transforms[processorID] = transformProcessor
 }
 

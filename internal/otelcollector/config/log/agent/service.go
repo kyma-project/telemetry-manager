@@ -28,8 +28,8 @@ func formatFileLogReceiverID(pipelineName string) string {
 	return fmt.Sprintf("filelog/%s", pipelineName)
 }
 
-func formatTransformProcessorID(pipelineName string) string {
-	return fmt.Sprintf("transform/%s", pipelineName)
+func formatUserDefinedTransformProcessorID(pipelineName string) string {
+	return fmt.Sprintf("transform/user-defined-%s", pipelineName)
 }
 
 // Pipeline configuration functions

@@ -24,8 +24,8 @@ func formatTracePipelineID(pipelineName string) string {
 	return fmt.Sprintf("traces/%s", pipelineName)
 }
 
-func formatTransformProcessorID(pipelineName string) string {
-	return fmt.Sprintf("transform/%s", pipelineName)
+func formatUserDefinedTransformProcessorID(pipelineName string) string {
+	return fmt.Sprintf("transform/user-defined-%s", pipelineName)
 }
 
 // Pipeline configuration functions
@@ -41,7 +41,7 @@ func pipelineConfig(pipeline *telemetryv1alpha1.TracePipeline, exporterIDs ...st
 
 	// Add transform processors if transforms are specified
 	if len(pipeline.Spec.Transforms) > 0 {
-		processors = append(processors, formatTransformProcessorID(pipeline.Name))
+		processors = append(processors, formatUserDefinedTransformProcessorID(pipeline.Name))
 	}
 
 	processors = append(processors,

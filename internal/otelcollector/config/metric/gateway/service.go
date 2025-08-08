@@ -67,7 +67,7 @@ func outputPipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline) config.Pip
 
 	// Add transform processors if transforms are specified
 	if len(pipeline.Spec.Transforms) > 0 {
-		processors = append(processors, formatTransformProcessorID(pipeline.Name))
+		processors = append(processors, formatUserDefinedTransformProcessorID(pipeline.Name))
 	}
 
 	processors = append(processors, "resource/insert-cluster-attributes", "resource/delete-skip-enrichment-attribute", "resource/drop-kyma-attributes", "batch")
@@ -191,11 +191,9 @@ func formatRoutingConnectorID(pipelineName string) string {
 	return fmt.Sprintf("routing/%s", pipelineName)
 }
 
-func formatTransformProcessorID(pipelineName string) string {
-	return fmt.Sprintf("transform/%s", pipelineName)
+func formatUserDefinedTransformProcessorID(pipelineName string) string {
+	return fmt.Sprintf("transform/user-defined-%s", pipelineName)
 }
-
-// Helper functions
 
 func formatOTLPExporterID(pipeline *telemetryv1alpha1.MetricPipeline) string {
 	return otlpexporter.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)
