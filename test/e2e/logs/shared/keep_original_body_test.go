@@ -13,7 +13,7 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -23,13 +23,24 @@ const (
 	scenarioKeepOriginal = "keep-original-body"
 	// keepOriginalBody = false
 	scenarioDropOriginal = "drop-original-body"
+	// plaintext to be logged by the stdout log generator
+	plaintextLog = "hello world"
 )
 
-var logLines = []string{
-	`{"scenario": "message", "message":"a-body"}`,
-	`{"scenario": "msg", "msg":"b-body"}`,
-	`{"scenario": "none", "body":"c-body"}`,
-}
+var (
+	messageScenario = map[string]string{
+		"scenario": "message",
+		"message":  "a-body",
+	}
+	msgScenario = map[string]string{
+		"scenario": "msg",
+		"msg":      "b-body",
+	}
+	noneScenario = map[string]string{
+		"scenario": "none",
+		"body":     "c-body",
+	}
+)
 
 func TestKeepOriginalBody_OTel(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelLogAgent)
@@ -72,13 +83,16 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 		kitk8s.NewNamespace(backendNsDropOriginal).K8sObject(),
 		&pipelineDropOriginal,
 		&pipelineKeepOriginal,
-		stdloggen.NewDeployment(
-			sourceNsKeepOriginal,
-			stdloggen.AppendLogLines(logLines...),
-		).K8sObject(),
-		stdloggen.NewDeployment(sourceNsDropOriginal,
-			stdloggen.AppendLogLines(logLines...),
-		).K8sObject(),
+		// stdout log generators in the "keep-original-body" namespace
+		stdoutloggen.NewDeployment(sourceNsKeepOriginal, stdoutloggen.WithFields(messageScenario)).WithName(messageScenario["scenario"]).K8sObject(),
+		stdoutloggen.NewDeployment(sourceNsKeepOriginal, stdoutloggen.WithFields(msgScenario)).WithName(msgScenario["scenario"]).K8sObject(),
+		stdoutloggen.NewDeployment(sourceNsKeepOriginal, stdoutloggen.WithFields(noneScenario)).WithName(noneScenario["scenario"]).K8sObject(),
+		stdoutloggen.NewDeployment(sourceNsKeepOriginal, stdoutloggen.WithPlaintextFormat(), stdoutloggen.WithText(plaintextLog)).K8sObject(),
+		// stdout log generators in the "drop-original-body" namespace
+		stdoutloggen.NewDeployment(sourceNsDropOriginal, stdoutloggen.WithFields(messageScenario)).WithName(messageScenario["scenario"]).K8sObject(),
+		stdoutloggen.NewDeployment(sourceNsDropOriginal, stdoutloggen.WithFields(msgScenario)).WithName(msgScenario["scenario"]).K8sObject(),
+		stdoutloggen.NewDeployment(sourceNsDropOriginal, stdoutloggen.WithFields(noneScenario)).WithName(noneScenario["scenario"]).K8sObject(),
+		stdoutloggen.NewDeployment(sourceNsDropOriginal, stdoutloggen.WithPlaintextFormat(), stdoutloggen.WithText(plaintextLog)).K8sObject(),
 	}
 	resources = append(resources, backendKeepOriginal.K8sObjects()...)
 	resources = append(resources, backendDropOriginal.K8sObjects()...)
@@ -128,7 +142,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 
 	assert.BackendDataEventuallyMatches(t, backendDropOriginal,
 		HaveFlatLogs(ContainElement(SatisfyAll(
-			HaveLogBody(Equal(stdloggen.DefaultLine)),
+			HaveLogBody(Equal(plaintextLog)),
 			HaveAttributes(Not(HaveKey("log.original"))),
 			HaveAttributes(Not(HaveKey("scenario"))),
 		))),
@@ -169,7 +183,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 
 	assert.BackendDataEventuallyMatches(t, backendKeepOriginal,
 		HaveFlatLogs(ContainElement(SatisfyAll(
-			HaveLogBody(Equal(stdloggen.DefaultLine)),
+			HaveLogBody(Equal(plaintextLog)),
 			HaveAttributes(Not(HaveKey("log.original"))),
 			HaveAttributes(Not(HaveKey("scenario"))),
 		))),
@@ -218,14 +232,16 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 		kitk8s.NewNamespace(backendNsDropOriginal).K8sObject(),
 		&pipelineDropOriginal,
 		&pipelineKeepOriginal,
-		stdloggen.NewDeployment(
-			sourceNsKeepOriginal,
-			stdloggen.AppendLogLines(logLines...),
-		).K8sObject(),
-		stdloggen.NewDeployment(
-			sourceNsDropOriginal,
-			stdloggen.AppendLogLines(logLines...),
-		).K8sObject(),
+		// stdout log generators in the "keep-original-body" namespace
+		stdoutloggen.NewDeployment(sourceNsKeepOriginal, stdoutloggen.WithFields(messageScenario)).WithName(messageScenario["scenario"]).K8sObject(),
+		stdoutloggen.NewDeployment(sourceNsKeepOriginal, stdoutloggen.WithFields(msgScenario)).WithName(msgScenario["scenario"]).K8sObject(),
+		stdoutloggen.NewDeployment(sourceNsKeepOriginal, stdoutloggen.WithFields(noneScenario)).WithName(noneScenario["scenario"]).K8sObject(),
+		stdoutloggen.NewDeployment(sourceNsKeepOriginal, stdoutloggen.WithPlaintextFormat(), stdoutloggen.WithText(plaintextLog)).K8sObject(),
+		// stdout log generators in the "drop-original-body" namespace
+		stdoutloggen.NewDeployment(sourceNsDropOriginal, stdoutloggen.WithFields(messageScenario)).WithName(messageScenario["scenario"]).K8sObject(),
+		stdoutloggen.NewDeployment(sourceNsDropOriginal, stdoutloggen.WithFields(msgScenario)).WithName(msgScenario["scenario"]).K8sObject(),
+		stdoutloggen.NewDeployment(sourceNsDropOriginal, stdoutloggen.WithFields(noneScenario)).WithName(noneScenario["scenario"]).K8sObject(),
+		stdoutloggen.NewDeployment(sourceNsDropOriginal, stdoutloggen.WithPlaintextFormat(), stdoutloggen.WithText(plaintextLog)).K8sObject(),
 	}
 	resources = append(resources, backendKeepOriginal.K8sObjects()...)
 	resources = append(resources, backendDropOriginal.K8sObjects()...)
@@ -253,7 +269,7 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 	assert.BackendDataEventuallyMatches(t, backendDropOriginal,
 		fluentbit.HaveFlatLogs(ContainElement(SatisfyAll(
 			fluentbit.HaveAttributes(Not(HaveKey("scenario"))),
-			fluentbit.HaveLogBody(Equal(stdloggen.DefaultLine)),
+			fluentbit.HaveLogBody(Equal(plaintextLog)),
 		))),
 		assert.WithOptionalDescription("Scenario keepOriginalBody=false with plain logs should not have attributes and have a body"),
 	)
@@ -271,7 +287,7 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 	assert.BackendDataEventuallyMatches(t, backendKeepOriginal,
 		fluentbit.HaveFlatLogs(ContainElement(SatisfyAll(
 			fluentbit.HaveAttributes(Not(HaveKey("scenario"))),
-			fluentbit.HaveLogBody(Equal(stdloggen.DefaultLine)),
+			fluentbit.HaveLogBody(Equal(plaintextLog)),
 		))),
 		assert.WithOptionalDescription("Scenario keepOriginalBody=true with plain logs should not have attributes and have a body"),
 	)

@@ -13,7 +13,7 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
@@ -91,7 +91,7 @@ func TestServiceName_OTel(t *testing.T) {
 			resources = append(resources, backend.K8sObjects()...)
 
 			if tc.expectAgent {
-				podSpecLogs := stdloggen.PodSpec()
+				podSpecLogs := stdoutloggen.PodSpec()
 				resources = append(resources,
 					kitk8s.NewPod(podWithBothLabelsName, genNs).
 						WithLabel(kubeAppLabelKey, kubeAppLabelValue).
