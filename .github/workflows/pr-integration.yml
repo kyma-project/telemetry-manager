@@ -65,7 +65,7 @@ jobs:
           - healthy
           - backpressure
           - outage
-    name: "selfmonitor: ${{ matrix.kind }}-${{ matrix.scenario }}"
+    name: "selfmon: ${{ matrix.kind }}-${{ matrix.scenario }}"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
