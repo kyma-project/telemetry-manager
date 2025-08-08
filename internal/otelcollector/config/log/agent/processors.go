@@ -14,12 +14,12 @@ const (
 	InstrumentationScopeRuntime = "io.kyma-project.telemetry/runtime"
 )
 
-func makeProcessorsConfig(opts BuildOptions) Processors {
+func processorsConfig(opts BuildOptions) Processors {
 	return Processors{
 		BaseProcessors: config.BaseProcessors{
-			MemoryLimiter: makeMemoryLimiterConfig(),
+			MemoryLimiter: memoryLimiterProcessorConfig(),
 		},
-		SetInstrumentationScopeRuntime: makeInstrumentationScopeRuntime(opts.InstrumentationScopeVersion),
+		SetInstrumentationScopeRuntime: instrumentationScopeRuntimeProcessorConfig(opts.InstrumentationScopeVersion),
 		K8sAttributes:                  processors.K8sAttributesProcessorConfig(opts.Enrichments),
 		InsertClusterAttributes:        processors.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.ClusterUID, opts.CloudProvider),
 		ResolveServiceName:             processors.MakeResolveServiceNameConfig(),
@@ -27,7 +27,7 @@ func makeProcessorsConfig(opts BuildOptions) Processors {
 	}
 }
 
-func makeMemoryLimiterConfig() *config.MemoryLimiter {
+func memoryLimiterProcessorConfig() *config.MemoryLimiter {
 	return &config.MemoryLimiter{
 		CheckInterval:        "5s",
 		LimitPercentage:      limitPercentage,
@@ -35,7 +35,7 @@ func makeMemoryLimiterConfig() *config.MemoryLimiter {
 	}
 }
 
-func makeInstrumentationScopeRuntime(instrumentationScopeVersion string) *log.TransformProcessor {
+func instrumentationScopeRuntimeProcessorConfig(instrumentationScopeVersion string) *log.TransformProcessor {
 	return &log.TransformProcessor{
 		ErrorMode: "ignore",
 		LogStatements: []config.TransformProcessorStatements{

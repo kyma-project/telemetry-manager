@@ -32,16 +32,16 @@ const (
 	appServicesSecureJobName = "app-services-secure"
 )
 
-// makePrometheusConfigForPods creates a Prometheus configuration for scraping Pods that are annotated with prometheus.io annotations.
-func makePrometheusConfigForPods() *PrometheusReceiver {
+// prometheusPodsReceiverConfig creates a Prometheus configuration for scraping Pods that are annotated with prometheus.io annotations.
+func prometheusPodsReceiverConfig() *PrometheusReceiver {
 	var config PrometheusReceiver
 
 	scrapeConfig := ScrapeConfig{
 		ScrapeInterval:             scrapeInterval,
 		SampleLimit:                sampleLimit,
-		KubernetesDiscoveryConfigs: makeDiscoveryConfigWithNodeSelector(RolePod),
+		KubernetesDiscoveryConfigs: discoveryConfigWithNodeSelector(RolePod),
 		JobName:                    appPodsJobName,
-		RelabelConfigs:             makePrometheusPodsRelabelConfigs(),
+		RelabelConfigs:             prometheusPodsRelabelConfigs(),
 	}
 
 	config.Config.ScrapeConfigs = append(config.Config.ScrapeConfigs, scrapeConfig)
@@ -49,42 +49,42 @@ func makePrometheusConfigForPods() *PrometheusReceiver {
 	return &config
 }
 
-// makePrometheusConfigForServices creates a Prometheus configuration for scraping Services that are annotated with prometheus.io annotations.
+// prometheusServicesReceiverConfig creates a Prometheus configuration for scraping Services that are annotated with prometheus.io annotations.
 // If Istio is enabled, an additional scrape job config is generated (suffixed with -secure) to scrape annotated Services over HTTPS using Istio certificate.
 // Istio certificate is expected to be mounted at the provided path using the proxy.istio.io/config annotation.
 // See more: https://istio.io/latest/docs/ops/integrations/prometheus/#tls-settings
-func makePrometheusConfigForServices(opts BuildOptions) *PrometheusReceiver {
+func prometheusServicesReceiverConfig(opts BuildOptions) *PrometheusReceiver {
 	var config PrometheusReceiver
 
 	baseScrapeConfig := ScrapeConfig{
 		ScrapeInterval:             scrapeInterval,
 		SampleLimit:                sampleLimit,
-		KubernetesDiscoveryConfigs: makeDiscoveryConfigWithNodeSelector(RoleEndpoints),
+		KubernetesDiscoveryConfigs: discoveryConfigWithNodeSelector(RoleEndpoints),
 	}
 
 	httpScrapeConfig := baseScrapeConfig
 	httpScrapeConfig.JobName = appServicesJobName
-	httpScrapeConfig.RelabelConfigs = makePrometheusEndpointsRelabelConfigs(false)
+	httpScrapeConfig.RelabelConfigs = prometheusEndpointsRelabelConfigs(false)
 	config.Config.ScrapeConfigs = append(config.Config.ScrapeConfigs, httpScrapeConfig)
 
 	// If Istio is enabled, generate an additional scrape config for scraping annotated Services over HTTPS
 	if opts.IstioEnabled {
 		httpsScrapeConfig := baseScrapeConfig
 		httpsScrapeConfig.JobName = appServicesSecureJobName
-		httpsScrapeConfig.RelabelConfigs = makePrometheusEndpointsRelabelConfigs(true)
-		httpsScrapeConfig.TLSConfig = makeTLSConfig(opts.IstioCertPath)
+		httpsScrapeConfig.RelabelConfigs = prometheusEndpointsRelabelConfigs(true)
+		httpsScrapeConfig.TLSConfig = tlsConfig(opts.IstioCertPath)
 		config.Config.ScrapeConfigs = append(config.Config.ScrapeConfigs, httpsScrapeConfig)
 	}
 
 	return &config
 }
 
-// makePrometheusPodsRelabelConfigs generates a set of relabel configs for the Pod role type.
+// prometheusPodsRelabelConfigs generates a set of relabel configs for the Pod role type.
 // They restrict Pods that are selected for scraping and set internal labels (__address__, __scheme__, etc.).
 // See more: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#pod.
 //
 // Only Pods without Istio sidecars are selected.
-func makePrometheusPodsRelabelConfigs() []RelabelConfig {
+func prometheusPodsRelabelConfigs() []RelabelConfig {
 	return []RelabelConfig{
 		keepIfRunningOnSameNode(NodeAffiliatedPod),
 		keepIfScrapingEnabled(AnnotatedPod),
@@ -98,13 +98,13 @@ func makePrometheusPodsRelabelConfigs() []RelabelConfig {
 	}
 }
 
-// makePrometheusEndpointsRelabelConfigs generates a set of relabel configs for the Endpoint role type.
+// prometheusEndpointsRelabelConfigs generates a set of relabel configs for the Endpoint role type.
 // They restrict Service Endpoints that are selected for scraping and set internal labels (__address__, __scheme__, etc.).
 // See more: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#endpoint.
 //
 // If requireHTTPS is true, only Endpoints backed by Pods with Istio sidecars or those explicitly marked with prometheus.io/scheme=http annotations are selected.
 // If requireHTTPS is false, only Endpoints backed by Pods wuthout Istio sidecars or those marked with prometheus.io/scheme=https annotation are selcted.
-func makePrometheusEndpointsRelabelConfigs(requireHTTPS bool) []RelabelConfig {
+func prometheusEndpointsRelabelConfigs(requireHTTPS bool) []RelabelConfig {
 	relabelConfigs := []RelabelConfig{
 		keepIfRunningOnSameNode(NodeAffiliatedEndpoint),
 		keepIfScrapingEnabled(AnnotatedService),
@@ -128,7 +128,7 @@ func makePrometheusEndpointsRelabelConfigs(requireHTTPS bool) []RelabelConfig {
 		inferServiceFromMetaLabel())
 }
 
-func makeTLSConfig(istioCertPath string) *TLSConfig {
+func tlsConfig(istioCertPath string) *TLSConfig {
 	istioCAFile := filepath.Join(istioCertPath, "root-cert.pem")
 	istioCertFile := filepath.Join(istioCertPath, "cert-chain.pem")
 	istioKeyFile := filepath.Join(istioCertPath, "key.pem")
@@ -141,7 +141,7 @@ func makeTLSConfig(istioCertPath string) *TLSConfig {
 	}
 }
 
-func makePrometheusIstioConfig(envoyMetricsEnabled bool) *PrometheusReceiver {
+func prometheusIstioReceiverConfig(envoyMetricsEnabled bool) *PrometheusReceiver {
 	metricNames := "istio_.*"
 	if envoyMetricsEnabled {
 		metricNames = strings.Join([]string{"envoy_.*", metricNames}, "|")
@@ -155,7 +155,7 @@ func makePrometheusIstioConfig(envoyMetricsEnabled bool) *PrometheusReceiver {
 					SampleLimit:                sampleLimit,
 					MetricsPath:                "/stats/prometheus",
 					ScrapeInterval:             scrapeInterval,
-					KubernetesDiscoveryConfigs: makeDiscoveryConfigWithNodeSelector(RolePod),
+					KubernetesDiscoveryConfigs: discoveryConfigWithNodeSelector(RolePod),
 					RelabelConfigs: []RelabelConfig{
 						keepIfRunningOnSameNode(NodeAffiliatedPod),
 						keepIfIstioProxy(),
@@ -311,7 +311,7 @@ func inferURLParamFromAnnotation(annotated AnnotatedResource) RelabelConfig {
 	}
 }
 
-func makeDiscoveryConfigWithNodeSelector(role Role) []KubernetesDiscoveryConfig {
+func discoveryConfigWithNodeSelector(role Role) []KubernetesDiscoveryConfig {
 	return []KubernetesDiscoveryConfig{
 		{
 			Role: role,

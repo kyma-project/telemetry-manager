@@ -5,7 +5,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 )
 
-func makeExtensionsConfig() Extensions {
+func extensionsConfig() Extensions {
 	return Extensions{
 		Extensions: config.DefaultExtensions(),
 		FileStorage: &FileStorage{
