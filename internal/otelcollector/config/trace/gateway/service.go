@@ -2,7 +2,6 @@ package gateway
 
 import (
 	"fmt"
-	"sort"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
@@ -12,10 +11,35 @@ import (
 // Service pipeline assembly
 
 func (b *Builder) addServicePipelines(pipeline *telemetryv1alpha1.TracePipeline) {
-	pipelineID := formatTracePipelineID(pipeline.Name)
-	exporterID := otlpexporter.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)
+	processorIDs := []string{
+		// memory_limiter is always the first processor in the pipeline
+		"memory_limiter",
+		"k8sattributes",
+		"istio_noise_filter",
+		"resource/insert-cluster-attributes",
+		"service_enrichment",
+		"resource/drop-kyma-attributes",
+	}
 
-	b.config.Service.Pipelines[pipelineID] = pipelineConfig(pipeline, exporterID)
+	// Add user-defined transform processor after all of the enrichment processors
+	// if transforms are specified
+	if len(pipeline.Spec.Transforms) > 0 {
+		processorIDs = append(processorIDs, formatUserDefinedTransformProcessorID(pipeline.Name))
+	}
+
+	processorIDs = append(processorIDs,
+		// batch processor is always the last processor in the pipeline
+		"batch",
+	)
+
+	pipelineConfig := config.Pipeline{
+		Receivers:  []string{"otlp"},
+		Processors: processorIDs,
+		Exporters:  []string{formatOTLPExporterID(pipeline)},
+	}
+
+	pipelineID := formatTracePipelineID(pipeline.Name)
+	b.config.Service.Pipelines[pipelineID] = pipelineConfig
 }
 
 // Pipeline ID formatting functions
@@ -28,32 +52,6 @@ func formatUserDefinedTransformProcessorID(pipelineName string) string {
 	return fmt.Sprintf("transform/user-defined-%s", pipelineName)
 }
 
-// Pipeline configuration functions
-
-func pipelineConfig(pipeline *telemetryv1alpha1.TracePipeline, exporterIDs ...string) config.Pipeline {
-	sort.Strings(exporterIDs)
-
-	processors := []string{
-		"memory_limiter",
-		"k8sattributes",
-		"istio_noise_filter",
-	}
-
-	// Add transform processors if transforms are specified
-	if len(pipeline.Spec.Transforms) > 0 {
-		processors = append(processors, formatUserDefinedTransformProcessorID(pipeline.Name))
-	}
-
-	processors = append(processors,
-		"resource/insert-cluster-attributes",
-		"service_enrichment",
-		"resource/drop-kyma-attributes",
-		"batch",
-	)
-
-	return config.Pipeline{
-		Receivers:  []string{"otlp"},
-		Processors: processors,
-		Exporters:  exporterIDs,
-	}
+func formatOTLPExporterID(pipeline *telemetryv1alpha1.TracePipeline) string {
+	return otlpexporter.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)
 }

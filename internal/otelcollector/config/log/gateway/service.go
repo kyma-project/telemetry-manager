@@ -15,7 +15,7 @@ func (b *Builder) addServicePipelines(pipeline *telemetryv1alpha1.LogPipeline) {
 	processorIDs := []string{
 		// memory_limiter is always the first processor in the pipeline
 		"memory_limiter",
-		// Record observed time at the beginning of the pipeline
+		// record observed time at the beginning of the pipeline
 		"transform/set-observed-time-if-zero",
 		"k8sattributes",
 		"istio_noise_filter",
