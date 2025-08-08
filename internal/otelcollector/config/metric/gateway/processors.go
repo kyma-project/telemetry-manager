@@ -22,6 +22,7 @@ func processorsConfig(opts BuildOptions) Processors {
 		DropKymaAttributes:            processors.DropKymaAttributesProcessorConfig(),
 		DeleteSkipEnrichmentAttribute: deleteSkipEnrichmentAttributeProcessorConfig(),
 		SetInstrumentationScopeKyma:   metric.InstrumentationScopeProcessorConfig(opts.InstrumentationScopeVersion, metric.InputSourceKyma),
+		Transforms:                    make(map[string]*config.TransformProcessor),
 	}
 }
 

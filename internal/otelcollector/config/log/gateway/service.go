@@ -43,6 +43,11 @@ func servicePipelineConfig(pipeline *telemetryv1alpha1.LogPipeline) config.Pipel
 		processorIDs = append(processorIDs, formatNamespaceFilterID(pipeline.Name))
 	}
 
+	// Add transform processors if transforms are specified
+	if len(pipeline.Spec.Transforms) > 0 {
+		processorIDs = append(processorIDs, formatTransformProcessorID(pipeline.Name))
+	}
+
 	processorIDs = append(processorIDs,
 		"resource/insert-cluster-attributes",
 		"service_enrichment",
@@ -66,6 +71,10 @@ func shouldFilterByNamespace(namespaceSelector *telemetryv1alpha1.NamespaceSelec
 
 func formatNamespaceFilterID(pipelineName string) string {
 	return fmt.Sprintf("filter/%s-filter-by-namespace", pipelineName)
+}
+
+func formatTransformProcessorID(pipelineName string) string {
+	return fmt.Sprintf("transform/%s", pipelineName)
 }
 
 func formatOTLPExporterID(pipeline *telemetryv1alpha1.LogPipeline) string {

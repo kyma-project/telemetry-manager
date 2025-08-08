@@ -28,6 +28,10 @@ func formatFileLogReceiverID(pipelineName string) string {
 	return fmt.Sprintf("filelog/%s", pipelineName)
 }
 
+func formatTransformProcessorID(pipelineName string) string {
+	return fmt.Sprintf("transform/%s", pipelineName)
+}
+
 // Pipeline configuration functions
 
 // Each pipeline will have one receiver and one exporter

@@ -81,6 +81,7 @@ func (b *Builder) addComponents(
 	b.addInputSourceFilters(pipeline)
 	b.addRuntimeResourcesFilters(pipeline)
 	b.addNamespaceFilters(pipeline)
+	b.addTransformProcessors(pipeline)
 	b.addConnectors(pipeline.Name)
 
 	return b.addOTLPExporter(ctx, pipeline, queueSize)
@@ -183,6 +184,18 @@ func (b *Builder) addNamespaceFilters(pipeline *telemetryv1alpha1.MetricPipeline
 		processorID := formatNamespaceFilterID(pipeline.Name, metric.InputSourceOTLP)
 		b.config.Processors.NamespaceFilters[processorID] = filterByNamespaceProcessorConfig(pipeline.Spec.Input.OTLP.Namespaces, otlpInputSource())
 	}
+}
+
+func (b *Builder) addTransformProcessors(pipeline *telemetryv1alpha1.MetricPipeline) {
+	if len(pipeline.Spec.Transforms) == 0 {
+		return
+	}
+
+	transformStatements := config.TransformSpecsToProcessorStatements(pipeline.Spec.Transforms)
+	transformProcessor := config.MetricTransformProcessor(transformStatements)
+
+	processorID := formatTransformProcessorID(pipeline.Name)
+	b.config.Processors.Transforms[processorID] = transformProcessor
 }
 
 func (b *Builder) addConnectors(pipelineName string) {

@@ -87,6 +87,7 @@ func receiversConfig() Receivers {
 func (b *Builder) addComponentsForLogPipeline(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, queueSize int) error {
 	b.addNamespaceFilter(pipeline)
 	b.addInputSourceFilters(pipeline)
+	b.addTransformProcessors(pipeline)
 
 	return b.addOTLPExporter(ctx, pipeline, queueSize)
 }
@@ -113,6 +114,18 @@ func (b *Builder) addInputSourceFilters(pipeline *telemetryv1alpha1.LogPipeline)
 	if !logpipelineutils.IsOTLPInputEnabled(input) {
 		b.config.Processors.DropIfInputSourceOTLP = dropIfInputSourceOTLPProcessorConfig()
 	}
+}
+
+func (b *Builder) addTransformProcessors(pipeline *telemetryv1alpha1.LogPipeline) {
+	if len(pipeline.Spec.Transforms) == 0 {
+		return
+	}
+
+	transformStatements := config.TransformSpecsToProcessorStatements(pipeline.Spec.Transforms)
+	transformProcessor := config.LogTransformProcessor(transformStatements)
+
+	processorID := formatTransformProcessorID(pipeline.Name)
+	b.config.Processors.Transforms[processorID] = transformProcessor
 }
 
 func (b *Builder) addOTLPExporter(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, queueSize int) error {

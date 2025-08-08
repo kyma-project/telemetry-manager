@@ -53,7 +53,6 @@ func (b *Builder) Build(ctx context.Context, logPipelines []telemetryv1alpha1.Lo
 		b.addServicePipelines(&pipeline)
 	}
 
-	// Return the assembled config and any environment variables needed for exporters
 	return b.config, b.envVars, nil
 }
 
@@ -75,14 +74,27 @@ func (b *Builder) baseConfig(opts BuildOptions) *Config {
 // addComponentsForLogPipeline enriches a Config (exporters, processors, etc.) with components for a given telemetryv1alpha1.LogPipeline.
 func (b *Builder) addComponentsForLogPipeline(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, queueSize int) error {
 	b.addFileLogReceiver(pipeline)
+	b.addTransformProcessors(pipeline)
 	return b.addOTLPExporter(ctx, pipeline, queueSize)
 }
 
 func (b *Builder) addFileLogReceiver(pipeline *telemetryv1alpha1.LogPipeline) {
 	receiver := fileLogReceiverConfig(*pipeline)
 
-	otlpReceiverID := fmt.Sprintf("filelog/%s", pipeline.Name)
-	b.config.Receivers[otlpReceiverID] = Receiver{FileLog: receiver}
+	receiverID := formatFileLogReceiverID(pipeline.Name)
+	b.config.Receivers[receiverID] = Receiver{FileLog: receiver}
+}
+
+func (b *Builder) addTransformProcessors(pipeline *telemetryv1alpha1.LogPipeline) {
+	if len(pipeline.Spec.Transforms) == 0 {
+		return
+	}
+
+	transformStatements := config.TransformSpecsToProcessorStatements(pipeline.Spec.Transforms)
+	transformProcessor := config.LogTransformProcessor(transformStatements)
+
+	processorID := formatTransformProcessorID(pipeline.Name)
+	b.config.Processors.Transforms[processorID] = transformProcessor
 }
 
 func (b *Builder) addOTLPExporter(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, queueSize int) error {

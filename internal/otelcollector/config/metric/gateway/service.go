@@ -65,6 +65,11 @@ func outputPipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline) config.Pip
 	processors = append(processors, runtimeResourcesFiltersIDs(input)...)
 	processors = append(processors, diagnosticMetricFiltersIDs(input)...)
 
+	// Add transform processors if transforms are specified
+	if len(pipeline.Spec.Transforms) > 0 {
+		processors = append(processors, formatTransformProcessorID(pipeline.Name))
+	}
+
 	processors = append(processors, "resource/insert-cluster-attributes", "resource/delete-skip-enrichment-attribute", "resource/drop-kyma-attributes", "batch")
 
 	return config.Pipeline{
@@ -184,6 +189,10 @@ func formatForwardConnectorID(pipelineName string) string {
 
 func formatRoutingConnectorID(pipelineName string) string {
 	return fmt.Sprintf("routing/%s", pipelineName)
+}
+
+func formatTransformProcessorID(pipelineName string) string {
+	return fmt.Sprintf("transform/%s", pipelineName)
 }
 
 // Helper functions
