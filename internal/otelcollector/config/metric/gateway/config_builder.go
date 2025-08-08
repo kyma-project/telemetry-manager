@@ -186,19 +186,15 @@ func (b *Builder) addNamespaceFilters(pipeline *telemetryv1alpha1.MetricPipeline
 	}
 }
 
-func (b *Builder) addUserDefinedProcessor(pipeline *telemetryv1alpha1.MetricPipeline) {
+func (b *Builder) addUserDefinedTransformProcessor(pipeline *telemetryv1alpha1.MetricPipeline) {
 	if len(pipeline.Spec.Transforms) == 0 {
 		return
-	}
-
-	if b.config.Processors.Dynamic == nil {
-		b.config.Processors.Dynamic = make(map[string]any)
 	}
 
 	transformStatements := config.TransformSpecsToProcessorStatements(pipeline.Spec.Transforms)
 	transformProcessor := config.MetricTransformProcessor(transformStatements)
 
-	processorID := formatTransformProcessorID(pipeline.Name)
+	processorID := formatUserDefinedTransformProcessorID(pipeline.Name)
 	b.config.Processors.Dynamic[processorID] = transformProcessor
 }
 
