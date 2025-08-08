@@ -14,6 +14,7 @@ mend:
     - '**/test/**'
     - '**/*_test.go'
     - docs/**
+    - dependencies/**
 checkmarx-one:
   preset: go-default
   exclude:
