@@ -77,16 +77,16 @@ func (b *EndpointSliceBuilder) Build() discoveryv1.EndpointSlice {
 }
 
 func (b *EndpointSliceBuilder) WithName(name string) *EndpointSliceBuilder {
-	b.endpointSlice.ObjectMeta.Name = name
+	b.endpointSlice.Name = name
 	return b
 }
 
 func (b *EndpointSliceBuilder) WithNamespace(namespace string) *EndpointSliceBuilder {
-	b.endpointSlice.ObjectMeta.Namespace = namespace
+	b.endpointSlice.Namespace = namespace
 	return b
 }
 
 func (b *EndpointSliceBuilder) WithLabel(label map[string]string) *EndpointSliceBuilder {
-	b.endpointSlice.ObjectMeta.Labels = label
+	b.endpointSlice.Labels = label
 	return b
 }

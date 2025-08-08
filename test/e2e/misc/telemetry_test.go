@@ -77,7 +77,6 @@ func TestTelemetry(t *testing.T) {
 		g.Expect(telemetry.Status.GatewayEndpoints.Metrics).ShouldNot(BeNil())
 		g.Expect(telemetry.Status.GatewayEndpoints.Metrics.GRPC).Should(Equal(metricGRPCEndpoint))
 		g.Expect(telemetry.Status.GatewayEndpoints.Metrics.HTTP).Should(Equal(metricHTTPEndpoint))
-
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 
 	assertValidatingWebhookConfiguration()

@@ -4,20 +4,20 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/resources/common"
-	v1 "k8s.io/api/core/v1"
-	discoveryv1 "k8s.io/api/discovery/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"slices"
 
+	corev1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 )
 
@@ -36,7 +36,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, telemetry *operatorv1alph
 
 	r.updateOverallState(ctx, telemetry, telemetryInDeletion)
 
-	if err := r.updateGatewayEndpoints(ctx, telemetry, telemetryInDeletion); err != nil {
+	if err := r.updateGatewayEndpoints(ctx, telemetry); err != nil {
 		return fmt.Errorf("failed to update gateway endpoints: %w", err)
 	}
 
@@ -88,7 +88,7 @@ func (r *Reconciler) updateOverallState(ctx context.Context, telemetry *operator
 	}
 }
 
-func (r *Reconciler) updateGatewayEndpoints(ctx context.Context, telemetry *operatorv1alpha1.Telemetry, telemetryInDeletion bool) error {
+func (r *Reconciler) updateGatewayEndpoints(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
 	logEndpoints, err := r.logEndpoints(ctx, r.config)
 	if err != nil {
 		return fmt.Errorf("failed to get log endpoints: %w", err)
@@ -123,8 +123,10 @@ func (r *Reconciler) logEndpoints(ctx context.Context, config Config) (*operator
 	if err != nil {
 		return nil, fmt.Errorf("failed to check if log service endpoints exist: %w", err)
 	}
+
+	// It might take sometime for the endpoints to be created after the service is created.
 	if !endPointsExist {
-		return nil, nil
+		return nil, nil //nolint:nilnil //it is ok in this context, even if it is not go idiomatic
 	}
 
 	return makeOTLPEndpoints(pushEndpoint.Name, pushEndpoint.Namespace), nil
@@ -135,12 +137,15 @@ func (r *Reconciler) traceEndpoints(ctx context.Context, config Config) (*operat
 		Name:      otelcollector.TraceOTLPServiceName,
 		Namespace: config.Traces.Namespace,
 	}
+
 	endPointsExist, err := r.checkServiceEndpointsExist(ctx, otelcollector.TraceGatewayName, pushEndpoint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check if trace service endpoints exist: %w", err)
 	}
+
+	// It might take sometime for the endpoints to be created after the service is created.
 	if !endPointsExist {
-		return nil, nil
+		return nil, nil //nolint:nilnil //it is ok in this context, even if it is not go idiomatic
 	}
 
 	return makeOTLPEndpoints(pushEndpoint.Name, pushEndpoint.Namespace), nil
@@ -155,34 +160,41 @@ func (r *Reconciler) metricEndpoints(ctx context.Context, config Config) (*opera
 	if err != nil {
 		return nil, fmt.Errorf("failed to check if metric service endpoints exist: %w", err)
 	}
+
+	// It might take sometime for the endpoints to be created after the service is created.
 	if !endPointsExist {
-		return nil, nil
+		return nil, nil //nolint:nilnil //it is ok in this context, even if it is not go idiomatic
 	}
 
 	return makeOTLPEndpoints(pushEndpoint.Name, pushEndpoint.Namespace), nil
 }
 
 func (r *Reconciler) checkServiceEndpointsExist(ctx context.Context, gatewayName string, svcName types.NamespacedName) (bool, error) {
-	var service v1.Service
-	err := r.Client.Get(ctx, svcName, &service)
+	var service corev1.Service
 
+	err := r.Get(ctx, svcName, &service)
 	if err != nil {
+		// If the pipeline is not configured with OTLP input, gateway won't be deployed. In such case we can safely return error
 		if client.IgnoreNotFound(err) != nil {
 			return false, fmt.Errorf("failed to get log-otlp service: %w", err)
 		}
+
 		return false, nil
 	}
 
 	var endpointSlices discoveryv1.EndpointSliceList
-	err = r.Client.List(ctx, &endpointSlices, client.InNamespace(svcName.Namespace), client.MatchingLabels{
-		common.LabelKeyK8sName: gatewayName,
+
+	err = r.List(ctx, &endpointSlices, client.InNamespace(svcName.Namespace), client.MatchingLabels{
+		commonresources.LabelKeyK8sName: gatewayName,
 	})
 	if err != nil {
 		return false, err
 	}
+
 	if len(endpointSlices.Items) == 0 {
 		return false, fmt.Errorf("no EndpointSlice found for service %s in namespace %s", svcName.Name, svcName.Namespace)
 	}
+
 	return true, nil
 }
 
