@@ -236,11 +236,11 @@ spec:
                   type: object
                 type: array
               endpoints:
-                description: endpoints for trace and metric gateway.
+                description: Endpoints for trace and metric gateway.
                 nullable: true
                 properties:
                   metrics:
-                    description: metrics contains the endpoints for metric gateway supporting OTLP.
+                    description: Metrics contains the endpoints for metric gateway supporting OTLP.
                     properties:
                       grpc:
                         description: GRPC endpoint for OTLP.
@@ -250,7 +250,7 @@ spec:
                         type: string
                     type: object
                   traces:
-                    description: traces contains the endpoints for trace gateway supporting OTLP.
+                    description: Traces contains the endpoints for trace gateway supporting OTLP.
                     properties:
                       grpc:
                         description: GRPC endpoint for OTLP.

@@ -47,21 +47,21 @@ type TracePipeline struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	// Defines the desired state of TracePipeline
+	// Spec defines the desired state of TracePipeline
 	Spec TracePipelineSpec `json:"spec,omitempty"`
-	// Shows the observed state of the TracePipeline
+	// Status shows the observed state of the TracePipeline
 	Status TracePipelineStatus `json:"status,omitempty"`
 }
 
 // TracePipelineSpec defines the desired state of TracePipeline
 type TracePipelineSpec struct {
-	// Configures the output where the traces will be send to. Exactly one output must be specified.
+	// Output configures the output where the traces will be send to. Exactly one output must be specified.
 	Output TracePipelineOutput `json:"output"`
 }
 
 // TracePipelineOutput defines the output configuration section.
 type TracePipelineOutput struct {
-	// Defines an output using the OpenTelemetry protocol.
+	// OTLP output defines an output using the OpenTelemetry protocol.
 	OTLP *OTLPOutput `json:"otlp"`
 }
 
