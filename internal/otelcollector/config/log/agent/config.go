@@ -12,6 +12,7 @@ type Config struct {
 	Processors Processors `yaml:"processors"`
 	Exporters  Exporters  `yaml:"exporters"`
 }
+
 type Receivers map[string]Receiver
 type Receiver struct {
 	FileLog *FileLog `yaml:",inline,omitempty"`
@@ -73,6 +74,7 @@ type Route struct {
 	Expression string `yaml:"expr,omitempty"`
 	Output     string `yaml:"output,omitempty"`
 }
+
 type OperatorAttribute struct {
 	ParseFrom string `yaml:"parse_from,omitempty"`
 }
@@ -80,11 +82,15 @@ type OperatorAttribute struct {
 type Processors struct {
 	config.BaseProcessors `yaml:",inline"`
 
+	// OTel Collector components with static IDs
 	SetInstrumentationScopeRuntime *config.TransformProcessor         `yaml:"transform/set-instrumentation-scope-runtime,omitempty"`
 	K8sAttributes                  *config.K8sAttributesProcessor     `yaml:"k8sattributes,omitempty"`
 	InsertClusterAttributes        *config.ResourceProcessor          `yaml:"resource/insert-cluster-attributes,omitempty"`
 	ResolveServiceName             *config.ServiceEnrichmentProcessor `yaml:"service_enrichment,omitempty"`
 	DropKymaAttributes             *config.ResourceProcessor          `yaml:"resource/drop-kyma-attributes,omitempty"`
+
+	// OTel Collector components with dynamic IDs that are pipeline name based
+	Transforms map[string]*config.TransformProcessor `yaml:",inline,omitempty"`
 }
 
 type Exporters map[string]Exporter

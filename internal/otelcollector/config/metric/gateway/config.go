@@ -38,6 +38,7 @@ type ModuleGVR struct {
 type Processors struct {
 	config.BaseProcessors `yaml:",inline"`
 
+	// OTel Collector components with static IDs
 	K8sAttributes                                *config.K8sAttributesProcessor     `yaml:"k8sattributes,omitempty"`
 	InsertClusterAttributes                      *config.ResourceProcessor          `yaml:"resource/insert-cluster-attributes,omitempty"`
 	DropDiagnosticMetricsIfInputSourcePrometheus *FilterProcessor                   `yaml:"filter/drop-diagnostic-metrics-if-input-source-prometheus,omitempty"`
@@ -60,11 +61,10 @@ type Processors struct {
 	SetInstrumentationScopeKyma                  *config.TransformProcessor         `yaml:"transform/set-instrumentation-scope-kyma,omitempty"`
 	DeleteSkipEnrichmentAttribute                *config.ResourceProcessor          `yaml:"resource/delete-skip-enrichment-attribute,omitempty"`
 
-	// NamespaceFilters contains filter processors, which need different configurations per pipeline
-	NamespaceFilters NamespaceFilters `yaml:",inline,omitempty"`
+	// OTel Collector components with dynamic IDs that are pipeline name based
+	NamespaceFilters map[string]*FilterProcessor           `yaml:",inline,omitempty"`
+	Transforms       map[string]*config.TransformProcessor `yaml:",inline,omitempty"`
 }
-
-type NamespaceFilters map[string]*FilterProcessor
 
 type FilterProcessor struct {
 	Metrics FilterProcessorMetrics `yaml:"metrics"`

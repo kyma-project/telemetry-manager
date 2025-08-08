@@ -19,6 +19,7 @@ type Receivers struct {
 type Processors struct {
 	config.BaseProcessors `yaml:",inline"`
 
+	// OTel Collector components with static IDs
 	SetObsTimeIfZero        *config.TransformProcessor         `yaml:"transform/set-observed-time-if-zero,omitempty"`
 	K8sAttributes           *config.K8sAttributesProcessor     `yaml:"k8sattributes,omitempty"`
 	IstioNoiseFilter        *config.IstioNoiseFilterProcessor  `yaml:"istio_noise_filter,omitempty"`
@@ -28,11 +29,10 @@ type Processors struct {
 	DropIfInputSourceOTLP   *FilterProcessor                   `yaml:"filter/drop-if-input-source-otlp,omitempty"`
 	IstioEnrichment         *IstioEnrichmentProcessor          `yaml:"istio_enrichment,omitempty"`
 
-	// NamespaceFilters contains filter processors, which need different configurations per pipeline
-	NamespaceFilters NamespaceFilters `yaml:",inline,omitempty"`
+	// OTel Collector components with dynamic IDs that are pipeline name based
+	NamespaceFilters map[string]*FilterProcessor           `yaml:",inline,omitempty"`
+	Transforms       map[string]*config.TransformProcessor `yaml:",inline,omitempty"`
 }
-
-type NamespaceFilters map[string]*FilterProcessor
 
 type FilterProcessor struct {
 	Logs FilterProcessorLogs `yaml:"logs"`

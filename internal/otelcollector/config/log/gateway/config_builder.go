@@ -99,7 +99,7 @@ func (b *Builder) addNamespaceFilter(pipeline *telemetryv1alpha1.LogPipeline) {
 	}
 
 	if b.config.Processors.NamespaceFilters == nil {
-		b.config.Processors.NamespaceFilters = make(NamespaceFilters)
+		b.config.Processors.NamespaceFilters = make(map[string]*FilterProcessor)
 	}
 
 	if shouldFilterByNamespace(otlpInput.Namespaces) {

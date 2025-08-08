@@ -160,7 +160,7 @@ func (b *Builder) addRuntimeResourcesFilters(pipeline *telemetryv1alpha1.MetricP
 
 func (b *Builder) addNamespaceFilters(pipeline *telemetryv1alpha1.MetricPipeline) {
 	if b.config.Processors.NamespaceFilters == nil {
-		b.config.Processors.NamespaceFilters = make(NamespaceFilters)
+		b.config.Processors.NamespaceFilters = make(map[string]*FilterProcessor)
 	}
 
 	input := pipeline.Spec.Input
