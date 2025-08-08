@@ -66,7 +66,7 @@ func TestTelemetry(t *testing.T) {
 		var telemetry operatorv1alpha1.Telemetry
 		g.Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
 
-		g.Expect(telemetry.Status.GatewayEndpoints.Metrics).ShouldNot(BeNil())
+		g.Expect(telemetry.Status.GatewayEndpoints.Logs).ShouldNot(BeNil())
 		g.Expect(telemetry.Status.GatewayEndpoints.Logs.GRPC).Should(Equal(logGRPCEndpoint))
 		g.Expect(telemetry.Status.GatewayEndpoints.Logs.HTTP).Should(Equal(logHTTPEndpoint))
 
