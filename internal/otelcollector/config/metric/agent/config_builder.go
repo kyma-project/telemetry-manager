@@ -49,11 +49,21 @@ type BuildOptions struct {
 
 func (b *Builder) Build(pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) *Config {
 	inputs := inputSources{
-		runtime:          shouldEnableRuntimeMetricsScraping(pipelines),
-		runtimeResources: shouldEnableRuntimeResourcesMetricsScraping(pipelines),
-		prometheus:       shouldEnablePrometheusMetricsScraping(pipelines),
-		istio:            shouldEnableIstioMetricsScraping(pipelines),
-		envoy:            shouldEnableEnvoyMetricsScraping(pipelines),
+		runtimeResources: runtimeResourceSources{
+			pod:         shouldEnableRuntimePodMetricsScraping(pipelines),
+			container:   shouldEnableRuntimeContainerMetricsScraping(pipelines),
+			node:        shouldEnableRuntimeNodeMetricsScraping(pipelines),
+			volume:      shouldEnableRuntimeVolumeMetricsScraping(pipelines),
+			statefulset: shouldEnableRuntimeStatefulSetMetricsScraping(pipelines),
+			deployment:  shouldEnableRuntimeDeploymentMetricsScraping(pipelines),
+			daemonset:   shouldEnableRuntimeDaemonSetMetricsScraping(pipelines),
+			job:         shouldEnableRuntimeJobMetricsScraping(pipelines),
+		},
+
+		runtime:    shouldEnableRuntimeMetricsScraping(pipelines),
+		prometheus: shouldEnablePrometheusMetricsScraping(pipelines),
+		istio:      shouldEnableIstioMetricsScraping(pipelines),
+		envoy:      shouldEnableEnvoyMetricsScraping(pipelines),
 	}
 
 	return b.baseConfig(inputs, b.Config.GatewayOTLPServiceName, opts)
@@ -68,19 +78,6 @@ func shouldEnableRuntimeMetricsScraping(pipelines []telemetryv1alpha1.MetricPipe
 	}
 
 	return false
-}
-
-func shouldEnableRuntimeResourcesMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) runtimeResourceSources {
-	return runtimeResourceSources{
-		pod:         shouldEnableRuntimePodMetricsScraping(pipelines),
-		container:   shouldEnableRuntimeContainerMetricsScraping(pipelines),
-		node:        shouldEnableRuntimeNodeMetricsScraping(pipelines),
-		volume:      shouldEnableRuntimeVolumeMetricsScraping(pipelines),
-		statefulset: shouldEnableRuntimeStatefulSetMetricsScraping(pipelines),
-		deployment:  shouldEnableRuntimeDeploymentMetricsScraping(pipelines),
-		daemonset:   shouldEnableRuntimeDaemonSetMetricsScraping(pipelines),
-		job:         shouldEnableRuntimeJobMetricsScraping(pipelines),
-	}
 }
 
 func shouldEnableRuntimePodMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
