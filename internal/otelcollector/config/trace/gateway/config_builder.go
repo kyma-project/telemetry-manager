@@ -87,7 +87,7 @@ func (b *Builder) addComponentsForTracePipeline(ctx context.Context, pipeline *t
 	return b.addOTLPExporter(ctx, pipeline, queueSize)
 }
 
-func (b *Builder) addUserDefinedProcessor(pipeline *telemetryv1alpha1.TracePipeline) {
+func (b *Builder) addUserDefinedTransformProcessor(pipeline *telemetryv1alpha1.TracePipeline) {
 	if len(pipeline.Spec.Transforms) == 0 {
 		return
 	}
@@ -99,7 +99,7 @@ func (b *Builder) addUserDefinedProcessor(pipeline *telemetryv1alpha1.TracePipel
 	transformStatements := config.TransformSpecsToProcessorStatements(pipeline.Spec.Transforms)
 	transformProcessor := config.TraceTransformProcessor(transformStatements)
 
-	processorID := formatTransformProcessorID(pipeline.Name)
+	processorID := formatUserDefinedTransformProcessorID(pipeline.Name)
 	b.config.Processors.Dynamic[processorID] = transformProcessor
 }
 
