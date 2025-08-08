@@ -87,16 +87,20 @@ func (b *Builder) addComponentsForTracePipeline(ctx context.Context, pipeline *t
 	return b.addOTLPExporter(ctx, pipeline, queueSize)
 }
 
-func (b *Builder) addUserDefinedTransformProcessor(pipeline *telemetryv1alpha1.TracePipeline) {
+func (b *Builder) addUserDefinedProcessor(pipeline *telemetryv1alpha1.TracePipeline) {
 	if len(pipeline.Spec.Transforms) == 0 {
 		return
+	}
+
+	if b.config.Processors.Dynamic == nil {
+		b.config.Processors.Dynamic = make(map[string]any)
 	}
 
 	transformStatements := config.TransformSpecsToProcessorStatements(pipeline.Spec.Transforms)
 	transformProcessor := config.TraceTransformProcessor(transformStatements)
 
-	processorID := formatUserDefinedTransformProcessorID(pipeline.Name)
-	b.config.Processors.Transforms[processorID] = transformProcessor
+	processorID := formatTransformProcessorID(pipeline.Name)
+	b.config.Processors.Dynamic[processorID] = transformProcessor
 }
 
 func (b *Builder) addOTLPExporter(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, queueSize int) error {

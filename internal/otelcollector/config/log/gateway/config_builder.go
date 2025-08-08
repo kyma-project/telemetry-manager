@@ -99,13 +99,13 @@ func (b *Builder) addNamespaceFilter(pipeline *telemetryv1alpha1.LogPipeline) {
 		return
 	}
 
-	if b.config.Processors.NamespaceFilters == nil {
-		b.config.Processors.NamespaceFilters = make(map[string]*FilterProcessor)
+	if b.config.Processors.Dynamic == nil {
+		b.config.Processors.Dynamic = make(map[string]any)
 	}
 
 	if shouldFilterByNamespace(otlpInput.Namespaces) {
 		processorID := formatNamespaceFilterID(pipeline.Name)
-		b.config.Processors.NamespaceFilters[processorID] = namespaceFilterProcessorConfig(otlpInput.Namespaces)
+		b.config.Processors.Dynamic[processorID] = namespaceFilterProcessorConfig(otlpInput.Namespaces)
 	}
 }
 
@@ -125,7 +125,7 @@ func (b *Builder) addUserDefinedTransformProcessor(pipeline *telemetryv1alpha1.L
 	transformProcessor := config.LogTransformProcessor(transformStatements)
 
 	processorID := formatUserDefinedTransformProcessorID(pipeline.Name)
-	b.config.Processors.Transforms[processorID] = transformProcessor
+	b.config.Processors.Dynamic[processorID] = transformProcessor
 }
 
 func (b *Builder) addOTLPExporter(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, queueSize int) error {

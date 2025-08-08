@@ -272,4 +272,106 @@ func TestBuildConfig(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, string(goldenFile), string(configYAML))
 	})
+
+	t.Run("user-defined transforms", func(t *testing.T) {
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{
+			testutils.NewTracePipelineBuilder().WithName("test-1").WithOTLPOutput().WithTransform(telemetryv1alpha1.TransformSpec{
+				Conditions: []string{"resource.attributes[\"service.name\"] == \"test-service\""},
+				Statements: []string{
+					"set(attributes[\"custom.trace\"], \"value1\")",
+					"set(name, \"transformed_span\")",
+				},
+			}).Build(),
+			testutils.NewTracePipelineBuilder().WithName("test-2").WithOTLPOutput().WithTransform(telemetryv1alpha1.TransformSpec{
+				Statements: []string{"set(attributes[\"global.field\"], \"global-value\")"},
+			}).Build(),
+		}, BuildOptions{
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
+			CloudProvider: "test-cloud-provider",
+		})
+		require.NoError(t, err)
+
+		// Check that transform processors are created for both pipelines
+		require.Contains(t, collectorConfig.Processors.Dynamic, "transform/test-1")
+		require.Contains(t, collectorConfig.Processors.Dynamic, "transform/test-2")
+
+		// Check transform processor config for test-1
+		transform1 := collectorConfig.Processors.Dynamic["transform/test-1"].(*config.TransformProcessor)
+		require.Equal(t, "ignore", transform1.ErrorMode)
+		require.Len(t, transform1.TraceStatements, 1)
+		require.Equal(t, []string{"resource.attributes[\"service.name\"] == \"test-service\""}, transform1.TraceStatements[0].Conditions)
+		require.Equal(t, []string{
+			"set(attributes[\"custom.trace\"], \"value1\")",
+			"set(name, \"transformed_span\")",
+		}, transform1.TraceStatements[0].Statements)
+
+		// Check that transform processors are included in service pipelines
+		require.Contains(t, collectorConfig.Service.Pipelines, "traces/test-1")
+		processors1 := collectorConfig.Service.Pipelines["traces/test-1"].Processors
+		require.Contains(t, processors1, "transform/test-1")
+	})
+
+	t.Run("marshaling with transforms", func(t *testing.T) {
+		tests := []struct {
+			name                string
+			pipelines           []telemetryv1alpha1.TracePipeline
+			goldenFileName      string
+			overwriteGoldenFile bool
+		}{
+			{
+				name: "two pipelines with user-defined transforms",
+				pipelines: []telemetryv1alpha1.TracePipeline{
+					testutils.NewTracePipelineBuilder().
+						WithName("test1").
+						WithOTLPOutput().
+						WithTransform(telemetryv1alpha1.TransformSpec{
+							Conditions: []string{"name == \"http_request\""},
+							Statements: []string{
+								"set(attributes[\"span.type\"], \"http\")",
+								"set(attributes[\"service.layer\"], \"web\")",
+							},
+						}).
+						Build(),
+					testutils.NewTracePipelineBuilder().
+						WithName("test2").
+						WithOTLPOutput().
+						WithTransform(telemetryv1alpha1.TransformSpec{
+							Statements: []string{"set(attributes[\"global.field\"], \"global-value\")"},
+						}).
+						Build(),
+				},
+				goldenFileName:      "config_with_transforms.yaml",
+				overwriteGoldenFile: false,
+			},
+		}
+
+		buildOptions := BuildOptions{
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
+			CloudProvider: "test-cloud-provider",
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				collectorConfig, _, err := sut.Build(ctx, tt.pipelines, buildOptions)
+				require.NoError(t, err)
+				configYAML, err := yaml.Marshal(collectorConfig)
+				require.NoError(t, err, "failed to marshal config")
+
+				goldenFilePath := filepath.Join("testdata", tt.goldenFileName)
+				if tt.overwriteGoldenFile {
+					err = os.WriteFile(goldenFilePath, configYAML, 0600)
+					require.NoError(t, err, "failed to overwrite golden file")
+
+					t.Fatalf("Golden file %s has been saved, please verify it and set the overwriteGoldenFile flag to false", goldenFilePath)
+
+					return
+				}
+
+				goldenFile, err := os.ReadFile(goldenFilePath)
+				require.NoError(t, err, "failed to load golden file")
+
+				require.Equal(t, string(goldenFile), string(configYAML))
+			})
+		}
+	})
 }

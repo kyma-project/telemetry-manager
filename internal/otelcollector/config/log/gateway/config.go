@@ -30,8 +30,7 @@ type Processors struct {
 	IstioEnrichment         *IstioEnrichmentProcessor          `yaml:"istio_enrichment,omitempty"`
 
 	// OTel Collector components with dynamic IDs that are pipeline name based
-	NamespaceFilters map[string]*FilterProcessor           `yaml:",inline,omitempty"`
-	Transforms       map[string]*config.TransformProcessor `yaml:",inline,omitempty"`
+	Dynamic map[string]any `yaml:",inline,omitempty"`
 }
 
 type FilterProcessor struct {

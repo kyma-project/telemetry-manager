@@ -12,20 +12,8 @@ import (
 // Service pipeline assembly
 
 func (b *Builder) addServicePipelines(pipeline *telemetryv1alpha1.LogPipeline) {
-	pipelineID := formatLogPipelineID(pipeline.Name)
-	b.config.Service.Pipelines[pipelineID] = servicePipelineConfig(pipeline)
-}
-
-// Pipeline ID formatting functions
-
-func formatLogPipelineID(pipelineName string) string {
-	return fmt.Sprintf("logs/%s", pipelineName)
-}
-
-// Pipeline configuration functions
-
-func servicePipelineConfig(pipeline *telemetryv1alpha1.LogPipeline) config.Pipeline {
 	processorIDs := []string{
+		// memory_limiter is always the first processor in the pipeline
 		"memory_limiter",
 		// Record observed time at the beginning of the pipeline
 		"transform/set-observed-time-if-zero",
@@ -43,27 +31,39 @@ func servicePipelineConfig(pipeline *telemetryv1alpha1.LogPipeline) config.Pipel
 		processorIDs = append(processorIDs, formatNamespaceFilterID(pipeline.Name))
 	}
 
-	// Add transform processors if transforms are specified
-	if len(pipeline.Spec.Transforms) > 0 {
-		processorIDs = append(processorIDs, formatUserDefinedTransformProcessorID(pipeline.Name))
-	}
-
 	processorIDs = append(processorIDs,
 		"resource/insert-cluster-attributes",
 		"service_enrichment",
 		"resource/drop-kyma-attributes",
 		"istio_enrichment",
+	)
+
+	// Add user-defined transform processor after all of the enrichment processors
+	// if transforms are specified
+	if len(pipeline.Spec.Transforms) > 0 {
+		processorIDs = append(processorIDs, formatUserDefinedTransformProcessorID(pipeline.Name))
+	}
+
+	processorIDs = append(processorIDs,
+		// batch processor is always the last processor in the pipeline
 		"batch",
 	)
 
-	return config.Pipeline{
+	pipelineConfig := config.Pipeline{
 		Receivers:  []string{"otlp"},
 		Processors: processorIDs,
 		Exporters:  []string{formatOTLPExporterID(pipeline)},
 	}
+
+	pipelineID := formatLogPipelineID(pipeline.Name)
+	b.config.Service.Pipelines[pipelineID] = pipelineConfig
 }
 
-// Helper functions
+// Pipeline ID formatting functions
+
+func formatLogPipelineID(pipelineName string) string {
+	return fmt.Sprintf("logs/%s", pipelineName)
+}
 
 func shouldFilterByNamespace(namespaceSelector *telemetryv1alpha1.NamespaceSelector) bool {
 	return namespaceSelector != nil && (len(namespaceSelector.Include) > 0 || len(namespaceSelector.Exclude) > 0)

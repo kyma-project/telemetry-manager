@@ -20,7 +20,7 @@ func processorsConfig(opts BuildOptions) Processors {
 		ResolveServiceName:      processors.MakeResolveServiceNameConfig(),
 		DropKymaAttributes:      processors.DropKymaAttributesProcessorConfig(),
 		IstioEnrichment:         istioEnrichmentProcessorConfig(opts),
-		Transforms:              make(map[string]*config.TransformProcessor),
+		Dynamic:                 make(map[string]any),
 	}
 }
 

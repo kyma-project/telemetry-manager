@@ -204,7 +204,7 @@ func TestBuildAgentConfig(t *testing.T) {
 						WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).
 						Build(),
 				},
-				goldenFileName: "single-pipeline-config.yaml",
+				goldenFileName: "single-pipeline.yaml",
 			},
 			{
 				name: "two pipelines with user-defined transforms",
@@ -228,7 +228,7 @@ func TestBuildAgentConfig(t *testing.T) {
 						}).
 						Build(),
 				},
-				goldenFileName: "two-pipelines-with-transforms-config.yaml",
+				goldenFileName: "two-pipelines-with-transforms.yaml",
 			},
 		}
 

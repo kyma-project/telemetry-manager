@@ -318,4 +318,126 @@ func TestMakeConfig(t *testing.T) {
 			})
 		}
 	})
+
+	t.Run("user-defined transforms", func(t *testing.T) {
+		transforms := []telemetryv1alpha1.TransformSpec{
+			{
+				Conditions: []string{"resource.attributes[\"service.name\"] == \"test-service\""},
+				Statements: []string{
+					"set(attributes[\"custom.metric\"], \"value1\")",
+					"set(name, \"transformed_metric\")",
+				},
+			},
+			{
+				Statements: []string{"set(attributes[\"global.field\"], \"global-value\")"},
+			},
+		}
+
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithName("test-1").WithOTLPOutput().WithTransform(transforms[0]).Build(),
+			testutils.NewMetricPipelineBuilder().WithName("test-2").WithOTLPOutput().WithTransform(transforms[1]).Build(),
+		}, BuildOptions{
+			ClusterName:                 "${KUBERNETES_SERVICE_HOST}",
+			CloudProvider:               "test-cloud-provider",
+			GatewayNamespace:            "kyma-system",
+			InstrumentationScopeVersion: "test-version",
+		})
+		require.NoError(t, err)
+
+		// Check that transform processors are created for both pipelines
+		require.Contains(t, collectorConfig.Processors.Dynamic, "transform/test-1")
+		require.Contains(t, collectorConfig.Processors.Dynamic, "transform/test-2")
+
+		// Check transform processor config for test-1
+		transform1 := collectorConfig.Processors.Dynamic["transform/test-1"].(*config.TransformProcessor)
+		require.Equal(t, "ignore", transform1.ErrorMode)
+		require.Len(t, transform1.MetricStatements, 1)
+		require.Equal(t, []string{"resource.attributes[\"service.name\"] == \"test-service\""}, transform1.MetricStatements[0].Conditions)
+		require.Equal(t, []string{
+			"set(attributes[\"custom.metric\"], \"value1\")",
+			"set(name, \"transformed_metric\")",
+		}, transform1.MetricStatements[0].Statements)
+
+		// Check transform processor config for test-2
+		transform2 := collectorConfig.Processors.Dynamic["transform/test-2"].(*config.TransformProcessor)
+		require.Equal(t, "ignore", transform2.ErrorMode)
+		require.Len(t, transform2.MetricStatements, 1)
+		require.Nil(t, transform2.MetricStatements[0].Conditions)
+		require.Equal(t, []string{"set(attributes[\"global.field\"], \"global-value\")"}, transform2.MetricStatements[0].Statements)
+
+		// Check that transform processors are included in service pipelines
+		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-1-output")
+		processors1 := collectorConfig.Service.Pipelines["metrics/test-1-output"].Processors
+		require.Contains(t, processors1, "transform/test-1")
+
+		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-2-output")
+		processors2 := collectorConfig.Service.Pipelines["metrics/test-2-output"].Processors
+		require.Contains(t, processors2, "transform/test-2")
+	})
+
+	t.Run("marshaling with transforms", func(t *testing.T) {
+		tests := []struct {
+			name                string
+			pipelines           []telemetryv1alpha1.MetricPipeline
+			goldenFileName      string
+			overwriteGoldenFile bool
+		}{
+			{
+				name: "two pipelines with user-defined transforms",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("test1").
+						WithOTLPOutput().
+						WithTransform(telemetryv1alpha1.TransformSpec{
+							Conditions: []string{"name == \"cpu_usage\""},
+							Statements: []string{
+								"set(unit, \"percent\")",
+								"set(attributes[\"metric.type\"], \"gauge\")",
+							},
+						}).
+						Build(),
+					testutils.NewMetricPipelineBuilder().
+						WithName("test2").
+						WithOTLPOutput().
+						WithTransform(telemetryv1alpha1.TransformSpec{
+							Statements: []string{"set(attributes[\"global.field\"], \"global-value\")"},
+						}).
+						Build(),
+				},
+				goldenFileName:      "config_with_transforms.yaml",
+				overwriteGoldenFile: false,
+			},
+		}
+
+		buildOptions := BuildOptions{
+			ClusterName:                 "${KUBERNETES_SERVICE_HOST}",
+			CloudProvider:               "test-cloud-provider",
+			GatewayNamespace:            "kyma-system",
+			InstrumentationScopeVersion: "test-version",
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				collectorConfig, _, err := sut.Build(ctx, tt.pipelines, buildOptions)
+				require.NoError(t, err)
+				configYAML, err := yaml.Marshal(collectorConfig)
+				require.NoError(t, err, "failed to marshal config")
+
+				goldenFilePath := filepath.Join("testdata", tt.goldenFileName)
+				if tt.overwriteGoldenFile {
+					err = os.WriteFile(goldenFilePath, configYAML, 0600)
+					require.NoError(t, err, "failed to overwrite golden file")
+
+					t.Fatalf("Golden file %s has been saved, please verify it and set the overwriteGoldenFile flag to false", goldenFilePath)
+
+					return
+				}
+
+				goldenFile, err := os.ReadFile(goldenFilePath)
+				require.NoError(t, err, "failed to load golden file")
+
+				require.Equal(t, string(goldenFile), string(configYAML))
+			})
+		}
+	})
 }

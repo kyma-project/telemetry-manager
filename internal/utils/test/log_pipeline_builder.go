@@ -258,11 +258,6 @@ func (b *LogPipelineBuilder) WithVariable(name, secretName, secretNamespace, sec
 	return b
 }
 
-func (b *LogPipelineBuilder) WithTransform(transform telemetryv1alpha1.TransformSpec) *LogPipelineBuilder {
-	b.transforms = append(b.transforms, transform)
-	return b
-}
-
 func (b *LogPipelineBuilder) WithHTTPOutput(opts ...HTTPOutputOption) *LogPipelineBuilder {
 	b.httpOutput = defaultHTTPOutput()
 	for _, opt := range opts {
@@ -283,6 +278,11 @@ func (b *LogPipelineBuilder) WithOTLPOutput(opts ...OTLPOutputOption) *LogPipeli
 
 func (b *LogPipelineBuilder) WithCustomOutput(custom string) *LogPipelineBuilder {
 	b.customOutput = custom
+	return b
+}
+
+func (b *LogPipelineBuilder) WithTransform(transform telemetryv1alpha1.TransformSpec) *LogPipelineBuilder {
+	b.transforms = append(b.transforms, transform)
 	return b
 }
 
