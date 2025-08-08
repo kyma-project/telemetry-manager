@@ -17,8 +17,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestMetricsIstioEnvoyMultiPipeline(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelIstio)
+func TestMetricsEnvoyMultiPipeline(t *testing.T) {
+	suite.RegisterTestCase(t, suite.LabelGardener, suite.LabelIstio)
 
 	var (
 		uniquePrefix = unique.Prefix()

@@ -1,6 +1,6 @@
 module github.com/kyma-project/telemetry-manager/internal/tools
 
-go 1.24.5
+go 1.24.6
 
 require (
 	github.com/bombsimon/wsl/v5 v5.1.1
@@ -11,11 +11,10 @@ require (
 	github.com/k3d-io/k3d/v5 v5.8.3
 	github.com/kyma-project/kyma/hack/table-gen v0.0.0-20250404123224-5afb7a10791b
 	github.com/mikefarah/yq/v4 v4.47.1
-	github.com/onsi/ginkgo/v2 v2.23.4
-	github.com/vektra/mockery/v3 v3.5.1
+	github.com/vektra/mockery/v3 v3.5.2
 	github.com/vladopajic/go-test-coverage/v2 v2.16.0
 	github.com/yeya24/promlinter v0.3.0
-	golang.org/x/tools v0.35.0
+	golang.org/x/tools v0.36.0
 	sigs.k8s.io/controller-tools v0.18.0
 	sigs.k8s.io/kustomize/kustomize/v5 v5.7.1
 )
@@ -173,7 +172,6 @@ require (
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect
 	github.com/go-openapi/jsonreference v0.20.2 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
-	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/go-test/deep v1.1.0 // indirect
 	github.com/go-toolsmith/astcast v1.1.0 // indirect
 	github.com/go-toolsmith/astcopy v1.1.0 // indirect
@@ -208,7 +206,6 @@ require (
 	github.com/google/go-containerregistry v0.19.1 // indirect
 	github.com/google/go-github/v56 v56.0.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
-	github.com/google/pprof v0.0.0-20250607225305-033d6d78b36a // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/google/wire v0.6.0 // indirect
@@ -432,17 +429,17 @@ require (
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
 	go4.org/unsafe/assume-no-moving-gc v0.0.0-20231121144256-b99613f794b6 // indirect
 	gocloud.dev v0.41.0 // indirect
-	golang.org/x/crypto v0.40.0 // indirect
+	golang.org/x/crypto v0.41.0 // indirect
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20250620022241-b7579e27df2b // indirect
 	golang.org/x/image v0.18.0 // indirect
-	golang.org/x/mod v0.26.0 // indirect
-	golang.org/x/net v0.42.0 // indirect
+	golang.org/x/mod v0.27.0 // indirect
+	golang.org/x/net v0.43.0 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect
 	golang.org/x/sync v0.16.0 // indirect
-	golang.org/x/sys v0.34.0 // indirect
-	golang.org/x/term v0.33.0 // indirect
-	golang.org/x/text v0.27.0 // indirect
+	golang.org/x/sys v0.35.0 // indirect
+	golang.org/x/term v0.34.0 // indirect
+	golang.org/x/text v0.28.0 // indirect
 	golang.org/x/time v0.12.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	google.golang.org/api v0.242.0 // indirect

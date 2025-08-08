@@ -1,6 +1,8 @@
 package gateway
 
 import (
+	"fmt"
+
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
@@ -8,15 +10,43 @@ import (
 	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 )
 
-func makeInputPipelineServiceConfig(pipeline *telemetryv1alpha1.MetricPipeline) config.Pipeline {
+// Service pipeline assembly
+
+func (b *Builder) addServicePipelines(pipeline *telemetryv1alpha1.MetricPipeline) {
+	inputPipelineID := formatMetricInputPipelineID(pipeline.Name)
+	enrichmentPipelineID := formatMetricEnrichmentPipelineID(pipeline.Name)
+	outputPipelineID := formatMetricOutputPipelineID(pipeline.Name)
+
+	b.config.Service.Pipelines[inputPipelineID] = inputPipelineConfig(pipeline)
+	b.config.Service.Pipelines[enrichmentPipelineID] = enrichmentPipelineConfig(pipeline.Name)
+	b.config.Service.Pipelines[outputPipelineID] = outputPipelineConfig(pipeline)
+}
+
+// Pipeline ID formatting functions
+
+func formatMetricInputPipelineID(pipelineName string) string {
+	return fmt.Sprintf("metrics/%s-input", pipelineName)
+}
+
+func formatMetricEnrichmentPipelineID(pipelineName string) string {
+	return fmt.Sprintf("metrics/%s-attributes-enrichment", pipelineName)
+}
+
+func formatMetricOutputPipelineID(pipelineName string) string {
+	return fmt.Sprintf("metrics/%s-output", pipelineName)
+}
+
+// Pipeline configuration functions
+
+func inputPipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline) config.Pipeline {
 	return config.Pipeline{
-		Receivers:  makeReceiversIDs(),
+		Receivers:  []string{"otlp", "kymastats"},
 		Processors: []string{"memory_limiter"},
 		Exporters:  []string{formatRoutingConnectorID(pipeline.Name)},
 	}
 }
 
-func makeAttributesEnrichmentPipelineServiceConfig(pipelineName string) config.Pipeline {
+func enrichmentPipelineConfig(pipelineName string) config.Pipeline {
 	return config.Pipeline{
 		Receivers:  []string{formatRoutingConnectorID(pipelineName)},
 		Processors: []string{"k8sattributes", "service_enrichment"},
@@ -24,16 +54,16 @@ func makeAttributesEnrichmentPipelineServiceConfig(pipelineName string) config.P
 	}
 }
 
-func makeOutputPipelineServiceConfig(pipeline *telemetryv1alpha1.MetricPipeline) config.Pipeline {
+func outputPipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline) config.Pipeline {
 	var processors []string
 
 	input := pipeline.Spec.Input
 
 	processors = append(processors, "transform/set-instrumentation-scope-kyma")
-	processors = append(processors, makeInputSourceFiltersIDs(input)...)
-	processors = append(processors, makeNamespaceFiltersIDs(input, pipeline)...)
-	processors = append(processors, makeRuntimeResourcesFiltersIDs(input)...)
-	processors = append(processors, makeDiagnosticMetricFiltersIDs(input)...)
+	processors = append(processors, inputSourceFiltersIDs(input)...)
+	processors = append(processors, namespaceFiltersIDs(input, pipeline)...)
+	processors = append(processors, runtimeResourcesFiltersIDs(input)...)
+	processors = append(processors, diagnosticMetricFiltersIDs(input)...)
 
 	processors = append(processors, "resource/insert-cluster-attributes", "resource/delete-skip-enrichment-attribute", "resource/drop-kyma-attributes", "batch")
 
@@ -44,17 +74,7 @@ func makeOutputPipelineServiceConfig(pipeline *telemetryv1alpha1.MetricPipeline)
 	}
 }
 
-func makeReceiversIDs() []string {
-	var receivers []string
-
-	receivers = append(receivers, "otlp")
-
-	receivers = append(receivers, "kymastats")
-
-	return receivers
-}
-
-func makeInputSourceFiltersIDs(input telemetryv1alpha1.MetricPipelineInput) []string {
+func inputSourceFiltersIDs(input telemetryv1alpha1.MetricPipelineInput) []string {
 	var processors []string
 
 	if !metricpipelineutils.IsRuntimeInputEnabled(input) {
@@ -80,7 +100,7 @@ func makeInputSourceFiltersIDs(input telemetryv1alpha1.MetricPipelineInput) []st
 	return processors
 }
 
-func makeNamespaceFiltersIDs(input telemetryv1alpha1.MetricPipelineInput, pipeline *telemetryv1alpha1.MetricPipeline) []string {
+func namespaceFiltersIDs(input telemetryv1alpha1.MetricPipelineInput, pipeline *telemetryv1alpha1.MetricPipeline) []string {
 	var processors []string
 
 	if metricpipelineutils.IsRuntimeInputEnabled(input) && shouldFilterByNamespace(input.Runtime.Namespaces) {
@@ -102,7 +122,7 @@ func makeNamespaceFiltersIDs(input telemetryv1alpha1.MetricPipelineInput, pipeli
 	return processors
 }
 
-func makeRuntimeResourcesFiltersIDs(input telemetryv1alpha1.MetricPipelineInput) []string {
+func runtimeResourcesFiltersIDs(input telemetryv1alpha1.MetricPipelineInput) []string {
 	var processors []string
 
 	if metricpipelineutils.IsRuntimeInputEnabled(input) && !metricpipelineutils.IsRuntimePodInputEnabled(input) {
@@ -140,7 +160,7 @@ func makeRuntimeResourcesFiltersIDs(input telemetryv1alpha1.MetricPipelineInput)
 	return processors
 }
 
-func makeDiagnosticMetricFiltersIDs(input telemetryv1alpha1.MetricPipelineInput) []string {
+func diagnosticMetricFiltersIDs(input telemetryv1alpha1.MetricPipelineInput) []string {
 	var processors []string
 
 	if metricpipelineutils.IsIstioInputEnabled(input) && !metricpipelineutils.IsIstioDiagnosticInputEnabled(input) {
@@ -153,6 +173,20 @@ func makeDiagnosticMetricFiltersIDs(input telemetryv1alpha1.MetricPipelineInput)
 
 	return processors
 }
+
+func formatNamespaceFilterID(pipelineName string, inputSourceType metric.InputSourceType) string {
+	return fmt.Sprintf("filter/%s-filter-by-namespace-%s-input", pipelineName, inputSourceType)
+}
+
+func formatForwardConnectorID(pipelineName string) string {
+	return fmt.Sprintf("forward/%s", pipelineName)
+}
+
+func formatRoutingConnectorID(pipelineName string) string {
+	return fmt.Sprintf("routing/%s", pipelineName)
+}
+
+// Helper functions
 
 func formatOTLPExporterID(pipeline *telemetryv1alpha1.MetricPipeline) string {
 	return otlpexporter.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)
