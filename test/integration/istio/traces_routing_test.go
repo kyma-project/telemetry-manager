@@ -103,12 +103,14 @@ func TestTracesRouting(t *testing.T) {
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 
 	for _, podURLs := range []string{appURL, istiofiedAppURL} {
-		Eventually(func(g Gomega) {
-			resp, err := suite.ProxyClient.Get(podURLs)
-			g.Expect(err).NotTo(HaveOccurred())
-			g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-			defer resp.Body.Close()
-		}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+		for range 100 {
+			Eventually(func(g Gomega) {
+				resp, err := suite.ProxyClient.Get(podURLs)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				defer resp.Body.Close()
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+		}
 	}
 
 	assertIstioSpans(t, backend, istiofiedAppNs)
