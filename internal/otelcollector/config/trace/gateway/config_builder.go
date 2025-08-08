@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"maps"
-	"sort"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -21,6 +20,9 @@ const (
 
 type Builder struct {
 	Reader client.Reader
+
+	config  *Config
+	envVars otlpexporter.EnvVars
 }
 
 type BuildOptions struct {
@@ -31,42 +33,40 @@ type BuildOptions struct {
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.TracePipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {
-	cfg := &Config{
-		Base: config.Base{
-			Service:    config.DefaultService(make(config.Pipelines)),
-			Extensions: config.DefaultExtensions(),
-		},
-		Receivers:  makeReceiversConfig(),
-		Processors: makeProcessorsConfig(opts),
-		Exporters:  make(Exporters),
-	}
+	b.config = b.baseConfig(opts)
+	b.envVars = make(otlpexporter.EnvVars)
 
-	envVars := make(otlpexporter.EnvVars)
-
+	// Iterate over each TracePipeline CR and enrich the config with pipeline-specific components
 	queueSize := maxQueueSize / len(pipelines)
 
 	for i := range pipelines {
 		pipeline := pipelines[i]
-		if pipeline.DeletionTimestamp != nil {
-			continue
-		}
 
-		otlpExporterBuilder := otlpexporter.NewConfigBuilder(
-			b.Reader,
-			pipeline.Spec.Output.OTLP,
-			pipeline.Name,
-			queueSize,
-			otlpexporter.SignalTypeTrace,
-		)
-		if err := addComponentsForTracePipeline(ctx, otlpExporterBuilder, &pipeline, cfg, envVars); err != nil {
+		if err := b.addComponentsForTracePipeline(ctx, &pipeline, queueSize); err != nil {
 			return nil, nil, err
 		}
+
+		b.addServicePipelines(&pipeline)
 	}
 
-	return cfg, envVars, nil
+	return b.config, b.envVars, nil
 }
 
-func makeReceiversConfig() Receivers {
+// baseConfig creates the static/global base configuration for the trace gateway collector.
+// Pipeline-specific components are added later via addComponentsForTracePipeline method.
+func (b *Builder) baseConfig(opts BuildOptions) *Config {
+	return &Config{
+		Base: config.Base{
+			Service:    config.DefaultService(make(config.Pipelines)),
+			Extensions: config.DefaultExtensions(),
+		},
+		Receivers:  receiversConfig(),
+		Processors: processorsConfig(opts),
+		Exporters:  make(Exporters),
+	}
+}
+
+func receiversConfig() Receivers {
 	return Receivers{
 		OTLP: config.OTLPReceiver{
 			Protocols: config.ReceiverProtocols{
@@ -82,37 +82,28 @@ func makeReceiversConfig() Receivers {
 }
 
 // addComponentsForTracePipeline enriches a Config (exporters, processors, etc.) with components for a given telemetryv1alpha1.TracePipeline.
-func addComponentsForTracePipeline(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.TracePipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
-	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.MakeConfig(ctx)
+func (b *Builder) addComponentsForTracePipeline(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, queueSize int) error {
+	return b.addOTLPExporter(ctx, pipeline, queueSize)
+}
+
+func (b *Builder) addOTLPExporter(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, queueSize int) error {
+	otlpExporterBuilder := otlpexporter.NewConfigBuilder(
+		b.Reader,
+		pipeline.Spec.Output.OTLP,
+		pipeline.Name,
+		queueSize,
+		otlpexporter.SignalTypeTrace,
+	)
+
+	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.OTLPExporterConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to make otlp exporter config: %w", err)
 	}
 
-	maps.Copy(envVars, otlpExporterEnvVars)
+	maps.Copy(b.envVars, otlpExporterEnvVars)
 
 	otlpExporterID := otlpexporter.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)
-	cfg.Exporters[otlpExporterID] = Exporter{OTLP: otlpExporterConfig}
-
-	pipelineID := fmt.Sprintf("traces/%s", pipeline.Name)
-	cfg.Service.Pipelines[pipelineID] = makePipelineConfig(otlpExporterID)
+	b.config.Exporters[otlpExporterID] = Exporter{OTLP: otlpExporterConfig}
 
 	return nil
-}
-
-func makePipelineConfig(exporterIDs ...string) config.Pipeline {
-	sort.Strings(exporterIDs)
-
-	return config.Pipeline{
-		Receivers: []string{"otlp"},
-		Processors: []string{
-			"memory_limiter",
-			"k8sattributes",
-			"istio_noise_filter",
-			"resource/insert-cluster-attributes",
-			"service_enrichment",
-			"resource/drop-kyma-attributes",
-			"batch",
-		},
-		Exporters: exporterIDs,
-	}
 }

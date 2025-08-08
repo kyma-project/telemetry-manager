@@ -6,27 +6,27 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
 
-func makeReceiversConfig(inputs inputSources, opts BuildOptions) Receivers {
-	var receiversConfig Receivers
+func receiversConfig(inputs inputSources, opts BuildOptions) Receivers {
+	var config Receivers
 
 	if inputs.prometheus {
-		receiversConfig.PrometheusAppPods = makePrometheusConfigForPods()
-		receiversConfig.PrometheusAppServices = makePrometheusConfigForServices(opts)
+		config.PrometheusAppPods = prometheusPodsReceiverConfig()
+		config.PrometheusAppServices = prometheusServicesReceiverConfig(opts)
 	}
 
 	if inputs.runtime {
-		receiversConfig.KubeletStats = makeKubeletStatsConfig(inputs.runtimeResources)
-		receiversConfig.K8sClusterReceiver = makeK8sClusterReceiverConfig(inputs.runtimeResources)
+		config.KubeletStats = kubeletStatsReceiverConfig(inputs.runtimeResources)
+		config.K8sClusterReceiver = k8sClusterReceiverConfig(inputs.runtimeResources)
 	}
 
 	if inputs.istio {
-		receiversConfig.PrometheusIstio = makePrometheusIstioConfig(inputs.envoy)
+		config.PrometheusIstio = prometheusIstioReceiverConfig(inputs.envoy)
 	}
 
-	return receiversConfig
+	return config
 }
 
-func makeKubeletStatsConfig(runtimeResources runtimeResourcesEnabled) *KubeletStatsReceiver {
+func kubeletStatsReceiverConfig(runtimeResources runtimeResourceSources) *KubeletStatsReceiver {
 	const (
 		collectionInterval = "30s"
 		portKubelet        = 10250
@@ -37,7 +37,7 @@ func makeKubeletStatsConfig(runtimeResources runtimeResourcesEnabled) *KubeletSt
 		AuthType:           "serviceAccount",
 		InsecureSkipVerify: true,
 		Endpoint:           fmt.Sprintf("https://${%s}:%d", config.EnvVarCurrentNodeName, portKubelet),
-		MetricGroups:       makeKubeletStatsMetricGroups(runtimeResources),
+		MetricGroups:       kubeletStatsMetricGroups(runtimeResources),
 		Metrics: KubeletStatsMetricsConfig{
 			ContainerCPUUsage:            MetricConfig{Enabled: true},
 			ContainerCPUUtilization:      MetricConfig{Enabled: false},
@@ -56,17 +56,17 @@ func makeKubeletStatsConfig(runtimeResources runtimeResourcesEnabled) *KubeletSt
 	}
 }
 
-func makeK8sClusterReceiverConfig(runtimeResources runtimeResourcesEnabled) *K8sClusterReceiver {
+func k8sClusterReceiverConfig(runtimeResources runtimeResourceSources) *K8sClusterReceiver {
 	return &K8sClusterReceiver{
 		AuthType:               "serviceAccount",
 		CollectionInterval:     "30s",
 		NodeConditionsToReport: []string{},
 		K8sLeaderElector:       "k8s_leader_elector",
-		Metrics:                makeK8sClusterMetricsToDrop(runtimeResources),
+		Metrics:                k8sClusterMetricsToDrop(runtimeResources),
 	}
 }
 
-func makeK8sClusterMetricsToDrop(runtimeResources runtimeResourcesEnabled) K8sClusterMetricsToDrop {
+func k8sClusterMetricsToDrop(runtimeResources runtimeResourceSources) K8sClusterMetricsToDrop {
 	metricsToDrop := K8sClusterMetricsToDrop{}
 
 	//nolint:dupl // repeating the code as we want to test the metrics are disabled correctly
@@ -145,7 +145,7 @@ func makeK8sClusterMetricsToDrop(runtimeResources runtimeResourcesEnabled) K8sCl
 	return metricsToDrop
 }
 
-func makeKubeletStatsMetricGroups(runtimeResources runtimeResourcesEnabled) []MetricGroupType {
+func kubeletStatsMetricGroups(runtimeResources runtimeResourceSources) []MetricGroupType {
 	var metricGroups []MetricGroupType
 
 	if runtimeResources.container {
