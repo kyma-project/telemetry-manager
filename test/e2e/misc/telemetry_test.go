@@ -45,7 +45,7 @@ func TestTelemetry(t *testing.T) {
 
 	tracePipeline := testutils.NewTracePipelineBuilder().WithName(pipelineName).Build()
 	metricPipeline := testutils.NewMetricPipelineBuilder().WithName(pipelineName).Build()
-	logPipeline := testutils.NewLogPipelineBuilder().WithName(pipelineName).Build()
+	logPipeline := testutils.NewLogPipelineBuilder().WithName(pipelineName).WithOTLPInput(true).WithOTLPOutput().Build()
 
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),

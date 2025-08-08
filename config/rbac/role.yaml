@@ -128,6 +128,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - discovery.k8s.io
+  resources:
+  - endpointslices
+  verbs:
+  - get
+  - list
+  - watch
 
 #############################
 # Policy rules for fluent-bit

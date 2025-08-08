@@ -346,6 +346,9 @@ func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetr
 		mgr.GetScheme(),
 		operator.TelemetryControllerConfig{
 			Config: telemetry.Config{
+				Logs: telemetry.LogsConfig{
+					Namespace: telemetryNamespace,
+				},
 				Traces: telemetry.TracesConfig{
 					Namespace: telemetryNamespace,
 				},
