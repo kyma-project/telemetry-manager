@@ -5,11 +5,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/processors"
 )
 
-func makeProcessorsConfig(opts BuildOptions) Processors {
+func processorsConfig(opts BuildOptions) Processors {
 	return Processors{
 		BaseProcessors: config.BaseProcessors{
-			Batch:         makeBatchProcessorConfig(),
-			MemoryLimiter: makeMemoryLimiterConfig(),
+			Batch:         batchProcessorConfig(),
+			MemoryLimiter: memoryLimiterProcessorConfig(),
 		},
 		K8sAttributes:           processors.K8sAttributesProcessorConfig(opts.Enrichments),
 		IstioNoiseFilter:        &config.IstioNoiseFilterProcessor{},
@@ -20,7 +20,7 @@ func makeProcessorsConfig(opts BuildOptions) Processors {
 }
 
 //nolint:mnd // hardcoded values
-func makeBatchProcessorConfig() *config.BatchProcessor {
+func batchProcessorConfig() *config.BatchProcessor {
 	return &config.BatchProcessor{
 		SendBatchSize:    512,
 		Timeout:          "10s",
@@ -29,7 +29,7 @@ func makeBatchProcessorConfig() *config.BatchProcessor {
 }
 
 //nolint:mnd // hardcoded values
-func makeMemoryLimiterConfig() *config.MemoryLimiter {
+func memoryLimiterProcessorConfig() *config.MemoryLimiter {
 	return &config.MemoryLimiter{
 		CheckInterval:        "1s",
 		LimitPercentage:      75,
