@@ -34,7 +34,7 @@ Because CloudWatch doesn't support native OTLP ingestion for metrics, and OTLP s
 - The [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) is [added](https://kyma-project.io/#/02-get-started/01-quick-install)
 - [Kubectl version that is within one minor version (older or newer) of `kube-apiserver`](https://kubernetes.io/releases/version-skew-policy/#kubectl)
 - AWS account with permissions to create new users and security policies
-- AWS CloudWatch configured with a [Log Group and Log Stream](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/Working-with-log-groups-and-streams.html)
+- AWS CloudWatch configured with a [LogGroup and LogStream](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/Working-with-log-groups-and-streams.html)
 - AWS CloudWatch configured with [Transaction Search](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Transaction-Search.html) enabled
 
 ## Prepare the Namespace
@@ -161,5 +161,5 @@ Verify that the logs, traces and metrics are exported to CloudWatch.
 1. [Install the OpenTelemetry demo application](../opentelemetry-demo/README.md).
 2. Go to `https://{AWS_REGION}.console.aws.amazon.com/cloudwatch`. Replace `{AWS_REGION}` with the region that you have chosen when [creating the Secret with AWS credentials](#create-a-secret-with-aws-credentials).
 3. To verify the traces: under **Application Signals**, go to **Traces**.
-4. To verify the logs: under **Logs**, go to **Log groups** and select the log group and stream created as prerequisite and which is configured in the custom collector setup.
+4. To verify the logs: under **Logs**, go to **LogGroups** and select the LogGroup and stream created as prerequisite and which is configured in the custom collector setup.
 5. To verify the metrics: under **Metrics**, go to **All metrics**.
