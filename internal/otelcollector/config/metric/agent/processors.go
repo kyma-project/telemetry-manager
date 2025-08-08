@@ -80,7 +80,7 @@ func insertSkipEnrichmentAttributeProcessorConfig() *config.TransformProcessor {
 		"job",
 	}
 
-	return config.MakeMetricTransformProcessor([]config.TransformProcessorStatements{{
+	return config.MetricTransformProcessor([]config.TransformProcessorStatements{{
 		Conditions: metricNameConditionsWithIsMatch(metricsToSkipEnrichment),
 		Statements: []string{fmt.Sprintf("set(resource.attributes[\"%s\"], \"true\")", metric.SkipEnrichmentAttribute)},
 	}})

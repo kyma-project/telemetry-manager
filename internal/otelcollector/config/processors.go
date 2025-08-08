@@ -1,5 +1,9 @@
 package config
 
+import (
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+)
+
 const (
 	defaultTransformProcessorErrorMode = "ignore"
 )
@@ -72,9 +76,6 @@ type TransformProcessorStatements struct {
 	Conditions []string `yaml:"conditions,omitempty"`
 }
 
-type IstioNoiseFilterProcessor struct {
-}
-
 // LogTransformProcessor creates a TransformProcessor for logs with error_mode set to "ignore".
 func LogTransformProcessor(statements []TransformProcessorStatements) *TransformProcessor {
 	return &TransformProcessor{
@@ -83,18 +84,32 @@ func LogTransformProcessor(statements []TransformProcessorStatements) *Transform
 	}
 }
 
-// MakeMetricTransformProcessor creates a TransformProcessor for metrics with error_mode set to "ignore".
-func MakeMetricTransformProcessor(statements []TransformProcessorStatements) *TransformProcessor {
+// MetricTransformProcessor creates a TransformProcessor for metrics with the default error mode.
+func MetricTransformProcessor(statements []TransformProcessorStatements) *TransformProcessor {
 	return &TransformProcessor{
 		ErrorMode:        defaultTransformProcessorErrorMode,
 		MetricStatements: statements,
 	}
 }
 
-// MakeTraceTransformProcessor creates a TransformProcessor for traces with error_mode set to "ignore".
-func MakeTraceTransformProcessor(statements []TransformProcessorStatements) *TransformProcessor {
+// TraceTransformProcessor creates a TransformProcessor for traces with the default error mode.
+func TraceTransformProcessor(statements []TransformProcessorStatements) *TransformProcessor {
 	return &TransformProcessor{
 		ErrorMode:       defaultTransformProcessorErrorMode,
 		TraceStatements: statements,
 	}
+}
+
+func TransformSpecsToProcessorStatements(specs []telemetryv1alpha1.TransformSpec) []TransformProcessorStatements {
+	result := make([]TransformProcessorStatements, 0, len(specs))
+	for _, spec := range specs {
+		result = append(result, TransformProcessorStatements{
+			Statements: spec.Statements,
+			Conditions: spec.Conditions,
+		})
+	}
+	return result
+}
+
+type IstioNoiseFilterProcessor struct {
 }
