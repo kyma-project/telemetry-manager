@@ -139,6 +139,7 @@ jobs:
           # INTEGRATION
           - name: istio
             mode: integration
+    name: ${{ matrix.labels.name }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
