@@ -160,6 +160,4 @@ Verify that the logs, traces and metrics are exported to CloudWatch.
 
 1. [Install the OpenTelemetry demo application](../opentelemetry-demo/README.md).
 2. Go to `https://{AWS_REGION}.console.aws.amazon.com/cloudwatch`. Replace `{AWS_REGION}` with the region that you have chosen when [creating the Secret with AWS credentials](#create-a-secret-with-aws-credentials).
-3. To verify the traces: under **Application Signals**, go to **Traces**.
-4. To verify the logs: under **Logs**, go to **LogGroups** and select the LogGroup and stream created as prerequisite and which is configured in the custom collector setup.
-5. To verify the metrics: under **Metrics**, go to **All metrics**.
+3. Verify that data is visisble for all three signal types
