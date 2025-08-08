@@ -4,19 +4,19 @@ This proof of concept demonstrates the minimum possible sleep time for a GO appl
 
 ## Steps for Demonstration
 
-1. Create a k3d cluster
+1. Create a k3d cluster.
   ```bash
   k3d cluster create kyma
   ```
 
-2. Deploy the `sleep-tester` Pod
+2. Deploy the `sleep-tester` Pod.
   ```bash
   kubectl apply -f sleep-tester.yaml
   ```
 
-3. Wait until the status of the `sleep-tester` Pod is `Completed`
+3. Wait until the status of the `sleep-tester` Pod is `Completed`.
 
-4. Check the logs of the `sleep-tester` Pod
+4. Check the logs of the `sleep-tester` Pod.
   ```bash
     ➜  kubectl logs sleep-tester
     Slept: 967.834µs
