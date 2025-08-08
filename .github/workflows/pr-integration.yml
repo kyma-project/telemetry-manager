@@ -65,6 +65,7 @@ jobs:
           - healthy
           - backpressure
           - outage
+    name: "selfmon: ${{ matrix.kind }}-${{ matrix.scenario }}"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -93,7 +94,6 @@ jobs:
         with:
           failure: failure()
           job-name: ${{ github.job }}-${{ matrix.scenario }}-${{ matrix.kind }}
-
 
   e2e:
     needs: setup
@@ -140,6 +140,7 @@ jobs:
           # INTEGRATION
           - name: istio
             mode: integration
+    name: "e2e: ${{ matrix.labels.name }}"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -179,4 +180,3 @@ jobs:
         if: failure()
         run: |
           for pod in $(kubectl get pods -n kyma-system -o name); do echo "=== $pod ==="; kubectl logs -n kyma-system $pod; done || true
-          
