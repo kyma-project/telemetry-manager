@@ -21,10 +21,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 )
 
-type ServiceEndpointsChecker interface {
-	checkServiceEndpointsExist(ctx context.Context, gatewayName string, svcName types.NamespacedName) (bool, error)
-}
-
 type ComponentHealthChecker interface {
 	Check(ctx context.Context, telemetryInDeletion bool) (*metav1.Condition, error)
 }
@@ -174,6 +170,7 @@ func (r *Reconciler) checkServiceEndpointsExist(ctx context.Context, gatewayName
 		if client.IgnoreNotFound(err) != nil {
 			return false, fmt.Errorf("failed to get log-otlp service: %w", err)
 		}
+		return false, nil
 	}
 
 	var endpointSlices discoveryv1.EndpointSliceList
