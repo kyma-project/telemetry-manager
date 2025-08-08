@@ -65,6 +65,7 @@ jobs:
           - healthy
           - backpressure
           - outage
+    name: "e2e-sm: ${{ matrix.labels.kind }}-${{ matrix.scenario }}"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -139,7 +140,7 @@ jobs:
           # INTEGRATION
           - name: istio
             mode: integration
-    name: ${{ matrix.labels.name }}
+    name: "e2e: ${{ matrix.labels.name }}"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
