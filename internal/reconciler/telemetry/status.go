@@ -7,7 +7,6 @@ import (
 	"slices"
 
 	corev1 "k8s.io/api/core/v1"
-	discoveryv1 "k8s.io/api/discovery/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -17,7 +16,6 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
-	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 )
 
@@ -119,13 +117,13 @@ func (r *Reconciler) logEndpoints(ctx context.Context, config Config) (*operator
 		Namespace: config.Logs.Namespace,
 	}
 
-	endPointsExist, err := r.checkServiceEndpointsExist(ctx, otelcollector.LogGatewayName, pushEndpoint)
+	svcExists, err := r.checkServiceExists(ctx, pushEndpoint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check if log service endpoints exist: %w", err)
 	}
 
-	// It might take sometime for the endpoints to be created after the service is created.
-	if !endPointsExist {
+	// Service has not been created yet, so we return nil.
+	if !svcExists {
 		return nil, nil //nolint:nilnil //it is ok in this context, even if it is not go idiomatic
 	}
 
@@ -138,13 +136,13 @@ func (r *Reconciler) traceEndpoints(ctx context.Context, config Config) (*operat
 		Namespace: config.Traces.Namespace,
 	}
 
-	endPointsExist, err := r.checkServiceEndpointsExist(ctx, otelcollector.TraceGatewayName, pushEndpoint)
+	svcExists, err := r.checkServiceExists(ctx, pushEndpoint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check if trace service endpoints exist: %w", err)
 	}
 
-	// It might take sometime for the endpoints to be created after the service is created.
-	if !endPointsExist {
+	// Service has not been created yet, so we return nil.
+	if !svcExists {
 		return nil, nil //nolint:nilnil //it is ok in this context, even if it is not go idiomatic
 	}
 
@@ -156,20 +154,20 @@ func (r *Reconciler) metricEndpoints(ctx context.Context, config Config) (*opera
 		Name:      otelcollector.MetricOTLPServiceName,
 		Namespace: config.Metrics.Namespace}
 
-	endPointsExist, err := r.checkServiceEndpointsExist(ctx, otelcollector.MetricGatewayName, pushEndpoint)
+	svcExists, err := r.checkServiceExists(ctx, pushEndpoint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check if metric service endpoints exist: %w", err)
 	}
 
-	// It might take sometime for the endpoints to be created after the service is created.
-	if !endPointsExist {
+	// Service has not been created yet, so we return nil.
+	if !svcExists {
 		return nil, nil //nolint:nilnil //it is ok in this context, even if it is not go idiomatic
 	}
 
 	return makeOTLPEndpoints(pushEndpoint.Name, pushEndpoint.Namespace), nil
 }
 
-func (r *Reconciler) checkServiceEndpointsExist(ctx context.Context, gatewayName string, svcName types.NamespacedName) (bool, error) {
+func (r *Reconciler) checkServiceExists(ctx context.Context, svcName types.NamespacedName) (bool, error) {
 	var service corev1.Service
 
 	err := r.Get(ctx, svcName, &service)
@@ -180,19 +178,6 @@ func (r *Reconciler) checkServiceEndpointsExist(ctx context.Context, gatewayName
 		}
 
 		return false, nil
-	}
-
-	var endpointSlices discoveryv1.EndpointSliceList
-
-	err = r.List(ctx, &endpointSlices, client.InNamespace(svcName.Namespace), client.MatchingLabels{
-		commonresources.LabelKeyK8sName: gatewayName,
-	})
-	if err != nil {
-		return false, err
-	}
-
-	if len(endpointSlices.Items) == 0 {
-		return false, fmt.Errorf("no EndpointSlice found for service %s in namespace %s", svcName.Name, svcName.Namespace)
 	}
 
 	return true, nil

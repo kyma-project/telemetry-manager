@@ -16,7 +16,6 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry/mocks"
-	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
@@ -53,10 +52,6 @@ func TestUpdateStatus(t *testing.T) {
 				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.LogOTLPServiceName).Build()),
 				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.TraceOTLPServiceName).Build()),
 				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.MetricOTLPServiceName).Build()),
-
-				pointerFrom(testutils.NewEndpointSliceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.LogOTLPServiceName).WithLabel(map[string]string{commonresources.LabelKeyK8sName: otelcollector.LogGatewayName}).Build()),
-				pointerFrom(testutils.NewEndpointSliceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.TraceOTLPServiceName).WithLabel(map[string]string{commonresources.LabelKeyK8sName: otelcollector.TraceGatewayName}).Build()),
-				pointerFrom(testutils.NewEndpointSliceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.MetricOTLPServiceName).WithLabel(map[string]string{commonresources.LabelKeyK8sName: otelcollector.MetricGatewayName}).Build()),
 			},
 			expectedState: operatorv1alpha1.StateReady,
 			expectedConditions: []metav1.Condition{
@@ -95,10 +90,6 @@ func TestUpdateStatus(t *testing.T) {
 				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.LogOTLPServiceName).Build()),
 				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.TraceOTLPServiceName).Build()),
 				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.MetricOTLPServiceName).Build()),
-
-				pointerFrom(testutils.NewEndpointSliceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.LogOTLPServiceName).WithLabel(map[string]string{commonresources.LabelKeyK8sName: otelcollector.LogGatewayName}).Build()),
-				pointerFrom(testutils.NewEndpointSliceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.TraceOTLPServiceName).WithLabel(map[string]string{commonresources.LabelKeyK8sName: otelcollector.TraceGatewayName}).Build()),
-				pointerFrom(testutils.NewEndpointSliceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.MetricOTLPServiceName).WithLabel(map[string]string{commonresources.LabelKeyK8sName: otelcollector.MetricGatewayName}).Build()),
 			},
 			expectedConditions: []metav1.Condition{
 				{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonAgentNotReady},
@@ -135,10 +126,6 @@ func TestUpdateStatus(t *testing.T) {
 				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.LogOTLPServiceName).Build()),
 				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.TraceOTLPServiceName).Build()),
 				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.MetricOTLPServiceName).Build()),
-
-				pointerFrom(testutils.NewEndpointSliceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.LogOTLPServiceName).WithLabel(map[string]string{commonresources.LabelKeyK8sName: otelcollector.LogGatewayName}).Build()),
-				pointerFrom(testutils.NewEndpointSliceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.TraceOTLPServiceName).WithLabel(map[string]string{commonresources.LabelKeyK8sName: otelcollector.TraceGatewayName}).Build()),
-				pointerFrom(testutils.NewEndpointSliceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.MetricOTLPServiceName).WithLabel(map[string]string{commonresources.LabelKeyK8sName: otelcollector.MetricGatewayName}).Build()),
 			},
 			expectedState: operatorv1alpha1.StateWarning,
 			expectedConditions: []metav1.Condition{
@@ -176,10 +163,6 @@ func TestUpdateStatus(t *testing.T) {
 				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.LogOTLPServiceName).Build()),
 				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.TraceOTLPServiceName).Build()),
 				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.MetricOTLPServiceName).Build()),
-
-				pointerFrom(testutils.NewEndpointSliceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.LogOTLPServiceName).WithLabel(map[string]string{commonresources.LabelKeyK8sName: otelcollector.LogGatewayName}).Build()),
-				pointerFrom(testutils.NewEndpointSliceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.TraceOTLPServiceName).WithLabel(map[string]string{commonresources.LabelKeyK8sName: otelcollector.TraceGatewayName}).Build()),
-				pointerFrom(testutils.NewEndpointSliceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.MetricOTLPServiceName).WithLabel(map[string]string{commonresources.LabelKeyK8sName: otelcollector.MetricGatewayName}).Build()),
 			},
 			expectedState: operatorv1alpha1.StateWarning,
 			expectedConditions: []metav1.Condition{
@@ -254,10 +237,6 @@ func TestUpdateStatus(t *testing.T) {
 				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.LogOTLPServiceName).Build()),
 				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.TraceOTLPServiceName).Build()),
 				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.MetricOTLPServiceName).Build()),
-
-				pointerFrom(testutils.NewEndpointSliceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.LogOTLPServiceName).WithLabel(map[string]string{commonresources.LabelKeyK8sName: otelcollector.LogGatewayName}).Build()),
-				pointerFrom(testutils.NewEndpointSliceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.TraceOTLPServiceName).WithLabel(map[string]string{commonresources.LabelKeyK8sName: otelcollector.TraceGatewayName}).Build()),
-				pointerFrom(testutils.NewEndpointSliceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.MetricOTLPServiceName).WithLabel(map[string]string{commonresources.LabelKeyK8sName: otelcollector.MetricGatewayName}).Build()),
 			},
 			expectedState: operatorv1alpha1.StateDeleting,
 			expectedConditions: []metav1.Condition{
@@ -301,7 +280,6 @@ func TestUpdateStatus(t *testing.T) {
 			resources: []client.Object{
 				pointerFrom(testutils.NewTracePipelineBuilder().Build()),
 				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.MetricOTLPServiceName).Build()),
-				pointerFrom(testutils.NewEndpointSliceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.MetricOTLPServiceName).WithLabel(map[string]string{commonresources.LabelKeyK8sName: otelcollector.MetricGatewayName}).Build()),
 			},
 			expectedState: operatorv1alpha1.StateWarning,
 			expectedConditions: []metav1.Condition{
@@ -330,10 +308,6 @@ func TestUpdateStatus(t *testing.T) {
 				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.LogOTLPServiceName).Build()),
 				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.TraceOTLPServiceName).Build()),
 				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.MetricOTLPServiceName).Build()),
-
-				pointerFrom(testutils.NewEndpointSliceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.LogOTLPServiceName).WithLabel(map[string]string{commonresources.LabelKeyK8sName: otelcollector.LogGatewayName}).Build()),
-				pointerFrom(testutils.NewEndpointSliceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.TraceOTLPServiceName).WithLabel(map[string]string{commonresources.LabelKeyK8sName: otelcollector.TraceGatewayName}).Build()),
-				pointerFrom(testutils.NewEndpointSliceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.MetricOTLPServiceName).WithLabel(map[string]string{commonresources.LabelKeyK8sName: otelcollector.MetricGatewayName}).Build()),
 			},
 			expectedState: operatorv1alpha1.StateWarning,
 			expectedConditions: []metav1.Condition{
@@ -370,7 +344,6 @@ func TestUpdateStatus(t *testing.T) {
 			resources: []client.Object{
 				pointerFrom(testutils.NewMetricPipelineBuilder().Build()),
 				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.MetricOTLPServiceName).Build()),
-				pointerFrom(testutils.NewEndpointSliceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.MetricOTLPServiceName).WithLabel(map[string]string{commonresources.LabelKeyK8sName: otelcollector.MetricGatewayName}).Build()),
 			},
 			expectedState: operatorv1alpha1.StateWarning,
 			expectedConditions: []metav1.Condition{
