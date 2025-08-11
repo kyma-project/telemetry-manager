@@ -65,7 +65,7 @@ type MetricPipelineSpec struct {
 
 	// Transforms specify a list of transformations to apply to telemetry data.
 	// +optional
-	Transforms []TransformSpec `json:"transforms,omitempty"`
+	Transforms []TransformSpec `json:"transform,omitempty"`
 }
 
 // MetricPipelineInput defines the input configuration section.

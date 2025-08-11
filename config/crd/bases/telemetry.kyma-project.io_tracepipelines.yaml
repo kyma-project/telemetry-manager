@@ -310,7 +310,7 @@ spec:
                 required:
                 - otlp
                 type: object
-              transforms:
+              transform:
                 description: Transforms specify a list of transformations to apply to telemetry data.
                 items:
                   description: TransformSpec defines a transformation to apply to telemetry data.

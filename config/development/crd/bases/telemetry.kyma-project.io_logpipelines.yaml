@@ -617,7 +617,7 @@ spec:
                   rule: (!has(self.custom) && !has(self.otlp)) || ! (has(self.custom) && has(self.otlp))
                 - message: Exactly one output must be defined
                   rule: (!has(self.http) && !has(self.otlp)) || ! (has(self.http) && has(self.otlp))
-              transforms:
+              transform:
                 description: Transforms specify a list of transformations to apply to telemetry data.
                 items:
                   description: TransformSpec defines a transformation to apply to telemetry data.
@@ -1350,7 +1350,7 @@ spec:
                   rule: (!has(self.custom) && !has(self.otlp)) || ! (has(self.custom) && has(self.otlp))
                 - message: Exactly one output must be defined
                   rule: (!has(self.http) && !has(self.otlp)) || ! (has(self.http) && has(self.otlp))
-              transforms:
+              transform:
                 description: Transforms specify a list of transformations to apply to telemetry data.
                 items:
                   description: TransformSpec defines a transformation to apply to telemetry data.

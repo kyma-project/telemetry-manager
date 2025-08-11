@@ -60,7 +60,7 @@ type TracePipelineSpec struct {
 
 	// Transforms specify a list of transformations to apply to telemetry data.
 	// +optional
-	Transforms []TransformSpec `json:"transforms,omitempty"`
+	Transforms []TransformSpec `json:"transform,omitempty"`
 }
 
 // TracePipelineOutput defines the output configuration section.

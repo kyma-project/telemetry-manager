@@ -72,7 +72,7 @@ type LogPipelineSpec struct {
 	Variables []LogPipelineVariableRef `json:"variables,omitempty"`
 	// Transforms specify a list of transformations to apply to telemetry data.
 	// +optional
-	Transforms []TransformSpec `json:"transforms,omitempty"`
+	Transforms []TransformSpec `json:"transform,omitempty"`
 }
 
 // LogPipelineInput describes a log input for a LogPipeline.
