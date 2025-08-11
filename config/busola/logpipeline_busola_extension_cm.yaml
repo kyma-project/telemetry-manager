@@ -352,6 +352,7 @@ data:
       widget: SimpleList
       path: spec.filters
       children:
+        - widget: FormGroup
           path: '[]'
           children:
             - widget: CodeEditor
