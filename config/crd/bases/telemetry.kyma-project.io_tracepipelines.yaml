@@ -310,23 +310,6 @@ spec:
                 required:
                 - otlp
                 type: object
-              transform:
-                description: Transforms specify a list of transformations to apply to telemetry data.
-                items:
-                  description: TransformSpec defines a transformation to apply to telemetry data.
-                  properties:
-                    conditions:
-                      description: Conditions specify a list of multiple where clauses, which will be processed as global conditions for the accompanying set of statements. The conditions are ORed together, which means only one condition needs to evaluate to true in order for the statements (including their individual where clauses) to be executed.
-                      items:
-                        type: string
-                      type: array
-                    statements:
-                      description: Statements specify a list of OTTL statements to perform the transformation.
-                      items:
-                        type: string
-                      type: array
-                  type: object
-                type: array
             required:
             - output
             type: object
