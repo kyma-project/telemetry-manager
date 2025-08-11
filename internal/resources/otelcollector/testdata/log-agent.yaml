@@ -141,14 +141,13 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
-            add:
-            - FOWNER
             drop:
             - ALL
           privileged: false
           readOnlyRootFilesystem: true
-          runAsNonRoot: false
-          runAsUser: 0
+          runAsGroup: 0
+          runAsNonRoot: true
+          runAsUser: 10001
           seccompProfile:
             type: RuntimeDefault
         volumeMounts:
@@ -160,8 +159,8 @@ spec:
         - mountPath: /var/log/pods
           name: varlogpods
           readOnly: true
-        - mountPath: /var/tmp/telemetry-log-agent/file-log-receiver
-          name: vartmpfilelogreceiver
+        - mountPath: /tmp
+          name: tmp
       priorityClassName: normal
       securityContext:
         runAsNonRoot: true
@@ -187,9 +186,9 @@ spec:
           path: /var/log/pods
         name: varlogpods
       - hostPath:
-          path: /var/tmp/telemetry-log-agent/file-log-receiver
+          path: /tmp
           type: DirectoryOrCreate
-        name: vartmpfilelogreceiver
+        name: tmp
   updateStrategy: {}
 status:
   currentNumberScheduled: 0

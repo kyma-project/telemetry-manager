@@ -33,8 +33,7 @@ extensions:
     pprof:
         endpoint: 127.0.0.1:1777
     file_storage:
-        create_directory: true
-        directory: /var/tmp/telemetry-log-agent/file-log-receiver
+        directory: /tmp
 receivers:
     filelog/test:
         exclude:
