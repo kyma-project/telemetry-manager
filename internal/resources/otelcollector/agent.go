@@ -30,8 +30,8 @@ const (
 	MetricAgentName = "telemetry-metric-agent"
 	LogAgentName    = "telemetry-log-agent"
 
-	checkpointVolumeName = "varlibfilelogreceiver"
-	CheckpointVolumePath = "/var/lib/telemetry-log-agent/file-log-receiver"
+	checkpointVolumeName = "vartmpfilelogreceiver"
+	CheckpointVolumePath = "/var/tmp/telemetry-log-agent/file-log-receiver"
 	logVolumeName        = "varlogpods"
 	logVolumePath        = "/var/log/pods"
 )

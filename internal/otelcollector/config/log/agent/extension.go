@@ -9,7 +9,8 @@ func extensionsConfig() Extensions {
 	return Extensions{
 		Extensions: config.DefaultExtensions(),
 		FileStorage: &FileStorage{
-			Directory: otelcollector.CheckpointVolumePath,
+			CreateDirectory: true,
+			Directory:       otelcollector.CheckpointVolumePath,
 		},
 	}
 }
