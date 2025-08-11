@@ -21,6 +21,9 @@ const (
 
 type Builder struct {
 	Reader client.Reader
+
+	config  *Config
+	envVars otlpexporter.EnvVars
 }
 
 type BuildOptions struct {
@@ -32,45 +35,40 @@ type BuildOptions struct {
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {
-	cfg := &Config{
-		Base: config.Base{
-			Service:    config.DefaultService(make(config.Pipelines)),
-			Extensions: config.DefaultExtensions(),
-		},
-		Receivers:  makeReceiversConfig(),
-		Processors: makeProcessorsConfig(opts),
-		Exporters:  make(Exporters),
-	}
+	b.config = b.baseConfig(opts)
+	b.envVars = make(otlpexporter.EnvVars)
 
-	envVars := make(otlpexporter.EnvVars)
-
+	// Iterate over each LogPipeline CR and enrich the config with pipeline-specific components
 	queueSize := maxQueueSize / len(pipelines)
 
 	for i := range pipelines {
 		pipeline := pipelines[i]
-		if pipeline.DeletionTimestamp != nil {
-			continue
-		}
 
-		otlpExporterBuilder := otlpexporter.NewConfigBuilder(
-			b.Reader,
-			pipeline.Spec.Output.OTLP,
-			pipeline.Name,
-			queueSize,
-			otlpexporter.SignalTypeLog,
-		)
-		if err := addComponentsForLogPipeline(ctx, otlpExporterBuilder, &pipeline, cfg, envVars); err != nil {
+		if err := b.addComponentsForLogPipeline(ctx, &pipeline, queueSize); err != nil {
 			return nil, nil, err
 		}
 
-		pipelineID := fmt.Sprintf("logs/%s", pipeline.Name)
-		cfg.Service.Pipelines[pipelineID] = makePipelineServiceConfig(&pipeline)
+		b.addServicePipelines(&pipeline)
 	}
 
-	return cfg, envVars, nil
+	return b.config, b.envVars, nil
 }
 
-func makeReceiversConfig() Receivers {
+// baseConfig creates the static/global base configuration for the log gateway collector.
+// Pipeline-specific components are added later via addComponentsForLogPipeline method.
+func (b *Builder) baseConfig(opts BuildOptions) *Config {
+	return &Config{
+		Base: config.Base{
+			Service:    config.DefaultService(make(config.Pipelines)),
+			Extensions: config.DefaultExtensions(),
+		},
+		Receivers:  receiversConfig(),
+		Processors: processorsConfig(opts),
+		Exporters:  make(Exporters),
+	}
+}
+
+func receiversConfig() Receivers {
 	return Receivers{
 		OTLP: config.OTLPReceiver{
 			Protocols: config.ReceiverProtocols{
@@ -86,47 +84,55 @@ func makeReceiversConfig() Receivers {
 }
 
 // addComponentsForLogPipeline enriches a Config (exporters, processors, etc.) with components for a given telemetryv1alpha1.LogPipeline.
-func addComponentsForLogPipeline(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.LogPipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
-	addNamespaceFilter(pipeline, cfg)
-	addInputSourceFilters(pipeline, cfg)
+func (b *Builder) addComponentsForLogPipeline(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, queueSize int) error {
+	b.addNamespaceFilter(pipeline)
+	b.addInputSourceFilters(pipeline)
 
-	return addOTLPExporter(ctx, otlpExporterBuilder, pipeline, cfg, envVars)
+	return b.addOTLPExporter(ctx, pipeline, queueSize)
 }
 
-func addNamespaceFilter(pipeline *telemetryv1alpha1.LogPipeline, cfg *Config) {
+func (b *Builder) addNamespaceFilter(pipeline *telemetryv1alpha1.LogPipeline) {
 	otlpInput := pipeline.Spec.Input.OTLP
 	if otlpInput == nil || otlpInput.Disabled {
 		// no namespace filter needed
 		return
 	}
 
-	if cfg.Processors.NamespaceFilters == nil {
-		cfg.Processors.NamespaceFilters = make(NamespaceFilters)
+	if b.config.Processors.NamespaceFilters == nil {
+		b.config.Processors.NamespaceFilters = make(NamespaceFilters)
 	}
 
 	if shouldFilterByNamespace(otlpInput.Namespaces) {
 		processorID := formatNamespaceFilterID(pipeline.Name)
-		cfg.Processors.NamespaceFilters[processorID] = makeNamespaceFilterConfig(otlpInput.Namespaces)
+		b.config.Processors.NamespaceFilters[processorID] = namespaceFilterProcessorConfig(otlpInput.Namespaces)
 	}
 }
 
-func addOTLPExporter(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.LogPipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
-	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.MakeConfig(ctx)
+func (b *Builder) addInputSourceFilters(pipeline *telemetryv1alpha1.LogPipeline) {
+	input := pipeline.Spec.Input
+	if !logpipelineutils.IsOTLPInputEnabled(input) {
+		b.config.Processors.DropIfInputSourceOTLP = dropIfInputSourceOTLPProcessorConfig()
+	}
+}
+
+func (b *Builder) addOTLPExporter(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, queueSize int) error {
+	otlpExporterBuilder := otlpexporter.NewConfigBuilder(
+		b.Reader,
+		pipeline.Spec.Output.OTLP,
+		pipeline.Name,
+		queueSize,
+		otlpexporter.SignalTypeLog,
+	)
+
+	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.OTLPExporterConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to make otlp exporter config: %w", err)
 	}
 
-	maps.Copy(envVars, otlpExporterEnvVars)
+	maps.Copy(b.envVars, otlpExporterEnvVars)
 
 	otlpExporterID := formatOTLPExporterID(pipeline)
-	cfg.Exporters[otlpExporterID] = Exporter{OTLP: otlpExporterConfig}
+	b.config.Exporters[otlpExporterID] = Exporter{OTLP: otlpExporterConfig}
 
 	return nil
-}
-
-func addInputSourceFilters(pipeline *telemetryv1alpha1.LogPipeline, cfg *Config) {
-	input := pipeline.Spec.Input
-	if !logpipelineutils.IsOTLPInputEnabled(input) {
-		cfg.Processors.DropIfInputSourceOTLP = makeDropIfInputSourceOTLPConfig()
-	}
 }

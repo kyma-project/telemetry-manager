@@ -1,10 +1,8 @@
 package assert
 
 import (
-	"fmt"
 	"time"
 
-	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -120,6 +118,28 @@ func OTelLogsFromNamespaceNotDelivered(t testkit.T, backend *kitbackend.Backend,
 	)
 }
 
+func OTelLogsFromPodNotDelivered(t testkit.T, backend *kitbackend.Backend, podNamePrefix string, optionalDescription ...any) {
+	t.Helper()
+
+	BackendDataConsistentlyMatches(
+		t,
+		backend,
+		HaveFlatLogs(Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", ContainSubstring(podNamePrefix)))))),
+		WithOptionalDescription(optionalDescription...),
+	)
+}
+
+func OTelLogsFromPodDelivered(t testkit.T, backend *kitbackend.Backend, podNamePrefix string, optionalDescription ...any) {
+	t.Helper()
+
+	BackendDataEventuallyMatches(
+		t,
+		backend,
+		HaveFlatLogs(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", ContainSubstring(podNamePrefix))))),
+		WithOptionalDescription(optionalDescription...),
+	)
+}
+
 //nolint:dupl //LogPipelineHealthy and MetricPipelineHealthy have similarities, but they are not the same
 func FluentBitLogPipelineHealthy(t testkit.T, pipelineName string) {
 	t.Helper()
@@ -191,7 +211,7 @@ func LogPipelineConditionReasonsTransition(t testkit.T, pipelineName, condType s
 			return ReasonStatus{Reason: currCond.Reason, Status: currCond.Status}
 		}, 10*time.Minute, periodic.DefaultInterval).Should(Equal(expected), "expected reason %s[%s] of type %s not reached", expected.Reason, expected.Status, condType)
 
-		fmt.Fprintf(GinkgoWriter, "Transitioned to [%s]%s\n", currCond.Status, currCond.Reason)
+		t.Logf("Transitioned to [%s]%s\n", currCond.Status, currCond.Reason)
 	}
 }
 

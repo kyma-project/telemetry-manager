@@ -1,10 +1,10 @@
+---
+title: Log Flow Health Status API
+status: Accepted
+date: 2024-03-28
+---
+
 # 10. Log Flow Health Status API
-
-Date: 2024-03-28
-
-## Status
-
-Accepted
 
 ## Context: Key Events in the Fluent Bit Log Flow
 

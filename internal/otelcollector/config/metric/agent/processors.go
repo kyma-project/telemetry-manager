@@ -8,41 +8,42 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/ottlexpr"
 )
 
-func makeProcessorsConfig(inputs inputSources, instrumentationScopeVersion string) Processors {
-	processorsConfig := Processors{
+func processorsConfig(inputs inputSources, instrumentationScopeVersion string) Processors {
+	pc := Processors{
 		BaseProcessors: config.BaseProcessors{
-			Batch:         makeBatchProcessorConfig(),
-			MemoryLimiter: makeMemoryLimiterConfig(),
+			Batch:         batchProcessorConfig(),
+			MemoryLimiter: memoryLimiterProcessorConfig(),
 		},
+		DropVirtualNetworkInterfaces: dropVirtualNetworkInterfacesProcessorConfig(),
 	}
 
 	if inputs.runtime || inputs.prometheus || inputs.istio {
-		processorsConfig.DeleteServiceName = makeDeleteServiceNameConfig()
+		pc.DeleteServiceName = deleteServiceNameProcessorConfig()
 
 		if inputs.runtime {
-			processorsConfig.SetInstrumentationScopeRuntime = metric.MakeInstrumentationScopeProcessor(instrumentationScopeVersion, metric.InputSourceRuntime, metric.InputSourceK8sCluster)
-			processorsConfig.InsertSkipEnrichmentAttribute = makeInsertSkipEnrichmentAttributeProcessor()
+			pc.SetInstrumentationScopeRuntime = metric.InstrumentationScopeProcessorConfig(instrumentationScopeVersion, metric.InputSourceRuntime, metric.InputSourceK8sCluster)
+			pc.InsertSkipEnrichmentAttribute = insertSkipEnrichmentAttributeProcessorConfig()
 
 			if inputs.runtimeResources.volume {
-				processorsConfig.DropNonPVCVolumesMetrics = makeDropNonPVCVolumesMetricsProcessor()
+				pc.DropNonPVCVolumesMetrics = dropNonPVCVolumesMetricsProcessorConfig()
 			}
 		}
 
 		if inputs.prometheus {
-			processorsConfig.SetInstrumentationScopePrometheus = metric.MakeInstrumentationScopeProcessor(instrumentationScopeVersion, metric.InputSourcePrometheus)
+			pc.SetInstrumentationScopePrometheus = metric.InstrumentationScopeProcessorConfig(instrumentationScopeVersion, metric.InputSourcePrometheus)
 		}
 
 		if inputs.istio {
-			processorsConfig.IstioNoiseFilter = &config.IstioNoiseFilterProcessor{}
-			processorsConfig.SetInstrumentationScopeIstio = metric.MakeInstrumentationScopeProcessor(instrumentationScopeVersion, metric.InputSourceIstio)
+			pc.IstioNoiseFilter = &config.IstioNoiseFilterProcessor{}
+			pc.SetInstrumentationScopeIstio = metric.InstrumentationScopeProcessorConfig(instrumentationScopeVersion, metric.InputSourceIstio)
 		}
 	}
 
-	return processorsConfig
+	return pc
 }
 
 //nolint:mnd // hardcoded values
-func makeBatchProcessorConfig() *config.BatchProcessor {
+func batchProcessorConfig() *config.BatchProcessor {
 	return &config.BatchProcessor{
 		SendBatchSize:    1024,
 		Timeout:          "10s",
@@ -51,7 +52,7 @@ func makeBatchProcessorConfig() *config.BatchProcessor {
 }
 
 //nolint:mnd // hardcoded values
-func makeMemoryLimiterConfig() *config.MemoryLimiter {
+func memoryLimiterProcessorConfig() *config.MemoryLimiter {
 	return &config.MemoryLimiter{
 		CheckInterval:        "1s",
 		LimitPercentage:      75,
@@ -59,7 +60,7 @@ func makeMemoryLimiterConfig() *config.MemoryLimiter {
 	}
 }
 
-func makeDeleteServiceNameConfig() *config.ResourceProcessor {
+func deleteServiceNameProcessorConfig() *config.ResourceProcessor {
 	return &config.ResourceProcessor{
 		Attributes: []config.AttributeAction{
 			{
@@ -70,7 +71,7 @@ func makeDeleteServiceNameConfig() *config.ResourceProcessor {
 	}
 }
 
-func makeInsertSkipEnrichmentAttributeProcessor() *metric.TransformProcessor {
+func insertSkipEnrichmentAttributeProcessorConfig() *metric.TransformProcessor {
 	metricsToSkipEnrichment := []string{
 		"node",
 		"statefulset",
@@ -86,13 +87,13 @@ func makeInsertSkipEnrichmentAttributeProcessor() *metric.TransformProcessor {
 				Statements: []string{
 					fmt.Sprintf("set(resource.attributes[\"%s\"], \"true\")", metric.SkipEnrichmentAttribute),
 				},
-				Conditions: makeMetricNameConditionsWithIsMatch(metricsToSkipEnrichment),
+				Conditions: metricNameConditionsWithIsMatch(metricsToSkipEnrichment),
 			},
 		},
 	}
 }
 
-func makeDropNonPVCVolumesMetricsProcessor() *FilterProcessor {
+func dropNonPVCVolumesMetricsProcessorConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			Metric: []string{
@@ -106,7 +107,7 @@ func makeDropNonPVCVolumesMetricsProcessor() *FilterProcessor {
 	}
 }
 
-func makeMetricNameConditionsWithIsMatch(metrics []string) []string {
+func metricNameConditionsWithIsMatch(metrics []string) []string {
 	var conditions []string
 
 	for _, m := range metrics {
@@ -115,4 +116,17 @@ func makeMetricNameConditionsWithIsMatch(metrics []string) []string {
 	}
 
 	return conditions
+}
+
+func dropVirtualNetworkInterfacesProcessorConfig() *FilterProcessor {
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetrics{
+			Datapoint: []string{
+				ottlexpr.JoinWithAnd(
+					ottlexpr.IsMatch("metric.name", "^k8s.node.network.*"),
+					ottlexpr.Not(ottlexpr.IsMatch("attributes[\"interface\"]", "^(eth|en).*")),
+				),
+			},
+		},
+	}
 }
