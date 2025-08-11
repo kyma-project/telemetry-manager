@@ -20,11 +20,11 @@ import (
 type logFormat string
 
 const (
-	defaultByteSize           = 1 << 11 // 2 KiB = 2 * 2^10 = 2^11
-	jsonFormat      logFormat = "json"
-	plaintextFormat logFormat = "plaintext"
-	oneSecondInMillis = 1000
-	twoMilliSecondsMultiplier = 2
+	defaultByteSize                     = 1 << 11 // 2 KiB = 2 * 2^10 = 2^11
+	jsonFormat                logFormat = "json"
+	plaintextFormat           logFormat = "plaintext"
+	oneSecondInMillis                   = 1000
+	twoMilliSecondsMultiplier           = 2
 )
 
 var (
