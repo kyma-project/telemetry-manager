@@ -197,7 +197,7 @@ are printed out.
 
 ### Test Results
 
-See [results metrics](./results/metrics.md)
+For more information, see [Test Results: Metrics](./results/metrics.md).
 
 ## Log Test (Fluent-Bit)
 
@@ -263,7 +263,7 @@ test results are printed out.
 
 ### Test Results
 
-See [results logs](./results/logs.md)
+For more information, see [Test Results: Logs](./results/logs.md).
 
 ## Self Monitor
 
@@ -310,4 +310,4 @@ Configured memory, CPU limits, and storage are based on this base value and will
 
 ### Test Results
 
-See [results self-monitor](./results/self-monitor.md)
+For more information, see [Test Results: Self-Monitor](./results/self-monitor.md).
