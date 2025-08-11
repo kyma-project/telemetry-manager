@@ -49,7 +49,7 @@ On average, memory usage for gateway instances is ~150MB for a single Pod, and C
 ## Results Agent
 
 
-|       Version/Test | Single Pipeline (ci-metric-ag) |                              |                     |                      |               | Single Pipeline Backpressure (ci-metric-ag-b) |                              |                     |                      |               |
+|       Version/Test | Single-Pipeline (ci-metric-ag) |                              |                     |                      |               | Single-Pipeline Backpressure (ci-metric-ag-b) |                              |                     |                      |               |
 |-------------------:|:------------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:|:---------------------------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:|
 |                    |  Receiver Accepted Metric/sec  | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage |         Receiver Accepted Metric/sec          | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage |
 |               0.92 |             20123              |            20137             |          0          |       704, 747       |   0.2, 0.2    |                     19952                     |            15234             |          0          |       751, 736       |   0.3, 0.2    |
