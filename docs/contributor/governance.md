@@ -125,7 +125,7 @@ The code duplication linting scenario is problematic for being disabled an a per
 
 ### Dev Environment Configuration
 
-Read [golangci-lint integrations](https://golangci-lint.run/welcome/integrations/) for information on configuring file-watchers for your IDE or code editor.
+Read [golangci-lint integrations](https://golangci-lint.run/docs/welcome/integrations/) for information on configuring file-watchers for your IDE or code editor.
 
 ### Autofix
 
