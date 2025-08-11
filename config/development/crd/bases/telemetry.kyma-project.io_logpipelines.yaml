@@ -69,8 +69,8 @@ spec:
                   type: object
                 type: array
               filters:
+                description: Describes a filtering option on the logs of the pipeline.
                 items:
-                  description: Describes a filtering option on the logs of the pipeline.
                   properties:
                     custom:
                       description: 'Custom filter definition in the Fluent Bit syntax. Note: If you use a `custom` filter, you put the LogPipeline in unsupported mode.'
@@ -153,7 +153,7 @@ spec:
                     type: object
                 type: object
               output:
-                description: '[Fluent Bit output](https://docs.fluentbit.io/manual/pipeline/outputs) where you want to push the logs. Only one output can be specified.'
+                description: Output where you want to push the logs. Only one output can be specified.
                 properties:
                   custom:
                     description: 'Defines a custom output in the Fluent Bit syntax. Note: If you use a `custom` output, you put the LogPipeline in unsupported mode.'
@@ -784,8 +784,8 @@ spec:
                   type: object
                 type: array
               filters:
+                description: Describes a filtering option on the logs of the pipeline.
                 items:
-                  description: Describes a filtering option on the logs of the pipeline.
                   properties:
                     custom:
                       description: 'Custom filter definition in the Fluent Bit syntax. Note: If you use a `custom` filter, you put the LogPipeline in unsupported mode.'
@@ -868,7 +868,7 @@ spec:
                     type: object
                 type: object
               output:
-                description: '[Fluent Bit output](https://docs.fluentbit.io/manual/pipeline/outputs) where you want to push the logs. Only one output can be specified.'
+                description: '[Output where you want to push the logs. Only one output can be specified.'
                 properties:
                   custom:
                     description: 'Defines a custom output in the Fluent Bit syntax. Note: If you use a `custom` output, you put the LogPipeline in unsupported mode.'

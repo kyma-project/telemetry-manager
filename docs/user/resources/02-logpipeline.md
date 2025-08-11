@@ -102,7 +102,7 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 | **input.&#x200b;otlp.&#x200b;namespaces**  | object | Describes whether push-based OTLP signals from specific namespaces are selected. System namespaces are enabled by default. |
 | **input.&#x200b;otlp.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude signals from the specified Namespace names only. |
 | **input.&#x200b;otlp.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include signals from the specified Namespace names only. |
-| **output**  | object | [Fluent Bit output](https://docs.fluentbit.io/manual/pipeline/outputs) where you want to push the logs. Only one output can be specified. |
+| **output**  | object | Output where you want to push the logs. Only one output can be specified. |
 | **output.&#x200b;custom**  | string | Defines a custom output in the Fluent Bit syntax. Note: If you use a `custom` output, you put the LogPipeline in unsupported mode. |
 | **output.&#x200b;http**  | object | Configures an HTTP-based output compatible with the Fluent Bit HTTP output plugin. |
 | **output.&#x200b;http.&#x200b;compress**  | string | Defines the compression algorithm to use. |
