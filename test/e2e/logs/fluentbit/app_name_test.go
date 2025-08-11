@@ -12,7 +12,7 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -31,15 +31,15 @@ func TestAppName(t *testing.T) {
 	nsAppOnly := uniquePrefix("app-only")
 	nsNameOnly := uniquePrefix("name-only")
 	nsMixed := uniquePrefix("mixed")
-	logProducerNone := stdloggen.NewDeployment(nsNone).WithName("none")
-	logProducerAppOnly := stdloggen.NewDeployment(nsAppOnly).WithName("app-only").WithLabel("app", "app-only")
-	logProducerNameOnly := stdloggen.NewDeployment(nsNameOnly).WithName("name-only").WithLabel("app.kubernetes.io/name", "name-only")
-	logProducerMixed := stdloggen.NewDeployment(nsMixed).WithName("mixed").WithLabel("app", "app-mixed").WithLabel("app.kubernetes.io/name", "name-mixed")
+	logProducerNone := stdoutloggen.NewDeployment(nsNone).WithName("none")
+	logProducerAppOnly := stdoutloggen.NewDeployment(nsAppOnly).WithName("app-only").WithLabel("app", "app-only")
+	logProducerNameOnly := stdoutloggen.NewDeployment(nsNameOnly).WithName("name-only").WithLabel("app.kubernetes.io/name", "name-only")
+	logProducerMixed := stdoutloggen.NewDeployment(nsMixed).WithName("mixed").WithLabel("app", "app-mixed").WithLabel("app.kubernetes.io/name", "name-mixed")
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
-		WithIncludeContainers(stdloggen.DefaultContainerName).
+		WithIncludeContainers(stdoutloggen.DefaultContainerName).
 		WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 		Build()
 

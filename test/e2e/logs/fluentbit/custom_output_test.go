@@ -13,7 +13,7 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -29,7 +29,7 @@ func TestCustomOutput(t *testing.T) {
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
-	logProducer := stdloggen.NewDeployment(genNs)
+	logProducer := stdoutloggen.NewDeployment(genNs)
 	customOutputTemplate := fmt.Sprintf(`
 	name   http
 	port   %d
@@ -58,7 +58,7 @@ func TestCustomOutput(t *testing.T) {
 	assert.FluentBitLogPipelineHealthy(t, pipelineName)
 
 	assert.LogPipelineUnsupportedMode(t, pipelineName, true)
-	assert.FluentBitLogsFromPodDelivered(t, backend, stdloggen.DefaultName)
+	assert.FluentBitLogsFromPodDelivered(t, backend, stdoutloggen.DefaultName)
 
 	assert.BackendDataEventuallyMatches(t, backend,
 		fluentbit.HaveFlatLogs(HaveEach(SatisfyAll(

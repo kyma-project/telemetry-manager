@@ -12,7 +12,7 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -29,10 +29,10 @@ func TestDedot(t *testing.T) {
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
 
-	logProducer := stdloggen.NewDeployment(genNs).WithLabel("dedot.label", "logging-dedot-value").WithLabel("app", "appName")
+	logProducer := stdoutloggen.NewDeployment(genNs).WithLabel("dedot.label", "logging-dedot-value").WithLabel("app", "appName")
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
-		WithIncludeContainers(stdloggen.DefaultContainerName).
+		WithIncludeContainers(stdoutloggen.DefaultContainerName).
 		WithHTTPOutput(
 			testutils.HTTPHost(backend.Host()),
 			testutils.HTTPPort(backend.Port()),
