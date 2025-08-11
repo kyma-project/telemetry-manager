@@ -30,7 +30,7 @@ type serverCertProviderImpl struct {
 	storage       serverCertStorage
 }
 
-func newServerCertProvider(certDir string) *serverCertProviderImpl {
+func newServerCertProvider(certDir string, rsaKeySize int) *serverCertProviderImpl {
 	clock := realClock{}
 
 	const duration1d = 24 * time.Hour
@@ -39,7 +39,8 @@ func newServerCertProvider(certDir string) *serverCertProviderImpl {
 		expiryChecker: &certExpiryCheckerImpl{softExpiryOffset: duration1d, clock: realClock{}},
 		chainChecker:  &certChainCheckerImpl{},
 		generator: &serverCertGeneratorImpl{
-			clock: clock,
+			clock:   clock,
+			keySize: rsaKeySize,
 		},
 		storage: serverCertStorageImpl{certDir: certDir},
 	}

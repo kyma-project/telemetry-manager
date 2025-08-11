@@ -237,6 +237,7 @@ func TestUpdateLogPipelineWithWebhookConfig(t *testing.T) {
 	}(certDir)
 
 	config := Config{
+		rsaKeySize:            testRsaKeySize,
 		CertDir:               certDir,
 		ServiceName:           webhookService,
 		CASecretName:          caBundleSecret,
@@ -285,6 +286,7 @@ func TestUpdateWebhookConfig(t *testing.T) {
 	}(certDir)
 
 	config := Config{
+		rsaKeySize:            testRsaKeySize,
 		CertDir:               certDir,
 		ServiceName:           webhookService,
 		CASecretName:          caBundleSecret,
@@ -345,6 +347,7 @@ func TestCreateSecret(t *testing.T) {
 	}(certDir)
 
 	config := Config{
+		rsaKeySize:            testRsaKeySize,
 		CertDir:               certDir,
 		ServiceName:           webhookService,
 		CASecretName:          caBundleSecret,
@@ -378,6 +381,7 @@ func TestReuseExistingCertificate(t *testing.T) {
 	}(certDir)
 
 	config := Config{
+		rsaKeySize:            testRsaKeySize,
 		CertDir:               certDir,
 		ServiceName:           webhookService,
 		CASecretName:          caBundleSecret,

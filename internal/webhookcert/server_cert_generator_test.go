@@ -10,8 +10,14 @@ import (
 )
 
 func TestGenerateServerCert(t *testing.T) {
-	caCertGen := caCertGeneratorImpl{clock: mockClock{}}
-	sut := serverCertGeneratorImpl{clock: mockClock{}}
+	caCertGen := caCertGeneratorImpl{
+		clock:   mockClock{},
+		keySize: testRsaKeySize,
+	}
+	sut := serverCertGeneratorImpl{
+		clock:   mockClock{},
+		keySize: testRsaKeySize,
+	}
 
 	t.Run("fails if nil input", func(t *testing.T) {
 		_, _, err := sut.generateCert(serverCertConfig{host: "my-webhook.my-namespace"})

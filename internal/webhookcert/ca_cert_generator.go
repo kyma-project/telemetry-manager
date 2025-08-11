@@ -17,7 +17,8 @@ const (
 )
 
 type caCertGeneratorImpl struct {
-	clock clock
+	clock   clock
+	keySize int
 }
 
 func (g *caCertGeneratorImpl) generateCert() ([]byte, []byte, error) {
@@ -40,7 +41,10 @@ func (g *caCertGeneratorImpl) generateCert() ([]byte, []byte, error) {
 }
 
 func (g *caCertGeneratorImpl) generateCertInternal() (*x509.Certificate, *rsa.PrivateKey, error) {
-	caKey, err := rsa.GenerateKey(crand.Reader, rsaKeySize)
+	if g.keySize == 0 {
+		g.keySize = rsaKeySize
+	}
+	caKey, err := rsa.GenerateKey(crand.Reader, g.keySize)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to generateCert rsa private key: %w", err)
 	}

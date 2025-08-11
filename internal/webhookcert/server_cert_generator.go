@@ -17,7 +17,8 @@ const (
 )
 
 type serverCertGeneratorImpl struct {
-	clock clock
+	clock   clock
+	keySize int
 }
 
 func (g *serverCertGeneratorImpl) generateCert(config serverCertConfig) ([]byte, []byte, error) {
@@ -59,7 +60,10 @@ func (g *serverCertGeneratorImpl) generateCertInternal(host string, alternativeD
 	certTemplate.DNSNames = append(certTemplate.DNSNames, host)
 	certTemplate.DNSNames = append(certTemplate.DNSNames, alternativeDNSNames...)
 
-	key, err := rsa.GenerateKey(crand.Reader, rsaKeySize)
+	if g.keySize == 0 {
+		g.keySize = rsaKeySize
+	}
+	key, err := rsa.GenerateKey(crand.Reader, g.keySize)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to generateCert rsa private key: %w", err)
 	}
