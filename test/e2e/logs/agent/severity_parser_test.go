@@ -12,7 +12,7 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -21,10 +21,25 @@ func TestSeverityParser(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelLogAgent)
 
 	var (
-		uniquePrefix = unique.Prefix()
-		pipelineName = uniquePrefix()
-		backendNs    = uniquePrefix("backend")
-		genNs        = uniquePrefix("gen")
+		uniquePrefix      = unique.Prefix()
+		pipelineName      = uniquePrefix()
+		backendNs         = uniquePrefix("backend")
+		genNs             = uniquePrefix("gen")
+		levelINFOScenario = map[string]string{
+			"scenario": "level-info",
+			"level":    "INFO",
+		}
+		levelWarningScenario = map[string]string{
+			"scenario": "level-warning",
+			"level":    "WARNING",
+		}
+		logLevelScenario = map[string]string{
+			"scenario":  "log.level",
+			"log.level": "WARN",
+		}
+		defaultScenario = map[string]string{
+			"scenario": "default",
+		}
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
@@ -38,15 +53,10 @@ func TestSeverityParser(t *testing.T) {
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
-		stdloggen.NewDeployment(
-			genNs,
-			stdloggen.AppendLogLines(
-				`{"scenario": "levelAndINFO", "level": "INFO"}`,
-				`{"scenario": "levelAndWarning", "level": "warning"}`,
-				`{"scenario": "log.level", "log.level":"WARN"}`,
-				`{"scenario": "noLevel"}`,
-			),
-		).K8sObject(),
+		stdoutloggen.NewDeployment(genNs, stdoutloggen.WithFields(levelINFOScenario)).WithName(levelINFOScenario["scenario"]).K8sObject(),
+		stdoutloggen.NewDeployment(genNs, stdoutloggen.WithFields(levelWarningScenario)).WithName(levelWarningScenario["scenario"]).K8sObject(),
+		stdoutloggen.NewDeployment(genNs, stdoutloggen.WithFields(logLevelScenario)).WithName(logLevelScenario["scenario"]).K8sObject(),
+		stdoutloggen.NewDeployment(genNs, stdoutloggen.WithFields(defaultScenario)).WithName(defaultScenario["scenario"]).K8sObject(),
 		&pipeline,
 	}
 	resources = append(resources, backend.K8sObjects()...)
@@ -63,22 +73,22 @@ func TestSeverityParser(t *testing.T) {
 
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatLogs(ContainElement(SatisfyAll(
-			HaveAttributes(HaveKeyWithValue("scenario", "levelAndINFO")),
+			HaveAttributes(HaveKeyWithValue("scenario", "level-info")),
 			HaveSeverityNumber(Equal(9)),
 			HaveSeverityText(Equal("INFO")),
 			HaveAttributes(Not(HaveKey("level"))),
 		))),
-		assert.WithOptionalDescription("Scenario levelAndINFO should parse level attribute and remove it"),
+		assert.WithOptionalDescription("Scenario level-info should parse level attribute and remove it"),
 	)
 
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatLogs(ContainElement(SatisfyAll(
-			HaveAttributes(HaveKeyWithValue("scenario", "levelAndWarning")),
+			HaveAttributes(HaveKeyWithValue("scenario", "level-warning")),
 			HaveSeverityNumber(Equal(13)),
-			HaveSeverityText(Equal("warning")),
+			HaveSeverityText(Equal("WARNING")),
 			HaveAttributes(Not(HaveKey("level"))),
 		))),
-		assert.WithOptionalDescription("Scenario levelAndWarning should parse level attribute and remove it"),
+		assert.WithOptionalDescription("Scenario level-warning should parse level attribute and remove it"),
 	)
 
 	assert.BackendDataEventuallyMatches(t, backend,
@@ -92,7 +102,7 @@ func TestSeverityParser(t *testing.T) {
 
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatLogs(ContainElement(SatisfyAll(
-			HaveLogBody(Equal(stdloggen.DefaultLine)),
+			HaveAttributes(HaveKeyWithValue("scenario", "default")),
 			HaveSeverityNumber(Equal(0)), // default value
 			HaveSeverityText(BeEmpty()),
 		))),

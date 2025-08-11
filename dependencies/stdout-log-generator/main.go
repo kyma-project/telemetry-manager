@@ -23,8 +23,8 @@ const (
 	defaultByteSize                     = 1 << 11 // 2 KiB = 2 * 2^10 = 2^11
 	jsonFormat                logFormat = "json"
 	plaintextFormat           logFormat = "plaintext"
-	oneSecondInMillis                   = 1000
-	twoMilliSecondsMultiplier           = 2
+	millisecondsPerSecond               = 1000
+	twoMillisecondsMultiplier           = 2
 )
 
 var (
@@ -94,8 +94,8 @@ func main() {
 	// And since the timer will only be able to tick every 2ms, the burst size needs to be 140
 	// This will allow 140 logs back-to-back followed by around 2ms sleep, then another 140 logs back-to-back followed by around 2ms, etc.
 	// For more details, check the issue https://github.com/golang/go/issues/47084#issuecomment-897291261
-	limitPerMillisecond := int(limitPerSecond / oneSecondInMillis)
-	limiter := rate.NewLimiter(limitPerSecond, max(1, twoMilliSecondsMultiplier*limitPerMillisecond))
+	limitPerMillisecond := int(limitPerSecond / millisecondsPerSecond)
+	limiter := rate.NewLimiter(limitPerSecond, max(1, twoMillisecondsMultiplier*limitPerMillisecond))
 
 	// Start generation of logs
 	switch format {
