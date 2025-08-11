@@ -550,22 +550,22 @@ func createSelfMonitoringConfig() telemetry.SelfMonitorConfig {
 
 func createWebhookConfig() telemetry.WebhookConfig {
 	return telemetry.WebhookConfig{
-		CertConfig: webhookcert.Config{
-			CertDir: certDir,
-			ServiceName: types.NamespacedName{
+		CertConfig: webhookcert.NewWebhookCertConfig(
+			certDir,
+			types.NamespacedName{
 				Name:      webhookServiceName,
 				Namespace: telemetryNamespace,
 			},
-			CASecretName: types.NamespacedName{
+			types.NamespacedName{
 				Name:      "telemetry-webhook-cert",
 				Namespace: telemetryNamespace,
 			},
-			ValidatingWebhookName: types.NamespacedName{
+			types.NamespacedName{
 				Name: "telemetry-validating-webhook.kyma-project.io",
 			},
-			MutatingWebhookName: types.NamespacedName{
+			types.NamespacedName{
 				Name: "telemetry-mutating-webhook.kyma-project.io",
 			},
-		},
+		),
 	}
 }
