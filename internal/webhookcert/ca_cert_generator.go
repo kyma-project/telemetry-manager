@@ -44,6 +44,7 @@ func (g *caCertGeneratorImpl) generateCertInternal() (*x509.Certificate, *rsa.Pr
 	if g.keySize == 0 {
 		g.keySize = rsaKeySize
 	}
+
 	caKey, err := rsa.GenerateKey(crand.Reader, g.keySize)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to generateCert rsa private key: %w", err)

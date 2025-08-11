@@ -63,6 +63,7 @@ func (g *serverCertGeneratorImpl) generateCertInternal(host string, alternativeD
 	if g.keySize == 0 {
 		g.keySize = rsaKeySize
 	}
+
 	key, err := rsa.GenerateKey(crand.Reader, g.keySize)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to generateCert rsa private key: %w", err)
