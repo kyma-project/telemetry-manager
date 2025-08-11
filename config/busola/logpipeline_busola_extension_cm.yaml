@@ -367,7 +367,6 @@ data:
           defaultValue: "OTLP"
           name: Output Type
           enum: [HTTP, OTLP]
-          trigger: [outputtype]
         - name: Custom
           path: custom
           widget: CodeEditor
