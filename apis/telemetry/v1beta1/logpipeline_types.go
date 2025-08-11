@@ -71,9 +71,10 @@ type LogPipeline struct {
 // +kubebuilder:validation:XValidation:rule="!(has(self.output.otlp) && has(self.variables))", message="variables not supported with otlp output"
 type LogPipelineSpec struct {
 	// Defines where to collect logs, including selector mechanisms.
-	Input   LogPipelineInput    `json:"input,omitempty"`
+	Input LogPipelineInput `json:"input,omitempty"`
+	// Describes a filtering option on the logs of the pipeline.
 	Filters []LogPipelineFilter `json:"filters,omitempty"`
-	// [Fluent Bit output](https://docs.fluentbit.io/manual/pipeline/outputs) where you want to push the logs. Only one output can be specified.
+	// [Output where you want to push the logs. Only one output can be specified.
 	Output LogPipelineOutput      `json:"output,omitempty"`
 	Files  []LogPipelineFileMount `json:"files,omitempty"`
 	// A list of mappings from Kubernetes Secret keys to environment variables. Mapped keys are mounted as environment variables, so that they are available as [Variables](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/variables) in the sections.
@@ -126,13 +127,12 @@ type LogPipelineContainerSelector struct {
 	Exclude []string `json:"exclude,omitempty"`
 }
 
-// Describes a filtering option on the logs of the pipeline.
 type LogPipelineFilter struct {
 	// Custom filter definition in the Fluent Bit syntax. Note: If you use a `custom` filter, you put the LogPipeline in unsupported mode.
 	Custom string `json:"custom,omitempty"`
 }
 
-// Output describes a Fluent Bit output configuration section.
+// LogPipelineOutput describes an log output configuration section.
 // +kubebuilder:validation:XValidation:rule="has(self.otlp) == has(oldSelf.otlp)", message="Switching to or away from OTLP output is not supported. Please re-create the LogPipeline instead"
 // +kubebuilder:validation:XValidation:rule="(!has(self.custom) && !has(self.http)) || !(has(self.custom) && has(self.http))", message="Exactly one output must be defined"
 // +kubebuilder:validation:XValidation:rule="(!has(self.custom) && !has(self.otlp)) || ! (has(self.custom) && has(self.otlp))", message="Exactly one output must be defined"
