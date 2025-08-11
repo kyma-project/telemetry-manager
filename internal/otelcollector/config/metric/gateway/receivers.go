@@ -7,8 +7,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
-func makeReceiversConfig() Receivers {
+func receiversConfig() Receivers {
 	return Receivers{
+		KymaStatsReceiver: kymaStatsReceiverConfig(),
 		OTLP: config.OTLPReceiver{
 			Protocols: config.ReceiverProtocols{
 				HTTP: config.Endpoint{
@@ -22,7 +23,7 @@ func makeReceiversConfig() Receivers {
 	}
 }
 
-func makeKymaStatsReceiverConfig() *KymaStatsReceiver {
+func kymaStatsReceiverConfig() *KymaStatsReceiver {
 	return &KymaStatsReceiver{
 		AuthType:           "serviceAccount",
 		K8sLeaderElector:   "k8s_leader_elector",

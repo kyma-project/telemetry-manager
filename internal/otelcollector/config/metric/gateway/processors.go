@@ -10,22 +10,23 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/processors"
 )
 
-func makeProcessorsConfig(opts BuildOptions) Processors {
+func processorsConfig(opts BuildOptions) Processors {
 	return Processors{
 		BaseProcessors: config.BaseProcessors{
-			Batch:         makeBatchProcessorConfig(),
-			MemoryLimiter: makeMemoryLimiterConfig(),
+			Batch:         batchProcessorConfig(),
+			MemoryLimiter: memoryLimiterProcessorConfig(),
 		},
 		K8sAttributes:                 processors.K8sAttributesProcessorConfig(opts.Enrichments),
 		InsertClusterAttributes:       processors.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.ClusterUID, opts.CloudProvider),
 		ResolveServiceName:            processors.MakeResolveServiceNameConfig(),
 		DropKymaAttributes:            processors.DropKymaAttributesProcessorConfig(),
-		DeleteSkipEnrichmentAttribute: makeDeleteSkipEnrichmentAttributeConfig(),
+		DeleteSkipEnrichmentAttribute: deleteSkipEnrichmentAttributeProcessorConfig(),
+		SetInstrumentationScopeKyma:   metric.InstrumentationScopeProcessorConfig(opts.InstrumentationScopeVersion, metric.InputSourceKyma),
 	}
 }
 
 //nolint:mnd // hardcoded values
-func makeBatchProcessorConfig() *config.BatchProcessor {
+func batchProcessorConfig() *config.BatchProcessor {
 	return &config.BatchProcessor{
 		SendBatchSize:    1024,
 		Timeout:          "10s",
@@ -34,7 +35,7 @@ func makeBatchProcessorConfig() *config.BatchProcessor {
 }
 
 //nolint:mnd // hardcoded values
-func makeMemoryLimiterConfig() *config.MemoryLimiter {
+func memoryLimiterProcessorConfig() *config.MemoryLimiter {
 	return &config.MemoryLimiter{
 		CheckInterval:        "1s",
 		LimitPercentage:      75,
@@ -42,7 +43,7 @@ func makeMemoryLimiterConfig() *config.MemoryLimiter {
 	}
 }
 
-func makeDeleteSkipEnrichmentAttributeConfig() *config.ResourceProcessor {
+func deleteSkipEnrichmentAttributeProcessorConfig() *config.ResourceProcessor {
 	return &config.ResourceProcessor{
 		Attributes: []config.AttributeAction{
 			{
@@ -53,7 +54,7 @@ func makeDeleteSkipEnrichmentAttributeConfig() *config.ResourceProcessor {
 	}
 }
 
-func makeDropIfInputSourceRuntimeConfig() *FilterProcessor {
+func dropIfInputSourceRuntimeProcessorConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			Metric: []string{
@@ -63,7 +64,7 @@ func makeDropIfInputSourceRuntimeConfig() *FilterProcessor {
 	}
 }
 
-func makeDropIfInputSourcePrometheusConfig() *FilterProcessor {
+func dropIfInputSourcePrometheusProcessorConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			Metric: []string{
@@ -73,7 +74,7 @@ func makeDropIfInputSourcePrometheusConfig() *FilterProcessor {
 	}
 }
 
-func makeDropIfInputSourceIstioConfig() *FilterProcessor {
+func dropIfInputSourceIstioProcessorConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			Metric: []string{
@@ -83,7 +84,7 @@ func makeDropIfInputSourceIstioConfig() *FilterProcessor {
 	}
 }
 
-func makeDropIfEnvoyMetricsDisabledConfig() *FilterProcessor {
+func dropIfEnvoyMetricsDisabledProcessorConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			Metric: []string{
@@ -93,7 +94,7 @@ func makeDropIfEnvoyMetricsDisabledConfig() *FilterProcessor {
 	}
 }
 
-func makeDropIfInputSourceOTLPConfig() *FilterProcessor {
+func dropIfInputSourceOTLPProcessorConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			Metric: []string{
@@ -103,7 +104,7 @@ func makeDropIfInputSourceOTLPConfig() *FilterProcessor {
 	}
 }
 
-func makeDropRuntimePodMetricsConfig() *FilterProcessor {
+func dropRuntimePodMetricsProcessorConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			Metric: []string{
@@ -116,7 +117,7 @@ func makeDropRuntimePodMetricsConfig() *FilterProcessor {
 	}
 }
 
-func makeDropRuntimeContainerMetricsConfig() *FilterProcessor {
+func dropRuntimeContainerMetricsProcessorConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			Metric: []string{
@@ -129,7 +130,7 @@ func makeDropRuntimeContainerMetricsConfig() *FilterProcessor {
 	}
 }
 
-func makeDropRuntimeNodeMetricsConfig() *FilterProcessor {
+func dropRuntimeNodeMetricsProcessorConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			Metric: []string{
@@ -142,7 +143,7 @@ func makeDropRuntimeNodeMetricsConfig() *FilterProcessor {
 	}
 }
 
-func makeDropRuntimeVolumeMetricsConfig() *FilterProcessor {
+func dropRuntimeVolumeMetricsProcessorConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			Metric: []string{
@@ -155,7 +156,7 @@ func makeDropRuntimeVolumeMetricsConfig() *FilterProcessor {
 	}
 }
 
-func makeDropRuntimeDeploymentMetricsConfig() *FilterProcessor {
+func dropRuntimeDeploymentMetricsProcessorConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			Metric: []string{
@@ -168,7 +169,7 @@ func makeDropRuntimeDeploymentMetricsConfig() *FilterProcessor {
 	}
 }
 
-func makeDropRuntimeStatefulSetMetricsConfig() *FilterProcessor {
+func dropRuntimeStatefulSetMetricsProcessorConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			Metric: []string{
@@ -181,7 +182,7 @@ func makeDropRuntimeStatefulSetMetricsConfig() *FilterProcessor {
 	}
 }
 
-func makeDropRuntimeDaemonSetMetricsConfig() *FilterProcessor {
+func dropRuntimeDaemonSetMetricsProcessorConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			Metric: []string{
@@ -194,7 +195,7 @@ func makeDropRuntimeDaemonSetMetricsConfig() *FilterProcessor {
 	}
 }
 
-func makeDropRuntimeJobMetricsConfig() *FilterProcessor {
+func dropRuntimeJobMetricsProcessorConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			Metric: []string{
@@ -207,11 +208,11 @@ func makeDropRuntimeJobMetricsConfig() *FilterProcessor {
 	}
 }
 
-func makeFilterByNamespaceConfig(namespaceSelector *telemetryv1alpha1.NamespaceSelector, inputSourceCondition string) *FilterProcessor {
+func filterByNamespaceProcessorConfig(namespaceSelector *telemetryv1alpha1.NamespaceSelector, inputSourceCondition string) *FilterProcessor {
 	var filterExpressions []string
 
 	if len(namespaceSelector.Exclude) > 0 {
-		namespacesConditions := makeNamespacesConditions(namespaceSelector.Exclude)
+		namespacesConditions := namespacesConditions(namespaceSelector.Exclude)
 
 		// Drop metrics if the excluded namespaces are matched
 		excludeNamespacesExpr := ottlexpr.JoinWithAnd(inputSourceCondition, ottlexpr.JoinWithOr(namespacesConditions...))
@@ -219,7 +220,7 @@ func makeFilterByNamespaceConfig(namespaceSelector *telemetryv1alpha1.NamespaceS
 	}
 
 	if len(namespaceSelector.Include) > 0 {
-		namespacesConditions := makeNamespacesConditions(namespaceSelector.Include)
+		namespacesConditions := namespacesConditions(namespaceSelector.Include)
 
 		// metrics are dropped if the statement is true, so you need to negate the expression
 		includeNamespacesExpr := ottlexpr.JoinWithAnd(
@@ -244,13 +245,13 @@ func makeFilterByNamespaceConfig(namespaceSelector *telemetryv1alpha1.NamespaceS
 	}
 }
 
-func makeNamespacesConditions(namespaces []string) []string {
-	var namespacesConditions []string
+func namespacesConditions(namespaces []string) []string {
+	var conditions []string
 	for _, ns := range namespaces {
-		namespacesConditions = append(namespacesConditions, ottlexpr.NamespaceEquals(ns))
+		conditions = append(conditions, ottlexpr.NamespaceEquals(ns))
 	}
 
-	return namespacesConditions
+	return conditions
 }
 
 func inputSourceEquals(inputSourceType metric.InputSourceType) string {
