@@ -69,7 +69,7 @@ type LogPipeline struct {
 // +kubebuilder:validation:XValidation:rule="!(has(self.output.otlp) && has(self.filters))", message="filters are not supported with otlp output"
 // +kubebuilder:validation:XValidation:rule="!(has(self.output.otlp) && has(self.files))", message="files not supported with otlp output"
 // +kubebuilder:validation:XValidation:rule="!(has(self.output.otlp) && has(self.variables))", message="variables not supported with otlp output"
-// +kubebuilder:validation:XValidation:rule="!(!has(self.output.otlp) && has(self.transforms))", message="transforms is only supported with otlp output"
+// +kubebuilder:validation:XValidation:rule="!(!has(self.output.otlp) && has(self.transform))", message="transform is only supported with otlp output"
 type LogPipelineSpec struct {
 	// Defines where to collect logs, including selector mechanisms.
 	Input   LogPipelineInput    `json:"input,omitempty"`

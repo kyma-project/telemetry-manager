@@ -678,8 +678,8 @@ spec:
               rule: '!(has(self.output.otlp) && has(self.files))'
             - message: variables not supported with otlp output
               rule: '!(has(self.output.otlp) && has(self.variables))'
-            - message: transforms is only supported with otlp output
-              rule: '!(!has(self.output.otlp) && has(self.transforms))'
+            - message: transform is only supported with otlp output
+              rule: '!(!has(self.output.otlp) && has(self.transform))'
           status:
             description: Shows the observed state of the LogPipeline
             properties:
@@ -1411,8 +1411,8 @@ spec:
               rule: '!(has(self.output.otlp) && has(self.files))'
             - message: variables not supported with otlp output
               rule: '!(has(self.output.otlp) && has(self.variables))'
-            - message: transforms is only supported with otlp output
-              rule: '!(!has(self.output.otlp) && has(self.transforms))'
+            - message: transform is only supported with otlp output
+              rule: '!(!has(self.output.otlp) && has(self.transform))'
           status:
             description: Shows the observed state of the LogPipeline
             properties:
