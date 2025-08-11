@@ -95,7 +95,7 @@ A typical test result output looks like the following example:
 
 ### Test Results
 
-See [results traces](./results/traces.md)
+For more information, see [Test Results: Traces](./results/traces.md).
 
 ## Metrics Test
 
