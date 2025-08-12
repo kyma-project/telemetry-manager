@@ -38,41 +38,44 @@ const (
 
 // TelemetrySpec defines the desired state of Telemetry
 type TelemetrySpec struct {
-	// Configures module settings specific to the trace features.
+	// Trace configures module settings specific to the trace features. This field is optional.
 	// +optional
 	Trace *TraceSpec `json:"trace,omitempty"`
 
-	// Configures module settings specific to the metric features.
+	// Metric configures module settings specific to the metric features. This field is optional.
 	// +optional
 	Metric *MetricSpec `json:"metric,omitempty"`
 
-	// Configures module settings specific to the log features.
+	// Log configures module settings specific to the log features. This field is optional.
 	// +optional
 	Log *LogSpec `json:"log,omitempty"`
 
-	// Configures optional enrichments of all telemetry data collected by pipelines.
+	// Enrichments configures optional enrichments of all telemetry data collected by pipelines. This field is optional.
 	// +optional
 	Enrichments *EnrichmentSpec `json:"enrichments,omitempty"`
 }
 
-// MetricSpec defines the behavior of the metric gateway
+// MetricSpec configures module settings specific to the metric features.
 type MetricSpec struct {
+	// Gateway configures the settings for the metric gateway.
 	Gateway GatewaySpec `json:"gateway,omitempty"`
 }
 
-// TraceSpec defines the behavior of the trace gateway
+// TraceSpec configures module settings specific to the trace features.
 type TraceSpec struct {
+	// Gateway configures the settings for the trace gateway.
 	Gateway GatewaySpec `json:"gateway,omitempty"`
 }
 
-// LogSpec defines the behavior of a gateway.
+// LogSpec configures module settings specific to the log features.
 type LogSpec struct {
-	// Gateway specifies the settings for a gateway.
+	// Gateway configures the settings for the log gateway.
 	Gateway GatewaySpec `json:"gateway,omitempty"`
 }
 
 // GatewaySpec defines settings of a gateway.
 type GatewaySpec struct {
+	// Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
 	Scaling Scaling `json:"scaling,omitempty"`
 }
 
@@ -111,7 +114,7 @@ type TelemetryStatus struct {
 	// If all Conditions are met, State is expected to be in StateReady.
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
-	// Endpoints for trace and metric gateway.
+	// Endpoints for log, trace and metric gateway.
 	// +nullable
 	GatewayEndpoints GatewayEndpoints `json:"endpoints,omitempty"`
 	// add other fields to status subresource here
