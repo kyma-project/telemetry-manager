@@ -2,7 +2,6 @@ package gateway
 
 import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 )
 
 type Config struct {
@@ -39,6 +38,7 @@ type ModuleGVR struct {
 type Processors struct {
 	config.BaseProcessors `yaml:",inline"`
 
+	// OTel Collector components with static IDs
 	K8sAttributes                                *config.K8sAttributesProcessor     `yaml:"k8sattributes,omitempty"`
 	InsertClusterAttributes                      *config.ResourceProcessor          `yaml:"resource/insert-cluster-attributes,omitempty"`
 	DropDiagnosticMetricsIfInputSourcePrometheus *FilterProcessor                   `yaml:"filter/drop-diagnostic-metrics-if-input-source-prometheus,omitempty"`
@@ -58,14 +58,12 @@ type Processors struct {
 	DropRuntimeJobMetrics                        *FilterProcessor                   `yaml:"filter/drop-runtime-job-metrics,omitempty"`
 	ResolveServiceName                           *config.ServiceEnrichmentProcessor `yaml:"service_enrichment,omitempty"`
 	DropKymaAttributes                           *config.ResourceProcessor          `yaml:"resource/drop-kyma-attributes,omitempty"`
-	SetInstrumentationScopeKyma                  *metric.TransformProcessor         `yaml:"transform/set-instrumentation-scope-kyma,omitempty"`
+	SetInstrumentationScopeKyma                  *config.TransformProcessor         `yaml:"transform/set-instrumentation-scope-kyma,omitempty"`
 	DeleteSkipEnrichmentAttribute                *config.ResourceProcessor          `yaml:"resource/delete-skip-enrichment-attribute,omitempty"`
 
-	// NamespaceFilters contains filter processors, which need different configurations per pipeline
-	NamespaceFilters NamespaceFilters `yaml:",inline,omitempty"`
+	// OTel Collector components with dynamic IDs that are pipeline name based
+	Dynamic map[string]any `yaml:",inline,omitempty"`
 }
-
-type NamespaceFilters map[string]*FilterProcessor
 
 type FilterProcessor struct {
 	Metrics FilterProcessorMetrics `yaml:"metrics"`

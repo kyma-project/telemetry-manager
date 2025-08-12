@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/processors"
 )
 
@@ -24,6 +23,7 @@ func processorsConfig(opts BuildOptions) Processors {
 		InsertClusterAttributes:        processors.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.ClusterUID, opts.CloudProvider),
 		ResolveServiceName:             processors.MakeResolveServiceNameConfig(),
 		DropKymaAttributes:             processors.DropKymaAttributesProcessorConfig(),
+		Dynamic:                        make(map[string]any),
 	}
 }
 
@@ -35,16 +35,11 @@ func memoryLimiterProcessorConfig() *config.MemoryLimiter {
 	}
 }
 
-func instrumentationScopeRuntimeProcessorConfig(instrumentationScopeVersion string) *log.TransformProcessor {
-	return &log.TransformProcessor{
-		ErrorMode: "ignore",
-		LogStatements: []config.TransformProcessorStatements{
-			{
-				Statements: []string{
-					fmt.Sprintf("set(scope.version, %q)", instrumentationScopeVersion),
-					fmt.Sprintf("set(scope.name, %q)", InstrumentationScopeRuntime),
-				},
-			},
+func instrumentationScopeRuntimeProcessorConfig(instrumentationScopeVersion string) *config.TransformProcessor {
+	return config.LogTransformProcessor([]config.TransformProcessorStatements{{
+		Statements: []string{
+			fmt.Sprintf("set(scope.version, %q)", instrumentationScopeVersion),
+			fmt.Sprintf("set(scope.name, %q)", InstrumentationScopeRuntime),
 		},
-	}
+	}})
 }

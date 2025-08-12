@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 )
 
 type Config struct {
@@ -221,10 +220,10 @@ type Processors struct {
 
 	DeleteServiceName                 *config.ResourceProcessor         `yaml:"resource/delete-service-name,omitempty"`
 	IstioNoiseFilter                  *config.IstioNoiseFilterProcessor `yaml:"istio_noise_filter,omitempty"`
-	SetInstrumentationScopeRuntime    *metric.TransformProcessor        `yaml:"transform/set-instrumentation-scope-runtime,omitempty"`
-	SetInstrumentationScopePrometheus *metric.TransformProcessor        `yaml:"transform/set-instrumentation-scope-prometheus,omitempty"`
-	SetInstrumentationScopeIstio      *metric.TransformProcessor        `yaml:"transform/set-instrumentation-scope-istio,omitempty"`
-	InsertSkipEnrichmentAttribute     *metric.TransformProcessor        `yaml:"transform/insert-skip-enrichment-attribute,omitempty"`
+	SetInstrumentationScopeRuntime    *config.TransformProcessor        `yaml:"transform/set-instrumentation-scope-runtime,omitempty"`
+	SetInstrumentationScopePrometheus *config.TransformProcessor        `yaml:"transform/set-instrumentation-scope-prometheus,omitempty"`
+	SetInstrumentationScopeIstio      *config.TransformProcessor        `yaml:"transform/set-instrumentation-scope-istio,omitempty"`
+	InsertSkipEnrichmentAttribute     *config.TransformProcessor        `yaml:"transform/insert-skip-enrichment-attribute,omitempty"`
 	DropNonPVCVolumesMetrics          *FilterProcessor                  `yaml:"filter/drop-non-pvc-volumes-metrics,omitempty"`
 	DropVirtualNetworkInterfaces      *FilterProcessor                  `yaml:"filter/drop-virtual-network-interfaces,omitempty"`
 }

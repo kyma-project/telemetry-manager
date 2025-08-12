@@ -3,7 +3,6 @@ package gateway
 import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/ottlexpr"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/processors"
 )
@@ -21,6 +20,7 @@ func processorsConfig(opts BuildOptions) Processors {
 		ResolveServiceName:      processors.MakeResolveServiceNameConfig(),
 		DropKymaAttributes:      processors.DropKymaAttributesProcessorConfig(),
 		IstioEnrichment:         istioEnrichmentProcessorConfig(opts),
+		Dynamic:                 make(map[string]any),
 	}
 }
 
@@ -48,18 +48,11 @@ func memoryLimiterProcessorConfig() *config.MemoryLimiter {
 	}
 }
 
-func setObsTimeIfZeroProcessorConfig() *log.TransformProcessor {
-	return &log.TransformProcessor{
-		ErrorMode: "ignore",
-		LogStatements: []config.TransformProcessorStatements{
-			{
-				Conditions: []string{
-					"log.observed_time_unix_nano == 0",
-				},
-				Statements: []string{"set(log.observed_time, Now())"},
-			},
-		},
-	}
+func setObsTimeIfZeroProcessorConfig() *config.TransformProcessor {
+	return config.LogTransformProcessor([]config.TransformProcessorStatements{{
+		Conditions: []string{"log.observed_time_unix_nano == 0"},
+		Statements: []string{"set(log.observed_time, Now())"},
+	}})
 }
 
 func namespaceFilterProcessorConfig(namespaceSelector *telemetryv1alpha1.NamespaceSelector) *FilterProcessor {

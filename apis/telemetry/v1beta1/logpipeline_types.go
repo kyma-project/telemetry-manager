@@ -69,6 +69,7 @@ type LogPipeline struct {
 // +kubebuilder:validation:XValidation:rule="!(has(self.output.otlp) && has(self.filters))", message="filters are not supported with otlp output"
 // +kubebuilder:validation:XValidation:rule="!(has(self.output.otlp) && has(self.files))", message="files not supported with otlp output"
 // +kubebuilder:validation:XValidation:rule="!(has(self.output.otlp) && has(self.variables))", message="variables not supported with otlp output"
+// +kubebuilder:validation:XValidation:rule="!(!has(self.output.otlp) && has(self.transform))", message="transform is only supported with otlp output"
 type LogPipelineSpec struct {
 	// Defines where to collect logs, including selector mechanisms.
 	Input   LogPipelineInput    `json:"input,omitempty"`
@@ -78,6 +79,9 @@ type LogPipelineSpec struct {
 	Files  []LogPipelineFileMount `json:"files,omitempty"`
 	// A list of mappings from Kubernetes Secret keys to environment variables. Mapped keys are mounted as environment variables, so that they are available as [Variables](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/variables) in the sections.
 	Variables []LogPipelineVariableRef `json:"variables,omitempty"`
+	// Transforms specify a list of transformations to apply to telemetry data.
+	// +optional
+	Transforms []TransformSpec `json:"transform,omitempty"`
 }
 
 // LogPipelineInput describes a log input for a LogPipeline.

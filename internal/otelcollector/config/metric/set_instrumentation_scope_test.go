@@ -10,12 +10,12 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 	instrumentationScopeVersion := "main"
 	tests := []struct {
 		name        string
-		want        *TransformProcessor
+		want        *config.TransformProcessor
 		inputSource InputSourceType
 	}{
 		{
 			name: "InputSourceRuntime",
-			want: &TransformProcessor{
+			want: &config.TransformProcessor{
 				ErrorMode: "ignore",
 				MetricStatements: []config.TransformProcessorStatements{{
 					Statements: []string{
@@ -27,7 +27,7 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 			inputSource: InputSourceRuntime,
 		}, {
 			name: "InputSourcePrometheus",
-			want: &TransformProcessor{
+			want: &config.TransformProcessor{
 				ErrorMode: "ignore",
 				MetricStatements: []config.TransformProcessorStatements{
 					{
@@ -44,7 +44,7 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 			inputSource: InputSourcePrometheus,
 		}, {
 			name: "InputSourceIstio",
-			want: &TransformProcessor{
+			want: &config.TransformProcessor{
 				ErrorMode: "ignore",
 				MetricStatements: []config.TransformProcessorStatements{{
 					Statements: []string{
@@ -56,7 +56,7 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 			inputSource: InputSourceIstio,
 		}, {
 			name: "InputSourceKyma",
-			want: &TransformProcessor{
+			want: &config.TransformProcessor{
 				ErrorMode: "ignore",
 				MetricStatements: []config.TransformProcessorStatements{{
 					Statements: []string{
@@ -68,7 +68,7 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 			inputSource: InputSourceKyma,
 		}, {
 			name: "InputSourceK8sCluster",
-			want: &TransformProcessor{
+			want: &config.TransformProcessor{
 				ErrorMode: "ignore",
 				MetricStatements: []config.TransformProcessorStatements{{
 					Statements: []string{
@@ -90,7 +90,7 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 	}
 }
 
-func compareTransformProcessor(got, want *TransformProcessor) bool {
+func compareTransformProcessor(got, want *config.TransformProcessor) bool {
 	if got.ErrorMode != want.ErrorMode {
 		return false
 	}
