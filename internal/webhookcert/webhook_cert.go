@@ -17,14 +17,23 @@ type Config struct {
 	MutatingWebhookName   types.NamespacedName
 }
 
-func NewWebhookCertConfig(certDir string, serviceName, caSecretName, validatingWebhookName, mutatingWebhookName types.NamespacedName) Config {
+// ConfigOptions holds parameters for creating webhook certificate configuration
+type ConfigOptions struct {
+	CertDir               string
+	ServiceName           types.NamespacedName
+	CASecretName          types.NamespacedName
+	ValidatingWebhookName types.NamespacedName
+	MutatingWebhookName   types.NamespacedName
+}
+
+func NewWebhookCertConfig(opts ConfigOptions) Config {
 	return Config{
 		rsaKeySize:            rsaKeySize,
-		CertDir:               certDir,
-		ServiceName:           serviceName,
-		CASecretName:          caSecretName,
-		ValidatingWebhookName: validatingWebhookName,
-		MutatingWebhookName:   mutatingWebhookName,
+		CertDir:               opts.CertDir,
+		ServiceName:           opts.ServiceName,
+		CASecretName:          opts.CASecretName,
+		ValidatingWebhookName: opts.ValidatingWebhookName,
+		MutatingWebhookName:   opts.MutatingWebhookName,
 	}
 }
 

@@ -334,15 +334,26 @@ func TestUpdateWebhookConfig(t *testing.T) {
 }
 
 func TestNewWebhookCertConfig(t *testing.T) {
-	config := NewWebhookCertConfig(
-		t.TempDir(),
-		webhookService,
-		caBundleSecret,
-		validatingWebhookNamespacedName,
-		mutatingWebhookNamespacedName,
-	)
+	t.Run("should initialize all fields correctly", func(t *testing.T) {
+		certDir := t.TempDir()
 
-	require.Equal(t, rsaKeySize, config.rsaKeySize)
+		config := NewWebhookCertConfig(
+			ConfigOptions{
+				CertDir:               certDir,
+				ServiceName:           webhookService,
+				CASecretName:          caBundleSecret,
+				ValidatingWebhookName: validatingWebhookNamespacedName,
+				MutatingWebhookName:   mutatingWebhookNamespacedName,
+			},
+		)
+
+		require.Equal(t, rsaKeySize, config.rsaKeySize)
+		require.Equal(t, certDir, config.CertDir)
+		require.Equal(t, webhookService, config.ServiceName)
+		require.Equal(t, caBundleSecret, config.CASecretName)
+		require.Equal(t, validatingWebhookNamespacedName, config.ValidatingWebhookName)
+		require.Equal(t, mutatingWebhookNamespacedName, config.MutatingWebhookName)
+	})
 }
 
 func TestCreateSecret(t *testing.T) {
