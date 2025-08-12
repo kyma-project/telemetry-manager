@@ -12,7 +12,6 @@ const (
 	configFileName       = "relay.conf"
 	containerName        = "collector"
 	userDefault    int64 = 10001
-	userRoot       int64 = 0
 )
 
 const (

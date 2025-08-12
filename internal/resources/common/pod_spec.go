@@ -192,6 +192,12 @@ func WithRunAsRoot() ContainerOption {
 	}
 }
 
+func WithRunAsGroup(groupID int64) ContainerOption {
+	return func(c *corev1.Container) {
+		c.SecurityContext.RunAsGroup = ptr.To(groupID)
+	}
+}
+
 func WithRunAsUser(userID int64) ContainerOption {
 	return func(c *corev1.Container) {
 		c.SecurityContext.RunAsUser = ptr.To(userID)
