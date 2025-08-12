@@ -14,9 +14,9 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/gateway"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/logagent"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/logagent"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/loggateway"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
@@ -30,7 +30,7 @@ import (
 const defaultReplicaCount int32 = 2
 
 type GatewayConfigBuilder interface {
-	Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPipeline, opts gateway.BuildOptions) (*gateway.Config, otlpexporter.EnvVars, error)
+	Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPipeline, opts loggateway.BuildOptions) (*loggateway.Config, common.EnvVars, error)
 }
 
 type GatewayApplierDeleter interface {
@@ -51,7 +51,7 @@ type IstioStatusChecker interface {
 }
 
 type AgentConfigBuilder interface {
-	Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPipeline, options logagent.BuildOptions) (*logagent.Config, otlpexporter.EnvVars, error)
+	Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPipeline, options logagent.BuildOptions) (*logagent.Config, common.EnvVars, error)
 }
 
 type AgentApplierDeleter interface {
@@ -259,7 +259,7 @@ func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetr
 		enrichments = t.Spec.Enrichments
 	}
 
-	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, gateway.BuildOptions{
+	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, loggateway.BuildOptions{
 		ClusterName:   clusterName,
 		ClusterUID:    clusterUID,
 		CloudProvider: shootInfo.CloudProvider,

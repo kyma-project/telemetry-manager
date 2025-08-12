@@ -1,0 +1,41 @@
+package common
+
+import (
+	"fmt"
+)
+
+var upstreamInstrumentationScopeName = map[InputSourceType]string{
+	InputSourceRuntime:    "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver",
+	InputSourcePrometheus: "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver",
+	InputSourceIstio:      "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver",
+	InputSourceKyma:       "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver",
+	InputSourceK8sCluster: "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver",
+}
+
+func InstrumentationScopeProcessorConfig(instrumentationScopeVersion string, inputSource ...InputSourceType) *TransformProcessor {
+	statements := []string{}
+	transformProcessorStatements := []TransformProcessorStatements{}
+
+	for _, i := range inputSource {
+		statements = append(statements, instrumentationStatement(i, instrumentationScopeVersion)...)
+
+		if i == InputSourcePrometheus {
+			transformProcessorStatements = append(transformProcessorStatements, TransformProcessorStatements{
+				Statements: []string{fmt.Sprintf("set(resource.attributes[\"%s\"], \"%s\")", KymaInputNameAttribute, KymaInputPrometheus)},
+			})
+		}
+	}
+
+	transformProcessorStatements = append(transformProcessorStatements, TransformProcessorStatements{
+		Statements: statements,
+	})
+
+	return MetricTransformProcessor(transformProcessorStatements)
+}
+
+func instrumentationStatement(inputSource InputSourceType, instrumentationScopeVersion string) []string {
+	return []string{
+		fmt.Sprintf("set(scope.version, \"%s\") where scope.name == \"%s\"", instrumentationScopeVersion, upstreamInstrumentationScopeName[inputSource]),
+		fmt.Sprintf("set(scope.name, \"%s\") where scope.name == \"%s\"", InstrumentationScope[inputSource], upstreamInstrumentationScopeName[inputSource]),
+	}
+}

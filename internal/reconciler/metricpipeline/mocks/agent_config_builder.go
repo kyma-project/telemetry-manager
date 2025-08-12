@@ -6,7 +6,7 @@ package mocks
 
 import (
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/metricagent"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricagent"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -63,7 +63,7 @@ type AgentConfigBuilder_Build_Call struct {
 
 // Build is a helper method to define mock.On call
 //   - pipelines []v1alpha1.MetricPipeline
-//   - options agent.BuildOptions
+//   - options metricagent.BuildOptions
 func (_e *AgentConfigBuilder_Expecter) Build(pipelines interface{}, options interface{}) *AgentConfigBuilder_Build_Call {
 	return &AgentConfigBuilder_Build_Call{Call: _e.mock.On("Build", pipelines, options)}
 }

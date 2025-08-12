@@ -8,8 +8,8 @@ import (
 	"context"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/logagent"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/logagent"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -41,7 +41,7 @@ func (_m *AgentConfigBuilder) EXPECT() *AgentConfigBuilder_Expecter {
 }
 
 // Build provides a mock function for the type AgentConfigBuilder
-func (_mock *AgentConfigBuilder) Build(ctx context.Context, pipelines []v1alpha1.LogPipeline, options logagent.BuildOptions) (*logagent.Config, otlpexporter.EnvVars, error) {
+func (_mock *AgentConfigBuilder) Build(ctx context.Context, pipelines []v1alpha1.LogPipeline, options logagent.BuildOptions) (*logagent.Config, common.EnvVars, error) {
 	ret := _mock.Called(ctx, pipelines, options)
 
 	if len(ret) == 0 {
@@ -49,9 +49,9 @@ func (_mock *AgentConfigBuilder) Build(ctx context.Context, pipelines []v1alpha1
 	}
 
 	var r0 *logagent.Config
-	var r1 otlpexporter.EnvVars
+	var r1 common.EnvVars
 	var r2 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, []v1alpha1.LogPipeline, logagent.BuildOptions) (*logagent.Config, otlpexporter.EnvVars, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []v1alpha1.LogPipeline, logagent.BuildOptions) (*logagent.Config, common.EnvVars, error)); ok {
 		return returnFunc(ctx, pipelines, options)
 	}
 	if returnFunc, ok := ret.Get(0).(func(context.Context, []v1alpha1.LogPipeline, logagent.BuildOptions) *logagent.Config); ok {
@@ -61,11 +61,11 @@ func (_mock *AgentConfigBuilder) Build(ctx context.Context, pipelines []v1alpha1
 			r0 = ret.Get(0).(*logagent.Config)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, []v1alpha1.LogPipeline, logagent.BuildOptions) otlpexporter.EnvVars); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, []v1alpha1.LogPipeline, logagent.BuildOptions) common.EnvVars); ok {
 		r1 = returnFunc(ctx, pipelines, options)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(otlpexporter.EnvVars)
+			r1 = ret.Get(1).(common.EnvVars)
 		}
 	}
 	if returnFunc, ok := ret.Get(2).(func(context.Context, []v1alpha1.LogPipeline, logagent.BuildOptions) error); ok {
@@ -84,7 +84,7 @@ type AgentConfigBuilder_Build_Call struct {
 // Build is a helper method to define mock.On call
 //   - ctx context.Context
 //   - pipelines []v1alpha1.LogPipeline
-//   - options agent.BuildOptions
+//   - options logagent.BuildOptions
 func (_e *AgentConfigBuilder_Expecter) Build(ctx interface{}, pipelines interface{}, options interface{}) *AgentConfigBuilder_Build_Call {
 	return &AgentConfigBuilder_Build_Call{Call: _e.mock.On("Build", ctx, pipelines, options)}
 }
@@ -112,12 +112,12 @@ func (_c *AgentConfigBuilder_Build_Call) Run(run func(ctx context.Context, pipel
 	return _c
 }
 
-func (_c *AgentConfigBuilder_Build_Call) Return(config *logagent.Config, envVars otlpexporter.EnvVars, err error) *AgentConfigBuilder_Build_Call {
+func (_c *AgentConfigBuilder_Build_Call) Return(config *logagent.Config, envVars common.EnvVars, err error) *AgentConfigBuilder_Build_Call {
 	_c.Call.Return(config, envVars, err)
 	return _c
 }
 
-func (_c *AgentConfigBuilder_Build_Call) RunAndReturn(run func(ctx context.Context, pipelines []v1alpha1.LogPipeline, options logagent.BuildOptions) (*logagent.Config, otlpexporter.EnvVars, error)) *AgentConfigBuilder_Build_Call {
+func (_c *AgentConfigBuilder_Build_Call) RunAndReturn(run func(ctx context.Context, pipelines []v1alpha1.LogPipeline, options logagent.BuildOptions) (*logagent.Config, common.EnvVars, error)) *AgentConfigBuilder_Build_Call {
 	_c.Call.Return(run)
 	return _c
 }
