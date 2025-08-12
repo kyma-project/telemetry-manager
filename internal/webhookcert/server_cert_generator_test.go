@@ -10,8 +10,14 @@ import (
 )
 
 func TestGenerateServerCert(t *testing.T) {
-	caCertGen := caCertGeneratorImpl{clock: mockClock{}}
-	sut := serverCertGeneratorImpl{clock: mockClock{}}
+	caCertGen := caCertGeneratorImpl{
+		clock:   mockClock{},
+		keySize: testRsaKeySize,
+	}
+	sut := serverCertGeneratorImpl{
+		clock:   mockClock{},
+		keySize: testRsaKeySize,
+	}
 
 	t.Run("fails if nil input", func(t *testing.T) {
 		_, _, err := sut.generateCert(serverCertConfig{host: "my-webhook.my-namespace"})
@@ -124,5 +130,19 @@ func TestGenerateServerCert(t *testing.T) {
 		require.NoError(t, err)
 
 		require.Equal(t, serverCert.NotAfter, time.Date(2023, 6, 1, 11, 0, 0, 0, time.UTC))
+	})
+
+	t.Run("generates cert with 4096 rsa key size when no key size is given", func(t *testing.T) {
+		caCertGenEmptyKeySize := caCertGeneratorImpl{
+			clock: mockClock{},
+		}
+
+		_, caKeyPEM, err := caCertGenEmptyKeySize.generateCert()
+		require.NoError(t, err)
+
+		key, err := parseKeyPEM(caKeyPEM)
+		require.NoError(t, err)
+
+		require.Equal(t, key.N.BitLen(), rsaKeySize, "Length of RSA key is not 4096")
 	})
 }

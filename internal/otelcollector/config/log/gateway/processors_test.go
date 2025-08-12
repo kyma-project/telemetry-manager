@@ -114,13 +114,15 @@ func TestProcessors(t *testing.T) {
 		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{pipeline}, BuildOptions{})
 		require.NoError(t, err)
 
-		namespaceFilters := collectorConfig.Processors.NamespaceFilters
+		namespaceFilters := collectorConfig.Processors.Dynamic
 		require.NotNil(t, namespaceFilters)
 
 		expectedFilterID := "filter/dummy-filter-by-namespace"
 		require.Contains(t, namespaceFilters, expectedFilterID)
+		require.IsType(t, &FilterProcessor{}, namespaceFilters[expectedFilterID])
 
-		actualStatements := namespaceFilters[expectedFilterID].Logs.Log
+		filterProcessor := namespaceFilters[expectedFilterID].(*FilterProcessor)
+		actualStatements := filterProcessor.Logs.Log
 		require.Len(t, actualStatements, 1)
 
 		expectedStatement := `resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "kyma-system" or resource.attributes["k8s.namespace.name"] == "default")`
@@ -137,13 +139,15 @@ func TestProcessors(t *testing.T) {
 		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{pipeline}, BuildOptions{})
 		require.NoError(t, err)
 
-		namespaceFilters := collectorConfig.Processors.NamespaceFilters
+		namespaceFilters := collectorConfig.Processors.Dynamic
 		require.NotNil(t, namespaceFilters)
 
 		expectedFilterID := "filter/dummy-filter-by-namespace"
 		require.Contains(t, namespaceFilters, expectedFilterID)
+		require.IsType(t, &FilterProcessor{}, namespaceFilters[expectedFilterID])
 
-		actualStatements := namespaceFilters[expectedFilterID].Logs.Log
+		filterProcessor := namespaceFilters[expectedFilterID].(*FilterProcessor)
+		actualStatements := filterProcessor.Logs.Log
 		require.Len(t, actualStatements, 1)
 
 		expectedStatement := `(resource.attributes["k8s.namespace.name"] == "kyma-system" or resource.attributes["k8s.namespace.name"] == "default")`

@@ -104,3 +104,13 @@ type NamespaceSelector struct {
 	// Exclude signals from the specified Namespace names only.
 	Exclude []string `json:"exclude,omitempty"`
 }
+
+// TransformSpec defines a transformation to apply to telemetry data.
+type TransformSpec struct {
+	// Conditions specify a list of multiple where clauses, which will be processed as global conditions for the accompanying set of statements. The conditions are ORed together, which means only one condition needs to evaluate to true in order for the statements (including their individual where clauses) to be executed.
+	// +optional
+	Conditions []string `json:"conditions,omitempty"`
+	// Statements specify a list of OTTL statements to perform the transformation.
+	// +optional
+	Statements []string `json:"statements,omitempty"`
+}
