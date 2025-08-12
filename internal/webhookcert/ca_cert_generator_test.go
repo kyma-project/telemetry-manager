@@ -1,3 +1,4 @@
+//go:debug rsa1024min=0
 package webhookcert
 
 import (
@@ -8,9 +9,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testRsaKeySize = 512 // Use smaller key size for faster tests
+)
+
 func TestGenerateCACert(t *testing.T) {
 	sut := caCertGeneratorImpl{
-		clock: mockClock{},
+		clock:   mockClock{},
+		keySize: testRsaKeySize,
 	}
 
 	t.Run("succeeds", func(t *testing.T) {
