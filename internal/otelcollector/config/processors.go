@@ -1,5 +1,13 @@
 package config
 
+import (
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+)
+
+const (
+	defaultTransformProcessorErrorMode = "ignore"
+)
+
 type BaseProcessors struct {
 	Batch         *BatchProcessor `yaml:"batch,omitempty"`
 	MemoryLimiter *MemoryLimiter  `yaml:"memory_limiter,omitempty"`
@@ -56,9 +64,52 @@ type AttributeAction struct {
 	RegexPattern string `yaml:"pattern,omitempty"`
 }
 
+type TransformProcessor struct {
+	ErrorMode        string                         `yaml:"error_mode"`
+	LogStatements    []TransformProcessorStatements `yaml:"log_statements,omitempty"`
+	MetricStatements []TransformProcessorStatements `yaml:"metric_statements,omitempty"`
+	TraceStatements  []TransformProcessorStatements `yaml:"trace_statements,omitempty"`
+}
+
 type TransformProcessorStatements struct {
 	Statements []string `yaml:"statements"`
 	Conditions []string `yaml:"conditions,omitempty"`
+}
+
+// LogTransformProcessor creates a TransformProcessor for logs with error_mode set to "ignore".
+func LogTransformProcessor(statements []TransformProcessorStatements) *TransformProcessor {
+	return &TransformProcessor{
+		ErrorMode:     defaultTransformProcessorErrorMode,
+		LogStatements: statements,
+	}
+}
+
+// MetricTransformProcessor creates a TransformProcessor for metrics with the default error mode.
+func MetricTransformProcessor(statements []TransformProcessorStatements) *TransformProcessor {
+	return &TransformProcessor{
+		ErrorMode:        defaultTransformProcessorErrorMode,
+		MetricStatements: statements,
+	}
+}
+
+// TraceTransformProcessor creates a TransformProcessor for traces with the default error mode.
+func TraceTransformProcessor(statements []TransformProcessorStatements) *TransformProcessor {
+	return &TransformProcessor{
+		ErrorMode:       defaultTransformProcessorErrorMode,
+		TraceStatements: statements,
+	}
+}
+
+func TransformSpecsToProcessorStatements(specs []telemetryv1alpha1.TransformSpec) []TransformProcessorStatements {
+	result := make([]TransformProcessorStatements, 0, len(specs))
+	for _, spec := range specs {
+		result = append(result, TransformProcessorStatements{
+			Statements: spec.Statements,
+			Conditions: spec.Conditions,
+		})
+	}
+
+	return result
 }
 
 type IstioNoiseFilterProcessor struct {

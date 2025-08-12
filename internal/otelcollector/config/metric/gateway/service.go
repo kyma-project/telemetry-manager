@@ -65,7 +65,22 @@ func outputPipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline) config.Pip
 	processors = append(processors, runtimeResourcesFiltersIDs(input)...)
 	processors = append(processors, diagnosticMetricFiltersIDs(input)...)
 
-	processors = append(processors, "resource/insert-cluster-attributes", "resource/delete-skip-enrichment-attribute", "resource/drop-kyma-attributes", "batch")
+	processors = append(processors,
+		"resource/insert-cluster-attributes",
+		"resource/delete-skip-enrichment-attribute",
+		"resource/drop-kyma-attributes",
+	)
+
+	// Add user-defined transform processor after all of the enrichment processors
+	// if transforms are specified
+	if len(pipeline.Spec.Transforms) > 0 {
+		processors = append(processors, formatUserDefinedTransformProcessorID(pipeline.Name))
+	}
+
+	processors = append(processors,
+		// batch processor is always the last processor in the pipeline
+		"batch",
+	)
 
 	return config.Pipeline{
 		Receivers:  []string{formatRoutingConnectorID(pipeline.Name), formatForwardConnectorID(pipeline.Name)},
@@ -186,7 +201,9 @@ func formatRoutingConnectorID(pipelineName string) string {
 	return fmt.Sprintf("routing/%s", pipelineName)
 }
 
-// Helper functions
+func formatUserDefinedTransformProcessorID(pipelineName string) string {
+	return fmt.Sprintf("transform/user-defined-%s", pipelineName)
+}
 
 func formatOTLPExporterID(pipeline *telemetryv1alpha1.MetricPipeline) string {
 	return otlpexporter.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)

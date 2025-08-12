@@ -267,36 +267,68 @@ func TestMakeConfig(t *testing.T) {
 	t.Run("marshaling", func(t *testing.T) {
 		tests := []struct {
 			name                string
+			pipelines           []telemetryv1alpha1.MetricPipeline
 			goldenFileName      string
 			overwriteGoldenFile bool
-			withOTLPInput       bool
 		}{
 			{
-				name:           "OTLP Endpoint enabled",
-				goldenFileName: "config.yaml",
-				withOTLPInput:  true,
+				name:           "single pipeline",
+				goldenFileName: "single-pipeline.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("test").
+						WithOTLPInput(true).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
 			},
 			{
-				name:           "OTLP Endpoint disabled",
-				goldenFileName: "config_otlp_disabled.yaml",
-				withOTLPInput:  false,
+				name:           "single pipeline with OTLP disabled",
+				goldenFileName: "single-pipeline-otlp-disabled.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("test").
+						WithOTLPInput(false).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "two pipelines with user-defined transforms",
+				goldenFileName: "two-pipelines-with-transforms.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("test1").
+						WithOTLPInput(true).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
+						WithTransform(telemetryv1alpha1.TransformSpec{
+							Conditions: []string{"IsMatch(body, \".*error.*\")"},
+							Statements: []string{
+								"set(attributes[\"log.level\"], \"error\")",
+								"set(body, \"transformed1\")",
+							},
+						}).Build(),
+					testutils.NewMetricPipelineBuilder().
+						WithName("test2").
+						WithOTLPInput(true).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
+						WithTransform(telemetryv1alpha1.TransformSpec{
+							Conditions: []string{"IsMatch(body, \".*error.*\")"},
+							Statements: []string{
+								"set(attributes[\"log.level\"], \"error\")",
+								"set(body, \"transformed2\")",
+							},
+						}).Build(),
+				},
 			},
 		}
+
+		buildOptions := BuildOptions{
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
+			CloudProvider: "test-cloud-provider",
+		}
+
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				config, _, err := sut.Build(
-					t.Context(),
-					[]telemetryv1alpha1.MetricPipeline{
-						testutils.NewMetricPipelineBuilder().
-							WithName("test").
-							WithOTLPInput(tt.withOTLPInput).
-							WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
-					},
-					BuildOptions{
-						ClusterName:   "${KUBERNETES_SERVICE_HOST}",
-						CloudProvider: "test-cloud-provider",
-					},
-				)
+				config, _, err := sut.Build(t.Context(), tt.pipelines, buildOptions)
 				require.NoError(t, err)
 
 				configYAML, err := yaml.Marshal(config)

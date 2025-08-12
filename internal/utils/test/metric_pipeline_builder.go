@@ -24,6 +24,7 @@ type MetricPipelineBuilder struct {
 
 	outOTLP *telemetryv1alpha1.OTLPOutput
 
+	transforms       []telemetryv1alpha1.TransformSpec
 	statusConditions []metav1.Condition
 }
 
@@ -291,6 +292,11 @@ func (b *MetricPipelineBuilder) WithOTLPOutput(opts ...OTLPOutputOption) *Metric
 	return b
 }
 
+func (b *MetricPipelineBuilder) WithTransform(transform telemetryv1alpha1.TransformSpec) *MetricPipelineBuilder {
+	b.transforms = append(b.transforms, transform)
+	return b
+}
+
 func (b *MetricPipelineBuilder) WithStatusCondition(cond metav1.Condition) *MetricPipelineBuilder {
 	b.statusConditions = append(b.statusConditions, cond)
 	return b
@@ -321,6 +327,7 @@ func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
 			Output: telemetryv1alpha1.MetricPipelineOutput{
 				OTLP: b.outOTLP,
 			},
+			Transforms: b.transforms,
 		},
 	}
 
