@@ -122,6 +122,9 @@ type TelemetryStatus struct {
 }
 
 type GatewayEndpoints struct {
+	// Logs contains the endpoints for log gateway supporting OTLP.
+	Logs *OTLPEndpoints `json:"logs,omitempty"`
+
 	// traces contains the endpoints for trace gateway supporting OTLP.
 	Traces *OTLPEndpoints `json:"traces,omitempty"`
 

@@ -123,6 +123,9 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 | **conditions.&#x200b;status** (required) | string | status of the condition, one of True, False, Unknown. |
 | **conditions.&#x200b;type** (required) | string | type of condition in CamelCase or in foo.example.com/CamelCase. |
 | **endpoints**  | object | endpoints for trace and metric gateway. |
+| **endpoints.&#x200b;logs**  | object | Logs contains the endpoints for log gateway supporting OTLP. |
+| **endpoints.&#x200b;logs.&#x200b;grpc**  | string | GRPC endpoint for OTLP. |
+| **endpoints.&#x200b;logs.&#x200b;http**  | string | HTTP endpoint for OTLP. |
 | **endpoints.&#x200b;metrics**  | object | metrics contains the endpoints for metric gateway supporting OTLP. |
 | **endpoints.&#x200b;metrics.&#x200b;grpc**  | string | GRPC endpoint for OTLP. |
 | **endpoints.&#x200b;metrics.&#x200b;http**  | string | HTTP endpoint for OTLP. |

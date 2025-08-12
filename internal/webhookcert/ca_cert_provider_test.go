@@ -243,7 +243,10 @@ func TestProvideCACert(t *testing.T) {
 }
 
 func generateCACertKey(creationTime time.Time) ([]byte, []byte) {
-	generator := &caCertGeneratorImpl{clock: mockClock{t: creationTime}}
+	generator := &caCertGeneratorImpl{
+		clock:   mockClock{t: creationTime},
+		keySize: testRsaKeySize,
+	}
 	cert, key, _ := generator.generateCert()
 
 	return cert, key
@@ -255,7 +258,7 @@ func generateCACert(creationTime time.Time) []byte {
 }
 
 func generateServerCert(caCert, caKey []byte, creationTime time.Time) []byte {
-	generator := &serverCertGeneratorImpl{clock: mockClock{t: creationTime}}
+	generator := &serverCertGeneratorImpl{clock: mockClock{t: creationTime}, keySize: testRsaKeySize}
 	cert, _, _ := generator.generateCert(serverCertConfig{caCertPEM: caCert, caKeyPEM: caKey})
 
 	return cert

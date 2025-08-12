@@ -66,7 +66,7 @@ For integration with other backends, see:
 - [Prometheus](./integration/prometheus/README.md)
 - [Loki](./integration/loki/README.md)
 - [Jaeger](./integration/jaeger/README.md)
-- [Amazon CloudWatch and AWS X-Ray](./integration/aws-cloudwatch/README.md)
+- [Amazon CloudWatch](./integration/aws-cloudwatch/README.md)
 
 To learn how to collect data from applications based on the OpenTelemetry SDK, see:
 
