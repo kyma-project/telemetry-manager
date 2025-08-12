@@ -58,7 +58,7 @@ func (b *Builder) Build(ctx context.Context, logPipelines []telemetryv1alpha1.Lo
 // baseConfig creates the static/global base configuration for the log agent collector.
 // Pipeline-specific components are added later via addComponentsForLogPipeline method.
 func (b *Builder) baseConfig(opts BuildOptions) *Config {
-	service := common.DefaultService(make(common.Pipelines))
+	service := common.ServiceConfig(make(common.Pipelines))
 	service.Extensions = append(service.Extensions, "file_storage")
 
 	return &Config{
@@ -91,14 +91,14 @@ func (b *Builder) addTransformProcessors(pipeline *telemetryv1alpha1.LogPipeline
 	}
 
 	transformStatements := common.TransformSpecsToProcessorStatements(pipeline.Spec.Transforms)
-	transformProcessor := common.LogTransformProcessor(transformStatements)
+	transformProcessor := common.LogTransformProcessorConfig(transformStatements)
 
 	processorID := formatUserDefinedTransformProcessorID(pipeline.Name)
 	b.config.Processors.Dynamic[processorID] = transformProcessor
 }
 
 func (b *Builder) addOTLPExporter(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, queueSize int) error {
-	otlpExporterBuilder := common.NewConfigBuilder(
+	otlpExporterBuilder := common.NewOTLPExporterConfigBuilder(
 		b.Reader,
 		pipeline.Spec.Output.OTLP,
 		pipeline.Name,

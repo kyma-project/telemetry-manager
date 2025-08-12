@@ -58,7 +58,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 // Pipeline-specific components are added later via addComponents method.
 func (b *Builder) baseConfig(opts BuildOptions) *Config {
 	return &Config{
-		Base: common.DefaultBaseConfig(make(common.Pipelines),
+		Base: common.BaseConfig(make(common.Pipelines),
 			common.WithK8sLeaderElector("serviceAccount", "telemetry-metric-gateway-kymastats", opts.GatewayNamespace),
 		),
 		Receivers:  receiversConfig(),
@@ -189,7 +189,7 @@ func (b *Builder) addUserDefinedTransformProcessor(pipeline *telemetryv1alpha1.M
 	}
 
 	transformStatements := common.TransformSpecsToProcessorStatements(pipeline.Spec.Transforms)
-	transformProcessor := common.MetricTransformProcessor(transformStatements)
+	transformProcessor := common.MetricTransformProcessorConfig(transformStatements)
 
 	processorID := formatUserDefinedTransformProcessorID(pipeline.Name)
 	b.config.Processors.Dynamic[processorID] = transformProcessor
@@ -204,7 +204,7 @@ func (b *Builder) addConnectors(pipelineName string) {
 }
 
 func (b *Builder) addOTLPExporter(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, queueSize int) error {
-	otlpExporterBuilder := common.NewConfigBuilder(
+	otlpExporterBuilder := common.NewOTLPExporterConfigBuilder(
 		b.Reader,
 		pipeline.Spec.Output.OTLP,
 		pipeline.Name,

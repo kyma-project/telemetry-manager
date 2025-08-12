@@ -205,7 +205,7 @@ func shouldEnableEnvoyMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeli
 // Pipeline-specific components are added later via the Build method.
 func (b *Builder) baseConfig(inputs inputSources, gatewayOTLPServiceName types.NamespacedName, opts BuildOptions) *Config {
 	return &Config{
-		Base: common.DefaultBaseConfig(
+		Base: common.BaseConfig(
 			pipelinesConfig(inputs),
 			common.WithK8sLeaderElector("serviceAccount", "telemetry-metric-agent-k8scluster", opts.AgentNamespace),
 		),

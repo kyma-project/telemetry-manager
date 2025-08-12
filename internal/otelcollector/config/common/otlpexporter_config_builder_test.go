@@ -26,7 +26,7 @@ func TestMakeConfig(t *testing.T) {
 		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
 	}
 
-	cb := NewConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
 	otlpExporterConfig, envVars, err := cb.OTLPExporterConfig(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
@@ -51,7 +51,7 @@ func TestMakeConfigTraceWithPath(t *testing.T) {
 		Protocol: "http",
 	}
 
-	cb := NewConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
 	otlpExporterConfig, envVars, err := cb.OTLPExporterConfig(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
@@ -70,7 +70,7 @@ func TestMakeConfigMetricWithPath(t *testing.T) {
 		Protocol: "http",
 	}
 
-	cb := NewConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeMetric)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeMetric)
 	otlpExporterConfig, envVars, err := cb.OTLPExporterConfig(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
@@ -96,7 +96,7 @@ func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
 		Headers:  headers,
 	}
 
-	cb := NewConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
 	otlpExporterConfig, envVars, err := cb.OTLPExporterConfig(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
@@ -114,7 +114,7 @@ func TestMakeExporterConfigWithTLSInsecure(t *testing.T) {
 		TLS:      tls,
 	}
 
-	cb := NewConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
 	otlpExporterConfig, envVars, err := cb.OTLPExporterConfig(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
@@ -132,7 +132,7 @@ func TestMakeExporterConfigWithTLSInsecureSkipVerify(t *testing.T) {
 		TLS:      tls,
 	}
 
-	cb := NewConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
 	otlpExporterConfig, envVars, err := cb.OTLPExporterConfig(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
@@ -161,7 +161,7 @@ func TestMakeExporterConfigWithmTLS(t *testing.T) {
 		TLS:      tls,
 	}
 
-	cb := NewConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
 	otlpExporterConfig, envVars, err := cb.OTLPExporterConfig(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)

@@ -11,7 +11,6 @@ import (
 // KUBERNETES ATTRIBUTES PROCESSOR BUILDERS
 // =============================================================================
 
-// K8sAttributesProcessorConfig creates a Kubernetes attributes processor configuration
 func K8sAttributesProcessorConfig(enrichments *operatorv1alpha1.EnrichmentSpec) *K8sAttributesProcessor {
 	k8sAttributes := []string{
 		"k8s.pod.name",
@@ -41,7 +40,7 @@ func K8sAttributesProcessorConfig(enrichments *operatorv1alpha1.EnrichmentSpec) 
 		Passthrough: false,
 		Extract: ExtractK8sMetadata{
 			Metadata: k8sAttributes,
-			Labels:   append(extractLabels(), buildExtractPodLabels(enrichments)...),
+			Labels:   append(extractLabels(), extractPodLabels(enrichments)...),
 		},
 		PodAssociation: podAssociations,
 	}
@@ -82,7 +81,7 @@ func extractLabels() []ExtractLabel {
 	}
 }
 
-func buildExtractPodLabels(enrichments *operatorv1alpha1.EnrichmentSpec) []ExtractLabel {
+func extractPodLabels(enrichments *operatorv1alpha1.EnrichmentSpec) []ExtractLabel {
 	extractPodLabels := make([]ExtractLabel, 0)
 
 	if enrichments != nil && len(enrichments.ExtractPodLabels) > 0 {
@@ -175,24 +174,24 @@ func ResolveServiceNameConfig() *ServiceEnrichmentProcessor {
 // TRANSFORM PROCESSOR BUILDERS
 // =============================================================================
 
-// LogTransformProcessor creates a TransformProcessor for logs with error_mode set to "ignore"
-func LogTransformProcessor(statements []TransformProcessorStatements) *TransformProcessor {
+// LogTransformProcessorConfig creates a TransformProcessor for logs with error_mode set to "ignore"
+func LogTransformProcessorConfig(statements []TransformProcessorStatements) *TransformProcessor {
 	return &TransformProcessor{
 		ErrorMode:     defaultTransformProcessorErrorMode,
 		LogStatements: statements,
 	}
 }
 
-// MetricTransformProcessor creates a TransformProcessor for metrics with the default error mode
-func MetricTransformProcessor(statements []TransformProcessorStatements) *TransformProcessor {
+// MetricTransformProcessorConfig creates a TransformProcessor for metrics with the default error mode
+func MetricTransformProcessorConfig(statements []TransformProcessorStatements) *TransformProcessor {
 	return &TransformProcessor{
 		ErrorMode:        defaultTransformProcessorErrorMode,
 		MetricStatements: statements,
 	}
 }
 
-// TraceTransformProcessor creates a TransformProcessor for traces with the default error mode
-func TraceTransformProcessor(statements []TransformProcessorStatements) *TransformProcessor {
+// TraceTransformProcessorConfig creates a TransformProcessor for traces with the default error mode
+func TraceTransformProcessorConfig(statements []TransformProcessorStatements) *TransformProcessor {
 	return &TransformProcessor{
 		ErrorMode:       defaultTransformProcessorErrorMode,
 		TraceStatements: statements,
@@ -231,7 +230,7 @@ func InstrumentationScopeProcessorConfig(instrumentationScopeVersion string, inp
 		Statements: statements,
 	})
 
-	return MetricTransformProcessor(transformProcessorStatements)
+	return MetricTransformProcessorConfig(transformProcessorStatements)
 }
 
 func instrumentationStatement(inputSource InputSourceType, instrumentationScopeVersion string) []string {

@@ -56,8 +56,8 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Trace
 func (b *Builder) baseConfig(opts BuildOptions) *Config {
 	return &Config{
 		Base: common.Base{
-			Service:    common.DefaultService(make(common.Pipelines)),
-			Extensions: common.DefaultExtensions(),
+			Service:    common.ServiceConfig(make(common.Pipelines)),
+			Extensions: common.ExtensionsConfig(),
 		},
 		Receivers:  receiversConfig(),
 		Processors: processorsConfig(opts),
@@ -96,14 +96,14 @@ func (b *Builder) addUserDefinedTransformProcessor(pipeline *telemetryv1alpha1.T
 	}
 
 	transformStatements := common.TransformSpecsToProcessorStatements(pipeline.Spec.Transforms)
-	transformProcessor := common.TraceTransformProcessor(transformStatements)
+	transformProcessor := common.TraceTransformProcessorConfig(transformStatements)
 
 	processorID := formatUserDefinedTransformProcessorID(pipeline.Name)
 	b.config.Processors.Dynamic[processorID] = transformProcessor
 }
 
 func (b *Builder) addOTLPExporter(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, queueSize int) error {
-	otlpExporterBuilder := common.NewConfigBuilder(
+	otlpExporterBuilder := common.NewOTLPExporterConfigBuilder(
 		b.Reader,
 		pipeline.Spec.Output.OTLP,
 		pipeline.Name,

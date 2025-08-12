@@ -7,7 +7,7 @@ import (
 
 func extensionsConfig() Extensions {
 	return Extensions{
-		Extensions: common.DefaultExtensions(),
+		Extensions: common.ExtensionsConfig(),
 		FileStorage: &FileStorage{
 			Directory: otelcollector.CheckpointVolumePath,
 		},

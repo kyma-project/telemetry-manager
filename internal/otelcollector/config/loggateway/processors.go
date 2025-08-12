@@ -47,7 +47,7 @@ func memoryLimiterProcessorConfig() *common.MemoryLimiter {
 }
 
 func setObsTimeIfZeroProcessorConfig() *common.TransformProcessor {
-	return common.LogTransformProcessor([]common.TransformProcessorStatements{{
+	return common.LogTransformProcessorConfig([]common.TransformProcessorStatements{{
 		Conditions: []string{"log.observed_time_unix_nano == 0"},
 		Statements: []string{"set(log.observed_time, Now())"},
 	}})

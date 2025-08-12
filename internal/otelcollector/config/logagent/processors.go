@@ -35,7 +35,7 @@ func memoryLimiterProcessorConfig() *common.MemoryLimiter {
 }
 
 func instrumentationScopeRuntimeProcessorConfig(instrumentationScopeVersion string) *common.TransformProcessor {
-	return common.LogTransformProcessor([]common.TransformProcessorStatements{{
+	return common.LogTransformProcessorConfig([]common.TransformProcessorStatements{{
 		Statements: []string{
 			fmt.Sprintf("set(scope.version, %q)", instrumentationScopeVersion),
 			fmt.Sprintf("set(scope.name, %q)", InstrumentationScopeRuntime),
