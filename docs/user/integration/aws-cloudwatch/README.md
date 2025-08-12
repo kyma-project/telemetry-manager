@@ -55,7 +55,7 @@ Because CloudWatch doesn't support native OTLP ingestion for metrics, and OTLP s
 
 ### Create AWS IAM User
 
-1. In your AWS account, create an [IAM user](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users.html) and attach the policy **CloudWatchAgentServerPolicy**.
+1. In your AWS account, create an [IAM user](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users.html) and attach the **CloudWatchAgentServerPolicy** policy.
 1. For the [IAM user](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users.html) you just created, create an access key for an application running outside AWS. Copy and save the **access key** and **secret access key**; you need them to [Create a Secret with AWS Credentials](#create-a-secret-with-aws-credentials).
 
 ### Create a Secret with AWS Credentials
@@ -81,7 +81,7 @@ To connect the AWS Distro to the AWS services, create a Secret containing the cr
     helm repo update
     ```
 
-1- Deploy the custom collector using Helm by calling:
+1. Deploy the custom collector using Helm by calling:
 
 ```sh
 helm upgrade --install -n $K8S_NAMESPACE $HELM_OTEL_AWS_RELEASE open-telemetry/opentelemetry-collector -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/aws-cloudwatch/values.yaml
@@ -160,4 +160,4 @@ Verify that the logs, traces and metrics are exported to CloudWatch.
 
 1. [Install the OpenTelemetry demo application](../opentelemetry-demo/README.md).
 2. Go to `https://{AWS_REGION}.console.aws.amazon.com/cloudwatch`. Replace `{AWS_REGION}` with the region that you have chosen when [creating the Secret with AWS credentials](#create-a-secret-with-aws-credentials).
-3. Verify that data is visisble for all three signal types
+3. Verify that data is visible for all three signal types.
