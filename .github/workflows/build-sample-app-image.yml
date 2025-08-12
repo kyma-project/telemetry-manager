@@ -48,10 +48,28 @@ jobs:
       context: dependencies/sample-app
       tags: ${{ needs.envs.outputs.tags }}
       platforms: "linux/amd64,linux/arm64"
-  list-images:
+
+  notify-on-failure:
     needs: build-image
     runs-on: ubuntu-latest
+    if: ${{ always() && (needs.build-image.result == 'failure') }}
     steps:
-      - name: List images
-        run: |
-          echo "${{ needs.build-image.outputs.images }}"
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Send slack message on failure
+        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: ""
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "Workflow <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|*Telemetry ${{ github.workflow }}*> has status *${{ needs.build-image.result }}*"
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "See related <${{ github.event.pull_request.html_url || github.event.head_commit.url }}|commit>"
