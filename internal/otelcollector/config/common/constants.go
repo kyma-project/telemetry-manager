@@ -1,5 +1,12 @@
 package common
 
+// Environment variable names
+const (
+	EnvVarCurrentPodIP    = "MY_POD_IP"
+	EnvVarCurrentNodeName = "MY_NODE_NAME"
+	EnvVarGoMemLimit      = "GOMEMLIMIT"
+)
+
 type InputSourceType string
 
 const (
@@ -31,3 +38,25 @@ const (
 	KymaInputNameAttribute  = "kyma.input.name"
 	KymaInputPrometheus     = "prometheus"
 )
+
+// Signal type constants
+const (
+	SignalTypeMetric = "metric"
+	SignalTypeTrace  = "trace"
+	SignalTypeLog    = "log"
+)
+
+// Processor constants
+const (
+	kymaK8sIOAppName                   = "kyma.kubernetes_io_app_name"
+	kymaAppName                        = "kyma.app_name"
+	defaultTransformProcessorErrorMode = "ignore"
+)
+
+var upstreamInstrumentationScopeName = map[InputSourceType]string{
+	InputSourceRuntime:    "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver",
+	InputSourcePrometheus: "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver",
+	InputSourceIstio:      "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver",
+	InputSourceKyma:       "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver",
+	InputSourceK8sCluster: "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver",
+}

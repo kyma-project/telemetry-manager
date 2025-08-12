@@ -11,15 +11,12 @@ import (
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 )
 
-type EnvVars map[string][]byte
+// =============================================================================
+// OTLP EXPORTER CONFIG BUILDER
+// =============================================================================
 
-const (
-	SignalTypeMetric = "metric"
-	SignalTypeTrace  = "trace"
-	SignalTypeLog    = "log"
-)
-
-type ConfigBuilder struct {
+// OTLPExporterConfigBuilder defines OTLP exporter config builder
+type OTLPExporterConfigBuilder struct {
 	reader       client.Reader
 	otlpOutput   *telemetryv1alpha1.OTLPOutput
 	pipelineName string
@@ -27,8 +24,12 @@ type ConfigBuilder struct {
 	signalType   string
 }
 
-func NewConfigBuilder(reader client.Reader, otlpOutput *telemetryv1alpha1.OTLPOutput, pipelineName string, queueSize int, signalType string) *ConfigBuilder {
-	return &ConfigBuilder{
+// EnvVars represents environment variables as a map
+type EnvVars map[string][]byte
+
+// NewConfigBuilder creates a new OTLP exporter configuration builder
+func NewConfigBuilder(reader client.Reader, otlpOutput *telemetryv1alpha1.OTLPOutput, pipelineName string, queueSize int, signalType string) *OTLPExporterConfigBuilder {
+	return &OTLPExporterConfigBuilder{
 		reader:       reader,
 		otlpOutput:   otlpOutput,
 		pipelineName: pipelineName,
@@ -37,7 +38,8 @@ func NewConfigBuilder(reader client.Reader, otlpOutput *telemetryv1alpha1.OTLPOu
 	}
 }
 
-func (cb *ConfigBuilder) OTLPExporterConfig(ctx context.Context) (*OTLPExporter, EnvVars, error) {
+// OTLPExporterConfig builds OTLP exporter configuration and environment variables
+func (cb *OTLPExporterConfigBuilder) OTLPExporterConfig(ctx context.Context) (*OTLPExporter, EnvVars, error) {
 	envVars, err := makeEnvVars(ctx, cb.reader, cb.otlpOutput, cb.pipelineName)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to make env vars: %w", err)
@@ -48,6 +50,7 @@ func (cb *ConfigBuilder) OTLPExporterConfig(ctx context.Context) (*OTLPExporter,
 	return exportersConfig, envVars, nil
 }
 
+// makeExportersConfig creates OTLP exporter configuration
 func makeExportersConfig(otlpOutput *telemetryv1alpha1.OTLPOutput, pipelineName string, envVars map[string][]byte, queueSize int, signalType string) *OTLPExporter {
 	headers := makeHeaders(otlpOutput, pipelineName)
 	otlpEndpointVariable := makeOTLPEndpointVariable(pipelineName)
@@ -88,6 +91,7 @@ func makeExportersConfig(otlpOutput *telemetryv1alpha1.OTLPOutput, pipelineName 
 	return &otlpExporterConfig
 }
 
+// ExporterID generates an exporter ID based on protocol and pipeline name
 func ExporterID(protocol string, pipelineName string) string {
 	var outputType string
 	if protocol == telemetryv1alpha1.OTLPProtocolHTTP {
@@ -99,6 +103,7 @@ func ExporterID(protocol string, pipelineName string) string {
 	return fmt.Sprintf("%s/%s", outputType, pipelineName)
 }
 
+// makeTLSConfig creates TLS configuration for OTLP exporter
 func makeTLSConfig(output *telemetryv1alpha1.OTLPOutput, otlpEndpointValue, pipelineName string) TLS {
 	var cfg TLS
 
@@ -128,6 +133,7 @@ func makeTLSConfig(output *telemetryv1alpha1.OTLPOutput, otlpEndpointValue, pipe
 	return cfg
 }
 
+// makeHeaders creates headers configuration for OTLP exporter
 func makeHeaders(output *telemetryv1alpha1.OTLPOutput, pipelineName string) map[string]string {
 	headers := make(map[string]string)
 
@@ -143,6 +149,7 @@ func makeHeaders(output *telemetryv1alpha1.OTLPOutput, pipelineName string) map[
 	return headers
 }
 
+// isInsecureOutput checks if the endpoint uses insecure HTTP
 func isInsecureOutput(endpoint string) bool {
 	return len(strings.TrimSpace(endpoint)) > 0 && strings.HasPrefix(endpoint, "http://")
 }
