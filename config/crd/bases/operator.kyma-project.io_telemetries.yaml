@@ -236,7 +236,7 @@ spec:
                   type: object
                 type: array
               endpoints:
-                description: GatewayEndpoints for log, trace and metric gateway.
+                description: Endpoints for log, trace and metric gateway.
                 nullable: true
                 properties:
                   logs:
