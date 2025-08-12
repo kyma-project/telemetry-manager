@@ -34,8 +34,6 @@ const (
 	CheckpointVolumePath = "/tmp"
 	logVolumeName        = "varlogpods"
 	logVolumePath        = "/var/log/pods"
-
-	groupRoot int64 = 0
 )
 
 var (
@@ -98,8 +96,8 @@ func NewLogAgentApplierDeleter(image, namespace, priorityClassName string) *Agen
 			commonresources.WithEnvVarFromField(config.EnvVarCurrentPodIP, fieldPathPodIP),
 			commonresources.WithGoMemLimitEnvVar(logAgentMemoryLimit),
 			commonresources.WithVolumeMounts(volumeMounts),
-			commonresources.WithRunAsGroup(groupRoot),
-			commonresources.WithRunAsUser(userDefault),
+			commonresources.WithRunAsGroup(commonresources.GroupRoot),
+			commonresources.WithRunAsUser(commonresources.UserDefault),
 		},
 	}
 }

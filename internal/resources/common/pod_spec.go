@@ -10,6 +10,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
 
+const (
+	UserDefault int64 = 10001
+	GroupRoot   int64 = 0
+)
+
 var (
 	hardenedSecurityContext = corev1.SecurityContext{
 		Privileged:               ptr.To(false),
@@ -109,12 +114,6 @@ func WithArgs(args []string) ContainerOption {
 	}
 }
 
-func WithCapabilities(capabilities ...corev1.Capability) ContainerOption {
-	return func(c *corev1.Container) {
-		c.SecurityContext.Capabilities.Add = append(c.SecurityContext.Capabilities.Add, capabilities...)
-	}
-}
-
 func WithPort(name string, port int32) ContainerOption {
 	return func(c *corev1.Container) {
 		c.Ports = append(c.Ports, corev1.ContainerPort{
@@ -183,12 +182,6 @@ func WithProbes(liveness, readiness *corev1.Probe) ContainerOption {
 		if readiness != nil {
 			c.ReadinessProbe = readiness
 		}
-	}
-}
-
-func WithRunAsRoot() ContainerOption {
-	return func(c *corev1.Container) {
-		c.SecurityContext.RunAsNonRoot = ptr.To(false)
 	}
 }
 
