@@ -182,7 +182,7 @@ type LogPipelineOutputTLS struct {
 // Provides file content to be consumed by a LogPipeline configuration
 type LogPipelineFileMount struct {
 	// Name of the file under which the content is mounted in the Fluent Bit configuration.
-	Name    string `json:"name,omitempty"`
+	Name string `json:"name,omitempty"`
 	// Content of the file to be mounted in the Fluent Bit configuration.
 	Content string `json:"content,omitempty"`
 }
