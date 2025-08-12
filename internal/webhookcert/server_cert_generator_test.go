@@ -131,4 +131,18 @@ func TestGenerateServerCert(t *testing.T) {
 
 		require.Equal(t, serverCert.NotAfter, time.Date(2023, 6, 1, 11, 0, 0, 0, time.UTC))
 	})
+
+	t.Run("generates cert with 4096 rsa key size when no key size is given", func(t *testing.T) {
+		caCertGenEmptyKeySize := caCertGeneratorImpl{
+			clock: mockClock{},
+		}
+
+		_, caKeyPEM, err := caCertGenEmptyKeySize.generateCert()
+		require.NoError(t, err)
+
+		key, err := parseKeyPEM(caKeyPEM)
+		require.NoError(t, err)
+
+		require.Equal(t, key.N.BitLen(), rsaKeySize, "Length of RSA key is not 4096")
+	})
 }

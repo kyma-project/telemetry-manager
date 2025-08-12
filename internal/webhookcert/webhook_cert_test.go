@@ -333,6 +333,18 @@ func TestUpdateWebhookConfig(t *testing.T) {
 	require.True(t, mutatingCertValid)
 }
 
+func TestNewWebhookCertConfig(t *testing.T) {
+	config := NewWebhookCertConfig(
+		t.TempDir(),
+		webhookService,
+		caBundleSecret,
+		validatingWebhookNamespacedName,
+		mutatingWebhookNamespacedName,
+	)
+
+	require.Equal(t, rsaKeySize, config.rsaKeySize)
+}
+
 func TestCreateSecret(t *testing.T) {
 	scheme := runtime.NewScheme()
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))
