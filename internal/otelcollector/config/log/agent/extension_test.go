@@ -8,7 +8,9 @@ import (
 
 func TestMakeExtension(t *testing.T) {
 	ext := extensionsConfig()
-	require.Equal(t, "/tmp", ext.FileStorage.Directory)
+
 	require.Equal(t, "${MY_POD_IP}:13133", ext.HealthCheck.Endpoint)
 	require.Equal(t, "127.0.0.1:1777", ext.Pprof.Endpoint)
+	require.Equal(t, true, ext.FileStorage.CreateDirectory)
+	require.Equal(t, "/tmp/telemetry-log-agent/file-log-receiver", ext.FileStorage.Directory)
 }
