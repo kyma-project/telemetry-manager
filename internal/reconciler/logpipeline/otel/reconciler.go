@@ -14,8 +14,8 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/gateway"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/logagent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
@@ -51,7 +51,7 @@ type IstioStatusChecker interface {
 }
 
 type AgentConfigBuilder interface {
-	Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPipeline, options agent.BuildOptions) (*agent.Config, otlpexporter.EnvVars, error)
+	Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPipeline, options logagent.BuildOptions) (*logagent.Config, otlpexporter.EnvVars, error)
 }
 
 type AgentApplierDeleter interface {
@@ -319,7 +319,7 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 		return fmt.Errorf("failed to get kube-system namespace for cluster UID: %w", err)
 	}
 
-	agentConfig, envVars, err := r.agentConfigBuilder.Build(ctx, allPipelines, agent.BuildOptions{
+	agentConfig, envVars, err := r.agentConfigBuilder.Build(ctx, allPipelines, logagent.BuildOptions{
 		InstrumentationScopeVersion: r.moduleVersion,
 		AgentNamespace:              r.telemetryNamespace,
 		ClusterName:                 clusterName,

@@ -16,8 +16,8 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/gateway"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/metricagent"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/metricgateway"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
@@ -34,11 +34,11 @@ import (
 const defaultReplicaCount int32 = 2
 
 type AgentConfigBuilder interface {
-	Build(pipelines []telemetryv1alpha1.MetricPipeline, options agent.BuildOptions) *agent.Config
+	Build(pipelines []telemetryv1alpha1.MetricPipeline, options metricagent.BuildOptions) *metricagent.Config
 }
 
 type GatewayConfigBuilder interface {
-	Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, options gateway.BuildOptions) (*gateway.Config, otlpexporter.EnvVars, error)
+	Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, options metricgateway.BuildOptions) (*metricgateway.Config, otlpexporter.EnvVars, error)
 }
 
 type AgentApplierDeleter interface {
@@ -298,7 +298,7 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 		enrichments = t.Spec.Enrichments
 	}
 
-	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, gateway.BuildOptions{
+	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, metricgateway.BuildOptions{
 		GatewayNamespace:            r.telemetryNamespace,
 		InstrumentationScopeVersion: r.moduleVersion,
 		ClusterName:                 clusterName,
@@ -345,7 +345,7 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 
 func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
 	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
-	agentConfig := r.agentConfigBuilder.Build(allPipelines, agent.BuildOptions{
+	agentConfig := r.agentConfigBuilder.Build(allPipelines, metricagent.BuildOptions{
 		IstioEnabled:                isIstioActive,
 		IstioCertPath:               otelcollector.IstioCertPath,
 		InstrumentationScopeVersion: r.moduleVersion,

@@ -40,8 +40,8 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/gateway"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/metricagent"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/metricgateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
@@ -107,13 +107,13 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 		return nil, err
 	}
 
-	agentConfigBuilder := &agent.Builder{
-		Config: agent.BuilderConfig{
+	agentConfigBuilder := &metricagent.Builder{
+		Config: metricagent.BuilderConfig{
 			GatewayOTLPServiceName: types.NamespacedName{Namespace: config.TelemetryNamespace, Name: otelcollector.MetricOTLPServiceName},
 		},
 	}
 
-	gatewayConfigBuilder := &gateway.Builder{Reader: client}
+	gatewayConfigBuilder := &metricgateway.Builder{Reader: client}
 
 	reconciler := metricpipeline.New(
 		client,

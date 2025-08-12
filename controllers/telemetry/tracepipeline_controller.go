@@ -40,7 +40,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/trace/gateway"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/trace/tracegateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
@@ -109,7 +109,7 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 		config.TelemetryNamespace,
 		flowHealthProber,
 		otelcollector.NewTraceGatewayApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.TraceGatewayPriorityClassName),
-		&gateway.Builder{Reader: client},
+		&tracegateway.Builder{Reader: client},
 		&workloadstatus.DeploymentProber{Client: client},
 		istiostatus.NewChecker(discoveryClient),
 		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),

@@ -33,7 +33,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/trace/gateway"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/trace/tracegateway"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
@@ -48,7 +48,7 @@ import (
 const defaultReplicaCount int32 = 2
 
 type GatewayConfigBuilder interface {
-	Build(ctx context.Context, pipelines []telemetryv1alpha1.TracePipeline, opts gateway.BuildOptions) (*gateway.Config, otlpexporter.EnvVars, error)
+	Build(ctx context.Context, pipelines []telemetryv1alpha1.TracePipeline, opts tracegateway.BuildOptions) (*tracegateway.Config, otlpexporter.EnvVars, error)
 }
 
 type GatewayApplierDeleter interface {
@@ -257,7 +257,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 		enrichments = t.Spec.Enrichments
 	}
 
-	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, gateway.BuildOptions{
+	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, tracegateway.BuildOptions{
 		ClusterName:   clusterName,
 		ClusterUID:    clusterUID,
 		CloudProvider: shootInfo.CloudProvider,
