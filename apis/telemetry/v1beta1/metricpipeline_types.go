@@ -62,6 +62,10 @@ type MetricPipelineSpec struct {
 
 	// Output configures the output where the metrics will be send to. Exactly one output must be specified.
 	Output MetricPipelineOutput `json:"output,omitempty"`
+
+	// Transforms specify a list of transformations to apply to telemetry data.
+	// +optional
+	Transforms []TransformSpec `json:"transform,omitempty"`
 }
 
 // MetricPipelineInput configures additional inputs for metric collection.

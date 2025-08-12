@@ -8,7 +8,6 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -60,7 +59,7 @@ func TestProcessors(t *testing.T) {
 			InstrumentationScopeVersion: "main",
 		})
 
-		expectedSetInstrumentationScopeRuntime := metric.TransformProcessor{
+		expectedSetInstrumentationScopeRuntime := config.TransformProcessor{
 			ErrorMode: "ignore",
 			MetricStatements: []config.TransformProcessorStatements{
 				{
@@ -113,7 +112,7 @@ func TestProcessors(t *testing.T) {
 			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build(),
 		}, BuildOptions{})
 
-		expectedInsertSkipEnrichmentAttributeProcessor := metric.TransformProcessor{
+		expectedInsertSkipEnrichmentAttributeProcessor := config.TransformProcessor{
 			ErrorMode: "ignore",
 			MetricStatements: []config.TransformProcessorStatements{
 				{

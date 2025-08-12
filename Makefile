@@ -147,6 +147,13 @@ manifests: $(CONTROLLER_GEN) $(YQ) $(YAMLFMT) ## Generate WebhookConfiguration, 
 	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook paths="./..."
 	$(CONTROLLER_GEN) crd paths="./apis/operator/v1alpha1" output:crd:artifacts:config=config/crd/bases
 	$(CONTROLLER_GEN) crd paths="./apis/telemetry/v1alpha1" output:crd:artifacts:config=config/crd/bases
+# Strip off transform field from the CRDs until the feature is fully implemented
+	$(YQ) eval 'del(.. | select(has("transform")).transform)' -i ./config/crd/bases/telemetry.kyma-project.io_logpipelines.yaml
+	$(YQ) eval 'del(.. | select(has("transform")).transform)' -i ./config/crd/bases/telemetry.kyma-project.io_tracepipelines.yaml
+	$(YQ) eval 'del(.. | select(has("transform")).transform)' -i ./config/crd/bases/telemetry.kyma-project.io_metricpipelines.yaml
+	$(YQ) eval 'del(.. | select(has("x-kubernetes-validations"))."x-kubernetes-validations"[] | select(.rule|contains("transform")) )' -i ./config/crd/bases/telemetry.kyma-project.io_logpipelines.yaml
+	$(YQ) eval 'del(.. | select(has("x-kubernetes-validations"))."x-kubernetes-validations"[] | select(.rule|contains("transform")) )' -i ./config/crd/bases/telemetry.kyma-project.io_metricpipelines.yaml
+	$(YQ) eval 'del(.. | select(has("x-kubernetes-validations"))."x-kubernetes-validations"[] | select(.rule|contains("transform")) )' -i ./config/crd/bases/telemetry.kyma-project.io_tracepipelines.yaml
 	$(YAMLFMT)
 
 .PHONY: manifests-experimental

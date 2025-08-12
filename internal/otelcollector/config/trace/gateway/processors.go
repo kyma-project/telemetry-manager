@@ -16,6 +16,7 @@ func processorsConfig(opts BuildOptions) Processors {
 		InsertClusterAttributes: processors.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.ClusterUID, opts.CloudProvider),
 		ResolveServiceName:      processors.MakeResolveServiceNameConfig(),
 		DropKymaAttributes:      processors.DropKymaAttributesProcessorConfig(),
+		Dynamic:                 make(map[string]any),
 	}
 }
 
