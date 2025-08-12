@@ -70,15 +70,15 @@ type LogPipeline struct {
 // +kubebuilder:validation:XValidation:rule="!(has(self.output.otlp) && has(self.files))", message="files not supported with otlp output"
 // +kubebuilder:validation:XValidation:rule="!(has(self.output.otlp) && has(self.variables))", message="variables not supported with otlp output"
 type LogPipelineSpec struct {
-	// Configures additional inputs for log collection.
+	// Input configures additional inputs for log collection.
 	Input LogPipelineInput `json:"input,omitempty"`
-	// Configures custom Fluent-Bit `filters` to transform logs. Only available when using an output of type `http` and `custom`.
+	// Filters configures custom Fluent-Bit `filters` to transform logs. Only available when using an output of type `http` and `custom`.
 	Filters []LogPipelineFilter `json:"filters,omitempty"`
-	// Configures the output where the logs will be send to. Exactly one output must be specified.
+	// Output configures the output where the logs will be send to. Exactly one output must be specified.
 	Output LogPipelineOutput `json:"output,omitempty"`
-	// A list of content snippets that are mounted as files in the Fluent Bit configuration, which can be linked in the `custom` filters and a `custom` output. Only available when using an output of type `http` and `custom`.
+	// Files is a list of content snippets that are mounted as files in the Fluent Bit configuration, which can be linked in the `custom` filters and a `custom` output. Only available when using an output of type `http` and `custom`.
 	Files []LogPipelineFileMount `json:"files,omitempty"`
-	// A list of mappings from Kubernetes Secret keys to environment variables. Mapped keys are mounted as environment variables, so that they are available as [Variables](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/variables) in the `custom` filters and a `custom` output. Only available when using an output of type `http` and `custom`.
+	// Variables is a list of mappings from Kubernetes Secret keys to environment variables. Mapped keys are mounted as environment variables, so that they are available as [Variables](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/variables) in the `custom` filters and a `custom` output. Only available when using an output of type `http` and `custom`.
 	Variables []LogPipelineVariableRef `json:"variables,omitempty"`
 }
 
@@ -162,7 +162,7 @@ type LogPipelineHTTPOutput struct {
 	Port string `json:"port,omitempty"`
 	// Compress defines the compression algorithm to use. Either `none` or `gzip`. Default is `none`.
 	Compress string `json:"compress,omitempty"`
-	// Format data format to be used in the HTTP request body. Either `gelf`, `json`, `json_stream`, `json_lines` or `msgpack`. Default is `json`.
+	// Format is the data format to be used in the HTTP request body. Either `gelf`, `json`, `json_stream`, `json_lines` or `msgpack`. Default is `json`.
 	Format string `json:"format,omitempty"`
 	// TLS configures TLS for the HTTP backend.
 	TLSConfig OutputTLS `json:"tls,omitempty"`
@@ -172,7 +172,9 @@ type LogPipelineHTTPOutput struct {
 
 // Provides file content to be consumed by a LogPipeline configuration
 type LogPipelineFileMount struct {
+	// Name of the file under which the content is mounted in the Fluent Bit configuration.
 	Name    string `json:"name,omitempty"`
+	// Content of the file to be mounted in the Fluent Bit configuration.
 	Content string `json:"content,omitempty"`
 }
 

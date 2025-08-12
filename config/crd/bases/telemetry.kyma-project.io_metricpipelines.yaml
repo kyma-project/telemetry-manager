@@ -249,19 +249,19 @@ spec:
                         description: Authentication defines authentication options for the OTLP output
                         properties:
                           basic:
-                            description: Activates `Basic` authentication for the destination providing relevant Secrets.
+                            description: Basic activates `Basic` authentication for the destination providing relevant Secrets.
                             properties:
                               password:
                                 description: Password contains the basic auth password or a Secret reference.
                                 properties:
                                   value:
-                                    description: The value as plain text.
+                                    description: Value as plain text.
                                     type: string
                                   valueFrom:
-                                    description: The value as a reference to a resource.
+                                    description: ValueFrom is the value as a reference to a resource.
                                     properties:
                                       secretKeyRef:
-                                        description: Refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`.
+                                        description: SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`.
                                         properties:
                                           key:
                                             description: Key defines the name of the attribute of the Secret holding the referenced value.
@@ -283,13 +283,13 @@ spec:
                                 description: User contains the basic auth username or a Secret reference.
                                 properties:
                                   value:
-                                    description: The value as plain text.
+                                    description: Value as plain text.
                                     type: string
                                   valueFrom:
-                                    description: The value as a reference to a resource.
+                                    description: ValueFrom is the value as a reference to a resource.
                                     properties:
                                       secretKeyRef:
-                                        description: Refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`.
+                                        description: SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`.
                                         properties:
                                           key:
                                             description: Key defines the name of the attribute of the Secret holding the referenced value.
@@ -316,13 +316,13 @@ spec:
                         description: Endpoint defines the host and port (<host>:<port>) of an OTLP endpoint.
                         properties:
                           value:
-                            description: The value as plain text.
+                            description: Value as plain text.
                             type: string
                           valueFrom:
-                            description: The value as a reference to a resource.
+                            description: ValueFrom is the value as a reference to a resource.
                             properties:
                               secretKeyRef:
-                                description: Refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`.
+                                description: SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`.
                                 properties:
                                   key:
                                     description: Key defines the name of the attribute of the Secret holding the referenced value.
@@ -351,13 +351,13 @@ spec:
                               description: Prefix defines an optional header value prefix. The prefix is separated from the value by a space character.
                               type: string
                             value:
-                              description: The value as plain text.
+                              description: Value as plain text.
                               type: string
                             valueFrom:
-                              description: The value as a reference to a resource.
+                              description: ValueFrom is the value as a reference to a resource.
                               properties:
                                 secretKeyRef:
-                                  description: Refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`.
+                                  description: SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`.
                                   properties:
                                     key:
                                       description: Key defines the name of the attribute of the Secret holding the referenced value.
@@ -395,13 +395,13 @@ spec:
                             description: Defines an optional CA certificate for server certificate verification when using TLS. The certificate must be provided in PEM format.
                             properties:
                               value:
-                                description: The value as plain text.
+                                description: Value as plain text.
                                 type: string
                               valueFrom:
-                                description: The value as a reference to a resource.
+                                description: ValueFrom is the value as a reference to a resource.
                                 properties:
                                   secretKeyRef:
-                                    description: Refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`.
+                                    description: SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`.
                                     properties:
                                       key:
                                         description: Key defines the name of the attribute of the Secret holding the referenced value.
@@ -423,13 +423,13 @@ spec:
                             description: Defines a client certificate to use when using TLS. The certificate must be provided in PEM format.
                             properties:
                               value:
-                                description: The value as plain text.
+                                description: Value as plain text.
                                 type: string
                               valueFrom:
-                                description: The value as a reference to a resource.
+                                description: ValueFrom is the value as a reference to a resource.
                                 properties:
                                   secretKeyRef:
-                                    description: Refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`.
+                                    description: SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`.
                                     properties:
                                       key:
                                         description: Key defines the name of the attribute of the Secret holding the referenced value.
@@ -457,13 +457,13 @@ spec:
                             description: Defines the client key to use when using TLS. The key must be provided in PEM format.
                             properties:
                               value:
-                                description: The value as plain text.
+                                description: Value as plain text.
                                 type: string
                               valueFrom:
-                                description: The value as a reference to a resource.
+                                description: ValueFrom is the value as a reference to a resource.
                                 properties:
                                   secretKeyRef:
-                                    description: Refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`.
+                                    description: SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`.
                                     properties:
                                       key:
                                         description: Key defines the name of the attribute of the Secret holding the referenced value.

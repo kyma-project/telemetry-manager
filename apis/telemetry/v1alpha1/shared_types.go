@@ -1,14 +1,14 @@
 package v1alpha1
 
 type ValueType struct {
-	// The value as plain text.
+	// Value as plain text.
 	Value string `json:"value,omitempty"`
-	// The value as a reference to a resource.
+	// ValueFrom is the value as a reference to a resource.
 	ValueFrom *ValueFromSource `json:"valueFrom,omitempty"`
 }
 
 type ValueFromSource struct {
-	// Refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`.
+	// SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`.
 	SecretKeyRef *SecretKeyRef `json:"secretKeyRef,omitempty"`
 }
 
@@ -50,7 +50,7 @@ type OTLPOutput struct {
 }
 
 type AuthenticationOptions struct {
-	// Activates `Basic` authentication for the destination providing relevant Secrets.
+	// Basic activates `Basic` authentication for the destination providing relevant Secrets.
 	Basic *BasicAuthOptions `json:"basic,omitempty"`
 }
 
