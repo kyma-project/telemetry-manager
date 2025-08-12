@@ -31,7 +31,7 @@ type caCertProviderImpl struct {
 	generator        caCertGenerator
 }
 
-func newCACertProvider(client client.Client) *caCertProviderImpl {
+func newCACertProvider(client client.Client, keySize int) *caCertProviderImpl {
 	clock := realClock{}
 
 	const duration30d = 30 * 24 * time.Hour
@@ -40,9 +40,10 @@ func newCACertProvider(client client.Client) *caCertProviderImpl {
 		client:        client,
 		expiryChecker: &certExpiryCheckerImpl{clock: realClock{}, softExpiryOffset: duration30d},
 		generator: &caCertGeneratorImpl{
-			clock: clock,
+			clock:   clock,
+			keySize: keySize,
 		},
-		keyLengthChecker: &keyLengthCheckerImpl{},
+		keyLengthChecker: &keyLengthCheckerImpl{expectedKeySize: keySize},
 	}
 }
 

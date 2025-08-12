@@ -12,7 +12,7 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -28,10 +28,10 @@ func TestBasePayloadWithHTTPOutput(t *testing.T) {
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
-	logProducer := stdloggen.NewDeployment(genNs)
+	logProducer := stdoutloggen.NewDeployment(genNs)
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
-		WithIncludeContainers(stdloggen.DefaultContainerName).
+		WithIncludeContainers(stdoutloggen.DefaultContainerName).
 		WithIncludeNamespaces(genNs).
 		WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 		Build()
@@ -77,8 +77,8 @@ func TestBasePayloadWithHTTPOutput(t *testing.T) {
 	assert.BackendDataEventuallyMatches(t, backend,
 		fluentbit.HaveFlatLogs(HaveEach(
 			fluentbit.HaveKubernetesAttributes(SatisfyAll(
-				HaveKeyWithValue("container_name", stdloggen.DefaultContainerName),
-				HaveKeyWithValue("container_image", HaveSuffix(stdloggen.DefaultImageName)),
+				HaveKeyWithValue("container_name", stdoutloggen.DefaultContainerName),
+				HaveKeyWithValue("container_image", HaveSuffix(stdoutloggen.DefaultImageName)),
 				HaveKeyWithValue("namespace_name", genNs),
 			)),
 		)),

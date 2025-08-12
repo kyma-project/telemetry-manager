@@ -13,7 +13,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
@@ -40,7 +40,7 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 				return testutils.BuildLogPipelineApplicationInput(opts...)
 			},
 			logGeneratorBuilder: func(ns string) client.Object {
-				return stdloggen.NewDeployment(ns).K8sObject()
+				return stdoutloggen.NewDeployment(ns).K8sObject()
 			},
 			expectAgent: true,
 		},
@@ -174,8 +174,8 @@ func TestNamespaceSelector_FluentBit(t *testing.T) {
 		kitk8s.NewNamespace(gen2Ns).K8sObject(),
 		&includePipeline,
 		&excludeGen2Pipeline,
-		stdloggen.NewDeployment(gen1Ns).K8sObject(),
-		stdloggen.NewDeployment(gen2Ns).K8sObject(),
+		stdoutloggen.NewDeployment(gen1Ns).K8sObject(),
+		stdoutloggen.NewDeployment(gen2Ns).K8sObject(),
 	}
 	resources = append(resources, backend1.K8sObjects()...)
 	resources = append(resources, backend2.K8sObjects()...)

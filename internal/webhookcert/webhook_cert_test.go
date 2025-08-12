@@ -237,6 +237,7 @@ func TestUpdateLogPipelineWithWebhookConfig(t *testing.T) {
 	}(certDir)
 
 	config := Config{
+		rsaKeySize:            testRsaKeySize,
 		CertDir:               certDir,
 		ServiceName:           webhookService,
 		CASecretName:          caBundleSecret,
@@ -285,6 +286,7 @@ func TestUpdateWebhookConfig(t *testing.T) {
 	}(certDir)
 
 	config := Config{
+		rsaKeySize:            testRsaKeySize,
 		CertDir:               certDir,
 		ServiceName:           webhookService,
 		CASecretName:          caBundleSecret,
@@ -331,6 +333,29 @@ func TestUpdateWebhookConfig(t *testing.T) {
 	require.True(t, mutatingCertValid)
 }
 
+func TestNewWebhookCertConfig(t *testing.T) {
+	t.Run("should initialize all fields correctly", func(t *testing.T) {
+		certDir := t.TempDir()
+
+		config := NewWebhookCertConfig(
+			ConfigOptions{
+				CertDir:               certDir,
+				ServiceName:           webhookService,
+				CASecretName:          caBundleSecret,
+				ValidatingWebhookName: validatingWebhookNamespacedName,
+				MutatingWebhookName:   mutatingWebhookNamespacedName,
+			},
+		)
+
+		require.Equal(t, rsaKeySize, config.rsaKeySize)
+		require.Equal(t, certDir, config.CertDir)
+		require.Equal(t, webhookService, config.ServiceName)
+		require.Equal(t, caBundleSecret, config.CASecretName)
+		require.Equal(t, validatingWebhookNamespacedName, config.ValidatingWebhookName)
+		require.Equal(t, mutatingWebhookNamespacedName, config.MutatingWebhookName)
+	})
+}
+
 func TestCreateSecret(t *testing.T) {
 	scheme := runtime.NewScheme()
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))
@@ -345,6 +370,7 @@ func TestCreateSecret(t *testing.T) {
 	}(certDir)
 
 	config := Config{
+		rsaKeySize:            testRsaKeySize,
 		CertDir:               certDir,
 		ServiceName:           webhookService,
 		CASecretName:          caBundleSecret,
@@ -378,6 +404,7 @@ func TestReuseExistingCertificate(t *testing.T) {
 	}(certDir)
 
 	config := Config{
+		rsaKeySize:            testRsaKeySize,
 		CertDir:               certDir,
 		ServiceName:           webhookService,
 		CASecretName:          caBundleSecret,
