@@ -12,6 +12,7 @@ type keyLengthChecker interface {
 }
 
 type keyLengthCheckerImpl struct {
+	expectedKeySize int
 }
 
 // checkKeyLength checks if the provided PEM-encoded key has the desired length
@@ -21,10 +22,10 @@ func (c *keyLengthCheckerImpl) checkKeyLength(ctx context.Context, keyPEM []byte
 		return false, fmt.Errorf("failed to parse key PEM: %w", err)
 	}
 
-	if key.N.BitLen() != rsaKeySize {
+	if key.N.BitLen() != c.expectedKeySize {
 		logf.FromContext(ctx).Info("CA key length check failed",
 			"currentLength", key.N.BitLen(),
-			"desiredLength", rsaKeySize)
+			"desiredLength", c.expectedKeySize)
 
 		return false, nil
 	}
