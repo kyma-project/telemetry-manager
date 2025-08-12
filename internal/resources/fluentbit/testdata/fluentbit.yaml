@@ -305,13 +305,13 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
-            add:
-            - FOWNER
             drop:
             - ALL
           privileged: false
           readOnlyRootFilesystem: true
-          runAsNonRoot: false
+          runAsGroup: 0
+          runAsNonRoot: true
+          runAsUser: 10001
           seccompProfile:
             type: RuntimeDefault
         volumeMounts:
@@ -403,7 +403,7 @@ spec:
           optional: true
         name: dynamic-files
       - hostPath:
-          path: /var/telemetry-fluent-bit
+          path: /tmp
         name: varfluentbit
       - name: output-tls-config
         secret:
