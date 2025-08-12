@@ -37,16 +37,15 @@ func TestTelemetry(t *testing.T) {
 		metricGRPCEndpoint = "http://telemetry-otlp-metrics.kyma-system:4317"
 		metricHTTPEndpoint = "http://telemetry-otlp-metrics.kyma-system:4318"
 
-		// TODO: Uncomment when https://github.com/kyma-project/telemetry-manager/issues/2336 is fixed
-		// logGRPCEndpoint = "http://telemetry-otlp-logs.kyma-system:4317"
-		// logHTTPEndpoint = "http://telemetry-otlp-logs.kyma-system:4318"
+		logGRPCEndpoint = "http://telemetry-otlp-logs.kyma-system:4317"
+		logHTTPEndpoint = "http://telemetry-otlp-logs.kyma-system:4318"
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces)
 
 	tracePipeline := testutils.NewTracePipelineBuilder().WithName(pipelineName).Build()
 	metricPipeline := testutils.NewMetricPipelineBuilder().WithName(pipelineName).Build()
-	logPipeline := testutils.NewLogPipelineBuilder().WithName(pipelineName).Build()
+	logPipeline := testutils.NewLogPipelineBuilder().WithName(pipelineName).WithOTLPInput(true).WithOTLPOutput().Build()
 
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
@@ -66,6 +65,10 @@ func TestTelemetry(t *testing.T) {
 	Eventually(func(g Gomega) {
 		var telemetry operatorv1alpha1.Telemetry
 		g.Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
+
+		g.Expect(telemetry.Status.GatewayEndpoints.Logs).ShouldNot(BeNil())
+		g.Expect(telemetry.Status.GatewayEndpoints.Logs.GRPC).Should(Equal(logGRPCEndpoint))
+		g.Expect(telemetry.Status.GatewayEndpoints.Logs.HTTP).Should(Equal(logHTTPEndpoint))
 
 		g.Expect(telemetry.Status.GatewayEndpoints.Traces).ShouldNot(BeNil())
 		g.Expect(telemetry.Status.GatewayEndpoints.Traces.GRPC).Should(Equal(traceGRPCEndpoint))
