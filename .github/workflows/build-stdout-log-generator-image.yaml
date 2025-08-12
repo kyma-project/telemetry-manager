@@ -4,9 +4,9 @@ permissions:
   contents: read
 
 on:
-  pull_request:
-#    paths:
-#      - "dependencies/stdout-log-generator/**"
+  pull_request_target:
+    paths:
+      - "dependencies/stdout-log-generator/**"
     types: [opened, edited, synchronize, reopened, ready_for_review]
   push:
     branches:
@@ -72,8 +72,4 @@ jobs:
               - type: "section"
                 text:
                   type: "mrkdwn"
-                  text: "See related PR/Commit <${{ github.event.pull_request.html_url || github.event.head_commit.url }}|${{ github.event.pull_request.title || github.event.head_commit.message }}> by *${{ github.event.pull_request.user.email || github.event.head_commit.author }}*"
-              - type: "section"
-                text:
-                  type: "mrkdwn"
-                  text: "Images: ${{needs.build-image.outputs.images}}"
+                  text: "See related PR/Commit <${{ github.event.pull_request.html_url || github.event.head_commit.url }}|${{ github.event.pull_request.title || github.event.head_commit.message }}> by *${{ github.event.pull_request.user.login || github.event.head_commit.author }}*"
