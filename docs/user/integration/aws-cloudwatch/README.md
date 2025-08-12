@@ -156,7 +156,7 @@ Use the Kyma Telemetry module to enable ingestion of the signals from your workl
 
 ## Verify the Results
 
-Verify that the logs, traces and metrics are exported to CloudWatch.
+Verify that the logs, traces, and metrics are exported to CloudWatch.
 
 1. [Install the OpenTelemetry demo application](../opentelemetry-demo/README.md).
 2. Go to `https://{AWS_REGION}.console.aws.amazon.com/cloudwatch`. Replace `{AWS_REGION}` with the region that you have chosen when [creating the Secret with AWS credentials](#create-a-secret-with-aws-credentials).
