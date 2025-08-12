@@ -3,8 +3,9 @@ package common
 import (
 	"testing"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	"github.com/stretchr/testify/require"
+
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 )
 
 func TestInsertClusterNameProcessorConfig(t *testing.T) {
