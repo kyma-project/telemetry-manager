@@ -453,7 +453,7 @@ func (aad *AgentApplierDeleter) fluentBitVolumes() []corev1.Volume {
 		{
 			Name: "varfluentbit",
 			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{Path: fmt.Sprintf("/var/%s", LogAgentName)},
+				HostPath: &corev1.HostPathVolumeSource{Path: "/tmp"},
 			},
 		},
 		{
