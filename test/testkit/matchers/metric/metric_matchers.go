@@ -8,7 +8,7 @@ import (
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 )
 
 // HaveFlatMetrics extracts FlatMetrics from JSON and applies the matcher to them.
@@ -43,7 +43,7 @@ func HaveUniqueNamesForRuntimeScope(matcher types.GomegaMatcher) types.GomegaMat
 		names := make(map[string]struct{})
 
 		for _, m := range fm {
-			if m.ScopeName != metric.InstrumentationScopeRuntime {
+			if m.ScopeName != common.InstrumentationScopeRuntime {
 				continue
 			}
 
