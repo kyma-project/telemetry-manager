@@ -210,6 +210,9 @@ components:
     ports:
       - name: http
         value: 8081
+    resources:
+      limits:
+        memory: 150Mi
     podAnnotations:
       sidecar.istio.io/inject: "false"
 
