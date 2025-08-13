@@ -72,11 +72,9 @@
       "depNameTemplate": "kyma-project/istio"
     },
     {
-      "customType": "regex",
+      "customType": "jsonata",
       "fileMatch": ["^external-images\\.yaml$"],
-      "matchStrings": [
-        "source: \"(?<depName>.+?)@sha256:(?<currentDigest>[a-f0-9]{64})\"\\s*\\n\\s*tag: \"(?<currentValue>.+?)\""
-      ],
+      "extractVersionTemplate": "$.images.{depName: source.$substringBefore(\"@\"), currentDigest: source.$substringAfter(\"sha256:\"), currentValue: tag}",
       "datasourceTemplate": "docker"
     }
   ],
