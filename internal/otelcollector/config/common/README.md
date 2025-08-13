@@ -1,6 +1,6 @@
 # OpenTelemetry Collector Configuration - Common Package
 
-This package provides shared configuration types and builders for OpenTelemetry Collector configurations used throughout the telemetry-manager project. Note that if a specific confguration is only used in one place, it is defined directly in that package instead of being placed here (e.g. `filelog` receiver builder is log agent specific and is defined in the `logagent` package).
+This package provides shared configuration types and builders for OpenTelemetry Collector configurations used throughout the telemetry-manager project. Note that if a specific configuration is only used in one place, it is defined directly in that package instead of being placed here (e.g., the `filelog` receiver builder is an agent-specific log and is defined in the `logagent` package).
 
 ## Overview
 
