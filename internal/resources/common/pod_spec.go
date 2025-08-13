@@ -7,7 +7,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/utils/ptr"
 
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 )
 
 const (
@@ -155,7 +155,7 @@ func WithGoMemLimitEnvVar(memory resource.Quantity) ContainerOption {
 
 	return func(c *corev1.Container) {
 		c.Env = append(c.Env, corev1.EnvVar{
-			Name:  config.EnvVarGoMemLimit,
+			Name:  common.EnvVarGoMemLimit,
 			Value: strconv.FormatInt(goMemLimit, 10),
 		})
 	}

@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	. "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -90,7 +90,7 @@ func podScrapedMetricsShouldBeDelivered(t *testing.T, backend *kitbackend.Backen
 			HaveName(BeElementOf(prommetricgen.CustomMetricNames())),
 			Not(HaveMetricAttributes(HaveKey("service"))),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", podName)),
-			HaveScopeName(Equal(InstrumentationScopePrometheus)),
+			HaveScopeName(Equal(common.InstrumentationScopePrometheus)),
 			HaveScopeVersion(SatisfyAny(
 				Equal("main"),
 				MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
@@ -105,7 +105,7 @@ func serviceScrapedMetricsShouldBeDelivered(t *testing.T, backend *kitbackend.Ba
 		ContainElement(SatisfyAll(
 			HaveName(BeElementOf(prommetricgen.CustomMetricNames())),
 			HaveMetricAttributes(HaveKeyWithValue("service", serviceName)),
-			HaveScopeName(Equal(InstrumentationScopePrometheus)),
+			HaveScopeName(Equal(common.InstrumentationScopePrometheus)),
 			HaveScopeVersion(SatisfyAny(
 				Equal("main"),
 				MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),

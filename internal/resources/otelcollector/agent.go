@@ -17,7 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
@@ -93,7 +93,7 @@ func NewLogAgentApplierDeleter(image, namespace, priorityClassName string) *Agen
 		},
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithResources(makeAgentResourceRequirements(logAgentMemoryLimit, logAgentMemoryRequest, logAgentCPURequest)),
-			commonresources.WithEnvVarFromField(config.EnvVarCurrentPodIP, fieldPathPodIP),
+			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
 			commonresources.WithGoMemLimitEnvVar(logAgentMemoryLimit),
 			commonresources.WithVolumeMounts(volumeMounts),
 			commonresources.WithRunAsGroup(commonresources.GroupRoot),
@@ -119,8 +119,8 @@ func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string) *A
 			commonresources.WithVolumes([]corev1.Volume{makeIstioCertVolume()}),
 		},
 		containerOpts: []commonresources.ContainerOption{
-			commonresources.WithEnvVarFromField(config.EnvVarCurrentPodIP, fieldPathPodIP),
-			commonresources.WithEnvVarFromField(config.EnvVarCurrentNodeName, fieldPathNodeName),
+			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
+			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
 			commonresources.WithGoMemLimitEnvVar(metricAgentMemoryLimit),
 			commonresources.WithResources(makeAgentResourceRequirements(metricAgentMemoryLimit, metricAgentMemoryRequest, metricAgentCPURequest)),
 			commonresources.WithVolumeMounts([]corev1.VolumeMount{makeIstioCertVolumeMount()}),
