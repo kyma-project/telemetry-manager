@@ -20,7 +20,7 @@ However, after **decoupling** the Metric Agent from the Metric Gateway, the resp
 
 - If the backend (e.g., OTel Collector, Prometheus, or another mesh-enabled service) is **part of the Istio mesh**, the Metric Agent must **send traffic through the Istio sidecar proxy** to ensure mTLS, policy enforcement, and telemetry integration.
 
-Without this adjustment, communication with mesh-enabled backends would bypass the sidecar, potentially violating mesh security and observability guarantees.
+Without this change, traffic to mesh-enabled backends would bypass the sidecar breaking mTLS, security policy enforcement, and observability.
 
 ## Proposal
 
@@ -34,7 +34,7 @@ Currently, the Metric Agent relies on Istio **pod annotations** to control sidec
 
 ### Current Limitations
 With the default configuration, any backend listening on a mesh-enabled port would still be bypassed if its IP range was excluded for Prometheus scraping. 
-This means the Metric Agent cannot reliably send metrics through the sidecar if the backend is mesh-enabled.
+This prevents the Metric Agent from sending metrics through the sidecar if the backend is mesh-enabled.
 
 ### Proposed Adjustment
 We can reuse the **existing annotation-based approach** by:
