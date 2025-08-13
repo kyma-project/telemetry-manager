@@ -32,7 +32,6 @@ on:
       - "!**_test.go"
       - "!docs/**"
       - "test/e2e/**.go"
-      - "test/e2e-migrated/**.go"
       - "test/integration/istio/**.go"
       - ".github/workflows/pr-integration.yml"
       - ".github/template/**"
@@ -51,14 +50,22 @@ jobs:
       - name: Setup Golang
         uses: ./.github/template/setup-golang
 
-  e2e:
+  e2e-selfmonitor:
     needs: setup
     strategy:
       fail-fast: false
       matrix:
-        ginkgo-labels:
-          - telemetry
-          - misc
+        kind:
+          - logs-fluentbit
+          - logs-otel-agent
+          - logs-otel-gateway
+          - metrics
+          - traces
+        scenario:
+          - healthy
+          - backpressure
+          - outage
+    name: "selfmon: ${{ matrix.kind }}-${{ matrix.scenario }}"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -69,104 +76,26 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Deploy Test Prerequisites
+      # we need Istio for fault injection to simulate backpressure and outages
+      - name: Deploy Istio module
+        if: ${{ matrix.scenario != 'healthy' }}
+        run: hack/deploy-istio.sh
+
+      - name: Deploy test prerequisites
         uses: "./.github/template/deploy-test-prerequisites"
 
       - name: Run tests
-        run: bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags e2e --label-filter="${{ matrix.ginkgo-labels }} && !experimental &&!max-pipeline" -r test/e2e
+        run: |
+          go test -v -timeout=20m ./test/selfmonitor/... -- -labels="selfmonitor-${{ matrix.scenario }}-${{ matrix.kind }}"
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"
         if: ${{ !cancelled()  }}
         with:
           failure: failure()
-          job-name: ${{ github.job }}-${{ matrix.ginkgo-labels }}
+          job-name: ${{ github.job }}-${{ matrix.scenario }}-${{ matrix.kind }}
 
-  e2e-istio:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-
-      - name: Prepare Test
-        uses: "./.github/template/prepare-test"
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Deploy Istio Module
-        run: hack/deploy-istio.sh
-
-      - name: Deploy Test Prerequisites
-        uses: "./.github/template/deploy-test-prerequisites"
-
-      - name: Run tests
-        run: |
-          bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags istio --label-filter="istio && !experimental" test/integration/istio
-
-      - name: Finalize Test
-        uses: "./.github/template/finalize-test"
-        if: ${{ !cancelled()  }}
-        with:
-          failure: failure()
-          job-name: ${{ github.job }}
-
-  e2e-self-mon:
-    needs: setup
-    strategy:
-      fail-fast: false
-      matrix:
-        signal-type:
-          - fluentbit
-          - log-agent
-          - log-gateway
-          - metrics
-          - traces
-        scenario:
-          - healthy
-          - backpressure
-          - outage
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-
-      - name: Prepare Test
-        uses: "./.github/template/prepare-test"
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Deploy Test Prerequisites
-        if: ${{ matrix.scenario == 'healthy' }}
-        uses: "./.github/template/deploy-test-prerequisites"
-
-      - name: Run tests without Istio
-        if: ${{ matrix.scenario == 'healthy' }}
-        run: |
-          bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags e2e --label-filter="self-mon-${{ matrix.signal-type }}-${{ matrix.scenario }} && !experimental" -r test/e2e
-
-        # we need Istio for fault injection to simulate backpressure and outages
-      - name: Deploy Istio Module
-        if: ${{ matrix.scenario != 'healthy' }}
-        run: hack/deploy-istio.sh
-
-      - name: Deploy Test Prerequisites
-        if: ${{ matrix.scenario != 'healthy' }}
-        uses: "./.github/template/deploy-test-prerequisites"
-
-      - name: Run tests with Istio
-        if: ${{ matrix.scenario != 'healthy' }}
-        run: |
-          bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags istio --label-filter="self-mon-${{ matrix.signal-type }}-${{ matrix.scenario }}&& !experimental" test/integration/istio
-
-      - name: Finalize Test
-        uses: "./.github/template/finalize-test"
-        if: ${{ !cancelled()  }}
-        with:
-          failure: failure()
-          job-name: ${{ github.job }}-${{ matrix.signal-type }}-${{ matrix.scenario }}
-
-  e2e-migrated:
+  e2e:
     needs: setup
     strategy:
       fail-fast: false
@@ -199,43 +128,55 @@ jobs:
             mode: release
           - name: traces-max-pipeline
             mode: release
+          # TELEMETRY
+          - name: telemetry
+            mode: release
+          # MISC
+          - name: misc
+            mode: release
           # OTHER
           - name: experimental
             mode: experimental
           # INTEGRATION
           - name: istio
             mode: integration
+    name: "e2e: ${{ matrix.labels.name }}"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - name: Prepare Test
+      - name: Prepare test
         uses: "./.github/template/prepare-test"
         with:
           experimental: ${{ matrix.labels.mode == 'experimental' }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Deploy Istio Module
+      - name: Deploy Istio module
         if: ${{ matrix.labels.name == 'istio' &&  matrix.labels.mode == 'integration' }}
         run: hack/deploy-istio.sh
 
-      - name: Deploy Test Prerequisites
+      - name: Deploy test prerequisites
         uses: "./.github/template/deploy-test-prerequisites"
 
       - name: Run normal e2e tests
         if: ${{ matrix.labels.mode != 'integration' }}
         run: |
-          go test -v -timeout=20m ./test/e2e-migrated/... -- -labels=${{ matrix.labels.name }}
+          go test -v -timeout=20m ./test/e2e/... -- -labels=${{ matrix.labels.name }}
 
       - name: Run integration e2e tests
         if: ${{ matrix.labels.mode == 'integration' }}
         run: |
-          go test -v -timeout=20m ./test/integration-migrated/... -- -labels=${{ matrix.labels.name }}
+          go test -v -timeout=20m ./test/integration/... -- -labels=${{ matrix.labels.name }}
 
-      - name: Finalize Test
+      - name: Finalize test
         uses: "./.github/template/finalize-test"
         if: ${{ !cancelled()  }}
         with:
           failure: failure()
           job-name: ${{ github.job }}-${{ matrix.labels }}
+
+      - name: Print logs from all pods in kyma-system namespace
+        if: failure()
+        run: |
+          for pod in $(kubectl get pods -n kyma-system -o name); do echo "=== $pod ==="; kubectl logs -n kyma-system $pod; done || true

@@ -488,6 +488,8 @@ If Node metrics are enabled, the following metrics are collected:
   - `k8s.node.filesystem.usage`
   - `k8s.node.memory.available`
   - `k8s.node.memory.usage`
+  - `k8s.node.network.errors`,
+  - `k8s.node.network.io`,
   - `k8s.node.memory.rss`
   - `k8s.node.memory.working_set`
 
@@ -650,6 +652,30 @@ spec:
       endpoint:
         value: https://backend.example.com:4317
 ```
+The following example collects metrics from all namespaces including system namespaces:
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: MetricPipeline
+metadata:
+  name: backend
+spec:
+  input:
+    istio:
+      enabled: true
+      namespaces: {}
+    prometheus:
+      enabled: true
+      namespaces: {}
+    runtime:
+      enabled: true
+      namespaces: {}
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com:4317
+```
+To collect metrics with specific system namespaces, add them to the `include` section of namespaces.
 
 > [!NOTE]
 > The default settings depend on the input:

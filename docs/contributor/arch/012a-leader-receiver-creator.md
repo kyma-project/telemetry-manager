@@ -1,10 +1,10 @@
+---
+title: "Leader Receiver Creator"
+status: Accepted
+date: 2024-05-21
+---
+
 # 12a. Leader Receiver Creator
-
-Date: 2024-05-21
-
-## Status
-
-Accepted
 
 ## Context
 

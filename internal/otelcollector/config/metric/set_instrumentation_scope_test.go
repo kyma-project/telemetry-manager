@@ -83,7 +83,7 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := MakeInstrumentationScopeProcessor(instrumentationScopeVersion, tt.inputSource); !compareTransformProcessor(got, tt.want) {
+			if got := InstrumentationScopeProcessorConfig(instrumentationScopeVersion, tt.inputSource); !compareTransformProcessor(got, tt.want) {
 				t.Errorf("makeInstrumentationScopeProcessor() = %v, want %v", got, tt.want)
 			}
 		})
