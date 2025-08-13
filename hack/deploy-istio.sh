@@ -97,7 +97,7 @@ function ensure_peer_authentication() {
 
   for ((attempts=1; attempts<=MAX_ATTEMPTS; attempts++)); do
     echo "Attempting to create Istio Mesh PeerAuthentication (Attempt $attempts)..."
-    apply_peer_authentication $name $namespace $mtlsMode
+    apply_peer_authentication $name $namespace $mtlsMode || true
 
     if is_peer_authentication_apply_successful $name $namespace; then
       echo "Istio Mesh PeerAuthentication created successfully!"
@@ -145,6 +145,18 @@ function check_istiod_deployment_ready() {
     fi
 }
 
+function apply_namespace() {
+  local namespace=$1
+  kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: $namespace
+  labels:
+    istio-injection: enabled
+EOF
+}
+
 function main() {
   kubectl apply -f "https://github.com/kyma-project/istio/releases/download/$ISTIO_VERSION/istio-manager.yaml"
   kubectl apply -f "https://github.com/kyma-project/istio/releases/download/$ISTIO_VERSION/istio-default-cr.yaml"
@@ -153,14 +165,7 @@ function main() {
   ensure_istio_telemetry
   ensure_peer_authentication default "$ISTIO_NAMESPACE" STRICT
 
-  kubectl apply -f - <<EOF
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: istio-permissive-mtls
-  labels:
-    istio-injection: enabled
-EOF
+  apply_namespace "istio-permissive-mtls"
   ensure_peer_authentication default istio-permissive-mtls PERMISSIVE
 }
 
