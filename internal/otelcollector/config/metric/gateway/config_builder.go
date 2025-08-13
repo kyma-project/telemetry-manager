@@ -81,6 +81,7 @@ func (b *Builder) addComponents(
 	b.addInputSourceFilters(pipeline)
 	b.addRuntimeResourcesFilters(pipeline)
 	b.addNamespaceFilters(pipeline)
+	b.addUserDefinedTransformProcessor(pipeline)
 	b.addConnectors(pipeline.Name)
 
 	return b.addOTLPExporter(ctx, pipeline, queueSize)
@@ -159,30 +160,42 @@ func (b *Builder) addRuntimeResourcesFilters(pipeline *telemetryv1alpha1.MetricP
 }
 
 func (b *Builder) addNamespaceFilters(pipeline *telemetryv1alpha1.MetricPipeline) {
-	if b.config.Processors.NamespaceFilters == nil {
-		b.config.Processors.NamespaceFilters = make(NamespaceFilters)
+	if b.config.Processors.Dynamic == nil {
+		b.config.Processors.Dynamic = make(map[string]any)
 	}
 
 	input := pipeline.Spec.Input
 	if metricpipelineutils.IsRuntimeInputEnabled(input) && shouldFilterByNamespace(input.Runtime.Namespaces) {
 		processorID := formatNamespaceFilterID(pipeline.Name, metric.InputSourceRuntime)
-		b.config.Processors.NamespaceFilters[processorID] = filterByNamespaceProcessorConfig(pipeline.Spec.Input.Runtime.Namespaces, inputSourceEquals(metric.InputSourceRuntime))
+		b.config.Processors.Dynamic[processorID] = filterByNamespaceProcessorConfig(pipeline.Spec.Input.Runtime.Namespaces, inputSourceEquals(metric.InputSourceRuntime))
 	}
 
 	if metricpipelineutils.IsPrometheusInputEnabled(input) && shouldFilterByNamespace(input.Prometheus.Namespaces) {
 		processorID := formatNamespaceFilterID(pipeline.Name, metric.InputSourcePrometheus)
-		b.config.Processors.NamespaceFilters[processorID] = filterByNamespaceProcessorConfig(pipeline.Spec.Input.Prometheus.Namespaces, ottlexpr.ResourceAttributeEquals(metric.KymaInputNameAttribute, metric.KymaInputPrometheus))
+		b.config.Processors.Dynamic[processorID] = filterByNamespaceProcessorConfig(pipeline.Spec.Input.Prometheus.Namespaces, ottlexpr.ResourceAttributeEquals(metric.KymaInputNameAttribute, metric.KymaInputPrometheus))
 	}
 
 	if metricpipelineutils.IsIstioInputEnabled(input) && shouldFilterByNamespace(input.Istio.Namespaces) {
 		processorID := formatNamespaceFilterID(pipeline.Name, metric.InputSourceIstio)
-		b.config.Processors.NamespaceFilters[processorID] = filterByNamespaceProcessorConfig(pipeline.Spec.Input.Istio.Namespaces, inputSourceEquals(metric.InputSourceIstio))
+		b.config.Processors.Dynamic[processorID] = filterByNamespaceProcessorConfig(pipeline.Spec.Input.Istio.Namespaces, inputSourceEquals(metric.InputSourceIstio))
 	}
 
 	if metricpipelineutils.IsOTLPInputEnabled(input) && input.OTLP != nil && shouldFilterByNamespace(input.OTLP.Namespaces) {
 		processorID := formatNamespaceFilterID(pipeline.Name, metric.InputSourceOTLP)
-		b.config.Processors.NamespaceFilters[processorID] = filterByNamespaceProcessorConfig(pipeline.Spec.Input.OTLP.Namespaces, otlpInputSource())
+		b.config.Processors.Dynamic[processorID] = filterByNamespaceProcessorConfig(pipeline.Spec.Input.OTLP.Namespaces, otlpInputSource())
 	}
+}
+
+func (b *Builder) addUserDefinedTransformProcessor(pipeline *telemetryv1alpha1.MetricPipeline) {
+	if len(pipeline.Spec.Transforms) == 0 {
+		return
+	}
+
+	transformStatements := config.TransformSpecsToProcessorStatements(pipeline.Spec.Transforms)
+	transformProcessor := config.MetricTransformProcessor(transformStatements)
+
+	processorID := formatUserDefinedTransformProcessorID(pipeline.Name)
+	b.config.Processors.Dynamic[processorID] = transformProcessor
 }
 
 func (b *Builder) addConnectors(pipelineName string) {

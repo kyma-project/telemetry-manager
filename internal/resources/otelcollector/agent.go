@@ -30,10 +30,12 @@ const (
 	MetricAgentName = "telemetry-metric-agent"
 	LogAgentName    = "telemetry-log-agent"
 
-	checkpointVolumeName = "varlibfilelogreceiver"
-	CheckpointVolumePath = "/var/lib/telemetry-log-agent/file-log-receiver"
+	checkpointVolumeName = "tmp"
+	CheckpointVolumePath = "/tmp"
 	logVolumeName        = "varlogpods"
 	logVolumePath        = "/var/log/pods"
+
+	groupRoot int64 = 0
 )
 
 var (
@@ -96,9 +98,8 @@ func NewLogAgentApplierDeleter(image, namespace, priorityClassName string) *Agen
 			commonresources.WithEnvVarFromField(config.EnvVarCurrentPodIP, fieldPathPodIP),
 			commonresources.WithGoMemLimitEnvVar(logAgentMemoryLimit),
 			commonresources.WithVolumeMounts(volumeMounts),
-			commonresources.WithRunAsUser(userRoot),
-			commonresources.WithRunAsRoot(),
-			commonresources.WithCapabilities("FOWNER"),
+			commonresources.WithRunAsGroup(groupRoot),
+			commonresources.WithRunAsUser(userDefault),
 		},
 	}
 }

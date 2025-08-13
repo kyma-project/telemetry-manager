@@ -21,7 +21,7 @@ The gateways are based on the [OTel Collector](https://opentelemetry.io/docs/col
 
 ## Usage
 
-You can set up a pipeline with a backend that subsequently instantiates a gateway. For details, see [Traces](03-traces.md) and [Metrics](04-metrics.md).
+You can set up a pipeline with a backend that subsequently instantiates a gateway. For details, see [Logs](logs.md) [Traces](03-traces.md) and [Metrics](04-metrics.md).
 To see whether you've set up your gateways and their push endpoints successfully, check the status of the default Telemetry resource:
 
 ```sh
@@ -32,6 +32,9 @@ In the status of the returned resource, you see the pipeline health as well as t
 
 ```yaml
   endpoints:
+    logs:
+      grpc: http://telemetry-otlp-logs.kyma-system:4317
+      http: http://telemetry-otlp-logs.kyma-system:4318
     metrics:
       grpc: http://telemetry-otlp-metrics.kyma-system:4317
       http: http://telemetry-otlp-metrics.kyma-system:4318

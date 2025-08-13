@@ -106,6 +106,7 @@ func generateSecScanConfig(data map[string]string) error {
 		"**/test/**",
 		"**/*_test.go",
 		"docs/**",
+		"dependencies/**",
 	}
 
 	secScanCfg := secScanConfig{

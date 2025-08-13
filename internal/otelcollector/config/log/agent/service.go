@@ -11,11 +11,34 @@ import (
 // Service pipeline assembly
 
 func (b *Builder) addServicePipelines(pipeline *telemetryv1alpha1.LogPipeline) {
-	pipelineID := formatLogPipelineID(pipeline.Name)
 	receiverID := formatFileLogReceiverID(pipeline.Name)
-	exporterID := otlpexporter.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)
+	exporterID := formatOTLPExporterID(pipeline)
 
-	b.config.Service.Pipelines[pipelineID] = pipelineConfig(receiverID, exporterID)
+	processorIDs := []string{
+		// memory_limiter is always the first processor in the pipeline
+		"memory_limiter",
+		"transform/set-instrumentation-scope-runtime",
+		"k8sattributes",
+		"resource/insert-cluster-attributes",
+		"service_enrichment",
+		"resource/drop-kyma-attributes",
+		// no batch processor, since pre-batching is performed by the filelog receiver
+	}
+
+	// Add user-defined transform processor after all of the enrichment processors
+	// if transforms are specified
+	if len(pipeline.Spec.Transforms) > 0 {
+		processorIDs = append(processorIDs, formatUserDefinedTransformProcessorID(pipeline.Name))
+	}
+
+	pipelineConfig := config.Pipeline{
+		Receivers:  []string{receiverID},
+		Processors: processorIDs,
+		Exporters:  []string{exporterID},
+	}
+
+	pipelineID := formatLogPipelineID(pipeline.Name)
+	b.config.Service.Pipelines[pipelineID] = pipelineConfig
 }
 
 // Pipeline ID formatting functions
@@ -28,20 +51,10 @@ func formatFileLogReceiverID(pipelineName string) string {
 	return fmt.Sprintf("filelog/%s", pipelineName)
 }
 
-// Pipeline configuration functions
+func formatUserDefinedTransformProcessorID(pipelineName string) string {
+	return fmt.Sprintf("transform/user-defined-%s", pipelineName)
+}
 
-// Each pipeline will have one receiver and one exporter
-func pipelineConfig(receiverID, exporterID string) config.Pipeline {
-	return config.Pipeline{
-		Receivers: []string{receiverID},
-		Processors: []string{
-			"memory_limiter",
-			"transform/set-instrumentation-scope-runtime",
-			"k8sattributes",
-			"resource/insert-cluster-attributes",
-			"service_enrichment",
-			"resource/drop-kyma-attributes",
-		},
-		Exporters: []string{exporterID},
-	}
+func formatOTLPExporterID(pipeline *telemetryv1alpha1.LogPipeline) string {
+	return otlpexporter.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)
 }
