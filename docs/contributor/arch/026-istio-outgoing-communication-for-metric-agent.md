@@ -4,7 +4,7 @@ status: Accepted
 date: 2025-08-12
 ---
 
-# 25. Support Istio Outgoing Communication for Metric Agent
+# 26. Support Istio Outgoing Communication for Metric Agent
 
 ## Context
 
