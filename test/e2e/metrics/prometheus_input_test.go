@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -129,7 +129,7 @@ func TestPrometheusInput(t *testing.T) {
 		), assert.WithOptionalDescription("Unwanted runtime metrics sent to backend"))
 
 	assert.MetricsWithScopeAndNamespaceNotDelivered(t, backend,
-		metric.InstrumentationScopePrometheus,
+		common.InstrumentationScopePrometheus,
 		kitkyma.SystemNamespaceName,
 		"Unwanted kubeletstats metrics from system namespace sent to backend")
 
