@@ -159,8 +159,8 @@ spec:
         - mountPath: /var/log/pods
           name: varlogpods
           readOnly: true
-        - mountPath: /tmp
-          name: tmp
+        - mountPath: /var/lib/telemetry-log-agent/file-log-receiver
+          name: varlibfilelogreceiver
       priorityClassName: normal
       securityContext:
         runAsNonRoot: true
@@ -186,9 +186,9 @@ spec:
           path: /var/log/pods
         name: varlogpods
       - hostPath:
-          path: /tmp
+          path: /var/lib/telemetry-log-agent/file-log-receiver
           type: DirectoryOrCreate
-        name: tmp
+        name: varlibfilelogreceiver
   updateStrategy: {}
 status:
   currentNumberScheduled: 0

@@ -105,6 +105,5 @@ type Extensions struct {
 }
 
 type FileStorage struct {
-	CreateDirectory bool   `yaml:"create_directory,omitempty"`
-	Directory       string `yaml:"directory,omitempty"`
+	Directory string `yaml:"directory,omitempty"`
 }
