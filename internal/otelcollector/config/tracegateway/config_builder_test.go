@@ -265,8 +265,7 @@ func TestBuildConfig(t *testing.T) {
 				pipelines: []telemetryv1alpha1.TracePipeline{
 					testutils.NewTracePipelineBuilder().WithName("test").Build(),
 				},
-				goldenFileName:      "single-pipeline.yaml",
-				overwriteGoldenFile: true,
+				goldenFileName: "single-pipeline.yaml",
 			},
 			{
 				name: "two pipelines with user-defined transforms",

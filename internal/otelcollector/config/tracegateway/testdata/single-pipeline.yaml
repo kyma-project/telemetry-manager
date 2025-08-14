@@ -4,6 +4,20 @@ extensions:
     pprof:
         endpoint: 127.0.0.1:1777
 service:
+    pipelines:
+        traces/test:
+            receivers:
+                - otlp
+            processors:
+                - memory_limiter
+                - k8sattributes
+                - istio_noise_filter
+                - resource/insert-cluster-attributes
+                - service_enrichment
+                - resource/drop-kyma-attributes
+                - batch
+            exporters:
+                - otlp/test
     telemetry:
         metrics:
             readers:
