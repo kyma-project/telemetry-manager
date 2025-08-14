@@ -204,15 +204,17 @@ func shouldEnableEnvoyMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeli
 // baseConfig creates the static/global base configuration for the metric agent collector.
 // Pipeline-specific components are added later via the Build method.
 func (b *Builder) baseConfig(inputs inputSources, gatewayOTLPServiceName types.NamespacedName, opts BuildOptions) *Config {
-	return &Config{
+	cfg := &Config{
 		Base: common.BaseConfig(
-			pipelinesConfig(inputs),
 			common.WithK8sLeaderElector("serviceAccount", "telemetry-metric-agent-k8scluster", opts.AgentNamespace),
 		),
 		Receivers:  receiversConfig(inputs, opts),
 		Processors: processorsConfig(inputs, opts.InstrumentationScopeVersion),
 		Exporters:  exportersConfig(gatewayOTLPServiceName),
 	}
+	cfg.Service.Pipelines = pipelinesConfig(inputs)
+
+	return cfg
 }
 
 //nolint:mnd // all static config from here

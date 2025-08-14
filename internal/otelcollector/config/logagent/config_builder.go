@@ -58,7 +58,7 @@ func (b *Builder) Build(ctx context.Context, logPipelines []telemetryv1alpha1.Lo
 // baseConfig creates the static/global base configuration for the log agent collector.
 // Pipeline-specific components are added later via addComponentsForLogPipeline method.
 func (b *Builder) baseConfig(opts BuildOptions) *Config {
-	service := common.ServiceConfig(make(common.Pipelines))
+	service := common.ServiceConfig()
 	service.Extensions = append(service.Extensions, "file_storage")
 
 	return &Config{

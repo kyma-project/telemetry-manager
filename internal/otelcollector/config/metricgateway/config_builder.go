@@ -58,9 +58,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 // Pipeline-specific components are added later via addComponents method.
 func (b *Builder) baseConfig(opts BuildOptions) *Config {
 	return &Config{
-		Base: common.BaseConfig(make(common.Pipelines),
-			common.WithK8sLeaderElector("serviceAccount", "telemetry-metric-gateway-kymastats", opts.GatewayNamespace),
-		),
+		Base:       common.BaseConfig(common.WithK8sLeaderElector("serviceAccount", "telemetry-metric-gateway-kymastats", opts.GatewayNamespace)),
 		Receivers:  receiversConfig(),
 		Processors: processorsConfig(opts),
 		Exporters:  make(Exporters),
