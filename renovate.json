@@ -73,9 +73,11 @@
     },
     {
       "customType": "jsonata",
-      "fileFormat": "yaml"
+      "fileFormat": "yaml",
       "fileMatch": ["^external-images\\.yaml$"],
-      "matchStrings": "images.{\"depName\": source.$substringBefore(\"@\"), \"currentDigest\": source.$substringAfter(\"sha256:\"), \"currentValue\": tag}",
+      "matchStrings": [
+        "images.{\"depName\": source.$substringBefore(\"@\"), \"currentDigest\": source.$substringAfter(\"@\"), \"currentValue\": tag}"
+      ],
       "datasourceTemplate": "docker"
     }
   ],
