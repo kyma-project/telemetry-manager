@@ -66,17 +66,17 @@ func TestTelemetry(t *testing.T) {
 		var telemetry operatorv1alpha1.Telemetry
 		g.Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
 
-		g.Expect(telemetry.Status.GatewayEndpoints.Logs).ShouldNot(BeNil())
-		g.Expect(telemetry.Status.GatewayEndpoints.Logs.GRPC).Should(Equal(logGRPCEndpoint))
-		g.Expect(telemetry.Status.GatewayEndpoints.Logs.HTTP).Should(Equal(logHTTPEndpoint))
+		g.Expect(telemetry.Status.Endpoints.Logs).ShouldNot(BeNil())
+		g.Expect(telemetry.Status.Endpoints.Logs.GRPC).Should(Equal(logGRPCEndpoint))
+		g.Expect(telemetry.Status.Endpoints.Logs.HTTP).Should(Equal(logHTTPEndpoint))
 
-		g.Expect(telemetry.Status.GatewayEndpoints.Traces).ShouldNot(BeNil())
-		g.Expect(telemetry.Status.GatewayEndpoints.Traces.GRPC).Should(Equal(traceGRPCEndpoint))
-		g.Expect(telemetry.Status.GatewayEndpoints.Traces.HTTP).Should(Equal(traceHTTPEndpoint))
+		g.Expect(telemetry.Status.Endpoints.Traces).ShouldNot(BeNil())
+		g.Expect(telemetry.Status.Endpoints.Traces.GRPC).Should(Equal(traceGRPCEndpoint))
+		g.Expect(telemetry.Status.Endpoints.Traces.HTTP).Should(Equal(traceHTTPEndpoint))
 
-		g.Expect(telemetry.Status.GatewayEndpoints.Metrics).ShouldNot(BeNil())
-		g.Expect(telemetry.Status.GatewayEndpoints.Metrics.GRPC).Should(Equal(metricGRPCEndpoint))
-		g.Expect(telemetry.Status.GatewayEndpoints.Metrics.HTTP).Should(Equal(metricHTTPEndpoint))
+		g.Expect(telemetry.Status.Endpoints.Metrics).ShouldNot(BeNil())
+		g.Expect(telemetry.Status.Endpoints.Metrics.GRPC).Should(Equal(metricGRPCEndpoint))
+		g.Expect(telemetry.Status.Endpoints.Metrics.HTTP).Should(Equal(metricHTTPEndpoint))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 
 	assertValidatingWebhookConfiguration()
