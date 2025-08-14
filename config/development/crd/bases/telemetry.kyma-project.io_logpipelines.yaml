@@ -868,7 +868,7 @@ spec:
                     type: object
                 type: object
               output:
-                description: '[Output where you want to push the logs. Only one output can be specified.'
+                description: Output where you want to push the logs. Only one output can be specified.
                 properties:
                   custom:
                     description: 'Defines a custom output in the Fluent Bit syntax. Note: If you use a `custom` output, you put the LogPipeline in unsupported mode.'
