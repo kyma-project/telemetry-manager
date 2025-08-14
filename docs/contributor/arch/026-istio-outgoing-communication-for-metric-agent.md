@@ -8,50 +8,75 @@ date: 2025-08-12
 
 ## Context
 
-The **Metric Agent** is a lightweight component responsible for collecting and pushing metrics to various backends. By default, it **bypasses Istio’s sidecar proxy** for outgoing communication. 
-This bypass is intentional and exists for two main reasons:
+The **Metric Agent** collects and pushes metrics to various backends. By default, it **bypasses Istio’s sidecar proxy** for outgoing traffic and uses Istio SDS certificates via a volume mount.
 
-1. **Direct Prometheus Scraping** – Prometheus-Receiver can scrape metrics from the agent without traffic detouring through the sidecar. This avoids unnecessary latency and complexity in scraping paths.
-2. **Outgoing TLS via Istio Certificates** – Even without going through the sidecar, the Metric Agent can still leverage Istio-issued mTLS certificates for secure outgoing connections to mesh-enabled services.
+This bypass is intentional for two reasons:
 
-Previously, when the Metric Agent and **Metric Gateway** were tightly coupled, the communication model was straightforward. The Metric Gateway would handle traffic routing to in-cluster and external backends.
+1. **Prometheus Scraping** – Prometheus’s scrape mechanism is incompatible with the Istio sidecar proxy.
+2. **Outgoing TLS via Istio Certificates** – Istio control plane, gateway, and Envoy metrics can be scraped without the sidecar. Application metrics follow the Istio authentication policy: if mTLS is `STRICT`, Prometheus must use Istio SDS certificates.
 
-However, after **decoupling** the Metric Agent from the Metric Gateway, the responsibility for directly pushing metrics to in-cluster destinations now falls to the Metric Agent itself. This creates a new requirement:
+Certificate volume mount configuration:
 
-- If the backend (e.g., OTel Collector, Prometheus, or another mesh-enabled service) is **part of the Istio mesh**, the Metric Agent must **send traffic through the Istio sidecar proxy** to ensure mTLS, policy enforcement, and telemetry integration.
+```yaml
+containers:
+  - name: metric-agent
+    ...
+    volumeMounts:
+      mountPath: /etc/prom-certs/
+      name: istio-certs
+volumes:
+  - emptyDir:
+      medium: Memory
+    name: istio-certs
+```
 
-Without this change, traffic to mesh-enabled backends would bypass the sidecar breaking mTLS, security policy enforcement, and observability.
+Sidecar configuration to write certificates and bypass traffic redirection:
+
+```yaml
+spec:
+  template:
+    metadata:
+      annotations:
+        traffic.sidecar.istio.io/includeOutboundIPRanges: ""  # no outbound interception
+        proxy.istio.io/config: |  
+          proxyMetadata:
+            OUTPUT_CERTS: /etc/istio-output-certs
+        sidecar.istio.io/userVolumeMount: '[{"name": "istio-certs", "mountPath": "/etc/istio-output-certs"}]'
+```
+
+See [Istio documentation](https://istio.io/latest/docs/ops/integrations/prometheus/#tls-settings) for details.
+
+Previously, with the **Metric Agent** and **Metric Gateway** coupled, routing was handled centrally. After decoupling, the Metric Agent pushes directly to in-cluster backends. If the backend (e.g., OTel Collector, Prometheus, mesh-enabled service) is in the mesh, traffic must go through the sidecar for mTLS, policy, and telemetry.  Without this, traffic to mesh-enabled backends bypasses mTLS and security enforcement.
 
 ## Proposal
 
-Currently, the Metric Agent relies on Istio **pod annotations** to control sidecar traffic interception:
+The Metric Agent controls sidecar interception via annotations:
+- `traffic.sidecar.istio.io/includeOutboundIPRanges` – IP ranges to **bypass** interception (for Prometheus scraping).
+- `traffic.sidecar.istio.io/includeOutboundPorts` – Ports to **always intercept** (for mesh-enabled backends).
 
-- `traffic.sidecar.istio.io/excludeOutboundIPRanges`  
-  Specifies IP ranges that the sidecar should **not intercept**. This is used to ensure that Prometheus scrapes bypass the sidecar.
+Reuse the current approach:
+1. Add backend ports (e.g., OTel Collector, in-cluster Prometheus) to `includeOutboundPorts`.
+2. Keep IP exclusions for Prometheus scraping.
 
-- `traffic.sidecar.istio.io/includeOutboundPorts`  
-  Explicitly lists ports that should **always be intercepted** by the sidecar. This allows certain outgoing connections (e.g., to the Metric Gateway) to be routed through Istio.
+Effect:
+- Same port supports two flows:
+  - Prometheus scrapes directly.
+  - Metric Agent sends traffic via sidecar.
+- No need to detect mesh membership works for all cases.
 
-### Current Limitations
-With the default configuration, any backend listening on a mesh-enabled port would still be bypassed if its IP range was excluded for Prometheus scraping. 
-This prevents the Metric Agent from sending metrics through the sidecar if the backend is mesh-enabled.
+Example: in-mesh local Prometheus on port `9090`:
 
-### Proposed Adjustment
-We can reuse the **existing annotation-based approach** by:
+```yaml
+spec:
+  template:
+    metadata:
+      annotations:
+        traffic.sidecar.istio.io/includeOutboundPorts: "9090"
+        traffic.sidecar.istio.io/includeOutboundIPRanges: ""
+```
 
-1. **Adding backend ports** (used by OTel Collector, in-cluster Prometheus, etc.) to the `includeOutboundPorts` annotation.
-2. Keeping the necessary IP exclusions for Prometheus scraping intact.
-
-This way:
-- The same port can serve **two purposes**: Prometheus-Receiver can scrape it directly, while outgoing traffic to that port from the Metric Agent is routed through the sidecar.
-- No need to dynamically detect whether a backend is inside or outside the mesh, the configuration works uniformly.
-
-### Alternative: Using Istio `Sidecar` CRD
-Istio also offers the `Sidecar` custom resource for **fine-grained control** over allowed ingress and egress destinations for a specific workload. It can:
-- Restrict traffic to specific namespaces, services, or DNS patterns.
-- Configure egress paths for workloads without modifying annotations.
-
-For example:
+### Alternative: Istio `Sidecar` CRD
+`Sidecar` CRD offers fine-grained ingress/egress control:
 
 ```yaml
 apiVersion: networking.istio.io/v1beta1
@@ -64,28 +89,20 @@ spec:
     labels:
       app.kubernetes.io/name: telemetry-metric-agent
   egress:
-  - hosts:
-    - "*/*svc.cluster.local"
+    - hosts:
+      - "*/*svc.cluster.local"
 ```
 
-This configuration allows the Metric Agent sidecar to send traffic to any service in the cluster, regardless of namespace.
-
-However, the Sidecar CRD only defines what traffic is permitted; it does not control interception. Without the right annotations, all outbound traffic would be intercepted, which would break Prometheus-Receiver scraping. This makes it less practical for our specific use case, since we require selective interception.
+However, it only **permits** traffic; it does not control interception.  
+Without annotations, all traffic is intercepted, breaking Prometheus scraping making it unsuitable here.
 
 ## Decision
-We will continue using annotations (`traffic.sidecar.istio.io/excludeOutboundIPRanges` and `traffic.sidecar.istio.io/includeOutboundPorts`) as the primary mechanism for controlling Istio sidecar interception for the Metric Agent.
 
-By adding the backend service ports to the includeOutboundPorts annotation:
+Continue using annotations (`includeOutboundIPRanges` + `includeOutboundPorts`) to control interception:
 
-- Outgoing communication to mesh-enabled backends will go through the Istio sidecar proxy, ensuring mTLS and policy compliance.
-- Prometheus scraping will continue to work.
-- The solution works consistently for:
-  - Mesh services (in-cluster)
-  - Non-mesh in-cluster services 
-  - External services
+- Mesh-enabled backends use the sidecar → mTLS & policy compliance.
+- Prometheus scraping remains unaffected.
+- Works for mesh, non-mesh in-cluster, and external services.
+- No new APIs, detection logic, or operational changes required.
+- Minimal complexity, maximum compatibility.
 
-This approach:
-- Requires no new APIs or configuration structures.
-- Avoids mesh membership detection logic.
-- Preserves existing operational workflows.
-- Minimizes complexity while maximizing compatibility.
