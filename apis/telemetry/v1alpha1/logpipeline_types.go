@@ -123,7 +123,7 @@ type LogPipelineFilter struct {
 	Custom string `json:"custom,omitempty"`
 }
 
-// LogPipelineOutput describes an log output configuration section.
+// LogPipelineOutput describes a log output configuration section.
 // +kubebuilder:validation:XValidation:rule="has(self.otlp) == has(oldSelf.otlp)", message="Switching to or away from OTLP output is not supported. Please re-create the LogPipeline instead"
 // +kubebuilder:validation:XValidation:rule="(!has(self.custom) && !has(self.http)) || !(has(self.custom) && has(self.http))", message="Exactly one output must be defined"
 // +kubebuilder:validation:XValidation:rule="(!has(self.custom) && !has(self.otlp)) || ! (has(self.custom) && has(self.otlp))", message="Exactly one output must be defined"
