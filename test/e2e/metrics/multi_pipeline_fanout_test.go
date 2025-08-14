@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	. "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -93,7 +93,7 @@ func TestMultiPipelineFanout(t *testing.T) {
 		g.Expect(err).NotTo(HaveOccurred())
 
 		g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNamesForRuntimeScope(ConsistOf(runtime.ContainerMetricsNames))), "Not all required runtime metrics are sent to runtime backend")
-		checkInstrumentationScopeAndVersion(t, g, bodyContent, InstrumentationScopeRuntime, InstrumentationScopeKyma)
+		checkInstrumentationScopeAndVersion(t, g, bodyContent, common.InstrumentationScopeRuntime, common.InstrumentationScopeKyma)
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).To(Succeed())
 
 	Eventually(func(g Gomega) {
@@ -108,7 +108,7 @@ func TestMultiPipelineFanout(t *testing.T) {
 
 		g.Expect(bodyContent).NotTo(HaveFlatMetrics(
 			SatisfyAll(
-				ContainElement(HaveScopeName(Equal(InstrumentationScopeRuntime))),
+				ContainElement(HaveScopeName(Equal(common.InstrumentationScopeRuntime))),
 				ContainElement(HaveScopeVersion(
 					SatisfyAny(
 						ContainSubstring("main"),
@@ -116,7 +116,7 @@ func TestMultiPipelineFanout(t *testing.T) {
 						ContainSubstring("PR-"),
 					))),
 			),
-		), "scope '%v' must not be sent to the prometheus backend", InstrumentationScopeRuntime)
+		), "scope '%v' must not be sent to the prometheus backend", common.InstrumentationScopeRuntime)
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).To(Succeed())
 
 	Eventually(func(g Gomega) {
@@ -130,7 +130,7 @@ func TestMultiPipelineFanout(t *testing.T) {
 		// we expect additional elements such as 'go_memstats_gc_sys_bytes'. Therefor we use 'ContainElements' instead of 'ConsistOf'
 		g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNames(ContainElements(prommetricgen.CustomMetricNames()))), "Not all required prometheus metrics are sent to prometheus backend")
 
-		checkInstrumentationScopeAndVersion(t, g, bodyContent, InstrumentationScopePrometheus, InstrumentationScopeKyma)
+		checkInstrumentationScopeAndVersion(t, g, bodyContent, common.InstrumentationScopePrometheus, common.InstrumentationScopeKyma)
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).To(Succeed())
 
 	Eventually(func(g Gomega) {
@@ -145,7 +145,7 @@ func TestMultiPipelineFanout(t *testing.T) {
 
 		g.Expect(bodyContent).NotTo(HaveFlatMetrics(SatisfyAny(
 			SatisfyAll(
-				ContainElement(HaveScopeName(Equal(InstrumentationScopePrometheus))),
+				ContainElement(HaveScopeName(Equal(common.InstrumentationScopePrometheus))),
 				ContainElement(HaveScopeVersion(
 					SatisfyAny(
 						ContainSubstring("main"),
@@ -154,7 +154,7 @@ func TestMultiPipelineFanout(t *testing.T) {
 					))),
 			),
 		),
-		), "'%v' must not be sent to the runtime backend", InstrumentationScopePrometheus)
+		), "'%v' must not be sent to the runtime backend", common.InstrumentationScopePrometheus)
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).To(Succeed())
 }
 
@@ -189,5 +189,5 @@ func checkInstrumentationScopeAndVersion(t *testing.T, g Gomega, body []byte, sc
 						ContainSubstring("0."),
 					)),
 			)),
-	)), "only scope '%v' must be sent to the runtime backend", InstrumentationScopeRuntime)
+	)), "only scope '%v' must be sent to the runtime backend", common.InstrumentationScopeRuntime)
 }

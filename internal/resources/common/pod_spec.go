@@ -7,7 +7,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/utils/ptr"
 
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 )
 
 var (
@@ -156,7 +156,7 @@ func WithGoMemLimitEnvVar(memory resource.Quantity) ContainerOption {
 
 	return func(c *corev1.Container) {
 		c.Env = append(c.Env, corev1.EnvVar{
-			Name:  config.EnvVarGoMemLimit,
+			Name:  common.EnvVarGoMemLimit,
 			Value: strconv.FormatInt(goMemLimit, 10),
 		})
 	}
@@ -189,6 +189,12 @@ func WithProbes(liveness, readiness *corev1.Probe) ContainerOption {
 func WithRunAsRoot() ContainerOption {
 	return func(c *corev1.Container) {
 		c.SecurityContext.RunAsNonRoot = ptr.To(false)
+	}
+}
+
+func WithRunAsGroup(groupID int64) ContainerOption {
+	return func(c *corev1.Container) {
+		c.SecurityContext.RunAsGroup = ptr.To(groupID)
 	}
 }
 

@@ -239,6 +239,16 @@ spec:
                 description: endpoints for trace and metric gateway.
                 nullable: true
                 properties:
+                  logs:
+                    description: Logs contains the endpoints for log gateway supporting OTLP.
+                    properties:
+                      grpc:
+                        description: GRPC endpoint for OTLP.
+                        type: string
+                      http:
+                        description: HTTP endpoint for OTLP.
+                        type: string
+                    type: object
                   metrics:
                     description: metrics contains the endpoints for metric gateway supporting OTLP.
                     properties:
