@@ -133,7 +133,7 @@ jobs:
               - type: "section"
                 text:
                   type: "mrkdwn"
-                  text: "Workflow <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|*${{ github.workflow }}*> has status *${{ job.status }}*"
+                  text: "Workflow <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|*Telemetry ${{ github.workflow }}*> has status *${{ job.status }}*"
               - type: "section"
                 text:
                   type: "mrkdwn"
