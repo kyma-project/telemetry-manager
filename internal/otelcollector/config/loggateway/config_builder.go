@@ -58,7 +58,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPi
 func (b *Builder) baseConfig(opts BuildOptions) *Config {
 	return &Config{
 		Base: common.Base{
-			Service:    common.ServiceConfig(make(common.Pipelines)),
+			Service:    common.ServiceConfig(),
 			Extensions: common.ExtensionsConfig(),
 		},
 		Receivers:  receiversConfig(),

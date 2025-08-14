@@ -4,20 +4,6 @@ extensions:
     pprof:
         endpoint: 127.0.0.1:1777
 service:
-    pipelines:
-        traces/test:
-            receivers:
-                - otlp
-            processors:
-                - memory_limiter
-                - k8sattributes
-                - istio_noise_filter
-                - resource/insert-cluster-attributes
-                - service_enrichment
-                - resource/drop-kyma-attributes
-                - batch
-            exporters:
-                - otlp/test
     telemetry:
         metrics:
             readers:
@@ -44,10 +30,7 @@ processors:
         send_batch_size: 512
         timeout: 10s
         send_batch_max_size: 512
-    memory_limiter:
-        check_interval: 1s
-        limit_percentage: 75
-        spike_limit_percentage: 15
+    istio_noise_filter: {}
     k8sattributes:
         auth_type: serviceAccount
         passthrough: false
@@ -89,6 +72,14 @@ processors:
                   name: k8s.pod.uid
             - sources:
                 - from: connection
+    memory_limiter:
+        check_interval: 1s
+        limit_percentage: 75
+        spike_limit_percentage: 15
+    resource/drop-kyma-attributes:
+        attributes:
+            - action: delete
+              pattern: kyma.*
     resource/insert-cluster-attributes:
         attributes:
             - action: insert
@@ -99,15 +90,10 @@ processors:
             - action: insert
               key: cloud.provider
               value: test-cloud-provider
-    istio_noise_filter: {}
     service_enrichment:
         resource_attributes:
             - kyma.kubernetes_io_app_name
             - kyma.app_name
-    resource/drop-kyma-attributes:
-        attributes:
-            - action: delete
-              pattern: kyma.*
 exporters:
     otlp/test:
         endpoint: ${OTLP_ENDPOINT_TEST}

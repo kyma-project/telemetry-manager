@@ -60,3 +60,22 @@ var upstreamInstrumentationScopeName = map[InputSourceType]string{
 	InputSourceKyma:       "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver",
 	InputSourceK8sCluster: "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver",
 }
+
+// Component IDs
+
+const (
+	// General component IDs
+	ComponentIDOTLPReceiver               = "otlp"
+	ComponentIDMemoryLimiterProcessor     = "memory_limiter"
+	ComponentIDBatchProcessor             = "batch"
+	ComponentIDK8sAttributesProcessor     = "k8sattributes"
+	ComponentIDIstioNoiseFilterProcessor  = "istio_noise_filter"
+	ComponentIDServiceEnrichmentProcessor = "service_enrichment"
+
+	// Specialized component IDs with aliases
+	ComponentIDInsertClusterAttributesProcessor = "resource/insert-cluster-attributes"
+	ComponentIDDropKymaAttributesProcessor      = "resource/drop-kyma-attributes"
+
+	// Prefixes, shoulbe be used with pipeline names
+	ComponentIDPrefixUserDefinedTransformProcessor = "transform/user_defined_"
+)
