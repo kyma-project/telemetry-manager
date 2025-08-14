@@ -94,3 +94,4 @@ jobs:
           configurationFile: renovate.json
           dry-run: true
           token: ${{ secrets.GITHUB_TOKEN }}
+          autodiscover: true
