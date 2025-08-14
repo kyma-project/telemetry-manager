@@ -117,9 +117,9 @@ Next, you set up the ingestion of custom span and Istio span data, and, optional
 
 ### Ingest Traces
 
-To start ingesting custom spans and Istio spans, you must enable the Istio tracing feature and then deploy a TracePipeline.
+To start ingesting custom spans and Istio spans, you must enable the Istio tracing feature and then deploy a [TracePipeline](./../../traces/README.md).
 
-1. Deploy the Istio Telemetry resource:
+1. Deploy the [Istio Telemetry](./../../traces/README.md#istio) resource:
 
     ```bash
     kubectl apply -n istio-system -f - <<EOF
@@ -181,7 +181,7 @@ To start ingesting custom spans and Istio spans, you must enable the Istio traci
 
 Depending on they way your applications emit metrics, choose one of the following approaches to ingest custom metrics to Dynatrace:
 
-- Use a MetricPipeline together with a custom OTel Collector Deployment.
+- Use a [MetricPipeline](./../../metrics/README.md) together with a custom OTel Collector Deployment.
 
   This approach adds the required "cumulative to delta" transformation by running an additional custom OTel Collector. The Telemetry Metric gateway ships the metrics to the custom collector, and the collector transforms them before shipping the data to the Dynatrace endpoint. This approach enables support for all metric types and inputs for the MetricPipeline. However, you must operate the additional OTel Collector in a custom way.
 
@@ -215,7 +215,7 @@ Depending on they way your applications emit metrics, choose one of the followin
         EOF
         ```
 
-- If your application pushes metrics in delta temporality with OTLP, you can use a MetricPipeline to push metrics directly.
+- If your application pushes metrics in delta temporality with OTLP, you can use a [MetricPipeline](./../../metrics/README.md) to push metrics directly.
 
   To use this setup, you must explicitly enable the "delta" aggregation temporality in your applications. You cannot enable additional inputs for the MetricPipeline because these produce metrics with "cumulative" temperability.
 
@@ -292,9 +292,10 @@ To send alerts about the Kyma Telemetry module status to your preferred backend 
 2. To push alerts to your backend system, set up problem notifications in Dynatrace. For details, see [Problem notifications](https://docs.dynatrace.com/docs/analyze-explore-automate/notifications-and-alerting/problem-notifications).
 3. Create a metric event with a metric selector or a metric key that reflects the event you want to monitor. For details, see [Metric events](https://docs.dynatrace.com/docs/discover-dynatrace/platform/davis-ai/anomaly-detection/set-up-a-customized-anomaly-detector/how-to-set-up/metric-events).
    For example, trigger an alert when the Kyma Telemetry module enters a non-ready state:
+
      ```text
      kyma.resource.status.state:filter(not(eq("state","Ready")))
      ```
+
 4. To target the metric event you just created, add a custom event filter in your alerting profile. For details, see [event filters](https://docs.dynatrace.com/docs/analyze-explore-automate/notifications-and-alerting/alerting-profiles#event-filters).
 5. To test the integration, trigger the metric event and confirm that the target system receives the alert.
-

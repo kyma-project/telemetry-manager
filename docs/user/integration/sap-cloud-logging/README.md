@@ -159,7 +159,7 @@ By default, Istio sidecar injection and Istio access logs are disabled in Kyma. 
 
 You can set up ingestion of distributed traces from applications and the Istio service mesh to the OTLP endpoint of the SAP Cloud Logging service instance.
 
-1. Deploy the Istio Telemetry resource with the following script:
+1. Deploy the [Istio Telemetry](./../../traces/README.md#istio) resource with the following script:
 
    <div tabs name="istiotraces">
      <details><summary>Script: Istio Traces</summary>
@@ -183,7 +183,7 @@ You can set up ingestion of distributed traces from applications and the Istio s
 
    The default configuration has the **randomSamplingPercentage** property set to `1.0`, meaning it samples 1% of all requests. To change the sampling rate, adjust the property to the desired value, up to 100 percent.
 
-2. Deploy the TracePipeline with the following script:
+2. Deploy the [TracePipeline](./../../traces/README.md) with the following script:
 
    <div tabs name="distributedtraces">
      <details><summary>Script: Distributed Traces</summary>
@@ -228,7 +228,7 @@ You can set up ingestion of distributed traces from applications and the Istio s
 
 You can set up ingestion of metrics from applications and the Istio service mesh to the OTLP endpoint of the SAP Cloud Logging service instance.
 
-1. Deploy the MetricPipeline with the following script:
+1. Deploy the [MetricPipeline](./../../metrics/README.md) with the following script:
 
    <div tabs name="SAPCloudLogging">
      <details><summary>Script: SAP Cloud Logging</summary>
