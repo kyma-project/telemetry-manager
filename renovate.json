@@ -76,10 +76,10 @@
       "fileFormat": "yaml",
       "fileMatch": ["^external-images\\.yaml$"],
       "matchStrings": [
-        "images[].{\"depName\": $substringBefore(source, \"@\"), \"currentDigest\": $substringAfter($substringAfter(source, \"@\"), \":\"), \"currentValue\": tag, \"replaceString\": $}"
+        "images[].{\"depName\": $substringBefore(source, \"@\"), \"currentDigest\": $substringAfter(source, \"@\"), \"currentValue\": tag}"
       ],
       "datasourceTemplate": "docker",
-      "autoReplaceStringTemplate": "{\"source\": \"{{{depName}}}@sha256:{{{newDigest}}}\", \"tag\": \"{{{newValue}}}\"}"
+      "autoReplaceStringTemplate": "{\"source\": \"{{{depName}}}@{{{newDigest}}}\", \"tag\": \"{{{newValue}}}\"}"
     }
   ],
   "ignorePaths": ["docs/**"]
