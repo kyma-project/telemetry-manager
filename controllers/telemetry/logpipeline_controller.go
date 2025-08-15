@@ -69,6 +69,7 @@ type LogPipelineControllerConfig struct {
 	ExporterImage               string
 	FluentBitImage              string
 	OTelCollectorImage          string
+	AlpineImage                 string
 	FluentBitPriorityClassName  string
 	LogGatewayPriorityClassName string
 	LogAgentPriorityClassName   string
@@ -256,7 +257,7 @@ func configureOtelReconciler(client client.Client, config LogPipelineControllerC
 		gatewayFlowHealthProber,
 		agentFlowHealthProber,
 		agentConfigBuilder,
-		otelcollector.NewLogAgentApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.LogAgentPriorityClassName),
+		otelcollector.NewLogAgentApplierDeleter(config.OTelCollectorImage, config.AlpineImage, config.TelemetryNamespace, config.LogAgentPriorityClassName),
 		&workloadstatus.DaemonSetProber{Client: client},
 		otelcollector.NewLogGatewayApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.LogGatewayPriorityClassName),
 		&loggateway.Builder{Reader: client},

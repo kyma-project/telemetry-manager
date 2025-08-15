@@ -78,6 +78,22 @@ func WithContainer(name, image string, opts ...ContainerOption) PodSpecOption {
 	}
 }
 
+func WithInitContainer(name, image string, opts ...ContainerOption) PodSpecOption {
+	return func(pod *corev1.PodSpec) {
+		initContainer := corev1.Container{
+			Name:            name,
+			Image:           image,
+			SecurityContext: hardenedSecurityContext.DeepCopy(),
+		}
+
+		for _, opt := range opts {
+			opt(&initContainer)
+		}
+
+		pod.InitContainers = append(pod.InitContainers, initContainer)
+	}
+}
+
 func WithVolumes(volumes []corev1.Volume) PodSpecOption {
 	return func(pod *corev1.PodSpec) {
 		pod.Volumes = append(pod.Volumes, volumes...)
@@ -111,6 +127,12 @@ func WithTolerations(tolerations []corev1.Toleration) PodSpecOption {
 func WithArgs(args []string) ContainerOption {
 	return func(c *corev1.Container) {
 		c.Args = args
+	}
+}
+
+func WithCapabilities(capabilities ...corev1.Capability) ContainerOption {
+	return func(c *corev1.Container) {
+		c.SecurityContext.Capabilities.Add = append(c.SecurityContext.Capabilities.Add, capabilities...)
 	}
 }
 
@@ -185,6 +207,12 @@ func WithProbes(liveness, readiness *corev1.Probe) ContainerOption {
 	}
 }
 
+func WithRunAsRoot() ContainerOption {
+	return func(c *corev1.Container) {
+		c.SecurityContext.RunAsNonRoot = ptr.To(false)
+	}
+}
+
 func WithRunAsGroup(groupID int64) ContainerOption {
 	return func(c *corev1.Container) {
 		c.SecurityContext.RunAsGroup = ptr.To(groupID)
@@ -194,6 +222,12 @@ func WithRunAsGroup(groupID int64) ContainerOption {
 func WithRunAsUser(userID int64) ContainerOption {
 	return func(c *corev1.Container) {
 		c.SecurityContext.RunAsUser = ptr.To(userID)
+	}
+}
+
+func WithCommand(command []string) ContainerOption {
+	return func(c *corev1.Container) {
+		c.Command = command
 	}
 }
 
