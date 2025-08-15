@@ -418,6 +418,14 @@ data:
               - 'True'
             critical:
               - 'False'
+  presets: |-
+    - name: Default
+      default: true
+      value:
+        spec:
+          output:
+            otlp:
+              protocol: 'grpc'
   dataSources: |-
     relatedSecrets:
       resource:

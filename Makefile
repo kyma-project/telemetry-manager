@@ -104,23 +104,23 @@ LINT_FIX_TARGETS := $(addprefix lint-fix-,$(MODULE_NAMES))
 # Declare phony targets for shell completion
 
 # Lint the root module
-lint-manager:
+lint-manager: $(GOLANGCI_LINT)
 	@echo "Linting root module..."
 	@$(GOLANGCI_LINT) run --config $(SRC_ROOT)/.golangci.yaml
 
 # Lint the root module with --fix
-lint-fix-manager:
+lint-fix-manager: $(GOLANGCI_LINT)
 	@echo "Linting root module (with fix)..."
 	@$(GOLANGCI_LINT) run --config $(SRC_ROOT)/.golangci.yaml --fix
 
 # Pattern rule for standard lint targets
-$(LINT_TARGETS):
+$(LINT_TARGETS): $(GOLANGCI_LINT)
 	@modname=$(@:lint-%=%); \
 	echo "Linting $$modname..."; \
 	cd $(DEPENDENCIES_DIR)/$$modname && $(GOLANGCI_LINT) run --config $(SRC_ROOT)/.golangci.yaml
 
 # Pattern rule for fix lint targets
-$(LINT_FIX_TARGETS):
+$(LINT_FIX_TARGETS): $(GOLANGCI_LINT)
 	@modname=$(@:lint-fix-%=%); \
 	echo "Linting $$modname (with fix)..."; \
 	cd $(DEPENDENCIES_DIR)/$$modname && $(GOLANGCI_LINT) run --config $(SRC_ROOT)/.golangci.yaml --fix
