@@ -204,6 +204,7 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 		config.TelemetryNamespace,
 		config.FluentBitImage,
 		config.ExporterImage,
+		config.AlpineImage,
 		config.FluentBitPriorityClassName,
 	)
 
