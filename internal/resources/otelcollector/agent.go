@@ -97,7 +97,7 @@ func NewLogAgentApplierDeleter(collectorImage, initContainerImage, namespace, pr
 		commonresources.WithVolumeMounts([]corev1.VolumeMount{
 			makeFileLogCheckPointVolumeMount(),
 		}),
-		commonresources.WithResources(makeResourceRequirements(
+		commonresources.WithResources(commonresources.MakeResourceRequirements(
 			logAgentInitContainerMemoryLimit,
 			logAgentInitContainerMemoryRequest,
 			logAgentInitContainerCPURequest,
@@ -116,7 +116,11 @@ func NewLogAgentApplierDeleter(collectorImage, initContainerImage, namespace, pr
 			initContainer,
 		},
 		containerOpts: []commonresources.ContainerOption{
-			commonresources.WithResources(makeResourceRequirements(logAgentMemoryLimit, logAgentMemoryRequest, logAgentCPURequest)),
+			commonresources.WithResources(commonresources.MakeResourceRequirements(
+				logAgentMemoryLimit,
+				logAgentMemoryRequest,
+				logAgentCPURequest,
+			)),
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
 			commonresources.WithGoMemLimitEnvVar(logAgentMemoryLimit),
 			commonresources.WithVolumeMounts(volumeMounts),
@@ -146,7 +150,11 @@ func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string) *A
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
 			commonresources.WithGoMemLimitEnvVar(metricAgentMemoryLimit),
-			commonresources.WithResources(makeResourceRequirements(metricAgentMemoryLimit, metricAgentMemoryRequest, metricAgentCPURequest)),
+			commonresources.WithResources(commonresources.MakeResourceRequirements(
+				metricAgentMemoryLimit,
+				metricAgentMemoryRequest,
+				metricAgentCPURequest,
+			)),
 			commonresources.WithVolumeMounts([]corev1.VolumeMount{makeIstioCertVolumeMount()}),
 		},
 	}
@@ -243,18 +251,6 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string) *appsv
 				},
 				Spec: podSpec,
 			},
-		},
-	}
-}
-
-func makeResourceRequirements(memoryLimit, memoryRequest, cpuRequest resource.Quantity) corev1.ResourceRequirements {
-	return corev1.ResourceRequirements{
-		Limits: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceMemory: memoryLimit,
-		},
-		Requests: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    cpuRequest,
-			corev1.ResourceMemory: memoryRequest,
 		},
 	}
 }

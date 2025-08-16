@@ -403,7 +403,7 @@ spec:
           optional: true
         name: dynamic-files
       - hostPath:
-          path: /tmp
+          path: /var/telemetry-fluent-bit
         name: varfluentbit
       - name: output-tls-config
         secret:

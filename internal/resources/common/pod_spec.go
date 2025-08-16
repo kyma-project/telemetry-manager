@@ -243,3 +243,15 @@ func MakePodSpec(baseName string, opts ...PodSpecOption) corev1.PodSpec {
 
 	return pod
 }
+
+func MakeResourceRequirements(memoryLimit, memoryRequest, cpuRequest resource.Quantity) corev1.ResourceRequirements {
+	return corev1.ResourceRequirements{
+		Limits: map[corev1.ResourceName]resource.Quantity{
+			corev1.ResourceMemory: memoryLimit,
+		},
+		Requests: map[corev1.ResourceName]resource.Quantity{
+			corev1.ResourceCPU:    cpuRequest,
+			corev1.ResourceMemory: memoryRequest,
+		},
+	}
+}

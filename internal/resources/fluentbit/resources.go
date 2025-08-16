@@ -36,6 +36,9 @@ const (
 	fbTLSFileConfigSecretName = LogAgentName + "-output-tls-config"
 	fbDaemonSetName           = LogAgentName
 
+	exporterContainerName = "exporter"
+	initContainerName     = "checkpoint-dir-ownership-modifier"
+
 	// Volume names
 	configVolumeName                = "config"
 	luaScriptsVolumeName            = "luascripts"
@@ -61,10 +64,17 @@ const (
 )
 
 var (
-	// FluentBit
-	fbMemoryLimit   = resource.MustParse("1Gi")
 	fbCPURequest    = resource.MustParse("100m")
 	fbMemoryRequest = resource.MustParse("50Mi")
+	fbMemoryLimit   = resource.MustParse("1Gi")
+
+	exporterCPURequest    = resource.MustParse("1m")
+	exporterMemoryRequest = resource.MustParse("5Mi")
+	exporterMemoryLimit   = resource.MustParse("50Mi")
+
+	initContainerCPURequest    = resource.MustParse("10m")
+	initContainerMemoryRequest = resource.MustParse("10Mi")
+	initContainerMemoryLimit   = resource.MustParse("50Mi")
 )
 
 // AgentApplyOptions expects a syncerClient which is a client with no ownerReference setter since it handles its
@@ -305,6 +315,26 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 	podLabels := Labels()
 	maps.Copy(podLabels, aad.extraPodLabels)
 
+	fluentBitResources := commonresources.MakeResourceRequirements(
+		aad.memoryLimit,
+		aad.memoryRequest,
+		aad.cpuRequest,
+	)
+
+	exporterResources := commonresources.MakeResourceRequirements(
+		exporterMemoryLimit,
+		exporterMemoryRequest,
+		exporterCPURequest,
+	)
+
+	initContainerResources := commonresources.MakeResourceRequirements(
+		initContainerMemoryLimit,
+		initContainerMemoryRequest,
+		initContainerCPURequest,
+	)
+
+	userIDGroupID := fmt.Sprintf("%d:%d", commonresources.UserDefault, commonresources.GroupRoot)
+
 	ds := &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
@@ -331,17 +361,24 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 						commonresources.WithRunAsUser(commonresources.UserDefault),
 						commonresources.WithPort("http", fbports.HTTP),
 						commonresources.WithProbes(aad.fluentBitLivenessProbe(), aad.fluentBitReadinessProbe()),
-						commonresources.WithResources(aad.fluentBitResources()),
+						commonresources.WithResources(fluentBitResources),
 						commonresources.WithVolumeMounts(aad.fluentBitVolumeMounts()),
 					),
-					commonresources.WithContainer("exporter", aad.exporterImage,
+					commonresources.WithContainer(exporterContainerName, aad.exporterImage,
 						commonresources.WithArgs([]string{
 							"--storage-path=/data/flb-storage/",
 							"--metric-name=telemetry_fsbuffer_usage_bytes",
 						}),
 						commonresources.WithPort("http-metrics", fbports.ExporterMetrics),
-						commonresources.WithResources(aad.exporterResources()),
+						commonresources.WithResources(exporterResources),
 						commonresources.WithVolumeMounts(aad.exporterVolumeMounts()),
+					),
+					commonresources.WithInitContainer(initContainerName, aad.initContainerImage,
+						commonresources.WithCommand([]string{"chown", "-R", userIDGroupID, varFluentBitVolumeMountPath}),
+						commonresources.WithRunAsRoot(),
+						commonresources.WithCapabilities("CHOWN"),
+						commonresources.WithVolumeMounts(aad.initContainerVolumeMounts()),
+						commonresources.WithResources(initContainerResources),
 					),
 				),
 			},
@@ -349,30 +386,6 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 	}
 
 	return ds
-}
-
-func (aad *AgentApplierDeleter) fluentBitResources() corev1.ResourceRequirements {
-	return corev1.ResourceRequirements{
-		Limits: corev1.ResourceList{
-			corev1.ResourceMemory: aad.memoryLimit,
-		},
-		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    aad.cpuRequest,
-			corev1.ResourceMemory: aad.memoryRequest,
-		},
-	}
-}
-
-func (aad *AgentApplierDeleter) exporterResources() corev1.ResourceRequirements {
-	return corev1.ResourceRequirements{
-		Requests: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    resource.MustParse("1m"),
-			corev1.ResourceMemory: resource.MustParse("5Mi"),
-		},
-		Limits: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceMemory: resource.MustParse("50Mi"),
-		},
-	}
 }
 
 func (aad *AgentApplierDeleter) fluentBitLivenessProbe() *corev1.Probe {
@@ -414,7 +427,13 @@ func (aad *AgentApplierDeleter) fluentBitVolumeMounts() []corev1.VolumeMount {
 
 func (aad *AgentApplierDeleter) exporterVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
-		{Name: varFluentBitVolumeName, MountPath: "/data"},
+		{MountPath: varFluentBitVolumeMountPath, Name: varFluentBitVolumeName},
+	}
+}
+
+func (aad *AgentApplierDeleter) initContainerVolumeMounts() []corev1.VolumeMount {
+	return []corev1.VolumeMount{
+		{MountPath: varFluentBitVolumeMountPath, Name: varFluentBitVolumeName},
 	}
 }
 
