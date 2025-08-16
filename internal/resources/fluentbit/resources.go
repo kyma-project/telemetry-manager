@@ -376,6 +376,7 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 					commonresources.WithInitContainer(initContainerName, aad.initContainerImage,
 						commonresources.WithCommand([]string{"chown", "-R", userIDGroupID, varFluentBitVolumeMountPath}),
 						commonresources.WithRunAsRoot(),
+						commonresources.WithRunAsUser(0),
 						commonresources.WithCapabilities("CHOWN"),
 						commonresources.WithVolumeMounts(aad.initContainerVolumeMounts()),
 						commonresources.WithResources(initContainerResources),
