@@ -23,6 +23,7 @@ import (
 func TestAgent_ApplyResources(t *testing.T) {
 	image := "foo-fluentbit"
 	exporterImage := "foo-exporter"
+	initContainerImage := "alpine"
 	priorityClassName := "foo-prio-class"
 	namespace := "kyma-system"
 
@@ -34,7 +35,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 	}{
 		{
 			name:           "fluentbit",
-			sut:            NewFluentBitApplierDeleter(namespace, image, exporterImage, priorityClassName),
+			sut:            NewFluentBitApplierDeleter(namespace, image, exporterImage, initContainerImage, priorityClassName),
 			goldenFilePath: "testdata/fluentbit.yaml",
 		},
 	}
@@ -85,6 +86,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 func TestAgent_DeleteResources(t *testing.T) {
 	image := "foo-fluentbit"
 	exporterImage := "foo-exporter"
+	initContainerImage := "alpine"
 	priorityClassName := "foo-prio-class"
 	namespace := "kyma-system"
 
@@ -106,7 +108,7 @@ func TestAgent_DeleteResources(t *testing.T) {
 	}{
 		{
 			name: "fluentbit",
-			sut:  NewFluentBitApplierDeleter(namespace, image, exporterImage, priorityClassName),
+			sut:  NewFluentBitApplierDeleter(namespace, image, exporterImage, initContainerImage, priorityClassName),
 		},
 	}
 

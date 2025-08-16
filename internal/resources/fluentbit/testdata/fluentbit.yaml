@@ -367,6 +367,35 @@ spec:
         volumeMounts:
         - mountPath: /data
           name: varfluentbit
+      initContainers:
+      - command:
+        - chown
+        - -R
+        - "10001:0"
+        - /data
+        image: alpine
+        name: checkpoint-dir-ownership-modifier
+        resources:
+          limits:
+            memory: 50Mi
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - CHOWN
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: false
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+        - mountPath: /data
+          name: varfluentbit
       priorityClassName: foo-prio-class
       securityContext:
         runAsNonRoot: true
