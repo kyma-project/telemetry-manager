@@ -93,6 +93,7 @@ func NewLogAgentApplierDeleter(collectorImage, initContainerImage, namespace, pr
 		initContainerImage,
 		commonresources.WithCommand([]string{"chown", "-R", userIDGroupID, CheckpointVolumePath}),
 		commonresources.WithRunAsRoot(),
+		commonresources.WithRunAsUser(0),
 		commonresources.WithCapabilities("CHOWN"),
 		commonresources.WithVolumeMounts([]corev1.VolumeMount{
 			makeFileLogCheckPointVolumeMount(),
