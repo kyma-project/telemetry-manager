@@ -159,8 +159,38 @@ spec:
         - mountPath: /var/log/pods
           name: varlogpods
           readOnly: true
-        - mountPath: /tmp
-          name: tmp
+        - mountPath: /var/lib/telemetry-log-agent/file-log-receiver
+          name: varlibfilelogreceiver
+      initContainers:
+      - command:
+        - chown
+        - -R
+        - "10001:0"
+        - /var/lib/telemetry-log-agent/file-log-receiver
+        image: alpine:latest
+        name: checkpoint-dir-ownership-modifier
+        resources:
+          limits:
+            memory: 50Mi
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - CHOWN
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: false
+          runAsUser: 0
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+        - mountPath: /var/lib/telemetry-log-agent/file-log-receiver
+          name: varlibfilelogreceiver
       priorityClassName: normal
       securityContext:
         runAsNonRoot: true
@@ -186,9 +216,9 @@ spec:
           path: /var/log/pods
         name: varlogpods
       - hostPath:
-          path: /tmp
+          path: /var/lib/telemetry-log-agent/file-log-receiver
           type: DirectoryOrCreate
-        name: tmp
+        name: varlibfilelogreceiver
   updateStrategy: {}
 status:
   currentNumberScheduled: 0

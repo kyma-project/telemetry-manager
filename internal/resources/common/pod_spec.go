@@ -10,6 +10,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 )
 
+const (
+	UserDefault int64 = 10001
+	GroupRoot   int64 = 0
+)
+
 var (
 	hardenedSecurityContext = corev1.SecurityContext{
 		Privileged:               ptr.To(false),
@@ -70,6 +75,22 @@ func WithContainer(name, image string, opts ...ContainerOption) PodSpecOption {
 		}
 
 		pod.Containers = append(pod.Containers, container)
+	}
+}
+
+func WithInitContainer(name, image string, opts ...ContainerOption) PodSpecOption {
+	return func(pod *corev1.PodSpec) {
+		initContainer := corev1.Container{
+			Name:            name,
+			Image:           image,
+			SecurityContext: hardenedSecurityContext.DeepCopy(),
+		}
+
+		for _, opt := range opts {
+			opt(&initContainer)
+		}
+
+		pod.InitContainers = append(pod.InitContainers, initContainer)
 	}
 }
 
@@ -204,6 +225,12 @@ func WithRunAsUser(userID int64) ContainerOption {
 	}
 }
 
+func WithCommand(command []string) ContainerOption {
+	return func(c *corev1.Container) {
+		c.Command = command
+	}
+}
+
 func MakePodSpec(baseName string, opts ...PodSpecOption) corev1.PodSpec {
 	pod := corev1.PodSpec{
 		ServiceAccountName: baseName,
@@ -215,4 +242,16 @@ func MakePodSpec(baseName string, opts ...PodSpecOption) corev1.PodSpec {
 	}
 
 	return pod
+}
+
+func MakeResourceRequirements(memoryLimit, memoryRequest, cpuRequest resource.Quantity) corev1.ResourceRequirements {
+	return corev1.ResourceRequirements{
+		Limits: map[corev1.ResourceName]resource.Quantity{
+			corev1.ResourceMemory: memoryLimit,
+		},
+		Requests: map[corev1.ResourceName]resource.Quantity{
+			corev1.ResourceCPU:    cpuRequest,
+			corev1.ResourceMemory: memoryRequest,
+		},
+	}
 }

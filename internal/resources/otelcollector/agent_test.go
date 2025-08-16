@@ -19,7 +19,8 @@ import (
 )
 
 func TestAgent_ApplyResources(t *testing.T) {
-	image := "opentelemetry/collector:dummy"
+	collectorImage := "opentelemetry/collector:dummy"
+	alpineImage := "alpine:latest"
 	namespace := "kyma-system"
 	priorityClassName := "normal"
 
@@ -32,16 +33,17 @@ func TestAgent_ApplyResources(t *testing.T) {
 	}{
 		{
 			name:           "metric agent",
-			sut:            NewMetricAgentApplierDeleter(image, namespace, priorityClassName),
+			sut:            NewMetricAgentApplierDeleter(collectorImage, namespace, priorityClassName),
 			goldenFilePath: "testdata/metric-agent.yaml",
 		},
 		{
 			name:           "log agent",
-			sut:            NewLogAgentApplierDeleter(image, namespace, priorityClassName),
+			sut:            NewLogAgentApplierDeleter(collectorImage, alpineImage, namespace, priorityClassName),
 			goldenFilePath: "testdata/log-agent.yaml",
 			collectorEnvVars: map[string][]byte{
 				"DUMMY_ENV_VAR": []byte("foo"),
-			}},
+			},
+		},
 	}
 
 	for _, tt := range tests {

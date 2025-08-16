@@ -346,7 +346,11 @@ func (ad *ApplierDeleter) makePodSpec(baseName, image, configPath, configFile st
 		SuccessThreshold: 1, //nolint:mnd // 5 failures
 	}
 
-	resources := makeResourceRequirements()
+	resources := commonresources.MakeResourceRequirements(
+		memoryLimit,
+		memoryRequest,
+		cpuRequest,
+	)
 
 	opts := []commonresources.PodSpecOption{
 		commonresources.WithVolumes(volumes),
@@ -366,18 +370,6 @@ func (ad *ApplierDeleter) makePodSpec(baseName, image, configPath, configFile st
 	}
 
 	return commonresources.MakePodSpec(baseName, opts...)
-}
-
-func makeResourceRequirements() corev1.ResourceRequirements {
-	return corev1.ResourceRequirements{
-		Limits: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceMemory: memoryLimit,
-		},
-		Requests: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    cpuRequest,
-			corev1.ResourceMemory: memoryRequest,
-		},
-	}
 }
 
 func (ad *ApplierDeleter) makeService(port int32) *corev1.Service {

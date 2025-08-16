@@ -305,13 +305,13 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
-            add:
-            - FOWNER
             drop:
             - ALL
           privileged: false
           readOnlyRootFilesystem: true
-          runAsNonRoot: false
+          runAsGroup: 0
+          runAsNonRoot: true
+          runAsUser: 10001
           seccompProfile:
             type: RuntimeDefault
         volumeMounts:
@@ -362,6 +362,36 @@ spec:
           privileged: false
           readOnlyRootFilesystem: true
           runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+        - mountPath: /data
+          name: varfluentbit
+      initContainers:
+      - command:
+        - chown
+        - -R
+        - "10001:0"
+        - /data
+        image: alpine
+        name: checkpoint-dir-ownership-modifier
+        resources:
+          limits:
+            memory: 50Mi
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - CHOWN
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: false
+          runAsUser: 0
           seccompProfile:
             type: RuntimeDefault
         volumeMounts:
