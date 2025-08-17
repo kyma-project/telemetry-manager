@@ -333,6 +333,7 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 		initContainerCPURequest,
 	)
 
+	// user ID and group ID for fluentbit
 	userIDGroupID := fmt.Sprintf("%d:%d", commonresources.UserDefault, commonresources.GroupRoot)
 
 	ds := &appsv1.DaemonSet{
@@ -373,6 +374,7 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 						commonresources.WithResources(exporterResources),
 						commonresources.WithVolumeMounts(aad.exporterVolumeMounts()),
 					),
+					// init container for changing the owner of the storage volume to be fluentbit
 					commonresources.WithInitContainer(initContainerName, aad.initContainerImage,
 						commonresources.WithCommand([]string{"chown", "-R", userIDGroupID, varFluentBitVolumeMountPath}),
 						commonresources.WithRunAsRoot(),

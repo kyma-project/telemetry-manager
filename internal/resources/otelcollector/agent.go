@@ -80,30 +80,30 @@ func NewLogAgentApplierDeleter(collectorImage, initContainerImage, namespace, pr
 		makeFileLogCheckpointVolume(),
 	}
 
-	volumeMounts := []corev1.VolumeMount{
+	collectorVolumeMounts := []corev1.VolumeMount{
 		makeIstioCertVolumeMount(),
 		makePodLogsVolumeMount(),
 		makeFileLogCheckPointVolumeMount(),
 	}
 
-	// init container for changing the owner of the checkpoint volume to be the log agent
-	userIDGroupID := fmt.Sprintf("%d:%d", commonresources.UserDefault, commonresources.GroupRoot)
-	initContainer := commonresources.WithInitContainer(
-		logAgentInitContainerName,
-		initContainerImage,
-		commonresources.WithCommand([]string{"chown", "-R", userIDGroupID, CheckpointVolumePath}),
-		commonresources.WithRunAsRoot(),
-		commonresources.WithRunAsUser(0),
-		commonresources.WithCapabilities("CHOWN"),
-		commonresources.WithVolumeMounts([]corev1.VolumeMount{
-			makeFileLogCheckPointVolumeMount(),
-		}),
-		commonresources.WithResources(commonresources.MakeResourceRequirements(
-			logAgentInitContainerMemoryLimit,
-			logAgentInitContainerMemoryRequest,
-			logAgentInitContainerCPURequest,
-		)),
+	initContainerVolumeMounts := []corev1.VolumeMount{
+		makeFileLogCheckPointVolumeMount(),
+	}
+
+	collectorResources := commonresources.MakeResourceRequirements(
+		logAgentMemoryLimit,
+		logAgentMemoryRequest,
+		logAgentCPURequest,
 	)
+
+	initContainerResources := commonresources.MakeResourceRequirements(
+		logAgentInitContainerMemoryLimit,
+		logAgentInitContainerMemoryRequest,
+		logAgentInitContainerCPURequest,
+	)
+
+	// user ID and group ID for the log agent
+	userIDGroupID := fmt.Sprintf("%d:%d", commonresources.UserDefault, commonresources.GroupRoot)
 
 	return &AgentApplierDeleter{
 		baseName:      LogAgentName,
@@ -114,17 +114,20 @@ func NewLogAgentApplierDeleter(collectorImage, initContainerImage, namespace, pr
 		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
 			commonresources.WithVolumes(volumes),
-			initContainer,
+			// init container for changing the owner of the checkpoint volume to be the log agent
+			commonresources.WithInitContainer(logAgentInitContainerName, initContainerImage,
+				commonresources.WithCommand([]string{"chown", "-R", userIDGroupID, CheckpointVolumePath}),
+				commonresources.WithRunAsRoot(),
+				commonresources.WithRunAsUser(0),
+				commonresources.WithCapabilities("CHOWN"),
+				commonresources.WithVolumeMounts(initContainerVolumeMounts),
+				commonresources.WithResources(initContainerResources)),
 		},
 		containerOpts: []commonresources.ContainerOption{
-			commonresources.WithResources(commonresources.MakeResourceRequirements(
-				logAgentMemoryLimit,
-				logAgentMemoryRequest,
-				logAgentCPURequest,
-			)),
+			commonresources.WithResources(collectorResources),
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
 			commonresources.WithGoMemLimitEnvVar(logAgentMemoryLimit),
-			commonresources.WithVolumeMounts(volumeMounts),
+			commonresources.WithVolumeMounts(collectorVolumeMounts),
 			commonresources.WithRunAsGroup(commonresources.GroupRoot),
 			commonresources.WithRunAsUser(commonresources.UserDefault),
 		},
