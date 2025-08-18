@@ -418,7 +418,7 @@ func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan
 		telemetrycontrollers.LogPipelineControllerConfig{
 			ExporterImage:               fluentBitExporterImage,
 			FluentBitImage:              fluentBitImage,
-			AlpineImage:                 alpineImage,
+			ChownInitContainerImage:     alpineImage,
 			OTelCollectorImage:          otelCollectorImage,
 			FluentBitPriorityClassName:  highPriorityClassName,
 			LogGatewayPriorityClassName: normalPriorityClassName,
