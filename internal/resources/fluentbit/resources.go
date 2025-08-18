@@ -92,10 +92,6 @@ type AgentApplierDeleter struct {
 	priorityClassName  string
 	namespace          string
 
-	memoryLimit   resource.Quantity
-	cpuRequest    resource.Quantity
-	memoryRequest resource.Quantity
-
 	daemonSetName           types.NamespacedName
 	luaConfigMapName        types.NamespacedName
 	parsersConfigMapName    types.NamespacedName
@@ -116,10 +112,6 @@ func NewFluentBitApplierDeleter(namespace, fbImage, exporterImage, initContainer
 		exporterImage:      exporterImage,
 		initContainerImage: initContainerImage,
 		priorityClassName:  priorityClassName,
-
-		memoryLimit:   fbContainerMemoryLimit,
-		cpuRequest:    fbContainerCPURequest,
-		memoryRequest: fbContainerMemoryRequest,
 
 		daemonSetName:           types.NamespacedName{Name: fbDaemonSetName, Namespace: namespace},
 		luaConfigMapName:        types.NamespacedName{Name: fbLuaConfigMapName, Namespace: namespace},
@@ -316,9 +308,9 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 	maps.Copy(podLabels, aad.extraPodLabels)
 
 	fluentBitResources := commonresources.MakeResourceRequirements(
-		aad.memoryLimit,
-		aad.memoryRequest,
-		aad.cpuRequest,
+		fbContainerMemoryLimit,
+		fbContainerMemoryRequest,
+		fbContainerCPURequest,
 	)
 
 	exporterResources := commonresources.MakeResourceRequirements(
