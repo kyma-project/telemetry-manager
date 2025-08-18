@@ -102,7 +102,7 @@ func TestOutage(t *testing.T) {
 				return &p
 			},
 			generator: func(ns string) *appsv1.Deployment {
-				return stdoutloggen.NewDeployment(ns, stdoutloggen.WithRate(4000)).K8sObject()
+				return stdoutloggen.NewDeployment(ns, stdoutloggen.WithRate(5000)).K8sObject()
 			},
 			assert: func(t *testing.T) {
 				assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
