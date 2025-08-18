@@ -234,9 +234,9 @@ func WithCommand(command []string) ContainerOption {
 
 func WithChownInitContainerOpts(checkpointVolumePath string, volumeMounts []corev1.VolumeMount) []ContainerOption {
 	resources := MakeResourceRequirements(
-		resource.MustParse("10m"),
-		resource.MustParse("10Mi"),
 		resource.MustParse("50Mi"),
+		resource.MustParse("10Mi"),
+		resource.MustParse("10m"),
 	)
 
 	chownUserIDGroupID := fmt.Sprintf("%d:%d", UserDefault, GroupRoot)
