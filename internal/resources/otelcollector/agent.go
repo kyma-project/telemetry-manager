@@ -103,7 +103,7 @@ func NewLogAgentApplierDeleter(collectorImage, initContainerImage, namespace, pr
 	)
 
 	// user ID and group ID for the log agent
-	userIDGroupID := fmt.Sprintf("%d:%d", commonresources.UserDefault, commonresources.GroupRoot)
+	chownUserIDGroupID := fmt.Sprintf("%d:%d", commonresources.UserDefault, commonresources.GroupRoot)
 
 	return &AgentApplierDeleter{
 		baseName:      LogAgentName,
@@ -116,7 +116,7 @@ func NewLogAgentApplierDeleter(collectorImage, initContainerImage, namespace, pr
 			commonresources.WithVolumes(volumes),
 			// init container for changing the owner of the checkpoint volume to be the log agent
 			commonresources.WithInitContainer(logAgentInitContainerName, initContainerImage,
-				commonresources.WithCommand([]string{"chown", "-R", userIDGroupID, CheckpointVolumePath}),
+				commonresources.WithCommand([]string{"chown", "-R", chownUserIDGroupID, CheckpointVolumePath}),
 				commonresources.WithRunAsRoot(),
 				commonresources.WithRunAsUser(0),
 				commonresources.WithCapabilities("CHOWN"),
