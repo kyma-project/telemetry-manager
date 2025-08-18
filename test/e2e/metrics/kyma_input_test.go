@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -107,7 +107,7 @@ func checkTelemetryModuleMetricState(t *testing.T, g Gomega, body []byte) {
 			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.group", "operator.kyma-project.io")),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.version", "v1alpha1")),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.kind", "telemetries")),
-			HaveScopeName(Equal(metric.InstrumentationScopeKyma)),
+			HaveScopeName(Equal(common.InstrumentationScopeKyma)),
 			HaveScopeVersion(SatisfyAny(
 				Equal("main"),
 				MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
@@ -130,7 +130,7 @@ func checkTelemtryModuleMetricsConditions(t *testing.T, g Gomega, body []byte, t
 			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.group", "operator.kyma-project.io")),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.version", "v1alpha1")),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.kind", "telemetries")),
-			HaveScopeName(Equal(metric.InstrumentationScopeKyma)),
+			HaveScopeName(Equal(common.InstrumentationScopeKyma)),
 			HaveScopeVersion(SatisfyAny(
 				Equal("main"),
 				MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
@@ -152,7 +152,7 @@ func checkMetricPipelineMetricsConditions(t *testing.T, g Gomega, body []byte, t
 			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.group", "telemetry.kyma-project.io")),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.version", "v1alpha1")),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.kind", "metricpipelines")),
-			HaveScopeName(Equal(metric.InstrumentationScopeKyma)),
+			HaveScopeName(Equal(common.InstrumentationScopeKyma)),
 			HaveScopeVersion(SatisfyAny(
 				Equal("main"),
 				MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
