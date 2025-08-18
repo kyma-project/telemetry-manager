@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	. "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -142,7 +142,7 @@ func TestMetricsIstioInput(t *testing.T) {
 				HaveKeyWithValue("source_workload_namespace", metrics["source_workload_namespace"]),
 				HaveKeyWithValue("source_workload", metrics["source_workload"]),
 			))),
-			ContainElement(HaveScopeName(ContainSubstring(InstrumentationScopeIstio))),
+			ContainElement(HaveScopeName(ContainSubstring(common.InstrumentationScopeIstio))),
 		),
 	))
 

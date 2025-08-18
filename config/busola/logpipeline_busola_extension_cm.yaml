@@ -270,13 +270,26 @@ data:
       widget: FormGroup
       defaultExpanded: true
       children:
+        - var: applicationInput
+          type: string
+          simple: true
+          defaultValue: "Enabled"
+          name: Application Input
+          enum: ["Disabled", "Enabled"]
+          trigger: [appChange]
         - name: Application
           path: application
           widget: FormGroup
+          visibility: '$applicationInput = "Enabled"'
+          overwrite: false
           defaultExpanded: true
           children:
             - name: Enabled
               path: enabled
+              visibility: false
+              overwrite: false
+              subscribe:
+                appChange: '$applicationInput = "Enabled"'
             - name: Include Namespaces
               widget: SimpleList
               path: namespaces.include
@@ -303,12 +316,26 @@ data:
               path: dropLabels
             - name: Keep Original Log Body
               path: keepOriginalBody
+        - var: otlpInput
+          type: string
+          simple: true
+          defaultValue: "Enabled"
+          name: OTLP Input
+          enum: ["Disabled", "Enabled"]
+          trigger: [otlpChange]
         - name: OTLP
           path: otlp
+          visibility: '$otlpInput = "Enabled"'
+          overwrite: false
+          defaultExpanded: true
           widget: FormGroup
           children:
             - name: Disabled
               path: disabled
+              visibility: false
+              overwrite: false
+              subscribe:
+                otlpChange: '$otlpInput = "Disabled"'
             - name: Include Namespaces
               widget: SimpleList
               path: namespaces.include
@@ -334,9 +361,16 @@ data:
       widget: FormGroup
       defaultExpanded: true
       children:
+        - var: outputType
+          type: string
+          simple: true
+          defaultValue: "OTLP"
+          name: Output Type
+          enum: [HTTP, OTLP]
         - name: Custom
           path: custom
           widget: CodeEditor
+          visibility: '$outputType = "HTTP"'
           advanced: true
           inputInfo: >-
             Note: If you use a custom output, you put the LogPipeline in unsupported
@@ -345,6 +379,7 @@ data:
         - name: HTTP
           path: http
           widget: FormGroup
+          visibility: '$outputType = "HTTP"'
           defaultExpanded: true
           children:
             - name: Host
@@ -468,6 +503,7 @@ data:
         - name: OTLP
           path: otlp
           widget: FormGroup
+          visibility: '$outputType = "OTLP"'
           defaultExpanded: true
           children:
             - name: Protocol
@@ -632,14 +668,14 @@ data:
       name: Type
       isSelected: true
       widget: Text
-    - name: Unsupported-Mode
-      source: status.unsupportedMode
+    - name: Supported-Mode
+      source: $not(status.unsupportedMode)
       widget: Badge
       highlights:
         positive:
-          - 'false'
-        critical:
           - 'true'
+        critical:
+          - 'false'
     - name: Status
       source: status.conditions
       widget: Columns
@@ -655,6 +691,18 @@ data:
               - 'True'
             critical:
               - 'False'
+  presets: |-
+    - name: Default
+      default: true
+      value:
+        spec:
+          input:
+            application:
+              enabled: true
+              keepOriginalBody: true
+          output:
+            otlp:
+              protocol: 'grpc'
   dataSources: |-
     relatedSecrets:
       resource:
