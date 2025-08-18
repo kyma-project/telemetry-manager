@@ -64,7 +64,7 @@ Reuse the current approach:
 Effect:
 - The same port supports two flows:
   - Prometheus scrapes directly.
-  - Metric Agent sends traffic via sidecar.
+  - Metric Agent sends metrics via sidecar to the backend.
 
 No need to detect mesh membership works for all cases.
 
