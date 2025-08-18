@@ -68,7 +68,7 @@ Effect:
 
 No need to detect mesh membership works for all cases.
 
-Example: in-mesh local Prometheus on port `9090`:
+Example: in-mesh local Prometheus backend on port `9090`:
 
 ```yaml
 spec:
