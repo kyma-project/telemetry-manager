@@ -12,8 +12,8 @@ After decoupling the Metric Agent from Metric Gateway, the Metric Agent will col
 
 This bypass is intentional for two reasons:
 
-1. **Prometheus Scraping** – Prometheus’s scrape mechanism is incompatible with the Istio sidecar proxy.
-2. **Outgoing TLS via Istio Certificates** – Istio control plane, gateway, and Envoy metrics can be scraped without the sidecar, however, application metrics follow the Istio authentication policy: if mTLS mode is `STRICT`, Prometheus must use Istio [SDS](https://www.envoyproxy.io/docs/envoy/latest/configuration/security/secret) certificates to be able to scrape application metrics.
+1. Prometheus Scraping – Prometheus’s scrape mechanism is incompatible with the Istio sidecar proxy.
+2. Outgoing TLS via Istio Certificates – Istio control plane, gateway, and Envoy metrics can be scraped without the sidecar, however, application metrics follow the Istio authentication policy: if mTLS mode is `STRICT`, Prometheus must use Istio [SDS](https://www.envoyproxy.io/docs/envoy/latest/configuration/security/secret) certificates to be able to scrape application metrics.
 
 Current Metric Agent certificate volume mount configuration:
 
@@ -54,12 +54,12 @@ After decoupling the Metric Agent from the Metric Gateway, we need to ensure tha
 ## Proposal
 
 The Metric Agent controls sidecar interception via annotations:
-- `traffic.sidecar.istio.io/includeOutboundPorts` – Ports to **always intercept** (for mesh-enabled backends).
-- `traffic.sidecar.istio.io/includeOutboundIPRanges` – IP ranges to **bypass** interception (for Prometheus scraping).
+- `traffic.sidecar.istio.io/includeOutboundPorts` – Ports to always intercept (for mesh-enabled backends).
+- `traffic.sidecar.istio.io/includeOutboundIPRanges` – IP ranges to bypass interception (for Prometheus scraping).
 
 Reuse the current approach:
 1. Add configured backend ports (e.g., OTel Collector, in-cluster Prometheus) to `traffic.sidecar.istio.io/includeOutboundPorts` annotation.
-2. Keep IP exclusions of `traffic.sidecar.istio.io/includeOutboundIPRanges` as is for Prometheus scraping.
+2. Keep IP exclusions of `traffic.sidecar.istio.io/includeOutboundIPRanges` as it is for Prometheus scraping.
 
 Effect:
 - The same port supports two flows:
