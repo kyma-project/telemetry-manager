@@ -48,7 +48,7 @@ spec:
 See [Istio documentation](https://istio.io/latest/docs/ops/integrations/prometheus/#tls-settings) for details.
 
 ### Problem Statement
-The current Matric Agent setup allows only intercepting outbound traffic for OTLP traffic to the Metric Gateway, while bypassing all other outbound traffic interceptions.
+The current Matric Agent setup allows only intercepting outbound traffic for the Metric Gateway on including outbound port `4317`, while bypassing all other outbound traffic interceptions.
 After decoupling the Metric Agent from the Metric Gateway, we need to ensure that the Metric Agent can communicate with any in-cluster mesh backends (e.g., OTel Collector, Prometheus) and external services while maintaining Istio's security policies.
 
 ## Proposal
