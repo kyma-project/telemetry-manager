@@ -6,12 +6,13 @@ The Telemetry module supports you in collecting all relevant trace data in a Kym
 
 The Telemetry module provides a trace gateway for the shipment of traces of any container running in the Kyma runtime. Kyma modules like Istio or Serverless contribute traces transparently and the Telemetry module enriches the data. You can choose among multiple [vendors for OTLP-based backends](https://opentelemetry.io/ecosystem/vendors/).
 
-You can configure the trace gateway with external systems using runtime configuration with a dedicated Kubernetes API ([CRD](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions)) named TracePipeline. Additional to the regular [pipeline features](./../pipelines/README.md), the following features are offered by TracePipelines:
+You can configure the trace gateway with external systems using runtime configuration with a dedicated Kubernetes API ([CRD](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions)) named TracePipeline. A TracePipeline is following the structure and characteristic of a Telemetry [pipeline](./../pipelines/README.md) and offers these collection features:
 
+- [`otlp` input](./../pipelines/otlp-input.md): Ingest OTLP traces via the push endpoints.
 - Activate Istio tracing. For details, see [Istio](#istio).
 - Collect traces from [Eventing](#eventing) and [Serverless Functions](#serverless).
 
-For an example, see [Sample TracePipeline](./sample.md) and check out the available parameters and attributes under [TracePipeline](./../resources/04-tracepipeline.md).
+For an example, see [Sample TracePipeline](./sample.md) and check out the available parameters and attributes under [TracePipeline](./../resources/04-tracepipeline.md) and checkout the involved components of a TracePipeline at the [Architecture](architecture.md).
 
 The Trace feature is optional. If you don't want to use it, simply don't set up a TracePipeline. For details, see Creating a Telemetry Pipeline.
 

@@ -6,13 +6,14 @@ With the Telemetry module, you can collect all relevant metrics of a workload in
 
 The Telemetry module provides an API which configures a metric gateway and, optionally, an agent for the collection and shipment of metrics of any container running in the Kyma runtime. Kyma modules like [Istio](https://kyma-project.io/#/istio/user/README) or [Serverless](https://kyma-project.io/#/serverless-manager/user/README) contribute metrics instantly, and the Telemetry module enriches the data. You can choose among multiple [vendors for OTLP-based backends](https://opentelemetry.io/ecosystem/vendors/).
 
-You can configure the metric gateway with external systems using runtime configuration with a dedicated Kubernetes API ([CRD](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions)) named MetricPipeline. Additional to the regular [pipeline features](./../pipelines/README.md), the following features are offered by MetricPipelines:
+You can configure the metric gateway with external systems using runtime configuration with a dedicated Kubernetes API ([CRD](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions)) named MetricPipeline. A MetricPipeline is following the structure and characteristic of a Telemetry [pipeline](./../pipelines/README.md) and offers these collection features:
 
+- [`otlp` input](./../pipelines/otlp-input.md): Ingest OTLP metrics via the push endpoints.
 - [`prometheus` input](./prometheus-input.md): Requires annotating your Kubernetes Services (or Pods without sidecars and Services) to expose the metrics endpoint for scraping. You must set prometheus.io/scrape: "true" along with prometheus.io/port: "". You can use the annotations prometheus.io/path (defaults to /metrics), and prometheus.io/scheme (defaults to http unless an Istio sidecar is present with security.istio.io/tlsMode=istio and then https is used) to control specific details of the scraping process.
 - [`runtime` input](./runtime-input.md): Enables collecting Kubernetes runtime metrics. You can configure which resource types (Pods, containers, Nodes, and so on) to include or exclude.
 - [`istio` input](./istio-input.md): Collects Istio metrics and, optionally, Envoy proxy metrics (if envoyMetrics.enabled: true).
 
-For an example, see [Sample MetricPipeline](./sample.md) and check out the available parameters and attributes under [MetricPipeline](./../resources/05-metricpipeline.md).
+For an example, see [Sample MetricPipeline](./sample.md) and check out the available parameters and attributes under [MetricPipeline](./../resources/05-metricpipeline.md) and checkout the involved components of a MetricPipeline at the [Architecture](architecture.md).
 
 The Metric feature is optional. If you don't want to use it, simply don't set up a MetricPipeline.
 

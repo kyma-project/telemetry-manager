@@ -22,19 +22,13 @@ The Telemetry module focuses exactly on the aspects of instrumentation, collecti
 
 To support telemetry for your applications, the Telemetry module provides the following features:
 
-- Tooling for collection, filtering, and shipment: Based on the [Open Telemetry Collector](https://opentelemetry.io/docs/collector/), you can configure basic pipelines to collect, enrich, filter and ship telemetry data.
+- A [Pipeline](pipelines/README.md) API for collection, filtering, and shipment: Based on the [Open Telemetry Collector](https://opentelemetry.io/docs/collector/), you can configure basic pipelines to collect, enrich, filter and ship telemetry data, and these for all three signal types [Logs](./logs/README.md), [Traces](./traces/README.md) and [Metrics](./metrics/README.md).
 - Integration in a vendor-neutral way to a vendor-specific observability system: Based on the [OpenTelemetry protocol (OTLP)](https://opentelemetry.io/docs/reference/specification/protocol/), you can integrate backend systems.
 - Guidance for the instrumentation: Based on [Open Telemetry](https://opentelemetry.io/), you get community samples on how to instrument your code using the [Open Telemetry SDKs](https://opentelemetry.io/docs/instrumentation/) in nearly every programming language.
 - Enriching telemetry data by automatically adding metadata attributes (OTel resource attributes). This is done in compliance with established semantic conventions of OTel, ensuring that the enriched data adheres to industry best practices and is more meaningful for analysis. For details, see [Data Enrichment](./pipelines/enrichment.md).
 - Opt-out of features for advanced scenarios: At any time, you can opt out for each data type, and use custom tooling to collect and ship the telemetry data.
 - SAP BTP as first-class integration: Integration into SAP BTP Observability services, such as SAP Cloud Logging, is prioritized. For more information, see [Integrate with SAP Cloud Logging](integration/sap-cloud-logging/README.md).
-
-The Telemetry API provides a hardened setup of an OTel Collector and also abstracts the underlying OTel Collector concept. Such abstraction has the following benefits:
-
-- Compatibility: An abstraction layer supports compatibility when underlying features change.
-- Migratability: Smooth migration experiences when switching underlying technologies or architectures.
-- Native Kubernetes support: API provided by Kyma Telemetry supports an easy integration with Secrets, for example, served by the [SAP BTP Service Operator](https://github.com/SAP/sap-btp-service-operator#readme). Telemetry Manager takes care of the full lifecycle.
-- Focus: The user doesn't need to understand the underlying concepts.
+- [Integration guides](./integration/README.md) to connect to typical backends.
 
 ## Scope
 
@@ -46,33 +40,6 @@ Supported integration scenarios are neutral to the vendor of the target system.
 
 The module consists of a manager component, which continuosly watches the API resources (pipelines) provided by the user and deploys sets of OTel Collectors doing. For more information, see [Architecture](architecture.md).
 
-## Pipeline API
-
-The API of the module consists of a Pipeline API available for every signal type. The three APIs have the same structure and base functionality which is explained in more detail in [Pipelines](pipelines/README.md).
-
-For every pipeline kind, the signal specifics are described in more detail at:
-
-- [Logs](./logs/README.md)
-- [Traces](./traces/README.md)
-- [Metrics](./metrics/README.md)
-
-## Integration Guides
-
-To learn about integration with SAP Cloud Logging, read [Integrate with SAP Cloud Logging](./integration/sap-cloud-logging/README.md). <!--- replace with Help Portal link once published? --->
-
-For integration with other backends, see:
-
-- [Dynatrace](./integration/dynatrace/README.md)
-- [Prometheus](./integration/prometheus/README.md)
-- [Loki](./integration/loki/README.md)
-- [Jaeger](./integration/jaeger/README.md)
-- [Amazon CloudWatch](./integration/aws-cloudwatch/README.md)
-
-To learn how to collect data from applications based on the OpenTelemetry SDK, see:
-
-- [OpenTelemetry Demo App](./integration/opentelemetry-demo/README.md)
-- [Sample App](./integration/sample-app/)
-
 ## API / Custom Resource Definitions
 
 The API of the Telemetry module is based on Kubernetes Custom Resource Definitions (CRD), which extend the Kubernetes API with custom additions. To inspect the specification of the Telemetry module API, see:
@@ -82,6 +49,6 @@ The API of the Telemetry module is based on Kubernetes Custom Resource Definitio
 - [TracePipeline CRD](./resources/04-tracepipeline.md)
 - [MetricPipeline CRD](./resources/05-metricpipeline.md)
 
-## Resource Usage
+## Resource Consumption
 
 To learn more about the resources used by the Telemetry module, see [Kyma Modules' Sizing](https://help.sap.com/docs/btp/sap-business-technology-platform/kyma-modules-sizing#telemetry).

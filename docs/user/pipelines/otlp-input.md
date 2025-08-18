@@ -1,6 +1,6 @@
 # OTLP Input
 
-The `otlp` input of a pipeline is enabled by default. An enabled input will serve a cluster internal endpoint accepting OTLP data. Here, workloads can start pushing telemetry data for the respective signal type.
+With OpenTelemetry, applications are pushing telemetry data in the OTLP format to the backend. By default, a Telemetry Pipeline will serve a cluster internal endpoint accepting OTLP data, to enrich and dispatch the data to the configured backend, so that the application requires no additional backend configuration for the push.
 
 ## Push Endpoint
 
@@ -97,9 +97,9 @@ spec:
 ...
 ```
 
-## Istio
+## Istio Support
 
-The Telemetry module automatically detects whether the Istio module is added to your cluster, and injects Istio sidecars to the Telemetry components. Additionally, the ingestion endpoints of gateways are configured to allow traffic in the permissive mode, so they accept mTLS-based communication as well as plain text.
+The OTLP endpoints natively support ingestion with mTLS based on Istio. The Telemetry module automatically detects whether the Istio module is added to your cluster, and injects Istio sidecars to the Telemetry components. The ingestion endpoints of gateways are then configured to allow traffic in the permissive mode, so they accept mTLS-based communication as well as plain text.
 
 ![Gateways-Istio](./../assets/gateways-istio-input.drawio.svg)
 

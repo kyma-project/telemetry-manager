@@ -53,76 +53,7 @@ The default protocol for shipping the data to a backend is GRPC, but you can cho
           value: https://backend.example.com:4318
   ```
 
-## Authentication Details From Plain Text
-
-To integrate with external systems, you must configure authentication  details. You can use mutual TLS (mTLS), Basic Authentication, or custom headers:
-
-<!-- tabs:start -->
-
-### **mTLS**
-
-```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: <Kind>Pipeline
-metadata:
-  name: backend
-spec:
-  output:
-    otlp:
-      endpoint:
-        value: https://backend.example.com/otlp:4317
-      tls:
-        cert:
-          value: |
-            -----BEGIN CERTIFICATE-----
-            ...
-        key:
-          value: |
-            -----BEGIN RSA PRIVATE KEY-----
-            ...
-```
-
-### **Basic Authentication**
-
-```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: <Kind>Pipeline
-metadata:
-  name: backend
-spec:
-  output:
-    otlp:
-      endpoint:
-        value: https://backend.example.com/otlp:4317
-      authentication:
-        basic:
-          user:
-            value: myUser
-          password:
-            value: myPwd
-```
-
-### **Token-based authentication with custom headers**
-
-```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: <Kind>Pipeline
-metadata:
-  name: backend
-spec:
-  output:
-    otlp:
-      endpoint:
-        value: https://backend.example.com/otlp:4317
-      headers:
-      - name: Authorization
-        prefix: Bearer
-        value: "myToken"
-```
-
-<!-- tabs:end -->
-
-### Authentication Details From Secrets
+## Authentication Details From Secrets
 
 Integrations into external systems usually need authentication details dealing with sensitive data. To handle that data properly in Secrets, TracePipeline supports the reference of Secrets.
 
@@ -244,10 +175,79 @@ Telemetry Manager continuously watches the Secret referenced with the **secretKe
 > [!TIP]
 > If you use a Secret owned by the [SAP BTP Service Operator](https://github.com/SAP/sap-btp-service-operator), you can configure an automated rotation using a `credentialsRotationPolicy` with a specific `rotationFrequency` and don’t have to intervene manually.
 
-## Istio
+## Authentication Details From Plain Text
 
-The Telemetry module automatically detects whether the Istio module is added to your cluster, and injects Istio sidecars to the Telemetry components.
+To integrate with external systems, you must configure authentication  details. You can use mutual TLS (mTLS), Basic Authentication, or custom headers:
+
+<!-- tabs:start -->
+
+### **mTLS**
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: <Kind>Pipeline
+metadata:
+  name: backend
+spec:
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com/otlp:4317
+      tls:
+        cert:
+          value: |
+            -----BEGIN CERTIFICATE-----
+            ...
+        key:
+          value: |
+            -----BEGIN RSA PRIVATE KEY-----
+            ...
+```
+
+### **Basic Authentication**
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: <Kind>Pipeline
+metadata:
+  name: backend
+spec:
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com/otlp:4317
+      authentication:
+        basic:
+          user:
+            value: myUser
+          password:
+            value: myPwd
+```
+
+### **Token-based authentication with custom headers**
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: <Kind>Pipeline
+metadata:
+  name: backend
+spec:
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com/otlp:4317
+      headers:
+      - name: Authorization
+        prefix: Bearer
+        value: "myToken"
+```
+
+<!-- tabs:end -->
+
+## Istio Support
+
+Communication to cluster-internal backends running in the Istio service mesh can leverage mTLS communication and with that improve the security of that communication channel.
+
+The Telemetry module automatically detects whether the Istio module is added to your cluster, and injects Istio sidecars to the Telemetry components and will automatically support Istio mTLS if possible.
 
 ![Gateways-Istio](./../assets/gateways-istio-output.drawio.svg)
-
-With that, communication to internal backends running in the service mesh can leverage mTLS communication.

@@ -1,5 +1,12 @@
 # Architecture
 
+The Telemetry API provides a hardened setup of an OTel Collector and also abstracts the underlying OTel Collector concept. Such abstraction has the following benefits:
+
+- Compatibility: An abstraction layer supports compatibility when underlying features change.
+- Migratability: Smooth migration experiences when switching underlying technologies or architectures.
+- Native Kubernetes support: API provided by Kyma Telemetry supports an easy integration with Secrets, for example, served by the [SAP BTP Service Operator](https://github.com/SAP/sap-btp-service-operator#readme). Telemetry Manager takes care of the full lifecycle.
+- Focus: The user doesn't need to understand the underlying concepts.
+
 The components running in a cluster as part of the telemetry module can be seen in the following diagram and are explained in more detail in the following:
 
 ![Components](./assets/telemetry-arch.drawio.svg)
@@ -24,18 +31,20 @@ Additionally, you can monitor the health of your pipelines in an integrated back
 
 ![Self-Monitor](assets/manager-arch.drawio.svg)
 
-## Module Configuration and Status
+## Gateways and Agents
 
-For configuration options and the overall status of the module, see the specification of the related [Telemetry resource](./resources/01-telemetry.md).
+The log, trace, and metrics features provide gateways based on an [OTel Collector](https://opentelemetry.io/docs/collector/) [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/). The gateways act as central endpoints in the cluster to which your applications push data in the OTLP format. From here, the data is enriched and filtered, and then dispatched configured in your pipeline resources.
 
-## Gateways
+- Log Gateway and Agent
 
-The log, trace, and metrics features provide gateways based on an [OTel Collector](https://opentelemetry.io/docs/collector/) [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/). The gateways act as central endpoints in the cluster to which your applications push data in the [OTLP](https://opentelemetry.io/docs/reference/specification/protocol/) format.
+  In addition to the log gateway, you can also use the log agent based on a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/), which collects logs of any container printing logs to stdout/stderr. For details, see [Logs](./logs/README.md).
 
-### Log Agent
+  As an alternative to the OTLP-based log feature, you can choose using a log agent based on a Fluent Bit installation running as a DaemonSet. It reads all containers’ logs in the runtime and ships them according to your LogPipeline configuration. For details, see Application Logs (Fluent Bit).
 
-In addition to the log gateway, the additional `application` input in a LogPipeline will use the dedicated log agent based on a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/). The agent collects logs of any container printing logs to `stdout/stderr`. For more information, see [Logs](logs.md).
+- Trace Gateway
 
-### Metric Agent
+  The trace gateway provides an [OTLP](https://opentelemetry.io/docs/specs/otel/protocol/)-based endpoint to which applications can push the trace signals. Kyma modules like Istio or Serverless contribute traces transparently. For more information, see [Traces](./traces/README.md).
 
-In addition to the metric gateway, the additional inputs in a MetricPipeline will use the dedicated metric agent based on a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/), which for example scrapes annotated Prometheus-based workloads. For more information, see [Metrics](04-metrics.md).
+- Metric Gateway and Agent
+
+  In addition to the metric gateway, you can also use the metric agent based on a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/), which, for example, scrapes annotated Prometheus-based workloads. For details, see [Metrics](./metrics/README.md).

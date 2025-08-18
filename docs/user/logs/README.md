@@ -6,12 +6,13 @@ With application logs, you can debug an application and derive the internal stat
 
 The Telemetry module provides an API which configures a log gateway for push-based collection of logs using OTLP and, optionally, an agent for the collection of logs of any container printing logs to the `stdout/stderr` channel running in the Kyma runtime. Kyma modules like [Istio](https://kyma-project.io/#/istio/user/README) contribute access logs. The Telemetry module enriches the data and ships them to your chosen backend (see [Vendors who natively support OpenTelemetry](https://opentelemetry.io/ecosystem/vendors/)).
 
-You can configure the log gateway and agent with external systems using runtime configuration with a dedicated Kubernetes API ([CRD](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions)) named LogPipeline. Additional to the regular [pipeline](./../pipelines/README.md) features, the following features are offered by LogPipelines:
+You can configure the log gateway and agent with external systems using runtime configuration with a dedicated Kubernetes API ([CRD](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions)) named LogPipeline. A LogPipeline is following the structure and characteristic of a Telemetry [pipeline](./../pipelines/README.md) and offers these collection features:
 
+- [`otlp` input](./../pipelines/otlp-input.md): Ingest OTLP logs via the push endpoints.
 - [`application` input](./application-input.md): Activate collection of application logs from `stdout/stderr` channels of any container in the cluster using the [`application` input](./application-input.md)
 - Activate Istio access logs. For details, see [Istio](#istio).
 
-For an example, see [Sample LogPipeline](sample.md), check out the available parameters and attributes under [LogPipeline](./../resources/02-logpipeline.md).
+For an example, see [Sample LogPipeline](sample.md), check out the available parameters and attributes under [LogPipeline](./../resources/02-logpipeline.md) and checkout the involved components of a LogPipeline at the [Architecture](architecture.md).
 
 The Log feature is optional. If you don’t want to use it, simply don’t set up a LogPipeline.
 
@@ -22,10 +23,6 @@ The Log feature is optional. If you don’t want to use it, simply don’t set u
 - If you want to emit the logs to the `stdout/stderr` channel, use structured logs in a JSON format with a logger library like log4J. With that, the log agent can parse your log and enrich all JSON attributes as log attributes, and a backend can use that.
 
 - If you prefer the push-based alternative with OTLP, also use a logger library like log4J. However, you additionally instrument that logger and bridge it to the OTel SDK. For details, see [OpenTelemetry: New First-Party Application Logs](https://opentelemetry.io/docs/specs/otel/logs/#new-first-party-application-logs).
-
-## Architecture
-
-More details can be found at [Architecture](architecture.md).
 
 ## Basic Pipeline
 
@@ -77,8 +74,6 @@ Kyma bundles modules that can be involved in user flows. If you want to collect 
 
 The Istio module is crucial as it provides the [Ingress Gateway](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/). Typically, this is where external requests enter the cluster scope. Furthermore, every component that’s part of the Istio Service Mesh runs an Istio proxy. Using the Istio telemetry API, you can enable access logs for the Ingress Gateway and the proxies individually.
 
-The Istio module is configured with an [extension provider](https://istio.io/latest/docs/tasks/observability/telemetry/) called `kyma-logs`. To activate the provider on the global mesh level using the Istio [Telemetry API](https://istio.io/latest/docs/reference/config/telemetry), place a resource to the `istio-system` namespace.
-
 The following example configures all Istio proxies with the `kyma-logs` extension provider, which, by default, reports access logs to the log gateway of the Telemetry module.
 
 ```yaml
@@ -93,8 +88,8 @@ spec:
         - name: kyma-logs
 ```
 
-The Kyma Istio module provides a second extension provider not based on OTLP. Please assure that you always use the `kyma-logs` provider as only this will work with the OTLP based LogPipeline output.
-More configuration options can be found at [Configure Istio Access Logs](https://kyma-project.io/#/istio/user/tutorials/01-45-enable-istio-access-logs).
+The Kyma Istio module provides a second extension provider `stdout-json` not based on OTLP. Please assure that you always use the `kyma-logs` provider as only this will work with the OTLP based LogPipeline output.
+More details and configuration options can be found at [Configure Istio Access Logs](./istio.md).
 
 ## Limitations
 
