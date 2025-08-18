@@ -82,6 +82,8 @@ spec:
           value: europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.132.0-main
         - name: SELF_MONITOR_IMAGE
           value: europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:3.5.0-8d9d348
+        - name: ALPINE_IMAGE
+          value: europe-docker.pkg.dev/kyma-project/prod/external/library/alpine:3.22.1
       volumes:
       - name: crt-volume
         emptyDir: {}

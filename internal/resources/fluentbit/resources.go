@@ -35,13 +35,42 @@ const (
 	fbEnvConfigSecretName     = LogAgentName + "-env"
 	fbTLSFileConfigSecretName = LogAgentName + "-output-tls-config"
 	fbDaemonSetName           = LogAgentName
+
+	exporterContainerName  = "exporter"
+	chownInitContainerName = "checkpoint-dir-ownership-modifier"
+
+	// Volume names
+	configVolumeName                = "config"
+	luaScriptsVolumeName            = "luascripts"
+	varLogVolumeName                = "varlog"
+	sharedFluentBitConfigVolumeName = "shared-fluent-bit-config"
+	dynamicConfigVolumeName         = "dynamic-config"
+	dynamicParsersConfigVolumeName  = "dynamic-parsers-config"
+	dynamicFilesVolumeName          = "dynamic-files"
+	varFluentBitVolumeName          = "varfluentbit"
+	outputTLSConfigVolumeName       = "output-tls-config"
+
+	// Volume mount paths
+	configVolumeFluentBitMountPath       = "/fluent-bit/etc/fluent-bit.conf"
+	configVolumeCustomParsersMountPath   = "/fluent-bit/etc/custom_parsers.conf"
+	luaScriptsVolumeMountPath            = "/fluent-bit/scripts/filter-script.lua"
+	varLogVolumeMountPath                = "/var/log"
+	sharedFluentBitConfigVolumeMountPath = "/fluent-bit/etc"
+	dynamicConfigVolumeMountPath         = "/fluent-bit/etc/dynamic/"
+	dynamicParsersConfigVolumeMountPath  = "/fluent-bit/etc/dynamic-parsers/"
+	dynamicFilesVolumeMountPath          = "/files"
+	varFluentBitVolumeMountPath          = "/data"
+	outputTLSConfigVolumeMountPath       = "/fluent-bit/etc/output-tls-config/"
 )
 
 var (
-	// FluentBit
-	fbMemoryLimit   = resource.MustParse("1Gi")
-	fbCPURequest    = resource.MustParse("100m")
-	fbMemoryRequest = resource.MustParse("50Mi")
+	fbContainerCPURequest    = resource.MustParse("100m")
+	fbContainerMemoryRequest = resource.MustParse("50Mi")
+	fbContainerMemoryLimit   = resource.MustParse("1Gi")
+
+	exporterContainerCPURequest    = resource.MustParse("1m")
+	exporterContainerMemoryRequest = resource.MustParse("5Mi")
+	exporterContainerMemoryLimit   = resource.MustParse("50Mi")
 )
 
 // AgentApplyOptions expects a syncerClient which is a client with no ownerReference setter since it handles its
@@ -52,15 +81,12 @@ type AgentApplyOptions struct {
 }
 
 type AgentApplierDeleter struct {
-	extraPodLabels    map[string]string
-	fluentBitImage    string
-	exporterImage     string
-	priorityClassName string
-	namespace         string
-
-	memoryLimit   resource.Quantity
-	cpuRequest    resource.Quantity
-	memoryRequest resource.Quantity
+	extraPodLabels          map[string]string
+	fluentBitImage          string
+	exporterImage           string
+	chownInitContainerImage string
+	priorityClassName       string
+	namespace               string
 
 	daemonSetName           types.NamespacedName
 	luaConfigMapName        types.NamespacedName
@@ -71,20 +97,17 @@ type AgentApplierDeleter struct {
 	tlsFileConfigSecretName types.NamespacedName
 }
 
-func NewFluentBitApplierDeleter(namespace, fbImage, exporterImage, priorityClassName string) *AgentApplierDeleter {
+func NewFluentBitApplierDeleter(namespace, fbImage, exporterImage, chownInitContainerImage, priorityClassName string) *AgentApplierDeleter {
 	return &AgentApplierDeleter{
 		namespace: namespace,
 		extraPodLabels: map[string]string{
 			commonresources.LabelKeyIstioInject:        "true",
 			commonresources.LabelKeyTelemetryLogExport: "true",
 		},
-		fluentBitImage:    fbImage,
-		exporterImage:     exporterImage,
-		priorityClassName: priorityClassName,
-
-		memoryLimit:   fbMemoryLimit,
-		cpuRequest:    fbCPURequest,
-		memoryRequest: fbMemoryRequest,
+		fluentBitImage:          fbImage,
+		exporterImage:           exporterImage,
+		chownInitContainerImage: chownInitContainerImage,
+		priorityClassName:       priorityClassName,
 
 		daemonSetName:           types.NamespacedName{Name: fbDaemonSetName, Namespace: namespace},
 		luaConfigMapName:        types.NamespacedName{Name: fbLuaConfigMapName, Namespace: namespace},
@@ -280,6 +303,18 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 	podLabels := Labels()
 	maps.Copy(podLabels, aad.extraPodLabels)
 
+	fluentBitResources := commonresources.MakeResourceRequirements(
+		fbContainerMemoryLimit,
+		fbContainerMemoryRequest,
+		fbContainerCPURequest,
+	)
+
+	exporterResources := commonresources.MakeResourceRequirements(
+		exporterContainerMemoryLimit,
+		exporterContainerMemoryRequest,
+		exporterContainerCPURequest,
+	)
+
 	ds := &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
@@ -301,22 +336,26 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 					commonresources.WithTolerations(commonresources.CriticalDaemonSetTolerations),
 					commonresources.WithVolumes(aad.fluentBitVolumes()),
 					commonresources.WithContainer("fluent-bit", aad.fluentBitImage,
-						commonresources.WithCapabilities("FOWNER"),
 						commonresources.WithEnvVarsFromSecret(fmt.Sprintf("%s-env", LogAgentName)),
-						commonresources.WithRunAsRoot(),
+						commonresources.WithRunAsGroup(commonresources.GroupRoot),
+						commonresources.WithRunAsUser(commonresources.UserDefault),
 						commonresources.WithPort("http", fbports.HTTP),
 						commonresources.WithProbes(aad.fluentBitLivenessProbe(), aad.fluentBitReadinessProbe()),
-						commonresources.WithResources(aad.fluentBitResources()),
+						commonresources.WithResources(fluentBitResources),
 						commonresources.WithVolumeMounts(aad.fluentBitVolumeMounts()),
 					),
-					commonresources.WithContainer("exporter", aad.exporterImage,
+					commonresources.WithContainer(exporterContainerName, aad.exporterImage,
 						commonresources.WithArgs([]string{
 							"--storage-path=/data/flb-storage/",
 							"--metric-name=telemetry_fsbuffer_usage_bytes",
 						}),
 						commonresources.WithPort("http-metrics", fbports.ExporterMetrics),
-						commonresources.WithResources(aad.exporterResources()),
+						commonresources.WithResources(exporterResources),
 						commonresources.WithVolumeMounts(aad.exporterVolumeMounts()),
+					),
+					// init container for changing the owner of the storage volume to be fluentbit
+					commonresources.WithInitContainer(chownInitContainerName, aad.chownInitContainerImage,
+						commonresources.WithChownInitContainerOpts(varFluentBitVolumeMountPath, aad.chownInitContainerVolumeMounts())...,
 					),
 				),
 			},
@@ -324,30 +363,6 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 	}
 
 	return ds
-}
-
-func (aad *AgentApplierDeleter) fluentBitResources() corev1.ResourceRequirements {
-	return corev1.ResourceRequirements{
-		Limits: corev1.ResourceList{
-			corev1.ResourceMemory: aad.memoryLimit,
-		},
-		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    aad.cpuRequest,
-			corev1.ResourceMemory: aad.memoryRequest,
-		},
-	}
-}
-
-func (aad *AgentApplierDeleter) exporterResources() corev1.ResourceRequirements {
-	return corev1.ResourceRequirements{
-		Requests: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    resource.MustParse("1m"),
-			corev1.ResourceMemory: resource.MustParse("5Mi"),
-		},
-		Limits: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceMemory: resource.MustParse("50Mi"),
-		},
-	}
 }
 
 func (aad *AgentApplierDeleter) fluentBitLivenessProbe() *corev1.Probe {
@@ -374,29 +389,35 @@ func (aad *AgentApplierDeleter) fluentBitReadinessProbe() *corev1.Probe {
 
 func (aad *AgentApplierDeleter) fluentBitVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
-		{MountPath: "/fluent-bit/etc", Name: "shared-fluent-bit-config"},
-		{MountPath: "/fluent-bit/etc/fluent-bit.conf", Name: "config", SubPath: "fluent-bit.conf"},
-		{MountPath: "/fluent-bit/etc/dynamic/", Name: "dynamic-config"},
-		{MountPath: "/fluent-bit/etc/dynamic-parsers/", Name: "dynamic-parsers-config"},
-		{MountPath: "/fluent-bit/etc/custom_parsers.conf", Name: "config", SubPath: "custom_parsers.conf"},
-		{MountPath: "/fluent-bit/scripts/filter-script.lua", Name: "luascripts", SubPath: "filter-script.lua"},
-		{MountPath: "/var/log", Name: "varlog", ReadOnly: true},
-		{MountPath: "/data", Name: "varfluentbit"},
-		{MountPath: "/files", Name: "dynamic-files"},
-		{MountPath: "/fluent-bit/etc/output-tls-config/", Name: "output-tls-config", ReadOnly: true},
+		{MountPath: sharedFluentBitConfigVolumeMountPath, Name: sharedFluentBitConfigVolumeName},
+		{MountPath: configVolumeFluentBitMountPath, Name: configVolumeName, SubPath: "fluent-bit.conf"},
+		{MountPath: dynamicConfigVolumeMountPath, Name: dynamicConfigVolumeName},
+		{MountPath: dynamicParsersConfigVolumeMountPath, Name: dynamicParsersConfigVolumeName},
+		{MountPath: configVolumeCustomParsersMountPath, Name: configVolumeName, SubPath: "custom_parsers.conf"},
+		{MountPath: luaScriptsVolumeMountPath, Name: luaScriptsVolumeName, SubPath: "filter-script.lua"},
+		{MountPath: varLogVolumeMountPath, Name: varLogVolumeName, ReadOnly: true},
+		{MountPath: varFluentBitVolumeMountPath, Name: varFluentBitVolumeName},
+		{MountPath: dynamicFilesVolumeMountPath, Name: dynamicFilesVolumeName},
+		{MountPath: outputTLSConfigVolumeMountPath, Name: outputTLSConfigVolumeName, ReadOnly: true},
 	}
 }
 
 func (aad *AgentApplierDeleter) exporterVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
-		{Name: "varfluentbit", MountPath: "/data"},
+		{MountPath: varFluentBitVolumeMountPath, Name: varFluentBitVolumeName},
+	}
+}
+
+func (aad *AgentApplierDeleter) chownInitContainerVolumeMounts() []corev1.VolumeMount {
+	return []corev1.VolumeMount{
+		{MountPath: varFluentBitVolumeMountPath, Name: varFluentBitVolumeName},
 	}
 }
 
 func (aad *AgentApplierDeleter) fluentBitVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
-			Name: "config",
+			Name: configVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{Name: LogAgentName},
@@ -404,7 +425,7 @@ func (aad *AgentApplierDeleter) fluentBitVolumes() []corev1.Volume {
 			},
 		},
 		{
-			Name: "luascripts",
+			Name: luaScriptsVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-luascripts", LogAgentName)},
@@ -412,19 +433,19 @@ func (aad *AgentApplierDeleter) fluentBitVolumes() []corev1.Volume {
 			},
 		},
 		{
-			Name: "varlog",
+			Name: varLogVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{Path: "/var/log"},
 			},
 		},
 		{
-			Name: "shared-fluent-bit-config",
+			Name: sharedFluentBitConfigVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 		},
 		{
-			Name: "dynamic-config",
+			Name: dynamicConfigVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-sections", LogAgentName)},
@@ -433,7 +454,7 @@ func (aad *AgentApplierDeleter) fluentBitVolumes() []corev1.Volume {
 			},
 		},
 		{
-			Name: "dynamic-parsers-config",
+			Name: dynamicParsersConfigVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-parsers", LogAgentName)},
@@ -442,7 +463,7 @@ func (aad *AgentApplierDeleter) fluentBitVolumes() []corev1.Volume {
 			},
 		},
 		{
-			Name: "dynamic-files",
+			Name: dynamicFilesVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-files", LogAgentName)},
@@ -451,13 +472,13 @@ func (aad *AgentApplierDeleter) fluentBitVolumes() []corev1.Volume {
 			},
 		},
 		{
-			Name: "varfluentbit",
+			Name: varFluentBitVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{Path: fmt.Sprintf("/var/%s", LogAgentName)},
 			},
 		},
 		{
-			Name: "output-tls-config",
+			Name: outputTLSConfigVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: fmt.Sprintf("%s-output-tls-config", LogAgentName),
