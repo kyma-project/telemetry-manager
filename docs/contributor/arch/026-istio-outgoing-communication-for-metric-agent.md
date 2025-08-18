@@ -79,7 +79,7 @@ spec:
         traffic.sidecar.istio.io/includeOutboundIPRanges: ""
 ```
 
-With the above configuration, the Metric Agent will be able to push metrics to the in-cluster Prometheus while still allowing the Metric Agent to scrape metrics from the targets without interception issues.
+With the above configuration, the Metric Agent will be able to push metrics to the in-cluster Prometheus while still allowing the Metric Agent to scrape metrics from the targets without issues.
 The Metric Pipeline reconciliation loop will handle the configuration of the Metric Agent sidecar annotations based on the configured backends, the configured backend ports should be added to the `traffic.sidecar.istio.io/includeOutboundPorts` annotation, regardless of whether the backend is mesh-enabled or not.
 
 ### Alternative: Istio `Sidecar` CRD
@@ -100,7 +100,7 @@ spec:
       - "*/*svc.cluster.local"
 ```
 
-However, it only permits traffic; it does not control interception. Without annotations, all traffic is intercepted, breaking Prometheus scraping making it unsuitable here.
+However, it only permits traffic; it does not control interception. Without annotations, all traffic is intercepted, thus breaks Prometheus scraping, hence making it unsuitable here.
 
 ## Decision
 
