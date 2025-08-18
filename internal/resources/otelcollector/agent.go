@@ -27,9 +27,9 @@ const (
 	IstioCertPath       = "/etc/istio-output-certs"
 	istioCertVolumeName = "istio-certs"
 
-	MetricAgentName           = "telemetry-metric-agent"
-	LogAgentName              = "telemetry-log-agent"
-	logAgentInitContainerName = "checkpoint-dir-ownership-modifier"
+	MetricAgentName                = "telemetry-metric-agent"
+	LogAgentName                   = "telemetry-log-agent"
+	logAgentChownInitContainerName = "checkpoint-dir-ownership-modifier"
 
 	checkpointVolumeName = "varlibfilelogreceiver"
 	CheckpointVolumePath = "/var/lib/telemetry-log-agent/file-log-receiver"
@@ -46,9 +46,9 @@ var (
 	logAgentMemoryRequest = resource.MustParse("50Mi")
 	logAgentMemoryLimit   = resource.MustParse("1200Mi")
 
-	logAgentInitContainerCPURequest    = resource.MustParse("10m")
-	logAgentInitContainerMemoryRequest = resource.MustParse("10Mi")
-	logAgentInitContainerMemoryLimit   = resource.MustParse("50Mi")
+	logAgentChownInitContainerCPURequest    = resource.MustParse("10m")
+	logAgentChownInitContainerMemoryRequest = resource.MustParse("10Mi")
+	logAgentChownInitContainerMemoryLimit   = resource.MustParse("50Mi")
 )
 
 type AgentApplierDeleter struct {
@@ -68,7 +68,7 @@ type AgentApplyOptions struct {
 	CollectorEnvVars    map[string][]byte
 }
 
-func NewLogAgentApplierDeleter(collectorImage, initContainerImage, namespace, priorityClassName string) *AgentApplierDeleter {
+func NewLogAgentApplierDeleter(collectorImage, chownInitContainerImage, namespace, priorityClassName string) *AgentApplierDeleter {
 	extraLabels := map[string]string{
 		commonresources.LabelKeyIstioInject: "true", // inject Istio sidecar for SDS certificates and agent-to-gateway communication
 	}
@@ -86,7 +86,7 @@ func NewLogAgentApplierDeleter(collectorImage, initContainerImage, namespace, pr
 		makeFileLogCheckPointVolumeMount(),
 	}
 
-	initContainerVolumeMounts := []corev1.VolumeMount{
+	chownInitContainerVolumeMounts := []corev1.VolumeMount{
 		makeFileLogCheckPointVolumeMount(),
 	}
 
@@ -96,10 +96,10 @@ func NewLogAgentApplierDeleter(collectorImage, initContainerImage, namespace, pr
 		logAgentCPURequest,
 	)
 
-	initContainerResources := commonresources.MakeResourceRequirements(
-		logAgentInitContainerMemoryLimit,
-		logAgentInitContainerMemoryRequest,
-		logAgentInitContainerCPURequest,
+	chownInitContainerResources := commonresources.MakeResourceRequirements(
+		logAgentChownInitContainerMemoryLimit,
+		logAgentChownInitContainerMemoryRequest,
+		logAgentChownInitContainerCPURequest,
 	)
 
 	// user ID and group ID for the log agent
@@ -115,13 +115,13 @@ func NewLogAgentApplierDeleter(collectorImage, initContainerImage, namespace, pr
 			commonresources.WithPriorityClass(priorityClassName),
 			commonresources.WithVolumes(volumes),
 			// init container for changing the owner of the checkpoint volume to be the log agent
-			commonresources.WithInitContainer(logAgentInitContainerName, initContainerImage,
+			commonresources.WithInitContainer(logAgentChownInitContainerName, chownInitContainerImage,
 				commonresources.WithCommand([]string{"chown", "-R", chownUserIDGroupID, CheckpointVolumePath}),
 				commonresources.WithRunAsRoot(),
 				commonresources.WithRunAsUser(0),
 				commonresources.WithCapabilities("CHOWN"),
-				commonresources.WithVolumeMounts(initContainerVolumeMounts),
-				commonresources.WithResources(initContainerResources)),
+				commonresources.WithVolumeMounts(chownInitContainerVolumeMounts),
+				commonresources.WithResources(chownInitContainerResources)),
 		},
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithResources(collectorResources),

@@ -36,8 +36,8 @@ const (
 	fbTLSFileConfigSecretName = LogAgentName + "-output-tls-config"
 	fbDaemonSetName           = LogAgentName
 
-	exporterContainerName = "exporter"
-	initContainerName     = "checkpoint-dir-ownership-modifier"
+	exporterContainerName  = "exporter"
+	chownInitContainerName = "checkpoint-dir-ownership-modifier"
 
 	// Volume names
 	configVolumeName                = "config"
@@ -72,9 +72,9 @@ var (
 	exporterContainerMemoryRequest = resource.MustParse("5Mi")
 	exporterContainerMemoryLimit   = resource.MustParse("50Mi")
 
-	initContainerCPURequest    = resource.MustParse("10m")
-	initContainerMemoryRequest = resource.MustParse("10Mi")
-	initContainerMemoryLimit   = resource.MustParse("50Mi")
+	chownInitContainerCPURequest    = resource.MustParse("10m")
+	chownInitContainerMemoryRequest = resource.MustParse("10Mi")
+	chownInitContainerMemoryLimit   = resource.MustParse("50Mi")
 )
 
 // AgentApplyOptions expects a syncerClient which is a client with no ownerReference setter since it handles its
@@ -85,12 +85,12 @@ type AgentApplyOptions struct {
 }
 
 type AgentApplierDeleter struct {
-	extraPodLabels     map[string]string
-	fluentBitImage     string
-	exporterImage      string
-	initContainerImage string
-	priorityClassName  string
-	namespace          string
+	extraPodLabels          map[string]string
+	fluentBitImage          string
+	exporterImage           string
+	chownInitContainerImage string
+	priorityClassName       string
+	namespace               string
 
 	daemonSetName           types.NamespacedName
 	luaConfigMapName        types.NamespacedName
@@ -101,17 +101,17 @@ type AgentApplierDeleter struct {
 	tlsFileConfigSecretName types.NamespacedName
 }
 
-func NewFluentBitApplierDeleter(namespace, fbImage, exporterImage, initContainerImage, priorityClassName string) *AgentApplierDeleter {
+func NewFluentBitApplierDeleter(namespace, fbImage, exporterImage, chownInitContainerImage, priorityClassName string) *AgentApplierDeleter {
 	return &AgentApplierDeleter{
 		namespace: namespace,
 		extraPodLabels: map[string]string{
 			commonresources.LabelKeyIstioInject:        "true",
 			commonresources.LabelKeyTelemetryLogExport: "true",
 		},
-		fluentBitImage:     fbImage,
-		exporterImage:      exporterImage,
-		initContainerImage: initContainerImage,
-		priorityClassName:  priorityClassName,
+		fluentBitImage:          fbImage,
+		exporterImage:           exporterImage,
+		chownInitContainerImage: chownInitContainerImage,
+		priorityClassName:       priorityClassName,
 
 		daemonSetName:           types.NamespacedName{Name: fbDaemonSetName, Namespace: namespace},
 		luaConfigMapName:        types.NamespacedName{Name: fbLuaConfigMapName, Namespace: namespace},
@@ -319,10 +319,10 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 		exporterContainerCPURequest,
 	)
 
-	initContainerResources := commonresources.MakeResourceRequirements(
-		initContainerMemoryLimit,
-		initContainerMemoryRequest,
-		initContainerCPURequest,
+	chownInitContainerResources := commonresources.MakeResourceRequirements(
+		chownInitContainerMemoryLimit,
+		chownInitContainerMemoryRequest,
+		chownInitContainerCPURequest,
 	)
 
 	// user ID and group ID for fluentbit
@@ -367,13 +367,13 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 						commonresources.WithVolumeMounts(aad.exporterVolumeMounts()),
 					),
 					// init container for changing the owner of the storage volume to be fluentbit
-					commonresources.WithInitContainer(initContainerName, aad.initContainerImage,
+					commonresources.WithInitContainer(chownInitContainerName, aad.chownInitContainerImage,
 						commonresources.WithCommand([]string{"chown", "-R", chownUserIDGroupID, varFluentBitVolumeMountPath}),
 						commonresources.WithRunAsRoot(),
 						commonresources.WithRunAsUser(0),
 						commonresources.WithCapabilities("CHOWN"),
-						commonresources.WithVolumeMounts(aad.initContainerVolumeMounts()),
-						commonresources.WithResources(initContainerResources),
+						commonresources.WithVolumeMounts(aad.chownInitContainerVolumeMounts()),
+						commonresources.WithResources(chownInitContainerResources),
 					),
 				),
 			},
@@ -426,7 +426,7 @@ func (aad *AgentApplierDeleter) exporterVolumeMounts() []corev1.VolumeMount {
 	}
 }
 
-func (aad *AgentApplierDeleter) initContainerVolumeMounts() []corev1.VolumeMount {
+func (aad *AgentApplierDeleter) chownInitContainerVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
 		{MountPath: varFluentBitVolumeMountPath, Name: varFluentBitVolumeName},
 	}
