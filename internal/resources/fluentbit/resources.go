@@ -64,13 +64,13 @@ const (
 )
 
 var (
-	fbCPURequest    = resource.MustParse("100m")
-	fbMemoryRequest = resource.MustParse("50Mi")
-	fbMemoryLimit   = resource.MustParse("1Gi")
+	fbContainerCPURequest    = resource.MustParse("100m")
+	fbContainerMemoryRequest = resource.MustParse("50Mi")
+	fbContainerMemoryLimit   = resource.MustParse("1Gi")
 
-	exporterCPURequest    = resource.MustParse("1m")
-	exporterMemoryRequest = resource.MustParse("5Mi")
-	exporterMemoryLimit   = resource.MustParse("50Mi")
+	exporterContainerCPURequest    = resource.MustParse("1m")
+	exporterContainerMemoryRequest = resource.MustParse("5Mi")
+	exporterContainerMemoryLimit   = resource.MustParse("50Mi")
 
 	initContainerCPURequest    = resource.MustParse("10m")
 	initContainerMemoryRequest = resource.MustParse("10Mi")
@@ -117,9 +117,9 @@ func NewFluentBitApplierDeleter(namespace, fbImage, exporterImage, initContainer
 		initContainerImage: initContainerImage,
 		priorityClassName:  priorityClassName,
 
-		memoryLimit:   fbMemoryLimit,
-		cpuRequest:    fbCPURequest,
-		memoryRequest: fbMemoryRequest,
+		memoryLimit:   fbContainerMemoryLimit,
+		cpuRequest:    fbContainerCPURequest,
+		memoryRequest: fbContainerMemoryRequest,
 
 		daemonSetName:           types.NamespacedName{Name: fbDaemonSetName, Namespace: namespace},
 		luaConfigMapName:        types.NamespacedName{Name: fbLuaConfigMapName, Namespace: namespace},
@@ -322,9 +322,9 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 	)
 
 	exporterResources := commonresources.MakeResourceRequirements(
-		exporterMemoryLimit,
-		exporterMemoryRequest,
-		exporterCPURequest,
+		exporterContainerMemoryLimit,
+		exporterContainerMemoryRequest,
+		exporterContainerCPURequest,
 	)
 
 	initContainerResources := commonresources.MakeResourceRequirements(
