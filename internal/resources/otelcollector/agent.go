@@ -45,10 +45,6 @@ var (
 	logAgentCPURequest    = resource.MustParse("15m")
 	logAgentMemoryRequest = resource.MustParse("50Mi")
 	logAgentMemoryLimit   = resource.MustParse("1200Mi")
-
-	logAgentChownInitContainerCPURequest    = resource.MustParse("10m")
-	logAgentChownInitContainerMemoryRequest = resource.MustParse("10Mi")
-	logAgentChownInitContainerMemoryLimit   = resource.MustParse("50Mi")
 )
 
 type AgentApplierDeleter struct {
@@ -96,15 +92,6 @@ func NewLogAgentApplierDeleter(collectorImage, chownInitContainerImage, namespac
 		logAgentCPURequest,
 	)
 
-	chownInitContainerResources := commonresources.MakeResourceRequirements(
-		logAgentChownInitContainerMemoryLimit,
-		logAgentChownInitContainerMemoryRequest,
-		logAgentChownInitContainerCPURequest,
-	)
-
-	// user ID and group ID for the log agent
-	chownUserIDGroupID := fmt.Sprintf("%d:%d", commonresources.UserDefault, commonresources.GroupRoot)
-
 	return &AgentApplierDeleter{
 		baseName:      LogAgentName,
 		extraPodLabel: extraLabels,
@@ -116,12 +103,8 @@ func NewLogAgentApplierDeleter(collectorImage, chownInitContainerImage, namespac
 			commonresources.WithVolumes(volumes),
 			// init container for changing the owner of the checkpoint volume to be the log agent
 			commonresources.WithInitContainer(logAgentChownInitContainerName, chownInitContainerImage,
-				commonresources.WithCommand([]string{"chown", "-R", chownUserIDGroupID, CheckpointVolumePath}),
-				commonresources.WithRunAsRoot(),
-				commonresources.WithRunAsUser(0),
-				commonresources.WithCapabilities("CHOWN"),
-				commonresources.WithVolumeMounts(chownInitContainerVolumeMounts),
-				commonresources.WithResources(chownInitContainerResources)),
+				commonresources.WithChownInitContainerOpts(CheckpointVolumePath, chownInitContainerVolumeMounts)...,
+			),
 		},
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithResources(collectorResources),

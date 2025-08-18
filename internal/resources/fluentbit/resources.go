@@ -71,10 +71,6 @@ var (
 	exporterContainerCPURequest    = resource.MustParse("1m")
 	exporterContainerMemoryRequest = resource.MustParse("5Mi")
 	exporterContainerMemoryLimit   = resource.MustParse("50Mi")
-
-	chownInitContainerCPURequest    = resource.MustParse("10m")
-	chownInitContainerMemoryRequest = resource.MustParse("10Mi")
-	chownInitContainerMemoryLimit   = resource.MustParse("50Mi")
 )
 
 // AgentApplyOptions expects a syncerClient which is a client with no ownerReference setter since it handles its
@@ -319,15 +315,6 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 		exporterContainerCPURequest,
 	)
 
-	chownInitContainerResources := commonresources.MakeResourceRequirements(
-		chownInitContainerMemoryLimit,
-		chownInitContainerMemoryRequest,
-		chownInitContainerCPURequest,
-	)
-
-	// user ID and group ID for fluentbit
-	chownUserIDGroupID := fmt.Sprintf("%d:%d", commonresources.UserDefault, commonresources.GroupRoot)
-
 	ds := &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
@@ -368,12 +355,7 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 					),
 					// init container for changing the owner of the storage volume to be fluentbit
 					commonresources.WithInitContainer(chownInitContainerName, aad.chownInitContainerImage,
-						commonresources.WithCommand([]string{"chown", "-R", chownUserIDGroupID, varFluentBitVolumeMountPath}),
-						commonresources.WithRunAsRoot(),
-						commonresources.WithRunAsUser(0),
-						commonresources.WithCapabilities("CHOWN"),
-						commonresources.WithVolumeMounts(aad.chownInitContainerVolumeMounts()),
-						commonresources.WithResources(chownInitContainerResources),
+						commonresources.WithChownInitContainerOpts(varFluentBitVolumeMountPath, aad.chownInitContainerVolumeMounts())...,
 					),
 				),
 			},

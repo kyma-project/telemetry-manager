@@ -1,6 +1,7 @@
 package common
 
 import (
+	"fmt"
 	"strconv"
 
 	corev1 "k8s.io/api/core/v1"
@@ -228,6 +229,25 @@ func WithRunAsUser(userID int64) ContainerOption {
 func WithCommand(command []string) ContainerOption {
 	return func(c *corev1.Container) {
 		c.Command = command
+	}
+}
+
+func WithChownInitContainerOpts(checkpointVolumePath string, volumeMounts []corev1.VolumeMount) []ContainerOption {
+	resources := MakeResourceRequirements(
+		resource.MustParse("10m"),
+		resource.MustParse("10Mi"),
+		resource.MustParse("50Mi"),
+	)
+
+	chownUserIDGroupID := fmt.Sprintf("%d:%d", UserDefault, GroupRoot)
+
+	return []ContainerOption{
+		WithCommand([]string{"chown", "-R", chownUserIDGroupID, checkpointVolumePath}),
+		WithRunAsRoot(),
+		WithRunAsUser(0),
+		WithCapabilities("CHOWN"),
+		WithVolumeMounts(volumeMounts),
+		WithResources(resources),
 	}
 }
 
