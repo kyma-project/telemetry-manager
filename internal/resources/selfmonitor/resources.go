@@ -283,8 +283,6 @@ func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile 
 func (ad *ApplierDeleter) makePodSpec(baseName, image, configPath, configFile string) corev1.PodSpec {
 	var defaultMode int32 = 420
 
-	var prometheusUser int64 = 10001
-
 	args := []string{
 		"--storage.tsdb.retention.time=" + retentionTime,
 		"--storage.tsdb.retention.size=" + retentionSize,
@@ -354,7 +352,7 @@ func (ad *ApplierDeleter) makePodSpec(baseName, image, configPath, configFile st
 
 	opts := []commonresources.PodSpecOption{
 		commonresources.WithVolumes(volumes),
-		commonresources.WithPodRunAsUser(prometheusUser),
+		commonresources.WithPodRunAsUser(commonresources.UserDefault),
 		commonresources.WithPriorityClass(ad.Config.Deployment.PriorityClassName),
 		commonresources.WithTerminationGracePeriodSeconds(300), //nolint:mnd // 300 seconds
 
@@ -364,7 +362,7 @@ func (ad *ApplierDeleter) makePodSpec(baseName, image, configPath, configFile st
 			commonresources.WithVolumeMounts(volumeMounts),
 			commonresources.WithProbes(liveness, readiness),
 			commonresources.WithResources(resources),
-			commonresources.WithRunAsUser(prometheusUser),
+			commonresources.WithRunAsUser(commonresources.UserDefault),
 			commonresources.WithGoMemLimitEnvVar(memoryLimit),
 		),
 	}
