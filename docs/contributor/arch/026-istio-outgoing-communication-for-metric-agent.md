@@ -54,8 +54,8 @@ After decoupling the Metric Agent from the Metric Gateway, we need to ensure tha
 ## Proposal
 
 The Metric Agent controls sidecar interception via annotations:
-- `traffic.sidecar.istio.io/includeOutboundPorts` – Ports to always intercept (for mesh-enabled backends).
-- `traffic.sidecar.istio.io/includeOutboundIPRanges` – IP ranges to bypass interception (for Prometheus scraping).
+- `traffic.sidecar.istio.io/includeOutboundPorts` – Ports to always intercept outbound communication (for mesh-enabled backends).
+- `traffic.sidecar.istio.io/includeOutboundIPRanges` – to bypass outbound communication interception (for Prometheus scraping).
 
 Reuse the current approach:
 1. Add configured backend ports (e.g., OTel Collector, in-cluster Prometheus) to `traffic.sidecar.istio.io/includeOutboundPorts` annotation.
