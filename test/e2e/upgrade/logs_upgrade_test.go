@@ -16,7 +16,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-// LogPipeline (Fluentbit) upgrade test flow
+// LogPipeline (OTel) upgrade test flow
 func TestLogsUpgrade(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelUpgrade)
 
@@ -27,11 +27,11 @@ func TestLogsUpgrade(t *testing.T) {
 		genNs        = uniquePrefix("gen")
 	)
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
-		WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 		Build()
 
 	resources := []client.Object{
@@ -45,16 +45,24 @@ func TestLogsUpgrade(t *testing.T) {
 	t.Run("before upgrade", func(t *testing.T) {
 		Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-		assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
-		assert.FluentBitLogPipelineHealthy(t, pipelineName)
+		assert.DeploymentReady(t, kitkyma.LogGatewayName)
+		assert.OTelLogPipelineHealthy(t, pipelineName)
 		assert.BackendReachable(t, backend)
-		assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
+		assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
 	})
 
 	t.Run("after upgrade", func(t *testing.T) {
-		assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
-		assert.FluentBitLogPipelineHealthy(t, pipelineName)
+		// TODO(TeodorSAP): Delete after 1.47 release
+		assert.DeploymentReady(t, kitkyma.LogGatewayName)
+		assert.OTelLogPipelineHealthy(t, "logs-otel-upgrade")
+		backend = kitbackend.New("logs-otel-upgrade-otel-backend", kitbackend.SignalTypeLogsOTel)
 		assert.BackendReachable(t, backend)
-		assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
+		assert.OTelLogsFromNamespaceDelivered(t, backend, "logs-otel-upgrade-otel-gen")
+
+		// TODO(TeodorSAP): Uncomment after 1.47 release
+		// assert.DeploymentReady(t, kitkyma.LogGatewayName)
+		// assert.OTelLogPipelineHealthy(t, pipelineName)
+		// assert.BackendReachable(t, backend)
+		// assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
 	})
 }
