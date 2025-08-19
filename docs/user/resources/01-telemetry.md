@@ -121,13 +121,13 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 | **conditions.&#x200b;type** (required) | string | type of condition in CamelCase or in foo.example.com/CamelCase. |
 | **endpoints**  | object | Endpoints for log, trace, and metric gateway. |
 | **endpoints.&#x200b;logs**  | object | Logs contains the endpoints for log gateway supporting OTLP. |
-| **endpoints.&#x200b;logs.&#x200b;grpc**  | string | GRPC endpoint for OTLP. |
+| **endpoints.&#x200b;logs.&#x200b;grpc**  | string | gRPC endpoint for OTLP. |
 | **endpoints.&#x200b;logs.&#x200b;http**  | string | HTTP endpoint for OTLP. |
 | **endpoints.&#x200b;metrics**  | object | Metrics contains the endpoints for metric gateway supporting OTLP. |
-| **endpoints.&#x200b;metrics.&#x200b;grpc**  | string | GRPC endpoint for OTLP. |
+| **endpoints.&#x200b;metrics.&#x200b;grpc**  | string | gRPC endpoint for OTLP. |
 | **endpoints.&#x200b;metrics.&#x200b;http**  | string | HTTP endpoint for OTLP. |
 | **endpoints.&#x200b;traces**  | object | Traces contains the endpoints for trace gateway supporting OTLP. |
-| **endpoints.&#x200b;traces.&#x200b;grpc**  | string | GRPC endpoint for OTLP. |
+| **endpoints.&#x200b;traces.&#x200b;grpc**  | string | gRPC endpoint for OTLP. |
 | **endpoints.&#x200b;traces.&#x200b;http**  | string | HTTP endpoint for OTLP. |
 | **state** (required) | string | State signifies current state of Module CR. Value can be one of these three: "Ready", "Deleting", or "Warning". |
 

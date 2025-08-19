@@ -32,7 +32,7 @@ const (
 // OTLPOutput OTLP output configuration
 // +kubebuilder:validation:XValidation:rule="((!has(self.path) || size(self.path) <= 0) && (has(self.protocol) && self.protocol == 'grpc')) || (has(self.protocol) && self.protocol == 'http')", message="Path is only available with HTTP protocol"
 type OTLPOutput struct {
-	// Protocol defines the OTLP protocol (http or grpc). Default is grpc.
+	// Protocol defines the OTLP protocol (`http` or `grpc`). Default is `grpc`.
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:Enum=grpc;http
 	Protocol string `json:"protocol,omitempty"`
@@ -43,7 +43,7 @@ type OTLPOutput struct {
 	Path string `json:"path,omitempty"`
 	// Authentication defines authentication options for the OTLP output
 	Authentication *AuthenticationOptions `json:"authentication,omitempty"`
-	// Headers defines custom headers to be added to outgoing HTTP or GRPC requests.
+	// Headers defines custom headers to be added to outgoing HTTP or gRPC requests.
 	Headers []Header `json:"headers,omitempty"`
 	// TLS defines TLS options for the OTLP output.
 	TLS *OTLPTLS `json:"tls,omitempty"`

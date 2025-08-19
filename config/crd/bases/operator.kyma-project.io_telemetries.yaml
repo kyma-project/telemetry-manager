@@ -243,7 +243,7 @@ spec:
                     description: Logs contains the endpoints for log gateway supporting OTLP.
                     properties:
                       grpc:
-                        description: GRPC endpoint for OTLP.
+                        description: gRPC endpoint for OTLP.
                         type: string
                       http:
                         description: HTTP endpoint for OTLP.
@@ -253,7 +253,7 @@ spec:
                     description: Metrics contains the endpoints for metric gateway supporting OTLP.
                     properties:
                       grpc:
-                        description: GRPC endpoint for OTLP.
+                        description: gRPC endpoint for OTLP.
                         type: string
                       http:
                         description: HTTP endpoint for OTLP.
@@ -263,7 +263,7 @@ spec:
                     description: Traces contains the endpoints for trace gateway supporting OTLP.
                     properties:
                       grpc:
-                        description: GRPC endpoint for OTLP.
+                        description: gRPC endpoint for OTLP.
                         type: string
                       http:
                         description: HTTP endpoint for OTLP.

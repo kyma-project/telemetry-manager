@@ -132,7 +132,7 @@ type GatewayEndpoints struct {
 }
 
 type OTLPEndpoints struct {
-	// GRPC endpoint for OTLP.
+	// gRPC endpoint for OTLP.
 	GRPC string `json:"grpc,omitempty"`
 	// HTTP endpoint for OTLP.
 	HTTP string `json:"http,omitempty"`
