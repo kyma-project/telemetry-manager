@@ -2,12 +2,12 @@ name: Finalize test
 description: Finalizes integration test execution with cleanup and collecting dumps for the error scenario
 
 inputs:
+  id:
+    description: A unique identifier of the test run (used for naming artifacts)
+    required: true
   failure:
     description: Are we in failure mode?
     required: true
-  job-name:
-    description: The name of the job
-    required: false
 
 runs:
   using: "composite"
@@ -16,7 +16,7 @@ runs:
     - name: Upload JUnit report
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
-        name: ${{ inputs.job-name }}-report
+        name: ${{ inputs.id }}-report
         path: junit-report*.xml
 
     - name: Describe manager pod

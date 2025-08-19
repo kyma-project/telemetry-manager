@@ -2,8 +2,8 @@ name: Run test
 description: Execute integration test
 
 inputs:
-  name:
-    description: The name of the integration test
+  id:
+    description: A unique identifier of the test run (used for naming artifacts)
     required: true
   path:
     description: The path to the tests
@@ -23,6 +23,6 @@ runs:
         bin/gotestsum
           --format dots-v2
           --hide-summary=skipped
-          --junitfile junit-report-${{ inputs.name }}.xml
+          --junitfile junit-report-${{ inputs.id }}.xml
           -- -timeout=20m ${{ inputs.path }}
           -- -labels="${{ inputs.labels }}"

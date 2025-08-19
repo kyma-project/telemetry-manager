@@ -101,14 +101,14 @@ jobs:
       - name: Run a subset of istio tests
         uses: "./.github/template/run-test"
         with:
-          name: gardener-istio
+          id: gardener-istio
           path: ./test/integration/...
           labels: "gardener"
 
       - name: Run a subset of e2e tests
         uses: "./.github/template/run-test"
         with:
-          name: gardener-istio
+          id: gardener-e2e
           path: ./test/e2e/...
           labels: "gardener"
 

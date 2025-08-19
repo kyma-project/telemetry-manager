@@ -111,5 +111,5 @@ jobs:
         uses: "./.github/template/finalize-test"
         if: ${{ !cancelled()  }}
         with:
+          id: ${{ github.job }}
           failure: failure()
-          job-name: ${{ github.job }}
