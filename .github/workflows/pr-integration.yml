@@ -85,7 +85,9 @@ jobs:
 
       - name: Run tests
         run: |
-          go test -v -timeout=20m ./test/selfmonitor/... -- -labels="selfmonitor-${{ matrix.scenario }}-${{ matrix.kind }}"
+          gotestsum --format dots-v2 --hide-summary=skipped --junitfile junit-report-selfmonitor.xml \
+          -- -timeout=20m ./test/selfmonitor/... \
+          -- -labels="selfmonitor-${{ matrix.scenario }}-${{ matrix.kind }}"
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"
@@ -161,12 +163,16 @@ jobs:
       - name: Run normal e2e tests
         if: ${{ matrix.labels.mode != 'integration' }}
         run: |
-          go test -v -timeout=20m ./test/e2e/... -- -labels=${{ matrix.labels.name }}
+          gotestsum --format dots-v2 --hide-summary=skipped --junitfile junit-report-e2e.xml \
+          -- -timeout=20m ./test/e2e/...
+          -- -labels=${{ matrix.labels.name }}
 
       - name: Run integration e2e tests
         if: ${{ matrix.labels.mode == 'integration' }}
         run: |
-          go test -v -timeout=20m ./test/integration/... -- -labels=${{ matrix.labels.name }}
+          gotestsum --format dots-v2 --hide-summary=skipped --junitfile junit-report-integration.xml \
+          -- -timeout=20m ./test/integration/...
+          -- -labels=${{ matrix.labels.name }}
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"

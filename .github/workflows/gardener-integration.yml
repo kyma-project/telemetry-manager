@@ -100,11 +100,17 @@ jobs:
 
       - name: Run a subset of istio tests
         shell: bash
-        run: go test -v -timeout=20m ./test/integration/... -- -labels=gardener
+        run: |
+          gotestsum --format dots-v2 --hide-summary=skipped --junitfile junit-report-gardener-istio.xml \
+          -- -timeout=20m ./test/integration/... \
+          -- -labels=gardener
 
       - name: Run a subset of e2e tests
         shell: bash
-        run: go test -v -timeout=20m ./test/e2e/... -- -labels=gardener
+        run: |
+          gotestsum --format dots-v2 --hide-summary=skipped --junitfile junit-report-gardener-e2e.xml \
+          -- -timeout=20m ./test/e2e/... \
+          -- -labels=gardener
 
       - name: Deprovision Gardener
         shell: bash
