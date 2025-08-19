@@ -64,7 +64,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Trace
 }
 
 // buildComponentFunc defines a function type for building components in the telemetry configuration
-type buildComponentFunc = func(ctx context.Context, tp *telemetryv1alpha1.TracePipeline) error
+type buildComponentFunc func(ctx context.Context, tp *telemetryv1alpha1.TracePipeline) error
 
 // componentConfigFunc creates the configuration for a component (receiver or processor)
 type componentConfigFunc func(tp *telemetryv1alpha1.TracePipeline) any
