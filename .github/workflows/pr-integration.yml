@@ -86,15 +86,15 @@ jobs:
       - name: Run test
         uses: "./.github/template/run-test"
         with:
-          id: ${{ matrix.scenario }}-${{ matrix.kind }}
+          id: ${{ matrix.kind }}-${{ matrix.scenario }}
           path: ./test/selfmonitor/...
-          labels: "selfmonitor-${{ matrix.scenario }}-${{ matrix.kind }}"
+          labels: "selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}"
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"
         if: ${{ !cancelled()  }}
         with:
-          id: ${{ github.job }}-${{ matrix.scenario }}-${{ matrix.kind }}
+          id: ${{ github.job }}-${{ matrix.kind }}-${{ matrix.scenario }}
           failure: failure()
 
   e2e:
@@ -188,7 +188,7 @@ jobs:
         uses: "./.github/template/finalize-test"
         if: ${{ !cancelled()  }}
         with:
-          id: ${{ github.job }}-${{ matrix.labels }}
+          id: ${{ matrix.labels.type }}-${{ matrix.labels.name }}
           failure: failure()
 
       - name: Print logs from all pods in kyma-system namespace
