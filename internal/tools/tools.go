@@ -11,7 +11,6 @@ import (
 	_ "github.com/bombsimon/wsl/v5/cmd/wsl"
 	_ "github.com/golangci/golangci-lint/v2/cmd/golangci-lint"
 	_ "github.com/google/yamlfmt/cmd/yamlfmt"
-	_ "github.com/gotestyourself/gotestsum"
 	_ "github.com/hairyhenderson/gomplate/v4/cmd/gomplate"
 	_ "github.com/itchyny/gojq/cmd/gojq"
 	_ "github.com/k3d-io/k3d/v5"
@@ -21,6 +20,7 @@ import (
 	_ "github.com/vladopajic/go-test-coverage/v2"
 	_ "github.com/yeya24/promlinter/cmd/promlinter"
 	_ "golang.org/x/tools/cmd/stringer"
+	_ "gotest.tools/gotestsum"
 	_ "sigs.k8s.io/controller-tools/cmd/controller-gen"
 	_ "sigs.k8s.io/kustomize/kustomize/v5"
 )
