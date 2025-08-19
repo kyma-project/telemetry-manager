@@ -112,10 +112,6 @@ func (b *Builder) withReceiver(componentIDFunc componentIDFunc, configFunc compo
 			b.config.Receivers[componentID] = config
 		}
 
-		if len(b.config.Service.Pipelines) == 0 {
-			panic("no service pipelines found in config, cannot add receiver")
-		}
-
 		pipelineID := formatTraceServicePipelineID(tp)
 		pipeline := b.config.Service.Pipelines[pipelineID]
 		pipeline.Receivers = append(pipeline.Receivers, componentID)
