@@ -97,14 +97,13 @@ func (b *Builder) addServicePipeline(ctx context.Context, pipeline *telemetryv1a
 // withReceiver creates a decorator for adding receivers
 func (b *Builder) withReceiver(componentIDFunc componentIDFunc, configFunc componentConfigFunc) buildComponentFunc {
 	return func(ctx context.Context, tp *telemetryv1alpha1.TracePipeline) error {
-		componentID := componentIDFunc(tp)
-
 		config := configFunc(tp)
 		if config == nil {
 			// If no config is provided, skip adding the receiver
 			return nil
 		}
 
+		componentID := componentIDFunc(tp)
 		if _, found := b.config.Receivers[componentID]; !found {
 			b.config.Receivers[componentID] = config
 		}
@@ -121,14 +120,13 @@ func (b *Builder) withReceiver(componentIDFunc componentIDFunc, configFunc compo
 // withProcessor creates a decorator for adding processors
 func (b *Builder) withProcessor(componentIDFunc componentIDFunc, configFunc componentConfigFunc) buildComponentFunc {
 	return func(ctx context.Context, tp *telemetryv1alpha1.TracePipeline) error {
-		componentID := componentIDFunc(tp)
-
 		config := configFunc(tp)
 		if config == nil {
 			// If no config is provided, skip adding the processor
 			return nil
 		}
 
+		componentID := componentIDFunc(tp)
 		if _, found := b.config.Processors[componentID]; !found {
 			config := configFunc(tp)
 			b.config.Processors[componentID] = config
@@ -146,8 +144,6 @@ func (b *Builder) withProcessor(componentIDFunc componentIDFunc, configFunc comp
 // withExporter creates a decorator for adding exporters
 func (b *Builder) withExporter(componentIDFunc componentIDFunc, configFunc exporterComponentConfigFunc) buildComponentFunc {
 	return func(ctx context.Context, tp *telemetryv1alpha1.TracePipeline) error {
-		componentID := componentIDFunc(tp)
-
 		config, envVars, err := configFunc(ctx, tp)
 		if err != nil {
 			return fmt.Errorf("failed to create exporter config: %w", err)
@@ -158,6 +154,7 @@ func (b *Builder) withExporter(componentIDFunc componentIDFunc, configFunc expor
 			return nil
 		}
 
+		componentID := componentIDFunc(tp)
 		b.config.Exporters[componentID] = config
 		maps.Copy(b.envVars, envVars)
 
