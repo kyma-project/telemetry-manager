@@ -19,10 +19,10 @@ runs:
   steps:
     - name: Run tests with gotestsum
       shell: bash
-      run: >
-        bin/gotestsum
-          --format dots-v2
-          --hide-summary=skipped
-          --junitfile junit-report-${{ inputs.id }}.xml
-          -- -timeout=20m ${{ inputs.path }}
+      run: |
+        bin/gotestsum \
+          --format dots-v2 \
+          --hide-summary=skipped \
+          --junitfile junit-report-${{ inputs.id }}.xml \
+          -- -timeout=20m ${{ inputs.path }} \
           -- -labels="${{ inputs.labels }}"
