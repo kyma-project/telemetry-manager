@@ -94,7 +94,7 @@ jobs:
         uses: "./.github/template/finalize-test"
         if: ${{ !cancelled()  }}
         with:
-          id: ${{ github.job }}-${{ matrix.kind }}-${{ matrix.scenario }}
+          id: selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}
           failure: failure()
 
   e2e:
