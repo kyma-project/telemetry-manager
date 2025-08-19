@@ -85,6 +85,10 @@ func staticComponentID(componentID string) componentIDFunc {
 }
 
 func (b *Builder) addServicePipeline(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, fs ...buildComponentFunc) error {
+	// Add an empty pipeline to the config
+	pipelineID := formatTraceServicePipelineID(pipeline)
+	b.config.Service.Pipelines[pipelineID] = common.Pipeline{}
+
 	for _, f := range fs {
 		if err := f(ctx, pipeline); err != nil {
 			return fmt.Errorf("failed to add component: %w", err)
@@ -106,6 +110,10 @@ func (b *Builder) withReceiver(componentIDFunc componentIDFunc, configFunc compo
 		componentID := componentIDFunc(tp)
 		if _, found := b.config.Receivers[componentID]; !found {
 			b.config.Receivers[componentID] = config
+		}
+
+		if len(b.config.Service.Pipelines) == 0 {
+			panic("no service pipelines found in config, cannot add receiver")
 		}
 
 		pipelineID := formatTraceServicePipelineID(tp)
