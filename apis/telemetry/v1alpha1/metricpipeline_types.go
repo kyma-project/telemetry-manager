@@ -48,19 +48,19 @@ type MetricPipeline struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	// Defines the desired characteristics of MetricPipeline.
+	// Spec defines the desired characteristics of MetricPipeline.
 	Spec MetricPipelineSpec `json:"spec,omitempty"`
 
-	// Represents the current information/status of MetricPipeline.
+	// Status represents the current information/status of MetricPipeline.
 	Status MetricPipelineStatus `json:"status,omitempty"`
 }
 
 // MetricPipelineSpec defines the desired state of MetricPipeline.
 type MetricPipelineSpec struct {
-	// Configures different inputs to send additional metrics to the metric gateway.
+	// Input configures additional inputs for metric collection.
 	Input MetricPipelineInput `json:"input,omitempty"`
 
-	// Configures the metric gateway.
+	// Output configures the backend to which metrics are sent. You must specify exactly one output per pipeline.
 	Output MetricPipelineOutput `json:"output,omitempty"`
 
 	// Transforms specify a list of transformations to apply to telemetry data.
@@ -68,103 +68,101 @@ type MetricPipelineSpec struct {
 	Transforms []TransformSpec `json:"transform,omitempty"`
 }
 
-// MetricPipelineInput defines the input configuration section.
+// MetricPipelineInput configures additional inputs for metric collection.
 type MetricPipelineInput struct {
-	// Configures Prometheus scraping.
+	// Prometheus input configures collection of application metrics in the pull-based Prometheus protocol using endpoint discovery based on annotations.
 	// +optional
 	Prometheus *MetricPipelinePrometheusInput `json:"prometheus,omitempty"`
-	// Configures runtime scraping.
+	// Runtime input configures collection of Kubernetes runtime metrics.
 	// +optional
 	Runtime *MetricPipelineRuntimeInput `json:"runtime,omitempty"`
-	// Configures istio-proxy metrics scraping.
+	// Istio input configures collection of Istio metrics from applications running in the Istio service mesh.
 	// +optional
 	Istio *MetricPipelineIstioInput `json:"istio,omitempty"`
-	// Configures the collection of push-based metrics that use the OpenTelemetry protocol.
+	// OTLP input configures the push endpoint to receive metrics from an OTLP source.
 	// +optional
 	OTLP *OTLPInput `json:"otlp,omitempty"`
 }
 
-// MetricPipelinePrometheusInput defines the Prometheus scraping section.
+// MetricPipelinePrometheusInput collection of application metrics in the pull-based Prometheus protocol using endpoint discovery based on annotations.
 type MetricPipelinePrometheusInput struct {
-	// If enabled, Services and Pods marked with `prometheus.io/scrape=true` annotation are scraped. The default is `false`.
+	// Enabled specifies whether Service endpoints and Pods marked with `prometheus.io/scrape=true` annotation are scraped. The default is `false`.
 	Enabled *bool `json:"enabled,omitempty"`
-	// Describes whether Prometheus metrics from specific namespaces are selected. System namespaces are disabled by default.
+	// Namespaces specifies from which namespaces metrics are collected. By default, all namespaces except the system namespaces are enabled. To enable all namespaces including system namespaces, use an empty struct notation.
 	// +optional
 	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
-	// Configures diagnostic metrics scraping. The diagnostic metrics are disabled by default.
+	// DiagnosticMetrics configures collection of additional diagnostic metrics. The default is `false`.
 	DiagnosticMetrics *MetricPipelineIstioInputDiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
 }
 
-// MetricPipelineRuntimeInput defines the runtime scraping section.
+// MetricPipelineRuntimeInput configures collection of Kubernetes runtime metrics.
 type MetricPipelineRuntimeInput struct {
-	// If enabled, runtime metrics are scraped. The default is `false`.
+	// Enabled specifies whether runtime metrics are collected. The default is `false`.
 	Enabled *bool `json:"enabled,omitempty"`
-	// Describes whether runtime metrics from specific namespaces are selected. System namespaces are disabled by default.
+	// Namespaces specifies from which namespaces metrics are collected. By default, all namespaces except the system namespaces are enabled. To enable all namespaces including system namespaces, use an empty struct notation.
 	// +optional
 	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
-	// Describes the Kubernetes resources for which runtime metrics are scraped.
+	// Resources configures the Kubernetes resource types for which metrics are collected.
 	// +optional
 	Resources *MetricPipelineRuntimeInputResources `json:"resources,omitempty"`
 }
 
-// MetricPipelineRuntimeInputResources describes the Kubernetes resources for which runtime metrics are scraped.
+// MetricPipelineRuntimeInputResources configures the Kubernetes resource types for which metrics are collected.
 type MetricPipelineRuntimeInputResources struct {
-	// Configures Pod runtime metrics scraping.
+	// Pod configures Pod runtime metrics collection.
 	// +optional
 	Pod *MetricPipelineRuntimeInputResource `json:"pod,omitempty"`
-	// Configures container runtime metrics scraping.
+	// Container configures container runtime metrics collection.
 	// +optional
 	Container *MetricPipelineRuntimeInputResource `json:"container,omitempty"`
-	// Configures Node runtime metrics scraping.
+	// Node configures Node runtime metrics collection.
 	// +optional
 	Node *MetricPipelineRuntimeInputResource `json:"node,omitempty"`
-	// Configures Volume runtime metrics scraping.
+	// Volume configures Volume runtime metrics collection.
 	// +optional
 	Volume *MetricPipelineRuntimeInputResource `json:"volume,omitempty"`
-	// Configures DaemonSet runtime metrics scraping.
+	// DaemonSet configures DaemonSet runtime metrics collection.
 	// +optional
 	DaemonSet *MetricPipelineRuntimeInputResource `json:"daemonset,omitempty"`
-	// Configures Deployment runtime metrics scraping.
+	// Deployment configures Deployment runtime metrics collection.
 	// +optional
 	Deployment *MetricPipelineRuntimeInputResource `json:"deployment,omitempty"`
-	// Configures StatefulSet runtime metrics scraping.
+	// StatefulSet configures StatefulSet runtime metrics collection.
 	// +optional
 	StatefulSet *MetricPipelineRuntimeInputResource `json:"statefulset,omitempty"`
-	// Configures Job runtime metrics scraping.
+	// Job configures Job runtime metrics collection.
 	// +optional
 	Job *MetricPipelineRuntimeInputResource `json:"job,omitempty"`
 }
 
-// MetricPipelineRuntimeInputResource defines if the scraping of runtime metrics is enabled for a specific resource. The scraping is enabled by default.
+// MetricPipelineRuntimeInputResource configures if the collection of runtime metrics is enabled for a specific resource type. The collection is enabled by default.
 type MetricPipelineRuntimeInputResource struct {
-	// If enabled, the runtime metrics for the resource are scraped. The default is `true`.
+	// Enabled specifies that the runtime metrics for the resource type are collected. The default is `true`.
 	// +optional
 	Enabled *bool `json:"enabled,omitempty"`
 }
 
 // MetricPipelineIstioInput defines the Istio scraping section.
 type MetricPipelineIstioInput struct {
-	// If enabled, istio-proxy metrics are scraped from Pods that have the istio-proxy sidecar injected. The default is `false`.
+	// Enabled specifies that istio-proxy metrics are scraped from Pods that have the istio-proxy sidecar injected. The default is `false`.
 	Enabled *bool `json:"enabled,omitempty"`
-	// Describes whether istio-proxy metrics from specific namespaces are selected. System namespaces are enabled by default.
-	// +optional
+	// Namespaces configures the namespaces for which the collection should be activated. By default, all namespaces including system namespaces are enabled.
 	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
-	// Configures diagnostic metrics scraping. The diagnostic metrics are disabled by default.
+	// DiagnosticMetrics configures collection of additional diagnostic metrics. The default is `false`.
 	DiagnosticMetrics *MetricPipelineIstioInputDiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
-	// EnvoyMetrics defines the configuration for scraping Envoy metrics.
-	// If enabled, Envoy metrics with prefix `envoy_` are scraped. The envoy metrics are disabled by default.
+	// EnvoyMetrics enables the collection of additional Envoy metrics with prefix `envoy_`. The default is `false`.
 	EnvoyMetrics *EnvoyMetrics `json:"envoyMetrics,omitempty"`
 }
 
 // MetricPipelineIstioInputDiagnosticMetrics defines the diagnostic metrics configuration section
 type MetricPipelineIstioInputDiagnosticMetrics struct {
-	// If enabled, diagnostic metrics are scraped. The default is `false`.
+	// If enabled, diagnostic metrics are collected. The default is `false`.
 	Enabled *bool `json:"enabled,omitempty"`
 }
 
 // MetricPipelineOutput defines the output configuration section.
 type MetricPipelineOutput struct {
-	// Defines an output using the OpenTelemetry protocol.
+	// OTLP output defines an output using the OpenTelemetry protocol.
 	OTLP *OTLPOutput `json:"otlp"`
 }
 
@@ -176,6 +174,6 @@ type MetricPipelineStatus struct {
 
 // EnvoyMetrics defines the configuration for scraping Envoy metrics.
 type EnvoyMetrics struct {
-	// If enabled, Envoy metrics with prefix `envoy_` are scraped. The default is `false`.
+	// Enabled specifies that Envoy metrics with prefix `envoy_` are scraped additionally. The default is `false`.
 	Enabled *bool `json:"enabled,omitempty"`
 }

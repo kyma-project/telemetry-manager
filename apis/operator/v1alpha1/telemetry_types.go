@@ -38,45 +38,44 @@ const (
 
 // TelemetrySpec defines the desired state of Telemetry
 type TelemetrySpec struct {
+	// Trace configures module settings specific to the trace features. This field is optional.
 	// +optional
 	Trace *TraceSpec `json:"trace,omitempty"`
 
+	// Metric configures module settings specific to the metric features. This field is optional.
 	// +optional
 	Metric *MetricSpec `json:"metric,omitempty"`
 
+	// Log configures module settings specific to the log features. This field is optional.
 	// +optional
 	Log *LogSpec `json:"log,omitempty"`
 
-	// Enrichments specifies optional enrichments for the telemetry data.
-	// This field is optional.
+	// Enrichments configures optional enrichments of all telemetry data collected by pipelines. This field is optional.
+	// +optional
 	Enrichments *EnrichmentSpec `json:"enrichments,omitempty"`
 }
 
-// MetricSpec defines the behavior of the metric gateway
+// MetricSpec configures module settings specific to the metric features.
 type MetricSpec struct {
-	Gateway MetricGatewaySpec `json:"gateway,omitempty"`
+	// Gateway configures the metric gateway.
+	Gateway GatewaySpec `json:"gateway,omitempty"`
 }
 
-type MetricGatewaySpec struct {
-	Scaling Scaling `json:"scaling,omitempty"`
-}
-
-// TraceSpec defines the behavior of the trace gateway
+// TraceSpec configures module settings specific to the trace features.
 type TraceSpec struct {
-	Gateway TraceGatewaySpec `json:"gateway,omitempty"`
+	// Gateway configures the trace gateway.
+	Gateway GatewaySpec `json:"gateway,omitempty"`
 }
 
-type TraceGatewaySpec struct {
-	Scaling Scaling `json:"scaling,omitempty"`
-}
-
-// LogSpec defines the behavior of the log gateway.
+// LogSpec configures module settings specific to the log features.
 type LogSpec struct {
-	// Gateway specifies the settings for the log gateway.
-	Gateway LogGatewaySpec `json:"gateway,omitempty"`
+	// Gateway configures the log gateway.
+	Gateway GatewaySpec `json:"gateway,omitempty"`
 }
 
-type LogGatewaySpec struct {
+// GatewaySpec defines settings of a gateway.
+type GatewaySpec struct {
+	// Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
 	Scaling Scaling `json:"scaling,omitempty"`
 }
 
@@ -115,9 +114,9 @@ type TelemetryStatus struct {
 	// If all Conditions are met, State is expected to be in StateReady.
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
-	// endpoints for trace and metric gateway.
+	// Endpoints for log, trace, and metric gateway.
 	// +nullable
-	GatewayEndpoints GatewayEndpoints `json:"endpoints,omitempty"`
+	Endpoints GatewayEndpoints `json:"endpoints,omitempty"`
 	// add other fields to status subresource here
 }
 
@@ -125,15 +124,15 @@ type GatewayEndpoints struct {
 	// Logs contains the endpoints for log gateway supporting OTLP.
 	Logs *OTLPEndpoints `json:"logs,omitempty"`
 
-	// traces contains the endpoints for trace gateway supporting OTLP.
+	// Traces contains the endpoints for trace gateway supporting OTLP.
 	Traces *OTLPEndpoints `json:"traces,omitempty"`
 
-	// metrics contains the endpoints for metric gateway supporting OTLP.
+	// Metrics contains the endpoints for metric gateway supporting OTLP.
 	Metrics *OTLPEndpoints `json:"metrics,omitempty"`
 }
 
 type OTLPEndpoints struct {
-	// GRPC endpoint for OTLP.
+	// gRPC endpoint for OTLP.
 	GRPC string `json:"grpc,omitempty"`
 	// HTTP endpoint for OTLP.
 	HTTP string `json:"http,omitempty"`
