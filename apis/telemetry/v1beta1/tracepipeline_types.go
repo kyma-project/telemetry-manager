@@ -47,15 +47,15 @@ type TracePipeline struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	// Defines the desired state of TracePipeline
+	// Spec defines the desired state of TracePipeline
 	Spec TracePipelineSpec `json:"spec,omitempty"`
-	// Shows the observed state of the TracePipeline
+	// Status shows the observed state of the TracePipeline
 	Status TracePipelineStatus `json:"status,omitempty"`
 }
 
 // TracePipelineSpec defines the desired state of TracePipeline
 type TracePipelineSpec struct {
-	// Defines a destination for shipping trace data. Only one can be defined per pipeline.
+	// Output configures the backend to which traces  are sent. You must specify exactly one output per pipeline.
 	Output TracePipelineOutput `json:"output"`
 
 	// Transforms specify a list of transformations to apply to telemetry data.
@@ -65,7 +65,7 @@ type TracePipelineSpec struct {
 
 // TracePipelineOutput defines the output configuration section.
 type TracePipelineOutput struct {
-	// Configures the underlying OTel Collector with an [OTLP exporter](https://github.com/open-telemetry/opentelemetry-collector/blob/main/exporter/otlpexporter/README.md). If you switch `protocol`to `http`, an [OTLP HTTP exporter](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/otlphttpexporter) is used.
+	// OTLP output defines an output using the OpenTelemetry protocol.
 	OTLP *OTLPOutput `json:"otlp"`
 }
 
