@@ -52,12 +52,14 @@ func TestLogsUpgrade(t *testing.T) {
 	})
 
 	t.Run("after upgrade", func(t *testing.T) {
-		// TODO(TeodorSAP): Delete after 1.47 release
+		// TODO(TeodorSAP): Delete after 1.47 release ---
 		assert.DeploymentReady(t, kitkyma.LogGatewayName)
 		assert.OTelLogPipelineHealthy(t, "logs-otel-upgrade")
+
 		backend = kitbackend.New("logs-otel-upgrade-otel-backend", kitbackend.SignalTypeLogsOTel)
 		assert.BackendReachable(t, backend)
 		assert.OTelLogsFromNamespaceDelivered(t, backend, "logs-otel-upgrade-otel-gen")
+		// ---
 
 		// TODO(TeodorSAP): Uncomment after 1.47 release
 		// assert.DeploymentReady(t, kitkyma.LogGatewayName)
