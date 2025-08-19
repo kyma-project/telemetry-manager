@@ -8,6 +8,7 @@ FLUENT_BIT_IMAGE ?= $(ENV_FLUENTBIT_IMAGE)
 OTEL_COLLECTOR_IMAGE ?= $(ENV_OTEL_COLLECTOR_IMAGE)
 SELF_MONITOR_IMAGE?= $(ENV_SELFMONITOR_IMAGE)
 K3S_IMAGE ?= $(ENV_K3S_IMAGE)
+ALPINE_IMAGE ?= $(ENV_ALPINE_IMAGE)
 
 # Operating system architecture
 OS_ARCH ?= $(shell uname -m)
@@ -172,6 +173,7 @@ generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) $(YQ) $(YAMLFMT) $(POPULATE_I
 	$(YQ) eval '.spec.template.spec.containers[] |= (select(.name == "manager") | .env[] |= (select(.name == "FLUENT_BIT_EXPORTER_IMAGE") | .value = ${FLUENT_BIT_EXPORTER_IMAGE}))' -i config/manager/manager.yaml
 	$(YQ) eval '.spec.template.spec.containers[] |= (select(.name == "manager") | .env[] |= (select(.name == "OTEL_COLLECTOR_IMAGE") | .value = ${OTEL_COLLECTOR_IMAGE}))' -i config/manager/manager.yaml
 	$(YQ) eval '.spec.template.spec.containers[] |= (select(.name == "manager") | .env[] |= (select(.name == "SELF_MONITOR_IMAGE") | .value = ${SELF_MONITOR_IMAGE}))' -i config/manager/manager.yaml
+	$(YQ) eval '.spec.template.spec.containers[] |= (select(.name == "manager") | .env[] |= (select(.name == "ALPINE_IMAGE") | .value = ${ALPINE_IMAGE}))' -i config/manager/manager.yaml
 	$(YAMLFMT)
 	$(POPULATE_IMAGES)
 .PHONY: fmt
