@@ -16,7 +16,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-// LogPipeline (OTel) upgrade test flow
+// LogPipeline upgrade test flow
 func TestLogsUpgrade(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelUpgrade)
 
