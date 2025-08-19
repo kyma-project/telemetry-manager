@@ -74,10 +74,6 @@ jobs:
       - name: Switch back to current revision
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      - name: Wait for cleanup of test run
-        shell: bash
-        run: hack/wait-for-namespaces.sh
-
       # wait for the build to complete so that the manager image is available
       - name: Wait for the Build Image workflow to complete
         run: "./hack/await_image.sh"
@@ -102,7 +98,7 @@ jobs:
       - name: Run tests on current revision
         shell: bash
         run: |
-          go test -v -timeout=10m -run="^(TestLogsUpgrade|TestLogsOTelUpgrade|TestMetricsUpgrade|TestTracesUpgrade)/after_upgrade$" ./test/e2e/upgrade/...
+          go test -v -timeout=10m -run="^(TestLogsFluentBitUpgrade|TestLogsUpgrade|TestMetricsUpgrade|TestTracesUpgrade)/after_upgrade$" ./test/e2e/upgrade/...
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"

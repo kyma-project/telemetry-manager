@@ -16,22 +16,22 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-// LogPipeline (OTel) upgrade test flow
-func TestLogsOTelUpgrade(t *testing.T) {
+// LogPipeline (FluentBit) upgrade test flow
+func TestLogsFluentBitUpgrade(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelUpgrade)
 
 	var (
-		uniquePrefix = unique.Prefix("otel")
+		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
 		backendNs    = uniquePrefix("backend")
 		genNs        = uniquePrefix("gen")
 	)
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+		WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 		Build()
 
 	resources := []client.Object{
@@ -45,16 +45,26 @@ func TestLogsOTelUpgrade(t *testing.T) {
 	t.Run("before upgrade", func(t *testing.T) {
 		Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-		assert.DeploymentReady(t, kitkyma.LogGatewayName)
-		assert.OTelLogPipelineHealthy(t, pipelineName)
+		assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
+		assert.FluentBitLogPipelineHealthy(t, pipelineName)
 		assert.BackendReachable(t, backend)
-		assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
+		assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
 	})
 
 	t.Run("after upgrade", func(t *testing.T) {
-		assert.DeploymentReady(t, kitkyma.LogGatewayName)
-		assert.OTelLogPipelineHealthy(t, pipelineName)
+		// TODO(TeodorSAP): Delete after 1.47 release ---
+		assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
+		assert.FluentBitLogPipelineHealthy(t, "logs-upgrade")
+
+		backend = kitbackend.New("logs-upgrade-backend", kitbackend.SignalTypeLogsFluentBit)
 		assert.BackendReachable(t, backend)
-		assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
+		assert.FluentBitLogsFromNamespaceDelivered(t, backend, "logs-upgrade-gen")
+		// ---
+
+		// TODO(TeodorSAP): Uncomment after 1.47 release
+		// assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
+		// assert.FluentBitLogPipelineHealthy(t, pipelineName)
+		// assert.BackendReachable(t, backend)
+		// assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
 	})
 }
