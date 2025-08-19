@@ -74,14 +74,14 @@ spec:
       - "*/*svc.cluster.local"
 ```
 
-However, `Sidecar` CRD only permits traffic; it does not control interception. Without annotations, all traffic is intercepted, which breaks Prometheus scraping of Istio and Envoy metrics which makes it unsuitable here.
+However, `Sidecar` CRD only permits traffic; it does not control interception. Without annotations, all traffic is intercepted, which breaks Prometheus scraping of Istio and Envoy metrics, which makes it unsuitable here.
 The `Sidecar` CRD does not work in combination with the Istio annotations `traffic.sidecar.istio.io/includeOutboundPorts` and `traffic.sidecar.istio.io/includeOutboundIPRanges`, because these annotations take precedence over the `Sidecar` CRD configuration.
 
 ## Proposal
 
 The Metric Agent controls sidecar interception with the following annotations:
 - `traffic.sidecar.istio.io/includeOutboundPorts` – Ports specifies the ports that always intercept outbound communication (for mesh-enabled backends).
-- `traffic.sidecar.istio.io/includeOutboundIPRanges` – To bypass outbound communication interception, the annotation must have an empty value, in this way Prometheus scraping of Istio and Envoy metrics enabled.
+- `traffic.sidecar.istio.io/includeOutboundIPRanges` – To bypass outbound communication interception, the annotation must have an empty value. This way, Prometheus scraping of Istio and Envoy metrics is enabled.
 
 We reuse the current approach:
 1. Metric Agent adds configured backend ports (such as OTel Collector, or in-cluster Prometheus) to the `traffic.sidecar.istio.io/includeOutboundPorts` annotation.
