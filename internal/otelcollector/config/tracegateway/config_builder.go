@@ -32,94 +32,285 @@ type BuildOptions struct {
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.TracePipeline, opts BuildOptions) (*Config, common.EnvVars, error) {
-	b.config = b.baseConfig(opts)
+	b.config = &Config{
+		Base:       common.BaseConfig(),
+		Receivers:  make(map[string]any),
+		Processors: make(map[string]any),
+		Exporters:  make(map[string]any),
+	}
 	b.envVars = make(common.EnvVars)
 
 	// Iterate over each TracePipeline CR and enrich the config with pipeline-specific components
 	queueSize := maxQueueSize / len(pipelines)
 
 	for i := range pipelines {
-		pipeline := pipelines[i]
-
-		if err := b.addComponentsForTracePipeline(ctx, &pipeline, queueSize); err != nil {
-			return nil, nil, err
+		if err := b.addServicePipeline(ctx, &pipelines[i],
+			b.addOTLPReceiver(),
+			b.addMemoryLimiterProcessor(),
+			b.addK8sAttributesProcessor(opts),
+			b.addIstioNoiseFilterProcessor(),
+			b.addInsertClusterAttributesProcessor(opts),
+			b.addServiceEnrichmentProcessor(),
+			b.addDropKymaAttributesProcessor(),
+			b.addUserDefinedTransformProcessor(),
+			b.addBatchProcessor(),
+			b.addOTLPExporter(queueSize),
+		); err != nil {
+			return nil, nil, fmt.Errorf("failed to add service pipeline: %w", err)
 		}
-
-		b.addServicePipelines(&pipeline)
 	}
 
 	return b.config, b.envVars, nil
 }
 
-// baseConfig creates the static/global base configuration for the trace gateway collector.
-// Pipeline-specific components are added later via addComponentsForTracePipeline method.
-func (b *Builder) baseConfig(opts BuildOptions) *Config {
-	return &Config{
-		Base: common.Base{
-			Service:    common.ServiceConfig(make(common.Pipelines)),
-			Extensions: common.ExtensionsConfig(),
-		},
-		Receivers:  receiversConfig(),
-		Processors: processorsConfig(opts),
-		Exporters:  make(Exporters),
+// buildComponentFunc defines a function type for building components in the telemetry configuration
+type buildComponentFunc func(ctx context.Context, tp *telemetryv1alpha1.TracePipeline) error
+
+// componentConfigFunc creates the configuration for a component (receiver or processor)
+type componentConfigFunc func(tp *telemetryv1alpha1.TracePipeline) any
+
+// exporterComponentConfigFunc creates the configuration for an exporter component
+// creating exporters is different from receivers and processors, as it makes an API server call to resolve the reference secrets
+// and returns the configuration along with environment variables needed for the exporter
+type exporterComponentConfigFunc func(ctx context.Context, tp *telemetryv1alpha1.TracePipeline) (any, common.EnvVars, error)
+
+// componentIDFunc determines the ID of a component
+type componentIDFunc func(*telemetryv1alpha1.TracePipeline) string
+
+// staticComponentID returns a ComponentIDFunc that always returns the same component ID independent of the TracePipeline
+func staticComponentID(componentID string) componentIDFunc {
+	return func(*telemetryv1alpha1.TracePipeline) string {
+		return componentID
 	}
 }
 
-func receiversConfig() Receivers {
-	return Receivers{
-		OTLP: common.OTLPReceiver{
-			Protocols: common.ReceiverProtocols{
-				HTTP: common.Endpoint{
-					Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPHTTP),
-				},
-				GRPC: common.Endpoint{
-					Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPGRPC),
-				},
-			},
-		},
+func (b *Builder) addServicePipeline(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, fs ...buildComponentFunc) error {
+	// Add an empty pipeline to the config
+	pipelineID := formatTraceServicePipelineID(pipeline)
+	b.config.Service.Pipelines[pipelineID] = common.Pipeline{}
+
+	for _, f := range fs {
+		if err := f(ctx, pipeline); err != nil {
+			return fmt.Errorf("failed to add component: %w", err)
+		}
 	}
-}
-
-// addComponentsForTracePipeline enriches a Config (exporters, processors, etc.) with components for a given telemetryv1alpha1.TracePipeline.
-func (b *Builder) addComponentsForTracePipeline(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, queueSize int) error {
-	b.addUserDefinedTransformProcessor(pipeline)
-	return b.addOTLPExporter(ctx, pipeline, queueSize)
-}
-
-func (b *Builder) addUserDefinedTransformProcessor(pipeline *telemetryv1alpha1.TracePipeline) {
-	if len(pipeline.Spec.Transforms) == 0 {
-		return
-	}
-
-	if b.config.Processors.Dynamic == nil {
-		b.config.Processors.Dynamic = make(map[string]any)
-	}
-
-	transformStatements := common.TransformSpecsToProcessorStatements(pipeline.Spec.Transforms)
-	transformProcessor := common.TraceTransformProcessorConfig(transformStatements)
-
-	processorID := formatUserDefinedTransformProcessorID(pipeline.Name)
-	b.config.Processors.Dynamic[processorID] = transformProcessor
-}
-
-func (b *Builder) addOTLPExporter(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, queueSize int) error {
-	otlpExporterBuilder := common.NewOTLPExporterConfigBuilder(
-		b.Reader,
-		pipeline.Spec.Output.OTLP,
-		pipeline.Name,
-		queueSize,
-		common.SignalTypeTrace,
-	)
-
-	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.OTLPExporterConfig(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to make otlp exporter config: %w", err)
-	}
-
-	maps.Copy(b.envVars, otlpExporterEnvVars)
-
-	otlpExporterID := common.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)
-	b.config.Exporters[otlpExporterID] = Exporter{OTLP: otlpExporterConfig}
 
 	return nil
+}
+
+// withReceiver creates a decorator for adding receivers
+func (b *Builder) withReceiver(componentIDFunc componentIDFunc, configFunc componentConfigFunc) buildComponentFunc {
+	return func(ctx context.Context, tp *telemetryv1alpha1.TracePipeline) error {
+		config := configFunc(tp)
+		if config == nil {
+			// If no config is provided, skip adding the receiver
+			return nil
+		}
+
+		componentID := componentIDFunc(tp)
+		if _, found := b.config.Receivers[componentID]; !found {
+			b.config.Receivers[componentID] = config
+		}
+
+		pipelineID := formatTraceServicePipelineID(tp)
+		pipeline := b.config.Service.Pipelines[pipelineID]
+		pipeline.Receivers = append(pipeline.Receivers, componentID)
+		b.config.Service.Pipelines[pipelineID] = pipeline
+
+		return nil
+	}
+}
+
+// withProcessor creates a decorator for adding processors
+func (b *Builder) withProcessor(componentIDFunc componentIDFunc, configFunc componentConfigFunc) buildComponentFunc {
+	return func(ctx context.Context, tp *telemetryv1alpha1.TracePipeline) error {
+		config := configFunc(tp)
+		if config == nil {
+			// If no config is provided, skip adding the processor
+			return nil
+		}
+
+		componentID := componentIDFunc(tp)
+		if _, found := b.config.Processors[componentID]; !found {
+			config := configFunc(tp)
+			b.config.Processors[componentID] = config
+		}
+
+		pipelineID := formatTraceServicePipelineID(tp)
+		pipeline := b.config.Service.Pipelines[pipelineID]
+		pipeline.Processors = append(pipeline.Processors, componentID)
+		b.config.Service.Pipelines[pipelineID] = pipeline
+
+		return nil
+	}
+}
+
+// withExporter creates a decorator for adding exporters
+func (b *Builder) withExporter(componentIDFunc componentIDFunc, configFunc exporterComponentConfigFunc) buildComponentFunc {
+	return func(ctx context.Context, tp *telemetryv1alpha1.TracePipeline) error {
+		config, envVars, err := configFunc(ctx, tp)
+		if err != nil {
+			return fmt.Errorf("failed to create exporter config: %w", err)
+		}
+
+		if config == nil {
+			// If no config is provided, skip adding the exporter
+			return nil
+		}
+
+		componentID := componentIDFunc(tp)
+		b.config.Exporters[componentID] = config
+		maps.Copy(b.envVars, envVars)
+
+		pipelineID := formatTraceServicePipelineID(tp)
+		pipeline := b.config.Service.Pipelines[pipelineID]
+		pipeline.Exporters = append(pipeline.Exporters, componentID)
+		b.config.Service.Pipelines[pipelineID] = pipeline
+
+		return nil
+	}
+}
+
+func (b *Builder) addOTLPReceiver() buildComponentFunc {
+	return b.withReceiver(
+		staticComponentID(common.ComponentIDOTLPReceiver),
+		func(tp *telemetryv1alpha1.TracePipeline) any {
+			return &common.OTLPReceiver{
+				Protocols: common.ReceiverProtocols{
+					HTTP: common.Endpoint{
+						Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPHTTP),
+					},
+					GRPC: common.Endpoint{
+						Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPGRPC),
+					},
+				},
+			}
+		},
+	)
+}
+
+//nolint:mnd // hardcoded values
+func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
+	return b.withProcessor(
+		staticComponentID(common.ComponentIDMemoryLimiterProcessor),
+		func(tp *telemetryv1alpha1.TracePipeline) any {
+			return &common.MemoryLimiter{
+				CheckInterval:        "1s",
+				LimitPercentage:      75,
+				SpikeLimitPercentage: 15,
+			}
+		},
+	)
+}
+
+func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFunc {
+	return b.withProcessor(
+		staticComponentID(common.ComponentIDK8sAttributesProcessor),
+		func(tp *telemetryv1alpha1.TracePipeline) any {
+			return common.K8sAttributesProcessorConfig(opts.Enrichments)
+		},
+	)
+}
+
+func (b *Builder) addIstioNoiseFilterProcessor() buildComponentFunc {
+	return b.withProcessor(
+		staticComponentID(common.ComponentIDIstioNoiseFilterProcessor),
+		func(tp *telemetryv1alpha1.TracePipeline) any {
+			return &common.IstioNoiseFilterProcessor{}
+		},
+	)
+}
+
+func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildComponentFunc {
+	return b.withProcessor(
+		staticComponentID(common.ComponentIDInsertClusterAttributesProcessor),
+		func(tp *telemetryv1alpha1.TracePipeline) any {
+			return common.InsertClusterAttributesProcessorConfig(
+				opts.ClusterName, opts.ClusterUID, opts.CloudProvider,
+			)
+		},
+	)
+}
+
+func (b *Builder) addServiceEnrichmentProcessor() buildComponentFunc {
+	return b.withProcessor(
+		staticComponentID(common.ComponentIDServiceEnrichmentProcessor),
+		func(tp *telemetryv1alpha1.TracePipeline) any {
+			return common.ResolveServiceNameConfig()
+		},
+	)
+}
+
+func (b *Builder) addDropKymaAttributesProcessor() buildComponentFunc {
+	return b.withProcessor(
+		staticComponentID(common.ComponentIDDropKymaAttributesProcessor),
+		func(tp *telemetryv1alpha1.TracePipeline) any {
+			return common.DropKymaAttributesProcessorConfig()
+		},
+	)
+}
+
+// addUserDefinedTransformProcessor handles user-defined transform processors with dynamic component IDs
+func (b *Builder) addUserDefinedTransformProcessor() buildComponentFunc {
+	return b.withProcessor(
+		formatUserDefinedTransformProcessorID,
+		func(tp *telemetryv1alpha1.TracePipeline) any {
+			if len(tp.Spec.Transforms) == 0 {
+				return nil // No transforms, no processor needed
+			}
+
+			transformStatements := common.TransformSpecsToProcessorStatements(tp.Spec.Transforms)
+			transformProcessor := common.TraceTransformProcessorConfig(transformStatements)
+
+			return transformProcessor
+		},
+	)
+}
+
+//nolint:mnd // hardcoded values
+func (b *Builder) addBatchProcessor() buildComponentFunc {
+	return b.withProcessor(
+		staticComponentID(common.ComponentIDBatchProcessor),
+		func(_ *telemetryv1alpha1.TracePipeline) any {
+			return &common.BatchProcessor{
+				SendBatchSize:    512,
+				Timeout:          "10s",
+				SendBatchMaxSize: 512,
+			}
+		},
+	)
+}
+
+func (b *Builder) addOTLPExporter(queueSize int) buildComponentFunc {
+	return b.withExporter(
+		formatOTLPExporterID,
+		func(ctx context.Context, tp *telemetryv1alpha1.TracePipeline) (any, common.EnvVars, error) {
+			otlpExporterBuilder := common.NewOTLPExporterConfigBuilder(
+				b.Reader,
+				tp.Spec.Output.OTLP,
+				tp.Name,
+				queueSize,
+				common.SignalTypeTrace,
+			)
+
+			otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.OTLPExporterConfig(ctx)
+			if err != nil {
+				return nil, nil, fmt.Errorf("failed to create otlp exporter config: %w", err)
+			}
+
+			return otlpExporterConfig, otlpExporterEnvVars, nil
+		},
+	)
+}
+
+func formatTraceServicePipelineID(tp *telemetryv1alpha1.TracePipeline) string {
+	return fmt.Sprintf("traces/%s", tp.Name)
+}
+
+func formatUserDefinedTransformProcessorID(tp *telemetryv1alpha1.TracePipeline) string {
+	return fmt.Sprintf("transform/user-defined-%s", tp.Name)
+}
+
+func formatOTLPExporterID(tp *telemetryv1alpha1.TracePipeline) string {
+	return common.ExporterID(tp.Spec.Output.OTLP.Protocol, tp.Name)
 }
