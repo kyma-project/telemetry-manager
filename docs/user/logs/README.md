@@ -88,7 +88,6 @@ spec:
         - name: kyma-logs
 ```
 
-The Kyma Istio module provides a second extension provider `stdout-json` not based on OTLP. Please assure that you always use the `kyma-logs` provider as only this will work with the OTLP based LogPipeline output.
 More details and configuration options can be found at [Configure Istio Access Logs](./istio.md).
 
 ## Limitations
