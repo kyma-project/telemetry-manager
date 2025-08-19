@@ -54,12 +54,10 @@ After decoupling the Metric Agent from the Metric Gateway, we need to ensure tha
 ### Tested Alternatives
 
 1. Metric Agent with Istio sidecar proxy enabled, but without any annotations:
-This configuration allows the Metric Agent to use the sidecar proxy for outgoing traffic, this setup works for mesh-enabled backends and scraping application metrics, but breaks Prometheus scraping of Istio and Envoy metrics, since their metric endpoint ports are not reachable via the sidecar proxy.
+   This configuration allows the Metric Agent to use the sidecar proxy for outgoing traffic, this setup works for mesh-enabled backends and scraping application metrics, but breaks Prometheus scraping of Istio and Envoy metrics, since their metric endpoint ports are not reachable via the sidecar proxy.
 
-
-2. Istio `Sidecar` CRD: 
-
-The `Sidecar` CRD offers fine-grained ingress/egress control, like wildcard DNS names, ports, and IP ranges. It can be used to control the sidecar proxy behavior for the Metric Agent.
+2. Istio `Sidecar` CRD:
+   The `Sidecar` CRD offers fine-grained ingress/egress control, like wildcard DNS names, ports, and IP ranges. It can be used to control the sidecar proxy behavior for the Metric Agent.
 
 ```yaml
 apiVersion: networking.istio.io/v1beta1
