@@ -76,7 +76,7 @@ type Header struct {
 
 // +kubebuilder:validation:XValidation:rule="has(self.cert) == has(self.key)", message="Can define either both 'cert' and 'key', or neither"
 type OutputTLS struct {
-	// Disabled indicates if TLS is disabled or enabled. Default is `false`.
+	// Disabled specifies if TLS is disabled or enabled. Default is `false`.
 	Disabled bool `json:"disabled,omitempty"`
 	// If `true`, the validation of certificates is skipped. Default is `false`.
 	SkipCertificateValidation bool `json:"skipCertificateValidation,omitempty"`

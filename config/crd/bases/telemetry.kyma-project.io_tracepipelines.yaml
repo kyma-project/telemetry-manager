@@ -56,7 +56,7 @@ spec:
             description: Spec defines the desired state of TracePipeline
             properties:
               output:
-                description: Output configures the output where the traces will be send to. Exactly one output must be specified.
+                description: Output configures the backend to which traces  are sent. You must specify exactly one output per pipeline.
                 properties:
                   otlp:
                     description: OTLP output defines an output using the OpenTelemetry protocol.

@@ -82,8 +82,8 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 | **files**  | \[\]object | Files is a list of content snippets that are mounted as files in the Fluent Bit configuration, which can be linked in the `custom` filters and a `custom` output. Only available when using an output of type `http` and `custom`. |
 | **files.&#x200b;content**  | string | Content of the file to be mounted in the Fluent Bit configuration. |
 | **files.&#x200b;name**  | string | Name of the file under which the content is mounted in the Fluent Bit configuration. |
-| **filters**  | \[\]object | Filters configures custom Fluent-Bit `filters` to transform logs. Only available when using an output of type `http` and `custom`. |
-| **filters.&#x200b;custom**  | string | Custom defines a custom filter in the [Fluent Bit syntax](https://docs.fluentbit.io/manual/pipeline/outputs). Note: If you use a `custom` filter, you put the LogPipeline in unsupported mode. Only available when using an output of type `http` and `custom`. |
+| **filters**  | \[\]object | Filters configures custom Fluent Bit `filters` to transform logs. Only available when using an output of type `http` and `custom`. |
+| **filters.&#x200b;custom**  | string | Custom defines a custom filter in the [Fluent Bit syntax](https://docs.fluentbit.io/manual/pipeline/outputs). If you use a `custom` filter, you put the LogPipeline in unsupported mode. Only available when using an output of type `http` and `custom`. |
 | **input**  | object | Input configures additional inputs for log collection. |
 | **input.&#x200b;application**  | object | Application input configures the log collection from application containers stdout/stderr by tailing the log files of the underlying container runtime. |
 | **input.&#x200b;application.&#x200b;containers**  | object | Containers describes whether application logs from specific containers are selected. The options are mutually exclusive. |
@@ -92,22 +92,22 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 | **input.&#x200b;application.&#x200b;dropLabels**  | boolean | DropLabels defines whether to drop all Kubernetes labels. The default is `false`. Only available when using an output of type `http` and `custom`. For an `otlp` output, use the label enrichement feature in the Telemetry resource instead. |
 | **input.&#x200b;application.&#x200b;enabled**  | boolean | If enabled, application logs are collected from application containers stdout/stderr. The default is `true`. |
 | **input.&#x200b;application.&#x200b;keepAnnotations**  | boolean | KeepAnnotations defines whether to keep all Kubernetes annotations. The default is `false`.  Only available when using an output of type `http` and `custom`. |
-| **input.&#x200b;application.&#x200b;keepOriginalBody**  | boolean | KeepOriginalBody retains the original log data if the log data is in JSON and it is successfully parsed. If set to `false`, the original log data will be removed from the log record. The default is `true`. |
-| **input.&#x200b;application.&#x200b;namespaces**  | object | Namespaces describes whether application logs from specific Namespaces are selected. The options are mutually exclusive. System Namespaces are excluded by default. Use the `system` attribute with value `true` to enable them. |
+| **input.&#x200b;application.&#x200b;keepOriginalBody**  | boolean | KeepOriginalBody retains the original log data if the log data is in JSON and it is successfully parsed. If set to `false`, the original log data is removed from the log record. The default is `true`. |
+| **input.&#x200b;application.&#x200b;namespaces**  | object | Namespaces describes whether application logs from specific namespaces are selected. The options are mutually exclusive. System namespaces are excluded by default. Use the `system` attribute with value `true` to enable them. |
 | **input.&#x200b;application.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude the container logs of the specified Namespace names. |
 | **input.&#x200b;application.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include only the container logs of the specified Namespace names. |
-| **input.&#x200b;application.&#x200b;namespaces.&#x200b;system**  | boolean | Set system to `true` if collecting from all Namespaces must also include the system Namespaces like kube-system, istio-system, and kyma-system. |
+| **input.&#x200b;application.&#x200b;namespaces.&#x200b;system**  | boolean | System specifies whether to collect logs from system namespaces. If set to `true`, you collect logs from all namespaces including system namespaces, such as like kube-system, istio-system, and kyma-system. The default is `false`. |
 | **input.&#x200b;otlp**  | object | OTLP input configures the push endpoint to receive logs from a OTLP source. |
 | **input.&#x200b;otlp.&#x200b;disabled**  | boolean | If set to `true`, no push-based OTLP signals are collected. The default is `false`. |
 | **input.&#x200b;otlp.&#x200b;namespaces**  | object | Namespaces describes whether push-based OTLP signals from specific namespaces are selected. System namespaces are enabled by default. |
 | **input.&#x200b;otlp.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude signals from the specified Namespace names only. |
 | **input.&#x200b;otlp.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include signals from the specified Namespace names only. |
-| **output**  | object | Output configures the output where the logs will be send to. Exactly one output must be specified. |
-| **output.&#x200b;custom**  | string | Custom defines a custom output in the [Fluent Bit syntax](https://docs.fluentbit.io/manual/pipeline/outputs) where you want to push the logs. Note: If you use a `custom` output, you put the LogPipeline in unsupported mode. Only available when using an output of type `http` and `custom`. |
+| **output**  | object | Output configures the backend to which logs are sent. You must specify exactly one output per pipeline. |
+| **output.&#x200b;custom**  | string | Custom defines a custom output in the [Fluent Bit syntax](https://docs.fluentbit.io/manual/pipeline/outputs) where you want to push the logs. If you use a `custom` output, you put the LogPipeline in unsupported mode. Only available when using an output of type `http` and `custom`. |
 | **output.&#x200b;http**  | object | HTTP configures an HTTP-based output compatible with the Fluent Bit HTTP output plugin. |
 | **output.&#x200b;http.&#x200b;compress**  | string | Compress defines the compression algorithm to use. Either `none` or `gzip`. Default is `none`. |
-| **output.&#x200b;http.&#x200b;dedot**  | boolean | Dedot enables de-dotting of Kubernetes labels and annotations for compatibility with ElasticSearch based backends. Dots (.) will be replaced by underscores (_). Default is `false`. |
-| **output.&#x200b;http.&#x200b;format**  | string | Format is the data format to be used in the HTTP request body. Either `gelf`, `json`, `json_stream`, `json_lines` or `msgpack`. Default is `json`. |
+| **output.&#x200b;http.&#x200b;dedot**  | boolean | Dedot enables de-dotting of Kubernetes labels and annotations. For compatibility with OpenSearch-based backends, dots (.) are replaced by underscores (_). Default is `false`. |
+| **output.&#x200b;http.&#x200b;format**  | string | Format is the data format to be used in the HTTP request body. Either `gelf`, `json`, `json_stream`, `json_lines`, or `msgpack`. Default is `json`. |
 | **output.&#x200b;http.&#x200b;host**  | object | Host defines the host of the HTTP backend. |
 | **output.&#x200b;http.&#x200b;host.&#x200b;value**  | string | Value as plain text. |
 | **output.&#x200b;http.&#x200b;host.&#x200b;valueFrom**  | object | ValueFrom is the value as a reference to a resource. |
@@ -138,7 +138,7 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 | **output.&#x200b;http.&#x200b;tls.&#x200b;cert.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key** (required) | string | Key defines the name of the attribute of the Secret holding the referenced value. |
 | **output.&#x200b;http.&#x200b;tls.&#x200b;cert.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name** (required) | string | Name of the Secret containing the referenced value. |
 | **output.&#x200b;http.&#x200b;tls.&#x200b;cert.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace** (required) | string | Namespace containing the Secret with the referenced value. |
-| **output.&#x200b;http.&#x200b;tls.&#x200b;disabled**  | boolean | Disabled indicates if TLS is disabled or enabled. Default is `false`. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;disabled**  | boolean | Disabled specifies if TLS is disabled or enabled. Default is `false`. |
 | **output.&#x200b;http.&#x200b;tls.&#x200b;key**  | object | Key defines the client key to use when using TLS. The key must be provided in PEM format. |
 | **output.&#x200b;http.&#x200b;tls.&#x200b;key.&#x200b;value**  | string | Value as plain text. |
 | **output.&#x200b;http.&#x200b;tls.&#x200b;key.&#x200b;valueFrom**  | object | ValueFrom is the value as a reference to a resource. |

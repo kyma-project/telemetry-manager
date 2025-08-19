@@ -56,7 +56,7 @@ spec:
             description: Spec defines the desired state of TracePipeline
             properties:
               output:
-                description: Output configures the output where the traces will be send to. Exactly one output must be specified.
+                description: Output configures the backend to which traces  are sent. You must specify exactly one output per pipeline.
                 properties:
                   otlp:
                     description: OTLP output defines an output using the OpenTelemetry protocol.
@@ -434,7 +434,7 @@ spec:
             description: Spec defines the desired state of TracePipeline
             properties:
               output:
-                description: Output configures the output where the traces will be send to. Exactly one output must be specified.
+                description: Output configures the backend to which traces  are sent. You must specify exactly one output per pipeline.
                 properties:
                   otlp:
                     description: OTLP output defines an output using the OpenTelemetry protocol.
@@ -641,7 +641,7 @@ spec:
                                 type: object
                             type: object
                           disabled:
-                            description: Disabled indicates if TLS is disabled or enabled. Default is `false`.
+                            description: Disabled specifies if TLS is disabled or enabled. Default is `false`.
                             type: boolean
                           key:
                             description: Defines the client key to use when using TLS. The key must be provided in PEM format.

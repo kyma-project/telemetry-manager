@@ -57,19 +57,19 @@ type TelemetrySpec struct {
 
 // MetricSpec configures module settings specific to the metric features.
 type MetricSpec struct {
-	// Gateway configures the settings for the metric gateway.
+	// Gateway configures the metric gateway.
 	Gateway GatewaySpec `json:"gateway,omitempty"`
 }
 
 // TraceSpec configures module settings specific to the trace features.
 type TraceSpec struct {
-	// Gateway configures the settings for the trace gateway.
+	// Gateway configures the trace gateway.
 	Gateway GatewaySpec `json:"gateway,omitempty"`
 }
 
 // LogSpec configures module settings specific to the log features.
 type LogSpec struct {
-	// Gateway configures the settings for the log gateway.
+	// Gateway configures the log gateway.
 	Gateway GatewaySpec `json:"gateway,omitempty"`
 }
 
@@ -114,7 +114,7 @@ type TelemetryStatus struct {
 	// If all Conditions are met, State is expected to be in StateReady.
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
-	// Endpoints for log, trace and metric gateway.
+	// Endpoints for log, trace, and metric gateway.
 	// +nullable
 	Endpoints GatewayEndpoints `json:"endpoints,omitempty"`
 	// add other fields to status subresource here

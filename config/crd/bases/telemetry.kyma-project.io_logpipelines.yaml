@@ -72,12 +72,12 @@ spec:
                   type: object
                 type: array
               filters:
-                description: Filters configures custom Fluent-Bit `filters` to transform logs. Only available when using an output of type `http` and `custom`.
+                description: Filters configures custom Fluent Bit `filters` to transform logs. Only available when using an output of type `http` and `custom`.
                 items:
-                  description: LogPipelineFilter configures custom Fluent-Bit `filters` to transform logs. Only available when using an output of type `http` and `custom`.
+                  description: LogPipelineFilter configures custom Fluent Bit `filters` to transform logs. Only available when using an output of type `http` and `custom`.
                   properties:
                     custom:
-                      description: 'Custom defines a custom filter in the [Fluent Bit syntax](https://docs.fluentbit.io/manual/pipeline/outputs). Note: If you use a `custom` filter, you put the LogPipeline in unsupported mode. Only available when using an output of type `http` and `custom`.'
+                      description: Custom defines a custom filter in the [Fluent Bit syntax](https://docs.fluentbit.io/manual/pipeline/outputs). If you use a `custom` filter, you put the LogPipeline in unsupported mode. Only available when using an output of type `http` and `custom`.
                       type: string
                   type: object
                 type: array
@@ -111,10 +111,10 @@ spec:
                         description: KeepAnnotations defines whether to keep all Kubernetes annotations. The default is `false`.  Only available when using an output of type `http` and `custom`.
                         type: boolean
                       keepOriginalBody:
-                        description: KeepOriginalBody retains the original log data if the log data is in JSON and it is successfully parsed. If set to `false`, the original log data will be removed from the log record. The default is `true`.
+                        description: KeepOriginalBody retains the original log data if the log data is in JSON and it is successfully parsed. If set to `false`, the original log data is removed from the log record. The default is `true`.
                         type: boolean
                       namespaces:
-                        description: Namespaces describes whether application logs from specific Namespaces are selected. The options are mutually exclusive. System Namespaces are excluded by default. Use the `system` attribute with value `true` to enable them.
+                        description: Namespaces describes whether application logs from specific namespaces are selected. The options are mutually exclusive. System namespaces are excluded by default. Use the `system` attribute with value `true` to enable them.
                         properties:
                           exclude:
                             description: Exclude the container logs of the specified Namespace names.
@@ -127,7 +127,7 @@ spec:
                               type: string
                             type: array
                           system:
-                            description: Set system to `true` if collecting from all Namespaces must also include the system Namespaces like kube-system, istio-system, and kyma-system.
+                            description: System specifies whether to collect logs from system namespaces. If set to `true`, you collect logs from all namespaces including system namespaces, such as like kube-system, istio-system, and kyma-system. The default is `false`.
                             type: boolean
                         type: object
                     type: object
@@ -157,10 +157,10 @@ spec:
                     type: object
                 type: object
               output:
-                description: Output configures the output where the logs will be send to. Exactly one output must be specified.
+                description: Output configures the backend to which logs are sent. You must specify exactly one output per pipeline.
                 properties:
                   custom:
-                    description: 'Custom defines a custom output in the [Fluent Bit syntax](https://docs.fluentbit.io/manual/pipeline/outputs) where you want to push the logs. Note: If you use a `custom` output, you put the LogPipeline in unsupported mode. Only available when using an output of type `http` and `custom`.'
+                    description: Custom defines a custom output in the [Fluent Bit syntax](https://docs.fluentbit.io/manual/pipeline/outputs) where you want to push the logs. If you use a `custom` output, you put the LogPipeline in unsupported mode. Only available when using an output of type `http` and `custom`.
                     type: string
                   http:
                     description: HTTP configures an HTTP-based output compatible with the Fluent Bit HTTP output plugin.
@@ -169,10 +169,10 @@ spec:
                         description: Compress defines the compression algorithm to use. Either `none` or `gzip`. Default is `none`.
                         type: string
                       dedot:
-                        description: Dedot enables de-dotting of Kubernetes labels and annotations for compatibility with ElasticSearch based backends. Dots (.) will be replaced by underscores (_). Default is `false`.
+                        description: Dedot enables de-dotting of Kubernetes labels and annotations. For compatibility with OpenSearch-based backends, dots (.) are replaced by underscores (_). Default is `false`.
                         type: boolean
                       format:
-                        description: Format is the data format to be used in the HTTP request body. Either `gelf`, `json`, `json_stream`, `json_lines` or `msgpack`. Default is `json`.
+                        description: Format is the data format to be used in the HTTP request body. Either `gelf`, `json`, `json_stream`, `json_lines`, or `msgpack`. Default is `json`.
                         type: string
                       host:
                         description: Host defines the host of the HTTP backend.
@@ -293,7 +293,7 @@ spec:
                                 type: object
                             type: object
                           disabled:
-                            description: Disabled indicates if TLS is disabled or enabled. Default is `false`.
+                            description: Disabled specifies if TLS is disabled or enabled. Default is `false`.
                             type: boolean
                           key:
                             description: Key defines the client key to use when using TLS. The key must be provided in PEM format.

@@ -55,7 +55,7 @@ type TracePipeline struct {
 
 // TracePipelineSpec defines the desired state of TracePipeline
 type TracePipelineSpec struct {
-	// Output configures the output where the traces will be send to. Exactly one output must be specified.
+	// Output configures the backend to which traces  are sent. You must specify exactly one output per pipeline.
 	Output TracePipelineOutput `json:"output"`
 
 	// Transforms specify a list of transformations to apply to telemetry data.

@@ -93,7 +93,7 @@ spec:
                 description: Log configures module settings specific to the log features. This field is optional.
                 properties:
                   gateway:
-                    description: Gateway configures the settings for the log gateway.
+                    description: Gateway configures the log gateway.
                     properties:
                       scaling:
                         description: Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
@@ -121,7 +121,7 @@ spec:
                 description: Metric configures module settings specific to the metric features. This field is optional.
                 properties:
                   gateway:
-                    description: Gateway configures the settings for the metric gateway.
+                    description: Gateway configures the metric gateway.
                     properties:
                       scaling:
                         description: Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
@@ -149,7 +149,7 @@ spec:
                 description: Trace configures module settings specific to the trace features. This field is optional.
                 properties:
                   gateway:
-                    description: Gateway configures the settings for the trace gateway.
+                    description: Gateway configures the trace gateway.
                     properties:
                       scaling:
                         description: Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
@@ -236,7 +236,7 @@ spec:
                   type: object
                 type: array
               endpoints:
-                description: Endpoints for log, trace and metric gateway.
+                description: Endpoints for log, trace, and metric gateway.
                 nullable: true
                 properties:
                   logs:

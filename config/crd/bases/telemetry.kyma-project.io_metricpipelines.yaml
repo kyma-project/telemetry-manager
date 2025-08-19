@@ -72,17 +72,17 @@ spec:
                             type: boolean
                         type: object
                       enabled:
-                        description: If enabled, istio-proxy metrics are scraped from Pods that have the istio-proxy sidecar injected. The default is `false`.
+                        description: Enabled specifies that istio-proxy metrics are scraped from Pods that have the istio-proxy sidecar injected. The default is `false`.
                         type: boolean
                       envoyMetrics:
                         description: EnvoyMetrics enables the collection of additional Envoy metrics with prefix `envoy_`. The default is `false`.
                         properties:
                           enabled:
-                            description: If enabled, Envoy metrics with prefix `envoy_` are scraped additional. The default is `false`.
+                            description: Enabled specifies that Envoy metrics with prefix `envoy_` are scraped additionally. The default is `false`.
                             type: boolean
                         type: object
                       namespaces:
-                        description: Namespaces configures the namespaces for which the collection should be activated. All namespaces including system namespaces are enabled by default.
+                        description: Namespaces configures the namespaces for which the collection should be activated. By default, all namespaces including system namespaces are enabled.
                         properties:
                           exclude:
                             description: Exclude signals from the specified Namespace names only.
@@ -100,7 +100,7 @@ spec:
                           rule: '!((has(self.include) && size(self.include) != 0) && (has(self.exclude) && size(self.exclude) != 0))'
                     type: object
                   otlp:
-                    description: OTLP input configures the push endpoint to receive metrics from a OTLP source.
+                    description: OTLP input configures the push endpoint to receive metrics from an OTLP source.
                     properties:
                       disabled:
                         description: If set to `true`, no push-based OTLP signals are collected. The default is `false`.
@@ -134,10 +134,10 @@ spec:
                             type: boolean
                         type: object
                       enabled:
-                        description: If enabled, Services endpoints and Pods marked with `prometheus.io/scrape=true` annotation are scraped. The default is `false`.
+                        description: Enabled specifies whether Service endpoints and Pods marked with `prometheus.io/scrape=true` annotation are scraped. The default is `false`.
                         type: boolean
                       namespaces:
-                        description: Namespaces configures the namespaces for which the collection should be activated. All namespaces except the system namespaces are enabled by default, use an empty struct notation to enable all namespaces.
+                        description: Namespaces specifies from which namespaces metrics are collected. By default, all namespaces except the system namespaces are enabled. To enable all namespaces including system namespaces, use an empty struct notation.
                         properties:
                           exclude:
                             description: Exclude signals from the specified Namespace names only.
@@ -158,10 +158,10 @@ spec:
                     description: Runtime input configures collection of Kubernetes runtime metrics.
                     properties:
                       enabled:
-                        description: If enabled, runtime metrics are collected. The default is `false`.
+                        description: Enabled specifies whether runtime metrics are collected. The default is `false`.
                         type: boolean
                       namespaces:
-                        description: Namespaces configures the namespaces for which the collection should be activated. All namespaces except the system namespaces are enabled by default, use an empty struct notation to enable all namespaces.
+                        description: Namespaces specifies from which namespaces metrics are collected. By default, all namespaces except the system namespaces are enabled. To enable all namespaces including system namespaces, use an empty struct notation.
                         properties:
                           exclude:
                             description: Exclude signals from the specified Namespace names only.
@@ -184,63 +184,63 @@ spec:
                             description: Container configures container runtime metrics collection.
                             properties:
                               enabled:
-                                description: If enabled, the runtime metrics for the resource type are collected. The default is `true`.
+                                description: Enabled specifies that the runtime metrics for the resource type are collected. The default is `true`.
                                 type: boolean
                             type: object
                           daemonset:
                             description: DaemonSet configures DaemonSet runtime metrics collection.
                             properties:
                               enabled:
-                                description: If enabled, the runtime metrics for the resource type are collected. The default is `true`.
+                                description: Enabled specifies that the runtime metrics for the resource type are collected. The default is `true`.
                                 type: boolean
                             type: object
                           deployment:
-                            description: Deployment donfigures Deployment runtime metrics collection.
+                            description: Deployment configures Deployment runtime metrics collection.
                             properties:
                               enabled:
-                                description: If enabled, the runtime metrics for the resource type are collected. The default is `true`.
+                                description: Enabled specifies that the runtime metrics for the resource type are collected. The default is `true`.
                                 type: boolean
                             type: object
                           job:
                             description: Job configures Job runtime metrics collection.
                             properties:
                               enabled:
-                                description: If enabled, the runtime metrics for the resource type are collected. The default is `true`.
+                                description: Enabled specifies that the runtime metrics for the resource type are collected. The default is `true`.
                                 type: boolean
                             type: object
                           node:
                             description: Node configures Node runtime metrics collection.
                             properties:
                               enabled:
-                                description: If enabled, the runtime metrics for the resource type are collected. The default is `true`.
+                                description: Enabled specifies that the runtime metrics for the resource type are collected. The default is `true`.
                                 type: boolean
                             type: object
                           pod:
                             description: Pod configures Pod runtime metrics collection.
                             properties:
                               enabled:
-                                description: If enabled, the runtime metrics for the resource type are collected. The default is `true`.
+                                description: Enabled specifies that the runtime metrics for the resource type are collected. The default is `true`.
                                 type: boolean
                             type: object
                           statefulset:
                             description: StatefulSet configures StatefulSet runtime metrics collection.
                             properties:
                               enabled:
-                                description: If enabled, the runtime metrics for the resource type are collected. The default is `true`.
+                                description: Enabled specifies that the runtime metrics for the resource type are collected. The default is `true`.
                                 type: boolean
                             type: object
                           volume:
                             description: Volume configures Volume runtime metrics collection.
                             properties:
                               enabled:
-                                description: If enabled, the runtime metrics for the resource type are collected. The default is `true`.
+                                description: Enabled specifies that the runtime metrics for the resource type are collected. The default is `true`.
                                 type: boolean
                             type: object
                         type: object
                     type: object
                 type: object
               output:
-                description: Output configures the output where the metrics will be send to. Exactly one output must be specified.
+                description: Output configures the backend to which metrics are sent. You must specify exactly one output per pipeline.
                 properties:
                   otlp:
                     description: OTLP output defines an output using the OpenTelemetry protocol.
