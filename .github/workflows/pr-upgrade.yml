@@ -71,8 +71,7 @@ jobs:
         # TODO(TeodorSAP): Remove '...-migrated' file path after 1.46.0 release
         # TODO(TeodorSAP): Add "TestLogsOTelUpgrade" after 1.46.0 release
         run: |
-          gotestsum --format dots-v2 --hide-summary=skipped --junitfile junit-report-upgrade-before.xml \
-          -- -timeout=10m -run="^(TestLogsUpgrade|TestMetricsUpgrade|TestTracesUpgrade)/before_upgrade$" ./test/e2e-migrated/upgrade/...
+          go test -v -timeout=10m -run="^(TestLogsUpgrade|TestMetricsUpgrade|TestTracesUpgrade)/before_upgrade$" ./test/e2e-migrated/upgrade/...
 
       - name: Switch back to current revision
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -106,8 +105,7 @@ jobs:
         shell: bash
         # TODO(TeodorSAP): Add "TestLogsOTelUpgrade" after 1.46.0 release
         run: |
-          gotestsum --format dots-v2 --hide-summary=skipped --junitfile junit-report-upgrade-after.xml \
-          -- -timeout=10m -run="^(TestLogsUpgrade|TestMetricsUpgrade|TestTracesUpgrade)/after_upgrade$" ./test/e2e/upgrade/...
+          go test -v -timeout=10m -run="^(TestLogsUpgrade|TestMetricsUpgrade|TestTracesUpgrade)/after_upgrade$" ./test/e2e/upgrade/...
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"

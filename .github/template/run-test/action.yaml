@@ -1,0 +1,28 @@
+name: Run test
+description: Execute integration test
+
+inputs:
+  name:
+    description: The name of the integration test
+    required: true
+  path:
+    description: The path to the tests
+    required: true
+  labels:
+    description: Labels to use for the tests
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+
+  steps:
+    - name: Run tests with gotestsum
+      shell: bash
+      run: >
+        bin/gotestsum
+          --format dots-v2
+          --hide-summary=skipped
+          --junitfile junit-report-${{ inputs.name }}.xml
+          -- -timeout=20m ${{ inputs.path }}
+          -- -labels="${{ inputs.labels }}"

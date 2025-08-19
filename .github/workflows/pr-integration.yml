@@ -83,11 +83,12 @@ jobs:
       - name: Deploy test prerequisites
         uses: "./.github/template/deploy-test-prerequisites"
 
-      - name: Run tests
-        run: |
-          gotestsum --format dots-v2 --hide-summary=skipped --junitfile junit-report-selfmonitor.xml \
-          -- -timeout=20m ./test/selfmonitor/... \
-          -- -labels="selfmonitor-${{ matrix.scenario }}-${{ matrix.kind }}"
+      - name: Run test
+        uses: "./.github/template/run-test"
+        with:
+          name: selfmonitor
+          path: ./test/selfmonitor/...
+          labels: "selfmonitor-${{ matrix.scenario }}-${{ matrix.kind }}"
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"
@@ -105,42 +106,58 @@ jobs:
           # LOGS
           - name: fluent-bit
             mode: release
+            type: e2e
           - name: log-agent
             mode: release
+            type: e2e
           - name: log-gateway
             mode: release
+            type: e2e
           - name: logs-max-pipeline
             mode: release
+            type: e2e
           - name: fluent-bit-max-pipeline
             mode: release
+            type: e2e
           - name: otel-max-pipeline
             mode: release
+            type: e2e
           # METRICS
           - name: metrics-set-a
             mode: release
+            type: e2e
           - name: metrics-set-b
             mode: release
+            type: e2e
           - name: metrics-set-c
             mode: release
+            type: e2e
           - name: metrics-max-pipeline
             mode: release
+            type: e2e
           # TRACES
           - name: traces
             mode: release
+            type: e2e
           - name: traces-max-pipeline
             mode: release
+            type: e2e
           # TELEMETRY
           - name: telemetry
             mode: release
+            type: e2e
           # MISC
           - name: misc
             mode: release
+            type: e2e
           # OTHER
           - name: experimental
             mode: experimental
+            type: e2e
           # INTEGRATION
           - name: istio
-            mode: integration
+            mode: release
+            type: integration
     name: "e2e: ${{ matrix.labels.name }}"
     runs-on: ubuntu-latest
     steps:
@@ -154,25 +171,18 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deploy Istio module
-        if: ${{ matrix.labels.name == 'istio' &&  matrix.labels.mode == 'integration' }}
+        if: ${{ matrix.labels.name == 'istio' && matrix.labels.type == 'integration' }}
         run: hack/deploy-istio.sh
 
       - name: Deploy test prerequisites
         uses: "./.github/template/deploy-test-prerequisites"
 
-      - name: Run normal e2e tests
-        if: ${{ matrix.labels.mode != 'integration' }}
-        run: |
-          gotestsum --format dots-v2 --hide-summary=skipped --junitfile junit-report-e2e.xml \
-          -- -timeout=20m ./test/e2e/...
-          -- -labels=${{ matrix.labels.name }}
-
-      - name: Run integration e2e tests
-        if: ${{ matrix.labels.mode == 'integration' }}
-        run: |
-          gotestsum --format dots-v2 --hide-summary=skipped --junitfile junit-report-integration.xml \
-          -- -timeout=20m ./test/integration/...
-          -- -labels=${{ matrix.labels.name }}
+      - name: Run test
+        uses: "./.github/template/run-test"
+        with:
+          name: ${{ matrix.labels.type }}
+          path: ./test/${{ matrix.labels.type }}/...
+          labels: ${{ matrix.labels.name }}
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"

@@ -1,5 +1,5 @@
-name: Finalize tests
-description: Finalizes integration test execution with cleanup and collecting dumps fors the error scenario
+name: Finalize test
+description: Finalizes integration test execution with cleanup and collecting dumps for the error scenario
 
 inputs:
   failure:
