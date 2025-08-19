@@ -13,11 +13,11 @@ runs:
   using: "composite"
 
   steps:
-    - name: Upload JUnit report
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-      with:
-        name: junit-report-final
-        path: junit-report*.xml
+    # - name: Upload JUnit report
+    #   uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+    #   with:
+    #     name: ${{ inputs.id }}-report
+    #     path: junit-report*.xml
 
     - name: Describe manager pod
       shell: bash

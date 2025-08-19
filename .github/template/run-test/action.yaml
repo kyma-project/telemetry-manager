@@ -23,6 +23,6 @@ runs:
         bin/gotestsum \
           --format dots-v2 \
           --hide-summary=skipped \
-          --junitfile junit-report.xml \
+          --junitfile junit-report-${{ inputs.id }}.xml \
           -- -timeout=20m ${{ inputs.path }} \
           -- -labels="${{ inputs.labels }}"
