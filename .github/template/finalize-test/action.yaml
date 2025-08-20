@@ -31,6 +31,7 @@ runs:
         detailed_summary: true
         fail_on_failure: true
         include_passed: true
+        include_time_in_summary: true
         token: ${{ inputs.github-token }}
 
     - name: Describe manager pod
