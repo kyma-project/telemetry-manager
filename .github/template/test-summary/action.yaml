@@ -1,6 +1,12 @@
 name: Test Summary
 description: Downloads test artifacts and publishes consolidated test reports
 
+inputs:
+  reports-path:
+    description: Path where reports will be downloaded
+    required: false
+    default: "reports"
+
 runs:
   using: "composite"
 
@@ -19,7 +25,7 @@ runs:
     - name: Download JUnit reports
       uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
       with:
-        path: "reports"
+        path: "${{ inputs.reports-path }}"
         pattern: "*-report"
         merge-multiple: true
 
@@ -27,7 +33,7 @@ runs:
       shell: bash
       run: |
         # Process each JUnit report XML file to remove testcase elements containing skipped tags
-        for xml_file in reports/*.xml; do
+        for xml_file in ${{ inputs.reports-path }}/*.xml; do
           if [ -f "$xml_file" ]; then
             echo "Processing: $xml_file"
             # Use xmlstarlet to remove testcase elements that contain skipped child elements
@@ -40,7 +46,7 @@ runs:
       shell: bash
       run: |
         # Process each JUnit report XML file to remove duplicate testcase elements
-        for xml_file in reports/*.xml; do
+        for xml_file in ${{ inputs.reports-path }}/*.xml; do
           if [ -f "$xml_file" ]; then
             echo "Processing duplicates in: $xml_file"
             # Use xmlstarlet to remove duplicate testcase elements anywhere in the document, keeping only the first occurrence of each name
@@ -54,7 +60,7 @@ runs:
       uses: mikepenz/action-junit-report@3585e9575db828022551b4231f165eb59a0e74e3 # v5.6.2
       if: always()
       with:
-        report_paths: "reports/junit-report*.xml"
+        report_paths: "${{ inputs.reports-path }}/junit-report*.xml"
         summary: true
         detailed_summary: true
         fail_on_failure: true
