@@ -196,18 +196,18 @@ jobs:
         run: |
           for pod in $(kubectl get pods -n kyma-system -o name); do echo "=== $pod ==="; kubectl logs -n kyma-system $pod; done || true
 
-  summary:
-    needs: [e2e-selfmonitor, e2e]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+  # summary:
+  #   needs: [e2e-selfmonitor, e2e]
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout repo
+  #       uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      - name: Publish Test Results
-        uses: mikepenz/action-junit-report@v5
-        if: always()
-        with:
-          report_paths: 'junit-report*.xml'
-          summary: true
-          detailed_summary: true
-          fail_on_failure: true
+  #     - name: Publish Test Results
+  #       uses: mikepenz/action-junit-report@v5
+  #       if: always()
+  #       with:
+  #         report_paths: 'junit-report*.xml'
+  #         summary: true
+  #         detailed_summary: true
+  #         fail_on_failure: true

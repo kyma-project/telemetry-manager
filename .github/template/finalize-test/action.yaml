@@ -19,6 +19,15 @@ runs:
     #     name: ${{ inputs.id }}-report
     #     path: junit-report*.xml
 
+    - name: Publish Test Results
+      uses: mikepenz/action-junit-report@v5
+      if: always()
+      with:
+        report_paths: 'junit-report*.xml'
+        summary: true
+        detailed_summary: true
+        fail_on_failure: true
+
     - name: Describe manager pod
       shell: bash
       if: ${{ inputs.failure }}
