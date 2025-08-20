@@ -1,5 +1,5 @@
-name: Finalize test
-description: Finalizes integration test execution with cleanup and collecting dumps for the error scenario
+name: Test Cleanup
+description: Cleans up test artifacts and collects diagnostic information for failures
 
 inputs:
   id:
@@ -25,7 +25,7 @@ runs:
           sudo apt-get update -qq
           sudo apt-get install -y xmlstarlet
         fi
-        
+
         # Process each JUnit report XML file to remove testcase elements containing skipped tags
         for xml_file in junit-report*.xml; do
           if [ -f "$xml_file" ]; then

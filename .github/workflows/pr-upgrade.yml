@@ -100,8 +100,8 @@ jobs:
         run: |
           go test -v -timeout=10m -run="^(TestLogsFluentBitUpgrade|TestLogsUpgrade|TestMetricsUpgrade|TestTracesUpgrade)/after_upgrade$" ./test/e2e/upgrade/...
 
-      - name: Finalize test
-        uses: "./.github/template/finalize-test"
+      - name: Cleanup test environment
+        uses: "./.github/template/test-cleanup"
         if: ${{ !cancelled()  }}
         with:
           id: ${{ github.job }}

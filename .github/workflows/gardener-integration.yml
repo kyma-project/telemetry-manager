@@ -98,15 +98,15 @@ jobs:
         shell: bash
         run: kubectl apply -f config/networking/networkpolicy-deny-all.yaml -n kyma-system
 
-      - name: Run a subset of istio tests
-        uses: "./.github/template/run-test"
+      - name: Execute istio tests subset
+        uses: "./.github/template/test-execute"
         with:
           id: gardener-istio
           path: ./test/integration/...
           labels: "gardener"
 
-      - name: Run a subset of e2e tests
-        uses: "./.github/template/run-test"
+      - name: Execute e2e tests subset
+        uses: "./.github/template/test-execute"
         with:
           id: gardener-e2e
           path: ./test/e2e/...

@@ -1,5 +1,5 @@
-name: Run test
-description: Execute integration test
+name: Test Execute
+description: Executes the test suite with the specified parameters
 
 inputs:
   id:

@@ -70,8 +70,8 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      - name: Prepare test
-        uses: "./.github/template/prepare-test"
+      - name: Setup test environment
+        uses: "./.github/template/test-setup"
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -83,15 +83,15 @@ jobs:
       - name: Deploy test prerequisites
         uses: "./.github/template/deploy-test-prerequisites"
 
-      - name: Run test
-        uses: "./.github/template/run-test"
+      - name: Execute tests
+        uses: "./.github/template/test-execute"
         with:
           id: ${{ matrix.kind }}-${{ matrix.scenario }}
           path: ./test/selfmonitor/...
           labels: "selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}"
 
-      - name: Finalize test
-        uses: "./.github/template/finalize-test"
+      - name: Cleanup test environment
+        uses: "./.github/template/test-cleanup"
         if: ${{ !cancelled()  }}
         with:
           id: selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}
@@ -165,8 +165,8 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      - name: Prepare test
-        uses: "./.github/template/prepare-test"
+      - name: Setup test environment
+        uses: "./.github/template/test-setup"
         with:
           experimental: ${{ matrix.labels.mode == 'experimental' }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -178,15 +178,15 @@ jobs:
       - name: Deploy test prerequisites
         uses: "./.github/template/deploy-test-prerequisites"
 
-      - name: Run test
-        uses: "./.github/template/run-test"
+      - name: Execute tests
+        uses: "./.github/template/test-execute"
         with:
           id: ${{ matrix.labels.type }}-${{ matrix.labels.name }}
           path: ./test/${{ matrix.labels.type }}/...
           labels: ${{ matrix.labels.name }}
 
-      - name: Finalize test
-        uses: "./.github/template/finalize-test"
+      - name: Cleanup test environment
+        uses: "./.github/template/test-cleanup"
         if: ${{ !cancelled()  }}
         with:
           id: ${{ matrix.labels.type }}-${{ matrix.labels.name }}
@@ -205,21 +205,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      - name: Download JUnit reports
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+      - name: Generate test summary
+        uses: "./.github/template/test-summary"
         with:
-          path: reports
-          pattern: "*-report"
-          merge-multiple: true
-
-      - name: Publish JUnit reports as GHA Summary
-        uses: mikepenz/action-junit-report@3585e9575db828022551b4231f165eb59a0e74e3 # v5.6.2
-        if: always()
-        with:
-          report_paths: 'reports/junit-report*.xml'
-          summary: true
-          detailed_summary: true
-          fail_on_failure: true
-          include_passed: true
-          skip_annotations: true
-          token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
