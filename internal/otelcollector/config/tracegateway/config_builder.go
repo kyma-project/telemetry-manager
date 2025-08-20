@@ -257,5 +257,5 @@ func formatUserDefinedTransformProcessorID(tp *telemetryv1alpha1.TracePipeline) 
 }
 
 func formatOTLPExporterID(tp *telemetryv1alpha1.TracePipeline) string {
-	return common.FormatExporterID(tp.Spec.Output.OTLP.Protocol, tp.Name)
+	return common.ExporterID(tp.Spec.Output.OTLP.Protocol, tp.Name)
 }
