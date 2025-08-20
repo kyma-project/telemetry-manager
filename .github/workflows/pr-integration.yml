@@ -211,12 +211,17 @@ jobs:
           path: reports
           pattern: "*-report"
           merge-multiple: true
-      
-      - name: TEST CONTENTS
-        shell: bash
+
+      - name: Remove skipped test cases from JUnit reports
         run: |
-          ls -al
-          ls -al reports
+          # Process each XML file to remove testcase elements containing skipped tags
+          for xml_file in reports/*.xml; do
+            if [ -f "$xml_file" ]; then
+              echo "Processing: $xml_file"
+              # Use xmlstarlet to remove testcase elements that contain skipped child elements
+              xmlstarlet ed -L --delete "//testcase[skipped]" "$xml_file"
+            fi
+          done
 
       - name: Publish test results
         uses: mikepenz/action-junit-report@3585e9575db828022551b4231f165eb59a0e74e3 # v5.6.2
@@ -227,4 +232,5 @@ jobs:
           detailed_summary: true
           fail_on_failure: true
           include_passed: true
+          skip_annotations: true
           token: ${{ secrets.GITHUB_TOKEN }}
