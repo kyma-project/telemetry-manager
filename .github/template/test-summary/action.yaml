@@ -53,5 +53,6 @@ runs:
         include_passed: true
         skip_annotations: true
         group_suite: true
+        group_reports: false
         include_empty_in_summary: false
         include_time_in_summary: true
