@@ -3,7 +3,6 @@ package loggateway
 import (
 	"context"
 	"fmt"
-	"maps"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -69,112 +68,62 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPi
 	return b.config, b.envVars, nil
 }
 
-// buildComponentFunc defines a function type for building components in the telemetry configuration
-type buildComponentFunc func(ctx context.Context, lp *telemetryv1alpha1.LogPipeline) error
-
-// componentConfigFunc creates the configuration for a component (receiver or processor)
-type componentConfigFunc func(lp *telemetryv1alpha1.LogPipeline) any
-
-// exporterComponentConfigFunc creates the configuration for an exporter component
-// creating exporters is different from receivers and processors, as it makes an API server call to resolve the reference secrets
-// and returns the configuration along with environment variables needed for the exporter
-type exporterComponentConfigFunc func(ctx context.Context, lp *telemetryv1alpha1.LogPipeline) (any, common.EnvVars, error)
-
-// componentIDFunc determines the ID of a component
-type componentIDFunc func(*telemetryv1alpha1.LogPipeline) string
+// Type aliases for common builder patterns
+type buildComponentFunc = common.BuildComponentFunc[*telemetryv1alpha1.LogPipeline]
+type componentConfigFunc = common.ComponentConfigFunc[*telemetryv1alpha1.LogPipeline]
+type exporterComponentConfigFunc = common.ExporterComponentConfigFunc[*telemetryv1alpha1.LogPipeline]
+type componentIDFunc = common.ComponentIDFunc[*telemetryv1alpha1.LogPipeline]
 
 // staticComponentID returns a ComponentIDFunc that always returns the same component ID independent of the LogPipeline
-func staticComponentID(componentID string) componentIDFunc {
-	return func(*telemetryv1alpha1.LogPipeline) string {
-		return componentID
-	}
-}
+var staticComponentID = common.StaticComponentID[*telemetryv1alpha1.LogPipeline]
 
 func (b *Builder) addServicePipeline(ctx context.Context, lp *telemetryv1alpha1.LogPipeline, fs ...buildComponentFunc) error {
 	// Add an empty pipeline to the config
 	pipelineID := formatLogServicePipelineID(lp)
-	b.config.Service.Pipelines[pipelineID] = common.Pipeline{}
 
-	for _, f := range fs {
-		if err := f(ctx, lp); err != nil {
-			return fmt.Errorf("failed to add component: %w", err)
-		}
-	}
-
-	return nil
+	return common.AddServicePipeline(
+		ctx,
+		lp,
+		pipelineID,
+		func(id string) {
+			b.config.Service.Pipelines[id] = common.Pipeline{}
+		},
+		fs...,
+	)
 }
 
 // withReceiver creates a decorator for adding receivers
 func (b *Builder) withReceiver(componentIDFunc componentIDFunc, configFunc componentConfigFunc) buildComponentFunc {
-	return func(ctx context.Context, lp *telemetryv1alpha1.LogPipeline) error {
-		config := configFunc(lp)
-		if config == nil {
-			// If no config is provided, skip adding the receiver
-			return nil
-		}
-
-		componentID := componentIDFunc(lp)
-		if _, found := b.config.Receivers[componentID]; !found {
-			b.config.Receivers[componentID] = config
-		}
-
-		pipelineID := formatLogServicePipelineID(lp)
-		pipeline := b.config.Service.Pipelines[pipelineID]
-		pipeline.Receivers = append(pipeline.Receivers, componentID)
-		b.config.Service.Pipelines[pipelineID] = pipeline
-
-		return nil
-	}
+	return common.WithReceiver[*telemetryv1alpha1.LogPipeline, any](
+		componentIDFunc,
+		configFunc,
+		b.config.Receivers,
+		b.config.Service.Pipelines,
+		formatLogServicePipelineID,
+	)
 }
 
 // withProcessor creates a decorator for adding processors
 func (b *Builder) withProcessor(componentIDFunc componentIDFunc, configFunc componentConfigFunc) buildComponentFunc {
-	return func(ctx context.Context, lp *telemetryv1alpha1.LogPipeline) error {
-		config := configFunc(lp)
-		if config == nil {
-			// If no config is provided, skip adding the processor
-			return nil
-		}
-
-		componentID := componentIDFunc(lp)
-		if _, found := b.config.Processors[componentID]; !found {
-			config := configFunc(lp)
-			b.config.Processors[componentID] = config
-		}
-
-		pipelineID := formatLogServicePipelineID(lp)
-		pipeline := b.config.Service.Pipelines[pipelineID]
-		pipeline.Processors = append(pipeline.Processors, componentID)
-		b.config.Service.Pipelines[pipelineID] = pipeline
-
-		return nil
-	}
+	return common.WithProcessor[*telemetryv1alpha1.LogPipeline, any](
+		componentIDFunc,
+		configFunc,
+		b.config.Processors,
+		b.config.Service.Pipelines,
+		formatLogServicePipelineID,
+	)
 }
 
 // withExporter creates a decorator for adding exporters
 func (b *Builder) withExporter(componentIDFunc componentIDFunc, configFunc exporterComponentConfigFunc) buildComponentFunc {
-	return func(ctx context.Context, lp *telemetryv1alpha1.LogPipeline) error {
-		config, envVars, err := configFunc(ctx, lp)
-		if err != nil {
-			return fmt.Errorf("failed to create exporter config: %w", err)
-		}
-
-		if config == nil {
-			// If no config is provided, skip adding the exporter
-			return nil
-		}
-
-		componentID := componentIDFunc(lp)
-		b.config.Exporters[componentID] = config
-		maps.Copy(b.envVars, envVars)
-
-		pipelineID := formatLogServicePipelineID(lp)
-		pipeline := b.config.Service.Pipelines[pipelineID]
-		pipeline.Exporters = append(pipeline.Exporters, componentID)
-		b.config.Service.Pipelines[pipelineID] = pipeline
-
-		return nil
-	}
+	return common.WithExporter[*telemetryv1alpha1.LogPipeline, any](
+		componentIDFunc,
+		configFunc,
+		b.config.Exporters,
+		b.config.Service.Pipelines,
+		b.envVars,
+		formatLogServicePipelineID,
+	)
 }
 
 func (b *Builder) addOTLPReceiver() buildComponentFunc {
@@ -432,5 +381,5 @@ func formatUserDefinedTransformProcessorID(lp *telemetryv1alpha1.LogPipeline) st
 }
 
 func formatOTLPExporterID(pipeline *telemetryv1alpha1.LogPipeline) string {
-	return common.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)
+	return common.FormatExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)
 }

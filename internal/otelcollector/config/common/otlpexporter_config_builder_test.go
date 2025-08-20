@@ -10,15 +10,15 @@ import (
 )
 
 func TestExporterIDHTTP(t *testing.T) {
-	require.Equal(t, "otlphttp/test", ExporterID("http", "test"))
+	require.Equal(t, "otlphttp/test", FormatExporterID("http", "test"))
 }
 
 func TestExporterIDGRPC(t *testing.T) {
-	require.Equal(t, "otlp/test", ExporterID("grpc", "test"))
+	require.Equal(t, "otlp/test", FormatExporterID("grpc", "test"))
 }
 
 func TestExorterIDDefault(t *testing.T) {
-	require.Equal(t, "otlp/test", ExporterID("", "test"))
+	require.Equal(t, "otlp/test", FormatExporterID("", "test"))
 }
 
 func TestMakeConfig(t *testing.T) {

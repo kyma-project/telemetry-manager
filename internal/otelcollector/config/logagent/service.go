@@ -55,5 +55,5 @@ func formatUserDefinedTransformProcessorID(pipelineName string) string {
 }
 
 func formatOTLPExporterID(pipeline *telemetryv1alpha1.LogPipeline) string {
-	return common.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)
+	return common.FormatExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)
 }

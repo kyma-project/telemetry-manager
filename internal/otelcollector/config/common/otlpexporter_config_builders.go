@@ -86,7 +86,7 @@ func makeExportersConfig(otlpOutput *telemetryv1alpha1.OTLPOutput, pipelineName 
 	return &otlpExporterConfig
 }
 
-func ExporterID(protocol string, pipelineName string) string {
+func FormatExporterID(protocol string, pipelineName string) string {
 	var outputType string
 	if protocol == telemetryv1alpha1.OTLPProtocolHTTP {
 		outputType = "otlphttp"

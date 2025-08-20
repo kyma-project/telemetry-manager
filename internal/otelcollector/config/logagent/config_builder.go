@@ -113,7 +113,7 @@ func (b *Builder) addOTLPExporter(ctx context.Context, pipeline *telemetryv1alph
 
 	maps.Copy(b.envVars, otlpExporterEnvVars)
 
-	otlpExporterID := common.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)
+	otlpExporterID := common.FormatExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)
 	b.config.Exporters[otlpExporterID] = Exporter{OTLP: otlpExporterConfig}
 
 	return nil
