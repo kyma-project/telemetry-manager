@@ -106,3 +106,4 @@ jobs:
         with:
           id: ${{ github.job }}
           failure: failure()
+          github-token: ${{ secrets.GITHUB_TOKEN }}
