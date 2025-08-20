@@ -63,6 +63,12 @@ func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 		dst.Spec.Output.Custom = srcCustomOutput
 	}
 
+	if src.Spec.Transforms != nil {
+		for _, t := range src.Spec.Transforms {
+			dst.Spec.Transforms = append(dst.Spec.Transforms, v1Alpha1TransformSpecToV1Beta1(t))
+		}
+	}
+
 	dst.Status = telemetryv1beta1.LogPipelineStatus(src.Status)
 
 	return nil
@@ -214,6 +220,16 @@ func v1Alpha1TLSToV1Beta1(src LogPipelineOutputTLS) telemetryv1beta1.OutputTLS {
 	return dst
 }
 
+func v1Alpha1TransformSpecToV1Beta1(src TransformSpec) telemetryv1beta1.TransformSpec {
+	var dst telemetryv1beta1.TransformSpec
+
+	dst.Conditions = append(dst.Conditions, src.Conditions...)
+
+	dst.Statements = append(dst.Statements, src.Statements...)
+
+	return dst
+}
+
 // ConvertFrom converts from the Hub version (v1beta1) to this version.
 func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 	dst := lp
@@ -263,6 +279,12 @@ func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 
 	if srcCustomOutput := src.Spec.Output.Custom; srcCustomOutput != "" {
 		dst.Spec.Output.Custom = srcCustomOutput
+	}
+
+	if src.Spec.Transforms != nil {
+		for _, t := range src.Spec.Transforms {
+			dst.Spec.Transforms = append(dst.Spec.Transforms, v1Beta1TransformSpecToV1Alpha1(t))
+		}
 	}
 
 	dst.Status = LogPipelineStatus(src.Status)
@@ -414,4 +436,14 @@ func v1Beta1ValueTypeToV1Alpha1(src telemetryv1beta1.ValueType) ValueType {
 	return ValueType{
 		Value: src.Value,
 	}
+}
+
+func v1Beta1TransformSpecToV1Alpha1(src telemetryv1beta1.TransformSpec) TransformSpec {
+	var dst TransformSpec
+
+	dst.Conditions = append(dst.Conditions, src.Conditions...)
+
+	dst.Statements = append(dst.Statements, src.Statements...)
+
+	return dst
 }

@@ -47,6 +47,12 @@ func TestConvertTo(t *testing.T) {
 			Filters: []LogPipelineFilter{
 				{Custom: "name stdout"},
 			},
+			Transforms: []TransformSpec{
+				{
+					Conditions: []string{"resource.attributes[\"k8s.pod.name\"] == nil"},
+					Statements: []string{"set(resource.attributes[\"k8s.pod.name\"]", "nginx"},
+				},
+			},
 			Output: LogPipelineOutput{
 				Custom: "custom-output",
 				HTTP: &LogPipelineHTTPOutput{
@@ -192,6 +198,12 @@ func TestConvertFrom(t *testing.T) {
 			},
 			Filters: []telemetryv1beta1.LogPipelineFilter{
 				{Custom: "name stdout"},
+			},
+			Transforms: []telemetryv1beta1.TransformSpec{
+				{
+					Conditions: []string{"resource.attributes[\"k8s.pod.name\"] == nil"},
+					Statements: []string{"set(resource.attributes[\"k8s.pod.name\"]", "nginx"},
+				},
 			},
 			Output: telemetryv1beta1.LogPipelineOutput{
 				Custom: "custom-output",
@@ -362,4 +374,13 @@ func requireLogPipelinesEquivalent(t *testing.T, x *LogPipeline, y *telemetryv1b
 
 	require.Equal(t, x.Status.UnsupportedMode, y.Status.UnsupportedMode, "status unsupported mode mismatch")
 	require.ElementsMatch(t, x.Status.Conditions, y.Status.Conditions, "status conditions mismatch")
+
+	xTransforms := x.Spec.Transforms
+	yTransforms := y.Spec.Transforms
+	require.Len(t, xTransforms, len(yTransforms), "expected same number of transforms")
+
+	for i := range xTransforms {
+		require.Equal(t, xTransforms[i].Conditions, yTransforms[i].Conditions, "transform conditions mismatch at index %d", i)
+		require.Equal(t, xTransforms[i].Statements, yTransforms[i].Statements, "transform statements mismatch at index %d", i)
+	}
 }
