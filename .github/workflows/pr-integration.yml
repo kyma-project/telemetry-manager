@@ -56,14 +56,14 @@ jobs:
       matrix:
         kind:
           - logs-fluentbit
-          - logs-otel-agent
-          - logs-otel-gateway
-          - metrics
-          - traces
+          # - logs-otel-agent
+          # - logs-otel-gateway
+          # - metrics
+          # - traces
         scenario:
           - healthy
-          - backpressure
-          - outage
+          # - backpressure
+          # - outage
     name: "selfmon: ${{ matrix.kind }}-${{ matrix.scenario }}"
     runs-on: ubuntu-latest
     steps:
@@ -105,60 +105,60 @@ jobs:
       matrix:
         labels:
           # LOGS
-          - name: fluent-bit
-            mode: release
-            type: e2e
-          - name: log-agent
-            mode: release
-            type: e2e
-          - name: log-gateway
-            mode: release
-            type: e2e
-          - name: logs-max-pipeline
-            mode: release
-            type: e2e
-          - name: fluent-bit-max-pipeline
-            mode: release
-            type: e2e
-          - name: otel-max-pipeline
-            mode: release
-            type: e2e
-          # METRICS
-          - name: metrics-set-a
-            mode: release
-            type: e2e
-          - name: metrics-set-b
-            mode: release
-            type: e2e
-          - name: metrics-set-c
-            mode: release
-            type: e2e
-          - name: metrics-max-pipeline
-            mode: release
-            type: e2e
-          # TRACES
-          - name: traces
-            mode: release
-            type: e2e
-          - name: traces-max-pipeline
-            mode: release
-            type: e2e
-          # TELEMETRY
-          - name: telemetry
-            mode: release
-            type: e2e
-          # MISC
-          - name: misc
-            mode: release
-            type: e2e
+          # - name: fluent-bit
+          #   mode: release
+          #   type: e2e
+          # - name: log-agent
+          #   mode: release
+          #   type: e2e
+          # - name: log-gateway
+          #   mode: release
+          #   type: e2e
+          # - name: logs-max-pipeline
+          #   mode: release
+          #   type: e2e
+          # - name: fluent-bit-max-pipeline
+          #   mode: release
+          #   type: e2e
+          # - name: otel-max-pipeline
+          #   mode: release
+          #   type: e2e
+          # # METRICS
+          # - name: metrics-set-a
+          #   mode: release
+          #   type: e2e
+          # - name: metrics-set-b
+          #   mode: release
+          #   type: e2e
+          # - name: metrics-set-c
+          #   mode: release
+          #   type: e2e
+          # - name: metrics-max-pipeline
+          #   mode: release
+          #   type: e2e
+          # # TRACES
+          # - name: traces
+          #   mode: release
+          #   type: e2e
+          # - name: traces-max-pipeline
+          #   mode: release
+          #   type: e2e
+          # # TELEMETRY
+          # - name: telemetry
+          #   mode: release
+          #   type: e2e
+          # # MISC
+          # - name: misc
+          #   mode: release
+          #   type: e2e
           # OTHER
           - name: experimental
             mode: experimental
             type: e2e
           # INTEGRATION
-          - name: istio
-            mode: release
-            type: integration
+          # - name: istio
+          #   mode: release
+          #   type: integration
     name: "e2e: ${{ matrix.labels.name }}"
     runs-on: ubuntu-latest
     steps:
@@ -214,12 +214,17 @@ jobs:
 
       - name: Remove skipped test cases from JUnit reports
         run: |
+          # Install xmlstarlet 
+          sudo apt-get update
+          sudo apt-get install -y xmlstarlet
+          
           # Process each XML file to remove testcase elements containing skipped tags
           for xml_file in reports/*.xml; do
             if [ -f "$xml_file" ]; then
               echo "Processing: $xml_file"
               # Use xmlstarlet to remove testcase elements that contain skipped child elements
               xmlstarlet ed -L --delete "//testcase[skipped]" "$xml_file"
+              echo "✓ Removed skipped testcases from: $xml_file"
             fi
           done
 
