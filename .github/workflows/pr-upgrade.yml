@@ -60,12 +60,13 @@ jobs:
           MANAGER_IMAGE=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA} make deploy-experimental
 
       - name: Deploy test K8S prerequisites
-        uses: "./.github/template/deploy-test-k8s-prerequisites"
+        uses: "./.github/template/deploy-test-prerequisites" # TODO(TeodorSAP): Replace with "deploy-test-k8s-prerequisites" after 1.47.0 release
 
       - name: Wait for manager readiness
         shell: bash
         run: kubectl -n kyma-system rollout status deployment telemetry-manager --timeout=90s
 
+      # TODO(TeodorSAP): Rename TestLogsUpgrade to TestLogsFluentBitUpgrade and TestLogsOTelUpgrade to TestLogsUpgrade after 1.47 release
       - name: Run tests on latest tag
         shell: bash
         run: |
@@ -101,7 +102,7 @@ jobs:
           go test -v -timeout=10m -run="^(TestLogsFluentBitUpgrade|TestLogsUpgrade|TestMetricsUpgrade|TestTracesUpgrade)/after_upgrade$" ./test/e2e/upgrade/...
 
       - name: Clean-up test environment
-        uses: "./.github/template/test-cleanup"
+        uses: "./.github/template/finalize-test" # TODO(TeodorSAP): Replace with "test-cleanup" after 1.47.0 release
         if: ${{ !cancelled()  }}
         with:
           id: ${{ github.job }}
