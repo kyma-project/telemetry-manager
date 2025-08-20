@@ -3,10 +3,11 @@ package loggateway
 import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 )
 
-func processorsConfig(opts BuildOptions) Processors {
-	return Processors{
+func processorsConfig(opts BuildOptions, pipelines []telemetryv1alpha1.LogPipeline) Processors {
+	processors := Processors{
 		BaseProcessors: common.BaseProcessors{
 			Batch:         batchProcessorConfig(),
 			MemoryLimiter: memoryLimiterProcessorConfig(),
@@ -20,6 +21,16 @@ func processorsConfig(opts BuildOptions) Processors {
 		IstioEnrichment:         istioEnrichmentProcessorConfig(opts),
 		Dynamic:                 make(map[string]any),
 	}
+
+	// Check if any pipeline has OTLP input disabled
+	for _, pipeline := range pipelines {
+		if !logpipelineutils.IsOTLPInputEnabled(pipeline.Spec.Input) {
+			processors.DropIfInputSourceOTLP = dropIfInputSourceOTLPProcessorConfig()
+			break
+		}
+	}
+
+	return processors
 }
 
 func istioEnrichmentProcessorConfig(opts BuildOptions) *IstioEnrichmentProcessor {
