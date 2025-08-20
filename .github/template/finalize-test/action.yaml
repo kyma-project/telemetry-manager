@@ -27,6 +27,7 @@ runs:
         summary: true
         detailed_summary: true
         fail_on_failure: true
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Describe manager pod
       shell: bash
