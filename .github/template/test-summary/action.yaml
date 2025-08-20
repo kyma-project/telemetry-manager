@@ -1,19 +1,6 @@
 name: Test Summary
 description: Downloads test artifacts and publishes consolidated test reports
 
-inputs:
-  github-token:
-    description: Github token to use for github access
-    required: true
-  report-pattern:
-    description: Pattern to match report artifacts
-    required: false
-    default: "*-report"
-  report-path:
-    description: Path where reports will be downloaded
-    required: false
-    default: "reports"
-
 runs:
   using: "composite"
 
@@ -32,8 +19,8 @@ runs:
     - name: Download JUnit reports
       uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
       with:
-        path: ${{ inputs.report-path }}
-        pattern: ${{ inputs.report-pattern }}
+        path: "reports"
+        pattern: "*-report"
         merge-multiple: true
 
     - name: Remove skipped testcases from JUnit reports
@@ -49,19 +36,19 @@ runs:
           fi
         done
 
-    - name: Remove duplicate testcases from JUnit reports
-      shell: bash
-      run: |
-        # Process each JUnit report XML file to remove duplicate testcase elements
-        for xml_file in ${{ inputs.report-path }}/*.xml; do
-          if [ -f "$xml_file" ]; then
-            echo "Processing duplicates in: $xml_file"
-            # Use xmlstarlet to remove duplicate testcase elements anywhere in the document, keeping only the first occurrence of each name
-            # This works by finding testcases that have the same name as any preceding testcase in the entire document
-            xmlstarlet ed -L --delete "//testcase[@name = preceding::testcase/@name]" "$xml_file"
-            echo "✓ Removed duplicate testcases from: $xml_file"
-          fi
-        done
+    # - name: Remove duplicate testcases from JUnit reports
+    #   shell: bash
+    #   run: |
+    #     # Process each JUnit report XML file to remove duplicate testcase elements
+    #     for xml_file in ${{ inputs.report-path }}/*.xml; do
+    #       if [ -f "$xml_file" ]; then
+    #         echo "Processing duplicates in: $xml_file"
+    #         # Use xmlstarlet to remove duplicate testcase elements anywhere in the document, keeping only the first occurrence of each name
+    #         # This works by finding testcases that have the same name as any preceding testcase in the entire document
+    #         xmlstarlet ed -L --delete "//testcase[@name = preceding::testcase/@name]" "$xml_file"
+    #         echo "✓ Removed duplicate testcases from: $xml_file"
+    #       fi
+    #     done
 
     - name: Publish JUnit reports as GHA Summary
       uses: mikepenz/action-junit-report@3585e9575db828022551b4231f165eb59a0e74e3 # v5.6.2
@@ -73,4 +60,6 @@ runs:
         fail_on_failure: true
         include_passed: true
         skip_annotations: true
-        token: ${{ inputs.github-token }}
+        group_suite: true
+        include_empty_in_summary: false
+        include_time_in_summary: true

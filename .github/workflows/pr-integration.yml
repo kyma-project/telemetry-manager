@@ -207,5 +207,3 @@ jobs:
 
       - name: Generate test summary
         uses: "./.github/template/test-summary"
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
