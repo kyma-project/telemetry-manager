@@ -38,10 +38,6 @@ func (eie *EndpointInvalidError) Error() string {
 	return eie.Err.Error()
 }
 
-func (eie *EndpointInvalidError) Unwrap() error {
-	return eie.Err
-}
-
 func IsEndpointInvalidError(err error) bool {
 	var errEndpointInvalid *EndpointInvalidError
 	return errors.As(err, &errEndpointInvalid)
