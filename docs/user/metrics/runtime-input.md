@@ -3,18 +3,10 @@
 To enable collection of runtime metrics, define a MetricPipeline that has the `runtime` section enabled as input:
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: MetricPipeline
-metadata:
-  name: backend
-spec:
+...
   input:
     runtime:
       enabled: true
-  output:
-    otlp:
-      endpoint:
-        value: https://backend.example.com:4317
 ```
 
 ## Resource Selection
@@ -25,11 +17,7 @@ To enable or disable the collection of metrics for a specific resource, use the 
 The following example collects only DaemonSet, Deployment, StatefulSet, and Job metrics:
 
   ```yaml
-  apiVersion: telemetry.kyma-project.io/v1alpha1
-  kind: MetricPipeline
-  metadata:
-    name: backend
-  spec:
+  ...
     input:
       runtime:
         enabled: true
@@ -50,13 +38,9 @@ The following example collects only DaemonSet, Deployment, StatefulSet, and Job 
             enabled: true
           job:
             enabled: true
-    output:
-      otlp:
-        endpoint:
-          value: https://backend.example.com:4317
   ```
 
-## Metrics
+## Pod Metrics
 
 If `pod` metrics are enabled, the following metrics are collected:
 

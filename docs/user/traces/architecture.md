@@ -1,4 +1,4 @@
-# Architecture
+# Traces Architecture
 
 In the Kyma cluster, the Telemetry module provides a central deployment of an [OTel Collector](https://opentelemetry.io/docs/collector/) acting as a gateway. The gateway exposes endpoints to which all Kyma modules and users’ applications should send the trace data.
 

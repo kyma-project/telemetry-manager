@@ -1,19 +1,12 @@
-# Application Input
+# Logs Application Input
 
 To enable collection of logs printed by containers to the `stdout/stderr` channel, define a LogPipeline that has the `application` section enabled as input:
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: LogPipeline
-metadata:
-  name: backend
-spec:
+  ...
   input:
     application:
       enabled: true
-  output:
-    otlp:
-      ...
 ```
 
 By default, input is collected from all namespaces, except the system namespaces `kube-system`, `istio-system`, `kyma-system`, which are excluded by default.
@@ -25,11 +18,7 @@ To filter your application logs by namespace or container, use an input spec to 
 The following pipeline collects input from all namespaces excluding `kyma-system` and only from the `istio-proxy` containers:
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: LogPipeline
-metadata:
-  name: backend
-spec:
+  ...
   input:
     application:
       enabled: true
@@ -40,8 +29,6 @@ spec:
       containers:
         exclude:
           - myContainer
-    otlp:
-      ...
 ```
 
 After tailing the log files from the container runtime, the payload of the log lines is transformed into an OTLP entry. Learn more about the flow of the log record through the steps and the available log attributes in the following stages:

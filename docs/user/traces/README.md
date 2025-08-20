@@ -8,11 +8,11 @@ The Telemetry module provides a trace gateway for the shipment of traces of any 
 
 You can configure the trace gateway with external systems using runtime configuration with a dedicated Kubernetes API ([CRD](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions)) named TracePipeline. A TracePipeline is following the structure and characteristic of a Telemetry [pipeline](./../pipelines/README.md) and offers these collection features:
 
-- [`otlp` input](./../pipelines/otlp-input.md): Ingest OTLP traces via the push endpoints.
-- Activate Istio tracing. For details, see [Istio](#istio).
+- `otlp` input: Ingest OTLP traces via the push endpoints, see [Telemetry Pipeline OTLP Input](./../pipelines/otlp-input.md).
+- Activate Istio tracing. For details, see [Traces Istio Support](./istio-support.md).
 - Collect traces from [Eventing](#eventing) and [Serverless Functions](#serverless).
 
-For an example, see [Sample TracePipeline](./sample.md) and check out the available parameters and attributes under [TracePipeline](./../resources/04-tracepipeline.md) and checkout the involved components of a TracePipeline at the [Architecture](architecture.md).
+For an example, see [Sample TracePipeline](./sample.md) and check out the available parameters and attributes under [TracePipeline](./../resources/04-tracepipeline.md) and checkout the involved components of a TracePipeline at the [Traces Architecture](architecture.md).
 
 The Trace feature is optional. If you don't want to use it, simply don't set up a TracePipeline. For details, see Creating a Telemetry Pipeline.
 
@@ -24,13 +24,9 @@ For the recording of a distributed trace, every involved component must propagat
 - Your application also must propagate the W3C Trace Context for any user-related activity. This can be achieved easily using the [Open Telemetry SDKs](https://opentelemetry.io/docs/instrumentation/) available for all common programming languages. If your application follows that guidance and is part of the Istio Service Mesh, it’s already outlined with dedicated span data in the trace data collected by the Kyma telemetry setup.
 - Furthermore, your application must enrich a trace with additional span data and send these data to the cluster-central telemetry services. You can achieve this with [Open Telemetry SDKs](https://opentelemetry.io/docs/instrumentation/).
 
-## Architecture
-
-More details can be found at [Architecture](architecture.md).
-
 ## Basic Pipeline
 
-The minimal pipeline will define an [`otlp` output](./../pipelines/otlp-output.md) and have the [`otlp` input](./../pipelines/otlp-input.md) enabled by default.
+The minimal pipeline will define an `otlp` output and have the `otlp` input enabled by default, see [Telemetry Pipeline OTLP Output](./../pipelines/otlp-output.md) and [Telemetry Pipeline OTLP Input](./../pipelines/otlp-input.md).
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -73,7 +69,7 @@ spec:
     randomSamplingPercentage: 5.00
 ```
 
-More details and configuration options can be found at [Configure Istio Access Logs](./istio.md).
+More details and configuration options can be found at [Traces Istio Support](./istio-support.md).
 
 ### Eventing
 
@@ -97,9 +93,9 @@ Because the Telemetry endpoints are configured by default, Serverless also repor
 
 ## Troubleshooting and Operations
 
-Operational remarks can be found at [Operations](./../pipelines/operations.md).
+Operational remarks can be found at [Telemetry Pipeline Operations](./../pipelines/operations.md).
 
-For typical pipeline troubleshooting please see [Troubleshooting](./../pipelines/troubleshooting.md).
+For typical pipeline troubleshooting please see [Telemetry Pipeline Troubleshooting](./../pipelines/troubleshooting.md).
 
 ### Custom Spans Don’t Arrive at the Backend, but Istio Spans Do
 
@@ -113,7 +109,7 @@ For typical pipeline troubleshooting please see [Troubleshooting](./../pipelines
 
 ### Trace Backend Shows Fewer Traces than Expected
 
-**Cause**: By [default](#istio), only 1% of the requests are sent to the trace backend for trace recording.
+**Cause**: By default, only 1% of the requests are sent to the trace backend for trace recording, see [Traces Istio Support](./istio-support.md).
 
 **Solution**:
 

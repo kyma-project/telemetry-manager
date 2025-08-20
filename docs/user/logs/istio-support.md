@@ -1,11 +1,10 @@
-# Configure Istio Access Logs
+# Logs Istio Support
 
 Use the Istio Telemetry API to selectively enable the Istio access logs and filter them if needed.
 
 ## Prerequisites
 
 * You have the Istio module added.
-* To use CLI instruction, you must install [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl) and [curl](https://curl.se/). Alternatively, you can use Kyma dashboard.
 
 ## Context
 
@@ -16,7 +15,7 @@ The Istio setup shipped with the Kyma Istio module provides a pre-configured [ex
 > When using LogPipelines with `http` output, then the integration via OTLP is not supported and the legacy extension provider `stdout-json` needs to be used
 > Enabling access logs may drastically increase logs volume and might quickly fill up your log storage.
 
-See also [Kyma tracing with Istio](./../traces/README.md#istio) for more details on how to enable the Istio tracing using the same API.
+For more details on how to enable the Istio tracing using the same API, see [Traces Istio Support](./../traces/README.md#istio) 
 
 ## Configuration
 
@@ -153,7 +152,7 @@ Enable access logs for all individual proxies of the workloads and Istio Ingress
     ```
 
 > [!NOTE]
-> There can be only one Istio Telemetry resource on global mesh level. If you also enable [Kyma tracing with Istio](./../traces/README.md#istio), assure that the configuration happens in the same resource.
+> There can be only one Istio Telemetry resource on global mesh level. If you also enable Istio tracing, assure that the configuration happens in the same resource. See [Traces Istio Support](./../traces/istio-support.md)
 
 ### Filter Access Logs
 

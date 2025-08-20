@@ -1,4 +1,4 @@
-# OTLP Input
+# Telemetry Pipeline OTLP Input
 
 With OpenTelemetry, applications are pushing telemetry data in the OTLP format to the backend. By default, a Telemetry Pipeline will serve a cluster internal endpoint accepting OTLP data, to enrich and dispatch the data to the configured backend, so that the application requires no additional backend configuration for the push.
 
@@ -47,17 +47,12 @@ By default, `otlp` input is enabled.
 To drop the push-based OTLP logs that are received by the log gateway, define a LogPipeline that has the `otlp` section disabled as an input:
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: <Kind>Pipeline
-metadata:
-  name: backend
-spec:
+...
   input:
     application:
       enabled: true
     otlp:
       disabled: true
-...
 ```
 
 With this, the agent starts collecting all container logs, while the push-based OTLP logs are dropped by the gateway.
@@ -67,11 +62,7 @@ With this, the agent starts collecting all container logs, while the push-based 
 The input supports filtering of incoming data by namespaces.
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: <Kind>Pipeline
-metadata:
-  name: backend
-spec:
+...
   input:
     otlp:
       namespaces:
@@ -80,21 +71,15 @@ spec:
           - namespaceB
         exclude:
           - namespaceC
-...
 ```
 
 By default, all system namespaces are excluded. To collect all namespaces without using any inclusion or exclusion list, use an empty struct syntax like in:
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: <Kind>Pipeline
-metadata:
-  name: backend
-spec:
+...
   input:
     otlp:
       namespaces: {}
-...
 ```
 
 ## Istio Support

@@ -1,4 +1,4 @@
-# Configure Istio Tracing
+# Traces Istio Support
 
 Use the Istio Telemetry API to selectively enable integration of Istio traces with the Telemetry module.
 
@@ -16,7 +16,7 @@ The Istio module is configured with an [extension provider](https://istio.io/lat
 > [!WARNING]
 > Enabling Istio traces may drastically increase data volume and might quickly fill up your trace storage.
 
-See also [Kyma Access Logs with Istio](./../logs/README.md#istio) for more details on how to enable Istio access logs using the same API.
+For more details on how to enable Istio access logs using the same API, see [Logs Istio Support](./../logs/istio-support.md)
 
 ## Configuration
 
@@ -46,7 +46,7 @@ spec:
 ```
 
 > [!NOTE]
-> There can be only one Istio Telemetry resource on global mesh level. If you also enable [Kyma access logs with Istio](./../logs/README.md#istio), assure that the configuration happens in the same resource.
+> There can be only one Istio Telemetry resource on global mesh level. If you also enable Istio access logs, assure that the configuration happens in the same resource, see [Logs Istio Support](./../logs/istio-support.md).
 
 ### Configure a Sampling Rate
 

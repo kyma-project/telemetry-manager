@@ -1,5 +1,5 @@
 
-# Architecture
+# Logs Architecture
 
 In the Telemetry module, a central in-cluster Deployment of an [OTel Collector](https://opentelemetry.io/docs/collector/) acts as a gateway. The gateway exposes endpoints for the [OpenTelemetry Protocol (OTLP)](https://opentelemetry.io/docs/specs/otlp/) for GRPC and HTTP-based communication using the dedicated `telemetry-otlp-logs` service, to which your applications send the logs data.
 
@@ -28,7 +28,7 @@ The LogPipeline resource is watched by Telemetry Manager, which is responsible f
 
 ## Log Gateway
 
-In a Kyma cluster, the log gateway is the central component to which all components can send their individual logs. The gateway collects, enriches, and dispatches the data to the configured backend. For more information, see [`otlp` input](./../pipelines/otlp-input.md).
+In a Kyma cluster, the log gateway is the central component to which all components can send their individual logs. The gateway collects, enriches, and dispatches the data to the configured backend. For more information, see [Telemetry Pipeline OTLP Input](./../pipelines/otlp-input.md).
 
 ## Log Agent
 

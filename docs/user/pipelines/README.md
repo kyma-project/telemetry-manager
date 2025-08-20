@@ -36,28 +36,28 @@ Each pipeline handles a distinct kind of telemetry data, which is reflected in t
 
 ## Input
 
-In the input section of the pipeline, you define which data is collected. Every pipeline supports the ingestion of OTLP data as the [`otlp`](./otlp-input.md) input of a pipeline is enabled by default and will enable a cluster internal endpoint accepting OTLP data. For more details, see [`otlp` input](./otlp-input.md).
+In the input section of the pipeline, you define which data is collected. Every telemetry pipeline supports the ingestion of OTLP data, as the `otlp` input of a pipeline is enabled by default and will enable a cluster internal endpoint accepting OTLP data. For more details, see [Telemetry Pipeline OTLP input](./otlp-input.md).
 
-Besides the OTLP ingestion using the [`otlp`](./otlp-input.md), other inputs are avaialble dependent on the pipeline type:
+Besides the OTLP ingestion using the `otlp` input, other inputs are avaialble dependent on the pipeline type:
 
-- LogPipeline: collect logs from your application containers' standard output (stdout) and standard error (stderr) using the [`application`](./../logs/application-input.md) input. It parses these logs, extracts useful information and transforms them into the OTLP format. Additional, Istio access log integration is available via the regular [`otlp`](./otlp-input.md) input.
-- TracePipeline: No dedicated inputs are available, however Istio trace integration is available via the regular [`otlp`](./otlp-input.md) input.
-- MetricPipeline: a pull-based metric collection in the Prometheus format using an annotation-based discovery is available with the the [`prometheus`](./../metrics/prometheus-input.md) input. Collection of Kubernetes runtime metrics (things like CPU/memory usage) is  supported by the [`runtime`](./../metrics/runtime-input.md). You can also configure the collection of [`istio`](./../metrics/istio-input.md) proxy metrics, providing detailed information about service mesh traffic.
+- LogPipeline: collect logs from your application containers' standard output (stdout) and standard error (stderr) using the `application` input, see [Logs Application Input](./../logs/application-input.md)]. It parses these logs, extracts useful information and transforms them into the OTLP format. Additional, Istio access log integration is available via the regular `otlp` input.
+- TracePipeline: No dedicated inputs are available, however Istio trace integration is available via the regular `otlp` input, see [Telemetry Pipeline OTLP input](./otlp-input.md)
+- MetricPipeline: a pull-based metric collection in the Prometheus format using an annotation-based discovery is available with the the `prometheus` input, see [Metrics Prometheus Input](./../metrics/prometheus-input.md). Collection of Kubernetes runtime metrics (things like CPU/memory usage) is  supported by the `runtime` input, see [Metrics Runtime Input](./../metrics/runtime-input.md). You can also configure the collection of Istio metrics `istio` proxy metrics using the `istio` input, providing detailed information about service mesh traffic. See [Metrics Isio Input](./../metrics/istio-input.md)
 
 ## Output
 
-The output section defines the destination for your telemetry data, always using OTLP leveraging the [`otlp` output](./otlp-output.md) (besides the [legacy LogPipeline](./../02-logs.md). As the endpoint, specify the address of your preferred backend. In the output section, you also define the authentication details to connect securely to your telemetry backend.
+The output section defines the destination for your telemetry data, always using OTLP leveraging the `otlp` output (besides the [legacy LogPipeline](./../02-logs.md). As the endpoint, specify the address of your preferred backend. In the output section, you also define the authentication details to connect securely to your telemetry backend.
 
-For more details, see [`otlp` output](./otlp-output.md).
+For more details, see [Telemetry Pipeline OTLP Output](./otlp-output.md).
 
 ## Data Enrichment
 
-All pipelines are performing advanced enrichment of the data leveraging the OTel resource attributes. With that the sources of the data can be identified with ease in the backends. For more details, see [Enrichment](./enrichment.md).
+All pipelines are performing advanced enrichment of the data leveraging the OTel resource attributes. With that the sources of the data can be identified with ease in the backends. For more details, see [Telemetry Pipeline Data Enrichment](./enrichment.md).
 
 ## Troubleshooting
 
-For more details, see [Troubleshooting](./troubleshooting.md)
+For more details, see [Telemetry Pipeline Troubleshooting](./troubleshooting.md)
 
 ## Operations
 
-For more details, see [Operations](./operations.md)
+For more details, see [Telemetry Pipeline Operations](./operations.md)

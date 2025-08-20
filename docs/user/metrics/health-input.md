@@ -1,4 +1,4 @@
-# Telemetry Health Input
+# Metrics Health Input
 
 By default, a MetricPipeline emits metrics about the health of all pipeline resources taken from each status. Based on these status metrics, you can track the status of every individual pipeline and set up alerting for it.
 

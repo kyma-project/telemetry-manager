@@ -30,7 +30,7 @@ In case native OTLP is not supported, you will need to run a custom OTel Collect
 
 ### 1. Create New LogPipeline
 
-Create a new LogPipeline manifest with an OTLP output. Use the identified OTLP endpoint and configure it as endpoint. For details on the different configuration options please see [`otlp` output](./pipelines/otlp-output.md). Hereby, verify the used protocol and authentication method.
+Create a new LogPipeline manifest with an OTLP output. Use the identified OTLP endpoint and configure it as endpoint. For details on the different configuration options please see [Telemetry Pipeline OTLP Output](./pipelines/otlp-output.md). Hereby, verify the used protocol and authentication method.
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1

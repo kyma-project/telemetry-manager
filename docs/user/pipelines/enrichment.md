@@ -1,4 +1,4 @@
-# Data Enrichment
+# Telemetry Pipeline Data Enrichment
 
 The Telemetry pipelines automatically enrich your data with OTel resource attributes, which makes it easy for you to identify the source of the data in your backend.
 

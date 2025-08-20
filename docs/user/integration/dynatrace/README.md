@@ -119,7 +119,7 @@ Next, you set up the ingestion of custom span and Istio span data, and, optional
 
 To start ingesting custom spans and Istio spans, you must enable the Istio tracing feature and then deploy a [TracePipeline](./../../traces/README.md).
 
-1. Deploy the [Istio Telemetry](./../../traces/README.md#istio) resource:
+1. Deploy the [Istio Telemetry](./../../traces/istio-support.md) resource:
 
     ```bash
     kubectl apply -n istio-system -f - <<EOF

@@ -8,11 +8,11 @@ The Telemetry module provides an API which configures a log gateway for push-bas
 
 You can configure the log gateway and agent with external systems using runtime configuration with a dedicated Kubernetes API ([CRD](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions)) named LogPipeline. A LogPipeline is following the structure and characteristic of a Telemetry [pipeline](./../pipelines/README.md) and offers these collection features:
 
-- [`otlp` input](./../pipelines/otlp-input.md): Ingest OTLP logs via the push endpoints.
-- [`application` input](./application-input.md): Activate collection of application logs from `stdout/stderr` channels of any container in the cluster using the [`application` input](./application-input.md)
-- Activate Istio access logs. For details, see [Istio](#istio).
+- `otlp` input: Ingest OTLP logs via the push endpoints, see [Telemetry Pipeline OTLP Input](./../pipelines/otlp-input.md)
+- `application` input: Activate collection of application logs from `stdout/stderr` channels of any container in the cluster using the `application` input, see [Logs Application Input](./application-input.md)
+- Activate Istio access logs. For details, see [Logs Istio Support](./istio-support.md).
 
-For an example, see [Sample LogPipeline](sample.md), check out the available parameters and attributes under [LogPipeline](./../resources/02-logpipeline.md) and checkout the involved components of a LogPipeline at the [Architecture](architecture.md).
+For an example, see [Sample LogPipeline](sample.md), check out the available parameters and attributes under [LogPipeline](./../resources/02-logpipeline.md) and checkout the involved components of a LogPipeline at the [Logs Architecture](architecture.md).
 
 The Log feature is optional. If you don’t want to use it, simply don’t set up a LogPipeline.
 
@@ -26,7 +26,7 @@ The Log feature is optional. If you don’t want to use it, simply don’t set u
 
 ## Basic Pipeline
 
-The minimal pipeline will define an [`otlp` output](./../pipelines/otlp-output.md) and have the [`otlp` input](./../pipelines/otlp-input.md) enabled by default.
+The minimal pipeline will define an `otlp` output and have the `otlp` input enabled by default, see [Telemetry Pipeline OTLP Output](./../pipelines/otlp-output.md) and [Telemetry Pipeline OTLP Input](./../pipelines/otlp-input.md).
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -48,7 +48,7 @@ The default protocol for shipping the data to a backend is GRPC, but you can cho
 
 ## Application Input
 
-The most common input used on a LogPipline is the [`application` input](./application-input.md). It will enable the collection of application logs from all containers tailing the log files of the container runtime. The most basic example which is enabling collection on all namespaces except the system namespaces:
+The most common input used on a LogPipline is the `application` input. It will enable the collection of application logs from all containers tailing the log files of the container runtime. The most basic example which is enabling collection on all namespaces except the system namespaces:
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -64,11 +64,11 @@ output:
         value: http://myEndpoint:4317
 ```
 
-For more details, please see [`application` input](./application-input.md).
+For more details, please see [Logs Application Input](./application-input.md).
 
 ## Kyma Modules With Logging Capabilities
 
-Kyma bundles modules that can be involved in user flows. If you want to collect all logs of all modules, enable the [`application` input](./application-input.md) for the `kyma-system` namespace.
+Kyma bundles modules that can be involved in user flows. If you want to collect all logs of all modules, enable the `application` input for the `kyma-system` namespace, see [Logs Application Input](./application-input.md).
 
 ### Istio
 
@@ -88,7 +88,7 @@ spec:
         - name: kyma-logs
 ```
 
-More details and configuration options can be found at [Configure Istio Access Logs](./istio.md).
+More details and configuration options can be found at [Logs Istio Support](./istio-support.md).
 
 ## Limitations
 
@@ -103,5 +103,5 @@ More details and configuration options can be found at [Configure Istio Access L
 
 ## Troubleshooting and Operations
 
-Operational remarks can be found at [Operations](./../pipelines/operations.md).
-There are no signal specific routines defined, for typical pipeline troubleshooting please see [Troubleshooting](./../pipelines/troubleshooting.md).
+Operational remarks can be found at [Telemetry Pipeline Operations](./../pipelines/operations.md).
+For pipeline troubleshooting please see [Telemetry Pipeline Troubleshooting](./../pipelines/troubleshooting.md).

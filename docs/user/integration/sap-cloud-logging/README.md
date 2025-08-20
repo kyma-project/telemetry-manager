@@ -159,7 +159,7 @@ By default, Istio sidecar injection and Istio access logs are disabled in Kyma. 
 
 You can set up ingestion of distributed traces from applications and the Istio service mesh to the OTLP endpoint of the SAP Cloud Logging service instance.
 
-1. Deploy the [Istio Telemetry](./../../traces/README.md#istio) resource with the following script:
+1. Deploy the [Istio Telemetry](./../../traces/istio-support.md) resource with the following script:
 
    <div tabs name="istiotraces">
      <details><summary>Script: Istio Traces</summary>

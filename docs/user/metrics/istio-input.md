@@ -1,20 +1,12 @@
-# Istio Input
+# Metrics Istio Input
 
 To enable collection of Istio metrics, define a MetricPipeline that has the `istio` section enabled as input:
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: MetricPipeline
-metadata:
-  name: backend
-spec:
+  ...
   input:
     istio:
       enabled: true
-  output:
-    otlp:
-      endpoint:
-        value: https://backend.example.com:4317
 ```
 
 With this, the agent starts collecting all Istio metrics from Istio sidecars from all namespaces (including system namespaces).
@@ -28,11 +20,7 @@ By default, the sidecars of all namespaces are getting collected.
 The following example collects runtime metrics **only** from the `foo` and `bar` namespaces:
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: MetricPipeline
-metadata:
-  name: backend
-spec:
+  ...
   input:
     istio:
       enabled: true
@@ -40,20 +28,12 @@ spec:
         include:
           - foo
           - bar
-  output:
-    otlp:
-      endpoint:
-        value: https://backend.example.com:4317
 ```
 
 The following example collects runtime metrics from all namespaces **except** the `foo` and `bar` namespaces:
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: MetricPipeline
-metadata:
-  name: backend
-spec:
+  ...
   input:
     istio:
       enabled: true
@@ -61,10 +41,6 @@ spec:
         exclude:
           - foo
           - bar
-  output:
-    otlp:
-      endpoint:
-        value: https://backend.example.com:4317
 ```
 
 ## Envoy metrics
@@ -77,22 +53,14 @@ By default, Envoy metrics collection is disabled.
 
 To activate Envoy metrics, enable the `envoyMetrics` section in the MetricPipeline specification under the `istio` input:
 
-  ```yaml
-  apiVersion: telemetry.kyma-project.io/v1alpha1
-  kind: MetricPipeline
-  metadata:
-    name: envoy-metrics
-  spec:
-    input:
-      istio:
+```yaml
+  ...
+  input:
+    istio:
+      enabled: true
+      envoyMetrics:
         enabled: true
-        envoyMetrics:
-          enabled: true
-    output:
-      otlp:
-        endpoint:
-          value: https://backend.example.com:4317
-  ```
+```
 
 ## Diagnostic Metrics
 
@@ -104,19 +72,11 @@ If you want to use them for debugging and diagnostic purposes, you can activate 
 
 The following example enables diagnostic metrics:
 
-  ```yaml
-  apiVersion: telemetry.kyma-project.io/v1alpha1
-  kind: MetricPipeline
-  metadata:
-    name: backend
-  spec:
-    input:
-      istio:
+```yaml
+  ...
+  input:
+    istio:
+      enabled: true
+      diagnosticMetrics:
         enabled: true
-        diagnosticMetrics:
-          enabled: true
-    output:
-      otlp:
-        endpoint:
-          value: https://backend.example.com:4317
-  ```
+```

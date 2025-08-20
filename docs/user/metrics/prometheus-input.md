@@ -1,20 +1,12 @@
-# Prometheus Input
+# Metrics Prometheus Input
 
 To enable collection of Prometheus-based metrics, define a MetricPipeline that has the `prometheus` section enabled as input:
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: MetricPipeline
-metadata:
-  name: backend
-spec:
+  ...
   input:
     prometheus:
       enabled: true
-  output:
-    otlp:
-      endpoint:
-        value: https://backend.example.com:4317
 ```
 
 > [!NOTE]
@@ -73,11 +65,7 @@ By default, the sidecars of all namespaces are getting collected excluding syste
 The following example collects runtime metrics **only** from the `foo` and `bar` namespaces:
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: MetricPipeline
-metadata:
-  name: backend
-spec:
+  ...
   input:
     prometheus:
       enabled: true
@@ -85,20 +73,12 @@ spec:
         include:
           - foo
           - bar
-  output:
-    otlp:
-      endpoint:
-        value: https://backend.example.com:4317
 ```
 
 The following example collects runtime metrics from all namespaces **except** the `foo` and `bar` namespaces:
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: MetricPipeline
-metadata:
-  name: backend
-spec:
+  ...
   input:
     prometheus:
       enabled: true
@@ -106,10 +86,6 @@ spec:
         exclude:
           - foo
           - bar
-  output:
-    otlp:
-      endpoint:
-        value: https://backend.example.com:4317
 ```
 
 ## Diagnostic Metrics
@@ -123,18 +99,10 @@ If you want to use them for debugging and diagnostic purposes, you can activate 
 The following example enables diagnostic metrics:
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: MetricPipeline
-metadata:
-  name: backend
-spec:
+  ...
   input:
     istio:
     enabled: true
     diagnosticMetrics:
         enabled: true
-  output:
-    otlp:
-    endpoint:
-        value: https://backend.example.com:4317
 ```

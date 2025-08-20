@@ -1,4 +1,4 @@
-# OTLP Output
+# Telemetry Pipeline OTLP Output
 
 The `otlp` output is the only output usually supported by a pipeline and is mandatory to configure. It will define where to push the telemetry data, what protocoll to use and which means of authentication to use.
 
@@ -9,11 +9,7 @@ The `otlp` output is the only output usually supported by a pipeline and is mand
 The minimal configuration to define an output is to specify an OTLP endpoint without authentication using GRPC as underlying protocol.
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: <Kind>Pipeline
-metadata:
-    name: backend
-spec:
+...
   output:
     otlp:
       endpoint:
@@ -27,11 +23,7 @@ The default protocol for shipping the data to a backend is GRPC, but you can cho
 - For GRPC, use:
 
   ```yaml
-  apiVersion: telemetry.kyma-project.io/v1alpha1
-  kind: <Kind>Pipeline
-  metadata:
-    name: backend
-  spec:
+    ...
     output:
       otlp:
         endpoint:
@@ -41,11 +33,7 @@ The default protocol for shipping the data to a backend is GRPC, but you can cho
 - For HTTP, use the `protocol` attribute:
 
   ```yaml
-  apiVersion: telemetry.kyma-project.io/v1alpha1
-  kind: <Kind>Pipeline
-  metadata:
-    name: backend
-  spec:
+   ...
    output:
       otlp:
         protocol: http
@@ -66,11 +54,7 @@ You can store the value of the token in the referenced Secret without any prefix
 ### **mTLS**
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: <Kind>Pipeline
-metadata:
-  name: backend
-spec:
+  ...
   output:
     otlp:
       endpoint:
@@ -93,11 +77,7 @@ spec:
 ### **Basic Authentication**
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: <Kind>Pipeline
-metadata:
-  name: backend
-spec:
+  ...
   output:
     otlp:
       endpoint:
@@ -125,11 +105,7 @@ spec:
 ### **Token-based authentication with custom headers**
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: <Kind>Pipeline
-metadata:
-  name: backend
-spec:
+  ...
   output:
     otlp:
       endpoint:
@@ -184,11 +160,7 @@ To integrate with external systems, you must configure authentication  details. 
 ### **mTLS**
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: <Kind>Pipeline
-metadata:
-  name: backend
-spec:
+  ...
   output:
     otlp:
       endpoint:
@@ -207,11 +179,7 @@ spec:
 ### **Basic Authentication**
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: <Kind>Pipeline
-metadata:
-  name: backend
-spec:
+  ...
   output:
     otlp:
       endpoint:
@@ -227,11 +195,7 @@ spec:
 ### **Token-based authentication with custom headers**
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: <Kind>Pipeline
-metadata:
-  name: backend
-spec:
+  ...
   output:
     otlp:
       endpoint:
