@@ -47,7 +47,7 @@ If a LogPipeline is defined, a DaemonSet is deployed acting as an agent. The age
 
 ### Pipelines
 <!--- Pipelines is not part of Help Portal docs --->
-Fluent Bit comes with a pipeline concept, which supports a flexible combination of inputs with outputs and filtering in between. For details, see [Fluent Bit: Output](https://docs.fluentbit.io/manual/concepts/data-pipeline/output).
+Fluent Bit comes with a pipeline concept, which supports a flexible combination of inputs with outputs and filtering in between. For details, see [Fluent Bit: Output](https://docs.fluentbit.io/manual/data-pipeline/outputs).
 Kyma's Telemetry module brings a predefined setup of the Fluent Bit DaemonSet and a base configuration, which assures that the application logs of the workloads in the cluster are processed reliably and efficiently. Additionally, the Telemetry module provides a Kubernetes API called `LogPipeline` to configure outputs with some filtering capabilities.
 
 This approach ensures reliable buffer management and isolation of pipelines, while keeping flexibility on customizations.
@@ -143,7 +143,7 @@ spec:
 
 <!--- custom filters/unsupported mode is not part of Help Portal docs --->
 
-If filtering by namespace and container is not enough, use [Fluent Bit filters](https://docs.fluentbit.io/manual/concepts/data-pipeline/filter) to enrich logs for filtering by attribute, or to drop whole lines.
+If filtering by namespace and container is not enough, use [Fluent Bit filters](https://docs.fluentbit.io/manual/data-pipeline/filters) to enrich logs for filtering by attribute, or to drop whole lines.
 
 > [!WARNING]
 > If you use a `custom` filter, you put the LogPipeline in the [unsupported mode](#unsupported-mode).
@@ -179,7 +179,7 @@ spec:
 > [!WARNING]
 > If you use a `custom` filter, you put the LogPipeline in the [unsupported mode](#unsupported-mode).
 
-Telemetry Manager supports different types of [Fluent Bit filter](https://docs.fluentbit.io/manual/concepts/data-pipeline/filter). The example uses the filters [grep](https://docs.fluentbit.io/manual/pipeline/filters/grep) and [record_modifier](https://docs.fluentbit.io/manual/pipeline/filters/record-modifier).
+Telemetry Manager supports different types of [Fluent Bit filter](https://docs.fluentbit.io/manual/data-pipeline/filters). The example uses the filters [grep](https://docs.fluentbit.io/manual/pipeline/filters/grep) and [record_modifier](https://docs.fluentbit.io/manual/pipeline/filters/record-modifier).
 
 - The first filter keeps all log records that have the **kubernetes.labels.app** attribute set with the value `my-deployment`; all other logs are discarded. The **kubernetes** attribute is available for every log record. For more details, see [Kubernetes filter (metadata)](#kubernetes-filter-metadata).
 - The second filter drops all log records fulfilling the given rule. In the example, typical namespaces are dropped based on the **kubernetes** attribute.
