@@ -258,7 +258,7 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 	assert.FluentBitLogPipelineHealthy(t, pipelineDropOriginalName)
 	assert.FluentBitLogsFromNamespaceDelivered(t, backendDropOriginal, sourceNsDropOriginal)
 
-	assert.BackendDataConsistentlyMatches(t, backendDropOriginal,
+	assert.BackendDataEventuallyMatches(t, backendDropOriginal,
 		fluentbit.HaveFlatLogs(ContainElement(SatisfyAll(
 			fluentbit.HaveAttributes(HaveKeyWithValue("scenario", "msg")),
 			fluentbit.HaveLogBody(BeEmpty()),

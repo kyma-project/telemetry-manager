@@ -416,7 +416,7 @@ func TestUpdateStatus(t *testing.T) {
 				require.NotZero(t, actualCond.LastTransitionTime)
 			}
 
-			require.Equal(t, tt.expectedEndpoints, tt.telemetry.Status.GatewayEndpoints)
+			require.Equal(t, tt.expectedEndpoints, tt.telemetry.Status.Endpoints)
 		})
 	}
 }

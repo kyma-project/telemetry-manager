@@ -9,10 +9,8 @@ import (
 )
 
 const (
-	configFileName       = "relay.conf"
-	containerName        = "collector"
-	userDefault    int64 = 10001
-	userRoot       int64 = 0
+	configFileName = "relay.conf"
+	containerName  = "collector"
 )
 
 const (
@@ -52,14 +50,14 @@ func makePodSpec(
 		commonresources.WithArgs([]string{"--config=/conf/" + configFileName}),
 		commonresources.WithEnvVarsFromSecret(baseName),
 		commonresources.WithProbes(healthProbe, healthProbe),
-		commonresources.WithRunAsUser(userDefault),
+		commonresources.WithRunAsUser(commonresources.UserDefault),
 		commonresources.WithVolumeMounts(volumeMounts),
 	}
 	containerOpts = append(defaultContainerOpts, containerOpts...)
 
 	defaultPodOpts := []commonresources.PodSpecOption{
 		commonresources.WithContainer(containerName, image, containerOpts...),
-		commonresources.WithPodRunAsUser(userDefault),
+		commonresources.WithPodRunAsUser(commonresources.UserDefault),
 		commonresources.WithVolumes(volumes),
 	}
 	podOpts = append(defaultPodOpts, podOpts...)

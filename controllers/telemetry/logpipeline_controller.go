@@ -40,8 +40,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/agent"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/gateway"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/logagent"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/loggateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	logpipelinefluentbit "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit"
@@ -69,6 +69,7 @@ type LogPipelineControllerConfig struct {
 	ExporterImage               string
 	FluentBitImage              string
 	OTelCollectorImage          string
+	ChownInitContainerImage     string
 	FluentBitPriorityClassName  string
 	LogGatewayPriorityClassName string
 	LogAgentPriorityClassName   string
@@ -203,6 +204,7 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 		config.TelemetryNamespace,
 		config.FluentBitImage,
 		config.ExporterImage,
+		config.ChownInitContainerImage,
 		config.FluentBitPriorityClassName,
 	)
 
@@ -242,9 +244,9 @@ func configureOtelReconciler(client client.Client, config LogPipelineControllerC
 		return nil, err
 	}
 
-	agentConfigBuilder := &agent.Builder{
+	agentConfigBuilder := &logagent.Builder{
 		Reader: client,
-		Config: agent.BuilderConfig{
+		Config: logagent.BuilderConfig{
 			GatewayOTLPServiceName: types.NamespacedName{Namespace: config.TelemetryNamespace, Name: otelcollector.LogOTLPServiceName},
 		},
 	}
@@ -256,10 +258,10 @@ func configureOtelReconciler(client client.Client, config LogPipelineControllerC
 		gatewayFlowHealthProber,
 		agentFlowHealthProber,
 		agentConfigBuilder,
-		otelcollector.NewLogAgentApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.LogAgentPriorityClassName),
+		otelcollector.NewLogAgentApplierDeleter(config.OTelCollectorImage, config.ChownInitContainerImage, config.TelemetryNamespace, config.LogAgentPriorityClassName),
 		&workloadstatus.DaemonSetProber{Client: client},
 		otelcollector.NewLogGatewayApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.LogGatewayPriorityClassName),
-		&gateway.Builder{Reader: client},
+		&loggateway.Builder{Reader: client},
 		&workloadstatus.DeploymentProber{Client: client},
 		istiostatus.NewChecker(discoveryClient),
 		pipelineLock,

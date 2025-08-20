@@ -21,7 +21,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
@@ -120,8 +120,8 @@ func NewLogGatewayApplierDeleter(image, namespace, priorityClassName string) *Ga
 			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(LogGatewayName))),
 		},
 		containerOpts: []commonresources.ContainerOption{
-			commonresources.WithEnvVarFromField(config.EnvVarCurrentPodIP, fieldPathPodIP),
-			commonresources.WithEnvVarFromField(config.EnvVarCurrentNodeName, fieldPathNodeName),
+			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
+			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
 		},
 	}
 }
@@ -152,8 +152,8 @@ func NewMetricGatewayApplierDeleter(image, namespace, priorityClassName string) 
 			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(MetricGatewayName))),
 		},
 		containerOpts: []commonresources.ContainerOption{
-			commonresources.WithEnvVarFromField(config.EnvVarCurrentPodIP, fieldPathPodIP),
-			commonresources.WithEnvVarFromField(config.EnvVarCurrentNodeName, fieldPathNodeName),
+			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
+			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
 		},
 	}
 }
@@ -184,8 +184,8 @@ func NewTraceGatewayApplierDeleter(image, namespace, priorityClassName string) *
 			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(TraceGatewayName))),
 		},
 		containerOpts: []commonresources.ContainerOption{
-			commonresources.WithEnvVarFromField(config.EnvVarCurrentPodIP, fieldPathPodIP),
-			commonresources.WithEnvVarFromField(config.EnvVarCurrentNodeName, fieldPathNodeName),
+			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
+			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
 		},
 	}
 }

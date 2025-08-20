@@ -283,8 +283,6 @@ func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile 
 func (ad *ApplierDeleter) makePodSpec(baseName, image, configPath, configFile string) corev1.PodSpec {
 	var defaultMode int32 = 420
 
-	var prometheusUser int64 = 10001
-
 	args := []string{
 		"--storage.tsdb.retention.time=" + retentionTime,
 		"--storage.tsdb.retention.size=" + retentionSize,
@@ -346,11 +344,15 @@ func (ad *ApplierDeleter) makePodSpec(baseName, image, configPath, configFile st
 		SuccessThreshold: 1, //nolint:mnd // 5 failures
 	}
 
-	resources := makeResourceRequirements()
+	resources := commonresources.MakeResourceRequirements(
+		memoryLimit,
+		memoryRequest,
+		cpuRequest,
+	)
 
 	opts := []commonresources.PodSpecOption{
 		commonresources.WithVolumes(volumes),
-		commonresources.WithPodRunAsUser(prometheusUser),
+		commonresources.WithPodRunAsUser(commonresources.UserDefault),
 		commonresources.WithPriorityClass(ad.Config.Deployment.PriorityClassName),
 		commonresources.WithTerminationGracePeriodSeconds(300), //nolint:mnd // 300 seconds
 
@@ -360,24 +362,12 @@ func (ad *ApplierDeleter) makePodSpec(baseName, image, configPath, configFile st
 			commonresources.WithVolumeMounts(volumeMounts),
 			commonresources.WithProbes(liveness, readiness),
 			commonresources.WithResources(resources),
-			commonresources.WithRunAsUser(prometheusUser),
+			commonresources.WithRunAsUser(commonresources.UserDefault),
 			commonresources.WithGoMemLimitEnvVar(memoryLimit),
 		),
 	}
 
 	return commonresources.MakePodSpec(baseName, opts...)
-}
-
-func makeResourceRequirements() corev1.ResourceRequirements {
-	return corev1.ResourceRequirements{
-		Limits: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceMemory: memoryLimit,
-		},
-		Requests: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    cpuRequest,
-			corev1.ResourceMemory: memoryRequest,
-		},
-	}
 }
 
 func (ad *ApplierDeleter) makeService(port int32) *corev1.Service {

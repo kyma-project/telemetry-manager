@@ -90,6 +90,7 @@ var (
 	fluentBitImage         string
 	otelCollectorImage     string
 	selfMonitorImage       string
+	alpineImage            string
 )
 
 const (
@@ -376,6 +377,7 @@ func getImagesFromEnv() error {
 		"FLUENT_BIT_EXPORTER_IMAGE": &fluentBitExporterImage,
 		"OTEL_COLLECTOR_IMAGE":      &otelCollectorImage,
 		"SELF_MONITOR_IMAGE":        &selfMonitorImage,
+		"ALPINE_IMAGE":              &alpineImage,
 	}
 
 	for k, v := range requiredEnvVars {
@@ -416,6 +418,7 @@ func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan
 		telemetrycontrollers.LogPipelineControllerConfig{
 			ExporterImage:               fluentBitExporterImage,
 			FluentBitImage:              fluentBitImage,
+			ChownInitContainerImage:     alpineImage,
 			OTelCollectorImage:          otelCollectorImage,
 			FluentBitPriorityClassName:  highPriorityClassName,
 			LogGatewayPriorityClassName: normalPriorityClassName,

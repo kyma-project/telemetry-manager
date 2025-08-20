@@ -60,122 +60,130 @@ type LogPipeline struct {
 // +kubebuilder:validation:XValidation:rule="!(has(self.output.otlp) && has(self.filters))", message="filters are not supported with otlp output"
 // +kubebuilder:validation:XValidation:rule="!(has(self.output.otlp) && has(self.files))", message="files not supported with otlp output"
 // +kubebuilder:validation:XValidation:rule="!(has(self.output.otlp) && has(self.variables))", message="variables not supported with otlp output"
+// +kubebuilder:validation:XValidation:rule="!(!has(self.output.otlp) && has(self.transform))", message="transform is only supported with otlp output"
 type LogPipelineSpec struct {
-	// Defines where to collect logs, including selector mechanisms.
-	Input   LogPipelineInput    `json:"input,omitempty"`
+	// Input configures additional inputs for log collection.
+	Input LogPipelineInput `json:"input,omitempty"`
+	// Filters configures custom Fluent Bit `filters` to transform logs. Only available when using an output of type `http` and `custom`.
 	Filters []LogPipelineFilter `json:"filters,omitempty"`
-	// [Fluent Bit output](https://docs.fluentbit.io/manual/pipeline/outputs) where you want to push the logs. Only one output can be specified.
-	Output LogPipelineOutput      `json:"output,omitempty"`
-	Files  []LogPipelineFileMount `json:"files,omitempty"`
-	// A list of mappings from Kubernetes Secret keys to environment variables. Mapped keys are mounted as environment variables, so that they are available as [Variables](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/variables) in the sections.
+	// Output configures the backend to which logs are sent. You must specify exactly one output per pipeline.
+	Output LogPipelineOutput `json:"output,omitempty"`
+	// Files is a list of content snippets that are mounted as files in the Fluent Bit configuration, which can be linked in the `custom` filters and a `custom` output. Only available when using an output of type `http` and `custom`.
+	Files []LogPipelineFileMount `json:"files,omitempty"`
+	// Variables is a list of mappings from Kubernetes Secret keys to environment variables. Mapped keys are mounted as environment variables, so that they are available as [Variables](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/variables) in the `custom` filters and a `custom` output. Only available when using an output of type `http` and `custom`.
 	Variables []LogPipelineVariableRef `json:"variables,omitempty"`
+	// Transforms specify a list of transformations to apply to telemetry data.
+	// +optional
+	Transforms []TransformSpec `json:"transform,omitempty"`
 }
 
-// LogPipelineInput describes a log input for a LogPipeline.
+// LogPipelineInput configures additional inputs for log collection.
 type LogPipelineInput struct {
-	// Configures in more detail from which containers application logs are enabled as input.
+	// Application input configures the log collection from application containers stdout/stderr by tailing the log files of the underlying container runtime.
 	Application *LogPipelineApplicationInput `json:"application,omitempty"`
-	// Configures an endpoint to receive logs from a OTLP source.
+	// OTLP input configures the push endpoint to receive logs from a OTLP source.
 	OTLP *OTLPInput `json:"otlp,omitempty"`
 }
 
-// LogPipelineApplicationInput specifies the default type of Input that handles application logs from runtime containers. It configures in more detail from which containers logs are selected as input.
+// LogPipelineApplicationInput configures the log collection from application containers stdout/stderr by tailing the log files of the underlying container runtime.
 type LogPipelineApplicationInput struct {
-	// If enabled, application logs are collected. The default is `true`.
+	// If enabled, application logs are collected from application containers stdout/stderr. The default is `true`.
 	// +optional
 	Enabled *bool `json:"enabled,omitempty"`
-	// Describes whether application logs from specific Namespaces are selected. The options are mutually exclusive. System Namespaces are excluded by default from the collection.
+	// Namespaces describes whether application logs from specific namespaces are selected. The options are mutually exclusive. System namespaces are excluded by default. Use the `system` attribute with value `true` to enable them.
 	Namespaces LogPipelineNamespaceSelector `json:"namespaces,omitempty"`
-	// Describes whether application logs from specific containers are selected. The options are mutually exclusive.
+	// Containers describes whether application logs from specific containers are selected. The options are mutually exclusive.
 	Containers LogPipelineContainerSelector `json:"containers,omitempty"`
-	// Defines whether to keep all Kubernetes annotations. The default is `false`.
+	// KeepAnnotations defines whether to keep all Kubernetes annotations. The default is `false`.  Only available when using an output of type `http` and `custom`.
 	// +optional
 	KeepAnnotations *bool `json:"keepAnnotations,omitempty"`
-	// Defines whether to drop all Kubernetes labels. The default is `false`.
+	// DropLabels defines whether to drop all Kubernetes labels. The default is `false`. Only available when using an output of type `http` and `custom`. For an `otlp` output, use the label enrichement feature in the Telemetry resource instead.
 	// +optional
 	DropLabels *bool `json:"dropLabels,omitempty"`
-	// If the `log` attribute contains a JSON payload and it is successfully parsed, the `log` attribute will be retained if `KeepOriginalBody` is set to `true`. Otherwise, the log attribute will be removed from the log record. The default is `true`.
+	// KeepOriginalBody retains the original log data if the log data is in JSON and it is successfully parsed. If set to `false`, the original log data is removed from the log record. The default is `true`.
 	// +optional
 	KeepOriginalBody *bool `json:"keepOriginalBody,omitempty"`
 }
 
-// LogPipelineNamespaceSelector describes whether application logs from specific Namespaces are selected. The options are mutually exclusive. System Namespaces are excluded by default from the collection.
+// LogPipelineNamespaceSelector describes whether application logs from specific Namespaces are selected. The options are mutually exclusive. System Namespaces are excluded by default. Use the `system` attribute with value `true` to enable them.
 type LogPipelineNamespaceSelector struct {
 	// Include only the container logs of the specified Namespace names.
 	Include []string `json:"include,omitempty"`
 	// Exclude the container logs of the specified Namespace names.
 	Exclude []string `json:"exclude,omitempty"`
-	// Set to `true` if collecting from all Namespaces must also include the system Namespaces like kube-system, istio-system, and kyma-system.
+	// System specifies whether to collect logs from system namespaces. If set to `true`, you collect logs from all namespaces including system namespaces, such as like kube-system, istio-system, and kyma-system. The default is `false`.
 	System bool `json:"system,omitempty"`
 }
 
 // LogPipelineContainerSelector describes whether application logs from specific containers are selected. The options are mutually exclusive.
 type LogPipelineContainerSelector struct {
-	// Specifies to include only the container logs with the specified container names.
+	// Include specifies to include only the container logs with the specified container names.
 	Include []string `json:"include,omitempty"`
-	// Specifies to exclude only the container logs with the specified container names.
+	// Exclude specifies to exclude only the container logs with the specified container names.
 	Exclude []string `json:"exclude,omitempty"`
 }
 
-// Describes a filtering option on the logs of the pipeline.
+// LogPipelineFilter configures custom Fluent Bit `filters` to transform logs. Only available when using an output of type `http` and `custom`.
 type LogPipelineFilter struct {
-	// Custom filter definition in the Fluent Bit syntax. Note: If you use a `custom` filter, you put the LogPipeline in unsupported mode.
+	// Custom defines a custom filter in the [Fluent Bit syntax](https://docs.fluentbit.io/manual/pipeline/outputs). If you use a `custom` filter, you put the LogPipeline in unsupported mode. Only available when using an output of type `http` and `custom`.
 	Custom string `json:"custom,omitempty"`
 }
 
-// LogPipelineOutput describes a Fluent Bit output configuration section.
+// LogPipelineOutput configures the backend to which logs are sent. You must specify exactly one output per pipeline.
 // +kubebuilder:validation:XValidation:rule="has(self.otlp) == has(oldSelf.otlp)", message="Switching to or away from OTLP output is not supported. Please re-create the LogPipeline instead"
 // +kubebuilder:validation:XValidation:rule="(!has(self.custom) && !has(self.http)) || !(has(self.custom) && has(self.http))", message="Exactly one output must be defined"
 // +kubebuilder:validation:XValidation:rule="(!has(self.custom) && !has(self.otlp)) || ! (has(self.custom) && has(self.otlp))", message="Exactly one output must be defined"
 // +kubebuilder:validation:XValidation:rule="(!has(self.http) && !has(self.otlp)) || ! (has(self.http) && has(self.otlp))", message="Exactly one output must be defined"
 type LogPipelineOutput struct {
-	// Defines a custom output in the Fluent Bit syntax. Note: If you use a `custom` output, you put the LogPipeline in unsupported mode.
+	// Custom defines a custom output in the [Fluent Bit syntax](https://docs.fluentbit.io/manual/pipeline/outputs) where you want to push the logs. If you use a `custom` output, you put the LogPipeline in unsupported mode. Only available when using an output of type `http` and `custom`.
 	Custom string `json:"custom,omitempty"`
-	// Configures an HTTP-based output compatible with the Fluent Bit HTTP output plugin.
+	// HTTP configures an HTTP-based output compatible with the Fluent Bit HTTP output plugin.
 	HTTP *LogPipelineHTTPOutput `json:"http,omitempty"`
-	// Defines an output using the OpenTelemetry protocol.
+	// OTLP defines an output using the OpenTelemetry protocol.
 	OTLP *OTLPOutput `json:"otlp,omitempty"`
 }
 
 // LogPipelineHTTPOutput configures an HTTP-based output compatible with the Fluent Bit HTTP output plugin.
 type LogPipelineHTTPOutput struct {
-	// Defines the host of the HTTP receiver.
+	// Host defines the host of the HTTP backend.
 	Host ValueType `json:"host,omitempty"`
-	// Defines the basic auth user.
+	// User defines the basic auth user.
 	User ValueType `json:"user,omitempty"`
-	// Defines the basic auth password.
+	// Password defines the basic auth password.
 	Password ValueType `json:"password,omitempty"`
-	// Defines the URI of the HTTP receiver. Default is "/".
+	// URI defines the URI of the HTTP backend. Default is "/".
 	URI string `json:"uri,omitempty"`
-	// Defines the port of the HTTP receiver. Default is 443.
+	// Port defines the port of the HTTP backend. Default is 443.
 	Port string `json:"port,omitempty"`
-	// Defines the compression algorithm to use.
+	// Compress defines the compression algorithm to use. Either `none` or `gzip`. Default is `none`.
 	Compress string `json:"compress,omitempty"`
-	// Data format to be used in the HTTP request body. Default is `json`.
+	// Format is the data format to be used in the HTTP request body. Either `gelf`, `json`, `json_stream`, `json_lines`, or `msgpack`. Default is `json`.
 	Format string `json:"format,omitempty"`
-	// Configures TLS for the HTTP target server.
+	// TLS configures TLS for the HTTP backend.
 	TLS LogPipelineOutputTLS `json:"tls,omitempty"`
-	// Enables de-dotting of Kubernetes labels and annotations for compatibility with ElasticSearch based backends. Dots (.) will be replaced by underscores (_). Default is `false`.
+	// Dedot enables de-dotting of Kubernetes labels and annotations. For compatibility with OpenSearch-based backends, dots (.) are replaced by underscores (_). Default is `false`.
 	Dedot bool `json:"dedot,omitempty"`
 }
 
 // +kubebuilder:validation:XValidation:rule="has(self.cert) == has(self.key)", message="Can define either both 'cert' and 'key', or neither"
 type LogPipelineOutputTLS struct {
-	// Indicates if TLS is disabled or enabled. Default is `false`.
+	// Disabled specifies if TLS is disabled or enabled. Default is `false`.
 	Disabled bool `json:"disabled,omitempty"`
 	// If `true`, the validation of certificates is skipped. Default is `false`.
 	SkipCertificateValidation bool `json:"skipCertificateValidation,omitempty"`
-	// Defines an optional CA certificate for server certificate verification when using TLS. The certificate must be provided in PEM format.
+	// CA defines an optional CA certificate for server certificate verification when using TLS. The certificate must be provided in PEM format.
 	CA *ValueType `json:"ca,omitempty"`
-	// Defines a client certificate to use when using TLS. The certificate must be provided in PEM format.
+	// Cert defines a client certificate to use when using TLS. The certificate must be provided in PEM format.
 	Cert *ValueType `json:"cert,omitempty"`
-	// Defines the client key to use when using TLS. The key must be provided in PEM format.
+	// Key defines the client key to use when using TLS. The key must be provided in PEM format.
 	Key *ValueType `json:"key,omitempty"`
 }
 
 // Provides file content to be consumed by a LogPipeline configuration
 type LogPipelineFileMount struct {
-	Name    string `json:"name,omitempty"`
+	// Name of the file under which the content is mounted in the Fluent Bit configuration.
+	Name string `json:"name,omitempty"`
+	// Content of the file to be mounted in the Fluent Bit configuration.
 	Content string `json:"content,omitempty"`
 }
 

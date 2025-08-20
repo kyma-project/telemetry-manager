@@ -20,13 +20,17 @@ type LogPipelineBuilder struct {
 	finalizers        []string
 	deletionTimeStamp metav1.Time
 
-	input            telemetryv1alpha1.LogPipelineInput
-	filters          []telemetryv1alpha1.LogPipelineFilter
-	httpOutput       *telemetryv1alpha1.LogPipelineHTTPOutput
-	otlpOutput       *telemetryv1alpha1.OTLPOutput
-	customOutput     string
-	files            []telemetryv1alpha1.LogPipelineFileMount
-	variables        []telemetryv1alpha1.LogPipelineVariableRef
+	input telemetryv1alpha1.LogPipelineInput
+
+	httpOutput   *telemetryv1alpha1.LogPipelineHTTPOutput
+	otlpOutput   *telemetryv1alpha1.OTLPOutput
+	customOutput string
+
+	filters    []telemetryv1alpha1.LogPipelineFilter
+	files      []telemetryv1alpha1.LogPipelineFileMount
+	variables  []telemetryv1alpha1.LogPipelineVariableRef
+	transforms []telemetryv1alpha1.TransformSpec
+
 	statusConditions []metav1.Condition
 }
 
@@ -133,6 +137,7 @@ func (b *LogPipelineBuilder) WithOutput(output telemetryv1alpha1.LogPipelineOutp
 func (b *LogPipelineBuilder) WithApplicationInput(enabled bool, opts ...ExtendedNamespaceSelectorOptions) *LogPipelineBuilder {
 	b.input = BuildLogPipelineApplicationInput(opts...)
 	b.input.Application.Enabled = ptr.To(enabled)
+	b.input.Application.KeepOriginalBody = ptr.To(false)
 
 	return b
 }
@@ -276,6 +281,11 @@ func (b *LogPipelineBuilder) WithCustomOutput(custom string) *LogPipelineBuilder
 	return b
 }
 
+func (b *LogPipelineBuilder) WithTransform(transform telemetryv1alpha1.TransformSpec) *LogPipelineBuilder {
+	b.transforms = append(b.transforms, transform)
+	return b
+}
+
 func (b *LogPipelineBuilder) WithDeletionTimeStamp(ts metav1.Time) *LogPipelineBuilder {
 	b.deletionTimeStamp = ts
 	return b
@@ -314,8 +324,9 @@ func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 				Custom: b.customOutput,
 				OTLP:   b.otlpOutput,
 			},
-			Files:     b.files,
-			Variables: b.variables,
+			Files:      b.files,
+			Variables:  b.variables,
+			Transforms: b.transforms,
 		},
 		Status: telemetryv1alpha1.LogPipelineStatus{
 			Conditions: b.statusConditions,
