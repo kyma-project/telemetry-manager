@@ -80,8 +80,8 @@ jobs:
         if: ${{ matrix.scenario != 'healthy' }}
         run: hack/deploy-istio.sh
 
-      - name: Deploy test prerequisites
-        uses: "./.github/template/deploy-test-prerequisites"
+      - name: Deploy test K8S prerequisites
+        uses: "./.github/template/deploy-test-k8s-prerequisites"
 
       - name: Execute tests
         uses: "./.github/template/test-execute"
@@ -175,8 +175,8 @@ jobs:
         if: ${{ matrix.labels.name == 'istio' && matrix.labels.type == 'integration' }}
         run: hack/deploy-istio.sh
 
-      - name: Deploy test prerequisites
-        uses: "./.github/template/deploy-test-prerequisites"
+      - name: Deploy test K8S prerequisites
+        uses: "./.github/template/deploy-test-k8s-prerequisites"
 
       - name: Execute tests
         uses: "./.github/template/test-execute"
