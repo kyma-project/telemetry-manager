@@ -16,44 +16,6 @@ runs:
   using: "composite"
 
   steps:
-    - name: Install xmlstarlet
-      shell: bash
-      run: |
-        if ! command -v xmlstarlet &> /dev/null; then
-          echo "Installing xmlstarlet..."
-          sudo apt-get update -qq
-          sudo apt-get install -y xmlstarlet
-        else
-          echo "xmlstarlet is already installed"
-        fi
-
-    - name: Remove skipped testcases from JUnit report
-      shell: bash
-      run: |
-        # Process each JUnit report XML file to remove testcase elements containing skipped tags
-        for xml_file in junit-report*.xml; do
-          if [ -f "$xml_file" ]; then
-            echo "Processing: $xml_file"
-            # Use xmlstarlet to remove testcase elements that contain skipped child elements
-            xmlstarlet ed -L --delete "//testcase[skipped]" "$xml_file"
-            echo "✓ Removed skipped testcases from: $xml_file"
-          fi
-        done
-
-    - name: Remove duplicate testcases by name
-      shell: bash
-      run: |
-        # Process each JUnit report XML file to remove duplicate testcase elements
-        for xml_file in junit-report*.xml; do
-          if [ -f "$xml_file" ]; then
-            echo "Processing duplicates in: $xml_file"
-            # Use xmlstarlet to remove duplicate testcase elements anywhere in the document, keeping only the first occurrence of each name
-            # This works by finding testcases that have the same name as any preceding testcase in the entire document
-            xmlstarlet ed -L --delete "//testcase[@name = preceding::testcase/@name]" "$xml_file"
-            echo "✓ Removed duplicate testcases from: $xml_file"
-          fi
-        done
-
     - name: Upload JUnit report
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
