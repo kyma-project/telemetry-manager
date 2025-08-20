@@ -90,7 +90,7 @@ jobs:
           path: ./test/selfmonitor/...
           labels: "selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}"
 
-      - name: Cleanup test environment
+      - name: Clean-up test environment
         uses: "./.github/template/test-cleanup"
         if: ${{ !cancelled()  }}
         with:
@@ -185,7 +185,7 @@ jobs:
           path: ./test/${{ matrix.labels.type }}/...
           labels: ${{ matrix.labels.name }}
 
-      - name: Cleanup test environment
+      - name: Clean-up test environment
         uses: "./.github/template/test-cleanup"
         if: ${{ !cancelled()  }}
         with:
