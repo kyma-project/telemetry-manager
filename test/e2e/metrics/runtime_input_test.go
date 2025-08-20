@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -183,14 +183,14 @@ func TestRuntimeInput(t *testing.T) {
 		HaveFlatMetrics(
 			ContainElement(SatisfyAll(
 				HaveName(BeElementOf(runtime.DefaultMetricsNames)),
-				HaveScopeName(Equal(metric.InstrumentationScopeRuntime)),
+				HaveScopeName(Equal(common.InstrumentationScopeRuntime)),
 				HaveScopeVersion(SatisfyAny(
 					Equal("main"),
 					MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
 				)),
 			)),
 		))
-	assert.MetricsWithScopeAndNamespaceNotDelivered(t, backendC, metric.InstrumentationScopeRuntime, kitkyma.SystemNamespaceName)
+	assert.MetricsWithScopeAndNamespaceNotDelivered(t, backendC, common.InstrumentationScopeRuntime, kitkyma.SystemNamespaceName)
 	backendConsistsOfMetricsDeliveredForResource(t, backendC, runtime.DefaultMetricsNames)
 }
 

@@ -8,6 +8,7 @@ FLUENT_BIT_IMAGE ?= $(ENV_FLUENTBIT_IMAGE)
 OTEL_COLLECTOR_IMAGE ?= $(ENV_OTEL_COLLECTOR_IMAGE)
 SELF_MONITOR_IMAGE?= $(ENV_SELFMONITOR_IMAGE)
 K3S_IMAGE ?= $(ENV_K3S_IMAGE)
+ALPINE_IMAGE ?= $(ENV_ALPINE_IMAGE)
 
 # Operating system architecture
 OS_ARCH ?= $(shell uname -m)
@@ -103,23 +104,23 @@ LINT_FIX_TARGETS := $(addprefix lint-fix-,$(MODULE_NAMES))
 # Declare phony targets for shell completion
 
 # Lint the root module
-lint-manager:
+lint-manager: $(GOLANGCI_LINT)
 	@echo "Linting root module..."
 	@$(GOLANGCI_LINT) run --config $(SRC_ROOT)/.golangci.yaml
 
 # Lint the root module with --fix
-lint-fix-manager:
+lint-fix-manager: $(GOLANGCI_LINT)
 	@echo "Linting root module (with fix)..."
 	@$(GOLANGCI_LINT) run --config $(SRC_ROOT)/.golangci.yaml --fix
 
 # Pattern rule for standard lint targets
-$(LINT_TARGETS):
+$(LINT_TARGETS): $(GOLANGCI_LINT)
 	@modname=$(@:lint-%=%); \
 	echo "Linting $$modname..."; \
 	cd $(DEPENDENCIES_DIR)/$$modname && $(GOLANGCI_LINT) run --config $(SRC_ROOT)/.golangci.yaml
 
 # Pattern rule for fix lint targets
-$(LINT_FIX_TARGETS):
+$(LINT_FIX_TARGETS): $(GOLANGCI_LINT)
 	@modname=$(@:lint-fix-%=%); \
 	echo "Linting $$modname (with fix)..."; \
 	cd $(DEPENDENCIES_DIR)/$$modname && $(GOLANGCI_LINT) run --config $(SRC_ROOT)/.golangci.yaml --fix
@@ -147,6 +148,13 @@ manifests: $(CONTROLLER_GEN) $(YQ) $(YAMLFMT) ## Generate WebhookConfiguration, 
 	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook paths="./..."
 	$(CONTROLLER_GEN) crd paths="./apis/operator/v1alpha1" output:crd:artifacts:config=config/crd/bases
 	$(CONTROLLER_GEN) crd paths="./apis/telemetry/v1alpha1" output:crd:artifacts:config=config/crd/bases
+# Strip off transform field from the CRDs until the feature is fully implemented
+	$(YQ) eval 'del(.. | select(has("transform")).transform)' -i ./config/crd/bases/telemetry.kyma-project.io_logpipelines.yaml
+	$(YQ) eval 'del(.. | select(has("transform")).transform)' -i ./config/crd/bases/telemetry.kyma-project.io_tracepipelines.yaml
+	$(YQ) eval 'del(.. | select(has("transform")).transform)' -i ./config/crd/bases/telemetry.kyma-project.io_metricpipelines.yaml
+	$(YQ) eval 'del(.. | select(has("x-kubernetes-validations"))."x-kubernetes-validations"[] | select(.rule|contains("transform")) )' -i ./config/crd/bases/telemetry.kyma-project.io_logpipelines.yaml
+	$(YQ) eval 'del(.. | select(has("x-kubernetes-validations"))."x-kubernetes-validations"[] | select(.rule|contains("transform")) )' -i ./config/crd/bases/telemetry.kyma-project.io_metricpipelines.yaml
+	$(YQ) eval 'del(.. | select(has("x-kubernetes-validations"))."x-kubernetes-validations"[] | select(.rule|contains("transform")) )' -i ./config/crd/bases/telemetry.kyma-project.io_tracepipelines.yaml
 	$(YAMLFMT)
 
 .PHONY: manifests-experimental
@@ -165,6 +173,7 @@ generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) $(YQ) $(YAMLFMT) $(POPULATE_I
 	$(YQ) eval '.spec.template.spec.containers[] |= (select(.name == "manager") | .env[] |= (select(.name == "FLUENT_BIT_EXPORTER_IMAGE") | .value = ${FLUENT_BIT_EXPORTER_IMAGE}))' -i config/manager/manager.yaml
 	$(YQ) eval '.spec.template.spec.containers[] |= (select(.name == "manager") | .env[] |= (select(.name == "OTEL_COLLECTOR_IMAGE") | .value = ${OTEL_COLLECTOR_IMAGE}))' -i config/manager/manager.yaml
 	$(YQ) eval '.spec.template.spec.containers[] |= (select(.name == "manager") | .env[] |= (select(.name == "SELF_MONITOR_IMAGE") | .value = ${SELF_MONITOR_IMAGE}))' -i config/manager/manager.yaml
+	$(YQ) eval '.spec.template.spec.containers[] |= (select(.name == "manager") | .env[] |= (select(.name == "ALPINE_IMAGE") | .value = ${ALPINE_IMAGE}))' -i config/manager/manager.yaml
 	$(YAMLFMT)
 	$(POPULATE_IMAGES)
 .PHONY: fmt

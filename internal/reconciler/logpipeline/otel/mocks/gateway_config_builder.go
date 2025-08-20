@@ -8,8 +8,8 @@ import (
 	"context"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/gateway"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/loggateway"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -41,34 +41,34 @@ func (_m *GatewayConfigBuilder) EXPECT() *GatewayConfigBuilder_Expecter {
 }
 
 // Build provides a mock function for the type GatewayConfigBuilder
-func (_mock *GatewayConfigBuilder) Build(ctx context.Context, pipelines []v1alpha1.LogPipeline, opts gateway.BuildOptions) (*gateway.Config, otlpexporter.EnvVars, error) {
+func (_mock *GatewayConfigBuilder) Build(ctx context.Context, pipelines []v1alpha1.LogPipeline, opts loggateway.BuildOptions) (*loggateway.Config, common.EnvVars, error) {
 	ret := _mock.Called(ctx, pipelines, opts)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Build")
 	}
 
-	var r0 *gateway.Config
-	var r1 otlpexporter.EnvVars
+	var r0 *loggateway.Config
+	var r1 common.EnvVars
 	var r2 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, []v1alpha1.LogPipeline, gateway.BuildOptions) (*gateway.Config, otlpexporter.EnvVars, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []v1alpha1.LogPipeline, loggateway.BuildOptions) (*loggateway.Config, common.EnvVars, error)); ok {
 		return returnFunc(ctx, pipelines, opts)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, []v1alpha1.LogPipeline, gateway.BuildOptions) *gateway.Config); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []v1alpha1.LogPipeline, loggateway.BuildOptions) *loggateway.Config); ok {
 		r0 = returnFunc(ctx, pipelines, opts)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*gateway.Config)
+			r0 = ret.Get(0).(*loggateway.Config)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, []v1alpha1.LogPipeline, gateway.BuildOptions) otlpexporter.EnvVars); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, []v1alpha1.LogPipeline, loggateway.BuildOptions) common.EnvVars); ok {
 		r1 = returnFunc(ctx, pipelines, opts)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(otlpexporter.EnvVars)
+			r1 = ret.Get(1).(common.EnvVars)
 		}
 	}
-	if returnFunc, ok := ret.Get(2).(func(context.Context, []v1alpha1.LogPipeline, gateway.BuildOptions) error); ok {
+	if returnFunc, ok := ret.Get(2).(func(context.Context, []v1alpha1.LogPipeline, loggateway.BuildOptions) error); ok {
 		r2 = returnFunc(ctx, pipelines, opts)
 	} else {
 		r2 = ret.Error(2)
@@ -84,12 +84,12 @@ type GatewayConfigBuilder_Build_Call struct {
 // Build is a helper method to define mock.On call
 //   - ctx context.Context
 //   - pipelines []v1alpha1.LogPipeline
-//   - opts gateway.BuildOptions
+//   - opts loggateway.BuildOptions
 func (_e *GatewayConfigBuilder_Expecter) Build(ctx interface{}, pipelines interface{}, opts interface{}) *GatewayConfigBuilder_Build_Call {
 	return &GatewayConfigBuilder_Build_Call{Call: _e.mock.On("Build", ctx, pipelines, opts)}
 }
 
-func (_c *GatewayConfigBuilder_Build_Call) Run(run func(ctx context.Context, pipelines []v1alpha1.LogPipeline, opts gateway.BuildOptions)) *GatewayConfigBuilder_Build_Call {
+func (_c *GatewayConfigBuilder_Build_Call) Run(run func(ctx context.Context, pipelines []v1alpha1.LogPipeline, opts loggateway.BuildOptions)) *GatewayConfigBuilder_Build_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -99,9 +99,9 @@ func (_c *GatewayConfigBuilder_Build_Call) Run(run func(ctx context.Context, pip
 		if args[1] != nil {
 			arg1 = args[1].([]v1alpha1.LogPipeline)
 		}
-		var arg2 gateway.BuildOptions
+		var arg2 loggateway.BuildOptions
 		if args[2] != nil {
-			arg2 = args[2].(gateway.BuildOptions)
+			arg2 = args[2].(loggateway.BuildOptions)
 		}
 		run(
 			arg0,
@@ -112,12 +112,12 @@ func (_c *GatewayConfigBuilder_Build_Call) Run(run func(ctx context.Context, pip
 	return _c
 }
 
-func (_c *GatewayConfigBuilder_Build_Call) Return(config *gateway.Config, envVars otlpexporter.EnvVars, err error) *GatewayConfigBuilder_Build_Call {
+func (_c *GatewayConfigBuilder_Build_Call) Return(config *loggateway.Config, envVars common.EnvVars, err error) *GatewayConfigBuilder_Build_Call {
 	_c.Call.Return(config, envVars, err)
 	return _c
 }
 
-func (_c *GatewayConfigBuilder_Build_Call) RunAndReturn(run func(ctx context.Context, pipelines []v1alpha1.LogPipeline, opts gateway.BuildOptions) (*gateway.Config, otlpexporter.EnvVars, error)) *GatewayConfigBuilder_Build_Call {
+func (_c *GatewayConfigBuilder_Build_Call) RunAndReturn(run func(ctx context.Context, pipelines []v1alpha1.LogPipeline, opts loggateway.BuildOptions) (*loggateway.Config, common.EnvVars, error)) *GatewayConfigBuilder_Build_Call {
 	_c.Call.Return(run)
 	return _c
 }

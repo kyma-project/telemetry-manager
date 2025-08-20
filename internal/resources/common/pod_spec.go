@@ -1,13 +1,19 @@
 package common
 
 import (
+	"fmt"
 	"strconv"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/utils/ptr"
 
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+)
+
+const (
+	UserDefault int64 = 10001
+	GroupRoot   int64 = 0
 )
 
 var (
@@ -70,6 +76,22 @@ func WithContainer(name, image string, opts ...ContainerOption) PodSpecOption {
 		}
 
 		pod.Containers = append(pod.Containers, container)
+	}
+}
+
+func WithInitContainer(name, image string, opts ...ContainerOption) PodSpecOption {
+	return func(pod *corev1.PodSpec) {
+		initContainer := corev1.Container{
+			Name:            name,
+			Image:           image,
+			SecurityContext: hardenedSecurityContext.DeepCopy(),
+		}
+
+		for _, opt := range opts {
+			opt(&initContainer)
+		}
+
+		pod.InitContainers = append(pod.InitContainers, initContainer)
 	}
 }
 
@@ -156,7 +178,7 @@ func WithGoMemLimitEnvVar(memory resource.Quantity) ContainerOption {
 
 	return func(c *corev1.Container) {
 		c.Env = append(c.Env, corev1.EnvVar{
-			Name:  config.EnvVarGoMemLimit,
+			Name:  common.EnvVarGoMemLimit,
 			Value: strconv.FormatInt(goMemLimit, 10),
 		})
 	}
@@ -192,9 +214,40 @@ func WithRunAsRoot() ContainerOption {
 	}
 }
 
+func WithRunAsGroup(groupID int64) ContainerOption {
+	return func(c *corev1.Container) {
+		c.SecurityContext.RunAsGroup = ptr.To(groupID)
+	}
+}
+
 func WithRunAsUser(userID int64) ContainerOption {
 	return func(c *corev1.Container) {
 		c.SecurityContext.RunAsUser = ptr.To(userID)
+	}
+}
+
+func WithCommand(command []string) ContainerOption {
+	return func(c *corev1.Container) {
+		c.Command = command
+	}
+}
+
+func WithChownInitContainerOpts(checkpointVolumePath string, volumeMounts []corev1.VolumeMount) []ContainerOption {
+	resources := MakeResourceRequirements(
+		resource.MustParse("50Mi"),
+		resource.MustParse("10Mi"),
+		resource.MustParse("10m"),
+	)
+
+	chownUserIDGroupID := fmt.Sprintf("%d:%d", UserDefault, GroupRoot)
+
+	return []ContainerOption{
+		WithCommand([]string{"chown", "-R", chownUserIDGroupID, checkpointVolumePath}),
+		WithRunAsRoot(),
+		WithRunAsUser(0),
+		WithCapabilities("CHOWN"),
+		WithVolumeMounts(volumeMounts),
+		WithResources(resources),
 	}
 }
 
@@ -209,4 +262,16 @@ func MakePodSpec(baseName string, opts ...PodSpecOption) corev1.PodSpec {
 	}
 
 	return pod
+}
+
+func MakeResourceRequirements(memoryLimit, memoryRequest, cpuRequest resource.Quantity) corev1.ResourceRequirements {
+	return corev1.ResourceRequirements{
+		Limits: map[corev1.ResourceName]resource.Quantity{
+			corev1.ResourceMemory: memoryLimit,
+		},
+		Requests: map[corev1.ResourceName]resource.Quantity{
+			corev1.ResourceCPU:    cpuRequest,
+			corev1.ResourceMemory: memoryRequest,
+		},
+	}
 }

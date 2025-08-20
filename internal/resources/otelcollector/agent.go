@@ -17,7 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
@@ -27,8 +27,9 @@ const (
 	IstioCertPath       = "/etc/istio-output-certs"
 	istioCertVolumeName = "istio-certs"
 
-	MetricAgentName = "telemetry-metric-agent"
-	LogAgentName    = "telemetry-log-agent"
+	MetricAgentName                = "telemetry-metric-agent"
+	LogAgentName                   = "telemetry-log-agent"
+	logAgentChownInitContainerName = "checkpoint-dir-ownership-modifier"
 
 	checkpointVolumeName = "varlibfilelogreceiver"
 	CheckpointVolumePath = "/var/lib/telemetry-log-agent/file-log-receiver"
@@ -37,13 +38,13 @@ const (
 )
 
 var (
-	metricAgentMemoryLimit   = resource.MustParse("1200Mi")
 	metricAgentCPURequest    = resource.MustParse("15m")
 	metricAgentMemoryRequest = resource.MustParse("50Mi")
+	metricAgentMemoryLimit   = resource.MustParse("1200Mi")
 
-	logAgentMemoryLimit   = resource.MustParse("1200Mi")
 	logAgentCPURequest    = resource.MustParse("15m")
 	logAgentMemoryRequest = resource.MustParse("50Mi")
+	logAgentMemoryLimit   = resource.MustParse("1200Mi")
 )
 
 type AgentApplierDeleter struct {
@@ -63,7 +64,7 @@ type AgentApplyOptions struct {
 	CollectorEnvVars    map[string][]byte
 }
 
-func NewLogAgentApplierDeleter(image, namespace, priorityClassName string) *AgentApplierDeleter {
+func NewLogAgentApplierDeleter(collectorImage, chownInitContainerImage, namespace, priorityClassName string) *AgentApplierDeleter {
 	extraLabels := map[string]string{
 		commonresources.LabelKeyIstioInject: "true", // inject Istio sidecar for SDS certificates and agent-to-gateway communication
 	}
@@ -75,30 +76,43 @@ func NewLogAgentApplierDeleter(image, namespace, priorityClassName string) *Agen
 		makeFileLogCheckpointVolume(),
 	}
 
-	volumeMounts := []corev1.VolumeMount{
+	collectorVolumeMounts := []corev1.VolumeMount{
 		makeIstioCertVolumeMount(),
 		makePodLogsVolumeMount(),
 		makeFileLogCheckPointVolumeMount(),
 	}
 
+	chownInitContainerVolumeMounts := []corev1.VolumeMount{
+		makeFileLogCheckPointVolumeMount(),
+	}
+
+	collectorResources := commonresources.MakeResourceRequirements(
+		logAgentMemoryLimit,
+		logAgentMemoryRequest,
+		logAgentCPURequest,
+	)
+
 	return &AgentApplierDeleter{
 		baseName:      LogAgentName,
 		extraPodLabel: extraLabels,
-		image:         image,
+		image:         collectorImage,
 		namespace:     namespace,
 		rbac:          makeLogAgentRBAC(namespace),
 		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
 			commonresources.WithVolumes(volumes),
+			// init container for changing the owner of the checkpoint volume to be the log agent
+			commonresources.WithInitContainer(logAgentChownInitContainerName, chownInitContainerImage,
+				commonresources.WithChownInitContainerOpts(CheckpointVolumePath, chownInitContainerVolumeMounts)...,
+			),
 		},
 		containerOpts: []commonresources.ContainerOption{
-			commonresources.WithResources(makeAgentResourceRequirements(logAgentMemoryLimit, logAgentMemoryRequest, logAgentCPURequest)),
-			commonresources.WithEnvVarFromField(config.EnvVarCurrentPodIP, fieldPathPodIP),
+			commonresources.WithResources(collectorResources),
+			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
 			commonresources.WithGoMemLimitEnvVar(logAgentMemoryLimit),
-			commonresources.WithVolumeMounts(volumeMounts),
-			commonresources.WithRunAsUser(userRoot),
-			commonresources.WithRunAsRoot(),
-			commonresources.WithCapabilities("FOWNER"),
+			commonresources.WithVolumeMounts(collectorVolumeMounts),
+			commonresources.WithRunAsGroup(commonresources.GroupRoot),
+			commonresources.WithRunAsUser(commonresources.UserDefault),
 		},
 	}
 }
@@ -120,10 +134,14 @@ func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string) *A
 			commonresources.WithVolumes([]corev1.Volume{makeIstioCertVolume()}),
 		},
 		containerOpts: []commonresources.ContainerOption{
-			commonresources.WithEnvVarFromField(config.EnvVarCurrentPodIP, fieldPathPodIP),
-			commonresources.WithEnvVarFromField(config.EnvVarCurrentNodeName, fieldPathNodeName),
+			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
+			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
 			commonresources.WithGoMemLimitEnvVar(metricAgentMemoryLimit),
-			commonresources.WithResources(makeAgentResourceRequirements(metricAgentMemoryLimit, metricAgentMemoryRequest, metricAgentCPURequest)),
+			commonresources.WithResources(commonresources.MakeResourceRequirements(
+				metricAgentMemoryLimit,
+				metricAgentMemoryRequest,
+				metricAgentCPURequest,
+			)),
 			commonresources.WithVolumeMounts([]corev1.VolumeMount{makeIstioCertVolumeMount()}),
 		},
 	}
@@ -220,18 +238,6 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string) *appsv
 				},
 				Spec: podSpec,
 			},
-		},
-	}
-}
-
-func makeAgentResourceRequirements(memoryLimit, memoryRequest, cpuRequest resource.Quantity) corev1.ResourceRequirements {
-	return corev1.ResourceRequirements{
-		Limits: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceMemory: memoryLimit,
-		},
-		Requests: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    cpuRequest,
-			corev1.ResourceMemory: memoryRequest,
 		},
 	}
 }
