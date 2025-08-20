@@ -4,6 +4,15 @@ package common
 // BASE CONFIGURATION TYPES
 // =============================================================================
 
+// Config represents the root configuration structure for OpenTelemetry Collector
+type Config struct {
+	Base `yaml:",inline"`
+
+	Receivers  map[string]any `yaml:"receivers"`
+	Processors map[string]any `yaml:"processors"`
+	Exporters  map[string]any `yaml:"exporters"`
+}
+
 // Base represents the root configuration structure for OpenTelemetry Collector
 type Base struct {
 	Extensions Extensions `yaml:"extensions"`

@@ -20,7 +20,7 @@ const (
 type Builder struct {
 	Reader client.Reader
 
-	config  *Config
+	config  *common.Config
 	envVars common.EnvVars
 }
 
@@ -32,8 +32,8 @@ type BuildOptions struct {
 	ModuleVersion string
 }
 
-func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPipeline, opts BuildOptions) (*Config, common.EnvVars, error) {
-	b.config = &Config{
+func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPipeline, opts BuildOptions) (*common.Config, common.EnvVars, error) {
+	b.config = &common.Config{
 		Base:       common.BaseConfig(),
 		Receivers:  make(map[string]any),
 		Processors: make(map[string]any),
