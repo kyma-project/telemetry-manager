@@ -5,7 +5,7 @@ extensions:
         endpoint: 127.0.0.1:1777
 service:
     pipelines:
-        logs/test1:
+        logs/test:
             receivers:
                 - otlp
             processors:
@@ -13,30 +13,14 @@ service:
                 - transform/set-observed-time-if-zero
                 - k8sattributes
                 - istio_noise_filter
+                - filter/test-filter-by-namespace
                 - resource/insert-cluster-attributes
                 - service_enrichment
                 - resource/drop-kyma-attributes
                 - istio_enrichment
-                - transform/user-defined-test1
                 - batch
             exporters:
-                - otlp/test1
-        logs/test2:
-            receivers:
-                - otlp
-            processors:
-                - memory_limiter
-                - transform/set-observed-time-if-zero
-                - k8sattributes
-                - istio_noise_filter
-                - resource/insert-cluster-attributes
-                - service_enrichment
-                - resource/drop-kyma-attributes
-                - istio_enrichment
-                - transform/user-defined-test2
-                - batch
-            exporters:
-                - otlp/test2
+                - otlp/test
     telemetry:
         metrics:
             readers:
@@ -63,6 +47,10 @@ processors:
         send_batch_size: 512
         timeout: 10s
         send_batch_max_size: 512
+    filter/test-filter-by-namespace:
+        logs:
+            log_record:
+                - resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "kyma-system" or resource.attributes["k8s.namespace.name"] == "default")
     istio_enrichment:
         scope_version: 1.0.0
     istio_noise_filter: {}
@@ -136,38 +124,12 @@ processors:
                 - set(log.observed_time, Now())
               conditions:
                 - log.observed_time_unix_nano == 0
-    transform/user-defined-test1:
-        error_mode: ignore
-        log_statements:
-            - statements:
-                - set(attributes["log.level"], "error")
-                - set(body, "transformed1")
-              conditions:
-                - IsMatch(body, ".*error.*")
-    transform/user-defined-test2:
-        error_mode: ignore
-        log_statements:
-            - statements:
-                - set(attributes["log.level"], "error")
-                - set(body, "transformed2")
-              conditions:
-                - IsMatch(body, ".*error.*")
 exporters:
-    otlp/test1:
-        endpoint: ${OTLP_ENDPOINT_TEST1}
+    otlp/test:
+        endpoint: ${OTLP_ENDPOINT_TEST}
         sending_queue:
             enabled: true
-            queue_size: 128
-        retry_on_failure:
-            enabled: true
-            initial_interval: 5s
-            max_interval: 30s
-            max_elapsed_time: 300s
-    otlp/test2:
-        endpoint: ${OTLP_ENDPOINT_TEST2}
-        sending_queue:
-            enabled: true
-            queue_size: 128
+            queue_size: 256
         retry_on_failure:
             enabled: true
             initial_interval: 5s

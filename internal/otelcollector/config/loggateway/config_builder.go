@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"maps"
-	"strings"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -37,9 +36,9 @@ type BuildOptions struct {
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPipeline, opts BuildOptions) (*Config, common.EnvVars, error) {
 	b.config = &Config{
 		Base:       common.BaseConfig(),
-		Receivers:  receiversConfig(),
-		Processors: processorsConfig(opts, pipelines),
-		Exporters:  make(Exporters),
+		Receivers:  make(map[string]any),
+		Processors: make(map[string]any),
+		Exporters:  make(map[string]any),
 	}
 	b.envVars = make(common.EnvVars)
 
@@ -91,13 +90,13 @@ func staticComponentID(componentID string) componentIDFunc {
 	}
 }
 
-func (b *Builder) addServicePipeline(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, fs ...buildComponentFunc) error {
+func (b *Builder) addServicePipeline(ctx context.Context, lp *telemetryv1alpha1.LogPipeline, fs ...buildComponentFunc) error {
 	// Add an empty pipeline to the config
-	pipelineID := formatLogPipelineID(pipeline.Name)
+	pipelineID := formatLogServicePipelineID(lp)
 	b.config.Service.Pipelines[pipelineID] = common.Pipeline{}
 
 	for _, f := range fs {
-		if err := f(ctx, pipeline); err != nil {
+		if err := f(ctx, lp); err != nil {
 			return fmt.Errorf("failed to add component: %w", err)
 		}
 	}
@@ -115,12 +114,11 @@ func (b *Builder) withReceiver(componentIDFunc componentIDFunc, configFunc compo
 		}
 
 		componentID := componentIDFunc(lp)
-		if componentID == "otlp" {
-			// OTLP receiver is already configured in receiversConfig()
-			// Just add it to the pipeline
+		if _, found := b.config.Receivers[componentID]; !found {
+			b.config.Receivers[componentID] = config
 		}
 
-		pipelineID := formatLogPipelineID(lp.Name)
+		pipelineID := formatLogServicePipelineID(lp)
 		pipeline := b.config.Service.Pipelines[pipelineID]
 		pipeline.Receivers = append(pipeline.Receivers, componentID)
 		b.config.Service.Pipelines[pipelineID] = pipeline
@@ -139,19 +137,12 @@ func (b *Builder) withProcessor(componentIDFunc componentIDFunc, configFunc comp
 		}
 
 		componentID := componentIDFunc(lp)
-
-		// Check if this is a dynamic processor that needs to be added to the Dynamic map
-		if isDynamicProcessor(componentID) {
-			if b.config.Processors.Dynamic == nil {
-				b.config.Processors.Dynamic = make(map[string]any)
-			}
-			if _, found := b.config.Processors.Dynamic[componentID]; !found {
-				b.config.Processors.Dynamic[componentID] = config
-			}
+		if _, found := b.config.Processors[componentID]; !found {
+			config := configFunc(lp)
+			b.config.Processors[componentID] = config
 		}
-		// Static processors are already configured in processorsConfig()
 
-		pipelineID := formatLogPipelineID(lp.Name)
+		pipelineID := formatLogServicePipelineID(lp)
 		pipeline := b.config.Service.Pipelines[pipelineID]
 		pipeline.Processors = append(pipeline.Processors, componentID)
 		b.config.Service.Pipelines[pipelineID] = pipeline
@@ -174,10 +165,10 @@ func (b *Builder) withExporter(componentIDFunc componentIDFunc, configFunc expor
 		}
 
 		componentID := componentIDFunc(lp)
-		b.config.Exporters[componentID] = Exporter{OTLP: config.(*common.OTLPExporter)}
+		b.config.Exporters[componentID] = config
 		maps.Copy(b.envVars, envVars)
 
-		pipelineID := formatLogPipelineID(lp.Name)
+		pipelineID := formatLogServicePipelineID(lp)
 		pipeline := b.config.Service.Pipelines[pipelineID]
 		pipeline.Exporters = append(pipeline.Exporters, componentID)
 		b.config.Service.Pipelines[pipelineID] = pipeline
@@ -190,18 +181,30 @@ func (b *Builder) addOTLPReceiver() buildComponentFunc {
 	return b.withReceiver(
 		staticComponentID("otlp"),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
-			// OTLP receiver config is already set in receiversConfig()
-			return &common.OTLPReceiver{}
+			return &common.OTLPReceiver{
+				Protocols: common.ReceiverProtocols{
+					HTTP: common.Endpoint{
+						Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPHTTP),
+					},
+					GRPC: common.Endpoint{
+						Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPGRPC),
+					},
+				},
+			}
 		},
 	)
 }
 
+//nolint:mnd // hardcoded values
 func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
 	return b.withProcessor(
 		staticComponentID("memory_limiter"),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
-			// Memory limiter config is already set in processorsConfig()
-			return &common.MemoryLimiter{}
+			return &common.MemoryLimiter{
+				CheckInterval:        "1s",
+				LimitPercentage:      75,
+				SpikeLimitPercentage: 15,
+			}
 		},
 	)
 }
@@ -210,8 +213,10 @@ func (b *Builder) addSetObsTimeIfZeroProcessor() buildComponentFunc {
 	return b.withProcessor(
 		staticComponentID("transform/set-observed-time-if-zero"),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
-			// Set observed time config is already set in processorsConfig()
-			return &common.TransformProcessor{}
+			return common.LogTransformProcessorConfig([]common.TransformProcessorStatements{{
+				Conditions: []string{"log.observed_time_unix_nano == 0"},
+				Statements: []string{"set(log.observed_time, Now())"},
+			}})
 		},
 	)
 }
@@ -220,8 +225,7 @@ func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFun
 	return b.withProcessor(
 		staticComponentID("k8sattributes"),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
-			// K8s attributes config is already set in processorsConfig()
-			return &common.K8sAttributesProcessor{}
+			return common.K8sAttributesProcessorConfig(opts.Enrichments)
 		},
 	)
 }
@@ -230,7 +234,6 @@ func (b *Builder) addIstioNoiseFilterProcessor() buildComponentFunc {
 	return b.withProcessor(
 		staticComponentID("istio_noise_filter"),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
-			// Istio noise filter config is already set in processorsConfig()
 			return &common.IstioNoiseFilterProcessor{}
 		},
 	)
@@ -243,11 +246,8 @@ func (b *Builder) addDropIfInputSourceOTLPProcessor() buildComponentFunc {
 			if logpipelineutils.IsOTLPInputEnabled(lp.Spec.Input) {
 				return nil // Skip this processor if OTLP input is enabled
 			}
-			// Check if processor was already configured in processorsConfig()
-			if b.config.Processors.DropIfInputSourceOTLP != nil {
-				return b.config.Processors.DropIfInputSourceOTLP
-			}
-			return nil
+
+			return dropIfInputSourceOTLPProcessorConfig()
 		},
 	)
 }
@@ -270,8 +270,7 @@ func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildCo
 	return b.withProcessor(
 		staticComponentID("resource/insert-cluster-attributes"),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
-			// Insert cluster attributes config is already set in processorsConfig()
-			return &common.ResourceProcessor{}
+			return common.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.ClusterUID, opts.CloudProvider)
 		},
 	)
 }
@@ -280,8 +279,7 @@ func (b *Builder) addServiceEnrichmentProcessor() buildComponentFunc {
 	return b.withProcessor(
 		staticComponentID("service_enrichment"),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
-			// Service enrichment config is already set in processorsConfig()
-			return &common.ServiceEnrichmentProcessor{}
+			return common.ResolveServiceNameConfig()
 		},
 	)
 }
@@ -290,8 +288,7 @@ func (b *Builder) addDropKymaAttributesProcessor() buildComponentFunc {
 	return b.withProcessor(
 		staticComponentID("resource/drop-kyma-attributes"),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
-			// Drop Kyma attributes config is already set in processorsConfig()
-			return &common.ResourceProcessor{}
+			return common.DropKymaAttributesProcessorConfig()
 		},
 	)
 }
@@ -300,8 +297,7 @@ func (b *Builder) addIstioEnrichmentProcessor(opts BuildOptions) buildComponentF
 	return b.withProcessor(
 		staticComponentID("istio_enrichment"),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
-			// Istio enrichment config is already set in processorsConfig()
-			return &IstioEnrichmentProcessor{}
+			return istioEnrichmentProcessorConfig(opts)
 		},
 	)
 }
@@ -322,12 +318,16 @@ func (b *Builder) addUserDefinedTransformProcessor() buildComponentFunc {
 	)
 }
 
+//nolint:mnd // hardcoded values
 func (b *Builder) addBatchProcessor() buildComponentFunc {
 	return b.withProcessor(
 		staticComponentID("batch"),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
-			// Batch processor config is already set in processorsConfig()
-			return &common.BatchProcessor{}
+			return &common.BatchProcessor{
+				SendBatchSize:    512,
+				Timeout:          "10s",
+				SendBatchMaxSize: 512,
+			}
 		},
 	)
 }
@@ -356,35 +356,67 @@ func (b *Builder) addOTLPExporter(queueSize int) buildComponentFunc {
 
 // Helper functions
 
-func receiversConfig() Receivers {
-	return Receivers{
-		OTLP: common.OTLPReceiver{
-			Protocols: common.ReceiverProtocols{
-				HTTP: common.Endpoint{
-					Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPHTTP),
-				},
-				GRPC: common.Endpoint{
-					Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPGRPC),
-				},
+func istioEnrichmentProcessorConfig(opts BuildOptions) *IstioEnrichmentProcessor {
+	return &IstioEnrichmentProcessor{
+		ScopeVersion: opts.ModuleVersion,
+	}
+}
+
+func namespaceFilterProcessorConfig(namespaceSelector *telemetryv1alpha1.NamespaceSelector) *FilterProcessor {
+	var filterExpressions []string
+
+	if len(namespaceSelector.Exclude) > 0 {
+		namespacesConditions := namespacesConditions(namespaceSelector.Exclude)
+
+		// Drop logs if the excluded namespaces are matched
+		excludeNamespacesExpr := common.JoinWithOr(namespacesConditions...)
+		filterExpressions = append(filterExpressions, excludeNamespacesExpr)
+	}
+
+	if len(namespaceSelector.Include) > 0 {
+		namespacesConditions := namespacesConditions(namespaceSelector.Include)
+		includeNamespacesExpr := common.JoinWithAnd(
+			// Ensure the k8s.namespace.name resource attribute is not nil,
+			// so we don't drop logs without a namespace label
+			common.ResourceAttributeIsNotNil(common.K8sNamespaceName),
+
+			// Logs are dropped if the filter expression evaluates to true,
+			// so we negate the match against included namespaces to keep only those
+			common.Not(common.JoinWithOr(namespacesConditions...)),
+		)
+		filterExpressions = append(filterExpressions, includeNamespacesExpr)
+	}
+
+	return &FilterProcessor{
+		Logs: FilterProcessorLogs{
+			Log: filterExpressions,
+		},
+	}
+}
+
+func namespacesConditions(namespaces []string) []string {
+	var conditions []string
+	for _, ns := range namespaces {
+		conditions = append(conditions, common.NamespaceEquals(ns))
+	}
+
+	return conditions
+}
+
+func dropIfInputSourceOTLPProcessorConfig() *FilterProcessor {
+	return &FilterProcessor{
+		Logs: FilterProcessorLogs{
+			Log: []string{
+				// Drop all logs; the filter processor requires at least one valid condition expression,
+				// to drop all logs, we use a condition that is always true for any log
+				common.JoinWithOr(common.IsNotNil("log.observed_time"), common.IsNotNil("log.time")),
 			},
 		},
 	}
 }
 
-func isDynamicProcessor(componentID string) bool {
-	// Dynamic processors are those with pipeline-specific IDs
-	switch {
-	case strings.HasPrefix(componentID, "filter/") && componentID != "filter/drop-if-input-source-otlp":
-		return true
-	case strings.HasPrefix(componentID, "transform/user-defined-"):
-		return true
-	default:
-		return false
-	}
-}
-
-func formatLogPipelineID(pipelineName string) string {
-	return fmt.Sprintf("logs/%s", pipelineName)
+func formatLogServicePipelineID(lp *telemetryv1alpha1.LogPipeline) string {
+	return fmt.Sprintf("logs/%s", lp.Name)
 }
 
 func shouldFilterByNamespace(namespaceSelector *telemetryv1alpha1.NamespaceSelector) bool {
