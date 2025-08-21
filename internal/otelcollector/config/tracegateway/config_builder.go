@@ -238,12 +238,7 @@ func (b *Builder) addOTLPExporter(queueSize int) buildComponentFunc {
 				common.SignalTypeTrace,
 			)
 
-			otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.OTLPExporterConfig(ctx)
-			if err != nil {
-				return nil, nil, fmt.Errorf("failed to create otlp exporter config: %w", err)
-			}
-
-			return otlpExporterConfig, otlpExporterEnvVars, nil
+			return otlpExporterBuilder.OTLPExporterConfig(ctx)
 		},
 	)
 }

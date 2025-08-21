@@ -289,12 +289,7 @@ func (b *Builder) addOTLPExporter(queueSize int) buildComponentFunc {
 				common.SignalTypeLog,
 			)
 
-			otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.OTLPExporterConfig(ctx)
-			if err != nil {
-				return nil, nil, fmt.Errorf("failed to create otlp exporter config: %w", err)
-			}
-
-			return otlpExporterConfig, otlpExporterEnvVars, nil
+			return otlpExporterBuilder.OTLPExporterConfig(ctx)
 		},
 	)
 }
@@ -360,12 +355,12 @@ func dropIfInputSourceOTLPProcessorConfig() *FilterProcessor {
 	}
 }
 
-func formatLogServicePipelineID(lp *telemetryv1alpha1.LogPipeline) string {
-	return fmt.Sprintf("logs/%s", lp.Name)
-}
-
 func shouldFilterByNamespace(namespaceSelector *telemetryv1alpha1.NamespaceSelector) bool {
 	return namespaceSelector != nil && (len(namespaceSelector.Include) > 0 || len(namespaceSelector.Exclude) > 0)
+}
+
+func formatLogServicePipelineID(lp *telemetryv1alpha1.LogPipeline) string {
+	return fmt.Sprintf("logs/%s", lp.Name)
 }
 
 func formatNamespaceFilterID(lp *telemetryv1alpha1.LogPipeline) string {
