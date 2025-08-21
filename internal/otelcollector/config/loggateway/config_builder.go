@@ -360,11 +360,11 @@ func formatLogServicePipelineID(lp *telemetryv1alpha1.LogPipeline) string {
 }
 
 func formatNamespaceFilterID(lp *telemetryv1alpha1.LogPipeline) string {
-	return fmt.Sprintf("filter/%s-filter-by-namespace", lp.Name)
+	return fmt.Sprintf(common.ComponentIDNamespaceFilterProcessor, lp.Name)
 }
 
 func formatUserDefinedTransformProcessorID(lp *telemetryv1alpha1.LogPipeline) string {
-	return fmt.Sprintf("transform/user-defined-%s", lp.Name)
+	return fmt.Sprintf(common.ComponentIDUserDefinedTransformProcessor, lp.Name)
 }
 
 func formatOTLPExporterID(pipeline *telemetryv1alpha1.LogPipeline) string {

@@ -233,11 +233,11 @@ func formatLogServicePipelineID(lp *telemetryv1alpha1.LogPipeline) string {
 }
 
 func formatFileLogReceiverID(lp *telemetryv1alpha1.LogPipeline) string {
-	return fmt.Sprintf("filelog/%s", lp.Name)
+	return fmt.Sprintf(common.ComponentIDFileLogReceiver, lp.Name)
 }
 
 func formatUserDefinedTransformProcessorID(lp *telemetryv1alpha1.LogPipeline) string {
-	return fmt.Sprintf("transform/user-defined-%s", lp.Name)
+	return fmt.Sprintf(common.ComponentIDUserDefinedTransformProcessor, lp.Name)
 }
 
 func formatOTLPExporterID(lp *telemetryv1alpha1.LogPipeline) string {

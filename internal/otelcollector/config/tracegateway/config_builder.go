@@ -248,7 +248,7 @@ func formatTraceServicePipelineID(tp *telemetryv1alpha1.TracePipeline) string {
 }
 
 func formatUserDefinedTransformProcessorID(tp *telemetryv1alpha1.TracePipeline) string {
-	return fmt.Sprintf("transform/user-defined-%s", tp.Name)
+	return fmt.Sprintf(common.ComponentIDUserDefinedTransformProcessor, tp.Name)
 }
 
 func formatOTLPExporterID(tp *telemetryv1alpha1.TracePipeline) string {
