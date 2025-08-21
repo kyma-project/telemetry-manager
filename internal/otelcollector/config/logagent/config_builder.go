@@ -10,6 +10,7 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 )
 
 type BuilderConfig struct {
@@ -41,7 +42,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPi
 		Exporters:  make(map[string]any),
 	}
 	b.config.Extensions.FileStorage = &common.FileStorage{
-		Directory: "/var/lib/telemetry-log-agent/file-log-receiver",
+		Directory: otelcollector.CheckpointVolumePath,
 	}
 	b.config.Service.Extensions = append(b.config.Service.Extensions, "file_storage")
 	b.envVars = make(common.EnvVars)
