@@ -96,7 +96,6 @@ jobs:
         with:
           id: selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}
           failure: failure()
-          github-token: ${{ secrets.GITHUB_TOKEN }}
 
   e2e:
     needs: setup
@@ -191,7 +190,6 @@ jobs:
         with:
           id: ${{ matrix.labels.type }}-${{ matrix.labels.name }}
           failure: failure()
-          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Print logs from all pods in kyma-system namespace
         if: failure()
