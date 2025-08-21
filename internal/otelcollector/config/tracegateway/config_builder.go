@@ -244,7 +244,7 @@ func (b *Builder) addOTLPExporter(queueSize int) buildComponentFunc {
 }
 
 func formatTraceServicePipelineID(tp *telemetryv1alpha1.TracePipeline) string {
-	return fmt.Sprintf("trace/%s", tp.Name)
+	return fmt.Sprintf("traces/%s", tp.Name)
 }
 
 func formatUserDefinedTransformProcessorID(tp *telemetryv1alpha1.TracePipeline) string {
