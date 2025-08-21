@@ -8,69 +8,24 @@ import (
 
 // BuildComponentFunc defines a function type for building OpenTelemetry collector components.
 // It can be chained together to construct telemetry pipelines.
-//
-// Example:
-//
-//	err := b.addServicePipeline(ctx, &pipeline,
-//	    b.addOTLPReceiver(),
-//	    b.addMemoryLimiterProcessor(),
-//	    b.addOTLPExporter(),
-//	)
 type BuildComponentFunc[T any] func(ctx context.Context, pipeline T) error
 
 // ComponentIDFunc determines the unique identifier for a component.
-//
-// Example:
-//
-//	staticID := StaticComponentID[*LogPipeline]("memory_limiter")
-//	dynamicID := func(lp *LogPipeline) string {
-//	    return fmt.Sprintf("otlp/%s", lp.Name)
-//	}
 type ComponentIDFunc[T any] func(pipeline T) string
 
 // ComponentConfigFunc creates the configuration for a component (receiver or processor).
 // Returns nil to skip the component for this pipeline.
-//
-// Example:
-//
-//	func otlpReceiverConfig(lp *LogPipeline) any {
-//	    return &OTLPReceiver{
-//	        Protocols: ReceiverProtocols{
-//	            HTTP: Endpoint{Endpoint: "0.0.0.0:4318"},
-//	        },
-//	    }
-//	}
 type ComponentConfigFunc[T any] func(pipeline T) any
 
 // ExporterComponentConfigFunc creates exporter configuration and environment variables.
 // Unlike receivers/processors, exporters often need secret resolution.
-//
-// Example:
-//
-//	func otlpExporterConfig(ctx context.Context, lp *LogPipeline) (any, EnvVars, error) {
-//	    envVars := make(EnvVars)
-//	    envVars["OTLP_ENDPOINT"] = []byte("https://backend.example.com")
-//	    config := &OTLPExporter{Endpoint: "${OTLP_ENDPOINT}"}
-//	    return config, envVars, nil
-//	}
 type ExporterComponentConfigFunc[T any] func(ctx context.Context, pipeline T) (any, EnvVars, error)
 
 // PipelineIDFunc determines the unique identifier for a service pipeline.
-//
-// Example:
-//
-//	func formatLogServicePipelineID(lp *LogPipeline) string {
-//	    return fmt.Sprintf("logs/%s", lp.Name)
-//	}
 type PipelineIDFunc[T any] func(pipeline T) string
 
 // StaticComponentID returns a ComponentIDFunc that always returns the same ID.
 // Useful for shared components like receivers and processors.
-//
-// Example:
-//
-//	otlpReceiverID := StaticComponentID[*LogPipeline]("otlp")
-//	// Results in: receivers: otlp: {...}
 func StaticComponentID[T any](componentID string) ComponentIDFunc[T] {
 	return func(T) string {
 		return componentID
@@ -87,7 +42,12 @@ func StaticComponentID[T any](componentID string) ComponentIDFunc[T] {
 //	        b.config,
 //	        StaticComponentID[*LogPipeline]("otlp"),
 //	        func(lp *LogPipeline) any {
-//	            return &OTLPReceiver{...}
+//	            return &OTLPReceiver{
+//	                Protocols: ReceiverProtocols{
+//	                    HTTP: Endpoint{Endpoint: fmt.Sprintf("${%s}:4318", EnvVarCurrentPodIP)},
+//	                    GRPC: Endpoint{Endpoint: fmt.Sprintf("${%s}:4317", EnvVarCurrentPodIP)},
+//	                },
+//	            }
 //	        },
 //	        formatLogServicePipelineID,
 //	    )
@@ -129,7 +89,11 @@ func AddReceiver[T any](
 //	        b.config,
 //	        StaticComponentID[*LogPipeline]("memory_limiter"),
 //	        func(lp *LogPipeline) any {
-//	            return &MemoryLimiter{...}
+//	            return &MemoryLimiter{
+//	                CheckInterval:        "1s",
+//	                LimitPercentage:      75,
+//	                SpikeLimitPercentage: 15,
+//	            }
 //	        },
 //	        formatLogServicePipelineID,
 //	    )
@@ -172,8 +136,10 @@ func AddProcessor[T any](
 //	        b.envVars,
 //	        func(lp *LogPipeline) string { return fmt.Sprintf("otlp/%s", lp.Name) },
 //	        func(ctx context.Context, lp *LogPipeline) (any, EnvVars, error) {
-//	            // Create config and env vars
-//	            return config, envVars, nil
+//	            builder := NewOTLPExporterConfigBuilder(
+//	                b.Reader, lp.Spec.Output.OTLP, lp.Name, queueSize, SignalTypeLog,
+//	            )
+//	            return builder.OTLPExporterConfig(ctx)
 //	        },
 //	        formatLogServicePipelineID,
 //	    )
