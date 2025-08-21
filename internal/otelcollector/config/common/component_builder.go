@@ -49,7 +49,7 @@ func StaticComponentID[T any](componentID string) ComponentIDFunc[T] {
 //	                },
 //	            }
 //	        },
-//	        formatLogServicePipelineID,
+//	        func(lp *LogPipeline) string { return fmt.Sprintf("logs/%s", lp.Name) },
 //	    )
 //	}
 //
@@ -97,7 +97,7 @@ func AddReceiver[T any](
 //	                SpikeLimitPercentage: 15,
 //	            }
 //	        },
-//	        formatLogServicePipelineID,
+//	        func(lp *LogPipeline) string { return fmt.Sprintf("logs/%s", lp.Name) },
 //	    )
 //	}
 //
@@ -145,7 +145,7 @@ func AddProcessor[T any](
 //	            )
 //	            return builder.OTLPExporterConfig(ctx)
 //	        },
-//	        formatLogServicePipelineID,
+//	        func(lp *LogPipeline) string { return fmt.Sprintf("logs/%s", lp.Name) },
 //	    )
 //	}
 func AddExporter[T any](
