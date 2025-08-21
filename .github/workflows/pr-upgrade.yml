@@ -102,7 +102,7 @@ jobs:
           go test -v -timeout=10m -run="^(TestLogsFluentBitUpgrade|TestLogsUpgrade|TestMetricsUpgrade|TestTracesUpgrade)/after_upgrade$" ./test/e2e/upgrade/...
 
       - name: Clean-up test environment
-        uses: "./.github/template/finalize-test" # TODO(TeodorSAP): Replace with "test-cleanup" after 1.47.0 release
+        uses: "./.github/template/test-cleanup"
         if: ${{ !cancelled()  }}
         with:
           id: ${{ github.job }}
