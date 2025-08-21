@@ -21,7 +21,7 @@ runs:
       shell: bash
       run: |
         bin/gotestsum \
-          --format dots \
+          --format github-actions \
           --hide-summary=skipped \
           --junitfile junit-report-${{ inputs.id }}.xml \
           -- -timeout=20m ${{ inputs.path }} \
