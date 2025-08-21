@@ -56,7 +56,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPi
 			b.addInsertClusterAttributesProcessor(opts),
 			b.addServiceEnrichmentProcessor(),
 			b.addDropKymaAttributesProcessor(),
-			b.addIstioEnrichmentProcessor(opts),
+			b.addIstioAccessLogsEnrichmentProcessor(opts),
 			b.addUserDefinedTransformProcessor(),
 			b.addBatchProcessor(),
 			b.addOTLPExporter(queueSize),
@@ -238,11 +238,13 @@ func (b *Builder) addDropKymaAttributesProcessor() buildComponentFunc {
 	)
 }
 
-func (b *Builder) addIstioEnrichmentProcessor(opts BuildOptions) buildComponentFunc {
+func (b *Builder) addIstioAccessLogsEnrichmentProcessor(opts BuildOptions) buildComponentFunc {
 	return b.addProcessor(
 		staticComponentID("istio_enrichment"),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
-			return istioEnrichmentProcessorConfig(opts)
+			return &IstioEnrichmentProcessor{
+				ScopeVersion: opts.ModuleVersion,
+			}
 		},
 	)
 }
@@ -295,12 +297,6 @@ func (b *Builder) addOTLPExporter(queueSize int) buildComponentFunc {
 }
 
 // Helper functions
-
-func istioEnrichmentProcessorConfig(opts BuildOptions) *IstioEnrichmentProcessor {
-	return &IstioEnrichmentProcessor{
-		ScopeVersion: opts.ModuleVersion,
-	}
-}
 
 func namespaceFilterProcessorConfig(namespaceSelector *telemetryv1alpha1.NamespaceSelector) *FilterProcessor {
 	var filterExpressions []string
