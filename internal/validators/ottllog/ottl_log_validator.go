@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottllog"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
@@ -13,6 +12,8 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
 type InvalidOTTLExpressionError struct {
