@@ -7,6 +7,7 @@ Additionally, there is a [plugins.yml](./plugins.yml) file, which contains the l
 ## Build locally
 
 To build the image locally with the versions taken from the `envs` file, run:
-```
+
+```sh
 docker build -t telemetry-self-monitor:local --build-arg PROMETHEUS_VERSION=XXX --build-arg ALPINE_VERSION=XXX .
 ```
