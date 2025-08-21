@@ -2,7 +2,7 @@
 
 Small tool for generating logs to stdout, used in the e2e tests of the telemetry-manager.
 
-Available command lige args:
+Available command line args:
 
 - format
 - bytes

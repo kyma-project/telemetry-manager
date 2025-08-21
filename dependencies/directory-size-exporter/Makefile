@@ -1,10 +1,3 @@
-# Operating system architecture
-OS_ARCH ?= $(shell uname -m)
-# Operating system type
-OS_TYPE ?= $(shell uname)
-PROJECT_DIR ?= $(shell pwd)
-ARTIFACTS ?= $(shell pwd)/artifacts
-
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
