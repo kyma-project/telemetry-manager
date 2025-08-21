@@ -124,7 +124,7 @@ func (b *Builder) addExporter(componentIDFunc componentIDFunc, configFunc export
 
 func (b *Builder) addOTLPReceiver() buildComponentFunc {
 	return b.addReceiver(
-		staticComponentID("otlp"),
+		staticComponentID(common.ComponentIDOTLPReceiver),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
 			return &common.OTLPReceiver{
 				Protocols: common.ReceiverProtocols{
@@ -143,7 +143,7 @@ func (b *Builder) addOTLPReceiver() buildComponentFunc {
 //nolint:mnd // hardcoded values
 func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
 	return b.addProcessor(
-		staticComponentID("memory_limiter"),
+		staticComponentID(common.ComponentIDMemoryLimiterProcessor),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
 			return &common.MemoryLimiter{
 				CheckInterval:        "1s",
@@ -156,7 +156,7 @@ func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
 
 func (b *Builder) addSetObsTimeIfZeroProcessor() buildComponentFunc {
 	return b.addProcessor(
-		staticComponentID("transform/set-observed-time-if-zero"),
+		staticComponentID(common.ComponentIDSetObservedTimeIfZeroProcessor),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
 			return common.LogTransformProcessorConfig([]common.TransformProcessorStatements{{
 				Conditions: []string{"log.observed_time_unix_nano == 0"},
@@ -168,7 +168,7 @@ func (b *Builder) addSetObsTimeIfZeroProcessor() buildComponentFunc {
 
 func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFunc {
 	return b.addProcessor(
-		staticComponentID("k8sattributes"),
+		staticComponentID(common.ComponentIDK8sAttributesProcessor),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
 			return common.K8sAttributesProcessorConfig(opts.Enrichments)
 		},
@@ -177,7 +177,7 @@ func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFun
 
 func (b *Builder) addIstioNoiseFilterProcessor() buildComponentFunc {
 	return b.addProcessor(
-		staticComponentID("istio_noise_filter"),
+		staticComponentID(common.ComponentIDIstioNoiseFilterProcessor),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
 			return &common.IstioNoiseFilterProcessor{}
 		},
@@ -186,7 +186,7 @@ func (b *Builder) addIstioNoiseFilterProcessor() buildComponentFunc {
 
 func (b *Builder) addDropIfInputSourceOTLPProcessor() buildComponentFunc {
 	return b.addProcessor(
-		staticComponentID("filter/drop-if-input-source-otlp"),
+		staticComponentID(common.ComponentIDDropIfInputSourceOTLPProcessor),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
 			if logpipelineutils.IsOTLPInputEnabled(lp.Spec.Input) {
 				return nil // Skip this processor if OTLP input is enabled
@@ -213,7 +213,7 @@ func (b *Builder) addNamespaceFilterProcessor() buildComponentFunc {
 
 func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildComponentFunc {
 	return b.addProcessor(
-		staticComponentID("resource/insert-cluster-attributes"),
+		staticComponentID(common.ComponentIDInsertClusterAttributesProcessor),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
 			return common.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.ClusterUID, opts.CloudProvider)
 		},
@@ -222,7 +222,7 @@ func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildCo
 
 func (b *Builder) addServiceEnrichmentProcessor() buildComponentFunc {
 	return b.addProcessor(
-		staticComponentID("service_enrichment"),
+		staticComponentID(common.ComponentIDServiceEnrichmentProcessor),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
 			return common.ResolveServiceNameConfig()
 		},
@@ -231,7 +231,7 @@ func (b *Builder) addServiceEnrichmentProcessor() buildComponentFunc {
 
 func (b *Builder) addDropKymaAttributesProcessor() buildComponentFunc {
 	return b.addProcessor(
-		staticComponentID("resource/drop-kyma-attributes"),
+		staticComponentID(common.ComponentIDDropKymaAttributesProcessor),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
 			return common.DropKymaAttributesProcessorConfig()
 		},
@@ -240,7 +240,7 @@ func (b *Builder) addDropKymaAttributesProcessor() buildComponentFunc {
 
 func (b *Builder) addIstioAccessLogsEnrichmentProcessor(opts BuildOptions) buildComponentFunc {
 	return b.addProcessor(
-		staticComponentID("istio_enrichment"),
+		staticComponentID(common.ComponentIDIstioEnrichmentProcessor),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
 			return &IstioEnrichmentProcessor{
 				ScopeVersion: opts.ModuleVersion,
@@ -268,7 +268,7 @@ func (b *Builder) addUserDefinedTransformProcessor() buildComponentFunc {
 //nolint:mnd // hardcoded values
 func (b *Builder) addBatchProcessor() buildComponentFunc {
 	return b.addProcessor(
-		staticComponentID("batch"),
+		staticComponentID(common.ComponentIDBatchProcessor),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
 			return &common.BatchProcessor{
 				SendBatchSize:    512,

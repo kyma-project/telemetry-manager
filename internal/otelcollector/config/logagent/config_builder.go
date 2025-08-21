@@ -133,7 +133,7 @@ func (b *Builder) addFileLogReceiver() buildComponentFunc {
 //nolint:mnd // hardcoded values
 func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
 	return b.addProcessor(
-		staticComponentID("memory_limiter"),
+		staticComponentID(common.ComponentIDMemoryLimiterProcessor),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
 			return &common.MemoryLimiter{
 				CheckInterval:        "5s",
@@ -146,7 +146,7 @@ func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
 
 func (b *Builder) addSetInstrumentationScopeProcessor(opts BuildOptions) buildComponentFunc {
 	return b.addProcessor(
-		staticComponentID("transform/set-instrumentation-scope-runtime"),
+		staticComponentID(common.ComponentIDSetInstrumentationScopeProcessor),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
 			return common.LogTransformProcessorConfig([]common.TransformProcessorStatements{{
 				Statements: []string{
@@ -160,7 +160,7 @@ func (b *Builder) addSetInstrumentationScopeProcessor(opts BuildOptions) buildCo
 
 func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFunc {
 	return b.addProcessor(
-		staticComponentID("k8sattributes"),
+		staticComponentID(common.ComponentIDK8sAttributesProcessor),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
 			return common.K8sAttributesProcessorConfig(opts.Enrichments)
 		},
@@ -169,7 +169,7 @@ func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFun
 
 func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildComponentFunc {
 	return b.addProcessor(
-		staticComponentID("resource/insert-cluster-attributes"),
+		staticComponentID(common.ComponentIDInsertClusterAttributesProcessor),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
 			return common.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.ClusterUID, opts.CloudProvider)
 		},
@@ -178,7 +178,7 @@ func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildCo
 
 func (b *Builder) addServiceEnrichmentProcessor() buildComponentFunc {
 	return b.addProcessor(
-		staticComponentID("service_enrichment"),
+		staticComponentID(common.ComponentIDServiceEnrichmentProcessor),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
 			return common.ResolveServiceNameConfig()
 		},
@@ -187,7 +187,7 @@ func (b *Builder) addServiceEnrichmentProcessor() buildComponentFunc {
 
 func (b *Builder) addDropKymaAttributesProcessor() buildComponentFunc {
 	return b.addProcessor(
-		staticComponentID("resource/drop-kyma-attributes"),
+		staticComponentID(common.ComponentIDDropKymaAttributesProcessor),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
 			return common.DropKymaAttributesProcessorConfig()
 		},

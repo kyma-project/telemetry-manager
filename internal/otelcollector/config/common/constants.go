@@ -64,18 +64,30 @@ var upstreamInstrumentationScopeName = map[InputSourceType]string{
 // Component IDs
 
 const (
-	// General component IDs
-	ComponentIDOTLPReceiver               = "otlp"
-	ComponentIDMemoryLimiterProcessor     = "memory_limiter"
-	ComponentIDBatchProcessor             = "batch"
-	ComponentIDK8sAttributesProcessor     = "k8sattributes"
-	ComponentIDIstioNoiseFilterProcessor  = "istio_noise_filter"
-	ComponentIDServiceEnrichmentProcessor = "service_enrichment"
+	// Receivers
+	ComponentIDOTLPReceiver = "otlp"
 
-	// Specialized component IDs with aliases
+	// Core processors
+	ComponentIDMemoryLimiterProcessor = "memory_limiter"
+	ComponentIDBatchProcessor         = "batch"
+
+	// Transform processors
+	ComponentIDSetObservedTimeIfZeroProcessor   = "transform/set-observed-time-if-zero"
+	ComponentIDSetInstrumentationScopeProcessor = "transform/set-instrumentation-scope-runtime"
+
+	// Enrichment processors
+	ComponentIDK8sAttributesProcessor     = "k8sattributes"
+	ComponentIDServiceEnrichmentProcessor = "service_enrichment"
+	ComponentIDIstioEnrichmentProcessor   = "istio_enrichment"
+
+	// Filter processors
+	ComponentIDIstioNoiseFilterProcessor      = "istio_noise_filter"
+	ComponentIDDropIfInputSourceOTLPProcessor = "filter/drop-if-input-source-otlp"
+
+	// Resource processors
 	ComponentIDInsertClusterAttributesProcessor = "resource/insert-cluster-attributes"
 	ComponentIDDropKymaAttributesProcessor      = "resource/drop-kyma-attributes"
 
-	// Prefixes, shoulbe be used with pipeline names
+	// Prefixes, should be used with pipeline names
 	ComponentIDPrefixUserDefinedTransformProcessor = "transform/user_defined_"
 )
