@@ -69,14 +69,24 @@ func TestBuildConfig(t *testing.T) {
 				goldenFileName: "single-pipeline-otlp-disabled.yaml",
 			},
 			{
-				name: "single pipeline with namespace filter",
+				name: "single pipeline with namespace included",
 				pipelines: []telemetryv1alpha1.LogPipeline{
 					testutils.NewLogPipelineBuilder().
 						WithName("test").
 						WithOTLPInput(true, testutils.IncludeNamespaces("kyma-system", "default")).
 						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 				},
-				goldenFileName: "single-pipeline-namespace-filter.yaml",
+				goldenFileName: "single-pipeline-namespace-included.yaml",
+			},
+			{
+				name: "single pipeline with namespace excluded",
+				pipelines: []telemetryv1alpha1.LogPipeline{
+					testutils.NewLogPipelineBuilder().
+						WithName("test").
+						WithOTLPInput(true, testutils.ExcludeNamespaces("kyma-system", "default")).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+				goldenFileName: "single-pipeline-namespace-excluded.yaml",
 			},
 			{
 				name: "two pipelines with user-defined transforms",
