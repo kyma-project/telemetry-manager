@@ -52,6 +52,8 @@ func StaticComponentID[T any](componentID string) ComponentIDFunc[T] {
 //	        formatLogServicePipelineID,
 //	    )
 //	}
+//
+//nolint:dupl // Code duplication is intentional for clarity
 func AddReceiver[T any](
 	rootConfig *Config,
 	componentIDFunc ComponentIDFunc[T],
@@ -98,6 +100,8 @@ func AddReceiver[T any](
 //	        formatLogServicePipelineID,
 //	    )
 //	}
+//
+//nolint:dupl // Code duplication is intentional for clarity
 func AddProcessor[T any](
 	rootConfig *Config,
 	componentIDFunc ComponentIDFunc[T],
