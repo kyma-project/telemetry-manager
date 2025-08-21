@@ -61,10 +61,6 @@ type AgentApplierDeleter interface {
 
 // var _ logpipeline.LogPipelineReconciler = &Reconciler{}
 
-type PipelineValidator interface {
-	Validate(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error
-}
-
 type Prober interface {
 	IsReady(ctx context.Context, name types.NamespacedName) error
 }
@@ -90,7 +86,7 @@ type Reconciler struct {
 	gatewayProber           Prober
 	istioStatusChecker      IstioStatusChecker
 	pipelineLock            PipelineLock
-	pipelineValidator       PipelineValidator
+	pipelineValidator       *Validator
 	errToMessageConverter   ErrorToMessageConverter
 }
 
@@ -108,7 +104,7 @@ func New(
 	gatewayProber Prober,
 	istioStatusChecker IstioStatusChecker,
 	pipelineLock PipelineLock,
-	pipelineValidator PipelineValidator,
+	pipelineValidator *Validator,
 	errToMessageConverter ErrorToMessageConverter,
 ) *Reconciler {
 	return &Reconciler{
