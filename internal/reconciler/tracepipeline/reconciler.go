@@ -48,7 +48,7 @@ import (
 const defaultReplicaCount int32 = 2
 
 type GatewayConfigBuilder interface {
-	Build(ctx context.Context, pipelines []telemetryv1alpha1.TracePipeline, opts tracegateway.BuildOptions) (*tracegateway.Config, common.EnvVars, error)
+	Build(ctx context.Context, pipelines []telemetryv1alpha1.TracePipeline, opts tracegateway.BuildOptions) (*common.Config, common.EnvVars, error)
 }
 
 type GatewayApplierDeleter interface {

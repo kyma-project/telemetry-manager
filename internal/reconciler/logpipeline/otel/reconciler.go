@@ -30,7 +30,7 @@ import (
 const defaultReplicaCount int32 = 2
 
 type GatewayConfigBuilder interface {
-	Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPipeline, opts loggateway.BuildOptions) (*loggateway.Config, common.EnvVars, error)
+	Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPipeline, opts loggateway.BuildOptions) (*common.Config, common.EnvVars, error)
 }
 
 type GatewayApplierDeleter interface {
