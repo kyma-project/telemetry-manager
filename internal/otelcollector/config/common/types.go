@@ -23,6 +23,11 @@ type Extensions struct {
 	HealthCheck      Endpoint         `yaml:"health_check,omitempty"`
 	Pprof            Endpoint         `yaml:"pprof,omitempty"`
 	K8sLeaderElector K8sLeaderElector `yaml:"k8s_leader_elector,omitempty"`
+	FileStorage      *FileStorage     `yaml:"file_storage,omitempty"`
+}
+
+type FileStorage struct {
+	Directory string `yaml:"directory,omitempty"`
 }
 
 type Service struct {

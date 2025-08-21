@@ -33,10 +33,10 @@ const (
 	operatorNoop = "noop"
 )
 
-func fileLogReceiverConfig(logpipeline *telemetryv1alpha1.LogPipeline) *FileLogReceiver {
-	excludePath := createExcludePath(logpipeline.Spec.Input.Application)
+func fileLogReceiverConfig(lp *telemetryv1alpha1.LogPipeline) *FileLogReceiver {
+	excludePath := createExcludePath(lp.Spec.Input.Application)
 
-	includePath := createIncludePath(logpipeline.Spec.Input.Application)
+	includePath := createIncludePath(lp.Spec.Input.Application)
 
 	return &FileLogReceiver{
 		Exclude:         excludePath,
@@ -51,7 +51,7 @@ func fileLogReceiverConfig(logpipeline *telemetryv1alpha1.LogPipeline) *FileLogR
 			MaxInterval:     maxInterval,
 			MaxElapsedTime:  maxElapsedTime,
 		},
-		Operators: makeOperators(logpipeline),
+		Operators: makeOperators(lp),
 	}
 }
 
@@ -129,8 +129,8 @@ func makePath(namespace, pod, container string) string {
 	return fmt.Sprintf(pathPattern, namespace, pod, container)
 }
 
-func makeOperators(logPipeline telemetryv1alpha1.LogPipeline) []Operator {
-	keepOriginalBody := *logPipeline.Spec.Input.Application.KeepOriginalBody
+func makeOperators(lp *telemetryv1alpha1.LogPipeline) []Operator {
+	keepOriginalBody := *lp.Spec.Input.Application.KeepOriginalBody
 
 	operators := []Operator{
 		makeContainerParser(),

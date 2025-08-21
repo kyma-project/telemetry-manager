@@ -40,9 +40,10 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPi
 		Processors: make(map[string]any),
 		Exporters:  make(map[string]any),
 	}
-	// b.config.Extensions["file_storage"] = &FileStorageExtension{
-	// 	Directory: otelcollector.CheckpointVolumePath,
-	// }
+	b.config.Extensions.FileStorage = &common.FileStorage{
+		Directory: "/var/lib/telemetry-log-agent/file-log-receiver",
+	}
+	b.config.Service.Extensions = append(b.config.Service.Extensions, "file_storage")
 	b.envVars = make(common.EnvVars)
 
 	// Iterate over each LogPipeline CR and enrich the config with pipeline-specific components
@@ -53,6 +54,9 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPi
 			b.addMemoryLimiterProcessor(),
 			b.addSetInstrumentationScopeProcessor(opts),
 			b.addK8sAttributesProcessor(opts),
+			b.addInsertClusterAttributesProcessor(opts),
+			b.addServiceEnrichmentProcessor(),
+			b.addDropKymaAttributesProcessor(),
 			b.addUserDefinedTransformProcessor(),
 			b.addOTLPExporter(),
 		); err != nil {
@@ -119,7 +123,7 @@ func (b *Builder) addExporter(componentIDFunc componentIDFunc, configFunc export
 
 func (b *Builder) addFileLogReceiver() buildComponentFunc {
 	return b.addReceiver(
-		staticComponentID("filelog"),
+		formatFileLogReceiverID,
 		func(lp *telemetryv1alpha1.LogPipeline) any {
 			return fileLogReceiverConfig(lp)
 		},
@@ -142,7 +146,7 @@ func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
 
 func (b *Builder) addSetInstrumentationScopeProcessor(opts BuildOptions) buildComponentFunc {
 	return b.addProcessor(
-		staticComponentID("transform/set_instrumentation_scope"),
+		staticComponentID("transform/set-instrumentation-scope-runtime"),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
 			return common.LogTransformProcessorConfig([]common.TransformProcessorStatements{{
 				Statements: []string{
@@ -159,6 +163,33 @@ func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFun
 		staticComponentID("k8sattributes"),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
 			return common.K8sAttributesProcessorConfig(opts.Enrichments)
+		},
+	)
+}
+
+func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildComponentFunc {
+	return b.addProcessor(
+		staticComponentID("resource/insert-cluster-attributes"),
+		func(lp *telemetryv1alpha1.LogPipeline) any {
+			return common.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.ClusterUID, opts.CloudProvider)
+		},
+	)
+}
+
+func (b *Builder) addServiceEnrichmentProcessor() buildComponentFunc {
+	return b.addProcessor(
+		staticComponentID("service_enrichment"),
+		func(lp *telemetryv1alpha1.LogPipeline) any {
+			return common.ResolveServiceNameConfig()
+		},
+	)
+}
+
+func (b *Builder) addDropKymaAttributesProcessor() buildComponentFunc {
+	return b.addProcessor(
+		staticComponentID("resource/drop-kyma-attributes"),
+		func(lp *telemetryv1alpha1.LogPipeline) any {
+			return common.DropKymaAttributesProcessorConfig()
 		},
 	)
 }

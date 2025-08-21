@@ -64,7 +64,3 @@ type Route struct {
 type OperatorAttribute struct {
 	ParseFrom string `yaml:"parse_from,omitempty"`
 }
-
-type FileStorageExtension struct {
-	Directory string `yaml:"directory,omitempty"`
-}

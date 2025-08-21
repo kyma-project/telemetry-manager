@@ -36,7 +36,7 @@ func TestBuildConfig(t *testing.T) {
 
 			require.Contains(t, collectorConfig.Receivers, "filelog/test")
 
-			fileLogReceiver := collectorConfig.Receivers["filelog/test"]
+			fileLogReceiver := collectorConfig.Receivers["filelog/test"].(*FileLogReceiver)
 			expectedExcludeFilePath := []string{
 				"/var/log/pods/kyma-system_*system-logs-agent-*/collector/*.log",
 				"/var/log/pods/kyma-system_*system-logs-collector-*/collector/*.log",
@@ -47,18 +47,18 @@ func TestBuildConfig(t *testing.T) {
 				"/var/log/pods/istio-system_*/*/*.log",
 				"/var/log/pods/compass-system_*/*/*.log",
 			}
-			require.Equal(t, expectedExcludeFilePath, fileLogReceiver.FileLog.Exclude)
-			require.Equal(t, []string{"/var/log/pods/*_*/*/*.log"}, fileLogReceiver.FileLog.Include)
-			require.Equal(t, ptr.To(false), fileLogReceiver.FileLog.IncludeFileName)
-			require.Equal(t, ptr.To(true), fileLogReceiver.FileLog.IncludeFilePath)
-			require.Equal(t, "beginning", fileLogReceiver.FileLog.StartAt)
-			require.Equal(t, "file_storage", fileLogReceiver.FileLog.Storage)
+			require.Equal(t, expectedExcludeFilePath, fileLogReceiver.Exclude)
+			require.Equal(t, []string{"/var/log/pods/*_*/*/*.log"}, fileLogReceiver.Include)
+			require.Equal(t, ptr.To(false), fileLogReceiver.IncludeFileName)
+			require.Equal(t, ptr.To(true), fileLogReceiver.IncludeFilePath)
+			require.Equal(t, "beginning", fileLogReceiver.StartAt)
+			require.Equal(t, "file_storage", fileLogReceiver.Storage)
 			require.Equal(t, common.RetryOnFailure{
 				Enabled:         true,
 				InitialInterval: initialInterval,
 				MaxInterval:     maxInterval,
 				MaxElapsedTime:  maxElapsedTime,
-			}, fileLogReceiver.FileLog.RetryOnFailure)
+			}, fileLogReceiver.RetryOnFailure)
 		})
 	})
 
@@ -76,8 +76,8 @@ func TestBuildConfig(t *testing.T) {
 
 		expectedEndpoint := fmt.Sprintf("${%s}", endpointEnvVar)
 
-		otlpExporterConfig := collectorConfig.Exporters["otlp/test"]
-		require.Equal(t, expectedEndpoint, otlpExporterConfig.OTLP.Endpoint)
+		otlpExporterConfig := collectorConfig.Exporters["otlp/test"].(*common.OTLPExporter)
+		require.Equal(t, expectedEndpoint, otlpExporterConfig.Endpoint)
 
 		require.Contains(t, envVars, endpointEnvVar)
 		require.Equal(t, "http://localhost", string(envVars[endpointEnvVar]))
@@ -91,8 +91,8 @@ func TestBuildConfig(t *testing.T) {
 					WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build()}, BuildOptions{})
 			require.NoError(t, err)
 
-			actualExporterConfig := collectorConfig.Exporters["otlp/test"]
-			require.True(t, actualExporterConfig.OTLP.TLS.Insecure)
+			actualExporterConfig := collectorConfig.Exporters["otlp/test"].(*common.OTLPExporter)
+			require.True(t, actualExporterConfig.TLS.Insecure)
 		})
 	})
 
@@ -108,10 +108,10 @@ func TestBuildConfig(t *testing.T) {
 		require.NotEmpty(t, collectorConfig.Extensions.HealthCheck.Endpoint)
 		require.Contains(t, collectorConfig.Service.Extensions, "health_check")
 
-		require.NotEmpty(t, t, collectorConfig.Extensions.Pprof.Endpoint)
+		require.NotEmpty(t, collectorConfig.Extensions.Pprof.Endpoint)
 		require.Contains(t, collectorConfig.Service.Extensions, "pprof")
 
-		require.NotEmpty(t, collectorConfig.Extensions.FileStorage)
+		require.NotEmpty(t, collectorConfig.Extensions.FileStorage.Directory)
 		require.Contains(t, collectorConfig.Service.Extensions, "file_storage")
 	})
 
@@ -205,6 +205,26 @@ func TestBuildConfig(t *testing.T) {
 						Build(),
 				},
 				goldenFileName: "single-pipeline.yaml",
+			},
+			{
+				name: "single pipeline with namespace included",
+				pipelines: []telemetryv1alpha1.LogPipeline{
+					testutils.NewLogPipelineBuilder().
+						WithName("test").
+						WithApplicationInput(true, testutils.ExtIncludeNamespaces("kyma-system", "default")).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+				goldenFileName: "single-pipeline-namespace-included.yaml",
+			},
+			{
+				name: "single pipeline with namespace excluded",
+				pipelines: []telemetryv1alpha1.LogPipeline{
+					testutils.NewLogPipelineBuilder().
+						WithName("test").
+						WithApplicationInput(true, testutils.ExtExcludeNamespaces("kyma-system", "default")).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+				goldenFileName: "single-pipeline-namespace-excluded.yaml",
 			},
 			{
 				name: "two pipelines with user-defined transforms",
