@@ -17,6 +17,7 @@ mend:
     - docs/**
     - dependencies/populateimages/**
     - dependencies/telemetry-sample-app/**
+    - dependencies/stdout-log-generator/**
 checkmarx-one:
   preset: go-default
   exclude:
@@ -27,3 +28,4 @@ checkmarx-one:
     - docs/**
     - dependencies/populateimages/**
     - dependencies/telemetry-sample-app/**
+    - dependencies/stdout-log-generator/**

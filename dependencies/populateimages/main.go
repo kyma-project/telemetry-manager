@@ -109,6 +109,7 @@ func generateSecScanConfig(data map[string]string) error {
 		"docs/**",
 		"dependencies/populateimages/**",
 		"dependencies/telemetry-sample-app/**",
+		"dependencies/stdout-log-generator/**",
 	}
 
 	secScanCfg := secScanConfig{
