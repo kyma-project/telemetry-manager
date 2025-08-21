@@ -68,32 +68,14 @@ help: ## Display this help.
 resolve:
 	GO111MODULE=on go mod vendor -v
 
-ensure:
-	@echo "Go modules present in component - omitting."
-
-dep-status:	
-	@echo "Go modules present in component - omitting."
-
 mod-verify:
 	GO111MODULE=on go mod verify
 
 test: fmt vet tidy
 	go test ./... -coverprofile cover.out
 
-build: fmt vet tidy ## Build manager binary.
+build: fmt vet tidy
 	go build -o bin/manager main.go
 
-lint: $(GOLANGCI_LINT) ## Check lint issues using `golangci-lint`
-	$(TOOLS_BIN_DIR)/golangci-lint run
-
-lint-fix: $(GOLANGCI_LINT) $(WSL)
-	-$(WSL) --fix ./...
-	$(GOLANGCI_LINT) run --fix
-
-run: fmt vet tidy ## Run a controller from your host.
+run: fmt vet tidy
 	go run ./main.go
-
-##@ Dynamic Function Build
-$(eval $(call buildpack-cp-ro,resolve))
-$(eval $(call buildpack-mount,mod-verify))
-$(eval $(call buildpack-mount,test))

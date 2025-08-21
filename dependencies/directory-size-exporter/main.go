@@ -12,8 +12,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/kyma-project/telemetry-manager/dependencies/directory-size-exporter/internal/exporter"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	"github.com/kyma-project/telemetry-manager/dependencies/directory-size-exporter/internal/exporter"
 )
 
 const (
