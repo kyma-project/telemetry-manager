@@ -1,4 +1,4 @@
-name: PR Code Checks
+name: PR Code Checks Directory Size Exporter
 
 permissions:
   contents: read
@@ -8,17 +8,16 @@ on:
   pull_request:
     branches:
       - "main"
-      - "release-*"
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
-      - 'OWNERS'
-      - 'CODEOWNERS'
-      - 'external-images.yaml'
+    paths:
+      - "dependencies/directory-size-exporter/**"
   workflow_dispatch:
 
 env:
-  GITLEAKS_VERSION: 8.18.2
+  GITLEAKS_VERSION: 8.28.0
+
+defaults:
+  run:
+    working-directory: dependencies/directory-size-exporter
 
 jobs:
   unit-tests:
@@ -83,13 +82,3 @@ jobs:
         env:
           PULL_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PULL_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-
-  test-renovate:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - name: Test Renovate Config
-        uses: renovatebot/github-action@b11417b9eaac3145fe9a8544cee66503724e32b6 # v43.0.8
-        with:
-          configurationFile: renovate.json
-          token: ${{ secrets.GITHUB_TOKEN }}
