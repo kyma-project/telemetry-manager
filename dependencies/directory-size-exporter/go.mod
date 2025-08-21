@@ -1,4 +1,4 @@
-module github.com/kyma-project/directory-size-exporter
+module github.com/kyma-project/telemetry-manager/dependencies/directory-size-exporter
 
 go 1.25.0
 

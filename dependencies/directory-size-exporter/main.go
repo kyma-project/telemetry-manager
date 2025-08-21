@@ -12,7 +12,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/kyma-project/directory-size-exporter/internal/exporter"
+	"github.com/kyma-project/telemetry-manager/dependencies/directory-size-exporter/internal/exporter"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
