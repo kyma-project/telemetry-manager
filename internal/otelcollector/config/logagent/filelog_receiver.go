@@ -33,12 +33,12 @@ const (
 	operatorNoop = "noop"
 )
 
-func fileLogReceiverConfig(logpipeline telemetryv1alpha1.LogPipeline) *FileLog {
+func fileLogReceiverConfig(logpipeline *telemetryv1alpha1.LogPipeline) *FileLogReceiver {
 	excludePath := createExcludePath(logpipeline.Spec.Input.Application)
 
 	includePath := createIncludePath(logpipeline.Spec.Input.Application)
 
-	return &FileLog{
+	return &FileLogReceiver{
 		Exclude:         excludePath,
 		Include:         includePath,
 		IncludeFileName: ptr.To(false),
