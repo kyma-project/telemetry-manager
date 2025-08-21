@@ -26,6 +26,8 @@ spec:
       ...
 ```
 
+![structure](./../assets/pipeline-structure.drawio.svg)
+
 ## Metadata
 
 Each pipeline handles a distinct kind of telemetry data, which is reflected in the kind attribute.
