@@ -74,6 +74,7 @@ func TestReconcile(t *testing.T) {
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
 			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			OTTLValidator:      stubs.NewOTTLLogValidator(nil),
 		}
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
@@ -147,6 +148,7 @@ func TestReconcile(t *testing.T) {
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
 			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			OTTLValidator:      stubs.NewOTTLLogValidator(nil),
 		}
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
@@ -214,6 +216,7 @@ func TestReconcile(t *testing.T) {
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
 			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			OTTLValidator:      stubs.NewOTTLLogValidator(nil),
 		}
 
 		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
@@ -286,6 +289,7 @@ func TestReconcile(t *testing.T) {
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
 			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			OTTLValidator:      stubs.NewOTTLLogValidator(nil),
 		}
 
 		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
@@ -358,6 +362,7 @@ func TestReconcile(t *testing.T) {
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
 			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			OTTLValidator:      stubs.NewOTTLLogValidator(nil),
 		}
 
 		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
@@ -530,6 +535,7 @@ func TestReconcile(t *testing.T) {
 					EndpointValidator:  stubs.NewEndpointValidator(nil),
 					TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 					SecretRefValidator: stubs.NewSecretRefValidator(nil),
+					OTTLValidator:      stubs.NewOTTLLogValidator(nil),
 				}
 
 				errToMsg := &conditions.ErrorToMessageConverter{}
@@ -678,6 +684,7 @@ func TestReconcile(t *testing.T) {
 					EndpointValidator:  stubs.NewEndpointValidator(nil),
 					TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 					SecretRefValidator: stubs.NewSecretRefValidator(nil),
+					OTTLValidator:      stubs.NewOTTLLogValidator(nil),
 				}
 
 				errToMsg := &conditions.ErrorToMessageConverter{}
@@ -748,6 +755,7 @@ func TestReconcile(t *testing.T) {
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
 			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			OTTLValidator:      stubs.NewOTTLLogValidator(nil),
 		}
 
 		sut := New(
@@ -819,6 +827,7 @@ func TestReconcile(t *testing.T) {
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
 			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			OTTLValidator:      stubs.NewOTTLLogValidator(nil),
 		}
 
 		sut := New(
@@ -891,6 +900,7 @@ func TestReconcile(t *testing.T) {
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
 			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			OTTLValidator:      stubs.NewOTTLLogValidator(nil),
 		}
 
 		sut := New(
