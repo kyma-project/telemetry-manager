@@ -77,7 +77,7 @@ func run() error {
 
 		// When Shutdown is called, ListenAndServe will return http.ErrServerClosed, do not log it as an error
 		if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
-			logger.ErrorContext(ctx, "HTTP server error: %v", slog.Any("err", err))
+			logger.ErrorContext(ctx, "HTTP server error: %w", slog.Any("err", err))
 		}
 
 		logger.InfoContext(ctx, "Stopped serving new connections.")
@@ -91,7 +91,7 @@ func run() error {
 	defer shutdownRelease()
 
 	if err := server.Shutdown(shutdownCtx); err != nil {
-		logger.ErrorContext(shutdownCtx, "HTTP shutdown error: %v", slog.Any("err", err))
+		logger.ErrorContext(shutdownCtx, "HTTP shutdown error: %w", slog.Any("err", err))
 		return err
 	}
 
