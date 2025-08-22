@@ -64,18 +64,26 @@ var upstreamInstrumentationScopeName = map[InputSourceType]string{
 // Component IDs
 
 const (
-	// General component IDs
-	ComponentIDOTLPReceiver               = "otlp"
-	ComponentIDMemoryLimiterProcessor     = "memory_limiter"
-	ComponentIDBatchProcessor             = "batch"
-	ComponentIDK8sAttributesProcessor     = "k8sattributes"
-	ComponentIDIstioNoiseFilterProcessor  = "istio_noise_filter"
-	ComponentIDServiceEnrichmentProcessor = "service_enrichment"
+	// Receivers
+	ComponentIDOTLPReceiver    = "otlp"
+	ComponentIDFileLogReceiver = "filelog/%s" // dynamically filled with pipeline name
 
-	// Specialized component IDs with aliases
+	// Processors
+	ComponentIDMemoryLimiterProcessor           = "memory_limiter"
+	ComponentIDBatchProcessor                   = "batch"
+	ComponentIDK8sAttributesProcessor           = "k8sattributes"
+	ComponentIDServiceEnrichmentProcessor       = "service_enrichment"
+	ComponentIDIstioEnrichmentProcessor         = "istio_enrichment"
+	ComponentIDIstioNoiseFilterProcessor        = "istio_noise_filter"
+	ComponentIDSetObservedTimeIfZeroProcessor   = "transform/set-observed-time-if-zero"
+	ComponentIDSetInstrumentationScopeProcessor = "transform/set-instrumentation-scope-runtime"
+	ComponentIDUserDefinedTransformProcessor    = "transform/user-defined-%s" // dynamically filled with pipeline name
+	ComponentIDDropIfInputSourceOTLPProcessor   = "filter/drop-if-input-source-otlp"
+	ComponentIDNamespaceFilterProcessor         = "filter/%s-filter-by-namespace"
 	ComponentIDInsertClusterAttributesProcessor = "resource/insert-cluster-attributes"
 	ComponentIDDropKymaAttributesProcessor      = "resource/drop-kyma-attributes"
 
-	// Prefixes, shoulbe be used with pipeline names
-	ComponentIDPrefixUserDefinedTransformProcessor = "transform/user_defined_"
+	// Exporters
+	ComponentIDOTLPHTTPExporter = "otlphttp/%s" // dynamically filled with pipeline name
+	ComponentIDOTLPGRPCExporter = "otlp/%s"     // dynamically filled with pipeline name
 )
