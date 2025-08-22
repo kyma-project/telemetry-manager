@@ -41,24 +41,24 @@ func (_m *GatewayConfigBuilder) EXPECT() *GatewayConfigBuilder_Expecter {
 }
 
 // Build provides a mock function for the type GatewayConfigBuilder
-func (_mock *GatewayConfigBuilder) Build(ctx context.Context, pipelines []v1alpha1.TracePipeline, opts tracegateway.BuildOptions) (*tracegateway.Config, common.EnvVars, error) {
+func (_mock *GatewayConfigBuilder) Build(ctx context.Context, pipelines []v1alpha1.TracePipeline, opts tracegateway.BuildOptions) (*common.Config, common.EnvVars, error) {
 	ret := _mock.Called(ctx, pipelines, opts)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Build")
 	}
 
-	var r0 *tracegateway.Config
+	var r0 *common.Config
 	var r1 common.EnvVars
 	var r2 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, []v1alpha1.TracePipeline, tracegateway.BuildOptions) (*tracegateway.Config, common.EnvVars, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []v1alpha1.TracePipeline, tracegateway.BuildOptions) (*common.Config, common.EnvVars, error)); ok {
 		return returnFunc(ctx, pipelines, opts)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, []v1alpha1.TracePipeline, tracegateway.BuildOptions) *tracegateway.Config); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []v1alpha1.TracePipeline, tracegateway.BuildOptions) *common.Config); ok {
 		r0 = returnFunc(ctx, pipelines, opts)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*tracegateway.Config)
+			r0 = ret.Get(0).(*common.Config)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, []v1alpha1.TracePipeline, tracegateway.BuildOptions) common.EnvVars); ok {
@@ -112,12 +112,12 @@ func (_c *GatewayConfigBuilder_Build_Call) Run(run func(ctx context.Context, pip
 	return _c
 }
 
-func (_c *GatewayConfigBuilder_Build_Call) Return(config *tracegateway.Config, envVars common.EnvVars, err error) *GatewayConfigBuilder_Build_Call {
+func (_c *GatewayConfigBuilder_Build_Call) Return(config *common.Config, envVars common.EnvVars, err error) *GatewayConfigBuilder_Build_Call {
 	_c.Call.Return(config, envVars, err)
 	return _c
 }
 
-func (_c *GatewayConfigBuilder_Build_Call) RunAndReturn(run func(ctx context.Context, pipelines []v1alpha1.TracePipeline, opts tracegateway.BuildOptions) (*tracegateway.Config, common.EnvVars, error)) *GatewayConfigBuilder_Build_Call {
+func (_c *GatewayConfigBuilder_Build_Call) RunAndReturn(run func(ctx context.Context, pipelines []v1alpha1.TracePipeline, opts tracegateway.BuildOptions) (*common.Config, common.EnvVars, error)) *GatewayConfigBuilder_Build_Call {
 	_c.Call.Return(run)
 	return _c
 }

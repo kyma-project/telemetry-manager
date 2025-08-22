@@ -18,7 +18,7 @@ on:
   workflow_dispatch:
 
 env:
-  GITLEAKS_VERSION: 8.18.2
+  GITLEAKS_VERSION: 8.28.0
 
 jobs:
   unit-tests:

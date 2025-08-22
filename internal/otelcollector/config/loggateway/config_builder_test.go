@@ -11,6 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -34,7 +35,7 @@ func TestBuildConfig(t *testing.T) {
 
 		require.Contains(t, collectorConfig.Exporters, "otlp/test")
 		otlpExporterConfig := collectorConfig.Exporters["otlp/test"]
-		require.Equal(t, expectedEndpoint, otlpExporterConfig.OTLP.Endpoint)
+		require.Equal(t, expectedEndpoint, otlpExporterConfig.(*common.OTLPExporter).Endpoint)
 
 		require.Contains(t, envVars, endpointEnvVar)
 		require.Equal(t, "http://localhost", string(envVars[endpointEnvVar]))
@@ -56,6 +57,36 @@ func TestBuildConfig(t *testing.T) {
 						Build(),
 				},
 				goldenFileName: "single-pipeline.yaml",
+			},
+			{
+				name: "single pipeline with OTLP disabled",
+				pipelines: []telemetryv1alpha1.LogPipeline{
+					testutils.NewLogPipelineBuilder().
+						WithName("test").
+						WithOTLPInput(false).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+				goldenFileName: "single-pipeline-otlp-disabled.yaml",
+			},
+			{
+				name: "single pipeline with namespace included",
+				pipelines: []telemetryv1alpha1.LogPipeline{
+					testutils.NewLogPipelineBuilder().
+						WithName("test").
+						WithOTLPInput(true, testutils.IncludeNamespaces("kyma-system", "default")).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+				goldenFileName: "single-pipeline-namespace-included.yaml",
+			},
+			{
+				name: "single pipeline with namespace excluded",
+				pipelines: []telemetryv1alpha1.LogPipeline{
+					testutils.NewLogPipelineBuilder().
+						WithName("test").
+						WithOTLPInput(true, testutils.ExcludeNamespaces("kyma-system", "default")).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+				goldenFileName: "single-pipeline-namespace-excluded.yaml",
 			},
 			{
 				name: "two pipelines with user-defined transforms",
