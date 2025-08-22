@@ -3,18 +3,19 @@ package traces
 import (
 	"testing"
 
+	. "github.com/onsi/gomega"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
-	. "github.com/onsi/gomega"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestTransform(t *testing.T) {
@@ -55,9 +56,8 @@ func TestTransform(t *testing.T) {
 	assert.TracesFromNamespaceDelivered(t, backend, genNs)
 
 	assert.BackendDataEventuallyMatches(t, backend,
-		trace.HaveFlatTraces(ContainElement(SatisfyAll(
-			trace.HaveSpanAttributes(HaveKeyWithValue("system", "false")),
+		HaveFlatTraces(ContainElement(SatisfyAll(
+			HaveSpanAttributes(HaveKeyWithValue("system", "false")),
 		))),
 	)
-
 }
