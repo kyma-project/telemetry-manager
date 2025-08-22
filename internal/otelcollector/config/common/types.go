@@ -11,6 +11,7 @@ type Config struct {
 	Receivers  map[string]any `yaml:"receivers"`
 	Processors map[string]any `yaml:"processors"`
 	Exporters  map[string]any `yaml:"exporters"`
+	Connectors map[string]any `yaml:"connectors"`
 }
 
 // Base represents the root configuration structure for OpenTelemetry Collector
@@ -208,6 +209,21 @@ type ServiceEnrichmentProcessor struct {
 }
 
 type IstioNoiseFilterProcessor struct {
+}
+
+// =============================================================================
+// CONNECTOR TYPES
+// =============================================================================
+
+type RoutingConnector struct {
+	DefaultPipelines []string                     `yaml:"default_pipelines"`
+	ErrorMode        string                       `yaml:"error_mode"`
+	Table            []RoutingConnectorTableEntry `yaml:"table"`
+}
+
+type RoutingConnectorTableEntry struct {
+	Statement string   `yaml:"statement"`
+	Pipelines []string `yaml:"pipelines"`
 }
 
 // =============================================================================

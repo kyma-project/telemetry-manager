@@ -10,28 +10,28 @@ import (
 
 // Service pipeline assembly
 
-func (b *Builder) addServicePipelines(pipeline *telemetryv1alpha1.MetricPipeline) {
-	inputPipelineID := formatMetricInputPipelineID(pipeline.Name)
-	enrichmentPipelineID := formatMetricEnrichmentPipelineID(pipeline.Name)
-	outputPipelineID := formatMetricOutputPipelineID(pipeline.Name)
+// func (b *Builder) addServicePipelines(pipeline *telemetryv1alpha1.MetricPipeline) {
+// 	inputPipelineID := formatMetricInputPipelineID(pipeline.Name)
+// 	enrichmentPipelineID := formatMetricEnrichmentPipelineID(pipeline.Name)
+// 	outputPipelineID := formatMetricOutputPipelineID(pipeline.Name)
 
-	b.config.Service.Pipelines[inputPipelineID] = inputPipelineConfig(pipeline)
-	b.config.Service.Pipelines[enrichmentPipelineID] = enrichmentPipelineConfig(pipeline.Name)
-	b.config.Service.Pipelines[outputPipelineID] = outputPipelineConfig(pipeline)
-}
+// 	b.config.Service.Pipelines[inputPipelineID] = inputPipelineConfig(pipeline)
+// 	b.config.Service.Pipelines[enrichmentPipelineID] = enrichmentPipelineConfig(pipeline.Name)
+// 	b.config.Service.Pipelines[outputPipelineID] = outputPipelineConfig(pipeline)
+// }
 
 // Pipeline ID formatting functions
 
-func formatMetricInputPipelineID(pipelineName string) string {
-	return fmt.Sprintf("metrics/%s-input", pipelineName)
+func formatInputMetricServicePipelineID(mp *telemetryv1alpha1.MetricPipeline) string {
+	return fmt.Sprintf("metrics/%s-input", mp.Name)
 }
 
-func formatMetricEnrichmentPipelineID(pipelineName string) string {
-	return fmt.Sprintf("metrics/%s-attributes-enrichment", pipelineName)
+func formatEnrichmentServicePipelineID(mp *telemetryv1alpha1.MetricPipeline) string {
+	return fmt.Sprintf("metrics/%s-attributes-enrichment", mp.Name)
 }
 
-func formatMetricOutputPipelineID(pipelineName string) string {
-	return fmt.Sprintf("metrics/%s-output", pipelineName)
+func formatOutputServicePipelineID(mp *telemetryv1alpha1.MetricPipeline) string {
+	return fmt.Sprintf("metrics/%s-output", mp.Name)
 }
 
 // Pipeline configuration functions

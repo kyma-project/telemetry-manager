@@ -65,8 +65,9 @@ var upstreamInstrumentationScopeName = map[InputSourceType]string{
 
 const (
 	// Receivers
-	ComponentIDOTLPReceiver    = "otlp"
-	ComponentIDFileLogReceiver = "filelog/%s" // dynamically filled with pipeline name
+	ComponentIDOTLPReceiver      = "otlp"
+	ComponentIDFileLogReceiver   = "filelog/%s" // dynamically filled with pipeline name
+	ComponentIDKymaStatsReceiver = "kymastats"
 
 	// Processors
 	ComponentIDMemoryLimiterProcessor           = "memory_limiter"
@@ -86,4 +87,7 @@ const (
 	// Exporters
 	ComponentIDOTLPHTTPExporter = "otlphttp/%s" // dynamically filled with pipeline name
 	ComponentIDOTLPGRPCExporter = "otlp/%s"     // dynamically filled with pipeline name
+
+	// Connectors
+	ComponentIDRoutingConnector = "routing/%s" // dynamically filled with pipeline name
 )
