@@ -10,6 +10,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 )
 
 const (
@@ -50,13 +51,44 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addOTLPReceiver(),
 			b.addKymaStatsReceiver(),
 			b.addMemoryLimiterProcessor(),
-			b.addRoutingConnector(),
+			b.addRoutingConnectorAsExporter(),
 		); err != nil {
 			return nil, nil, fmt.Errorf("failed to add input service pipeline: %w", err)
 		}
 
-		if err := b.addEnrichmentServicePipeline(ctx, &pipelines[i]); err != nil {
+		if err := b.addEnrichmentServicePipeline(ctx, &pipelines[i],
+			b.addRoutingConnectorAsReceiver(),
+			b.addK8sAttributesProcessor(opts),
+			b.addServiceEnrichmentProcessor(),
+			b.addForwardConnectorAsExporter(),
+		); err != nil {
 			return nil, nil, fmt.Errorf("failed to add enrichment service pipeline: %w", err)
+		}
+
+		if err := b.addOutputServicePipeline(ctx, &pipelines[i],
+			b.addRoutingConnectorAsReceiver(),
+			b.addForwardConnectorAsReceiver(),
+			b.addSetInstrumentationScopeProcessor(opts),
+			// Input source filters (in service.go order)
+			b.addDropIfRuntimeInputDisabledProcessor(),
+			b.addDropIfPrometheusInputDisabledProcessor(),
+			b.addDropIfIstioInputDisabledProcessor(),
+			b.addDropEnvoyMetricsIfDisabledProcessor(),
+			b.addDropIfOTLPInputDisabledProcessor(),
+			// Runtime resource filters (in service.go order)
+			b.addDropRuntimePodMetricsProcessor(),
+			b.addDropRuntimeContainerMetricsProcessor(),
+			b.addDropRuntimeNodeMetricsProcessor(),
+			b.addDropRuntimeVolumeMetricsProcessor(),
+			b.addDropRuntimeDeploymentMetricsProcessor(),
+			b.addDropRuntimeDaemonSetMetricsProcessor(),
+			b.addDropRuntimeStatefulSetMetricsProcessor(),
+			b.addDropRuntimeJobMetricsProcessor(),
+			// Diagnostic metric filters (in service.go order)
+			b.addDropDiagnosticMetricsIfInputSourceIstioProcessor(),
+			b.addDropDiagnosticMetricsIfInputSourcePrometheusProcessor(),
+		); err != nil {
+			return nil, nil, fmt.Errorf("failed to add output service pipeline: %w", err)
 		}
 	}
 
@@ -100,6 +132,20 @@ func (b *Builder) addEnrichmentServicePipeline(ctx context.Context, mp *telemetr
 	return nil
 }
 
+func (b *Builder) addOutputServicePipeline(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline, fs ...buildComponentFunc) error {
+	// Add an empty pipeline to the config
+	pipelineID := formatOutputServicePipelineID(mp)
+	b.config.Service.Pipelines[pipelineID] = common.Pipeline{}
+
+	for _, f := range fs {
+		if err := f(ctx, mp); err != nil {
+			return fmt.Errorf("failed to add component: %w", err)
+		}
+	}
+
+	return nil
+}
+
 func (b *Builder) addInputReceiver(componentIDFunc componentIDFunc, configFunc componentConfigFunc) buildComponentFunc {
 	return common.AddReceiver(b.config, componentIDFunc, configFunc, formatInputMetricServicePipelineID)
 }
@@ -122,6 +168,18 @@ func (b *Builder) addEnrichmentProcessor(componentIDFunc componentIDFunc, config
 
 func (b *Builder) addEnrichmentExporter(componentIDFunc componentIDFunc, configFunc exporterComponentConfigFunc) buildComponentFunc {
 	return common.AddExporter(b.config, b.envVars, componentIDFunc, configFunc, formatEnrichmentServicePipelineID)
+}
+
+func (b *Builder) addOutputReceiver(componentIDFunc componentIDFunc, configFunc componentConfigFunc) buildComponentFunc {
+	return common.AddReceiver(b.config, componentIDFunc, configFunc, formatOutputServicePipelineID)
+}
+
+func (b *Builder) addOutputProcessor(componentIDFunc componentIDFunc, configFunc componentConfigFunc) buildComponentFunc {
+	return common.AddProcessor(b.config, componentIDFunc, configFunc, formatOutputServicePipelineID)
+}
+
+func (b *Builder) addOutputExporter(componentIDFunc componentIDFunc, configFunc exporterComponentConfigFunc) buildComponentFunc {
+	return common.AddExporter(b.config, b.envVars, componentIDFunc, configFunc, formatOutputServicePipelineID)
 }
 
 func (b *Builder) addOTLPReceiver() buildComponentFunc {
@@ -175,25 +233,350 @@ func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
 	)
 }
 
-func (b *Builder) addRoutingConnector() buildComponentFunc {
+func (b *Builder) addRoutingConnectorAsExporter() buildComponentFunc {
 	return b.addInputExporter(
 		staticComponentID(common.ComponentIDRoutingConnector),
 		func(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline) (any, common.EnvVars, error) {
-			enrichmentPipelineID := formatEnrichmentServicePipelineID(mp)
-			outputPipelineID := formatOutputServicePipelineID(mp)
-
-			return &common.RoutingConnector{
-				DefaultPipelines: []string{enrichmentPipelineID},
-				ErrorMode:        "ignore",
-				Table: []common.RoutingConnectorTableEntry{
-					{
-						Statement: fmt.Sprintf("route() where attributes[\"%s\"] == \"true\"", common.SkipEnrichmentAttribute),
-						Pipelines: []string{outputPipelineID},
-					},
-				},
-			}, nil, nil
+			return enrichmentRoutingConnectorConfig(mp), nil, nil
 		},
 	)
+}
+
+func (b *Builder) addRoutingConnectorAsReceiver() buildComponentFunc {
+	return b.addEnrichmentReceiver(
+		staticComponentID(common.ComponentIDRoutingConnector),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			return enrichmentRoutingConnectorConfig(mp)
+		},
+	)
+}
+
+func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFunc {
+	return b.addEnrichmentProcessor(
+		staticComponentID(common.ComponentIDK8sAttributesProcessor),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			return common.K8sAttributesProcessorConfig(opts.Enrichments)
+		},
+	)
+}
+
+func (b *Builder) addServiceEnrichmentProcessor() buildComponentFunc {
+	return b.addEnrichmentProcessor(
+		staticComponentID(common.ComponentIDServiceEnrichmentProcessor),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			return common.ResolveServiceNameConfig()
+		},
+	)
+}
+
+func (b *Builder) addForwardConnectorAsExporter() buildComponentFunc {
+	return b.addEnrichmentExporter(
+		staticComponentID(common.ComponentIDForwardConnector),
+		func(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline) (any, common.EnvVars, error) {
+			return &common.ForwardConnector{}, nil, nil
+		},
+	)
+}
+
+func (b *Builder) addForwardConnectorAsReceiver() buildComponentFunc {
+	return b.addOutputReceiver(
+		staticComponentID(common.ComponentIDForwardConnector),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			return &common.ForwardConnector{}
+		},
+	)
+}
+
+func (b *Builder) addSetInstrumentationScopeProcessor(opts BuildOptions) buildComponentFunc {
+	return b.addOutputProcessor(
+		staticComponentID(common.ComponentIDSetInstrumentationScopeKymaProcessor),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			return common.InstrumentationScopeProcessorConfig(opts.InstrumentationScopeVersion, common.InputSourceKyma)
+		},
+	)
+}
+
+func (b *Builder) addDropIfRuntimeInputDisabledProcessor() buildComponentFunc {
+	return b.addOutputProcessor(
+		staticComponentID("filter/drop-if-input-source-runtime"),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			if metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) {
+				return nil
+			}
+
+			return &FilterProcessor{
+				Metrics: FilterProcessorMetrics{
+					Metric: []string{common.ScopeNameEquals(common.InstrumentationScopeRuntime)},
+				},
+			}
+		},
+	)
+}
+
+func (b *Builder) addDropIfPrometheusInputDisabledProcessor() buildComponentFunc {
+	return b.addOutputProcessor(
+		staticComponentID("filter/drop-if-input-source-prometheus"),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			if metricpipelineutils.IsPrometheusInputEnabled(mp.Spec.Input) {
+				return nil
+			}
+
+			return &FilterProcessor{
+				Metrics: FilterProcessorMetrics{
+					Metric: []string{`resource.attributes["kyma.input.name"] == "prometheus"`},
+				},
+			}
+		},
+	)
+}
+
+func (b *Builder) addDropIfIstioInputDisabledProcessor() buildComponentFunc {
+	return b.addOutputProcessor(
+		staticComponentID("filter/drop-if-input-source-istio"),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			if metricpipelineutils.IsIstioInputEnabled(mp.Spec.Input) {
+				return nil
+			}
+
+			return &FilterProcessor{
+				Metrics: FilterProcessorMetrics{
+					Metric: []string{common.ScopeNameEquals(common.InstrumentationScopeIstio)},
+				},
+			}
+		},
+	)
+}
+
+func (b *Builder) addDropIfOTLPInputDisabledProcessor() buildComponentFunc {
+	return b.addOutputProcessor(
+		staticComponentID("filter/drop-if-input-source-otlp"),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			if metricpipelineutils.IsOTLPInputEnabled(mp.Spec.Input) {
+				return nil
+			}
+
+			return &FilterProcessor{
+				Metrics: FilterProcessorMetrics{
+					Metric: []string{`instrumentation_scope.name == "io.kyma-project.telemetry/otlp"`},
+				},
+			}
+		},
+	)
+}
+
+func (b *Builder) addDropEnvoyMetricsIfDisabledProcessor() buildComponentFunc {
+	return b.addOutputProcessor(
+		staticComponentID("filter/drop-envoy-metrics-if-disabled"),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			if metricpipelineutils.IsIstioInputEnabled(mp.Spec.Input) && metricpipelineutils.IsEnvoyMetricsEnabled(mp.Spec.Input) {
+				return nil
+			}
+
+			return &FilterProcessor{
+				Metrics: FilterProcessorMetrics{
+					Metric: []string{`IsMatch(name, "^envoy_.*") and instrumentation_scope.name == "io.kyma-project.telemetry/istio"`},
+				},
+			}
+		},
+	)
+}
+
+func (b *Builder) addDropRuntimePodMetricsProcessor() buildComponentFunc {
+	return b.addOutputProcessor(
+		staticComponentID("filter/drop-runtime-pod-metrics"),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			if metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) && metricpipelineutils.IsRuntimePodInputEnabled(mp.Spec.Input) {
+				return nil
+			}
+
+			return &FilterProcessor{
+				Metrics: FilterProcessorMetrics{
+					Metric: []string{`instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s\\.pod\\.")`},
+				},
+			}
+		},
+	)
+}
+
+func (b *Builder) addDropRuntimeContainerMetricsProcessor() buildComponentFunc {
+	return b.addOutputProcessor(
+		staticComponentID("filter/drop-runtime-container-metrics"),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			if metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) && metricpipelineutils.IsRuntimeContainerInputEnabled(mp.Spec.Input) {
+				return nil
+			}
+
+			return &FilterProcessor{
+				Metrics: FilterProcessorMetrics{
+					Metric: []string{`instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s\\.container\\.")`},
+				},
+			}
+		},
+	)
+}
+
+func (b *Builder) addDropRuntimeNodeMetricsProcessor() buildComponentFunc {
+	return b.addOutputProcessor(
+		staticComponentID("filter/drop-runtime-node-metrics"),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			if metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) && metricpipelineutils.IsRuntimeNodeInputEnabled(mp.Spec.Input) {
+				return nil
+			}
+
+			return &FilterProcessor{
+				Metrics: FilterProcessorMetrics{
+					Metric: []string{`instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s\\.node\\.")`},
+				},
+			}
+		},
+	)
+}
+
+func (b *Builder) addDropRuntimeVolumeMetricsProcessor() buildComponentFunc {
+	return b.addOutputProcessor(
+		staticComponentID("filter/drop-runtime-volume-metrics"),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			if metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) && metricpipelineutils.IsRuntimeVolumeInputEnabled(mp.Spec.Input) {
+				return nil
+			}
+
+			return &FilterProcessor{
+				Metrics: FilterProcessorMetrics{
+					Metric: []string{`instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s\\.volume\\.")`},
+				},
+			}
+		},
+	)
+}
+
+func (b *Builder) addDropRuntimeDeploymentMetricsProcessor() buildComponentFunc {
+	return b.addOutputProcessor(
+		staticComponentID("filter/drop-runtime-deployment-metrics"),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			if metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) && metricpipelineutils.IsRuntimeDeploymentInputEnabled(mp.Spec.Input) {
+				return nil
+			}
+
+			return &FilterProcessor{
+				Metrics: FilterProcessorMetrics{
+					Metric: []string{`instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s\\.deployment\\.")`},
+				},
+			}
+		},
+	)
+}
+
+func (b *Builder) addDropRuntimeDaemonSetMetricsProcessor() buildComponentFunc {
+	return b.addOutputProcessor(
+		staticComponentID("filter/drop-runtime-daemonset-metrics"),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			if metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) && metricpipelineutils.IsRuntimeDaemonSetInputEnabled(mp.Spec.Input) {
+				return nil
+			}
+
+			return &FilterProcessor{
+				Metrics: FilterProcessorMetrics{
+					Metric: []string{`instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s\\.daemonset\\.")`},
+				},
+			}
+		},
+	)
+}
+
+func (b *Builder) addDropRuntimeStatefulSetMetricsProcessor() buildComponentFunc {
+	return b.addOutputProcessor(
+		staticComponentID("filter/drop-runtime-statefulset-metrics"),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			if metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) && metricpipelineutils.IsRuntimeStatefulSetInputEnabled(mp.Spec.Input) {
+				return nil
+			}
+
+			return &FilterProcessor{
+				Metrics: FilterProcessorMetrics{
+					Metric: []string{`instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s\\.statefulset\\.")`},
+				},
+			}
+		},
+	)
+}
+
+func (b *Builder) addDropRuntimeJobMetricsProcessor() buildComponentFunc {
+	return b.addOutputProcessor(
+		staticComponentID("filter/drop-runtime-job-metrics"),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			if metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) && metricpipelineutils.IsRuntimeJobInputEnabled(mp.Spec.Input) {
+				return nil
+			}
+
+			return &FilterProcessor{
+				Metrics: FilterProcessorMetrics{
+					Metric: []string{`instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s\\.job\\.")`},
+				},
+			}
+		},
+	)
+}
+
+func (b *Builder) addDropDiagnosticMetricsIfInputSourcePrometheusProcessor() buildComponentFunc {
+	return b.addOutputProcessor(
+		staticComponentID("filter/drop-diagnostic-metrics-if-input-source-prometheus"),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			if metricpipelineutils.IsPrometheusInputEnabled(mp.Spec.Input) && metricpipelineutils.IsPrometheusDiagnosticInputEnabled(mp.Spec.Input) {
+				return nil
+			}
+
+			return &FilterProcessor{
+				Metrics: FilterProcessorMetrics{
+					Metric: []string{`instrumentation_scope.name == "io.kyma-project.telemetry/prometheus" and (name == "up" or name == "scrape_duration_seconds" or name == "scrape_samples_scraped" or name == "scrape_samples_post_metric_relabeling" or name == "scrape_series_added")`},
+				},
+			}
+		},
+	)
+}
+
+func (b *Builder) addDropDiagnosticMetricsIfInputSourceIstioProcessor() buildComponentFunc {
+	return b.addOutputProcessor(
+		staticComponentID("filter/drop-diagnostic-metrics-if-input-source-istio"),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			if metricpipelineutils.IsIstioInputEnabled(mp.Spec.Input) && metricpipelineutils.IsIstioDiagnosticInputEnabled(mp.Spec.Input) {
+				return nil
+			}
+
+			return &FilterProcessor{
+				Metrics: FilterProcessorMetrics{
+					Metric: []string{`instrumentation_scope.name == "io.kyma-project.telemetry/istio" and (name == "up" or name == "scrape_duration_seconds" or name == "scrape_samples_scraped" or name == "scrape_samples_post_metric_relabeling" or name == "scrape_series")`},
+				},
+			}
+		},
+	)
+}
+
+func enrichmentRoutingConnectorConfig(mp *telemetryv1alpha1.MetricPipeline) common.RoutingConnector {
+	enrichmentPipelineID := formatEnrichmentServicePipelineID(mp)
+	outputPipelineID := formatOutputServicePipelineID(mp)
+
+	return common.RoutingConnector{
+		DefaultPipelines: []string{enrichmentPipelineID},
+		ErrorMode:        "ignore",
+		Table: []common.RoutingConnectorTableEntry{
+			{
+				Statement: fmt.Sprintf("route() where attributes[\"%s\"] == \"true\"", common.SkipEnrichmentAttribute),
+				Pipelines: []string{outputPipelineID},
+			},
+		},
+	}
+}
+
+func formatInputMetricServicePipelineID(mp *telemetryv1alpha1.MetricPipeline) string {
+	return fmt.Sprintf("metrics/%s-input", mp.Name)
+}
+
+func formatEnrichmentServicePipelineID(mp *telemetryv1alpha1.MetricPipeline) string {
+	return fmt.Sprintf("metrics/%s-attributes-enrichment", mp.Name)
+}
+
+func formatOutputServicePipelineID(mp *telemetryv1alpha1.MetricPipeline) string {
+	return fmt.Sprintf("metrics/%s-output", mp.Name)
 }
 
 // // addComponents enriches a Config (receivers, processors, exporters etc.) with components for a given telemetryv1alpha1.MetricPipeline.

@@ -226,6 +226,9 @@ type RoutingConnectorTableEntry struct {
 	Pipelines []string `yaml:"pipelines"`
 }
 
+type ForwardConnector struct {
+}
+
 // =============================================================================
 // EXTENSION TYPES
 // =============================================================================

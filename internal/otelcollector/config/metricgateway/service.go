@@ -22,96 +22,58 @@ import (
 
 // Pipeline ID formatting functions
 
-func formatInputMetricServicePipelineID(mp *telemetryv1alpha1.MetricPipeline) string {
-	return fmt.Sprintf("metrics/%s-input", mp.Name)
-}
-
-func formatEnrichmentServicePipelineID(mp *telemetryv1alpha1.MetricPipeline) string {
-	return fmt.Sprintf("metrics/%s-attributes-enrichment", mp.Name)
-}
-
-func formatOutputServicePipelineID(mp *telemetryv1alpha1.MetricPipeline) string {
-	return fmt.Sprintf("metrics/%s-output", mp.Name)
-}
-
 // Pipeline configuration functions
 
-func inputPipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline) common.Pipeline {
-	return common.Pipeline{
-		Receivers:  []string{"otlp", "kymastats"},
-		Processors: []string{"memory_limiter"},
-		Exporters:  []string{formatRoutingConnectorID(pipeline.Name)},
-	}
-}
+// func inputPipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline) common.Pipeline {
+// 	return common.Pipeline{
+// 		Receivers:  []string{"otlp", "kymastats"},
+// 		Processors: []string{"memory_limiter"},
+// 		Exporters:  []string{formatRoutingConnectorID(pipeline.Name)},
+// 	}
+// }
 
-func enrichmentPipelineConfig(pipelineName string) common.Pipeline {
-	return common.Pipeline{
-		Receivers:  []string{formatRoutingConnectorID(pipelineName)},
-		Processors: []string{"k8sattributes", "service_enrichment"},
-		Exporters:  []string{formatForwardConnectorID(pipelineName)},
-	}
-}
+// func enrichmentPipelineConfig(pipelineName string) common.Pipeline {
+// 	return common.Pipeline{
+// 		Receivers:  []string{formatRoutingConnectorID(pipelineName)},
+// 		Processors: []string{"k8sattributes", "service_enrichment"},
+// 		Exporters:  []string{formatForwardConnectorID(pipelineName)},
+// 	}
+// }
 
-func outputPipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline) common.Pipeline {
-	var processors []string
+// func outputPipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline) common.Pipeline {
+// 	var processors []string
 
-	input := pipeline.Spec.Input
+// 	input := pipeline.Spec.Input
 
-	processors = append(processors, "transform/set-instrumentation-scope-kyma")
-	processors = append(processors, inputSourceFiltersIDs(input)...)
-	processors = append(processors, namespaceFiltersIDs(input, pipeline)...)
-	processors = append(processors, runtimeResourcesFiltersIDs(input)...)
-	processors = append(processors, diagnosticMetricFiltersIDs(input)...)
+// 	// processors = append(processors, "transform/set-instrumentation-scope-kyma")
+// 	processors = append(processors, inputSourceFiltersIDs(input)...)
+// 	processors = append(processors, namespaceFiltersIDs(input, pipeline)...)
+// 	processors = append(processors, runtimeResourcesFiltersIDs(input)...)
+// 	processors = append(processors, diagnosticMetricFiltersIDs(input)...)
 
-	processors = append(processors,
-		"resource/insert-cluster-attributes",
-		"resource/delete-skip-enrichment-attribute",
-		"resource/drop-kyma-attributes",
-	)
+// 	processors = append(processors,
+// 		"resource/insert-cluster-attributes",
+// 		"resource/delete-skip-enrichment-attribute",
+// 		"resource/drop-kyma-attributes",
+// 	)
 
-	// Add user-defined transform processor after all of the enrichment processors
-	// if transforms are specified
-	if len(pipeline.Spec.Transforms) > 0 {
-		processors = append(processors, formatUserDefinedTransformProcessorID(pipeline.Name))
-	}
+// 	// Add user-defined transform processor after all of the enrichment processors
+// 	// if transforms are specified
+// 	if len(pipeline.Spec.Transforms) > 0 {
+// 		processors = append(processors, formatUserDefinedTransformProcessorID(pipeline.Name))
+// 	}
 
-	processors = append(processors,
-		// batch processor is always the last processor in the pipeline
-		"batch",
-	)
+// 	processors = append(processors,
+// 		// batch processor is always the last processor in the pipeline
+// 		"batch",
+// 	)
 
-	return common.Pipeline{
-		Receivers:  []string{formatRoutingConnectorID(pipeline.Name), formatForwardConnectorID(pipeline.Name)},
-		Processors: processors,
-		Exporters:  []string{formatOTLPExporterID(pipeline)},
-	}
-}
-
-func inputSourceFiltersIDs(input telemetryv1alpha1.MetricPipelineInput) []string {
-	var processors []string
-
-	if !metricpipelineutils.IsRuntimeInputEnabled(input) {
-		processors = append(processors, "filter/drop-if-input-source-runtime")
-	}
-
-	if !metricpipelineutils.IsPrometheusInputEnabled(input) {
-		processors = append(processors, "filter/drop-if-input-source-prometheus")
-	}
-
-	if !metricpipelineutils.IsIstioInputEnabled(input) {
-		processors = append(processors, "filter/drop-if-input-source-istio")
-	}
-
-	if !metricpipelineutils.IsIstioInputEnabled(input) || !metricpipelineutils.IsEnvoyMetricsEnabled(input) {
-		processors = append(processors, "filter/drop-envoy-metrics-if-disabled")
-	}
-
-	if !metricpipelineutils.IsOTLPInputEnabled(input) {
-		processors = append(processors, "filter/drop-if-input-source-otlp")
-	}
-
-	return processors
-}
+// 	return common.Pipeline{
+// 		Receivers:  []string{formatRoutingConnectorID(pipeline.Name), formatForwardConnectorID(pipeline.Name)},
+// 		Processors: processors,
+// 		Exporters:  []string{formatOTLPExporterID(pipeline)},
+// 	}
+// }
 
 func namespaceFiltersIDs(input telemetryv1alpha1.MetricPipelineInput, pipeline *telemetryv1alpha1.MetricPipeline) []string {
 	var processors []string
@@ -189,18 +151,6 @@ func diagnosticMetricFiltersIDs(input telemetryv1alpha1.MetricPipelineInput) []s
 
 func formatNamespaceFilterID(pipelineName string, inputSourceType common.InputSourceType) string {
 	return fmt.Sprintf("filter/%s-filter-by-namespace-%s-input", pipelineName, inputSourceType)
-}
-
-func formatForwardConnectorID(pipelineName string) string {
-	return fmt.Sprintf("forward/%s", pipelineName)
-}
-
-func formatRoutingConnectorID(pipelineName string) string {
-	return fmt.Sprintf("routing/%s", pipelineName)
-}
-
-func formatUserDefinedTransformProcessorID(pipelineName string) string {
-	return fmt.Sprintf("transform/user-defined-%s", pipelineName)
 }
 
 func formatOTLPExporterID(pipeline *telemetryv1alpha1.MetricPipeline) string {

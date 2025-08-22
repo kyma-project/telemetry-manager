@@ -147,7 +147,7 @@ func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
 
 func (b *Builder) addSetInstrumentationScopeProcessor(opts BuildOptions) buildComponentFunc {
 	return b.addProcessor(
-		staticComponentID(common.ComponentIDSetInstrumentationScopeProcessor),
+		staticComponentID(common.ComponentIDSetInstrumentationScopeRuntimeProcessor),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
 			return common.LogTransformProcessorConfig([]common.TransformProcessorStatements{{
 				Statements: []string{

@@ -70,24 +70,26 @@ const (
 	ComponentIDKymaStatsReceiver = "kymastats"
 
 	// Processors
-	ComponentIDMemoryLimiterProcessor           = "memory_limiter"
-	ComponentIDBatchProcessor                   = "batch"
-	ComponentIDK8sAttributesProcessor           = "k8sattributes"
-	ComponentIDServiceEnrichmentProcessor       = "service_enrichment"
-	ComponentIDIstioEnrichmentProcessor         = "istio_enrichment"
-	ComponentIDIstioNoiseFilterProcessor        = "istio_noise_filter"
-	ComponentIDSetObservedTimeIfZeroProcessor   = "transform/set-observed-time-if-zero"
-	ComponentIDSetInstrumentationScopeProcessor = "transform/set-instrumentation-scope-runtime"
-	ComponentIDUserDefinedTransformProcessor    = "transform/user-defined-%s" // dynamically filled with pipeline name
-	ComponentIDDropIfInputSourceOTLPProcessor   = "filter/drop-if-input-source-otlp"
-	ComponentIDNamespaceFilterProcessor         = "filter/%s-filter-by-namespace"
-	ComponentIDInsertClusterAttributesProcessor = "resource/insert-cluster-attributes"
-	ComponentIDDropKymaAttributesProcessor      = "resource/drop-kyma-attributes"
+	ComponentIDMemoryLimiterProcessor                  = "memory_limiter"
+	ComponentIDBatchProcessor                          = "batch"
+	ComponentIDK8sAttributesProcessor                  = "k8sattributes"
+	ComponentIDServiceEnrichmentProcessor              = "service_enrichment"
+	ComponentIDIstioEnrichmentProcessor                = "istio_enrichment"
+	ComponentIDIstioNoiseFilterProcessor               = "istio_noise_filter"
+	ComponentIDSetObservedTimeIfZeroProcessor          = "transform/set-observed-time-if-zero"
+	ComponentIDSetInstrumentationScopeKymaProcessor    = "transform/set-instrumentation-scope-kyma"
+	ComponentIDSetInstrumentationScopeRuntimeProcessor = "transform/set-instrumentation-scope-runtime"
+	ComponentIDUserDefinedTransformProcessor           = "transform/user-defined-%s" // dynamically filled with pipeline name
+	ComponentIDDropIfInputSourceOTLPProcessor          = "filter/drop-if-input-source-otlp"
+	ComponentIDNamespaceFilterProcessor                = "filter/%s-filter-by-namespace"
+	ComponentIDInsertClusterAttributesProcessor        = "resource/insert-cluster-attributes"
+	ComponentIDDropKymaAttributesProcessor             = "resource/drop-kyma-attributes"
 
 	// Exporters
 	ComponentIDOTLPHTTPExporter = "otlphttp/%s" // dynamically filled with pipeline name
 	ComponentIDOTLPGRPCExporter = "otlp/%s"     // dynamically filled with pipeline name
 
 	// Connectors
+	ComponentIDForwardConnector = "forward/%s" // dynamically filled with pipeline name
 	ComponentIDRoutingConnector = "routing/%s" // dynamically filled with pipeline name
 )

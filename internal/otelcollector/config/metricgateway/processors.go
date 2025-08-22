@@ -10,15 +10,11 @@ import (
 func processorsConfig(opts BuildOptions) Processors {
 	return Processors{
 		BaseProcessors: common.BaseProcessors{
-			Batch:         batchProcessorConfig(),
-			MemoryLimiter: memoryLimiterProcessorConfig(),
+			Batch: batchProcessorConfig(),
 		},
-		K8sAttributes:                 common.K8sAttributesProcessorConfig(opts.Enrichments),
 		InsertClusterAttributes:       common.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.ClusterUID, opts.CloudProvider),
-		ResolveServiceName:            common.ResolveServiceNameConfig(),
 		DropKymaAttributes:            common.DropKymaAttributesProcessorConfig(),
 		DeleteSkipEnrichmentAttribute: deleteSkipEnrichmentAttributeProcessorConfig(),
-		SetInstrumentationScopeKyma:   common.InstrumentationScopeProcessorConfig(opts.InstrumentationScopeVersion, common.InputSourceKyma),
 		Dynamic:                       make(map[string]any),
 	}
 }
