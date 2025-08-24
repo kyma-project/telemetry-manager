@@ -1,4 +1,4 @@
-name: Deploy Test Prerequisites
+name: Deploy Test K8S Prerequisites
 description: Deploys the Kubernetes resources needed for the test execution
 
 runs:

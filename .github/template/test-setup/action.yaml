@@ -1,5 +1,5 @@
-name: Prepare test
-description: Prepares everything for integration test execution
+name: Test Setup
+description: Sets up the test environment and deploys necessary components
 
 inputs:
   experimental:

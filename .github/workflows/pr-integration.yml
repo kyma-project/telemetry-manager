@@ -70,8 +70,8 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      - name: Prepare test
-        uses: "./.github/template/prepare-test"
+      - name: Setup test environment
+        uses: "./.github/template/test-setup"
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -80,19 +80,22 @@ jobs:
         if: ${{ matrix.scenario != 'healthy' }}
         run: hack/deploy-istio.sh
 
-      - name: Deploy test prerequisites
-        uses: "./.github/template/deploy-test-prerequisites"
+      - name: Deploy test K8S prerequisites
+        uses: "./.github/template/deploy-test-k8s-prerequisites"
 
-      - name: Run tests
-        run: |
-          go test -v -timeout=20m ./test/selfmonitor/... -- -labels="selfmonitor-${{ matrix.scenario }}-${{ matrix.kind }}"
+      - name: Execute tests
+        uses: "./.github/template/test-execute"
+        with:
+          id: ${{ matrix.kind }}-${{ matrix.scenario }}
+          path: ./test/selfmonitor/...
+          labels: "selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}"
 
-      - name: Finalize test
-        uses: "./.github/template/finalize-test"
+      - name: Clean-up test environment
+        uses: "./.github/template/test-cleanup"
         if: ${{ !cancelled()  }}
         with:
+          id: selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}
           failure: failure()
-          job-name: ${{ github.job }}-${{ matrix.scenario }}-${{ matrix.kind }}
 
   e2e:
     needs: setup
@@ -103,79 +106,102 @@ jobs:
           # LOGS
           - name: fluent-bit
             mode: release
+            type: e2e
           - name: log-agent
             mode: release
+            type: e2e
           - name: log-gateway
             mode: release
+            type: e2e
           - name: logs-max-pipeline
             mode: release
+            type: e2e
           - name: fluent-bit-max-pipeline
             mode: release
+            type: e2e
           - name: otel-max-pipeline
             mode: release
+            type: e2e
           # METRICS
           - name: metrics-set-a
             mode: release
+            type: e2e
           - name: metrics-set-b
             mode: release
+            type: e2e
           - name: metrics-set-c
             mode: release
+            type: e2e
           - name: metrics-max-pipeline
             mode: release
+            type: e2e
           # TRACES
           - name: traces
             mode: release
+            type: e2e
           - name: traces-max-pipeline
             mode: release
+            type: e2e
           # TELEMETRY
           - name: telemetry
             mode: release
+            type: e2e
           # MISC
           - name: misc
             mode: release
+            type: e2e
           # OTHER
           - name: experimental
             mode: experimental
+            type: e2e
           # INTEGRATION
           - name: istio
-            mode: integration
+            mode: release
+            type: integration
     name: "e2e: ${{ matrix.labels.name }}"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      - name: Prepare test
-        uses: "./.github/template/prepare-test"
+      - name: Setup test environment
+        uses: "./.github/template/test-setup"
         with:
           experimental: ${{ matrix.labels.mode == 'experimental' }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deploy Istio module
-        if: ${{ matrix.labels.name == 'istio' &&  matrix.labels.mode == 'integration' }}
+        if: ${{ matrix.labels.name == 'istio' && matrix.labels.type == 'integration' }}
         run: hack/deploy-istio.sh
 
-      - name: Deploy test prerequisites
-        uses: "./.github/template/deploy-test-prerequisites"
+      - name: Deploy test K8S prerequisites
+        uses: "./.github/template/deploy-test-k8s-prerequisites"
 
-      - name: Run normal e2e tests
-        if: ${{ matrix.labels.mode != 'integration' }}
-        run: |
-          go test -v -timeout=20m ./test/e2e/... -- -labels=${{ matrix.labels.name }}
+      - name: Execute tests
+        uses: "./.github/template/test-execute"
+        with:
+          id: ${{ matrix.labels.type }}-${{ matrix.labels.name }}
+          path: ./test/${{ matrix.labels.type }}/...
+          labels: ${{ matrix.labels.name }}
 
-      - name: Run integration e2e tests
-        if: ${{ matrix.labels.mode == 'integration' }}
-        run: |
-          go test -v -timeout=20m ./test/integration/... -- -labels=${{ matrix.labels.name }}
-
-      - name: Finalize test
-        uses: "./.github/template/finalize-test"
+      - name: Clean-up test environment
+        uses: "./.github/template/test-cleanup"
         if: ${{ !cancelled()  }}
         with:
+          id: ${{ matrix.labels.type }}-${{ matrix.labels.name }}
           failure: failure()
-          job-name: ${{ github.job }}-${{ matrix.labels }}
 
       - name: Print logs from all pods in kyma-system namespace
         if: failure()
         run: |
           for pod in $(kubectl get pods -n kyma-system -o name); do echo "=== $pod ==="; kubectl logs -n kyma-system $pod; done || true
+
+  summary:
+    needs: [e2e-selfmonitor, e2e]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Generate test summary
+        uses: "./.github/template/test-summary"
