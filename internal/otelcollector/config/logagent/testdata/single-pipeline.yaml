@@ -1,3 +1,10 @@
+extensions:
+    health_check:
+        endpoint: ${MY_POD_IP}:13133
+    pprof:
+        endpoint: 127.0.0.1:1777
+    file_storage:
+        directory: /var/lib/telemetry-log-agent/file-log-receiver
 service:
     pipelines:
         logs/test:
@@ -27,13 +34,6 @@ service:
         - health_check
         - pprof
         - file_storage
-extensions:
-    health_check:
-        endpoint: ${MY_POD_IP}:13133
-    pprof:
-        endpoint: 127.0.0.1:1777
-    file_storage:
-        directory: /var/lib/telemetry-log-agent/file-log-receiver
 receivers:
     filelog/test:
         exclude:
@@ -156,16 +156,6 @@ receivers:
             - id: noop
               type: noop
 processors:
-    memory_limiter:
-        check_interval: 5s
-        limit_percentage: 80
-        spike_limit_percentage: 25
-    transform/set-instrumentation-scope-runtime:
-        error_mode: ignore
-        log_statements:
-            - statements:
-                - set(scope.version, "main")
-                - set(scope.name, "io.kyma-project.telemetry/runtime")
     k8sattributes:
         auth_type: serviceAccount
         passthrough: false
@@ -207,6 +197,14 @@ processors:
                   name: k8s.pod.uid
             - sources:
                 - from: connection
+    memory_limiter:
+        check_interval: 5s
+        limit_percentage: 80
+        spike_limit_percentage: 25
+    resource/drop-kyma-attributes:
+        attributes:
+            - action: delete
+              pattern: kyma.*
     resource/insert-cluster-attributes:
         attributes:
             - action: insert
@@ -221,10 +219,12 @@ processors:
         resource_attributes:
             - kyma.kubernetes_io_app_name
             - kyma.app_name
-    resource/drop-kyma-attributes:
-        attributes:
-            - action: delete
-              pattern: kyma.*
+    transform/set-instrumentation-scope-runtime:
+        error_mode: ignore
+        log_statements:
+            - statements:
+                - set(scope.version, "main")
+                - set(scope.name, "io.kyma-project.telemetry/runtime")
 exporters:
     otlp/test:
         endpoint: ${OTLP_ENDPOINT_TEST}

@@ -1,4 +1,4 @@
-name: Build Self Monitor Image
+name: Build Directory Size Exporter Image
 
 permissions:
   contents: read
@@ -6,57 +6,37 @@ permissions:
 on:
   pull_request_target:
     paths:
-      - "dependencies/telemetry-self-monitor/**"
+      - "dependencies/directory-size-exporter/**"
     types: [opened, edited, synchronize, reopened, ready_for_review]
   push:
     branches:
       - main
     paths:
-      - "dependencies/telemetry-self-monitor/**"
+      - "dependencies/directory-size-exporter/**"
   workflow_dispatch:
 
 jobs:
   envs:
     runs-on: ubuntu-latest
     outputs:
-      build-args: ${{ steps.prepare-envs.outputs.build-args }}
-      build-tag: ${{ steps.build-tag.outputs.build-tag || '' }}
+      tags: ${{ steps.create-tags.outputs.tags }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-
-      - name: Fetch new env file
-        if: github.event_name == 'pull_request_target'
+      - name: create tags
+        id: create-tags
         run: |
-          git fetch origin ${{ github.event.pull_request.head.sha }}
-          git checkout ${{ github.event.pull_request.head.sha }} --no-overlay -- dependencies/telemetry-self-monitor/envs
-
-      - name: Prepare Envs
-        id: prepare-envs
-        run: |
-          {
-          # this creates a multiline string with the envs.
-          # Everything between `build-args<<BUILD_ARGS` and BUILD_ARGS will be content of the build-args variable.
-          echo 'build-args<<BUILD_ARGS'
-          cat dependencies/telemetry-self-monitor/envs
-          echo BUILD_ARGS
-
-          } >> "$GITHUB_OUTPUT"
-
-      - name: load envs into output
-        id: load-envs
-        run: |
-          cat dependencies/telemetry-self-monitor/envs >> "$GITHUB_OUTPUT"
-
-      - name: get commit short sha
-        id: get-short-sha
-        run: echo "short-sha=$(git rev-parse --short $GITHUB_SHA)" >> $GITHUB_OUTPUT
-
-      - name: build image tag
-        if: github.event_name == 'push'
-        id: build-tag
-        run: echo "build-tag=${{ steps.load-envs.outputs.PROMETHEUS_VERSION }}-${{ steps.get-short-sha.outputs.short-sha }}" >> $GITHUB_OUTPUT
+          if [[ $GITHUB_EVENT_NAME == 'push' || $GITHUB_EVENT_NAME == 'merge_group' ]]; then
+            echo "TAGS=$(git rev-parse --short $GITHUB_SHA)" >> "$GITHUB_OUTPUT"
+          else
+            {
+              echo 'tags<<TAGS'
+              echo 'PR-${{ github.event.pull_request.number }}'
+              echo '${{ github.event.pull_request.head.sha }}'
+              echo 'TAGS'
+            } >> "$GITHUB_OUTPUT"
+          fi
 
   build-image:
     permissions:
@@ -65,11 +45,10 @@ jobs:
     needs: envs
     uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main
     with:
-      name: tpi/telemetry-self-monitor
+      name: directory-size-exporter
       dockerfile: Dockerfile
-      context: dependencies/telemetry-self-monitor
-      build-args: ${{ needs.envs.outputs.build-args }}
-      tags: ${{ needs.envs.outputs.build-tag }}
+      context: dependencies/directory-size-exporter
+      tags: ${{ needs.envs.outputs.tags }}
       platforms: "linux/amd64,linux/arm64"
 
   notify-on-failure:
