@@ -1,18 +1,18 @@
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
-  name: {{ include "telemetry-helm-chart.fullname" . }}-validating-webhook.kyma-project.io
+  name: {{ include "telemetry-manager.fullname" . }}-validating-webhook.kyma-project.io
   annotations:
-    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "telemetry-helm-chart.fullname" . }}-
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "telemetry-manager.fullname" . }}-
   labels:
-  {{- include "telemetry-helm-chart.labels" . | nindent 4 }}
+  {{- include "telemetry-manager.labels" . | nindent 4 }}
 webhooks:
 - admissionReviewVersions:
   - v1beta1
   - v1
   clientConfig:
     service:
-      name: '{{ include "telemetry-helm-chart.fullname" . }}-manager-webhook'
+      name: '{{ include "telemetry-manager.fullname" . }}-manager-webhook'
       namespace: '{{ .Release.Namespace }}'
       path: /validate-logpipeline
       port: 443
@@ -39,7 +39,7 @@ webhooks:
   - v1
   clientConfig:
     service:
-      name: '{{ include "telemetry-helm-chart.fullname" . }}-manager-webhook'
+      name: '{{ include "telemetry-manager.fullname" . }}-manager-webhook'
       namespace: '{{ .Release.Namespace }}'
       path: /validate-logparser
       port: 443

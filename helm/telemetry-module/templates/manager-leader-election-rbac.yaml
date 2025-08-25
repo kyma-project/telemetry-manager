@@ -1,12 +1,12 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{ include "telemetry-helm-chart.fullname" . }}-manager-leader-election-role
+  name: {{ include "telemetry-manager.fullname" . }}-manager-leader-election-role
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  {{- include "telemetry-helm-chart.labels" . | nindent 4 }}
+  {{- include "telemetry-manager.labels" . | nindent 4 }}
 rules:
 - apiGroups:
   - ""
@@ -43,17 +43,17 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: {{ include "telemetry-helm-chart.fullname" . }}-manager-leader-election-rolebinding
+  name: {{ include "telemetry-manager.fullname" . }}-manager-leader-election-rolebinding
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  {{- include "telemetry-helm-chart.labels" . | nindent 4 }}
+  {{- include "telemetry-manager.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: '{{ include "telemetry-helm-chart.fullname" . }}-manager-leader-election-role'
+  name: '{{ include "telemetry-manager.fullname" . }}-manager-leader-election-role'
 subjects:
 - kind: ServiceAccount
-  name: '{{ include "telemetry-helm-chart.fullname" . }}-manager'
+  name: '{{ include "telemetry-manager.fullname" . }}-manager'
   namespace: '{{ .Release.Namespace }}'

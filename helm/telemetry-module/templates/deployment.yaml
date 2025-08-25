@@ -1,12 +1,12 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "telemetry-helm-chart.fullname" . }}-manager
+  name: {{ include "telemetry-manager.fullname" . }}-manager
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  {{- include "telemetry-helm-chart.labels" . | nindent 4 }}
+  {{- include "telemetry-manager.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.manager.replicas }}
   selector:
@@ -15,7 +15,7 @@ spec:
       app.kubernetes.io/name: manager
       control-plane: telemetry-manager
       kyma-project.io/component: controller
-    {{- include "telemetry-helm-chart.selectorLabels" . | nindent 6 }}
+    {{- include "telemetry-manager.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
@@ -23,7 +23,7 @@ spec:
         app.kubernetes.io/name: manager
         control-plane: telemetry-manager
         kyma-project.io/component: controller
-      {{- include "telemetry-helm-chart.selectorLabels" . | nindent 8 }}
+      {{- include "telemetry-manager.selectorLabels" . | nindent 8 }}
       annotations:
         kubectl.kubernetes.io/default-container: manager
         sidecar.istio.io/inject: "false"
@@ -76,7 +76,7 @@ spec:
           name: crt-volume
       priorityClassName: telemetry-priority-class
       securityContext: {{- toYaml .Values.manager.podSecurityContext | nindent 8 }}
-      serviceAccountName: {{ include "telemetry-helm-chart.fullname" . }}-manager
+      serviceAccountName: {{ include "telemetry-manager.fullname" . }}-manager
       terminationGracePeriodSeconds: 10
       volumes:
       - emptyDir: {}
