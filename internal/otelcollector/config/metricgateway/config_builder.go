@@ -40,7 +40,7 @@ var staticComponentID = common.StaticComponentID[*telemetryv1alpha1.MetricPipeli
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) (*common.Config, common.EnvVars, error) {
 	b.config = &common.Config{
-		Base:       common.BaseConfig(common.WithK8sLeaderElector("serviceAccount", "telemetry-metric-gateway-kymastats", opts.GatewayNamespace)),
+		Base:       common.BaseConfig(common.WithK8sLeaderElector("serviceAccount", common.ComponentIDK8sLeaderElectorKymaStats, opts.GatewayNamespace)),
 		Receivers:  make(map[string]any),
 		Processors: make(map[string]any),
 		Exporters:  make(map[string]any),

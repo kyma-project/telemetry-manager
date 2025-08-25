@@ -206,7 +206,7 @@ func shouldEnableEnvoyMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeli
 func (b *Builder) baseConfig(inputs inputSources, gatewayOTLPServiceName types.NamespacedName, opts BuildOptions) *Config {
 	cfg := &Config{
 		Base: common.BaseConfig(
-			common.WithK8sLeaderElector("serviceAccount", "telemetry-metric-agent-k8scluster", opts.AgentNamespace),
+			common.WithK8sLeaderElector("serviceAccount", common.ComponentIDK8sLeaderElectorK8sCluster, opts.AgentNamespace),
 		),
 		Receivers:  receiversConfig(inputs, opts),
 		Processors: processorsConfig(inputs, opts.InstrumentationScopeVersion),

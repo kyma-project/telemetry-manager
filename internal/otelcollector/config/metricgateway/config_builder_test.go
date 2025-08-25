@@ -282,7 +282,7 @@ func TestMakeConfig(t *testing.T) {
 				},
 			},
 			{
-				name:           "pipeline with OTLP input disabled disabled",
+				name:           "pipeline with OTLP input disabled",
 				goldenFileName: "otlp-disabled.yaml",
 				pipelines: []telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().
