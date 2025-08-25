@@ -11,7 +11,7 @@ type Config struct {
 	Receivers  map[string]any `yaml:"receivers"`
 	Processors map[string]any `yaml:"processors"`
 	Exporters  map[string]any `yaml:"exporters"`
-	Connectors map[string]any `yaml:"connectors"`
+	Connectors map[string]any `yaml:"connectors,omitempty"` // Connectors are optional and may not be present in all configurations
 }
 
 // Base represents the root configuration structure for OpenTelemetry Collector

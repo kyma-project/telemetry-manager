@@ -69,10 +69,12 @@ func AddReceiver[T any](
 		}
 
 		componentID := componentIDFunc(pipeline)
+
 		receiversOrConnectors := rootConfig.Receivers
 		if isConnector(componentID) {
 			receiversOrConnectors = rootConfig.Connectors
 		}
+
 		if _, found := receiversOrConnectors[componentID]; !found {
 			receiversOrConnectors[componentID] = receiverConfig
 		}
@@ -172,10 +174,12 @@ func AddExporter[T any](
 		}
 
 		componentID := componentIDFunc(pipeline)
+
 		exportersOrConnectors := rootConfig.Exporters
 		if isConnector(componentID) {
 			exportersOrConnectors = rootConfig.Connectors
 		}
+
 		exportersOrConnectors[componentID] = exporterConfig
 
 		maps.Copy(envVars, exporterEnvVars)

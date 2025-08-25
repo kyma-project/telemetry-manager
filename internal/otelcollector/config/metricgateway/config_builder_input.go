@@ -72,6 +72,7 @@ func (b *Builder) addKymaStatsReceiver() buildComponentFunc {
 	)
 }
 
+//nolint:mnd // hardcoded values
 func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
 	return b.addInputProcessor(
 		staticComponentID(common.ComponentIDMemoryLimiterProcessor),

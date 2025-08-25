@@ -158,6 +158,7 @@ func (b *Builder) addRuntimeNamespaceFilterProcessor() buildComponentFunc {
 			processorID := formatNamespaceFilterID(mp.Name, common.InputSourceRuntime)
 			b.config.Processors[processorID] = filterByNamespaceProcessorConfig(input.Runtime.Namespaces, inputSourceEquals(common.InputSourceRuntime))
 		}
+
 		return nil
 	}
 }
@@ -169,6 +170,7 @@ func (b *Builder) addPrometheusNamespaceFilterProcessor() buildComponentFunc {
 			processorID := formatNamespaceFilterID(mp.Name, common.InputSourcePrometheus)
 			b.config.Processors[processorID] = filterByNamespaceProcessorConfig(input.Prometheus.Namespaces, common.ResourceAttributeEquals(common.KymaInputNameAttribute, common.KymaInputPrometheus))
 		}
+
 		return nil
 	}
 }
@@ -180,6 +182,7 @@ func (b *Builder) addIstioNamespaceFilterProcessor() buildComponentFunc {
 			processorID := formatNamespaceFilterID(mp.Name, common.InputSourceIstio)
 			b.config.Processors[processorID] = filterByNamespaceProcessorConfig(input.Istio.Namespaces, inputSourceEquals(common.InputSourceIstio))
 		}
+
 		return nil
 	}
 }
@@ -191,6 +194,7 @@ func (b *Builder) addOTLPNamespaceFilterProcessor() buildComponentFunc {
 			processorID := formatNamespaceFilterID(mp.Name, common.InputSourceOTLP)
 			b.config.Processors[processorID] = filterByNamespaceProcessorConfig(input.OTLP.Namespaces, otlpInputSource())
 		}
+
 		return nil
 	}
 }
@@ -435,6 +439,7 @@ func namespacesConditions(namespaces []string) []string {
 	for _, ns := range namespaces {
 		conditions = append(conditions, common.NamespaceEquals(ns))
 	}
+
 	return conditions
 }
 
@@ -476,6 +481,7 @@ func (b *Builder) addDropKymaAttributesProcessor() buildComponentFunc {
 
 // Batch processor
 
+//nolint:mnd // hardcoded values
 func (b *Builder) addBatchProcessor() buildComponentFunc {
 	return b.addOutputProcessor(
 		staticComponentID(common.ComponentIDBatchProcessor),
