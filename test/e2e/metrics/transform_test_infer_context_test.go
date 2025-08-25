@@ -3,22 +3,22 @@ package metrics
 import (
 	"testing"
 
-	. "github.com/onsi/gomega"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
+
+	. "github.com/onsi/gomega"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestTransform_Basic(t *testing.T) {
+func TestTransformInfer_InferContext(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelExperimental)
 
 	var (
@@ -32,7 +32,9 @@ func TestTransform_Basic(t *testing.T) {
 	pipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineName).
 		WithTransform(telemetryv1alpha1.TransformSpec{
-			Statements: []string{"set(datapoint.attributes[\"system\"], \"false\") where not IsMatch(resource.attributes[\"k8s.namespace.name\"], \".*-system\")"},
+			Statements: []string{"set(resource.attributes[\"test\"], \"passed\")",
+				"set(metric.description, \"test passed\")",
+			},
 		}).
 		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 		Build()
@@ -56,8 +58,10 @@ func TestTransform_Basic(t *testing.T) {
 	assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
 
 	assert.BackendDataEventuallyMatches(t, backend,
-		metric.HaveFlatMetrics(ContainElement(SatisfyAll(
-			metric.HaveMetricAttributes(HaveKeyWithValue("system", "false")),
+		HaveFlatMetrics(ContainElement(SatisfyAll(
+			HaveResourceAttributes(HaveKeyWithValue("test", "passed")),
+			HaveDescription(Equal("test passed")),
 		))),
 	)
+
 }

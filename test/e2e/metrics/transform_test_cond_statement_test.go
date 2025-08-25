@@ -18,7 +18,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestTransform_Basic(t *testing.T) {
+func TestTransform_StatementCondition(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelExperimental)
 
 	var (
@@ -32,7 +32,8 @@ func TestTransform_Basic(t *testing.T) {
 	pipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineName).
 		WithTransform(telemetryv1alpha1.TransformSpec{
-			Statements: []string{"set(datapoint.attributes[\"system\"], \"false\") where not IsMatch(resource.attributes[\"k8s.namespace.name\"], \".*-system\")"},
+			Conditions: []string{"metric.type == METRIC_DATA_TYPE_GAUGE"},
+			Statements: []string{"set(metric.name, \"GaugeMetric\")"},
 		}).
 		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 		Build()
@@ -53,11 +54,11 @@ func TestTransform_Basic(t *testing.T) {
 	assert.BackendReachable(t, backend)
 	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 	assert.MetricPipelineHealthy(t, pipelineName)
-	assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
 
 	assert.BackendDataEventuallyMatches(t, backend,
 		metric.HaveFlatMetrics(ContainElement(SatisfyAll(
-			metric.HaveMetricAttributes(HaveKeyWithValue("system", "false")),
+			metric.HaveName(Equal("GaugeMetric")),
+			metric.HaveType(Equal("Gauge")),
 		))),
 	)
 }
