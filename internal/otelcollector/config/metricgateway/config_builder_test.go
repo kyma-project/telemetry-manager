@@ -282,7 +282,7 @@ func TestMakeConfig(t *testing.T) {
 				},
 			},
 			{
-				name:           "single pipeline with OTLP disabled",
+				name:           "pipeline with OTLP input disabled disabled",
 				goldenFileName: "otlp-disabled.yaml",
 				pipelines: []telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().
@@ -370,25 +370,25 @@ func TestMakeConfig(t *testing.T) {
 				},
 			},
 			{
-				name:           "pipeline with prometheus diagnostic metrics enabled",
+				name:           "pipeline with no prometheus diagnostic metrics",
 				goldenFileName: "prometheus-diagnostic-metrics.yaml",
 				pipelines: []telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().
 						WithName("cls").
 						WithPrometheusInput(true).
-						WithPrometheusInputDiagnosticMetrics(true).
+						WithPrometheusInputDiagnosticMetrics(false).
 						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 				},
 			},
 			{
-				name:           "pipeline with istio envoy metrics and diagnostic metrics",
+				name:           "pipeline with no istio envoy metrics and no diagnostic metrics",
 				goldenFileName: "istio-envoy-diagnostic.yaml",
 				pipelines: []telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().
 						WithName("cls").
 						WithIstioInput(true).
-						WithIstioInputEnvoyMetrics(true).
-						WithIstioInputDiagnosticMetrics(true).
+						WithIstioInputEnvoyMetrics(false).
+						WithIstioInputDiagnosticMetrics(false).
 						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 				},
 			},
