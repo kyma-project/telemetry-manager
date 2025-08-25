@@ -93,7 +93,7 @@ func (b *Builder) addDropIfPrometheusInputDisabledProcessor() buildComponentFunc
 
 			return &FilterProcessor{
 				Metrics: FilterProcessorMetrics{
-					Metric: []string{`resource.attributes["kyma.input.name"] == "prometheus"`},
+					Metric: []string{common.ResourceAttributeEquals(common.KymaInputNameAttribute, common.KymaInputPrometheus)},
 				},
 			}
 		},
@@ -125,9 +125,19 @@ func (b *Builder) addDropIfOTLPInputDisabledProcessor() buildComponentFunc {
 				return nil
 			}
 
+			// When instrumentation scope is not set to any of the following values
+			// io.kyma-project.telemetry/runtime, io.kyma-project.telemetry/prometheus, io.kyma-project.telemetry/istio, and io.kyma-project.telemetry/kyma
+			// we assume the metric is being pushed directly to metrics gateway.
 			return &FilterProcessor{
 				Metrics: FilterProcessorMetrics{
-					Metric: []string{`instrumentation_scope.name == "io.kyma-project.telemetry/otlp"`},
+					Metric: []string{
+						fmt.Sprintf("not(%s or %s or %s or %s)",
+							common.ScopeNameEquals(common.InstrumentationScopeRuntime),
+							common.ResourceAttributeEquals(common.KymaInputNameAttribute, common.KymaInputPrometheus),
+							common.ScopeNameEquals(common.InstrumentationScopeIstio),
+							common.ScopeNameEquals(common.InstrumentationScopeKyma),
+						),
+					},
 				},
 			}
 		},
