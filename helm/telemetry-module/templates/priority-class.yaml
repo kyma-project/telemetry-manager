@@ -1,0 +1,13 @@
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: {{ include "telemetry-helm-chart.fullname" . }}-priority-class
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  {{- include "telemetry-helm-chart.labels" . | nindent 4 }}
+description: Global (default) scheduling priority of Kyma components. Must not be
+  blocked by unschedulable user workloads.
+globalDefault: false
+value: 2000000

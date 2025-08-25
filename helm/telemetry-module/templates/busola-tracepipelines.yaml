@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "telemetry-helm-chart.fullname" . }}-tracepipelines
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/part-of: telemetry
+    busola.io/extension: resource
+    busola.io/extension-version: "0.5"
+    kyma-project.io/module: telemetry
+  {{- include "telemetry-helm-chart.labels" . | nindent 4 }}
+data:
+  dataSources: {{ .Values.tracepipelines.dataSources | toYaml | indent 1 }}
+  details: {{ .Values.tracepipelines.details | toYaml | indent 1 }}
+  form: {{ .Values.tracepipelines.form | toYaml | indent 1 }}
+  general: {{ .Values.tracepipelines.general | toYaml | indent 1 }}
+  list: {{ .Values.tracepipelines.list | toYaml | indent 1 }}
+  presets: {{ .Values.tracepipelines.presets | toYaml | indent 1 }}
