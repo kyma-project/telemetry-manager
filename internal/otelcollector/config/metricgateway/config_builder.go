@@ -56,23 +56,23 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addOTLPReceiver(),
 			b.addKymaStatsReceiver(),
 			b.addMemoryLimiterProcessor(),
-			b.addRoutingConnectorAsExporter(),
+			b.addInputRoutingExporter(),
 		); err != nil {
 			return nil, nil, fmt.Errorf("failed to add input service pipeline: %w", err)
 		}
 
 		if err := b.addEnrichmentServicePipeline(ctx, &pipelines[i],
-			b.addRoutingConnectorAsReceiver(),
+			b.addEnrichmentRoutingReceiver(),
 			b.addK8sAttributesProcessor(opts),
 			b.addServiceEnrichmentProcessor(),
-			b.addForwardConnectorAsExporter(),
+			b.addEnrichmentForwardExporter(),
 		); err != nil {
 			return nil, nil, fmt.Errorf("failed to add enrichment service pipeline: %w", err)
 		}
 
 		if err := b.addOutputServicePipeline(ctx, &pipelines[i],
-			b.addRoutingConnectorAsReceiver(),
-			b.addForwardConnectorAsReceiver(),
+			b.addOutputRoutingReceiver(),
+			b.addOutputForwardReceiver(),
 			b.addSetInstrumentationScopeProcessor(opts),
 			// Input source filters
 			b.addDropIfRuntimeInputDisabledProcessor(),

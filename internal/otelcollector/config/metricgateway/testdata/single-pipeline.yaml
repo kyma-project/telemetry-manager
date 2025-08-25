@@ -12,7 +12,6 @@ service:
         metrics/test-attributes-enrichment:
             receivers:
                 - routing/test
-                - routing/test
             processors:
                 - k8sattributes
                 - service_enrichment
@@ -28,6 +27,7 @@ service:
                 - routing/test
         metrics/test-output:
             receivers:
+                - routing/test
                 - forward/test
             processors:
                 - transform/set-instrumentation-scope-kyma

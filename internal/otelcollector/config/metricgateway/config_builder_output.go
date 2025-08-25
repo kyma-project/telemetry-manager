@@ -35,11 +35,20 @@ func (b *Builder) addOutputExporter(componentIDFunc componentIDFunc, configFunc 
 	return common.AddExporter(b.config, b.envVars, componentIDFunc, configFunc, formatOutputServicePipelineID)
 }
 
-func (b *Builder) addForwardConnectorAsReceiver() buildComponentFunc {
+func (b *Builder) addOutputForwardReceiver() buildComponentFunc {
 	return b.addOutputReceiver(
 		formatForwardConnectorID,
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return &common.ForwardConnector{}
+		},
+	)
+}
+
+func (b *Builder) addOutputRoutingReceiver() buildComponentFunc {
+	return b.addOutputReceiver(
+		formatRoutingConnectorID,
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			return enrichmentRoutingConnectorConfig(mp)
 		},
 	)
 }
