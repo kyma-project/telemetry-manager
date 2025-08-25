@@ -201,13 +201,15 @@ func (b *Builder) addDropRuntimePodMetricsProcessor() buildComponentFunc {
 	return b.addOutputProcessor(
 		staticComponentID("filter/drop-runtime-pod-metrics"),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			if metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) && metricpipelineutils.IsRuntimePodInputEnabled(mp.Spec.Input) {
+			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimePodInputEnabled(mp.Spec.Input) {
 				return nil
 			}
 
 			return &FilterProcessor{
 				Metrics: FilterProcessorMetrics{
-					Metric: []string{`instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s\\.pod\\.")`},
+					Metric: []string{
+						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.pod.*")),
+					},
 				},
 			}
 		},
@@ -218,13 +220,15 @@ func (b *Builder) addDropRuntimeContainerMetricsProcessor() buildComponentFunc {
 	return b.addOutputProcessor(
 		staticComponentID("filter/drop-runtime-container-metrics"),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			if metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) && metricpipelineutils.IsRuntimeContainerInputEnabled(mp.Spec.Input) {
+			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeContainerInputEnabled(mp.Spec.Input) {
 				return nil
 			}
 
 			return &FilterProcessor{
 				Metrics: FilterProcessorMetrics{
-					Metric: []string{`instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s\\.container\\.")`},
+					Metric: []string{
+						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "(^k8s.container.*)|(^container.*)")),
+					},
 				},
 			}
 		},
@@ -235,13 +239,15 @@ func (b *Builder) addDropRuntimeNodeMetricsProcessor() buildComponentFunc {
 	return b.addOutputProcessor(
 		staticComponentID("filter/drop-runtime-node-metrics"),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			if metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) && metricpipelineutils.IsRuntimeNodeInputEnabled(mp.Spec.Input) {
+			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeNodeInputEnabled(mp.Spec.Input) {
 				return nil
 			}
 
 			return &FilterProcessor{
 				Metrics: FilterProcessorMetrics{
-					Metric: []string{`instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s\\.node\\.")`},
+					Metric: []string{
+						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.node.*")),
+					},
 				},
 			}
 		},
@@ -252,13 +258,15 @@ func (b *Builder) addDropRuntimeVolumeMetricsProcessor() buildComponentFunc {
 	return b.addOutputProcessor(
 		staticComponentID("filter/drop-runtime-volume-metrics"),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			if metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) && metricpipelineutils.IsRuntimeVolumeInputEnabled(mp.Spec.Input) {
+			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeVolumeInputEnabled(mp.Spec.Input) {
 				return nil
 			}
 
 			return &FilterProcessor{
 				Metrics: FilterProcessorMetrics{
-					Metric: []string{`instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s\\.volume\\.")`},
+					Metric: []string{
+						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.volume.*")),
+					},
 				},
 			}
 		},
@@ -269,13 +277,15 @@ func (b *Builder) addDropRuntimeDeploymentMetricsProcessor() buildComponentFunc 
 	return b.addOutputProcessor(
 		staticComponentID("filter/drop-runtime-deployment-metrics"),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			if metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) && metricpipelineutils.IsRuntimeDeploymentInputEnabled(mp.Spec.Input) {
+			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeDeploymentInputEnabled(mp.Spec.Input) {
 				return nil
 			}
 
 			return &FilterProcessor{
 				Metrics: FilterProcessorMetrics{
-					Metric: []string{`instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s\\.deployment\\.")`},
+					Metric: []string{
+						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.deployment.*")),
+					},
 				},
 			}
 		},
@@ -286,13 +296,15 @@ func (b *Builder) addDropRuntimeDaemonSetMetricsProcessor() buildComponentFunc {
 	return b.addOutputProcessor(
 		staticComponentID("filter/drop-runtime-daemonset-metrics"),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			if metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) && metricpipelineutils.IsRuntimeDaemonSetInputEnabled(mp.Spec.Input) {
+			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeDaemonSetInputEnabled(mp.Spec.Input) {
 				return nil
 			}
 
 			return &FilterProcessor{
 				Metrics: FilterProcessorMetrics{
-					Metric: []string{`instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s\\.daemonset\\.")`},
+					Metric: []string{
+						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.daemonset.*")),
+					},
 				},
 			}
 		},
@@ -303,13 +315,15 @@ func (b *Builder) addDropRuntimeStatefulSetMetricsProcessor() buildComponentFunc
 	return b.addOutputProcessor(
 		staticComponentID("filter/drop-runtime-statefulset-metrics"),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			if metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) && metricpipelineutils.IsRuntimeStatefulSetInputEnabled(mp.Spec.Input) {
+			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeStatefulSetInputEnabled(mp.Spec.Input) {
 				return nil
 			}
 
 			return &FilterProcessor{
 				Metrics: FilterProcessorMetrics{
-					Metric: []string{`instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s\\.statefulset\\.")`},
+					Metric: []string{
+						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.statefulset.*")),
+					},
 				},
 			}
 		},
@@ -320,13 +334,15 @@ func (b *Builder) addDropRuntimeJobMetricsProcessor() buildComponentFunc {
 	return b.addOutputProcessor(
 		staticComponentID("filter/drop-runtime-job-metrics"),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			if metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) && metricpipelineutils.IsRuntimeJobInputEnabled(mp.Spec.Input) {
+			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeJobInputEnabled(mp.Spec.Input) {
 				return nil
 			}
 
 			return &FilterProcessor{
 				Metrics: FilterProcessorMetrics{
-					Metric: []string{`instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s\\.job\\.")`},
+					Metric: []string{
+						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.job.*")),
+					},
 				},
 			}
 		},
