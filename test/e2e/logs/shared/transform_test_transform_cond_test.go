@@ -64,7 +64,7 @@ func TestTransform_StatementCond(t *testing.T) {
 				WithInput(tc.input).
 				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 				WithTransform(telemetryv1alpha1.TransformSpec{
-					Conditions: []string{"log.severity_text == \"info\" or log.severity_text == \"Info	\""},
+					Conditions: []string{"log.severity_text == \"info\" or log.severity_text == \"Info\""},
 					Statements: []string{"set(log.severity_text, ToUpperCase(log.severity_text))"},
 				}).
 				Build()
