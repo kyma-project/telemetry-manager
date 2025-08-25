@@ -9,26 +9,26 @@ extensions:
         lease_namespace: ""
 service:
     pipelines:
-        metrics/test-prom-diagnostic-attributes-enrichment:
+        metrics/cls-attributes-enrichment:
             receivers:
-                - routing/test-prom-diagnostic
+                - routing/cls
             processors:
                 - k8sattributes
                 - service_enrichment
             exporters:
-                - forward/test-prom-diagnostic
-        metrics/test-prom-diagnostic-input:
+                - forward/cls
+        metrics/cls-input:
             receivers:
                 - otlp
                 - kymastats
             processors:
                 - memory_limiter
             exporters:
-                - routing/test-prom-diagnostic
-        metrics/test-prom-diagnostic-output:
+                - routing/cls
+        metrics/cls-output:
             receivers:
-                - routing/test-prom-diagnostic
-                - forward/test-prom-diagnostic
+                - routing/cls
+                - forward/cls
             processors:
                 - transform/set-instrumentation-scope-kyma
                 - filter/drop-if-input-source-runtime
@@ -39,7 +39,7 @@ service:
                 - resource/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp/test-prom-diagnostic
+                - otlp/cls
     telemetry:
         metrics:
             readers:
@@ -170,8 +170,8 @@ processors:
                 - set(scope.version, "") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
                 - set(scope.name, "io.kyma-project.telemetry/kyma") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
 exporters:
-    otlp/test-prom-diagnostic:
-        endpoint: ${OTLP_ENDPOINT_TEST_PROM_DIAGNOSTIC}
+    otlp/cls:
+        endpoint: ${OTLP_ENDPOINT_CLS}
         sending_queue:
             enabled: true
             queue_size: 256
@@ -181,12 +181,12 @@ exporters:
             max_interval: 30s
             max_elapsed_time: 300s
 connectors:
-    forward/test-prom-diagnostic: {}
-    routing/test-prom-diagnostic:
+    forward/cls: {}
+    routing/cls:
         default_pipelines:
-            - metrics/test-prom-diagnostic-attributes-enrichment
+            - metrics/cls-attributes-enrichment
         error_mode: ignore
         table:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
               pipelines:
-                - metrics/test-prom-diagnostic-output
+                - metrics/cls-output

@@ -9,26 +9,26 @@ extensions:
         lease_namespace: ""
 service:
     pipelines:
-        metrics/test-runtime-resources-attributes-enrichment:
+        metrics/cls-attributes-enrichment:
             receivers:
-                - routing/test-runtime-resources
+                - routing/cls
             processors:
                 - k8sattributes
                 - service_enrichment
             exporters:
-                - forward/test-runtime-resources
-        metrics/test-runtime-resources-input:
+                - forward/cls
+        metrics/cls-input:
             receivers:
                 - otlp
                 - kymastats
             processors:
                 - memory_limiter
             exporters:
-                - routing/test-runtime-resources
-        metrics/test-runtime-resources-output:
+                - routing/cls
+        metrics/cls-output:
             receivers:
-                - routing/test-runtime-resources
-                - forward/test-runtime-resources
+                - routing/cls
+                - forward/cls
             processors:
                 - transform/set-instrumentation-scope-kyma
                 - filter/drop-if-input-source-prometheus
@@ -40,7 +40,7 @@ service:
                 - resource/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp/test-runtime-resources
+                - otlp/cls
     telemetry:
         metrics:
             readers:
@@ -175,8 +175,8 @@ processors:
                 - set(scope.version, "") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
                 - set(scope.name, "io.kyma-project.telemetry/kyma") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
 exporters:
-    otlp/test-runtime-resources:
-        endpoint: ${OTLP_ENDPOINT_TEST_RUNTIME_RESOURCES}
+    otlp/cls:
+        endpoint: ${OTLP_ENDPOINT_CLS}
         sending_queue:
             enabled: true
             queue_size: 256
@@ -186,12 +186,12 @@ exporters:
             max_interval: 30s
             max_elapsed_time: 300s
 connectors:
-    forward/test-runtime-resources: {}
-    routing/test-runtime-resources:
+    forward/cls: {}
+    routing/cls:
         default_pipelines:
-            - metrics/test-runtime-resources-attributes-enrichment
+            - metrics/cls-attributes-enrichment
         error_mode: ignore
         table:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
               pipelines:
-                - metrics/test-runtime-resources-output
+                - metrics/cls-output

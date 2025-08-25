@@ -9,26 +9,26 @@ extensions:
         lease_namespace: ""
 service:
     pipelines:
-        metrics/test1-attributes-enrichment:
+        metrics/cls-attributes-enrichment:
             receivers:
-                - routing/test1
+                - routing/cls
             processors:
                 - k8sattributes
                 - service_enrichment
             exporters:
-                - forward/test1
-        metrics/test1-input:
+                - forward/cls
+        metrics/cls-input:
             receivers:
                 - otlp
                 - kymastats
             processors:
                 - memory_limiter
             exporters:
-                - routing/test1
-        metrics/test1-output:
+                - routing/cls
+        metrics/cls-output:
             receivers:
-                - routing/test1
-                - forward/test1
+                - routing/cls
+                - forward/cls
             processors:
                 - transform/set-instrumentation-scope-kyma
                 - filter/drop-if-input-source-runtime
@@ -38,30 +38,30 @@ service:
                 - resource/insert-cluster-attributes
                 - resource/delete-skip-enrichment-attribute
                 - resource/drop-kyma-attributes
-                - transform/test1-user-defined
+                - transform/cls-user-defined
                 - batch
             exporters:
-                - otlp/test1
-        metrics/test2-attributes-enrichment:
+                - otlp/cls
+        metrics/dynatrace-attributes-enrichment:
             receivers:
-                - routing/test2
+                - routing/dynatrace
             processors:
                 - k8sattributes
                 - service_enrichment
             exporters:
-                - forward/test2
-        metrics/test2-input:
+                - forward/dynatrace
+        metrics/dynatrace-input:
             receivers:
                 - otlp
                 - kymastats
             processors:
                 - memory_limiter
             exporters:
-                - routing/test2
-        metrics/test2-output:
+                - routing/dynatrace
+        metrics/dynatrace-output:
             receivers:
-                - routing/test2
-                - forward/test2
+                - routing/dynatrace
+                - forward/dynatrace
             processors:
                 - transform/set-instrumentation-scope-kyma
                 - filter/drop-if-input-source-runtime
@@ -71,10 +71,10 @@ service:
                 - resource/insert-cluster-attributes
                 - resource/delete-skip-enrichment-attribute
                 - resource/drop-kyma-attributes
-                - transform/test2-user-defined
+                - transform/dynatrace-user-defined
                 - batch
             exporters:
-                - otlp/test2
+                - otlp/dynatrace
     telemetry:
         metrics:
             readers:
@@ -202,13 +202,7 @@ processors:
         resource_attributes:
             - kyma.kubernetes_io_app_name
             - kyma.app_name
-    transform/set-instrumentation-scope-kyma:
-        error_mode: ignore
-        metric_statements:
-            - statements:
-                - set(scope.version, "") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
-                - set(scope.name, "io.kyma-project.telemetry/kyma") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
-    transform/test1-user-defined:
+    transform/cls-user-defined:
         error_mode: ignore
         metric_statements:
             - statements:
@@ -216,7 +210,7 @@ processors:
                 - set(body, "transformed1")
               conditions:
                 - IsMatch(body, ".*error.*")
-    transform/test2-user-defined:
+    transform/dynatrace-user-defined:
         error_mode: ignore
         metric_statements:
             - statements:
@@ -224,9 +218,15 @@ processors:
                 - set(body, "transformed2")
               conditions:
                 - IsMatch(body, ".*error.*")
+    transform/set-instrumentation-scope-kyma:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(scope.version, "") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
+                - set(scope.name, "io.kyma-project.telemetry/kyma") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
 exporters:
-    otlp/test1:
-        endpoint: ${OTLP_ENDPOINT_TEST1}
+    otlp/cls:
+        endpoint: ${OTLP_ENDPOINT_CLS}
         sending_queue:
             enabled: true
             queue_size: 128
@@ -235,8 +235,8 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    otlp/test2:
-        endpoint: ${OTLP_ENDPOINT_TEST2}
+    otlp/dynatrace:
+        endpoint: ${OTLP_ENDPOINT_DYNATRACE}
         sending_queue:
             enabled: true
             queue_size: 128
@@ -246,21 +246,21 @@ exporters:
             max_interval: 30s
             max_elapsed_time: 300s
 connectors:
-    forward/test1: {}
-    forward/test2: {}
-    routing/test1:
+    forward/cls: {}
+    forward/dynatrace: {}
+    routing/cls:
         default_pipelines:
-            - metrics/test1-attributes-enrichment
+            - metrics/cls-attributes-enrichment
         error_mode: ignore
         table:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
               pipelines:
-                - metrics/test1-output
-    routing/test2:
+                - metrics/cls-output
+    routing/dynatrace:
         default_pipelines:
-            - metrics/test2-attributes-enrichment
+            - metrics/dynatrace-attributes-enrichment
         error_mode: ignore
         table:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
               pipelines:
-                - metrics/test2-output
+                - metrics/dynatrace-output

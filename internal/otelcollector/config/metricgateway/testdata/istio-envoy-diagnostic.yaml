@@ -9,26 +9,26 @@ extensions:
         lease_namespace: ""
 service:
     pipelines:
-        metrics/test-istio-envoy-attributes-enrichment:
+        metrics/cls-attributes-enrichment:
             receivers:
-                - routing/test-istio-envoy
+                - routing/cls
             processors:
                 - k8sattributes
                 - service_enrichment
             exporters:
-                - forward/test-istio-envoy
-        metrics/test-istio-envoy-input:
+                - forward/cls
+        metrics/cls-input:
             receivers:
                 - otlp
                 - kymastats
             processors:
                 - memory_limiter
             exporters:
-                - routing/test-istio-envoy
-        metrics/test-istio-envoy-output:
+                - routing/cls
+        metrics/cls-output:
             receivers:
-                - routing/test-istio-envoy
-                - forward/test-istio-envoy
+                - routing/cls
+                - forward/cls
             processors:
                 - transform/set-instrumentation-scope-kyma
                 - filter/drop-if-input-source-runtime
@@ -38,7 +38,7 @@ service:
                 - resource/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp/test-istio-envoy
+                - otlp/cls
     telemetry:
         metrics:
             readers:
@@ -165,8 +165,8 @@ processors:
                 - set(scope.version, "") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
                 - set(scope.name, "io.kyma-project.telemetry/kyma") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
 exporters:
-    otlp/test-istio-envoy:
-        endpoint: ${OTLP_ENDPOINT_TEST_ISTIO_ENVOY}
+    otlp/cls:
+        endpoint: ${OTLP_ENDPOINT_CLS}
         sending_queue:
             enabled: true
             queue_size: 256
@@ -176,12 +176,12 @@ exporters:
             max_interval: 30s
             max_elapsed_time: 300s
 connectors:
-    forward/test-istio-envoy: {}
-    routing/test-istio-envoy:
+    forward/cls: {}
+    routing/cls:
         default_pipelines:
-            - metrics/test-istio-envoy-attributes-enrichment
+            - metrics/cls-attributes-enrichment
         error_mode: ignore
         table:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
               pipelines:
-                - metrics/test-istio-envoy-output
+                - metrics/cls-output

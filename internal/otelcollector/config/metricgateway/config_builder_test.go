@@ -272,8 +272,8 @@ func TestMakeConfig(t *testing.T) {
 			overwriteGoldenFile bool
 		}{
 			{
-				name:           "single pipeline",
-				goldenFileName: "single-pipeline.yaml",
+				name:           "simple single pipeline setup",
+				goldenFileName: "simple.yaml",
 				pipelines: []telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().
 						WithName("test").
@@ -283,7 +283,7 @@ func TestMakeConfig(t *testing.T) {
 			},
 			{
 				name:           "single pipeline with OTLP disabled",
-				goldenFileName: "single-pipeline-otlp-disabled.yaml",
+				goldenFileName: "otlp-disabled.yaml",
 				pipelines: []telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().
 						WithName("test").
@@ -296,7 +296,7 @@ func TestMakeConfig(t *testing.T) {
 				goldenFileName: "runtime-namespace-include.yaml",
 				pipelines: []telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().
-						WithName("test-runtime-ns-include").
+						WithName("cls").
 						WithRuntimeInput(true, testutils.IncludeNamespaces("kyma-system", "default")).
 						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 				},
@@ -306,7 +306,7 @@ func TestMakeConfig(t *testing.T) {
 				goldenFileName: "runtime-namespace-exclude.yaml",
 				pipelines: []telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().
-						WithName("test-runtime-ns-exclude").
+						WithName("cls").
 						WithRuntimeInput(true, testutils.ExcludeNamespaces("kube-system", "istio-system")).
 						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 				},
@@ -316,7 +316,7 @@ func TestMakeConfig(t *testing.T) {
 				goldenFileName: "prometheus-namespace-filters.yaml",
 				pipelines: []telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().
-						WithName("test-prometheus-ns").
+						WithName("cls").
 						WithPrometheusInput(true, testutils.IncludeNamespaces("monitoring", "observability")).
 						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 				},
@@ -326,7 +326,7 @@ func TestMakeConfig(t *testing.T) {
 				goldenFileName: "istio-namespace-filters.yaml",
 				pipelines: []telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().
-						WithName("test-istio-ns").
+						WithName("cls").
 						WithIstioInput(true, testutils.ExcludeNamespaces("kube-system")).
 						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 				},
@@ -336,7 +336,7 @@ func TestMakeConfig(t *testing.T) {
 				goldenFileName: "otlp-namespace-filters.yaml",
 				pipelines: []telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().
-						WithName("test-otlp-ns").
+						WithName("cls").
 						WithOTLPInput(true, testutils.IncludeNamespaces("apps", "services")).
 						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 				},
@@ -346,7 +346,7 @@ func TestMakeConfig(t *testing.T) {
 				goldenFileName: "multiple-inputs-mixed.yaml",
 				pipelines: []telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().
-						WithName("test-multi-input").
+						WithName("cls").
 						WithRuntimeInput(true, testutils.IncludeNamespaces("default")).
 						WithPrometheusInput(true, testutils.ExcludeNamespaces("kube-system")).
 						WithIstioInput(false).
@@ -359,7 +359,7 @@ func TestMakeConfig(t *testing.T) {
 				goldenFileName: "runtime-specific-resources.yaml",
 				pipelines: []telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().
-						WithName("test-runtime-resources").
+						WithName("cls").
 						WithRuntimeInput(true).
 						WithRuntimeInputPodMetrics(true).
 						WithRuntimeInputContainerMetrics(true).
@@ -374,7 +374,7 @@ func TestMakeConfig(t *testing.T) {
 				goldenFileName: "prometheus-diagnostic-metrics.yaml",
 				pipelines: []telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().
-						WithName("test-prom-diagnostic").
+						WithName("cls").
 						WithPrometheusInput(true).
 						WithPrometheusInputDiagnosticMetrics(true).
 						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
@@ -385,7 +385,7 @@ func TestMakeConfig(t *testing.T) {
 				goldenFileName: "istio-envoy-diagnostic.yaml",
 				pipelines: []telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().
-						WithName("test-istio-envoy").
+						WithName("cls").
 						WithIstioInput(true).
 						WithIstioInputEnvoyMetrics(true).
 						WithIstioInputDiagnosticMetrics(true).
@@ -397,7 +397,7 @@ func TestMakeConfig(t *testing.T) {
 				goldenFileName: "otlp-only.yaml",
 				pipelines: []telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().
-						WithName("test-otlp-only").
+						WithName("cls").
 						WithRuntimeInput(false).
 						WithPrometheusInput(false).
 						WithIstioInput(false).
@@ -410,7 +410,7 @@ func TestMakeConfig(t *testing.T) {
 				goldenFileName: "comprehensive-config.yaml",
 				pipelines: []telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().
-						WithName("test-comprehensive").
+						WithName("cls").
 						WithRuntimeInput(true, testutils.IncludeNamespaces("production", "staging")).
 						WithRuntimeInputPodMetrics(true).
 						WithRuntimeInputContainerMetrics(true).
@@ -429,10 +429,10 @@ func TestMakeConfig(t *testing.T) {
 			},
 			{
 				name:           "two pipelines with user-defined transforms",
-				goldenFileName: "two-pipelines-with-transforms.yaml",
+				goldenFileName: "user-defined-transforms.yaml",
 				pipelines: []telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().
-						WithName("test1").
+						WithName("cls").
 						WithOTLPInput(true).
 						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
 						WithTransform(telemetryv1alpha1.TransformSpec{
@@ -443,7 +443,7 @@ func TestMakeConfig(t *testing.T) {
 							},
 						}).Build(),
 					testutils.NewMetricPipelineBuilder().
-						WithName("test2").
+						WithName("dynatrace").
 						WithOTLPInput(true).
 						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
 						WithTransform(telemetryv1alpha1.TransformSpec{
