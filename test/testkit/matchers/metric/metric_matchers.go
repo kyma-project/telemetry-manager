@@ -102,3 +102,9 @@ func HaveKeys(matcher types.GomegaMatcher) types.GomegaMatcher {
 		return slices.Sorted(maps.Keys(m))
 	}, matcher)
 }
+
+func HaveDescription(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(fm FlatMetric) string {
+		return fm.Description
+	}, matcher)
+}
