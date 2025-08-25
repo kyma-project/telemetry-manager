@@ -292,6 +292,142 @@ func TestMakeConfig(t *testing.T) {
 				},
 			},
 			{
+				name:           "pipeline with runtime input and namespace include filter",
+				goldenFileName: "runtime-namespace-include.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("test-runtime-ns-include").
+						WithRuntimeInput(true, testutils.IncludeNamespaces("kyma-system", "default")).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "pipeline with runtime input and namespace exclude filter",
+				goldenFileName: "runtime-namespace-exclude.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("test-runtime-ns-exclude").
+						WithRuntimeInput(true, testutils.ExcludeNamespaces("kube-system", "istio-system")).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "pipeline with prometheus input and namespace filters",
+				goldenFileName: "prometheus-namespace-filters.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("test-prometheus-ns").
+						WithPrometheusInput(true, testutils.IncludeNamespaces("monitoring", "observability")).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "pipeline with istio input and namespace filters",
+				goldenFileName: "istio-namespace-filters.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("test-istio-ns").
+						WithIstioInput(true, testutils.ExcludeNamespaces("kube-system")).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "pipeline with OTLP input and namespace filters",
+				goldenFileName: "otlp-namespace-filters.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("test-otlp-ns").
+						WithOTLPInput(true, testutils.IncludeNamespaces("apps", "services")).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "pipeline with multiple input types and mixed configurations",
+				goldenFileName: "multiple-inputs-mixed.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("test-multi-input").
+						WithRuntimeInput(true, testutils.IncludeNamespaces("default")).
+						WithPrometheusInput(true, testutils.ExcludeNamespaces("kube-system")).
+						WithIstioInput(false).
+						WithOTLPInput(true).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "pipeline with runtime input specific resources enabled",
+				goldenFileName: "runtime-specific-resources.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("test-runtime-resources").
+						WithRuntimeInput(true).
+						WithRuntimeInputPodMetrics(true).
+						WithRuntimeInputContainerMetrics(true).
+						WithRuntimeInputNodeMetrics(false).
+						WithRuntimeInputVolumeMetrics(true).
+						WithRuntimeInputDeploymentMetrics(true).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "pipeline with prometheus diagnostic metrics enabled",
+				goldenFileName: "prometheus-diagnostic-metrics.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("test-prom-diagnostic").
+						WithPrometheusInput(true).
+						WithPrometheusInputDiagnosticMetrics(true).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "pipeline with istio envoy metrics and diagnostic metrics",
+				goldenFileName: "istio-envoy-diagnostic.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("test-istio-envoy").
+						WithIstioInput(true).
+						WithIstioInputEnvoyMetrics(true).
+						WithIstioInputDiagnosticMetrics(true).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "pipeline with all inputs disabled except OTLP",
+				goldenFileName: "otlp-only.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("test-otlp-only").
+						WithRuntimeInput(false).
+						WithPrometheusInput(false).
+						WithIstioInput(false).
+						WithOTLPInput(true).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "complex pipeline with comprehensive configuration",
+				goldenFileName: "comprehensive-config.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("test-comprehensive").
+						WithRuntimeInput(true, testutils.IncludeNamespaces("production", "staging")).
+						WithRuntimeInputPodMetrics(true).
+						WithRuntimeInputContainerMetrics(true).
+						WithRuntimeInputNodeMetrics(true).
+						WithPrometheusInput(true, testutils.ExcludeNamespaces("kube-system")).
+						WithPrometheusInputDiagnosticMetrics(true).
+						WithIstioInput(true).
+						WithIstioInputEnvoyMetrics(true).
+						WithOTLPInput(true, testutils.IncludeNamespaces("apps")).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://backend.example.com")).
+						WithTransform(telemetryv1alpha1.TransformSpec{
+							Conditions: []string{"resource.attributes[\"k8s.namespace.name\"] == \"production\""},
+							Statements: []string{"set(attributes[\"environment\"], \"prod\")"},
+						}).Build(),
+				},
+			},
+			{
 				name:           "two pipelines with user-defined transforms",
 				goldenFileName: "two-pipelines-with-transforms.yaml",
 				pipelines: []telemetryv1alpha1.MetricPipeline{
