@@ -40,7 +40,7 @@ func TestMakeConfig(t *testing.T) {
 		require.Contains(t, collectorConfig.Exporters, "otlp/test")
 
 		actualExporterConfig := collectorConfig.Exporters["otlp/test"]
-		require.Equal(t, expectedEndpoint, actualExporterConfig.OTLP.Endpoint)
+		require.Equal(t, expectedEndpoint, actualExporterConfig.(*common.OTLPExporter).Endpoint)
 
 		require.Contains(t, envVars, "OTLP_ENDPOINT_TEST")
 		require.Equal(t, "http://localhost", string(envVars["OTLP_ENDPOINT_TEST"]))
@@ -61,7 +61,7 @@ func TestMakeConfig(t *testing.T) {
 		require.Contains(t, collectorConfig.Exporters, "otlp/test")
 
 		actualExporterConfig := collectorConfig.Exporters["otlp/test"]
-		require.False(t, actualExporterConfig.OTLP.TLS.Insecure)
+		require.False(t, actualExporterConfig.(*common.OTLPExporter).TLS.Insecure)
 	})
 
 	t.Run("insecure", func(t *testing.T) {
@@ -79,7 +79,7 @@ func TestMakeConfig(t *testing.T) {
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-insecure")
 
 		actualExporterConfig := collectorConfig.Exporters["otlp/test-insecure"]
-		require.True(t, actualExporterConfig.OTLP.TLS.Insecure)
+		require.True(t, actualExporterConfig.(*common.OTLPExporter).TLS.Insecure)
 	})
 
 	t.Run("basic auth", func(t *testing.T) {
@@ -97,7 +97,7 @@ func TestMakeConfig(t *testing.T) {
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-basic-auth")
 
 		actualExporterConfig := collectorConfig.Exporters["otlp/test-basic-auth"]
-		headers := actualExporterConfig.OTLP.Headers
+		headers := actualExporterConfig.(*common.OTLPExporter).Headers
 		authHeader, existing := headers["Authorization"]
 		require.True(t, existing)
 		require.Equal(t, "${BASIC_AUTH_HEADER_TEST_BASIC_AUTH}", authHeader)
@@ -123,7 +123,7 @@ func TestMakeConfig(t *testing.T) {
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-custom-header")
 
 		otlpExporterConfig := collectorConfig.Exporters["otlp/test-custom-header"]
-		headers := otlpExporterConfig.OTLP.Headers
+		headers := otlpExporterConfig.(*common.OTLPExporter).Headers
 		customHeader, exists := headers["Authorization"]
 		require.True(t, exists)
 		require.Equal(t, "${HEADER_TEST_CUSTOM_HEADER_AUTHORIZATION}", customHeader)
@@ -147,8 +147,8 @@ func TestMakeConfig(t *testing.T) {
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-mtls")
 
 		otlpExporterConfig := collectorConfig.Exporters["otlp/test-mtls"]
-		require.Equal(t, "${OTLP_TLS_CERT_PEM_TEST_MTLS}", otlpExporterConfig.OTLP.TLS.CertPem)
-		require.Equal(t, "${OTLP_TLS_KEY_PEM_TEST_MTLS}", otlpExporterConfig.OTLP.TLS.KeyPem)
+		require.Equal(t, "${OTLP_TLS_CERT_PEM_TEST_MTLS}", otlpExporterConfig.(*common.OTLPExporter).TLS.CertPem)
+		require.Equal(t, "${OTLP_TLS_KEY_PEM_TEST_MTLS}", otlpExporterConfig.(*common.OTLPExporter).TLS.KeyPem)
 
 		require.Contains(t, envVars, "OTLP_TLS_CERT_PEM_TEST_MTLS")
 		require.Equal(t, "cert", string(envVars["OTLP_TLS_CERT_PEM_TEST_MTLS"]))
@@ -219,7 +219,7 @@ func TestMakeConfig(t *testing.T) {
 			},
 		)
 		require.NoError(t, err)
-		require.Equal(t, maxQueueSize, collectorConfig.Exporters["otlp/test"].OTLP.SendingQueue.QueueSize, "Pipeline should have the full queue size")
+		require.Equal(t, maxQueueSize, collectorConfig.Exporters["otlp/test"].(*common.OTLPExporter).SendingQueue.QueueSize, "Pipeline should have the full queue size")
 	})
 
 	t.Run("multi pipeline queue size", func(t *testing.T) {
@@ -239,9 +239,9 @@ func TestMakeConfig(t *testing.T) {
 		require.NoError(t, err)
 
 		expectedQueueSize := 85 // Total queue size (256) divided by the number of pipelines (3)
-		require.Equal(t, expectedQueueSize, collectorConfig.Exporters["otlp/test-1"].OTLP.SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
-		require.Equal(t, expectedQueueSize, collectorConfig.Exporters["otlp/test-2"].OTLP.SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
-		require.Equal(t, expectedQueueSize, collectorConfig.Exporters["otlp/test-3"].OTLP.SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
+		require.Equal(t, expectedQueueSize, collectorConfig.Exporters["otlp/test-1"].(*common.OTLPExporter).SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
+		require.Equal(t, expectedQueueSize, collectorConfig.Exporters["otlp/test-2"].(*common.OTLPExporter).SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
+		require.Equal(t, expectedQueueSize, collectorConfig.Exporters["otlp/test-3"].(*common.OTLPExporter).SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
 	})
 
 	t.Run("exporters names", func(t *testing.T) {
