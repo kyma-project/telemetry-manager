@@ -473,6 +473,24 @@ func (b *Builder) addDropKymaAttributesProcessor() buildComponentFunc {
 	)
 }
 
+func (b *Builder) addUserDefinedTransformProcessor() buildComponentFunc {
+	return b.addOutputProcessor(
+		func(mp *telemetryv1alpha1.MetricPipeline) string {
+			return fmt.Sprintf("transform/%s-user-defined", mp.Name)
+		},
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			if len(mp.Spec.Transforms) == 0 {
+				return nil // No transforms, no processor needed
+			}
+
+			transformStatements := common.TransformSpecsToProcessorStatements(mp.Spec.Transforms)
+			transformProcessor := common.MetricTransformProcessorConfig(transformStatements)
+
+			return transformProcessor
+		},
+	)
+}
+
 // Batch processor
 
 //nolint:mnd // hardcoded values

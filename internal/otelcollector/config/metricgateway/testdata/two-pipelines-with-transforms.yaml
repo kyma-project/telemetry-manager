@@ -38,6 +38,7 @@ service:
                 - resource/insert-cluster-attributes
                 - resource/delete-skip-enrichment-attribute
                 - resource/drop-kyma-attributes
+                - transform/test1-user-defined
                 - batch
             exporters:
                 - otlp/test1
@@ -70,6 +71,7 @@ service:
                 - resource/insert-cluster-attributes
                 - resource/delete-skip-enrichment-attribute
                 - resource/drop-kyma-attributes
+                - transform/test2-user-defined
                 - batch
             exporters:
                 - otlp/test2
@@ -206,6 +208,22 @@ processors:
             - statements:
                 - set(scope.version, "") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
                 - set(scope.name, "io.kyma-project.telemetry/kyma") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
+    transform/test1-user-defined:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(attributes["log.level"], "error")
+                - set(body, "transformed1")
+              conditions:
+                - IsMatch(body, ".*error.*")
+    transform/test2-user-defined:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(attributes["log.level"], "error")
+                - set(body, "transformed2")
+              conditions:
+                - IsMatch(body, ".*error.*")
 exporters:
     otlp/test1:
         endpoint: ${OTLP_ENDPOINT_TEST1}

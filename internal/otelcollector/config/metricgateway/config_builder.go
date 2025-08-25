@@ -97,10 +97,11 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			// Diagnostic metric filters
 			b.addDropIstioDiagnosticMetricsProcessor(),
 			b.addDropPrometheusDiagnosticMetricsProcessor(),
-			// Resource processors
+
 			b.addInsertClusterAttributesProcessor(opts),
 			b.addDeleteSkipEnrichmentAttributeProcessor(),
 			b.addDropKymaAttributesProcessor(),
+			b.addUserDefinedTransformProcessor(),
 			// Batch processor (always last)
 			b.addBatchProcessor(),
 			// OTLP exporter
