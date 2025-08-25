@@ -36,6 +36,8 @@ type componentIDFunc = common.ComponentIDFunc[*telemetryv1alpha1.MetricPipeline]
 type componentConfigFunc = common.ComponentConfigFunc[*telemetryv1alpha1.MetricPipeline]
 type exporterComponentConfigFunc = common.ExporterComponentConfigFunc[*telemetryv1alpha1.MetricPipeline]
 
+var staticComponentID = common.StaticComponentID[*telemetryv1alpha1.MetricPipeline]
+
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) (*common.Config, common.EnvVars, error) {
 	b.config = &common.Config{
 		Base:       common.BaseConfig(common.WithK8sLeaderElector("serviceAccount", "telemetry-metric-gateway-kymastats", opts.GatewayNamespace)),
@@ -111,19 +113,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 	return b.config, b.envVars, nil
 }
 
-var staticComponentID = common.StaticComponentID[*telemetryv1alpha1.MetricPipeline]
-
-func formatInputMetricServicePipelineID(mp *telemetryv1alpha1.MetricPipeline) string {
-	return fmt.Sprintf("metrics/%s-input", mp.Name)
-}
-
-func formatEnrichmentServicePipelineID(mp *telemetryv1alpha1.MetricPipeline) string {
-	return fmt.Sprintf("metrics/%s-attributes-enrichment", mp.Name)
-}
-
-func formatOutputServicePipelineID(mp *telemetryv1alpha1.MetricPipeline) string {
-	return fmt.Sprintf("metrics/%s-output", mp.Name)
-}
+// Helper functions
 
 func enrichmentRoutingConnectorConfig(mp *telemetryv1alpha1.MetricPipeline) common.RoutingConnector {
 	enrichmentPipelineID := formatEnrichmentServicePipelineID(mp)
@@ -139,4 +129,24 @@ func enrichmentRoutingConnectorConfig(mp *telemetryv1alpha1.MetricPipeline) comm
 			},
 		},
 	}
+}
+
+func formatInputMetricServicePipelineID(mp *telemetryv1alpha1.MetricPipeline) string {
+	return fmt.Sprintf("metrics/%s-input", mp.Name)
+}
+
+func formatEnrichmentServicePipelineID(mp *telemetryv1alpha1.MetricPipeline) string {
+	return fmt.Sprintf("metrics/%s-attributes-enrichment", mp.Name)
+}
+
+func formatOutputServicePipelineID(mp *telemetryv1alpha1.MetricPipeline) string {
+	return fmt.Sprintf("metrics/%s-output", mp.Name)
+}
+
+func formatRoutingConnectorID(mp *telemetryv1alpha1.MetricPipeline) string {
+	return fmt.Sprintf(common.ComponentIDRoutingConnector, mp.Name)
+}
+
+func formatForwardConnectorID(mp *telemetryv1alpha1.MetricPipeline) string {
+	return fmt.Sprintf(common.ComponentIDForwardConnector, mp.Name)
 }

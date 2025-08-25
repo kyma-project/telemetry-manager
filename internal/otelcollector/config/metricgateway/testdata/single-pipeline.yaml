@@ -11,13 +11,13 @@ service:
     pipelines:
         metrics/test-attributes-enrichment:
             receivers:
-                - routing/%s
-                - routing/%s
+                - routing/test
+                - routing/test
             processors:
                 - k8sattributes
                 - service_enrichment
             exporters:
-                - forward/%s
+                - forward/test
         metrics/test-input:
             receivers:
                 - otlp
@@ -25,10 +25,10 @@ service:
             processors:
                 - memory_limiter
             exporters:
-                - routing/%s
+                - routing/test
         metrics/test-output:
             receivers:
-                - forward/%s
+                - forward/test
             processors:
                 - transform/set-instrumentation-scope-kyma
                 - filter/drop-if-input-source-runtime
@@ -67,7 +67,6 @@ service:
         - pprof
         - k8s_leader_elector
 receivers:
-    forward/%s: {}
     kymastats:
         auth_type: serviceAccount
         collection_interval: 30s
@@ -91,14 +90,6 @@ receivers:
                 endpoint: ${MY_POD_IP}:4318
             grpc:
                 endpoint: ${MY_POD_IP}:4317
-    routing/%s:
-        default_pipelines:
-            - metrics/test-attributes-enrichment
-        error_mode: ignore
-        table:
-            - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
-              pipelines:
-                - metrics/test-output
 processors:
     batch:
         send_batch_size: 1024
@@ -234,7 +225,6 @@ processors:
                 - set(scope.version, "") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
                 - set(scope.name, "io.kyma-project.telemetry/kyma") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
 exporters:
-    forward/%s: {}
     otlp/test:
         endpoint: ${OTLP_ENDPOINT_TEST}
         sending_queue:
@@ -245,7 +235,9 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    routing/%s:
+connectors:
+    forward/test: {}
+    routing/test:
         default_pipelines:
             - metrics/test-attributes-enrichment
         error_mode: ignore
@@ -253,4 +245,3 @@ exporters:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
               pipelines:
                 - metrics/test-output
-connectors: {}

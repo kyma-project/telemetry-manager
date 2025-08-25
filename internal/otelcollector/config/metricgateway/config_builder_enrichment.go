@@ -36,7 +36,7 @@ func (b *Builder) addEnrichmentExporter(componentIDFunc componentIDFunc, configF
 
 func (b *Builder) addRoutingConnectorAsReceiver() buildComponentFunc {
 	return b.addEnrichmentReceiver(
-		staticComponentID(common.ComponentIDRoutingConnector),
+		formatRoutingConnectorID,
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return enrichmentRoutingConnectorConfig(mp)
 		},
@@ -63,7 +63,7 @@ func (b *Builder) addServiceEnrichmentProcessor() buildComponentFunc {
 
 func (b *Builder) addForwardConnectorAsExporter() buildComponentFunc {
 	return b.addEnrichmentExporter(
-		staticComponentID(common.ComponentIDForwardConnector),
+		formatForwardConnectorID,
 		func(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline) (any, common.EnvVars, error) {
 			return &common.ForwardConnector{}, nil, nil
 		},

@@ -37,7 +37,7 @@ func (b *Builder) addOutputExporter(componentIDFunc componentIDFunc, configFunc 
 
 func (b *Builder) addForwardConnectorAsReceiver() buildComponentFunc {
 	return b.addOutputReceiver(
-		staticComponentID(common.ComponentIDForwardConnector),
+		formatForwardConnectorID,
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return &common.ForwardConnector{}
 		},
