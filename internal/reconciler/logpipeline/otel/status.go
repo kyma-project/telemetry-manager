@@ -19,6 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
+	"github.com/kyma-project/telemetry-manager/internal/validators/ottllog"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 )
 
@@ -179,6 +180,10 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 		return metav1.ConditionFalse,
 			conditions.ReasonEndpointInvalid,
 			fmt.Sprintf(conditions.MessageForOtelLogPipeline(conditions.ReasonEndpointInvalid), err.Error())
+	}
+
+	if ottllog.IsInvalidOTTLExpressionError(err) {
+		return metav1.ConditionFalse, conditions.ReasonOTTLExpressionInvalid, conditions.ConvertErrToMsg(err)
 	}
 
 	var APIRequestFailed *errortypes.APIRequestFailedError
