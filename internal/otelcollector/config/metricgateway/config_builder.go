@@ -95,8 +95,8 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addDropRuntimeStatefulSetMetricsProcessor(),
 			b.addDropRuntimeJobMetricsProcessor(),
 			// Diagnostic metric filters
-			b.addDropDiagnosticMetricsIfInputSourceIstioProcessor(),
-			b.addDropDiagnosticMetricsIfInputSourcePrometheusProcessor(),
+			b.addDropIstioDiagnosticMetricsProcessor(),
+			b.addDropPrometheusDiagnosticMetricsProcessor(),
 			// Resource processors
 			b.addInsertClusterAttributesProcessor(opts),
 			b.addDeleteSkipEnrichmentAttributeProcessor(),

@@ -9,6 +9,8 @@ import (
 	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 )
 
+var diagnosticMetricNames = []string{"up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added"}
+
 func (b *Builder) addOutputServicePipeline(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline, fs ...buildComponentFunc) error {
 	// Add an empty pipeline to the config
 	pipelineID := formatOutputServicePipelineID(mp)
@@ -355,36 +357,28 @@ func (b *Builder) addDropRuntimeJobMetricsProcessor() buildComponentFunc {
 
 // Diagnostic metric filter processors
 
-func (b *Builder) addDropDiagnosticMetricsIfInputSourcePrometheusProcessor() buildComponentFunc {
+func (b *Builder) addDropPrometheusDiagnosticMetricsProcessor() buildComponentFunc {
 	return b.addOutputProcessor(
 		staticComponentID("filter/drop-diagnostic-metrics-if-input-source-prometheus"),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			if metricpipelineutils.IsPrometheusInputEnabled(mp.Spec.Input) && metricpipelineutils.IsPrometheusDiagnosticInputEnabled(mp.Spec.Input) {
+			if !metricpipelineutils.IsPrometheusInputEnabled(mp.Spec.Input) || metricpipelineutils.IsPrometheusDiagnosticInputEnabled(mp.Spec.Input) {
 				return nil
 			}
 
-			return &FilterProcessor{
-				Metrics: FilterProcessorMetrics{
-					Metric: []string{`instrumentation_scope.name == "io.kyma-project.telemetry/prometheus" and (name == "up" or name == "scrape_duration_seconds" or name == "scrape_samples_scraped" or name == "scrape_samples_post_metric_relabeling" or name == "scrape_series_added")`},
-				},
-			}
+			return dropDiagnosticMetricsFilterConfig(inputSourceEquals(common.InputSourcePrometheus))
 		},
 	)
 }
 
-func (b *Builder) addDropDiagnosticMetricsIfInputSourceIstioProcessor() buildComponentFunc {
+func (b *Builder) addDropIstioDiagnosticMetricsProcessor() buildComponentFunc {
 	return b.addOutputProcessor(
 		staticComponentID("filter/drop-diagnostic-metrics-if-input-source-istio"),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			if metricpipelineutils.IsIstioInputEnabled(mp.Spec.Input) && metricpipelineutils.IsIstioDiagnosticInputEnabled(mp.Spec.Input) {
+			if !metricpipelineutils.IsIstioInputEnabled(mp.Spec.Input) || metricpipelineutils.IsIstioDiagnosticInputEnabled(mp.Spec.Input) {
 				return nil
 			}
 
-			return &FilterProcessor{
-				Metrics: FilterProcessorMetrics{
-					Metric: []string{`instrumentation_scope.name == "io.kyma-project.telemetry/istio" and (name == "up" or name == "scrape_duration_seconds" or name == "scrape_samples_scraped" or name == "scrape_samples_post_metric_relabeling" or name == "scrape_series")`},
-				},
-			}
+			return dropDiagnosticMetricsFilterConfig(inputSourceEquals(common.InputSourceIstio))
 		},
 	)
 }
@@ -510,6 +504,29 @@ func (b *Builder) addOTLPExporter(queueSize int) buildComponentFunc {
 			return otlpExporterBuilder.OTLPExporterConfig(ctx)
 		},
 	)
+}
+
+func dropDiagnosticMetricsFilterConfig(inputSourceCondition string) *FilterProcessor {
+	var filterExpressions []string
+
+	metricNameConditions := nameConditions(diagnosticMetricNames)
+	excludeScrapeMetricsExpr := common.JoinWithAnd(inputSourceCondition, common.JoinWithOr(metricNameConditions...))
+	filterExpressions = append(filterExpressions, excludeScrapeMetricsExpr)
+
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetrics{
+			Metric: filterExpressions,
+		},
+	}
+}
+
+func nameConditions(names []string) []string {
+	var nameConditions []string
+	for _, name := range names {
+		nameConditions = append(nameConditions, common.NameAttributeEquals(name))
+	}
+
+	return nameConditions
 }
 
 func formatNamespaceFilterID(pipelineName string, inputSourceType common.InputSourceType) string {

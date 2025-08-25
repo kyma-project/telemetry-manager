@@ -36,8 +36,6 @@ service:
                 - filter/drop-if-input-source-istio
                 - filter/drop-envoy-metrics-if-disabled
                 - filter/drop-if-input-source-otlp
-                - filter/drop-diagnostic-metrics-if-input-source-istio
-                - filter/drop-diagnostic-metrics-if-input-source-prometheus
                 - resource/insert-cluster-attributes
                 - resource/delete-skip-enrichment-attribute
                 - resource/drop-kyma-attributes
@@ -88,14 +86,6 @@ processors:
         send_batch_size: 1024
         timeout: 10s
         send_batch_max_size: 1024
-    filter/drop-diagnostic-metrics-if-input-source-istio:
-        metrics:
-            metric:
-                - instrumentation_scope.name == "io.kyma-project.telemetry/istio" and (name == "up" or name == "scrape_duration_seconds" or name == "scrape_samples_scraped" or name == "scrape_samples_post_metric_relabeling" or name == "scrape_series")
-    filter/drop-diagnostic-metrics-if-input-source-prometheus:
-        metrics:
-            metric:
-                - instrumentation_scope.name == "io.kyma-project.telemetry/prometheus" and (name == "up" or name == "scrape_duration_seconds" or name == "scrape_samples_scraped" or name == "scrape_samples_post_metric_relabeling" or name == "scrape_series_added")
     filter/drop-envoy-metrics-if-disabled:
         metrics:
             metric:
