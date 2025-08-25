@@ -154,7 +154,9 @@ func (b *Builder) addDropEnvoyMetricsIfDisabledProcessor() buildComponentFunc {
 
 			return &FilterProcessor{
 				Metrics: FilterProcessorMetrics{
-					Metric: []string{`IsMatch(name, "^envoy_.*") and instrumentation_scope.name == "io.kyma-project.telemetry/istio"`},
+					Metric: []string{
+						common.JoinWithAnd(common.IsMatch("name", "^envoy_.*"), common.ScopeNameEquals(common.InstrumentationScopeIstio)),
+					},
 				},
 			}
 		},
@@ -166,10 +168,12 @@ func (b *Builder) addDropEnvoyMetricsIfDisabledProcessor() buildComponentFunc {
 func (b *Builder) addRuntimeNamespaceFilterProcessor() buildComponentFunc {
 	return func(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline) error {
 		input := mp.Spec.Input
-		if metricpipelineutils.IsRuntimeInputEnabled(input) && shouldFilterByNamespace(input.Runtime.Namespaces) {
-			processorID := formatNamespaceFilterID(mp.Name, common.InputSourceRuntime)
-			b.config.Processors[processorID] = filterByNamespaceProcessorConfig(input.Runtime.Namespaces, inputSourceEquals(common.InputSourceRuntime))
+		if !metricpipelineutils.IsRuntimeInputEnabled(input) || !shouldFilterByNamespace(input.Runtime.Namespaces) {
+			return nil
 		}
+
+		processorID := formatNamespaceFilterID(mp.Name, common.InputSourceRuntime)
+		b.config.Processors[processorID] = filterByNamespaceProcessorConfig(input.Runtime.Namespaces, inputSourceEquals(common.InputSourceRuntime))
 
 		return nil
 	}
@@ -178,10 +182,12 @@ func (b *Builder) addRuntimeNamespaceFilterProcessor() buildComponentFunc {
 func (b *Builder) addPrometheusNamespaceFilterProcessor() buildComponentFunc {
 	return func(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline) error {
 		input := mp.Spec.Input
-		if metricpipelineutils.IsPrometheusInputEnabled(input) && shouldFilterByNamespace(input.Prometheus.Namespaces) {
-			processorID := formatNamespaceFilterID(mp.Name, common.InputSourcePrometheus)
-			b.config.Processors[processorID] = filterByNamespaceProcessorConfig(input.Prometheus.Namespaces, common.ResourceAttributeEquals(common.KymaInputNameAttribute, common.KymaInputPrometheus))
+		if !metricpipelineutils.IsPrometheusInputEnabled(input) || !shouldFilterByNamespace(input.Prometheus.Namespaces) {
+			return nil
 		}
+
+		processorID := formatNamespaceFilterID(mp.Name, common.InputSourcePrometheus)
+		b.config.Processors[processorID] = filterByNamespaceProcessorConfig(input.Prometheus.Namespaces, common.ResourceAttributeEquals(common.KymaInputNameAttribute, common.KymaInputPrometheus))
 
 		return nil
 	}
@@ -190,10 +196,12 @@ func (b *Builder) addPrometheusNamespaceFilterProcessor() buildComponentFunc {
 func (b *Builder) addIstioNamespaceFilterProcessor() buildComponentFunc {
 	return func(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline) error {
 		input := mp.Spec.Input
-		if metricpipelineutils.IsIstioInputEnabled(input) && shouldFilterByNamespace(input.Istio.Namespaces) {
-			processorID := formatNamespaceFilterID(mp.Name, common.InputSourceIstio)
-			b.config.Processors[processorID] = filterByNamespaceProcessorConfig(input.Istio.Namespaces, inputSourceEquals(common.InputSourceIstio))
+		if !metricpipelineutils.IsIstioInputEnabled(input) || !shouldFilterByNamespace(input.Istio.Namespaces) {
+			return nil
 		}
+
+		processorID := formatNamespaceFilterID(mp.Name, common.InputSourceIstio)
+		b.config.Processors[processorID] = filterByNamespaceProcessorConfig(input.Istio.Namespaces, inputSourceEquals(common.InputSourceIstio))
 
 		return nil
 	}
@@ -202,10 +210,12 @@ func (b *Builder) addIstioNamespaceFilterProcessor() buildComponentFunc {
 func (b *Builder) addOTLPNamespaceFilterProcessor() buildComponentFunc {
 	return func(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline) error {
 		input := mp.Spec.Input
-		if metricpipelineutils.IsOTLPInputEnabled(input) && input.OTLP != nil && shouldFilterByNamespace(input.OTLP.Namespaces) {
-			processorID := formatNamespaceFilterID(mp.Name, common.InputSourceOTLP)
-			b.config.Processors[processorID] = filterByNamespaceProcessorConfig(input.OTLP.Namespaces, otlpInputSource())
+		if !metricpipelineutils.IsOTLPInputEnabled(input) || input.OTLP == nil || !shouldFilterByNamespace(input.OTLP.Namespaces) {
+			return nil
 		}
+
+		processorID := formatNamespaceFilterID(mp.Name, common.InputSourceOTLP)
+		b.config.Processors[processorID] = filterByNamespaceProcessorConfig(input.OTLP.Namespaces, otlpInputSource())
 
 		return nil
 	}
