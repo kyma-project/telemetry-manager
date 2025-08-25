@@ -34,7 +34,6 @@ func TestTransform_StatementCond(t *testing.T) {
 					"scenario": "level-info",
 					"level":    "info",
 				})).K8sObject()
-
 			},
 			expectAgent: true,
 		},
