@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"maps"
+	"strings"
 )
 
 // BuildComponentFunc defines a function type for building OpenTelemetry collector components.
@@ -68,8 +69,14 @@ func AddReceiver[T any](
 		}
 
 		componentID := componentIDFunc(pipeline)
-		if _, found := rootConfig.Receivers[componentID]; !found {
-			rootConfig.Receivers[componentID] = receiverConfig
+
+		receiversOrConnectors := rootConfig.Receivers
+		if isConnector(componentID) {
+			receiversOrConnectors = rootConfig.Connectors
+		}
+
+		if _, found := receiversOrConnectors[componentID]; !found {
+			receiversOrConnectors[componentID] = receiverConfig
 		}
 
 		pipelineID := pipelineIDFunc(pipeline)
@@ -167,7 +174,13 @@ func AddExporter[T any](
 		}
 
 		componentID := componentIDFunc(pipeline)
-		rootConfig.Exporters[componentID] = exporterConfig
+
+		exportersOrConnectors := rootConfig.Exporters
+		if isConnector(componentID) {
+			exportersOrConnectors = rootConfig.Connectors
+		}
+
+		exportersOrConnectors[componentID] = exporterConfig
 
 		maps.Copy(envVars, exporterEnvVars)
 
@@ -178,4 +191,8 @@ func AddExporter[T any](
 
 		return nil
 	}
+}
+
+func isConnector(componentID string) bool {
+	return strings.HasPrefix(componentID, "routing") || strings.HasPrefix(componentID, "forward")
 }
