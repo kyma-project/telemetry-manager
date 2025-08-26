@@ -256,7 +256,7 @@ uninstall: manifests $(HELM) ## Uninstall CRDs from the K8s cluster specified in
 
 .PHONY: deploy
 deploy: manifests $(HELM) ## Deploy resources based on the release (default) variant to the K8s cluster specified in ~/.kube/config.
-	$(HEML) template telemetry helm/telemetry-module --set experimental.enabled=false --set regular.enabled=true --set nameOverride=telemetry --set manager.container.image.repository=${MANAGER_IMAGE} --namespace kyma-system | kubectl apply -f -
+	$(HELM) template telemetry helm/telemetry-module --set experimental.enabled=false --set regular.enabled=true --set nameOverride=telemetry --set manager.container.image.repository=${MANAGER_IMAGE} --namespace kyma-system | kubectl apply -f -
 
 .PHONY: undeploy
 undeploy: $(HELM) ## Undeploy resources based on the release (default) variant from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
