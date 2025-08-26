@@ -55,7 +55,6 @@ func (g *caCertGeneratorImpl) generateCertInternal() (*x509.Certificate, *rsa.Pr
 	validTo := validFrom.Add(caCertMaxAge).UTC()
 
 	publicKey, err := x509.MarshalPKIXPublicKey(&caKey.PublicKey)
-
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to marshal public key: %w", err)
 	}
