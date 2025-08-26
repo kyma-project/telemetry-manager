@@ -50,13 +50,16 @@ spec:
             description: TelemetrySpec defines the desired state of Telemetry
             properties:
               enrichments:
-                description: Enrichments configures optional enrichments of all telemetry data collected by pipelines. This field is optional.
+                description: Enrichments configures optional enrichments of all telemetry
+                  data collected by pipelines. This field is optional.
                 properties:
                   cluster:
-                    description: Cluster provides user-defined cluster definitions to enrich resource attributes.
+                    description: Cluster provides user-defined cluster definitions
+                      to enrich resource attributes.
                     properties:
                       name:
-                        description: Name specifies a custom cluster name for the resource attribute `k8s.cluster.name`.
+                        description: Name specifies a custom cluster name for the
+                          resource attribute `k8s.cluster.name`.
                         type: string
                     required:
                     - name
@@ -90,13 +93,16 @@ spec:
                     type: array
                 type: object
               log:
-                description: Log configures module settings specific to the log features. This field is optional.
+                description: Log configures module settings specific to the log features.
+                  This field is optional.
                 properties:
                   gateway:
                     description: Gateway configures the log gateway.
                     properties:
                       scaling:
-                        description: Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
+                        description: Scaling defines which strategy is used for scaling
+                          the gateway, with detailed configuration options for each
+                          strategy type.
                         properties:
                           static:
                             description: |-
@@ -104,13 +110,15 @@ spec:
                               StaticScalingStrategyType.
                             properties:
                               replicas:
-                                description: Replicas defines a static number of Pods to run the gateway. Minimum is 1.
+                                description: Replicas defines a static number of Pods
+                                  to run the gateway. Minimum is 1.
                                 format: int32
                                 minimum: 1
                                 type: integer
                             type: object
                           type:
-                            description: Type of scaling strategy. Default is none, using a fixed amount of replicas.
+                            description: Type of scaling strategy. Default is none,
+                              using a fixed amount of replicas.
                             enum:
                             - Static
                             type: string
@@ -118,13 +126,16 @@ spec:
                     type: object
                 type: object
               metric:
-                description: Metric configures module settings specific to the metric features. This field is optional.
+                description: Metric configures module settings specific to the metric
+                  features. This field is optional.
                 properties:
                   gateway:
                     description: Gateway configures the metric gateway.
                     properties:
                       scaling:
-                        description: Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
+                        description: Scaling defines which strategy is used for scaling
+                          the gateway, with detailed configuration options for each
+                          strategy type.
                         properties:
                           static:
                             description: |-
@@ -132,13 +143,15 @@ spec:
                               StaticScalingStrategyType.
                             properties:
                               replicas:
-                                description: Replicas defines a static number of Pods to run the gateway. Minimum is 1.
+                                description: Replicas defines a static number of Pods
+                                  to run the gateway. Minimum is 1.
                                 format: int32
                                 minimum: 1
                                 type: integer
                             type: object
                           type:
-                            description: Type of scaling strategy. Default is none, using a fixed amount of replicas.
+                            description: Type of scaling strategy. Default is none,
+                              using a fixed amount of replicas.
                             enum:
                             - Static
                             type: string
@@ -146,13 +159,16 @@ spec:
                     type: object
                 type: object
               trace:
-                description: Trace configures module settings specific to the trace features. This field is optional.
+                description: Trace configures module settings specific to the trace
+                  features. This field is optional.
                 properties:
                   gateway:
                     description: Gateway configures the trace gateway.
                     properties:
                       scaling:
-                        description: Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
+                        description: Scaling defines which strategy is used for scaling
+                          the gateway, with detailed configuration options for each
+                          strategy type.
                         properties:
                           static:
                             description: |-
@@ -160,13 +176,15 @@ spec:
                               StaticScalingStrategyType.
                             properties:
                               replicas:
-                                description: Replicas defines a static number of Pods to run the gateway. Minimum is 1.
+                                description: Replicas defines a static number of Pods
+                                  to run the gateway. Minimum is 1.
                                 format: int32
                                 minimum: 1
                                 type: integer
                             type: object
                           type:
-                            description: Type of scaling strategy. Default is none, using a fixed amount of replicas.
+                            description: Type of scaling strategy. Default is none,
+                              using a fixed amount of replicas.
                             enum:
                             - Static
                             type: string
@@ -182,7 +200,8 @@ spec:
                   Conditions contain a set of conditionals to determine the State of Status.
                   If all Conditions are met, State is expected to be in StateReady.
                 items:
-                  description: Condition contains details for one aspect of the current state of this API Resource.
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
                   properties:
                     lastTransitionTime:
                       description: |-
@@ -240,7 +259,8 @@ spec:
                 nullable: true
                 properties:
                   logs:
-                    description: Logs contains the endpoints for log gateway supporting OTLP.
+                    description: Logs contains the endpoints for log gateway supporting
+                      OTLP.
                     properties:
                       grpc:
                         description: gRPC endpoint for OTLP.
@@ -250,7 +270,8 @@ spec:
                         type: string
                     type: object
                   metrics:
-                    description: Metrics contains the endpoints for metric gateway supporting OTLP.
+                    description: Metrics contains the endpoints for metric gateway
+                      supporting OTLP.
                     properties:
                       grpc:
                         description: gRPC endpoint for OTLP.
@@ -260,7 +281,8 @@ spec:
                         type: string
                     type: object
                   traces:
-                    description: Traces contains the endpoints for trace gateway supporting OTLP.
+                    description: Traces contains the endpoints for trace gateway supporting
+                      OTLP.
                     properties:
                       grpc:
                         description: gRPC endpoint for OTLP.

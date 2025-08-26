@@ -36,7 +36,6 @@ manager:
     runAsNonRoot: true
     seccompProfile:
       type: RuntimeDefault
-  replicas: 1
   serviceAccount:
     annotations: {}
 managerMetrics:

@@ -22,7 +22,8 @@ spec:
       name: Age
       type: date
     deprecated: true
-    deprecationWarning: The LogParser API is deprecated. Instead, log in JSON format and use the JSON parsing feature of the LogPipeline
+    deprecationWarning: The LogParser API is deprecated. Instead, log in JSON format
+      and use the JSON parsing feature of the LogPipeline
     name: v1alpha1
     schema:
       openAPIV3Schema:
@@ -49,7 +50,11 @@ spec:
             description: Defines the desired state of LogParser.
             properties:
               parser:
-                description: '[Fluent Bit Parsers](https://docs.fluentbit.io/manual/pipeline/parsers). The parser specified here has no effect until it is referenced by a [Pod annotation](https://docs.fluentbit.io/manual/pipeline/filters/kubernetes#kubernetes-annotations) on your workload or by a [Parser Filter](https://docs.fluentbit.io/manual/pipeline/filters/parser) defined in a pipeline''s filters section.'
+                description: '[Fluent Bit Parsers](https://docs.fluentbit.io/manual/pipeline/parsers).
+                  The parser specified here has no effect until it is referenced by
+                  a [Pod annotation](https://docs.fluentbit.io/manual/pipeline/filters/kubernetes#kubernetes-annotations)
+                  on your workload or by a [Parser Filter](https://docs.fluentbit.io/manual/pipeline/filters/parser)
+                  defined in a pipeline''s filters section.'
                 type: string
             type: object
           status:
@@ -58,7 +63,8 @@ spec:
               conditions:
                 description: An array of conditions describing the status of the parser.
                 items:
-                  description: Condition contains details for one aspect of the current state of this API Resource.
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
                   properties:
                     lastTransitionTime:
                       description: |-
