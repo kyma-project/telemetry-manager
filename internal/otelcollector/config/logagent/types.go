@@ -4,21 +4,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 )
 
-type Config struct {
-	Service    common.Service `yaml:"service"`
-	Extensions Extensions     `yaml:"extensions"`
-
-	Receivers  Receivers  `yaml:"receivers"`
-	Processors Processors `yaml:"processors"`
-	Exporters  Exporters  `yaml:"exporters"`
-}
-
-type Receivers map[string]Receiver
-type Receiver struct {
-	FileLog *FileLog `yaml:",inline,omitempty"`
-}
-
-type FileLog struct {
+type FileLogReceiver struct {
 	Exclude         []string              `yaml:"exclude,omitempty"`
 	Include         []string              `yaml:"include,omitempty"`
 	IncludeFileName *bool                 `yaml:"include_file_name,omitempty"`
@@ -77,33 +63,4 @@ type Route struct {
 
 type OperatorAttribute struct {
 	ParseFrom string `yaml:"parse_from,omitempty"`
-}
-
-type Processors struct {
-	common.BaseProcessors `yaml:",inline"`
-
-	// OTel Collector components with static IDs
-	SetInstrumentationScopeRuntime *common.TransformProcessor         `yaml:"transform/set-instrumentation-scope-runtime,omitempty"`
-	K8sAttributes                  *common.K8sAttributesProcessor     `yaml:"k8sattributes,omitempty"`
-	InsertClusterAttributes        *common.ResourceProcessor          `yaml:"resource/insert-cluster-attributes,omitempty"`
-	ResolveServiceName             *common.ServiceEnrichmentProcessor `yaml:"service_enrichment,omitempty"`
-	DropKymaAttributes             *common.ResourceProcessor          `yaml:"resource/drop-kyma-attributes,omitempty"`
-
-	// OTel Collector components with dynamic IDs that are pipeline name based
-	Dynamic map[string]any `yaml:",inline,omitempty"`
-}
-
-type Exporters map[string]Exporter
-type Exporter struct {
-	OTLP *common.OTLPExporter `yaml:",inline,omitempty"`
-}
-
-type Extensions struct {
-	common.Extensions `yaml:",inline"`
-
-	FileStorage *FileStorage `yaml:"file_storage,omitempty"`
-}
-
-type FileStorage struct {
-	Directory string `yaml:"directory,omitempty"`
 }

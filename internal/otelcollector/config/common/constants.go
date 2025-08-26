@@ -60,3 +60,30 @@ var upstreamInstrumentationScopeName = map[InputSourceType]string{
 	InputSourceKyma:       "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver",
 	InputSourceK8sCluster: "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver",
 }
+
+// Component IDs
+
+const (
+	// Receivers
+	ComponentIDOTLPReceiver    = "otlp"
+	ComponentIDFileLogReceiver = "filelog/%s" // dynamically filled with pipeline name
+
+	// Processors
+	ComponentIDMemoryLimiterProcessor           = "memory_limiter"
+	ComponentIDBatchProcessor                   = "batch"
+	ComponentIDK8sAttributesProcessor           = "k8sattributes"
+	ComponentIDServiceEnrichmentProcessor       = "service_enrichment"
+	ComponentIDIstioEnrichmentProcessor         = "istio_enrichment"
+	ComponentIDIstioNoiseFilterProcessor        = "istio_noise_filter"
+	ComponentIDSetObservedTimeIfZeroProcessor   = "transform/set-observed-time-if-zero"
+	ComponentIDSetInstrumentationScopeProcessor = "transform/set-instrumentation-scope-runtime"
+	ComponentIDUserDefinedTransformProcessor    = "transform/user-defined-%s" // dynamically filled with pipeline name
+	ComponentIDDropIfInputSourceOTLPProcessor   = "filter/drop-if-input-source-otlp"
+	ComponentIDNamespaceFilterProcessor         = "filter/%s-filter-by-namespace"
+	ComponentIDInsertClusterAttributesProcessor = "resource/insert-cluster-attributes"
+	ComponentIDDropKymaAttributesProcessor      = "resource/drop-kyma-attributes"
+
+	// Exporters
+	ComponentIDOTLPHTTPExporter = "otlphttp/%s" // dynamically filled with pipeline name
+	ComponentIDOTLPGRPCExporter = "otlp/%s"     // dynamically filled with pipeline name
+)

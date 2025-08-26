@@ -23,10 +23,10 @@ func WithK8sLeaderElector(authType, leaseName, leaseNamespace string) ConfigOpti
 	}
 }
 
-func BaseConfig(pipelines Pipelines, opts ...ConfigOption) Base {
+func BaseConfig(opts ...ConfigOption) Base {
 	baseConfig := Base{
 		ExtensionsConfig(),
-		ServiceConfig(pipelines),
+		ServiceConfig(),
 	}
 
 	for _, opt := range opts {
@@ -36,7 +36,7 @@ func BaseConfig(pipelines Pipelines, opts ...ConfigOption) Base {
 	return baseConfig
 }
 
-func ServiceConfig(pipelines Pipelines) Service {
+func ServiceConfig() Service {
 	telemetry := Telemetry{
 		Metrics: Metrics{
 			Readers: []MetricReader{
@@ -59,7 +59,7 @@ func ServiceConfig(pipelines Pipelines) Service {
 	}
 
 	return Service{
-		Pipelines:  pipelines,
+		Pipelines:  make(Pipelines),
 		Telemetry:  telemetry,
 		Extensions: []string{"health_check", "pprof"},
 	}

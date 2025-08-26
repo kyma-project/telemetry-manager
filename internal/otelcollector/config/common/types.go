@@ -4,6 +4,15 @@ package common
 // BASE CONFIGURATION TYPES
 // =============================================================================
 
+// Config represents the root configuration structure for OpenTelemetry Collector
+type Config struct {
+	Base `yaml:",inline"`
+
+	Receivers  map[string]any `yaml:"receivers"`
+	Processors map[string]any `yaml:"processors"`
+	Exporters  map[string]any `yaml:"exporters"`
+}
+
 // Base represents the root configuration structure for OpenTelemetry Collector
 type Base struct {
 	Extensions Extensions `yaml:"extensions"`
@@ -14,6 +23,11 @@ type Extensions struct {
 	HealthCheck      Endpoint         `yaml:"health_check,omitempty"`
 	Pprof            Endpoint         `yaml:"pprof,omitempty"`
 	K8sLeaderElector K8sLeaderElector `yaml:"k8s_leader_elector,omitempty"`
+	FileStorage      *FileStorage     `yaml:"file_storage,omitempty"`
+}
+
+type FileStorage struct {
+	Directory string `yaml:"directory,omitempty"`
 }
 
 type Service struct {
