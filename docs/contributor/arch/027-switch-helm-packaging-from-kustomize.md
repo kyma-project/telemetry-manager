@@ -21,7 +21,7 @@ The proposal is to switch the deployment packaging from Kustomize to Helm. This 
 4. Ensure that all existing functionality is preserved and that the new Helm-based deployment is tested thoroughly.
 5. Maintain the CRD generation using ControllerGen, as it is not affected by the deployment layer.
 
-### CRD manifests
+### CRD Manifests
 The Helm CRDs are treated as a special kind of object. They are installed before the rest of the chart, however, they have some limitations:
 - They are not templated, so they must be plain YAML documents.
 - They are not deleted when the chart is uninstalled, so they must be managed separately.
@@ -31,7 +31,7 @@ As we have two different sets of CRDs (one regular release and experimental rele
 
 
 ## Decision
-- The `config/` folder will be converted into a Helm chart, new folder `helm/telemetry-module` in the root of the repository.
+- The `config/` folder will be converted into a Helm chart, in a new folder `helm/telemetry-module` in the root of the repository.
 - The CRDs will be maintained in a separate folder as subcharts (regular amd experimental), and included or excluded based on the deployment type.
 - The CRDs generation will continue to use ControllerGen.
 - The deployment scripts and CI/CD pipelines will be updated to use Helm.
