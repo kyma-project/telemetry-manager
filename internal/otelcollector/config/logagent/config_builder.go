@@ -53,7 +53,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPi
 		if err := b.addServicePipeline(ctx, &pipelines[i],
 			b.addFileLogReceiver(),
 			b.addMemoryLimiterProcessor(),
-			b.addSetInstrumentationScopeProcessor(opts),
+			b.addSetInstrumentationScopeToRuntimeProcessor(opts),
 			b.addK8sAttributesProcessor(opts),
 			b.addInsertClusterAttributesProcessor(opts),
 			b.addServiceEnrichmentProcessor(),
@@ -145,7 +145,7 @@ func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
 	)
 }
 
-func (b *Builder) addSetInstrumentationScopeProcessor(opts BuildOptions) buildComponentFunc {
+func (b *Builder) addSetInstrumentationScopeToRuntimeProcessor(opts BuildOptions) buildComponentFunc {
 	return b.addProcessor(
 		staticComponentID(common.ComponentIDSetInstrumentationScopeRuntimeProcessor),
 		func(lp *telemetryv1alpha1.LogPipeline) any {

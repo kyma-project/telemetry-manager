@@ -73,7 +73,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 		if err := b.addOutputServicePipeline(ctx, &pipelines[i],
 			b.addOutputRoutingReceiver(),
 			b.addOutputForwardReceiver(),
-			b.addSetInstrumentationScopeProcessor(opts),
+			b.addSetInstrumentationScopeToKymaProcessor(opts),
 			// Input source filters
 			b.addDropIfRuntimeInputDisabledProcessor(),
 			b.addDropIfPrometheusInputDisabledProcessor(),

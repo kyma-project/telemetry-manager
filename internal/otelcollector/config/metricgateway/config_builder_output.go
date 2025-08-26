@@ -55,7 +55,7 @@ func (b *Builder) addOutputRoutingReceiver() buildComponentFunc {
 	)
 }
 
-func (b *Builder) addSetInstrumentationScopeProcessor(opts BuildOptions) buildComponentFunc {
+func (b *Builder) addSetInstrumentationScopeToKymaProcessor(opts BuildOptions) buildComponentFunc {
 	return b.addOutputProcessor(
 		staticComponentID(common.ComponentIDSetInstrumentationScopeKymaProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
