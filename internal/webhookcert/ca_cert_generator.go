@@ -6,7 +6,6 @@ import (
 	"crypto/sha256"
 	"crypto/x509"
 	"crypto/x509/pkix"
-	"encoding/asn1"
 	"fmt"
 	"math/big"
 	"time"
@@ -55,20 +54,13 @@ func (g *caCertGeneratorImpl) generateCertInternal() (*x509.Certificate, *rsa.Pr
 	validFrom := g.clock.now().Add(-time.Hour).UTC() // valid an hour earlier to avoid flakes due to clock skew
 	validTo := validFrom.Add(caCertMaxAge).UTC()
 
-	pub := caKey.Public()
+	publicKey, err := x509.MarshalPKIXPublicKey(&caKey.PublicKey)
 
-	publicKey, ok := pub.(rsa.PublicKey)
-
-	if !ok {
-		return nil, nil, fmt.Errorf("failed to cast public key to rsa.PublicKey")
-	}
-
-	publicKeyBytes, err := asn1.Marshal(publicKey)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to marshal public key: %w", err)
 	}
 
-	subjectKeyId := sha256.Sum256(publicKeyBytes)
+	subjectKeyId := sha256.Sum256(publicKey)
 
 	caCertTemplate := x509.Certificate{
 		SerialNumber: new(big.Int).SetInt64(0),
