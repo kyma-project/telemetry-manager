@@ -95,7 +95,7 @@ func TestTransform_InferContext(t *testing.T) {
 			assert.OTelLogPipelineHealthy(t, pipelineNameValue)
 
 			assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
-			assert.BackendDataEventuallyMatches(t, backend,
+			assert.BackendDataConsistentlyMatches(t, backend,
 				HaveFlatLogs(ContainElement(SatisfyAll(
 					HaveResourceAttributes(HaveKeyWithValue("test", "passed")),
 					HaveAttributes(HaveKeyWithValue("name", "InfoLogs")),

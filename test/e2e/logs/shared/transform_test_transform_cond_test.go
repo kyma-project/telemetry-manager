@@ -94,7 +94,7 @@ func TestTransform_StatementCond(t *testing.T) {
 			assert.OTelLogPipelineHealthy(t, pipelineNameValue)
 
 			assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
-			assert.BackendDataEventuallyMatches(t, backend,
+			assert.BackendDataConsistentlyMatches(t, backend,
 				HaveFlatLogs(ContainElement(SatisfyAll(
 					HaveSeverityText(Equal("INFO")),
 				))),

@@ -57,7 +57,7 @@ func TestTransform_InferContext(t *testing.T) {
 	assert.TracePipelineHealthy(t, pipelineName)
 	assert.TracesFromNamespaceDelivered(t, backend, genNs)
 
-	assert.BackendDataEventuallyMatches(t, backend,
+	assert.BackendDataConsistentlyMatches(t, backend,
 		HaveFlatTraces(ContainElement(SatisfyAll(
 			HaveSpanAttributes(HaveKeyWithValue("name", "passed")),
 			HaveResourceAttributes(HaveKeyWithValue("test", "passed")),

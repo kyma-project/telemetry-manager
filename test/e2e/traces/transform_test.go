@@ -55,8 +55,9 @@ func TestTransform(t *testing.T) {
 	assert.TracePipelineHealthy(t, pipelineName)
 	assert.TracesFromNamespaceDelivered(t, backend, genNs)
 
-	assert.BackendDataEventuallyMatches(t, backend,
+	assert.BackendDataConsistentlyMatches(t, backend,
 		HaveFlatTraces(ContainElement(SatisfyAll(
+			HaveResourceAttributes(Not(HaveKeyWithValue("k8s.namespace.name", "kyma-system"))),
 			HaveSpanAttributes(HaveKeyWithValue("system", "false")),
 		))),
 	)

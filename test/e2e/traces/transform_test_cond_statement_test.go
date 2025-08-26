@@ -58,6 +58,7 @@ func TestTransform_StatementCond(t *testing.T) {
 
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatTraces(ContainElement(SatisfyAll(
+			HaveSpanAttributes(HaveKeyWithValue("component", "proxy")),
 			HaveSpanAttributes(HaveKeyWithValue("FromProxy", "true")),
 		))),
 	)

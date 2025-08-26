@@ -90,8 +90,9 @@ func TestTransform_OTel(t *testing.T) {
 			assert.OTelLogPipelineHealthy(t, pipelineNameValue)
 
 			assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
-			assert.BackendDataEventuallyMatches(t, backend,
+			assert.BackendDataConsistentlyMatches(t, backend,
 				HaveFlatLogs(ContainElement(SatisfyAll(
+					HaveResourceAttributes(Not(HaveKeyWithValue("k8s.namespace.name", "kyma-system"))),
 					HaveAttributes(HaveKeyWithValue("system", "false")),
 				))),
 			)

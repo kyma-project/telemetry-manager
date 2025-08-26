@@ -57,7 +57,7 @@ func TestTransformInfer_InferContext(t *testing.T) {
 	assert.MetricPipelineHealthy(t, pipelineName)
 	assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
 
-	assert.BackendDataEventuallyMatches(t, backend,
+	assert.BackendDataConsistentlyMatches(t, backend,
 		HaveFlatMetrics(ContainElement(SatisfyAll(
 			HaveResourceAttributes(HaveKeyWithValue("test", "passed")),
 			HaveDescription(Equal("test passed")),

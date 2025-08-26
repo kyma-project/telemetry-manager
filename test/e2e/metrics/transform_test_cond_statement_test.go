@@ -55,7 +55,7 @@ func TestTransform_StatementCondition(t *testing.T) {
 	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 	assert.MetricPipelineHealthy(t, pipelineName)
 
-	assert.BackendDataEventuallyMatches(t, backend,
+	assert.BackendDataConsistentlyMatches(t, backend,
 		metric.HaveFlatMetrics(ContainElement(SatisfyAll(
 			metric.HaveName(Equal("GaugeMetric")),
 			metric.HaveType(Equal("Gauge")),

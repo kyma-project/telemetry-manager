@@ -55,8 +55,9 @@ func TestTransform_Basic(t *testing.T) {
 	assert.MetricPipelineHealthy(t, pipelineName)
 	assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
 
-	assert.BackendDataEventuallyMatches(t, backend,
+	assert.BackendDataConsistentlyMatches(t, backend,
 		metric.HaveFlatMetrics(ContainElement(SatisfyAll(
+			metric.HaveResourceAttributes(Not(HaveKeyWithValue("k8s.namespace.name", "kyma-system"))),
 			metric.HaveMetricAttributes(HaveKeyWithValue("system", "false")),
 		))),
 	)
