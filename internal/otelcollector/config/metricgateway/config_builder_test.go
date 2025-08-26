@@ -273,141 +273,17 @@ func TestMakeConfig(t *testing.T) {
 		}{
 			{
 				name:           "simple single pipeline setup",
-				goldenFileName: "simple.yaml",
+				goldenFileName: "setup-simple.yaml",
 				pipelines: []telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().
 						WithName("test").
-						WithOTLPInput(true).
-						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
-				},
-			},
-			{
-				name:           "pipeline with OTLP input disabled",
-				goldenFileName: "otlp-disabled.yaml",
-				pipelines: []telemetryv1alpha1.MetricPipeline{
-					testutils.NewMetricPipelineBuilder().
-						WithName("test").
-						WithOTLPInput(false).
-						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
-				},
-			},
-			{
-				name:           "pipeline with runtime input and namespace include filter",
-				goldenFileName: "runtime-namespace-include.yaml",
-				pipelines: []telemetryv1alpha1.MetricPipeline{
-					testutils.NewMetricPipelineBuilder().
-						WithName("cls").
-						WithRuntimeInput(true, testutils.IncludeNamespaces("kyma-system", "default")).
-						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
-				},
-			},
-			{
-				name:           "pipeline with runtime input and namespace exclude filter",
-				goldenFileName: "runtime-namespace-exclude.yaml",
-				pipelines: []telemetryv1alpha1.MetricPipeline{
-					testutils.NewMetricPipelineBuilder().
-						WithName("cls").
-						WithRuntimeInput(true, testutils.ExcludeNamespaces("kube-system", "istio-system")).
-						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
-				},
-			},
-			{
-				name:           "pipeline with prometheus input and namespace filters",
-				goldenFileName: "prometheus-namespace-filters.yaml",
-				pipelines: []telemetryv1alpha1.MetricPipeline{
-					testutils.NewMetricPipelineBuilder().
-						WithName("cls").
-						WithPrometheusInput(true, testutils.IncludeNamespaces("monitoring", "observability")).
-						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
-				},
-			},
-			{
-				name:           "pipeline with istio input and namespace filters",
-				goldenFileName: "istio-namespace-filters.yaml",
-				pipelines: []telemetryv1alpha1.MetricPipeline{
-					testutils.NewMetricPipelineBuilder().
-						WithName("cls").
-						WithIstioInput(true, testutils.ExcludeNamespaces("kube-system")).
-						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
-				},
-			},
-			{
-				name:           "pipeline with OTLP input and namespace filters",
-				goldenFileName: "otlp-namespace-filters.yaml",
-				pipelines: []telemetryv1alpha1.MetricPipeline{
-					testutils.NewMetricPipelineBuilder().
-						WithName("cls").
-						WithOTLPInput(true, testutils.IncludeNamespaces("apps", "services")).
-						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
-				},
-			},
-			{
-				name:           "pipeline with multiple input types and mixed configurations",
-				goldenFileName: "multiple-inputs-mixed.yaml",
-				pipelines: []telemetryv1alpha1.MetricPipeline{
-					testutils.NewMetricPipelineBuilder().
-						WithName("cls").
-						WithRuntimeInput(true, testutils.IncludeNamespaces("default")).
-						WithPrometheusInput(true, testutils.ExcludeNamespaces("kube-system")).
-						WithIstioInput(false).
-						WithOTLPInput(true).
-						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
-				},
-			},
-			{
-				name:           "pipeline with runtime input specific resources enabled",
-				goldenFileName: "runtime-specific-resources.yaml",
-				pipelines: []telemetryv1alpha1.MetricPipeline{
-					testutils.NewMetricPipelineBuilder().
-						WithName("cls").
-						WithRuntimeInput(true).
-						WithRuntimeInputPodMetrics(true).
-						WithRuntimeInputContainerMetrics(true).
-						WithRuntimeInputNodeMetrics(false).
-						WithRuntimeInputVolumeMetrics(true).
-						WithRuntimeInputDeploymentMetrics(true).
-						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
-				},
-			},
-			{
-				name:           "pipeline with no prometheus diagnostic metrics",
-				goldenFileName: "prometheus-diagnostic-metrics.yaml",
-				pipelines: []telemetryv1alpha1.MetricPipeline{
-					testutils.NewMetricPipelineBuilder().
-						WithName("cls").
-						WithPrometheusInput(true).
-						WithPrometheusInputDiagnosticMetrics(false).
-						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
-				},
-			},
-			{
-				name:           "pipeline with no istio envoy metrics and no diagnostic metrics",
-				goldenFileName: "istio-envoy-diagnostic.yaml",
-				pipelines: []telemetryv1alpha1.MetricPipeline{
-					testutils.NewMetricPipelineBuilder().
-						WithName("cls").
-						WithIstioInput(true).
-						WithIstioInputEnvoyMetrics(false).
-						WithIstioInputDiagnosticMetrics(false).
-						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
-				},
-			},
-			{
-				name:           "pipeline with all inputs disabled except OTLP",
-				goldenFileName: "otlp-only.yaml",
-				pipelines: []telemetryv1alpha1.MetricPipeline{
-					testutils.NewMetricPipelineBuilder().
-						WithName("cls").
-						WithRuntimeInput(false).
-						WithPrometheusInput(false).
-						WithIstioInput(false).
 						WithOTLPInput(true).
 						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 				},
 			},
 			{
 				name:           "complex pipeline with comprehensive configuration",
-				goldenFileName: "comprehensive-config.yaml",
+				goldenFileName: "setup-comprehensive.yaml",
 				pipelines: []telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().
 						WithName("cls").
@@ -425,6 +301,163 @@ func TestMakeConfig(t *testing.T) {
 							Conditions: []string{"resource.attributes[\"k8s.namespace.name\"] == \"production\""},
 							Statements: []string{"set(attributes[\"environment\"], \"prod\")"},
 						}).Build(),
+				},
+			},
+			{
+				name:           "pipeline with OTLP input disabled",
+				goldenFileName: "otlp-disabled.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("test").
+						WithOTLPInput(false).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "pipeline with runtime input and namespace filters",
+				goldenFileName: "runtime-namespace-filters.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("cls").
+						WithRuntimeInput(true,
+							testutils.IncludeNamespaces("monitoring", "observability"),
+							testutils.ExcludeNamespaces("kube-system", "istio-system"),
+						).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "pipeline with prometheus input and namespace filters",
+				goldenFileName: "prometheus-namespace-filters.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("cls").
+						WithPrometheusInput(true,
+							testutils.IncludeNamespaces("monitoring", "observability"),
+							testutils.ExcludeNamespaces("kube-system", "istio-system"),
+						).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "pipeline with istio input and namespace filters",
+				goldenFileName: "istio-namespace-filters.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("cls").
+						WithIstioInput(true,
+							testutils.IncludeNamespaces("monitoring", "observability"),
+							testutils.ExcludeNamespaces("kube-system", "istio-system"),
+						).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "pipeline with OTLP input and namespace filters",
+				goldenFileName: "otlp-namespace-filters.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("cls").
+						WithOTLPInput(true,
+							testutils.IncludeNamespaces("monitoring", "observability"),
+							testutils.ExcludeNamespaces("kube-system", "istio-system"),
+						).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "pipeline with multiple input types and mixed configurations",
+				goldenFileName: "multiple-inputs-mixed.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("cls").
+						WithRuntimeInput(true, testutils.IncludeNamespaces("default")).
+						WithPrometheusInput(true, testutils.ExcludeNamespaces("kube-system")).
+						WithIstioInput(false).
+						WithOTLPInput(true).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "pipeline with all runtime input resources desiabled",
+				goldenFileName: "runtime-resources-all-disabled.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("cls").
+						WithRuntimeInput(true).
+						WithRuntimeInputPodMetrics(false).
+						WithRuntimeInputContainerMetrics(false).
+						WithRuntimeInputNodeMetrics(false).
+						WithRuntimeInputVolumeMetrics(false).
+						WithRuntimeInputDeploymentMetrics(false).
+						WithRuntimeInputDaemonSetMetrics(false).
+						WithRuntimeInputStatefulSetMetrics(false).
+						WithRuntimeInputJobMetrics(false).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "pipeline with some runtime input resources disabled",
+				goldenFileName: "runtime-resources-some-disabled.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("cls").
+						WithRuntimeInput(true).
+						WithRuntimeInputPodMetrics(true).
+						WithRuntimeInputContainerMetrics(false).
+						WithRuntimeInputNodeMetrics(false).
+						WithRuntimeInputVolumeMetrics(true).
+						WithRuntimeInputDeploymentMetrics(true).
+						WithRuntimeInputDaemonSetMetrics(true).
+						WithRuntimeInputStatefulSetMetrics(true).
+						WithRuntimeInputJobMetrics(true).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "pipeline with prometheus diagnostic metrics",
+				goldenFileName: "prometheus-diagnostic.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("cls").
+						WithPrometheusInput(true).
+						WithPrometheusInputDiagnosticMetrics(true).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "pipeline with istio envoy metrics",
+				goldenFileName: "istio-envoy.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("cls").
+						WithIstioInput(true).
+						WithIstioInputEnvoyMetrics(true).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "pipeline with istio diagnostic metrics",
+				goldenFileName: "istio-diagnostic.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("cls").
+						WithIstioInput(true).
+						WithIstioInputDiagnosticMetrics(true).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "pipeline with all inputs disabled except OTLP",
+				goldenFileName: "otlp-only.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("cls").
+						WithRuntimeInput(false).
+						WithPrometheusInput(false).
+						WithIstioInput(false).
+						WithOTLPInput(true).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 				},
 			},
 			{

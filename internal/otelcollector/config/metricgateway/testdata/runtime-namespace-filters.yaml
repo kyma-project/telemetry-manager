@@ -34,7 +34,7 @@ service:
                 - filter/drop-if-input-source-prometheus
                 - filter/drop-if-input-source-istio
                 - filter/drop-envoy-metrics-if-disabled
-                - filter/drop-runtime-node-metrics
+                - filter/cls-filter-by-namespace-runtime-input
                 - resource/insert-cluster-attributes
                 - resource/delete-skip-enrichment-attribute
                 - resource/drop-kyma-attributes
@@ -85,6 +85,11 @@ processors:
         send_batch_size: 1024
         timeout: 10s
         send_batch_max_size: 1024
+    filter/cls-filter-by-namespace-runtime-input:
+        metrics:
+            metric:
+                - instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and (resource.attributes["k8s.namespace.name"] == "kube-system" or resource.attributes["k8s.namespace.name"] == "istio-system")
+                - instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "monitoring" or resource.attributes["k8s.namespace.name"] == "observability")
     filter/drop-envoy-metrics-if-disabled:
         metrics:
             metric:
@@ -97,10 +102,6 @@ processors:
         metrics:
             metric:
                 - resource.attributes["kyma.input.name"] == "prometheus"
-    filter/drop-runtime-node-metrics:
-        metrics:
-            metric:
-                - instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s.node.*")
     k8sattributes:
         auth_type: serviceAccount
         passthrough: false

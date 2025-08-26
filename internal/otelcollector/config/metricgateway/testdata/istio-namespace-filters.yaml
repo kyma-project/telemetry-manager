@@ -89,7 +89,8 @@ processors:
     filter/cls-filter-by-namespace-istio-input:
         metrics:
             metric:
-                - instrumentation_scope.name == "io.kyma-project.telemetry/istio" and (resource.attributes["k8s.namespace.name"] == "kube-system")
+                - instrumentation_scope.name == "io.kyma-project.telemetry/istio" and (resource.attributes["k8s.namespace.name"] == "kube-system" or resource.attributes["k8s.namespace.name"] == "istio-system")
+                - instrumentation_scope.name == "io.kyma-project.telemetry/istio" and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "monitoring" or resource.attributes["k8s.namespace.name"] == "observability")
     filter/drop-diagnostic-metrics-if-input-source-istio:
         metrics:
             metric:

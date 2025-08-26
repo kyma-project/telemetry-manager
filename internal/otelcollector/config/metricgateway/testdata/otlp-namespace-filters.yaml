@@ -89,7 +89,8 @@ processors:
     filter/cls-filter-by-namespace-otlp-input:
         metrics:
             metric:
-                - not(instrumentation_scope.name == "io.kyma-project.telemetry/runtime" or resource.attributes["kyma.input.name"] == "prometheus" or instrumentation_scope.name == "io.kyma-project.telemetry/istio" or instrumentation_scope.name == "io.kyma-project.telemetry/kyma") and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "apps" or resource.attributes["k8s.namespace.name"] == "services")
+                - not(instrumentation_scope.name == "io.kyma-project.telemetry/runtime" or resource.attributes["kyma.input.name"] == "prometheus" or instrumentation_scope.name == "io.kyma-project.telemetry/istio" or instrumentation_scope.name == "io.kyma-project.telemetry/kyma") and (resource.attributes["k8s.namespace.name"] == "kube-system" or resource.attributes["k8s.namespace.name"] == "istio-system")
+                - not(instrumentation_scope.name == "io.kyma-project.telemetry/runtime" or resource.attributes["kyma.input.name"] == "prometheus" or instrumentation_scope.name == "io.kyma-project.telemetry/istio" or instrumentation_scope.name == "io.kyma-project.telemetry/kyma") and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "monitoring" or resource.attributes["k8s.namespace.name"] == "observability")
     filter/drop-envoy-metrics-if-disabled:
         metrics:
             metric:
