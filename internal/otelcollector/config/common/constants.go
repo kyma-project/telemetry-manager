@@ -1,28 +1,16 @@
 package common
 
-// ================================================================================
-// Environment Variables
-// ================================================================================
-
 const (
 	EnvVarCurrentPodIP    = "MY_POD_IP"
 	EnvVarCurrentNodeName = "MY_NODE_NAME"
 	EnvVarGoMemLimit      = "GOMEMLIMIT"
 )
 
-// ================================================================================
-// Signal Types
-// ================================================================================
-
 const (
 	SignalTypeMetric = "metric"
 	SignalTypeTrace  = "trace"
 	SignalTypeLog    = "log"
 )
-
-// ================================================================================
-// Input Sources and Instrumentation Scopes
-// ================================================================================
 
 type InputSourceType string
 
@@ -58,21 +46,21 @@ var upstreamInstrumentationScopeName = map[InputSourceType]string{
 	InputSourceK8sCluster: "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver",
 }
 
-// ================================================================================
-// Attributes and Labels
-// ================================================================================
-
 const (
 	SkipEnrichmentAttribute = "io.kyma-project.telemetry.skip_enrichment"
 	KymaInputNameAttribute  = "kyma.input.name"
 	KymaInputPrometheus     = "prometheus"
 )
 
-// Processor constants
 const (
 	kymaK8sIOAppName                   = "kyma.kubernetes_io_app_name"
 	kymaAppName                        = "kyma.app_name"
 	defaultTransformProcessorErrorMode = "ignore"
+)
+
+const (
+	K8sLeaderElectorKymaStats  = "telemetry-metric-gateway-kymastats"
+	K8sLeaderElectorK8sCluster = "telemetry-metric-agent-k8scluster"
 )
 
 // ================================================================================
@@ -84,50 +72,36 @@ const (
 	// RECEIVERS
 	// ================================================================================
 
-	// Generic Receivers
-	ComponentIDOTLPReceiver = "otlp"
-
-	// Log-Specific Receivers
-	ComponentIDFileLogReceiver = "filelog/%s" // dynamically filled with pipeline name
-
-	// Metric-Specific Receivers
+	ComponentIDOTLPReceiver      = "otlp"
+	ComponentIDFileLogReceiver   = "filelog/%s" // dynamically filled with pipeline name
 	ComponentIDKymaStatsReceiver = "kymastats"
 
 	// ================================================================================
 	// PROCESSORS
 	// ================================================================================
 
-	// Generic Basic Processors
-	ComponentIDBatchProcessor         = "batch"
-	ComponentIDMemoryLimiterProcessor = "memory_limiter"
-
-	// Generic Enrichment Processors
-	ComponentIDK8sAttributesProcessor     = "k8sattributes"
-	ComponentIDServiceEnrichmentProcessor = "service_enrichment"
-
-	// Generic Transform Processors
+	// Common Processors
+	ComponentIDBatchProcessor                          = "batch"
+	ComponentIDMemoryLimiterProcessor                  = "memory_limiter"
+	ComponentIDK8sAttributesProcessor                  = "k8sattributes"
+	ComponentIDServiceEnrichmentProcessor              = "service_enrichment"
+	ComponentIDIstioNoiseFilterProcessor               = "istio_noise_filter"
 	ComponentIDSetInstrumentationScopeKymaProcessor    = "transform/set-instrumentation-scope-kyma"
 	ComponentIDSetInstrumentationScopeRuntimeProcessor = "transform/set-instrumentation-scope-runtime"
 	ComponentIDUserDefinedTransformProcessor           = "transform/user-defined-%s" // dynamically filled with pipeline name
-
-	// Generic Resource Processors
-	ComponentIDInsertClusterAttributesProcessor       = "resource/insert-cluster-attributes"
-	ComponentIDDropKymaAttributesProcessor            = "resource/drop-kyma-attributes"
-	ComponentIDDeleteSkipEnrichmentAttributeProcessor = "resource/delete-skip-enrichment-attribute"
-
-	// Generic Input Source Filter Processors
-	ComponentIDDropIfInputSourceRuntimeProcessor    = "filter/drop-if-input-source-runtime"
-	ComponentIDDropIfInputSourcePrometheusProcessor = "filter/drop-if-input-source-prometheus"
-	ComponentIDDropIfInputSourceIstioProcessor      = "filter/drop-if-input-source-istio"
-	ComponentIDDropIfInputSourceOTLPProcessor       = "filter/drop-if-input-source-otlp"
+	ComponentIDInsertClusterAttributesProcessor        = "resource/insert-cluster-attributes"
+	ComponentIDDropKymaAttributesProcessor             = "resource/drop-kyma-attributes"
 
 	// Log-Specific Processors
 	ComponentIDNamespaceFilterProcessor       = "filter/%s-filter-by-namespace" // dynamically filled with pipeline name and input source
 	ComponentIDSetObservedTimeIfZeroProcessor = "transform/set-observed-time-if-zero"
 	ComponentIDIstioEnrichmentProcessor       = "istio_enrichment"
-	ComponentIDIstioNoiseFilterProcessor      = "istio_noise_filter"
 
 	// Metric-Specific Processors
+	ComponentIDDropIfInputSourceRuntimeProcessor        = "filter/drop-if-input-source-runtime"
+	ComponentIDDropIfInputSourcePrometheusProcessor     = "filter/drop-if-input-source-prometheus"
+	ComponentIDDropIfInputSourceIstioProcessor          = "filter/drop-if-input-source-istio"
+	ComponentIDDropIfInputSourceOTLPProcessor           = "filter/drop-if-input-source-otlp"
 	ComponentIDDropEnvoyMetricsIfDisabledProcessor      = "filter/drop-envoy-metrics-if-disabled"
 	ComponentIDNamespacePerInputFilterProcessor         = "filter/%s-filter-by-namespace-%s-input" // dynamically filled with pipeline name and input source
 	ComponentIDDropRuntimePodMetricsProcessor           = "filter/drop-runtime-pod-metrics"
@@ -140,12 +114,12 @@ const (
 	ComponentIDDropRuntimeJobMetricsProcessor           = "filter/drop-runtime-job-metrics"
 	ComponentIDDropPrometheusDiagnosticMetricsProcessor = "filter/drop-diagnostic-metrics-if-input-source-prometheus"
 	ComponentIDDropIstioDiagnosticMetricsProcessor      = "filter/drop-diagnostic-metrics-if-input-source-istio"
+	ComponentIDDeleteSkipEnrichmentAttributeProcessor   = "resource/delete-skip-enrichment-attribute"
 
 	// ================================================================================
 	// EXPORTERS
 	// ================================================================================
 
-	// Generic Exporters
 	ComponentIDOTLPHTTPExporter = "otlphttp/%s" // dynamically filled with pipeline name
 	ComponentIDOTLPGRPCExporter = "otlp/%s"     // dynamically filled with pipeline name
 
@@ -153,15 +127,6 @@ const (
 	// CONNECTORS
 	// ================================================================================
 
-	// Generic Connectors
 	ComponentIDForwardConnector = "forward/%s" // dynamically filled with pipeline name
 	ComponentIDRoutingConnector = "routing/%s" // dynamically filled with pipeline name
-
-	// ================================================================================
-	// EXTENSIONS AND INFRASTRUCTURE
-	// ================================================================================
-
-	// K8s Leader Electors
-	ComponentIDK8sLeaderElectorKymaStats  = "telemetry-metric-gateway-kymastats"
-	ComponentIDK8sLeaderElectorK8sCluster = "telemetry-metric-agent-k8scluster"
 )
