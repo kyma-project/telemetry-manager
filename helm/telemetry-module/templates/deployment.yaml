@@ -55,8 +55,6 @@ spec:
           value: {{ quote .Values.manager.container.env.selfMonitorImage }}
         - name: ALPINE_IMAGE
           value: {{ quote .Values.manager.container.env.alpineImage }}
-        - name: KUBERNETES_CLUSTER_DOMAIN
-          value: {{ quote .Values.kubernetesClusterDomain }}
         image: {{ .Values.manager.container.image.repository }}
         livenessProbe:
           httpGet:
