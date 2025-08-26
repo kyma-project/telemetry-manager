@@ -82,7 +82,7 @@ func TestReceiverCreator(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			fileLogReceiver := fileLogReceiverConfig(tc.pipeline)
+			fileLogReceiver := fileLogReceiverConfig(&tc.pipeline)
 			require.Equal(t, expectedExcludePaths, fileLogReceiver.Exclude)
 			require.Equal(t, expectedIncludePaths, fileLogReceiver.Include)
 			require.Equal(t, ptr.To(false), fileLogReceiver.IncludeFileName)
