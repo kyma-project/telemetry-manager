@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM --platform=$BUILDPLATFORM golang:1.25.0-alpine3.22 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.24.6-alpine3.22 AS builder
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -29,6 +29,7 @@ RUN go mod tidy && \
   CGO_ENABLED=0 \
   GOOS=${TARGETOS:-linux} \
   GOARCH=${TARGETARCH} \
+  GOFIPS=v1.0.0 \
   go build \
     -ldflags="-X github.com/kyma-project/telemetry-manager/internal/build.gitCommit=${COMMIT} \
     -X github.com/kyma-project/telemetry-manager/internal/build.gitTag=${TAG} \
@@ -40,6 +41,8 @@ FROM scratch
 LABEL org.opencontainers.image.source="https://github.com/kyma-project/telemetry-manager"
 
 WORKDIR /
+
+ENV GODEBUG=fips140=only
 
 COPY --from=builder /telemetry-manager-workspace/manager .
 
