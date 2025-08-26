@@ -25,4 +25,4 @@ dependencies:
     condition: experimental.enabled
   - name: regular
     version: 0.1.0
-    condition: default.enabled
+    condition: regular.enabled

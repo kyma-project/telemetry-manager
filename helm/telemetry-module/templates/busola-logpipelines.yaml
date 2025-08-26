@@ -10,9 +10,9 @@ metadata:
     kyma-project.io/module: telemetry
   {{- include "telemetry-manager.labels" . | nindent 4 }}
 data:
-  dataSources: {{ .Values.logpipelines.dataSources | toYaml | indent 1 }}
-  details: {{ .Values.logpipelines.details | toYaml | indent 1 }}
-  form: {{ .Values.logpipelines.form | toYaml | indent 1 }}
-  general: {{ .Values.logpipelines.general | toYaml | indent 1 }}
-  list: {{ .Values.logpipelines.list | toYaml | indent 1 }}
-  presets: {{ .Values.logpipelines.presets | toYaml | indent 1 }}
+  dataSources: {{ .Values.busola.logpipeline.dataSources | toYaml | indent 1 }}
+  details: {{ .Values.busola.logpipeline.details | toYaml | indent 1 }}
+  form: {{ .Values.busola.logpipeline.form | toYaml | indent 1 }}
+  general: {{ .Values.busola.logpipeline.general | toYaml | indent 1 }}
+  list: {{ .Values.busola.logpipeline.list | toYaml | indent 1 }}
+  presets: {{ .Values.busola.logpipeline.presets | toYaml | indent 1 }}

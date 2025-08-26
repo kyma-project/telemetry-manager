@@ -10,9 +10,9 @@ metadata:
     kyma-project.io/module: telemetry
   {{- include "telemetry-manager.labels" . | nindent 4 }}
 data:
-  dataSources: {{ .Values.tracepipelines.dataSources | toYaml | indent 1 }}
-  details: {{ .Values.tracepipelines.details | toYaml | indent 1 }}
-  form: {{ .Values.tracepipelines.form | toYaml | indent 1 }}
-  general: {{ .Values.tracepipelines.general | toYaml | indent 1 }}
-  list: {{ .Values.tracepipelines.list | toYaml | indent 1 }}
-  presets: {{ .Values.tracepipelines.presets | toYaml | indent 1 }}
+  dataSources: {{ .Values.busola.tracepipeline.dataSources | toYaml | indent 1 }}
+  details: {{ .Values.busola.tracepipeline.details | toYaml | indent 1 }}
+  form: {{ .Values.busola.tracepipeline.form | toYaml | indent 1 }}
+  general: {{ .Values.busola.tracepipeline.general | toYaml | indent 1 }}
+  list: {{ .Values.busola.tracepipeline.list | toYaml | indent 1 }}
+  presets: {{ .Values.busola.tracepipeline.presets | toYaml | indent 1 }}

@@ -10,8 +10,8 @@ metadata:
     kyma-project.io/module: telemetry
   {{- include "telemetry-manager.labels" . | nindent 4 }}
 data:
-  dataSources: {{ .Values.module.dataSources | toYaml | indent 1 }}
-  details: {{ .Values.module.details | toYaml | indent 1 }}
-  form: {{ .Values.module.form | toYaml | indent 1 }}
-  general: {{ .Values.module.general | toYaml | indent 1 }}
-  list: {{ .Values.module.list | toYaml | indent 1 }}
+  dataSources: {{ .Values.busola.telemetry.dataSources | toYaml | indent 1 }}
+  details: {{ .Values.busola.telemetry.details | toYaml | indent 1 }}
+  form: {{ .Values.busola.telemetry.form | toYaml | indent 1 }}
+  general: {{ .Values.busola.telemetry.general | toYaml | indent 1 }}
+  list: {{ .Values.busola.telemetry.list | toYaml | indent 1 }}
