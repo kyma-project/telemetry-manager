@@ -6,21 +6,21 @@ regular:
 manager:
   container:
     args:
-    - --cert-dir=/tmp
-    - --high-priority-class-name=telemetry-priority-class-high
-    - --normal-priority-class-name=telemetry-priority-class
+      - --cert-dir=/tmp
+      - --high-priority-class-name=telemetry-priority-class-high
+      - --normal-priority-class-name=telemetry-priority-class
     containerSecurityContext:
       allowPrivilegeEscalation: false
       capabilities:
         drop:
-        - ALL
+          - ALL
       privileged: false
       readOnlyRootFilesystem: false
     env:
       alpineImage: europe-docker.pkg.dev/kyma-project/prod/external/library/alpine:3.22.1
       appLogLevel: info
       fluentBitExporterImage: europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20250724-d99b68f4
-      fluentBitImage: europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:4.0.7
+      fluentBitImage: europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:4.0.8
       gomemlimit: 300MiB
       otelCollectorImage: europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.132.0-main
       selfMonitorImage: europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:3.5.0-8d9d348
@@ -40,15 +40,15 @@ manager:
     annotations: {}
 managerMetrics:
   ports:
-  - name: http-metrics
-    port: 8080
-    targetPort: 8080
+    - name: http-metrics
+      port: 8080
+      targetPort: 8080
   type: ClusterIP
 managerWebhook:
   ports:
-  - port: 443
-    protocol: TCP
-    targetPort: 9443
+    - port: 443
+      protocol: TCP
+      targetPort: 9443
   type: ClusterIP
 busola:
   logpipeline:
@@ -1872,7 +1872,6 @@ busola:
             output:
               otlp:
                 protocol: 'grpc'
-
   telemetry:
     dataSources: |-
       logPipelines:
