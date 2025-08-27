@@ -8,9 +8,9 @@ date: 2025-08-21
 
 ## Context
 
-For deploying the module across multiple environments, templating capabilities are frequently required. While Kustomize was initially chosen due to its integration with kubebuilder (which generates artifacts using Kustomize), its role in our setup has become minimal. At this point, Kustomize is only used for CRD generation.
+We often need templating capabilities to deploy the module across multiple environments. While Kustomize was initially chosen due to its integration with kubebuilder (which generates artifacts using Kustomize), its role in our setup has become minimal. At this point, Kustomize is only used for CRD generation.
 
-Since these CRDs are unaffected by the deployment layer, we now have the opportunity to switch the main deployment mechanism to Helm, which is the de-facto standard for Kubernetes packaging and offers significantly more powerful templating and configuration features. The proposal is therefore to convert the existing `config/` folder into a Helm chart, and adapt the deployment and testing tooling accordingly.
+Because these CRDs are unaffected by the deployment layer, we now have the opportunity to switch the main deployment mechanism to Helm, which is the de-facto standard for Kubernetes packaging and offers significantly more powerful templating and configuration features. Therefore, the proposal is to convert the existing `config/` folder into a Helm chart, and adapt the deployment and testing tooling accordingly.
 
 ## Proposal
 
@@ -22,7 +22,7 @@ The proposal is to switch the deployment packaging from Kustomize to Helm. This 
 5. Maintain the CRD generation using ControllerGen, as it is not affected by the deployment layer.
 
 ### CRD Manifests
-The Helm CRDs are treated as a special kind of object. They are installed before the rest of the chart, however, they have some limitations:
+The Helm CRDs are treated as a special kind of object. They are installed before the rest of the chart. However, they have some limitations:
 - They are not templated, so they must be plain YAML documents.
 - They are not deleted when the chart is uninstalled, so they must be managed separately.
 - They are not upgraded when the chart is upgraded, so they must be managed separately.
