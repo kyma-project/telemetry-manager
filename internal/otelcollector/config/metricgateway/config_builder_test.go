@@ -40,7 +40,7 @@ func TestMakeConfig(t *testing.T) {
 		require.Contains(t, collectorConfig.Exporters, "otlp/test")
 
 		actualExporterConfig := collectorConfig.Exporters["otlp/test"]
-		require.Equal(t, expectedEndpoint, actualExporterConfig.OTLP.Endpoint)
+		require.Equal(t, expectedEndpoint, actualExporterConfig.(*common.OTLPExporter).Endpoint)
 
 		require.Contains(t, envVars, "OTLP_ENDPOINT_TEST")
 		require.Equal(t, "http://localhost", string(envVars["OTLP_ENDPOINT_TEST"]))
@@ -61,7 +61,7 @@ func TestMakeConfig(t *testing.T) {
 		require.Contains(t, collectorConfig.Exporters, "otlp/test")
 
 		actualExporterConfig := collectorConfig.Exporters["otlp/test"]
-		require.False(t, actualExporterConfig.OTLP.TLS.Insecure)
+		require.False(t, actualExporterConfig.(*common.OTLPExporter).TLS.Insecure)
 	})
 
 	t.Run("insecure", func(t *testing.T) {
@@ -79,7 +79,7 @@ func TestMakeConfig(t *testing.T) {
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-insecure")
 
 		actualExporterConfig := collectorConfig.Exporters["otlp/test-insecure"]
-		require.True(t, actualExporterConfig.OTLP.TLS.Insecure)
+		require.True(t, actualExporterConfig.(*common.OTLPExporter).TLS.Insecure)
 	})
 
 	t.Run("basic auth", func(t *testing.T) {
@@ -97,7 +97,7 @@ func TestMakeConfig(t *testing.T) {
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-basic-auth")
 
 		actualExporterConfig := collectorConfig.Exporters["otlp/test-basic-auth"]
-		headers := actualExporterConfig.OTLP.Headers
+		headers := actualExporterConfig.(*common.OTLPExporter).Headers
 		authHeader, existing := headers["Authorization"]
 		require.True(t, existing)
 		require.Equal(t, "${BASIC_AUTH_HEADER_TEST_BASIC_AUTH}", authHeader)
@@ -123,7 +123,7 @@ func TestMakeConfig(t *testing.T) {
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-custom-header")
 
 		otlpExporterConfig := collectorConfig.Exporters["otlp/test-custom-header"]
-		headers := otlpExporterConfig.OTLP.Headers
+		headers := otlpExporterConfig.(*common.OTLPExporter).Headers
 		customHeader, exists := headers["Authorization"]
 		require.True(t, exists)
 		require.Equal(t, "${HEADER_TEST_CUSTOM_HEADER_AUTHORIZATION}", customHeader)
@@ -147,8 +147,8 @@ func TestMakeConfig(t *testing.T) {
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-mtls")
 
 		otlpExporterConfig := collectorConfig.Exporters["otlp/test-mtls"]
-		require.Equal(t, "${OTLP_TLS_CERT_PEM_TEST_MTLS}", otlpExporterConfig.OTLP.TLS.CertPem)
-		require.Equal(t, "${OTLP_TLS_KEY_PEM_TEST_MTLS}", otlpExporterConfig.OTLP.TLS.KeyPem)
+		require.Equal(t, "${OTLP_TLS_CERT_PEM_TEST_MTLS}", otlpExporterConfig.(*common.OTLPExporter).TLS.CertPem)
+		require.Equal(t, "${OTLP_TLS_KEY_PEM_TEST_MTLS}", otlpExporterConfig.(*common.OTLPExporter).TLS.KeyPem)
 
 		require.Contains(t, envVars, "OTLP_TLS_CERT_PEM_TEST_MTLS")
 		require.Equal(t, "cert", string(envVars["OTLP_TLS_CERT_PEM_TEST_MTLS"]))
@@ -219,7 +219,7 @@ func TestMakeConfig(t *testing.T) {
 			},
 		)
 		require.NoError(t, err)
-		require.Equal(t, maxQueueSize, collectorConfig.Exporters["otlp/test"].OTLP.SendingQueue.QueueSize, "Pipeline should have the full queue size")
+		require.Equal(t, maxQueueSize, collectorConfig.Exporters["otlp/test"].(*common.OTLPExporter).SendingQueue.QueueSize, "Pipeline should have the full queue size")
 	})
 
 	t.Run("multi pipeline queue size", func(t *testing.T) {
@@ -239,9 +239,9 @@ func TestMakeConfig(t *testing.T) {
 		require.NoError(t, err)
 
 		expectedQueueSize := 85 // Total queue size (256) divided by the number of pipelines (3)
-		require.Equal(t, expectedQueueSize, collectorConfig.Exporters["otlp/test-1"].OTLP.SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
-		require.Equal(t, expectedQueueSize, collectorConfig.Exporters["otlp/test-2"].OTLP.SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
-		require.Equal(t, expectedQueueSize, collectorConfig.Exporters["otlp/test-3"].OTLP.SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
+		require.Equal(t, expectedQueueSize, collectorConfig.Exporters["otlp/test-1"].(*common.OTLPExporter).SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
+		require.Equal(t, expectedQueueSize, collectorConfig.Exporters["otlp/test-2"].(*common.OTLPExporter).SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
+		require.Equal(t, expectedQueueSize, collectorConfig.Exporters["otlp/test-3"].(*common.OTLPExporter).SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
 	})
 
 	t.Run("exporters names", func(t *testing.T) {
@@ -272,8 +272,8 @@ func TestMakeConfig(t *testing.T) {
 			overwriteGoldenFile bool
 		}{
 			{
-				name:           "single pipeline",
-				goldenFileName: "single-pipeline.yaml",
+				name:           "simple single pipeline setup",
+				goldenFileName: "setup-simple.yaml",
 				pipelines: []telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().
 						WithName("test").
@@ -282,8 +282,30 @@ func TestMakeConfig(t *testing.T) {
 				},
 			},
 			{
-				name:           "single pipeline with OTLP disabled",
-				goldenFileName: "single-pipeline-otlp-disabled.yaml",
+				name:           "complex pipeline with comprehensive configuration",
+				goldenFileName: "setup-comprehensive.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("cls").
+						WithRuntimeInput(true, testutils.IncludeNamespaces("production", "staging")).
+						WithRuntimeInputPodMetrics(true).
+						WithRuntimeInputContainerMetrics(true).
+						WithRuntimeInputNodeMetrics(true).
+						WithPrometheusInput(true, testutils.ExcludeNamespaces("kube-system")).
+						WithPrometheusInputDiagnosticMetrics(true).
+						WithIstioInput(true).
+						WithIstioInputEnvoyMetrics(true).
+						WithOTLPInput(true, testutils.IncludeNamespaces("apps")).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://backend.example.com")).
+						WithTransform(telemetryv1alpha1.TransformSpec{
+							Conditions: []string{"resource.attributes[\"k8s.namespace.name\"] == \"production\""},
+							Statements: []string{"set(attributes[\"environment\"], \"prod\")"},
+						}).Build(),
+				},
+			},
+			{
+				name:           "pipeline with OTLP input disabled",
+				goldenFileName: "otlp-disabled.yaml",
 				pipelines: []telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().
 						WithName("test").
@@ -292,11 +314,158 @@ func TestMakeConfig(t *testing.T) {
 				},
 			},
 			{
-				name:           "two pipelines with user-defined transforms",
-				goldenFileName: "two-pipelines-with-transforms.yaml",
+				name:           "pipeline with runtime input and namespace filters",
+				goldenFileName: "runtime-namespace-filters.yaml",
 				pipelines: []telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().
-						WithName("test1").
+						WithName("cls").
+						WithRuntimeInput(true,
+							testutils.IncludeNamespaces("monitoring", "observability"),
+							testutils.ExcludeNamespaces("kube-system", "istio-system"),
+						).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "pipeline with prometheus input and namespace filters",
+				goldenFileName: "prometheus-namespace-filters.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("cls").
+						WithPrometheusInput(true,
+							testutils.IncludeNamespaces("monitoring", "observability"),
+							testutils.ExcludeNamespaces("kube-system", "istio-system"),
+						).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "pipeline with istio input and namespace filters",
+				goldenFileName: "istio-namespace-filters.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("cls").
+						WithIstioInput(true,
+							testutils.IncludeNamespaces("monitoring", "observability"),
+							testutils.ExcludeNamespaces("kube-system", "istio-system"),
+						).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "pipeline with OTLP input and namespace filters",
+				goldenFileName: "otlp-namespace-filters.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("cls").
+						WithOTLPInput(true,
+							testutils.IncludeNamespaces("monitoring", "observability"),
+							testutils.ExcludeNamespaces("kube-system", "istio-system"),
+						).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "pipeline with multiple input types and mixed configurations",
+				goldenFileName: "multiple-inputs-mixed.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("cls").
+						WithRuntimeInput(true, testutils.IncludeNamespaces("default")).
+						WithPrometheusInput(true, testutils.ExcludeNamespaces("kube-system")).
+						WithIstioInput(false).
+						WithOTLPInput(true).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "pipeline with all runtime input resources desiabled",
+				goldenFileName: "runtime-resources-all-disabled.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("cls").
+						WithRuntimeInput(true).
+						WithRuntimeInputPodMetrics(false).
+						WithRuntimeInputContainerMetrics(false).
+						WithRuntimeInputNodeMetrics(false).
+						WithRuntimeInputVolumeMetrics(false).
+						WithRuntimeInputDeploymentMetrics(false).
+						WithRuntimeInputDaemonSetMetrics(false).
+						WithRuntimeInputStatefulSetMetrics(false).
+						WithRuntimeInputJobMetrics(false).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "pipeline with some runtime input resources disabled",
+				goldenFileName: "runtime-resources-some-disabled.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("cls").
+						WithRuntimeInput(true).
+						WithRuntimeInputPodMetrics(true).
+						WithRuntimeInputContainerMetrics(false).
+						WithRuntimeInputNodeMetrics(false).
+						WithRuntimeInputVolumeMetrics(true).
+						WithRuntimeInputDeploymentMetrics(true).
+						WithRuntimeInputDaemonSetMetrics(true).
+						WithRuntimeInputStatefulSetMetrics(true).
+						WithRuntimeInputJobMetrics(true).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "pipeline with prometheus diagnostic metrics",
+				goldenFileName: "prometheus-diagnostic.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("cls").
+						WithPrometheusInput(true).
+						WithPrometheusInputDiagnosticMetrics(true).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "pipeline with istio envoy metrics",
+				goldenFileName: "istio-envoy.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("cls").
+						WithIstioInput(true).
+						WithIstioInputEnvoyMetrics(true).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "pipeline with istio diagnostic metrics",
+				goldenFileName: "istio-diagnostic.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("cls").
+						WithIstioInput(true).
+						WithIstioInputDiagnosticMetrics(true).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "pipeline with all inputs disabled except OTLP",
+				goldenFileName: "otlp-only.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("cls").
+						WithRuntimeInput(false).
+						WithPrometheusInput(false).
+						WithIstioInput(false).
+						WithOTLPInput(true).
+						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				},
+			},
+			{
+				name:           "two pipelines with user-defined transforms",
+				goldenFileName: "user-defined-transforms.yaml",
+				pipelines: []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("cls").
 						WithOTLPInput(true).
 						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
 						WithTransform(telemetryv1alpha1.TransformSpec{
@@ -307,7 +476,7 @@ func TestMakeConfig(t *testing.T) {
 							},
 						}).Build(),
 					testutils.NewMetricPipelineBuilder().
-						WithName("test2").
+						WithName("dynatrace").
 						WithOTLPInput(true).
 						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
 						WithTransform(telemetryv1alpha1.TransformSpec{
