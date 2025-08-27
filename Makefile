@@ -51,6 +51,7 @@ $(TOOLS_BIN_NAMES): $(TOOLS_BIN_DIR) $(TOOLS_MOD_DIR)/go.mod
 CONTROLLER_GEN   := $(TOOLS_BIN_DIR)/controller-gen
 GOLANGCI_LINT    := $(TOOLS_BIN_DIR)/golangci-lint
 GO_TEST_COVERAGE := $(TOOLS_BIN_DIR)/go-test-coverage
+GOTESTSUM		 := $(TOOLS_BIN_DIR)/gotestsum
 MOCKERY          := $(TOOLS_BIN_DIR)/mockery
 TABLE_GEN        := $(TOOLS_BIN_DIR)/table-gen
 YQ               := $(TOOLS_BIN_DIR)/yq
