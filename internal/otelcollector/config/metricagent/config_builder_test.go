@@ -1,6 +1,7 @@
 package metricagent
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -16,6 +17,7 @@ import (
 )
 
 func TestBuildConfig(t *testing.T) {
+	ctx := context.Background()
 	gatewayServiceName := types.NamespacedName{Name: "metrics", Namespace: "telemetry-system"}
 	sut := Builder{
 		Config: BuilderConfig{
@@ -24,29 +26,33 @@ func TestBuildConfig(t *testing.T) {
 	}
 
 	t.Run("otlp exporter endpoint", func(t *testing.T) {
-		collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()}, BuildOptions{})
-		actualExporterConfig := collectorConfig.Exporters.OTLP
-		require.Equal(t, "metrics.telemetry-system.svc.cluster.local:4317", actualExporterConfig.Endpoint)
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()}, BuildOptions{})
+		require.NoError(t, err)
+		actualExporterConfig := collectorConfig.Exporters["otlp"]
+		require.Equal(t, "metrics.telemetry-system.svc.cluster.local:4317", actualExporterConfig.(*common.OTLPExporter).Endpoint)
 	})
 
 	t.Run("insecure", func(t *testing.T) {
 		t.Run("otlp exporter endpoint", func(t *testing.T) {
-			collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()}, BuildOptions{})
+			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()}, BuildOptions{})
+			require.NoError(t, err)
 
-			actualExporterConfig := collectorConfig.Exporters.OTLP
-			require.True(t, actualExporterConfig.TLS.Insecure)
+			actualExporterConfig := collectorConfig.Exporters["otlp"]
+			require.True(t, actualExporterConfig.(*common.OTLPExporter).TLS.Insecure)
 		})
 	})
 
 	t.Run("extensions", func(t *testing.T) {
-		collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()}, BuildOptions{})
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()}, BuildOptions{})
+		require.NoError(t, err)
 
 		require.NotEmpty(t, collectorConfig.Extensions.HealthCheck.Endpoint)
 		require.Contains(t, collectorConfig.Service.Extensions, "health_check")
 	})
 
 	t.Run("telemetry", func(t *testing.T) {
-		collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()}, BuildOptions{})
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()}, BuildOptions{})
+		require.NoError(t, err)
 
 		metricreaders := []common.MetricReader{
 			{
@@ -68,11 +74,12 @@ func TestBuildConfig(t *testing.T) {
 
 	t.Run("single pipeline topology", func(t *testing.T) {
 		t.Run("no input enabled", func(t *testing.T) {
-			collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
+			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().Build(),
 			}, BuildOptions{})
+			require.NoError(t, err)
 
-			require.Nil(t, collectorConfig.Processors.DeleteServiceName)
+			require.NotContains(t, collectorConfig.Processors, "resource/delete-service-name")
 
 			require.Len(t, collectorConfig.Service.Pipelines, 0)
 		})
@@ -134,18 +141,19 @@ func TestBuildConfig(t *testing.T) {
 				}
 
 				t.Run(tc.name, func(t *testing.T) {
-					collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{tc.pipeline}, BuildOptions{})
+					collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{tc.pipeline}, BuildOptions{})
+					require.NoError(t, err)
 
-					require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
-					require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
-					require.NotNil(t, collectorConfig.Processors.InsertSkipEnrichmentAttribute)
-					require.Nil(t, collectorConfig.Processors.SetInstrumentationScopePrometheus)
-					require.Nil(t, collectorConfig.Processors.SetInstrumentationScopeIstio)
+					require.Contains(t, collectorConfig.Processors, "resource/delete-service-name")
+					require.Contains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-runtime")
+					require.Contains(t, collectorConfig.Processors, "transform/insert-skip-enrichment-attribute")
+					require.NotContains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-prometheus")
+					require.NotContains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-istio")
 
 					if tc.volumeMetricsEnabled {
-						require.NotNil(t, collectorConfig.Processors.DropNonPVCVolumesMetrics)
+						require.Contains(t, collectorConfig.Processors, "filter/drop-non-pvc-volumes-metrics")
 					} else {
-						require.Nil(t, collectorConfig.Processors.DropNonPVCVolumesMetrics)
+						require.NotContains(t, collectorConfig.Processors, "filter/drop-non-pvc-volumes-metrics")
 					}
 
 					require.Len(t, collectorConfig.Service.Pipelines, 1)
@@ -158,14 +166,15 @@ func TestBuildConfig(t *testing.T) {
 		})
 
 		t.Run("prometheus input enabled", func(t *testing.T) {
-			collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
+			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build(),
 			}, BuildOptions{})
+			require.NoError(t, err)
 
-			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
-			require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopePrometheus)
-			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
-			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopeIstio)
+			require.Contains(t, collectorConfig.Processors, "resource/delete-service-name")
+			require.Contains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-prometheus")
+			require.NotContains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-runtime")
+			require.NotContains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-istio")
 
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
@@ -175,14 +184,15 @@ func TestBuildConfig(t *testing.T) {
 		})
 
 		t.Run("istio input enabled", func(t *testing.T) {
-			collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
+			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithIstioInput(true).Build(),
 			}, BuildOptions{})
+			require.NoError(t, err)
 
-			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
-			require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeIstio)
-			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
-			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopePrometheus)
+			require.Contains(t, collectorConfig.Processors, "resource/delete-service-name")
+			require.Contains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-istio")
+			require.NotContains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-runtime")
+			require.NotContains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-prometheus")
 
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/istio")
@@ -192,15 +202,16 @@ func TestBuildConfig(t *testing.T) {
 		})
 
 		t.Run("multiple input enabled", func(t *testing.T) {
-			collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
+			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).WithIstioInput(true).Build(),
 			}, BuildOptions{})
+			require.NoError(t, err)
 
-			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
-			require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
-			require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopePrometheus)
-			require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeIstio)
-			require.NotNil(t, collectorConfig.Processors.DropNonPVCVolumesMetrics)
+			require.Contains(t, collectorConfig.Processors, "resource/delete-service-name")
+			require.Contains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-runtime")
+			require.Contains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-prometheus")
+			require.Contains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-istio")
+			require.Contains(t, collectorConfig.Processors, "filter/drop-non-pvc-volumes-metrics")
 
 			require.Len(t, collectorConfig.Service.Pipelines, 3)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
@@ -220,30 +231,32 @@ func TestBuildConfig(t *testing.T) {
 
 	t.Run("multi pipeline topology", func(t *testing.T) {
 		t.Run("no pipeline has input enabled", func(t *testing.T) {
-			collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
+			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().Build(),
 				testutils.NewMetricPipelineBuilder().Build(),
 			}, BuildOptions{})
+			require.NoError(t, err)
 
-			require.Nil(t, collectorConfig.Processors.DeleteServiceName)
-			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
-			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopePrometheus)
-			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopeIstio)
+			require.NotContains(t, collectorConfig.Processors, "resource/delete-service-name")
+			require.NotContains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-runtime")
+			require.NotContains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-prometheus")
+			require.NotContains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-istio")
 
 			require.Len(t, collectorConfig.Service.Pipelines, 0)
 		})
 
 		t.Run("some pipelines have runtime input enabled", func(t *testing.T) {
-			collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
+			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithRuntimeInput(false).Build(),
 				testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build(),
 			}, BuildOptions{})
+			require.NoError(t, err)
 
-			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
-			require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
-			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopePrometheus)
-			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopeIstio)
-			require.NotNil(t, collectorConfig.Processors.DropNonPVCVolumesMetrics)
+			require.Contains(t, collectorConfig.Processors, "resource/delete-service-name")
+			require.Contains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-runtime")
+			require.NotContains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-prometheus")
+			require.NotContains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-istio")
+			require.Contains(t, collectorConfig.Processors, "filter/drop-non-pvc-volumes-metrics")
 
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
@@ -253,16 +266,17 @@ func TestBuildConfig(t *testing.T) {
 		})
 
 		t.Run("all pipelines have runtime input enabled", func(t *testing.T) {
-			collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
+			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build(),
 				testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build(),
 			}, BuildOptions{})
+			require.NoError(t, err)
 
-			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
-			require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
-			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopePrometheus)
-			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopeIstio)
-			require.NotNil(t, collectorConfig.Processors.DropNonPVCVolumesMetrics)
+			require.Contains(t, collectorConfig.Processors, "resource/delete-service-name")
+			require.Contains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-runtime")
+			require.NotContains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-prometheus")
+			require.NotContains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-istio")
+			require.Contains(t, collectorConfig.Processors, "filter/drop-non-pvc-volumes-metrics")
 
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
@@ -272,15 +286,16 @@ func TestBuildConfig(t *testing.T) {
 		})
 
 		t.Run("some pipelines have prometheus input enabled", func(t *testing.T) {
-			collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
+			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithPrometheusInput(false).Build(),
 				testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build(),
 			}, BuildOptions{})
+			require.NoError(t, err)
 
-			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
-			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
-			require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopePrometheus)
-			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopeIstio)
+			require.Contains(t, collectorConfig.Processors, "resource/delete-service-name")
+			require.NotContains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-runtime")
+			require.Contains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-prometheus")
+			require.NotContains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-istio")
 
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
@@ -290,14 +305,15 @@ func TestBuildConfig(t *testing.T) {
 		})
 
 		t.Run("all pipelines have prometheus input enabled", func(t *testing.T) {
-			collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
+			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build(),
 				testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build(),
 			}, BuildOptions{})
+			require.NoError(t, err)
 
-			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
-			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
-			require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopePrometheus)
+			require.Contains(t, collectorConfig.Processors, "resource/delete-service-name")
+			require.NotContains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-runtime")
+			require.Contains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-prometheus")
 
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
@@ -307,15 +323,16 @@ func TestBuildConfig(t *testing.T) {
 		})
 
 		t.Run("multiple input types enabled", func(t *testing.T) {
-			collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
+			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build(),
 				testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build(),
 			}, BuildOptions{})
+			require.NoError(t, err)
 
-			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
-			require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
-			require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
-			require.NotNil(t, collectorConfig.Processors.DropNonPVCVolumesMetrics)
+			require.Contains(t, collectorConfig.Processors, "resource/delete-service-name")
+			require.Contains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-runtime")
+			require.Contains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-prometheus")
+			require.Contains(t, collectorConfig.Processors, "filter/drop-non-pvc-volumes-metrics")
 
 			require.Len(t, collectorConfig.Service.Pipelines, 2)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
@@ -353,11 +370,12 @@ func TestBuildConfig(t *testing.T) {
 				pipelines := []telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).WithIstioInput(tt.istioEnabled).Build(),
 				}
-				config := sut.Build(pipelines, BuildOptions{
+				config, _, err := sut.Build(ctx, pipelines, BuildOptions{
 					IstioEnabled:                tt.istioEnabled,
 					IstioCertPath:               "/etc/istio-output-certs",
 					InstrumentationScopeVersion: "main",
 				})
+				require.NoError(t, err)
 				configYAML, err := yaml.Marshal(config)
 				require.NoError(t, err, "failed to marshal config")
 

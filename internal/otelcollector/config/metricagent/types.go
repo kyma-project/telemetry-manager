@@ -4,14 +4,6 @@ import (
 	"time"
 )
 
-// type Receivers struct {
-// 	KubeletStats          *KubeletStatsReceiver `yaml:"kubeletstats,omitempty"`
-// 	K8sClusterReceiver    *K8sClusterReceiver   `yaml:"k8s_cluster,omitempty"`
-// 	PrometheusAppPods     *PrometheusReceiver   `yaml:"prometheus/app-pods,omitempty"`
-// 	PrometheusAppServices *PrometheusReceiver   `yaml:"prometheus/app-services,omitempty"`
-// 	PrometheusIstio       *PrometheusReceiver   `yaml:"prometheus/istio,omitempty"`
-// }
-
 type KubeletStatsReceiver struct {
 	CollectionInterval          string                         `yaml:"collection_interval"`
 	AuthType                    string                         `yaml:"auth_type"`
