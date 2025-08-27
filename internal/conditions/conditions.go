@@ -38,7 +38,7 @@ const (
 	ReasonTLSConfigurationInvalid       = "TLSConfigurationInvalid"
 	ReasonValidationFailed              = "ValidationFailed"
 	ReasonRolloutInProgress             = "RolloutInProgress"
-	ReasonOTTLExpressionInvalid         = "OTTLExpressionInvalid"
+	ReasonTransformSpecInvalid          = "TransformSpecInvalid"
 
 	// Telemetry reasons
 	ReasonComponentsRunning      = "ComponentsRunning"

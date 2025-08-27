@@ -1,4 +1,4 @@
-package ottllog
+package transformspec
 
 import (
 	"go.opentelemetry.io/collector/component"
@@ -20,7 +20,13 @@ func withLogParser(functions map[string]ottl.Factory[ottllog.TransformContext]) 
 		if err != nil {
 			return err
 		}
-		return ottl.WithParserCollectionContext(ottllog.ContextName, &logParser, ottl.WithStatementConverter(convertLogStatements))(pc)
+
+		return ottl.WithParserCollectionContext(
+			ottllog.ContextName,
+			&logParser,
+			ottl.WithStatementConverter(convertLogStatements),
+			ottl.WithConditionConverter(convertLogConditions),
+		)(pc)
 	}
 }
 
@@ -43,9 +49,18 @@ func newGenericParserCollection(settings component.TelemetrySettings, options ..
 	return &gpc, nil
 }
 
-func (gpc *genericParserCollection) parseStatementsWithConditions(statements []string, conditions []string) (any, error) {
+func (gpc *genericParserCollection) parseStatementsAndConditions(statements []string, conditions []string) error {
 	pc := ottl.ParserCollection[any](*gpc)
-	return pc.ParseStatements(ottl.NewStatementsGetter(statements), ottl.WithContextInferenceConditions(conditions))
+
+	if _, err := pc.ParseStatements(ottl.NewStatementsGetter(statements), ottl.WithContextInferenceConditions(conditions)); err != nil {
+		return err
+	}
+
+	if _, err := pc.ParseConditions(ottl.NewConditionsGetter(conditions)); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func withCommonContextParsers() ottl.ParserCollectionOption[any] {
@@ -54,17 +69,28 @@ func withCommonContextParsers() ottl.ParserCollectionOption[any] {
 		if err != nil {
 			return err
 		}
+
 		sp, err := ottlscope.NewParser(ottlfuncs.StandardFuncs[ottlscope.TransformContext](), pc.Settings, ottlscope.EnablePathContextNames())
 		if err != nil {
 			return err
 		}
 
-		err = ottl.WithParserCollectionContext(ottlresource.ContextName, &rp, ottl.WithStatementConverter(convertResourceStatements))(pc)
+		err = ottl.WithParserCollectionContext(
+			ottlresource.ContextName,
+			&rp,
+			ottl.WithStatementConverter(convertResourceStatements),
+			ottl.WithConditionConverter(convertResourceConditions),
+		)(pc)
 		if err != nil {
 			return err
 		}
 
-		err = ottl.WithParserCollectionContext(ottlscope.ContextName, &sp, ottl.WithStatementConverter(convertScopeStatements))(pc)
+		err = ottl.WithParserCollectionContext(
+			ottlscope.ContextName,
+			&sp,
+			ottl.WithStatementConverter(convertScopeStatements),
+			ottl.WithConditionConverter(convertScopeConditions),
+		)(pc)
 		if err != nil {
 			return err
 		}
@@ -77,10 +103,22 @@ func convertLogStatements(_ *ottl.ParserCollection[any], _ ottl.StatementsGetter
 	return nil, nil
 }
 
+func convertLogConditions(_ *ottl.ParserCollection[any], _ ottl.ConditionsGetter, _ []*ottl.Condition[ottllog.TransformContext]) (any, error) {
+	return nil, nil
+}
+
 func convertResourceStatements(_ *ottl.ParserCollection[any], _ ottl.StatementsGetter, _ []*ottl.Statement[ottlresource.TransformContext]) (any, error) {
 	return nil, nil
 }
 
+func convertResourceConditions(_ *ottl.ParserCollection[any], _ ottl.ConditionsGetter, _ []*ottl.Condition[ottlresource.TransformContext]) (any, error) {
+	return nil, nil
+}
+
 func convertScopeStatements(_ *ottl.ParserCollection[any], _ ottl.StatementsGetter, _ []*ottl.Statement[ottlscope.TransformContext]) (any, error) {
+	return nil, nil
+}
+
+func convertScopeConditions(_ *ottl.ParserCollection[any], _ ottl.ConditionsGetter, _ []*ottl.Condition[ottlscope.TransformContext]) (any, error) {
 	return nil, nil
 }

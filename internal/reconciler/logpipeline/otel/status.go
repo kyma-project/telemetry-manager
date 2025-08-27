@@ -19,8 +19,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
-	"github.com/kyma-project/telemetry-manager/internal/validators/ottllog"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/validators/transformspec"
 )
 
 func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) error {
@@ -182,8 +182,8 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 			fmt.Sprintf(conditions.MessageForOtelLogPipeline(conditions.ReasonEndpointInvalid), err.Error())
 	}
 
-	if ottllog.IsInvalidOTTLExpressionError(err) {
-		return metav1.ConditionFalse, conditions.ReasonOTTLExpressionInvalid, conditions.ConvertErrToMsg(err)
+	if transformspec.IsInvalidTransformSpecError(err) {
+		return metav1.ConditionFalse, conditions.ReasonTransformSpecInvalid, conditions.ConvertErrToMsg(err)
 	}
 
 	var APIRequestFailed *errortypes.APIRequestFailedError

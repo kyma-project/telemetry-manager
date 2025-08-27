@@ -52,9 +52,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
-	"github.com/kyma-project/telemetry-manager/internal/validators/ottllog"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
+	"github.com/kyma-project/telemetry-manager/internal/validators/transformspec"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
@@ -233,12 +233,17 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 
 //nolint:unparam // error is always nil: An error could be returned after implementing the IstioStatusChecker (TODO)
 func configureOtelReconciler(client client.Client, config LogPipelineControllerConfig, pipelineLock logpipelineotel.PipelineLock, gatewayFlowHealthProber *prober.OTelGatewayProber, agentFlowHealthProber *prober.OTelAgentProber) (*logpipelineotel.Reconciler, error) {
+	transformSpecValidator, err := transformspec.New(transformspec.SignalTypeLog)
+	if err != nil {
+		return nil, err
+	}
+
 	pipelineValidator := &logpipelineotel.Validator{
-		PipelineLock:       pipelineLock,
-		EndpointValidator:  &endpoint.Validator{Client: client},
-		TLSCertValidator:   tlscert.New(client),
-		SecretRefValidator: &secretref.Validator{Client: client},
-		OTTLValidator:      &ottllog.Validator{},
+		PipelineLock:           pipelineLock,
+		EndpointValidator:      &endpoint.Validator{Client: client},
+		TLSCertValidator:       tlscert.New(client),
+		SecretRefValidator:     &secretref.Validator{Client: client},
+		TransformSpecValidator: transformSpecValidator,
 	}
 
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)
