@@ -38,7 +38,7 @@ type AgentConfigBuilder interface {
 }
 
 type GatewayConfigBuilder interface {
-	Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, options metricgateway.BuildOptions) (*metricgateway.Config, common.EnvVars, error)
+	Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, options metricgateway.BuildOptions) (*common.Config, common.EnvVars, error)
 }
 
 type AgentApplierDeleter interface {

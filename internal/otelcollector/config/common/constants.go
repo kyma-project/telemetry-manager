@@ -1,10 +1,15 @@
 package common
 
-// Environment variable names
 const (
 	EnvVarCurrentPodIP    = "MY_POD_IP"
 	EnvVarCurrentNodeName = "MY_NODE_NAME"
 	EnvVarGoMemLimit      = "GOMEMLIMIT"
+)
+
+const (
+	SignalTypeMetric = "metric"
+	SignalTypeTrace  = "trace"
+	SignalTypeLog    = "log"
 )
 
 type InputSourceType string
@@ -33,26 +38,6 @@ var InstrumentationScope = map[InputSourceType]string{
 	InputSourceK8sCluster: InstrumentationScopeRuntime,
 }
 
-const (
-	SkipEnrichmentAttribute = "io.kyma-project.telemetry.skip_enrichment"
-	KymaInputNameAttribute  = "kyma.input.name"
-	KymaInputPrometheus     = "prometheus"
-)
-
-// Signal type constants
-const (
-	SignalTypeMetric = "metric"
-	SignalTypeTrace  = "trace"
-	SignalTypeLog    = "log"
-)
-
-// Processor constants
-const (
-	kymaK8sIOAppName                   = "kyma.kubernetes_io_app_name"
-	kymaAppName                        = "kyma.app_name"
-	defaultTransformProcessorErrorMode = "ignore"
-)
-
 var upstreamInstrumentationScopeName = map[InputSourceType]string{
 	InputSourceRuntime:    "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver",
 	InputSourcePrometheus: "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver",
@@ -61,29 +46,87 @@ var upstreamInstrumentationScopeName = map[InputSourceType]string{
 	InputSourceK8sCluster: "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver",
 }
 
-// Component IDs
+const (
+	SkipEnrichmentAttribute = "io.kyma-project.telemetry.skip_enrichment"
+	KymaInputNameAttribute  = "kyma.input.name"
+	KymaInputPrometheus     = "prometheus"
+)
 
 const (
-	// Receivers
-	ComponentIDOTLPReceiver    = "otlp"
-	ComponentIDFileLogReceiver = "filelog/%s" // dynamically filled with pipeline name
+	kymaK8sIOAppName                   = "kyma.kubernetes_io_app_name"
+	kymaAppName                        = "kyma.app_name"
+	defaultTransformProcessorErrorMode = "ignore"
+)
 
-	// Processors
-	ComponentIDMemoryLimiterProcessor           = "memory_limiter"
-	ComponentIDBatchProcessor                   = "batch"
-	ComponentIDK8sAttributesProcessor           = "k8sattributes"
-	ComponentIDServiceEnrichmentProcessor       = "service_enrichment"
-	ComponentIDIstioEnrichmentProcessor         = "istio_enrichment"
-	ComponentIDIstioNoiseFilterProcessor        = "istio_noise_filter"
-	ComponentIDSetObservedTimeIfZeroProcessor   = "transform/set-observed-time-if-zero"
-	ComponentIDSetInstrumentationScopeProcessor = "transform/set-instrumentation-scope-runtime"
-	ComponentIDUserDefinedTransformProcessor    = "transform/user-defined-%s" // dynamically filled with pipeline name
-	ComponentIDDropIfInputSourceOTLPProcessor   = "filter/drop-if-input-source-otlp"
-	ComponentIDNamespaceFilterProcessor         = "filter/%s-filter-by-namespace"
-	ComponentIDInsertClusterAttributesProcessor = "resource/insert-cluster-attributes"
-	ComponentIDDropKymaAttributesProcessor      = "resource/drop-kyma-attributes"
+const (
+	K8sLeaderElectorKymaStats  = "telemetry-metric-gateway-kymastats"
+	K8sLeaderElectorK8sCluster = "telemetry-metric-agent-k8scluster"
+)
 
-	// Exporters
+// ================================================================================
+// Component IDs
+// ================================================================================
+
+const (
+	// ================================================================================
+	// RECEIVERS
+	// ================================================================================
+
+	ComponentIDOTLPReceiver      = "otlp"
+	ComponentIDFileLogReceiver   = "filelog/%s" // dynamically filled with pipeline name
+	ComponentIDKymaStatsReceiver = "kymastats"
+
+	// ================================================================================
+	// PROCESSORS
+	// ================================================================================
+
+	// Common Processors
+	ComponentIDBatchProcessor                          = "batch"
+	ComponentIDMemoryLimiterProcessor                  = "memory_limiter"
+	ComponentIDK8sAttributesProcessor                  = "k8sattributes"
+	ComponentIDServiceEnrichmentProcessor              = "service_enrichment"
+	ComponentIDIstioNoiseFilterProcessor               = "istio_noise_filter"
+	ComponentIDSetInstrumentationScopeKymaProcessor    = "transform/set-instrumentation-scope-kyma"
+	ComponentIDSetInstrumentationScopeRuntimeProcessor = "transform/set-instrumentation-scope-runtime"
+	ComponentIDUserDefinedTransformProcessor           = "transform/user-defined-%s" // dynamically filled with pipeline name
+	ComponentIDInsertClusterAttributesProcessor        = "resource/insert-cluster-attributes"
+	ComponentIDDropKymaAttributesProcessor             = "resource/drop-kyma-attributes"
+
+	// Log-Specific Processors
+	ComponentIDNamespaceFilterProcessor       = "filter/%s-filter-by-namespace" // dynamically filled with pipeline name and input source
+	ComponentIDSetObservedTimeIfZeroProcessor = "transform/set-observed-time-if-zero"
+	ComponentIDIstioEnrichmentProcessor       = "istio_enrichment"
+
+	// Metric-Specific Processors
+	ComponentIDDropIfInputSourceRuntimeProcessor        = "filter/drop-if-input-source-runtime"
+	ComponentIDDropIfInputSourcePrometheusProcessor     = "filter/drop-if-input-source-prometheus"
+	ComponentIDDropIfInputSourceIstioProcessor          = "filter/drop-if-input-source-istio"
+	ComponentIDDropIfInputSourceOTLPProcessor           = "filter/drop-if-input-source-otlp"
+	ComponentIDDropEnvoyMetricsIfDisabledProcessor      = "filter/drop-envoy-metrics-if-disabled"
+	ComponentIDNamespacePerInputFilterProcessor         = "filter/%s-filter-by-namespace-%s-input" // dynamically filled with pipeline name and input source
+	ComponentIDDropRuntimePodMetricsProcessor           = "filter/drop-runtime-pod-metrics"
+	ComponentIDDropRuntimeContainerMetricsProcessor     = "filter/drop-runtime-container-metrics"
+	ComponentIDDropRuntimeNodeMetricsProcessor          = "filter/drop-runtime-node-metrics"
+	ComponentIDDropRuntimeVolumeMetricsProcessor        = "filter/drop-runtime-volume-metrics"
+	ComponentIDDropRuntimeDeploymentMetricsProcessor    = "filter/drop-runtime-deployment-metrics"
+	ComponentIDDropRuntimeDaemonSetMetricsProcessor     = "filter/drop-runtime-daemonset-metrics"
+	ComponentIDDropRuntimeStatefulSetMetricsProcessor   = "filter/drop-runtime-statefulset-metrics"
+	ComponentIDDropRuntimeJobMetricsProcessor           = "filter/drop-runtime-job-metrics"
+	ComponentIDDropPrometheusDiagnosticMetricsProcessor = "filter/drop-diagnostic-metrics-if-input-source-prometheus"
+	ComponentIDDropIstioDiagnosticMetricsProcessor      = "filter/drop-diagnostic-metrics-if-input-source-istio"
+	ComponentIDDeleteSkipEnrichmentAttributeProcessor   = "resource/delete-skip-enrichment-attribute"
+
+	// ================================================================================
+	// EXPORTERS
+	// ================================================================================
+
 	ComponentIDOTLPHTTPExporter = "otlphttp/%s" // dynamically filled with pipeline name
 	ComponentIDOTLPGRPCExporter = "otlp/%s"     // dynamically filled with pipeline name
+
+	// ================================================================================
+	// CONNECTORS
+	// ================================================================================
+
+	ComponentIDForwardConnector = "forward/%s" // dynamically filled with pipeline name
+	ComponentIDRoutingConnector = "routing/%s" // dynamically filled with pipeline name
 )
