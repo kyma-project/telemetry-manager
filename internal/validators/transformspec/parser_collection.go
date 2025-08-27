@@ -104,25 +104,25 @@ func withCommonContextParsers() ottl.ParserCollectionOption[any] {
 }
 
 func convertLogStatements(_ *ottl.ParserCollection[any], _ ottl.StatementsGetter, _ []*ottl.Statement[ottllog.TransformContext]) (any, error) {
-	return nil, nil
+	return struct{}{}, nil
 }
 
 func convertLogConditions(_ *ottl.ParserCollection[any], _ ottl.ConditionsGetter, _ []*ottl.Condition[ottllog.TransformContext]) (any, error) {
-	return nil, nil
+	return struct{}{}, nil
 }
 
 func convertResourceStatements(_ *ottl.ParserCollection[any], _ ottl.StatementsGetter, _ []*ottl.Statement[ottlresource.TransformContext]) (any, error) {
-	return nil, nil
+	return struct{}{}, nil
 }
 
 func convertResourceConditions(_ *ottl.ParserCollection[any], _ ottl.ConditionsGetter, _ []*ottl.Condition[ottlresource.TransformContext]) (any, error) {
-	return nil, nil
+	return struct{}{}, nil
 }
 
 func convertScopeStatements(_ *ottl.ParserCollection[any], _ ottl.StatementsGetter, _ []*ottl.Statement[ottlscope.TransformContext]) (any, error) {
-	return nil, nil
+	return struct{}{}, nil
 }
 
 func convertScopeConditions(_ *ottl.ParserCollection[any], _ ottl.ConditionsGetter, _ []*ottl.Condition[ottlscope.TransformContext]) (any, error) {
-	return nil, nil
+	return struct{}{}, nil
 }
