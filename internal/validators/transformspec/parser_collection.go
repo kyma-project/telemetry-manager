@@ -56,6 +56,10 @@ func (gpc *genericParserCollection) parseStatementsAndConditions(statements []st
 		return err
 	}
 
+	if len(conditions) == 0 {
+		return nil
+	}
+
 	if _, err := pc.ParseConditions(ottl.NewConditionsGetter(conditions)); err != nil {
 		return err
 	}
