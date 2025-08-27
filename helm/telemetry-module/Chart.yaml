@@ -1,8 +1,8 @@
 apiVersion: v2
 name: telemetry-manager
 description: Kyma Telemetry Manager Helm Chart
-type: application
 version: 0.1.0
+type: application
 appVersion: "main"
 keywords:
   - kyma
