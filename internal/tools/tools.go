@@ -20,6 +20,7 @@ import (
 	_ "github.com/vladopajic/go-test-coverage/v2"
 	_ "github.com/yeya24/promlinter/cmd/promlinter"
 	_ "golang.org/x/tools/cmd/stringer"
+	_ "gotest.tools/gotestsum"
 	_ "sigs.k8s.io/controller-tools/cmd/controller-gen"
 	_ "sigs.k8s.io/kustomize/kustomize/v5"
 )
