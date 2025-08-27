@@ -343,7 +343,11 @@ func (b *Builder) addOTLPExporter() fooFunc {
 		staticComponentID("otlp"),
 		func(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline) (any, common.EnvVars, error) {
 			return &common.OTLPExporter{
-				Endpoint: fmt.Sprintf("%s.%s.svc.cluster.local:%d", b.Config.GatewayOTLPServiceName.Name, b.Config.GatewayOTLPServiceName.Namespace, ports.OTLPGRPC),
+				Endpoint: fmt.Sprintf("%s.%s.svc.cluster.local:%d",
+					b.Config.GatewayOTLPServiceName.Name,
+					b.Config.GatewayOTLPServiceName.Namespace,
+					ports.OTLPGRPC,
+				),
 				TLS: common.TLS{
 					Insecure: true,
 				},

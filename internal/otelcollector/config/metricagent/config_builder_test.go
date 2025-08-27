@@ -12,7 +12,6 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -26,7 +25,7 @@ func TestBuildConfig(t *testing.T) {
 	}
 
 	t.Run("otlp exporter endpoint", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()}, BuildOptions{})
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build()}, BuildOptions{})
 		require.NoError(t, err)
 		actualExporterConfig := collectorConfig.Exporters["otlp"]
 		require.Equal(t, "metrics.telemetry-system.svc.cluster.local:4317", actualExporterConfig.(*common.OTLPExporter).Endpoint)
@@ -34,7 +33,7 @@ func TestBuildConfig(t *testing.T) {
 
 	t.Run("insecure", func(t *testing.T) {
 		t.Run("otlp exporter endpoint", func(t *testing.T) {
-			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()}, BuildOptions{})
+			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build()}, BuildOptions{})
 			require.NoError(t, err)
 
 			actualExporterConfig := collectorConfig.Exporters["otlp"]
@@ -43,300 +42,132 @@ func TestBuildConfig(t *testing.T) {
 	})
 
 	t.Run("extensions", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()}, BuildOptions{})
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build()}, BuildOptions{})
 		require.NoError(t, err)
 
 		require.NotEmpty(t, collectorConfig.Extensions.HealthCheck.Endpoint)
 		require.Contains(t, collectorConfig.Service.Extensions, "health_check")
+		require.Contains(t, collectorConfig.Service.Extensions, "pprof")
+		require.Contains(t, collectorConfig.Service.Extensions, "k8s_leader_elector")
 	})
 
 	t.Run("telemetry", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()}, BuildOptions{})
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build()}, BuildOptions{})
 		require.NoError(t, err)
 
-		metricreaders := []common.MetricReader{
+		require.NotNil(t, collectorConfig.Service.Telemetry)
+		require.NotNil(t, collectorConfig.Service.Telemetry.Metrics)
+		require.Len(t, collectorConfig.Service.Telemetry.Metrics.Readers, 0)
+	})
+
+	t.Run("batch processor", func(t *testing.T) {
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build()}, BuildOptions{})
+		require.NoError(t, err)
+
+		require.Contains(t, collectorConfig.Processors, "batch")
+		batchProcessor := collectorConfig.Processors["batch"].(*common.BatchProcessor)
+		require.Equal(t, 1024, batchProcessor.SendBatchSize)
+		require.Equal(t, "10s", batchProcessor.Timeout)
+		require.Equal(t, 1024, batchProcessor.SendBatchMaxSize)
+	})
+
+	t.Run("memory limiter processor", func(t *testing.T) {
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build()}, BuildOptions{})
+		require.NoError(t, err)
+
+		require.Contains(t, collectorConfig.Processors, "memory_limiter")
+		memoryLimiterProcessor := collectorConfig.Processors["memory_limiter"].(*common.MemoryLimiter)
+		require.Equal(t, "1s", memoryLimiterProcessor.CheckInterval)
+		require.Equal(t, 75, memoryLimiterProcessor.LimitPercentage)
+		require.Equal(t, 15, memoryLimiterProcessor.SpikeLimitPercentage)
+	})
+
+	t.Run("otlp exporter", func(t *testing.T) {
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build()}, BuildOptions{})
+		require.NoError(t, err)
+
+		require.Contains(t, collectorConfig.Exporters, "otlp")
+		otlpExporter := collectorConfig.Exporters["otlp"].(*common.OTLPExporter)
+		require.Equal(t, "metrics.telemetry-system.svc.cluster.local:4317", otlpExporter.Endpoint)
+		require.True(t, otlpExporter.TLS.Insecure)
+		require.Equal(t, 512, otlpExporter.SendingQueue.QueueSize)
+	})
+
+	t.Run("volume metrics scraping disabled", func(t *testing.T) {
+		tests := []struct {
+			name                 string
+			pipeline             telemetryv1alpha1.MetricPipeline
+			volumeMetricsEnabled bool
+		}{
 			{
-				Pull: common.PullMetricReader{
-					Exporter: common.MetricExporter{
-						Prometheus: common.PrometheusMetricExporter{
-							Host: "${MY_POD_IP}",
-							Port: ports.Metrics,
-						},
-					},
-				},
+				name:                 "volume metrics enabled",
+				pipeline:             testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithRuntimeInputVolumeMetrics(true).Build(),
+				volumeMetricsEnabled: true,
+			},
+			{
+				name:                 "volume metrics disabled",
+				pipeline:             testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithRuntimeInputVolumeMetrics(false).Build(),
+				volumeMetricsEnabled: false,
 			},
 		}
 
-		require.Equal(t, "info", collectorConfig.Service.Telemetry.Logs.Level)
-		require.Equal(t, "json", collectorConfig.Service.Telemetry.Logs.Encoding)
-		require.Equal(t, metricreaders, collectorConfig.Service.Telemetry.Metrics.Readers)
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{tt.pipeline}, BuildOptions{})
+				require.NoError(t, err)
+
+				kubeletStatsReceiver := collectorConfig.Receivers["kubeletstats"].(*KubeletStatsReceiver)
+
+				if tt.volumeMetricsEnabled {
+					require.Contains(t, kubeletStatsReceiver.MetricGroups, MetricGroupTypeVolume)
+					require.NotContains(t, collectorConfig.Service.Pipelines["metrics/runtime"].Processors, "filter/drop-non-pvc-volumes-metrics")
+				} else {
+					require.NotContains(t, kubeletStatsReceiver.MetricGroups, MetricGroupTypeVolume)
+					require.NotContains(t, collectorConfig.Processors, "filter/drop-non-pvc-volumes-metrics")
+				}
+			})
+		}
 	})
 
-	t.Run("single pipeline topology", func(t *testing.T) {
-		t.Run("no input enabled", func(t *testing.T) {
-			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().Build(),
-			}, BuildOptions{})
-			require.NoError(t, err)
-
-			require.NotContains(t, collectorConfig.Processors, "resource/delete-service-name")
-
-			require.Len(t, collectorConfig.Service.Pipelines, 0)
-		})
-
-		t.Run("runtime enabled with different resources", func(t *testing.T) {
-			tt := []struct {
-				name                 string
-				pipeline             telemetryv1alpha1.MetricPipeline
-				volumeMetricsEnabled bool
-			}{
-				{
-					name:                 "runtime enabled with default metrics enabled",
-					pipeline:             testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build(),
-					volumeMetricsEnabled: true,
-				}, {
-					name:                 "runtime enabled with and only pod metrics disabled",
-					pipeline:             testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithRuntimeInputPodMetrics(false).Build(),
-					volumeMetricsEnabled: true,
-				}, {
-					name:                 "runtime enabled with and only container metrics disabled",
-					pipeline:             testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithRuntimeInputContainerMetrics(false).Build(),
-					volumeMetricsEnabled: true,
-				}, {
-					name:                 "runtime enabled with and only node metrics disabled",
-					pipeline:             testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithRuntimeInputNodeMetrics(false).Build(),
-					volumeMetricsEnabled: true,
-				},
-				{
-					name:                 "runtime enabled with and only volume metrics disabled",
-					pipeline:             testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithRuntimeInputVolumeMetrics(false).Build(),
-					volumeMetricsEnabled: false,
-				}, {
-					name:                 "runtime enabled with only statefulset metrics disabled",
-					pipeline:             testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithRuntimeInputStatefulSetMetrics(false).Build(),
-					volumeMetricsEnabled: true,
-				}, {
-					name:                 "runtime enabled with only daemonset metrics disabled",
-					pipeline:             testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithRuntimeInputDaemonSetMetrics(false).Build(),
-					volumeMetricsEnabled: true,
-				}, {
-					name:                 "runtime enabled with only deployment metrics disabled",
-					pipeline:             testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithRuntimeInputDeploymentMetrics(false).Build(),
-					volumeMetricsEnabled: true,
-				}, {
-					name:                 "runtime enabled with only job metrics disabled",
-					pipeline:             testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithRuntimeInputJobMetrics(false).Build(),
-					volumeMetricsEnabled: true,
-				},
-			}
-			for _, tc := range tt {
-				expectedReceiverIDs := []string{"kubeletstats", "k8s_cluster"}
-				expectedExporterIDs := []string{"otlp"}
-
-				var expectedProcessorIDs []string
-				if tc.volumeMetricsEnabled {
-					expectedProcessorIDs = []string{"memory_limiter", "filter/drop-non-pvc-volumes-metrics", "filter/drop-virtual-network-interfaces", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "batch"}
-				} else {
-					expectedProcessorIDs = []string{"memory_limiter", "filter/drop-virtual-network-interfaces", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "batch"}
-				}
-
-				t.Run(tc.name, func(t *testing.T) {
-					collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{tc.pipeline}, BuildOptions{})
-					require.NoError(t, err)
-
-					require.Contains(t, collectorConfig.Processors, "resource/delete-service-name")
-					require.Contains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-runtime")
-					require.Contains(t, collectorConfig.Processors, "transform/insert-skip-enrichment-attribute")
-					require.NotContains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-prometheus")
-					require.NotContains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-istio")
-
-					if tc.volumeMetricsEnabled {
-						require.Contains(t, collectorConfig.Processors, "filter/drop-non-pvc-volumes-metrics")
-					} else {
-						require.NotContains(t, collectorConfig.Processors, "filter/drop-non-pvc-volumes-metrics")
-					}
-
-					require.Len(t, collectorConfig.Service.Pipelines, 1)
-					require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
-					require.Equal(t, expectedReceiverIDs, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
-					require.Equal(t, expectedProcessorIDs, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
-					require.Equal(t, expectedExporterIDs, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
-				})
-			}
-		})
-
-		t.Run("prometheus input enabled", func(t *testing.T) {
-			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build(),
-			}, BuildOptions{})
-			require.NoError(t, err)
-
-			require.Contains(t, collectorConfig.Processors, "resource/delete-service-name")
-			require.Contains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-prometheus")
-			require.NotContains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-runtime")
-			require.NotContains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-istio")
-
-			require.Len(t, collectorConfig.Service.Pipelines, 1)
-			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
-			require.Equal(t, []string{"prometheus/app-pods", "prometheus/app-services"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
-			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-prometheus", "batch"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
-			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Exporters)
-		})
-
-		t.Run("istio input enabled", func(t *testing.T) {
-			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithIstioInput(true).Build(),
-			}, BuildOptions{})
-			require.NoError(t, err)
-
-			require.Contains(t, collectorConfig.Processors, "resource/delete-service-name")
-			require.Contains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-istio")
-			require.NotContains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-runtime")
-			require.NotContains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-prometheus")
-
-			require.Len(t, collectorConfig.Service.Pipelines, 1)
-			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/istio")
-			require.Equal(t, []string{"prometheus/istio"}, collectorConfig.Service.Pipelines["metrics/istio"].Receivers)
-			require.Equal(t, []string{"memory_limiter", "istio_noise_filter", "resource/delete-service-name", "transform/set-instrumentation-scope-istio", "batch"}, collectorConfig.Service.Pipelines["metrics/istio"].Processors)
-			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/istio"].Exporters)
-		})
-
-		t.Run("multiple input enabled", func(t *testing.T) {
+	t.Run("pipelines", func(t *testing.T) {
+		t.Run("with istio enabled", func(t *testing.T) {
 			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).WithIstioInput(true).Build(),
-			}, BuildOptions{})
+			}, BuildOptions{
+				IstioEnabled:                true,
+				IstioCertPath:               "/etc/istio-output-certs",
+				InstrumentationScopeVersion: "main",
+			})
 			require.NoError(t, err)
 
-			require.Contains(t, collectorConfig.Processors, "resource/delete-service-name")
-			require.Contains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-runtime")
-			require.Contains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-prometheus")
-			require.Contains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-istio")
-			require.Contains(t, collectorConfig.Processors, "filter/drop-non-pvc-volumes-metrics")
-
-			require.Len(t, collectorConfig.Service.Pipelines, 3)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
-			require.Equal(t, []string{"kubeletstats", "k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
+			require.Equal(t, []string{"k8s_cluster", "kubeletstats"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
 			require.Equal(t, []string{"memory_limiter", "filter/drop-non-pvc-volumes-metrics", "filter/drop-virtual-network-interfaces", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
+
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
 			require.Equal(t, []string{"prometheus/app-pods", "prometheus/app-services"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
 			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-prometheus", "batch"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Exporters)
+
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/istio")
 			require.Equal(t, []string{"prometheus/istio"}, collectorConfig.Service.Pipelines["metrics/istio"].Receivers)
 			require.Equal(t, []string{"memory_limiter", "istio_noise_filter", "resource/delete-service-name", "transform/set-instrumentation-scope-istio", "batch"}, collectorConfig.Service.Pipelines["metrics/istio"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/istio"].Exporters)
 		})
-	})
 
-	t.Run("multi pipeline topology", func(t *testing.T) {
-		t.Run("no pipeline has input enabled", func(t *testing.T) {
+		t.Run("with istio disabled", func(t *testing.T) {
 			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().Build(),
-				testutils.NewMetricPipelineBuilder().Build(),
-			}, BuildOptions{})
+				testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).WithIstioInput(false).Build(),
+			}, BuildOptions{
+				IstioEnabled:                false,
+				IstioCertPath:               "/etc/istio-output-certs",
+				InstrumentationScopeVersion: "main",
+			})
 			require.NoError(t, err)
 
-			require.NotContains(t, collectorConfig.Processors, "resource/delete-service-name")
-			require.NotContains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-runtime")
-			require.NotContains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-prometheus")
-			require.NotContains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-istio")
-
-			require.Len(t, collectorConfig.Service.Pipelines, 0)
-		})
-
-		t.Run("some pipelines have runtime input enabled", func(t *testing.T) {
-			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithRuntimeInput(false).Build(),
-				testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build(),
-			}, BuildOptions{})
-			require.NoError(t, err)
-
-			require.Contains(t, collectorConfig.Processors, "resource/delete-service-name")
-			require.Contains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-runtime")
-			require.NotContains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-prometheus")
-			require.NotContains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-istio")
-			require.Contains(t, collectorConfig.Processors, "filter/drop-non-pvc-volumes-metrics")
-
-			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
-			require.Equal(t, []string{"kubeletstats", "k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
-			require.Equal(t, []string{"memory_limiter", "filter/drop-non-pvc-volumes-metrics", "filter/drop-virtual-network-interfaces", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
-			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
-		})
-
-		t.Run("all pipelines have runtime input enabled", func(t *testing.T) {
-			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build(),
-				testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build(),
-			}, BuildOptions{})
-			require.NoError(t, err)
-
-			require.Contains(t, collectorConfig.Processors, "resource/delete-service-name")
-			require.Contains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-runtime")
-			require.NotContains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-prometheus")
-			require.NotContains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-istio")
-			require.Contains(t, collectorConfig.Processors, "filter/drop-non-pvc-volumes-metrics")
-
-			require.Len(t, collectorConfig.Service.Pipelines, 1)
-			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
-			require.Equal(t, []string{"kubeletstats", "k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
-			require.Equal(t, []string{"memory_limiter", "filter/drop-non-pvc-volumes-metrics", "filter/drop-virtual-network-interfaces", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
-			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
-		})
-
-		t.Run("some pipelines have prometheus input enabled", func(t *testing.T) {
-			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithPrometheusInput(false).Build(),
-				testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build(),
-			}, BuildOptions{})
-			require.NoError(t, err)
-
-			require.Contains(t, collectorConfig.Processors, "resource/delete-service-name")
-			require.NotContains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-runtime")
-			require.Contains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-prometheus")
-			require.NotContains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-istio")
-
-			require.Len(t, collectorConfig.Service.Pipelines, 1)
-			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
-			require.Equal(t, []string{"prometheus/app-pods", "prometheus/app-services"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
-			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-prometheus", "batch"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
-			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Exporters)
-		})
-
-		t.Run("all pipelines have prometheus input enabled", func(t *testing.T) {
-			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build(),
-				testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build(),
-			}, BuildOptions{})
-			require.NoError(t, err)
-
-			require.Contains(t, collectorConfig.Processors, "resource/delete-service-name")
-			require.NotContains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-runtime")
-			require.Contains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-prometheus")
-
-			require.Len(t, collectorConfig.Service.Pipelines, 1)
-			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
-			require.Equal(t, []string{"prometheus/app-pods", "prometheus/app-services"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
-			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-prometheus", "batch"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
-			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Exporters)
-		})
-
-		t.Run("multiple input types enabled", func(t *testing.T) {
-			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build(),
-				testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build(),
-			}, BuildOptions{})
-			require.NoError(t, err)
-
-			require.Contains(t, collectorConfig.Processors, "resource/delete-service-name")
-			require.Contains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-runtime")
-			require.Contains(t, collectorConfig.Processors, "transform/set-instrumentation-scope-prometheus")
-			require.Contains(t, collectorConfig.Processors, "filter/drop-non-pvc-volumes-metrics")
-
-			require.Len(t, collectorConfig.Service.Pipelines, 2)
-			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
-			require.Equal(t, []string{"kubeletstats", "k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
+			require.Equal(t, []string{"k8s_cluster", "kubeletstats"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
 			require.Equal(t, []string{"memory_limiter", "filter/drop-non-pvc-volumes-metrics", "filter/drop-virtual-network-interfaces", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
@@ -350,32 +181,125 @@ func TestBuildConfig(t *testing.T) {
 		tests := []struct {
 			name                string
 			goldenFileName      string
-			istioEnabled        bool
+			pipeline            telemetryv1alpha1.MetricPipeline
+			buildOptions        BuildOptions
 			overwriteGoldenFile bool
 		}{
 			{
-				name:           "istio not enabled",
-				goldenFileName: "config_istio_not_enabled.yaml",
-				istioEnabled:   false,
+				name:           "basic runtime and prometheus input enabled",
+				goldenFileName: "basic-runtime-prometheus.yaml",
+				pipeline:       testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).Build(),
+				buildOptions: BuildOptions{
+					IstioEnabled:                false,
+					IstioCertPath:               "/etc/istio-output-certs",
+					InstrumentationScopeVersion: "main",
+				},
+				overwriteGoldenFile: false,
 			},
 			{
-				name:           "istio enabled",
-				goldenFileName: "config_istio_enabled.yaml",
-				istioEnabled:   true,
+				name:           "istio input enabled",
+				goldenFileName: "istio-enabled.yaml",
+				pipeline:       testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).WithIstioInput(true).Build(),
+				buildOptions: BuildOptions{
+					IstioEnabled:                true,
+					IstioCertPath:               "/etc/istio-output-certs",
+					InstrumentationScopeVersion: "main",
+				},
+				overwriteGoldenFile: false,
+			},
+			{
+				name:           "istio input disabled",
+				goldenFileName: "istio-disabled.yaml",
+				pipeline:       testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).WithIstioInput(false).Build(),
+				buildOptions: BuildOptions{
+					IstioEnabled:                false,
+					IstioCertPath:               "/etc/istio-output-certs",
+					InstrumentationScopeVersion: "main",
+				},
+				overwriteGoldenFile: false,
+			},
+			{
+				name:           "runtime input only",
+				goldenFileName: "runtime-only.yaml",
+				pipeline:       testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(false).WithIstioInput(false).Build(),
+				buildOptions: BuildOptions{
+					IstioEnabled:                false,
+					IstioCertPath:               "/etc/istio-output-certs",
+					InstrumentationScopeVersion: "main",
+				},
+				overwriteGoldenFile: false,
+			},
+			{
+				name:           "prometheus input only",
+				goldenFileName: "prometheus-only.yaml",
+				pipeline:       testutils.NewMetricPipelineBuilder().WithRuntimeInput(false).WithPrometheusInput(true).WithIstioInput(false).Build(),
+				buildOptions: BuildOptions{
+					IstioEnabled:                false,
+					IstioCertPath:               "/etc/istio-output-certs",
+					InstrumentationScopeVersion: "main",
+				},
+				overwriteGoldenFile: false,
+			},
+			{
+				name:           "istio input with envoy metrics enabled",
+				goldenFileName: "istio-envoy-metrics.yaml",
+				pipeline:       testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).WithIstioInput(true).WithIstioInputEnvoyMetrics(true).Build(),
+				buildOptions: BuildOptions{
+					IstioEnabled:                true,
+					IstioCertPath:               "/etc/istio-output-certs",
+					InstrumentationScopeVersion: "main",
+				},
+				overwriteGoldenFile: false,
+			},
+			{
+				name:           "runtime input with specific resource metrics disabled",
+				goldenFileName: "runtime-resources-some-disabled.yaml",
+				pipeline: testutils.NewMetricPipelineBuilder().
+					WithRuntimeInput(true).
+					WithRuntimeInputPodMetrics(false).
+					WithRuntimeInputVolumeMetrics(false).
+					WithPrometheusInput(false).
+					WithIstioInput(false).
+					Build(),
+				buildOptions: BuildOptions{
+					IstioEnabled:                false,
+					IstioCertPath:               "/etc/istio-output-certs",
+					InstrumentationScopeVersion: "main",
+				},
+				overwriteGoldenFile: false,
+			},
+			{
+				name:           "comprehensive setup with all inputs enabled",
+				goldenFileName: "setup-comprehensive.yaml",
+				pipeline: testutils.NewMetricPipelineBuilder().
+					WithRuntimeInput(true).
+					WithRuntimeInputPodMetrics(true).
+					WithRuntimeInputContainerMetrics(true).
+					WithRuntimeInputNodeMetrics(true).
+					WithRuntimeInputVolumeMetrics(true).
+					WithRuntimeInputStatefulSetMetrics(true).
+					WithRuntimeInputDeploymentMetrics(true).
+					WithRuntimeInputDaemonSetMetrics(true).
+					WithRuntimeInputJobMetrics(true).
+					WithPrometheusInput(true).
+					WithPrometheusInputDiagnosticMetrics(true).
+					WithIstioInput(true).
+					WithIstioInputEnvoyMetrics(true).
+					Build(),
+				buildOptions: BuildOptions{
+					IstioEnabled:                true,
+					IstioCertPath:               "/etc/istio-output-certs",
+					InstrumentationScopeVersion: "main",
+				},
+				overwriteGoldenFile: false,
 			},
 		}
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				pipelines := []telemetryv1alpha1.MetricPipeline{
-					testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).WithIstioInput(tt.istioEnabled).Build(),
-				}
-				config, _, err := sut.Build(ctx, pipelines, BuildOptions{
-					IstioEnabled:                tt.istioEnabled,
-					IstioCertPath:               "/etc/istio-output-certs",
-					InstrumentationScopeVersion: "main",
-				})
+				config, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{tt.pipeline}, tt.buildOptions)
 				require.NoError(t, err)
+
 				configYAML, err := yaml.Marshal(config)
 				require.NoError(t, err, "failed to marshal config")
 
@@ -384,15 +308,12 @@ func TestBuildConfig(t *testing.T) {
 					err = os.WriteFile(goldenFilePath, configYAML, 0600)
 					require.NoError(t, err, "failed to overwrite golden file")
 
-					t.Fatalf("Golden file %s has been saved, please verify it and set the overwriteGoldenFile flag to false", goldenFilePath)
-
-					return
+					t.Fatalf("Golden file %s has been saved, please verify it and set the overwriteGoldenFile flag to false", tt.goldenFileName)
 				}
 
 				goldenFile, err := os.ReadFile(goldenFilePath)
 				require.NoError(t, err, "failed to load golden file")
 
-				require.NoError(t, err)
 				require.Equal(t, string(goldenFile), string(configYAML))
 			})
 		}
