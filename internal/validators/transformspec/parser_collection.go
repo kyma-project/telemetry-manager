@@ -2,7 +2,9 @@ package transformspec
 
 import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottldatapoint"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottllog"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlmetric"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlresource"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlscope"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/ottlfuncs"
@@ -25,6 +27,38 @@ func withLogParser(functions map[string]ottl.Factory[ottllog.TransformContext]) 
 			&logParser,
 			ottl.WithStatementConverter(convertLogStatements),
 			ottl.WithConditionConverter(convertLogConditions),
+		)(pc)
+	}
+}
+
+func withDataPointParser(functions map[string]ottl.Factory[ottldatapoint.TransformContext]) genericParserCollectionOption {
+	return func(pc *ottl.ParserCollection[any]) error {
+		datapointParser, err := ottldatapoint.NewParser(functions, pc.Settings, ottldatapoint.EnablePathContextNames())
+		if err != nil {
+			return err
+		}
+
+		return ottl.WithParserCollectionContext(
+			ottldatapoint.ContextName,
+			&datapointParser,
+			ottl.WithStatementConverter(convertDataPointStatements),
+			ottl.WithConditionConverter(convertDataPointConditions),
+		)(pc)
+	}
+}
+
+func withMetricParser(functions map[string]ottl.Factory[ottlmetric.TransformContext]) genericParserCollectionOption {
+	return func(pc *ottl.ParserCollection[any]) error {
+		metricParser, err := ottlmetric.NewParser(functions, pc.Settings, ottlmetric.EnablePathContextNames())
+		if err != nil {
+			return err
+		}
+
+		return ottl.WithParserCollectionContext(
+			ottlmetric.ContextName,
+			&metricParser,
+			ottl.WithStatementConverter(convertMetricStatements),
+			ottl.WithConditionConverter(convertMetricConditions),
 		)(pc)
 	}
 }
@@ -103,14 +137,6 @@ func withCommonContextParsers() ottl.ParserCollectionOption[any] {
 	}
 }
 
-func convertLogStatements(_ *ottl.ParserCollection[any], _ ottl.StatementsGetter, _ []*ottl.Statement[ottllog.TransformContext]) (any, error) {
-	return struct{}{}, nil
-}
-
-func convertLogConditions(_ *ottl.ParserCollection[any], _ ottl.ConditionsGetter, _ []*ottl.Condition[ottllog.TransformContext]) (any, error) {
-	return struct{}{}, nil
-}
-
 func convertResourceStatements(_ *ottl.ParserCollection[any], _ ottl.StatementsGetter, _ []*ottl.Statement[ottlresource.TransformContext]) (any, error) {
 	return struct{}{}, nil
 }
@@ -124,5 +150,29 @@ func convertScopeStatements(_ *ottl.ParserCollection[any], _ ottl.StatementsGett
 }
 
 func convertScopeConditions(_ *ottl.ParserCollection[any], _ ottl.ConditionsGetter, _ []*ottl.Condition[ottlscope.TransformContext]) (any, error) {
+	return struct{}{}, nil
+}
+
+func convertLogStatements(_ *ottl.ParserCollection[any], _ ottl.StatementsGetter, _ []*ottl.Statement[ottllog.TransformContext]) (any, error) {
+	return struct{}{}, nil
+}
+
+func convertLogConditions(_ *ottl.ParserCollection[any], _ ottl.ConditionsGetter, _ []*ottl.Condition[ottllog.TransformContext]) (any, error) {
+	return struct{}{}, nil
+}
+
+func convertDataPointStatements(_ *ottl.ParserCollection[any], _ ottl.StatementsGetter, _ []*ottl.Statement[ottldatapoint.TransformContext]) (any, error) {
+	return struct{}{}, nil
+}
+
+func convertDataPointConditions(_ *ottl.ParserCollection[any], _ ottl.ConditionsGetter, _ []*ottl.Condition[ottldatapoint.TransformContext]) (any, error) {
+	return struct{}{}, nil
+}
+
+func convertMetricStatements(_ *ottl.ParserCollection[any], _ ottl.StatementsGetter, _ []*ottl.Statement[ottlmetric.TransformContext]) (any, error) {
+	return struct{}{}, nil
+}
+
+func convertMetricConditions(_ *ottl.ParserCollection[any], _ ottl.ConditionsGetter, _ []*ottl.Condition[ottlmetric.TransformContext]) (any, error) {
 	return struct{}{}, nil
 }

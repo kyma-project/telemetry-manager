@@ -49,7 +49,7 @@ func New(signalType SignalType) (*Validator, error) {
 	case SignalTypeLog:
 		parserCollection, err = newLogParserCollection()
 	case SignalTypeMetric:
-		// TODO
+		parserCollection, err = newMetricParserCollection()
 	case SignalTypeTrace:
 		// TODO
 	default:
@@ -76,6 +76,26 @@ func newLogParserCollection() (*genericParserCollection, error) {
 	}
 
 	return logParserCollection, nil
+}
+
+func newMetricParserCollection() (*genericParserCollection, error) {
+	telemetrySettings := component.TelemetrySettings{
+		Logger: zap.New(zapcore.NewNopCore()),
+	}
+
+	metricFunctionsMap := ottl.CreateFactoryMap(transformprocessor.DefaultMetricFunctions()...)
+	dataPointFunctionsMap := ottl.CreateFactoryMap(transformprocessor.DefaultDataPointFunctions()...)
+
+	metricParserCollection, err := newGenericParserCollection(
+		telemetrySettings,
+		withMetricParser(metricFunctionsMap),
+		withDataPointParser(dataPointFunctionsMap),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create metric parser collection: %w", err)
+	}
+
+	return metricParserCollection, nil
 }
 
 func (v *Validator) Validate(transforms []telemetryv1alpha1.TransformSpec) error {
