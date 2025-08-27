@@ -1,13 +1,12 @@
 package transformspec
 
 import (
-	"go.opentelemetry.io/collector/component"
-
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottllog"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlresource"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlscope"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/ottlfuncs"
+	"go.opentelemetry.io/collector/component"
 )
 
 type genericParserCollection ottl.ParserCollection[any]
@@ -46,6 +45,7 @@ func newGenericParserCollection(settings component.TelemetrySettings, options ..
 	}
 
 	gpc := genericParserCollection(*pc)
+
 	return &gpc, nil
 }
 

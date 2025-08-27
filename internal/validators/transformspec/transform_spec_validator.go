@@ -4,12 +4,13 @@ import (
 	"errors"
 	"fmt"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
 	"go.opentelemetry.io/collector/component"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
 type InvalidTransformSpecError struct {
@@ -39,8 +40,10 @@ type Validator struct {
 }
 
 func New(signalType SignalType) (*Validator, error) {
-	var parserCollection *genericParserCollection
-	var err error
+	var (
+		parserCollection *genericParserCollection
+		err              error
+	)
 
 	switch signalType {
 	case SignalTypeLog:
@@ -56,6 +59,7 @@ func New(signalType SignalType) (*Validator, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create TransformSpec validator: %w", err)
 	}
+
 	return &Validator{parserCollection: parserCollection}, nil
 }
 
@@ -65,6 +69,7 @@ func newLogParserCollection() (*genericParserCollection, error) {
 	}
 
 	functionsMap := ottl.CreateFactoryMap(transformprocessor.DefaultLogFunctions()...)
+
 	logParserCollection, err := newGenericParserCollection(telemetrySettings, withLogParser(functionsMap))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create log parser collection: %w", err)
