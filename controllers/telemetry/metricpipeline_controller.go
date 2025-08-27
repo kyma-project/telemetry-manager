@@ -51,6 +51,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
+	"github.com/kyma-project/telemetry-manager/internal/validators/transformspec"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
@@ -95,11 +96,17 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 		},
 	)
 
+	transformSpecValidator, err := transformspec.New(transformspec.SignalTypeMetric)
+	if err != nil {
+		return nil, err
+	}
+
 	pipelineValidator := &metricpipeline.Validator{
-		EndpointValidator:  &endpoint.Validator{Client: client},
-		TLSCertValidator:   tlscert.New(client),
-		SecretRefValidator: &secretref.Validator{Client: client},
-		PipelineLock:       pipelineLock,
+		EndpointValidator:      &endpoint.Validator{Client: client},
+		TLSCertValidator:       tlscert.New(client),
+		SecretRefValidator:     &secretref.Validator{Client: client},
+		PipelineLock:           pipelineLock,
+		TransformSpecValidator: transformSpecValidator,
 	}
 
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)

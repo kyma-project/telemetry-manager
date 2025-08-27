@@ -9,6 +9,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
+type PipelineLock interface {
+	TryAcquireLock(ctx context.Context, owner metav1.Object) error
+	IsLockHolder(ctx context.Context, owner metav1.Object) error
+}
+
 type EndpointValidator interface {
 	Validate(ctx context.Context, endpoint *telemetryv1alpha1.ValueType, protocol string) error
 }
@@ -21,16 +26,16 @@ type SecretRefValidator interface {
 	ValidateLogPipeline(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error
 }
 
-type Validator struct {
-	PipelineLock       PipelineLock
-	EndpointValidator  EndpointValidator
-	TLSCertValidator   TLSCertValidator
-	SecretRefValidator SecretRefValidator
+type TransformSpecValidator interface {
+	Validate(transforms []telemetryv1alpha1.TransformSpec) error
 }
 
-type PipelineLock interface {
-	TryAcquireLock(ctx context.Context, owner metav1.Object) error
-	IsLockHolder(ctx context.Context, owner metav1.Object) error
+type Validator struct {
+	PipelineLock           PipelineLock
+	EndpointValidator      EndpointValidator
+	TLSCertValidator       TLSCertValidator
+	SecretRefValidator     SecretRefValidator
+	TransformSpecValidator TransformSpecValidator
 }
 
 func (v *Validator) Validate(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
@@ -57,6 +62,10 @@ func (v *Validator) Validate(ctx context.Context, pipeline *telemetryv1alpha1.Lo
 	}
 
 	if err := v.PipelineLock.IsLockHolder(ctx, pipeline); err != nil {
+		return err
+	}
+
+	if err := v.TransformSpecValidator.Validate(pipeline.Spec.Transforms); err != nil {
 		return err
 	}
 
