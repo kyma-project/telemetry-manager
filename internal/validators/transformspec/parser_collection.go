@@ -7,6 +7,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlmetric"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlresource"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlscope"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlspan"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlspanevent"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/ottlfuncs"
 	"go.opentelemetry.io/collector/component"
 )
@@ -59,6 +61,38 @@ func withMetricParser(functions map[string]ottl.Factory[ottlmetric.TransformCont
 			&metricParser,
 			ottl.WithStatementConverter(convertMetricStatements),
 			ottl.WithConditionConverter(convertMetricConditions),
+		)(pc)
+	}
+}
+
+func withSpanEventParser(functions map[string]ottl.Factory[ottlspanevent.TransformContext]) genericParserCollectionOption {
+	return func(pc *ottl.ParserCollection[any]) error {
+		spanEventParser, err := ottlspanevent.NewParser(functions, pc.Settings, ottlspanevent.EnablePathContextNames())
+		if err != nil {
+			return err
+		}
+
+		return ottl.WithParserCollectionContext(
+			ottlspanevent.ContextName,
+			&spanEventParser,
+			ottl.WithStatementConverter(convertSpanEventStatements),
+			ottl.WithConditionConverter(convertSpanEventConditions),
+		)(pc)
+	}
+}
+
+func withSpanParser(functions map[string]ottl.Factory[ottlspan.TransformContext]) genericParserCollectionOption {
+	return func(pc *ottl.ParserCollection[any]) error {
+		spanParser, err := ottlspan.NewParser(functions, pc.Settings, ottlspan.EnablePathContextNames())
+		if err != nil {
+			return err
+		}
+
+		return ottl.WithParserCollectionContext(
+			ottlspan.ContextName,
+			&spanParser,
+			ottl.WithStatementConverter(convertSpanStatements),
+			ottl.WithConditionConverter(convertSpanConditions),
 		)(pc)
 	}
 }
@@ -174,5 +208,21 @@ func convertMetricStatements(_ *ottl.ParserCollection[any], _ ottl.StatementsGet
 }
 
 func convertMetricConditions(_ *ottl.ParserCollection[any], _ ottl.ConditionsGetter, _ []*ottl.Condition[ottlmetric.TransformContext]) (any, error) {
+	return struct{}{}, nil
+}
+
+func convertSpanEventStatements(_ *ottl.ParserCollection[any], _ ottl.StatementsGetter, _ []*ottl.Statement[ottlspanevent.TransformContext]) (any, error) {
+	return struct{}{}, nil
+}
+
+func convertSpanEventConditions(_ *ottl.ParserCollection[any], _ ottl.ConditionsGetter, _ []*ottl.Condition[ottlspanevent.TransformContext]) (any, error) {
+	return struct{}{}, nil
+}
+
+func convertSpanStatements(_ *ottl.ParserCollection[any], _ ottl.StatementsGetter, _ []*ottl.Statement[ottlspan.TransformContext]) (any, error) {
+	return struct{}{}, nil
+}
+
+func convertSpanConditions(_ *ottl.ParserCollection[any], _ ottl.ConditionsGetter, _ []*ottl.Condition[ottlspan.TransformContext]) (any, error) {
 	return struct{}{}, nil
 }

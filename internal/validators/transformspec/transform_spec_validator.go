@@ -51,7 +51,7 @@ func New(signalType SignalType) (*Validator, error) {
 	case SignalTypeMetric:
 		parserCollection, err = newMetricParserCollection()
 	case SignalTypeTrace:
-		// TODO
+		parserCollection, err = newTraceParserCollection()
 	default:
 		return nil, fmt.Errorf("unexpected signal type: %s", signalType)
 	}
@@ -96,6 +96,26 @@ func newMetricParserCollection() (*genericParserCollection, error) {
 	}
 
 	return metricParserCollection, nil
+}
+
+func newTraceParserCollection() (*genericParserCollection, error) {
+	telemetrySettings := component.TelemetrySettings{
+		Logger: zap.New(zapcore.NewNopCore()),
+	}
+
+	spanFunctionsMap := ottl.CreateFactoryMap(transformprocessor.DefaultSpanFunctions()...)
+	spanEventFunctionsMap := ottl.CreateFactoryMap(transformprocessor.DefaultSpanEventFunctions()...)
+
+	traceParserCollection, err := newGenericParserCollection(
+		telemetrySettings,
+		withSpanParser(spanFunctionsMap),
+		withSpanEventParser(spanEventFunctionsMap),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create trace parser collection: %w", err)
+	}
+
+	return traceParserCollection, nil
 }
 
 func (v *Validator) Validate(transforms []telemetryv1alpha1.TransformSpec) error {
