@@ -4,6 +4,17 @@ description: Kyma Telemetry Manager Helm Chart
 type: application
 version: 0.1.0
 appVersion: "main"
+keywords:
+  - kyma
+  - telemetry
+  - observability
+  - monitoring
+  - logging
+  - tracing
+  - opentelemetry
+maintainers:
+  - name: kyma-project.io
+    url: https://kyma-project.io
 dependencies:
   - name: experimental
     version: 0.1.0
