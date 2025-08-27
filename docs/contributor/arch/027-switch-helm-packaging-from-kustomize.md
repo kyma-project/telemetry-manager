@@ -62,5 +62,5 @@ Helm distinguishes between the chart version (`version`) and the application ver
 - The deployment scripts and CI/CD pipelines will be updated to use Helm.
 - The release artifact will be a packaged as plain YAML files as before, but generated using `helm template`.
 - Chart versioning will follow semantic versioning and be updated manually when chart changes are introduced.
-- Application versioning (`appVersion`) will be automatically updated via CI/CD whenever a new application image is released.
+- Application versioning (`appVersion`) will be updated whenever a new application image is released.
 - Both chart and application versions will be published together in the release artifacts to provide clear traceability between packaging logic and deployed application versions.
