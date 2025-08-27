@@ -2,25 +2,15 @@ package metricagent
 
 import (
 	"time"
-
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 )
 
-type Config struct {
-	common.Base `yaml:",inline"`
-
-	Receivers  Receivers  `yaml:"receivers"`
-	Processors Processors `yaml:"processors"`
-	Exporters  Exporters  `yaml:"exporters"`
-}
-
-type Receivers struct {
-	KubeletStats          *KubeletStatsReceiver `yaml:"kubeletstats,omitempty"`
-	K8sClusterReceiver    *K8sClusterReceiver   `yaml:"k8s_cluster,omitempty"`
-	PrometheusAppPods     *PrometheusReceiver   `yaml:"prometheus/app-pods,omitempty"`
-	PrometheusAppServices *PrometheusReceiver   `yaml:"prometheus/app-services,omitempty"`
-	PrometheusIstio       *PrometheusReceiver   `yaml:"prometheus/istio,omitempty"`
-}
+// type Receivers struct {
+// 	KubeletStats          *KubeletStatsReceiver `yaml:"kubeletstats,omitempty"`
+// 	K8sClusterReceiver    *K8sClusterReceiver   `yaml:"k8s_cluster,omitempty"`
+// 	PrometheusAppPods     *PrometheusReceiver   `yaml:"prometheus/app-pods,omitempty"`
+// 	PrometheusAppServices *PrometheusReceiver   `yaml:"prometheus/app-services,omitempty"`
+// 	PrometheusIstio       *PrometheusReceiver   `yaml:"prometheus/istio,omitempty"`
+// }
 
 type KubeletStatsReceiver struct {
 	CollectionInterval          string                         `yaml:"collection_interval"`
@@ -214,23 +204,6 @@ const (
 	Drop     RelabelAction = "drop"
 	LabelMap RelabelAction = "labelmap"
 )
-
-type Processors struct {
-	common.BaseProcessors `yaml:",inline"`
-
-	DeleteServiceName                 *common.ResourceProcessor         `yaml:"resource/delete-service-name,omitempty"`
-	IstioNoiseFilter                  *common.IstioNoiseFilterProcessor `yaml:"istio_noise_filter,omitempty"`
-	SetInstrumentationScopeRuntime    *common.TransformProcessor        `yaml:"transform/set-instrumentation-scope-runtime,omitempty"`
-	SetInstrumentationScopePrometheus *common.TransformProcessor        `yaml:"transform/set-instrumentation-scope-prometheus,omitempty"`
-	SetInstrumentationScopeIstio      *common.TransformProcessor        `yaml:"transform/set-instrumentation-scope-istio,omitempty"`
-	InsertSkipEnrichmentAttribute     *common.TransformProcessor        `yaml:"transform/insert-skip-enrichment-attribute,omitempty"`
-	DropNonPVCVolumesMetrics          *FilterProcessor                  `yaml:"filter/drop-non-pvc-volumes-metrics,omitempty"`
-	DropVirtualNetworkInterfaces      *FilterProcessor                  `yaml:"filter/drop-virtual-network-interfaces,omitempty"`
-}
-
-type Exporters struct {
-	OTLP common.OTLPExporter `yaml:"otlp"`
-}
 
 type FilterProcessor struct {
 	Metrics FilterProcessorMetrics `yaml:"metrics"`

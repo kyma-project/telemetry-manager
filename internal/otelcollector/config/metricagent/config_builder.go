@@ -17,6 +17,8 @@ type BuilderConfig struct {
 
 type Builder struct {
 	Config BuilderConfig
+
+	config *common.Config
 }
 
 // inputSources represents the enabled input sources for the telemetry metric agent.
@@ -47,7 +49,15 @@ type BuildOptions struct {
 	AgentNamespace              string
 }
 
-func (b *Builder) Build(pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) *Config {
+func (b *Builder) Build(pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) *common.Config {
+	b.config = &common.Config{
+		Base:       common.BaseConfig(common.WithK8sLeaderElector("serviceAccount", common.K8sLeaderElectorK8sCluster, opts.AgentNamespace)),
+		Receivers:  make(map[string]any),
+		Processors: make(map[string]any),
+		Exporters:  make(map[string]any),
+		Connectors: make(map[string]any),
+	}
+
 	inputs := inputSources{
 		runtimeResources: runtimeResourceSources{
 			pod:         shouldEnableRuntimePodMetricsScraping(pipelines),
@@ -66,7 +76,43 @@ func (b *Builder) Build(pipelines []telemetryv1alpha1.MetricPipeline, opts Build
 		envoy:      shouldEnableEnvoyMetricsScraping(pipelines),
 	}
 
-	return b.baseConfig(inputs, b.Config.GatewayOTLPServiceName, opts)
+	if inputs.runtime {
+		b.addServicePipeline("metrics/runtime",
+			addK8sClusterReceiver(inputs.runtimeResources),
+			addKubeletStatsReceiver(inputs.runtimeResources),
+			addMemoryLimiterProcessor(),
+			addFilterDropNonPVCVolumesMetricsProcessor(),
+			addFilterDropVirtualNetworkInterfacesProcessor(),
+			addResourceDeleteServiceNameProcessor(),
+			addSetInstrumentationScopeToRuntimeProcessor(opts),
+			addInsertSkipEnrichmentAttributeProcessor(),
+			addBatchProcessor(),
+		)
+	}
+
+	if inputs.prometheus {
+		b.addServicePipeline("metrics/prometheus",
+			addPrometheusAppPodsReceiver(),
+			addPrometheusAppServicesReceiver(opts),
+			addMemoryLimiterProcessor(),
+			addDeleteServiceNameProcessor(),
+			addSetInstrumentationScopeToPrometheusProcessor(opts),
+			addBatchProcessor(),
+		)
+	}
+
+	if inputs.istio {
+		b.addServicePipeline("metrics/istio",
+			addPrometheusIstioReceiver(opts.IstioCertPath, opts.IstioEnabled),
+			addMemoryLimiterProcessor(),
+			addIstioNoiseFilterProcessor(),
+			addDeleteServiceNameProcessor(),
+			addSetInstrumentationScopeToIstioProcessor(opts),
+			addBatchProcessor(),
+		)
+	}
+
+	return b.config
 }
 
 func shouldEnableRuntimeMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
@@ -199,22 +245,6 @@ func shouldEnableEnvoyMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeli
 	}
 
 	return false
-}
-
-// baseConfig creates the static/global base configuration for the metric agent collector.
-// Pipeline-specific components are added later via the Build method.
-func (b *Builder) baseConfig(inputs inputSources, gatewayOTLPServiceName types.NamespacedName, opts BuildOptions) *Config {
-	cfg := &Config{
-		Base: common.BaseConfig(
-			common.WithK8sLeaderElector("serviceAccount", common.K8sLeaderElectorK8sCluster, opts.AgentNamespace),
-		),
-		Receivers:  receiversConfig(inputs, opts),
-		Processors: processorsConfig(inputs, opts.InstrumentationScopeVersion),
-		Exporters:  exportersConfig(gatewayOTLPServiceName),
-	}
-	cfg.Service.Pipelines = pipelinesConfig(inputs)
-
-	return cfg
 }
 
 //nolint:mnd // all static config from here
