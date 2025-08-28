@@ -69,5 +69,5 @@ To avoid a version drift between the main (development) and release branches, th
 - The deployment scripts and CI/CD pipelines will be updated to use Helm.
 - The release artifact will be a packaged as plain YAML files as before, but generated using `helm template`.
 - Chart versioning will follow semantic versioning.
-- On the main branch, `version` and `appVersion` may diverge.
+- On the main branch, `version` will be `version=x.y.z-main` and `appVersion` `appVersion=main`.
 - On release branches, `version` and `appVersion` will always be release version to enforce alignment between chart and application releases.
