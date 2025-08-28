@@ -87,8 +87,8 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 
 	if inputs.runtime {
 		if err := b.addServicePipeline(ctx, "metrics/runtime",
-			b.addK8sClusterReceiver(inputs.runtimeResources),
 			b.addKubeletStatsReceiver(inputs.runtimeResources),
+			b.addK8sClusterReceiver(inputs.runtimeResources),
 			b.addMemoryLimiterProcessor(),
 			b.addFilterDropNonPVCVolumesMetricsProcessor(inputs.runtimeResources),
 			b.addFilterDropVirtualNetworkInterfacesProcessor(),

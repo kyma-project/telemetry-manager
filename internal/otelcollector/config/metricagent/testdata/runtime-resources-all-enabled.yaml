@@ -11,8 +11,8 @@ service:
     pipelines:
         metrics/runtime:
             receivers:
-                - k8s_cluster
                 - kubeletstats
+                - k8s_cluster
             processors:
                 - memory_limiter
                 - filter/drop-non-pvc-volumes-metrics
