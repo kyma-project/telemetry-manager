@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/component: controller
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  {{- include "telemetry-manager.labels" . | nindent 4 }}
+  {{- include "telemetry-manager.labels" . | indent 4 }}
 description: Global scheduling priority of Telemetry DaemonSet components. Must not
   be blocked by unschedulable non-daemonset workloads.
 globalDefault: false

@@ -7,16 +7,15 @@ metadata:
     app.kubernetes.io/component: controller
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  {{- include "telemetry-manager.labels" . | nindent 4 }}
+  {{- include "telemetry-manager.labels" . | indent 4 }}
 spec:
-  replicas: {{ .Values.manager.replicas }}
   selector:
     matchLabels:
       app.kubernetes.io/instance: telemetry
       app.kubernetes.io/name: manager
       control-plane: telemetry-manager
       kyma-project.io/component: controller
-    {{- include "telemetry-manager.selectorLabels" . | nindent 6 }}
+    {{- include "telemetry-manager.selectorLabels" . | indent 6 }}
   template:
     metadata:
       labels:
@@ -24,7 +23,7 @@ spec:
         app.kubernetes.io/name: manager
         control-plane: telemetry-manager
         kyma-project.io/component: controller
-      {{- include "telemetry-manager.selectorLabels" . | nindent 8 }}
+      {{- include "telemetry-manager.selectorLabels" . | indent 8 }}
       annotations:
         kubectl.kubernetes.io/default-container: manager
         sidecar.istio.io/inject: "false"
@@ -70,13 +69,21 @@ spec:
           initialDelaySeconds: 5
           periodSeconds: 10
         resources: {{- toYaml .Values.manager.container.resources | nindent 10 }}
-        securityContext: {{- toYaml .Values.manager.container.containerSecurityContext |
-          nindent 10 }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          privileged: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+              - ALL
         volumeMounts:
         - mountPath: /tmp
           name: crt-volume
       priorityClassName: telemetry-priority-class
-      securityContext: {{- toYaml .Values.manager.podSecurityContext | nindent 8 }}
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       serviceAccountName: {{ include "telemetry-manager.fullname" . }}-manager
       terminationGracePeriodSeconds: 10
       volumes:

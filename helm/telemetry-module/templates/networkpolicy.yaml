@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/component: controller
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  {{- include "telemetry-manager.labels" . | nindent 4 }}
+  {{- include "telemetry-manager.labels" . | indent 4 }}
 spec:
   egress:
   - to:

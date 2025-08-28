@@ -9,5 +9,5 @@ metadata:
     busola.io/extension: resource
     busola.io/extension-version: "0.5"
     kyma-project.io/module: telemetry
-  {{- include "telemetry-manager.labels" . | nindent 4 }}
+  {{- include "telemetry-manager.labels" . | indent 4 }}
 data: {{ .Files.Get "files/telemetries-busola-config.yaml" | nindent 2 }}

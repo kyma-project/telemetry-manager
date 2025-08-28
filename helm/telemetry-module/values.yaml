@@ -8,13 +8,6 @@ manager:
       - --cert-dir=/tmp
       - --high-priority-class-name=telemetry-priority-class-high
       - --normal-priority-class-name=telemetry-priority-class
-    containerSecurityContext:
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop:
-          - ALL
-      privileged: false
-      readOnlyRootFilesystem: false
     env:
       alpineImage: europe-docker.pkg.dev/kyma-project/prod/external/library/alpine:3.22.1
       appLogLevel: info
@@ -31,10 +24,6 @@ manager:
       requests:
         cpu: 5m
         memory: 50Mi
-  podSecurityContext:
-    runAsNonRoot: true
-    seccompProfile:
-      type: RuntimeDefault
   serviceAccount:
     annotations: {}
 managerMetrics:
@@ -42,10 +31,8 @@ managerMetrics:
     - name: http-metrics
       port: 8080
       targetPort: 8080
-  type: ClusterIP
 managerWebhook:
   ports:
     - port: 443
       protocol: TCP
       targetPort: 9443
-  type: ClusterIP

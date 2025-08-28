@@ -30,6 +30,7 @@ Common labels
 {{- define "telemetry-manager.labels" -}}
 {{ include "telemetry-manager.selectorLabels" . }}
 app.kubernetes.io/managed-by: kyma
+app.kubernetes.io/name: telemetry-manager
 {{- end }}
 
 {{/*

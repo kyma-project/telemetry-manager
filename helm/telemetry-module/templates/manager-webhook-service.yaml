@@ -7,14 +7,13 @@ metadata:
     app.kubernetes.io/component: controller
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  {{- include "telemetry-manager.labels" . | nindent 4 }}
+  {{- include "telemetry-manager.labels" . | indent 4 }}
 spec:
-  type: {{ .Values.managerWebhook.type }}
   selector:
     app.kubernetes.io/instance: telemetry
     app.kubernetes.io/name: manager
     control-plane: telemetry-manager
     kyma-project.io/component: controller
-    {{- include "telemetry-manager.selectorLabels" . | nindent 4 }}
+    {{- include "telemetry-manager.selectorLabels" . | indent 4 }}
   ports:
   {{- .Values.managerWebhook.ports | toYaml | nindent 2 }}

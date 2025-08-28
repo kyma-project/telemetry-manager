@@ -47,13 +47,20 @@ Helm distinguishes between the chart version (`version`) and the application ver
     - Purely informational from Helm’s perspective but helps humans trace which application version a given chart release deploys.
     - Should be kept in sync with the released application version.
 
-#### Best Practices
-- Treat chart versioning as independent of application versioning.
-- Use CI/CD automation to bump `appVersion` whenever a new application image is released.
-- Do not overwrite existing chart versions in the chart repository; each release is immutable.
-- Release artifacts will carry both versions, e.g.:
-    - `version: 0.1.2`
-    - `appVersion: 1.47.0`
+#### Branching and Version Management
+
+To avoid a version drift between the main (development) and release branches, the following rules apply:
+
+- Main branch
+    - Contains only mainline chart and application versions.
+    - `version` and `appVersion` may move independently (a chart version reflects packaging logic changes, appVersion reflects the mainline application image).
+    - Used for ongoing development.
+
+- Release branches
+    - Each release branch maintains both `version` and `appVersion` in sync.
+    - The chart `version` is always set to the same value as `appVersion`.
+    - This ensures a 1:1 traceability between a released chart and the application version it deploys.
+    - Any bugfix or patch release in a release branch will bump both versions together.
   
 ## Decision
 - The `config/` folder will be converted into a Helm chart, in a new folder `helm/telemetry-module` in the root of the repository.
@@ -61,6 +68,6 @@ Helm distinguishes between the chart version (`version`) and the application ver
 - The CRDs generation will continue to use ControllerGen.
 - The deployment scripts and CI/CD pipelines will be updated to use Helm.
 - The release artifact will be a packaged as plain YAML files as before, but generated using `helm template`.
-- Chart versioning will follow semantic versioning and be updated manually when chart changes are introduced.
-- Application versioning (`appVersion`) will be updated whenever a new application image is released.
-- Both chart and application versions will be published together in the release artifacts to provide clear traceability between packaging logic and deployed application versions.
+- Chart versioning will follow semantic versioning.
+- On the main branch, `version` and `appVersion` may diverge.
+- On release branches, `version` and `appVersion` will always be release version to enforce alignment between chart and application releases.
