@@ -19,8 +19,7 @@ type BuilderConfig struct {
 type Builder struct {
 	Config BuilderConfig
 
-	config  *common.Config
-	envVars common.EnvVars
+	config *common.Config
 }
 
 type BuildOptions struct {
@@ -60,15 +59,13 @@ type runtimeResourceSources struct {
 	job         bool
 }
 
-func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) (*common.Config, common.EnvVars, error) {
+func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) (*common.Config, error) {
 	b.config = &common.Config{
 		Base:       common.BaseConfig(common.WithK8sLeaderElector("serviceAccount", common.K8sLeaderElectorK8sCluster, opts.AgentNamespace)),
 		Receivers:  make(map[string]any),
 		Processors: make(map[string]any),
 		Exporters:  make(map[string]any),
-		Connectors: make(map[string]any),
 	}
-	b.envVars = make(common.EnvVars)
 
 	inputs := inputSources{
 		runtimeResources: runtimeResourceSources{
@@ -101,7 +98,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addBatchProcessor(),
 			b.addOTLPExporter(),
 		); err != nil {
-			return nil, nil, fmt.Errorf("failed to add runtime service pipeline: %w", err)
+			return nil, fmt.Errorf("failed to add runtime service pipeline: %w", err)
 		}
 	}
 
@@ -115,7 +112,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addBatchProcessor(),
 			b.addOTLPExporter(),
 		); err != nil {
-			return nil, nil, fmt.Errorf("failed to add prometheus service pipeline: %w", err)
+			return nil, fmt.Errorf("failed to add prometheus service pipeline: %w", err)
 		}
 	}
 
@@ -129,11 +126,11 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addBatchProcessor(),
 			b.addOTLPExporter(),
 		); err != nil {
-			return nil, nil, fmt.Errorf("failed to add istio service pipeline: %w", err)
+			return nil, fmt.Errorf("failed to add istio service pipeline: %w", err)
 		}
 	}
 
-	return b.config, b.envVars, nil
+	return b.config, nil
 }
 
 func (b *Builder) addServicePipeline(ctx context.Context, pipelineID string, fs ...fooFunc) error {
@@ -168,7 +165,7 @@ func (b *Builder) addProcessor(componentIDFunc componentIDFunc, configFunc compo
 
 func (b *Builder) addExporter(componentIDFunc componentIDFunc, configFunc exporterComponentConfigFunc) fooFunc {
 	return func(pipelineID string) buildComponentFunc {
-		return common.AddExporter(b.config, b.envVars, componentIDFunc, configFunc, func(_ *telemetryv1alpha1.MetricPipeline) string {
+		return common.AddExporter(b.config, nil, componentIDFunc, configFunc, func(_ *telemetryv1alpha1.MetricPipeline) string {
 			return pipelineID
 		})
 	}
@@ -244,6 +241,7 @@ func (b *Builder) addFilterDropNonPVCVolumesMetricsProcessor(runtimeResources ru
 			if !runtimeResources.volume {
 				return nil
 			}
+
 			return dropNonPVCVolumesMetricsProcessorConfig()
 		},
 	)
