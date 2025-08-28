@@ -33,13 +33,9 @@ type BuildOptions struct {
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) (*common.Config, common.EnvVars, error) {
-	b.Config = &common.Config{
-		Base:       common.BaseConfig(common.WithK8sLeaderElector("serviceAccount", common.K8sLeaderElectorKymaStats, opts.GatewayNamespace)),
-		Receivers:  make(map[string]any),
-		Processors: make(map[string]any),
-		Exporters:  make(map[string]any),
-		Connectors: make(map[string]any),
-	}
+	b.Config = common.NewConfig(
+		common.WithK8sLeaderElector("serviceAccount", common.K8sLeaderElectorKymaStats, opts.GatewayNamespace),
+	)
 	b.EnvVars = make(common.EnvVars)
 
 	queueSize := maxQueueSize / len(pipelines)

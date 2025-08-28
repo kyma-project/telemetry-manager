@@ -49,13 +49,9 @@ type runtimeResourceSources struct {
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) (*common.Config, error) {
-	b.Config = &common.Config{
-		Base: common.BaseConfig(common.WithK8sLeaderElector("serviceAccount",
-			common.K8sLeaderElectorK8sCluster, opts.AgentNamespace)),
-		Receivers:  make(map[string]any),
-		Processors: make(map[string]any),
-		Exporters:  make(map[string]any),
-	}
+	b.Config = common.NewConfig(
+		common.WithK8sLeaderElector("serviceAccount", common.K8sLeaderElectorK8sCluster, opts.AgentNamespace),
+	)
 
 	inputs := inputSources{
 		runtimeResources: runtimeResourceSources{
