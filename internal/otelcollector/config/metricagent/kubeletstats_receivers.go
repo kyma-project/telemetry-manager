@@ -6,26 +6,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 )
 
-func receiversConfig(inputs inputSources, opts BuildOptions) Receivers {
-	var config Receivers
-
-	if inputs.prometheus {
-		config.PrometheusAppPods = prometheusPodsReceiverConfig()
-		config.PrometheusAppServices = prometheusServicesReceiverConfig(opts)
-	}
-
-	if inputs.runtime {
-		config.KubeletStats = kubeletStatsReceiverConfig(inputs.runtimeResources)
-		config.K8sClusterReceiver = k8sClusterReceiverConfig(inputs.runtimeResources)
-	}
-
-	if inputs.istio {
-		config.PrometheusIstio = prometheusIstioReceiverConfig(inputs.envoy)
-	}
-
-	return config
-}
-
 func kubeletStatsReceiverConfig(runtimeResources runtimeResourceSources) *KubeletStatsReceiver {
 	const (
 		collectionInterval = "30s"

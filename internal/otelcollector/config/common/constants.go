@@ -72,9 +72,14 @@ const (
 	// RECEIVERS
 	// ================================================================================
 
-	ComponentIDOTLPReceiver      = "otlp"
-	ComponentIDFileLogReceiver   = "filelog/%s" // dynamically filled with pipeline name
-	ComponentIDKymaStatsReceiver = "kymastats"
+	ComponentIDOTLPReceiver                  = "otlp"
+	ComponentIDFileLogReceiver               = "filelog/%s" // dynamically filled with pipeline name
+	ComponentIDKymaStatsReceiver             = "kymastats"
+	ComponentIDK8sClusterReceiver            = "k8s_cluster"
+	ComponentIDKubeletStatsReceiver          = "kubeletstats"
+	ComponentIDPrometheusAppPodsReceiver     = "prometheus/app-pods"
+	ComponentIDPrometheusAppServicesReceiver = "prometheus/app-services"
+	ComponentIDPrometheusIstioReceiver       = "prometheus/istio"
 
 	// ================================================================================
 	// PROCESSORS
@@ -98,23 +103,29 @@ const (
 	ComponentIDIstioEnrichmentProcessor       = "istio_enrichment"
 
 	// Metric-Specific Processors
-	ComponentIDDropIfInputSourceRuntimeProcessor        = "filter/drop-if-input-source-runtime"
-	ComponentIDDropIfInputSourcePrometheusProcessor     = "filter/drop-if-input-source-prometheus"
-	ComponentIDDropIfInputSourceIstioProcessor          = "filter/drop-if-input-source-istio"
-	ComponentIDDropIfInputSourceOTLPProcessor           = "filter/drop-if-input-source-otlp"
-	ComponentIDDropEnvoyMetricsIfDisabledProcessor      = "filter/drop-envoy-metrics-if-disabled"
-	ComponentIDNamespacePerInputFilterProcessor         = "filter/%s-filter-by-namespace-%s-input" // dynamically filled with pipeline name and input source
-	ComponentIDDropRuntimePodMetricsProcessor           = "filter/drop-runtime-pod-metrics"
-	ComponentIDDropRuntimeContainerMetricsProcessor     = "filter/drop-runtime-container-metrics"
-	ComponentIDDropRuntimeNodeMetricsProcessor          = "filter/drop-runtime-node-metrics"
-	ComponentIDDropRuntimeVolumeMetricsProcessor        = "filter/drop-runtime-volume-metrics"
-	ComponentIDDropRuntimeDeploymentMetricsProcessor    = "filter/drop-runtime-deployment-metrics"
-	ComponentIDDropRuntimeDaemonSetMetricsProcessor     = "filter/drop-runtime-daemonset-metrics"
-	ComponentIDDropRuntimeStatefulSetMetricsProcessor   = "filter/drop-runtime-statefulset-metrics"
-	ComponentIDDropRuntimeJobMetricsProcessor           = "filter/drop-runtime-job-metrics"
-	ComponentIDDropPrometheusDiagnosticMetricsProcessor = "filter/drop-diagnostic-metrics-if-input-source-prometheus"
-	ComponentIDDropIstioDiagnosticMetricsProcessor      = "filter/drop-diagnostic-metrics-if-input-source-istio"
-	ComponentIDDeleteSkipEnrichmentAttributeProcessor   = "resource/delete-skip-enrichment-attribute"
+	ComponentIDDropIfInputSourceRuntimeProcessor           = "filter/drop-if-input-source-runtime"
+	ComponentIDDropIfInputSourcePrometheusProcessor        = "filter/drop-if-input-source-prometheus"
+	ComponentIDDropIfInputSourceIstioProcessor             = "filter/drop-if-input-source-istio"
+	ComponentIDDropIfInputSourceOTLPProcessor              = "filter/drop-if-input-source-otlp"
+	ComponentIDDropEnvoyMetricsIfDisabledProcessor         = "filter/drop-envoy-metrics-if-disabled"
+	ComponentIDNamespacePerInputFilterProcessor            = "filter/%s-filter-by-namespace-%s-input" // dynamically filled with pipeline name and input source
+	ComponentIDDropRuntimePodMetricsProcessor              = "filter/drop-runtime-pod-metrics"
+	ComponentIDDropRuntimeContainerMetricsProcessor        = "filter/drop-runtime-container-metrics"
+	ComponentIDDropRuntimeNodeMetricsProcessor             = "filter/drop-runtime-node-metrics"
+	ComponentIDDropRuntimeVolumeMetricsProcessor           = "filter/drop-runtime-volume-metrics"
+	ComponentIDDropRuntimeDeploymentMetricsProcessor       = "filter/drop-runtime-deployment-metrics"
+	ComponentIDDropRuntimeDaemonSetMetricsProcessor        = "filter/drop-runtime-daemonset-metrics"
+	ComponentIDDropRuntimeStatefulSetMetricsProcessor      = "filter/drop-runtime-statefulset-metrics"
+	ComponentIDDropRuntimeJobMetricsProcessor              = "filter/drop-runtime-job-metrics"
+	ComponentIDDropPrometheusDiagnosticMetricsProcessor    = "filter/drop-diagnostic-metrics-if-input-source-prometheus"
+	ComponentIDDropIstioDiagnosticMetricsProcessor         = "filter/drop-diagnostic-metrics-if-input-source-istio"
+	ComponentIDFilterDropNonPVCVolumesMetricsProcessor     = "filter/drop-non-pvc-volumes-metrics"
+	ComponentIDFilterDropVirtualNetworkInterfacesProcessor = "filter/drop-virtual-network-interfaces"
+	ComponentIDResourceDeleteServiceNameProcessor          = "resource/delete-service-name"
+	ComponentIDDeleteSkipEnrichmentAttributeProcessor      = "resource/delete-skip-enrichment-attribute"
+	ComponentIDSetInstrumentationScopePrometheusProcessor  = "transform/set-instrumentation-scope-prometheus"
+	ComponentIDSetInstrumentationScopeIstioProcessor       = "transform/set-instrumentation-scope-istio"
+	ComponentIDInsertSkipEnrichmentAttributeProcessor      = "transform/insert-skip-enrichment-attribute"
 
 	// ================================================================================
 	// EXPORTERS
@@ -122,6 +133,7 @@ const (
 
 	ComponentIDOTLPHTTPExporter = "otlphttp/%s" // dynamically filled with pipeline name
 	ComponentIDOTLPGRPCExporter = "otlp/%s"     // dynamically filled with pipeline name
+	ComponentIDOTLPExporter     = "otlp"        // static OTLP exporter
 
 	// ================================================================================
 	// CONNECTORS
