@@ -11,7 +11,7 @@ import (
 
 func (b *Builder) addOTLPReceiver() buildComponentFunc {
 	return b.AddReceiver(
-		staticComponentID(common.ComponentIDOTLPReceiver),
+		b.StaticComponentID(common.ComponentIDOTLPReceiver),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return &common.OTLPReceiver{
 				Protocols: common.ReceiverProtocols{
@@ -29,7 +29,7 @@ func (b *Builder) addOTLPReceiver() buildComponentFunc {
 
 func (b *Builder) addKymaStatsReceiver() buildComponentFunc {
 	return b.AddReceiver(
-		staticComponentID(common.ComponentIDKymaStatsReceiver),
+		b.StaticComponentID(common.ComponentIDKymaStatsReceiver),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return &KymaStatsReceiver{
 				AuthType:           "serviceAccount",
@@ -49,7 +49,7 @@ func (b *Builder) addKymaStatsReceiver() buildComponentFunc {
 //nolint:mnd // hardcoded values
 func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		staticComponentID(common.ComponentIDMemoryLimiterProcessor),
+		b.StaticComponentID(common.ComponentIDMemoryLimiterProcessor),
 		func(lp *telemetryv1alpha1.MetricPipeline) any {
 			return &common.MemoryLimiter{
 				CheckInterval:        "1s",

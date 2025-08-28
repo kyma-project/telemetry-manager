@@ -75,6 +75,10 @@ func (cb *ComponentBuilder[T]) AddExporter(componentIDFunc ComponentIDFunc[T], c
 	}
 }
 
+func (cb *ComponentBuilder[T]) StaticComponentID(componentID string) ComponentIDFunc[T] {
+	return StaticComponentID[T](componentID)
+}
+
 // AddReceiver creates a BuildComponentFunc that adds a receiver to the configuration.
 // Receivers collect telemetry data from various sources.
 //

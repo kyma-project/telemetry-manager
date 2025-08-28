@@ -18,7 +18,7 @@ func (b *Builder) addEnrichmentRoutingReceiver() buildComponentFunc {
 
 func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFunc {
 	return b.AddProcessor(
-		staticComponentID(common.ComponentIDK8sAttributesProcessor),
+		b.StaticComponentID(common.ComponentIDK8sAttributesProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return common.K8sAttributesProcessorConfig(opts.Enrichments)
 		},
@@ -27,7 +27,7 @@ func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFun
 
 func (b *Builder) addServiceEnrichmentProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		staticComponentID(common.ComponentIDServiceEnrichmentProcessor),
+		b.StaticComponentID(common.ComponentIDServiceEnrichmentProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return common.ResolveServiceNameConfig()
 		},

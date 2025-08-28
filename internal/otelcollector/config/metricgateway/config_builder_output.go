@@ -31,7 +31,7 @@ func (b *Builder) addOutputRoutingReceiver() buildComponentFunc {
 
 func (b *Builder) addSetInstrumentationScopeToKymaProcessor(opts BuildOptions) buildComponentFunc {
 	return b.AddProcessor(
-		staticComponentID(common.ComponentIDSetInstrumentationScopeKymaProcessor),
+		b.StaticComponentID(common.ComponentIDSetInstrumentationScopeKymaProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return common.InstrumentationScopeProcessorConfig(opts.InstrumentationScopeVersion, common.InputSourceKyma)
 		},
@@ -42,7 +42,7 @@ func (b *Builder) addSetInstrumentationScopeToKymaProcessor(opts BuildOptions) b
 
 func (b *Builder) addDropIfRuntimeInputDisabledProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		staticComponentID(common.ComponentIDDropIfInputSourceRuntimeProcessor),
+		b.StaticComponentID(common.ComponentIDDropIfInputSourceRuntimeProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			if metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) {
 				return nil
@@ -59,7 +59,7 @@ func (b *Builder) addDropIfRuntimeInputDisabledProcessor() buildComponentFunc {
 
 func (b *Builder) addDropIfPrometheusInputDisabledProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		staticComponentID(common.ComponentIDDropIfInputSourcePrometheusProcessor),
+		b.StaticComponentID(common.ComponentIDDropIfInputSourcePrometheusProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			if metricpipelineutils.IsPrometheusInputEnabled(mp.Spec.Input) {
 				return nil
@@ -76,7 +76,7 @@ func (b *Builder) addDropIfPrometheusInputDisabledProcessor() buildComponentFunc
 
 func (b *Builder) addDropIfIstioInputDisabledProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		staticComponentID(common.ComponentIDDropIfInputSourceIstioProcessor),
+		b.StaticComponentID(common.ComponentIDDropIfInputSourceIstioProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			if metricpipelineutils.IsIstioInputEnabled(mp.Spec.Input) {
 				return nil
@@ -93,7 +93,7 @@ func (b *Builder) addDropIfIstioInputDisabledProcessor() buildComponentFunc {
 
 func (b *Builder) addDropIfOTLPInputDisabledProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		staticComponentID(common.ComponentIDDropIfInputSourceOTLPProcessor),
+		b.StaticComponentID(common.ComponentIDDropIfInputSourceOTLPProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			if metricpipelineutils.IsOTLPInputEnabled(mp.Spec.Input) {
 				return nil
@@ -110,7 +110,7 @@ func (b *Builder) addDropIfOTLPInputDisabledProcessor() buildComponentFunc {
 
 func (b *Builder) addDropEnvoyMetricsIfDisabledProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		staticComponentID(common.ComponentIDDropEnvoyMetricsIfDisabledProcessor),
+		b.StaticComponentID(common.ComponentIDDropEnvoyMetricsIfDisabledProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			if metricpipelineutils.IsIstioInputEnabled(mp.Spec.Input) && metricpipelineutils.IsEnvoyMetricsEnabled(mp.Spec.Input) {
 				return nil
@@ -197,7 +197,7 @@ func (b *Builder) addOTLPNamespaceFilterProcessor() buildComponentFunc {
 
 func (b *Builder) addDropRuntimePodMetricsProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		staticComponentID(common.ComponentIDDropRuntimePodMetricsProcessor),
+		b.StaticComponentID(common.ComponentIDDropRuntimePodMetricsProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimePodInputEnabled(mp.Spec.Input) {
 				return nil
@@ -216,7 +216,7 @@ func (b *Builder) addDropRuntimePodMetricsProcessor() buildComponentFunc {
 
 func (b *Builder) addDropRuntimeContainerMetricsProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		staticComponentID(common.ComponentIDDropRuntimeContainerMetricsProcessor),
+		b.StaticComponentID(common.ComponentIDDropRuntimeContainerMetricsProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeContainerInputEnabled(mp.Spec.Input) {
 				return nil
@@ -235,7 +235,7 @@ func (b *Builder) addDropRuntimeContainerMetricsProcessor() buildComponentFunc {
 
 func (b *Builder) addDropRuntimeNodeMetricsProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		staticComponentID(common.ComponentIDDropRuntimeNodeMetricsProcessor),
+		b.StaticComponentID(common.ComponentIDDropRuntimeNodeMetricsProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeNodeInputEnabled(mp.Spec.Input) {
 				return nil
@@ -254,7 +254,7 @@ func (b *Builder) addDropRuntimeNodeMetricsProcessor() buildComponentFunc {
 
 func (b *Builder) addDropRuntimeVolumeMetricsProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		staticComponentID(common.ComponentIDDropRuntimeVolumeMetricsProcessor),
+		b.StaticComponentID(common.ComponentIDDropRuntimeVolumeMetricsProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeVolumeInputEnabled(mp.Spec.Input) {
 				return nil
@@ -273,7 +273,7 @@ func (b *Builder) addDropRuntimeVolumeMetricsProcessor() buildComponentFunc {
 
 func (b *Builder) addDropRuntimeDeploymentMetricsProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		staticComponentID(common.ComponentIDDropRuntimeDeploymentMetricsProcessor),
+		b.StaticComponentID(common.ComponentIDDropRuntimeDeploymentMetricsProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeDeploymentInputEnabled(mp.Spec.Input) {
 				return nil
@@ -292,7 +292,7 @@ func (b *Builder) addDropRuntimeDeploymentMetricsProcessor() buildComponentFunc 
 
 func (b *Builder) addDropRuntimeDaemonSetMetricsProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		staticComponentID(common.ComponentIDDropRuntimeDaemonSetMetricsProcessor),
+		b.StaticComponentID(common.ComponentIDDropRuntimeDaemonSetMetricsProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeDaemonSetInputEnabled(mp.Spec.Input) {
 				return nil
@@ -311,7 +311,7 @@ func (b *Builder) addDropRuntimeDaemonSetMetricsProcessor() buildComponentFunc {
 
 func (b *Builder) addDropRuntimeStatefulSetMetricsProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		staticComponentID(common.ComponentIDDropRuntimeStatefulSetMetricsProcessor),
+		b.StaticComponentID(common.ComponentIDDropRuntimeStatefulSetMetricsProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeStatefulSetInputEnabled(mp.Spec.Input) {
 				return nil
@@ -330,7 +330,7 @@ func (b *Builder) addDropRuntimeStatefulSetMetricsProcessor() buildComponentFunc
 
 func (b *Builder) addDropRuntimeJobMetricsProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		staticComponentID(common.ComponentIDDropRuntimeJobMetricsProcessor),
+		b.StaticComponentID(common.ComponentIDDropRuntimeJobMetricsProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeJobInputEnabled(mp.Spec.Input) {
 				return nil
@@ -351,7 +351,7 @@ func (b *Builder) addDropRuntimeJobMetricsProcessor() buildComponentFunc {
 
 func (b *Builder) addDropPrometheusDiagnosticMetricsProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		staticComponentID(common.ComponentIDDropPrometheusDiagnosticMetricsProcessor),
+		b.StaticComponentID(common.ComponentIDDropPrometheusDiagnosticMetricsProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			if !metricpipelineutils.IsPrometheusInputEnabled(mp.Spec.Input) || metricpipelineutils.IsPrometheusDiagnosticInputEnabled(mp.Spec.Input) {
 				return nil
@@ -364,7 +364,7 @@ func (b *Builder) addDropPrometheusDiagnosticMetricsProcessor() buildComponentFu
 
 func (b *Builder) addDropIstioDiagnosticMetricsProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		staticComponentID(common.ComponentIDDropIstioDiagnosticMetricsProcessor),
+		b.StaticComponentID(common.ComponentIDDropIstioDiagnosticMetricsProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			if !metricpipelineutils.IsIstioInputEnabled(mp.Spec.Input) || metricpipelineutils.IsIstioDiagnosticInputEnabled(mp.Spec.Input) {
 				return nil
@@ -436,7 +436,7 @@ func namespacesConditions(namespaces []string) []string {
 
 func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildComponentFunc {
 	return b.AddProcessor(
-		staticComponentID(common.ComponentIDInsertClusterAttributesProcessor),
+		b.StaticComponentID(common.ComponentIDInsertClusterAttributesProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return common.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.ClusterUID, opts.CloudProvider)
 		},
@@ -445,7 +445,7 @@ func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildCo
 
 func (b *Builder) addDeleteSkipEnrichmentAttributeProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		staticComponentID(common.ComponentIDDeleteSkipEnrichmentAttributeProcessor),
+		b.StaticComponentID(common.ComponentIDDeleteSkipEnrichmentAttributeProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return &common.ResourceProcessor{
 				Attributes: []common.AttributeAction{
@@ -461,7 +461,7 @@ func (b *Builder) addDeleteSkipEnrichmentAttributeProcessor() buildComponentFunc
 
 func (b *Builder) addDropKymaAttributesProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		staticComponentID(common.ComponentIDDropKymaAttributesProcessor),
+		b.StaticComponentID(common.ComponentIDDropKymaAttributesProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return common.DropKymaAttributesProcessorConfig()
 		},
@@ -491,7 +491,7 @@ func (b *Builder) addUserDefinedTransformProcessor() buildComponentFunc {
 //nolint:mnd // hardcoded values
 func (b *Builder) addBatchProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		staticComponentID(common.ComponentIDBatchProcessor),
+		b.StaticComponentID(common.ComponentIDBatchProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return &common.BatchProcessor{
 				SendBatchSize:    1024,

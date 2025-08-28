@@ -13,8 +13,6 @@ import (
 
 type buildComponentFunc = common.BuildComponentFunc[*telemetryv1alpha1.MetricPipeline]
 
-var staticComponentID = common.StaticComponentID[*telemetryv1alpha1.MetricPipeline]
-
 const (
 	maxQueueSize = 256 // Maximum number of batches kept in memory before dropping
 )

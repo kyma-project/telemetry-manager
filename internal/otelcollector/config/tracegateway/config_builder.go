@@ -14,8 +14,6 @@ import (
 
 type buildComponentFunc = common.BuildComponentFunc[*telemetryv1alpha1.TracePipeline]
 
-var staticComponentID = common.StaticComponentID[*telemetryv1alpha1.TracePipeline]
-
 const (
 	maxQueueSize = 256 // Maximum number of batches kept in memory before dropping
 )
@@ -68,7 +66,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Trace
 
 func (b *Builder) addOTLPReceiver() buildComponentFunc {
 	return b.AddReceiver(
-		staticComponentID(common.ComponentIDOTLPReceiver),
+		b.StaticComponentID(common.ComponentIDOTLPReceiver),
 		func(tp *telemetryv1alpha1.TracePipeline) any {
 			return &common.OTLPReceiver{
 				Protocols: common.ReceiverProtocols{
@@ -87,7 +85,7 @@ func (b *Builder) addOTLPReceiver() buildComponentFunc {
 //nolint:mnd // hardcoded values
 func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		staticComponentID(common.ComponentIDMemoryLimiterProcessor),
+		b.StaticComponentID(common.ComponentIDMemoryLimiterProcessor),
 		func(tp *telemetryv1alpha1.TracePipeline) any {
 			return &common.MemoryLimiter{
 				CheckInterval:        "1s",
@@ -100,7 +98,7 @@ func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
 
 func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFunc {
 	return b.AddProcessor(
-		staticComponentID(common.ComponentIDK8sAttributesProcessor),
+		b.StaticComponentID(common.ComponentIDK8sAttributesProcessor),
 		func(tp *telemetryv1alpha1.TracePipeline) any {
 			return common.K8sAttributesProcessorConfig(opts.Enrichments)
 		},
@@ -109,7 +107,7 @@ func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFun
 
 func (b *Builder) addIstioNoiseFilterProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		staticComponentID(common.ComponentIDIstioNoiseFilterProcessor),
+		b.StaticComponentID(common.ComponentIDIstioNoiseFilterProcessor),
 		func(tp *telemetryv1alpha1.TracePipeline) any {
 			return &common.IstioNoiseFilterProcessor{}
 		},
@@ -118,7 +116,7 @@ func (b *Builder) addIstioNoiseFilterProcessor() buildComponentFunc {
 
 func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildComponentFunc {
 	return b.AddProcessor(
-		staticComponentID(common.ComponentIDInsertClusterAttributesProcessor),
+		b.StaticComponentID(common.ComponentIDInsertClusterAttributesProcessor),
 		func(tp *telemetryv1alpha1.TracePipeline) any {
 			return common.InsertClusterAttributesProcessorConfig(
 				opts.ClusterName, opts.ClusterUID, opts.CloudProvider,
@@ -129,7 +127,7 @@ func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildCo
 
 func (b *Builder) addServiceEnrichmentProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		staticComponentID(common.ComponentIDServiceEnrichmentProcessor),
+		b.StaticComponentID(common.ComponentIDServiceEnrichmentProcessor),
 		func(tp *telemetryv1alpha1.TracePipeline) any {
 			return common.ResolveServiceNameConfig()
 		},
@@ -138,7 +136,7 @@ func (b *Builder) addServiceEnrichmentProcessor() buildComponentFunc {
 
 func (b *Builder) addDropKymaAttributesProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		staticComponentID(common.ComponentIDDropKymaAttributesProcessor),
+		b.StaticComponentID(common.ComponentIDDropKymaAttributesProcessor),
 		func(tp *telemetryv1alpha1.TracePipeline) any {
 			return common.DropKymaAttributesProcessorConfig()
 		},
@@ -165,7 +163,7 @@ func (b *Builder) addUserDefinedTransformProcessor() buildComponentFunc {
 //nolint:mnd // hardcoded values
 func (b *Builder) addBatchProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		staticComponentID(common.ComponentIDBatchProcessor),
+		b.StaticComponentID(common.ComponentIDBatchProcessor),
 		func(_ *telemetryv1alpha1.TracePipeline) any {
 			return &common.BatchProcessor{
 				SendBatchSize:    512,
