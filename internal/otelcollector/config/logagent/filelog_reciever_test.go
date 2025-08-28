@@ -82,7 +82,7 @@ func TestReceiverCreator(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			fileLogReceiver := fileLogReceiverConfig(&tc.pipeline)
+			fileLogReceiver := fileLogReceiverConfig(&tc.pipeline, false)
 			require.Equal(t, expectedExcludePaths, fileLogReceiver.Exclude)
 			require.Equal(t, expectedIncludePaths, fileLogReceiver.Include)
 			require.Equal(t, ptr.To(false), fileLogReceiver.IncludeFileName)
@@ -239,7 +239,7 @@ func TestExcludePath(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			excludePaths := createExcludePath(tc.pipeline.Spec.Input.Application)
+			excludePaths := createExcludePath(tc.pipeline.Spec.Input.Application, false)
 			require.Equal(t, tc.expected, excludePaths)
 		})
 	}
@@ -439,10 +439,10 @@ func TestMakeRemoveLevel(t *testing.T) {
 
 func getExcludePaths(system bool, paths ...string) []string {
 	var defaultExcludePaths = []string{
+		"/var/log/pods/kyma-system_telemetry-fluent-bit-*/fluent-bit/*.log",
+		"/var/log/pods/kyma-system_telemetry-log-agent-*/collector/*.log",
 		"/var/log/pods/kyma-system_*system-logs-agent-*/collector/*.log",
 		"/var/log/pods/kyma-system_*system-logs-collector-*/collector/*.log",
-		"/var/log/pods/kyma-system_telemetry-log-agent-*/collector/*.log",
-		"/var/log/pods/kyma-system_telemetry-fluent-bit-*/fluent-bit/*.log",
 	}
 
 	var systemExcludePaths = []string{
