@@ -6,24 +6,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
-// =============================================================================
-// BASE CONFIGURATION BUILDERS
-// =============================================================================
-
-type ConfigOption func(*Config)
-
-func WithK8sLeaderElector(authType, leaseName, leaseNamespace string) ConfigOption {
-	return func(config *Config) {
-		config.Service.Extensions = append(config.Service.Extensions, "k8s_leader_elector")
-		config.Extensions.K8sLeaderElector = K8sLeaderElector{
-			AuthType:       authType,
-			LeaseName:      leaseName,
-			LeaseNamespace: leaseNamespace,
-		}
-	}
-}
-
-func NewConfig(opts ...ConfigOption) *Config {
+func NewConfig() *Config {
 	config := &Config{
 		Receivers:  make(map[string]any),
 		Processors: make(map[string]any),
@@ -31,10 +14,6 @@ func NewConfig(opts ...ConfigOption) *Config {
 		Connectors: make(map[string]any),
 		Extensions: extensionsConfig(),
 		Service:    serviceConfig(),
-	}
-
-	for _, opt := range opts {
-		opt(config)
 	}
 
 	return config
@@ -63,18 +42,18 @@ func serviceConfig() Service {
 	}
 
 	return Service{
-		Pipelines:  make(Pipelines),
+		Pipelines:  make(map[string]Pipeline),
 		Telemetry:  telemetry,
-		Extensions: []string{"health_check", "pprof"},
+		Extensions: []string{ComponentIDHealthCheckExtension, ComponentIDPprofExtension},
 	}
 }
 
-func extensionsConfig() Extensions {
-	return Extensions{
-		HealthCheck: Endpoint{
+func extensionsConfig() map[string]any {
+	return map[string]any{
+		ComponentIDHealthCheckExtension: Endpoint{
 			Endpoint: fmt.Sprintf("${%s}:%d", EnvVarCurrentPodIP, ports.HealthCheck),
 		},
-		Pprof: Endpoint{
+		ComponentIDPprofExtension: Endpoint{
 			Endpoint: fmt.Sprintf("127.0.0.1:%d", ports.Pprof),
 		},
 	}

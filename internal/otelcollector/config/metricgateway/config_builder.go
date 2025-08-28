@@ -33,8 +33,13 @@ type BuildOptions struct {
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) (*common.Config, common.EnvVars, error) {
-	b.Config = common.NewConfig(
-		common.WithK8sLeaderElector("serviceAccount", common.K8sLeaderElectorKymaStats, opts.GatewayNamespace),
+	b.Config = common.NewConfig()
+	b.AddExtension(common.ComponentIDK8sLeaderElectorExtension,
+		common.K8sLeaderElector{
+			AuthType:       "serviceAccount",
+			LeaseName:      common.K8sLeaderElectorKymaStats,
+			LeaseNamespace: opts.GatewayNamespace,
+		},
 	)
 	b.EnvVars = make(common.EnvVars)
 

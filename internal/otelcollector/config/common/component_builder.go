@@ -193,6 +193,22 @@ func (cb *ComponentBuilder[T]) AddExporter(componentIDFunc ComponentIDFunc[T], c
 	}
 }
 
+func (cb *ComponentBuilder[T]) AddExtension(componentID string, extensionConfig any) {
+	if _, found := cb.Config.Extensions[componentID]; !found {
+		cb.Config.Extensions[componentID] = extensionConfig
+	}
+
+	// Ensure the extension is added to the service only once
+	extensions := cb.Config.Service.Extensions
+	for _, ext := range extensions {
+		if ext == componentID {
+			return
+		}
+	}
+
+	cb.Config.Service.Extensions = append(cb.Config.Service.Extensions, componentID)
+}
+
 // StaticComponentID returns a ComponentIDFunc that always returns the same ID.
 // Useful for static components like receivers and processors.
 func (cb *ComponentBuilder[T]) StaticComponentID(componentID string) ComponentIDFunc[T] {

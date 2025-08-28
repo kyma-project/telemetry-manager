@@ -6,29 +6,37 @@ package common
 
 // Config represents the root configuration structure for OpenTelemetry Collector
 type Config struct {
-	Extensions Extensions     `yaml:"extensions"`
+	Extensions map[string]any `yaml:"extensions"`
 	Service    Service        `yaml:"service"`
+
 	Receivers  map[string]any `yaml:"receivers"`
 	Processors map[string]any `yaml:"processors"`
 	Exporters  map[string]any `yaml:"exporters"`
 	Connectors map[string]any `yaml:"connectors,omitempty"` // Connectors are optional and may not be present in all configurations
 }
 
-type Extensions struct {
-	HealthCheck      Endpoint         `yaml:"health_check,omitempty"`
-	Pprof            Endpoint         `yaml:"pprof,omitempty"`
-	K8sLeaderElector K8sLeaderElector `yaml:"k8s_leader_elector,omitempty"`
-	FileStorage      *FileStorage     `yaml:"file_storage,omitempty"`
+// =============================================================================
+// EXTENSION TYPES
+// =============================================================================
+
+type K8sLeaderElector struct {
+	AuthType       string `yaml:"auth_type,omitempty"`
+	LeaseName      string `yaml:"lease_name,omitempty"`
+	LeaseNamespace string `yaml:"lease_namespace,omitempty"`
 }
 
 type FileStorage struct {
 	Directory string `yaml:"directory,omitempty"`
 }
 
+// =============================================================================
+// SERVICE TYPES
+// =============================================================================
+
 type Service struct {
-	Pipelines  Pipelines `yaml:"pipelines,omitempty"`
-	Telemetry  Telemetry `yaml:"telemetry,omitempty"`
-	Extensions []string  `yaml:"extensions,omitempty"`
+	Pipelines  map[string]Pipeline `yaml:"pipelines,omitempty"`
+	Telemetry  Telemetry           `yaml:"telemetry,omitempty"`
+	Extensions []string            `yaml:"extensions,omitempty"`
 }
 
 type Telemetry struct {
@@ -57,17 +65,10 @@ type PrometheusMetricExporter struct {
 	Port int32  `yaml:"port"`
 }
 
-// Logs defines logs configuration for telemetry
 type Logs struct {
 	Level    string `yaml:"level"`
 	Encoding string `yaml:"encoding"`
 }
-
-// =============================================================================
-// PIPELINE TYPES
-// =============================================================================
-
-type Pipelines map[string]Pipeline
 
 type Pipeline struct {
 	Receivers  []string `yaml:"receivers"`
@@ -221,14 +222,4 @@ type RoutingConnectorTableEntry struct {
 }
 
 type ForwardConnector struct {
-}
-
-// =============================================================================
-// EXTENSION TYPES
-// =============================================================================
-
-type K8sLeaderElector struct {
-	AuthType       string `yaml:"auth_type"`
-	LeaseName      string `yaml:"lease_name"`
-	LeaseNamespace string `yaml:"lease_namespace"`
 }
