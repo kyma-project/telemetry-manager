@@ -32,35 +32,30 @@ func TestBuildConfig(t *testing.T) {
 			overwriteGoldenFile bool
 		}{
 			{
-				name:                "istio input only",
-				goldenFileName:      "istio-only.yaml",
-				pipeline:            testutils.NewMetricPipelineBuilder().WithRuntimeInput(false).WithPrometheusInput(false).WithIstioInput(true).Build(),
-				overwriteGoldenFile: false,
+				name:           "istio input only",
+				goldenFileName: "istio-only.yaml",
+				pipeline:       testutils.NewMetricPipelineBuilder().WithRuntimeInput(false).WithPrometheusInput(false).WithIstioInput(true).Build(),
 			},
 			{
-				name:                "prometheus input only",
-				goldenFileName:      "prometheus-only.yaml",
-				pipeline:            testutils.NewMetricPipelineBuilder().WithRuntimeInput(false).WithPrometheusInput(true).WithIstioInput(false).Build(),
-				overwriteGoldenFile: false,
+				name:           "prometheus input only",
+				goldenFileName: "prometheus-only.yaml",
+				pipeline:       testutils.NewMetricPipelineBuilder().WithRuntimeInput(false).WithPrometheusInput(true).WithIstioInput(false).Build(),
 			},
 			{
-				name:                "runtime input only",
-				goldenFileName:      "runtime-only.yaml",
-				pipeline:            testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(false).WithIstioInput(false).Build(),
-				overwriteGoldenFile: false,
+				name:           "runtime input only",
+				goldenFileName: "runtime-only.yaml",
+				pipeline:       testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(false).WithIstioInput(false).Build(),
 			},
 			{
-				name:                "all three inputs without istio operations",
-				goldenFileName:      "all-inputs-istio-ops-disabled.yaml",
-				pipeline:            testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).WithIstioInput(true).WithIstioInputEnvoyMetrics(false).Build(),
-				overwriteGoldenFile: false,
+				name:           "istio module is not installed",
+				goldenFileName: "istio-ops-disabled.yaml",
+				pipeline:       testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).WithIstioInput(false).WithIstioInputEnvoyMetrics(false).Build(),
 			},
 			{
-				name:                "all three inputs with istio operations",
-				goldenFileName:      "all-inputs-istio-ops-enabled.yaml",
-				pipeline:            testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).WithIstioInput(true).WithIstioInputEnvoyMetrics(true).Build(),
-				istioEnabled:        true,
-				overwriteGoldenFile: false,
+				name:           "istio module is installed",
+				goldenFileName: "istio-ops-enabled.yaml",
+				pipeline:       testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).WithIstioInput(true).WithIstioInputEnvoyMetrics(true).Build(),
+				istioEnabled:   true,
 			},
 			{
 				name:           "runtime all resource metrics enabled",
@@ -78,7 +73,6 @@ func TestBuildConfig(t *testing.T) {
 					WithPrometheusInput(false).
 					WithIstioInput(false).
 					Build(),
-				overwriteGoldenFile: false,
 			},
 			{
 				name:           "runtime some resource metrics disabled",
@@ -96,7 +90,6 @@ func TestBuildConfig(t *testing.T) {
 					WithPrometheusInput(false).
 					WithIstioInput(false).
 					Build(),
-				overwriteGoldenFile: false,
 			},
 			{
 				name:           "comprehensive setup with all features enabled",
@@ -116,7 +109,6 @@ func TestBuildConfig(t *testing.T) {
 					WithIstioInput(true).
 					WithIstioInputEnvoyMetrics(true).
 					Build(),
-				overwriteGoldenFile: false,
 			},
 		}
 
