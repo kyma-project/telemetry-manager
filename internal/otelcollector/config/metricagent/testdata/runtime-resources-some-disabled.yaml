@@ -79,6 +79,14 @@ receivers:
                 enabled: false
             k8s.pod.phase:
                 enabled: false
+            k8s.daemonset.current_scheduled_nodes:
+                enabled: false
+            k8s.daemonset.desired_scheduled_nodes:
+                enabled: false
+            k8s.daemonset.misscheduled_nodes:
+                enabled: false
+            k8s.daemonset.ready_nodes:
+                enabled: false
         k8s_leader_elector: k8s_leader_elector
     kubeletstats:
         collection_interval: 30s
@@ -87,7 +95,6 @@ receivers:
         insecure_skip_verify: true
         metric_groups:
             - container
-            - node
         metrics:
             container.cpu.usage:
                 enabled: true

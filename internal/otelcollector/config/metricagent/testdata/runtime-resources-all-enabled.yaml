@@ -9,17 +9,6 @@ extensions:
         lease_namespace: ""
 service:
     pipelines:
-        metrics/prometheus:
-            receivers:
-                - prometheus/app-pods
-                - prometheus/app-services
-            processors:
-                - memory_limiter
-                - resource/delete-service-name
-                - transform/set-instrumentation-scope-prometheus
-                - batch
-            exporters:
-                - otlp
         metrics/runtime:
             receivers:
                 - k8s_cluster
@@ -123,104 +112,6 @@ receivers:
             - k8s.volume.type
         collect_all_network_interfaces:
             node: true
-    prometheus/app-pods:
-        config:
-            scrape_configs:
-                - job_name: app-pods
-                  sample_limit: 50000
-                  scrape_interval: 30s
-                  relabel_configs:
-                    - source_labels: [__meta_kubernetes_pod_node_name]
-                      regex: ${MY_NODE_NAME}
-                      action: keep
-                    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
-                      regex: "true"
-                      action: keep
-                    - source_labels: [__meta_kubernetes_pod_phase]
-                      regex: Pending|Succeeded|Failed
-                      action: drop
-                    - source_labels: [__meta_kubernetes_pod_container_init]
-                      regex: (true)
-                      action: drop
-                    - source_labels: [__meta_kubernetes_pod_label_security_istio_io_tlsMode]
-                      regex: (istio)
-                      target_label: __scheme__
-                      replacement: https
-                      action: replace
-                    - source_labels: [__scheme__]
-                      regex: (https)
-                      action: drop
-                    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
-                      regex: (.+)
-                      target_label: __metrics_path__
-                      action: replace
-                    - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
-                      regex: ([^:]+)(?::\d+)?;(\d+)
-                      target_label: __address__
-                      replacement: $$1:$$2
-                      action: replace
-                    - regex: __meta_kubernetes_pod_annotation_prometheus_io_param_(.+)
-                      replacement: __param_$1
-                      action: labelmap
-                  kubernetes_sd_configs:
-                    - role: pod
-                      selectors:
-                        - role: pod
-                          field: spec.nodeName=${MY_NODE_NAME}
-    prometheus/app-services:
-        config:
-            scrape_configs:
-                - job_name: app-services
-                  sample_limit: 50000
-                  scrape_interval: 30s
-                  relabel_configs:
-                    - source_labels: [__meta_kubernetes_endpoint_node_name]
-                      regex: ${MY_NODE_NAME}
-                      action: keep
-                    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
-                      regex: "true"
-                      action: keep
-                    - source_labels: [__meta_kubernetes_pod_phase]
-                      regex: Pending|Succeeded|Failed
-                      action: drop
-                    - source_labels: [__meta_kubernetes_pod_container_init]
-                      regex: (true)
-                      action: drop
-                    - source_labels: [__meta_kubernetes_pod_container_name]
-                      regex: (istio-proxy)
-                      action: drop
-                    - source_labels: [__meta_kubernetes_pod_label_security_istio_io_tlsMode]
-                      regex: (istio)
-                      target_label: __scheme__
-                      replacement: https
-                      action: replace
-                    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
-                      regex: (https?)
-                      target_label: __scheme__
-                      action: replace
-                    - regex: __meta_kubernetes_service_annotation_prometheus_io_param_(.+)
-                      replacement: __param_$1
-                      action: labelmap
-                    - source_labels: [__scheme__]
-                      regex: (https)
-                      action: drop
-                    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
-                      regex: (.+)
-                      target_label: __metrics_path__
-                      action: replace
-                    - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
-                      regex: ([^:]+)(?::\d+)?;(\d+)
-                      target_label: __address__
-                      replacement: $$1:$$2
-                      action: replace
-                    - source_labels: [__meta_kubernetes_service_name]
-                      target_label: service
-                      action: replace
-                  kubernetes_sd_configs:
-                    - role: endpoints
-                      selectors:
-                        - role: pod
-                          field: spec.nodeName=${MY_NODE_NAME}
 processors:
     batch:
         send_batch_size: 1024
@@ -253,14 +144,6 @@ processors:
                 - IsMatch(metric.name, "^k8s.daemonset.*")
                 - IsMatch(metric.name, "^k8s.deployment.*")
                 - IsMatch(metric.name, "^k8s.job.*")
-    transform/set-instrumentation-scope-prometheus:
-        error_mode: ignore
-        metric_statements:
-            - statements:
-                - set(resource.attributes["kyma.input.name"], "prometheus")
-            - statements:
-                - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
-                - set(scope.name, "io.kyma-project.telemetry/prometheus") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
     transform/set-instrumentation-scope-runtime:
         error_mode: ignore
         metric_statements:
