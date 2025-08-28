@@ -1,6 +1,7 @@
 package common
 
 import (
+	"encoding/base64"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -102,7 +103,8 @@ func TestMakeExporterWithBasicAuth(t *testing.T) {
 	require.Equal(t, "${BASIC_AUTH_HEADER_TEST}", otlpExporterConfig.Headers["Authorization"])
 
 	require.NotNil(t, envVars["BASIC_AUTH_HEADER_TEST"])
-	base64UserPass := "dGVzdHVzZXI6dGVzdHBhc3M=" // base64(testuser:testpass)
+
+	base64UserPass := base64.StdEncoding.EncodeToString([]byte("testuser:testpass"))
 	require.Equal(t, envVars["BASIC_AUTH_HEADER_TEST"], []byte("Basic "+base64UserPass))
 }
 
