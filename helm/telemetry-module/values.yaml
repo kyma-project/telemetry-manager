@@ -24,8 +24,6 @@ manager:
       requests:
         cpu: 5m
         memory: 50Mi
-  serviceAccount:
-    annotations: {}
 managerMetrics:
   ports:
     - name: http-metrics
