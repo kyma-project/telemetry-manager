@@ -34,28 +34,60 @@ func TestBuildConfig(t *testing.T) {
 			{
 				name:           "istio input only",
 				goldenFileName: "istio-only.yaml",
-				pipeline:       testutils.NewMetricPipelineBuilder().WithRuntimeInput(false).WithPrometheusInput(false).WithIstioInput(true).Build(),
+				pipeline: testutils.NewMetricPipelineBuilder().
+					WithRuntimeInput(false).
+					WithPrometheusInput(false).
+					WithIstioInput(true).
+					Build(),
 			},
 			{
 				name:           "prometheus input only",
 				goldenFileName: "prometheus-only.yaml",
-				pipeline:       testutils.NewMetricPipelineBuilder().WithRuntimeInput(false).WithPrometheusInput(true).WithIstioInput(false).Build(),
+				pipeline: testutils.NewMetricPipelineBuilder().
+					WithRuntimeInput(false).
+					WithPrometheusInput(true).
+					WithIstioInput(false).
+					Build(),
 			},
 			{
 				name:           "runtime input only",
 				goldenFileName: "runtime-only.yaml",
-				pipeline:       testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(false).WithIstioInput(false).Build(),
+				pipeline: testutils.NewMetricPipelineBuilder().
+					WithRuntimeInput(true).
+					WithPrometheusInput(false).
+					WithIstioInput(false).
+					Build(),
 			},
 			{
 				name:           "istio module is not installed",
 				goldenFileName: "istio-ops-disabled.yaml",
-				pipeline:       testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).WithIstioInput(false).WithIstioInputEnvoyMetrics(false).Build(),
+				pipeline: testutils.NewMetricPipelineBuilder().
+					WithRuntimeInput(true).
+					WithPrometheusInput(true).
+					WithIstioInput(false).
+					WithIstioInputEnvoyMetrics(false).
+					Build(),
 			},
 			{
 				name:           "istio module is installed",
 				goldenFileName: "istio-ops-enabled.yaml",
-				pipeline:       testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).WithIstioInput(true).WithIstioInputEnvoyMetrics(true).Build(),
-				istioEnabled:   true,
+				pipeline: testutils.NewMetricPipelineBuilder().
+					WithRuntimeInput(true).
+					WithPrometheusInput(true).
+					WithIstioInput(true).
+					WithIstioInputEnvoyMetrics(true).
+					Build(),
+				istioEnabled: true,
+			},
+			{
+				name:           "istio envoy metrics enabled",
+				goldenFileName: "istio-envoy.yaml",
+				pipeline: testutils.NewMetricPipelineBuilder().
+					WithRuntimeInput(false).
+					WithPrometheusInput(false).
+					WithIstioInput(true).
+					WithIstioInputEnvoyMetrics(true).
+					Build(),
 			},
 			{
 				name:           "runtime all resource metrics enabled",
