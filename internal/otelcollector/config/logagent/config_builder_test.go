@@ -8,7 +8,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -18,12 +17,7 @@ import (
 )
 
 func TestBuildConfig(t *testing.T) {
-	gatewayServiceName := types.NamespacedName{Name: "logs", Namespace: "telemetry-system"}
-	sut := Builder{
-		Config: BuilderConfig{
-			GatewayOTLPServiceName: gatewayServiceName,
-		},
-	}
+	sut := Builder{}
 
 	t.Run("receivers", func(t *testing.T) {
 		t.Run("filelog receiver", func(t *testing.T) {

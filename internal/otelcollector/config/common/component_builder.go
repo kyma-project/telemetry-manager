@@ -9,7 +9,7 @@ import (
 
 // BuildComponentFunc defines a function type for building OpenTelemetry collector components.
 // It can be chained together to construct telemetry pipelines.
-type BuildComponentFunc[T any] func(ctx context.Context, buildCtx T) error
+type BuildComponentFunc[T any] func(ctx context.Context, buildCtx T, pipelineID string) error
 
 // ComponentIDFunc determines the unique identifier for a component.
 type ComponentIDFunc[T any] func(buildCtx T) string
@@ -30,6 +30,48 @@ type PipelineIDFunc[T any] func(buildCtx T) string
 func StaticComponentID[T any](componentID string) ComponentIDFunc[T] {
 	return func(T) string {
 		return componentID
+	}
+}
+
+// ComponentBuilder provides common builder patterns for OpenTelemetry collector configurations.
+// It can be embedded into specific config builders to provide reusable component management.
+type ComponentBuilder[T any] struct {
+	Config  *Config
+	EnvVars EnvVars
+}
+
+func (cb *ComponentBuilder[T]) AddServicePipeline(ctx context.Context, buildCtx T, pipelineID string, fs ...BuildComponentFunc[T]) error {
+	// Initialize pipeline componentsAdd an empty pipeline to the config
+	cb.Config.Service.Pipelines[pipelineID] = Pipeline{}
+
+	for _, f := range fs {
+		// None of the service pipelines depend on the MetricPipeline object, so we can pass nil here
+		if err := f(ctx, buildCtx, pipelineID); err != nil {
+			return fmt.Errorf("failed to add component: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// AddReceiver creates a BuildComponentWithIDFunc that adds a receiver to the configuration using a pipeline ID.
+func (cb *ComponentBuilder[T]) AddReceiver(componentIDFunc ComponentIDFunc[T], configFunc ComponentConfigFunc[T]) BuildComponentFunc[T] {
+	return func(ctx context.Context, buildCtx T, pipelineID string) error {
+		return AddReceiver(cb.Config, componentIDFunc, configFunc)(ctx, buildCtx, pipelineID)
+	}
+}
+
+// AddProcessor creates a BuildComponentWithIDFunc that adds a processor to the configuration using a pipeline ID.
+func (cb *ComponentBuilder[T]) AddProcessor(componentIDFunc ComponentIDFunc[T], configFunc ComponentConfigFunc[T]) BuildComponentFunc[T] {
+	return func(ctx context.Context, buildCtx T, pipelineID string) error {
+		return AddProcessor(cb.Config, componentIDFunc, configFunc)(ctx, buildCtx, pipelineID)
+	}
+}
+
+// AddExporter creates a BuildComponentWithIDFunc that adds an exporter to the configuration using a pipeline ID.
+func (cb *ComponentBuilder[T]) AddExporter(componentIDFunc ComponentIDFunc[T], configFunc ExporterComponentConfigFunc[T]) BuildComponentFunc[T] {
+	return func(ctx context.Context, buildCtx T, pipelineID string) error {
+		return AddExporter(cb.Config, cb.EnvVars, componentIDFunc, configFunc)(ctx, buildCtx, pipelineID)
 	}
 }
 
@@ -59,9 +101,8 @@ func AddReceiver[T any](
 	rootConfig *Config,
 	componentIDFunc ComponentIDFunc[T],
 	configFunc ComponentConfigFunc[T],
-	pipelineIDFunc PipelineIDFunc[T],
 ) BuildComponentFunc[T] {
-	return func(ctx context.Context, buildCtx T) error {
+	return func(ctx context.Context, buildCtx T, pipelineID string) error {
 		receiverConfig := configFunc(buildCtx)
 		if receiverConfig == nil {
 			// If no config is provided, skip adding the receiver
@@ -79,7 +120,6 @@ func AddReceiver[T any](
 			receiversOrConnectors[componentID] = receiverConfig
 		}
 
-		pipelineID := pipelineIDFunc(buildCtx)
 		pipelineConfig := rootConfig.Service.Pipelines[pipelineID]
 		pipelineConfig.Receivers = append(pipelineConfig.Receivers, componentID)
 		rootConfig.Service.Pipelines[pipelineID] = pipelineConfig
@@ -113,9 +153,8 @@ func AddProcessor[T any](
 	rootConfig *Config,
 	componentIDFunc ComponentIDFunc[T],
 	configFunc ComponentConfigFunc[T],
-	pipelineIDFunc PipelineIDFunc[T],
 ) BuildComponentFunc[T] {
-	return func(ctx context.Context, pipeline T) error {
+	return func(ctx context.Context, pipeline T, pipelineID string) error {
 		processorConfig := configFunc(pipeline)
 		if processorConfig == nil {
 			// If no config is provided, skip adding the processor
@@ -127,7 +166,6 @@ func AddProcessor[T any](
 			rootConfig.Processors[componentID] = processorConfig
 		}
 
-		pipelineID := pipelineIDFunc(pipeline)
 		servicePipeline := rootConfig.Service.Pipelines[pipelineID]
 		servicePipeline.Processors = append(servicePipeline.Processors, componentID)
 		rootConfig.Service.Pipelines[pipelineID] = servicePipeline
@@ -160,9 +198,8 @@ func AddExporter[T any](
 	envVars EnvVars,
 	componentIDFunc ComponentIDFunc[T],
 	configFunc ExporterComponentConfigFunc[T],
-	pipelineIDFunc PipelineIDFunc[T],
 ) BuildComponentFunc[T] {
-	return func(ctx context.Context, buildCtx T) error {
+	return func(ctx context.Context, buildCtx T, pipelineID string) error {
 		exporterConfig, exporterEnvVars, err := configFunc(ctx, buildCtx)
 		if err != nil {
 			return fmt.Errorf("failed to create exporter config: %w", err)
@@ -184,7 +221,6 @@ func AddExporter[T any](
 
 		maps.Copy(envVars, exporterEnvVars)
 
-		pipelineID := pipelineIDFunc(buildCtx)
 		servicePipeline := rootConfig.Service.Pipelines[pipelineID]
 		servicePipeline.Exporters = append(servicePipeline.Exporters, componentID)
 		rootConfig.Service.Pipelines[pipelineID] = servicePipeline

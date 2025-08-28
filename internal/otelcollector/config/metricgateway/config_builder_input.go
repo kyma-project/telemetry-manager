@@ -9,34 +9,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
-func (b *Builder) addInputServicePipeline(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline, fs ...buildComponentFunc) error {
-	// Add an empty pipeline to the config
-	pipelineID := formatInputMetricServicePipelineID(mp)
-	b.config.Service.Pipelines[pipelineID] = common.Pipeline{}
-
-	for _, f := range fs {
-		if err := f(ctx, mp); err != nil {
-			return fmt.Errorf("failed to add component: %w", err)
-		}
-	}
-
-	return nil
-}
-
-func (b *Builder) addInputReceiver(componentIDFunc componentIDFunc, configFunc componentConfigFunc) buildComponentFunc {
-	return common.AddReceiver(b.config, componentIDFunc, configFunc, formatInputMetricServicePipelineID)
-}
-
-func (b *Builder) addInputProcessor(componentIDFunc componentIDFunc, configFunc componentConfigFunc) buildComponentFunc {
-	return common.AddProcessor(b.config, componentIDFunc, configFunc, formatInputMetricServicePipelineID)
-}
-
-func (b *Builder) addInputExporter(componentIDFunc componentIDFunc, configFunc exporterComponentConfigFunc) buildComponentFunc {
-	return common.AddExporter(b.config, b.envVars, componentIDFunc, configFunc, formatInputMetricServicePipelineID)
-}
-
 func (b *Builder) addOTLPReceiver() buildComponentFunc {
-	return b.addInputReceiver(
+	return b.AddReceiver(
 		staticComponentID(common.ComponentIDOTLPReceiver),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return &common.OTLPReceiver{
@@ -54,7 +28,7 @@ func (b *Builder) addOTLPReceiver() buildComponentFunc {
 }
 
 func (b *Builder) addKymaStatsReceiver() buildComponentFunc {
-	return b.addInputReceiver(
+	return b.AddReceiver(
 		staticComponentID(common.ComponentIDKymaStatsReceiver),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return &KymaStatsReceiver{
@@ -74,7 +48,7 @@ func (b *Builder) addKymaStatsReceiver() buildComponentFunc {
 
 //nolint:mnd // hardcoded values
 func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
-	return b.addInputProcessor(
+	return b.AddProcessor(
 		staticComponentID(common.ComponentIDMemoryLimiterProcessor),
 		func(lp *telemetryv1alpha1.MetricPipeline) any {
 			return &common.MemoryLimiter{
@@ -87,7 +61,7 @@ func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
 }
 
 func (b *Builder) addInputRoutingExporter() buildComponentFunc {
-	return b.addInputExporter(
+	return b.AddExporter(
 		formatRoutingConnectorID,
 		func(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline) (any, common.EnvVars, error) {
 			return enrichmentRoutingConnectorConfig(mp), nil, nil
