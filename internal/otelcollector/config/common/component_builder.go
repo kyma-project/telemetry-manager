@@ -9,21 +9,21 @@ import (
 
 // BuildComponentFunc defines a function type for building OpenTelemetry collector components.
 // It can be chained together to construct telemetry pipelines.
-type BuildComponentFunc[T any] func(ctx context.Context, pipeline T) error
+type BuildComponentFunc[T any] func(ctx context.Context, buildCtx T) error
 
 // ComponentIDFunc determines the unique identifier for a component.
-type ComponentIDFunc[T any] func(pipeline T) string
+type ComponentIDFunc[T any] func(buildCtx T) string
 
 // ComponentConfigFunc creates the configuration for a component (receiver or processor).
 // Returns nil to skip the component for this pipeline.
-type ComponentConfigFunc[T any] func(pipeline T) any
+type ComponentConfigFunc[T any] func(buildCtx T) any
 
 // ExporterComponentConfigFunc creates exporter configuration and environment variables.
 // Unlike receivers/processors, exporters often need secret resolution.
-type ExporterComponentConfigFunc[T any] func(ctx context.Context, pipeline T) (any, EnvVars, error)
+type ExporterComponentConfigFunc[T any] func(ctx context.Context, buildCtx T) (any, EnvVars, error)
 
 // PipelineIDFunc determines the unique identifier for a service pipeline.
-type PipelineIDFunc[T any] func(pipeline T) string
+type PipelineIDFunc[T any] func(buildCtx T) string
 
 // StaticComponentID returns a ComponentIDFunc that always returns the same ID.
 // Useful for shared components like receivers and processors.
@@ -61,14 +61,14 @@ func AddReceiver[T any](
 	configFunc ComponentConfigFunc[T],
 	pipelineIDFunc PipelineIDFunc[T],
 ) BuildComponentFunc[T] {
-	return func(ctx context.Context, pipeline T) error {
-		receiverConfig := configFunc(pipeline)
+	return func(ctx context.Context, buildCtx T) error {
+		receiverConfig := configFunc(buildCtx)
 		if receiverConfig == nil {
 			// If no config is provided, skip adding the receiver
 			return nil
 		}
 
-		componentID := componentIDFunc(pipeline)
+		componentID := componentIDFunc(buildCtx)
 
 		receiversOrConnectors := rootConfig.Receivers
 		if isConnector(componentID) {
@@ -79,7 +79,7 @@ func AddReceiver[T any](
 			receiversOrConnectors[componentID] = receiverConfig
 		}
 
-		pipelineID := pipelineIDFunc(pipeline)
+		pipelineID := pipelineIDFunc(buildCtx)
 		pipelineConfig := rootConfig.Service.Pipelines[pipelineID]
 		pipelineConfig.Receivers = append(pipelineConfig.Receivers, componentID)
 		rootConfig.Service.Pipelines[pipelineID] = pipelineConfig
@@ -162,8 +162,8 @@ func AddExporter[T any](
 	configFunc ExporterComponentConfigFunc[T],
 	pipelineIDFunc PipelineIDFunc[T],
 ) BuildComponentFunc[T] {
-	return func(ctx context.Context, pipeline T) error {
-		exporterConfig, exporterEnvVars, err := configFunc(ctx, pipeline)
+	return func(ctx context.Context, buildCtx T) error {
+		exporterConfig, exporterEnvVars, err := configFunc(ctx, buildCtx)
 		if err != nil {
 			return fmt.Errorf("failed to create exporter config: %w", err)
 		}
@@ -173,7 +173,7 @@ func AddExporter[T any](
 			return nil
 		}
 
-		componentID := componentIDFunc(pipeline)
+		componentID := componentIDFunc(buildCtx)
 
 		exportersOrConnectors := rootConfig.Exporters
 		if isConnector(componentID) {
@@ -184,7 +184,7 @@ func AddExporter[T any](
 
 		maps.Copy(envVars, exporterEnvVars)
 
-		pipelineID := pipelineIDFunc(pipeline)
+		pipelineID := pipelineIDFunc(buildCtx)
 		servicePipeline := rootConfig.Service.Pipelines[pipelineID]
 		servicePipeline.Exporters = append(servicePipeline.Exporters, componentID)
 		rootConfig.Service.Pipelines[pipelineID] = servicePipeline
