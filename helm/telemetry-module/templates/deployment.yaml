@@ -9,6 +9,7 @@ metadata:
     kyma-project.io/module: telemetry
   {{- include "telemetry-manager.labels" . | indent 4 }}
 spec:
+  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/instance: telemetry
