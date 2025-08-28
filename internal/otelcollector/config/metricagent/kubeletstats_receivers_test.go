@@ -1,6 +1,7 @@
 package metricagent
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -22,23 +23,14 @@ const (
 	none        metricResource = "none"
 )
 
-func TestReceivers(t *testing.T) {
+func TestKubeletStatsReceiver(t *testing.T) {
+	ctx := context.Background()
 	gatewayServiceName := types.NamespacedName{Name: "metrics", Namespace: "telemetry-system"}
 	sut := Builder{
 		Config: BuilderConfig{
 			GatewayOTLPServiceName: gatewayServiceName,
 		},
 	}
-
-	t.Run("no input enabled", func(t *testing.T) {
-		collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().Build(),
-		}, BuildOptions{})
-
-		require.Nil(t, collectorConfig.Receivers.KubeletStats)
-		require.Nil(t, collectorConfig.Receivers.PrometheusAppPods)
-		require.Nil(t, collectorConfig.Receivers.PrometheusIstio)
-	})
 
 	t.Run("runtime input enabled verify k8sClusterReceiver", func(t *testing.T) {
 		agentNamespace := "test-namespace"
@@ -103,17 +95,18 @@ func TestReceivers(t *testing.T) {
 			},
 		}
 		for _, test := range tests {
-			collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
+			collectorConfig, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
 				test.pipeline,
 			}, BuildOptions{
 				AgentNamespace: agentNamespace,
 			})
+			require.NoError(t, err)
 
-			require.Nil(t, collectorConfig.Receivers.PrometheusAppPods)
-			require.Nil(t, collectorConfig.Receivers.PrometheusIstio)
+			require.NotContains(t, collectorConfig.Receivers, "prometheus/app-pods")
+			require.NotContains(t, collectorConfig.Receivers, "prometheus/istio")
 
-			k8sClusterReceiver := collectorConfig.Receivers.K8sClusterReceiver
-			require.NotNil(t, k8sClusterReceiver)
+			require.Contains(t, collectorConfig.Receivers, "k8s_cluster")
+			k8sClusterReceiver := collectorConfig.Receivers["k8s_cluster"].(*K8sClusterReceiver)
 			require.Equal(t, "serviceAccount", k8sClusterReceiver.AuthType)
 			require.Equal(t, "30s", k8sClusterReceiver.CollectionInterval)
 			require.Len(t, k8sClusterReceiver.NodeConditionsToReport, 0)
@@ -167,12 +160,13 @@ func TestReceivers(t *testing.T) {
 		}
 
 		for _, test := range tests {
-			collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
+			collectorConfig, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
 				test.pipeline,
 			}, BuildOptions{})
+			require.NoError(t, err)
 
-			require.Nil(t, collectorConfig.Receivers.PrometheusAppPods)
-			require.Nil(t, collectorConfig.Receivers.PrometheusIstio)
+			require.NotContains(t, collectorConfig.Receivers, "prometheus/app-pods")
+			require.NotContains(t, collectorConfig.Receivers, "prometheus/istio")
 
 			expectedKubeletStatsReceiver := KubeletStatsReceiver{
 				CollectionInterval: "30s",
@@ -198,95 +192,10 @@ func TestReceivers(t *testing.T) {
 					NodeMetrics: true,
 				},
 			}
-			require.Equal(t, expectedKubeletStatsReceiver, *collectorConfig.Receivers.KubeletStats)
+
+			require.Contains(t, collectorConfig.Receivers, "kubeletstats")
+			require.Equal(t, expectedKubeletStatsReceiver, *collectorConfig.Receivers["kubeletstats"].(*KubeletStatsReceiver))
 		}
-	})
-
-	t.Run("prometheus input enabled", func(t *testing.T) {
-		tests := []struct {
-			name                      string
-			istioEnabled              bool
-			expectedPodScrapeJobs     []string
-			expectedServiceScrapeJobs []string
-		}{
-			{
-				name: "istio not enabled",
-				expectedPodScrapeJobs: []string{
-					"app-pods",
-				},
-				expectedServiceScrapeJobs: []string{
-					"app-services",
-				},
-			},
-			{
-				name:         "istio enabled",
-				istioEnabled: true,
-				expectedPodScrapeJobs: []string{
-					"app-pods",
-				},
-				expectedServiceScrapeJobs: []string{
-					"app-services",
-					"app-services-secure",
-				},
-			},
-		}
-
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
-					testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build(),
-				}, BuildOptions{
-					IstioEnabled: tt.istioEnabled,
-				})
-
-				receivers := collectorConfig.Receivers
-
-				require.Nil(t, receivers.KubeletStats)
-				require.Nil(t, receivers.PrometheusIstio)
-
-				require.NotNil(t, receivers.PrometheusAppPods)
-				require.Len(t, receivers.PrometheusAppPods.Config.ScrapeConfigs, len(tt.expectedPodScrapeJobs))
-
-				for i := range receivers.PrometheusAppPods.Config.ScrapeConfigs {
-					require.Equal(t, tt.expectedPodScrapeJobs[i], receivers.PrometheusAppPods.Config.ScrapeConfigs[i].JobName)
-				}
-
-				require.NotNil(t, receivers.PrometheusAppServices)
-				require.Len(t, receivers.PrometheusAppServices.Config.ScrapeConfigs, len(tt.expectedServiceScrapeJobs))
-
-				for i := range receivers.PrometheusAppServices.Config.ScrapeConfigs {
-					require.Equal(t, tt.expectedServiceScrapeJobs[i], receivers.PrometheusAppServices.Config.ScrapeConfigs[i].JobName)
-				}
-			})
-		}
-	})
-
-	t.Run("istio input enabled", func(t *testing.T) {
-		collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithIstioInput(true).Build(),
-		}, BuildOptions{
-			IstioEnabled: true,
-		})
-
-		require.Nil(t, collectorConfig.Receivers.KubeletStats)
-		require.Nil(t, collectorConfig.Receivers.PrometheusAppPods)
-		require.NotNil(t, collectorConfig.Receivers.PrometheusIstio)
-		require.Len(t, collectorConfig.Receivers.PrometheusIstio.Config.ScrapeConfigs, 1)
-		require.Len(t, collectorConfig.Receivers.PrometheusIstio.Config.ScrapeConfigs[0].KubernetesDiscoveryConfigs, 1)
-	})
-
-	t.Run("istio input envoy metrics enabled", func(t *testing.T) {
-		collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithIstioInput(true).WithIstioInputEnvoyMetrics(true).Build(),
-		}, BuildOptions{
-			IstioEnabled: true,
-		})
-
-		require.Nil(t, collectorConfig.Receivers.KubeletStats)
-		require.Nil(t, collectorConfig.Receivers.PrometheusAppPods)
-		require.NotNil(t, collectorConfig.Receivers.PrometheusIstio)
-		require.Len(t, collectorConfig.Receivers.PrometheusIstio.Config.ScrapeConfigs[0].MetricRelabelConfigs, 1)
-		require.Equal(t, collectorConfig.Receivers.PrometheusIstio.Config.ScrapeConfigs[0].MetricRelabelConfigs[0].Regex, "envoy_.*|istio_.*")
 	})
 }
 
