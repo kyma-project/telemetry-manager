@@ -3,6 +3,10 @@ package traces
 import (
 	"testing"
 
+	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -13,13 +17,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
-	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestTransform(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelExperimental)
+
 	tests := []struct {
 		name          string
 		transformSpec telemetryv1alpha1.TransformSpec
@@ -105,5 +107,4 @@ func TestTransform(t *testing.T) {
 			assert.BackendDataConsistentlyMatches(t, backend, tt.assertion)
 		})
 	}
-
 }
