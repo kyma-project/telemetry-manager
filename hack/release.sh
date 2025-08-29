@@ -8,7 +8,7 @@ set -E          # needs to be set if we want the ERR trap
 set -o pipefail # prevents errors in a pipeline from being masked
 
 readonly LOCALBIN=${LOCALBIN:-$(pwd)/bin}
-readonly KUSTOMIZE=${KUSTOMIZE:-$LOCALBIN/kustomize}
+readonly HELM=${HELM:-$LOCALBIN/helm}
 readonly GORELEASER_VERSION="${GORELEASER_VERSION:-$ENV_GORELEASER_VERSION}"
 readonly MANAGER_IMAGE="${MANAGER_IMAGE:-$ENV_MANAGER_IMAGE}"
 readonly MANAGER_IMAGE_EXPERIMENTAL=${MANAGER_IMAGE}-experimental
@@ -16,12 +16,10 @@ readonly CURRENT_VERSION="$1"
 
 function prepare_release_artefacts() {
   echo "Preparing release artefacts"
-  cd config/manager && ${KUSTOMIZE} edit set image controller="${MANAGER_IMAGE}" && cd ../..
   # Create the resources file that is used for creating the ModuleTemplate for regular
-  ${KUSTOMIZE} build config/default >telemetry-manager.yaml
+  ${HELM} template telemetry helm/telemetry-module --set experimental.enabled=false --set regular.enabled=true --set nameOverride=telemetry --set manager.container.image.repository=${MANAGER_IMAGE} --namespace kyma-system >telemetry-manager.yaml
   # Create the resources file that is used for creating the ModuleTemplate for experimental release
-  cd config/manager && ${KUSTOMIZE} edit set image controller="${MANAGER_IMAGE_EXPERIMENTAL}" && cd ../..
-  ${KUSTOMIZE} build config/development >telemetry-manager-experimental.yaml
+  ${HELM} template telemetry helm/telemetry-module --set experimental.enabled=true --set regular.enabled=false --set nameOverride=telemetry --set manager.container.image.repository=${MANAGER_IMAGE_EXPERIMENTAL} --namespace kyma-system >telemetry-manager-experimental.yaml
   # Rename the file for Telemetry default CR to have a better naming as a release artefact
   cp ./config/samples/operator_v1alpha1_telemetry.yaml telemetry-default-cr.yaml
 }
