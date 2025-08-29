@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"crypto/fips140"
 	"flag"
 	"fmt"
 	"os"
@@ -287,6 +288,8 @@ func logBuildAndProcessInfo() {
 		featureFlagsGaugeVec.WithLabelValues(flg.String()).Set(1)
 		setupLog.Info("Enabled feature flag", "flag", flg)
 	}
+
+	setupLog.Info("FIPS mode", "enabled", fips140.Enabled())
 }
 
 func initializeFeatureFlags() {
