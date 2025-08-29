@@ -13,6 +13,7 @@ RUN apk --no-cache upgrade
 ENV GOROOT=/usr/lib/go
 ENV GOPATH=/go
 ENV PATH=/go/bin:$PATH
+ENV GODEBUG=fips140=only
 
 
 RUN mkdir -p ${GOPATH}/src ${GOPATH}/bin
@@ -27,7 +28,7 @@ COPY plugins.yml plugins.yml
 # Only the plain build should use the targetarch, not the utilities like plugins, that's why the make call is divided into its parts, see
 # https://github.com/prometheus/prometheus/blob/f1db64f4c513f9b0abaed6cac96646fadfe485ca/Makefile#L163C8-L163C51
 RUN make plugins
-RUN GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} make assets npm_licenses assets-compress common-build
+RUN GOFIPS=v1.0.0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} make assets npm_licenses assets-compress common-build
 
 FROM scratch
 
