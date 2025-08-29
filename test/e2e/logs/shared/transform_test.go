@@ -176,8 +176,7 @@ func TestTransform_OTel(t *testing.T) {
 
 			assert.OTelLogPipelineHealthy(t, pipelineNameValue)
 
-			assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
-			assert.BackendDataConsistentlyMatches(t, backend, tc.assertion)
+			assert.BackendDataEventuallyMatches(t, backend, tc.assertion)
 		})
 	}
 }

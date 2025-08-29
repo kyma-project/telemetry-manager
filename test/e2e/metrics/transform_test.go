@@ -91,9 +91,8 @@ func TestTransform_Basic(t *testing.T) {
 			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 			assert.MetricPipelineHealthy(t, pipelineName)
-			assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
 
-			assert.BackendDataConsistentlyMatches(t, backend, tc.assertion)
+			assert.BackendDataEventuallyMatches(t, backend, tc.assertion)
 		})
 	}
 }

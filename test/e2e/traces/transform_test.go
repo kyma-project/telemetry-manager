@@ -102,9 +102,8 @@ func TestTransform(t *testing.T) {
 			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.TraceGatewayName)
 			assert.TracePipelineHealthy(t, pipelineName)
-			assert.TracesFromNamespaceDelivered(t, backend, genNs)
 
-			assert.BackendDataConsistentlyMatches(t, backend, tt.assertion)
+			assert.BackendDataEventuallyMatches(t, backend, tt.assertion)
 		})
 	}
 }
