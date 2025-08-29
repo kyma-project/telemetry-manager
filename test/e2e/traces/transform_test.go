@@ -27,7 +27,7 @@ func TestTransform(t *testing.T) {
 		tranceGen     func(ns string) client.Object
 	}{
 		{
-			name: "Test Transform with `Where` statement",
+			name: "with-where",
 			tranceGen: func(ns string) client.Object {
 				return telemetrygen.NewPod(ns, telemetrygen.SignalTypeTraces).K8sObject()
 			},
@@ -39,7 +39,7 @@ func TestTransform(t *testing.T) {
 				HaveSpanAttributes(HaveKeyWithValue("system", "false")),
 			))),
 		}, {
-			name: "Test Transform with Conditions and statements",
+			name: "cond-and-stmts",
 			tranceGen: func(ns string) client.Object {
 				return telemetrygen.NewPod(ns, telemetrygen.SignalTypeTraces, telemetrygen.WithTelemetryAttribute("component", "proxy")).K8sObject()
 			},
@@ -52,7 +52,7 @@ func TestTransform(t *testing.T) {
 				HaveSpanAttributes(HaveKeyWithValue("FromProxy", "true")),
 			))),
 		}, {
-			name: "Test Transform with infer context",
+			name: "infer-context",
 			tranceGen: func(ns string) client.Object {
 				return telemetrygen.NewPod(ns, telemetrygen.SignalTypeTraces).K8sObject()
 			},
@@ -71,7 +71,7 @@ func TestTransform(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var (
-				uniquePrefix = unique.Prefix("traces")
+				uniquePrefix = unique.Prefix(tt.name)
 				pipelineName = uniquePrefix()
 				backendNs    = uniquePrefix("backend")
 				genNs        = uniquePrefix("gen")

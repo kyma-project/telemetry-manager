@@ -32,7 +32,7 @@ func TestTransform_OTel(t *testing.T) {
 	}{
 		{
 			label: suite.LabelLogAgent,
-			name:  "Test LogPipeline with Where",
+			name:  "with-where",
 			input: testutils.BuildLogPipelineApplicationInput(),
 			logGeneratorBuilder: func(ns string) client.Object {
 				return stdoutloggen.NewDeployment(ns).K8sObject()
@@ -48,7 +48,7 @@ func TestTransform_OTel(t *testing.T) {
 		},
 		{
 			label: suite.LabelLogAgent,
-			name:  "Test LogPipeline with infer context",
+			name:  "infer-context",
 			input: testutils.BuildLogPipelineApplicationInput(),
 			logGeneratorBuilder: func(ns string) client.Object {
 				return stdoutloggen.NewDeployment(ns, stdoutloggen.WithFields(map[string]string{
@@ -68,7 +68,7 @@ func TestTransform_OTel(t *testing.T) {
 			))),
 		}, {
 			label: suite.LabelLogAgent,
-			name:  "Test LogPipeline with Conditions and statements",
+			name:  "cond-and-stmts",
 			input: testutils.BuildLogPipelineApplicationInput(),
 			logGeneratorBuilder: func(ns string) client.Object {
 				return stdoutloggen.NewDeployment(ns, stdoutloggen.WithFields(map[string]string{
@@ -87,7 +87,7 @@ func TestTransform_OTel(t *testing.T) {
 		},
 		{
 			label: suite.LabelLogGateway,
-			name:  "Test LogPipeline with Where",
+			name:  "with-where",
 			input: testutils.BuildLogPipelineOTLPInput(),
 			logGeneratorBuilder: func(ns string) client.Object {
 				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
@@ -101,7 +101,7 @@ func TestTransform_OTel(t *testing.T) {
 			))),
 		}, {
 			label: suite.LabelLogGateway,
-			name:  "Test LogPipeline with infer context",
+			name:  "infer-context",
 			input: testutils.BuildLogPipelineOTLPInput(),
 			logGeneratorBuilder: func(ns string) client.Object {
 				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
@@ -117,7 +117,7 @@ func TestTransform_OTel(t *testing.T) {
 			))),
 		}, {
 			label: suite.LabelLogGateway,
-			name:  "Test LogPipeline with Conditions and statements",
+			name:  "cond-and-stmts",
 			input: testutils.BuildLogPipelineOTLPInput(),
 			logGeneratorBuilder: func(ns string) client.Object {
 				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
@@ -137,7 +137,7 @@ func TestTransform_OTel(t *testing.T) {
 			suite.RegisterTestCase(t, suite.LabelExperimental)
 
 			var (
-				uniquePrefix      = unique.Prefix(tc.label)
+				uniquePrefix      = unique.Prefix(tc.name)
 				pipelineNameValue = uniquePrefix("value")
 				backendNs         = uniquePrefix("backend")
 				genNs             = uniquePrefix("gen")

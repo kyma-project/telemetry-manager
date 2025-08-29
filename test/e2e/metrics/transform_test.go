@@ -28,7 +28,7 @@ func TestTransform_Basic(t *testing.T) {
 		assertion     types.GomegaMatcher
 	}{
 		{
-			name: "Test Transform with `Where` statement",
+			name: "with-where",
 			transformSpec: telemetryv1alpha1.TransformSpec{
 				Statements: []string{"set(datapoint.attributes[\"system\"], \"false\") where not IsMatch(resource.attributes[\"k8s.namespace.name\"], \".*-system\")"},
 			},
@@ -37,7 +37,7 @@ func TestTransform_Basic(t *testing.T) {
 				metric.HaveMetricAttributes(HaveKeyWithValue("system", "false")),
 			))),
 		}, {
-			name: "Test Transform with Conditions and statements",
+			name: "cond-and-stmts",
 			transformSpec: telemetryv1alpha1.TransformSpec{
 				Conditions: []string{"metric.type != \"\""},
 				Statements: []string{"set(metric.description, \"FooMetric\")"},
@@ -46,7 +46,7 @@ func TestTransform_Basic(t *testing.T) {
 				metric.HaveDescription(Equal("FooMetric")),
 			))),
 		}, {
-			name: "Test Transform with infer context",
+			name: "infer-context",
 			transformSpec: telemetryv1alpha1.TransformSpec{
 				Statements: []string{"set(resource.attributes[\"test\"], \"passed\")",
 					"set(metric.description, \"test passed\")",
@@ -62,7 +62,7 @@ func TestTransform_Basic(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			var (
-				uniquePrefix = unique.Prefix()
+				uniquePrefix = unique.Prefix(tc.name)
 				pipelineName = uniquePrefix()
 				backendNs    = uniquePrefix("backend")
 				genNs        = uniquePrefix("gen")
