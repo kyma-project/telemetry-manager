@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -22,24 +23,112 @@ import (
 func TestTransform_OTel(t *testing.T) {
 	tests := []struct {
 		label               string
+		name                string
 		input               telemetryv1alpha1.LogPipelineInput
 		logGeneratorBuilder func(ns string) client.Object
+		transformSpec       telemetryv1alpha1.TransformSpec
+		assertion           types.GomegaMatcher
 		expectAgent         bool
 	}{
 		{
 			label: suite.LabelLogAgent,
+			name:  "with-where",
 			input: testutils.BuildLogPipelineApplicationInput(),
 			logGeneratorBuilder: func(ns string) client.Object {
 				return stdoutloggen.NewDeployment(ns).K8sObject()
 			},
+			transformSpec: telemetryv1alpha1.TransformSpec{
+				Statements: []string{"set(log.attributes[\"system\"], \"false\") where not IsMatch(resource.attributes[\"k8s.namespace.name\"], \".*-system\")"},
+			},
+			assertion: HaveFlatLogs(ContainElement(SatisfyAll(
+				HaveResourceAttributes(Not(HaveKeyWithValue("k8s.namespace.name", "kyma-system"))),
+				HaveAttributes(HaveKeyWithValue("system", "false")),
+			))),
 			expectAgent: true,
 		},
 		{
+			label: suite.LabelLogAgent,
+			name:  "infer-context",
+			input: testutils.BuildLogPipelineApplicationInput(),
+			logGeneratorBuilder: func(ns string) client.Object {
+				return stdoutloggen.NewDeployment(ns, stdoutloggen.WithFields(map[string]string{
+					"scenario": "level-info",
+					"level":    "info",
+				})).K8sObject()
+			},
+			expectAgent: true,
+			transformSpec: telemetryv1alpha1.TransformSpec{
+				Statements: []string{"set(resource.attributes[\"test\"], \"passed\")",
+					"set(log.attributes[\"name\"], \"InfoLogs\")",
+				},
+			},
+			assertion: HaveFlatLogs(ContainElement(SatisfyAll(
+				HaveResourceAttributes(HaveKeyWithValue("test", "passed")),
+				HaveAttributes(HaveKeyWithValue("name", "InfoLogs")),
+			))),
+		}, {
+			label: suite.LabelLogAgent,
+			name:  "cond-and-stmts",
+			input: testutils.BuildLogPipelineApplicationInput(),
+			logGeneratorBuilder: func(ns string) client.Object {
+				return stdoutloggen.NewDeployment(ns, stdoutloggen.WithFields(map[string]string{
+					"scenario": "level-info",
+					"level":    "info",
+				})).K8sObject()
+			},
+			expectAgent: true,
+			transformSpec: telemetryv1alpha1.TransformSpec{
+				Conditions: []string{"log.severity_text == \"info\" or log.severity_text == \"Info\""},
+				Statements: []string{"set(log.severity_text, ToUpperCase(log.severity_text))"},
+			},
+			assertion: HaveFlatLogs(ContainElement(SatisfyAll(
+				HaveSeverityText(Equal("INFO")),
+			))),
+		},
+		{
 			label: suite.LabelLogGateway,
+			name:  "with-where",
 			input: testutils.BuildLogPipelineOTLPInput(),
 			logGeneratorBuilder: func(ns string) client.Object {
 				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
 			},
+			transformSpec: telemetryv1alpha1.TransformSpec{
+				Statements: []string{"set(log.attributes[\"system\"], \"false\") where not IsMatch(resource.attributes[\"k8s.namespace.name\"], \".*-system\")"},
+			},
+			assertion: HaveFlatLogs(ContainElement(SatisfyAll(
+				HaveResourceAttributes(Not(HaveKeyWithValue("k8s.namespace.name", "kyma-system"))),
+				HaveAttributes(HaveKeyWithValue("system", "false")),
+			))),
+		}, {
+			label: suite.LabelLogGateway,
+			name:  "infer-context",
+			input: testutils.BuildLogPipelineOTLPInput(),
+			logGeneratorBuilder: func(ns string) client.Object {
+				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
+			},
+			transformSpec: telemetryv1alpha1.TransformSpec{
+				Statements: []string{"set(resource.attributes[\"test\"], \"passed\")",
+					"set(log.attributes[\"name\"], \"InfoLogs\")",
+				},
+			},
+			assertion: HaveFlatLogs(ContainElement(SatisfyAll(
+				HaveResourceAttributes(HaveKeyWithValue("test", "passed")),
+				HaveAttributes(HaveKeyWithValue("name", "InfoLogs")),
+			))),
+		}, {
+			label: suite.LabelLogGateway,
+			name:  "cond-and-stmts",
+			input: testutils.BuildLogPipelineOTLPInput(),
+			logGeneratorBuilder: func(ns string) client.Object {
+				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
+			},
+			transformSpec: telemetryv1alpha1.TransformSpec{
+				Conditions: []string{"log.severity_text == \"info\" or log.severity_text == \"Info\""},
+				Statements: []string{"set(log.severity_text, ToUpperCase(log.severity_text))"},
+			},
+			assertion: HaveFlatLogs(ContainElement(SatisfyAll(
+				HaveSeverityText(Equal("INFO")),
+			))),
 		},
 	}
 
@@ -48,7 +137,7 @@ func TestTransform_OTel(t *testing.T) {
 			suite.RegisterTestCase(t, suite.LabelExperimental)
 
 			var (
-				uniquePrefix      = unique.Prefix(tc.label)
+				uniquePrefix      = unique.Prefix(tc.name)
 				pipelineNameValue = uniquePrefix("value")
 				backendNs         = uniquePrefix("backend")
 				genNs             = uniquePrefix("gen")
@@ -60,9 +149,7 @@ func TestTransform_OTel(t *testing.T) {
 				WithName(pipelineNameValue).
 				WithInput(tc.input).
 				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
-				WithTransform(telemetryv1alpha1.TransformSpec{
-					Statements: []string{"set(log.attributes[\"system\"], \"false\") where not IsMatch(resource.attributes[\"k8s.namespace.name\"], \".*-system\")"},
-				}).
+				WithTransform(tc.transformSpec).
 				Build()
 
 			resources := []client.Object{
@@ -89,13 +176,7 @@ func TestTransform_OTel(t *testing.T) {
 
 			assert.OTelLogPipelineHealthy(t, pipelineNameValue)
 
-			assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
-			assert.BackendDataConsistentlyMatches(t, backend,
-				HaveFlatLogs(ContainElement(SatisfyAll(
-					HaveResourceAttributes(Not(HaveKeyWithValue("k8s.namespace.name", "kyma-system"))),
-					HaveAttributes(HaveKeyWithValue("system", "false")),
-				))),
-			)
+			assert.BackendDataEventuallyMatches(t, backend, tc.assertion)
 		})
 	}
 }

@@ -21,7 +21,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricagent"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/mocks"
@@ -262,7 +261,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-		agentConfigBuilderMock.On("Build", containsPipeline(pipeline), mock.Anything).Return(&metricagent.Config{}).Times(1)
+		agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil).Times(1)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
@@ -336,7 +335,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-		agentConfigBuilderMock.On("Build", containsPipeline(pipeline), mock.Anything).Return(&metricagent.Config{}).Times(1)
+		agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil).Times(1)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
@@ -411,7 +410,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-		agentConfigBuilderMock.On("Build", containsPipeline(pipeline), mock.Anything).Return(&metricagent.Config{}).Times(1)
+		agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil).Times(1)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
@@ -1362,7 +1361,7 @@ func TestReconcile(t *testing.T) {
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.MetricPipeline{pipeline1, pipeline2}), mock.Anything).Return(&common.Config{}, nil, nil)
 
 		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-		agentConfigBuilderMock.On("Build", containsPipelines([]telemetryv1alpha1.MetricPipeline{pipeline1, pipeline2}), mock.Anything).Return(&metricagent.Config{}, nil, nil)
+		agentConfigBuilderMock.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.MetricPipeline{pipeline1, pipeline2}), mock.Anything).Return(&common.Config{}, nil)
 
 		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Times(1)
@@ -1601,7 +1600,7 @@ func TestReconcile(t *testing.T) {
 				fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 				agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-				agentConfigBuilderMock.On("Build", containsPipeline(pipeline), mock.Anything).Return(&metricagent.Config{}).Times(1)
+				agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil).Times(1)
 
 				gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 				gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)

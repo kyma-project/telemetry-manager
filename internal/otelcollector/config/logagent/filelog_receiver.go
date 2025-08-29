@@ -33,8 +33,8 @@ const (
 	operatorNoop = "noop"
 )
 
-func fileLogReceiverConfig(lp *telemetryv1alpha1.LogPipeline) *FileLogReceiver {
-	excludePath := createExcludePath(lp.Spec.Input.Application)
+func fileLogReceiverConfig(lp *telemetryv1alpha1.LogPipeline, collectAgentLogs bool) *FileLogReceiver {
+	excludePath := createExcludePath(lp.Spec.Input.Application, collectAgentLogs)
 
 	includePath := createIncludePath(lp.Spec.Input.Application)
 
@@ -80,37 +80,28 @@ func createIncludePath(application *telemetryv1alpha1.LogPipelineApplicationInpu
 	return includePath
 }
 
-func createExcludePath(application *telemetryv1alpha1.LogPipelineApplicationInput) []string {
-	var excludePath []string
+func createExcludePath(application *telemetryv1alpha1.LogPipelineApplicationInput, collectAgentLogs bool) []string {
+	var excludePath, excludeContainers []string
 
-	var excludeContainers []string
-
-	var excludeNamespaces []string
+	if !collectAgentLogs {
+		excludePath = append(excludePath, makePath("kyma-system", fmt.Sprintf("%s-*", fluentbit.LogAgentName), "fluent-bit"))
+		excludePath = append(excludePath, makePath("kyma-system", fmt.Sprintf("%s-*", otelcollector.LogAgentName), "collector"))
+	}
 
 	excludeSystemLogAgentPath := makePath("kyma-system", fmt.Sprintf("*%s-*", commonresources.SystemLogAgentName), "collector")
 	excludeSystemLogCollectorPath := makePath("kyma-system", fmt.Sprintf("*%s-*", commonresources.SystemLogCollectorName), "collector")
-	excludeOtlpLogAgentPath := makePath("kyma-system", fmt.Sprintf("%s-*", otelcollector.LogAgentName), "collector")
-	excludeFluentBitPath := makePath("kyma-system", fmt.Sprintf("%s-*", fluentbit.LogAgentName), "fluent-bit")
 
-	excludePath = append(excludePath, excludeSystemLogAgentPath, excludeSystemLogCollectorPath, excludeOtlpLogAgentPath, excludeFluentBitPath)
+	excludePath = append(excludePath, excludeSystemLogAgentPath, excludeSystemLogCollectorPath)
 
-	if application == nil || !application.Namespaces.System {
-		systemLogPath := []string{}
-		for _, ns := range namespaces.System() {
-			systemLogPath = append(systemLogPath, fmt.Sprintf("/var/log/pods/%s_*/*/*.log", ns))
-		}
-
-		excludePath = append(excludePath, systemLogPath...)
-	}
+	var excludeNamespaces []string
 
 	if application != nil {
-		if len(application.Namespaces.Exclude) > 0 {
-			excludeNamespaces = append(excludeNamespaces, application.Namespaces.Exclude...)
-		}
+		excludeNamespaces = append(excludeNamespaces, application.Namespaces.Exclude...)
+		excludeContainers = append(excludeContainers, application.Containers.Exclude...)
+	}
 
-		if len(application.Containers.Exclude) > 0 {
-			excludeContainers = append(excludeContainers, application.Containers.Exclude...)
-		}
+	if application == nil || (!application.Namespaces.System && len(application.Namespaces.Include) == 0 && len(application.Namespaces.Exclude) == 0) {
+		excludeNamespaces = namespaces.System()
 	}
 
 	for _, ns := range excludeNamespaces {

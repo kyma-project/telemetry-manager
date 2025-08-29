@@ -1,6 +1,7 @@
 package common
 
 import (
+	"encoding/base64"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -80,6 +81,31 @@ func TestMakeConfigMetricWithPath(t *testing.T) {
 
 	require.Equal(t, "${OTLP_ENDPOINT_TEST}", otlpExporterConfig.MetricsEndpoint)
 	require.Empty(t, otlpExporterConfig.Endpoint)
+}
+
+func TestMakeExporterWithBasicAuth(t *testing.T) {
+	output := &telemetryv1alpha1.OTLPOutput{
+		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
+		Authentication: &telemetryv1alpha1.AuthenticationOptions{
+			Basic: &telemetryv1alpha1.BasicAuthOptions{
+				User:     telemetryv1alpha1.ValueType{Value: "testuser"},
+				Password: telemetryv1alpha1.ValueType{Value: "testpass"},
+			},
+		},
+	}
+
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
+	otlpExporterConfig, envVars, err := cb.OTLPExporterConfig(t.Context())
+	require.NoError(t, err)
+	require.NotNil(t, envVars)
+
+	require.Equal(t, 1, len(otlpExporterConfig.Headers))
+	require.Equal(t, "${BASIC_AUTH_HEADER_TEST}", otlpExporterConfig.Headers["Authorization"])
+
+	require.NotNil(t, envVars["BASIC_AUTH_HEADER_TEST"])
+
+	base64UserPass := base64.StdEncoding.EncodeToString([]byte("testuser:testpass"))
+	require.Equal(t, envVars["BASIC_AUTH_HEADER_TEST"], []byte("Basic "+base64UserPass))
 }
 
 func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
