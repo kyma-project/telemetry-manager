@@ -12,14 +12,12 @@ import (
 	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 )
 
-type BuilderConfig struct {
-	GatewayOTLPServiceName types.NamespacedName
-}
+type buildComponentFunc = common.BuildComponentFunc[*telemetryv1alpha1.MetricPipeline]
 
 type Builder struct {
-	Config BuilderConfig
+	common.ComponentBuilder[*telemetryv1alpha1.MetricPipeline]
 
-	config *common.Config
+	GatewayOTLPServiceName types.NamespacedName
 }
 
 type BuildOptions struct {
@@ -28,15 +26,6 @@ type BuildOptions struct {
 	InstrumentationScopeVersion string
 	AgentNamespace              string
 }
-
-// Type aliases for common builder patterns
-type buildComponentFunc = common.BuildComponentFunc[*telemetryv1alpha1.MetricPipeline]
-type buildComponentWithIDFunc = func(pipelineID string) buildComponentFunc
-type componentIDFunc = common.ComponentIDFunc[*telemetryv1alpha1.MetricPipeline]
-type componentConfigFunc = common.ComponentConfigFunc[*telemetryv1alpha1.MetricPipeline]
-type exporterComponentConfigFunc = common.ExporterComponentConfigFunc[*telemetryv1alpha1.MetricPipeline]
-
-var staticComponentID = common.StaticComponentID[*telemetryv1alpha1.MetricPipeline]
 
 // inputSources represents the enabled input sources for the telemetry metric agent.
 type inputSources struct {
@@ -60,12 +49,14 @@ type runtimeResourceSources struct {
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) (*common.Config, error) {
-	b.config = &common.Config{
-		Base:       common.BaseConfig(common.WithK8sLeaderElector("serviceAccount", common.K8sLeaderElectorK8sCluster, opts.AgentNamespace)),
-		Receivers:  make(map[string]any),
-		Processors: make(map[string]any),
-		Exporters:  make(map[string]any),
-	}
+	b.Config = common.NewConfig()
+	b.AddExtension(common.ComponentIDK8sLeaderElectorExtension,
+		common.K8sLeaderElector{
+			AuthType:       "serviceAccount",
+			LeaseName:      common.K8sLeaderElectorK8sCluster,
+			LeaseNamespace: opts.AgentNamespace,
+		},
+	)
 
 	inputs := inputSources{
 		runtimeResources: runtimeResourceSources{
@@ -86,7 +77,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 	}
 
 	if inputs.runtime {
-		if err := b.addServicePipeline(ctx, "metrics/runtime",
+		if err := b.AddServicePipeline(ctx, nil, "metrics/runtime",
 			b.addKubeletStatsReceiver(inputs.runtimeResources),
 			b.addK8sClusterReceiver(inputs.runtimeResources),
 			b.addMemoryLimiterProcessor(),
@@ -103,7 +94,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 	}
 
 	if inputs.prometheus {
-		if err := b.addServicePipeline(ctx, "metrics/prometheus",
+		if err := b.AddServicePipeline(ctx, nil, "metrics/prometheus",
 			b.addPrometheusAppPodsReceiver(),
 			b.addPrometheusAppServicesReceiver(opts),
 			b.addMemoryLimiterProcessor(),
@@ -117,7 +108,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 	}
 
 	if inputs.istio {
-		if err := b.addServicePipeline(ctx, "metrics/istio",
+		if err := b.AddServicePipeline(ctx, nil, "metrics/istio",
 			b.addPrometheusIstioReceiver(inputs.envoy),
 			b.addMemoryLimiterProcessor(),
 			b.addIstioNoiseFilterProcessor(),
@@ -130,89 +121,51 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 		}
 	}
 
-	return b.config, nil
-}
-
-func (b *Builder) addServicePipeline(ctx context.Context, pipelineID string, fs ...buildComponentWithIDFunc) error {
-	// Initialize pipeline componentsAdd an empty pipeline to the config
-	b.config.Service.Pipelines[pipelineID] = common.Pipeline{}
-
-	for _, f := range fs {
-		// None of the service pipelines depend on the MetricPipeline object, so we can pass nil here
-		if err := f(pipelineID)(ctx, nil); err != nil {
-			return fmt.Errorf("failed to add component: %w", err)
-		}
-	}
-
-	return nil
-}
-
-func (b *Builder) addReceiver(componentIDFunc componentIDFunc, configFunc componentConfigFunc) buildComponentWithIDFunc {
-	return func(pipelineID string) buildComponentFunc {
-		return common.AddReceiver(b.config, componentIDFunc, configFunc, func(_ *telemetryv1alpha1.MetricPipeline) string {
-			return pipelineID
-		})
-	}
-}
-
-func (b *Builder) addProcessor(componentIDFunc componentIDFunc, configFunc componentConfigFunc) buildComponentWithIDFunc {
-	return func(pipelineID string) buildComponentFunc {
-		return common.AddProcessor(b.config, componentIDFunc, configFunc, func(_ *telemetryv1alpha1.MetricPipeline) string {
-			return pipelineID
-		})
-	}
-}
-
-func (b *Builder) addExporter(componentIDFunc componentIDFunc, configFunc exporterComponentConfigFunc) buildComponentWithIDFunc {
-	return func(pipelineID string) buildComponentFunc {
-		return common.AddExporter(b.config, nil, componentIDFunc, configFunc, func(_ *telemetryv1alpha1.MetricPipeline) string {
-			return pipelineID
-		})
-	}
+	return b.Config, nil
 }
 
 // Receiver builders
 
-func (b *Builder) addK8sClusterReceiver(runtimeResources runtimeResourceSources) buildComponentWithIDFunc {
-	return b.addReceiver(
-		staticComponentID(common.ComponentIDK8sClusterReceiver),
-		func(mp *telemetryv1alpha1.MetricPipeline) any {
+func (b *Builder) addK8sClusterReceiver(runtimeResources runtimeResourceSources) buildComponentFunc {
+	return b.AddReceiver(
+		b.StaticComponentID(common.ComponentIDK8sClusterReceiver),
+		func(*telemetryv1alpha1.MetricPipeline) any {
 			return k8sClusterReceiverConfig(runtimeResources)
 		},
 	)
 }
 
-func (b *Builder) addKubeletStatsReceiver(runtimeResources runtimeResourceSources) buildComponentWithIDFunc {
-	return b.addReceiver(
-		staticComponentID(common.ComponentIDKubeletStatsReceiver),
-		func(mp *telemetryv1alpha1.MetricPipeline) any {
+func (b *Builder) addKubeletStatsReceiver(runtimeResources runtimeResourceSources) buildComponentFunc {
+	return b.AddReceiver(
+		b.StaticComponentID(common.ComponentIDKubeletStatsReceiver),
+		func(*telemetryv1alpha1.MetricPipeline) any {
 			return kubeletStatsReceiverConfig(runtimeResources)
 		},
 	)
 }
 
-func (b *Builder) addPrometheusAppPodsReceiver() buildComponentWithIDFunc {
-	return b.addReceiver(
-		staticComponentID(common.ComponentIDPrometheusAppPodsReceiver),
-		func(mp *telemetryv1alpha1.MetricPipeline) any {
+func (b *Builder) addPrometheusAppPodsReceiver() buildComponentFunc {
+	return b.AddReceiver(
+		b.StaticComponentID(common.ComponentIDPrometheusAppPodsReceiver),
+		func(*telemetryv1alpha1.MetricPipeline) any {
 			return prometheusPodsReceiverConfig()
 		},
 	)
 }
 
-func (b *Builder) addPrometheusAppServicesReceiver(opts BuildOptions) buildComponentWithIDFunc {
-	return b.addReceiver(
-		staticComponentID(common.ComponentIDPrometheusAppServicesReceiver),
-		func(mp *telemetryv1alpha1.MetricPipeline) any {
+func (b *Builder) addPrometheusAppServicesReceiver(opts BuildOptions) buildComponentFunc {
+	return b.AddReceiver(
+		b.StaticComponentID(common.ComponentIDPrometheusAppServicesReceiver),
+		func(*telemetryv1alpha1.MetricPipeline) any {
 			return prometheusServicesReceiverConfig(opts)
 		},
 	)
 }
 
-func (b *Builder) addPrometheusIstioReceiver(envoyMetricsEnabled bool) buildComponentWithIDFunc {
-	return b.addReceiver(
-		staticComponentID(common.ComponentIDPrometheusIstioReceiver),
-		func(mp *telemetryv1alpha1.MetricPipeline) any {
+func (b *Builder) addPrometheusIstioReceiver(envoyMetricsEnabled bool) buildComponentFunc {
+	return b.AddReceiver(
+		b.StaticComponentID(common.ComponentIDPrometheusIstioReceiver),
+		func(*telemetryv1alpha1.MetricPipeline) any {
 			return prometheusIstioReceiverConfig(envoyMetricsEnabled)
 		},
 	)
@@ -221,9 +174,9 @@ func (b *Builder) addPrometheusIstioReceiver(envoyMetricsEnabled bool) buildComp
 // Processor builders
 
 //nolint:mnd // hardcoded values
-func (b *Builder) addMemoryLimiterProcessor() buildComponentWithIDFunc {
-	return b.addProcessor(
-		staticComponentID(common.ComponentIDMemoryLimiterProcessor),
+func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDMemoryLimiterProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return &common.MemoryLimiter{
 				CheckInterval:        "1s",
@@ -234,9 +187,9 @@ func (b *Builder) addMemoryLimiterProcessor() buildComponentWithIDFunc {
 	)
 }
 
-func (b *Builder) addFilterDropNonPVCVolumesMetricsProcessor(runtimeResources runtimeResourceSources) buildComponentWithIDFunc {
-	return b.addProcessor(
-		staticComponentID(common.ComponentIDFilterDropNonPVCVolumesMetricsProcessor),
+func (b *Builder) addFilterDropNonPVCVolumesMetricsProcessor(runtimeResources runtimeResourceSources) buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDFilterDropNonPVCVolumesMetricsProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			if !runtimeResources.volume {
 				return nil
@@ -247,72 +200,72 @@ func (b *Builder) addFilterDropNonPVCVolumesMetricsProcessor(runtimeResources ru
 	)
 }
 
-func (b *Builder) addFilterDropVirtualNetworkInterfacesProcessor() buildComponentWithIDFunc {
-	return b.addProcessor(
-		staticComponentID(common.ComponentIDFilterDropVirtualNetworkInterfacesProcessor),
+func (b *Builder) addFilterDropVirtualNetworkInterfacesProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDFilterDropVirtualNetworkInterfacesProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return dropVirtualNetworkInterfacesProcessorConfig()
 		},
 	)
 }
 
-func (b *Builder) addResourceDeleteServiceNameProcessor() buildComponentWithIDFunc {
-	return b.addProcessor(
-		staticComponentID(common.ComponentIDResourceDeleteServiceNameProcessor),
+func (b *Builder) addResourceDeleteServiceNameProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDResourceDeleteServiceNameProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return deleteServiceNameProcessorConfig()
 		},
 	)
 }
 
-func (b *Builder) addDeleteServiceNameProcessor() buildComponentWithIDFunc {
-	return b.addProcessor(
-		staticComponentID(common.ComponentIDResourceDeleteServiceNameProcessor),
+func (b *Builder) addDeleteServiceNameProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDResourceDeleteServiceNameProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return deleteServiceNameProcessorConfig()
 		},
 	)
 }
 
-func (b *Builder) addSetInstrumentationScopeToRuntimeProcessor(opts BuildOptions) buildComponentWithIDFunc {
-	return b.addProcessor(
-		staticComponentID(common.ComponentIDSetInstrumentationScopeRuntimeProcessor),
+func (b *Builder) addSetInstrumentationScopeToRuntimeProcessor(opts BuildOptions) buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDSetInstrumentationScopeRuntimeProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return common.InstrumentationScopeProcessorConfig(opts.InstrumentationScopeVersion, common.InputSourceRuntime, common.InputSourceK8sCluster)
 		},
 	)
 }
 
-func (b *Builder) addSetInstrumentationScopeToPrometheusProcessor(opts BuildOptions) buildComponentWithIDFunc {
-	return b.addProcessor(
-		staticComponentID(common.ComponentIDSetInstrumentationScopePrometheusProcessor),
+func (b *Builder) addSetInstrumentationScopeToPrometheusProcessor(opts BuildOptions) buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDSetInstrumentationScopePrometheusProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return common.InstrumentationScopeProcessorConfig(opts.InstrumentationScopeVersion, common.InputSourcePrometheus)
 		},
 	)
 }
 
-func (b *Builder) addSetInstrumentationScopeToIstioProcessor(opts BuildOptions) buildComponentWithIDFunc {
-	return b.addProcessor(
-		staticComponentID(common.ComponentIDSetInstrumentationScopeIstioProcessor),
+func (b *Builder) addSetInstrumentationScopeToIstioProcessor(opts BuildOptions) buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDSetInstrumentationScopeIstioProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return common.InstrumentationScopeProcessorConfig(opts.InstrumentationScopeVersion, common.InputSourceIstio)
 		},
 	)
 }
 
-func (b *Builder) addInsertSkipEnrichmentAttributeProcessor() buildComponentWithIDFunc {
-	return b.addProcessor(
-		staticComponentID(common.ComponentIDInsertSkipEnrichmentAttributeProcessor),
+func (b *Builder) addInsertSkipEnrichmentAttributeProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDInsertSkipEnrichmentAttributeProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return insertSkipEnrichmentAttributeProcessorConfig()
 		},
 	)
 }
 
-func (b *Builder) addIstioNoiseFilterProcessor() buildComponentWithIDFunc {
-	return b.addProcessor(
-		staticComponentID(common.ComponentIDIstioNoiseFilterProcessor),
+func (b *Builder) addIstioNoiseFilterProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDIstioNoiseFilterProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return &common.IstioNoiseFilterProcessor{}
 		},
@@ -320,9 +273,9 @@ func (b *Builder) addIstioNoiseFilterProcessor() buildComponentWithIDFunc {
 }
 
 //nolint:mnd // hardcoded values
-func (b *Builder) addBatchProcessor() buildComponentWithIDFunc {
-	return b.addProcessor(
-		staticComponentID(common.ComponentIDBatchProcessor),
+func (b *Builder) addBatchProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDBatchProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return &common.BatchProcessor{
 				SendBatchSize:    1024,
@@ -336,14 +289,14 @@ func (b *Builder) addBatchProcessor() buildComponentWithIDFunc {
 // Exporter builders
 
 //nolint:mnd // all static config from here
-func (b *Builder) addOTLPExporter() buildComponentWithIDFunc {
-	return b.addExporter(
-		staticComponentID(common.ComponentIDOTLPExporter),
+func (b *Builder) addOTLPExporter() buildComponentFunc {
+	return b.AddExporter(
+		b.StaticComponentID(common.ComponentIDOTLPExporter),
 		func(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline) (any, common.EnvVars, error) {
 			return &common.OTLPExporter{
 				Endpoint: fmt.Sprintf("%s.%s.svc.cluster.local:%d",
-					b.Config.GatewayOTLPServiceName.Name,
-					b.Config.GatewayOTLPServiceName.Namespace,
+					b.GatewayOTLPServiceName.Name,
+					b.GatewayOTLPServiceName.Namespace,
 					ports.OTLPGRPC,
 				),
 				TLS: common.TLS{

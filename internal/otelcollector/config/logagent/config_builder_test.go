@@ -1,284 +1,110 @@
 package logagent
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
 func TestBuildConfig(t *testing.T) {
-	gatewayServiceName := types.NamespacedName{Name: "logs", Namespace: "telemetry-system"}
-	sut := Builder{
-		Config: BuilderConfig{
-			GatewayOTLPServiceName: gatewayServiceName,
+	sut := Builder{}
+
+	tests := []struct {
+		name                string
+		pipelines           []telemetryv1alpha1.LogPipeline
+		goldenFileName      string
+		overwriteGoldenFile bool
+	}{
+		{
+			name: "single pipeline",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithName("test").
+					WithApplicationInput(true).
+					WithKeepOriginalBody(true).
+					WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).
+					Build(),
+			},
+			goldenFileName: "single-pipeline.yaml",
+		},
+		{
+			name: "single pipeline with namespace included",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithName("test").
+					WithApplicationInput(true, testutils.ExtIncludeNamespaces("kyma-system", "default")).
+					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+			},
+			goldenFileName: "single-pipeline-namespace-included.yaml",
+		},
+		{
+			name: "single pipeline with namespace excluded",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithName("test").
+					WithApplicationInput(true, testutils.ExtExcludeNamespaces("kyma-system", "default")).
+					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+			},
+			goldenFileName: "single-pipeline-namespace-excluded.yaml",
+		},
+		{
+			name: "two pipelines with user-defined transforms",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithName("test1").
+					WithApplicationInput(true).
+					WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).
+					WithTransform(telemetryv1alpha1.TransformSpec{
+						Conditions: []string{"IsMatch(body, \".*error.*\")"},
+						Statements: []string{"set(attributes[\"log.level\"], \"error\")", "set(body, \"transformed1\")"},
+					}).
+					Build(),
+				testutils.NewLogPipelineBuilder().
+					WithName("test2").
+					WithApplicationInput(true).
+					WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).
+					WithTransform(telemetryv1alpha1.TransformSpec{
+						Conditions: []string{"IsMatch(body, \".*error.*\")"},
+						Statements: []string{"set(attributes[\"log.level\"], \"error\")", "set(body, \"transformed2\")"},
+					}).
+					Build(),
+			},
+			goldenFileName: "two-pipelines-with-transforms.yaml",
 		},
 	}
 
-	t.Run("receivers", func(t *testing.T) {
-		t.Run("filelog receiver", func(t *testing.T) {
-			collectorConfig, _, err := sut.Build(t.Context(), []telemetryv1alpha1.LogPipeline{
-				testutils.NewLogPipelineBuilder().WithName("test").
-					WithApplicationInput(true).WithKeepOriginalBody(true).
-					WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build(),
-			}, BuildOptions{AgentNamespace: "kyma-system"})
+	buildOptions := BuildOptions{
+		InstrumentationScopeVersion: "main",
+		AgentNamespace:              "kyma-system",
+		CloudProvider:               "azure",
+		ClusterName:                 "test-cluster",
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			collectorConfig, _, err := sut.Build(t.Context(), tt.pipelines, buildOptions)
 			require.NoError(t, err)
+			configYAML, err := yaml.Marshal(collectorConfig)
+			require.NoError(t, err, "failed to marshal config")
 
-			require.Contains(t, collectorConfig.Receivers, "filelog/test")
+			goldenFilePath := filepath.Join("testdata", tt.goldenFileName)
+			if tt.overwriteGoldenFile {
+				err = os.WriteFile(goldenFilePath, configYAML, 0600)
+				require.NoError(t, err, "failed to overwrite golden file")
 
-			fileLogReceiver := collectorConfig.Receivers["filelog/test"].(*FileLogReceiver)
-			expectedExcludeFilePath := []string{
-				"/var/log/pods/kyma-system_telemetry-fluent-bit-*/fluent-bit/*.log",
-				"/var/log/pods/kyma-system_telemetry-log-agent-*/collector/*.log",
-				"/var/log/pods/kyma-system_*system-logs-agent-*/collector/*.log",
-				"/var/log/pods/kyma-system_*system-logs-collector-*/collector/*.log",
-				"/var/log/pods/kyma-system_*/*/*.log",
-				"/var/log/pods/kube-system_*/*/*.log",
-				"/var/log/pods/istio-system_*/*/*.log",
-				"/var/log/pods/compass-system_*/*/*.log",
+				t.Fatalf("Golden file %s has been saved, please verify it and set the overwriteGoldenFile flag to false", tt.goldenFileName)
 			}
-			require.Equal(t, expectedExcludeFilePath, fileLogReceiver.Exclude)
-			require.Equal(t, []string{"/var/log/pods/*_*/*/*.log"}, fileLogReceiver.Include)
-			require.Equal(t, ptr.To(false), fileLogReceiver.IncludeFileName)
-			require.Equal(t, ptr.To(true), fileLogReceiver.IncludeFilePath)
-			require.Equal(t, "beginning", fileLogReceiver.StartAt)
-			require.Equal(t, "file_storage", fileLogReceiver.Storage)
-			require.Equal(t, common.RetryOnFailure{
-				Enabled:         true,
-				InitialInterval: initialInterval,
-				MaxInterval:     maxInterval,
-				MaxElapsedTime:  maxElapsedTime,
-			}, fileLogReceiver.RetryOnFailure)
+
+			goldenFile, err := os.ReadFile(goldenFilePath)
+			require.NoError(t, err, "failed to load golden file")
+
+			require.Equal(t, string(goldenFile), string(configYAML))
 		})
-	})
-
-	t.Run("otlp exporter endpoint", func(t *testing.T) {
-		collectorConfig, envVars, err := sut.Build(t.Context(), []telemetryv1alpha1.LogPipeline{
-			testutils.NewLogPipelineBuilder().WithName("test").
-				WithApplicationInput(true).WithKeepOriginalBody(true).
-				WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build()}, BuildOptions{})
-
-		require.NoError(t, err)
-
-		require.Contains(t, collectorConfig.Exporters, "otlp/test")
-
-		const endpointEnvVar = "OTLP_ENDPOINT_TEST"
-
-		expectedEndpoint := fmt.Sprintf("${%s}", endpointEnvVar)
-
-		otlpExporterConfig := collectorConfig.Exporters["otlp/test"].(*common.OTLPExporter)
-		require.Equal(t, expectedEndpoint, otlpExporterConfig.Endpoint)
-
-		require.Contains(t, envVars, endpointEnvVar)
-		require.Equal(t, "http://localhost", string(envVars[endpointEnvVar]))
-	})
-
-	t.Run("insecure", func(t *testing.T) {
-		t.Run("otlp exporter endpoint", func(t *testing.T) {
-			collectorConfig, _, err := sut.Build(t.Context(), []telemetryv1alpha1.LogPipeline{
-				testutils.NewLogPipelineBuilder().WithName("test").
-					WithApplicationInput(true).WithKeepOriginalBody(true).
-					WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build()}, BuildOptions{})
-			require.NoError(t, err)
-
-			actualExporterConfig := collectorConfig.Exporters["otlp/test"].(*common.OTLPExporter)
-			require.True(t, actualExporterConfig.TLS.Insecure)
-		})
-	})
-
-	t.Run("extensions", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(t.Context(), []telemetryv1alpha1.LogPipeline{
-			testutils.NewLogPipelineBuilder().WithName("test").
-				WithApplicationInput(true).WithKeepOriginalBody(true).
-				WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build(),
-		}, BuildOptions{})
-
-		require.NoError(t, err)
-
-		require.NotEmpty(t, collectorConfig.Extensions.HealthCheck.Endpoint)
-		require.Contains(t, collectorConfig.Service.Extensions, "health_check")
-
-		require.NotEmpty(t, collectorConfig.Extensions.Pprof.Endpoint)
-		require.Contains(t, collectorConfig.Service.Extensions, "pprof")
-
-		require.NotEmpty(t, collectorConfig.Extensions.FileStorage.Directory)
-		require.Contains(t, collectorConfig.Service.Extensions, "file_storage")
-	})
-
-	t.Run("telemetry", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(t.Context(), []telemetryv1alpha1.LogPipeline{
-			testutils.NewLogPipelineBuilder().WithName("test").
-				WithApplicationInput(true).WithKeepOriginalBody(true).
-				WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build(),
-		}, BuildOptions{})
-
-		require.NoError(t, err)
-
-		metricreaders := []common.MetricReader{
-			{
-				Pull: common.PullMetricReader{
-					Exporter: common.MetricExporter{
-						Prometheus: common.PrometheusMetricExporter{
-							Host: "${MY_POD_IP}",
-							Port: ports.Metrics,
-						},
-					},
-				},
-			},
-		}
-
-		require.Equal(t, "info", collectorConfig.Service.Telemetry.Logs.Level)
-		require.Equal(t, "json", collectorConfig.Service.Telemetry.Logs.Encoding)
-		require.Equal(t, metricreaders, collectorConfig.Service.Telemetry.Metrics.Readers)
-	})
-
-	t.Run("single pipeline topology", func(t *testing.T) {
-		t.Run("application log input enabled", func(t *testing.T) {
-			collectorConfig, _, err := sut.Build(t.Context(), []telemetryv1alpha1.LogPipeline{
-				testutils.NewLogPipelineBuilder().WithName("test").
-					WithApplicationInput(true).WithKeepOriginalBody(true).
-					WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build()}, BuildOptions{})
-			require.NoError(t, err)
-
-			require.Len(t, collectorConfig.Service.Pipelines, 1)
-			require.Contains(t, collectorConfig.Service.Pipelines, "logs/test")
-
-			require.Contains(t, collectorConfig.Service.Pipelines["logs/test"].Receivers, "filelog/test")
-			require.Equal(t, []string{"memory_limiter", "transform/set-instrumentation-scope-runtime", "k8sattributes", "resource/insert-cluster-attributes", "service_enrichment", "resource/drop-kyma-attributes"}, collectorConfig.Service.Pipelines["logs/test"].Processors)
-			require.Equal(t, []string{"otlp/test"}, collectorConfig.Service.Pipelines["logs/test"].Exporters)
-		})
-	})
-
-	t.Run("multiple pipelines topology", func(t *testing.T) {
-		t.Run("two logpipelines defined", func(t *testing.T) {
-			pipleine1 := testutils.NewLogPipelineBuilder().WithName("test1").
-				WithApplicationInput(true).WithKeepOriginalBody(true).
-				WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build()
-
-			pipleine2 := testutils.NewLogPipelineBuilder().WithName("test2").
-				WithApplicationInput(true).WithKeepOriginalBody(true).
-				WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build()
-
-			collectorConfig, _, err := sut.Build(t.Context(), []telemetryv1alpha1.LogPipeline{pipleine1, pipleine2}, BuildOptions{})
-			require.NoError(t, err)
-
-			require.Len(t, collectorConfig.Service.Pipelines, 2)
-			require.Contains(t, collectorConfig.Service.Pipelines, "logs/test1")
-			require.Contains(t, collectorConfig.Service.Pipelines, "logs/test2")
-
-			require.Contains(t, collectorConfig.Service.Pipelines["logs/test1"].Receivers, "filelog/test1")
-			require.Contains(t, collectorConfig.Service.Pipelines["logs/test2"].Receivers, "filelog/test2")
-
-			require.Equal(t, []string{"memory_limiter", "transform/set-instrumentation-scope-runtime", "k8sattributes", "resource/insert-cluster-attributes", "service_enrichment", "resource/drop-kyma-attributes"}, collectorConfig.Service.Pipelines["logs/test1"].Processors)
-			require.Equal(t, []string{"memory_limiter", "transform/set-instrumentation-scope-runtime", "k8sattributes", "resource/insert-cluster-attributes", "service_enrichment", "resource/drop-kyma-attributes"}, collectorConfig.Service.Pipelines["logs/test2"].Processors)
-
-			require.Contains(t, collectorConfig.Service.Pipelines["logs/test1"].Exporters, "otlp/test1")
-			require.Contains(t, collectorConfig.Service.Pipelines["logs/test2"].Exporters, "otlp/test2")
-		})
-	})
-
-	t.Run("marshaling", func(t *testing.T) {
-		tests := []struct {
-			name                string
-			pipelines           []telemetryv1alpha1.LogPipeline
-			goldenFileName      string
-			overwriteGoldenFile bool
-		}{
-			{
-				name: "single pipeline",
-				pipelines: []telemetryv1alpha1.LogPipeline{
-					testutils.NewLogPipelineBuilder().
-						WithName("test").
-						WithApplicationInput(true).
-						WithKeepOriginalBody(true).
-						WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).
-						Build(),
-				},
-				goldenFileName: "single-pipeline.yaml",
-			},
-			{
-				name: "single pipeline with namespace included",
-				pipelines: []telemetryv1alpha1.LogPipeline{
-					testutils.NewLogPipelineBuilder().
-						WithName("test").
-						WithApplicationInput(true, testutils.ExtIncludeNamespaces("kyma-system", "default")).
-						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
-				},
-				goldenFileName: "single-pipeline-namespace-included.yaml",
-			},
-			{
-				name: "single pipeline with namespace excluded",
-				pipelines: []telemetryv1alpha1.LogPipeline{
-					testutils.NewLogPipelineBuilder().
-						WithName("test").
-						WithApplicationInput(true, testutils.ExtExcludeNamespaces("foo", "default")).
-						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
-				},
-				goldenFileName: "single-pipeline-namespace-excluded.yaml",
-			},
-			{
-				name: "two pipelines with user-defined transforms",
-				pipelines: []telemetryv1alpha1.LogPipeline{
-					testutils.NewLogPipelineBuilder().
-						WithName("test1").
-						WithApplicationInput(true).
-						WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).
-						WithTransform(telemetryv1alpha1.TransformSpec{
-							Conditions: []string{"IsMatch(body, \".*error.*\")"},
-							Statements: []string{"set(attributes[\"log.level\"], \"error\")", "set(body, \"transformed1\")"},
-						}).
-						Build(),
-					testutils.NewLogPipelineBuilder().
-						WithName("test2").
-						WithApplicationInput(true).
-						WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).
-						WithTransform(telemetryv1alpha1.TransformSpec{
-							Conditions: []string{"IsMatch(body, \".*error.*\")"},
-							Statements: []string{"set(attributes[\"log.level\"], \"error\")", "set(body, \"transformed2\")"},
-						}).
-						Build(),
-				},
-				goldenFileName: "two-pipelines-with-transforms.yaml",
-			},
-		}
-
-		buildOptions := BuildOptions{
-			InstrumentationScopeVersion: "main",
-			AgentNamespace:              "kyma-system",
-			CloudProvider:               "azure",
-			ClusterName:                 "test-cluster",
-		}
-
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				collectorConfig, _, err := sut.Build(t.Context(), tt.pipelines, buildOptions)
-				require.NoError(t, err)
-				configYAML, err := yaml.Marshal(collectorConfig)
-				require.NoError(t, err, "failed to marshal config")
-
-				goldenFilePath := filepath.Join("testdata", tt.goldenFileName)
-				if tt.overwriteGoldenFile {
-					err = os.WriteFile(goldenFilePath, configYAML, 0600)
-					require.NoError(t, err, "failed to overwrite golden file")
-
-					t.Fatalf("Golden file %s has been saved, please verify it and set the overwriteGoldenFile flag to false", tt.goldenFileName)
-				}
-
-				goldenFile, err := os.ReadFile(goldenFilePath)
-				require.NoError(t, err, "failed to load golden file")
-
-				require.Equal(t, string(goldenFile), string(configYAML))
-			})
-		}
-	})
+	}
 }

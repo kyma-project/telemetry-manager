@@ -11,15 +11,16 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 )
 
+type buildComponentFunc = common.BuildComponentFunc[*telemetryv1alpha1.MetricPipeline]
+
 const (
 	maxQueueSize = 256 // Maximum number of batches kept in memory before dropping
 )
 
 type Builder struct {
-	Reader client.Reader
+	common.ComponentBuilder[*telemetryv1alpha1.MetricPipeline]
 
-	config  *common.Config
-	envVars common.EnvVars
+	Reader client.Reader
 }
 
 type BuildOptions struct {
@@ -31,28 +32,22 @@ type BuildOptions struct {
 	Enrichments                 *operatorv1alpha1.EnrichmentSpec
 }
 
-type buildComponentFunc = common.BuildComponentFunc[*telemetryv1alpha1.MetricPipeline]
-type componentIDFunc = common.ComponentIDFunc[*telemetryv1alpha1.MetricPipeline]
-type componentConfigFunc = common.ComponentConfigFunc[*telemetryv1alpha1.MetricPipeline]
-type exporterComponentConfigFunc = common.ExporterComponentConfigFunc[*telemetryv1alpha1.MetricPipeline]
-
-var staticComponentID = common.StaticComponentID[*telemetryv1alpha1.MetricPipeline]
-
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) (*common.Config, common.EnvVars, error) {
-	b.config = &common.Config{
-		Base:       common.BaseConfig(common.WithK8sLeaderElector("serviceAccount", common.K8sLeaderElectorKymaStats, opts.GatewayNamespace)),
-		Receivers:  make(map[string]any),
-		Processors: make(map[string]any),
-		Exporters:  make(map[string]any),
-		Connectors: make(map[string]any),
-	}
-	b.envVars = make(common.EnvVars)
+	b.Config = common.NewConfig()
+	b.AddExtension(common.ComponentIDK8sLeaderElectorExtension,
+		common.K8sLeaderElector{
+			AuthType:       "serviceAccount",
+			LeaseName:      common.K8sLeaderElectorKymaStats,
+			LeaseNamespace: opts.GatewayNamespace,
+		},
+	)
+	b.EnvVars = make(common.EnvVars)
 
-	// Iterate over each MetricPipeline CR and enrich the config with pipeline-specific components
 	queueSize := maxQueueSize / len(pipelines)
 
-	for i := range pipelines {
-		if err := b.addInputServicePipeline(ctx, &pipelines[i],
+	for _, pipeline := range pipelines {
+		inputPipelineID := formatInputMetricServicePipelineID(&pipeline)
+		if err := b.AddServicePipeline(ctx, &pipeline, inputPipelineID,
 			b.addOTLPReceiver(),
 			b.addKymaStatsReceiver(),
 			b.addMemoryLimiterProcessor(),
@@ -61,7 +56,8 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			return nil, nil, fmt.Errorf("failed to add input service pipeline: %w", err)
 		}
 
-		if err := b.addEnrichmentServicePipeline(ctx, &pipelines[i],
+		enrichmentPipelineID := formatEnrichmentServicePipelineID(&pipeline)
+		if err := b.AddServicePipeline(ctx, &pipeline, enrichmentPipelineID,
 			b.addEnrichmentRoutingReceiver(),
 			b.addK8sAttributesProcessor(opts),
 			b.addServiceEnrichmentProcessor(),
@@ -70,7 +66,8 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			return nil, nil, fmt.Errorf("failed to add enrichment service pipeline: %w", err)
 		}
 
-		if err := b.addOutputServicePipeline(ctx, &pipelines[i],
+		ouputPipelineID := formatOutputServicePipelineID(&pipeline)
+		if err := b.AddServicePipeline(ctx, &pipeline, ouputPipelineID,
 			b.addOutputRoutingReceiver(),
 			b.addOutputForwardReceiver(),
 			b.addSetInstrumentationScopeToKymaProcessor(opts),
@@ -111,7 +108,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 		}
 	}
 
-	return b.config, b.envVars, nil
+	return b.Config, b.EnvVars, nil
 }
 
 // Helper functions

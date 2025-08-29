@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
@@ -13,17 +12,13 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 )
 
-type BuilderConfig struct {
-	GatewayOTLPServiceName types.NamespacedName
-	collectAgentLogs       bool
-}
+type buildComponentFunc = common.BuildComponentFunc[*telemetryv1alpha1.LogPipeline]
 
 type Builder struct {
-	Reader client.Reader
-	Config BuilderConfig
+	common.ComponentBuilder[*telemetryv1alpha1.LogPipeline]
 
-	config  *common.Config
-	envVars common.EnvVars
+	Reader           client.Reader
+	collectAgentLogs bool
 }
 
 type BuildOptions struct {
@@ -36,22 +31,13 @@ type BuildOptions struct {
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPipeline, opts BuildOptions) (*common.Config, common.EnvVars, error) {
-	b.config = &common.Config{
-		Base:       common.BaseConfig(),
-		Receivers:  make(map[string]any),
-		Processors: make(map[string]any),
-		Exporters:  make(map[string]any),
-	}
-	b.config.Extensions.FileStorage = &common.FileStorage{
-		Directory: otelcollector.CheckpointVolumePath,
-	}
-	b.config.Service.Extensions = append(b.config.Service.Extensions, "file_storage")
-	b.envVars = make(common.EnvVars)
+	b.Config = common.NewConfig()
+	b.AddExtension(common.ComponentIDFileStorageExtension, &common.FileStorage{Directory: otelcollector.CheckpointVolumePath})
+	b.EnvVars = make(common.EnvVars)
 
-	// Iterate over each LogPipeline CR and enrich the config with pipeline-specific components
-	// Iterate over each LogPipeline CR and enrich the config with pipeline-specific components
-	for i := range pipelines {
-		if err := b.addServicePipeline(ctx, &pipelines[i],
+	for _, pipeline := range pipelines {
+		pipelineID := formatLogServicePipelineID(&pipeline)
+		if err := b.AddServicePipeline(ctx, &pipeline, pipelineID,
 			b.addFileLogReceiver(),
 			b.addMemoryLimiterProcessor(),
 			b.addSetInstrumentationScopeToRuntimeProcessor(opts),
@@ -66,76 +52,22 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPi
 		}
 	}
 
-	return b.config, b.envVars, nil
-}
-
-// Type aliases for common builder patterns
-type buildComponentFunc = common.BuildComponentFunc[*telemetryv1alpha1.LogPipeline]
-type componentConfigFunc = common.ComponentConfigFunc[*telemetryv1alpha1.LogPipeline]
-type exporterComponentConfigFunc = common.ExporterComponentConfigFunc[*telemetryv1alpha1.LogPipeline]
-type componentIDFunc = common.ComponentIDFunc[*telemetryv1alpha1.LogPipeline]
-
-// staticComponentID returns a ComponentIDFunc that always returns the same component ID independent of the LogPipeline
-var staticComponentID = common.StaticComponentID[*telemetryv1alpha1.LogPipeline]
-
-func (b *Builder) addServicePipeline(ctx context.Context, lp *telemetryv1alpha1.LogPipeline, fs ...buildComponentFunc) error {
-	// Add an empty pipeline to the config
-	pipelineID := formatLogServicePipelineID(lp)
-	b.config.Service.Pipelines[pipelineID] = common.Pipeline{}
-
-	for _, f := range fs {
-		if err := f(ctx, lp); err != nil {
-			return fmt.Errorf("failed to add component: %w", err)
-		}
-	}
-
-	return nil
-}
-
-// addReceiver creates a decorator for adding receivers
-func (b *Builder) addReceiver(componentIDFunc componentIDFunc, configFunc componentConfigFunc) buildComponentFunc {
-	return common.AddReceiver(
-		b.config,
-		componentIDFunc,
-		configFunc,
-		formatLogServicePipelineID,
-	)
-}
-
-// addProcessor creates a decorator for adding processors
-func (b *Builder) addProcessor(componentIDFunc componentIDFunc, configFunc componentConfigFunc) buildComponentFunc {
-	return common.AddProcessor(
-		b.config,
-		componentIDFunc,
-		configFunc,
-		formatLogServicePipelineID,
-	)
-}
-
-// addExporter creates a decorator for adding exporters
-func (b *Builder) addExporter(componentIDFunc componentIDFunc, configFunc exporterComponentConfigFunc) buildComponentFunc {
-	return common.AddExporter(
-		b.config,
-		b.envVars,
-		componentIDFunc,
-		configFunc,
-		formatLogServicePipelineID,
-	)
+	return b.Config, b.EnvVars, nil
 }
 
 func (b *Builder) addFileLogReceiver() buildComponentFunc {
-	return b.addReceiver(
+	return b.AddReceiver(
 		formatFileLogReceiverID,
 		func(lp *telemetryv1alpha1.LogPipeline) any {
-			return fileLogReceiverConfig(lp, b.Config.collectAgentLogs)
+			return fileLogReceiverConfig(lp, b.collectAgentLogs)
 		},
 	)
 }
 
 //nolint:mnd // hardcoded values
 func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
-	return b.addProcessor(
-		staticComponentID(common.ComponentIDMemoryLimiterProcessor),
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDMemoryLimiterProcessor),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
 			return &common.MemoryLimiter{
 				CheckInterval:        "5s",
@@ -147,8 +79,8 @@ func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
 }
 
 func (b *Builder) addSetInstrumentationScopeToRuntimeProcessor(opts BuildOptions) buildComponentFunc {
-	return b.addProcessor(
-		staticComponentID(common.ComponentIDSetInstrumentationScopeRuntimeProcessor),
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDSetInstrumentationScopeRuntimeProcessor),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
 			return common.LogTransformProcessorConfig([]common.TransformProcessorStatements{{
 				Statements: []string{
@@ -161,8 +93,8 @@ func (b *Builder) addSetInstrumentationScopeToRuntimeProcessor(opts BuildOptions
 }
 
 func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFunc {
-	return b.addProcessor(
-		staticComponentID(common.ComponentIDK8sAttributesProcessor),
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDK8sAttributesProcessor),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
 			return common.K8sAttributesProcessorConfig(opts.Enrichments)
 		},
@@ -170,8 +102,8 @@ func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFun
 }
 
 func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildComponentFunc {
-	return b.addProcessor(
-		staticComponentID(common.ComponentIDInsertClusterAttributesProcessor),
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDInsertClusterAttributesProcessor),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
 			return common.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.ClusterUID, opts.CloudProvider)
 		},
@@ -179,8 +111,8 @@ func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildCo
 }
 
 func (b *Builder) addServiceEnrichmentProcessor() buildComponentFunc {
-	return b.addProcessor(
-		staticComponentID(common.ComponentIDServiceEnrichmentProcessor),
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDServiceEnrichmentProcessor),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
 			return common.ResolveServiceNameConfig()
 		},
@@ -188,8 +120,8 @@ func (b *Builder) addServiceEnrichmentProcessor() buildComponentFunc {
 }
 
 func (b *Builder) addDropKymaAttributesProcessor() buildComponentFunc {
-	return b.addProcessor(
-		staticComponentID(common.ComponentIDDropKymaAttributesProcessor),
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDDropKymaAttributesProcessor),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
 			return common.DropKymaAttributesProcessorConfig()
 		},
@@ -197,7 +129,7 @@ func (b *Builder) addDropKymaAttributesProcessor() buildComponentFunc {
 }
 
 func (b *Builder) addUserDefinedTransformProcessor() buildComponentFunc {
-	return b.addProcessor(
+	return b.AddProcessor(
 		formatUserDefinedTransformProcessorID,
 		func(lp *telemetryv1alpha1.LogPipeline) any {
 			if len(lp.Spec.Transforms) == 0 {
@@ -213,7 +145,7 @@ func (b *Builder) addUserDefinedTransformProcessor() buildComponentFunc {
 }
 
 func (b *Builder) addOTLPExporter() buildComponentFunc {
-	return b.addExporter(
+	return b.AddExporter(
 		formatOTLPExporterID,
 		func(ctx context.Context, lp *telemetryv1alpha1.LogPipeline) (any, common.EnvVars, error) {
 			otlpExporterBuilder := common.NewOTLPExporterConfigBuilder(

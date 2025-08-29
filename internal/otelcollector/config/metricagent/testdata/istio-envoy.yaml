@@ -1,12 +1,11 @@
 extensions:
     health_check:
         endpoint: ${MY_POD_IP}:13133
-    pprof:
-        endpoint: 127.0.0.1:1777
     k8s_leader_elector:
         auth_type: serviceAccount
         lease_name: telemetry-metric-agent-k8scluster
-        lease_namespace: ""
+    pprof:
+        endpoint: 127.0.0.1:1777
 service:
     pipelines:
         metrics/istio:

@@ -1,10 +1,10 @@
 extensions:
+    file_storage:
+        directory: /var/lib/telemetry-log-agent/file-log-receiver
     health_check:
         endpoint: ${MY_POD_IP}:13133
     pprof:
         endpoint: 127.0.0.1:1777
-    file_storage:
-        directory: /var/lib/telemetry-log-agent/file-log-receiver
 service:
     pipelines:
         logs/test:
@@ -41,7 +41,7 @@ receivers:
             - /var/log/pods/kyma-system_telemetry-log-agent-*/collector/*.log
             - /var/log/pods/kyma-system_*system-logs-agent-*/collector/*.log
             - /var/log/pods/kyma-system_*system-logs-collector-*/collector/*.log
-            - /var/log/pods/foo_*/*/*.log
+            - /var/log/pods/kyma-system_*/*/*.log
             - /var/log/pods/default_*/*/*.log
         include:
             - /var/log/pods/*_*/*/*.log

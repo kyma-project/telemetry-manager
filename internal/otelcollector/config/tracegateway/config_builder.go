@@ -12,15 +12,16 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
+type buildComponentFunc = common.BuildComponentFunc[*telemetryv1alpha1.TracePipeline]
+
 const (
 	maxQueueSize = 256 // Maximum number of batches kept in memory before dropping
 )
 
 type Builder struct {
-	Reader client.Reader
+	common.ComponentBuilder[*telemetryv1alpha1.TracePipeline]
 
-	config  *common.Config
-	envVars common.EnvVars
+	Reader client.Reader
 }
 
 type BuildOptions struct {
@@ -31,19 +32,15 @@ type BuildOptions struct {
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.TracePipeline, opts BuildOptions) (*common.Config, common.EnvVars, error) {
-	b.config = &common.Config{
-		Base:       common.BaseConfig(),
-		Receivers:  make(map[string]any),
-		Processors: make(map[string]any),
-		Exporters:  make(map[string]any),
-	}
-	b.envVars = make(common.EnvVars)
+	b.Config = common.NewConfig()
+	b.EnvVars = make(common.EnvVars)
 
 	// Iterate over each TracePipeline CR and enrich the config with pipeline-specific components
 	queueSize := maxQueueSize / len(pipelines)
 
-	for i := range pipelines {
-		if err := b.addServicePipeline(ctx, &pipelines[i],
+	for _, pipeline := range pipelines {
+		pipelineID := formatTraceServicePipelineID(&pipeline)
+		if err := b.AddServicePipeline(ctx, &pipeline, pipelineID,
 			b.addOTLPReceiver(),
 			b.addMemoryLimiterProcessor(),
 			b.addK8sAttributesProcessor(opts),
@@ -59,66 +56,12 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Trace
 		}
 	}
 
-	return b.config, b.envVars, nil
-}
-
-// Type aliases for common builder patterns
-type buildComponentFunc = common.BuildComponentFunc[*telemetryv1alpha1.TracePipeline]
-type componentConfigFunc = common.ComponentConfigFunc[*telemetryv1alpha1.TracePipeline]
-type exporterComponentConfigFunc = common.ExporterComponentConfigFunc[*telemetryv1alpha1.TracePipeline]
-type componentIDFunc = common.ComponentIDFunc[*telemetryv1alpha1.TracePipeline]
-
-// staticComponentID returns a ComponentIDFunc that always returns the same component ID independent of the TracePipeline
-var staticComponentID = common.StaticComponentID[*telemetryv1alpha1.TracePipeline]
-
-func (b *Builder) addServicePipeline(ctx context.Context, tp *telemetryv1alpha1.TracePipeline, fs ...buildComponentFunc) error {
-	// Add an empty pipeline to the config
-	pipelineID := formatTraceServicePipelineID(tp)
-	b.config.Service.Pipelines[pipelineID] = common.Pipeline{}
-
-	for _, f := range fs {
-		if err := f(ctx, tp); err != nil {
-			return fmt.Errorf("failed to add component: %w", err)
-		}
-	}
-
-	return nil
-}
-
-// addReceiver creates a decorator for adding receivers
-func (b *Builder) addReceiver(componentIDFunc componentIDFunc, configFunc componentConfigFunc) buildComponentFunc {
-	return common.AddReceiver(
-		b.config,
-		componentIDFunc,
-		configFunc,
-		formatTraceServicePipelineID,
-	)
-}
-
-// addProcessor creates a decorator for adding processors
-func (b *Builder) addProcessor(componentIDFunc componentIDFunc, configFunc componentConfigFunc) buildComponentFunc {
-	return common.AddProcessor(
-		b.config,
-		componentIDFunc,
-		configFunc,
-		formatTraceServicePipelineID,
-	)
-}
-
-// addExporter creates a decorator for adding exporters
-func (b *Builder) addExporter(componentIDFunc componentIDFunc, configFunc exporterComponentConfigFunc) buildComponentFunc {
-	return common.AddExporter(
-		b.config,
-		b.envVars,
-		componentIDFunc,
-		configFunc,
-		formatTraceServicePipelineID,
-	)
+	return b.Config, b.EnvVars, nil
 }
 
 func (b *Builder) addOTLPReceiver() buildComponentFunc {
-	return b.addReceiver(
-		staticComponentID(common.ComponentIDOTLPReceiver),
+	return b.AddReceiver(
+		b.StaticComponentID(common.ComponentIDOTLPReceiver),
 		func(tp *telemetryv1alpha1.TracePipeline) any {
 			return &common.OTLPReceiver{
 				Protocols: common.ReceiverProtocols{
@@ -136,8 +79,8 @@ func (b *Builder) addOTLPReceiver() buildComponentFunc {
 
 //nolint:mnd // hardcoded values
 func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
-	return b.addProcessor(
-		staticComponentID(common.ComponentIDMemoryLimiterProcessor),
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDMemoryLimiterProcessor),
 		func(tp *telemetryv1alpha1.TracePipeline) any {
 			return &common.MemoryLimiter{
 				CheckInterval:        "1s",
@@ -149,8 +92,8 @@ func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
 }
 
 func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFunc {
-	return b.addProcessor(
-		staticComponentID(common.ComponentIDK8sAttributesProcessor),
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDK8sAttributesProcessor),
 		func(tp *telemetryv1alpha1.TracePipeline) any {
 			return common.K8sAttributesProcessorConfig(opts.Enrichments)
 		},
@@ -158,8 +101,8 @@ func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFun
 }
 
 func (b *Builder) addIstioNoiseFilterProcessor() buildComponentFunc {
-	return b.addProcessor(
-		staticComponentID(common.ComponentIDIstioNoiseFilterProcessor),
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDIstioNoiseFilterProcessor),
 		func(tp *telemetryv1alpha1.TracePipeline) any {
 			return &common.IstioNoiseFilterProcessor{}
 		},
@@ -167,8 +110,8 @@ func (b *Builder) addIstioNoiseFilterProcessor() buildComponentFunc {
 }
 
 func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildComponentFunc {
-	return b.addProcessor(
-		staticComponentID(common.ComponentIDInsertClusterAttributesProcessor),
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDInsertClusterAttributesProcessor),
 		func(tp *telemetryv1alpha1.TracePipeline) any {
 			return common.InsertClusterAttributesProcessorConfig(
 				opts.ClusterName, opts.ClusterUID, opts.CloudProvider,
@@ -178,8 +121,8 @@ func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildCo
 }
 
 func (b *Builder) addServiceEnrichmentProcessor() buildComponentFunc {
-	return b.addProcessor(
-		staticComponentID(common.ComponentIDServiceEnrichmentProcessor),
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDServiceEnrichmentProcessor),
 		func(tp *telemetryv1alpha1.TracePipeline) any {
 			return common.ResolveServiceNameConfig()
 		},
@@ -187,8 +130,8 @@ func (b *Builder) addServiceEnrichmentProcessor() buildComponentFunc {
 }
 
 func (b *Builder) addDropKymaAttributesProcessor() buildComponentFunc {
-	return b.addProcessor(
-		staticComponentID(common.ComponentIDDropKymaAttributesProcessor),
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDDropKymaAttributesProcessor),
 		func(tp *telemetryv1alpha1.TracePipeline) any {
 			return common.DropKymaAttributesProcessorConfig()
 		},
@@ -197,7 +140,7 @@ func (b *Builder) addDropKymaAttributesProcessor() buildComponentFunc {
 
 // addUserDefinedTransformProcessor handles user-defined transform processors with dynamic component IDs
 func (b *Builder) addUserDefinedTransformProcessor() buildComponentFunc {
-	return b.addProcessor(
+	return b.AddProcessor(
 		formatUserDefinedTransformProcessorID,
 		func(tp *telemetryv1alpha1.TracePipeline) any {
 			if len(tp.Spec.Transforms) == 0 {
@@ -214,8 +157,8 @@ func (b *Builder) addUserDefinedTransformProcessor() buildComponentFunc {
 
 //nolint:mnd // hardcoded values
 func (b *Builder) addBatchProcessor() buildComponentFunc {
-	return b.addProcessor(
-		staticComponentID(common.ComponentIDBatchProcessor),
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDBatchProcessor),
 		func(_ *telemetryv1alpha1.TracePipeline) any {
 			return &common.BatchProcessor{
 				SendBatchSize:    512,
@@ -227,7 +170,7 @@ func (b *Builder) addBatchProcessor() buildComponentFunc {
 }
 
 func (b *Builder) addOTLPExporter(queueSize int) buildComponentFunc {
-	return b.addExporter(
+	return b.AddExporter(
 		formatOTLPExporterID,
 		func(ctx context.Context, tp *telemetryv1alpha1.TracePipeline) (any, common.EnvVars, error) {
 			otlpExporterBuilder := common.NewOTLPExporterConfigBuilder(
