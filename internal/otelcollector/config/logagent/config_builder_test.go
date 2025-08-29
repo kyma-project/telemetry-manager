@@ -38,10 +38,10 @@ func TestBuildConfig(t *testing.T) {
 
 			fileLogReceiver := collectorConfig.Receivers["filelog/test"].(*FileLogReceiver)
 			expectedExcludeFilePath := []string{
+				"/var/log/pods/kyma-system_telemetry-fluent-bit-*/fluent-bit/*.log",
+				"/var/log/pods/kyma-system_telemetry-log-agent-*/collector/*.log",
 				"/var/log/pods/kyma-system_*system-logs-agent-*/collector/*.log",
 				"/var/log/pods/kyma-system_*system-logs-collector-*/collector/*.log",
-				"/var/log/pods/kyma-system_telemetry-log-agent-*/collector/*.log",
-				"/var/log/pods/kyma-system_telemetry-fluent-bit-*/fluent-bit/*.log",
 				"/var/log/pods/kyma-system_*/*/*.log",
 				"/var/log/pods/kube-system_*/*/*.log",
 				"/var/log/pods/istio-system_*/*/*.log",
@@ -221,7 +221,7 @@ func TestBuildConfig(t *testing.T) {
 				pipelines: []telemetryv1alpha1.LogPipeline{
 					testutils.NewLogPipelineBuilder().
 						WithName("test").
-						WithApplicationInput(true, testutils.ExtExcludeNamespaces("kyma-system", "default")).
+						WithApplicationInput(true, testutils.ExtExcludeNamespaces("foo", "default")).
 						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 				},
 				goldenFileName: "single-pipeline-namespace-excluded.yaml",

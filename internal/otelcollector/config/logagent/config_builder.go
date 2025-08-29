@@ -15,6 +15,7 @@ import (
 
 type BuilderConfig struct {
 	GatewayOTLPServiceName types.NamespacedName
+	collectAgentLogs       bool
 }
 
 type Builder struct {
@@ -126,7 +127,7 @@ func (b *Builder) addFileLogReceiver() buildComponentFunc {
 	return b.addReceiver(
 		formatFileLogReceiverID,
 		func(lp *telemetryv1alpha1.LogPipeline) any {
-			return fileLogReceiverConfig(lp)
+			return fileLogReceiverConfig(lp, b.Config.collectAgentLogs)
 		},
 	)
 }
