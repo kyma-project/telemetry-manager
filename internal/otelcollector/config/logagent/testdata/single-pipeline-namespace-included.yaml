@@ -41,10 +41,6 @@ receivers:
             - /var/log/pods/kyma-system_telemetry-log-agent-*/collector/*.log
             - /var/log/pods/kyma-system_*system-logs-agent-*/collector/*.log
             - /var/log/pods/kyma-system_*system-logs-collector-*/collector/*.log
-            - /var/log/pods/kyma-system_*/*/*.log
-            - /var/log/pods/kube-system_*/*/*.log
-            - /var/log/pods/istio-system_*/*/*.log
-            - /var/log/pods/compass-system_*/*/*.log
         include:
             - /var/log/pods/kyma-system_*/*/*.log
             - /var/log/pods/default_*/*/*.log

@@ -99,18 +99,10 @@ func createExcludePath(application *telemetryv1alpha1.LogPipelineApplicationInpu
 		excludeNamespaces = append(excludeNamespaces, application.Namespaces.Exclude...)
 		excludeContainers = append(excludeContainers, application.Containers.Exclude...)
 	}
+
 	if application == nil || (!application.Namespaces.System && len(application.Namespaces.Include) == 0 && len(application.Namespaces.Exclude) == 0) {
 		excludeNamespaces = namespaces.System()
 	}
-
-	//if application == nil || (!application.Namespaces.System && len(application.Namespaces.Include) == 0 && len(application.Namespaces.Exclude) == 0) {
-	//	systemLogPath := []string{}
-	//	for _, ns := range namespaces.System() {
-	//		systemLogPath = append(systemLogPath, fmt.Sprintf("/var/log/pods/%s_*/*/*.log", ns))
-	//	}
-	//
-	//	excludePath = append(excludePath, systemLogPath...)
-	//}
 
 	for _, ns := range excludeNamespaces {
 		excludePath = append(excludePath, fmt.Sprintf("/var/log/pods/%s_*/*/*.log", ns))

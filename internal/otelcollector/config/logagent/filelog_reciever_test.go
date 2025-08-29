@@ -218,7 +218,7 @@ func TestExcludePath(t *testing.T) {
 		{
 			name:     "should return excluded path if namespace is present",
 			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithExcludeNamespaces("foo", "bar").Build(),
-			expected: getExcludePaths(systemNamespacesIncluded, "/var/log/pods/foo_*/*/*.log", "/var/log/pods/bar_*/*/*.log"),
+			expected: getExcludePaths(systemNamespacesExcluded, "/var/log/pods/foo_*/*/*.log", "/var/log/pods/bar_*/*/*.log"),
 		},
 		{
 			name:     "should return default excluded path if namespace is not present",

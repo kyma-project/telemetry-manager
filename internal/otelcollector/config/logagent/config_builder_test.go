@@ -221,7 +221,7 @@ func TestBuildConfig(t *testing.T) {
 				pipelines: []telemetryv1alpha1.LogPipeline{
 					testutils.NewLogPipelineBuilder().
 						WithName("test").
-						WithApplicationInput(true, testutils.ExtExcludeNamespaces("kyma-system", "default")).
+						WithApplicationInput(true, testutils.ExtExcludeNamespaces("foo", "default")).
 						WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 				},
 				goldenFileName: "single-pipeline-namespace-excluded.yaml",
