@@ -4,26 +4,27 @@ import (
 	"context"
 	"fmt"
 	"maps"
+	"slices"
 	"strings"
 )
 
 // BuildComponentFunc defines a function type for building OpenTelemetry collector components.
 // It can be chained together to construct telemetry pipelines.
-type BuildComponentFunc[T any] func(ctx context.Context, buildCtx T, pipelineID string) error
+type BuildComponentFunc[T any] func(ctx context.Context, pipeline T, pipelineID string) error
 
 // ComponentIDFunc determines the unique identifier for a component.
-type ComponentIDFunc[T any] func(buildCtx T) string
+type ComponentIDFunc[T any] func(pipeline T) string
 
 // ComponentConfigFunc creates the configuration for a component (receiver or processor).
 // Returns nil to skip the component for this pipeline.
-type ComponentConfigFunc[T any] func(buildCtx T) any
+type ComponentConfigFunc[T any] func(pipeline T) any
 
 // ExporterComponentConfigFunc creates exporter configuration and environment variables.
 // Unlike receivers/processors, exporters often need secret resolution.
-type ExporterComponentConfigFunc[T any] func(ctx context.Context, buildCtx T) (any, EnvVars, error)
+type ExporterComponentConfigFunc[T any] func(ctx context.Context, pipeline T) (any, EnvVars, error)
 
 // PipelineIDFunc determines the unique identifier for a service pipeline.
-type PipelineIDFunc[T any] func(buildCtx T) string
+type PipelineIDFunc[T any] func(pipeline T) string
 
 // ComponentBuilder provides common builder patterns for OpenTelemetry collector configurations.
 // It can be embedded into specific config builders to provide reusable component management.
@@ -48,11 +49,11 @@ type ComponentBuilder[T any] struct {
 //	    }
 //	    return b.Config, b.EnvVars, nil
 //	}
-func (cb *ComponentBuilder[T]) AddServicePipeline(ctx context.Context, buildCtx T, pipelineID string, fs ...BuildComponentFunc[T]) error {
+func (cb *ComponentBuilder[T]) AddServicePipeline(ctx context.Context, pipeline T, pipelineID string, fs ...BuildComponentFunc[T]) error {
 	cb.Config.Service.Pipelines[pipelineID] = Pipeline{}
 
 	for _, f := range fs {
-		if err := f(ctx, buildCtx, pipelineID); err != nil {
+		if err := f(ctx, pipeline, pipelineID); err != nil {
 			return fmt.Errorf("failed to add component: %w", err)
 		}
 	}
@@ -80,14 +81,14 @@ func (cb *ComponentBuilder[T]) AddServicePipeline(ctx context.Context, buildCtx 
 //	    )
 //	}
 func (cb *ComponentBuilder[T]) AddReceiver(componentIDFunc ComponentIDFunc[T], configFunc ComponentConfigFunc[T]) BuildComponentFunc[T] {
-	return func(ctx context.Context, buildCtx T, pipelineID string) error {
-		receiverConfig := configFunc(buildCtx)
+	return func(ctx context.Context, pipeline T, pipelineID string) error {
+		receiverConfig := configFunc(pipeline)
 		if receiverConfig == nil {
 			// If no config is provided, skip adding the receiver
 			return nil
 		}
 
-		componentID := componentIDFunc(buildCtx)
+		componentID := componentIDFunc(pipeline)
 
 		receiversOrConnectors := cb.Config.Receivers
 		if isConnector(componentID) {
@@ -125,14 +126,14 @@ func (cb *ComponentBuilder[T]) AddReceiver(componentIDFunc ComponentIDFunc[T], c
 //	    )
 //	}
 func (cb *ComponentBuilder[T]) AddProcessor(componentIDFunc ComponentIDFunc[T], configFunc ComponentConfigFunc[T]) BuildComponentFunc[T] {
-	return func(ctx context.Context, buildCtx T, pipelineID string) error {
-		processorConfig := configFunc(buildCtx)
+	return func(ctx context.Context, pipeline T, pipelineID string) error {
+		processorConfig := configFunc(pipeline)
 		if processorConfig == nil {
 			// If no config is provided, skip adding the processor
 			return nil
 		}
 
-		componentID := componentIDFunc(buildCtx)
+		componentID := componentIDFunc(pipeline)
 		if _, found := cb.Config.Processors[componentID]; !found {
 			cb.Config.Processors[componentID] = processorConfig
 		}
@@ -163,8 +164,8 @@ func (cb *ComponentBuilder[T]) AddProcessor(componentIDFunc ComponentIDFunc[T], 
 //	    )
 //	}
 func (cb *ComponentBuilder[T]) AddExporter(componentIDFunc ComponentIDFunc[T], configFunc ExporterComponentConfigFunc[T]) BuildComponentFunc[T] {
-	return func(ctx context.Context, buildCtx T, pipelineID string) error {
-		exporterConfig, exporterEnvVars, err := configFunc(ctx, buildCtx)
+	return func(ctx context.Context, pipeline T, pipelineID string) error {
+		exporterConfig, exporterEnvVars, err := configFunc(ctx, pipeline)
 		if err != nil {
 			return fmt.Errorf("failed to create exporter config: %w", err)
 		}
@@ -174,7 +175,7 @@ func (cb *ComponentBuilder[T]) AddExporter(componentIDFunc ComponentIDFunc[T], c
 			return nil
 		}
 
-		componentID := componentIDFunc(buildCtx)
+		componentID := componentIDFunc(pipeline)
 
 		exportersOrConnectors := cb.Config.Exporters
 		if isConnector(componentID) {
@@ -200,10 +201,8 @@ func (cb *ComponentBuilder[T]) AddExtension(componentID string, extensionConfig 
 
 	// Ensure the extension is added to the service only once
 	extensions := cb.Config.Service.Extensions
-	for _, ext := range extensions {
-		if ext == componentID {
-			return
-		}
+	if slices.Contains(extensions, componentID) {
+		return
 	}
 
 	cb.Config.Service.Extensions = append(cb.Config.Service.Extensions, componentID)
@@ -212,7 +211,7 @@ func (cb *ComponentBuilder[T]) AddExtension(componentID string, extensionConfig 
 // StaticComponentID returns a ComponentIDFunc that always returns the same ID.
 // Useful for static components like receivers and processors.
 func (cb *ComponentBuilder[T]) StaticComponentID(componentID string) ComponentIDFunc[T] {
-	return func(buildCtx T) string {
+	return func(pipeline T) string {
 		return componentID
 	}
 }
