@@ -17,7 +17,8 @@ type buildComponentFunc = common.BuildComponentFunc[*telemetryv1alpha1.LogPipeli
 type Builder struct {
 	common.ComponentBuilder[*telemetryv1alpha1.LogPipeline]
 
-	Reader client.Reader
+	Reader           client.Reader
+	collectAgentLogs bool
 }
 
 type BuildOptions struct {
@@ -58,7 +59,7 @@ func (b *Builder) addFileLogReceiver() buildComponentFunc {
 	return b.AddReceiver(
 		formatFileLogReceiverID,
 		func(lp *telemetryv1alpha1.LogPipeline) any {
-			return fileLogReceiverConfig(lp)
+			return fileLogReceiverConfig(lp, b.collectAgentLogs)
 		},
 	)
 }
