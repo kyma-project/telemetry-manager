@@ -122,22 +122,22 @@ func withScopeParser(functions map[string]ottl.Factory[ottlscope.TransformContex
 }
 
 func newGenericParserCollection(settings component.TelemetrySettings, options ...genericParserCollectionOption) (*genericParserCollection, error) {
-	pcOptions := []ottl.ParserCollectionOption[any]{
+	parserCollectionOptions := []ottl.ParserCollectionOption[any]{
 		ottl.EnableParserCollectionModifiedPathsLogging[any](true),
 	}
 
 	for _, option := range options {
-		pcOptions = append(pcOptions, ottl.ParserCollectionOption[any](option))
+		parserCollectionOptions = append(parserCollectionOptions, ottl.ParserCollectionOption[any](option))
 	}
 
-	pc, err := ottl.NewParserCollection(settings, pcOptions...)
+	parserCollection, err := ottl.NewParserCollection(settings, parserCollectionOptions...)
 	if err != nil {
 		return nil, err
 	}
 
-	gpc := genericParserCollection(*pc)
+	genericParserCollection := genericParserCollection(*parserCollection)
 
-	return &gpc, nil
+	return &genericParserCollection, nil
 }
 
 func (gpc *genericParserCollection) parseStatementsWithConditions(statements []string, conditions []string) error {
