@@ -6,8 +6,6 @@ import (
 	"context"
 	"errors"
 
-	"go.opentelemetry.io/collector/pdata/pmetric"
-
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottldatapoint"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottllog"
@@ -17,12 +15,14 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlspan"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlspanevent"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/ottlfuncs"
+	"go.opentelemetry.io/collector/pdata/pmetric"
 )
 
 func spanConverterFuncs() map[string]ottl.Factory[ottlspan.TransformContext] {
 	m := ottlfuncs.StandardConverters[ottlspan.TransformContext]()
 	isRootSpanFactory := ottlfuncs.NewIsRootSpanFactory()
 	m[isRootSpanFactory.Name()] = isRootSpanFactory
+
 	return m
 }
 
@@ -36,6 +36,7 @@ func metricConverterFuncs() map[string]ottl.Factory[ottlmetric.TransformContext]
 	hasAttributeKeyOnDatapointFactory := newHasAttributeKeyOnDatapointFactory()
 	m[hasAttributeOnDatapointFactory.Name()] = hasAttributeOnDatapointFactory
 	m[hasAttributeKeyOnDatapointFactory.Name()] = hasAttributeKeyOnDatapointFactory
+
 	return m
 }
 
@@ -119,61 +120,74 @@ func checkDataPoints(tCtx ottlmetric.TransformContext, key string, expectedVal *
 	case pmetric.MetricTypeSummary:
 		return checkSummaryDataPointSlice(metric.Summary().DataPoints(), key, expectedVal), nil
 	}
+
 	return nil, errors.New("unknown metric type")
 }
 
 func checkNumberDataPointSlice(dps pmetric.NumberDataPointSlice, key string, expectedVal *string) bool {
 	for i := 0; i < dps.Len(); i++ {
 		dp := dps.At(i)
+
 		value, ok := dp.Attributes().Get(key)
 		if ok {
 			if expectedVal != nil {
 				return value.Str() == *expectedVal
 			}
+
 			return true
 		}
 	}
+
 	return false
 }
 
 func checkHistogramDataPointSlice(dps pmetric.HistogramDataPointSlice, key string, expectedVal *string) bool {
 	for i := 0; i < dps.Len(); i++ {
 		dp := dps.At(i)
+
 		value, ok := dp.Attributes().Get(key)
 		if ok {
 			if expectedVal != nil {
 				return value.Str() == *expectedVal
 			}
+
 			return true
 		}
 	}
+
 	return false
 }
 
 func checkExponentialHistogramDataPointSlice(dps pmetric.ExponentialHistogramDataPointSlice, key string, expectedVal *string) bool {
 	for i := 0; i < dps.Len(); i++ {
 		dp := dps.At(i)
+
 		value, ok := dp.Attributes().Get(key)
 		if ok {
 			if expectedVal != nil {
 				return value.Str() == *expectedVal
 			}
+
 			return true
 		}
 	}
+
 	return false
 }
 
 func checkSummaryDataPointSlice(dps pmetric.SummaryDataPointSlice, key string, expectedVal *string) bool {
 	for i := 0; i < dps.Len(); i++ {
 		dp := dps.At(i)
+
 		value, ok := dp.Attributes().Get(key)
 		if ok {
 			if expectedVal != nil {
 				return value.Str() == *expectedVal
 			}
+
 			return true
 		}
 	}
+
 	return false
 }

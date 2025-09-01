@@ -162,7 +162,6 @@ func (gpc *genericParserCollection) parseConditions(conditions []string) error {
 	}
 
 	return nil
-
 }
 
 func convertResourceStatements(_ *ottl.ParserCollection[any], _ ottl.StatementsGetter, _ []*ottl.Statement[ottlresource.TransformContext]) (any, error) {

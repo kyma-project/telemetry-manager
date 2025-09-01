@@ -81,7 +81,6 @@ func (v *Validator) setLogParserCollections() error {
 		withScopeParser(ottlfuncs.StandardFuncs[ottlscope.TransformContext](), ottl.WithStatementConverter(convertScopeStatements)),
 		withLogParser(logStatementsFunctions, ottl.WithStatementConverter(convertLogStatements)),
 	)
-
 	if err != nil {
 		return fmt.Errorf("failed to create log statements parser collection: %w", err)
 	}
@@ -95,7 +94,6 @@ func (v *Validator) setLogParserCollections() error {
 		withScopeParser(scopeConverterFuncs(), ottl.WithConditionConverter(convertScopeConditions)),
 		withLogParser(logConverterFuncs(), ottl.WithConditionConverter(convertLogConditions)),
 	)
-
 	if err != nil {
 		return fmt.Errorf("failed to create log conditions parser collection: %w", err)
 	}
@@ -121,7 +119,6 @@ func (v *Validator) setMetricParserCollections() error {
 		withMetricParser(metricStatementsFunctions, ottl.WithStatementConverter(convertMetricStatements)),
 		withDataPointParser(dataPointStatementsFunctions, ottl.WithStatementConverter(convertDataPointStatements)),
 	)
-
 	if err != nil {
 		return fmt.Errorf("failed to create metric statements parser collection: %w", err)
 	}
@@ -136,7 +133,6 @@ func (v *Validator) setMetricParserCollections() error {
 		withMetricParser(metricConverterFuncs(), ottl.WithConditionConverter(convertMetricConditions)),
 		withDataPointParser(dataPointConverterFuncs(), ottl.WithConditionConverter(convertDataPointConditions)),
 	)
-
 	if err != nil {
 		return fmt.Errorf("failed to create metric conditions parser collection: %w", err)
 	}
@@ -162,7 +158,6 @@ func (v *Validator) setTraceParserCollections() error {
 		withSpanParser(spanStatementsFunctionsMap, ottl.WithStatementConverter(convertSpanStatements)),
 		withSpanEventParser(spanEventStatementsFunctionsMap, ottl.WithStatementConverter(convertSpanEventStatements)),
 	)
-
 	if err != nil {
 		return fmt.Errorf("failed to create trace statements parser collection: %w", err)
 	}
@@ -177,7 +172,6 @@ func (v *Validator) setTraceParserCollections() error {
 		withSpanParser(spanConverterFuncs(), ottl.WithConditionConverter(convertSpanConditions)),
 		withSpanEventParser(spanEventConverterFuncs(), ottl.WithConditionConverter(convertSpanEventConditions)),
 	)
-
 	if err != nil {
 		return fmt.Errorf("failed to create trace conditions parser collection: %w", err)
 	}

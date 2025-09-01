@@ -4,8 +4,9 @@ import (
 	"errors"
 	"testing"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/stretchr/testify/require"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
 type testCase struct {
@@ -61,7 +62,6 @@ func TestValidateForTracePipeline(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestValidateForMetricPipeline(t *testing.T) {
