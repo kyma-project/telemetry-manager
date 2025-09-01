@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false # if one version is not working, continue tests on other versions
       matrix:
-        k8s_version: [1.31, 1.32]
+        k8s_version: [1.32, 1.33]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
