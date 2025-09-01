@@ -82,6 +82,7 @@ func (v *Validator) Validate(transforms []telemetryv1alpha1.TransformSpec) error
 	return nil
 }
 
+//nolint:dupl // new*ParserCollection() functions are similar, but not identical
 func newLogParserCollection() (*genericParserCollection, error) {
 	telemetrySettings := component.TelemetrySettings{
 		Logger: zap.New(zapcore.NewNopCore()),
@@ -98,7 +99,6 @@ func newLogParserCollection() (*genericParserCollection, error) {
 	parserCollectionOpts = append(parserCollectionOpts, withCommonContextsParsers()...)
 
 	logParserCollection, err := newGenericParserCollection(telemetrySettings, parserCollectionOpts...)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to create log parser collection: %w", err)
 	}
@@ -106,6 +106,7 @@ func newLogParserCollection() (*genericParserCollection, error) {
 	return logParserCollection, nil
 }
 
+//nolint:dupl // new*ParserCollection() functions are similar, but not identical
 func newMetricParserCollection() (*genericParserCollection, error) {
 	telemetrySettings := component.TelemetrySettings{
 		Logger: zap.New(zapcore.NewNopCore()),
@@ -127,7 +128,6 @@ func newMetricParserCollection() (*genericParserCollection, error) {
 	parserCollectionOpts = append(parserCollectionOpts, withCommonContextsParsers()...)
 
 	metricParserCollection, err := newGenericParserCollection(telemetrySettings, parserCollectionOpts...)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to create metric parser collection: %w", err)
 	}
@@ -135,6 +135,7 @@ func newMetricParserCollection() (*genericParserCollection, error) {
 	return metricParserCollection, nil
 }
 
+//nolint:dupl // new*ParserCollection() functions are similar, but not identical
 func newTraceParserCollection() (*genericParserCollection, error) {
 	telemetrySettings := component.TelemetrySettings{
 		Logger: zap.New(zapcore.NewNopCore()),
@@ -156,7 +157,6 @@ func newTraceParserCollection() (*genericParserCollection, error) {
 	parserCollectionOpts = append(parserCollectionOpts, withCommonContextsParsers()...)
 
 	traceParserCollection, err := newGenericParserCollection(telemetrySettings, parserCollectionOpts...)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to create trace parser collection: %w", err)
 	}

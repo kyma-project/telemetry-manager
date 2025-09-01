@@ -135,9 +135,9 @@ func newGenericParserCollection(settings component.TelemetrySettings, options ..
 		return nil, err
 	}
 
-	genericParserCollection := genericParserCollection(*parserCollection)
+	gpc := genericParserCollection(*parserCollection)
 
-	return &genericParserCollection, nil
+	return &gpc, nil
 }
 
 func (gpc *genericParserCollection) parseStatementsWithConditions(statements []string, conditions []string) error {
