@@ -470,6 +470,15 @@ func spanContextTestCases() []testCase {
 			isErrorExpected: false,
 		},
 		{
+			name: "[span context] valid transform spec with IsRootSpan() function",
+			transforms: []telemetryv1alpha1.TransformSpec{
+				{
+					Statements: []string{"set(span.attributes[\"isRoot\"], \"true\") where IsRootSpan()"},
+				},
+			},
+			isErrorExpected: false,
+		},
+		{
 			name: "[span context] valid statement but incorrectly used as a condition",
 			transforms: []telemetryv1alpha1.TransformSpec{
 				{
