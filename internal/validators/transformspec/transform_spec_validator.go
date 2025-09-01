@@ -38,24 +38,23 @@ const (
 )
 
 type Validator struct {
-	// The statementsParserCollection is intentionally not exported, because it should be initialized internally only by the constructor
-	statementsParserCollection *genericParserCollection
-	// The conditionsParserCollection is intentionally not exported, because it should be initialized internally only by the constructor
-	conditionsParserCollection *genericParserCollection
+	// The parserCollection is intentionally not exported, because it should be initialized internally only by the constructor
+	parserCollection *genericParserCollection
 }
 
 func New(signalType SignalType) (*Validator, error) {
-	var err error
-
-	validator := &Validator{}
+	var (
+		parserCollection *genericParserCollection
+		err              error
+	)
 
 	switch signalType {
 	case SignalTypeLog:
-		err = validator.setLogParserCollections()
+		parserCollection, err = newLogParserCollection()
 	case SignalTypeMetric:
-		err = validator.setMetricParserCollections()
+		parserCollection, err = newMetricParserCollection()
 	case SignalTypeTrace:
-		err = validator.setTraceParserCollections()
+		parserCollection, err = newTraceParserCollection()
 	default:
 		return nil, fmt.Errorf("unexpected signal type: %s", signalType)
 	}
@@ -64,136 +63,118 @@ func New(signalType SignalType) (*Validator, error) {
 		return nil, fmt.Errorf("failed to create TransformSpec validator: %w", err)
 	}
 
-	return validator, nil
+	return &Validator{parserCollection: parserCollection}, nil
 }
 
 func (v *Validator) Validate(transforms []telemetryv1alpha1.TransformSpec) error {
+	const errorMessage = "invalid TransformSpec"
+
 	for _, ts := range transforms {
-		if err := v.statementsParserCollection.parseStatementsWithConditions(ts.Statements, ts.Conditions); err != nil {
-			return &InvalidTransformSpecError{Err: fmt.Errorf("invalid TransformSpec: %w", err)}
+		if err := v.parserCollection.parseStatementsWithConditions(ts.Statements, ts.Conditions); err != nil {
+			return &InvalidTransformSpecError{Err: fmt.Errorf("%s: %w", errorMessage, err)}
 		}
 
-		if err := v.conditionsParserCollection.parseConditions(ts.Conditions); err != nil {
-			return &InvalidTransformSpecError{Err: fmt.Errorf("invalid TransformSpec: %w", err)}
+		if err := v.parserCollection.parseConditions(ts.Conditions); err != nil {
+			return &InvalidTransformSpecError{Err: fmt.Errorf("%s: %w", errorMessage, err)}
 		}
 	}
 
 	return nil
 }
 
-//nolint:dupl // no duplicate code
-func (v *Validator) setLogParserCollections() error {
+func newLogParserCollection() (*genericParserCollection, error) {
 	telemetrySettings := component.TelemetrySettings{
 		Logger: zap.New(zapcore.NewNopCore()),
 	}
 
-	// Set log statements parser collection
-	logStatementsFunctions := ottl.CreateFactoryMap(transformprocessor.DefaultLogFunctions()...)
-
-	logStatementsParserCollection, err := newGenericParserCollection(
-		telemetrySettings,
-		withResourceParser(ottlfuncs.StandardFuncs[ottlresource.TransformContext](), ottl.WithStatementConverter(convertResourceStatements)),
-		withScopeParser(ottlfuncs.StandardFuncs[ottlscope.TransformContext](), ottl.WithStatementConverter(convertScopeStatements)),
-		withLogParser(logStatementsFunctions, ottl.WithStatementConverter(convertLogStatements)),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to create log statements parser collection: %w", err)
+	parserCollectionOpts := []genericParserCollectionOption{
+		withLogParser(
+			ottl.CreateFactoryMap(transformprocessor.DefaultLogFunctions()...),
+			ottl.WithStatementConverter(convertLogStatements),
+			ottl.WithConditionConverter(convertLogConditions),
+		),
 	}
 
-	v.statementsParserCollection = logStatementsParserCollection
+	parserCollectionOpts = append(parserCollectionOpts, withCommonContextsParsers()...)
 
-	// Set log conditions parser collection
-	logConditionsParserCollection, err := newGenericParserCollection(
-		telemetrySettings,
-		withResourceParser(resourceConverterFuncs(), ottl.WithConditionConverter(convertResourceConditions)),
-		withScopeParser(scopeConverterFuncs(), ottl.WithConditionConverter(convertScopeConditions)),
-		withLogParser(logConverterFuncs(), ottl.WithConditionConverter(convertLogConditions)),
-	)
+	logParserCollection, err := newGenericParserCollection(telemetrySettings, parserCollectionOpts...)
+
 	if err != nil {
-		return fmt.Errorf("failed to create log conditions parser collection: %w", err)
+		return nil, fmt.Errorf("failed to create log parser collection: %w", err)
 	}
 
-	v.conditionsParserCollection = logConditionsParserCollection
-
-	return nil
+	return logParserCollection, nil
 }
 
-//nolint:dupl // no duplicate code
-func (v *Validator) setMetricParserCollections() error {
+func newMetricParserCollection() (*genericParserCollection, error) {
 	telemetrySettings := component.TelemetrySettings{
 		Logger: zap.New(zapcore.NewNopCore()),
 	}
 
-	// Set metric statements parser collection
-	metricStatementsFunctions := ottl.CreateFactoryMap(transformprocessor.DefaultMetricFunctions()...)
-	dataPointStatementsFunctions := ottl.CreateFactoryMap(transformprocessor.DefaultDataPointFunctions()...)
-
-	metricStatementsParserCollection, err := newGenericParserCollection(
-		telemetrySettings,
-		withResourceParser(ottlfuncs.StandardFuncs[ottlresource.TransformContext](), ottl.WithStatementConverter(convertResourceStatements)),
-		withScopeParser(ottlfuncs.StandardFuncs[ottlscope.TransformContext](), ottl.WithStatementConverter(convertScopeStatements)),
-		withMetricParser(metricStatementsFunctions, ottl.WithStatementConverter(convertMetricStatements)),
-		withDataPointParser(dataPointStatementsFunctions, ottl.WithStatementConverter(convertDataPointStatements)),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to create metric statements parser collection: %w", err)
+	parserCollectionOpts := []genericParserCollectionOption{
+		withMetricParser(
+			ottl.CreateFactoryMap(transformprocessor.DefaultMetricFunctions()...),
+			ottl.WithStatementConverter(convertMetricStatements),
+			ottl.WithConditionConverter(convertMetricConditions),
+		),
+		withDataPointParser(
+			ottl.CreateFactoryMap(transformprocessor.DefaultDataPointFunctions()...),
+			ottl.WithStatementConverter(convertDataPointStatements),
+			ottl.WithConditionConverter(convertDataPointConditions),
+		),
 	}
 
-	v.statementsParserCollection = metricStatementsParserCollection
+	parserCollectionOpts = append(parserCollectionOpts, withCommonContextsParsers()...)
 
-	// Set metric conditions parser collection
-	metricConditionsParserCollection, err := newGenericParserCollection(
-		telemetrySettings,
-		withResourceParser(resourceConverterFuncs(), ottl.WithConditionConverter(convertResourceConditions)),
-		withScopeParser(scopeConverterFuncs(), ottl.WithConditionConverter(convertScopeConditions)),
-		withMetricParser(metricConverterFuncs(), ottl.WithConditionConverter(convertMetricConditions)),
-		withDataPointParser(dataPointConverterFuncs(), ottl.WithConditionConverter(convertDataPointConditions)),
-	)
+	metricParserCollection, err := newGenericParserCollection(telemetrySettings, parserCollectionOpts...)
+
 	if err != nil {
-		return fmt.Errorf("failed to create metric conditions parser collection: %w", err)
+		return nil, fmt.Errorf("failed to create metric parser collection: %w", err)
 	}
 
-	v.conditionsParserCollection = metricConditionsParserCollection
-
-	return nil
+	return metricParserCollection, nil
 }
 
-//nolint:dupl // no duplicate code
-func (v *Validator) setTraceParserCollections() error {
+func newTraceParserCollection() (*genericParserCollection, error) {
 	telemetrySettings := component.TelemetrySettings{
 		Logger: zap.New(zapcore.NewNopCore()),
 	}
 
-	// Set trace statements parser collection
-	spanStatementsFunctionsMap := ottl.CreateFactoryMap(transformprocessor.DefaultSpanFunctions()...)
-	spanEventStatementsFunctionsMap := ottl.CreateFactoryMap(transformprocessor.DefaultSpanEventFunctions()...)
-
-	traceStatementsParserCollection, err := newGenericParserCollection(
-		telemetrySettings,
-		withResourceParser(ottlfuncs.StandardFuncs[ottlresource.TransformContext](), ottl.WithStatementConverter(convertResourceStatements)),
-		withScopeParser(ottlfuncs.StandardFuncs[ottlscope.TransformContext](), ottl.WithStatementConverter(convertScopeStatements)),
-		withSpanParser(spanStatementsFunctionsMap, ottl.WithStatementConverter(convertSpanStatements)),
-		withSpanEventParser(spanEventStatementsFunctionsMap, ottl.WithStatementConverter(convertSpanEventStatements)),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to create trace statements parser collection: %w", err)
+	parserCollectionOpts := []genericParserCollectionOption{
+		withSpanParser(
+			ottl.CreateFactoryMap(transformprocessor.DefaultSpanFunctions()...),
+			ottl.WithStatementConverter(convertSpanStatements),
+			ottl.WithConditionConverter(convertSpanConditions),
+		),
+		withSpanEventParser(
+			ottl.CreateFactoryMap(transformprocessor.DefaultSpanEventFunctions()...),
+			ottl.WithStatementConverter(convertSpanEventStatements),
+			ottl.WithConditionConverter(convertSpanEventConditions),
+		),
 	}
 
-	v.statementsParserCollection = traceStatementsParserCollection
+	parserCollectionOpts = append(parserCollectionOpts, withCommonContextsParsers()...)
 
-	// Set trace conditions parser collection
-	traceConditionsParserCollection, err := newGenericParserCollection(
-		telemetrySettings,
-		withResourceParser(resourceConverterFuncs(), ottl.WithConditionConverter(convertResourceConditions)),
-		withScopeParser(scopeConverterFuncs(), ottl.WithConditionConverter(convertScopeConditions)),
-		withSpanParser(spanConverterFuncs(), ottl.WithConditionConverter(convertSpanConditions)),
-		withSpanEventParser(spanEventConverterFuncs(), ottl.WithConditionConverter(convertSpanEventConditions)),
-	)
+	traceParserCollection, err := newGenericParserCollection(telemetrySettings, parserCollectionOpts...)
+
 	if err != nil {
-		return fmt.Errorf("failed to create trace conditions parser collection: %w", err)
+		return nil, fmt.Errorf("failed to create trace parser collection: %w", err)
 	}
 
-	v.conditionsParserCollection = traceConditionsParserCollection
+	return traceParserCollection, nil
+}
 
-	return nil
+func withCommonContextsParsers() []genericParserCollectionOption {
+	return []genericParserCollectionOption{
+		withResourceParser(
+			ottlfuncs.StandardFuncs[ottlresource.TransformContext](),
+			ottl.WithStatementConverter(convertResourceStatements),
+			ottl.WithConditionConverter(convertResourceConditions),
+		),
+		withScopeParser(
+			ottlfuncs.StandardFuncs[ottlscope.TransformContext](),
+			ottl.WithStatementConverter(convertScopeStatements),
+			ottl.WithConditionConverter(convertScopeConditions),
+		),
+	}
 }
