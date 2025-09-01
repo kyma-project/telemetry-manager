@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestTransform_Basic(t *testing.T) {
+func TestTransform(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelExperimental)
 
 	tt := []struct {
