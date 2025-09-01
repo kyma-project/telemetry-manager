@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestTransform_Basic(t *testing.T) {
+func TestTransform(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelExperimental)
 
 	tt := []struct {
@@ -62,7 +62,7 @@ func TestTransform_Basic(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			var (
-				uniquePrefix = unique.Prefix(tc.name)
+				uniquePrefix = unique.Prefix("metrics", tc.name)
 				pipelineName = uniquePrefix()
 				backendNs    = uniquePrefix("backend")
 				genNs        = uniquePrefix("gen")
