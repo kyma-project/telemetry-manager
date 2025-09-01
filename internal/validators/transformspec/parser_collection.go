@@ -9,7 +9,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlscope"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlspan"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlspanevent"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/ottlfuncs"
 	"go.opentelemetry.io/collector/component"
 )
 
@@ -17,7 +16,7 @@ type genericParserCollection ottl.ParserCollection[any]
 
 type genericParserCollectionOption ottl.ParserCollectionOption[any]
 
-func withLogParser(functions map[string]ottl.Factory[ottllog.TransformContext]) genericParserCollectionOption {
+func withLogParser(functions map[string]ottl.Factory[ottllog.TransformContext], opts ...ottl.ParserCollectionContextOption[ottllog.TransformContext, any]) genericParserCollectionOption {
 	return func(pc *ottl.ParserCollection[any]) error {
 		logParser, err := ottllog.NewParser(functions, pc.Settings, ottllog.EnablePathContextNames())
 		if err != nil {
@@ -27,13 +26,12 @@ func withLogParser(functions map[string]ottl.Factory[ottllog.TransformContext]) 
 		return ottl.WithParserCollectionContext(
 			ottllog.ContextName,
 			&logParser,
-			ottl.WithStatementConverter(convertLogStatements),
-			ottl.WithConditionConverter(convertLogConditions),
+			opts...,
 		)(pc)
 	}
 }
 
-func withDataPointParser(functions map[string]ottl.Factory[ottldatapoint.TransformContext]) genericParserCollectionOption {
+func withDataPointParser(functions map[string]ottl.Factory[ottldatapoint.TransformContext], opts ...ottl.ParserCollectionContextOption[ottldatapoint.TransformContext, any]) genericParserCollectionOption {
 	return func(pc *ottl.ParserCollection[any]) error {
 		datapointParser, err := ottldatapoint.NewParser(functions, pc.Settings, ottldatapoint.EnablePathContextNames())
 		if err != nil {
@@ -43,13 +41,12 @@ func withDataPointParser(functions map[string]ottl.Factory[ottldatapoint.Transfo
 		return ottl.WithParserCollectionContext(
 			ottldatapoint.ContextName,
 			&datapointParser,
-			ottl.WithStatementConverter(convertDataPointStatements),
-			ottl.WithConditionConverter(convertDataPointConditions),
+			opts...,
 		)(pc)
 	}
 }
 
-func withMetricParser(functions map[string]ottl.Factory[ottlmetric.TransformContext]) genericParserCollectionOption {
+func withMetricParser(functions map[string]ottl.Factory[ottlmetric.TransformContext], opts ...ottl.ParserCollectionContextOption[ottlmetric.TransformContext, any]) genericParserCollectionOption {
 	return func(pc *ottl.ParserCollection[any]) error {
 		metricParser, err := ottlmetric.NewParser(functions, pc.Settings, ottlmetric.EnablePathContextNames())
 		if err != nil {
@@ -59,13 +56,12 @@ func withMetricParser(functions map[string]ottl.Factory[ottlmetric.TransformCont
 		return ottl.WithParserCollectionContext(
 			ottlmetric.ContextName,
 			&metricParser,
-			ottl.WithStatementConverter(convertMetricStatements),
-			ottl.WithConditionConverter(convertMetricConditions),
+			opts...,
 		)(pc)
 	}
 }
 
-func withSpanEventParser(functions map[string]ottl.Factory[ottlspanevent.TransformContext]) genericParserCollectionOption {
+func withSpanEventParser(functions map[string]ottl.Factory[ottlspanevent.TransformContext], opts ...ottl.ParserCollectionContextOption[ottlspanevent.TransformContext, any]) genericParserCollectionOption {
 	return func(pc *ottl.ParserCollection[any]) error {
 		spanEventParser, err := ottlspanevent.NewParser(functions, pc.Settings, ottlspanevent.EnablePathContextNames())
 		if err != nil {
@@ -75,13 +71,12 @@ func withSpanEventParser(functions map[string]ottl.Factory[ottlspanevent.Transfo
 		return ottl.WithParserCollectionContext(
 			ottlspanevent.ContextName,
 			&spanEventParser,
-			ottl.WithStatementConverter(convertSpanEventStatements),
-			ottl.WithConditionConverter(convertSpanEventConditions),
+			opts...,
 		)(pc)
 	}
 }
 
-func withSpanParser(functions map[string]ottl.Factory[ottlspan.TransformContext]) genericParserCollectionOption {
+func withSpanParser(functions map[string]ottl.Factory[ottlspan.TransformContext], opts ...ottl.ParserCollectionContextOption[ottlspan.TransformContext, any]) genericParserCollectionOption {
 	return func(pc *ottl.ParserCollection[any]) error {
 		spanParser, err := ottlspan.NewParser(functions, pc.Settings, ottlspan.EnablePathContextNames())
 		if err != nil {
@@ -91,15 +86,43 @@ func withSpanParser(functions map[string]ottl.Factory[ottlspan.TransformContext]
 		return ottl.WithParserCollectionContext(
 			ottlspan.ContextName,
 			&spanParser,
-			ottl.WithStatementConverter(convertSpanStatements),
-			ottl.WithConditionConverter(convertSpanConditions),
+			opts...,
+		)(pc)
+	}
+}
+
+func withResourceParser(functions map[string]ottl.Factory[ottlresource.TransformContext], opts ...ottl.ParserCollectionContextOption[ottlresource.TransformContext, any]) genericParserCollectionOption {
+	return func(pc *ottl.ParserCollection[any]) error {
+		resourceParser, err := ottlresource.NewParser(functions, pc.Settings, ottlresource.EnablePathContextNames())
+		if err != nil {
+			return err
+		}
+
+		return ottl.WithParserCollectionContext(
+			ottlresource.ContextName,
+			&resourceParser,
+			opts...,
+		)(pc)
+	}
+}
+
+func withScopeParser(functions map[string]ottl.Factory[ottlscope.TransformContext], opts ...ottl.ParserCollectionContextOption[ottlscope.TransformContext, any]) genericParserCollectionOption {
+	return func(pc *ottl.ParserCollection[any]) error {
+		scopeParser, err := ottlscope.NewParser(functions, pc.Settings, ottlscope.EnablePathContextNames())
+		if err != nil {
+			return err
+		}
+
+		return ottl.WithParserCollectionContext(
+			ottlscope.ContextName,
+			&scopeParser,
+			opts...,
 		)(pc)
 	}
 }
 
 func newGenericParserCollection(settings component.TelemetrySettings, options ...genericParserCollectionOption) (*genericParserCollection, error) {
 	pcOptions := []ottl.ParserCollectionOption[any]{
-		withCommonContextParsers(),
 		ottl.EnableParserCollectionModifiedPathsLogging[any](true),
 	}
 
@@ -117,58 +140,29 @@ func newGenericParserCollection(settings component.TelemetrySettings, options ..
 	return &gpc, nil
 }
 
-func (gpc *genericParserCollection) parseStatementsAndConditions(statements []string, conditions []string) error {
-	pc := ottl.ParserCollection[any](*gpc)
+func (gpc *genericParserCollection) parseStatementsWithConditions(statements []string, conditions []string) error {
+	parserCollection := ottl.ParserCollection[any](*gpc)
 
-	if _, err := pc.ParseStatements(ottl.NewStatementsGetter(statements), ottl.WithContextInferenceConditions(conditions)); err != nil {
-		return err
-	}
-
-	if len(conditions) == 0 {
-		return nil
-	}
-
-	if _, err := pc.ParseConditions(ottl.NewConditionsGetter(conditions)); err != nil {
+	if _, err := parserCollection.ParseStatements(ottl.NewStatementsGetter(statements), ottl.WithContextInferenceConditions(conditions)); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func withCommonContextParsers() ottl.ParserCollectionOption[any] {
-	return func(pc *ottl.ParserCollection[any]) error {
-		rp, err := ottlresource.NewParser(ottlfuncs.StandardFuncs[ottlresource.TransformContext](), pc.Settings, ottlresource.EnablePathContextNames())
-		if err != nil {
-			return err
-		}
-
-		sp, err := ottlscope.NewParser(ottlfuncs.StandardFuncs[ottlscope.TransformContext](), pc.Settings, ottlscope.EnablePathContextNames())
-		if err != nil {
-			return err
-		}
-
-		err = ottl.WithParserCollectionContext(
-			ottlresource.ContextName,
-			&rp,
-			ottl.WithStatementConverter(convertResourceStatements),
-			ottl.WithConditionConverter(convertResourceConditions),
-		)(pc)
-		if err != nil {
-			return err
-		}
-
-		err = ottl.WithParserCollectionContext(
-			ottlscope.ContextName,
-			&sp,
-			ottl.WithStatementConverter(convertScopeStatements),
-			ottl.WithConditionConverter(convertScopeConditions),
-		)(pc)
-		if err != nil {
-			return err
-		}
-
+func (gpc *genericParserCollection) parseConditions(conditions []string) error {
+	if len(conditions) == 0 {
 		return nil
 	}
+
+	parserCollection := ottl.ParserCollection[any](*gpc)
+
+	if _, err := parserCollection.ParseConditions(ottl.NewConditionsGetter(conditions)); err != nil {
+		return err
+	}
+
+	return nil
+
 }
 
 func convertResourceStatements(_ *ottl.ParserCollection[any], _ ottl.StatementsGetter, _ []*ottl.Statement[ottlresource.TransformContext]) (any, error) {
