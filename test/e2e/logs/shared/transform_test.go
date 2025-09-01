@@ -137,7 +137,7 @@ func TestTransform_OTel(t *testing.T) {
 			suite.RegisterTestCase(t, suite.LabelExperimental)
 
 			var (
-				uniquePrefix      = unique.Prefix(tc.name)
+				uniquePrefix      = unique.Prefix("logs", tc.name)
 				pipelineNameValue = uniquePrefix("value")
 				backendNs         = uniquePrefix("backend")
 				genNs             = uniquePrefix("gen")

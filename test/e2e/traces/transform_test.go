@@ -73,7 +73,7 @@ func TestTransform(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var (
-				uniquePrefix = unique.Prefix(tt.name)
+				uniquePrefix = unique.Prefix("traces", tt.name)
 				pipelineName = uniquePrefix()
 				backendNs    = uniquePrefix("backend")
 				genNs        = uniquePrefix("gen")
