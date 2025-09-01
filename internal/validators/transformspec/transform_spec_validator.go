@@ -67,6 +67,21 @@ func New(signalType SignalType) (*Validator, error) {
 	return validator, nil
 }
 
+func (v *Validator) Validate(transforms []telemetryv1alpha1.TransformSpec) error {
+	for _, ts := range transforms {
+		if err := v.statementsParserCollection.parseStatementsWithConditions(ts.Statements, ts.Conditions); err != nil {
+			return &InvalidTransformSpecError{Err: fmt.Errorf("invalid TransformSpec: %w", err)}
+		}
+
+		if err := v.conditionsParserCollection.parseConditions(ts.Conditions); err != nil {
+			return &InvalidTransformSpecError{Err: fmt.Errorf("invalid TransformSpec: %w", err)}
+		}
+	}
+
+	return nil
+}
+
+//nolint:dupl // no duplicate code
 func (v *Validator) setLogParserCollections() error {
 	telemetrySettings := component.TelemetrySettings{
 		Logger: zap.New(zapcore.NewNopCore()),
@@ -103,6 +118,7 @@ func (v *Validator) setLogParserCollections() error {
 	return nil
 }
 
+//nolint:dupl // no duplicate code
 func (v *Validator) setMetricParserCollections() error {
 	telemetrySettings := component.TelemetrySettings{
 		Logger: zap.New(zapcore.NewNopCore()),
@@ -142,6 +158,7 @@ func (v *Validator) setMetricParserCollections() error {
 	return nil
 }
 
+//nolint:dupl // no duplicate code
 func (v *Validator) setTraceParserCollections() error {
 	telemetrySettings := component.TelemetrySettings{
 		Logger: zap.New(zapcore.NewNopCore()),
@@ -177,20 +194,6 @@ func (v *Validator) setTraceParserCollections() error {
 	}
 
 	v.conditionsParserCollection = traceConditionsParserCollection
-
-	return nil
-}
-
-func (v *Validator) Validate(transforms []telemetryv1alpha1.TransformSpec) error {
-	for _, ts := range transforms {
-		if err := v.statementsParserCollection.parseStatementsWithConditions(ts.Statements, ts.Conditions); err != nil {
-			return &InvalidTransformSpecError{Err: fmt.Errorf("invalid TransformSpec: %w", err)}
-		}
-
-		if err := v.conditionsParserCollection.parseConditions(ts.Conditions); err != nil {
-			return &InvalidTransformSpecError{Err: fmt.Errorf("invalid TransformSpec: %w", err)}
-		}
-	}
 
 	return nil
 }
