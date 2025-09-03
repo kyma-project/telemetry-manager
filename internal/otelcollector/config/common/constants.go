@@ -141,4 +141,12 @@ const (
 
 	ComponentIDForwardConnector = "forward/%s" // dynamically filled with pipeline name
 	ComponentIDRoutingConnector = "routing/%s" // dynamically filled with pipeline name
+
+	// ================================================================================
+	// EXTENSIONS
+	// ================================================================================
+	ComponentIDK8sLeaderElectorExtension = "k8s_leader_elector"
+	ComponentIDFileStorageExtension      = "file_storage"
+	ComponentIDHealthCheckExtension      = "health_check"
+	ComponentIDPprofExtension            = "pprof"
 )

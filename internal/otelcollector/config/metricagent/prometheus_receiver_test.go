@@ -15,9 +15,7 @@ func TestPrometheusReceiver(t *testing.T) {
 	ctx := context.Background()
 	gatewayServiceName := types.NamespacedName{Name: "metrics", Namespace: "telemetry-system"}
 	sut := Builder{
-		Config: BuilderConfig{
-			GatewayOTLPServiceName: gatewayServiceName,
-		},
+		GatewayOTLPServiceName: gatewayServiceName,
 	}
 
 	t.Run("prometheus input enabled", func(t *testing.T) {

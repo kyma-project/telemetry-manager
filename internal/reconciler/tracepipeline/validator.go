@@ -19,11 +19,16 @@ type TLSCertValidator interface {
 	Validate(ctx context.Context, config tlscert.TLSBundle) error
 }
 
+type TransformSpecValidator interface {
+	Validate(transforms []telemetryv1alpha1.TransformSpec) error
+}
+
 type Validator struct {
-	EndpointValidator  EndpointValidator
-	TLSCertValidator   TLSCertValidator
-	SecretRefValidator SecretRefValidator
-	PipelineLock       PipelineLock
+	EndpointValidator      EndpointValidator
+	TLSCertValidator       TLSCertValidator
+	SecretRefValidator     SecretRefValidator
+	PipelineLock           PipelineLock
+	TransformSpecValidator TransformSpecValidator
 }
 
 func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) error {
@@ -50,6 +55,10 @@ func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.Tr
 	}
 
 	if err := v.PipelineLock.IsLockHolder(ctx, pipeline); err != nil {
+		return err
+	}
+
+	if err := v.TransformSpecValidator.Validate(pipeline.Spec.Transforms); err != nil {
 		return err
 	}
 
