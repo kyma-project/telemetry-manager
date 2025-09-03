@@ -52,19 +52,9 @@ func TestLogsFluentBitUpgrade(t *testing.T) {
 	})
 
 	t.Run("after upgrade", func(t *testing.T) {
-		// TODO(TeodorSAP): Delete after 1.47 release ---
 		assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
-		assert.FluentBitLogPipelineHealthy(t, "logs-upgrade")
-
-		backend = kitbackend.New("logs-upgrade-backend", kitbackend.SignalTypeLogsFluentBit)
+		assert.FluentBitLogPipelineHealthy(t, pipelineName)
 		assert.BackendReachable(t, backend)
-		assert.FluentBitLogsFromNamespaceDelivered(t, backend, "logs-upgrade-gen")
-		// ---
-
-		// TODO(TeodorSAP): Uncomment after 1.47 release
-		// assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
-		// assert.FluentBitLogPipelineHealthy(t, pipelineName)
-		// assert.BackendReachable(t, backend)
-		// assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
+		assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
 	})
 }
