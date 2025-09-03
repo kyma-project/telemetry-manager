@@ -1,5 +1,0 @@
-bases:
-  - ../base
-
-resources:
-  - log-generator.yaml
