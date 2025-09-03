@@ -34,16 +34,6 @@ func TestBuildConfig(t *testing.T) {
 			goldenFileName: "single-pipeline.yaml",
 		},
 		{
-			name: "single pipeline with namespace included",
-			pipelines: []telemetryv1alpha1.LogPipeline{
-				testutils.NewLogPipelineBuilder().
-					WithName("test").
-					WithApplicationInput(true, testutils.ExtIncludeNamespaces("kyma-system", "default")).
-					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
-			},
-			goldenFileName: "single-pipeline-namespace-included.yaml",
-		},
-		{
 			name:           "pipeline using http protocol WITH custom 'Path' field",
 			goldenFileName: "http-protocol-with-custom-path.yaml",
 			pipelines: []telemetryv1alpha1.LogPipeline{
@@ -67,6 +57,16 @@ func TestBuildConfig(t *testing.T) {
 						testutils.OTLPProtocol("http"),
 					).Build(),
 			},
+		},
+		{
+			name: "single pipeline with namespace included",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithName("test").
+					WithApplicationInput(true, testutils.ExtIncludeNamespaces("kyma-system", "default")).
+					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+			},
+			goldenFileName: "single-pipeline-namespace-included.yaml",
 		},
 		{
 			name: "single pipeline with namespace excluded",

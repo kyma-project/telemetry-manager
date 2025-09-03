@@ -31,6 +31,29 @@ func TestBuildConfig(t *testing.T) {
 			goldenFileName: "single-pipeline.yaml",
 		},
 		{
+			name:           "pipeline using http protocol WITH custom 'Path' field",
+			goldenFileName: "http-protocol-with-custom-path.yaml",
+			pipelines: []telemetryv1alpha1.TracePipeline{
+				testutils.NewTracePipelineBuilder().
+					WithName("test").
+					WithOTLPOutput(
+						testutils.OTLPProtocol("http"),
+						testutils.OTLPEndpointPath("v2/otlp/v1/traces"),
+					).Build(),
+			},
+		},
+		{
+			name:           "pipeline using http protocol WITHOUT custom 'Path' field",
+			goldenFileName: "http-protocol-without-custom-path.yaml",
+			pipelines: []telemetryv1alpha1.TracePipeline{
+				testutils.NewTracePipelineBuilder().
+					WithName("test").
+					WithOTLPOutput(
+						testutils.OTLPProtocol("http"),
+					).Build(),
+			},
+		},
+		{
 			name: "two pipelines with user-defined transforms",
 			pipelines: []telemetryv1alpha1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
