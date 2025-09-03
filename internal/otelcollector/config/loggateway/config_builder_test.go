@@ -56,7 +56,6 @@ func TestBuildConfig(t *testing.T) {
 						testutils.OTLPProtocol("http"),
 					).Build(),
 			},
-			overwriteGoldenFile: true,
 		},
 		{
 			name: "single pipeline with OTLP disabled",
