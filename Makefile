@@ -138,29 +138,29 @@ lint-fix: lint-fix-manager $(LINT_FIX_TARGETS)
 
 .PHONY: crd-docs-gen
 crd-docs-gen: $(TABLE_GEN) manifests## Generates CRD spec into docs folder
-	$(TABLE_GEN) --crd-filename ./helm/telemetry-module/charts/regular/templates/operator.kyma-project.io_telemetries.yaml --md-filename ./docs/user/resources/01-telemetry.md
-	$(TABLE_GEN) --crd-filename ./helm/telemetry-module/charts/regular/templates/telemetry.kyma-project.io_logpipelines.yaml --md-filename ./docs/user/resources/02-logpipeline.md
-	$(TABLE_GEN) --crd-filename ./helm/telemetry-module/charts/regular/templates/telemetry.kyma-project.io_logparsers.yaml --md-filename ./docs/user/resources/03-logparser.md
-	$(TABLE_GEN) --crd-filename ./helm/telemetry-module/charts/regular/templates/telemetry.kyma-project.io_tracepipelines.yaml --md-filename ./docs/user/resources/04-tracepipeline.md
-	$(TABLE_GEN) --crd-filename ./helm/telemetry-module/charts/regular/templates/telemetry.kyma-project.io_metricpipelines.yaml --md-filename ./docs/user/resources/05-metricpipeline.md
+	$(TABLE_GEN) --crd-filename ./helm/charts/regular/templates/operator.kyma-project.io_telemetries.yaml --md-filename ./docs/user/resources/01-telemetry.md
+	$(TABLE_GEN) --crd-filename ./helm/charts/regular/templates/telemetry.kyma-project.io_logpipelines.yaml --md-filename ./docs/user/resources/02-logpipeline.md
+	$(TABLE_GEN) --crd-filename ./helm/charts/regular/templates/telemetry.kyma-project.io_logparsers.yaml --md-filename ./docs/user/resources/03-logparser.md
+	$(TABLE_GEN) --crd-filename ./helm/charts/regular/templates/telemetry.kyma-project.io_tracepipelines.yaml --md-filename ./docs/user/resources/04-tracepipeline.md
+	$(TABLE_GEN) --crd-filename ./helm/charts/regular/templates/telemetry.kyma-project.io_metricpipelines.yaml --md-filename ./docs/user/resources/05-metricpipeline.md
 
 .PHONY: manifests
 manifests: $(CONTROLLER_GEN) $(YQ) $(YAMLFMT) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition for v1alpha1.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook paths="./..."
-	$(CONTROLLER_GEN) crd paths="./apis/operator/v1alpha1" output:crd:artifacts:config=helm/telemetry-module/charts/regular/templates
-	$(CONTROLLER_GEN) crd paths="./apis/telemetry/v1alpha1" output:crd:artifacts:config=helm/telemetry-module/charts/regular/templates
+	$(CONTROLLER_GEN) crd paths="./apis/operator/v1alpha1" output:crd:artifacts:config=helm/charts/regular/templates
+	$(CONTROLLER_GEN) crd paths="./apis/telemetry/v1alpha1" output:crd:artifacts:config=helm/charts/regular/templates
 # Strip off transform field from the CRDs until the feature is fully implemented
-	$(YQ) eval 'del(.. | select(has("transform")).transform)' -i ./helm/telemetry-module/charts/regular/templates/telemetry.kyma-project.io_logpipelines.yaml
-	$(YQ) eval 'del(.. | select(has("transform")).transform)' -i ./helm/telemetry-module/charts/regular/templates/telemetry.kyma-project.io_tracepipelines.yaml
-	$(YQ) eval 'del(.. | select(has("transform")).transform)' -i ./helm/telemetry-module/charts/regular/templates/telemetry.kyma-project.io_metricpipelines.yaml
-	$(YQ) eval 'del(.. | select(has("x-kubernetes-validations"))."x-kubernetes-validations"[] | select(.rule|contains("transform")) )' -i ./helm/telemetry-module/charts/regular/templates/telemetry.kyma-project.io_logpipelines.yaml
-	$(YQ) eval 'del(.. | select(has("x-kubernetes-validations"))."x-kubernetes-validations"[] | select(.rule|contains("transform")) )' -i ./helm/telemetry-module/charts/regular/templates/telemetry.kyma-project.io_metricpipelines.yaml
-	$(YQ) eval 'del(.. | select(has("x-kubernetes-validations"))."x-kubernetes-validations"[] | select(.rule|contains("transform")) )' -i ./helm/telemetry-module/charts/regular/templates/telemetry.kyma-project.io_tracepipelines.yaml
+	$(YQ) eval 'del(.. | select(has("transform")).transform)' -i ./helm/charts/regular/templates/telemetry.kyma-project.io_logpipelines.yaml
+	$(YQ) eval 'del(.. | select(has("transform")).transform)' -i ./helm/charts/regular/templates/telemetry.kyma-project.io_tracepipelines.yaml
+	$(YQ) eval 'del(.. | select(has("transform")).transform)' -i ./helm/charts/regular/templates/telemetry.kyma-project.io_metricpipelines.yaml
+	$(YQ) eval 'del(.. | select(has("x-kubernetes-validations"))."x-kubernetes-validations"[] | select(.rule|contains("transform")) )' -i ./helm/charts/regular/templates/telemetry.kyma-project.io_logpipelines.yaml
+	$(YQ) eval 'del(.. | select(has("x-kubernetes-validations"))."x-kubernetes-validations"[] | select(.rule|contains("transform")) )' -i ./helm/charts/regular/templates/telemetry.kyma-project.io_metricpipelines.yaml
+	$(YQ) eval 'del(.. | select(has("x-kubernetes-validations"))."x-kubernetes-validations"[] | select(.rule|contains("transform")) )' -i ./helm/charts/regular/templates/telemetry.kyma-project.io_tracepipelines.yaml
 	$(YAMLFMT)
 
 .PHONY: manifests-experimental
 manifests-experimental: $(CONTROLLER_GEN) $(YAMLFMT) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition for v1alpha1 and v1beta1.
-	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook crd paths="./..." output:crd:artifacts:config=helm/telemetry-module/charts/experimental/templates
+	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook crd paths="./..." output:crd:artifacts:config=helm/charts/experimental/templates
 	$(YAMLFMT)
 
 
@@ -170,11 +170,11 @@ generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) $(YQ) $(YAMLFMT) $(POPULATE_I
 	$(MOCKERY)
 	$(STRINGER) --type Mode internal/utils/logpipeline/logpipeline.go
 	$(STRINGER) --type FeatureFlag internal/featureflags/featureflags.go
-	$(YQ) eval '.manager.container.env.fluentBitImage = ${FLUENT_BIT_IMAGE}' -i helm/telemetry-module/values.yaml
-	$(YQ) eval '.manager.container.env.fluentBitExporterImage = ${FLUENT_BIT_EXPORTER_IMAGE}' -i helm/telemetry-module/values.yaml
-	$(YQ) eval '.manager.container.env.otelCollectorImage = ${OTEL_COLLECTOR_IMAGE}' -i helm/telemetry-module/values.yaml
-	$(YQ) eval '.manager.container.env.selfMonitorImage = ${SELF_MONITOR_IMAGE}' -i helm/telemetry-module/values.yaml
-	$(YQ) eval '.manager.container.env.alpineImage = ${ALPINE_IMAGE}' -i helm/telemetry-module/values.yaml
+	$(YQ) eval '.manager.container.env.fluentBitImage = ${FLUENT_BIT_IMAGE}' -i helm/values.yaml
+	$(YQ) eval '.manager.container.env.fluentBitExporterImage = ${FLUENT_BIT_EXPORTER_IMAGE}' -i helm/values.yaml
+	$(YQ) eval '.manager.container.env.otelCollectorImage = ${OTEL_COLLECTOR_IMAGE}' -i helm/values.yaml
+	$(YQ) eval '.manager.container.env.selfMonitorImage = ${SELF_MONITOR_IMAGE}' -i helm/values.yaml
+	$(YQ) eval '.manager.container.env.alpineImage = ${ALPINE_IMAGE}' -i helm/values.yaml
 	$(YAMLFMT)
 	$(POPULATE_IMAGES)
 .PHONY: fmt
@@ -246,32 +246,32 @@ endif
 
 .PHONY: install
 install: manifests $(HELM) ## Install CRDs into the K8s cluster specified in ~/.kube/config.
-	$(HELM) template helm/telemetry-module/charts/regular | kubectl apply -f -
+	$(HELM) template helm/charts/regular | kubectl apply -f -
 
 .PHONY: install-with-telemetry
 install-with-telemetry: install
 	kubectl get ns kyma-system || kubectl create ns kyma-system
-	kubectl apply -f config/samples/operator_v1alpha1_telemetry.yaml -n kyma-system
+	kubectl apply -f samples/operator_v1alpha1_telemetry.yaml -n kyma-system
 
 .PHONY: uninstall
 uninstall: manifests $(HELM) ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
-	$(HELM) template helm/telemetry-module/charts/regular | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+	$(HELM) template helm/charts/regular | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy
 deploy: manifests $(HELM) ## Deploy resources based on the release (default) variant to the K8s cluster specified in ~/.kube/config.
-	$(HELM) template telemetry helm/telemetry-module --set experimental.enabled=false --set regular.enabled=true --set nameOverride=telemetry --set manager.container.image.repository=${MANAGER_IMAGE} --namespace kyma-system | kubectl apply -f -
+	$(HELM) template telemetry helm --set experimental.enabled=false --set regular.enabled=true --set nameOverride=telemetry --set manager.container.image.repository=${MANAGER_IMAGE} --namespace kyma-system | kubectl apply -f -
 
 .PHONY: undeploy
 undeploy: $(HELM) ## Undeploy resources based on the release (default) variant from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
-	$(HELM) template telemetry helm/telemetry-module --set experimental.enabled=false --set regular.enabled=true --set nameOverride=telemetry --set manager.container.image.repository=${MANAGER_IMAGE} --namespace kyma-system | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+	$(HELM) template telemetry helm --set experimental.enabled=false --set regular.enabled=true --set nameOverride=telemetry --set manager.container.image.repository=${MANAGER_IMAGE} --namespace kyma-system | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy-experimental
 deploy-experimental: manifests-experimental $(HELM) ## Deploy resources based on the development variant to the K8s cluster specified in ~/.kube/config.
-	$(HELM) template telemetry helm/telemetry-module --set experimental.enabled=true --set regular.enabled=false --set nameOverride=telemetry --set manager.container.image.repository=${MANAGER_IMAGE} --namespace kyma-system | kubectl apply -f -
+	$(HELM) template telemetry helm --set experimental.enabled=true --set regular.enabled=false --set nameOverride=telemetry --set manager.container.image.repository=${MANAGER_IMAGE} --namespace kyma-system | kubectl apply -f -
 
 .PHONY: undeploy-experimental
 undeploy-experimental: $(HELM) ## Undeploy resources based on the development variant from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
-	$(HELM) template telemetry helm/telemetry-module --set experimental.enabled=true --set regular.enabled=false --set nameOverride=telemetry --set manager.container.image.repository=${MANAGER_IMAGE} --namespace kyma-system | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+	$(HELM) template telemetry helm --set experimental.enabled=true --set regular.enabled=false --set nameOverride=telemetry --set manager.container.image.repository=${MANAGER_IMAGE} --namespace kyma-system | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: update-metrics-docs
  update-metrics-docs: $(PROMLINTER) $(GOMPLATE) # Update metrics documentation

@@ -1,5 +1,10 @@
 name: Tag Release
 
+env:
+  KYMA_TELEMETRY_MANAGER_REPO: ${{ github.repository_owner }}/telemetry-manager-release
+  GIT_EMAIL: hisarbalik@hotmail.com
+  GIT_NAME: hisarbalik
+
 permissions:
   contents: read
 
@@ -37,3 +42,27 @@ jobs:
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           GORELEASER_CURRENT_TAG: "${{ github.ref_name }}" # Explicitly set release tag to avoid ambiguity
+
+      - name: Package Helm chart
+        run: |
+          OUTPUT=$(helm package ./helm -d ./)
+          FILENAME=$(echo $OUTPUT | grep -o '[^ ]*.tgz')
+          echo "HELM_CHART=$FILENAME" >> $GITHUB_ENV
+
+      - name: Upload packaged Helm chart to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+        run: |
+          [[ ! -e ${HELM_CHART} ]] && echo "::error ::Packaged Helm chart does not exist" && exit 1
+
+          gh release upload ${{ github.ref_name }} --clobber ${HELM_CHART}
+      - name: Commit and push Helm chart metadata
+        run: |
+          git config --global user.email ${{ env.GIT_EMAIL }}
+          git config --global user.name ${{ env.GIT_NAME }}
+          git checkout gh-pages
+          helm repo index --url https://github.com/${{ env.KYMA_TELEMETRY_MANAGER_REPO }}/releases/download/${{ github.ref_name }} --merge ./index.yaml ./
+          git add index.yaml
+          git commit -m "Update Helm chart metadata for ${{ github.ref_name }}"
+          git push origin gh-pages
