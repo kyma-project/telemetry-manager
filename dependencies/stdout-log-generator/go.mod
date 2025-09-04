@@ -1,6 +1,6 @@
 module github.com/kyma-project/telemetry-manager/dependencies/stdout-log-generator
 
-go 1.25.0
+go 1.25.1
 
 require (
 	github.com/prometheus/client_golang v1.23.0
