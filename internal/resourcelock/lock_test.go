@@ -100,7 +100,9 @@ func Test_new(t *testing.T) {
 		maxOwners int
 		suffix    string
 	}
+
 	client := fake.NewClientBuilder().Build()
+
 	tests := []struct {
 		name string
 		args args
