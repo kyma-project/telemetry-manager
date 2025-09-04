@@ -101,6 +101,8 @@ func Test_new(t *testing.T) {
 		suffix    string
 	}
 
+	client := fake.NewClientBuilder().Build()
+
 	tests := []struct {
 		name string
 		args args
@@ -109,7 +111,7 @@ func Test_new(t *testing.T) {
 		{
 			name: "Test newChecker with suffix",
 			args: args{
-				client: fake.NewClientBuilder().Build(),
+				client: client,
 				lockName: types.NamespacedName{
 					Namespace: "test",
 					Name:      "test-lock",
@@ -118,7 +120,7 @@ func Test_new(t *testing.T) {
 				suffix:    "lock",
 			},
 			want: &Checker{
-				client:    fake.NewClientBuilder().Build(),
+				client:    client,
 				lockName:  types.NamespacedName{Namespace: "test", Name: "test-lock"},
 				maxOwners: 2,
 			},
@@ -126,7 +128,7 @@ func Test_new(t *testing.T) {
 		{
 			name: "Test newChecker without suffix",
 			args: args{
-				client: fake.NewClientBuilder().Build(),
+				client: client,
 				lockName: types.NamespacedName{
 					Namespace: "test",
 					Name:      "test",
@@ -135,7 +137,7 @@ func Test_new(t *testing.T) {
 				suffix:    "lock",
 			},
 			want: &Checker{
-				client:    fake.NewClientBuilder().Build(),
+				client:    client,
 				lockName:  types.NamespacedName{Namespace: "test", Name: "test-lock"},
 				maxOwners: 2,
 			},
