@@ -1,4 +1,0 @@
-apiVersion: v2
-name: regular
-description: Telemetry Manager Regular CRDs
-version: 0.0.1

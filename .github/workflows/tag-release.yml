@@ -1,9 +1,7 @@
 name: Tag Release
 
 env:
-  KYMA_TELEMETRY_MANAGER_REPO: ${{ github.repository_owner }}/telemetry-manager-release
-  GIT_EMAIL: hisarbalik@hotmail.com
-  GIT_NAME: hisarbalik
+  KYMA_TELEMETRY_MANAGER_REPO: ${{ github.repository_owner }}/telemetry-manager
 
 permissions:
   contents: read
@@ -59,8 +57,8 @@ jobs:
           gh release upload ${{ github.ref_name }} --clobber ${HELM_CHART}
       - name: Commit and push Helm chart metadata
         run: |
-          git config --global user.email ${{ env.GIT_EMAIL }}
-          git config --global user.name ${{ env.GIT_NAME }}
+          git config --global user.name "${GITHUB_ACTOR}"
+          git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
           git checkout gh-pages
           helm repo index --url https://github.com/${{ env.KYMA_TELEMETRY_MANAGER_REPO }}/releases/download/${{ github.ref_name }} --merge ./index.yaml ./
           git add index.yaml
