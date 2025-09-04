@@ -1,6 +1,6 @@
 # Telemetry Module
 
-Learn more about the Telemetry Module. Use it to enable observability for your application.
+Learn more about the Telemetry Module. Use it to enable observability for your applications.
 
 ## What Is Telemetry?
 
@@ -16,18 +16,19 @@ Fundamentally, "Observability" is a measure of how well the application's extern
 The Telemetry module focuses exactly on the aspects of instrumentation, collection, and shipment that happen in the runtime and explicitly defocuses on backends.
 
 > [!TIP]
-> An enterprise-grade setup demands a central solution outside the cluster, so we recommend in-cluster solutions only for testing purposes. If you want to install lightweight in-cluster backends for demo or development purposes, see [Integration Guides](#integration-guides).
+> An enterprise-grade setup demands a central solution outside the cluster, so we recommend in-cluster solutions only for testing purposes. If you want to install lightweight in-cluster backends for demo or development purposes, see [Integration Guides](./integration/README.md).
 
 ## Features
 
 To support telemetry for your applications, the Telemetry module provides the following features:
 
-- Tooling for collection, filtering, and shipment: Based on the [Open Telemetry Collector](https://opentelemetry.io/docs/collector/), you can configure basic pipelines to filter and ship telemetry data.
+- A [Pipeline](pipelines/README.md) API for collection, filtering, and shipment: Based on the [Open Telemetry Collector](https://opentelemetry.io/docs/collector/), you can configure basic pipelines to collect, enrich, filter and ship telemetry data, and these for all three signal types [Logs](./logs/README.md), [Traces](./traces/README.md) and [Metrics](./metrics/README.md).
 - Integration in a vendor-neutral way to a vendor-specific observability system: Based on the [OpenTelemetry protocol (OTLP)](https://opentelemetry.io/docs/reference/specification/protocol/), you can integrate backend systems.
 - Guidance for the instrumentation: Based on [Open Telemetry](https://opentelemetry.io/), you get community samples on how to instrument your code using the [Open Telemetry SDKs](https://opentelemetry.io/docs/instrumentation/) in nearly every programming language.
-- Enriching telemetry data by automatically adding common attributes. This is done in compliance with established semantic conventions, ensuring that the enriched data adheres to industry best practices and is more meaningful for analysis. For details, see [Data Enrichment](gateways.md#data-enrichment).
+- Enriching telemetry data by automatically adding metadata attributes (OTel resource attributes). This is done in compliance with established semantic conventions of OTel, ensuring that the enriched data adheres to industry best practices and is more meaningful for analysis. For details, see [Data Enrichment](./pipelines/enrichment.md).
 - Opt-out of features for advanced scenarios: At any time, you can opt out for each data type, and use custom tooling to collect and ship the telemetry data.
-- SAP BTP as first-class integration: Integration into SAP BTP Observability services, such as SAP Cloud Logging, is prioritized. For more information, see [Integrate with SAP Cloud Logging](integration/sap-cloud-logging/README.md). <!--- replace with Help Portal link once published? --->
+- SAP BTP as first-class integration: Integration into SAP BTP Observability services, such as SAP Cloud Logging, is prioritized. For more information, see [Integrate with SAP Cloud Logging](integration/sap-cloud-logging/README.md).
+- [Integration guides](./integration/README.md) to connect to typical backends.
 
 ## Scope
 
@@ -37,51 +38,7 @@ Supported integration scenarios are neutral to the vendor of the target system.
 
 ## Architecture
 
-![Components](./assets/telemetry-arch.drawio.svg)
-
-### Telemetry Manager
-
-The Telemetry module ships Telemetry Manager as its core component. Telemetry Manager is a Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) that implements the Kubernetes controller pattern and manages the whole lifecycle of all other components covered in the Telemetry module. Telemetry Manager watches for the user-created Kubernetes resources: LogPipeline, TracePipeline, and MetricPipeline. In these resources, you specify what data of a signal type to collect and where to ship it.
-If Telemetry Manager detects a configuration, it deploys the related gateway and agent components accordingly and keeps them in sync with the requested pipeline definition.
-
-For more information, see [Telemetry Manager](01-manager.md).
-
-### Gateways
-
-The log, trace, and metrics features provide gateways based on an [OTel Collector](https://opentelemetry.io/docs/collector/) [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/). The gateways act as central endpoints in the cluster to which your applications push data in the [OTLP](https://opentelemetry.io/docs/reference/specification/protocol/) format. From here, the data is enriched and filtered, and then dispatched as configured in your pipeline resources.
-
-For more information, see [Telemetry Gateways](gateways.md).
-
-### Log Gateway and Agent
-
-In addition to the log gateway, you can also use the log agent based on a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/), which collects logs of any container printing logs to `stdout/stderr`. For more information, see [Application Logs (OTLP)](logs.md).
-
-As an alternative to the OTLP-based log feature, you can choose using a log agent based on a [Fluent Bit](https://fluentbit.io/) installation running as a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/). It reads all containers' logs in the runtime and ships them according to your LogPipeline configuration. For more information, see [Application Logs (Fluent Bit)](02-logs.md).
-
-### Trace Gateway
-
-The trace gateway provides an [OTLP-based](https://opentelemetry.io/docs/reference/specification/protocol/) endpoint to which applications can push the trace signals. Kyma modules like Istio or Serverless contribute traces transparently. For more information, see [Traces](03-traces.md).
-
-### Metric Gateway and Agent
-
-In addition to the metric gateway, you can also use the metric agent based on a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/), which scrapes annotated Prometheus-based workloads. For more information, see [Metrics](04-metrics.md).
-
-## Integration Guides
-
-To learn about integration with SAP Cloud Logging, read [Integrate with SAP Cloud Logging](./integration/sap-cloud-logging/README.md). <!--- replace with Help Portal link once published? --->
-
-For integration with other backends, such as Dynatrace, see:
-
-- [Dynatrace](./integration/dynatrace/README.md)
-- [Prometheus](./integration/prometheus/README.md)
-- [Loki](./integration/loki/README.md)
-- [Jaeger](./integration/jaeger/README.md)
-- [Amazon CloudWatch](./integration/aws-cloudwatch/README.md)
-
-To learn how to collect data from applications based on the OpenTelemetry SDK, see:
-
-- [OpenTelemetry Demo App](./integration/opentelemetry-demo/README.md)
-- [Sample App](./integration/sample-app/)
+The module consists of a manager component, which continuosly watches the API resources (pipelines) provided by the user and deploys sets of OTel Collectors doing. For more information, see [Architecture](architecture.md).
 
 ## API / Custom Resource Definitions
 
@@ -92,6 +49,6 @@ The API of the Telemetry module is based on Kubernetes Custom Resource Definitio
 - [TracePipeline CRD](./resources/04-tracepipeline.md)
 - [MetricPipeline CRD](./resources/05-metricpipeline.md)
 
-## Resource Usage
+## Resource Consumption
 
 To learn more about the resources used by the Telemetry module, see [Kyma Modules' Sizing](https://help.sap.com/docs/btp/sap-business-technology-platform/kyma-modules-sizing#telemetry).
