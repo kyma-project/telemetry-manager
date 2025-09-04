@@ -6,11 +6,12 @@ import (
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 	"github.com/prometheus/common/expfmt"
+	"github.com/prometheus/common/model"
 )
 
 func HaveFlatMetricFamilies(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(responseBody []byte) ([]FlatMetricFamily, error) {
-		var parser expfmt.TextParser
+		parser := expfmt.NewTextParser(model.UTF8Validation)
 
 		mfs, _ := parser.TextToMetricFamilies(bytes.NewReader(responseBody)) //nolint:errcheck // ignore duplicate metrics parsing error and try extract metric
 
