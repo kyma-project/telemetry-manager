@@ -176,6 +176,7 @@ generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) $(YQ) $(YAMLFMT) $(POPULATE_I
 	$(YQ) eval '.manager.container.env.otelCollectorImage = ${OTEL_COLLECTOR_IMAGE}' -i helm/values.yaml
 	$(YQ) eval '.manager.container.env.selfMonitorImage = ${SELF_MONITOR_IMAGE}' -i helm/values.yaml
 	$(YQ) eval '.manager.container.env.alpineImage = ${ALPINE_IMAGE}' -i helm/values.yaml
+	$(YQ) eval '.manager.container.image.repository = "${MANAGER_IMAGE}"' -i helm/values.yaml
 	$(YQ) eval '.version = "${HELM_RELEASE_VERSION}"' -i helm/Chart.yaml
 	$(YQ) eval '.appVersion = "${HELM_RELEASE_VERSION}"' -i helm/Chart.yaml
 	$(YQ) eval '.dependencies[].version = "${HELM_RELEASE_VERSION}"' -i helm/Chart.yaml
