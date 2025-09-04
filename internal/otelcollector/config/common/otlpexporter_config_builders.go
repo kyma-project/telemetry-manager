@@ -83,6 +83,11 @@ func makeExportersConfig(otlpOutput *telemetryv1alpha1.OTLPOutput, pipelineName 
 		otlpExporterConfig.TracesEndpoint = fmt.Sprintf("${%s}", otlpEndpointVariable)
 	}
 
+	if len(otlpOutput.Path) > 0 && SignalTypeLog == signalType {
+		otlpExporterConfig.Endpoint = ""
+		otlpExporterConfig.LogsEndpoint = fmt.Sprintf("${%s}", otlpEndpointVariable)
+	}
+
 	return &otlpExporterConfig
 }
 
