@@ -100,6 +100,7 @@ type Endpoint struct {
 type OTLPExporter struct {
 	MetricsEndpoint string            `yaml:"metrics_endpoint,omitempty"`
 	TracesEndpoint  string            `yaml:"traces_endpoint,omitempty"`
+	LogsEndpoint    string            `yaml:"logs_endpoint,omitempty"`
 	Endpoint        string            `yaml:"endpoint,omitempty"`
 	Headers         map[string]string `yaml:"headers,omitempty"`
 	TLS             TLS               `yaml:"tls,omitempty"`
