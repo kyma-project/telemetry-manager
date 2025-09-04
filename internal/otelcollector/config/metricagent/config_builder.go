@@ -122,6 +122,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 
 	// Enrichment pipeline
 
+
 	// Output pipelines
 
 	return b.Config, nil
@@ -324,7 +325,7 @@ func (b *Builder) addOTLPExporter() buildComponentFunc {
 
 func (b *Builder) addInputRoutingExporter(connectorID string, outputPipelines []telemetryv1alpha1.MetricPipeline) buildComponentFunc {
 	return b.AddExporter(
-		b.StaticComponentID(connectorID),
+		b.StaticComponentID(fmt.Sprintf(common.ComponentIDRoutingConnector, connectorID)),
 		func(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline) (any, common.EnvVars, error) {
 			return common.EnrichmentRoutingConnectorConfig(
 				[]string{"metrics/enrichment"},
@@ -336,7 +337,7 @@ func (b *Builder) addInputRoutingExporter(connectorID string, outputPipelines []
 
 func (b *Builder) addInputRoutingReceiver(connectorID string, outputPipelines []telemetryv1alpha1.MetricPipeline) buildComponentFunc {
 	return b.AddReceiver(
-		b.StaticComponentID(connectorID),
+		b.StaticComponentID(fmt.Sprintf(common.ComponentIDRoutingConnector, connectorID)),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return common.EnrichmentRoutingConnectorConfig(
 				[]string{"metrics/enrichment"},
