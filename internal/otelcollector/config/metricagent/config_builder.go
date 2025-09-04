@@ -76,8 +76,10 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 		envoy:      shouldEnableEnvoyMetricsScraping(pipelines),
 	}
 
+	// Input pipelines
+
 	if inputs.runtime {
-		if err := b.AddServicePipeline(ctx, nil, "metrics/runtime",
+		if err := b.AddServicePipeline(ctx, nil, "metrics/runtime-input",
 			b.addKubeletStatsReceiver(inputs.runtimeResources),
 			b.addK8sClusterReceiver(inputs.runtimeResources),
 			b.addMemoryLimiterProcessor(),
@@ -86,40 +88,41 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addResourceDeleteServiceNameProcessor(),
 			b.addSetInstrumentationScopeToRuntimeProcessor(opts),
 			b.addInsertSkipEnrichmentAttributeProcessor(),
-			b.addBatchProcessor(),
-			b.addOTLPExporter(),
+			b.addInputRoutingExporter("runtime-input", pipelinesWithRuntimeInput(pipelines)),
 		); err != nil {
 			return nil, fmt.Errorf("failed to add runtime service pipeline: %w", err)
 		}
 	}
 
 	if inputs.prometheus {
-		if err := b.AddServicePipeline(ctx, nil, "metrics/prometheus",
+		if err := b.AddServicePipeline(ctx, nil, "metrics/prometheus-input",
 			b.addPrometheusAppPodsReceiver(),
 			b.addPrometheusAppServicesReceiver(opts),
 			b.addMemoryLimiterProcessor(),
 			b.addDeleteServiceNameProcessor(),
 			b.addSetInstrumentationScopeToPrometheusProcessor(opts),
-			b.addBatchProcessor(),
-			b.addOTLPExporter(),
+			b.addInputRoutingExporter("prometheus-input", pipelinesWithPrometheusInput(pipelines)),
 		); err != nil {
 			return nil, fmt.Errorf("failed to add prometheus service pipeline: %w", err)
 		}
 	}
 
 	if inputs.istio {
-		if err := b.AddServicePipeline(ctx, nil, "metrics/istio",
+		if err := b.AddServicePipeline(ctx, nil, "metrics/istio-input",
 			b.addPrometheusIstioReceiver(inputs.envoy),
 			b.addMemoryLimiterProcessor(),
-			b.addIstioNoiseFilterProcessor(),
 			b.addDeleteServiceNameProcessor(),
+			b.addIstioNoiseFilterProcessor(),
 			b.addSetInstrumentationScopeToIstioProcessor(opts),
-			b.addBatchProcessor(),
-			b.addOTLPExporter(),
+			b.addInputRoutingExporter("istio-input", pipelinesWithIstioInput(pipelines)),
 		); err != nil {
 			return nil, fmt.Errorf("failed to add istio service pipeline: %w", err)
 		}
 	}
+
+	// Enrichment pipeline
+
+	// Output pipelines
 
 	return b.Config, nil
 }
@@ -315,6 +318,84 @@ func (b *Builder) addOTLPExporter() buildComponentFunc {
 			}, nil, nil
 		},
 	)
+}
+
+// Connector builders
+
+func (b *Builder) addInputRoutingExporter(connectorID string, outputPipelines []telemetryv1alpha1.MetricPipeline) buildComponentFunc {
+	return b.AddExporter(
+		b.StaticComponentID(connectorID),
+		func(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline) (any, common.EnvVars, error) {
+			return common.EnrichmentRoutingConnectorConfig(
+				[]string{"metrics/enrichment"},
+				formatOutputPipelineIDs(outputPipelines),
+			), nil, nil
+		},
+	)
+}
+
+func (b *Builder) addInputRoutingReceiver(connectorID string, outputPipelines []telemetryv1alpha1.MetricPipeline) buildComponentFunc {
+	return b.AddReceiver(
+		b.StaticComponentID(connectorID),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			return common.EnrichmentRoutingConnectorConfig(
+				[]string{"metrics/enrichment"},
+				formatOutputPipelineIDs(outputPipelines),
+			)
+		},
+	)
+}
+
+// Helper functions for formatting IDs
+
+func formatOutputPipelineIDs(pipelines []telemetryv1alpha1.MetricPipeline) []string {
+	var ids []string
+	for i := range pipelines {
+		ids = append(ids, fmt.Sprintf("metrics/%s-output", pipelines[i].Name))
+	}
+
+	return ids
+}
+
+// Helper functions for getting pipelines by input source
+
+func pipelinesWithRuntimeInput(pipelines []telemetryv1alpha1.MetricPipeline) []telemetryv1alpha1.MetricPipeline {
+	var result []telemetryv1alpha1.MetricPipeline
+
+	for i := range pipelines {
+		input := pipelines[i].Spec.Input
+		if metricpipelineutils.IsRuntimeInputEnabled(input) {
+			result = append(result, pipelines[i])
+		}
+	}
+
+	return result
+}
+
+func pipelinesWithPrometheusInput(pipelines []telemetryv1alpha1.MetricPipeline) []telemetryv1alpha1.MetricPipeline {
+	var result []telemetryv1alpha1.MetricPipeline
+
+	for i := range pipelines {
+		input := pipelines[i].Spec.Input
+		if metricpipelineutils.IsPrometheusInputEnabled(input) {
+			result = append(result, pipelines[i])
+		}
+	}
+
+	return result
+}
+
+func pipelinesWithIstioInput(pipelines []telemetryv1alpha1.MetricPipeline) []telemetryv1alpha1.MetricPipeline {
+	var result []telemetryv1alpha1.MetricPipeline
+
+	for i := range pipelines {
+		input := pipelines[i].Spec.Input
+		if metricpipelineutils.IsIstioInputEnabled(input) {
+			result = append(result, pipelines[i])
+		}
+	}
+
+	return result
 }
 
 // Helper functions for determining what should be enabled

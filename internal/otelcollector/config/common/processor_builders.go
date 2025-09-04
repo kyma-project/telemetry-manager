@@ -239,3 +239,9 @@ func instrumentationStatement(inputSource InputSourceType, instrumentationScopeV
 		fmt.Sprintf("set(scope.name, \"%s\") where scope.name == \"%s\"", InstrumentationScope[inputSource], upstreamInstrumentationScopeName[inputSource]),
 	}
 }
+
+// =============================================================================
+// ENRICHMENT PROCESSOR BUILDERS
+// =============================================================================
+
+// TODO
