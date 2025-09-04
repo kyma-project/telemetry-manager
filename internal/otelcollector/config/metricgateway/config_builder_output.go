@@ -466,7 +466,7 @@ func (b *Builder) addOTLPExporter(queueSize int) buildComponentFunc {
 				mp.Spec.Output.OTLP,
 				mp.Name,
 				queueSize,
-				common.SignalTypeLog,
+				common.SignalTypeMetric,
 			)
 
 			return otlpExporterBuilder.OTLPExporterConfig(ctx)
