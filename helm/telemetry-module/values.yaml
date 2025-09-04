@@ -17,7 +17,7 @@ manager:
       otelCollectorImage: europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.133.0-1.47.0
       selfMonitorImage: europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:3.5.0-8d9d348
     image:
-      repository: europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:1.47.0
+      repository: europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:1.47.1
     resources:
       limits:
         memory: 384Mi
