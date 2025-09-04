@@ -614,4 +614,4 @@ To detect and fix such situations, check the [pipeline status](./resources/02-lo
 
 **Cause**: Gateway cannot receive logs at the given rate.
 
-**Solution**: Manually scale out the gateway by increasing the number of replicas for the log gateway. See [Module Configuration and Status](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
+**Solution**: Manually scale out the gateway by increasing the number of replicas for the log gateway. See [Module Configuration and Status](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).**Solution**: Manually scale out the gateway by increasing the number of replicas for the log gateway. See [Module Configuration and Status](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
