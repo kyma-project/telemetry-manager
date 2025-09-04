@@ -1,3 +1,10 @@
+extensions:
+    file_storage:
+        directory: /var/lib/telemetry-log-agent/file-log-receiver
+    health_check:
+        endpoint: ${MY_POD_IP}:13133
+    pprof:
+        endpoint: 127.0.0.1:1777
 service:
     pipelines:
         logs/test1:
@@ -41,20 +48,13 @@ service:
         - health_check
         - pprof
         - file_storage
-extensions:
-    health_check:
-        endpoint: ${MY_POD_IP}:13133
-    pprof:
-        endpoint: 127.0.0.1:1777
-    file_storage:
-        directory: /var/lib/telemetry-log-agent/file-log-receiver
 receivers:
     filelog/test1:
         exclude:
+            - /var/log/pods/kyma-system_telemetry-fluent-bit-*/fluent-bit/*.log
+            - /var/log/pods/kyma-system_telemetry-log-agent-*/collector/*.log
             - /var/log/pods/kyma-system_*system-logs-agent-*/collector/*.log
             - /var/log/pods/kyma-system_*system-logs-collector-*/collector/*.log
-            - /var/log/pods/kyma-system_telemetry-log-agent-*/collector/*.log
-            - /var/log/pods/kyma-system_telemetry-fluent-bit-*/fluent-bit/*.log
             - /var/log/pods/kyma-system_*/*/*.log
             - /var/log/pods/kube-system_*/*/*.log
             - /var/log/pods/istio-system_*/*/*.log
@@ -170,10 +170,10 @@ receivers:
               type: noop
     filelog/test2:
         exclude:
+            - /var/log/pods/kyma-system_telemetry-fluent-bit-*/fluent-bit/*.log
+            - /var/log/pods/kyma-system_telemetry-log-agent-*/collector/*.log
             - /var/log/pods/kyma-system_*system-logs-agent-*/collector/*.log
             - /var/log/pods/kyma-system_*system-logs-collector-*/collector/*.log
-            - /var/log/pods/kyma-system_telemetry-log-agent-*/collector/*.log
-            - /var/log/pods/kyma-system_telemetry-fluent-bit-*/fluent-bit/*.log
             - /var/log/pods/kyma-system_*/*/*.log
             - /var/log/pods/kube-system_*/*/*.log
             - /var/log/pods/istio-system_*/*/*.log
@@ -288,16 +288,6 @@ receivers:
             - id: noop
               type: noop
 processors:
-    memory_limiter:
-        check_interval: 5s
-        limit_percentage: 80
-        spike_limit_percentage: 25
-    transform/set-instrumentation-scope-runtime:
-        error_mode: ignore
-        log_statements:
-            - statements:
-                - set(scope.version, "main")
-                - set(scope.name, "io.kyma-project.telemetry/runtime")
     k8sattributes:
         auth_type: serviceAccount
         passthrough: false
@@ -339,6 +329,14 @@ processors:
                   name: k8s.pod.uid
             - sources:
                 - from: connection
+    memory_limiter:
+        check_interval: 5s
+        limit_percentage: 80
+        spike_limit_percentage: 25
+    resource/drop-kyma-attributes:
+        attributes:
+            - action: delete
+              pattern: kyma.*
     resource/insert-cluster-attributes:
         attributes:
             - action: insert
@@ -353,10 +351,12 @@ processors:
         resource_attributes:
             - kyma.kubernetes_io_app_name
             - kyma.app_name
-    resource/drop-kyma-attributes:
-        attributes:
-            - action: delete
-              pattern: kyma.*
+    transform/set-instrumentation-scope-runtime:
+        error_mode: ignore
+        log_statements:
+            - statements:
+                - set(scope.version, "main")
+                - set(scope.name, "io.kyma-project.telemetry/runtime")
     transform/user-defined-test1:
         error_mode: ignore
         log_statements:

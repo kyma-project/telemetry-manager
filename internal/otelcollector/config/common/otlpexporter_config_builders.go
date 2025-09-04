@@ -83,18 +83,20 @@ func makeExportersConfig(otlpOutput *telemetryv1alpha1.OTLPOutput, pipelineName 
 		otlpExporterConfig.TracesEndpoint = fmt.Sprintf("${%s}", otlpEndpointVariable)
 	}
 
+	if len(otlpOutput.Path) > 0 && SignalTypeLog == signalType {
+		otlpExporterConfig.Endpoint = ""
+		otlpExporterConfig.LogsEndpoint = fmt.Sprintf("${%s}", otlpEndpointVariable)
+	}
+
 	return &otlpExporterConfig
 }
 
 func ExporterID(protocol string, pipelineName string) string {
-	var outputType string
 	if protocol == telemetryv1alpha1.OTLPProtocolHTTP {
-		outputType = "otlphttp"
-	} else {
-		outputType = "otlp"
+		return fmt.Sprintf(ComponentIDOTLPHTTPExporter, pipelineName)
 	}
 
-	return fmt.Sprintf("%s/%s", outputType, pipelineName)
+	return fmt.Sprintf(ComponentIDOTLPGRPCExporter, pipelineName)
 }
 
 func makeTLSConfig(output *telemetryv1alpha1.OTLPOutput, otlpEndpointValue, pipelineName string) TLS {

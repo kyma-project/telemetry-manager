@@ -1,0 +1,99 @@
+extensions:
+    health_check:
+        endpoint: ${MY_POD_IP}:13133
+    k8s_leader_elector:
+        auth_type: serviceAccount
+        lease_name: telemetry-metric-agent-k8scluster
+    pprof:
+        endpoint: 127.0.0.1:1777
+service:
+    pipelines:
+        metrics/istio:
+            receivers:
+                - prometheus/istio
+            processors:
+                - memory_limiter
+                - istio_noise_filter
+                - resource/delete-service-name
+                - transform/set-instrumentation-scope-istio
+                - batch
+            exporters:
+                - otlp
+    telemetry:
+        metrics:
+            readers:
+                - pull:
+                    exporter:
+                        prometheus:
+                            host: ${MY_POD_IP}
+                            port: 8888
+        logs:
+            level: info
+            encoding: json
+    extensions:
+        - health_check
+        - pprof
+        - k8s_leader_elector
+receivers:
+    prometheus/istio:
+        config:
+            scrape_configs:
+                - job_name: istio-proxy
+                  sample_limit: 50000
+                  scrape_interval: 30s
+                  metrics_path: /stats/prometheus
+                  relabel_configs:
+                    - source_labels: [__meta_kubernetes_pod_node_name]
+                      regex: ${MY_NODE_NAME}
+                      action: keep
+                    - source_labels: [__meta_kubernetes_pod_container_name]
+                      regex: istio-proxy
+                      action: keep
+                    - source_labels: [__meta_kubernetes_pod_container_port_name]
+                      regex: http-envoy-prom
+                      action: keep
+                    - source_labels: [__meta_kubernetes_pod_phase]
+                      regex: Pending|Succeeded|Failed
+                      action: drop
+                  metric_relabel_configs:
+                    - source_labels: [__name__]
+                      regex: envoy_.*|istio_.*
+                      action: keep
+                  kubernetes_sd_configs:
+                    - role: pod
+                      selectors:
+                        - role: pod
+                          field: spec.nodeName=${MY_NODE_NAME}
+processors:
+    batch:
+        send_batch_size: 1024
+        timeout: 10s
+        send_batch_max_size: 1024
+    istio_noise_filter: {}
+    memory_limiter:
+        check_interval: 1s
+        limit_percentage: 75
+        spike_limit_percentage: 15
+    resource/delete-service-name:
+        attributes:
+            - action: delete
+              key: service.name
+    transform/set-instrumentation-scope-istio:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
+                - set(scope.name, "io.kyma-project.telemetry/istio") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
+exporters:
+    otlp:
+        endpoint: metrics.telemetry-system.svc.cluster.local:4317
+        tls:
+            insecure: true
+        sending_queue:
+            enabled: true
+            queue_size: 512
+        retry_on_failure:
+            enabled: true
+            initial_interval: 5s
+            max_interval: 30s
+            max_elapsed_time: 300s
