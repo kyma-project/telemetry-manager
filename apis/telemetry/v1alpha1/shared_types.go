@@ -36,7 +36,7 @@ type OTLPOutput struct {
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:Enum=grpc;http
 	Protocol string `json:"protocol,omitempty"`
-	// Endpoint defines the host and port (<host>:<port>) of an OTLP endpoint.
+	// Endpoint defines the host and port (`<host>:<port>`) of an OTLP endpoint.
 	// +kubebuilder:validation:Required
 	Endpoint ValueType `json:"endpoint"`
 	// Path defines OTLP export URL path (only for the HTTP protocol). This value overrides auto-appended paths `/v1/metrics` and `/v1/traces`
