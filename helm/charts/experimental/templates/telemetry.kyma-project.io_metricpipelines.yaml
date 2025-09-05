@@ -407,7 +407,7 @@ spec:
                             type: object
                         type: object
                       endpoint:
-                        description: Endpoint defines the host and port (<host>:<port>)
+                        description: Endpoint defines the host and port (`<host>:<port>`)
                           of an OTLP endpoint.
                         properties:
                           value:
@@ -1114,7 +1114,7 @@ spec:
                             type: object
                         type: object
                       endpoint:
-                        description: Endpoint defines the host and port (<host>:<port>)
+                        description: Endpoint defines the host and port (`<host>:<port>`)
                           of an OTLP endpoint.
                         properties:
                           value:
