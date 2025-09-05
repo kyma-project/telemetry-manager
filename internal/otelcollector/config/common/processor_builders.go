@@ -170,6 +170,17 @@ func ResolveServiceNameConfig() *ServiceEnrichmentProcessor {
 	}
 }
 
+func DeleteSkipEnrichmentAttributeProcessorConfig() *ResourceProcessor {
+	return &ResourceProcessor{
+		Attributes: []AttributeAction{
+			{
+				Action: "delete",
+				Key:    SkipEnrichmentAttribute,
+			},
+		},
+	}
+}
+
 // =============================================================================
 // TRANSFORM PROCESSOR BUILDERS
 // =============================================================================
@@ -241,7 +252,65 @@ func instrumentationStatement(inputSource InputSourceType, instrumentationScopeV
 }
 
 // =============================================================================
-// ENRICHMENT PROCESSOR BUILDERS
+// FILTER PROCESSOR BUILDERS
 // =============================================================================
 
-// TODO
+var diagnosticMetricNames = []string{"up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added"}
+
+func DropDiagnosticMetricsFilterProcessorConfig(inputSourceCondition string) *FilterProcessor {
+	var filterExpressions []string
+
+	metricNameConditions := nameConditions(diagnosticMetricNames)
+	excludeScrapeMetricsExpr := JoinWithAnd(inputSourceCondition, JoinWithOr(metricNameConditions...))
+	filterExpressions = append(filterExpressions, excludeScrapeMetricsExpr)
+
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetrics{
+			Metric: filterExpressions,
+		},
+	}
+}
+
+func FilterByNamespaceProcessorConfig(namespaceSelector *telemetryv1alpha1.NamespaceSelector, inputSourceCondition string) *FilterProcessor {
+	var filterExpressions []string
+
+	if len(namespaceSelector.Exclude) > 0 {
+		namespacesConditions := namespacesConditions(namespaceSelector.Exclude)
+		excludeNamespacesExpr := JoinWithAnd(inputSourceCondition, JoinWithOr(namespacesConditions...))
+		filterExpressions = append(filterExpressions, excludeNamespacesExpr)
+	}
+
+	if len(namespaceSelector.Include) > 0 {
+		namespacesConditions := namespacesConditions(namespaceSelector.Include)
+		includeNamespacesExpr := JoinWithAnd(
+			inputSourceCondition,
+			ResourceAttributeIsNotNil(K8sNamespaceName),
+			Not(JoinWithOr(namespacesConditions...)),
+		)
+		filterExpressions = append(filterExpressions, includeNamespacesExpr)
+	}
+
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetrics{
+			Metric: filterExpressions,
+		},
+	}
+}
+
+func nameConditions(names []string) []string {
+	var nameConditions []string
+	for _, name := range names {
+		nameConditions = append(nameConditions, NameAttributeEquals(name))
+	}
+
+	return nameConditions
+}
+
+func namespacesConditions(namespaces []string) []string {
+	var conditions []string
+	for _, ns := range namespaces {
+		conditions = append(conditions, NamespaceEquals(ns))
+	}
+
+	return conditions
+}

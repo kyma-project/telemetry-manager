@@ -9,8 +9,6 @@ import (
 	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 )
 
-var diagnosticMetricNames = []string{"up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added"}
-
 func (b *Builder) addOutputForwardReceiver() buildComponentFunc {
 	return b.AddReceiver(
 		formatForwardConnectorID,
@@ -24,7 +22,7 @@ func (b *Builder) addOutputRoutingReceiver() buildComponentFunc {
 	return b.AddReceiver(
 		formatRoutingConnectorID,
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			return common.EnrichmentRoutingConnectorConfig(
+			return common.SkipEnrichmentRoutingConnectorConfig(
 				[]string{formatEnrichmentServicePipelineID(mp)},
 				[]string{formatOutputServicePipelineID(mp)},
 			)
@@ -51,8 +49,8 @@ func (b *Builder) addDropIfRuntimeInputDisabledProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return &FilterProcessor{
-				Metrics: FilterProcessorMetrics{
+			return &common.FilterProcessor{
+				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{common.ScopeNameEquals(common.InstrumentationScopeRuntime)},
 				},
 			}
@@ -68,8 +66,8 @@ func (b *Builder) addDropIfPrometheusInputDisabledProcessor() buildComponentFunc
 				return nil
 			}
 
-			return &FilterProcessor{
-				Metrics: FilterProcessorMetrics{
+			return &common.FilterProcessor{
+				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{common.ResourceAttributeEquals(common.KymaInputNameAttribute, common.KymaInputPrometheus)},
 				},
 			}
@@ -85,8 +83,8 @@ func (b *Builder) addDropIfIstioInputDisabledProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return &FilterProcessor{
-				Metrics: FilterProcessorMetrics{
+			return &common.FilterProcessor{
+				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{common.ScopeNameEquals(common.InstrumentationScopeIstio)},
 				},
 			}
@@ -102,8 +100,8 @@ func (b *Builder) addDropIfOTLPInputDisabledProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return &FilterProcessor{
-				Metrics: FilterProcessorMetrics{
+			return &common.FilterProcessor{
+				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{ottlUknownInputSource()},
 				},
 			}
@@ -119,8 +117,8 @@ func (b *Builder) addDropEnvoyMetricsIfDisabledProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return &FilterProcessor{
-				Metrics: FilterProcessorMetrics{
+			return &common.FilterProcessor{
+				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{
 						common.JoinWithAnd(common.IsMatch("name", "^envoy_.*"), common.ScopeNameEquals(common.InstrumentationScopeIstio)),
 					},
@@ -143,7 +141,7 @@ func (b *Builder) addRuntimeNamespaceFilterProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return filterByNamespaceProcessorConfig(input.Runtime.Namespaces, inputSourceEquals(common.InputSourceRuntime))
+			return common.FilterByNamespaceProcessorConfig(input.Runtime.Namespaces, inputSourceEquals(common.InputSourceRuntime))
 		},
 	)
 }
@@ -159,7 +157,7 @@ func (b *Builder) addPrometheusNamespaceFilterProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return filterByNamespaceProcessorConfig(input.Prometheus.Namespaces, common.ResourceAttributeEquals(common.KymaInputNameAttribute, common.KymaInputPrometheus))
+			return common.FilterByNamespaceProcessorConfig(input.Prometheus.Namespaces, common.ResourceAttributeEquals(common.KymaInputNameAttribute, common.KymaInputPrometheus))
 		},
 	)
 }
@@ -175,7 +173,7 @@ func (b *Builder) addIstioNamespaceFilterProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return filterByNamespaceProcessorConfig(input.Istio.Namespaces, inputSourceEquals(common.InputSourceIstio))
+			return common.FilterByNamespaceProcessorConfig(input.Istio.Namespaces, inputSourceEquals(common.InputSourceIstio))
 		},
 	)
 }
@@ -191,7 +189,7 @@ func (b *Builder) addOTLPNamespaceFilterProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return filterByNamespaceProcessorConfig(input.OTLP.Namespaces, ottlUknownInputSource())
+			return common.FilterByNamespaceProcessorConfig(input.OTLP.Namespaces, ottlUknownInputSource())
 		},
 	)
 }
@@ -206,8 +204,8 @@ func (b *Builder) addDropRuntimePodMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return &FilterProcessor{
-				Metrics: FilterProcessorMetrics{
+			return &common.FilterProcessor{
+				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{
 						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.pod.*")),
 					},
@@ -225,8 +223,8 @@ func (b *Builder) addDropRuntimeContainerMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return &FilterProcessor{
-				Metrics: FilterProcessorMetrics{
+			return &common.FilterProcessor{
+				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{
 						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "(^k8s.container.*)|(^container.*)")),
 					},
@@ -244,8 +242,8 @@ func (b *Builder) addDropRuntimeNodeMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return &FilterProcessor{
-				Metrics: FilterProcessorMetrics{
+			return &common.FilterProcessor{
+				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{
 						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.node.*")),
 					},
@@ -263,8 +261,8 @@ func (b *Builder) addDropRuntimeVolumeMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return &FilterProcessor{
-				Metrics: FilterProcessorMetrics{
+			return &common.FilterProcessor{
+				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{
 						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.volume.*")),
 					},
@@ -282,8 +280,8 @@ func (b *Builder) addDropRuntimeDeploymentMetricsProcessor() buildComponentFunc 
 				return nil
 			}
 
-			return &FilterProcessor{
-				Metrics: FilterProcessorMetrics{
+			return &common.FilterProcessor{
+				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{
 						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.deployment.*")),
 					},
@@ -301,8 +299,8 @@ func (b *Builder) addDropRuntimeDaemonSetMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return &FilterProcessor{
-				Metrics: FilterProcessorMetrics{
+			return &common.FilterProcessor{
+				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{
 						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.daemonset.*")),
 					},
@@ -320,8 +318,8 @@ func (b *Builder) addDropRuntimeStatefulSetMetricsProcessor() buildComponentFunc
 				return nil
 			}
 
-			return &FilterProcessor{
-				Metrics: FilterProcessorMetrics{
+			return &common.FilterProcessor{
+				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{
 						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.statefulset.*")),
 					},
@@ -339,8 +337,8 @@ func (b *Builder) addDropRuntimeJobMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return &FilterProcessor{
-				Metrics: FilterProcessorMetrics{
+			return &common.FilterProcessor{
+				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{
 						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.job.*")),
 					},
@@ -360,7 +358,7 @@ func (b *Builder) addDropPrometheusDiagnosticMetricsProcessor() buildComponentFu
 				return nil
 			}
 
-			return dropDiagnosticMetricsFilterConfig(inputSourceEquals(common.InputSourcePrometheus))
+			return common.DropDiagnosticMetricsFilterProcessorConfig(inputSourceEquals(common.InputSourcePrometheus))
 		},
 	)
 }
@@ -373,7 +371,7 @@ func (b *Builder) addDropIstioDiagnosticMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return dropDiagnosticMetricsFilterConfig(inputSourceEquals(common.InputSourceIstio))
+			return common.DropDiagnosticMetricsFilterProcessorConfig(inputSourceEquals(common.InputSourceIstio))
 		},
 	)
 }
@@ -400,41 +398,6 @@ func ottlUknownInputSource() string {
 	)
 }
 
-func filterByNamespaceProcessorConfig(namespaceSelector *telemetryv1alpha1.NamespaceSelector, inputSourceCondition string) *FilterProcessor {
-	var filterExpressions []string
-
-	if len(namespaceSelector.Exclude) > 0 {
-		namespacesConditions := namespacesConditions(namespaceSelector.Exclude)
-		excludeNamespacesExpr := common.JoinWithAnd(inputSourceCondition, common.JoinWithOr(namespacesConditions...))
-		filterExpressions = append(filterExpressions, excludeNamespacesExpr)
-	}
-
-	if len(namespaceSelector.Include) > 0 {
-		namespacesConditions := namespacesConditions(namespaceSelector.Include)
-		includeNamespacesExpr := common.JoinWithAnd(
-			inputSourceCondition,
-			common.ResourceAttributeIsNotNil(common.K8sNamespaceName),
-			common.Not(common.JoinWithOr(namespacesConditions...)),
-		)
-		filterExpressions = append(filterExpressions, includeNamespacesExpr)
-	}
-
-	return &FilterProcessor{
-		Metrics: FilterProcessorMetrics{
-			Metric: filterExpressions,
-		},
-	}
-}
-
-func namespacesConditions(namespaces []string) []string {
-	var conditions []string
-	for _, ns := range namespaces {
-		conditions = append(conditions, common.NamespaceEquals(ns))
-	}
-
-	return conditions
-}
-
 // Resource processors
 
 func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildComponentFunc {
@@ -450,14 +413,7 @@ func (b *Builder) addDeleteSkipEnrichmentAttributeProcessor() buildComponentFunc
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDDeleteSkipEnrichmentAttributeProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			return &common.ResourceProcessor{
-				Attributes: []common.AttributeAction{
-					{
-						Action: "delete",
-						Key:    common.SkipEnrichmentAttribute,
-					},
-				},
-			}
+			return common.DeleteSkipEnrichmentAttributeProcessorConfig()
 		},
 	)
 }
@@ -520,29 +476,6 @@ func (b *Builder) addOTLPExporter(queueSize int) buildComponentFunc {
 			return otlpExporterBuilder.OTLPExporterConfig(ctx)
 		},
 	)
-}
-
-func dropDiagnosticMetricsFilterConfig(inputSourceCondition string) *FilterProcessor {
-	var filterExpressions []string
-
-	metricNameConditions := nameConditions(diagnosticMetricNames)
-	excludeScrapeMetricsExpr := common.JoinWithAnd(inputSourceCondition, common.JoinWithOr(metricNameConditions...))
-	filterExpressions = append(filterExpressions, excludeScrapeMetricsExpr)
-
-	return &FilterProcessor{
-		Metrics: FilterProcessorMetrics{
-			Metric: filterExpressions,
-		},
-	}
-}
-
-func nameConditions(names []string) []string {
-	var nameConditions []string
-	for _, name := range names {
-		nameConditions = append(nameConditions, common.NameAttributeEquals(name))
-	}
-
-	return nameConditions
 }
 
 func formatNamespaceFilterID(pipelineName string, inputSourceType common.InputSourceType) string {

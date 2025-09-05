@@ -6,6 +6,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
@@ -25,6 +26,10 @@ type BuildOptions struct {
 	IstioCertPath               string
 	InstrumentationScopeVersion string
 	AgentNamespace              string
+	ClusterName                 string
+	ClusterUID                  string
+	CloudProvider               string
+	Enrichments                 *operatorv1alpha1.EnrichmentSpec
 }
 
 // inputSources represents the enabled input sources for the telemetry metric agent.
@@ -77,6 +82,9 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 	}
 
 	// Input pipelines
+	pipelinesWithRuntimeInput := getPipelinesWithRuntimeInput(pipelines)
+	pipelinesWithPrometheusInput := getPipelinesWithPrometheusInput(pipelines)
+	pipelinesWithIstioInput := getPipelinesWithIstioInput(pipelines)
 
 	if inputs.runtime {
 		if err := b.AddServicePipeline(ctx, nil, "metrics/runtime-input",
@@ -88,7 +96,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addResourceDeleteServiceNameProcessor(),
 			b.addSetInstrumentationScopeToRuntimeProcessor(opts),
 			b.addInsertSkipEnrichmentAttributeProcessor(),
-			b.addInputRoutingExporter("runtime-input", pipelinesWithRuntimeInput(pipelines)),
+			b.addInputRoutingExporter("runtime-input", pipelinesWithRuntimeInput),
 		); err != nil {
 			return nil, fmt.Errorf("failed to add runtime service pipeline: %w", err)
 		}
@@ -101,7 +109,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addMemoryLimiterProcessor(),
 			b.addDeleteServiceNameProcessor(),
 			b.addSetInstrumentationScopeToPrometheusProcessor(opts),
-			b.addInputRoutingExporter("prometheus-input", pipelinesWithPrometheusInput(pipelines)),
+			b.addInputRoutingExporter("prometheus-input", pipelinesWithPrometheusInput),
 		); err != nil {
 			return nil, fmt.Errorf("failed to add prometheus service pipeline: %w", err)
 		}
@@ -114,16 +122,72 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addDeleteServiceNameProcessor(),
 			b.addIstioNoiseFilterProcessor(),
 			b.addSetInstrumentationScopeToIstioProcessor(opts),
-			b.addInputRoutingExporter("istio-input", pipelinesWithIstioInput(pipelines)),
+			b.addInputRoutingExporter("istio-input", pipelinesWithIstioInput),
 		); err != nil {
 			return nil, fmt.Errorf("failed to add istio service pipeline: %w", err)
 		}
 	}
 
 	// Enrichment pipeline
-
+	if err := b.AddServicePipeline(ctx, nil, "metrics/enrichment",
+		b.addInputRoutingReceiver("runtime-input", pipelinesWithRuntimeInput),
+		b.addInputRoutingReceiver("prometheus-input", pipelinesWithPrometheusInput),
+		b.addInputRoutingReceiver("istio-input", pipelinesWithIstioInput),
+		b.addK8sAttributesProcessor(opts),
+		b.addInsertClusterAttributesProcessor(opts),
+		b.addServiceEnrichmentProcessor(),
+		b.addDropKymaAttributesProcessor(),
+		b.addUserDefinedTransformProcessor(),
+		b.addEnrichmentOutputRoutingExporter(pipelinesWithRuntimeInput, pipelinesWithPrometheusInput, pipelinesWithIstioInput),
+	); err != nil {
+		return nil, fmt.Errorf("failed to add enrichment service pipeline: %w", err)
+	}
 
 	// Output pipelines
+	for _, pipeline := range pipelines {
+		outputPipelineID := formatOutputMetricServicePipelineID(&pipeline)
+
+		// enrichment receiver
+		bcf := []common.BuildComponentFunc[*telemetryv1alpha1.MetricPipeline]{
+			b.addEnrichmentOutputRoutingReceiver(pipelinesWithRuntimeInput, pipelinesWithPrometheusInput, pipelinesWithIstioInput),
+		}
+
+		// skip-enrichment receivers & input-specific processors
+		if inputs.runtime {
+			bcf = append(bcf, b.addInputRoutingReceiver("runtime-input", pipelinesWithRuntimeInput))
+			// TODO: Add runtime processors
+		}
+
+		if inputs.prometheus {
+			bcf = append(bcf,
+				b.addInputRoutingReceiver("prometheus-input", pipelinesWithPrometheusInput),
+				b.addDropPrometheusDiagnosticMetricsProcessor(),
+			)
+		}
+
+		if inputs.istio {
+			bcf = append(bcf,
+				b.addInputRoutingReceiver("istio-input", pipelinesWithIstioInput),
+				b.addDropIstioDiagnosticMetricsProcessor(),
+			)
+		}
+
+		// generic processors
+		bcf = append(bcf,
+			b.addDeleteSkipEnrichmentAttributeProcessor(),
+			b.addRuntimeNamespaceFilterProcessor(),
+			b.addPrometheusNamespaceFilterProcessor(),
+			b.addIstioNamespaceFilterProcessor(),
+			b.addBatchProcessor(),
+		)
+
+		// exporters
+		bcf = append(bcf, b.addOTLPExporter()) // TODO: test configuration
+
+		if err := b.AddServicePipeline(ctx, &pipeline, outputPipelineID, bcf...); err != nil {
+			return nil, fmt.Errorf("failed to add enrichment service pipeline: %w", err)
+		}
+	}
 
 	return b.Config, nil
 }
@@ -175,7 +239,7 @@ func (b *Builder) addPrometheusIstioReceiver(envoyMetricsEnabled bool) buildComp
 	)
 }
 
-// Processor builders
+// Input processors
 
 //nolint:mnd // hardcoded values
 func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
@@ -276,6 +340,161 @@ func (b *Builder) addIstioNoiseFilterProcessor() buildComponentFunc {
 	)
 }
 
+// Enrichment processors
+
+func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDK8sAttributesProcessor),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			return common.K8sAttributesProcessorConfig(opts.Enrichments)
+		},
+	)
+}
+
+func (b *Builder) addServiceEnrichmentProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDServiceEnrichmentProcessor),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			return common.ResolveServiceNameConfig()
+		},
+	)
+}
+
+// Resource processors
+
+func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDInsertClusterAttributesProcessor),
+		func(tp *telemetryv1alpha1.MetricPipeline) any {
+			return common.InsertClusterAttributesProcessorConfig(
+				opts.ClusterName, opts.ClusterUID, opts.CloudProvider,
+			)
+		},
+	)
+}
+
+func (b *Builder) addDeleteSkipEnrichmentAttributeProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDDeleteSkipEnrichmentAttributeProcessor),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			return common.DeleteSkipEnrichmentAttributeProcessorConfig()
+		},
+	)
+}
+
+func (b *Builder) addDropKymaAttributesProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDDropKymaAttributesProcessor),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			return common.DropKymaAttributesProcessorConfig()
+		},
+	)
+}
+
+func (b *Builder) addUserDefinedTransformProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		func(mp *telemetryv1alpha1.MetricPipeline) string {
+			return fmt.Sprintf("transform/%s-user-defined", mp.Name)
+		},
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			if len(mp.Spec.Transforms) == 0 {
+				return nil // No transforms, no processor needed
+			}
+
+			transformStatements := common.TransformSpecsToProcessorStatements(mp.Spec.Transforms)
+			transformProcessor := common.MetricTransformProcessorConfig(transformStatements)
+
+			return transformProcessor
+		},
+	)
+}
+
+// Namespace filter processors
+
+func (b *Builder) addRuntimeNamespaceFilterProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		func(mp *telemetryv1alpha1.MetricPipeline) string {
+			return formatNamespaceFilterID(mp.Name, common.InputSourceRuntime)
+		},
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			input := mp.Spec.Input
+			if !metricpipelineutils.IsRuntimeInputEnabled(input) || !shouldFilterByNamespace(input.Runtime.Namespaces) {
+				return nil
+			}
+
+			return common.FilterByNamespaceProcessorConfig(input.Runtime.Namespaces, inputSourceEquals(common.InputSourceRuntime))
+		},
+	)
+}
+
+func (b *Builder) addPrometheusNamespaceFilterProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		func(mp *telemetryv1alpha1.MetricPipeline) string {
+			return formatNamespaceFilterID(mp.Name, common.InputSourcePrometheus)
+		},
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			input := mp.Spec.Input
+			if !metricpipelineutils.IsPrometheusInputEnabled(input) || !shouldFilterByNamespace(input.Prometheus.Namespaces) {
+				return nil
+			}
+
+			return common.FilterByNamespaceProcessorConfig(input.Prometheus.Namespaces, common.ResourceAttributeEquals(common.KymaInputNameAttribute, common.KymaInputPrometheus))
+		},
+	)
+}
+
+func (b *Builder) addIstioNamespaceFilterProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		func(mp *telemetryv1alpha1.MetricPipeline) string {
+			return formatNamespaceFilterID(mp.Name, common.InputSourceIstio)
+		},
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			input := mp.Spec.Input
+			if !metricpipelineutils.IsIstioInputEnabled(input) || !shouldFilterByNamespace(input.Istio.Namespaces) {
+				return nil
+			}
+
+			return common.FilterByNamespaceProcessorConfig(input.Istio.Namespaces, inputSourceEquals(common.InputSourceIstio))
+		},
+	)
+}
+
+func formatNamespaceFilterID(pipelineName string, inputSourceType common.InputSourceType) string {
+	return fmt.Sprintf(common.ComponentIDNamespacePerInputFilterProcessor, pipelineName, inputSourceType)
+}
+
+// Diagnostic metric filter processors
+
+func (b *Builder) addDropPrometheusDiagnosticMetricsProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDDropPrometheusDiagnosticMetricsProcessor),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			if !metricpipelineutils.IsPrometheusInputEnabled(mp.Spec.Input) || metricpipelineutils.IsPrometheusDiagnosticInputEnabled(mp.Spec.Input) {
+				return nil
+			}
+
+			return common.DropDiagnosticMetricsFilterProcessorConfig(inputSourceEquals(common.InputSourcePrometheus))
+		},
+	)
+}
+
+func (b *Builder) addDropIstioDiagnosticMetricsProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDDropIstioDiagnosticMetricsProcessor),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			if !metricpipelineutils.IsIstioInputEnabled(mp.Spec.Input) || metricpipelineutils.IsIstioDiagnosticInputEnabled(mp.Spec.Input) {
+				return nil
+			}
+
+			return common.DropDiagnosticMetricsFilterProcessorConfig(inputSourceEquals(common.InputSourceIstio))
+		},
+	)
+}
+
+func inputSourceEquals(inputSourceType common.InputSourceType) string {
+	return common.ScopeNameEquals(common.InstrumentationScope[inputSourceType])
+}
+
 //nolint:mnd // hardcoded values
 func (b *Builder) addBatchProcessor() buildComponentFunc {
 	return b.AddProcessor(
@@ -327,7 +546,7 @@ func (b *Builder) addInputRoutingExporter(connectorID string, outputPipelines []
 	return b.AddExporter(
 		b.StaticComponentID(fmt.Sprintf(common.ComponentIDRoutingConnector, connectorID)),
 		func(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline) (any, common.EnvVars, error) {
-			return common.EnrichmentRoutingConnectorConfig(
+			return common.SkipEnrichmentRoutingConnectorConfig(
 				[]string{"metrics/enrichment"},
 				formatOutputPipelineIDs(outputPipelines),
 			), nil, nil
@@ -339,12 +558,50 @@ func (b *Builder) addInputRoutingReceiver(connectorID string, outputPipelines []
 	return b.AddReceiver(
 		b.StaticComponentID(fmt.Sprintf(common.ComponentIDRoutingConnector, connectorID)),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			return common.EnrichmentRoutingConnectorConfig(
+			return common.SkipEnrichmentRoutingConnectorConfig(
 				[]string{"metrics/enrichment"},
 				formatOutputPipelineIDs(outputPipelines),
 			)
 		},
 	)
+}
+
+func (b *Builder) addEnrichmentOutputRoutingExporter(runtimePipelines, prometheusPipelines, istioPipelines []telemetryv1alpha1.MetricPipeline) buildComponentFunc {
+	return b.AddExporter(
+		b.StaticComponentID(fmt.Sprintf(common.ComponentIDRoutingConnector, "enrichment-output")),
+		func(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline) (any, common.EnvVars, error) {
+			return enrichmentOutputRoutingConnectorConfig(runtimePipelines, prometheusPipelines, istioPipelines), nil, nil
+		},
+	)
+}
+
+func (b *Builder) addEnrichmentOutputRoutingReceiver(runtimePipelines, prometheusPipelines, istioPipelines []telemetryv1alpha1.MetricPipeline) buildComponentFunc {
+	return b.AddReceiver(
+		b.StaticComponentID(fmt.Sprintf(common.ComponentIDRoutingConnector, "enrichment-output")),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			return enrichmentOutputRoutingConnectorConfig(runtimePipelines, prometheusPipelines, istioPipelines)
+		},
+	)
+}
+
+func enrichmentOutputRoutingConnectorConfig(runtimePipelines, prometheusPipelines, istioPipelines []telemetryv1alpha1.MetricPipeline) common.RoutingConnector {
+	return common.RoutingConnector{
+		ErrorMode: "ignore",
+		Table: []common.RoutingConnectorTableEntry{
+			{
+				Statement: fmt.Sprintf("route() where %s", common.ScopeNameEquals(common.InstrumentationScopeRuntime)),
+				Pipelines: formatOutputPipelineIDs(runtimePipelines),
+			},
+			{
+				Statement: fmt.Sprintf("route() where %s", common.ScopeNameEquals(common.InstrumentationScopePrometheus)),
+				Pipelines: formatOutputPipelineIDs(prometheusPipelines),
+			},
+			{
+				Statement: fmt.Sprintf("route() where %s", common.ScopeNameEquals(common.InstrumentationScopeIstio)),
+				Pipelines: formatOutputPipelineIDs(istioPipelines),
+			},
+		},
+	}
 }
 
 // Helper functions for formatting IDs
@@ -358,9 +615,13 @@ func formatOutputPipelineIDs(pipelines []telemetryv1alpha1.MetricPipeline) []str
 	return ids
 }
 
+func formatOutputMetricServicePipelineID(mp *telemetryv1alpha1.MetricPipeline) string {
+	return fmt.Sprintf("metrics/%s-output", mp.Name)
+}
+
 // Helper functions for getting pipelines by input source
 
-func pipelinesWithRuntimeInput(pipelines []telemetryv1alpha1.MetricPipeline) []telemetryv1alpha1.MetricPipeline {
+func getPipelinesWithRuntimeInput(pipelines []telemetryv1alpha1.MetricPipeline) []telemetryv1alpha1.MetricPipeline {
 	var result []telemetryv1alpha1.MetricPipeline
 
 	for i := range pipelines {
@@ -373,7 +634,7 @@ func pipelinesWithRuntimeInput(pipelines []telemetryv1alpha1.MetricPipeline) []t
 	return result
 }
 
-func pipelinesWithPrometheusInput(pipelines []telemetryv1alpha1.MetricPipeline) []telemetryv1alpha1.MetricPipeline {
+func getPipelinesWithPrometheusInput(pipelines []telemetryv1alpha1.MetricPipeline) []telemetryv1alpha1.MetricPipeline {
 	var result []telemetryv1alpha1.MetricPipeline
 
 	for i := range pipelines {
@@ -386,7 +647,7 @@ func pipelinesWithPrometheusInput(pipelines []telemetryv1alpha1.MetricPipeline) 
 	return result
 }
 
-func pipelinesWithIstioInput(pipelines []telemetryv1alpha1.MetricPipeline) []telemetryv1alpha1.MetricPipeline {
+func getPipelinesWithIstioInput(pipelines []telemetryv1alpha1.MetricPipeline) []telemetryv1alpha1.MetricPipeline {
 	var result []telemetryv1alpha1.MetricPipeline
 
 	for i := range pipelines {
@@ -531,6 +792,10 @@ func shouldEnableEnvoyMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeli
 	}
 
 	return false
+}
+
+func shouldFilterByNamespace(namespaceSelector *telemetryv1alpha1.NamespaceSelector) bool {
+	return namespaceSelector != nil && (len(namespaceSelector.Include) > 0 || len(namespaceSelector.Exclude) > 0)
 }
 
 // Processor configuration functions (merged from processors.go)

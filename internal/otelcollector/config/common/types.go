@@ -206,6 +206,14 @@ type ServiceEnrichmentProcessor struct {
 type IstioNoiseFilterProcessor struct {
 }
 
+type FilterProcessor struct {
+	Metrics FilterProcessorMetrics `yaml:"metrics"`
+}
+
+type FilterProcessorMetrics struct {
+	Metric []string `yaml:"metric,omitempty"`
+}
+
 // =============================================================================
 // CONNECTOR TYPES
 // =============================================================================

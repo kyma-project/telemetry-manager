@@ -8,7 +8,7 @@ import (
 // ENRICHMENT CONNECTOR BUILDERS
 // =============================================================================
 
-func EnrichmentRoutingConnectorConfig(defaultPipelineIDs, outputPipelineIDs []string) RoutingConnector {
+func SkipEnrichmentRoutingConnectorConfig(defaultPipelineIDs, outputPipelineIDs []string) RoutingConnector {
 	return RoutingConnector{
 		DefaultPipelines: defaultPipelineIDs,
 		ErrorMode:        "ignore",
