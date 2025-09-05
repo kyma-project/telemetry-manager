@@ -12,7 +12,7 @@ require (
 	github.com/kyma-project/kyma/hack/table-gen v0.0.0-20250404123224-5afb7a10791b
 	github.com/mikefarah/yq/v4 v4.47.1
 	github.com/vektra/mockery/v3 v3.5.4
-	github.com/vladopajic/go-test-coverage/v2 v2.16.0
+	github.com/vladopajic/go-test-coverage/v2 v2.16.1
 	github.com/yeya24/promlinter v0.3.0
 	golang.org/x/tools v0.36.0
 	gotest.tools/gotestsum v1.12.3
@@ -71,8 +71,8 @@ require (
 	github.com/alecthomas/participle/v2 v2.1.4 // indirect
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
 	github.com/alecthomas/units v0.0.0-20211218093645-b94a6e3cc137 // indirect
-	github.com/alexflint/go-arg v1.4.3 // indirect
-	github.com/alexflint/go-scalar v1.1.0 // indirect
+	github.com/alexflint/go-arg v1.6.0 // indirect
+	github.com/alexflint/go-scalar v1.2.0 // indirect
 	github.com/alexkohler/nakedret/v2 v2.0.6 // indirect
 	github.com/alexkohler/prealloc v1.0.0 // indirect
 	github.com/alfatraining/structtag v1.0.0 // indirect
@@ -407,7 +407,7 @@ require (
 	github.com/ssgreg/nlreturn/v2 v2.2.1 // indirect
 	github.com/stbenjam/no-sprintf-host-port v0.2.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
-	github.com/stretchr/testify v1.10.0 // indirect
+	github.com/stretchr/testify v1.11.1 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/tdakkota/asciicheck v0.4.1 // indirect
 	github.com/tetafro/godot v1.5.1 // indirect
