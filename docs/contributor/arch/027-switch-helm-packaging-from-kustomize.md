@@ -63,7 +63,7 @@ To avoid a version drift between the main (development) and release branches, th
     - Any bugfix or patch release in a release branch will bump both versions together.
   
 ## Decision
-- The `config/` folder will be converted into a Helm chart, in a new folder `helm/telemetry-module` in the root of the repository.
+- The `config/` folder will be converted into a Helm chart, in a new folder `helm` in the root of the repository.
 - The CRDs will be maintained in a separate folder as subcharts (regular amd experimental), and included or excluded based on the deployment type.
 - The CRDs generation will continue to use ControllerGen.
 - The deployment scripts and CI/CD pipelines will be updated to use Helm.

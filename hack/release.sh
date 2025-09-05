@@ -17,11 +17,11 @@ readonly CURRENT_VERSION="$1"
 function prepare_release_artefacts() {
   echo "Preparing release artefacts"
   # Create the resources file that is used for creating the ModuleTemplate for regular
-  ${HELM} template telemetry helm/telemetry-module --set experimental.enabled=false --set regular.enabled=true --set nameOverride=telemetry --set manager.container.image.repository=${MANAGER_IMAGE} --namespace kyma-system >telemetry-manager.yaml
+  ${HELM} template telemetry helm --set experimental.enabled=false --set default.enabled=true --set nameOverride=telemetry --set manager.container.image.repository=${MANAGER_IMAGE} --namespace kyma-system >telemetry-manager.yaml
   # Create the resources file that is used for creating the ModuleTemplate for experimental release
-  ${HELM} template telemetry helm/telemetry-module --set experimental.enabled=true --set regular.enabled=false --set nameOverride=telemetry --set manager.container.image.repository=${MANAGER_IMAGE_EXPERIMENTAL} --namespace kyma-system >telemetry-manager-experimental.yaml
+  ${HELM} template telemetry helm --set experimental.enabled=true --set default.enabled=false --set nameOverride=telemetry --set manager.container.image.repository=${MANAGER_IMAGE_EXPERIMENTAL} --namespace kyma-system >telemetry-manager-experimental.yaml
   # Rename the file for Telemetry default CR to have a better naming as a release artefact
-  cp ./config/samples/operator_v1alpha1_telemetry.yaml telemetry-default-cr.yaml
+  cp ./samples/operator_v1alpha1_telemetry.yaml telemetry-default-cr.yaml
 }
 
 get_previous_release_version() {
