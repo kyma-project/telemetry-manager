@@ -145,6 +145,10 @@ const (
 
 	ComponentIDForwardConnector = "forward/%s" // dynamically filled with pipeline name
 	ComponentIDRoutingConnector = "routing/%s" // dynamically filled with pipeline name
+	ComponentIDEnrichmentOutputRoutingConnector = "routing/enrichment-output"
+	ComponentIDRuntimeInputRoutingConnector    = "routing/runtime-input"
+	ComponentIDPrometheusInputRoutingConnector = "routing/prometheus-input"
+	ComponentIDIstioInputRoutingConnector      = "routing/istio-input"
 
 	// ================================================================================
 	// EXTENSIONS
