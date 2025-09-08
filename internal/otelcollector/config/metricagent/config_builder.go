@@ -93,8 +93,8 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addFilterDropNonPVCVolumesMetricsProcessor(inputs.runtimeResources),
 			b.addFilterDropVirtualNetworkInterfacesProcessor(),
 			b.addResourceDeleteServiceNameProcessor(),
-			b.addSetInstrumentationScopeToRuntimeProcessor(opts),
 			b.addInsertSkipEnrichmentAttributeProcessor(),
+			b.addSetInstrumentationScopeToRuntimeProcessor(opts),
 			b.addInputRoutingExporter("runtime-input", pipelinesWithRuntimeInput),
 		); err != nil {
 			return nil, fmt.Errorf("failed to add runtime service pipeline: %w", err)
@@ -155,31 +155,38 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 		if inputs.runtime {
 			bcf = append(bcf,
 				b.addInputRoutingReceiver("runtime-input", pipelinesWithRuntimeInput),
-				// TODO: Add runtime processors
 				b.addRuntimeNamespaceFilterProcessor(),
+				b.addDropRuntimePodMetricsProcessor(),
+				b.addDropRuntimeContainerMetricsProcessor(),
+				b.addDropRuntimeNodeMetricsProcessor(),
+				b.addDropRuntimeVolumeMetricsProcessor(),
+				b.addDropRuntimeDeploymentMetricsProcessor(),
+				b.addDropRuntimeDaemonSetMetricsProcessor(),
+				b.addDropRuntimeStatefulSetMetricsProcessor(),
+				b.addDropRuntimeJobMetricsProcessor(),
 			)
 		}
 
 		if inputs.prometheus {
 			bcf = append(bcf,
 				b.addInputRoutingReceiver("prometheus-input", pipelinesWithPrometheusInput),
-				b.addDropPrometheusDiagnosticMetricsProcessor(),
 				b.addPrometheusNamespaceFilterProcessor(),
+				b.addDropPrometheusDiagnosticMetricsProcessor(),
 			)
 		}
 
 		if inputs.istio {
 			bcf = append(bcf,
 				b.addInputRoutingReceiver("istio-input", pipelinesWithIstioInput),
-				b.addDropIstioDiagnosticMetricsProcessor(),
 				b.addIstioNamespaceFilterProcessor(),
+				b.addDropIstioDiagnosticMetricsProcessor(),
 			)
 		}
 
 		// generic processors
 		bcf = append(bcf,
 			b.addDeleteSkipEnrichmentAttributeProcessor(),
-			b.addBatchProcessor(),
+			b.addBatchProcessor(), // always last
 		)
 
 		// exporters
@@ -424,7 +431,7 @@ func (b *Builder) addRuntimeNamespaceFilterProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return common.FilterByNamespaceProcessorConfig(input.Runtime.Namespaces, inputSourceEquals(common.InputSourceRuntime))
+			return common.FilterByNamespaceProcessorConfig(input.Runtime.Namespaces, common.InputSourceEquals(common.InputSourceRuntime))
 		},
 	)
 }
@@ -456,13 +463,115 @@ func (b *Builder) addIstioNamespaceFilterProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return common.FilterByNamespaceProcessorConfig(input.Istio.Namespaces, inputSourceEquals(common.InputSourceIstio))
+			return common.FilterByNamespaceProcessorConfig(input.Istio.Namespaces, common.InputSourceEquals(common.InputSourceIstio))
 		},
 	)
 }
 
-func formatNamespaceFilterID(pipelineName string, inputSourceType common.InputSourceType) string {
-	return fmt.Sprintf(common.ComponentIDNamespacePerInputFilterProcessor, pipelineName, inputSourceType)
+// Runtime resource filter processors
+
+func (b *Builder) addDropRuntimePodMetricsProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDDropRuntimePodMetricsProcessor),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimePodInputEnabled(mp.Spec.Input) {
+				return nil
+			}
+
+			return common.DropRuntimePodMetricsProcessorConfig()
+		},
+	)
+}
+
+func (b *Builder) addDropRuntimeContainerMetricsProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDDropRuntimeContainerMetricsProcessor),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeContainerInputEnabled(mp.Spec.Input) {
+				return nil
+			}
+
+			return common.DropRuntimeContainerMetricsProcessorConfig()
+		},
+	)
+}
+
+func (b *Builder) addDropRuntimeNodeMetricsProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDDropRuntimeNodeMetricsProcessor),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeNodeInputEnabled(mp.Spec.Input) {
+				return nil
+			}
+
+			return common.DropRuntimeNodeMetricsProcessorConfig()
+		},
+	)
+}
+
+func (b *Builder) addDropRuntimeVolumeMetricsProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDDropRuntimeVolumeMetricsProcessor),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeVolumeInputEnabled(mp.Spec.Input) {
+				return nil
+			}
+
+			return common.DropRuntimeVolumeMetricsProcessorConfig()
+		},
+	)
+}
+
+func (b *Builder) addDropRuntimeDeploymentMetricsProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDDropRuntimeDeploymentMetricsProcessor),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeDeploymentInputEnabled(mp.Spec.Input) {
+				return nil
+			}
+
+			return common.DropRuntimeDeploymentMetricsProcessorConfig()
+		},
+	)
+}
+
+func (b *Builder) addDropRuntimeDaemonSetMetricsProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDDropRuntimeDaemonSetMetricsProcessor),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeDaemonSetInputEnabled(mp.Spec.Input) {
+				return nil
+			}
+
+			return common.DropRuntimeDaemonSetMetricsProcessorConfig()
+		},
+	)
+}
+
+func (b *Builder) addDropRuntimeStatefulSetMetricsProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDDropRuntimeStatefulSetMetricsProcessor),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeStatefulSetInputEnabled(mp.Spec.Input) {
+				return nil
+			}
+
+			return common.DropRuntimeStatefulSetMetricsProcessorConfig()
+		},
+	)
+}
+
+func (b *Builder) addDropRuntimeJobMetricsProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDDropRuntimeJobMetricsProcessor),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeJobInputEnabled(mp.Spec.Input) {
+				return nil
+			}
+
+			return common.DropRuntimeJobMetricsProcessorConfig()
+		},
+	)
 }
 
 // Diagnostic metric filter processors
@@ -475,7 +584,7 @@ func (b *Builder) addDropPrometheusDiagnosticMetricsProcessor() buildComponentFu
 				return nil
 			}
 
-			return common.DropDiagnosticMetricsFilterProcessorConfig(inputSourceEquals(common.InputSourcePrometheus))
+			return common.DropDiagnosticMetricsFilterProcessorConfig(common.InputSourcePrometheus)
 		},
 	)
 }
@@ -488,13 +597,9 @@ func (b *Builder) addDropIstioDiagnosticMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return common.DropDiagnosticMetricsFilterProcessorConfig(inputSourceEquals(common.InputSourceIstio))
+			return common.DropDiagnosticMetricsFilterProcessorConfig(common.InputSourceIstio)
 		},
 	)
-}
-
-func inputSourceEquals(inputSourceType common.InputSourceType) string {
-	return common.ScopeNameEquals(common.InstrumentationScope[inputSourceType])
 }
 
 //nolint:mnd // hardcoded values
@@ -612,6 +717,10 @@ func formatOutputMetricServicePipelineID(mp *telemetryv1alpha1.MetricPipeline) s
 
 func formatOTLPExporterID(pipeline *telemetryv1alpha1.MetricPipeline) string {
 	return common.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)
+}
+
+func formatNamespaceFilterID(pipelineName string, inputSourceType common.InputSourceType) string {
+	return fmt.Sprintf(common.ComponentIDNamespacePerInputFilterProcessor, pipelineName, inputSourceType)
 }
 
 // Helper functions for getting pipelines by input source

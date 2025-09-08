@@ -257,9 +257,10 @@ func instrumentationStatement(inputSource InputSourceType, instrumentationScopeV
 
 var diagnosticMetricNames = []string{"up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added"}
 
-func DropDiagnosticMetricsFilterProcessorConfig(inputSourceCondition string) *FilterProcessor {
+func DropDiagnosticMetricsFilterProcessorConfig(inputSource InputSourceType) *FilterProcessor {
 	var filterExpressions []string
 
+	inputSourceCondition := InputSourceEquals(inputSource)
 	metricNameConditions := nameConditions(diagnosticMetricNames)
 	excludeScrapeMetricsExpr := JoinWithAnd(inputSourceCondition, JoinWithOr(metricNameConditions...))
 	filterExpressions = append(filterExpressions, excludeScrapeMetricsExpr)
@@ -313,4 +314,85 @@ func namespacesConditions(namespaces []string) []string {
 	}
 
 	return conditions
+}
+
+func DropRuntimePodMetricsProcessorConfig() *FilterProcessor {
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetrics{
+			Metric: []string{
+				JoinWithAnd(InputSourceEquals(InputSourceRuntime), IsMatch("name", "^k8s.pod.*")),
+			},
+		},
+	}
+}
+
+func DropRuntimeContainerMetricsProcessorConfig() *FilterProcessor {
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetrics{
+			Metric: []string{
+				JoinWithAnd(InputSourceEquals(InputSourceRuntime), IsMatch("name", "(^k8s.container.*)|(^container.*)")),
+			},
+		},
+	}
+}
+
+func DropRuntimeNodeMetricsProcessorConfig() *FilterProcessor {
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetrics{
+			Metric: []string{
+				JoinWithAnd(InputSourceEquals(InputSourceRuntime), IsMatch("name", "^k8s.node.*")),
+			},
+		},
+	}
+}
+
+func DropRuntimeVolumeMetricsProcessorConfig() *FilterProcessor {
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetrics{
+			Metric: []string{
+				JoinWithAnd(InputSourceEquals(InputSourceRuntime), IsMatch("name", "^k8s.volume.*")),
+			},
+		},
+	}
+}
+
+func DropRuntimeDeploymentMetricsProcessorConfig() *FilterProcessor {
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetrics{
+			Metric: []string{
+				JoinWithAnd(InputSourceEquals(InputSourceRuntime), IsMatch("name", "^k8s.deployment.*")),
+			},
+		},
+	}
+}
+func DropRuntimeDaemonSetMetricsProcessorConfig() *FilterProcessor {
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetrics{
+			Metric: []string{
+				JoinWithAnd(InputSourceEquals(InputSourceRuntime), IsMatch("name", "^k8s.daemonset.*")),
+			},
+		},
+	}
+}
+func DropRuntimeStatefulSetMetricsProcessorConfig() *FilterProcessor {
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetrics{
+			Metric: []string{
+				JoinWithAnd(InputSourceEquals(InputSourceRuntime), IsMatch("name", "^k8s.statefulset.*")),
+			},
+		},
+	}
+}
+func DropRuntimeJobMetricsProcessorConfig() *FilterProcessor {
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetrics{
+			Metric: []string{
+				JoinWithAnd(InputSourceEquals(InputSourceRuntime), IsMatch("name", "^k8s.job.*")),
+			},
+		},
+	}
+}
+
+func InputSourceEquals(inputSourceType InputSourceType) string {
+	return ScopeNameEquals(InstrumentationScope[inputSourceType])
 }
