@@ -142,7 +142,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 		return nil, fmt.Errorf("failed to add enrichment service pipeline: %w", err)
 	}
 
-	// Output pipelines
+	// Output pipelines // TODO: Refactor to Spec.Input... 
 	for _, pipeline := range pipelines {
 		outputPipelineID := formatOutputMetricServicePipelineID(&pipeline)
 

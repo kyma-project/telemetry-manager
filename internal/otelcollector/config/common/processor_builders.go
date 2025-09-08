@@ -365,6 +365,7 @@ func DropRuntimeDeploymentMetricsProcessorConfig() *FilterProcessor {
 		},
 	}
 }
+
 func DropRuntimeDaemonSetMetricsProcessorConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
@@ -374,6 +375,7 @@ func DropRuntimeDaemonSetMetricsProcessorConfig() *FilterProcessor {
 		},
 	}
 }
+
 func DropRuntimeStatefulSetMetricsProcessorConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
@@ -383,6 +385,7 @@ func DropRuntimeStatefulSetMetricsProcessorConfig() *FilterProcessor {
 		},
 	}
 }
+
 func DropRuntimeJobMetricsProcessorConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
