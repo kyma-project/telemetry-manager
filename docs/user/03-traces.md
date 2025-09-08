@@ -409,7 +409,7 @@ To enable the propagation of the [W3C Trace Context](https://www.w3.org/TR/trace
       randomSamplingPercentage: 0
   ```
 
- <!-- tabs:end -->
+<!-- tabs:end -->
 
 ### Eventing
 
