@@ -16,11 +16,3 @@ type ModuleGVR struct {
 	Version  string `yaml:"version"`
 	Resource string `yaml:"resource"`
 }
-
-type FilterProcessor struct {
-	Metrics FilterProcessorMetrics `yaml:"metrics"`
-}
-
-type FilterProcessorMetrics struct {
-	Metric []string `yaml:"metric,omitempty"`
-}

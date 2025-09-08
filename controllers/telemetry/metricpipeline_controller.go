@@ -115,7 +115,7 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 	}
 
 	agentConfigBuilder := &metricagent.Builder{
-		GatewayOTLPServiceName: types.NamespacedName{Namespace: config.TelemetryNamespace, Name: otelcollector.MetricOTLPServiceName},
+		Reader: client,
 	}
 
 	gatewayConfigBuilder := &metricgateway.Builder{Reader: client}

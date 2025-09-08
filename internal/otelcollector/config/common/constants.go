@@ -63,6 +63,10 @@ const (
 	K8sLeaderElectorK8sCluster = "telemetry-metric-agent-k8scluster"
 )
 
+const (
+	MetricsBatchingMaxQueueSize = 256 // Maximum number of batches kept in memory before dropping
+)
+
 // ================================================================================
 // Component IDs
 // ================================================================================
@@ -139,8 +143,12 @@ const (
 	// CONNECTORS
 	// ================================================================================
 
-	ComponentIDForwardConnector = "forward/%s" // dynamically filled with pipeline name
-	ComponentIDRoutingConnector = "routing/%s" // dynamically filled with pipeline name
+	ComponentIDForwardConnector                 = "forward/%s" // dynamically filled with pipeline name
+	ComponentIDRoutingConnector                 = "routing/%s" // dynamically filled with pipeline name
+	ComponentIDEnrichmentOutputRoutingConnector = "routing/enrichment-output"
+	ComponentIDRuntimeInputRoutingConnector     = "routing/runtime-input"
+	ComponentIDPrometheusInputRoutingConnector  = "routing/prometheus-input"
+	ComponentIDIstioInputRoutingConnector       = "routing/istio-input"
 
 	// ================================================================================
 	// EXTENSIONS

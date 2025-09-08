@@ -345,12 +345,30 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 
 func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
 	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
+	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
+	clusterName := r.getClusterNameFromTelemetry(ctx, shootInfo.ClusterName)
+
+	clusterUID, err := r.getK8sClusterUID(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get kube-system namespace for cluster UID: %w", err)
+	}
+
+	var enrichments *operatorv1alpha1.EnrichmentSpec
+
+	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.telemetryNamespace)
+	if err == nil {
+		enrichments = t.Spec.Enrichments
+	}
 
 	agentConfig, err := r.agentConfigBuilder.Build(ctx, allPipelines, metricagent.BuildOptions{
 		IstioEnabled:                isIstioActive,
 		IstioCertPath:               otelcollector.IstioCertPath,
 		InstrumentationScopeVersion: r.moduleVersion,
 		AgentNamespace:              r.telemetryNamespace,
+		ClusterName:                 clusterName,
+		ClusterUID:                  clusterUID,
+		CloudProvider:               shootInfo.CloudProvider,
+		Enrichments:                 enrichments,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)

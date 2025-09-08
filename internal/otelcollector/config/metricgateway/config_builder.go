@@ -13,10 +13,6 @@ import (
 
 type buildComponentFunc = common.BuildComponentFunc[*telemetryv1alpha1.MetricPipeline]
 
-const (
-	maxQueueSize = 256 // Maximum number of batches kept in memory before dropping
-)
-
 type Builder struct {
 	common.ComponentBuilder[*telemetryv1alpha1.MetricPipeline]
 
@@ -43,7 +39,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 	)
 	b.EnvVars = make(common.EnvVars)
 
-	queueSize := maxQueueSize / len(pipelines)
+	queueSize := common.MetricsBatchingMaxQueueSize / len(pipelines)
 
 	for _, pipeline := range pipelines {
 		inputPipelineID := formatInputMetricServicePipelineID(&pipeline)
@@ -112,22 +108,6 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 }
 
 // Helper functions
-
-func enrichmentRoutingConnectorConfig(mp *telemetryv1alpha1.MetricPipeline) common.RoutingConnector {
-	enrichmentPipelineID := formatEnrichmentServicePipelineID(mp)
-	outputPipelineID := formatOutputServicePipelineID(mp)
-
-	return common.RoutingConnector{
-		DefaultPipelines: []string{enrichmentPipelineID},
-		ErrorMode:        "ignore",
-		Table: []common.RoutingConnectorTableEntry{
-			{
-				Statement: fmt.Sprintf("route() where attributes[\"%s\"] == \"true\"", common.SkipEnrichmentAttribute),
-				Pipelines: []string{outputPipelineID},
-			},
-		},
-	}
-}
 
 func formatInputMetricServicePipelineID(mp *telemetryv1alpha1.MetricPipeline) string {
 	return fmt.Sprintf("metrics/%s-input", mp.Name)
