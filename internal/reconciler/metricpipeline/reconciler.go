@@ -292,6 +292,7 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 	}
 
 	var enrichments *operatorv1alpha1.EnrichmentSpec
+
 	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.telemetryNamespace)
 	if err == nil {
 		enrichments = t.Spec.Enrichments
@@ -353,6 +354,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 	}
 
 	var enrichments *operatorv1alpha1.EnrichmentSpec
+
 	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.telemetryNamespace)
 	if err == nil {
 		enrichments = t.Spec.Enrichments
