@@ -4,12 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 )
 
@@ -18,7 +17,7 @@ type buildComponentFunc = common.BuildComponentFunc[*telemetryv1alpha1.MetricPip
 type Builder struct {
 	common.ComponentBuilder[*telemetryv1alpha1.MetricPipeline]
 
-	GatewayOTLPServiceName types.NamespacedName
+	Reader client.Reader
 }
 
 type BuildOptions struct {
@@ -154,14 +153,18 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 
 		// skip-enrichment receivers & input-specific processors
 		if inputs.runtime {
-			bcf = append(bcf, b.addInputRoutingReceiver("runtime-input", pipelinesWithRuntimeInput))
-			// TODO: Add runtime processors
+			bcf = append(bcf,
+				b.addInputRoutingReceiver("runtime-input", pipelinesWithRuntimeInput),
+				// TODO: Add runtime processors
+				b.addRuntimeNamespaceFilterProcessor(),
+			)
 		}
 
 		if inputs.prometheus {
 			bcf = append(bcf,
 				b.addInputRoutingReceiver("prometheus-input", pipelinesWithPrometheusInput),
 				b.addDropPrometheusDiagnosticMetricsProcessor(),
+				b.addPrometheusNamespaceFilterProcessor(),
 			)
 		}
 
@@ -169,20 +172,19 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			bcf = append(bcf,
 				b.addInputRoutingReceiver("istio-input", pipelinesWithIstioInput),
 				b.addDropIstioDiagnosticMetricsProcessor(),
+				b.addIstioNamespaceFilterProcessor(),
 			)
 		}
 
 		// generic processors
 		bcf = append(bcf,
 			b.addDeleteSkipEnrichmentAttributeProcessor(),
-			b.addRuntimeNamespaceFilterProcessor(),
-			b.addPrometheusNamespaceFilterProcessor(),
-			b.addIstioNamespaceFilterProcessor(),
 			b.addBatchProcessor(),
 		)
 
 		// exporters
-		bcf = append(bcf, b.addOTLPExporter()) // TODO: test configuration
+		queueSize := common.MetricsBatchingMaxQueueSize / len(pipelines)
+		bcf = append(bcf, b.addOTLPExporter(queueSize))
 
 		if err := b.AddServicePipeline(ctx, &pipeline, outputPipelineID, bcf...); err != nil {
 			return nil, fmt.Errorf("failed to add enrichment service pipeline: %w", err)
@@ -512,30 +514,19 @@ func (b *Builder) addBatchProcessor() buildComponentFunc {
 // Exporter builders
 
 //nolint:mnd // all static config from here
-func (b *Builder) addOTLPExporter() buildComponentFunc {
+func (b *Builder) addOTLPExporter(queueSize int) buildComponentFunc {
 	return b.AddExporter(
-		b.StaticComponentID(common.ComponentIDOTLPExporter),
+		formatOTLPExporterID,
 		func(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline) (any, common.EnvVars, error) {
-			return &common.OTLPExporter{
-				Endpoint: fmt.Sprintf("%s.%s.svc.cluster.local:%d",
-					b.GatewayOTLPServiceName.Name,
-					b.GatewayOTLPServiceName.Namespace,
-					ports.OTLPGRPC,
-				),
-				TLS: common.TLS{
-					Insecure: true,
-				},
-				SendingQueue: common.SendingQueue{
-					Enabled:   true,
-					QueueSize: 512,
-				},
-				RetryOnFailure: common.RetryOnFailure{
-					Enabled:         true,
-					InitialInterval: "5s",
-					MaxInterval:     "30s",
-					MaxElapsedTime:  "300s",
-				},
-			}, nil, nil
+			otlpExporterBuilder := common.NewOTLPExporterConfigBuilder(
+				b.Reader,
+				mp.Spec.Output.OTLP,
+				mp.Name,
+				queueSize,
+				common.SignalTypeLog,
+			)
+
+			return otlpExporterBuilder.OTLPExporterConfig(ctx)
 		},
 	)
 }
@@ -617,6 +608,10 @@ func formatOutputPipelineIDs(pipelines []telemetryv1alpha1.MetricPipeline) []str
 
 func formatOutputMetricServicePipelineID(mp *telemetryv1alpha1.MetricPipeline) string {
 	return fmt.Sprintf("metrics/%s-output", mp.Name)
+}
+
+func formatOTLPExporterID(pipeline *telemetryv1alpha1.MetricPipeline) string {
+	return common.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)
 }
 
 // Helper functions for getting pipelines by input source

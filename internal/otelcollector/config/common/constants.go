@@ -63,6 +63,10 @@ const (
 	K8sLeaderElectorK8sCluster = "telemetry-metric-agent-k8scluster"
 )
 
+const (
+	MetricsBatchingMaxQueueSize = 256 // Maximum number of batches kept in memory before dropping
+)
+
 // ================================================================================
 // Component IDs
 // ================================================================================

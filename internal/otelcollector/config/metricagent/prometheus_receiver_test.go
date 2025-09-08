@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -13,9 +13,9 @@ import (
 
 func TestPrometheusReceiver(t *testing.T) {
 	ctx := context.Background()
-	gatewayServiceName := types.NamespacedName{Name: "metrics", Namespace: "telemetry-system"}
+	fakeClient := fake.NewClientBuilder().Build()
 	sut := Builder{
-		GatewayOTLPServiceName: gatewayServiceName,
+		Reader: fakeClient,
 	}
 
 	t.Run("prometheus input enabled", func(t *testing.T) {
