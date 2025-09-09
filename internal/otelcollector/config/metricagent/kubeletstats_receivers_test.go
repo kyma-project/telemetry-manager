@@ -93,7 +93,7 @@ func TestKubeletStatsReceiver(t *testing.T) {
 			},
 		}
 		for _, test := range tests {
-			collectorConfig, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
+			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
 				test.pipeline,
 			}, BuildOptions{
 				AgentNamespace: agentNamespace,
@@ -158,7 +158,7 @@ func TestKubeletStatsReceiver(t *testing.T) {
 		}
 
 		for _, test := range tests {
-			collectorConfig, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
+			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
 				test.pipeline,
 			}, BuildOptions{})
 			require.NoError(t, err)

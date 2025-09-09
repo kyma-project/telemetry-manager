@@ -52,7 +52,7 @@ type runtimeResourceSources struct {
 	job         bool
 }
 
-func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) (*common.Config, error) {
+func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) (*common.Config, common.EnvVars, error) {
 	b.Config = common.NewConfig()
 	b.AddExtension(common.ComponentIDK8sLeaderElectorExtension,
 		common.K8sLeaderElector{
@@ -61,6 +61,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			LeaseNamespace: opts.AgentNamespace,
 		},
 	)
+	b.EnvVars = make(common.EnvVars)
 
 	inputs := inputSources{
 		runtimeResources: runtimeResourceSources{
@@ -97,7 +98,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addSetInstrumentationScopeToRuntimeProcessor(opts),
 			b.addInputRoutingExporter(common.ComponentIDRuntimeInputRoutingConnector, pipelinesWithRuntimeInput),
 		); err != nil {
-			return nil, fmt.Errorf("failed to add runtime service pipeline: %w", err)
+			return nil, nil, fmt.Errorf("failed to add runtime service pipeline: %w", err)
 		}
 	}
 
@@ -110,7 +111,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addSetInstrumentationScopeToPrometheusProcessor(opts),
 			b.addInputRoutingExporter(common.ComponentIDPrometheusInputRoutingConnector, pipelinesWithPrometheusInput),
 		); err != nil {
-			return nil, fmt.Errorf("failed to add prometheus service pipeline: %w", err)
+			return nil, nil, fmt.Errorf("failed to add prometheus service pipeline: %w", err)
 		}
 	}
 
@@ -123,7 +124,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addSetInstrumentationScopeToIstioProcessor(opts),
 			b.addInputRoutingExporter(common.ComponentIDIstioInputRoutingConnector, pipelinesWithIstioInput),
 		); err != nil {
-			return nil, fmt.Errorf("failed to add istio service pipeline: %w", err)
+			return nil, nil, fmt.Errorf("failed to add istio service pipeline: %w", err)
 		}
 	}
 
@@ -138,7 +139,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 		b.addDropKymaAttributesProcessor(),
 		b.addEnrichmentOutputRoutingExporter(pipelinesWithRuntimeInput, pipelinesWithPrometheusInput, pipelinesWithIstioInput),
 	); err != nil {
-		return nil, fmt.Errorf("failed to add enrichment service pipeline: %w", err)
+		return nil, nil, fmt.Errorf("failed to add enrichment service pipeline: %w", err)
 	}
 
 	// Output pipelines
@@ -178,11 +179,11 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			// OTLP exporter
 			b.addOTLPExporter(queueSize),
 		); err != nil {
-			return nil, fmt.Errorf("failed to add enrichment service pipeline: %w", err)
+			return nil, nil, fmt.Errorf("failed to add enrichment service pipeline: %w", err)
 		}
 	}
 
-	return b.Config, nil
+	return b.Config, b.EnvVars, nil
 }
 
 // Receiver builders

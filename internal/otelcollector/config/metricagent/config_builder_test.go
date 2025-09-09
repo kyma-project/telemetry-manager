@@ -148,7 +148,7 @@ func TestBuildConfig(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			config, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{tt.pipeline}, buildOptions)
+			config, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{tt.pipeline}, buildOptions)
 			require.NoError(t, err)
 
 			configYAML, err := yaml.Marshal(config)

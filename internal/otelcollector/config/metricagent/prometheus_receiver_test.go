@@ -49,7 +49,7 @@ func TestPrometheusReceiver(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				collectorConfig, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
+				collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build(),
 				}, BuildOptions{
 					IstioEnabled: tt.istioEnabled,
@@ -79,7 +79,7 @@ func TestPrometheusReceiver(t *testing.T) {
 	})
 
 	t.Run("istio input enabled", func(t *testing.T) {
-		collectorConfig, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithIstioInput(true).Build(),
 		}, BuildOptions{
 			IstioEnabled: true,
@@ -95,7 +95,7 @@ func TestPrometheusReceiver(t *testing.T) {
 	})
 
 	t.Run("istio input envoy metrics enabled", func(t *testing.T) {
-		collectorConfig, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithIstioInput(true).WithIstioInputEnvoyMetrics(true).Build(),
 		}, BuildOptions{
 			IstioEnabled: true,

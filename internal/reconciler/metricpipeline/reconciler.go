@@ -34,7 +34,7 @@ import (
 const defaultReplicaCount int32 = 2
 
 type AgentConfigBuilder interface {
-	Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, options metricagent.BuildOptions) (*common.Config, error)
+	Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, options metricagent.BuildOptions) (*common.Config, common.EnvVars, error)
 }
 
 type GatewayConfigBuilder interface {
@@ -360,7 +360,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		enrichments = t.Spec.Enrichments
 	}
 
-	agentConfig, err := r.agentConfigBuilder.Build(ctx, allPipelines, metricagent.BuildOptions{
+	agentConfig, collectorEnvVars, err := r.agentConfigBuilder.Build(ctx, allPipelines, metricagent.BuildOptions{
 		IstioEnabled:                isIstioActive,
 		IstioCertPath:               otelcollector.IstioCertPath,
 		InstrumentationScopeVersion: r.moduleVersion,
@@ -390,6 +390,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		otelcollector.AgentApplyOptions{
 			AllowedPorts:        allowedPorts,
 			CollectorConfigYAML: string(agentConfigYAML),
+			CollectorEnvVars:    collectorEnvVars,
 		},
 	); err != nil {
 		return fmt.Errorf("failed to apply agent resources: %w", err)
