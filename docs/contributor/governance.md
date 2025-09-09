@@ -4,7 +4,11 @@ Some quality aspects are covered by automated verification, so you must locally 
 
 ## CRD Generation
 
+<<<<<<< HEAD
 The API of Telemetry Manager is realized by Kubernetes CRDs defined in the [apis](../../apis) folder as Golang source code. To install the CRDs later using Helm together with Telemetry Manager deployment, you must generate proper Kubernetes [manifest files](../../helm/charts/default/templates). Also, you must update the [user documentation](../user/resources/).
+=======
+The Telemetry Manager uses Kubernetes CRDs that are defined as Golang source code in the [apis](../../apis) folder. Before you install the CRDs with Kustomize for the Telemetry Manager deployment, generate the Kubernetes manifest files into the [templates](../../helm/charts/default/templates) folder. Additionally, update the user documentation in the [resources](../user/resources/) folder.
+>>>>>>> 4dfd7830b4c89d72a1414c2c61d2b024961d1219
 
 To achieve both aspects, call:
 
