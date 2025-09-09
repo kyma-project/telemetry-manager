@@ -236,9 +236,6 @@ details: |-
                   placeholder: '443'
                 - name: URI
                   source: spec.output.http.uri
-    - widget: Panel
-      name: Output
-      children:
         - name: OTLP
           widget: Panel
           visibility: $exists(spec.output.otlp)
@@ -365,7 +362,6 @@ details: |-
               children:
                 - name: Protocol
                   source: spec.output.otlp.protocol
-
   resourceGraph:
     colorVariant: 2
     dataSources:
