@@ -98,6 +98,7 @@ func generateSecScanConfig(data map[string]string) error {
 		data["ENV_FLUENTBIT_IMAGE"],
 		data["ENV_OTEL_COLLECTOR_IMAGE"],
 		data["ENV_SELFMONITOR_IMAGE"],
+		data["ENV_ALPINE_IMAGE"],
 	}
 
 	excludes := []string{
@@ -106,7 +107,9 @@ func generateSecScanConfig(data map[string]string) error {
 		"**/test/**",
 		"**/*_test.go",
 		"docs/**",
-		"dependencies/**",
+		"dependencies/populateimages/**",
+		"dependencies/telemetry-sample-app/**",
+		"dependencies/stdout-log-generator/**",
 	}
 
 	secScanCfg := secScanConfig{

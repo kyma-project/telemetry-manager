@@ -5,7 +5,10 @@
 package mocks
 
 import (
+	"context"
+
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricagent"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -38,22 +41,31 @@ func (_m *AgentConfigBuilder) EXPECT() *AgentConfigBuilder_Expecter {
 }
 
 // Build provides a mock function for the type AgentConfigBuilder
-func (_mock *AgentConfigBuilder) Build(pipelines []v1alpha1.MetricPipeline, options metricagent.BuildOptions) *metricagent.Config {
-	ret := _mock.Called(pipelines, options)
+func (_mock *AgentConfigBuilder) Build(ctx context.Context, pipelines []v1alpha1.MetricPipeline, options metricagent.BuildOptions) (*common.Config, error) {
+	ret := _mock.Called(ctx, pipelines, options)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Build")
 	}
 
-	var r0 *metricagent.Config
-	if returnFunc, ok := ret.Get(0).(func([]v1alpha1.MetricPipeline, metricagent.BuildOptions) *metricagent.Config); ok {
-		r0 = returnFunc(pipelines, options)
+	var r0 *common.Config
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []v1alpha1.MetricPipeline, metricagent.BuildOptions) (*common.Config, error)); ok {
+		return returnFunc(ctx, pipelines, options)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []v1alpha1.MetricPipeline, metricagent.BuildOptions) *common.Config); ok {
+		r0 = returnFunc(ctx, pipelines, options)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*metricagent.Config)
+			r0 = ret.Get(0).(*common.Config)
 		}
 	}
-	return r0
+	if returnFunc, ok := ret.Get(1).(func(context.Context, []v1alpha1.MetricPipeline, metricagent.BuildOptions) error); ok {
+		r1 = returnFunc(ctx, pipelines, options)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
 }
 
 // AgentConfigBuilder_Build_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Build'
@@ -62,36 +74,42 @@ type AgentConfigBuilder_Build_Call struct {
 }
 
 // Build is a helper method to define mock.On call
+//   - ctx context.Context
 //   - pipelines []v1alpha1.MetricPipeline
 //   - options metricagent.BuildOptions
-func (_e *AgentConfigBuilder_Expecter) Build(pipelines interface{}, options interface{}) *AgentConfigBuilder_Build_Call {
-	return &AgentConfigBuilder_Build_Call{Call: _e.mock.On("Build", pipelines, options)}
+func (_e *AgentConfigBuilder_Expecter) Build(ctx interface{}, pipelines interface{}, options interface{}) *AgentConfigBuilder_Build_Call {
+	return &AgentConfigBuilder_Build_Call{Call: _e.mock.On("Build", ctx, pipelines, options)}
 }
 
-func (_c *AgentConfigBuilder_Build_Call) Run(run func(pipelines []v1alpha1.MetricPipeline, options metricagent.BuildOptions)) *AgentConfigBuilder_Build_Call {
+func (_c *AgentConfigBuilder_Build_Call) Run(run func(ctx context.Context, pipelines []v1alpha1.MetricPipeline, options metricagent.BuildOptions)) *AgentConfigBuilder_Build_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 []v1alpha1.MetricPipeline
+		var arg0 context.Context
 		if args[0] != nil {
-			arg0 = args[0].([]v1alpha1.MetricPipeline)
+			arg0 = args[0].(context.Context)
 		}
-		var arg1 metricagent.BuildOptions
+		var arg1 []v1alpha1.MetricPipeline
 		if args[1] != nil {
-			arg1 = args[1].(metricagent.BuildOptions)
+			arg1 = args[1].([]v1alpha1.MetricPipeline)
+		}
+		var arg2 metricagent.BuildOptions
+		if args[2] != nil {
+			arg2 = args[2].(metricagent.BuildOptions)
 		}
 		run(
 			arg0,
 			arg1,
+			arg2,
 		)
 	})
 	return _c
 }
 
-func (_c *AgentConfigBuilder_Build_Call) Return(config *metricagent.Config) *AgentConfigBuilder_Build_Call {
-	_c.Call.Return(config)
+func (_c *AgentConfigBuilder_Build_Call) Return(config *common.Config, err error) *AgentConfigBuilder_Build_Call {
+	_c.Call.Return(config, err)
 	return _c
 }
 
-func (_c *AgentConfigBuilder_Build_Call) RunAndReturn(run func(pipelines []v1alpha1.MetricPipeline, options metricagent.BuildOptions) *metricagent.Config) *AgentConfigBuilder_Build_Call {
+func (_c *AgentConfigBuilder_Build_Call) RunAndReturn(run func(ctx context.Context, pipelines []v1alpha1.MetricPipeline, options metricagent.BuildOptions) (*common.Config, error)) *AgentConfigBuilder_Build_Call {
 	_c.Call.Return(run)
 	return _c
 }

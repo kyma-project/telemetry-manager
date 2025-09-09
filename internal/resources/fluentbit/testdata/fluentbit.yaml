@@ -25,7 +25,6 @@ data:
     @INCLUDE dynamic/*.conf
 kind: ConfigMap
 metadata:
-  creationTimestamp: null
   labels:
     app.kubernetes.io/component: agent
     app.kubernetes.io/instance: telemetry
@@ -41,7 +40,6 @@ data:
   file1: dummy-file-content
 kind: ConfigMap
 metadata:
-  creationTimestamp: null
   labels:
     app.kubernetes.io/component: agent
     app.kubernetes.io/instance: telemetry
@@ -100,7 +98,6 @@ data:
     end
 kind: ConfigMap
 metadata:
-  creationTimestamp: null
   labels:
     app.kubernetes.io/component: agent
     app.kubernetes.io/instance: telemetry
@@ -116,7 +113,6 @@ data:
   parsers.conf: ""
 kind: ConfigMap
 metadata:
-  creationTimestamp: null
   labels:
     app.kubernetes.io/component: agent
     app.kubernetes.io/instance: telemetry
@@ -132,7 +128,6 @@ data:
   pipeline1.conf: dummy-sections-content
 kind: ConfigMap
 metadata:
-  creationTimestamp: null
   labels:
     app.kubernetes.io/component: agent
     app.kubernetes.io/instance: telemetry
@@ -148,7 +143,6 @@ data:
   env-config-secret1: ZHVtbXktdmFsdWU=
 kind: Secret
 metadata:
-  creationTimestamp: null
   labels:
     app.kubernetes.io/component: agent
     app.kubernetes.io/instance: telemetry
@@ -164,7 +158,6 @@ data:
   tls-config-secret1: ZHVtbXktdmFsdWU=
 kind: Secret
 metadata:
-  creationTimestamp: null
   labels:
     app.kubernetes.io/component: agent
     app.kubernetes.io/instance: telemetry
@@ -182,7 +175,6 @@ metadata:
     prometheus.io/port: "2021"
     prometheus.io/scheme: http
     prometheus.io/scrape: "true"
-  creationTimestamp: null
   labels:
     app.kubernetes.io/component: agent
     app.kubernetes.io/instance: telemetry
@@ -213,7 +205,6 @@ metadata:
     prometheus.io/port: "2020"
     prometheus.io/scheme: http
     prometheus.io/scrape: "true"
-  creationTimestamp: null
   labels:
     app.kubernetes.io/component: agent
     app.kubernetes.io/instance: telemetry
@@ -240,14 +231,12 @@ status:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  creationTimestamp: null
   name: telemetry-fluent-bit
   namespace: kyma-system
 ---
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  creationTimestamp: null
   labels:
     app.kubernetes.io/component: agent
     app.kubernetes.io/instance: telemetry
@@ -267,7 +256,6 @@ spec:
       annotations:
         checksum/config: 54ef44075035247cd4eba50a8df088d1426f0ea5deccdc0ba7b9f81078bc0226
         traffic.sidecar.istio.io/excludeInboundPorts: 2020,2021
-      creationTimestamp: null
       labels:
         app.kubernetes.io/component: agent
         app.kubernetes.io/instance: telemetry
@@ -305,13 +293,13 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
-            add:
-            - FOWNER
             drop:
             - ALL
           privileged: false
           readOnlyRootFilesystem: true
-          runAsNonRoot: false
+          runAsGroup: 0
+          runAsNonRoot: true
+          runAsUser: 10001
           seccompProfile:
             type: RuntimeDefault
         volumeMounts:
@@ -362,6 +350,36 @@ spec:
           privileged: false
           readOnlyRootFilesystem: true
           runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+        - mountPath: /data
+          name: varfluentbit
+      initContainers:
+      - command:
+        - chown
+        - -R
+        - "10001:0"
+        - /data
+        image: alpine
+        name: checkpoint-dir-ownership-modifier
+        resources:
+          limits:
+            memory: 50Mi
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - CHOWN
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: false
+          runAsUser: 0
           seccompProfile:
             type: RuntimeDefault
         volumeMounts:
@@ -418,7 +436,6 @@ status:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  creationTimestamp: null
   labels:
     app.kubernetes.io/component: agent
     app.kubernetes.io/instance: telemetry
@@ -457,7 +474,6 @@ spec:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  creationTimestamp: null
   labels:
     app.kubernetes.io/component: agent
     app.kubernetes.io/instance: telemetry
@@ -481,7 +497,6 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  creationTimestamp: null
   name: telemetry-fluent-bit
   namespace: kyma-system
 roleRef:

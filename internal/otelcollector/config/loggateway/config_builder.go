@@ -3,7 +3,6 @@ package loggateway
 import (
 	"context"
 	"fmt"
-	"maps"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -14,15 +13,16 @@ import (
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 )
 
+type buildComponentFunc = common.BuildComponentFunc[*telemetryv1alpha1.LogPipeline]
+
 const (
 	maxQueueSize = 256 // Maximum number of batches kept in memory before dropping
 )
 
 type Builder struct {
-	Reader client.Reader
+	common.ComponentBuilder[*telemetryv1alpha1.LogPipeline]
 
-	config  *Config
-	envVars common.EnvVars
+	Reader client.Reader
 }
 
 type BuildOptions struct {
@@ -33,118 +33,283 @@ type BuildOptions struct {
 	ModuleVersion string
 }
 
-func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPipeline, opts BuildOptions) (*Config, common.EnvVars, error) {
-	b.config = b.baseConfig(opts)
-	b.envVars = make(common.EnvVars)
+func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPipeline, opts BuildOptions) (*common.Config, common.EnvVars, error) {
+	b.Config = common.NewConfig()
+	b.EnvVars = make(common.EnvVars)
 
 	// Iterate over each LogPipeline CR and enrich the config with pipeline-specific components
 	queueSize := maxQueueSize / len(pipelines)
 
-	for i := range pipelines {
-		pipeline := pipelines[i]
-
-		if err := b.addComponentsForLogPipeline(ctx, &pipeline, queueSize); err != nil {
-			return nil, nil, err
+	for _, pipeline := range pipelines {
+		pipelineID := formatLogServicePipelineID(&pipeline)
+		if err := b.AddServicePipeline(ctx, &pipeline, pipelineID,
+			b.addOTLPReceiver(),
+			b.addMemoryLimiterProcessor(),
+			b.addSetObsTimeIfZeroProcessor(),
+			b.addK8sAttributesProcessor(opts),
+			b.addIstioNoiseFilterProcessor(),
+			b.addDropIfInputSourceOTLPProcessor(),
+			b.addNamespaceFilterProcessor(),
+			b.addInsertClusterAttributesProcessor(opts),
+			b.addServiceEnrichmentProcessor(),
+			b.addDropKymaAttributesProcessor(),
+			b.addIstioAccessLogsEnrichmentProcessor(opts),
+			b.addUserDefinedTransformProcessor(),
+			b.addBatchProcessor(),
+			b.addOTLPExporter(queueSize),
+		); err != nil {
+			return nil, nil, fmt.Errorf("failed to add service pipeline: %w", err)
 		}
-
-		b.addServicePipelines(&pipeline)
 	}
 
-	return b.config, b.envVars, nil
+	return b.Config, b.EnvVars, nil
 }
 
-// baseConfig creates the static/global base configuration for the log gateway collector.
-// Pipeline-specific components are added later via addComponentsForLogPipeline method.
-func (b *Builder) baseConfig(opts BuildOptions) *Config {
-	return &Config{
-		Base: common.Base{
-			Service:    common.ServiceConfig(make(common.Pipelines)),
-			Extensions: common.ExtensionsConfig(),
+func (b *Builder) addOTLPReceiver() buildComponentFunc {
+	return b.AddReceiver(
+		b.StaticComponentID(common.ComponentIDOTLPReceiver),
+		func(lp *telemetryv1alpha1.LogPipeline) any {
+			return &common.OTLPReceiver{
+				Protocols: common.ReceiverProtocols{
+					HTTP: common.Endpoint{
+						Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPHTTP),
+					},
+					GRPC: common.Endpoint{
+						Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPGRPC),
+					},
+				},
+			}
 		},
-		Receivers:  receiversConfig(),
-		Processors: processorsConfig(opts),
-		Exporters:  make(Exporters),
+	)
+}
+
+//nolint:mnd // hardcoded values
+func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDMemoryLimiterProcessor),
+		func(lp *telemetryv1alpha1.LogPipeline) any {
+			return &common.MemoryLimiter{
+				CheckInterval:        "1s",
+				LimitPercentage:      75,
+				SpikeLimitPercentage: 15,
+			}
+		},
+	)
+}
+
+func (b *Builder) addSetObsTimeIfZeroProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDSetObservedTimeIfZeroProcessor),
+		func(lp *telemetryv1alpha1.LogPipeline) any {
+			return common.LogTransformProcessorConfig([]common.TransformProcessorStatements{{
+				Conditions: []string{"log.observed_time_unix_nano == 0"},
+				Statements: []string{"set(log.observed_time, Now())"},
+			}})
+		},
+	)
+}
+
+func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDK8sAttributesProcessor),
+		func(lp *telemetryv1alpha1.LogPipeline) any {
+			return common.K8sAttributesProcessorConfig(opts.Enrichments)
+		},
+	)
+}
+
+func (b *Builder) addIstioNoiseFilterProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDIstioNoiseFilterProcessor),
+		func(lp *telemetryv1alpha1.LogPipeline) any {
+			return &common.IstioNoiseFilterProcessor{}
+		},
+	)
+}
+
+func (b *Builder) addDropIfInputSourceOTLPProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDDropIfInputSourceOTLPProcessor),
+		func(lp *telemetryv1alpha1.LogPipeline) any {
+			if logpipelineutils.IsOTLPInputEnabled(lp.Spec.Input) {
+				return nil // Skip this processor if OTLP input is enabled
+			}
+
+			return dropIfInputSourceOTLPProcessorConfig()
+		},
+	)
+}
+
+func (b *Builder) addNamespaceFilterProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		formatNamespaceFilterID,
+		func(lp *telemetryv1alpha1.LogPipeline) any {
+			otlpInput := lp.Spec.Input.OTLP
+			if otlpInput == nil || otlpInput.Disabled || !shouldFilterByNamespace(otlpInput.Namespaces) {
+				return nil // No namespace filter needed
+			}
+
+			return namespaceFilterProcessorConfig(otlpInput.Namespaces)
+		},
+	)
+}
+
+func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDInsertClusterAttributesProcessor),
+		func(lp *telemetryv1alpha1.LogPipeline) any {
+			return common.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.ClusterUID, opts.CloudProvider)
+		},
+	)
+}
+
+func (b *Builder) addServiceEnrichmentProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDServiceEnrichmentProcessor),
+		func(lp *telemetryv1alpha1.LogPipeline) any {
+			return common.ResolveServiceNameConfig()
+		},
+	)
+}
+
+func (b *Builder) addDropKymaAttributesProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDDropKymaAttributesProcessor),
+		func(lp *telemetryv1alpha1.LogPipeline) any {
+			return common.DropKymaAttributesProcessorConfig()
+		},
+	)
+}
+
+func (b *Builder) addIstioAccessLogsEnrichmentProcessor(opts BuildOptions) buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDIstioEnrichmentProcessor),
+		func(lp *telemetryv1alpha1.LogPipeline) any {
+			return &IstioEnrichmentProcessor{
+				ScopeVersion: opts.ModuleVersion,
+			}
+		},
+	)
+}
+
+func (b *Builder) addUserDefinedTransformProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		formatUserDefinedTransformProcessorID,
+		func(lp *telemetryv1alpha1.LogPipeline) any {
+			if len(lp.Spec.Transforms) == 0 {
+				return nil // No transforms, no processor needed
+			}
+
+			transformStatements := common.TransformSpecsToProcessorStatements(lp.Spec.Transforms)
+			transformProcessor := common.LogTransformProcessorConfig(transformStatements)
+
+			return transformProcessor
+		},
+	)
+}
+
+//nolint:mnd // hardcoded values
+func (b *Builder) addBatchProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDBatchProcessor),
+		func(lp *telemetryv1alpha1.LogPipeline) any {
+			return &common.BatchProcessor{
+				SendBatchSize:    512,
+				Timeout:          "10s",
+				SendBatchMaxSize: 512,
+			}
+		},
+	)
+}
+
+func (b *Builder) addOTLPExporter(queueSize int) buildComponentFunc {
+	return b.AddExporter(
+		formatOTLPExporterID,
+		func(ctx context.Context, lp *telemetryv1alpha1.LogPipeline) (any, common.EnvVars, error) {
+			otlpExporterBuilder := common.NewOTLPExporterConfigBuilder(
+				b.Reader,
+				lp.Spec.Output.OTLP,
+				lp.Name,
+				queueSize,
+				common.SignalTypeLog,
+			)
+
+			return otlpExporterBuilder.OTLPExporterConfig(ctx)
+		},
+	)
+}
+
+// Helper functions
+
+func namespaceFilterProcessorConfig(namespaceSelector *telemetryv1alpha1.NamespaceSelector) *FilterProcessor {
+	var filterExpressions []string
+
+	if len(namespaceSelector.Exclude) > 0 {
+		namespacesConditions := namespacesConditions(namespaceSelector.Exclude)
+
+		// Drop logs if the excluded namespaces are matched
+		excludeNamespacesExpr := common.JoinWithOr(namespacesConditions...)
+		filterExpressions = append(filterExpressions, excludeNamespacesExpr)
+	}
+
+	if len(namespaceSelector.Include) > 0 {
+		namespacesConditions := namespacesConditions(namespaceSelector.Include)
+		includeNamespacesExpr := common.JoinWithAnd(
+			// Ensure the k8s.namespace.name resource attribute is not nil,
+			// so we don't drop logs without a namespace label
+			common.ResourceAttributeIsNotNil(common.K8sNamespaceName),
+
+			// Logs are dropped if the filter expression evaluates to true,
+			// so we negate the match against included namespaces to keep only those
+			common.Not(common.JoinWithOr(namespacesConditions...)),
+		)
+		filterExpressions = append(filterExpressions, includeNamespacesExpr)
+	}
+
+	return &FilterProcessor{
+		Logs: FilterProcessorLogs{
+			Log: filterExpressions,
+		},
 	}
 }
 
-func receiversConfig() Receivers {
-	return Receivers{
-		OTLP: common.OTLPReceiver{
-			Protocols: common.ReceiverProtocols{
-				HTTP: common.Endpoint{
-					Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPHTTP),
-				},
-				GRPC: common.Endpoint{
-					Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPGRPC),
-				},
+func namespacesConditions(namespaces []string) []string {
+	var conditions []string
+	for _, ns := range namespaces {
+		conditions = append(conditions, common.NamespaceEquals(ns))
+	}
+
+	return conditions
+}
+
+func dropIfInputSourceOTLPProcessorConfig() *FilterProcessor {
+	return &FilterProcessor{
+		Logs: FilterProcessorLogs{
+			Log: []string{
+				// Drop all logs; the filter processor requires at least one valid condition expression,
+				// to drop all logs, we use a condition that is always true for any log
+				common.JoinWithOr(common.IsNotNil("log.observed_time"), common.IsNotNil("log.time")),
 			},
 		},
 	}
 }
 
-// addComponentsForLogPipeline enriches a Config (exporters, processors, etc.) with components for a given telemetryv1alpha1.LogPipeline.
-func (b *Builder) addComponentsForLogPipeline(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, queueSize int) error {
-	b.addNamespaceFilter(pipeline)
-	b.addInputSourceFilters(pipeline)
-	b.addUserDefinedTransformProcessor(pipeline)
-
-	return b.addOTLPExporter(ctx, pipeline, queueSize)
+func shouldFilterByNamespace(namespaceSelector *telemetryv1alpha1.NamespaceSelector) bool {
+	return namespaceSelector != nil && (len(namespaceSelector.Include) > 0 || len(namespaceSelector.Exclude) > 0)
 }
 
-func (b *Builder) addNamespaceFilter(pipeline *telemetryv1alpha1.LogPipeline) {
-	otlpInput := pipeline.Spec.Input.OTLP
-	if otlpInput == nil || otlpInput.Disabled {
-		// no namespace filter needed
-		return
-	}
-
-	if b.config.Processors.Dynamic == nil {
-		b.config.Processors.Dynamic = make(map[string]any)
-	}
-
-	if shouldFilterByNamespace(otlpInput.Namespaces) {
-		processorID := formatNamespaceFilterID(pipeline.Name)
-		b.config.Processors.Dynamic[processorID] = namespaceFilterProcessorConfig(otlpInput.Namespaces)
-	}
+func formatLogServicePipelineID(lp *telemetryv1alpha1.LogPipeline) string {
+	return fmt.Sprintf("logs/%s", lp.Name)
 }
 
-func (b *Builder) addInputSourceFilters(pipeline *telemetryv1alpha1.LogPipeline) {
-	input := pipeline.Spec.Input
-	if !logpipelineutils.IsOTLPInputEnabled(input) {
-		b.config.Processors.DropIfInputSourceOTLP = dropIfInputSourceOTLPProcessorConfig()
-	}
+func formatNamespaceFilterID(lp *telemetryv1alpha1.LogPipeline) string {
+	return fmt.Sprintf(common.ComponentIDNamespaceFilterProcessor, lp.Name)
 }
 
-func (b *Builder) addUserDefinedTransformProcessor(pipeline *telemetryv1alpha1.LogPipeline) {
-	if len(pipeline.Spec.Transforms) == 0 {
-		return
-	}
-
-	transformStatements := common.TransformSpecsToProcessorStatements(pipeline.Spec.Transforms)
-	transformProcessor := common.LogTransformProcessorConfig(transformStatements)
-
-	processorID := formatUserDefinedTransformProcessorID(pipeline.Name)
-	b.config.Processors.Dynamic[processorID] = transformProcessor
+func formatUserDefinedTransformProcessorID(lp *telemetryv1alpha1.LogPipeline) string {
+	return fmt.Sprintf(common.ComponentIDUserDefinedTransformProcessor, lp.Name)
 }
 
-func (b *Builder) addOTLPExporter(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, queueSize int) error {
-	otlpExporterBuilder := common.NewOTLPExporterConfigBuilder(
-		b.Reader,
-		pipeline.Spec.Output.OTLP,
-		pipeline.Name,
-		queueSize,
-		common.SignalTypeLog,
-	)
-
-	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.OTLPExporterConfig(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to make otlp exporter config: %w", err)
-	}
-
-	maps.Copy(b.envVars, otlpExporterEnvVars)
-
-	otlpExporterID := formatOTLPExporterID(pipeline)
-	b.config.Exporters[otlpExporterID] = Exporter{OTLP: otlpExporterConfig}
-
-	return nil
+func formatOTLPExporterID(pipeline *telemetryv1alpha1.LogPipeline) string {
+	return common.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)
 }

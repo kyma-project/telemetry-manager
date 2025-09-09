@@ -54,6 +54,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
+	"github.com/kyma-project/telemetry-manager/internal/validators/transformspec"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
@@ -69,6 +70,7 @@ type LogPipelineControllerConfig struct {
 	ExporterImage               string
 	FluentBitImage              string
 	OTelCollectorImage          string
+	ChownInitContainerImage     string
 	FluentBitPriorityClassName  string
 	LogGatewayPriorityClassName string
 	LogAgentPriorityClassName   string
@@ -203,6 +205,7 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 		config.TelemetryNamespace,
 		config.FluentBitImage,
 		config.ExporterImage,
+		config.ChownInitContainerImage,
 		config.FluentBitPriorityClassName,
 	)
 
@@ -230,11 +233,17 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 
 //nolint:unparam // error is always nil: An error could be returned after implementing the IstioStatusChecker (TODO)
 func configureOtelReconciler(client client.Client, config LogPipelineControllerConfig, pipelineLock logpipelineotel.PipelineLock, gatewayFlowHealthProber *prober.OTelGatewayProber, agentFlowHealthProber *prober.OTelAgentProber) (*logpipelineotel.Reconciler, error) {
+	transformSpecValidator, err := transformspec.New(transformspec.SignalTypeLog)
+	if err != nil {
+		return nil, err
+	}
+
 	pipelineValidator := &logpipelineotel.Validator{
-		PipelineLock:       pipelineLock,
-		EndpointValidator:  &endpoint.Validator{Client: client},
-		TLSCertValidator:   tlscert.New(client),
-		SecretRefValidator: &secretref.Validator{Client: client},
+		PipelineLock:           pipelineLock,
+		EndpointValidator:      &endpoint.Validator{Client: client},
+		TLSCertValidator:       tlscert.New(client),
+		SecretRefValidator:     &secretref.Validator{Client: client},
+		TransformSpecValidator: transformSpecValidator,
 	}
 
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)
@@ -244,9 +253,6 @@ func configureOtelReconciler(client client.Client, config LogPipelineControllerC
 
 	agentConfigBuilder := &logagent.Builder{
 		Reader: client,
-		Config: logagent.BuilderConfig{
-			GatewayOTLPServiceName: types.NamespacedName{Namespace: config.TelemetryNamespace, Name: otelcollector.LogOTLPServiceName},
-		},
 	}
 
 	otelReconciler := logpipelineotel.New(
@@ -256,7 +262,7 @@ func configureOtelReconciler(client client.Client, config LogPipelineControllerC
 		gatewayFlowHealthProber,
 		agentFlowHealthProber,
 		agentConfigBuilder,
-		otelcollector.NewLogAgentApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.LogAgentPriorityClassName),
+		otelcollector.NewLogAgentApplierDeleter(config.OTelCollectorImage, config.ChownInitContainerImage, config.TelemetryNamespace, config.LogAgentPriorityClassName),
 		&workloadstatus.DaemonSetProber{Client: client},
 		otelcollector.NewLogGatewayApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.LogGatewayPriorityClassName),
 		&loggateway.Builder{Reader: client},

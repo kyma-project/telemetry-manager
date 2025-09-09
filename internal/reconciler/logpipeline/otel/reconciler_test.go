@@ -1,6 +1,7 @@
 package otel
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,8 +15,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/logagent"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/loggateway"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	logpipelinemocks "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
@@ -23,6 +23,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
+	"github.com/kyma-project/telemetry-manager/internal/validators/transformspec"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
@@ -47,13 +48,13 @@ func TestReconcile(t *testing.T) {
 		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Times(1)
 
 		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-		agentConfigBuilderMock.On("Build", mock.Anything).Return(&logagent.Config{}, nil, nil).Times(1)
+		agentConfigBuilderMock.On("Build", mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
 
 		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
 		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&loggateway.Config{}, nil, nil).Times(1)
+		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
 
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(workloadstatus.ErrDeploymentFetching)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
@@ -70,10 +71,11 @@ func TestReconcile(t *testing.T) {
 		pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 		pipelineValidatorWithStubs := &Validator{
-			PipelineLock:       pipelineLock,
-			EndpointValidator:  stubs.NewEndpointValidator(nil),
-			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:           pipelineLock,
+			EndpointValidator:      stubs.NewEndpointValidator(nil),
+			TLSCertValidator:       stubs.NewTLSCertValidator(nil),
+			SecretRefValidator:     stubs.NewSecretRefValidator(nil),
+			TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
 		}
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
@@ -120,10 +122,10 @@ func TestReconcile(t *testing.T) {
 		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Times(1)
 
 		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-		agentConfigBuilderMock.On("Build", containsPipeline(pipeline), mock.Anything).Return(&loggateway.Config{}, nil, nil).Times(1)
+		agentConfigBuilderMock.On("Build", containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&loggateway.Config{}, nil, nil).Times(1)
+		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
 
 		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
 		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -143,10 +145,11 @@ func TestReconcile(t *testing.T) {
 		pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 		pipelineValidatorWithStubs := &Validator{
-			PipelineLock:       pipelineLock,
-			EndpointValidator:  stubs.NewEndpointValidator(nil),
-			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:           pipelineLock,
+			EndpointValidator:      stubs.NewEndpointValidator(nil),
+			TLSCertValidator:       stubs.NewTLSCertValidator(nil),
+			SecretRefValidator:     stubs.NewSecretRefValidator(nil),
+			TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
 		}
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
@@ -193,10 +196,10 @@ func TestReconcile(t *testing.T) {
 		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Times(1)
 
 		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-		agentConfigBuilderMock.On("Build", containsPipeline(pipeline), mock.Anything).Return(&loggateway.Config{}, nil, nil).Times(1)
+		agentConfigBuilderMock.On("Build", containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&loggateway.Config{}, nil, nil).Times(1)
+		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
 
 		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
 		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -210,10 +213,11 @@ func TestReconcile(t *testing.T) {
 		pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 		pipelineValidatorWithStubs := &Validator{
-			PipelineLock:       pipelineLock,
-			EndpointValidator:  stubs.NewEndpointValidator(nil),
-			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:           pipelineLock,
+			EndpointValidator:      stubs.NewEndpointValidator(nil),
+			TLSCertValidator:       stubs.NewTLSCertValidator(nil),
+			SecretRefValidator:     stubs.NewSecretRefValidator(nil),
+			TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
 		}
 
 		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
@@ -265,10 +269,10 @@ func TestReconcile(t *testing.T) {
 		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-		agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&logagent.Config{}, nil, nil).Times(1)
+		agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&loggateway.Config{}, nil, nil).Times(1)
+		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
 
 		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
 		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -282,10 +286,11 @@ func TestReconcile(t *testing.T) {
 		pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 		pipelineValidatorWithStubs := &Validator{
-			PipelineLock:       pipelineLock,
-			EndpointValidator:  stubs.NewEndpointValidator(nil),
-			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:           pipelineLock,
+			EndpointValidator:      stubs.NewEndpointValidator(nil),
+			TLSCertValidator:       stubs.NewTLSCertValidator(nil),
+			SecretRefValidator:     stubs.NewSecretRefValidator(nil),
+			TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
 		}
 
 		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
@@ -337,10 +342,10 @@ func TestReconcile(t *testing.T) {
 		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-		agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&logagent.Config{}, nil, nil).Times(1)
+		agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&loggateway.Config{}, nil, nil).Times(1)
+		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
 
 		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
 		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -354,10 +359,11 @@ func TestReconcile(t *testing.T) {
 		pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 		pipelineValidatorWithStubs := &Validator{
-			PipelineLock:       pipelineLock,
-			EndpointValidator:  stubs.NewEndpointValidator(nil),
-			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:           pipelineLock,
+			EndpointValidator:      stubs.NewEndpointValidator(nil),
+			TLSCertValidator:       stubs.NewTLSCertValidator(nil),
+			SecretRefValidator:     stubs.NewSecretRefValidator(nil),
+			TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
 		}
 
 		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
@@ -499,13 +505,13 @@ func TestReconcile(t *testing.T) {
 				fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 				gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-				gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&loggateway.Config{}, nil, nil).Times(1)
+				gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
 
 				agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 				agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Times(1)
 
 				agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-				agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&logagent.Config{}, nil, nil).Times(1)
+				agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
 
 				gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
 				gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -526,10 +532,11 @@ func TestReconcile(t *testing.T) {
 				pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 				pipelineValidatorWithStubs := &Validator{
-					PipelineLock:       pipelineLock,
-					EndpointValidator:  stubs.NewEndpointValidator(nil),
-					TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-					SecretRefValidator: stubs.NewSecretRefValidator(nil),
+					PipelineLock:           pipelineLock,
+					EndpointValidator:      stubs.NewEndpointValidator(nil),
+					TLSCertValidator:       stubs.NewTLSCertValidator(nil),
+					SecretRefValidator:     stubs.NewSecretRefValidator(nil),
+					TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
 				}
 
 				errToMsg := &conditions.ErrorToMessageConverter{}
@@ -647,13 +654,13 @@ func TestReconcile(t *testing.T) {
 				fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 				gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-				gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&loggateway.Config{}, nil, nil).Times(1)
+				gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
 
 				agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 				agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Times(1)
 
 				agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-				agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&logagent.Config{}, nil, nil).Times(1)
+				agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
 
 				gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
 				gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -674,10 +681,11 @@ func TestReconcile(t *testing.T) {
 				pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 				pipelineValidatorWithStubs := &Validator{
-					PipelineLock:       pipelineLock,
-					EndpointValidator:  stubs.NewEndpointValidator(nil),
-					TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-					SecretRefValidator: stubs.NewSecretRefValidator(nil),
+					PipelineLock:           pipelineLock,
+					EndpointValidator:      stubs.NewEndpointValidator(nil),
+					TLSCertValidator:       stubs.NewTLSCertValidator(nil),
+					SecretRefValidator:     stubs.NewSecretRefValidator(nil),
+					TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
 				}
 
 				errToMsg := &conditions.ErrorToMessageConverter{}
@@ -716,6 +724,86 @@ func TestReconcile(t *testing.T) {
 		}
 	})
 
+	t.Run("invalid transform spec", func(t *testing.T) {
+		pipeline := testutils.NewLogPipelineBuilder().Build()
+		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil)
+
+		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
+		agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil)
+
+		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+		gatewayApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil)
+
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
+
+		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHeathProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
+
+		pipelineLock := &mocks.PipelineLock{}
+		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
+		pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
+
+		pipelineValidatorWithStubs := &Validator{
+			PipelineLock:       pipelineLock,
+			EndpointValidator:  stubs.NewEndpointValidator(nil),
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			TransformSpecValidator: stubs.NewTransformSpecValidator(
+				&transformspec.InvalidTransformSpecError{
+					Err: fmt.Errorf("invalid TransformSpec: error while parsing statements"),
+				},
+			),
+		}
+
+		errToMsg := &conditions.ErrorToMessageConverter{}
+		sut := New(
+			fakeClient,
+			telemetryNamespace,
+			moduleVersion,
+			gatewayFlowHeathProber,
+			agentFlowHealthProber,
+			agentConfigBuilderMock,
+			agentApplierDeleterMock,
+			agentProberStub,
+			gatewayApplierDeleterMock,
+			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			istioStatusCheckerStub,
+			pipelineLock,
+			pipelineValidatorWithStubs,
+			errToMsg)
+		err := sut.Reconcile(t.Context(), &pipeline)
+		require.NoError(t, err)
+
+		var updatedPipeline telemetryv1alpha1.LogPipeline
+
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeConfigurationGenerated,
+			metav1.ConditionFalse,
+			conditions.ReasonTransformSpecInvalid,
+			"Invalid TransformSpec: error while parsing statements",
+		)
+
+		agentConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything, mock.Anything)
+		gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything, mock.Anything)
+	})
+
 	t.Run("one log pipeline does not require an agent", func(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().WithApplicationInput(false).Build()
 		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
@@ -724,7 +812,7 @@ func TestReconcile(t *testing.T) {
 		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Times(1)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&loggateway.Config{}, nil, nil).Times(1)
+		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
 
 		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
 		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -744,10 +832,11 @@ func TestReconcile(t *testing.T) {
 		pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 		pipelineValidatorWithStubs := &Validator{
-			PipelineLock:       pipelineLock,
-			EndpointValidator:  stubs.NewEndpointValidator(nil),
-			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:           pipelineLock,
+			EndpointValidator:      stubs.NewEndpointValidator(nil),
+			TLSCertValidator:       stubs.NewTLSCertValidator(nil),
+			SecretRefValidator:     stubs.NewSecretRefValidator(nil),
+			TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
 		}
 
 		sut := New(
@@ -788,14 +877,14 @@ func TestReconcile(t *testing.T) {
 		pipeline2 := testutils.NewLogPipelineBuilder().WithName("pipeline2").WithOTLPOutput().WithApplicationInput(true).Build()
 		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline1, &pipeline2).WithStatusSubresource(&pipeline1, &pipeline2).Build()
 
-		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-		agentConfigBuilderMock.On("Build", mock.Anything, mock.Anything, mock.Anything).Return(&logagent.Config{}, nil, nil)
+		agentConfigBuilder := &mocks.AgentConfigBuilder{}
+		agentConfigBuilder.On("Build", mock.Anything, mock.Anything, mock.Anything).Return(&common.Config{}, nil, nil)
 
 		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-		gatewayConfigBuilderMock.On("Build", mock.Anything, mock.Anything, mock.Anything).Return(&loggateway.Config{}, nil, nil)
+		gatewayConfigBuilderMock.On("Build", mock.Anything, mock.Anything, mock.Anything).Return(&common.Config{}, nil, nil)
 
 		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
 		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -815,10 +904,11 @@ func TestReconcile(t *testing.T) {
 		pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 		pipelineValidatorWithStubs := &Validator{
-			PipelineLock:       pipelineLock,
-			EndpointValidator:  stubs.NewEndpointValidator(nil),
-			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:           pipelineLock,
+			EndpointValidator:      stubs.NewEndpointValidator(nil),
+			TLSCertValidator:       stubs.NewTLSCertValidator(nil),
+			SecretRefValidator:     stubs.NewSecretRefValidator(nil),
+			TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
 		}
 
 		sut := New(
@@ -827,7 +917,7 @@ func TestReconcile(t *testing.T) {
 			moduleVersion,
 			gatewayFlowHeathProber,
 			agentFlowHealthProber,
-			agentConfigBuilderMock,
+			agentConfigBuilder,
 			agentApplierDeleterMock,
 			agentProberStub,
 			gatewayApplierDeleterMock,
@@ -853,7 +943,7 @@ func TestReconcile(t *testing.T) {
 			conditions.ReasonLogAgentNotRequired,
 			"")
 
-		agentConfigBuilderMock.AssertExpectations(t)
+		agentConfigBuilder.AssertExpectations(t)
 		agentApplierDeleterMock.AssertExpectations(t)
 		gatewayConfigBuilderMock.AssertExpectations(t)
 	})
@@ -867,7 +957,7 @@ func TestReconcile(t *testing.T) {
 		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Times(2)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline1, pipeline2}), mock.Anything).Return(&loggateway.Config{}, nil, nil)
+		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline1, pipeline2}), mock.Anything).Return(&common.Config{}, nil, nil)
 
 		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
 		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -887,10 +977,11 @@ func TestReconcile(t *testing.T) {
 		pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 		pipelineValidatorWithStubs := &Validator{
-			PipelineLock:       pipelineLock,
-			EndpointValidator:  stubs.NewEndpointValidator(nil),
-			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:           pipelineLock,
+			EndpointValidator:      stubs.NewEndpointValidator(nil),
+			TLSCertValidator:       stubs.NewTLSCertValidator(nil),
+			SecretRefValidator:     stubs.NewSecretRefValidator(nil),
+			TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
 		}
 
 		sut := New(

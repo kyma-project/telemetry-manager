@@ -1,25 +1,25 @@
 package v1alpha1
 
 type ValueType struct {
-	// The value as plain text.
+	// Value as plain text.
 	Value string `json:"value,omitempty"`
-	// The value as a reference to a resource.
+	// ValueFrom is the value as a reference to a resource.
 	ValueFrom *ValueFromSource `json:"valueFrom,omitempty"`
 }
 
 type ValueFromSource struct {
-	// Refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`.
+	// SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`.
 	SecretKeyRef *SecretKeyRef `json:"secretKeyRef,omitempty"`
 }
 
 type SecretKeyRef struct {
-	// The name of the Secret containing the referenced value.
+	// Name of the Secret containing the referenced value.
 	// +kubebuilder:validation:Required
 	Name string `json:"name,omitempty"`
-	// The name of the namespace containing the Secret with the referenced value.
+	// Namespace containing the Secret with the referenced value.
 	// +kubebuilder:validation:Required
 	Namespace string `json:"namespace,omitempty"`
-	// The name of the attribute of the Secret holding the referenced value.
+	// Key defines the name of the attribute of the Secret holding the referenced value.
 	// +kubebuilder:validation:Required
 	Key string `json:"key,omitempty"`
 }
@@ -32,33 +32,33 @@ const (
 // OTLPOutput OTLP output configuration
 // +kubebuilder:validation:XValidation:rule="((!has(self.path) || size(self.path) <= 0) && (has(self.protocol) && self.protocol == 'grpc')) || (has(self.protocol) && self.protocol == 'http')", message="Path is only available with HTTP protocol"
 type OTLPOutput struct {
-	// Defines the OTLP protocol (http or grpc). Default is grpc.
+	// Protocol defines the OTLP protocol (`http` or `grpc`). Default is `grpc`.
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:Enum=grpc;http
 	Protocol string `json:"protocol,omitempty"`
-	// Defines the host and port (<host>:<port>) of an OTLP endpoint.
+	// Endpoint defines the host and port (`<host>:<port>`) of an OTLP endpoint.
 	// +kubebuilder:validation:Required
 	Endpoint ValueType `json:"endpoint"`
-	// Defines OTLP export URL path (only for the HTTP protocol). This value overrides auto-appended paths `/v1/metrics` and `/v1/traces`
+	// Path defines OTLP export URL path (only for the HTTP protocol). This value overrides auto-appended paths `/v1/metrics` and `/v1/traces`
 	Path string `json:"path,omitempty"`
-	// Defines authentication options for the OTLP output
+	// Authentication defines authentication options for the OTLP output
 	Authentication *AuthenticationOptions `json:"authentication,omitempty"`
-	// Defines custom headers to be added to outgoing HTTP or GRPC requests.
+	// Headers defines custom headers to be added to outgoing HTTP or gRPC requests.
 	Headers []Header `json:"headers,omitempty"`
-	// Defines TLS options for the OTLP output.
+	// TLS defines TLS options for the OTLP output.
 	TLS *OTLPTLS `json:"tls,omitempty"`
 }
 
 type AuthenticationOptions struct {
-	// Activates `Basic` authentication for the destination providing relevant Secrets.
+	// Basic activates `Basic` authentication for the destination providing relevant Secrets.
 	Basic *BasicAuthOptions `json:"basic,omitempty"`
 }
 
 type BasicAuthOptions struct {
-	// Contains the basic auth username or a Secret reference.
+	// User contains the basic auth username or a Secret reference.
 	// +kubebuilder:validation:Required
 	User ValueType `json:"user"`
-	// Contains the basic auth password or a Secret reference.
+	// Password contains the basic auth password or a Secret reference.
 	// +kubebuilder:validation:Required
 	Password ValueType `json:"password"`
 }
@@ -67,17 +67,17 @@ type Header struct {
 	// Defines the header value.
 	ValueType `json:",inline"`
 
-	// Defines the header name.
+	// Name defines the header name.
 	Name string `json:"name"`
-	// Defines an optional header value prefix. The prefix is separated from the value by a space character.
+	// Prefix defines an optional header value prefix. The prefix is separated from the value by a space character.
 	Prefix string `json:"prefix,omitempty"`
 }
 
 // +kubebuilder:validation:XValidation:rule="has(self.cert) == has(self.key)", message="Can define either both 'cert' and 'key', or neither"
 type OTLPTLS struct {
-	// Defines whether to send requests using plaintext instead of TLS.
+	// Insecure defines whether to send requests using plaintext instead of TLS.
 	Insecure bool `json:"insecure,omitempty"`
-	// Defines whether to skip server certificate verification when using TLS.
+	// InsecureSkipVerify defines whether to skip server certificate verification when using TLS.
 	InsecureSkipVerify bool `json:"insecureSkipVerify,omitempty"`
 	// Defines an optional CA certificate for server certificate verification when using TLS. The certificate must be provided in PEM format.
 	CA *ValueType `json:"ca,omitempty"`
@@ -91,7 +91,7 @@ type OTLPTLS struct {
 type OTLPInput struct {
 	// If set to `true`, no push-based OTLP signals are collected. The default is `false`.
 	Disabled bool `json:"disabled,omitempty"`
-	// Describes whether push-based OTLP signals from specific namespaces are selected. System namespaces are enabled by default.
+	// Namespaces describes whether push-based OTLP signals from specific namespaces are selected. System namespaces are enabled by default.
 	// +optional
 	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
 }

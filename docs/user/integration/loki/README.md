@@ -109,7 +109,7 @@ Apply the LogPipeline:
             protocol: http
             endpoint:
                value: http://${HELM_LOKI_RELEASE}.${K8S_NAMESPACE}.svc.cluster.local:3100
-            path: otlp
+            path: otlp/v1/logs
    EOF
    ```
 

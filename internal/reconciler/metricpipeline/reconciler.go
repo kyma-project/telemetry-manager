@@ -34,11 +34,11 @@ import (
 const defaultReplicaCount int32 = 2
 
 type AgentConfigBuilder interface {
-	Build(pipelines []telemetryv1alpha1.MetricPipeline, options metricagent.BuildOptions) *metricagent.Config
+	Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, options metricagent.BuildOptions) (*common.Config, error)
 }
 
 type GatewayConfigBuilder interface {
-	Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, options metricgateway.BuildOptions) (*metricgateway.Config, common.EnvVars, error)
+	Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, options metricgateway.BuildOptions) (*common.Config, common.EnvVars, error)
 }
 
 type AgentApplierDeleter interface {
@@ -345,12 +345,16 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 
 func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
 	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
-	agentConfig := r.agentConfigBuilder.Build(allPipelines, metricagent.BuildOptions{
+
+	agentConfig, err := r.agentConfigBuilder.Build(ctx, allPipelines, metricagent.BuildOptions{
 		IstioEnabled:                isIstioActive,
 		IstioCertPath:               otelcollector.IstioCertPath,
 		InstrumentationScopeVersion: r.moduleVersion,
 		AgentNamespace:              r.telemetryNamespace,
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create collector config: %w", err)
+	}
 
 	agentConfigYAML, err := yaml.Marshal(agentConfig)
 	if err != nil {
