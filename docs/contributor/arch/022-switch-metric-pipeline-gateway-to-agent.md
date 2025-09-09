@@ -31,6 +31,8 @@ The new agent configuration consists of three pipelines:
 2. **Enrichment**: Defines enrichment-specific pipeline configurations, including enrichment-specific processors and a router to connect to the next pipeline. The enrichment pipeline is shared across all inputs.
 3. **Output**: Defines output for a specific MetricPipeline configuration, including processors and exporters (such as namespace filtering).
 
+The example below shows a configuration with two MetricPipelines, both MetricPipelines enabling the Prometheus, Runtime, and Istio inputs.
+
 ![config](./../assets/metric-agent-pipelines.png)
 
 See a [sample configuration for the new agent](./../assets/sample-metric-agent-config.yaml).

@@ -33,6 +33,8 @@ service:
         - routing/prometheus-input
     metrics/cls-1-backend-output:
       receivers:
+        - routing/prometheus-input
+        - routing/istio-input
         - routing/runtime-input
         - routing/enrichment
       processors:
@@ -48,6 +50,8 @@ service:
         - otlp/sample-1
     metrics/cls-2-backend-output:
       receivers:
+        - routing/prometheus-input
+        - routing/istio-input
         - routing/runtime-input
         - routing/enrichment
       processors:
