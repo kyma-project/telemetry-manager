@@ -674,14 +674,17 @@ func enrichmentOutputRoutingConnectorConfig(runtimePipelines, prometheusPipeline
 		ErrorMode: "ignore",
 		Table: []common.RoutingConnectorTableEntry{
 			{
+				Context:  "metric",
 				Statement: fmt.Sprintf("route() where %s", common.ScopeNameEquals(common.InstrumentationScopeRuntime)),
 				Pipelines: formatOutputPipelineIDs(runtimePipelines),
 			},
 			{
+				Context:  "metric",
 				Statement: fmt.Sprintf("route() where %s", common.ScopeNameEquals(common.InstrumentationScopePrometheus)),
 				Pipelines: formatOutputPipelineIDs(prometheusPipelines),
 			},
 			{
+				Context:  "metric",
 				Statement: fmt.Sprintf("route() where %s", common.ScopeNameEquals(common.InstrumentationScopeIstio)),
 				Pipelines: formatOutputPipelineIDs(istioPipelines),
 			},

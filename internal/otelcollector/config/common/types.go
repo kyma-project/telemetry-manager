@@ -228,6 +228,7 @@ type RoutingConnector struct {
 type RoutingConnectorTableEntry struct {
 	Statement string   `yaml:"statement"`
 	Pipelines []string `yaml:"pipelines"`
+	Context   string   `yaml:"context,omitempty"`
 }
 
 type ForwardConnector struct {
