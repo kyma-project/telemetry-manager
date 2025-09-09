@@ -13,7 +13,6 @@ on:
     types: [ opened, edited, synchronize, reopened, ready_for_review ]
     branches:
       - main
-      - chore/metric-agent-decoupling # TODO: Remove after the decoupling is done
     paths:
       - "external-images.yaml"
 
