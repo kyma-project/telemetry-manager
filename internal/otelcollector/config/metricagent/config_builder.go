@@ -690,7 +690,7 @@ func enrichmentOutputRoutingConnectorConfig(runtimePipelines, prometheusPipeline
 
 	return common.RoutingConnector{
 		ErrorMode: "ignore",
-		Table: tableEntries,
+		Table:     tableEntries,
 	}
 }
 
