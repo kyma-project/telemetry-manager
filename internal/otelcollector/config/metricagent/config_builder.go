@@ -154,10 +154,6 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addInputRoutingReceiver(common.ComponentIDRuntimeInputRoutingConnector, pipelinesWithRuntimeInput, runtimeInputEnabled),
 			b.addInputRoutingReceiver(common.ComponentIDPrometheusInputRoutingConnector, pipelinesWithPrometheusInput, prometheusInputEnabled),
 			b.addInputRoutingReceiver(common.ComponentIDIstioInputRoutingConnector, pipelinesWithIstioInput, istioInputEnabled),
-			// Namespace filters
-			b.addRuntimeNamespaceFilterProcessor(),
-			b.addPrometheusNamespaceFilterProcessor(),
-			b.addIstioNamespaceFilterProcessor(),
 			// Runtime resource filters
 			b.addDropRuntimePodMetricsProcessor(),
 			b.addDropRuntimeContainerMetricsProcessor(),
@@ -170,6 +166,12 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			// Diagnostic metric filters
 			b.addDropPrometheusDiagnosticMetricsProcessor(),
 			b.addDropIstioDiagnosticMetricsProcessor(),
+			// Istio envoy metrics
+			b.addDropEnvoyMetricsIfDisabledProcessor(),
+			// Namespace filters
+			b.addRuntimeNamespaceFilterProcessor(),
+			b.addPrometheusNamespaceFilterProcessor(),
+			b.addIstioNamespaceFilterProcessor(),
 			// Generic processors
 			b.addInsertClusterAttributesProcessor(opts),
 			b.addDeleteSkipEnrichmentAttributeProcessor(),
@@ -583,6 +585,27 @@ func (b *Builder) addDropIstioDiagnosticMetricsProcessor() buildComponentFunc {
 			}
 
 			return common.DropDiagnosticMetricsFilterProcessorConfig(common.InputSourceIstio)
+		},
+	)
+}
+
+// Istio envoy metrics
+
+func (b *Builder) addDropEnvoyMetricsIfDisabledProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDDropEnvoyMetricsIfDisabledProcessor),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			if metricpipelineutils.IsIstioInputEnabled(mp.Spec.Input) && metricpipelineutils.IsEnvoyMetricsEnabled(mp.Spec.Input) {
+				return nil
+			}
+
+			return &common.FilterProcessor{
+				Metrics: common.FilterProcessorMetrics{
+					Metric: []string{
+						common.JoinWithAnd(common.IsMatch("name", "^envoy_.*"), common.ScopeNameEquals(common.InstrumentationScopeIstio)),
+					},
+				},
+			}
 		},
 	)
 }
