@@ -677,15 +677,15 @@ func enrichmentOutputRoutingConnectorConfig(runtimePipelines, prometheusPipeline
 	tableEntries := []common.RoutingConnectorTableEntry{}
 
 	if len(runtimePipelines) > 0 {
-		tableEntries = append(tableEntries, enrichmentOutputRoutingConnectorTableEntry(runtimePipelines, common.InstrumentationScopeRuntime))
+		tableEntries = append(tableEntries, enrichmentOutputRoutingConnectorTableEntry(runtimePipelines, common.InputSourceEquals(common.InputSourceRuntime)) )
 	}
 
 	if len(prometheusPipelines) > 0 {
-		tableEntries = append(tableEntries, enrichmentOutputRoutingConnectorTableEntry(prometheusPipelines, common.InstrumentationScopePrometheus))
+		tableEntries = append(tableEntries, enrichmentOutputRoutingConnectorTableEntry(prometheusPipelines, common.ResourceAttributeEquals(common.KymaInputNameAttribute, common.KymaInputPrometheus)))
 	}
 
 	if len(istioPipelines) > 0 {
-		tableEntries = append(tableEntries, enrichmentOutputRoutingConnectorTableEntry(istioPipelines, common.InstrumentationScopeIstio))
+		tableEntries = append(tableEntries, enrichmentOutputRoutingConnectorTableEntry(istioPipelines, common.ScopeNameEquals(common.InstrumentationScopeIstio)))
 	}
 
 	return common.RoutingConnector{
@@ -694,10 +694,10 @@ func enrichmentOutputRoutingConnectorConfig(runtimePipelines, prometheusPipeline
 	}
 }
 
-func enrichmentOutputRoutingConnectorTableEntry(pipelines []telemetryv1alpha1.MetricPipeline, instrumentationScope string) common.RoutingConnectorTableEntry {
+func enrichmentOutputRoutingConnectorTableEntry(pipelines []telemetryv1alpha1.MetricPipeline, routingCondition string) common.RoutingConnectorTableEntry {
 	return common.RoutingConnectorTableEntry{
 		Context:   "metric",
-		Statement: fmt.Sprintf("route() where %s", common.ScopeNameEquals(instrumentationScope)),
+		Statement: fmt.Sprintf("route() where %s", routingCondition),
 		Pipelines: formatOutputPipelineIDs(pipelines),
 	}
 }

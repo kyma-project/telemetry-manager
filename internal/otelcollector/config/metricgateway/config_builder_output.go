@@ -146,7 +146,6 @@ func (b *Builder) addRuntimeNamespaceFilterProcessor() buildComponentFunc {
 	)
 }
 
-// TODO: Check why instrumentation scope is note used (ask in the daily)
 func (b *Builder) addPrometheusNamespaceFilterProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		func(mp *telemetryv1alpha1.MetricPipeline) string {
