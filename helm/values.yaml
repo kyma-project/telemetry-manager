@@ -1,6 +1,6 @@
 experimental:
   enabled: true
-regular:
+default:
   enabled: false
 manager:
   container:
