@@ -134,7 +134,6 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 		b.addInputRoutingReceiver(common.ComponentIDPrometheusInputRoutingConnector, pipelinesWithPrometheusInput, inputs.prometheus),
 		b.addInputRoutingReceiver(common.ComponentIDIstioInputRoutingConnector, pipelinesWithIstioInput, inputs.istio),
 		b.addK8sAttributesProcessor(opts),
-		b.addInsertClusterAttributesProcessor(opts),
 		b.addServiceEnrichmentProcessor(),
 		b.addEnrichmentOutputRoutingExporter(pipelinesWithRuntimeInput, pipelinesWithPrometheusInput, pipelinesWithIstioInput),
 	); err != nil {
@@ -172,6 +171,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addDropPrometheusDiagnosticMetricsProcessor(),
 			b.addDropIstioDiagnosticMetricsProcessor(),
 			// Generic processors
+			b.addInsertClusterAttributesProcessor(opts),
 			b.addDeleteSkipEnrichmentAttributeProcessor(),
 			b.addDropKymaAttributesProcessor(),
 			b.addUserDefinedTransformProcessor(),
@@ -677,7 +677,7 @@ func enrichmentOutputRoutingConnectorConfig(runtimePipelines, prometheusPipeline
 	tableEntries := []common.RoutingConnectorTableEntry{}
 
 	if len(runtimePipelines) > 0 {
-		tableEntries = append(tableEntries, enrichmentOutputRoutingConnectorTableEntry(runtimePipelines, common.InputSourceEquals(common.InputSourceRuntime)) )
+		tableEntries = append(tableEntries, enrichmentOutputRoutingConnectorTableEntry(runtimePipelines, common.InputSourceEquals(common.InputSourceRuntime)))
 	}
 
 	if len(prometheusPipelines) > 0 {
