@@ -136,7 +136,6 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 		b.addK8sAttributesProcessor(opts),
 		b.addInsertClusterAttributesProcessor(opts),
 		b.addServiceEnrichmentProcessor(),
-		b.addDropKymaAttributesProcessor(),
 		b.addEnrichmentOutputRoutingExporter(pipelinesWithRuntimeInput, pipelinesWithPrometheusInput, pipelinesWithIstioInput),
 	); err != nil {
 		return nil, nil, fmt.Errorf("failed to add enrichment service pipeline: %w", err)
@@ -174,6 +173,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addDropIstioDiagnosticMetricsProcessor(),
 			// Generic processors
 			b.addDeleteSkipEnrichmentAttributeProcessor(),
+			b.addDropKymaAttributesProcessor(),
 			b.addUserDefinedTransformProcessor(),
 			b.addBatchProcessor(), // always last
 			// OTLP exporter
