@@ -664,31 +664,41 @@ func (b *Builder) addEnrichmentOutputRoutingReceiver(runtimePipelines, prometheu
 	return b.AddReceiver(
 		b.StaticComponentID(common.ComponentIDEnrichmentOutputRoutingConnector),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			if len(runtimePipelines) == 0 && len(prometheusPipelines) == 0 && len(istioPipelines) == 0 {
+				return nil
+			}
+
 			return enrichmentOutputRoutingConnectorConfig(runtimePipelines, prometheusPipelines, istioPipelines)
 		},
 	)
 }
 
 func enrichmentOutputRoutingConnectorConfig(runtimePipelines, prometheusPipelines, istioPipelines []telemetryv1alpha1.MetricPipeline) common.RoutingConnector {
+	tableEntries := []common.RoutingConnectorTableEntry{}
+
+	if len(runtimePipelines) > 0 {
+		tableEntries = append(tableEntries, enrichmentOutputRoutingConnectorTableEntry(runtimePipelines, common.InstrumentationScopeRuntime))
+	}
+
+	if len(prometheusPipelines) > 0 {
+		tableEntries = append(tableEntries, enrichmentOutputRoutingConnectorTableEntry(prometheusPipelines, common.InstrumentationScopePrometheus))
+	}
+
+	if len(istioPipelines) > 0 {
+		tableEntries = append(tableEntries, enrichmentOutputRoutingConnectorTableEntry(istioPipelines, common.InstrumentationScopeIstio))
+	}
+
 	return common.RoutingConnector{
 		ErrorMode: "ignore",
-		Table: []common.RoutingConnectorTableEntry{
-			{
-				Context:  "metric",
-				Statement: fmt.Sprintf("route() where %s", common.ScopeNameEquals(common.InstrumentationScopeRuntime)),
-				Pipelines: formatOutputPipelineIDs(runtimePipelines),
-			},
-			{
-				Context:  "metric",
-				Statement: fmt.Sprintf("route() where %s", common.ScopeNameEquals(common.InstrumentationScopePrometheus)),
-				Pipelines: formatOutputPipelineIDs(prometheusPipelines),
-			},
-			{
-				Context:  "metric",
-				Statement: fmt.Sprintf("route() where %s", common.ScopeNameEquals(common.InstrumentationScopeIstio)),
-				Pipelines: formatOutputPipelineIDs(istioPipelines),
-			},
-		},
+		Table: tableEntries,
+	}
+}
+
+func enrichmentOutputRoutingConnectorTableEntry(pipelines []telemetryv1alpha1.MetricPipeline, instrumentationScope string) common.RoutingConnectorTableEntry {
+	return common.RoutingConnectorTableEntry{
+		Context:   "metric",
+		Statement: fmt.Sprintf("route() where %s", common.ScopeNameEquals(instrumentationScope)),
+		Pipelines: formatOutputPipelineIDs(pipelines),
 	}
 }
 
