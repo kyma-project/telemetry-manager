@@ -3,6 +3,7 @@ package logagent
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -11,6 +12,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 )
+
+const checkpointVolumePathSubdir = "telemetry-log-agent/file-log-receiver"
 
 type buildComponentFunc = common.BuildComponentFunc[*telemetryv1alpha1.LogPipeline]
 
@@ -32,7 +35,10 @@ type BuildOptions struct {
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPipeline, opts BuildOptions) (*common.Config, common.EnvVars, error) {
 	b.Config = common.NewConfig()
-	b.AddExtension(common.ComponentIDFileStorageExtension, &common.FileStorage{Directory: otelcollector.CheckpointVolumePath})
+	b.AddExtension(common.ComponentIDFileStorageExtension, &common.FileStorage{
+		CreateDirectory: true,
+		Directory:       filepath.Join(otelcollector.CheckpointVolumePath, checkpointVolumePathSubdir),
+	})
 	b.EnvVars = make(common.EnvVars)
 
 	for _, pipeline := range pipelines {

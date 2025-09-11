@@ -27,12 +27,11 @@ const (
 	IstioCertPath       = "/etc/istio-output-certs"
 	istioCertVolumeName = "istio-certs"
 
-	MetricAgentName                = "telemetry-metric-agent"
-	LogAgentName                   = "telemetry-log-agent"
-	logAgentChownInitContainerName = "checkpoint-dir-ownership-modifier"
+	MetricAgentName = "telemetry-metric-agent"
+	LogAgentName    = "telemetry-log-agent"
 
-	checkpointVolumeName = "varlibfilelogreceiver"
-	CheckpointVolumePath = "/var/lib/telemetry-log-agent/file-log-receiver"
+	checkpointVolumeName = "tmp"
+	CheckpointVolumePath = "/tmp"
 	logVolumeName        = "varlogpods"
 	logVolumePath        = "/var/log/pods"
 )
@@ -64,7 +63,7 @@ type AgentApplyOptions struct {
 	CollectorEnvVars    map[string][]byte
 }
 
-func NewLogAgentApplierDeleter(collectorImage, chownInitContainerImage, namespace, priorityClassName string) *AgentApplierDeleter {
+func NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName string) *AgentApplierDeleter {
 	extraLabels := map[string]string{
 		commonresources.LabelKeyIstioInject: "true", // inject Istio sidecar for SDS certificates and agent-to-gateway communication
 	}
@@ -79,10 +78,6 @@ func NewLogAgentApplierDeleter(collectorImage, chownInitContainerImage, namespac
 	collectorVolumeMounts := []corev1.VolumeMount{
 		makeIstioCertVolumeMount(),
 		makePodLogsVolumeMount(),
-		makeFileLogCheckPointVolumeMount(),
-	}
-
-	chownInitContainerVolumeMounts := []corev1.VolumeMount{
 		makeFileLogCheckPointVolumeMount(),
 	}
 
@@ -101,10 +96,6 @@ func NewLogAgentApplierDeleter(collectorImage, chownInitContainerImage, namespac
 		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
 			commonresources.WithVolumes(volumes),
-			// init container for changing the owner of the checkpoint volume to be the log agent
-			commonresources.WithInitContainer(logAgentChownInitContainerName, chownInitContainerImage,
-				commonresources.WithChownInitContainerOpts(CheckpointVolumePath, chownInitContainerVolumeMounts)...,
-			),
 		},
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithResources(collectorResources),
