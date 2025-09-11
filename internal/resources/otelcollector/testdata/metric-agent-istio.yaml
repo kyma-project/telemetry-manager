@@ -198,6 +198,8 @@ spec:
       protocol: TCP
     - port: 13133
       protocol: TCP
+    - port: 15090
+      protocol: TCP
   podSelector:
     matchLabels:
       app.kubernetes.io/name: telemetry-metric-agent

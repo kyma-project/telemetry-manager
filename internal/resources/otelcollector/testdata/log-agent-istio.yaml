@@ -6,10 +6,24 @@ metadata:
   labels:
     app.kubernetes.io/component: agent
     app.kubernetes.io/managed-by: telemetry-manager
-    app.kubernetes.io/name: telemetry-metric-agent
+    app.kubernetes.io/name: telemetry-log-agent
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: telemetry-metric-agent
+  name: telemetry-log-agent
+  namespace: kyma-system
+---
+apiVersion: v1
+data:
+  DUMMY_ENV_VAR: Zm9v
+kind: Secret
+metadata:
+  labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: telemetry-log-agent
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: telemetry-log-agent
   namespace: kyma-system
 ---
 apiVersion: v1
@@ -22,11 +36,11 @@ metadata:
   labels:
     app.kubernetes.io/component: agent
     app.kubernetes.io/managed-by: telemetry-manager
-    app.kubernetes.io/name: telemetry-metric-agent
+    app.kubernetes.io/name: telemetry-log-agent
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
     telemetry.kyma-project.io/self-monitor: enabled
-  name: telemetry-metric-agent-metrics
+  name: telemetry-log-agent-metrics
   namespace: kyma-system
 spec:
   ports:
@@ -35,7 +49,7 @@ spec:
     protocol: TCP
     targetPort: 8888
   selector:
-    app.kubernetes.io/name: telemetry-metric-agent
+    app.kubernetes.io/name: telemetry-log-agent
   type: ClusterIP
 status:
   loadBalancer: {}
@@ -46,10 +60,10 @@ metadata:
   labels:
     app.kubernetes.io/component: agent
     app.kubernetes.io/managed-by: telemetry-manager
-    app.kubernetes.io/name: telemetry-metric-agent
+    app.kubernetes.io/name: telemetry-log-agent
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: telemetry-metric-agent
+  name: telemetry-log-agent
   namespace: kyma-system
 ---
 apiVersion: apps/v1
@@ -58,19 +72,19 @@ metadata:
   labels:
     app.kubernetes.io/component: agent
     app.kubernetes.io/managed-by: telemetry-manager
-    app.kubernetes.io/name: telemetry-metric-agent
+    app.kubernetes.io/name: telemetry-log-agent
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: telemetry-metric-agent
+  name: telemetry-log-agent
   namespace: kyma-system
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name: telemetry-metric-agent
+      app.kubernetes.io/name: telemetry-log-agent
   template:
     metadata:
       annotations:
-        checksum/config: 6a334c19c8f1698c843d1c40ef9c228c222b0c04f9945a359a3e932c2aa11ac7
+        checksum/config: 1d8e9f768e6b24485bbdd6b9aa417d37fec897a7dafc8321355abc0d45259c9e
         proxy.istio.io/config: |
           # configure an env variable OUTPUT_CERTS to write certificates to the given folder
           proxyMetadata:
@@ -82,11 +96,10 @@ spec:
       labels:
         app.kubernetes.io/component: agent
         app.kubernetes.io/managed-by: telemetry-manager
-        app.kubernetes.io/name: telemetry-metric-agent
+        app.kubernetes.io/name: telemetry-log-agent
         app.kubernetes.io/part-of: telemetry
         kyma-project.io/module: telemetry
         sidecar.istio.io/inject: "true"
-        telemetry.kyma-project.io/metric-scrape: "true"
     spec:
       containers:
       - args:
@@ -97,16 +110,11 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.podIP
-        - name: MY_NODE_NAME
-          valueFrom:
-            fieldRef:
-              apiVersion: v1
-              fieldPath: spec.nodeName
         - name: GOMEMLIMIT
           value: "1006632960"
         envFrom:
         - secretRef:
-            name: telemetry-metric-agent
+            name: telemetry-log-agent
             optional: true
         image: opentelemetry/collector:dummy
         livenessProbe:
@@ -131,6 +139,7 @@ spec:
             - ALL
           privileged: false
           readOnlyRootFilesystem: true
+          runAsGroup: 0
           runAsNonRoot: true
           runAsUser: 10001
           seccompProfile:
@@ -141,13 +150,18 @@ spec:
         - mountPath: /etc/istio-output-certs
           name: istio-certs
           readOnly: true
+        - mountPath: /var/log/pods
+          name: varlogpods
+          readOnly: true
+        - mountPath: /tmp
+          name: tmp
       priorityClassName: normal
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001
         seccompProfile:
           type: RuntimeDefault
-      serviceAccountName: telemetry-metric-agent
+      serviceAccountName: telemetry-log-agent
       tolerations:
       - effect: NoExecute
         operator: Exists
@@ -158,10 +172,17 @@ spec:
           items:
           - key: relay.conf
             path: relay.conf
-          name: telemetry-metric-agent
+          name: telemetry-log-agent
         name: config
       - emptyDir: {}
         name: istio-certs
+      - hostPath:
+          path: /var/log/pods
+        name: varlogpods
+      - hostPath:
+          path: /tmp
+          type: DirectoryOrCreate
+        name: tmp
   updateStrategy: {}
 status:
   currentNumberScheduled: 0
@@ -175,10 +196,10 @@ metadata:
   labels:
     app.kubernetes.io/component: agent
     app.kubernetes.io/managed-by: telemetry-manager
-    app.kubernetes.io/name: telemetry-metric-agent
+    app.kubernetes.io/name: telemetry-log-agent
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: telemetry-metric-agent
+  name: telemetry-log-agent
   namespace: kyma-system
 spec:
   egress:
@@ -198,9 +219,11 @@ spec:
       protocol: TCP
     - port: 13133
       protocol: TCP
+    - port: 15090
+      protocol: TCP
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: telemetry-metric-agent
+      app.kubernetes.io/name: telemetry-log-agent
   policyTypes:
   - Ingress
   - Egress
@@ -211,53 +234,18 @@ metadata:
   labels:
     app.kubernetes.io/component: agent
     app.kubernetes.io/managed-by: telemetry-manager
-    app.kubernetes.io/name: telemetry-metric-agent
+    app.kubernetes.io/name: telemetry-log-agent
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: telemetry-metric-agent
+  name: telemetry-log-agent
   namespace: kyma-system
 rules:
 - apiGroups:
   - ""
   resources:
-  - nodes
-  - nodes/stats
-  - nodes/proxy
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  - nodes/metrics
-  - services
-  - endpoints
-  - pods
-  verbs:
-  - get
-  - list
-  - watch
-- nonResourceURLs:
-  - /metrics
-  - /metrics/cadvisor
-  verbs:
-  - get
-- apiGroups:
-  - ""
-  resources:
-  - events
   - namespaces
-  - namespaces/status
-  - nodes
-  - nodes/spec
   - pods
-  - pods/status
-  - replicationcontrollers
-  - replicationcontrollers/status
-  - resourcequotas
-  - services
+  - nodes
   verbs:
   - get
   - list
@@ -265,37 +253,7 @@ rules:
 - apiGroups:
   - apps
   resources:
-  - daemonsets
-  - deployments
   - replicasets
-  - statefulsets
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - extensions
-  resources:
-  - daemonsets
-  - deployments
-  - replicasets
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - batch
-  resources:
-  - jobs
-  - cronjobs
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - autoscaling
-  resources:
-  - horizontalpodautoscalers
   verbs:
   - get
   - list
@@ -307,62 +265,17 @@ metadata:
   labels:
     app.kubernetes.io/component: agent
     app.kubernetes.io/managed-by: telemetry-manager
-    app.kubernetes.io/name: telemetry-metric-agent
+    app.kubernetes.io/name: telemetry-log-agent
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: telemetry-metric-agent
+  name: telemetry-log-agent
   namespace: kyma-system
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: telemetry-metric-agent
+  name: telemetry-log-agent
 subjects:
 - kind: ServiceAccount
-  name: telemetry-metric-agent
-  namespace: kyma-system
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  labels:
-    app.kubernetes.io/component: agent
-    app.kubernetes.io/managed-by: telemetry-manager
-    app.kubernetes.io/name: telemetry-metric-agent
-    app.kubernetes.io/part-of: telemetry
-    kyma-project.io/module: telemetry
-  name: telemetry-metric-agent
-  namespace: kyma-system
-rules:
-- apiGroups:
-  - coordination.k8s.io
-  resources:
-  - leases
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  labels:
-    app.kubernetes.io/component: agent
-    app.kubernetes.io/managed-by: telemetry-manager
-    app.kubernetes.io/name: telemetry-metric-agent
-    app.kubernetes.io/part-of: telemetry
-    kyma-project.io/module: telemetry
-  name: telemetry-metric-agent
-  namespace: kyma-system
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: telemetry-metric-agent
-subjects:
-- kind: ServiceAccount
-  name: telemetry-metric-agent
+  name: telemetry-log-agent
   namespace: kyma-system
 ---
