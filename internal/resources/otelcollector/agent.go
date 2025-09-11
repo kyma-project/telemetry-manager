@@ -141,7 +141,7 @@ func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string) *A
 func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
 	name := types.NamespacedName{Namespace: aad.namespace, Name: aad.baseName}
 
-	ingressAllowedPorts := ingressAllowedPorts()
+	ingressAllowedPorts := agentIngressAllowedPorts()
 	if opts.IstioEnabled {
 		ingressAllowedPorts = append(ingressAllowedPorts, ports.IstioEnvoy)
 	}
@@ -309,7 +309,7 @@ func makeFileLogCheckPointVolumeMount() corev1.VolumeMount {
 	}
 }
 
-func ingressAllowedPorts() []int32 {
+func agentIngressAllowedPorts() []int32 {
 	return []int32{
 		ports.Metrics,
 		ports.HealthCheck,

@@ -19,7 +19,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricagent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricgateway"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
@@ -317,17 +316,10 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 
 	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
 
-	allowedPorts := getGatewayPorts()
-	if isIstioActive {
-		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
-	}
-
 	opts := otelcollector.GatewayApplyOptions{
-		AllowedPorts:                   allowedPorts,
 		CollectorConfigYAML:            string(collectorConfigYAML),
 		CollectorEnvVars:               collectorEnvVars,
 		IstioEnabled:                   isIstioActive,
-		IstioExcludePorts:              []int32{ports.Metrics},
 		Replicas:                       r.getReplicaCountFromTelemetry(ctx),
 		ResourceRequirementsMultiplier: len(allPipelines),
 	}
@@ -421,13 +413,4 @@ func (r *Reconciler) getK8sClusterUID(ctx context.Context) (string, error) {
 	}
 
 	return string(kubeSystem.UID), nil
-}
-
-func getGatewayPorts() []int32 {
-	return []int32{
-		ports.Metrics,
-		ports.HealthCheck,
-		ports.OTLPHTTP,
-		ports.OTLPGRPC,
-	}
 }
