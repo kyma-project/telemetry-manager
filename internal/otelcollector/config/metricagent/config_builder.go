@@ -650,7 +650,7 @@ func (b *Builder) addInputRoutingExporter(componentID string, outputPipelines []
 	return b.AddExporter(
 		b.StaticComponentID(componentID),
 		func(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline) (any, common.EnvVars, error) {
-			return common.SkipEnrichmentRoutingConnectorConfig(
+			return skipEnrichmentRoutingConnectorConfig(
 				[]string{"metrics/enrichment"},
 				formatOutputPipelineIDs(outputPipelines),
 			), nil, nil
@@ -666,7 +666,7 @@ func (b *Builder) addInputRoutingReceiver(componentID string, outputPipelines []
 				return nil
 			}
 
-			return common.SkipEnrichmentRoutingConnectorConfig(
+			return skipEnrichmentRoutingConnectorConfig(
 				[]string{"metrics/enrichment"},
 				formatOutputPipelineIDs(outputPipelines),
 			)
@@ -722,6 +722,19 @@ func enrichmentOutputRoutingConnectorTableEntry(pipelines []telemetryv1alpha1.Me
 		Context:   "metric",
 		Statement: fmt.Sprintf("route() where %s", routingCondition),
 		Pipelines: formatOutputPipelineIDs(pipelines),
+	}
+}
+
+func skipEnrichmentRoutingConnectorConfig(defaultPipelineIDs, outputPipelineIDs []string) common.RoutingConnector {
+	return common.RoutingConnector{
+		DefaultPipelines: defaultPipelineIDs,
+		ErrorMode:        "ignore",
+		Table: []common.RoutingConnectorTableEntry{
+			{
+				Statement: fmt.Sprintf("route() where attributes[\"%s\"] == \"true\"", common.SkipEnrichmentAttribute),
+				Pipelines: outputPipelineIDs,
+			},
+		},
 	}
 }
 

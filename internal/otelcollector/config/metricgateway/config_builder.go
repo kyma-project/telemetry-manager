@@ -109,6 +109,19 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 
 // Helper functions
 
+func skipEnrichmentRoutingConnectorConfig(defaultPipelineIDs, outputPipelineIDs []string) common.RoutingConnector {
+	return common.RoutingConnector{
+		DefaultPipelines: defaultPipelineIDs,
+		ErrorMode:        "ignore",
+		Table: []common.RoutingConnectorTableEntry{
+			{
+				Statement: fmt.Sprintf("route() where attributes[\"%s\"] == \"true\"", common.SkipEnrichmentAttribute),
+				Pipelines: outputPipelineIDs,
+			},
+		},
+	}
+}
+
 func formatInputMetricServicePipelineID(mp *telemetryv1alpha1.MetricPipeline) string {
 	return fmt.Sprintf("metrics/%s-input", mp.Name)
 }
