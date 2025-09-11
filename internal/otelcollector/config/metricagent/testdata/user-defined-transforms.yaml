@@ -9,35 +9,34 @@ extensions:
 service:
     pipelines:
         metrics/enrichment:
-            receivers:
-                - routing/istio-input
+            receivers: []
             processors:
                 - k8sattributes
                 - service_enrichment
             exporters:
                 - routing/enrichment-output
-        metrics/istio-envoy-output:
-            receivers:
-                - routing/enrichment-output
-                - routing/istio-input
+        metrics/transform1-output:
+            receivers: []
             processors:
-                - filter/drop-diagnostic-metrics-if-input-source-istio
+                - filter/drop-envoy-metrics-if-disabled
                 - resource/insert-cluster-attributes
                 - resource/delete-skip-enrichment-attribute
                 - resource/drop-kyma-attributes
+                - transform/transform1-user-defined
                 - batch
             exporters:
-                - otlp/istio-envoy
-        metrics/istio-input:
-            receivers:
-                - prometheus/istio
+                - otlp/transform1
+        metrics/transform2-output:
+            receivers: []
             processors:
-                - memory_limiter
-                - resource/delete-service-name
-                - istio_noise_filter
-                - transform/set-instrumentation-scope-istio
+                - filter/drop-envoy-metrics-if-disabled
+                - resource/insert-cluster-attributes
+                - resource/delete-skip-enrichment-attribute
+                - resource/drop-kyma-attributes
+                - transform/transform2-user-defined
+                - batch
             exporters:
-                - routing/istio-input
+                - otlp/transform2
     telemetry:
         metrics:
             readers:
@@ -53,46 +52,16 @@ service:
         - health_check
         - pprof
         - k8s_leader_elector
-receivers:
-    prometheus/istio:
-        config:
-            scrape_configs:
-                - job_name: istio-proxy
-                  sample_limit: 50000
-                  scrape_interval: 30s
-                  metrics_path: /stats/prometheus
-                  relabel_configs:
-                    - source_labels: [__meta_kubernetes_pod_node_name]
-                      regex: ${MY_NODE_NAME}
-                      action: keep
-                    - source_labels: [__meta_kubernetes_pod_container_name]
-                      regex: istio-proxy
-                      action: keep
-                    - source_labels: [__meta_kubernetes_pod_container_port_name]
-                      regex: http-envoy-prom
-                      action: keep
-                    - source_labels: [__meta_kubernetes_pod_phase]
-                      regex: Pending|Succeeded|Failed
-                      action: drop
-                  metric_relabel_configs:
-                    - source_labels: [__name__]
-                      regex: envoy_.*|istio_.*
-                      action: keep
-                  kubernetes_sd_configs:
-                    - role: pod
-                      selectors:
-                        - role: pod
-                          field: spec.nodeName=${MY_NODE_NAME}
+receivers: {}
 processors:
     batch:
         send_batch_size: 1024
         timeout: 10s
         send_batch_max_size: 1024
-    filter/drop-diagnostic-metrics-if-input-source-istio:
+    filter/drop-envoy-metrics-if-disabled:
         metrics:
             metric:
-                - instrumentation_scope.name == "io.kyma-project.telemetry/istio" and (name == "up" or name == "scrape_duration_seconds" or name == "scrape_samples_scraped" or name == "scrape_samples_post_metric_relabeling" or name == "scrape_series_added")
-    istio_noise_filter: {}
+                - IsMatch(name, "^envoy_.*") and instrumentation_scope.name == "io.kyma-project.telemetry/istio"
     k8sattributes:
         auth_type: serviceAccount
         passthrough: false
@@ -134,14 +103,6 @@ processors:
                   name: k8s.pod.uid
             - sources:
                 - from: connection
-    memory_limiter:
-        check_interval: 1s
-        limit_percentage: 75
-        spike_limit_percentage: 15
-    resource/delete-service-name:
-        attributes:
-            - action: delete
-              key: service.name
     resource/delete-skip-enrichment-attribute:
         attributes:
             - action: delete
@@ -160,20 +121,38 @@ processors:
         resource_attributes:
             - kyma.kubernetes_io_app_name
             - kyma.app_name
-    transform/set-instrumentation-scope-istio:
+    transform/transform1-user-defined:
         error_mode: ignore
         metric_statements:
             - statements:
-                - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
-                - set(scope.name, "io.kyma-project.telemetry/istio") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
+                - set(attributes["log.level"], "error")
+                - set(body, "transformed1")
+              conditions:
+                - IsMatch(body, ".*error.*")
+    transform/transform2-user-defined:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(attributes["log.level"], "error")
+                - set(body, "transformed2")
+              conditions:
+                - IsMatch(body, ".*error.*")
 exporters:
-    otlp/istio-envoy:
-        endpoint: ${OTLP_ENDPOINT_ISTIO_ENVOY}
-        tls:
-            insecure: true
+    otlp/transform1:
+        endpoint: ${OTLP_ENDPOINT_TRANSFORM1}
         sending_queue:
             enabled: true
-            queue_size: 256
+            queue_size: 128
+        retry_on_failure:
+            enabled: true
+            initial_interval: 5s
+            max_interval: 30s
+            max_elapsed_time: 300s
+    otlp/transform2:
+        endpoint: ${OTLP_ENDPOINT_TRANSFORM2}
+        sending_queue:
+            enabled: true
+            queue_size: 128
         retry_on_failure:
             enabled: true
             initial_interval: 5s
@@ -183,16 +162,4 @@ connectors:
     routing/enrichment-output:
         default_pipelines: []
         error_mode: ignore
-        table:
-            - statement: route() where instrumentation_scope.name == "io.kyma-project.telemetry/istio"
-              pipelines:
-                - metrics/istio-envoy-output
-              context: metric
-    routing/istio-input:
-        default_pipelines:
-            - metrics/enrichment
-        error_mode: ignore
-        table:
-            - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
-              pipelines:
-                - metrics/istio-envoy-output
+        table: []

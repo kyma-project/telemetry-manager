@@ -16,6 +16,18 @@ service:
                 - service_enrichment
             exporters:
                 - routing/enrichment-output
+        metrics/http-without-custom-path-output:
+            receivers:
+                - routing/enrichment-output
+                - routing/runtime-input
+            processors:
+                - filter/drop-envoy-metrics-if-disabled
+                - resource/insert-cluster-attributes
+                - resource/delete-skip-enrichment-attribute
+                - resource/drop-kyma-attributes
+                - batch
+            exporters:
+                - otlphttp/http-without-custom-path
         metrics/runtime-input:
             receivers:
                 - kubeletstats
@@ -29,18 +41,6 @@ service:
                 - transform/set-instrumentation-scope-runtime
             exporters:
                 - routing/runtime-input
-        metrics/runtime-only-output:
-            receivers:
-                - routing/enrichment-output
-                - routing/runtime-input
-            processors:
-                - filter/drop-envoy-metrics-if-disabled
-                - resource/insert-cluster-attributes
-                - resource/delete-skip-enrichment-attribute
-                - resource/drop-kyma-attributes
-                - batch
-            exporters:
-                - otlp/runtime-only
     telemetry:
         metrics:
             readers:
@@ -234,8 +234,8 @@ processors:
                 - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
                 - set(scope.name, "io.kyma-project.telemetry/runtime") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
 exporters:
-    otlp/runtime-only:
-        endpoint: ${OTLP_ENDPOINT_RUNTIME_ONLY}
+    otlphttp/http-without-custom-path:
+        endpoint: ${OTLP_ENDPOINT_HTTP_WITHOUT_CUSTOM_PATH}
         tls:
             insecure: true
         sending_queue:
@@ -253,7 +253,7 @@ connectors:
         table:
             - statement: route() where instrumentation_scope.name == "io.kyma-project.telemetry/runtime"
               pipelines:
-                - metrics/runtime-only-output
+                - metrics/http-without-custom-path-output
               context: metric
     routing/runtime-input:
         default_pipelines:
@@ -262,4 +262,4 @@ connectors:
         table:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
               pipelines:
-                - metrics/runtime-only-output
+                - metrics/http-without-custom-path-output

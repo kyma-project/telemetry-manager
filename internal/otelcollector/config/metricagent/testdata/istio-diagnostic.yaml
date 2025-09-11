@@ -16,18 +16,18 @@ service:
                 - service_enrichment
             exporters:
                 - routing/enrichment-output
-        metrics/istio-envoy-output:
+        metrics/istio-diagnostic-output:
             receivers:
                 - routing/enrichment-output
                 - routing/istio-input
             processors:
-                - filter/drop-diagnostic-metrics-if-input-source-istio
+                - filter/drop-envoy-metrics-if-disabled
                 - resource/insert-cluster-attributes
                 - resource/delete-skip-enrichment-attribute
                 - resource/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp/istio-envoy
+                - otlp/istio-diagnostic
         metrics/istio-input:
             receivers:
                 - prometheus/istio
@@ -76,7 +76,7 @@ receivers:
                       action: drop
                   metric_relabel_configs:
                     - source_labels: [__name__]
-                      regex: envoy_.*|istio_.*
+                      regex: istio_.*
                       action: keep
                   kubernetes_sd_configs:
                     - role: pod
@@ -88,10 +88,10 @@ processors:
         send_batch_size: 1024
         timeout: 10s
         send_batch_max_size: 1024
-    filter/drop-diagnostic-metrics-if-input-source-istio:
+    filter/drop-envoy-metrics-if-disabled:
         metrics:
             metric:
-                - instrumentation_scope.name == "io.kyma-project.telemetry/istio" and (name == "up" or name == "scrape_duration_seconds" or name == "scrape_samples_scraped" or name == "scrape_samples_post_metric_relabeling" or name == "scrape_series_added")
+                - IsMatch(name, "^envoy_.*") and instrumentation_scope.name == "io.kyma-project.telemetry/istio"
     istio_noise_filter: {}
     k8sattributes:
         auth_type: serviceAccount
@@ -167,10 +167,8 @@ processors:
                 - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
                 - set(scope.name, "io.kyma-project.telemetry/istio") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
 exporters:
-    otlp/istio-envoy:
-        endpoint: ${OTLP_ENDPOINT_ISTIO_ENVOY}
-        tls:
-            insecure: true
+    otlp/istio-diagnostic:
+        endpoint: ${OTLP_ENDPOINT_ISTIO_DIAGNOSTIC}
         sending_queue:
             enabled: true
             queue_size: 256
@@ -186,7 +184,7 @@ connectors:
         table:
             - statement: route() where instrumentation_scope.name == "io.kyma-project.telemetry/istio"
               pipelines:
-                - metrics/istio-envoy-output
+                - metrics/istio-diagnostic-output
               context: metric
     routing/istio-input:
         default_pipelines:
@@ -195,4 +193,4 @@ connectors:
         table:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
               pipelines:
-                - metrics/istio-envoy-output
+                - metrics/istio-diagnostic-output

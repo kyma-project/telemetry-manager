@@ -8,7 +8,27 @@ extensions:
         endpoint: 127.0.0.1:1777
 service:
     pipelines:
-        metrics/runtime:
+        metrics/enrichment:
+            receivers:
+                - routing/runtime-input
+            processors:
+                - k8sattributes
+                - service_enrichment
+            exporters:
+                - routing/enrichment-output
+        metrics/runtime-all-resources-output:
+            receivers:
+                - routing/enrichment-output
+                - routing/runtime-input
+            processors:
+                - filter/drop-envoy-metrics-if-disabled
+                - resource/insert-cluster-attributes
+                - resource/delete-skip-enrichment-attribute
+                - resource/drop-kyma-attributes
+                - batch
+            exporters:
+                - otlp/runtime-all-resources
+        metrics/runtime-input:
             receivers:
                 - kubeletstats
                 - k8s_cluster
@@ -17,11 +37,10 @@ service:
                 - filter/drop-non-pvc-volumes-metrics
                 - filter/drop-virtual-network-interfaces
                 - resource/delete-service-name
-                - transform/set-instrumentation-scope-runtime
                 - transform/insert-skip-enrichment-attribute
-                - batch
+                - transform/set-instrumentation-scope-runtime
             exporters:
-                - otlp
+                - routing/runtime-input
     telemetry:
         metrics:
             readers:
@@ -116,6 +135,10 @@ processors:
         send_batch_size: 1024
         timeout: 10s
         send_batch_max_size: 1024
+    filter/drop-envoy-metrics-if-disabled:
+        metrics:
+            metric:
+                - IsMatch(name, "^envoy_.*") and instrumentation_scope.name == "io.kyma-project.telemetry/istio"
     filter/drop-non-pvc-volumes-metrics:
         metrics:
             metric:
@@ -124,6 +147,47 @@ processors:
         metrics:
             datapoint:
                 - IsMatch(metric.name, "^k8s.node.network.*") and not(IsMatch(attributes["interface"], "^(eth|en).*"))
+    k8sattributes:
+        auth_type: serviceAccount
+        passthrough: false
+        extract:
+            metadata:
+                - k8s.pod.name
+                - k8s.node.name
+                - k8s.namespace.name
+                - k8s.deployment.name
+                - k8s.statefulset.name
+                - k8s.daemonset.name
+                - k8s.cronjob.name
+                - k8s.job.name
+            labels:
+                - from: pod
+                  key: app.kubernetes.io/name
+                  tag_name: kyma.kubernetes_io_app_name
+                - from: pod
+                  key: app
+                  tag_name: kyma.app_name
+                - from: node
+                  key: topology.kubernetes.io/region
+                  tag_name: cloud.region
+                - from: node
+                  key: topology.kubernetes.io/zone
+                  tag_name: cloud.availability_zone
+                - from: node
+                  key: node.kubernetes.io/instance-type
+                  tag_name: host.type
+                - from: node
+                  key: kubernetes.io/arch
+                  tag_name: host.arch
+        pod_association:
+            - sources:
+                - from: resource_attribute
+                  name: k8s.pod.ip
+            - sources:
+                - from: resource_attribute
+                  name: k8s.pod.uid
+            - sources:
+                - from: connection
     memory_limiter:
         check_interval: 1s
         limit_percentage: 75
@@ -132,6 +196,24 @@ processors:
         attributes:
             - action: delete
               key: service.name
+    resource/delete-skip-enrichment-attribute:
+        attributes:
+            - action: delete
+              key: io.kyma-project.telemetry.skip_enrichment
+    resource/drop-kyma-attributes:
+        attributes:
+            - action: delete
+              pattern: kyma.*
+    resource/insert-cluster-attributes:
+        attributes:
+            - action: insert
+              key: k8s.cluster.name
+            - action: insert
+              key: k8s.cluster.uid
+    service_enrichment:
+        resource_attributes:
+            - kyma.kubernetes_io_app_name
+            - kyma.app_name
     transform/insert-skip-enrichment-attribute:
         error_mode: ignore
         metric_statements:
@@ -152,15 +234,32 @@ processors:
                 - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
                 - set(scope.name, "io.kyma-project.telemetry/runtime") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
 exporters:
-    otlp:
-        endpoint: metrics.telemetry-system.svc.cluster.local:4317
+    otlp/runtime-all-resources:
+        endpoint: ${OTLP_ENDPOINT_RUNTIME_ALL_RESOURCES}
         tls:
             insecure: true
         sending_queue:
             enabled: true
-            queue_size: 512
+            queue_size: 256
         retry_on_failure:
             enabled: true
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
+connectors:
+    routing/enrichment-output:
+        default_pipelines: []
+        error_mode: ignore
+        table:
+            - statement: route() where instrumentation_scope.name == "io.kyma-project.telemetry/runtime"
+              pipelines:
+                - metrics/runtime-all-resources-output
+              context: metric
+    routing/runtime-input:
+        default_pipelines:
+            - metrics/enrichment
+        error_mode: ignore
+        table:
+            - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
+              pipelines:
+                - metrics/runtime-all-resources-output
