@@ -58,7 +58,7 @@ type AgentApplierDeleter struct {
 }
 
 type AgentApplyOptions struct {
-	AllowedPorts        []int32
+	IstioEnabled        bool
 	CollectorConfigYAML string
 	CollectorEnvVars    map[string][]byte
 }
@@ -141,7 +141,12 @@ func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string) *A
 func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
 	name := types.NamespacedName{Namespace: aad.namespace, Name: aad.baseName}
 
-	if err := applyCommonResources(ctx, c, name, commonresources.LabelValueK8sComponentAgent, aad.rbac, opts.AllowedPorts); err != nil {
+	ingressAllowedPorts := ingressAllowedPorts()
+	if opts.IstioEnabled {
+		ingressAllowedPorts = append(ingressAllowedPorts, ports.IstioEnvoy)
+	}
+
+	if err := applyCommonResources(ctx, c, name, commonresources.LabelValueK8sComponentAgent, aad.rbac, ingressAllowedPorts); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
@@ -301,5 +306,12 @@ func makeFileLogCheckPointVolumeMount() corev1.VolumeMount {
 	return corev1.VolumeMount{
 		Name:      checkpointVolumeName,
 		MountPath: CheckpointVolumePath,
+	}
+}
+
+func ingressAllowedPorts() []int32 {
+	return []int32{
+		ports.Metrics,
+		ports.HealthCheck,
 	}
 }

@@ -361,16 +361,11 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to marshal collector config: %w", err)
 	}
 
-	allowedPorts := getAgentPorts()
-	if isIstioActive {
-		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
-	}
-
 	if err := r.agentApplierDeleter.ApplyResources(
 		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		otelcollector.AgentApplyOptions{
-			AllowedPorts:        allowedPorts,
+			IstioEnabled:        isIstioActive,
 			CollectorConfigYAML: string(agentConfigYAML),
 		},
 	); err != nil {
@@ -426,13 +421,6 @@ func (r *Reconciler) getK8sClusterUID(ctx context.Context) (string, error) {
 	}
 
 	return string(kubeSystem.UID), nil
-}
-
-func getAgentPorts() []int32 {
-	return []int32{
-		ports.Metrics,
-		ports.HealthCheck,
-	}
 }
 
 func getGatewayPorts() []int32 {

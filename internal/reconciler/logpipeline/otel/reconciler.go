@@ -333,17 +333,12 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 	}
 
 	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
-	allowedPorts := getAgentPorts()
-
-	if isIstioActive {
-		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
-	}
 
 	if err := r.agentApplierDeleter.ApplyResources(
 		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		otelcollector.AgentApplyOptions{
-			AllowedPorts:        allowedPorts,
+			IstioEnabled:        isIstioActive,
 			CollectorConfigYAML: string(agentConfigYAML),
 			CollectorEnvVars:    envVars,
 		},
@@ -407,13 +402,6 @@ func getGatewayPorts() []int32 {
 		ports.HealthCheck,
 		ports.OTLPHTTP,
 		ports.OTLPGRPC,
-	}
-}
-
-func getAgentPorts() []int32 {
-	return []int32{
-		ports.Metrics,
-		ports.HealthCheck,
 	}
 }
 
