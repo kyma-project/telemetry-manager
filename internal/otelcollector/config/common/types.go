@@ -214,7 +214,8 @@ type FilterProcessor struct {
 }
 
 type FilterProcessorMetrics struct {
-	Metric []string `yaml:"metric,omitempty"`
+	Metric    []string `yaml:"metric,omitempty"`
+	Datapoint []string `yaml:"datapoint,omitempty"`
 }
 
 type FilterProcessorTraces struct {

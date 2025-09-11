@@ -46,6 +46,8 @@ var upstreamInstrumentationScopeName = map[InputSourceType]string{
 	InputSourceK8sCluster: "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver",
 }
 
+var DiagnosticMetricNames = []string{"up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added"}
+
 const (
 	SkipEnrichmentAttribute = "io.kyma-project.telemetry.skip_enrichment"
 	KymaInputNameAttribute  = "kyma.input.name"
