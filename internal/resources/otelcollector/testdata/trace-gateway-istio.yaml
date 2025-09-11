@@ -6,10 +6,10 @@ metadata:
   labels:
     app.kubernetes.io/component: gateway
     app.kubernetes.io/managed-by: telemetry-manager
-    app.kubernetes.io/name: telemetry-metric-gateway
+    app.kubernetes.io/name: telemetry-trace-gateway
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: telemetry-metric-gateway
+  name: telemetry-trace-gateway
   namespace: kyma-system
 ---
 apiVersion: v1
@@ -20,39 +20,11 @@ metadata:
   labels:
     app.kubernetes.io/component: gateway
     app.kubernetes.io/managed-by: telemetry-manager
-    app.kubernetes.io/name: telemetry-metric-gateway
+    app.kubernetes.io/name: telemetry-trace-gateway
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: telemetry-metric-gateway
+  name: telemetry-trace-gateway
   namespace: kyma-system
----
-apiVersion: v1
-kind: Service
-metadata:
-  annotations:
-    prometheus.io/port: "8888"
-    prometheus.io/scheme: http
-    prometheus.io/scrape: "true"
-  labels:
-    app.kubernetes.io/component: gateway
-    app.kubernetes.io/managed-by: telemetry-manager
-    app.kubernetes.io/name: telemetry-metric-gateway
-    app.kubernetes.io/part-of: telemetry
-    kyma-project.io/module: telemetry
-    telemetry.kyma-project.io/self-monitor: enabled
-  name: telemetry-metric-gateway-metrics
-  namespace: kyma-system
-spec:
-  ports:
-  - name: http-metrics
-    port: 8888
-    protocol: TCP
-    targetPort: 8888
-  selector:
-    app.kubernetes.io/name: telemetry-metric-gateway
-  type: ClusterIP
-status:
-  loadBalancer: {}
 ---
 apiVersion: v1
 kind: Service
@@ -60,10 +32,10 @@ metadata:
   labels:
     app.kubernetes.io/component: gateway
     app.kubernetes.io/managed-by: telemetry-manager
-    app.kubernetes.io/name: telemetry-metric-gateway
+    app.kubernetes.io/name: telemetry-trace-gateway
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: telemetry-otlp-metrics
+  name: telemetry-otlp-traces
   namespace: kyma-system
 spec:
   ports:
@@ -76,7 +48,35 @@ spec:
     protocol: TCP
     targetPort: 4318
   selector:
-    app.kubernetes.io/name: telemetry-metric-gateway
+    app.kubernetes.io/name: telemetry-trace-gateway
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/port: "8888"
+    prometheus.io/scheme: http
+    prometheus.io/scrape: "true"
+  labels:
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: telemetry-trace-gateway
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+    telemetry.kyma-project.io/self-monitor: enabled
+  name: telemetry-trace-gateway-metrics
+  namespace: kyma-system
+spec:
+  ports:
+  - name: http-metrics
+    port: 8888
+    protocol: TCP
+    targetPort: 8888
+  selector:
+    app.kubernetes.io/name: telemetry-trace-gateway
   type: ClusterIP
 status:
   loadBalancer: {}
@@ -87,10 +87,10 @@ metadata:
   labels:
     app.kubernetes.io/component: gateway
     app.kubernetes.io/managed-by: telemetry-manager
-    app.kubernetes.io/name: telemetry-metric-gateway
+    app.kubernetes.io/name: telemetry-trace-gateway
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: telemetry-metric-gateway
+  name: telemetry-trace-gateway
   namespace: kyma-system
 ---
 apiVersion: apps/v1
@@ -99,16 +99,16 @@ metadata:
   labels:
     app.kubernetes.io/component: gateway
     app.kubernetes.io/managed-by: telemetry-manager
-    app.kubernetes.io/name: telemetry-metric-gateway
+    app.kubernetes.io/name: telemetry-trace-gateway
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: telemetry-metric-gateway
+  name: telemetry-trace-gateway
   namespace: kyma-system
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app.kubernetes.io/name: telemetry-metric-gateway
+      app.kubernetes.io/name: telemetry-trace-gateway
   strategy: {}
   template:
     metadata:
@@ -119,12 +119,12 @@ spec:
       labels:
         app.kubernetes.io/component: gateway
         app.kubernetes.io/managed-by: telemetry-manager
-        app.kubernetes.io/name: telemetry-metric-gateway
+        app.kubernetes.io/name: telemetry-trace-gateway
         app.kubernetes.io/part-of: telemetry
         kyma-project.io/module: telemetry
         sidecar.istio.io/inject: "true"
-        telemetry.kyma-project.io/metric-export: "true"
-        telemetry.kyma-project.io/metric-ingest: "true"
+        telemetry.kyma-project.io/trace-export: "true"
+        telemetry.kyma-project.io/trace-ingest: "true"
     spec:
       affinity:
         podAntiAffinity:
@@ -132,13 +132,13 @@ spec:
           - podAffinityTerm:
               labelSelector:
                 matchLabels:
-                  app.kubernetes.io/name: telemetry-metric-gateway
+                  app.kubernetes.io/name: telemetry-trace-gateway
               topologyKey: kubernetes.io/hostname
             weight: 100
           - podAffinityTerm:
               labelSelector:
                 matchLabels:
-                  app.kubernetes.io/name: telemetry-metric-gateway
+                  app.kubernetes.io/name: telemetry-trace-gateway
               topologyKey: topology.kubernetes.io/zone
             weight: 100
       containers:
@@ -156,10 +156,10 @@ spec:
               apiVersion: v1
               fieldPath: spec.nodeName
         - name: GOMEMLIMIT
-          value: "429496720"
+          value: "419430400"
         envFrom:
         - secretRef:
-            name: telemetry-metric-gateway
+            name: telemetry-trace-gateway
             optional: true
         image: opentelemetry/collector:dummy
         livenessProbe:
@@ -173,9 +173,9 @@ spec:
             port: 13133
         resources:
           limits:
-            memory: 512Mi
+            memory: 500Mi
           requests:
-            cpu: 25m
+            cpu: 100m
             memory: 32Mi
         securityContext:
           allowPrivilegeEscalation: false
@@ -197,13 +197,13 @@ spec:
         runAsUser: 10001
         seccompProfile:
           type: RuntimeDefault
-      serviceAccountName: telemetry-metric-gateway
+      serviceAccountName: telemetry-trace-gateway
       volumes:
       - configMap:
           items:
           - key: relay.conf
             path: relay.conf
-          name: telemetry-metric-gateway
+          name: telemetry-trace-gateway
         name: config
 status: {}
 ---
@@ -213,10 +213,10 @@ metadata:
   labels:
     app.kubernetes.io/component: gateway
     app.kubernetes.io/managed-by: telemetry-manager
-    app.kubernetes.io/name: telemetry-metric-gateway
+    app.kubernetes.io/name: telemetry-trace-gateway
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: telemetry-metric-gateway
+  name: telemetry-trace-gateway
   namespace: kyma-system
 spec:
   egress:
@@ -244,7 +244,7 @@ spec:
       protocol: TCP
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: telemetry-metric-gateway
+      app.kubernetes.io/name: telemetry-trace-gateway
   policyTypes:
   - Ingress
   - Egress
@@ -255,10 +255,10 @@ metadata:
   labels:
     app.kubernetes.io/component: gateway
     app.kubernetes.io/managed-by: telemetry-manager
-    app.kubernetes.io/name: telemetry-metric-gateway
+    app.kubernetes.io/name: telemetry-trace-gateway
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: telemetry-metric-gateway
+  name: telemetry-trace-gateway
   namespace: kyma-system
 rules:
 - apiGroups:
@@ -279,38 +279,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - operator.kyma-project.io
-  resources:
-  - telemetries
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - telemetry.kyma-project.io
-  resources:
-  - metricpipelines
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - telemetry.kyma-project.io
-  resources:
-  - tracepipelines
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - telemetry.kyma-project.io
-  resources:
-  - logpipelines
-  verbs:
-  - get
-  - list
-  - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -318,63 +286,18 @@ metadata:
   labels:
     app.kubernetes.io/component: gateway
     app.kubernetes.io/managed-by: telemetry-manager
-    app.kubernetes.io/name: telemetry-metric-gateway
+    app.kubernetes.io/name: telemetry-trace-gateway
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: telemetry-metric-gateway
+  name: telemetry-trace-gateway
   namespace: kyma-system
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: telemetry-metric-gateway
+  name: telemetry-trace-gateway
 subjects:
 - kind: ServiceAccount
-  name: telemetry-metric-gateway
-  namespace: kyma-system
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  labels:
-    app.kubernetes.io/component: gateway
-    app.kubernetes.io/managed-by: telemetry-manager
-    app.kubernetes.io/name: telemetry-metric-gateway
-    app.kubernetes.io/part-of: telemetry
-    kyma-project.io/module: telemetry
-  name: telemetry-metric-gateway
-  namespace: kyma-system
-rules:
-- apiGroups:
-  - coordination.k8s.io
-  resources:
-  - leases
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  labels:
-    app.kubernetes.io/component: gateway
-    app.kubernetes.io/managed-by: telemetry-manager
-    app.kubernetes.io/name: telemetry-metric-gateway
-    app.kubernetes.io/part-of: telemetry
-    kyma-project.io/module: telemetry
-  name: telemetry-metric-gateway
-  namespace: kyma-system
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: telemetry-metric-gateway
-subjects:
-- kind: ServiceAccount
-  name: telemetry-metric-gateway
+  name: telemetry-trace-gateway
   namespace: kyma-system
 ---
 apiVersion: security.istio.io/v1
@@ -383,16 +306,16 @@ metadata:
   labels:
     app.kubernetes.io/component: gateway
     app.kubernetes.io/managed-by: telemetry-manager
-    app.kubernetes.io/name: telemetry-metric-gateway
+    app.kubernetes.io/name: telemetry-trace-gateway
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: telemetry-metric-gateway
+  name: telemetry-trace-gateway
   namespace: kyma-system
 spec:
   mtls:
     mode: PERMISSIVE
   selector:
     matchLabels:
-      app.kubernetes.io/name: telemetry-metric-gateway
+      app.kubernetes.io/name: telemetry-trace-gateway
 status: {}
 ---
