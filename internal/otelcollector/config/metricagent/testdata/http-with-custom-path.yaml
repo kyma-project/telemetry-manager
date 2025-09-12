@@ -40,7 +40,7 @@ service:
                 - resource/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp/test
+                - otlphttp/test
     telemetry:
         metrics:
             readers:
@@ -234,8 +234,8 @@ processors:
                 - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
                 - set(scope.name, "io.kyma-project.telemetry/runtime") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
 exporters:
-    otlp/test:
-        endpoint: ${OTLP_ENDPOINT_TEST}
+    otlphttp/test:
+        metrics_endpoint: ${OTLP_ENDPOINT_TEST}
         tls:
             insecure: true
         sending_queue:
