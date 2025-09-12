@@ -445,7 +445,7 @@ func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildCo
 
 func (b *Builder) addDeleteSkipEnrichmentAttributeProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		b.StaticComponentID(common.ComponentIDDeleteSkipEnrichmentAttributeProcessor),
+		b.StaticComponentID(common.ComponentIDDropSkipEnrichmentAttributeProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return &common.ResourceProcessor{
 				Attributes: []common.AttributeAction{

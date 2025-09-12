@@ -95,7 +95,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addMemoryLimiterProcessor(),
 			b.addFilterDropNonPVCVolumesMetricsProcessor(inputs.runtimeResources),
 			b.addFilterDropVirtualNetworkInterfacesProcessor(),
-			b.addDeleteServiceNameProcessor(),
+			b.addDropServiceNameProcessor(),
 			b.addInsertSkipEnrichmentAttributeProcessor(),
 			b.addSetInstrumentationScopeToRuntimeProcessor(opts),
 			b.addInputRoutingExporter(common.ComponentIDRuntimeInputRoutingConnector, pipelinesWithRuntimeInput),
@@ -109,7 +109,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addPrometheusAppPodsReceiver(),
 			b.addPrometheusAppServicesReceiver(opts),
 			b.addMemoryLimiterProcessor(),
-			b.addDeleteServiceNameProcessor(),
+			b.addDropServiceNameProcessor(),
 			b.addSetInstrumentationScopeToPrometheusProcessor(opts),
 			b.addInputRoutingExporter(common.ComponentIDPrometheusInputRoutingConnector, pipelinesWithPrometheusInput),
 		); err != nil {
@@ -121,7 +121,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 		if err := b.AddServicePipeline(ctx, nil, "metrics/input-istio",
 			b.addPrometheusIstioReceiver(inputs.envoy),
 			b.addMemoryLimiterProcessor(),
-			b.addDeleteServiceNameProcessor(),
+			b.addDropServiceNameProcessor(),
 			b.addIstioNoiseFilterProcessor(),
 			b.addSetInstrumentationScopeToIstioProcessor(opts),
 			b.addInputRoutingExporter(common.ComponentIDIstioInputRoutingConnector, pipelinesWithIstioInput),
@@ -176,7 +176,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addIstioNamespaceFilterProcessor(),
 			// Generic processors
 			b.addInsertClusterAttributesProcessor(opts),
-			b.addDeleteSkipEnrichmentAttributeProcessor(),
+			b.addDropSkipEnrichmentAttributeProcessor(),
 			b.addDropKymaAttributesProcessor(),
 			b.addUserDefinedTransformProcessor(),
 			b.addBatchProcessor(), // always last
@@ -275,11 +275,11 @@ func (b *Builder) addFilterDropVirtualNetworkInterfacesProcessor() buildComponen
 	)
 }
 
-func (b *Builder) addDeleteServiceNameProcessor() buildComponentFunc {
+func (b *Builder) addDropServiceNameProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		b.StaticComponentID(common.ComponentIDResourceDeleteServiceNameProcessor),
+		b.StaticComponentID(common.ComponentIDResourceDropServiceNameProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			return deleteServiceNameProcessorConfig()
+			return dropServiceNameProcessorConfig()
 		},
 	)
 }
@@ -362,9 +362,9 @@ func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildCo
 	)
 }
 
-func (b *Builder) addDeleteSkipEnrichmentAttributeProcessor() buildComponentFunc {
+func (b *Builder) addDropSkipEnrichmentAttributeProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		b.StaticComponentID(common.ComponentIDDeleteSkipEnrichmentAttributeProcessor),
+		b.StaticComponentID(common.ComponentIDDropSkipEnrichmentAttributeProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return &common.ResourceProcessor{
 				Attributes: []common.AttributeAction{
@@ -1053,7 +1053,7 @@ func shouldFilterByNamespace(namespaceSelector *telemetryv1alpha1.NamespaceSelec
 
 // Processor configuration functions (merged from processors.go)
 
-func deleteServiceNameProcessorConfig() *common.ResourceProcessor {
+func dropServiceNameProcessorConfig() *common.ResourceProcessor {
 	return &common.ResourceProcessor{
 		Attributes: []common.AttributeAction{
 			{
