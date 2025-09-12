@@ -262,7 +262,7 @@ func configureOtelReconciler(client client.Client, config LogPipelineControllerC
 		gatewayFlowHealthProber,
 		agentFlowHealthProber,
 		agentConfigBuilder,
-		otelcollector.NewLogAgentApplierDeleter(config.OTelCollectorImage, config.ChownInitContainerImage, config.TelemetryNamespace, config.LogAgentPriorityClassName),
+		otelcollector.NewLogAgentApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.LogAgentPriorityClassName),
 		&workloadstatus.DaemonSetProber{Client: client},
 		otelcollector.NewLogGatewayApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.LogGatewayPriorityClassName),
 		&loggateway.Builder{Reader: client},

@@ -15,7 +15,7 @@ To configure the log agent, deploy the [OTLP Logs Validation YAML](./otlp-logs-v
 - To set up the log agent with Helm, run:
 
     ``` bash
-    k apply -f telemetry-manager/config/samples/operator_v1alpha1_telemetry.yaml
+    k apply -f telemetry-manager/samples/operator_v1alpha1_telemetry.yaml
 
     // Execute knowledge-hub/scripts/create_cls_log_pipeline.sh with the corresponding environment variables 
 
@@ -27,7 +27,7 @@ To configure the log agent, deploy the [OTLP Logs Validation YAML](./otlp-logs-v
 - To set up the log agent manually, run:
 
     ``` bash
-    k apply -f telemetry-manager/config/samples/operator_v1alpha1_telemetry.yaml
+    k apply -f telemetry-manager/samples/operator_v1alpha1_telemetry.yaml
 
     // Execute knowledge-hub/scripts/create_cls_log_pipeline.sh with the corresponding environment variables 
 
