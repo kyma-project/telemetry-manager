@@ -20,7 +20,7 @@ import (
 )
 
 // applyCommonResources applies resources to gateway and agent deployment node
-func applyCommonResources(ctx context.Context, c client.Client, name types.NamespacedName, componentType string, rbac rbac, allowedPorts []int32) error {
+func applyCommonResources(ctx context.Context, c client.Client, name types.NamespacedName, componentType string, rbac rbac, ingressAllowedPorts []int32) error {
 	// Create service account before RBAC resources
 	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, c, makeServiceAccount(name, componentType)); err != nil {
 		return fmt.Errorf("failed to create service account: %w", err)
@@ -63,7 +63,7 @@ func applyCommonResources(ctx context.Context, c client.Client, name types.Names
 		return fmt.Errorf("failed to create metrics service: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, commonresources.MakeNetworkPolicy(name, allowedPorts, commonresources.MakeDefaultLabels(name.Name, componentType), commonresources.MakeDefaultSelectorLabels(name.Name))); err != nil {
+	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, commonresources.MakeNetworkPolicy(name, ingressAllowedPorts, commonresources.MakeDefaultLabels(name.Name, componentType), commonresources.MakeDefaultSelectorLabels(name.Name))); err != nil {
 		return fmt.Errorf("failed to create network policy: %w", err)
 	}
 
