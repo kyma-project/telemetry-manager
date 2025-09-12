@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/prometheus/otlptranslator"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
@@ -156,7 +155,7 @@ func newMetricReader(ctx context.Context) (metric.Reader, error) {
 
 	if exporterEnv == "prometheus" {
 		reader, err := prometheus.New(
-			prometheus.WithTranslationStrategy(otlptranslator.UnderscoreEscapingWithoutSuffixes),
+			prometheus.WithoutUnits(),
 		)
 		if err != nil {
 			return nil, fmt.Errorf("creating prometheus metric reader: %w", err)
