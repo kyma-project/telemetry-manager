@@ -12,6 +12,8 @@ import (
 	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 )
 
+var diagnosticMetricNames = []string{"up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added"}
+
 type buildComponentFunc = common.BuildComponentFunc[*telemetryv1alpha1.MetricPipeline]
 
 type Builder struct {
@@ -146,7 +148,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 		runtimeInputEnabled := metricpipelineutils.IsRuntimeInputEnabled(pipeline.Spec.Input)
 		prometheusInputEnabled := metricpipelineutils.IsPrometheusInputEnabled(pipeline.Spec.Input)
 		istioInputEnabled := metricpipelineutils.IsIstioInputEnabled(pipeline.Spec.Input)
-		queueSize := common.MetricsBatchingMaxQueueSize / len(pipelines)
+		queueSize := common.BatchingMaxQueueSize / len(pipelines)
 
 		if err := b.AddServicePipeline(ctx, &pipeline, outputPipelineID,
 			// Receivers
@@ -674,7 +676,7 @@ func dropDiagnosticMetricsFilterProcessorConfig(inputSource common.InputSourceTy
 	var filterExpressions []string
 
 	inputSourceCondition := inputSourceEquals(inputSource)
-	metricNameConditions := nameConditions(common.DiagnosticMetricNames)
+	metricNameConditions := nameConditions(diagnosticMetricNames)
 	excludeScrapeMetricsExpr := common.JoinWithAnd(inputSourceCondition, common.JoinWithOr(metricNameConditions...))
 	filterExpressions = append(filterExpressions, excludeScrapeMetricsExpr)
 

@@ -39,7 +39,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 	)
 	b.EnvVars = make(common.EnvVars)
 
-	queueSize := common.MetricsBatchingMaxQueueSize / len(pipelines)
+	queueSize := common.BatchingMaxQueueSize / len(pipelines)
 
 	for _, pipeline := range pipelines {
 		inputPipelineID := formatInputMetricServicePipelineID(&pipeline)
@@ -109,14 +109,16 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 
 // Helper functions
 
-func skipEnrichmentRoutingConnectorConfig(defaultPipelineIDs, outputPipelineIDs []string) common.RoutingConnector {
+func enrichmentRoutingConnectorConfig(mp *telemetryv1alpha1.MetricPipeline) common.RoutingConnector {
+	enrichmentPipelineID := formatEnrichmentServicePipelineID(mp)
+	outputPipelineID := formatOutputServicePipelineID(mp)
 	return common.RoutingConnector{
-		DefaultPipelines: defaultPipelineIDs,
+		DefaultPipelines: []string{enrichmentPipelineID},
 		ErrorMode:        "ignore",
 		Table: []common.RoutingConnectorTableEntry{
 			{
 				Statement: fmt.Sprintf("route() where attributes[\"%s\"] == \"true\"", common.SkipEnrichmentAttribute),
-				Pipelines: outputPipelineIDs,
+				Pipelines: []string{outputPipelineID},
 			},
 		},
 	}

@@ -9,6 +9,8 @@ import (
 	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 )
 
+var diagnosticMetricNames = []string{"up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added"}
+
 func (b *Builder) addOutputForwardReceiver() buildComponentFunc {
 	return b.AddReceiver(
 		formatForwardConnectorID,
@@ -22,10 +24,7 @@ func (b *Builder) addOutputRoutingReceiver() buildComponentFunc {
 	return b.AddReceiver(
 		formatRoutingConnectorID,
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			return skipEnrichmentRoutingConnectorConfig(
-				[]string{formatEnrichmentServicePipelineID(mp)},
-				[]string{formatOutputServicePipelineID(mp)},
-			)
+			return enrichmentRoutingConnectorConfig(mp)
 		},
 	)
 }
@@ -194,41 +193,6 @@ func (b *Builder) addOTLPNamespaceFilterProcessor() buildComponentFunc {
 	)
 }
 
-func filterByNamespaceProcessorConfig(namespaceSelector *telemetryv1alpha1.NamespaceSelector, inputSourceCondition string) *common.FilterProcessor {
-	var filterExpressions []string
-
-	if len(namespaceSelector.Exclude) > 0 {
-		namespacesConditions := namespacesConditions(namespaceSelector.Exclude)
-		excludeNamespacesExpr := common.JoinWithAnd(inputSourceCondition, common.JoinWithOr(namespacesConditions...))
-		filterExpressions = append(filterExpressions, excludeNamespacesExpr)
-	}
-
-	if len(namespaceSelector.Include) > 0 {
-		namespacesConditions := namespacesConditions(namespaceSelector.Include)
-		includeNamespacesExpr := common.JoinWithAnd(
-			inputSourceCondition,
-			common.ResourceAttributeIsNotNil(common.K8sNamespaceName),
-			common.Not(common.JoinWithOr(namespacesConditions...)),
-		)
-		filterExpressions = append(filterExpressions, includeNamespacesExpr)
-	}
-
-	return &common.FilterProcessor{
-		Metrics: common.FilterProcessorMetrics{
-			Metric: filterExpressions,
-		},
-	}
-}
-
-func namespacesConditions(namespaces []string) []string {
-	var conditions []string
-	for _, ns := range namespaces {
-		conditions = append(conditions, common.NamespaceEquals(ns))
-	}
-
-	return conditions
-}
-
 // Runtime resource filter processors
 
 func (b *Builder) addDropRuntimePodMetricsProcessor() buildComponentFunc {
@@ -393,7 +357,7 @@ func (b *Builder) addDropPrometheusDiagnosticMetricsProcessor() buildComponentFu
 				return nil
 			}
 
-			return dropDiagnosticMetricsFilterProcessorConfig(common.InputSourcePrometheus)
+			return dropDiagnosticMetricsFilterConfig(inputSourceEquals(common.InputSourcePrometheus))
 		},
 	)
 }
@@ -406,33 +370,9 @@ func (b *Builder) addDropIstioDiagnosticMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return dropDiagnosticMetricsFilterProcessorConfig(common.InputSourceIstio)
+			return dropDiagnosticMetricsFilterConfig(inputSourceEquals(common.InputSourceIstio))
 		},
 	)
-}
-
-func dropDiagnosticMetricsFilterProcessorConfig(inputSource common.InputSourceType) *common.FilterProcessor {
-	var filterExpressions []string
-
-	inputSourceCondition := inputSourceEquals(inputSource)
-	metricNameConditions := nameConditions(common.DiagnosticMetricNames)
-	excludeScrapeMetricsExpr := common.JoinWithAnd(inputSourceCondition, common.JoinWithOr(metricNameConditions...))
-	filterExpressions = append(filterExpressions, excludeScrapeMetricsExpr)
-
-	return &common.FilterProcessor{
-		Metrics: common.FilterProcessorMetrics{
-			Metric: filterExpressions,
-		},
-	}
-}
-
-func nameConditions(names []string) []string {
-	var nameConditions []string
-	for _, name := range names {
-		nameConditions = append(nameConditions, common.NameAttributeEquals(name))
-	}
-
-	return nameConditions
 }
 
 // Helper functions
@@ -455,6 +395,41 @@ func ottlUknownInputSource() string {
 		common.ScopeNameEquals(common.InstrumentationScopeIstio),
 		common.ScopeNameEquals(common.InstrumentationScopeKyma),
 	)
+}
+
+func filterByNamespaceProcessorConfig(namespaceSelector *telemetryv1alpha1.NamespaceSelector, inputSourceCondition string) *common.FilterProcessor {
+	var filterExpressions []string
+
+	if len(namespaceSelector.Exclude) > 0 {
+		namespacesConditions := namespacesConditions(namespaceSelector.Exclude)
+		excludeNamespacesExpr := common.JoinWithAnd(inputSourceCondition, common.JoinWithOr(namespacesConditions...))
+		filterExpressions = append(filterExpressions, excludeNamespacesExpr)
+	}
+
+	if len(namespaceSelector.Include) > 0 {
+		namespacesConditions := namespacesConditions(namespaceSelector.Include)
+		includeNamespacesExpr := common.JoinWithAnd(
+			inputSourceCondition,
+			common.ResourceAttributeIsNotNil(common.K8sNamespaceName),
+			common.Not(common.JoinWithOr(namespacesConditions...)),
+		)
+		filterExpressions = append(filterExpressions, includeNamespacesExpr)
+	}
+
+	return &common.FilterProcessor{
+		Metrics: common.FilterProcessorMetrics{
+			Metric: filterExpressions,
+		},
+	}
+}
+
+func namespacesConditions(namespaces []string) []string {
+	var conditions []string
+	for _, ns := range namespaces {
+		conditions = append(conditions, common.NamespaceEquals(ns))
+	}
+
+	return conditions
 }
 
 // Resource processors
@@ -542,6 +517,29 @@ func (b *Builder) addOTLPExporter(queueSize int) buildComponentFunc {
 			return otlpExporterBuilder.OTLPExporterConfig(ctx)
 		},
 	)
+}
+
+func dropDiagnosticMetricsFilterConfig(inputSourceCondition string) *common.FilterProcessor {
+	var filterExpressions []string
+
+	metricNameConditions := nameConditions(diagnosticMetricNames)
+	excludeScrapeMetricsExpr := common.JoinWithAnd(inputSourceCondition, common.JoinWithOr(metricNameConditions...))
+	filterExpressions = append(filterExpressions, excludeScrapeMetricsExpr)
+
+	return &common.FilterProcessor{
+		Metrics: common.FilterProcessorMetrics{
+			Metric: filterExpressions,
+		},
+	}
+}
+
+func nameConditions(names []string) []string {
+	var nameConditions []string
+	for _, name := range names {
+		nameConditions = append(nameConditions, common.NameAttributeEquals(name))
+	}
+
+	return nameConditions
 }
 
 func formatNamespaceFilterID(pipelineName string, inputSourceType common.InputSourceType) string {

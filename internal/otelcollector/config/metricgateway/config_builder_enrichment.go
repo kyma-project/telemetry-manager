@@ -11,10 +11,7 @@ func (b *Builder) addEnrichmentRoutingReceiver() buildComponentFunc {
 	return b.AddReceiver(
 		formatRoutingConnectorID,
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			return skipEnrichmentRoutingConnectorConfig(
-				[]string{formatEnrichmentServicePipelineID(mp)},
-				[]string{formatOutputServicePipelineID(mp)},
-			)
+			return enrichmentRoutingConnectorConfig(mp)
 		},
 	)
 }
