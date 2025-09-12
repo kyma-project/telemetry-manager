@@ -132,3 +132,5 @@ jobs:
         run: |
           ls -la
           python3 hack/load-tests/convert-results.py Results-*
+      - name: Send to GitHub Summary
+        run: python3 hack/load-tests/convert-results.py -m Results-* >> $GITHUB_STEP_SUMMARY
