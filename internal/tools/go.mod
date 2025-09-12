@@ -14,9 +14,8 @@ require (
 	github.com/vektra/mockery/v3 v3.5.4
 	github.com/vladopajic/go-test-coverage/v2 v2.16.1
 	github.com/yeya24/promlinter v0.3.0
-	gotest.tools/gotestsum v1.13.0
 	golang.org/x/tools v0.37.0
-	gotest.tools/gotestsum v1.12.3
+	gotest.tools/gotestsum v1.13.0
 	helm.sh/helm/v3 v3.19.0
 	sigs.k8s.io/controller-tools v0.19.0
 )
