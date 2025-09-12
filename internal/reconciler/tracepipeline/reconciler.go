@@ -34,7 +34,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/tracegateway"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
@@ -274,23 +273,10 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 
 	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
 
-	allowedPorts := []int32{
-		ports.OTLPHTTP,
-		ports.OTLPGRPC,
-		ports.Metrics,
-		ports.HealthCheck,
-	}
-
-	if isIstioActive {
-		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
-	}
-
 	opts := otelcollector.GatewayApplyOptions{
-		AllowedPorts:                   allowedPorts,
 		CollectorConfigYAML:            string(collectorConfigYAML),
 		CollectorEnvVars:               collectorEnvVars,
 		IstioEnabled:                   isIstioActive,
-		IstioExcludePorts:              []int32{ports.Metrics},
 		Replicas:                       r.getReplicaCountFromTelemetry(ctx),
 		ResourceRequirementsMultiplier: len(allPipelines),
 	}
