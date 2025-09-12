@@ -1,6 +1,7 @@
 extensions:
     file_storage:
-        directory: /var/lib/telemetry-log-agent/file-log-receiver
+        create_directory: true
+        directory: /tmp/telemetry-log-agent/file-log-receiver
     health_check:
         endpoint: ${MY_POD_IP}:13133
     pprof:

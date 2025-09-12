@@ -240,8 +240,9 @@ details: |-
           widget: Panel
           visibility: $exists(spec.output.otlp)
           children:
-            - name: Host
+            - name: Endpoint
               widget: Panel
+              visibility: $exists(spec.output.otlp.endpoint)
               children:
                 - name: Value
                   source: spec.output.otlp.endpoint.value
@@ -251,7 +252,116 @@ details: |-
                   source: spec.output.otlp.endpoint.valueFrom.secretKeyRef
                   kind: Secret
                   visibility: $exists(spec.output.otlp.endpoint.valueFrom.secretKeyRef.name)
-  
+            - name: Authentication
+              widget: Panel
+              visibility: $exists(spec.output.otlp.authentication)
+              children:
+                - name: User
+                  widget: Panel
+                  visibility: $exists(spec.output.otlp.authentication.basic.user)
+                  children:
+                    - name: Value
+                      source: spec.output.otlp.authentication.basic.user.value
+                      visibility: $exists(spec.output.otlp.authentication.basic.user.value)
+                    - name: Value From Secret
+                      widget: ResourceRefs
+                      source: >-
+                        spec.output.otlp.authentication.basic.user.valueFrom.secretKeyRef
+                      kind: Secret
+                      visibility: >-
+                        $exists(spec.output.otlp.authentication.basic.user.valueFrom.secretKeyRef.name)
+                - name: Password
+                  widget: Panel
+                  visibility: $exists(spec.output.otlp.authentication.basic.password)
+                  children:
+                    - name: Value
+                      source: spec.output.otlp.authentication.basic.password.value
+                      visibility: >-
+                        $exists(spec.output.otlp.authentication.basic.password.value)
+                    - name: Value From Secret
+                      widget: ResourceRefs
+                      source: >-
+                        spec.output.otlp.authentication.basic.password.valueFrom.secretKeyRef
+                      kind: Secret
+                      visibility: >-
+                        $exists(spec.output.otlp.authentication.basic.password.valueFrom.secretKeyRef.name)
+            - name: Headers
+              widget: Panel
+              visibility: $exists(spec.output.otlp.headers)
+              children:
+                - name: Header
+                  widget: Panel
+                  visibility: $exists(spec.output.otlp.headers[].name)
+                  source: spec.output.otlp.headers[]
+                  children:
+                    - name: Name
+                      source: name
+                      visibility: $exists(name)
+                    - name: Prefix
+                      source: prefix
+                      visibility: $exists(prefix)
+                    - name: Value
+                      source: value
+                      visibility: $exists(value)
+                    - name: Value From Secret
+                      widget: ResourceRefs
+                      source: valueFrom.secretKeyRef
+                      kind: Secret
+                      visibility: $exists(valueFrom.secretKeyRef.name)
+            - name: TLS
+              widget: Panel
+              visibility: $exists(spec.output.otlp.tls)
+              children:
+                - name: Insecure
+                  visibility: $exists(spec.output.otlp.tls.insecure)
+                  source: spec.output.otlp.tls.insecure
+                - name: Skip Cert Verification
+                  visibility: $exists(spec.output.otlp.tls.insecureSkipVerify)
+                  source: spec.output.otlp.tls.insecureSkipVerify
+                - name: Ca
+                  widget: Panel
+                  visibility: $exists(spec.output.otlp.tls.ca)
+                  source: spec.output.otlp.tls.ca
+                  children:
+                    - name: Value
+                      source: value
+                      visibility: $exists(value)
+                    - name: Value From Secret
+                      widget: ResourceRefs
+                      source: valueFrom.secretKeyRef
+                      kind: Secret
+                      visibility: $exists(valueFrom.secretKeyRef.name)
+                - name: Cert
+                  widget: Panel
+                  visibility: $exists(spec.output.otlp.tls.cert)
+                  source: spec.output.otlp.tls.cert
+                  children:
+                    - name: Value
+                      source: value
+                      visibility: $exists(value)
+                    - name: Value From Secret
+                      widget: ResourceRefs
+                      source: valueFrom.secretKeyRef
+                      kind: Secret
+                      visibility: $exists(valueFrom.secretKeyRef.name)
+                - name: Key
+                  widget: Panel
+                  visibility: $exists(spec.output.otlp.tls.key)
+                  source: spec.output.otlp.tls.key
+                  children:
+                    - name: Value
+                      source: value
+                      visibility: $exists(value)
+                    - name: Value From Secret
+                      widget: ResourceRefs
+                      source: valueFrom.secretKeyRef
+                      kind: Secret
+                      visibility: $exists(valueFrom.secretKeyRef.name)
+            - widget: Panel
+              name: Other Settings
+              children:
+                - name: Protocol
+                  source: spec.output.otlp.protocol
   resourceGraph:
     colorVariant: 2
     dataSources:
