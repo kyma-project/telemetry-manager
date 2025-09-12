@@ -16,7 +16,7 @@ import (
 const (
 	// A sample app instrumented with OpenTelemetry to generate metrics in the Prometheus exposition format
 	// https://github.com/kyma-project/telemetry-manager/tree/main/docs/user/integration/sample-app
-	metricProducerImage = "europe-docker.pkg.dev/kyma-project/prod/samples/telemetry-sample-app:v20250904-74e409ad"
+	metricProducerImage = "europe-docker.pkg.dev/kyma-project/dev/samples/telemetry-sample-app:PR-2512"
 )
 
 type Metric struct {
