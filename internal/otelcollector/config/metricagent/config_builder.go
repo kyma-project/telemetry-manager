@@ -93,7 +93,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addMemoryLimiterProcessor(),
 			b.addFilterDropNonPVCVolumesMetricsProcessor(inputs.runtimeResources),
 			b.addFilterDropVirtualNetworkInterfacesProcessor(),
-			b.addResourceDeleteServiceNameProcessor(),
+			b.addDeleteServiceNameProcessor(),
 			b.addInsertSkipEnrichmentAttributeProcessor(),
 			b.addSetInstrumentationScopeToRuntimeProcessor(opts),
 			b.addInputRoutingExporter(common.ComponentIDRuntimeInputRoutingConnector, pipelinesWithRuntimeInput),
@@ -269,15 +269,6 @@ func (b *Builder) addFilterDropVirtualNetworkInterfacesProcessor() buildComponen
 		b.StaticComponentID(common.ComponentIDFilterDropVirtualNetworkInterfacesProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return dropVirtualNetworkInterfacesProcessorConfig()
-		},
-	)
-}
-
-func (b *Builder) addResourceDeleteServiceNameProcessor() buildComponentFunc {
-	return b.AddProcessor(
-		b.StaticComponentID(common.ComponentIDResourceDeleteServiceNameProcessor),
-		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			return deleteServiceNameProcessorConfig()
 		},
 	)
 }
