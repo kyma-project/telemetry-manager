@@ -78,7 +78,7 @@ spec:
         sidecar.istio.io/userVolumeMount: '[{"name": "istio-certs", "mountPath": "/etc/istio-output-certs"}]'
         traffic.sidecar.istio.io/excludeInboundPorts: "8888"
         traffic.sidecar.istio.io/includeOutboundIPRanges: ""
-        traffic.sidecar.istio.io/includeOutboundPorts: "4317"
+        traffic.sidecar.istio.io/includeOutboundPorts: 4317,9090
       labels:
         app.kubernetes.io/component: agent
         app.kubernetes.io/managed-by: telemetry-manager
