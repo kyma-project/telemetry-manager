@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/prometheus/otlptranslator"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
@@ -78,8 +77,8 @@ func newOtelResource() (*resource.Resource, error) {
 	res, err := resource.New(
 		context.Background(),
 		resource.WithAttributes(attribute.String("service.name", "sample-app")), // Default service name which might get overridden by OTEL_SERVICE_NAME.
-		resource.WithFromEnv(),      // Discover and provide attributes from OTEL_RESOURCE_ATTRIBUTES and OTEL_SERVICE_NAME environment variables.
-		resource.WithTelemetrySDK(), // Discover and provide information about the OpenTelemetry SDK used.
+		resource.WithFromEnv(),                                                  // Discover and provide attributes from OTEL_RESOURCE_ATTRIBUTES and OTEL_SERVICE_NAME environment variables.
+		resource.WithTelemetrySDK(),                                             // Discover and provide information about the OpenTelemetry SDK used.
 	)
 	if err != nil {
 		return nil, fmt.Errorf("creating resource: %w", err)
@@ -155,7 +154,7 @@ func newMetricReader(ctx context.Context) (metric.Reader, error) {
 	endpointEnv := os.Getenv("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT")
 
 	if exporterEnv == "prometheus" {
-		reader, err := prometheus.New(prometheus.WithTranslationStrategy(otlptranslator.NoTranslation))
+		reader, err := prometheus.New()
 		if err != nil {
 			return nil, fmt.Errorf("creating prometheus metric reader: %w", err)
 		}

@@ -47,7 +47,7 @@ var (
 
 	MetricCPUEnergyHistogram = Metric{
 		Type:   pmetric.MetricTypeHistogram,
-		Name:   "cpu.energy.watt",
+		Name:   "cpu.energy.watt_core",
 		Labels: []string{"core"},
 	}
 
