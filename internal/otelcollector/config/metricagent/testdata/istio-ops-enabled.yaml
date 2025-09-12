@@ -18,7 +18,7 @@ service:
                 - service_enrichment
             exporters:
                 - routing/enrichment-output
-        metrics/istio-input:
+        metrics/input-istio:
             receivers:
                 - prometheus/istio
             processors:
@@ -28,7 +28,7 @@ service:
                 - transform/set-instrumentation-scope-istio
             exporters:
                 - routing/istio-input
-        metrics/prometheus-input:
+        metrics/input-prometheus:
             receivers:
                 - prometheus/app-pods
                 - prometheus/app-services
@@ -38,7 +38,7 @@ service:
                 - transform/set-instrumentation-scope-prometheus
             exporters:
                 - routing/prometheus-input
-        metrics/runtime-input:
+        metrics/input-runtime:
             receivers:
                 - kubeletstats
                 - k8s_cluster
@@ -51,7 +51,7 @@ service:
                 - transform/set-instrumentation-scope-runtime
             exporters:
                 - routing/runtime-input
-        metrics/test-output:
+        metrics/output-test:
             receivers:
                 - routing/enrichment-output
                 - routing/runtime-input
@@ -424,15 +424,15 @@ connectors:
         table:
             - statement: route() where instrumentation_scope.name == "io.kyma-project.telemetry/runtime"
               pipelines:
-                - metrics/test-output
+                - metrics/output-test
               context: metric
             - statement: route() where resource.attributes["kyma.input.name"] == "prometheus"
               pipelines:
-                - metrics/test-output
+                - metrics/output-test
               context: metric
             - statement: route() where instrumentation_scope.name == "io.kyma-project.telemetry/istio"
               pipelines:
-                - metrics/test-output
+                - metrics/output-test
               context: metric
     routing/istio-input:
         default_pipelines:
@@ -441,7 +441,7 @@ connectors:
         table:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
               pipelines:
-                - metrics/test-output
+                - metrics/output-test
     routing/prometheus-input:
         default_pipelines:
             - metrics/enrichment
@@ -449,7 +449,7 @@ connectors:
         table:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
               pipelines:
-                - metrics/test-output
+                - metrics/output-test
     routing/runtime-input:
         default_pipelines:
             - metrics/enrichment
@@ -457,4 +457,4 @@ connectors:
         table:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
               pipelines:
-                - metrics/test-output
+                - metrics/output-test

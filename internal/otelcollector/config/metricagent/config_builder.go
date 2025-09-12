@@ -89,7 +89,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 	pipelinesWithIstioInput := getPipelinesWithIstioInput(pipelines)
 
 	if inputs.runtime {
-		if err := b.AddServicePipeline(ctx, nil, "metrics/runtime-input",
+		if err := b.AddServicePipeline(ctx, nil, "metrics/input-runtime",
 			b.addKubeletStatsReceiver(inputs.runtimeResources),
 			b.addK8sClusterReceiver(inputs.runtimeResources),
 			b.addMemoryLimiterProcessor(),
@@ -105,7 +105,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 	}
 
 	if inputs.prometheus {
-		if err := b.AddServicePipeline(ctx, nil, "metrics/prometheus-input",
+		if err := b.AddServicePipeline(ctx, nil, "metrics/input-prometheus",
 			b.addPrometheusAppPodsReceiver(),
 			b.addPrometheusAppServicesReceiver(opts),
 			b.addMemoryLimiterProcessor(),
@@ -118,7 +118,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 	}
 
 	if inputs.istio {
-		if err := b.AddServicePipeline(ctx, nil, "metrics/istio-input",
+		if err := b.AddServicePipeline(ctx, nil, "metrics/input-istio",
 			b.addPrometheusIstioReceiver(inputs.envoy),
 			b.addMemoryLimiterProcessor(),
 			b.addDeleteServiceNameProcessor(),
@@ -850,14 +850,14 @@ func skipEnrichmentRoutingConnectorConfig(defaultPipelineIDs, outputPipelineIDs 
 func formatOutputPipelineIDs(pipelines []telemetryv1alpha1.MetricPipeline) []string {
 	var ids []string
 	for i := range pipelines {
-		ids = append(ids, fmt.Sprintf("metrics/%s-output", pipelines[i].Name))
+		ids = append(ids, fmt.Sprintf("metrics/output-%s", pipelines[i].Name))
 	}
 
 	return ids
 }
 
 func formatOutputMetricServicePipelineID(mp *telemetryv1alpha1.MetricPipeline) string {
-	return fmt.Sprintf("metrics/%s-output", mp.Name)
+	return fmt.Sprintf("metrics/output-%s", mp.Name)
 }
 
 func formatOTLPExporterID(pipeline *telemetryv1alpha1.MetricPipeline) string {

@@ -16,7 +16,7 @@ service:
                 - service_enrichment
             exporters:
                 - routing/enrichment-output
-        metrics/istio-input:
+        metrics/input-istio:
             receivers:
                 - prometheus/istio
             processors:
@@ -26,7 +26,7 @@ service:
                 - transform/set-instrumentation-scope-istio
             exporters:
                 - routing/istio-input
-        metrics/test-output:
+        metrics/output-test:
             receivers:
                 - routing/enrichment-output
                 - routing/istio-input
@@ -195,7 +195,7 @@ connectors:
         table:
             - statement: route() where instrumentation_scope.name == "io.kyma-project.telemetry/istio"
               pipelines:
-                - metrics/test-output
+                - metrics/output-test
               context: metric
     routing/istio-input:
         default_pipelines:
@@ -204,4 +204,4 @@ connectors:
         table:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
               pipelines:
-                - metrics/test-output
+                - metrics/output-test
