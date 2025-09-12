@@ -34,6 +34,6 @@ We need to decide how to handle this situation to continue delivering Transform 
 
   We could implement a Filter API that always uses a lower context level, such as `datapoint`, `spanevent`, or `log`. This would allow us to provide Filter capabilities to our users immediately, without waiting for the official FilterProcessor to support OTTL context inference.
 
-  However, this approach would limit the flexibility of our Filter implementation, as users would not be able to use higher context levels such as `resource` or `scope`.
+  However, this approach would limit the flexibility of our Filter implementation, as users would not be able to use higher context levels such as `resource` or `scope` directly.
 
   Migrating existing pipelines could be challenging, as users would need to manually update their configurations to use the new API.
