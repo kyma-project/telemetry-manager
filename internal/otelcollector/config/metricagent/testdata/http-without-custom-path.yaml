@@ -24,7 +24,7 @@ service:
                 - memory_limiter
                 - filter/drop-non-pvc-volumes-metrics
                 - filter/drop-virtual-network-interfaces
-                - resource/delete-service-name
+                - resource/drop-service-name
                 - transform/insert-skip-enrichment-attribute
                 - transform/set-instrumentation-scope-runtime
             exporters:
@@ -36,7 +36,7 @@ service:
             processors:
                 - filter/drop-envoy-metrics-if-disabled
                 - resource/insert-cluster-attributes
-                - resource/delete-skip-enrichment-attribute
+                - resource/drop-skip-enrichment-attribute
                 - resource/drop-kyma-attributes
                 - batch
             exporters:
@@ -192,18 +192,18 @@ processors:
         check_interval: 1s
         limit_percentage: 75
         spike_limit_percentage: 15
-    resource/delete-service-name:
-        attributes:
-            - action: delete
-              key: service.name
-    resource/delete-skip-enrichment-attribute:
-        attributes:
-            - action: delete
-              key: io.kyma-project.telemetry.skip_enrichment
     resource/drop-kyma-attributes:
         attributes:
             - action: delete
               pattern: kyma.*
+    resource/drop-service-name:
+        attributes:
+            - action: delete
+              key: service.name
+    resource/drop-skip-enrichment-attribute:
+        attributes:
+            - action: delete
+              key: io.kyma-project.telemetry.skip_enrichment
     resource/insert-cluster-attributes:
         attributes:
             - action: insert
