@@ -3,29 +3,32 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/managed-by: kyma
     app.kubernetes.io/name: telemetry-manager
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: logpipelines.telemetry.kyma-project.io
+  name: metricpipelines.telemetry.kyma-project.io
 spec:
   group: telemetry.kyma-project.io
   names:
     categories:
     - kyma-telemetry
     - kyma-telemetry-pipelines
-    kind: LogPipeline
-    listKind: LogPipelineList
-    plural: logpipelines
-    singular: logpipeline
+    kind: MetricPipeline
+    listKind: MetricPipelineList
+    plural: metricpipelines
+    singular: metricpipeline
   scope: Cluster
   versions:
   - additionalPrinterColumns:
     - jsonPath: .status.conditions[?(@.type=="ConfigurationGenerated")].status
       name: Configuration Generated
+      type: string
+    - jsonPath: .status.conditions[?(@.type=="GatewayHealthy")].status
+      name: Gateway Healthy
       type: string
     - jsonPath: .status.conditions[?(@.type=="AgentHealthy")].status
       name: Agent Healthy
@@ -33,16 +36,13 @@ spec:
     - jsonPath: .status.conditions[?(@.type=="TelemetryFlowHealthy")].status
       name: Flow Healthy
       type: string
-    - jsonPath: .status.unsupportedMode
-      name: Unsupported Mode
-      type: boolean
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: LogPipeline is the Schema for the logpipelines API
+        description: MetricPipeline is the Schema for the metricpipelines API.
         properties:
           apiVersion:
             description: |-
@@ -62,122 +62,66 @@ spec:
           metadata:
             type: object
           spec:
-            description: Defines the desired state of LogPipeline
+            description: Spec defines the desired characteristics of MetricPipeline.
             properties:
-              files:
-                description: Files is a list of content snippets that are mounted
-                  as files in the Fluent Bit configuration, which can be linked in
-                  the `custom` filters and a `custom` output. Only available when
-                  using an output of type `http` and `custom`.
-                items:
-                  description: Provides file content to be consumed by a LogPipeline
-                    configuration
-                  properties:
-                    content:
-                      description: Content of the file to be mounted in the Fluent
-                        Bit configuration.
-                      type: string
-                    name:
-                      description: Name of the file under which the content is mounted
-                        in the Fluent Bit configuration.
-                      type: string
-                  type: object
-                type: array
-              filters:
-                description: Filters configures custom Fluent Bit `filters` to transform
-                  logs. Only available when using an output of type `http` and `custom`.
-                items:
-                  description: LogPipelineFilter configures custom Fluent Bit `filters`
-                    to transform logs. Only available when using an output of type
-                    `http` and `custom`.
-                  properties:
-                    custom:
-                      description: Custom defines a custom filter in the [Fluent Bit
-                        syntax](https://docs.fluentbit.io/manual/pipeline/outputs).
-                        If you use a `custom` filter, you put the LogPipeline in unsupported
-                        mode. Only available when using an output of type `http` and
-                        `custom`.
-                      type: string
-                  type: object
-                type: array
               input:
-                description: Input configures additional inputs for log collection.
+                description: Input configures additional inputs for metric collection.
                 properties:
-                  application:
-                    description: Application input configures the log collection from
-                      application containers stdout/stderr by tailing the log files
-                      of the underlying container runtime.
+                  istio:
+                    description: Istio input configures collection of Istio metrics
+                      from applications running in the Istio service mesh.
                     properties:
-                      containers:
-                        description: Containers describes whether application logs
-                          from specific containers are selected. The options are mutually
-                          exclusive.
+                      diagnosticMetrics:
+                        description: DiagnosticMetrics configures collection of additional
+                          diagnostic metrics. The default is `false`.
                         properties:
-                          exclude:
-                            description: Exclude specifies to exclude only the container
-                              logs with the specified container names.
-                            items:
-                              type: string
-                            type: array
-                          include:
-                            description: Include specifies to include only the container
-                              logs with the specified container names.
-                            items:
-                              type: string
-                            type: array
-                        type: object
-                      dropLabels:
-                        description: DropLabels defines whether to drop all Kubernetes
-                          labels. The default is `false`. Only available when using
-                          an output of type `http` and `custom`. For an `otlp` output,
-                          use the label enrichement feature in the Telemetry resource
-                          instead.
-                        type: boolean
-                      enabled:
-                        description: If enabled, application logs are collected from
-                          application containers stdout/stderr. The default is `true`.
-                        type: boolean
-                      keepAnnotations:
-                        description: KeepAnnotations defines whether to keep all Kubernetes
-                          annotations. The default is `false`.  Only available when
-                          using an output of type `http` and `custom`.
-                        type: boolean
-                      keepOriginalBody:
-                        description: KeepOriginalBody retains the original log data
-                          if the log data is in JSON and it is successfully parsed.
-                          If set to `false`, the original log data is removed from
-                          the log record. The default is `true`.
-                        type: boolean
-                      namespaces:
-                        description: Namespaces describes whether application logs
-                          from specific namespaces are selected. The options are mutually
-                          exclusive. System namespaces are excluded by default. Use
-                          the `system` attribute with value `true` to enable them.
-                        properties:
-                          exclude:
-                            description: Exclude the container logs of the specified
-                              Namespace names.
-                            items:
-                              type: string
-                            type: array
-                          include:
-                            description: Include only the container logs of the specified
-                              Namespace names.
-                            items:
-                              type: string
-                            type: array
-                          system:
-                            description: System specifies whether to collect logs
-                              from system namespaces. If set to `true`, you collect
-                              logs from all namespaces including system namespaces,
-                              such as like kube-system, istio-system, and kyma-system.
+                          enabled:
+                            description: If enabled, diagnostic metrics are collected.
                               The default is `false`.
                             type: boolean
                         type: object
+                      enabled:
+                        description: Enabled specifies that istio-proxy metrics are
+                          scraped from Pods that have the istio-proxy sidecar injected.
+                          The default is `false`.
+                        type: boolean
+                      envoyMetrics:
+                        description: EnvoyMetrics enables the collection of additional
+                          Envoy metrics with prefix `envoy_`. The default is `false`.
+                        properties:
+                          enabled:
+                            description: Enabled specifies that Envoy metrics with
+                              prefix `envoy_` are scraped additionally. The default
+                              is `false`.
+                            type: boolean
+                        type: object
+                      namespaces:
+                        description: Namespaces configures the namespaces for which
+                          the collection should be activated. By default, all namespaces
+                          including system namespaces are enabled.
+                        properties:
+                          exclude:
+                            description: Exclude signals from the specified Namespace
+                              names only.
+                            items:
+                              type: string
+                            type: array
+                          include:
+                            description: Include signals from the specified Namespace
+                              names only.
+                            items:
+                              type: string
+                            type: array
+                        type: object
+                        x-kubernetes-validations:
+                        - message: Can only define one namespace selector - either
+                            'include' or 'exclude'
+                          rule: '!((has(self.include) && size(self.include) != 0)
+                            && (has(self.exclude) && size(self.exclude) != 0))'
                     type: object
                   otlp:
                     description: OTLP input configures the push endpoint to receive
-                      logs from a OTLP source.
+                      metrics from an OTLP source.
                     properties:
                       disabled:
                         description: If set to `true`, no push-based OTLP signals
@@ -207,278 +151,173 @@ spec:
                           rule: '!((has(self.include) && size(self.include) != 0)
                             && (has(self.exclude) && size(self.exclude) != 0))'
                     type: object
-                type: object
-              output:
-                description: Output configures the backend to which logs are sent.
-                  You must specify exactly one output per pipeline.
-                properties:
-                  custom:
-                    description: Custom defines a custom output in the [Fluent Bit
-                      syntax](https://docs.fluentbit.io/manual/pipeline/outputs) where
-                      you want to push the logs. If you use a `custom` output, you
-                      put the LogPipeline in unsupported mode. Only available when
-                      using an output of type `http` and `custom`.
-                    type: string
-                  http:
-                    description: HTTP configures an HTTP-based output compatible with
-                      the Fluent Bit HTTP output plugin.
+                  prometheus:
+                    description: Prometheus input configures collection of application
+                      metrics in the pull-based Prometheus protocol using endpoint
+                      discovery based on annotations.
                     properties:
-                      compress:
-                        description: Compress defines the compression algorithm to
-                          use. Either `none` or `gzip`. Default is `none`.
-                        type: string
-                      dedot:
-                        description: Dedot enables de-dotting of Kubernetes labels
-                          and annotations. For compatibility with OpenSearch-based
-                          backends, dots (.) are replaced by underscores (_). Default
-                          is `false`.
+                      diagnosticMetrics:
+                        description: DiagnosticMetrics configures collection of additional
+                          diagnostic metrics. The default is `false`.
+                        properties:
+                          enabled:
+                            description: If enabled, diagnostic metrics are collected.
+                              The default is `false`.
+                            type: boolean
+                        type: object
+                      enabled:
+                        description: Enabled specifies whether Service endpoints and
+                          Pods marked with `prometheus.io/scrape=true` annotation
+                          are scraped. The default is `false`.
                         type: boolean
-                      format:
-                        description: Format is the data format to be used in the HTTP
-                          request body. Either `gelf`, `json`, `json_stream`, `json_lines`,
-                          or `msgpack`. Default is `json`.
-                        type: string
-                      host:
-                        description: Host defines the host of the HTTP backend.
+                      namespaces:
+                        description: Namespaces specifies from which namespaces metrics
+                          are collected. By default, all namespaces except the system
+                          namespaces are enabled. To enable all namespaces including
+                          system namespaces, use an empty struct notation.
                         properties:
-                          value:
-                            description: Value as plain text.
-                            type: string
-                          valueFrom:
-                            description: ValueFrom is the value as a reference to
-                              a resource.
-                            properties:
-                              secretKeyRef:
-                                description: SecretKeyRef refers to the value of a
-                                  specific key in a Secret. You must provide `name`
-                                  and `namespace` of the Secret, as well as the name
-                                  of the `key`.
-                                properties:
-                                  key:
-                                    description: Key defines the name of the attribute
-                                      of the Secret holding the referenced value.
-                                    type: string
-                                  name:
-                                    description: Name of the Secret containing the
-                                      referenced value.
-                                    type: string
-                                  namespace:
-                                    description: Namespace containing the Secret with
-                                      the referenced value.
-                                    type: string
-                                required:
-                                - key
-                                - name
-                                - namespace
-                                type: object
-                            type: object
-                        type: object
-                      password:
-                        description: Password defines the basic auth password.
-                        properties:
-                          value:
-                            description: Value as plain text.
-                            type: string
-                          valueFrom:
-                            description: ValueFrom is the value as a reference to
-                              a resource.
-                            properties:
-                              secretKeyRef:
-                                description: SecretKeyRef refers to the value of a
-                                  specific key in a Secret. You must provide `name`
-                                  and `namespace` of the Secret, as well as the name
-                                  of the `key`.
-                                properties:
-                                  key:
-                                    description: Key defines the name of the attribute
-                                      of the Secret holding the referenced value.
-                                    type: string
-                                  name:
-                                    description: Name of the Secret containing the
-                                      referenced value.
-                                    type: string
-                                  namespace:
-                                    description: Namespace containing the Secret with
-                                      the referenced value.
-                                    type: string
-                                required:
-                                - key
-                                - name
-                                - namespace
-                                type: object
-                            type: object
-                        type: object
-                      port:
-                        description: Port defines the port of the HTTP backend. Default
-                          is 443.
-                        type: string
-                      tls:
-                        description: TLS configures TLS for the HTTP backend.
-                        properties:
-                          ca:
-                            description: CA defines an optional CA certificate for
-                              server certificate verification when using TLS. The
-                              certificate must be provided in PEM format.
-                            properties:
-                              value:
-                                description: Value as plain text.
-                                type: string
-                              valueFrom:
-                                description: ValueFrom is the value as a reference
-                                  to a resource.
-                                properties:
-                                  secretKeyRef:
-                                    description: SecretKeyRef refers to the value
-                                      of a specific key in a Secret. You must provide
-                                      `name` and `namespace` of the Secret, as well
-                                      as the name of the `key`.
-                                    properties:
-                                      key:
-                                        description: Key defines the name of the attribute
-                                          of the Secret holding the referenced value.
-                                        type: string
-                                      name:
-                                        description: Name of the Secret containing
-                                          the referenced value.
-                                        type: string
-                                      namespace:
-                                        description: Namespace containing the Secret
-                                          with the referenced value.
-                                        type: string
-                                    required:
-                                    - key
-                                    - name
-                                    - namespace
-                                    type: object
-                                type: object
-                            type: object
-                          cert:
-                            description: Cert defines a client certificate to use
-                              when using TLS. The certificate must be provided in
-                              PEM format.
-                            properties:
-                              value:
-                                description: Value as plain text.
-                                type: string
-                              valueFrom:
-                                description: ValueFrom is the value as a reference
-                                  to a resource.
-                                properties:
-                                  secretKeyRef:
-                                    description: SecretKeyRef refers to the value
-                                      of a specific key in a Secret. You must provide
-                                      `name` and `namespace` of the Secret, as well
-                                      as the name of the `key`.
-                                    properties:
-                                      key:
-                                        description: Key defines the name of the attribute
-                                          of the Secret holding the referenced value.
-                                        type: string
-                                      name:
-                                        description: Name of the Secret containing
-                                          the referenced value.
-                                        type: string
-                                      namespace:
-                                        description: Namespace containing the Secret
-                                          with the referenced value.
-                                        type: string
-                                    required:
-                                    - key
-                                    - name
-                                    - namespace
-                                    type: object
-                                type: object
-                            type: object
-                          disabled:
-                            description: Disabled specifies if TLS is disabled or
-                              enabled. Default is `false`.
-                            type: boolean
-                          key:
-                            description: Key defines the client key to use when using
-                              TLS. The key must be provided in PEM format.
-                            properties:
-                              value:
-                                description: Value as plain text.
-                                type: string
-                              valueFrom:
-                                description: ValueFrom is the value as a reference
-                                  to a resource.
-                                properties:
-                                  secretKeyRef:
-                                    description: SecretKeyRef refers to the value
-                                      of a specific key in a Secret. You must provide
-                                      `name` and `namespace` of the Secret, as well
-                                      as the name of the `key`.
-                                    properties:
-                                      key:
-                                        description: Key defines the name of the attribute
-                                          of the Secret holding the referenced value.
-                                        type: string
-                                      name:
-                                        description: Name of the Secret containing
-                                          the referenced value.
-                                        type: string
-                                      namespace:
-                                        description: Namespace containing the Secret
-                                          with the referenced value.
-                                        type: string
-                                    required:
-                                    - key
-                                    - name
-                                    - namespace
-                                    type: object
-                                type: object
-                            type: object
-                          skipCertificateValidation:
-                            description: If `true`, the validation of certificates
-                              is skipped. Default is `false`.
-                            type: boolean
+                          exclude:
+                            description: Exclude signals from the specified Namespace
+                              names only.
+                            items:
+                              type: string
+                            type: array
+                          include:
+                            description: Include signals from the specified Namespace
+                              names only.
+                            items:
+                              type: string
+                            type: array
                         type: object
                         x-kubernetes-validations:
-                        - message: Can define either both 'cert' and 'key', or neither
-                          rule: has(self.cert) == has(self.key)
-                      uri:
-                        description: URI defines the URI of the HTTP backend. Default
-                          is "/".
-                        type: string
-                      user:
-                        description: User defines the basic auth user.
+                        - message: Can only define one namespace selector - either
+                            'include' or 'exclude'
+                          rule: '!((has(self.include) && size(self.include) != 0)
+                            && (has(self.exclude) && size(self.exclude) != 0))'
+                    type: object
+                  runtime:
+                    description: Runtime input configures collection of Kubernetes
+                      runtime metrics.
+                    properties:
+                      enabled:
+                        description: Enabled specifies whether runtime metrics are
+                          collected. The default is `false`.
+                        type: boolean
+                      namespaces:
+                        description: Namespaces specifies from which namespaces metrics
+                          are collected. By default, all namespaces except the system
+                          namespaces are enabled. To enable all namespaces including
+                          system namespaces, use an empty struct notation.
                         properties:
-                          value:
-                            description: Value as plain text.
-                            type: string
-                          valueFrom:
-                            description: ValueFrom is the value as a reference to
-                              a resource.
+                          exclude:
+                            description: Exclude signals from the specified Namespace
+                              names only.
+                            items:
+                              type: string
+                            type: array
+                          include:
+                            description: Include signals from the specified Namespace
+                              names only.
+                            items:
+                              type: string
+                            type: array
+                        type: object
+                        x-kubernetes-validations:
+                        - message: Can only define one namespace selector - either
+                            'include' or 'exclude'
+                          rule: '!((has(self.include) && size(self.include) != 0)
+                            && (has(self.exclude) && size(self.exclude) != 0))'
+                      resources:
+                        description: Resources configures the Kubernetes resource
+                          types for which metrics are collected.
+                        properties:
+                          container:
+                            description: Container configures container runtime metrics
+                              collection.
                             properties:
-                              secretKeyRef:
-                                description: SecretKeyRef refers to the value of a
-                                  specific key in a Secret. You must provide `name`
-                                  and `namespace` of the Secret, as well as the name
-                                  of the `key`.
-                                properties:
-                                  key:
-                                    description: Key defines the name of the attribute
-                                      of the Secret holding the referenced value.
-                                    type: string
-                                  name:
-                                    description: Name of the Secret containing the
-                                      referenced value.
-                                    type: string
-                                  namespace:
-                                    description: Namespace containing the Secret with
-                                      the referenced value.
-                                    type: string
-                                required:
-                                - key
-                                - name
-                                - namespace
-                                type: object
+                              enabled:
+                                description: Enabled specifies that the runtime metrics
+                                  for the resource type are collected. The default
+                                  is `true`.
+                                type: boolean
+                            type: object
+                          daemonset:
+                            description: DaemonSet configures DaemonSet runtime metrics
+                              collection.
+                            properties:
+                              enabled:
+                                description: Enabled specifies that the runtime metrics
+                                  for the resource type are collected. The default
+                                  is `true`.
+                                type: boolean
+                            type: object
+                          deployment:
+                            description: Deployment configures Deployment runtime
+                              metrics collection.
+                            properties:
+                              enabled:
+                                description: Enabled specifies that the runtime metrics
+                                  for the resource type are collected. The default
+                                  is `true`.
+                                type: boolean
+                            type: object
+                          job:
+                            description: Job configures Job runtime metrics collection.
+                            properties:
+                              enabled:
+                                description: Enabled specifies that the runtime metrics
+                                  for the resource type are collected. The default
+                                  is `true`.
+                                type: boolean
+                            type: object
+                          node:
+                            description: Node configures Node runtime metrics collection.
+                            properties:
+                              enabled:
+                                description: Enabled specifies that the runtime metrics
+                                  for the resource type are collected. The default
+                                  is `true`.
+                                type: boolean
+                            type: object
+                          pod:
+                            description: Pod configures Pod runtime metrics collection.
+                            properties:
+                              enabled:
+                                description: Enabled specifies that the runtime metrics
+                                  for the resource type are collected. The default
+                                  is `true`.
+                                type: boolean
+                            type: object
+                          statefulset:
+                            description: StatefulSet configures StatefulSet runtime
+                              metrics collection.
+                            properties:
+                              enabled:
+                                description: Enabled specifies that the runtime metrics
+                                  for the resource type are collected. The default
+                                  is `true`.
+                                type: boolean
+                            type: object
+                          volume:
+                            description: Volume configures Volume runtime metrics
+                              collection.
+                            properties:
+                              enabled:
+                                description: Enabled specifies that the runtime metrics
+                                  for the resource type are collected. The default
+                                  is `true`.
+                                type: boolean
                             type: object
                         type: object
                     type: object
+                type: object
+              output:
+                description: Output configures the backend to which metrics are sent.
+                  You must specify exactly one output per pipeline.
+                properties:
                   otlp:
-                    description: OTLP defines an output using the OpenTelemetry protocol.
+                    description: OTLP output defines an output using the OpenTelemetry
+                      protocol.
                     properties:
                       authentication:
                         description: Authentication defines authentication options
@@ -568,7 +407,7 @@ spec:
                             type: object
                         type: object
                       endpoint:
-                        description: Endpoint defines the host and port (<host>:<port>)
+                        description: Endpoint defines the host and port (`<host>:<port>`)
                           of an OTLP endpoint.
                         properties:
                           value:
@@ -796,20 +635,9 @@ spec:
                       rule: ((!has(self.path) || size(self.path) <= 0) && (has(self.protocol)
                         && self.protocol == 'grpc')) || (has(self.protocol) && self.protocol
                         == 'http')
+                required:
+                - otlp
                 type: object
-                x-kubernetes-validations:
-                - message: Switching to or away from OTLP output is not supported.
-                    Please re-create the LogPipeline instead
-                  rule: has(self.otlp) == has(oldSelf.otlp)
-                - message: Exactly one output must be defined
-                  rule: (!has(self.custom) && !has(self.http)) || !(has(self.custom)
-                    && has(self.http))
-                - message: Exactly one output must be defined
-                  rule: (!has(self.custom) && !has(self.otlp)) || ! (has(self.custom)
-                    && has(self.otlp))
-                - message: Exactly one output must be defined
-                  rule: (!has(self.http) && !has(self.otlp)) || ! (has(self.http)
-                    && has(self.otlp))
               transform:
                 description: Transforms specify a list of transformations to apply
                   to telemetry data.
@@ -835,65 +663,9 @@ spec:
                       type: array
                   type: object
                 type: array
-              variables:
-                description: Variables is a list of mappings from Kubernetes Secret
-                  keys to environment variables. Mapped keys are mounted as environment
-                  variables, so that they are available as [Variables](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/variables)
-                  in the `custom` filters and a `custom` output. Only available when
-                  using an output of type `http` and `custom`.
-                items:
-                  description: References a Kubernetes secret that should be provided
-                    as environment variable to Fluent Bit
-                  properties:
-                    name:
-                      description: Name of the variable to map.
-                      type: string
-                    valueFrom:
-                      properties:
-                        secretKeyRef:
-                          description: SecretKeyRef refers to the value of a specific
-                            key in a Secret. You must provide `name` and `namespace`
-                            of the Secret, as well as the name of the `key`.
-                          properties:
-                            key:
-                              description: Key defines the name of the attribute of
-                                the Secret holding the referenced value.
-                              type: string
-                            name:
-                              description: Name of the Secret containing the referenced
-                                value.
-                              type: string
-                            namespace:
-                              description: Namespace containing the Secret with the
-                                referenced value.
-                              type: string
-                          required:
-                          - key
-                          - name
-                          - namespace
-                          type: object
-                      type: object
-                  type: object
-                type: array
             type: object
-            x-kubernetes-validations:
-            - message: otlp input is only supported with otlp output
-              rule: '!((has(self.output.http) || has(self.output.custom))  && has(self.input.otlp))'
-            - message: input.application.dropLabels is not supported with otlp output
-              rule: '!(has(self.output.otlp) && has(self.input.application.dropLabels))'
-            - message: input.application.keepAnnotations is not supported with otlp
-                output
-              rule: '!(has(self.output.otlp) && has(self.input.application.keepAnnotations))'
-            - message: filters are not supported with otlp output
-              rule: '!(has(self.output.otlp) && has(self.filters))'
-            - message: files not supported with otlp output
-              rule: '!(has(self.output.otlp) && has(self.files))'
-            - message: variables not supported with otlp output
-              rule: '!(has(self.output.otlp) && has(self.variables))'
-            - message: transform is only supported with otlp output
-              rule: '!(!has(self.output.otlp) && has(self.transform))'
           status:
-            description: Shows the observed state of the LogPipeline
+            description: Status represents the current information/status of MetricPipeline.
             properties:
               conditions:
                 description: An array of conditions describing the status of the pipeline.
@@ -952,10 +724,6 @@ spec:
                   - type
                   type: object
                 type: array
-              unsupportedMode:
-                description: Is active when the LogPipeline uses a `custom` output
-                  or filter; see [unsupported mode](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/02-logs.md#unsupported-mode).
-                type: boolean
             type: object
         type: object
     served: true
@@ -975,16 +743,13 @@ spec:
     - jsonPath: .status.conditions[?(@.type=="TelemetryFlowHealthy")].status
       name: Flow Healthy
       type: string
-    - jsonPath: .status.unsupportedMode
-      name: Unsupported Mode
-      type: boolean
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
     name: v1beta1
     schema:
       openAPIV3Schema:
-        description: LogPipeline is the Schema for the logpipelines API
+        description: MetricPipeline is the Schema for the metricpipelines API.
         properties:
           apiVersion:
             description: |-
@@ -1004,50 +769,66 @@ spec:
           metadata:
             type: object
           spec:
-            description: Defines the desired state of LogPipeline
+            description: Spec defines the desired characteristics of MetricPipeline.
             properties:
-              files:
-                description: Files is a list of content snippets that are mounted
-                  as files in the Fluent Bit configuration, which can be linked in
-                  the `custom` filters and a `custom` output. Only available when
-                  using an output of type `http` and `custom`.
-                items:
-                  description: Provides file content to be consumed by a LogPipeline
-                    configuration
-                  properties:
-                    content:
-                      description: Content of the file to be mounted in the Fluent
-                        Bit configuration.
-                      type: string
-                    name:
-                      description: Name of the file under which the content is mounted
-                        in the Fluent Bit configuration.
-                      type: string
-                  type: object
-                type: array
-              filters:
-                description: Filters configures custom Fluent Bit `filters` to transform
-                  logs. Only available when using an output of type `http` and `custom`.
-                items:
-                  description: LogPipelineFilter configures custom Fluent Bit `filters`
-                    to transform logs. Only available when using an output of type
-                    `http` and `custom`.
-                  properties:
-                    custom:
-                      description: Custom defines a custom filter in the [Fluent Bit
-                        syntax](https://docs.fluentbit.io/manual/pipeline/outputs).
-                        If you use a `custom` filter, you put the LogPipeline in unsupported
-                        mode. Only available when using an output of type `http` and
-                        `custom`.
-                      type: string
-                  type: object
-                type: array
               input:
-                description: Input configures additional inputs for log collection.
+                description: Input configures additional inputs for metric collection.
                 properties:
+                  istio:
+                    description: Istio input configures collection of Istio metrics
+                      from applications running in the Istio service mesh.
+                    properties:
+                      diagnosticMetrics:
+                        description: DiagnosticMetrics configures collection of additional
+                          diagnostic metrics. The default is `false`.
+                        properties:
+                          enabled:
+                            description: If enabled, diagnostic metrics are collected.
+                              The default is `false`.
+                            type: boolean
+                        type: object
+                      enabled:
+                        description: Enabled specifies that istio-proxy metrics are
+                          scraped from Pods that have the istio-proxy sidecar injected.
+                          The default is `false`.
+                        type: boolean
+                      envoyMetrics:
+                        description: EnvoyMetrics enables the collection of additional
+                          Envoy metrics with prefix `envoy_`. The default is `false`.
+                        properties:
+                          enabled:
+                            description: Enabled specifies that Envoy metrics with
+                              prefix `envoy_` are scraped additionally. The default
+                              is `false`.
+                            type: boolean
+                        type: object
+                      namespaces:
+                        description: Namespaces configures the namespaces for which
+                          the collection should be activated. By default, all namespaces
+                          including system namespaces are enabled.
+                        properties:
+                          exclude:
+                            description: Exclude signals from the specified Namespace
+                              names only.
+                            items:
+                              type: string
+                            type: array
+                          include:
+                            description: Include signals from the specified Namespace
+                              names only.
+                            items:
+                              type: string
+                            type: array
+                        type: object
+                        x-kubernetes-validations:
+                        - message: Can only define one namespace selector - either
+                            'include' or 'exclude'
+                          rule: '!((has(self.include) && size(self.include) != 0)
+                            && (has(self.exclude) && size(self.exclude) != 0))'
+                    type: object
                   otlp:
                     description: OTLP input configures the push endpoint to receive
-                      logs from a OTLP source.
+                      metrics from an OTLP source.
                     properties:
                       disabled:
                         description: If set to `true`, no push-based OTLP signals
@@ -1077,349 +858,173 @@ spec:
                           rule: '!((has(self.include) && size(self.include) != 0)
                             && (has(self.exclude) && size(self.exclude) != 0))'
                     type: object
-                  runtime:
-                    description: Runtime input configures the log collection from
-                      application containers stdout/stderr by tailing the log files
-                      of the underlying container runtime.
+                  prometheus:
+                    description: Prometheus input configures collection of application
+                      metrics in the pull-based Prometheus protocol using endpoint
+                      discovery based on annotations.
                     properties:
-                      containers:
-                        description: Containers describes whether application logs
-                          from specific containers are selected. The options are mutually
-                          exclusive.
+                      diagnosticMetrics:
+                        description: DiagnosticMetrics configures collection of additional
+                          diagnostic metrics. The default is `false`.
+                        properties:
+                          enabled:
+                            description: If enabled, diagnostic metrics are collected.
+                              The default is `false`.
+                            type: boolean
+                        type: object
+                      enabled:
+                        description: Enabled specifies whether Service endpoints and
+                          Pods marked with `prometheus.io/scrape=true` annotation
+                          are scraped. The default is `false`.
+                        type: boolean
+                      namespaces:
+                        description: Namespaces specifies from which namespaces metrics
+                          are collected. By default, all namespaces except the system
+                          namespaces are enabled. To enable all namespaces including
+                          system namespaces, use an empty struct notation.
                         properties:
                           exclude:
-                            description: Exclude specifies to exclude only the container
-                              logs with the specified container names.
+                            description: Exclude signals from the specified Namespace
+                              names only.
                             items:
                               type: string
                             type: array
                           include:
-                            description: Include specifies to include only the container
-                              logs with the specified container names.
+                            description: Include signals from the specified Namespace
+                              names only.
                             items:
                               type: string
                             type: array
                         type: object
-                      dropLabels:
-                        description: DropLabels defines whether to drop all Kubernetes
-                          labels. The default is `false`. Only available when using
-                          an output of type `http` and `custom`. For an `otlp` output,
-                          use the label enrichement feature in the Telemetry resource
-                          instead.
-                        type: boolean
+                        x-kubernetes-validations:
+                        - message: Can only define one namespace selector - either
+                            'include' or 'exclude'
+                          rule: '!((has(self.include) && size(self.include) != 0)
+                            && (has(self.exclude) && size(self.exclude) != 0))'
+                    type: object
+                  runtime:
+                    description: Runtime input configures collection of Kubernetes
+                      runtime metrics.
+                    properties:
                       enabled:
-                        description: If enabled, application logs are collected from
-                          application containers stdout/stderr. The default is `true`.
-                        type: boolean
-                      keepAnnotations:
-                        description: KeepAnnotations defines whether to keep all Kubernetes
-                          annotations. The default is `false`.  Only available when
-                          using an output of type `http` and `custom`.
-                        type: boolean
-                      keepOriginalBody:
-                        description: KeepOriginalBody retains the original log data
-                          if the log data is in JSON and it is successfully parsed.
-                          If set to `false`, the original log data is removed from
-                          the log record. The default is `true`.
+                        description: Enabled specifies whether runtime metrics are
+                          collected. The default is `false`.
                         type: boolean
                       namespaces:
-                        description: Namespaces describes whether application logs
-                          from specific namespaces are selected. The options are mutually
-                          exclusive. System namespaces are excluded by default. Use
-                          the `system` attribute with value `true` to enable them.
+                        description: Namespaces specifies from which namespaces metrics
+                          are collected. By default, all namespaces except the system
+                          namespaces are enabled. To enable all namespaces including
+                          system namespaces, use an empty struct notation.
                         properties:
                           exclude:
-                            description: Exclude the container logs of the specified
-                              Namespace names.
+                            description: Exclude signals from the specified Namespace
+                              names only.
                             items:
                               type: string
                             type: array
                           include:
-                            description: Include only the container logs of the specified
-                              Namespace names.
+                            description: Include signals from the specified Namespace
+                              names only.
                             items:
                               type: string
                             type: array
-                          system:
-                            description: System specifies whether to collect logs
-                              from system namespaces. If set to `true`, you collect
-                              logs from all namespaces including system namespaces,
-                              such as like kube-system, istio-system, and kyma-system.
-                              The default is `false`.
-                            type: boolean
+                        type: object
+                        x-kubernetes-validations:
+                        - message: Can only define one namespace selector - either
+                            'include' or 'exclude'
+                          rule: '!((has(self.include) && size(self.include) != 0)
+                            && (has(self.exclude) && size(self.exclude) != 0))'
+                      resources:
+                        description: Resources configures the Kubernetes resource
+                          types for which metrics are collected.
+                        properties:
+                          container:
+                            description: Container configures container runtime metrics
+                              collection.
+                            properties:
+                              enabled:
+                                description: Enabled specifies that the runtime metrics
+                                  for the resource type are collected. The default
+                                  is `true`.
+                                type: boolean
+                            type: object
+                          daemonset:
+                            description: DaemonSet configures DaemonSet runtime metrics
+                              collection.
+                            properties:
+                              enabled:
+                                description: Enabled specifies that the runtime metrics
+                                  for the resource type are collected. The default
+                                  is `true`.
+                                type: boolean
+                            type: object
+                          deployment:
+                            description: Deployment configures Deployment runtime
+                              metrics collection.
+                            properties:
+                              enabled:
+                                description: Enabled specifies that the runtime metrics
+                                  for the resource type are collected. The default
+                                  is `true`.
+                                type: boolean
+                            type: object
+                          job:
+                            description: Job configures Job runtime metrics collection.
+                            properties:
+                              enabled:
+                                description: Enabled specifies that the runtime metrics
+                                  for the resource type are collected. The default
+                                  is `true`.
+                                type: boolean
+                            type: object
+                          node:
+                            description: Node configures Node runtime metrics collection.
+                            properties:
+                              enabled:
+                                description: Enabled specifies that the runtime metrics
+                                  for the resource type are collected. The default
+                                  is `true`.
+                                type: boolean
+                            type: object
+                          pod:
+                            description: Pod configures Pod runtime metrics collection.
+                            properties:
+                              enabled:
+                                description: Enabled specifies that the runtime metrics
+                                  for the resource type are collected. The default
+                                  is `true`.
+                                type: boolean
+                            type: object
+                          statefulset:
+                            description: StatefulSet configures StatefulSet runtime
+                              metrics collection.
+                            properties:
+                              enabled:
+                                description: Enabled specifies that the runtime metrics
+                                  for the resource type are collected. The default
+                                  is `true`.
+                                type: boolean
+                            type: object
+                          volume:
+                            description: Volume configures Volume runtime metrics
+                              collection.
+                            properties:
+                              enabled:
+                                description: Enabled specifies that the runtime metrics
+                                  for the resource type are collected. The default
+                                  is `true`.
+                                type: boolean
+                            type: object
                         type: object
                     type: object
                 type: object
               output:
-                description: Output configures the backend to which logs are sent.
+                description: Output configures the backend to which metrics are sent.
                   You must specify exactly one output per pipeline.
                 properties:
-                  custom:
-                    description: Custom defines a custom output in the [Fluent Bit
-                      syntax](https://docs.fluentbit.io/manual/pipeline/outputs) where
-                      you want to push the logs. If you use a `custom` output, you
-                      put the LogPipeline in unsupported mode. Only available when
-                      using an output of type `http` and `custom`.
-                    type: string
-                  http:
-                    description: HTTP configures an HTTP-based output compatible with
-                      the Fluent Bit HTTP output plugin.
-                    properties:
-                      compress:
-                        description: Compress defines the compression algorithm to
-                          use. Either `none` or `gzip`. Default is `none`.
-                        type: string
-                      dedot:
-                        description: Dedot enables de-dotting of Kubernetes labels
-                          and annotations. For compatibility with OpenSearch-based
-                          backends, dots (.) are replaced by underscores (_). Default
-                          is `false`.
-                        type: boolean
-                      format:
-                        description: Format is the data format to be used in the HTTP
-                          request body. Either `gelf`, `json`, `json_stream`, `json_lines`,
-                          or `msgpack`. Default is `json`.
-                        type: string
-                      host:
-                        description: Host defines the host of the HTTP backend.
-                        properties:
-                          value:
-                            description: Value as plain text.
-                            type: string
-                          valueFrom:
-                            description: ValueFrom is the value as a reference to
-                              a resource.
-                            properties:
-                              secretKeyRef:
-                                description: SecretKeyRef refers to the value of a
-                                  specific key in a Secret. You must provide `name`
-                                  and `namespace` of the Secret, as well as the name
-                                  of the `key`.
-                                properties:
-                                  key:
-                                    description: Key defines the name of the attribute
-                                      of the Secret holding the referenced value.
-                                    type: string
-                                  name:
-                                    description: Name of the Secret containing the
-                                      referenced value.
-                                    type: string
-                                  namespace:
-                                    description: Namespace containing the Secret with
-                                      the referenced value.
-                                    type: string
-                                required:
-                                - key
-                                - name
-                                - namespace
-                                type: object
-                            type: object
-                        type: object
-                      password:
-                        description: Password defines the basic auth password.
-                        properties:
-                          value:
-                            description: Value as plain text.
-                            type: string
-                          valueFrom:
-                            description: ValueFrom is the value as a reference to
-                              a resource.
-                            properties:
-                              secretKeyRef:
-                                description: SecretKeyRef refers to the value of a
-                                  specific key in a Secret. You must provide `name`
-                                  and `namespace` of the Secret, as well as the name
-                                  of the `key`.
-                                properties:
-                                  key:
-                                    description: Key defines the name of the attribute
-                                      of the Secret holding the referenced value.
-                                    type: string
-                                  name:
-                                    description: Name of the Secret containing the
-                                      referenced value.
-                                    type: string
-                                  namespace:
-                                    description: Namespace containing the Secret with
-                                      the referenced value.
-                                    type: string
-                                required:
-                                - key
-                                - name
-                                - namespace
-                                type: object
-                            type: object
-                        type: object
-                      port:
-                        description: Port defines the port of the HTTP backend. Default
-                          is 443.
-                        type: string
-                      tls:
-                        description: TLS configures TLS for the HTTP backend.
-                        properties:
-                          ca:
-                            description: Defines an optional CA certificate for server
-                              certificate verification when using TLS. The certificate
-                              must be provided in PEM format.
-                            properties:
-                              value:
-                                description: Value as plain text.
-                                type: string
-                              valueFrom:
-                                description: ValueFrom is the value as a reference
-                                  to a resource.
-                                properties:
-                                  secretKeyRef:
-                                    description: SecretKeyRef refers to the value
-                                      of a specific key in a Secret. You must provide
-                                      `name` and `namespace` of the Secret, as well
-                                      as the name of the `key`.
-                                    properties:
-                                      key:
-                                        description: Key defines the name of the attribute
-                                          of the Secret holding the referenced value.
-                                        type: string
-                                      name:
-                                        description: Name of the Secret containing
-                                          the referenced value.
-                                        type: string
-                                      namespace:
-                                        description: Namespace containing the Secret
-                                          with the referenced value.
-                                        type: string
-                                    required:
-                                    - key
-                                    - name
-                                    - namespace
-                                    type: object
-                                type: object
-                            type: object
-                          cert:
-                            description: Defines a client certificate to use when
-                              using TLS. The certificate must be provided in PEM format.
-                            properties:
-                              value:
-                                description: Value as plain text.
-                                type: string
-                              valueFrom:
-                                description: ValueFrom is the value as a reference
-                                  to a resource.
-                                properties:
-                                  secretKeyRef:
-                                    description: SecretKeyRef refers to the value
-                                      of a specific key in a Secret. You must provide
-                                      `name` and `namespace` of the Secret, as well
-                                      as the name of the `key`.
-                                    properties:
-                                      key:
-                                        description: Key defines the name of the attribute
-                                          of the Secret holding the referenced value.
-                                        type: string
-                                      name:
-                                        description: Name of the Secret containing
-                                          the referenced value.
-                                        type: string
-                                      namespace:
-                                        description: Namespace containing the Secret
-                                          with the referenced value.
-                                        type: string
-                                    required:
-                                    - key
-                                    - name
-                                    - namespace
-                                    type: object
-                                type: object
-                            type: object
-                          disabled:
-                            description: Disabled specifies if TLS is disabled or
-                              enabled. Default is `false`.
-                            type: boolean
-                          key:
-                            description: Defines the client key to use when using
-                              TLS. The key must be provided in PEM format.
-                            properties:
-                              value:
-                                description: Value as plain text.
-                                type: string
-                              valueFrom:
-                                description: ValueFrom is the value as a reference
-                                  to a resource.
-                                properties:
-                                  secretKeyRef:
-                                    description: SecretKeyRef refers to the value
-                                      of a specific key in a Secret. You must provide
-                                      `name` and `namespace` of the Secret, as well
-                                      as the name of the `key`.
-                                    properties:
-                                      key:
-                                        description: Key defines the name of the attribute
-                                          of the Secret holding the referenced value.
-                                        type: string
-                                      name:
-                                        description: Name of the Secret containing
-                                          the referenced value.
-                                        type: string
-                                      namespace:
-                                        description: Namespace containing the Secret
-                                          with the referenced value.
-                                        type: string
-                                    required:
-                                    - key
-                                    - name
-                                    - namespace
-                                    type: object
-                                type: object
-                            type: object
-                          skipCertificateValidation:
-                            description: If `true`, the validation of certificates
-                              is skipped. Default is `false`.
-                            type: boolean
-                        type: object
-                        x-kubernetes-validations:
-                        - message: Can define either both 'cert' and 'key', or neither
-                          rule: has(self.cert) == has(self.key)
-                      uri:
-                        description: URI defines the URI of the HTTP backend. Default
-                          is "/".
-                        type: string
-                      user:
-                        description: User defines the basic auth user.
-                        properties:
-                          value:
-                            description: Value as plain text.
-                            type: string
-                          valueFrom:
-                            description: ValueFrom is the value as a reference to
-                              a resource.
-                            properties:
-                              secretKeyRef:
-                                description: SecretKeyRef refers to the value of a
-                                  specific key in a Secret. You must provide `name`
-                                  and `namespace` of the Secret, as well as the name
-                                  of the `key`.
-                                properties:
-                                  key:
-                                    description: Key defines the name of the attribute
-                                      of the Secret holding the referenced value.
-                                    type: string
-                                  name:
-                                    description: Name of the Secret containing the
-                                      referenced value.
-                                    type: string
-                                  namespace:
-                                    description: Namespace containing the Secret with
-                                      the referenced value.
-                                    type: string
-                                required:
-                                - key
-                                - name
-                                - namespace
-                                type: object
-                            type: object
-                        type: object
-                    type: object
                   otlp:
-                    description: OTLP defines an output using the OpenTelemetry protocol.
+                    description: OTLP output defines an output using the OpenTelemetry
+                      protocol.
                     properties:
                       authentication:
                         description: Authentication defines authentication options
@@ -1509,7 +1114,7 @@ spec:
                             type: object
                         type: object
                       endpoint:
-                        description: Endpoint defines the host and port (<host>:<port>)
+                        description: Endpoint defines the host and port (`<host>:<port>`)
                           of an OTLP endpoint.
                         properties:
                           value:
@@ -1736,20 +1341,9 @@ spec:
                       rule: ((!has(self.path) || size(self.path) <= 0) && (has(self.protocol)
                         && self.protocol == 'grpc')) || (has(self.protocol) && self.protocol
                         == 'http')
+                required:
+                - otlp
                 type: object
-                x-kubernetes-validations:
-                - message: Switching to or away from OTLP output is not supported.
-                    Please re-create the LogPipeline instead
-                  rule: has(self.otlp) == has(oldSelf.otlp)
-                - message: Exactly one output must be defined
-                  rule: (!has(self.custom) && !has(self.http)) || !(has(self.custom)
-                    && has(self.http))
-                - message: Exactly one output must be defined
-                  rule: (!has(self.custom) && !has(self.otlp)) || ! (has(self.custom)
-                    && has(self.otlp))
-                - message: Exactly one output must be defined
-                  rule: (!has(self.http) && !has(self.otlp)) || ! (has(self.http)
-                    && has(self.otlp))
               transform:
                 description: Transforms specify a list of transformations to apply
                   to telemetry data.
@@ -1775,64 +1369,9 @@ spec:
                       type: array
                   type: object
                 type: array
-              variables:
-                description: Variables is a list of mappings from Kubernetes Secret
-                  keys to environment variables. Mapped keys are mounted as environment
-                  variables, so that they are available as [Variables](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/variables)
-                  in the `custom` filters and a `custom` output. Only available when
-                  using an output of type `http` and `custom`.
-                items:
-                  description: References a Kubernetes secret that should be provided
-                    as environment variable to Fluent Bit
-                  properties:
-                    name:
-                      description: Name of the variable to map.
-                      type: string
-                    valueFrom:
-                      properties:
-                        secretKeyRef:
-                          description: SecretKeyRef refers to the value of a specific
-                            key in a Secret. You must provide `name` and `namespace`
-                            of the Secret, as well as the name of the `key`.
-                          properties:
-                            key:
-                              description: Key defines the name of the attribute of
-                                the Secret holding the referenced value.
-                              type: string
-                            name:
-                              description: Name of the Secret containing the referenced
-                                value.
-                              type: string
-                            namespace:
-                              description: Namespace containing the Secret with the
-                                referenced value.
-                              type: string
-                          required:
-                          - key
-                          - name
-                          - namespace
-                          type: object
-                      type: object
-                  type: object
-                type: array
             type: object
-            x-kubernetes-validations:
-            - message: otlp input is only supported with otlp output
-              rule: '!((has(self.output.http) || has(self.output.custom))  && has(self.input.otlp))'
-            - message: input.runtime.dropLabels is not supported with otlp output
-              rule: '!(has(self.output.otlp) && has(self.input.runtime.dropLabels))'
-            - message: input.runtime.keepAnnotations is not supported with otlp output
-              rule: '!(has(self.output.otlp) && has(self.input.runtime.keepAnnotations))'
-            - message: filters are not supported with otlp output
-              rule: '!(has(self.output.otlp) && has(self.filters))'
-            - message: files not supported with otlp output
-              rule: '!(has(self.output.otlp) && has(self.files))'
-            - message: variables not supported with otlp output
-              rule: '!(has(self.output.otlp) && has(self.variables))'
-            - message: transform is only supported with otlp output
-              rule: '!(!has(self.output.otlp) && has(self.transform))'
           status:
-            description: Shows the observed state of the LogPipeline
+            description: Status represents the current information/status of MetricPipeline.
             properties:
               conditions:
                 description: An array of conditions describing the status of the pipeline.
@@ -1891,10 +1430,6 @@ spec:
                   - type
                   type: object
                 type: array
-              unsupportedMode:
-                description: Is active when the LogPipeline uses a `custom` output
-                  or filter; see [unsupported mode](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/02-logs.md#unsupported-mode).
-                type: boolean
             type: object
         type: object
     served: true

@@ -1,6 +1,7 @@
 # collect all json files in given directory and convert them to a table line in markdown format
 # Usage: python convert-results.py <directory>
 
+import argparse
 import json
 import os
 from collections import defaultdict
@@ -194,7 +195,6 @@ def load_results(directories):
                 filenamePath = os.path.join(directory, filename)
                 with open(filenamePath, mode='r') as f:
                     data = json.load(f)
-                    print(data)
                     # calculate a new key by combining test_target, max_pipeline and backpressure_test
                     key = data['test_target']
                     test_key = []
@@ -226,18 +226,16 @@ def print_results(results):
 
 # main
 if __name__ == '__main__':
-    import sys
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-m','--markdown', action='store_true', help='Only output markdown table, skip debug prints')
+    parser.add_argument('directories', nargs='+', help='Directories containing result files')
 
-    if len(sys.argv) < 2:
-        print("Usage: python convert-results.py <directories>")
-        sys.exit(1)
+    args = parser.parse_args()
+    results = load_results(args.directories)
 
-    # get all arguments
-    directories = sys.argv[1:]
-    results = load_results(directories)
-
-    # debug print results
-    print(json.dumps(results, indent=2))
+    if not args.markdown:
+        # debug print results
+        print(json.dumps(results, indent=2))
 
     # print the results in markdown format
     print_results(results)
