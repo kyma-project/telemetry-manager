@@ -30,7 +30,7 @@ We need to decide how to handle this situation to continue delivering Transform 
 
   Migrating existing pipelines could be challenging, as users would need to manually update their configurations to use the new API.
 
-- **Custom FilterProcessor Implementation Using Lower Context:**
+- **Filter API Implementation Using Lower Context:**
 
   We could implement a Filter API that always uses a lower context level, such as `datapoint`, `spanevent`, or `log`. This would allow us to provide Filter capabilities to our users immediately, without waiting for the official FilterProcessor to support OTTL context inference.
 
