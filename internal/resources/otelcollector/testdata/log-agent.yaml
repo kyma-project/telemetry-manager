@@ -85,14 +85,6 @@ spec:
     metadata:
       annotations:
         checksum/config: 1d8e9f768e6b24485bbdd6b9aa417d37fec897a7dafc8321355abc0d45259c9e
-        proxy.istio.io/config: |
-          # configure an env variable OUTPUT_CERTS to write certificates to the given folder
-          proxyMetadata:
-            OUTPUT_CERTS: /etc/istio-output-certs
-        sidecar.istio.io/userVolumeMount: '[{"name": "istio-certs", "mountPath": "/etc/istio-output-certs"}]'
-        traffic.sidecar.istio.io/excludeInboundPorts: "8888"
-        traffic.sidecar.istio.io/includeOutboundIPRanges: ""
-        traffic.sidecar.istio.io/includeOutboundPorts: "4317"
       labels:
         app.kubernetes.io/component: agent
         app.kubernetes.io/managed-by: telemetry-manager
@@ -147,9 +139,6 @@ spec:
         volumeMounts:
         - mountPath: /conf
           name: config
-        - mountPath: /etc/istio-output-certs
-          name: istio-certs
-          readOnly: true
         - mountPath: /var/log/pods
           name: varlogpods
           readOnly: true
@@ -174,8 +163,6 @@ spec:
             path: relay.conf
           name: telemetry-log-agent
         name: config
-      - emptyDir: {}
-        name: istio-certs
       - hostPath:
           path: /var/log/pods
         name: varlogpods
