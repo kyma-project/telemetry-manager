@@ -112,6 +112,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 func enrichmentRoutingConnectorConfig(mp *telemetryv1alpha1.MetricPipeline) common.RoutingConnector {
 	enrichmentPipelineID := formatEnrichmentServicePipelineID(mp)
 	outputPipelineID := formatOutputServicePipelineID(mp)
+	
 	return common.RoutingConnector{
 		DefaultPipelines: []string{enrichmentPipelineID},
 		ErrorMode:        "ignore",
