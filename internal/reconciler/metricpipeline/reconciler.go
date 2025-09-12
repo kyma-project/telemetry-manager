@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
+	"sort"
 
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
@@ -353,12 +355,18 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to marshal collector config: %w", err)
 	}
 
+	backendPorts, err := r.getBackendPorts(ctx, allPipelines)
+	if err != nil {
+		return fmt.Errorf("failed to get ports of the backends: %w", err)
+	}
+
 	if err := r.agentApplierDeleter.ApplyResources(
 		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		otelcollector.AgentApplyOptions{
 			IstioEnabled:        isIstioActive,
 			CollectorConfigYAML: string(agentConfigYAML),
+			BackendPorts:        backendPorts,
 		},
 	); err != nil {
 		return fmt.Errorf("failed to apply agent resources: %w", err)
@@ -413,4 +421,28 @@ func (r *Reconciler) getK8sClusterUID(ctx context.Context) (string, error) {
 	}
 
 	return string(kubeSystem.UID), nil
+}
+
+// getBackendPorts returns the list of ports of the backends defined in all given MetricPipelines
+func (r *Reconciler) getBackendPorts(ctx context.Context, allPipelines []telemetryv1alpha1.MetricPipeline) ([]string, error) {
+	var backendPorts []string
+
+	for _, pipeline := range allPipelines {
+		endpoint, err := common.ResolveValue(ctx, r.Client, pipeline.Spec.Output.OTLP.Endpoint)
+		if err != nil {
+			return nil, err
+		}
+
+		parsedURL, err := url.Parse(string(endpoint))
+		if err != nil {
+			return nil, err
+		}
+
+		backendPorts = append(backendPorts, parsedURL.Port())
+	}
+
+	// list of ports needs to be ordered to avoid unnecessary updates of the metric agent DaemonSet
+	sort.Strings(backendPorts)
+
+	return backendPorts, nil
 }
