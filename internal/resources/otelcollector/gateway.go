@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"maps"
 	"slices"
-	"strings"
 
 	istiosecurityv1 "istio.io/api/security/v1"
 	istiotypev1beta1 "istio.io/api/type/v1beta1"
@@ -81,11 +80,9 @@ type GatewayApplierDeleter struct {
 }
 
 type GatewayApplyOptions struct {
-	AllowedPorts        []int32
 	CollectorConfigYAML string
 	CollectorEnvVars    map[string][]byte
 	IstioEnabled        bool
-	IstioExcludePorts   []int32
 	// Replicas specifies the number of gateway replicas.
 	Replicas int32
 	// ResourceRequirementsMultiplier is a coefficient affecting the CPU and memory resource limits for each replica.
@@ -193,7 +190,12 @@ func NewTraceGatewayApplierDeleter(image, namespace, priorityClassName string) *
 func (gad *GatewayApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts GatewayApplyOptions) error {
 	name := types.NamespacedName{Namespace: gad.namespace, Name: gad.baseName}
 
-	if err := applyCommonResources(ctx, c, name, commonresources.LabelValueK8sComponentGateway, gad.rbac, opts.AllowedPorts); err != nil {
+	ingressAllowedPorts := gatewayIngressAllowedPorts()
+	if opts.IstioEnabled {
+		ingressAllowedPorts = append(ingressAllowedPorts, ports.IstioEnvoy)
+	}
+
+	if err := applyCommonResources(ctx, c, name, commonresources.LabelValueK8sComponentGateway, gad.rbac, ingressAllowedPorts); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
@@ -418,12 +420,7 @@ func (gad *GatewayApplierDeleter) makeAnnotations(configChecksum string, opts Ga
 	annotations := map[string]string{commonresources.AnnotationKeyChecksumConfig: configChecksum}
 
 	if opts.IstioEnabled {
-		var excludeInboundPorts []string
-		for _, p := range opts.IstioExcludePorts {
-			excludeInboundPorts = append(excludeInboundPorts, fmt.Sprintf("%d", p))
-		}
-
-		annotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = strings.Join(excludeInboundPorts, ", ")
+		annotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = fmt.Sprintf("%d", ports.Metrics)
 		// When a workload is outside the istio mesh and communicates with pod in service mesh, the envoy proxy does not
 		// preserve the source IP and destination IP. To preserve source/destination IP we need TPROXY interception mode.
 		// More info: https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#ProxyConfig-InboundInterceptionMode
@@ -431,4 +428,13 @@ func (gad *GatewayApplierDeleter) makeAnnotations(configChecksum string, opts Ga
 	}
 
 	return annotations
+}
+
+func gatewayIngressAllowedPorts() []int32 {
+	return []int32{
+		ports.Metrics,
+		ports.HealthCheck,
+		ports.OTLPHTTP,
+		ports.OTLPGRPC,
+	}
 }

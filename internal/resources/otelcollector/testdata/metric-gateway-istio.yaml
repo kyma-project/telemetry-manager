@@ -115,7 +115,7 @@ spec:
       annotations:
         checksum/config: 1d8e9f768e6b24485bbdd6b9aa417d37fec897a7dafc8321355abc0d45259c9e
         sidecar.istio.io/interceptionMode: TPROXY
-        traffic.sidecar.istio.io/excludeInboundPorts: ""
+        traffic.sidecar.istio.io/excludeInboundPorts: "8888"
       labels:
         app.kubernetes.io/component: gateway
         app.kubernetes.io/managed-by: telemetry-manager
@@ -232,9 +232,15 @@ spec:
     - ipBlock:
         cidr: ::/0
     ports:
-    - port: 5555
+    - port: 8888
       protocol: TCP
-    - port: 6666
+    - port: 13133
+      protocol: TCP
+    - port: 4318
+      protocol: TCP
+    - port: 4317
+      protocol: TCP
+    - port: 15090
       protocol: TCP
   podSelector:
     matchLabels:

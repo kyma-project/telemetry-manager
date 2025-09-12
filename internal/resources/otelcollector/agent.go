@@ -47,36 +47,35 @@ var (
 )
 
 type AgentApplierDeleter struct {
-	baseName      string
-	extraPodLabel map[string]string
-	image         string
-	namespace     string
-	rbac          rbac
+	baseName            string
+	extraPodLabel       map[string]string
+	makeAnnotationsFunc func(configChecksum string, opts AgentApplyOptions) map[string]string
+	image               string
+	namespace           string
+	rbac                rbac
 
 	podOpts       []commonresources.PodSpecOption
 	containerOpts []commonresources.ContainerOption
 }
 
 type AgentApplyOptions struct {
-	AllowedPorts        []int32
+	IstioEnabled        bool
 	CollectorConfigYAML string
 	CollectorEnvVars    map[string][]byte
 }
 
 func NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName string) *AgentApplierDeleter {
 	extraLabels := map[string]string{
-		commonresources.LabelKeyIstioInject: "true", // inject Istio sidecar for SDS certificates and agent-to-gateway communication
+		commonresources.LabelKeyIstioInject: "true", // inject Istio sidecar
 	}
 
 	volumes := []corev1.Volume{
-		makeIstioCertVolume(),
 		makePodLogsVolume(),
 		// HostPath Should be unique for each application using it
 		makeFileLogCheckpointVolume(),
 	}
 
 	collectorVolumeMounts := []corev1.VolumeMount{
-		makeIstioCertVolumeMount(),
 		makePodLogsVolumeMount(),
 		makeFileLogCheckPointVolumeMount(),
 	}
@@ -88,11 +87,12 @@ func NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName stri
 	)
 
 	return &AgentApplierDeleter{
-		baseName:      LogAgentName,
-		extraPodLabel: extraLabels,
-		image:         collectorImage,
-		namespace:     namespace,
-		rbac:          makeLogAgentRBAC(namespace),
+		baseName:            LogAgentName,
+		extraPodLabel:       extraLabels,
+		makeAnnotationsFunc: makeLogAgentAnnotations,
+		image:               collectorImage,
+		namespace:           namespace,
+		rbac:                makeLogAgentRBAC(namespace),
 		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
 			commonresources.WithVolumes(volumes),
@@ -111,15 +111,16 @@ func NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName stri
 func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string) *AgentApplierDeleter {
 	extraLabels := map[string]string{
 		commonresources.LabelKeyTelemetryMetricScrape: "true",
-		commonresources.LabelKeyIstioInject:           "true", // inject Istio sidecar for SDS certificates and agent-to-gateway communication
+		commonresources.LabelKeyIstioInject:           "true", // inject Istio sidecar
 	}
 
 	return &AgentApplierDeleter{
-		baseName:      MetricAgentName,
-		extraPodLabel: extraLabels,
-		image:         image,
-		namespace:     namespace,
-		rbac:          makeMetricAgentRBAC(namespace),
+		baseName:            MetricAgentName,
+		extraPodLabel:       extraLabels,
+		makeAnnotationsFunc: makeMetricAgentAnnotations,
+		image:               image,
+		namespace:           namespace,
+		rbac:                makeMetricAgentRBAC(namespace),
 		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
 			commonresources.WithVolumes([]corev1.Volume{makeIstioCertVolume()}),
@@ -141,7 +142,12 @@ func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string) *A
 func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
 	name := types.NamespacedName{Namespace: aad.namespace, Name: aad.baseName}
 
-	if err := applyCommonResources(ctx, c, name, commonresources.LabelValueK8sComponentAgent, aad.rbac, opts.AllowedPorts); err != nil {
+	ingressAllowedPorts := agentIngressAllowedPorts()
+	if opts.IstioEnabled {
+		ingressAllowedPorts = append(ingressAllowedPorts, ports.IstioEnvoy)
+	}
+
+	if err := applyCommonResources(ctx, c, name, commonresources.LabelValueK8sComponentAgent, aad.rbac, ingressAllowedPorts); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
@@ -162,7 +168,7 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 	}
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, secretsInChecksum)
-	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, aad.makeAgentDaemonSet(configChecksum)); err != nil {
+	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, aad.makeAgentDaemonSet(configChecksum, opts)); err != nil {
 		return fmt.Errorf("failed to create daemonset: %w", err)
 	}
 
@@ -196,9 +202,8 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 	return allErrors
 }
 
-func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string) *appsv1.DaemonSet {
-	annotations := map[string]string{commonresources.AnnotationKeyChecksumConfig: configChecksum}
-	maps.Copy(annotations, makeIstioAnnotations(IstioCertPath))
+func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string, opts AgentApplyOptions) *appsv1.DaemonSet {
+	annotations := aad.makeAnnotationsFunc(configChecksum, opts)
 
 	// Add pod options shared between all agents
 	podOpts := slices.Clone(aad.podOpts)
@@ -233,18 +238,33 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string) *appsv
 	}
 }
 
-func makeIstioAnnotations(istioCertPath string) map[string]string {
-	// Provision Istio certificates for Prometheus Receiver running as a part of MetricAgent by injecting a sidecar which will rotate SDS certificates and output them to a volume. However, the sidecar should not intercept scraping requests  because Prometheus’s model of direct endpoint access is incompatible with Istio’s sidecar proxy model.
-	return map[string]string{
-		commonresources.AnnotationKeyIstioProxyConfig: fmt.Sprintf(`# configure an env variable OUTPUT_CERTS to write certificates to the given folder
+func makeLogAgentAnnotations(configChecksum string, opts AgentApplyOptions) map[string]string {
+	annotations := map[string]string{commonresources.AnnotationKeyChecksumConfig: configChecksum}
+
+	if opts.IstioEnabled {
+		annotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = strconv.Itoa(int(ports.Metrics))
+	}
+
+	return annotations
+}
+
+func makeMetricAgentAnnotations(configChecksum string, opts AgentApplyOptions) map[string]string {
+	annotations := map[string]string{commonresources.AnnotationKeyChecksumConfig: configChecksum}
+
+	if opts.IstioEnabled {
+		annotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = strconv.Itoa(int(ports.Metrics))
+		// Provision Istio certificates for Prometheus Receiver running as a part of MetricAgent by injecting a sidecar which will rotate SDS certificates and output them to a volume.
+		// However, the sidecar should not intercept scraping requests  because Prometheus’s model of direct endpoint access is incompatible with Istio’s sidecar proxy model.
+		annotations[commonresources.AnnotationKeyIstioProxyConfig] = fmt.Sprintf(`# configure an env variable OUTPUT_CERTS to write certificates to the given folder
 proxyMetadata:
   OUTPUT_CERTS: %s
-`, istioCertPath),
-		commonresources.AnnotationKeyIstioUserVolumeMount:         fmt.Sprintf(`[{"name": "%s", "mountPath": "%s"}]`, istioCertVolumeName, istioCertPath),
-		commonresources.AnnotationKeyIstioIncludeOutboundPorts:    strconv.Itoa(int(ports.OTLPGRPC)),
-		commonresources.AnnotationKeyIstioExcludeInboundPorts:     strconv.Itoa(int(ports.Metrics)),
-		commonresources.AnnotationKeyIstioIncludeOutboundIPRanges: "",
+`, IstioCertPath)
+		annotations[commonresources.AnnotationKeyIstioUserVolumeMount] = fmt.Sprintf(`[{"name": "%s", "mountPath": "%s"}]`, istioCertVolumeName, IstioCertPath)
+		annotations[commonresources.AnnotationKeyIstioIncludeOutboundIPRanges] = ""
+		annotations[commonresources.AnnotationKeyIstioIncludeOutboundPorts] = strconv.Itoa(int(ports.OTLPGRPC))
 	}
+
+	return annotations
 }
 
 func makeIstioCertVolume() corev1.Volume {
@@ -301,5 +321,12 @@ func makeFileLogCheckPointVolumeMount() corev1.VolumeMount {
 	return corev1.VolumeMount{
 		Name:      checkpointVolumeName,
 		MountPath: CheckpointVolumePath,
+	}
+}
+
+func agentIngressAllowedPorts() []int32 {
+	return []int32{
+		ports.Metrics,
+		ports.HealthCheck,
 	}
 }
