@@ -18,21 +18,6 @@ service:
                 - service_enrichment
             exporters:
                 - routing/enrichment-output
-        metrics/istio-enabled-output:
-            receivers:
-                - routing/enrichment-output
-                - routing/runtime-input
-                - routing/prometheus-input
-                - routing/istio-input
-            processors:
-                - filter/drop-diagnostic-metrics-if-input-source-prometheus
-                - filter/drop-diagnostic-metrics-if-input-source-istio
-                - resource/insert-cluster-attributes
-                - resource/delete-skip-enrichment-attribute
-                - resource/drop-kyma-attributes
-                - batch
-            exporters:
-                - otlp/istio-enabled
         metrics/istio-input:
             receivers:
                 - prometheus/istio
@@ -66,6 +51,21 @@ service:
                 - transform/set-instrumentation-scope-runtime
             exporters:
                 - routing/runtime-input
+        metrics/test-output:
+            receivers:
+                - routing/enrichment-output
+                - routing/runtime-input
+                - routing/prometheus-input
+                - routing/istio-input
+            processors:
+                - filter/drop-diagnostic-metrics-if-input-source-prometheus
+                - filter/drop-diagnostic-metrics-if-input-source-istio
+                - resource/insert-cluster-attributes
+                - resource/delete-skip-enrichment-attribute
+                - resource/drop-kyma-attributes
+                - batch
+            exporters:
+                - otlp/test
     telemetry:
         metrics:
             readers:
@@ -405,8 +405,8 @@ processors:
                 - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
                 - set(scope.name, "io.kyma-project.telemetry/runtime") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
 exporters:
-    otlp/istio-enabled:
-        endpoint: ${OTLP_ENDPOINT_ISTIO_ENABLED}
+    otlp/test:
+        endpoint: ${OTLP_ENDPOINT_TEST}
         tls:
             insecure: true
         sending_queue:
@@ -424,15 +424,15 @@ connectors:
         table:
             - statement: route() where instrumentation_scope.name == "io.kyma-project.telemetry/runtime"
               pipelines:
-                - metrics/istio-enabled-output
+                - metrics/test-output
               context: metric
             - statement: route() where resource.attributes["kyma.input.name"] == "prometheus"
               pipelines:
-                - metrics/istio-enabled-output
+                - metrics/test-output
               context: metric
             - statement: route() where instrumentation_scope.name == "io.kyma-project.telemetry/istio"
               pipelines:
-                - metrics/istio-enabled-output
+                - metrics/test-output
               context: metric
     routing/istio-input:
         default_pipelines:
@@ -441,7 +441,7 @@ connectors:
         table:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
               pipelines:
-                - metrics/istio-enabled-output
+                - metrics/test-output
     routing/prometheus-input:
         default_pipelines:
             - metrics/enrichment
@@ -449,7 +449,7 @@ connectors:
         table:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
               pipelines:
-                - metrics/istio-enabled-output
+                - metrics/test-output
     routing/runtime-input:
         default_pipelines:
             - metrics/enrichment
@@ -457,4 +457,4 @@ connectors:
         table:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
               pipelines:
-                - metrics/istio-enabled-output
+                - metrics/test-output

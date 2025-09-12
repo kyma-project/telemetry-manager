@@ -16,18 +16,6 @@ service:
                 - service_enrichment
             exporters:
                 - routing/enrichment-output
-        metrics/istio-diagnostic-output:
-            receivers:
-                - routing/enrichment-output
-                - routing/istio-input
-            processors:
-                - filter/drop-envoy-metrics-if-disabled
-                - resource/insert-cluster-attributes
-                - resource/delete-skip-enrichment-attribute
-                - resource/drop-kyma-attributes
-                - batch
-            exporters:
-                - otlp/istio-diagnostic
         metrics/istio-input:
             receivers:
                 - prometheus/istio
@@ -38,6 +26,18 @@ service:
                 - transform/set-instrumentation-scope-istio
             exporters:
                 - routing/istio-input
+        metrics/test-output:
+            receivers:
+                - routing/enrichment-output
+                - routing/istio-input
+            processors:
+                - filter/drop-envoy-metrics-if-disabled
+                - resource/insert-cluster-attributes
+                - resource/delete-skip-enrichment-attribute
+                - resource/drop-kyma-attributes
+                - batch
+            exporters:
+                - otlp/test
     telemetry:
         metrics:
             readers:
@@ -167,8 +167,8 @@ processors:
                 - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
                 - set(scope.name, "io.kyma-project.telemetry/istio") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
 exporters:
-    otlp/istio-diagnostic:
-        endpoint: ${OTLP_ENDPOINT_ISTIO_DIAGNOSTIC}
+    otlp/test:
+        endpoint: ${OTLP_ENDPOINT_TEST}
         sending_queue:
             enabled: true
             queue_size: 256
@@ -184,7 +184,7 @@ connectors:
         table:
             - statement: route() where instrumentation_scope.name == "io.kyma-project.telemetry/istio"
               pipelines:
-                - metrics/istio-diagnostic-output
+                - metrics/test-output
               context: metric
     routing/istio-input:
         default_pipelines:
@@ -193,4 +193,4 @@ connectors:
         table:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
               pipelines:
-                - metrics/istio-diagnostic-output
+                - metrics/test-output

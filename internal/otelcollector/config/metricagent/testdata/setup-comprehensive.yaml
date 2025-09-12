@@ -8,23 +8,6 @@ extensions:
         endpoint: 127.0.0.1:1777
 service:
     pipelines:
-        metrics/comprehensive-output:
-            receivers:
-                - routing/enrichment-output
-                - routing/runtime-input
-                - routing/prometheus-input
-                - routing/istio-input
-            processors:
-                - filter/drop-diagnostic-metrics-if-input-source-istio
-                - filter/comprehensive-filter-by-namespace-runtime-input
-                - filter/comprehensive-filter-by-namespace-prometheus-input
-                - resource/insert-cluster-attributes
-                - resource/delete-skip-enrichment-attribute
-                - resource/drop-kyma-attributes
-                - transform/comprehensive-user-defined
-                - batch
-            exporters:
-                - otlp/comprehensive
         metrics/enrichment:
             receivers:
                 - routing/runtime-input
@@ -68,6 +51,23 @@ service:
                 - transform/set-instrumentation-scope-runtime
             exporters:
                 - routing/runtime-input
+        metrics/test-output:
+            receivers:
+                - routing/enrichment-output
+                - routing/runtime-input
+                - routing/prometheus-input
+                - routing/istio-input
+            processors:
+                - filter/drop-diagnostic-metrics-if-input-source-istio
+                - filter/test-filter-by-namespace-runtime-input
+                - filter/test-filter-by-namespace-prometheus-input
+                - resource/insert-cluster-attributes
+                - resource/delete-skip-enrichment-attribute
+                - resource/drop-kyma-attributes
+                - transform/test-user-defined
+                - batch
+            exporters:
+                - otlp/test
     telemetry:
         metrics:
             readers:
@@ -289,14 +289,6 @@ processors:
         send_batch_size: 1024
         timeout: 10s
         send_batch_max_size: 1024
-    filter/comprehensive-filter-by-namespace-prometheus-input:
-        metrics:
-            metric:
-                - resource.attributes["kyma.input.name"] == "prometheus" and (resource.attributes["k8s.namespace.name"] == "kube-system")
-    filter/comprehensive-filter-by-namespace-runtime-input:
-        metrics:
-            metric:
-                - instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "production" or resource.attributes["k8s.namespace.name"] == "staging")
     filter/drop-diagnostic-metrics-if-input-source-istio:
         metrics:
             metric:
@@ -309,6 +301,14 @@ processors:
         metrics:
             datapoint:
                 - IsMatch(metric.name, "^k8s.node.network.*") and not(IsMatch(attributes["interface"], "^(eth|en).*"))
+    filter/test-filter-by-namespace-prometheus-input:
+        metrics:
+            metric:
+                - resource.attributes["kyma.input.name"] == "prometheus" and (resource.attributes["k8s.namespace.name"] == "kube-system")
+    filter/test-filter-by-namespace-runtime-input:
+        metrics:
+            metric:
+                - instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "production" or resource.attributes["k8s.namespace.name"] == "staging")
     istio_noise_filter: {}
     k8sattributes:
         auth_type: serviceAccount
@@ -377,13 +377,6 @@ processors:
         resource_attributes:
             - kyma.kubernetes_io_app_name
             - kyma.app_name
-    transform/comprehensive-user-defined:
-        error_mode: ignore
-        metric_statements:
-            - statements:
-                - set(attributes["environment"], "prod")
-              conditions:
-                - resource.attributes["k8s.namespace.name"] == "production"
     transform/insert-skip-enrichment-attribute:
         error_mode: ignore
         metric_statements:
@@ -417,9 +410,16 @@ processors:
                 - set(scope.name, "io.kyma-project.telemetry/runtime") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
                 - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
                 - set(scope.name, "io.kyma-project.telemetry/runtime") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
+    transform/test-user-defined:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(attributes["environment"], "prod")
+              conditions:
+                - resource.attributes["k8s.namespace.name"] == "production"
 exporters:
-    otlp/comprehensive:
-        endpoint: ${OTLP_ENDPOINT_COMPREHENSIVE}
+    otlp/test:
+        endpoint: ${OTLP_ENDPOINT_TEST}
         sending_queue:
             enabled: true
             queue_size: 256
@@ -435,15 +435,15 @@ connectors:
         table:
             - statement: route() where instrumentation_scope.name == "io.kyma-project.telemetry/runtime"
               pipelines:
-                - metrics/comprehensive-output
+                - metrics/test-output
               context: metric
             - statement: route() where resource.attributes["kyma.input.name"] == "prometheus"
               pipelines:
-                - metrics/comprehensive-output
+                - metrics/test-output
               context: metric
             - statement: route() where instrumentation_scope.name == "io.kyma-project.telemetry/istio"
               pipelines:
-                - metrics/comprehensive-output
+                - metrics/test-output
               context: metric
     routing/istio-input:
         default_pipelines:
@@ -452,7 +452,7 @@ connectors:
         table:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
               pipelines:
-                - metrics/comprehensive-output
+                - metrics/test-output
     routing/prometheus-input:
         default_pipelines:
             - metrics/enrichment
@@ -460,7 +460,7 @@ connectors:
         table:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
               pipelines:
-                - metrics/comprehensive-output
+                - metrics/test-output
     routing/runtime-input:
         default_pipelines:
             - metrics/enrichment
@@ -468,4 +468,4 @@ connectors:
         table:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
               pipelines:
-                - metrics/comprehensive-output
+                - metrics/test-output

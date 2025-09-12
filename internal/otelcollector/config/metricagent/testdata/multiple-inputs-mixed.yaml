@@ -17,22 +17,6 @@ service:
                 - service_enrichment
             exporters:
                 - routing/enrichment-output
-        metrics/inputs-mixed-output:
-            receivers:
-                - routing/enrichment-output
-                - routing/runtime-input
-                - routing/prometheus-input
-            processors:
-                - filter/drop-diagnostic-metrics-if-input-source-prometheus
-                - filter/drop-envoy-metrics-if-disabled
-                - filter/inputs-mixed-filter-by-namespace-runtime-input
-                - filter/inputs-mixed-filter-by-namespace-prometheus-input
-                - resource/insert-cluster-attributes
-                - resource/delete-skip-enrichment-attribute
-                - resource/drop-kyma-attributes
-                - batch
-            exporters:
-                - otlp/inputs-mixed
         metrics/prometheus-input:
             receivers:
                 - prometheus/app-pods
@@ -56,6 +40,22 @@ service:
                 - transform/set-instrumentation-scope-runtime
             exporters:
                 - routing/runtime-input
+        metrics/test-output:
+            receivers:
+                - routing/enrichment-output
+                - routing/runtime-input
+                - routing/prometheus-input
+            processors:
+                - filter/drop-diagnostic-metrics-if-input-source-prometheus
+                - filter/drop-envoy-metrics-if-disabled
+                - filter/test-filter-by-namespace-runtime-input
+                - filter/test-filter-by-namespace-prometheus-input
+                - resource/insert-cluster-attributes
+                - resource/delete-skip-enrichment-attribute
+                - resource/drop-kyma-attributes
+                - batch
+            exporters:
+                - otlp/test
     telemetry:
         metrics:
             readers:
@@ -264,11 +264,11 @@ processors:
         metrics:
             datapoint:
                 - IsMatch(metric.name, "^k8s.node.network.*") and not(IsMatch(attributes["interface"], "^(eth|en).*"))
-    filter/inputs-mixed-filter-by-namespace-prometheus-input:
+    filter/test-filter-by-namespace-prometheus-input:
         metrics:
             metric:
                 - resource.attributes["kyma.input.name"] == "prometheus" and (resource.attributes["k8s.namespace.name"] == "kube-system")
-    filter/inputs-mixed-filter-by-namespace-runtime-input:
+    filter/test-filter-by-namespace-runtime-input:
         metrics:
             metric:
                 - instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "default")
@@ -367,8 +367,8 @@ processors:
                 - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
                 - set(scope.name, "io.kyma-project.telemetry/runtime") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
 exporters:
-    otlp/inputs-mixed:
-        endpoint: ${OTLP_ENDPOINT_INPUTS_MIXED}
+    otlp/test:
+        endpoint: ${OTLP_ENDPOINT_TEST}
         sending_queue:
             enabled: true
             queue_size: 256
@@ -384,11 +384,11 @@ connectors:
         table:
             - statement: route() where instrumentation_scope.name == "io.kyma-project.telemetry/runtime"
               pipelines:
-                - metrics/inputs-mixed-output
+                - metrics/test-output
               context: metric
             - statement: route() where resource.attributes["kyma.input.name"] == "prometheus"
               pipelines:
-                - metrics/inputs-mixed-output
+                - metrics/test-output
               context: metric
     routing/prometheus-input:
         default_pipelines:
@@ -397,7 +397,7 @@ connectors:
         table:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
               pipelines:
-                - metrics/inputs-mixed-output
+                - metrics/test-output
     routing/runtime-input:
         default_pipelines:
             - metrics/enrichment
@@ -405,4 +405,4 @@ connectors:
         table:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
               pipelines:
-                - metrics/inputs-mixed-output
+                - metrics/test-output

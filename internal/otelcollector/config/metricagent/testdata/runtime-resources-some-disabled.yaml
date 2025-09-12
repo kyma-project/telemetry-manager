@@ -28,7 +28,7 @@ service:
                 - transform/set-instrumentation-scope-runtime
             exporters:
                 - routing/runtime-input
-        metrics/runtime-some-resources-output:
+        metrics/test-output:
             receivers:
                 - routing/enrichment-output
                 - routing/runtime-input
@@ -43,7 +43,7 @@ service:
                 - resource/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp/runtime-some-resources
+                - otlp/test
     telemetry:
         metrics:
             readers:
@@ -256,8 +256,8 @@ processors:
                 - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
                 - set(scope.name, "io.kyma-project.telemetry/runtime") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
 exporters:
-    otlp/runtime-some-resources:
-        endpoint: ${OTLP_ENDPOINT_RUNTIME_SOME_RESOURCES}
+    otlp/test:
+        endpoint: ${OTLP_ENDPOINT_TEST}
         tls:
             insecure: true
         sending_queue:
@@ -275,7 +275,7 @@ connectors:
         table:
             - statement: route() where instrumentation_scope.name == "io.kyma-project.telemetry/runtime"
               pipelines:
-                - metrics/runtime-some-resources-output
+                - metrics/test-output
               context: metric
     routing/runtime-input:
         default_pipelines:
@@ -284,4 +284,4 @@ connectors:
         table:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
               pipelines:
-                - metrics/runtime-some-resources-output
+                - metrics/test-output
