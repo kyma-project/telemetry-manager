@@ -42,7 +42,7 @@ func MakeClusterRoleBinding(name types.NamespacedName) *rbacv1.ClusterRoleBindin
 	return &clusterRoleBinding
 }
 
-func MakeNetworkPolicy(name types.NamespacedName, allowedPorts []int32, labels map[string]string, selectorLabels map[string]string) *networkingv1.NetworkPolicy {
+func MakeNetworkPolicy(name types.NamespacedName, ingressAllowedPorts []int32, labels map[string]string, selectorLabels map[string]string) *networkingv1.NetworkPolicy {
 	return &networkingv1.NetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
@@ -67,7 +67,7 @@ func MakeNetworkPolicy(name types.NamespacedName, allowedPorts []int32, labels m
 							IPBlock: &networkingv1.IPBlock{CIDR: "::/0"},
 						},
 					},
-					Ports: makeNetworkPolicyPorts(allowedPorts),
+					Ports: makeNetworkPolicyPorts(ingressAllowedPorts),
 				},
 			},
 			Egress: []networkingv1.NetworkPolicyEgressRule{
