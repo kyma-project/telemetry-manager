@@ -66,7 +66,7 @@ type AgentApplyOptions struct {
 
 func NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName string) *AgentApplierDeleter {
 	extraLabels := map[string]string{
-		commonresources.LabelKeyIstioInject: "true", // inject Istio sidecar for SDS certificates and agent-to-gateway communication
+		commonresources.LabelKeyIstioInject: "true", // inject Istio sidecar
 	}
 
 	volumes := []corev1.Volume{
@@ -111,7 +111,7 @@ func NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName stri
 func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string) *AgentApplierDeleter {
 	extraLabels := map[string]string{
 		commonresources.LabelKeyTelemetryMetricScrape: "true",
-		commonresources.LabelKeyIstioInject:           "true", // inject Istio sidecar for SDS certificates and agent-to-gateway communication
+		commonresources.LabelKeyIstioInject:           "true", // inject Istio sidecar
 	}
 
 	return &AgentApplierDeleter{
