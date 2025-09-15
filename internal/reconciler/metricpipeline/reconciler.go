@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"sort"
+	"slices"
 
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
@@ -441,8 +441,11 @@ func (r *Reconciler) getBackendPorts(ctx context.Context, allPipelines []telemet
 		backendPorts = append(backendPorts, parsedURL.Port())
 	}
 
-	// list of ports needs to be ordered to avoid unnecessary updates of the metric agent DaemonSet
-	sort.Strings(backendPorts)
+	// List of ports needs to be sorted
+	// Otherwise, metric agent will continuously restart, because in each reconciliation we can have the ports list in a different order
+	slices.Sort(backendPorts)
+	// Remove duplication in ports in case multiple backends are defined with the same port
+	backendPorts = slices.Compact(backendPorts)
 
 	return backendPorts, nil
 }
