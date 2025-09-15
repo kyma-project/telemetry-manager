@@ -430,12 +430,12 @@ func (r *Reconciler) getBackendPorts(ctx context.Context, allPipelines []telemet
 	for _, pipeline := range allPipelines {
 		endpoint, err := common.ResolveValue(ctx, r.Client, pipeline.Spec.Output.OTLP.Endpoint)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to resolve the value of the OTLP output endpoint: %w", err)
 		}
 
 		parsedURL, err := url.Parse(string(endpoint))
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to parse the URL of the OTLP output endpoint: %w", err)
 		}
 
 		backendPorts = append(backendPorts, parsedURL.Port())
