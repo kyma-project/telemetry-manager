@@ -70,7 +70,9 @@ func BackendReachable(t testkit.T, backend *kitbackend.Backend) {
 	Eventually(func(g Gomega) {
 		resp, err := suite.ProxyClient.GetWithContext(t.Context(), queryURL)
 		g.Expect(err).NotTo(HaveOccurred())
+
 		defer resp.Body.Close()
+
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 	}, periodic.EventuallyTimeout, queryInterval).Should(Succeed(), "Backend should be reachable at %s", queryURL)
 }
@@ -98,7 +100,9 @@ func HTTPResponseEventuallyMatches(t testkit.T, queryURL string, httpBodyMatcher
 	Eventually(func(g Gomega) {
 		resp, err := suite.ProxyClient.GetWithContext(t.Context(), queryURL)
 		g.Expect(err).NotTo(HaveOccurred())
+
 		defer resp.Body.Close()
+
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(httpBodyMatcher), backendAssertion.optionalDescription...)
 	}, backendAssertion.timeout, backendAssertion.queryInterval).Should(Succeed())
@@ -113,7 +117,9 @@ func HTTPResponseConsistentlyMatches(t testkit.T, queryURL string, httpBodyMatch
 	Consistently(func(g Gomega) {
 		resp, err := suite.ProxyClient.GetWithContext(t.Context(), queryURL)
 		g.Expect(err).NotTo(HaveOccurred())
+
 		defer resp.Body.Close()
+
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(httpBodyMatcher), backendAssertion.optionalDescription...)
 	}, backendAssertion.timeout, backendAssertion.queryInterval).Should(Succeed())

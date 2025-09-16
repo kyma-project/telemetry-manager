@@ -47,6 +47,7 @@ func TracePipelineHealthy(t testkit.T, pipelineName string) {
 
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.TracePipeline
+
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(suite.K8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
 
@@ -65,6 +66,7 @@ func TracePipelineHasCondition(t testkit.T, pipelineName string, expectedCond me
 
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.TracePipeline
+
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(suite.K8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
 		condition := meta.FindStatusCondition(pipeline.Status.Conditions, expectedCond.Type)
@@ -84,9 +86,11 @@ func TracePipelineConditionReasonsTransition(t testkit.T, pipelineName, condType
 		// Wait for the current condition to match the expected condition
 		Eventually(func(g Gomega) ReasonStatus {
 			var pipeline telemetryv1alpha1.TracePipeline
+
 			key := types.NamespacedName{Name: pipelineName}
 			err := suite.K8sClient.Get(t.Context(), key, &pipeline)
 			g.Expect(err).To(Succeed())
+
 			currCond = meta.FindStatusCondition(pipeline.Status.Conditions, condType)
 			if currCond == nil {
 				return ReasonStatus{}
@@ -105,6 +109,7 @@ func TracePipelineSelfMonitorIsHealthy(t testkit.T, k8sClient client.Client, pip
 
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.TracePipeline
+
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
 		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeFlowHealthy)).To(BeTrueBecause("Flow not healthy"))

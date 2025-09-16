@@ -26,6 +26,7 @@ func NewOwnerReferenceSetter(interceptedClient client.Client, owner metav1.Objec
 			if err != nil {
 				return err
 			}
+
 			return client.Create(ctx, obj, opts...)
 		},
 		Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
@@ -33,6 +34,7 @@ func NewOwnerReferenceSetter(interceptedClient client.Client, owner metav1.Objec
 			if err != nil {
 				return err
 			}
+
 			return client.Update(ctx, obj, opts...)
 		},
 	})

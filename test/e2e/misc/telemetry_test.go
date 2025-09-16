@@ -246,6 +246,7 @@ func assertTelemetryCRDeletionIsBlocked(logPipelineName string) {
 			},
 		}
 		g.Expect(telemetry.Status.Conditions).Should(HaveLen(3))
+
 		for _, actualCond := range telemetry.Status.Conditions {
 			expectedCond := expectedConditions[actualCond.Type]
 			g.Expect(expectedCond.Status).Should(Equal(actualCond.Status), "Condition: %+v", actualCond)
