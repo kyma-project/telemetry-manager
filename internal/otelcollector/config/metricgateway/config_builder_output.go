@@ -108,9 +108,9 @@ func (b *Builder) addDropIfOTLPInputDisabledProcessor() buildComponentFunc {
 	)
 }
 
-func (b *Builder) addDropEnvoyMetricsIfDisabledProcessor() buildComponentFunc {
+func (b *Builder) addDropEnvoyMetricsProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		b.StaticComponentID(common.ComponentIDDropEnvoyMetricsIfDisabledProcessor),
+		b.StaticComponentID(common.ComponentIDDropEnvoyMetricsProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			if metricpipelineutils.IsIstioInputEnabled(mp.Spec.Input) && metricpipelineutils.IsEnvoyMetricsEnabled(mp.Spec.Input) {
 				return nil

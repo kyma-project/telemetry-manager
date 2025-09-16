@@ -34,7 +34,7 @@ service:
                 - routing/enrichment-output
                 - routing/runtime-input
             processors:
-                - filter/drop-envoy-metrics-if-disabled
+                - filter/drop-envoy-metrics
                 - filter/test-filter-by-namespace-runtime-input
                 - resource/insert-cluster-attributes
                 - resource/drop-skip-enrichment-attribute
@@ -136,7 +136,7 @@ processors:
         send_batch_size: 1024
         timeout: 10s
         send_batch_max_size: 1024
-    filter/drop-envoy-metrics-if-disabled:
+    filter/drop-envoy-metrics:
         metrics:
             metric:
                 - IsMatch(name, "^envoy_.*") and instrumentation_scope.name == "io.kyma-project.telemetry/istio"

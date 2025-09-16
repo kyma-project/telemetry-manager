@@ -32,7 +32,7 @@ service:
                 - transform/set-instrumentation-scope-kyma
                 - filter/drop-if-input-source-prometheus
                 - filter/drop-if-input-source-istio
-                - filter/drop-envoy-metrics-if-disabled
+                - filter/drop-envoy-metrics
                 - filter/drop-runtime-container-metrics
                 - filter/drop-runtime-node-metrics
                 - resource/insert-cluster-attributes
@@ -85,7 +85,7 @@ processors:
         send_batch_size: 1024
         timeout: 10s
         send_batch_max_size: 1024
-    filter/drop-envoy-metrics-if-disabled:
+    filter/drop-envoy-metrics:
         metrics:
             metric:
                 - IsMatch(name, "^envoy_.*") and instrumentation_scope.name == "io.kyma-project.telemetry/istio"

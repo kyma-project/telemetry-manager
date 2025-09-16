@@ -71,7 +71,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addDropIfRuntimeInputDisabledProcessor(),
 			b.addDropIfPrometheusInputDisabledProcessor(),
 			b.addDropIfIstioInputDisabledProcessor(),
-			b.addDropEnvoyMetricsIfDisabledProcessor(),
+			b.addDropEnvoyMetricsProcessor(),
 			b.addDropIfOTLPInputDisabledProcessor(),
 			// Namespace filters
 			b.addRuntimeNamespaceFilterProcessor(),
