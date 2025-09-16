@@ -11,7 +11,7 @@ require (
 	github.com/k3d-io/k3d/v5 v5.8.3
 	github.com/kyma-project/kyma/hack/table-gen v0.0.0-20250404123224-5afb7a10791b
 	github.com/mikefarah/yq/v4 v4.47.2
-	github.com/vektra/mockery/v3 v3.5.4
+	github.com/vektra/mockery/v3 v3.5.5
 	github.com/vladopajic/go-test-coverage/v2 v2.16.1
 	github.com/yeya24/promlinter v0.3.0
 	golang.org/x/tools v0.37.0
@@ -299,7 +299,7 @@ require (
 	github.com/knadh/koanf/providers/file v1.1.2 // indirect
 	github.com/knadh/koanf/providers/posflag v0.1.0 // indirect
 	github.com/knadh/koanf/providers/structs v0.1.0 // indirect
-	github.com/knadh/koanf/v2 v2.2.1 // indirect
+	github.com/knadh/koanf/v2 v2.3.0 // indirect
 	github.com/kulti/thelper v0.6.3 // indirect
 	github.com/kunwardeep/paralleltest v1.0.14 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
