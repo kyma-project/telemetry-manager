@@ -137,7 +137,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 	}
 
 	// Enrichment pipeline
-	if err := b.AddServicePipeline(ctx, nil, "metrics/enrichment",
+	if err := b.AddServicePipeline(ctx, nil, enrichmentServicePipelineID(),
 		b.addInputRoutingReceiver(common.ComponentIDRuntimeInputRoutingConnector, pipelinesWithRuntimeInput, inputs.runtime),
 		b.addInputRoutingReceiver(common.ComponentIDPrometheusInputRoutingConnector, pipelinesWithPrometheusInput, inputs.prometheus),
 		b.addInputRoutingReceiver(common.ComponentIDIstioInputRoutingConnector, pipelinesWithIstioInput, inputs.istio),
@@ -836,7 +836,7 @@ func enrichmentRoutingConnectorTableEntry(pipelines []telemetryv1alpha1.MetricPi
 
 func inputRoutingConnectorConfig(outputPipelineIDs []string) common.RoutingConnector {
 	return common.RoutingConnector{
-		DefaultPipelines: []string{"metrics/enrichment"},
+		DefaultPipelines: []string{enrichmentServicePipelineID()},
 		ErrorMode:        "ignore",
 		Table: []common.RoutingConnectorTableEntry{
 			{
@@ -868,6 +868,10 @@ func formatOTLPExporterID(pipeline *telemetryv1alpha1.MetricPipeline) string {
 
 func formatNamespaceFilterID(pipelineName string, inputSourceType common.InputSourceType) string {
 	return fmt.Sprintf(common.ComponentIDNamespacePerInputFilterProcessor, pipelineName, inputSourceType)
+}
+
+func enrichmentServicePipelineID() string {
+	return "metrics/enrichment"
 }
 
 // Helper functions for getting pipelines by input source
