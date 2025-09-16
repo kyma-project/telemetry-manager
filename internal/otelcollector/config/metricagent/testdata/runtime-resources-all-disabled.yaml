@@ -41,7 +41,7 @@ service:
                 - filter/drop-runtime-daemonset-metrics
                 - filter/drop-runtime-statefulset-metrics
                 - filter/drop-runtime-job-metrics
-                - filter/drop-envoy-metrics
+                - filter/drop-envoy-metrics-if-disabled
                 - resource/insert-cluster-attributes
                 - resource/drop-skip-enrichment-attribute
                 - resource/drop-kyma-attributes
@@ -180,7 +180,7 @@ processors:
         send_batch_size: 1024
         timeout: 10s
         send_batch_max_size: 1024
-    filter/drop-envoy-metrics:
+    filter/drop-envoy-metrics-if-disabled:
         metrics:
             metric:
                 - IsMatch(name, "^envoy_.*") and instrumentation_scope.name == "io.kyma-project.telemetry/istio"
