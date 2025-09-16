@@ -270,16 +270,27 @@ func TestBuildConfig(t *testing.T) {
 					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 			},
 		}, {
-			name:           "pipeline with multiple input types and mixed configurations",
+			name:           "three pipelines with multiple input types and mixed configurations",
 			goldenFileName: "multiple-inputs-mixed.yaml",
 			pipelines: []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
-					WithName("test").
+					WithName("test1").
 					WithRuntimeInput(true, testutils.IncludeNamespaces("default")).
 					WithPrometheusInput(true, testutils.ExcludeNamespaces("kube-system")).
 					WithIstioInput(false).
-					WithOTLPInput(true).
-					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+					WithOTLPOutput(testutils.OTLPEndpoint("https://foo")).Build(),
+				testutils.NewMetricPipelineBuilder().
+					WithName("test2").
+					WithRuntimeInput(false).
+					WithPrometheusInput(false).
+					WithIstioInput(true).
+					WithOTLPOutput(testutils.OTLPEndpoint("https://foo")).Build(),
+				testutils.NewMetricPipelineBuilder().
+					WithName("test3").
+					WithRuntimeInput(true).
+					WithPrometheusInput(false).
+					WithIstioInput(false).
+					WithOTLPOutput(testutils.OTLPEndpoint("https://bar")).Build(),
 			},
 		},
 		{
