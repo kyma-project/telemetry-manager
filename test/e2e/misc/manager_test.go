@@ -51,6 +51,7 @@ func TestManager(t *testing.T) {
 	for _, service := range services {
 		Eventually(func() []string {
 			var svc corev1.Service
+
 			err := suite.K8sClient.Get(suite.Ctx, service, &svc)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -60,10 +61,12 @@ func TestManager(t *testing.T) {
 			}
 
 			var endpointsList discoveryv1.EndpointSliceList
+
 			err = suite.K8sClient.List(suite.Ctx, &endpointsList, client.InNamespace(kitkyma.SystemNamespaceName))
 			Expect(err).NotTo(HaveOccurred())
 
 			var webhookEndpoints *discoveryv1.EndpointSlice
+
 			for _, endpoints := range endpointsList.Items {
 				// EndpointSlice names are prefixed with the service name
 				if strings.HasPrefix(endpoints.Name, service.Name) {
@@ -71,12 +74,14 @@ func TestManager(t *testing.T) {
 					break
 				}
 			}
+
 			Expect(webhookEndpoints).NotTo(BeNil())
 
 			var addresses []string
 			for _, endpoint := range webhookEndpoints.Endpoints {
 				addresses = append(addresses, endpoint.Addresses...)
 			}
+
 			return addresses
 		}, periodic.EventuallyTimeout, periodic.DefaultInterval).ShouldNot(BeEmpty(), fmt.Sprintf("service %s endpoints should have IP addresses assigned", service.Name))
 	}

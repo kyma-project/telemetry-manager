@@ -56,8 +56,10 @@ func TestKymaInput(t *testing.T) {
 		resp, err := suite.ProxyClient.Get(backendURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+
 		bodyContent, err := io.ReadAll(resp.Body)
 		defer resp.Body.Close()
+
 		g.Expect(err).NotTo(HaveOccurred())
 
 		// Check the "kyma.resource.status.state" metric
@@ -79,8 +81,10 @@ func TestKymaInput(t *testing.T) {
 		resp, err := suite.ProxyClient.Get(backendURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+
 		bodyContent, err := io.ReadAll(resp.Body)
 		defer resp.Body.Close()
+
 		g.Expect(err).NotTo(HaveOccurred())
 
 		// Check the "kyma.resource.status.conditions" type ConfigurationGenerated for  metricpipeline with annotation
