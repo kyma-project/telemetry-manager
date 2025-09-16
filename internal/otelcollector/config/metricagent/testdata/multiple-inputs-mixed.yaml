@@ -51,21 +51,47 @@ service:
                 - transform/set-instrumentation-scope-runtime
             exporters:
                 - routing/runtime-input
-        metrics/output-test:
+        metrics/output-test1:
             receivers:
                 - routing/enrichment
                 - routing/runtime-input
                 - routing/prometheus-input
-                - routing/istio-input
             processors:
                 - filter/drop-diagnostic-metrics-if-input-source-prometheus
-                - filter/drop-diagnostic-metrics-if-input-source-istio
+                - filter/drop-envoy-metrics-if-disabled
+                - filter/test1-filter-by-namespace-runtime-input
+                - filter/test1-filter-by-namespace-prometheus-input
                 - resource/insert-cluster-attributes
                 - resource/drop-skip-enrichment-attribute
                 - resource/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp/test
+                - otlp/test1
+        metrics/output-test2:
+            receivers:
+                - routing/enrichment
+                - routing/istio-input
+            processors:
+                - filter/drop-diagnostic-metrics-if-input-source-istio
+                - filter/drop-envoy-metrics-if-disabled
+                - resource/insert-cluster-attributes
+                - resource/drop-skip-enrichment-attribute
+                - resource/drop-kyma-attributes
+                - batch
+            exporters:
+                - otlp/test2
+        metrics/output-test3:
+            receivers:
+                - routing/enrichment
+                - routing/runtime-input
+            processors:
+                - filter/drop-envoy-metrics-if-disabled
+                - resource/insert-cluster-attributes
+                - resource/drop-skip-enrichment-attribute
+                - resource/drop-kyma-attributes
+                - batch
+            exporters:
+                - otlp/test3
     telemetry:
         metrics:
             readers:
@@ -275,7 +301,7 @@ receivers:
                       action: drop
                   metric_relabel_configs:
                     - source_labels: [__name__]
-                      regex: envoy_.*|istio_.*
+                      regex: istio_.*
                       action: keep
                   kubernetes_sd_configs:
                     - role: pod
@@ -295,6 +321,10 @@ processors:
         metrics:
             metric:
                 - instrumentation_scope.name == "io.kyma-project.telemetry/prometheus" and (name == "up" or name == "scrape_duration_seconds" or name == "scrape_samples_scraped" or name == "scrape_samples_post_metric_relabeling" or name == "scrape_series_added")
+    filter/drop-envoy-metrics-if-disabled:
+        metrics:
+            metric:
+                - IsMatch(name, "^envoy_.*") and instrumentation_scope.name == "io.kyma-project.telemetry/istio"
     filter/drop-non-pvc-volumes-metrics:
         metrics:
             metric:
@@ -303,6 +333,14 @@ processors:
         metrics:
             datapoint:
                 - IsMatch(metric.name, "^k8s.node.network.*") and not(IsMatch(attributes["interface"], "^(eth|en).*"))
+    filter/test1-filter-by-namespace-prometheus-input:
+        metrics:
+            metric:
+                - resource.attributes["kyma.input.name"] == "prometheus" and (resource.attributes["k8s.namespace.name"] == "kube-system")
+    filter/test1-filter-by-namespace-runtime-input:
+        metrics:
+            metric:
+                - instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "default")
     istio_noise_filter: {}
     k8sattributes:
         auth_type: serviceAccount
@@ -405,13 +443,31 @@ processors:
                 - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
                 - set(scope.name, "io.kyma-project.telemetry/runtime") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
 exporters:
-    otlp/test:
-        endpoint: ${OTLP_ENDPOINT_TEST}
-        tls:
-            insecure: true
+    otlp/test1:
+        endpoint: ${OTLP_ENDPOINT_TEST1}
         sending_queue:
             enabled: true
-            queue_size: 256
+            queue_size: 85
+        retry_on_failure:
+            enabled: true
+            initial_interval: 5s
+            max_interval: 30s
+            max_elapsed_time: 300s
+    otlp/test2:
+        endpoint: ${OTLP_ENDPOINT_TEST2}
+        sending_queue:
+            enabled: true
+            queue_size: 85
+        retry_on_failure:
+            enabled: true
+            initial_interval: 5s
+            max_interval: 30s
+            max_elapsed_time: 300s
+    otlp/test3:
+        endpoint: ${OTLP_ENDPOINT_TEST3}
+        sending_queue:
+            enabled: true
+            queue_size: 85
         retry_on_failure:
             enabled: true
             initial_interval: 5s
@@ -424,15 +480,16 @@ connectors:
         table:
             - statement: route() where instrumentation_scope.name == "io.kyma-project.telemetry/runtime"
               pipelines:
-                - metrics/output-test
+                - metrics/output-test1
+                - metrics/output-test3
               context: metric
             - statement: route() where resource.attributes["kyma.input.name"] == "prometheus"
               pipelines:
-                - metrics/output-test
+                - metrics/output-test1
               context: metric
             - statement: route() where instrumentation_scope.name == "io.kyma-project.telemetry/istio"
               pipelines:
-                - metrics/output-test
+                - metrics/output-test2
               context: metric
     routing/istio-input:
         default_pipelines:
@@ -441,7 +498,7 @@ connectors:
         table:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
               pipelines:
-                - metrics/output-test
+                - metrics/output-test2
     routing/prometheus-input:
         default_pipelines:
             - metrics/enrichment
@@ -449,7 +506,7 @@ connectors:
         table:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
               pipelines:
-                - metrics/output-test
+                - metrics/output-test1
     routing/runtime-input:
         default_pipelines:
             - metrics/enrichment
@@ -457,4 +514,5 @@ connectors:
         table:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
               pipelines:
-                - metrics/output-test
+                - metrics/output-test1
+                - metrics/output-test3

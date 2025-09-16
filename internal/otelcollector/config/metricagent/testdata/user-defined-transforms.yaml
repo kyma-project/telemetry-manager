@@ -29,7 +29,7 @@ service:
                 - transform/set-instrumentation-scope-runtime
             exporters:
                 - routing/runtime-input
-        metrics/output-test:
+        metrics/output-test1:
             receivers:
                 - routing/enrichment
                 - routing/runtime-input
@@ -38,9 +38,23 @@ service:
                 - resource/insert-cluster-attributes
                 - resource/drop-skip-enrichment-attribute
                 - resource/drop-kyma-attributes
+                - transform/test1-user-defined
                 - batch
             exporters:
-                - otlp/test
+                - otlp/test1
+        metrics/output-test2:
+            receivers:
+                - routing/enrichment
+                - routing/runtime-input
+            processors:
+                - filter/drop-envoy-metrics-if-disabled
+                - resource/insert-cluster-attributes
+                - resource/drop-skip-enrichment-attribute
+                - resource/drop-kyma-attributes
+                - transform/test2-user-defined
+                - batch
+            exporters:
+                - otlp/test2
     telemetry:
         metrics:
             readers:
@@ -233,14 +247,38 @@ processors:
                 - set(scope.name, "io.kyma-project.telemetry/runtime") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
                 - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
                 - set(scope.name, "io.kyma-project.telemetry/runtime") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
+    transform/test1-user-defined:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(attributes["log.level"], "error")
+                - set(body, "transformed1")
+              conditions:
+                - IsMatch(body, ".*error.*")
+    transform/test2-user-defined:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(attributes["log.level"], "error")
+                - set(body, "transformed2")
+              conditions:
+                - IsMatch(body, ".*error.*")
 exporters:
-    otlp/test:
-        endpoint: ${OTLP_ENDPOINT_TEST}
-        tls:
-            insecure: true
+    otlp/test1:
+        endpoint: ${OTLP_ENDPOINT_TEST1}
         sending_queue:
             enabled: true
-            queue_size: 256
+            queue_size: 128
+        retry_on_failure:
+            enabled: true
+            initial_interval: 5s
+            max_interval: 30s
+            max_elapsed_time: 300s
+    otlp/test2:
+        endpoint: ${OTLP_ENDPOINT_TEST2}
+        sending_queue:
+            enabled: true
+            queue_size: 128
         retry_on_failure:
             enabled: true
             initial_interval: 5s
@@ -253,7 +291,8 @@ connectors:
         table:
             - statement: route() where instrumentation_scope.name == "io.kyma-project.telemetry/runtime"
               pipelines:
-                - metrics/output-test
+                - metrics/output-test1
+                - metrics/output-test2
               context: metric
     routing/runtime-input:
         default_pipelines:
@@ -262,4 +301,5 @@ connectors:
         table:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
               pipelines:
-                - metrics/output-test
+                - metrics/output-test1
+                - metrics/output-test2

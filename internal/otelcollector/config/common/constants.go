@@ -63,6 +63,10 @@ const (
 	K8sLeaderElectorK8sCluster = "telemetry-metric-agent-k8scluster"
 )
 
+const (
+	BatchingMaxQueueSize = 256 // Maximum number of batches kept in memory before dropping
+)
+
 // ================================================================================
 // Component IDs
 // ================================================================================
@@ -121,8 +125,8 @@ const (
 	ComponentIDDropIstioDiagnosticMetricsProcessor         = "filter/drop-diagnostic-metrics-if-input-source-istio"
 	ComponentIDFilterDropNonPVCVolumesMetricsProcessor     = "filter/drop-non-pvc-volumes-metrics"
 	ComponentIDFilterDropVirtualNetworkInterfacesProcessor = "filter/drop-virtual-network-interfaces"
-	ComponentIDResourceDeleteServiceNameProcessor          = "resource/delete-service-name"
-	ComponentIDDeleteSkipEnrichmentAttributeProcessor      = "resource/delete-skip-enrichment-attribute"
+	ComponentIDResourceDropServiceNameProcessor            = "resource/drop-service-name"
+	ComponentIDDropSkipEnrichmentAttributeProcessor        = "resource/drop-skip-enrichment-attribute"
 	ComponentIDSetInstrumentationScopePrometheusProcessor  = "transform/set-instrumentation-scope-prometheus"
 	ComponentIDSetInstrumentationScopeIstioProcessor       = "transform/set-instrumentation-scope-istio"
 	ComponentIDInsertSkipEnrichmentAttributeProcessor      = "transform/insert-skip-enrichment-attribute"
@@ -139,8 +143,12 @@ const (
 	// CONNECTORS
 	// ================================================================================
 
-	ComponentIDForwardConnector = "forward/%s" // dynamically filled with pipeline name
-	ComponentIDRoutingConnector = "routing/%s" // dynamically filled with pipeline name
+	ComponentIDForwardConnector                = "forward/%s" // dynamically filled with pipeline name
+	ComponentIDRoutingConnector                = "routing/%s" // dynamically filled with pipeline name
+	ComponentIDEnrichmentRoutingConnector      = "routing/enrichment"
+	ComponentIDRuntimeInputRoutingConnector    = "routing/runtime-input"
+	ComponentIDPrometheusInputRoutingConnector = "routing/prometheus-input"
+	ComponentIDIstioInputRoutingConnector      = "routing/istio-input"
 
 	// ================================================================================
 	// EXTENSIONS

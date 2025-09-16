@@ -35,7 +35,7 @@ import (
 const defaultReplicaCount int32 = 2
 
 type AgentConfigBuilder interface {
-	Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, options metricagent.BuildOptions) (*common.Config, error)
+	Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, options metricagent.BuildOptions) (*common.Config, common.EnvVars, error)
 }
 
 type GatewayConfigBuilder interface {
@@ -339,12 +339,30 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 
 func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
 	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
+	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
+	clusterName := r.getClusterNameFromTelemetry(ctx, shootInfo.ClusterName)
 
-	agentConfig, err := r.agentConfigBuilder.Build(ctx, allPipelines, metricagent.BuildOptions{
+	clusterUID, err := r.getK8sClusterUID(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get kube-system namespace for cluster UID: %w", err)
+	}
+
+	var enrichments *operatorv1alpha1.EnrichmentSpec
+
+	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.telemetryNamespace)
+	if err == nil {
+		enrichments = t.Spec.Enrichments
+	}
+
+	agentConfig, collectorEnvVars, err := r.agentConfigBuilder.Build(ctx, allPipelines, metricagent.BuildOptions{
 		IstioEnabled:                isIstioActive,
 		IstioCertPath:               otelcollector.IstioCertPath,
 		InstrumentationScopeVersion: r.moduleVersion,
 		AgentNamespace:              r.telemetryNamespace,
+		ClusterName:                 clusterName,
+		ClusterUID:                  clusterUID,
+		CloudProvider:               shootInfo.CloudProvider,
+		Enrichments:                 enrichments,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)
@@ -366,6 +384,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		otelcollector.AgentApplyOptions{
 			IstioEnabled:        isIstioActive,
 			CollectorConfigYAML: string(agentConfigYAML),
+			CollectorEnvVars:    collectorEnvVars,
 			BackendPorts:        backendPorts,
 		},
 	); err != nil {
