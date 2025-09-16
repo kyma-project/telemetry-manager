@@ -111,7 +111,7 @@ const (
 	ComponentIDDropIfInputSourcePrometheusProcessor        = "filter/drop-if-input-source-prometheus"
 	ComponentIDDropIfInputSourceIstioProcessor             = "filter/drop-if-input-source-istio"
 	ComponentIDDropIfInputSourceOTLPProcessor              = "filter/drop-if-input-source-otlp"
-	ComponentIDDropEnvoyMetricsProcessor                   = "filter/drop-envoy-metrics"
+	ComponentIDDropEnvoyMetricsIfDisabledProcessor         = "filter/drop-envoy-metrics-if-disabled"
 	ComponentIDNamespacePerInputFilterProcessor            = "filter/%s-filter-by-namespace-%s-input" // dynamically filled with pipeline name and input source
 	ComponentIDDropRuntimePodMetricsProcessor              = "filter/drop-runtime-pod-metrics"
 	ComponentIDDropRuntimeContainerMetricsProcessor        = "filter/drop-runtime-container-metrics"
