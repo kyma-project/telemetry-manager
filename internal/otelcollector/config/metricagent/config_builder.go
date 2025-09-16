@@ -137,7 +137,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 		b.addInputRoutingReceiver(common.ComponentIDIstioInputRoutingConnector, pipelinesWithIstioInput, inputs.istio),
 		b.addK8sAttributesProcessor(opts),
 		b.addServiceEnrichmentProcessor(),
-		b.addEnrichmentOutputRoutingExporter(pipelinesWithRuntimeInput, pipelinesWithPrometheusInput, pipelinesWithIstioInput),
+		b.addEnrichmentRoutingExporter(pipelinesWithRuntimeInput, pipelinesWithPrometheusInput, pipelinesWithIstioInput),
 	); err != nil {
 		return nil, nil, fmt.Errorf("failed to add enrichment service pipeline: %w", err)
 	}
@@ -152,7 +152,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 
 		if err := b.AddServicePipeline(ctx, &pipeline, outputPipelineID,
 			// Receivers
-			b.addEnrichmentOutputRoutingReceiver(pipelinesWithRuntimeInput, pipelinesWithPrometheusInput, pipelinesWithIstioInput),
+			b.addEnrichmentRoutingReceiver(pipelinesWithRuntimeInput, pipelinesWithPrometheusInput, pipelinesWithIstioInput),
 			b.addInputRoutingReceiver(common.ComponentIDRuntimeInputRoutingConnector, pipelinesWithRuntimeInput, runtimeInputEnabled),
 			b.addInputRoutingReceiver(common.ComponentIDPrometheusInputRoutingConnector, pipelinesWithPrometheusInput, prometheusInputEnabled),
 			b.addInputRoutingReceiver(common.ComponentIDIstioInputRoutingConnector, pipelinesWithIstioInput, istioInputEnabled),
@@ -781,41 +781,41 @@ func (b *Builder) addInputRoutingReceiver(componentID string, outputPipelines []
 	)
 }
 
-func (b *Builder) addEnrichmentOutputRoutingExporter(runtimePipelines, prometheusPipelines, istioPipelines []telemetryv1alpha1.MetricPipeline) buildComponentFunc {
+func (b *Builder) addEnrichmentRoutingExporter(runtimePipelines, prometheusPipelines, istioPipelines []telemetryv1alpha1.MetricPipeline) buildComponentFunc {
 	return b.AddExporter(
-		b.StaticComponentID(common.ComponentIDEnrichmentOutputRoutingConnector),
+		b.StaticComponentID(common.ComponentIDEnrichmentRoutingConnector),
 		func(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline) (any, common.EnvVars, error) {
-			return enrichmentOutputRoutingConnectorConfig(runtimePipelines, prometheusPipelines, istioPipelines), nil, nil
+			return enrichmentRoutingConnectorConfig(runtimePipelines, prometheusPipelines, istioPipelines), nil, nil
 		},
 	)
 }
 
-func (b *Builder) addEnrichmentOutputRoutingReceiver(runtimePipelines, prometheusPipelines, istioPipelines []telemetryv1alpha1.MetricPipeline) buildComponentFunc {
+func (b *Builder) addEnrichmentRoutingReceiver(runtimePipelines, prometheusPipelines, istioPipelines []telemetryv1alpha1.MetricPipeline) buildComponentFunc {
 	return b.AddReceiver(
-		b.StaticComponentID(common.ComponentIDEnrichmentOutputRoutingConnector),
+		b.StaticComponentID(common.ComponentIDEnrichmentRoutingConnector),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			if len(runtimePipelines) == 0 && len(prometheusPipelines) == 0 && len(istioPipelines) == 0 {
 				return nil
 			}
 
-			return enrichmentOutputRoutingConnectorConfig(runtimePipelines, prometheusPipelines, istioPipelines)
+			return enrichmentRoutingConnectorConfig(runtimePipelines, prometheusPipelines, istioPipelines)
 		},
 	)
 }
 
-func enrichmentOutputRoutingConnectorConfig(runtimePipelines, prometheusPipelines, istioPipelines []telemetryv1alpha1.MetricPipeline) common.RoutingConnector {
+func enrichmentRoutingConnectorConfig(runtimePipelines, prometheusPipelines, istioPipelines []telemetryv1alpha1.MetricPipeline) common.RoutingConnector {
 	tableEntries := []common.RoutingConnectorTableEntry{}
 
 	if len(runtimePipelines) > 0 {
-		tableEntries = append(tableEntries, enrichmentOutputRoutingConnectorTableEntry(runtimePipelines, inputSourceEquals(common.InputSourceRuntime)))
+		tableEntries = append(tableEntries, enrichmentRoutingConnectorTableEntry(runtimePipelines, inputSourceEquals(common.InputSourceRuntime)))
 	}
 
 	if len(prometheusPipelines) > 0 {
-		tableEntries = append(tableEntries, enrichmentOutputRoutingConnectorTableEntry(prometheusPipelines, common.ResourceAttributeEquals(common.KymaInputNameAttribute, common.KymaInputPrometheus)))
+		tableEntries = append(tableEntries, enrichmentRoutingConnectorTableEntry(prometheusPipelines, common.ResourceAttributeEquals(common.KymaInputNameAttribute, common.KymaInputPrometheus)))
 	}
 
 	if len(istioPipelines) > 0 {
-		tableEntries = append(tableEntries, enrichmentOutputRoutingConnectorTableEntry(istioPipelines, common.ScopeNameEquals(common.InstrumentationScopeIstio)))
+		tableEntries = append(tableEntries, enrichmentRoutingConnectorTableEntry(istioPipelines, common.ScopeNameEquals(common.InstrumentationScopeIstio)))
 	}
 
 	return common.RoutingConnector{
@@ -824,7 +824,7 @@ func enrichmentOutputRoutingConnectorConfig(runtimePipelines, prometheusPipeline
 	}
 }
 
-func enrichmentOutputRoutingConnectorTableEntry(pipelines []telemetryv1alpha1.MetricPipeline, routingCondition string) common.RoutingConnectorTableEntry {
+func enrichmentRoutingConnectorTableEntry(pipelines []telemetryv1alpha1.MetricPipeline, routingCondition string) common.RoutingConnectorTableEntry {
 	return common.RoutingConnectorTableEntry{
 		Context:   "metric",
 		Statement: fmt.Sprintf("route() where %s", routingCondition),

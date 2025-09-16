@@ -17,7 +17,7 @@ service:
                 - k8sattributes
                 - service_enrichment
             exporters:
-                - routing/enrichment-output
+                - routing/enrichment
         metrics/input-istio:
             receivers:
                 - prometheus/istio
@@ -53,7 +53,7 @@ service:
                 - routing/runtime-input
         metrics/output-test:
             receivers:
-                - routing/enrichment-output
+                - routing/enrichment
                 - routing/runtime-input
                 - routing/prometheus-input
                 - routing/istio-input
@@ -429,7 +429,7 @@ exporters:
             max_interval: 30s
             max_elapsed_time: 300s
 connectors:
-    routing/enrichment-output:
+    routing/enrichment:
         default_pipelines: []
         error_mode: ignore
         table:
