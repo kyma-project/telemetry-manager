@@ -98,6 +98,8 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addDropServiceNameProcessor(),
 			b.addInsertSkipEnrichmentAttributeProcessor(),
 			b.addSetInstrumentationScopeToRuntimeProcessor(opts),
+			// Metrics with the skip enrichment attribute are routed directly to output pipelines,
+			// while all other metrics are sent to the enrichment pipeline before output.
 			b.addInputRoutingExporter(common.ComponentIDRuntimeInputRoutingConnector, pipelinesWithRuntimeInput),
 		); err != nil {
 			return nil, nil, fmt.Errorf("failed to add runtime service pipeline: %w", err)
@@ -111,6 +113,8 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addMemoryLimiterProcessor(),
 			b.addDropServiceNameProcessor(),
 			b.addSetInstrumentationScopeToPrometheusProcessor(opts),
+			// Metrics with the skip enrichment attribute are routed directly to output pipelines,
+			// while all other metrics are sent to the enrichment pipeline before output.
 			b.addInputRoutingExporter(common.ComponentIDPrometheusInputRoutingConnector, pipelinesWithPrometheusInput),
 		); err != nil {
 			return nil, nil, fmt.Errorf("failed to add prometheus service pipeline: %w", err)
@@ -124,6 +128,8 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addDropServiceNameProcessor(),
 			b.addIstioNoiseFilterProcessor(),
 			b.addSetInstrumentationScopeToIstioProcessor(opts),
+			// Metrics with the skip enrichment attribute are routed directly to output pipelines,
+			// while all other metrics are sent to the enrichment pipeline before output.
 			b.addInputRoutingExporter(common.ComponentIDIstioInputRoutingConnector, pipelinesWithIstioInput),
 		); err != nil {
 			return nil, nil, fmt.Errorf("failed to add istio service pipeline: %w", err)
@@ -152,6 +158,8 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 
 		if err := b.AddServicePipeline(ctx, &pipeline, outputPipelineID,
 			// Receivers
+			// Metrics are received from either the enrichment pipeline or directly from input pipelines,
+			// depending on whether they have the skip enrichment attribute set.
 			b.addEnrichmentRoutingReceiver(pipelinesWithRuntimeInput, pipelinesWithPrometheusInput, pipelinesWithIstioInput),
 			b.addInputRoutingReceiver(common.ComponentIDRuntimeInputRoutingConnector, pipelinesWithRuntimeInput, runtimeInputEnabled),
 			b.addInputRoutingReceiver(common.ComponentIDPrometheusInputRoutingConnector, pipelinesWithPrometheusInput, prometheusInputEnabled),
@@ -757,10 +765,7 @@ func (b *Builder) addInputRoutingExporter(componentID string, outputPipelines []
 	return b.AddExporter(
 		b.StaticComponentID(componentID),
 		func(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline) (any, common.EnvVars, error) {
-			return skipEnrichmentRoutingConnectorConfig(
-				[]string{"metrics/enrichment"},
-				formatOutputPipelineIDs(outputPipelines),
-			), nil, nil
+			return inputRoutingConnectorConfig(formatOutputPipelineIDs(outputPipelines)), nil, nil
 		},
 	)
 }
@@ -773,10 +778,7 @@ func (b *Builder) addInputRoutingReceiver(componentID string, outputPipelines []
 				return nil
 			}
 
-			return skipEnrichmentRoutingConnectorConfig(
-				[]string{"metrics/enrichment"},
-				formatOutputPipelineIDs(outputPipelines),
-			)
+			return inputRoutingConnectorConfig(formatOutputPipelineIDs(outputPipelines))
 		},
 	)
 }
@@ -832,9 +834,9 @@ func enrichmentRoutingConnectorTableEntry(pipelines []telemetryv1alpha1.MetricPi
 	}
 }
 
-func skipEnrichmentRoutingConnectorConfig(defaultPipelineIDs, outputPipelineIDs []string) common.RoutingConnector {
+func inputRoutingConnectorConfig(outputPipelineIDs []string) common.RoutingConnector {
 	return common.RoutingConnector{
-		DefaultPipelines: defaultPipelineIDs,
+		DefaultPipelines: []string{"metrics/enrichment"},
 		ErrorMode:        "ignore",
 		Table: []common.RoutingConnectorTableEntry{
 			{
