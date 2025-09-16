@@ -33,6 +33,7 @@ func TestHealthy(t *testing.T) {
 					WithInput(testutils.BuildLogPipelineApplicationInput(testutils.ExtIncludeNamespaces(includeNs))).
 					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 					Build()
+
 				return &p
 			},
 			generator: func(ns string) *appsv1.Deployment {
@@ -54,6 +55,7 @@ func TestHealthy(t *testing.T) {
 					WithInput(testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))).
 					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 					Build()
+
 				return &p
 			},
 			generator: func(ns string) *appsv1.Deployment {
@@ -74,6 +76,7 @@ func TestHealthy(t *testing.T) {
 					WithApplicationInput(true, testutils.ExtIncludeNamespaces(includeNs)).
 					WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 					Build()
+
 				return &p
 			},
 			generator: func(ns string) *appsv1.Deployment {
@@ -93,6 +96,7 @@ func TestHealthy(t *testing.T) {
 					WithName(kindMetrics).
 					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 					Build()
+
 				return &p
 			},
 			generator: func(ns string) *appsv1.Deployment {
@@ -112,6 +116,7 @@ func TestHealthy(t *testing.T) {
 					WithName(kindTraces).
 					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 					Build()
+
 				return &p
 			},
 			generator: func(ns string) *appsv1.Deployment {

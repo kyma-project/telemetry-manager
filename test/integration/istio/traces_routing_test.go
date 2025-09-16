@@ -98,6 +98,7 @@ func TestTracesRouting(t *testing.T) {
 	Eventually(func(g Gomega) {
 		resp, err := suite.ProxyClient.Get(metricServiceURL)
 		g.Expect(err).NotTo(HaveOccurred())
+
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		defer resp.Body.Close()
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
@@ -107,6 +108,7 @@ func TestTracesRouting(t *testing.T) {
 			Eventually(func(g Gomega) {
 				resp, err := suite.ProxyClient.Get(podURLs)
 				g.Expect(err).NotTo(HaveOccurred())
+
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				defer resp.Body.Close()
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())

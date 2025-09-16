@@ -63,6 +63,7 @@ func (s *VirtualService) K8sObject() *istionetworkingclientv1.VirtualService {
 							if s.faultDelayPercentage == 0 {
 								return nil
 							}
+
 							return &istionetworkingv1.HTTPFaultInjection_Delay{
 								HttpDelayType: &istionetworkingv1.HTTPFaultInjection_Delay_FixedDelay{FixedDelay: durationpb.New(s.faultDelayFixedDelay)},
 								Percentage: &istionetworkingv1.Percent{
@@ -74,6 +75,7 @@ func (s *VirtualService) K8sObject() *istionetworkingclientv1.VirtualService {
 							if s.faultAbortPercentage == 0 {
 								return nil
 							}
+
 							return &istionetworkingv1.HTTPFaultInjection_Abort{Percentage: &istionetworkingv1.Percent{
 								Value: s.faultAbortPercentage,
 							},

@@ -85,6 +85,7 @@ spec:
     metadata:
       annotations:
         checksum/config: 1d8e9f768e6b24485bbdd6b9aa417d37fec897a7dafc8321355abc0d45259c9e
+        traffic.sidecar.istio.io/excludeInboundPorts: "8888"
       labels:
         app.kubernetes.io/component: agent
         app.kubernetes.io/managed-by: telemetry-manager
@@ -205,6 +206,8 @@ spec:
     - port: 8888
       protocol: TCP
     - port: 13133
+      protocol: TCP
+    - port: 15090
       protocol: TCP
   podSelector:
     matchLabels:

@@ -371,6 +371,7 @@ func TestBuildFluentBitConfig_Validation(t *testing.T) {
 				pipeline: func() *telemetryv1alpha1.LogPipeline {
 					lp := testutils.NewLogPipelineBuilder().Build()
 					lp.Spec.Output = telemetryv1alpha1.LogPipelineOutput{}
+
 					return &lp
 				}(),
 			},
