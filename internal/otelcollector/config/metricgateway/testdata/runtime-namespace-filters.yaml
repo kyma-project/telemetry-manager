@@ -32,7 +32,7 @@ service:
                 - transform/set-instrumentation-scope-kyma
                 - filter/drop-if-input-source-prometheus
                 - filter/drop-if-input-source-istio
-                - filter/drop-envoy-metrics-if-disabled
+                - filter/drop-envoy-metrics
                 - filter/cls-filter-by-namespace-runtime-input
                 - resource/insert-cluster-attributes
                 - resource/drop-skip-enrichment-attribute
@@ -89,7 +89,7 @@ processors:
             metric:
                 - instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and (resource.attributes["k8s.namespace.name"] == "kube-system" or resource.attributes["k8s.namespace.name"] == "istio-system")
                 - instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "monitoring" or resource.attributes["k8s.namespace.name"] == "observability")
-    filter/drop-envoy-metrics-if-disabled:
+    filter/drop-envoy-metrics:
         metrics:
             metric:
                 - IsMatch(name, "^envoy_.*") and instrumentation_scope.name == "io.kyma-project.telemetry/istio"

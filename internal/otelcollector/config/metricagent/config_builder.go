@@ -177,7 +177,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addDropPrometheusDiagnosticMetricsProcessor(),
 			b.addDropIstioDiagnosticMetricsProcessor(),
 			// Istio envoy metrics
-			b.addDropEnvoyMetricsIfDisabledProcessor(),
+			b.addDropEnvoyMetricsProcessor(),
 			// Namespace filters
 			b.addRuntimeNamespaceFilterProcessor(),
 			b.addPrometheusNamespaceFilterProcessor(),
@@ -706,9 +706,9 @@ func nameConditions(names []string) []string {
 
 // Istio envoy metrics
 
-func (b *Builder) addDropEnvoyMetricsIfDisabledProcessor() buildComponentFunc {
+func (b *Builder) addDropEnvoyMetricsProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		b.StaticComponentID(common.ComponentIDDropEnvoyMetricsIfDisabledProcessor),
+		b.StaticComponentID(common.ComponentIDDropEnvoyMetricsProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			if metricpipelineutils.IsIstioInputEnabled(mp.Spec.Input) && metricpipelineutils.IsEnvoyMetricsEnabled(mp.Spec.Input) {
 				return nil
