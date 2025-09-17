@@ -74,11 +74,15 @@ type MetricPipelineControllerConfig struct {
 }
 
 func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config MetricPipelineControllerConfig) (*MetricPipelineController, error) {
-	flowHealthProber, err := prober.NewOTelMetricGatewayProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
+	gatewayFlowHealthProber, err := prober.NewOTelMetricGatewayProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
 	if err != nil {
 		return nil, err
 	}
 
+	agentFlowHealthProber, err := prober.NewOTelLogAgentProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
+	if err != nil {
+		return nil, err
+	}
 	pipelineLock := resourcelock.NewLocker(
 		client,
 		types.NamespacedName{
@@ -124,7 +128,8 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 		otelcollector.NewMetricAgentApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.MetricAgentPriorityClassName),
 		agentConfigBuilder,
 		&workloadstatus.DaemonSetProber{Client: client},
-		flowHealthProber,
+		gatewayFlowHealthProber,
+		agentFlowHealthProber,
 		otelcollector.NewMetricGatewayApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.MetricGatewayPriorityClassName),
 		gatewayConfigBuilder,
 		&workloadstatus.DeploymentProber{Client: client},

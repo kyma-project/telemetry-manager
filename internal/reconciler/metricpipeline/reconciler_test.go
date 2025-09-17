@@ -1720,22 +1720,22 @@ func TestReconcile(t *testing.T) {
 				errToMsg := &conditions.ErrorToMessageConverter{}
 
 				sut := Reconciler{
-					Client:                fakeClient,
-					telemetryNamespace:    telemetryNamespace,
-					moduleVersion:         moduleVersion,
-					agentConfigBuilder:    agentConfigBuilderMock,
-					gatewayConfigBuilder:  gatewayConfigBuilderMock,
-					agentApplierDeleter:   agentApplierDeleterMock,
-					gatewayApplierDeleter: gatewayApplierDeleterMock,
-					pipelineLock:          pipelineLockStub,
-					pipelineSync:          pipelineSync,
-					gatewayProber:         gatewayProberStub,
-					agentProber:           agentProberMock,
-					flowHealthProber:      flowHealthProberStub,
-					overridesHandler:      overridesHandlerStub,
-					istioStatusChecker:    istioStatusCheckerStub,
-					pipelineValidator:     pipelineValidatorWithStubs,
-					errToMsgConverter:     errToMsg,
+					Client:                  fakeClient,
+					telemetryNamespace:      telemetryNamespace,
+					moduleVersion:           moduleVersion,
+					agentConfigBuilder:      agentConfigBuilderMock,
+					gatewayConfigBuilder:    gatewayConfigBuilderMock,
+					agentApplierDeleter:     agentApplierDeleterMock,
+					gatewayApplierDeleter:   gatewayApplierDeleterMock,
+					pipelineLock:            pipelineLockStub,
+					pipelineSync:            pipelineSync,
+					gatewayProber:           gatewayProberStub,
+					agentProber:             agentProberMock,
+					gatewayFlowHealthProber: flowHealthProberStub,
+					overridesHandler:        overridesHandlerStub,
+					istioStatusChecker:      istioStatusCheckerStub,
+					pipelineValidator:       pipelineValidatorWithStubs,
+					errToMsgConverter:       errToMsg,
 				}
 				_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)
