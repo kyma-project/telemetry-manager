@@ -283,6 +283,9 @@ func (b *Builder) addFilterDropVirtualNetworkInterfacesProcessor() buildComponen
 	)
 }
 
+// TODO(TeodorSAP): The Prometheus receiver sets the service.name attribute by default. 
+// We currently remove it here, but we should investigate configuring the receiver 
+// to not set this attribute in the first place for better efficiency.
 func (b *Builder) addDropServiceNameProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDResourceDropServiceNameProcessor),
@@ -871,7 +874,7 @@ func formatNamespaceFilterID(pipelineName string, inputSourceType common.InputSo
 }
 
 func enrichmentServicePipelineID() string {
-	return "metrics/enrichment"
+	return "metrics/enrichment-conditional"
 }
 
 // Helper functions for getting pipelines by input source
