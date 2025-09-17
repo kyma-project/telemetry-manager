@@ -12,6 +12,8 @@ import (
 	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 )
 
+const enrichmentServicePipelineID = "metrics/enrichment-conditional"
+
 var diagnosticMetricNames = []string{"up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added"}
 
 type buildComponentFunc = common.BuildComponentFunc[*telemetryv1alpha1.MetricPipeline]
@@ -137,7 +139,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 	}
 
 	// Enrichment pipeline
-	if err := b.AddServicePipeline(ctx, nil, enrichmentServicePipelineID(),
+	if err := b.AddServicePipeline(ctx, nil, enrichmentServicePipelineID,
 		b.addInputRoutingReceiver(common.ComponentIDRuntimeInputRoutingConnector, pipelinesWithRuntimeInput, inputs.runtime),
 		b.addInputRoutingReceiver(common.ComponentIDPrometheusInputRoutingConnector, pipelinesWithPrometheusInput, inputs.prometheus),
 		b.addInputRoutingReceiver(common.ComponentIDIstioInputRoutingConnector, pipelinesWithIstioInput, inputs.istio),
@@ -283,9 +285,10 @@ func (b *Builder) addFilterDropVirtualNetworkInterfacesProcessor() buildComponen
 	)
 }
 
-// TODO(TeodorSAP): The Prometheus receiver sets the service.name attribute by default.
-// We currently remove it here, but we should investigate configuring the receiver
-// to not set this attribute in the first place for better efficiency.
+// TODO (TeodorSAP):
+// The Prometheus receiver sets the service.name attribute by default to the scrape job name,
+// which prevents it from being enriched by the service name processor. We currently remove it here,
+// but we should investigate configuring the receiver to not set this attribute in the first place.
 func (b *Builder) addDropServiceNameProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDResourceDropServiceNameProcessor),
@@ -839,7 +842,7 @@ func enrichmentRoutingConnectorTableEntry(pipelines []telemetryv1alpha1.MetricPi
 
 func inputRoutingConnectorConfig(outputPipelineIDs []string) common.RoutingConnector {
 	return common.RoutingConnector{
-		DefaultPipelines: []string{enrichmentServicePipelineID()},
+		DefaultPipelines: []string{enrichmentServicePipelineID},
 		ErrorMode:        "ignore",
 		Table: []common.RoutingConnectorTableEntry{
 			{
@@ -871,10 +874,6 @@ func formatOTLPExporterID(pipeline *telemetryv1alpha1.MetricPipeline) string {
 
 func formatNamespaceFilterID(pipelineName string, inputSourceType common.InputSourceType) string {
 	return fmt.Sprintf(common.ComponentIDNamespacePerInputFilterProcessor, pipelineName, inputSourceType)
-}
-
-func enrichmentServicePipelineID() string {
-	return "metrics/enrichment-conditional"
 }
 
 // Helper functions for getting pipelines by input source
