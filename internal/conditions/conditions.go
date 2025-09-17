@@ -127,10 +127,13 @@ var metricPipelineMessages = map[string]string{
 	ReasonGatewayNotReady:               "Metric gateway Deployment is not ready",
 	ReasonGatewayReady:                  "Metric gateway Deployment is ready",
 	ReasonSelfMonGatewayAllDataDropped:  "Backend is not reachable or rejecting metrics. All metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=no-metrics-arrive-at-the-backend",
+	ReasonSelfMonAgentAllDataDropped:    "Backend is not reachable or rejecting metrics. All metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=no-metrics-arrive-at-the-backend",
 	ReasonSelfMonGatewayBufferFillingUp: "Buffer nearing capacity. Incoming metric rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-buffer-filling-up",
+	ReasonSelfMonAgentBufferFillingUp:   "Buffer nearing capacity. Incoming metric rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-buffer-filling-up",
 	ReasonSelfMonConfigNotGenerated:     "No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of Metric gateway. Check the 'ConfigurationGenerated' condition for more details",
 	ReasonSelfMonGatewayThrottling:      "Metric gateway is unable to receive metrics at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-throttling",
 	ReasonSelfMonGatewaySomeDataDropped: "Backend is reachable, but rejecting metrics. Some metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
+	ReasonSelfMonAgentSomeDataDropped:   "Backend is reachable, but rejecting metrics. Some metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
 }
 
 func MessageForOtelLogPipeline(reason string) string {

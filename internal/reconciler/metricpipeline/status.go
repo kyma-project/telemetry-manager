@@ -163,7 +163,7 @@ func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *
 	logf.FromContext(ctx).V(1).Info("Probed agent flow health", "result", agentProbeResult)
 
 	reason := flowHealthReasonFor(gatewayProbeResult, agentProbeResult)
-	if gatewayProbeResult.Healthy {
+	if reason == conditions.ReasonSelfMonFlowHealthy {
 		return metav1.ConditionTrue, reason
 	}
 
