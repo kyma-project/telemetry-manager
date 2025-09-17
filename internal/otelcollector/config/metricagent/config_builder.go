@@ -283,8 +283,8 @@ func (b *Builder) addFilterDropVirtualNetworkInterfacesProcessor() buildComponen
 	)
 }
 
-// TODO(TeodorSAP): The Prometheus receiver sets the service.name attribute by default. 
-// We currently remove it here, but we should investigate configuring the receiver 
+// TODO(TeodorSAP): The Prometheus receiver sets the service.name attribute by default.
+// We currently remove it here, but we should investigate configuring the receiver
 // to not set this attribute in the first place for better efficiency.
 func (b *Builder) addDropServiceNameProcessor() buildComponentFunc {
 	return b.AddProcessor(
