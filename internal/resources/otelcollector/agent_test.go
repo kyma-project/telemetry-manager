@@ -28,6 +28,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 		sut              *AgentApplierDeleter
 		collectorEnvVars map[string][]byte
 		istioEnabled     bool
+		backendPorts     []string
 		goldenFilePath   string
 		saveGoldenFile   bool
 	}{
@@ -40,6 +41,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 			name:           "metric agent with istio",
 			sut:            NewMetricAgentApplierDeleter(collectorImage, namespace, priorityClassName),
 			istioEnabled:   true,
+			backendPorts:   []string{"4317", "9090"},
 			goldenFilePath: "testdata/metric-agent-istio.yaml",
 		},
 		{
@@ -81,6 +83,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 				IstioEnabled:        tt.istioEnabled,
 				CollectorConfigYAML: "dummy",
 				CollectorEnvVars:    tt.collectorEnvVars,
+				BackendPorts:        tt.backendPorts,
 			})
 			require.NoError(t, err)
 

@@ -196,12 +196,3 @@ const (
 	Drop     RelabelAction = "drop"
 	LabelMap RelabelAction = "labelmap"
 )
-
-type FilterProcessor struct {
-	Metrics FilterProcessorMetrics `yaml:"metrics"`
-}
-
-type FilterProcessorMetrics struct {
-	Metric    []string `yaml:"metric,omitempty"`
-	Datapoint []string `yaml:"datapoint,omitempty"`
-}

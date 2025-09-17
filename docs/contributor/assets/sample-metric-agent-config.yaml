@@ -9,7 +9,7 @@ extensions:
     lease_namespace: kyma-system
 service:
   pipelines:
-    metrics/enrichment:
+    metrics/enrichment-conditional:
       receivers:
         - routing/prometheus-input
         - routing/istio-input
@@ -536,7 +536,7 @@ connectors:
   routing/runtime-input:
     error_mode: ignore
     default_pipelines:
-      - metrics/enrichment
+      - metrics/enrichment-conditional
     table:
       - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
         pipelines:
@@ -545,7 +545,7 @@ connectors:
   routing/prometheus-input:
     error_mode: ignore
     default_pipelines:
-      - metrics/enrichment
+      - metrics/enrichment-conditional
     table:
       - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
         pipelines:
@@ -554,7 +554,7 @@ connectors:
   routing/istio-input:
     error_mode: ignore
     default_pipelines:
-      - metrics/enrichment
+      - metrics/enrichment-conditional
     table:
       - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
         pipelines:
