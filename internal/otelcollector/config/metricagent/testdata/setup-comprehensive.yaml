@@ -8,7 +8,7 @@ extensions:
         endpoint: 127.0.0.1:1777
 service:
     pipelines:
-        metrics/enrichment:
+        metrics/enrichment-conditional:
             receivers:
                 - routing/runtime-input
                 - routing/prometheus-input
@@ -447,7 +447,7 @@ connectors:
               context: metric
     routing/istio-input:
         default_pipelines:
-            - metrics/enrichment
+            - metrics/enrichment-conditional
         error_mode: ignore
         table:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
@@ -455,7 +455,7 @@ connectors:
                 - metrics/output-test
     routing/prometheus-input:
         default_pipelines:
-            - metrics/enrichment
+            - metrics/enrichment-conditional
         error_mode: ignore
         table:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
@@ -463,7 +463,7 @@ connectors:
                 - metrics/output-test
     routing/runtime-input:
         default_pipelines:
-            - metrics/enrichment
+            - metrics/enrichment-conditional
         error_mode: ignore
         table:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
