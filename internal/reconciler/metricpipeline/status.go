@@ -39,6 +39,8 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 		return nil
 	}
 
+	logf.FromContext(ctx).V(1).Info("Updating MetricPipeline status")
+
 	r.setAgentHealthyCondition(ctx, &pipeline)
 	r.setGatewayHealthyCondition(ctx, &pipeline)
 	r.setGatewayConfigGeneratedCondition(ctx, &pipeline)
@@ -140,6 +142,7 @@ func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telem
 }
 
 func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) (metav1.ConditionStatus, string) {
+	logf.FromContext(ctx).V(1).Info("Evaluating Flow Health Condition")
 	configGeneratedStatus, _, _ := r.evaluateConfigGeneratedCondition(ctx, pipeline)
 	if configGeneratedStatus == metav1.ConditionFalse {
 		return metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated
