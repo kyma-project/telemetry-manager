@@ -41,7 +41,7 @@ Egress: Kubernetes API, DNS, self-monitor alert queries
 | **OTel Metric Agent** | `telemetry-metric-agent` | **From:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** 8888, 13133, 15090 (optional) | **To:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** All | `app.kubernetes.io/name: telemetry-metric-agent` |
 | **OTel Metric Gateway** | `telemetry-metric-gateway` | **From:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** 8888, 13133, 4318, 4317, 15090 (optional) | **To:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** All | `app.kubernetes.io/name: telemetry-metric-gateway` |
 | **OTel Trace Gateway** | `telemetry-trace-gateway` | **From:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** 8888, 13133, 4318, 4317, 15090 (optional) | **To:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** All | `app.kubernetes.io/name: telemetry-trace-gateway` |
-| **Self Monitor** | `telemetry-self-monitor` | **From:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** 9090 (TCP) | **To:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** All | `app.kubernetes.io/name: telemetry-self-monitor` |
+| **Self-Monitor** | `telemetry-self-monitor` | **From:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** 9090 (TCP) | **To:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** All | `app.kubernetes.io/name: telemetry-self-monitor` |
 
 ## Decision
 
