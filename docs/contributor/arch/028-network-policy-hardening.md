@@ -52,6 +52,7 @@ Egress: Kubernetes API, DNS, self-monitor alert queries
 - There is a need to define cross-workload policies applied based on labels. For example, every Telemetry module component should be able to communicate with the API server, DNS, and other essential services. And such a policy have to be defined in a single place, not per each workload. Health checks?
 - Egress when reaching external services (CLS, Dynatrace, etc.).
 - RMA/Prometheus scraping.
+- Telemetry module collecting metrics from other modules?
 
 
 ## Consequences
