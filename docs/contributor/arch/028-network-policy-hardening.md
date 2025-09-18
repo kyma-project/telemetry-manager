@@ -8,6 +8,30 @@ date: 2025-09-18
 
 ## Context
 
+### Communication Flow Analysis
+
+#### FluentBit, Log Agent:
+Ingress: Metric scraping (self-monitoring and RMA) and health checks
+Egress: Kubernetes API, DNS, external logging services (e.g., CLS)
+
+#### Log, Trace, Metric Gateway:
+Ingress: Metric scraping (self-monitoring and RMA), health checks, OTLP data ingested by customer workloads
+Egress: Kubernetes API, DNS, external telemetry backends (e.g., CLS, Dynatrace)
+
+#### Metric Agent:
+Ingress: Metric scraping (self-monitoring and RMA), health checks
+Egress: Kubernetes API, DNS, Kubelet, scraping customer workloads metrics, external telemetry backends (e.g., CLS, Dynatrace)
+
+#### Self-Monitor:
+Ingress: Metric scraping (self-monitoring and RMA), health checks, alert queries
+Egress: Kubernetes API, DNS, scraping module components metrics
+
+#### Telemetry Manager:
+Ingress: Metric scraping (RMA), health checks, alertmanager webhook, admission and conversion webhooks
+Egress: Kubernetes API, DNS, self-monitor alert queries
+
+### Current Network Policies
+
 | **Workload** | **Network Policy Name** | **Ingress Rules** | **Egress Rules** | **Pod Selector** |
 |--------------|------------------------|-------------------|------------------|------------------|
 | **Telemetry Manager** | `telemetry-manager-manager` | **From:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** 8080, 8081, 9443 | **To:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** All | `app.kubernetes.io/instance: telemetry`<br>`app.kubernetes.io/name: manager`<br>`control-plane: telemetry-manager`<br>`kyma-project.io/component: controller` |
@@ -17,7 +41,7 @@ date: 2025-09-18
 | **OTel Metric Agent** | `telemetry-metric-agent` | **From:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** 8888, 13133, 15090 (optional) | **To:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** All | `app.kubernetes.io/name: telemetry-metric-agent` |
 | **OTel Metric Gateway** | `telemetry-metric-gateway` | **From:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** 8888, 13133, 4318, 4317, 15090 (optional) | **To:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** All | `app.kubernetes.io/name: telemetry-metric-gateway` |
 | **OTel Trace Gateway** | `telemetry-trace-gateway` | **From:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** 8888, 13133, 4318, 4317, 15090 (optional) | **To:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** All | `app.kubernetes.io/name: telemetry-trace-gateway` |
-| **Self Monitor** | `telemetry-self-monitor` | **From:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** 9090 | **To:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** All | `app.kubernetes.io/name: telemetry-self-monitor` |
+| **Self Monitor** | `telemetry-self-monitor` | **From:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** 9090 (TCP) | **To:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** All | `app.kubernetes.io/name: telemetry-self-monitor` |
 
 ## Decision
 
