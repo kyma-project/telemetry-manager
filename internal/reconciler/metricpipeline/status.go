@@ -38,9 +38,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 		logf.FromContext(ctx).V(1).Info("Skipping status update for MetricPipeline - marked for deletion")
 		return nil
 	}
-
-	logf.FromContext(ctx).V(1).Info("Updating MetricPipeline status")
-
+	
 	r.setAgentHealthyCondition(ctx, &pipeline)
 	r.setGatewayHealthyCondition(ctx, &pipeline)
 	r.setGatewayConfigGeneratedCondition(ctx, &pipeline)
@@ -142,7 +140,6 @@ func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telem
 }
 
 func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) (metav1.ConditionStatus, string) {
-	logf.FromContext(ctx).V(1).Info("Evaluating Flow Health Condition")
 	configGeneratedStatus, _, _ := r.evaluateConfigGeneratedCondition(ctx, pipeline)
 	if configGeneratedStatus == metav1.ConditionFalse {
 		return metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated
@@ -162,7 +159,6 @@ func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *
 		logf.FromContext(ctx).Error(err, "Failed to probe agent flow health")
 		return metav1.ConditionUnknown, conditions.ReasonSelfMonAgentProbingFailed
 	}
-
 	logf.FromContext(ctx).V(1).Info("Probed agent flow health", "result", agentProbeResult)
 
 	reason := flowHealthReasonFor(gatewayProbeResult, agentProbeResult)
