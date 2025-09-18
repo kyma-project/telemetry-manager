@@ -1,4 +1,4 @@
-# Migrate Your LogPipeline From Fluent Bit to OTLP
+# Migrate Your LogPipeline From HTTP to OTLP
 
 To use the OpenTelemetry Protocol (OTLP) for sending logs, you must migrate your `LogPipeline` from the `http` or `custom` output to the `otlp` output. With the `otlp` output, you can correlate logs with traces and metrics, collect logs pushed directly from applications, and access new features developed only for the OTLP-based stack.
 
