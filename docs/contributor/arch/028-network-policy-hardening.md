@@ -11,16 +11,16 @@ date: 2025-09-18
 ### Communication Flow Analysis
 
 #### FluentBit, Log Agent:
-Ingress: Metric scraping (self-monitoring and RMA) and health checks, envoy sidecar (optional)
+Ingress: Metric scraping (self-monitoring and RMA) and health checks
 Egress: Kubernetes API, DNS, external logging services (e.g., CLS)
 
 #### Log, Trace, Metric Gateway:
-Ingress: Metric scraping (self-monitoring and RMA), health checks, OTLP data ingested by customer workloads, envoy sidecar (optional)
+Ingress: Metric scraping (self-monitoring and RMA), health checks, OTLP data ingested by customer workloads
 Egress: Kubernetes API, DNS, external telemetry backends (e.g., CLS, Dynatrace)
 
 #### Metric Agent:
-Ingress: Metric scraping (self-monitoring and RMA), health checks, envoy sidecar (optional)
-Egress: Kubernetes API, DNS, Kubelet API, scraping customer workloads metrics, external telemetry backends (e.g., CLS, Dynatrace)
+Ingress: Metric scraping (self-monitoring and RMA), health checks
+Egress: Kubernetes API, DNS, Kubelet, scraping customer workloads metrics, external telemetry backends (e.g., CLS, Dynatrace)
 
 #### Self-Monitor:
 Ingress: Metric scraping (self-monitoring and RMA), health checks, alert queries
