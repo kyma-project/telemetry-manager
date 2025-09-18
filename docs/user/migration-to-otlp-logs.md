@@ -21,7 +21,7 @@ You can't modify an existing `LogPipeline` to change its output type. You must c
 
     Pay special attention to the following settings (for details, see **Integrate With Your OTLP Backend** [ADD LINK]:
 
-    * Endpoint URL: You must use the OTLP-specific ingestion endpoint from your observability backend. This URL is different from the one used for the legacy `http` output.
+    * Endpoint URL: Use the OTLP-specific ingestion endpoint from your observability backend. This URL is different from the one used for the legacy `http` output.
     * Protocol: The `otlp` output defaults to the gRPC protocol. If your backend uses HTTP, you must include the protocol in the endpoint URL (for example, https://my-otlp-http-endpoint:4318).
     * Authentication: The OTLP endpoint often uses different credentials or API permissions than your previous log ingestion endpoint. Verify that your credentials have the necessary permissions for OTLP log ingestion.
 
