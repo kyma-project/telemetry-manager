@@ -13,7 +13,7 @@ To use the OpenTelemetry Protocol (OTLP) for sending logs, you must migrate your
 
 When you want to migrate to the `otlp` output, create a new `LogPipeline`. To prevent data loss, run it in parallel with your existing pipeline. After verifying that the new pipeline works correctly, you can delete the old one.
 
-You cannot modify an existing `LogPipeline` to change its output type. You must create a new resource.
+You can't modify an existing `LogPipeline` to change its output type. You must create a new resource.
 
 ### Procedure
 
