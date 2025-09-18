@@ -21,7 +21,14 @@ date: 2025-09-18
 
 ## Decision
 
-What is the change that we're proposing or have agreed to implement?
+### Issues/questions to address
+
+- Our network policies (loose) are already present, so `enableNetworkPolicies` toggle does not make sense for us.
+- No egress rules, too loose. Only ingress ports are limited at the moment.
+- There is a need to define cross-workload polcies applied based on labels. For example, every Telemetry module component should be able to communicate with the API server, DNS, and other essential services. And such a policy have to be defined in a single place, not per each workload.
+- Egress when reaching external services (CLS, Dynatrace, etc.).
+- RMA/Prometheus scraping.
+
 
 ## Consequences
 
