@@ -1,26 +1,25 @@
 # Migrate Your LogPipeline From HTTP to OTLP
 
-To use the OpenTelemetry Protocol (OTLP) for sending logs, you must migrate your `LogPipeline` from the `http` or `custom` output to the `otlp` output. With the `otlp` output, you can correlate logs with traces and metrics, collect logs pushed directly from applications, and access new features developed only for the OTLP-based stack.
+To use the OpenTelemetry Protocol (OTLP) for sending logs, you must migrate your `LogPipeline` from the `http` or `custom` output to the `otlp` output. With OTLP, you can correlate logs with traces and metrics, collect logs pushed directly from applications, and use features available only for the OTLP-based stack.
 
 ### Prerequisites
 
-* You have an active Kyma cluster with the Telemetry module enabled.
-* You have one or more `LogPipeline` resources that uses the `http` or `custom` output.
+* You have an active Kyma cluster with the Telemetry module added.
+* You have one or more `LogPipeline` resources that use the `http` or `custom` output.
 * Your observability backend has an OTLP ingestion endpoint.
   If your backend doesn't support OTLP natively, you must run a custom OTel Collector as gateway between the Telemetry module and the target backend.
 
 ### Context
 
-When you want to migrate to the `otlp` output, create a new `LogPipeline`. To prevent data loss, run it in parallel with your existing pipeline. After you verify that the new pipeline works correctly, you can delete the old one.
+When you want to migrate to the `otlp` output, create a new `LogPipeline`. To prevent data loss, run it in parallel with your existing pipeline. After verifying that the new pipeline works correctly, you can delete the old one.
 
-> [!CAUTION]
-> You cannot modify an existing `LogPipeline` to change its output type. You must create a new resource.
+You cannot modify an existing `LogPipeline` to change its output type. You must create a new resource.
 
 ### Procedure
 
 1. Create a new `LogPipeline` that uses the `otlp` output.
 
-    Pay special attention to the following settings:
+    Pay special attention to the following settings (for details, see **Integrate With Your OTLP Backend** [ADD LINK]:
 
     * Endpoint URL: You must use the OTLP-specific ingestion endpoint from your observability backend. This URL is different from the one used for the legacy `http` output.
     * Protocol: The `otlp` output defaults to the gRPC protocol. If your backend uses HTTP, you must include the protocol in the endpoint URL (for example, https://my-otlp-http-endpoint:4318).
@@ -81,16 +80,16 @@ When you want to migrate to the `otlp` output, create a new `LogPipeline`. To pr
          ...
    ```
 
-3. (Optional) To enrich logs with labels, configure the global Telemetry resource.
+3. (Optional) To enrich logs with labels, configure the central Telemetry resource.
 
-   In contrast to a Fluent Bit LogPipeline, the `otlp` output does not automatically add all Pod labels. To continue enriching logs with specific labels, you must explicitly configure this in the global `Telemetry` resource using the `spec.enrichments.extractPodLabels` field.
+   In contrast to a Fluent Bit LogPipeline, the `otlp` output doesn't automatically add all Pod labels. To continue enriching logs with specific labels, you must explicitly enable it in the spec.enrichments.extractPodLabels field.
 
    > **Note:** Enrichment with Pod annotations is no longer supported.
 
 4. Deploy the new `LogPipeline`:
 
    ```shell
-   kubectl apply -f <your-new-pipeline-filename>.yaml
+   kubectl apply -f logpipeline.yaml
    ```
 
 5. Check that the new `LogPipeline` is healthy:
@@ -99,7 +98,7 @@ When you want to migrate to the `otlp` output, create a new `LogPipeline`. To pr
    kubectl get logpipeline my-otlp-pipeline
    ```
 
-6. Verify that logs are arriving at your observability backend.
+6. Check your observability backend to confirm that log data is arriving.
 
 7. Delete the old `LogPipeline`:
 
