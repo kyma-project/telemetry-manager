@@ -65,6 +65,10 @@ This approach:
 - Aligns with the overall design of the API for the transform and filter processors.
 - Allows future migration to the official filter processor with OTTL context inference once it is available.
 
+## Limitations
+
+The functions `HasAttrKeyOnDatapoint` and `HasAttrOnDatapoint` can no longer be used, as they are only available within the metric context.
+
 ## Conclusion
 - We will implement a filter API that uses a lower context level, requiring users to include the context path in OTTL expressions.
 - The existing OTTL Validator from the transform API will be reused to ensure that filter conditions are valid and contain a context path.
