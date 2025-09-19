@@ -8,32 +8,65 @@ date: 2025-09-11
 
 ## Context
 
-The Telemetry Transform and Filter API is designed with the assumption that all Transform and FilterProcessor components will support OTTL context inference. However, it turns out the current FilterProcessor in its alpha state does not support OTTL context inference.
+The Telemetry Transform and Filter API was designed with the assumption that all Transform and FilterProcessor components would support OTTL context inference. However, the current FilterProcessor, in its alpha state, does not yet support OTTL context inference.
+We need to decide how to handle this limitation in order to continue delivering Transform and Filter capabilities to our users.
 
-We need to decide how to handle this situation to continue delivering Transform and Filter capabilities to our users.
+## Proposal
 
-## Proposals
+**Filter API Implementation Using Lower Context**  
+We propose implementing a Filter API that always operates at a lower context level, such as `datapoint`, `spanevent`, or `log`. This approach enables us to provide Filter capabilities to users immediately, without waiting for official OTTL context inference support in the FilterProcessor.
 
-- **Wait for OTTL Context Inference Support:**
+Users can provide any OTTL expression with an explicit context path (similar to TransformProcessor expressions). These expressions will be passed directly to the FilterProcessor with a configuration that specifies a lower context level.
 
-  We could wait until the FilterProcessor supports OTTL context inference. However, this approach would delay the availability of Filter capabilities to our users.
+Following example show Filter-API configuration using the `datapoint` context level in the final OpenTelemetry configuration:**
 
-  Discussions with the code owners of the FilterProcessor indicate that support for OTTL context inference is not a high priority for them, and it may take a significant amount of time before this feature is implemented.
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: MetricPipeline
+metadata:
+  name: metricpipeline-sample
+spec:
+  filter:
+    conditions:
+      - metric.name == "k8s.pod.phase" and datapoint.count == 4
+      - metric.type == METRIC_DATA_TYPE_NONE
+  input:
+    istio:
+      enabled: true
+    prometheus:
+      enabled: false
+  output:
+    otlp:
+      endpoint:
+        value: ingest-otlp.services.sap.hana.ondemand.com:443
+```
 
-  The benefit of this approach is that we don't have to implement and maintain a custom solution ourselves, and we could use the official FilterProcessor implementation, which will be similar to the TransformProcessor implementation.
+Corresponding FilterProcessor configuration in the OpenTelemetry Collector:
 
-- **Implement API to Support Current FilterProcessor:**
+```yaml
+processors:
+  filter:
+    error_mode: ignore
+    metrics:
+      datapoint:
+        - metric.name == "k8s.pod.phase" and datapoint.count == 4
+        - metric.type == METRIC_DATA_TYPE_NONE
+```
 
-  We could implement an API that supports the current FilterProcessor without OTTL context inference. This would enable us to provide Filter capabilities to our users immediately.
+Discussions with the current code owners of the FilterProcessor indicate that support for OTTL context inference is planned, likely following the approach already established by the TransformProcessor. However, no final API proposal is available yet.
+Once official support becomes available, we can migrate to the context-less FilterProcessor configuration without breaking existing functionality.
 
-  However, for this approach we must maintain a solution that is not aligned with the official OTTL context inference implemented by TransformProcessor. We would need to ensure that our implementation remains compatible with future updates to the FilterProcessor.
+## Implications
 
-  Migrating existing pipelines could be challenging, as users would need to manually update their configurations to use the new API.
+Since the OpenTelemetry FilterProcessor does not yet support context inference, users must explicitly include the appropriate context path in their OTTL expressions. This requirement increases the need for clear documentation and user guidance to ensure correct filter construction.
 
-- **Filter API Implementation Using Lower Context:**
+This approach:
+- Provides immediate Filter capabilities.
+- Aligns with the overall design of the Telemetry Transform and Filter API.
+- Allows future migration to the official FilterProcessor with OTTL context inference once it is available.
 
-  We could implement a Filter API that always uses a lower context level, such as `datapoint`, `spanevent`, or `log`. This would allow us to provide Filter capabilities to our users immediately, without waiting for the official FilterProcessor to support OTTL context inference.
-
-  However, this approach would limit the flexibility of our Filter implementation, as users would not be able to use higher context levels such as `resource` or `scope` directly.
-
-  Migrating existing pipelines could be challenging, as users would need to manually update their configurations to use the new API.
+## Conclusion
+- We will implement a Filter API that uses a lower context level, requiring users to include the context path in OTTL expressions.
+- The existing OTTL Validator from the Transform API will be reused to ensure that filter conditions are valid and contain a context path.
+- We will provide clear documentation and practical examples to help users construct filter conditions correctly.
+- We will monitor the development of the FilterProcessor, adopt OTTL context inference once available, and migrate accordingly.
