@@ -33,6 +33,7 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 				if len(includeNss) > 0 {
 					opts = append(opts, testutils.ExtIncludeNamespaces(includeNss...))
 				}
+
 				if len(excludeNss) > 0 {
 					opts = append(opts, testutils.ExtExcludeNamespaces(excludeNss...))
 				}
@@ -51,6 +52,7 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 				if len(includeNss) > 0 {
 					opts = append(opts, testutils.IncludeNamespaces(includeNss...))
 				}
+
 				if len(excludeNss) > 0 {
 					opts = append(opts, testutils.ExcludeNamespaces(excludeNss...))
 				}

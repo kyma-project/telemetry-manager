@@ -69,6 +69,7 @@ func TestPrometheusInput(t *testing.T) {
 		// targets discovered via annotated pods must have no service label
 		bodyContent, err := io.ReadAll(resp.Body)
 		defer resp.Body.Close()
+
 		g.Expect(err).NotTo(HaveOccurred())
 
 		for _, metric := range prommetricgen.CustomMetrics() {
@@ -97,8 +98,10 @@ func TestPrometheusInput(t *testing.T) {
 		resp, err := suite.ProxyClient.Get(backendURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+
 		bodyContent, err := io.ReadAll(resp.Body)
 		defer resp.Body.Close()
+
 		g.Expect(err).NotTo(HaveOccurred())
 
 		for _, metric := range prommetricgen.CustomMetrics() {
