@@ -1,15 +1,15 @@
 ---
-title: Support for FilterProcessor without OTTL Context Inference
+title: Support for Filter Processor without OTTL Context Inference
 status: Accepted
-date: 2025-09-11
+date: 2025-09-19
 ---
 
-# 16b. Support for FilterProcessor without OTTL Context Inference
+# 16b. Support for Filter Processor without OTTL Context Inference
 
 ## Context
 
-The Telemetry Transform and Filter API was designed with the assumption that all Transform and FilterProcessor components would support OTTL context inference. However, the current FilterProcessor, in its alpha state, does not yet support OTTL context inference.
-We need to decide how to handle this limitation in order to continue delivering Transform and Filter capabilities to our users.
+The Telemetry Transform and Filter API was designed with the assumption that both transform and filter processors would support OTTL context inference. However, the current filter processor, in its alpha state, does not yet support OTTL context inference.
+We need to decide how to handle this limitation in order to continue delivering transform and filter capabilities to our users.
 
 ## Proposal
 
