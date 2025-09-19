@@ -8,7 +8,7 @@ date: 2025-09-19
 
 ## Context
 
-The Telemetry Transform and Filter API was designed with the assumption that both transform and filter processors would support OTTL context inference. However, the current filter processor, in its alpha state, does not yet support OTTL context inference.
+The Telemetry transform and filter API was designed with the assumption that both transform and filter processors would support OTTL context inference. However, the current filter processor, in its alpha state, does not yet support OTTL context inference.
 We need to decide how to handle this limitation in order to continue delivering transform and filter capabilities to our users.
 
 ## Proposal
@@ -18,7 +18,7 @@ We propose implementing a filter API that always operates at a lower context lev
 
 Users can provide any OTTL expression with an explicit context path (similar to transform processor expressions). These expressions will be passed directly to the filter processor with a configuration that specifies a lower context level.
 
-Following example show Filter-API configuration using the `datapoint` context level in the final OpenTelemetry configuration:**
+Following example show filter API configuration using the `datapoint` context level in the final OpenTelemetry configuration:**
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
