@@ -20,13 +20,13 @@ We need to decide how to handle this situation to continue delivering Transform 
 
   Discussions with the code owners of the FilterProcessor indicate that support for OTTL context inference is not a high priority for them, and it may take a significant amount of time before this feature is implemented.
 
-  The benefit of this approach is that we would not need to implement and maintain a custom solution ourselves, and we would be able to leverage the official FilterProcessor implementation, which will be similar to the TransformProcessor implementation.
+  The benefit of this approach is that we don't have to implement and maintain a custom solution ourselves, and we could use the official FilterProcessor implementation, which will be similar to the TransformProcessor implementation.
 
 - **Implement API to Support Current FilterProcessor:**
 
-  We could implement an API that allows us to support the current FilterProcessor without OTTL context inference. This would enable us to provide Filter capabilities to our users immediately.
+  We could implement an API that supports the current FilterProcessor without OTTL context inference. This would enable us to provide Filter capabilities to our users immediately.
 
-  However, this approach would require us to maintain a solution that is not aligned with the official OTTL context inference implemented by TransformProcessor. We would need to ensure that our implementation remains compatible with future updates to the FilterProcessor.
+  However, for this approach we must maintain a solution that is not aligned with the official OTTL context inference implemented by TransformProcessor. We would need to ensure that our implementation remains compatible with future updates to the FilterProcessor.
 
   Migrating existing pipelines could be challenging, as users would need to manually update their configurations to use the new API.
 
