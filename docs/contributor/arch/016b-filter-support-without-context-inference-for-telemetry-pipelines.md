@@ -61,7 +61,7 @@ Once official support becomes available, we can migrate to the context-less filt
 Since the OpenTelemetry filter processor does not yet support context inference, users must explicitly include the appropriate context path in their OTTL expressions. This requirement increases the need for clear documentation and user guidance to ensure correct filter construction.
 
 This approach:
-- Provides immediate Filter capabilities.
+- Provides immediate filter capabilities.
 - Aligns with the overall design of the API for the transform and filter processors.
 - Allows future migration to the official filter processor with OTTL context inference once it is available.
 
