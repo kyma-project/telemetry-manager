@@ -13,12 +13,12 @@ We need to decide how to handle this limitation in order to continue delivering 
 
 ## Proposal
 
-**Filter API Implementation Using Lower Context**  
-We propose implementing a filter API that always operates at a lower context level, such as `datapoint`, `spanevent`, or `log`. This approach enables us to provide filter capabilities to users immediately, without waiting for official OTTL context inference support in the filter processor.
+**Filter API Implementation Using Lowest Context**  
+We propose implementing a filter API that always operates at the lowest context level, such as `datapoint`, `spanevent`, or `log`. This approach enables us to provide filter capabilities to users immediately, without waiting for official OTTL context inference support in the filter processor.
 
-Users can provide any OTTL expression with an explicit context path (similar to transform processor expressions). These expressions will be passed directly to the filter processor with a configuration that specifies a lower context level.
+Users can provide any OTTL expression with an explicit context path (similar to transform processor expressions). These expressions will be passed directly to the filter processor with a configuration that specifies the lowest context level.
 
-Following example show filter API configuration using the `datapoint` context level in the final OpenTelemetry configuration:**
+The following example shows the filter API configuration in the MetricPipeline and the corresponding filter processor configuration in the OpenTelemetry Collector using the `datapoint` context level:
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
