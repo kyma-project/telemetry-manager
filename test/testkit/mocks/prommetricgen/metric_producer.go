@@ -17,6 +17,7 @@ const (
 	// A sample app instrumented with OpenTelemetry to generate metrics in the Prometheus exposition format
 	// https://github.com/kyma-project/telemetry-manager/tree/main/docs/user/integration/sample-app
 	metricProducerImage = "europe-docker.pkg.dev/kyma-project/prod/samples/telemetry-sample-app:latest"
+	avalancheImage      = "quay.io/prometheuscommunity/avalanche:latest"
 )
 
 type Metric struct {
@@ -120,6 +121,8 @@ type Pod struct {
 	namespace   string
 	labels      map[string]string
 	annotations map[string]string
+	image       string
+	args        []string
 }
 
 type Service struct {
@@ -155,6 +158,8 @@ func (mp *MetricProducer) Pod() *Pod {
 		namespace:   mp.namespace,
 		labels:      make(map[string]string),
 		annotations: make(map[string]string),
+		image:       metricProducerImage,
+		args:        []string{},
 	}
 }
 
@@ -191,6 +196,17 @@ func (p *Pod) WithLabels(labels map[string]string) *Pod {
 	return p
 }
 
+func (p *Pod) WithAvalanche() *Pod {
+	p.image = avalancheImage
+	p.args = []string{
+		"--gauge-metric-count=160",
+		"--counter-metric-count=100",
+		"--histogram-metric-count=50",
+		"--port=" + strconv.Itoa(int(metricsPort)),
+	}
+	return p
+}
+
 func (p *Pod) K8sObject() *corev1.Pod {
 	labels := p.labels
 	maps.Copy(labels, selectorLabels)
@@ -206,13 +222,8 @@ func (p *Pod) K8sObject() *corev1.Pod {
 			Containers: []corev1.Container{
 				{
 					Name:  "metric-producer",
-					Image: "quay.io/prometheuscommunity/avalanche:latest",
-					Args: []string{
-						"--gauge-metric-count=160",
-						"--counter-metric-count=100",
-						"--histogram-metric-count=50",
-						"--port=" + strconv.Itoa(int(metricsPort)),
-					},
+					Image: p.image,
+					Args:  p.args,
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          metricsPortName,
