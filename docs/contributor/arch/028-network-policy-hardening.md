@@ -32,16 +32,79 @@ date: 2025-09-18
 
 ### Current Network Policies
 
-| **Workload** | **Network Policy Name** | **Ingress Rules** | **Egress Rules** | **Pod Selector** |
-|--------------|------------------------|-------------------|------------------|------------------|
-| **FluentBit Agent** | `telemetry-fluent-bit` | **From:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** 2020, 2021, 15090 (optional) | **To:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** All | `app.kubernetes.io/instance: telemetry`<br>`app.kubernetes.io/name: fluent-bit` |
-| **OTel Log Agent** | `telemetry-log-agent` | **From:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** 8888, 13133, 15090 (optional) | **To:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** All | `app.kubernetes.io/name: telemetry-log-agent` |
-| **OTel Log Gateway** | `telemetry-log-gateway` | **From:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** 8888, 13133, 4318, 4317, 15090 (optional) | **To:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** All | `app.kubernetes.io/name: telemetry-log-gateway` |
-| **OTel Metric Agent** | `telemetry-metric-agent` | **From:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** 8888, 13133, 15090 (optional) | **To:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** All | `app.kubernetes.io/name: telemetry-metric-agent` |
-| **OTel Metric Gateway** | `telemetry-metric-gateway` | **From:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** 8888, 13133, 4318, 4317, 15090 (optional) | **To:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** All | `app.kubernetes.io/name: telemetry-metric-gateway` |
-| **OTel Trace Gateway** | `telemetry-trace-gateway` | **From:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** 8888, 13133, 4318, 4317, 15090 (optional) | **To:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** All | `app.kubernetes.io/name: telemetry-trace-gateway` |
-| **Telemetry Manager** | `telemetry-manager-manager` | **From:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** 8080, 8081, 9443 | **To:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** All | `app.kubernetes.io/instance: telemetry`<br>`app.kubernetes.io/name: manager`<br>`control-plane: telemetry-manager`<br>`kyma-project.io/component: controller` |
-| **Self-Monitor** | `telemetry-self-monitor` | **From:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** 9090 (TCP) | **To:** Any IP (0.0.0.0/0, ::/0)<br>**Ports:** All | `app.kubernetes.io/name: telemetry-self-monitor` |
+### Current Network Policy Configuration
+
+1. **FluentBit Agent**
+   - **Network Policy Name:** `telemetry-fluent-bit`
+   - **Ingress Rules:**
+     - From: Any IP (0.0.0.0/0, ::/0)
+     - Ports: 2020, 2021, 15090 (optional) (TCP)
+   - **Egress Rules:**
+     - To: Any IP (0.0.0.0/0, ::/0)
+     - Ports: All
+
+2. **OTel Log Agent**
+   - **Network Policy Name:** `telemetry-log-agent`
+   - **Ingress Rules:**
+     - From: Any IP (0.0.0.0/0, ::/0)
+     - Ports: 8888, 13133, 15090 (optional) (TCP)
+   - **Egress Rules:**
+     - To: Any IP (0.0.0.0/0, ::/0)
+     - Ports: All
+
+3. **OTel Log Gateway**
+   - **Network Policy Name:** `telemetry-log-gateway`
+   - **Ingress Rules:**
+     - From: Any IP (0.0.0.0/0, ::/0)
+     - Ports: 8888, 13133, 4318, 4317, 15090 (optional) (TCP)
+   - **Egress Rules:**
+     - To: Any IP (0.0.0.0/0, ::/0)
+     - Ports: All
+
+4. **OTel Metric Agent**
+   - **Network Policy Name:** `telemetry-metric-agent`
+   - **Ingress Rules:**
+     - From: Any IP (0.0.0.0/0, ::/0)
+     - Ports: 8888, 13133, 15090 (optional) (TCP)
+   - **Egress Rules:**
+     - To: Any IP (0.0.0.0/0, ::/0)
+     - Ports: All
+
+5. **OTel Metric Gateway**
+   - **Network Policy Name:** `telemetry-metric-gateway`
+   - **Ingress Rules:**
+     - From: Any IP (0.0.0.0/0, ::/0)
+     - Ports: 8888, 13133, 4318, 4317, 15090 (optional) (TCP)
+   - **Egress Rules:**
+     - To: Any IP (0.0.0.0/0, ::/0)
+     - Ports: All
+
+6. **OTel Trace Gateway**
+   - **Network Policy Name:** `telemetry-trace-gateway`
+   - **Ingress Rules:**
+     - From: Any IP (0.0.0.0/0, ::/0)
+     - Ports: 8888, 13133, 4318, 4317, 15090 (optional) (TCP)
+   - **Egress Rules:**
+     - To: Any IP (0.0.0.0/0, ::/0)
+     - Ports: All
+
+7. **Self Monitor**
+   - **Network Policy Name:** `telemetry-self-monitor`
+   - **Ingress Rules:**
+     - From: Any IP (0.0.0.0/0, ::/0)
+     - Ports: 9090 (TCP)
+   - **Egress Rules:**
+     - To: Any IP (0.0.0.0/0, ::/0)
+     - Ports: All
+
+8. **Telemetry Manager**
+   - **Network Policy Name:** `telemetry-manager-manager`
+   - **Ingress Rules:**
+     - From: Any IP (0.0.0.0/0, ::/0)
+     - Ports: 8080, 8081, 9443 (TCP)
+   - **Egress Rules:**
+     - To: Any IP (0.0.0.0/0, ::/0)
+     - Ports: All
 
 ## Decision
 
@@ -59,6 +122,11 @@ date: 2025-09-18
 - Fluent Bit and OTel Collectors need to connect to external telemetry backends (CLS, Dynatrace, etc.). We can't predict what IP ranges these external backends will use, so we must allow egress to all IPs for these components and only limit the ports. This covers all other egress traffic that the component makes (for example, we don't need separate rules for the metric agent connecting to Kubelet since all IPs are already allowed).
 - Telemetry-manager and self-monitor are self-contained components and have no dependency on external services, their ingress and egress communication must be hardened.
 - Telemetry gateways receive traces, logs, and metrics from customer workloads, so they must allow ingress from any IPs. Currently, they allow ingress from any IPs. In the restricted mode we can limit them by using pod label selectors. It's a breaking change that requires customer action.
+
+#### Proposed Network Policy Changes
+
+The current network policies will remain unchanged as the analysis shows that the existing permissive approach is appropriate for telemetry components thatFinal Network Policy Configuration
+
 
 ## Consequences
 
