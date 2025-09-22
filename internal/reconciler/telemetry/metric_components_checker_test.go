@@ -292,6 +292,27 @@ func TestMetricComponentsCheck(t *testing.T) {
 			},
 		},
 		{
+			name: "should not be healthy if telemetry flow probing enabled and metric agent flow is not healthy",
+			pipelines: []telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithStatusCondition(healthyGatewayCond).
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(metav1.Condition{
+						Type:    conditions.TypeFlowHealthy,
+						Status:  metav1.ConditionFalse,
+						Reason:  conditions.ReasonSelfMonAgentBufferFillingUp,
+						Message: conditions.MessageForMetricPipeline(conditions.ReasonSelfMonAgentBufferFillingUp),
+					}).
+					Build(),
+			},
+			expectedCondition: &metav1.Condition{
+				Type:    conditions.TypeMetricComponentsHealthy,
+				Status:  "False",
+				Reason:  "AgentBufferFillingUp",
+				Message: "Buffer nearing capacity. Incoming metric rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-buffer-filling-up",
+			},
+		},
+		{
 			name: "should show tlsCertExpert if one pipeline has invalid tls cert and the other pipeline has an about to expire cert",
 			pipelines: []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().

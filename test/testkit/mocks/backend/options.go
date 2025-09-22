@@ -4,6 +4,12 @@ import testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 
 type Option func(*Backend)
 
+func WithSourceMetricAgent() Option {
+	return func(b *Backend) {
+		b.sourceMetricAgent = true
+	}
+}
+
 func WithAbortFaultInjection(abortFaultPercentage float64) Option {
 	return func(b *Backend) {
 		b.abortFaultPercentage = abortFaultPercentage

@@ -206,7 +206,13 @@ func (p *Pod) K8sObject() *corev1.Pod {
 			Containers: []corev1.Container{
 				{
 					Name:  "metric-producer",
-					Image: metricProducerImage,
+					Image: "quay.io/prometheuscommunity/avalanche:latest",
+					Args: []string{
+						"--gauge-metric-count=160",
+						"--counter-metric-count=100",
+						"--histogram-metric-count=50",
+						"--port=" + strconv.Itoa(int(metricsPort)),
+					},
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          metricsPortName,

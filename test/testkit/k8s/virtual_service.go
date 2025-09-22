@@ -16,6 +16,7 @@ type VirtualService struct {
 	host                 string
 	faultAbortPercentage float64
 	faultDelayPercentage float64
+	sourceMetricAgent    bool
 	faultDelayFixedDelay time.Duration
 }
 
@@ -27,6 +28,13 @@ func NewVirtualService(name, namespace, host string) *VirtualService {
 		namespace: namespace,
 		host:      host,
 	}
+}
+
+func (s *VirtualService) WithSourceMetricAgent(sourceMetricAgent bool) *VirtualService {
+	if sourceMetricAgent {
+		s.sourceMetricAgent = true
+	}
+	return s
 }
 
 func (s *VirtualService) WithFaultAbortPercentage(percentage float64) *VirtualService {
@@ -51,6 +59,16 @@ func (s *VirtualService) K8sObject() *istionetworkingclientv1.VirtualService {
 			Hosts: []string{s.host},
 			Http: []*istionetworkingv1.HTTPRoute{
 				{
+					Match: []*istionetworkingv1.HTTPMatchRequest{
+						{
+							SourceLabels: func() map[string]string {
+								if !s.sourceMetricAgent {
+									return map[string]string{}
+								}
+								return map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"}
+							}(),
+						},
+					},
 					Route: []*istionetworkingv1.HTTPRouteDestination{
 						{
 							Destination: &istionetworkingv1.Destination{
