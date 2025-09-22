@@ -37,74 +37,74 @@ date: 2025-09-18
 1. **FluentBit Agent**
    - **Network Policy Name:** `telemetry-fluent-bit`
    - **Ingress Rules:**
-     - From: Any IP (0.0.0.0/0, ::/0)
-     - Ports: 2020, 2021, 15090 (optional) (TCP)
+     - From: Any IP
+       Ports: 2020, 2021, 15090 (optional) (TCP)
    - **Egress Rules:**
-     - To: Any IP (0.0.0.0/0, ::/0)
-     - Ports: All
+     - To: Any IP
+       Ports: All
 
 2. **OTel Log Agent**
    - **Network Policy Name:** `telemetry-log-agent`
    - **Ingress Rules:**
-     - From: Any IP (0.0.0.0/0, ::/0)
-     - Ports: 8888, 13133, 15090 (optional) (TCP)
+     - From: Any IP
+       Ports: 8888, 13133, 15090 (optional) (TCP)
    - **Egress Rules:**
-     - To: Any IP (0.0.0.0/0, ::/0)
-     - Ports: All
+     - To: Any IP
+       Ports: All
 
 3. **OTel Log Gateway**
    - **Network Policy Name:** `telemetry-log-gateway`
    - **Ingress Rules:**
-     - From: Any IP (0.0.0.0/0, ::/0)
-     - Ports: 8888, 13133, 4318, 4317, 15090 (optional) (TCP)
+     - From: Any IP
+       Ports: 8888, 13133, 4318, 4317, 15090 (optional) (TCP)
    - **Egress Rules:**
-     - To: Any IP (0.0.0.0/0, ::/0)
-     - Ports: All
+     - To: Any IP
+       Ports: All
 
 4. **OTel Metric Agent**
    - **Network Policy Name:** `telemetry-metric-agent`
    - **Ingress Rules:**
-     - From: Any IP (0.0.0.0/0, ::/0)
-     - Ports: 8888, 13133, 15090 (optional) (TCP)
+     - From: Any IP
+       Ports: 8888, 13133, 15090 (optional) (TCP)
    - **Egress Rules:**
-     - To: Any IP (0.0.0.0/0, ::/0)
-     - Ports: All
+     - To: Any IP
+       Ports: All
 
 5. **OTel Metric Gateway**
    - **Network Policy Name:** `telemetry-metric-gateway`
    - **Ingress Rules:**
-     - From: Any IP (0.0.0.0/0, ::/0)
-     - Ports: 8888, 13133, 4318, 4317, 15090 (optional) (TCP)
+     - From: Any IP
+       Ports: 8888, 13133, 4318, 4317, 15090 (optional) (TCP)
    - **Egress Rules:**
-     - To: Any IP (0.0.0.0/0, ::/0)
-     - Ports: All
+     - To: Any IP
+       Ports: All
 
 6. **OTel Trace Gateway**
    - **Network Policy Name:** `telemetry-trace-gateway`
    - **Ingress Rules:**
-     - From: Any IP (0.0.0.0/0, ::/0)
-     - Ports: 8888, 13133, 4318, 4317, 15090 (optional) (TCP)
+     - From: Any IP
+       Ports: 8888, 13133, 4318, 4317, 15090 (optional) (TCP)
    - **Egress Rules:**
-     - To: Any IP (0.0.0.0/0, ::/0)
-     - Ports: All
+     - To: Any IP
+       Ports: All
 
 7. **Self Monitor**
    - **Network Policy Name:** `telemetry-self-monitor`
    - **Ingress Rules:**
-     - From: Any IP (0.0.0.0/0, ::/0)
-     - Ports: 9090 (TCP)
+     - From: Any IP
+       Ports: 9090 (TCP)
    - **Egress Rules:**
-     - To: Any IP (0.0.0.0/0, ::/0)
-     - Ports: All
+     - To: Any IP
+       Ports: All
 
 8. **Telemetry Manager**
    - **Network Policy Name:** `telemetry-manager-manager`
    - **Ingress Rules:**
-     - From: Any IP (0.0.0.0/0, ::/0)
-     - Ports: 8080, 8081, 9443 (TCP)
+     - From: Any IP
+       Ports: 8080, 8081, 9443 (TCP)
    - **Egress Rules:**
-     - To: Any IP (0.0.0.0/0, ::/0)
-     - Ports: All
+     - To: Any IP
+       Ports: All
 
 ## Decision
 
@@ -123,10 +123,25 @@ date: 2025-09-18
 - Telemetry-manager and self-monitor are self-contained components and have no dependency on external services, their ingress and egress communication must be hardened.
 - Telemetry gateways receive traces, logs, and metrics from customer workloads, so they must allow ingress from any IPs. Currently, they allow ingress from any IPs. In the restricted mode we can limit them by using pod label selectors. It's a breaking change that requires customer action.
 
-#### Proposed Network Policy Changes
+### Proposed Network Policy Changes
 
-The current network policies will remain unchanged as the analysis shows that the existing permissive approach is appropriate for telemetry components thatFinal Network Policy Configuration
+#### Cross-component Policies (use Telemetry module-identifier label selector)
 
+1. **Allow DNS Resolution**
+   - **Policy Name:** `kyma-project.io--telemetry-allow-to-dns`
+   - **Egress Rules:**
+     - To: Any IP
+       Ports: 53 (UDP, TCP)
+     - To: Namespace label matching `gardener.cloud/purpose: kube-system`, pod label matching `k8s-app: kube-dns`
+       Ports: 8053 (UDP, TCP)
+     - To: Namespace label matching `gardener.cloud/purpose: kube-system`, pod label matching `k8s-app: node-local-dns`
+       Ports: 53 (UDP, TCP)
+
+2. **Allow Kube API Server Access**
+   - **Policy Name:** `kyma-project.io--telemetry-allow-to-apiserver`
+   - **Egress Rules:**
+     - To: Any IP
+       Ports: 443 (TCP)
 
 ## Consequences
 
