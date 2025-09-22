@@ -115,6 +115,15 @@ func BuildMetricPipelineNoInput() telemetryv1alpha1.MetricPipelineInput {
 	)
 }
 
+func BuildMetricPipelineAgentInput(runtime, prometheus, istio bool, opts ...NamespaceSelectorOptions) telemetryv1alpha1.MetricPipelineInput {
+	return buildMetricPipelineInput(
+		prometheus, opts,
+		runtime, opts,
+		istio, opts,
+		false, nil,
+	)
+}
+
 func BuildMetricPipelinePrometheusInput(opts ...NamespaceSelectorOptions) telemetryv1alpha1.MetricPipelineInput {
 	return buildMetricPipelineInput(
 		true, opts,
