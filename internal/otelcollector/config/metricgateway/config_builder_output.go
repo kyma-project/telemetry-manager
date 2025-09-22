@@ -50,7 +50,7 @@ func (b *Builder) addDropIfRuntimeInputDisabledProcessor() buildComponentFunc {
 
 			return &FilterProcessor{
 				Metrics: FilterProcessorMetrics{
-					Metric: []string{common.ScopeNameEquals(common.InstrumentationScopeRuntime)},
+					Datapoint: []string{common.ScopeNameEquals(common.InstrumentationScopeRuntime)},
 				},
 			}
 		},
@@ -84,7 +84,7 @@ func (b *Builder) addDropIfIstioInputDisabledProcessor() buildComponentFunc {
 
 			return &FilterProcessor{
 				Metrics: FilterProcessorMetrics{
-					Metric: []string{common.ScopeNameEquals(common.InstrumentationScopeIstio)},
+					Datapoint: []string{common.ScopeNameEquals(common.InstrumentationScopeIstio)},
 				},
 			}
 		},

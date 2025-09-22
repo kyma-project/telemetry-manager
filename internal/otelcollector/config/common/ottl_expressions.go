@@ -75,7 +75,7 @@ func HasAttrOnDatapoint(key, value string) string {
 }
 
 func ScopeNameEquals(name string) string {
-	return fmt.Sprintf("instrumentation_scope.name == \"%s\"", name)
+	return fmt.Sprintf("scope.name == \"%s\"", name)
 }
 
 func Not(expression string) string {
