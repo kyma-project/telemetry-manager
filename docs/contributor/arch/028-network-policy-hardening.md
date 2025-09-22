@@ -38,73 +38,73 @@ date: 2025-09-18
    - **Network Policy Name:** `telemetry-fluent-bit`
    - **Ingress Rules:**
      - From: Any IP
-       Ports: 2020, 2021, 15090 (optional) (TCP)
+       Ports: 2020, 2021, 15090(optional)
    - **Egress Rules:**
      - To: Any IP
-       Ports: All
+       Ports: Any
 
 2. **OTel Log Agent**
    - **Network Policy Name:** `telemetry-log-agent`
    - **Ingress Rules:**
      - From: Any IP
-       Ports: 8888, 13133, 15090 (optional) (TCP)
+       Ports: 8888, 13133, 15090(optional)
    - **Egress Rules:**
      - To: Any IP
-       Ports: All
+       Ports: Any
 
-3. **OTel Log Gateway**
-   - **Network Policy Name:** `telemetry-log-gateway`
-   - **Ingress Rules:**
-     - From: Any IP
-       Ports: 8888, 13133, 4318, 4317, 15090 (optional) (TCP)
-   - **Egress Rules:**
-     - To: Any IP
-       Ports: All
-
-4. **OTel Metric Agent**
+3. **OTel Metric Agent**
    - **Network Policy Name:** `telemetry-metric-agent`
    - **Ingress Rules:**
      - From: Any IP
-       Ports: 8888, 13133, 15090 (optional) (TCP)
+       Ports: 8888, 13133, 15090(optional)
    - **Egress Rules:**
      - To: Any IP
-       Ports: All
+       Ports: Any
+
+4. **OTel Log Gateway**
+   - **Network Policy Name:** `telemetry-log-gateway`
+   - **Ingress Rules:**
+     - From: Any IP
+       Ports: 8888, 13133, 4318, 4317, 15090(optional)
+   - **Egress Rules:**
+     - To: Any IP
+       Ports: Any
 
 5. **OTel Metric Gateway**
    - **Network Policy Name:** `telemetry-metric-gateway`
    - **Ingress Rules:**
      - From: Any IP
-       Ports: 8888, 13133, 4318, 4317, 15090 (optional) (TCP)
+       Ports: 8888, 13133, 4318, 4317, 15090(optional)
    - **Egress Rules:**
      - To: Any IP
-       Ports: All
+       Ports: Any
 
 6. **OTel Trace Gateway**
    - **Network Policy Name:** `telemetry-trace-gateway`
    - **Ingress Rules:**
      - From: Any IP
-       Ports: 8888, 13133, 4318, 4317, 15090 (optional) (TCP)
+       Ports: 8888, 13133, 4318, 4317, 15090(optional)
    - **Egress Rules:**
      - To: Any IP
-       Ports: All
+       Ports: Any
 
 7. **Self Monitor**
    - **Network Policy Name:** `telemetry-self-monitor`
    - **Ingress Rules:**
      - From: Any IP
-       Ports: 9090 (TCP)
+       Ports: 9090
    - **Egress Rules:**
      - To: Any IP
-       Ports: All
+       Ports: Any
 
 8. **Telemetry Manager**
    - **Network Policy Name:** `telemetry-manager-manager`
    - **Ingress Rules:**
      - From: Any IP
-       Ports: 8080, 8081, 9443 (TCP)
+       Ports: 8080, 8081, 9443
    - **Egress Rules:**
      - To: Any IP
-       Ports: All
+       Ports: Any
 
 ## Decision
 
@@ -141,7 +141,107 @@ date: 2025-09-18
    - **Policy Name:** `kyma-project.io--telemetry-allow-to-apiserver`
    - **Egress Rules:**
      - To: Any IP
-       Ports: 443 (TCP)
+       Ports: 443
+
+#### Component-specific Policies
+
+1. **FluentBit Agent**
+   - **Network Policy Name:** `kyma-project.io--telemetry-fluent-bit`
+   - **Ingress Rules:**
+     <!--- From: Any IP
+       Ports: 2020-->
+     - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed`
+       Ports: 2021, 15090(optional)
+   - **Egress Rules:**
+     - To: Any IP
+       Ports: A set of ports used to connect to external logging services
+
+2. **OTel Log Agent**
+   - **Network Policy Name:** `kyma-project.io--telemetry-log-agent`
+   - **Ingress Rules:**
+     <!--- From: Any IP
+       Ports: 13133-->
+     - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed`
+       Ports: 8888, 15090(optional)
+   - **Egress Rules:**
+     - To: Any IP
+       Ports: A set of ports used to connect to external logging services
+
+3. **OTel Metric Agent**
+   - **Network Policy Name:** `kyma-project.io--telemetry-metric-agent`
+   - **Ingress Rules:**
+     <!--- From: Any IP
+       Ports: 13133-->
+     - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed`
+       Ports: 8888, 15090(optional)
+   - **Egress Rules:**
+     - To: Any IP
+       Ports: A set of ports used to connect to external metric services
+     <!--- To: Any IP
+       Ports: 10255-->
+     - To: Pods matching `networking.kyma-project.io/metrics-scraping: allowed`
+       Ports: Any
+
+4. **OTel Log Gateway**
+   - **Network Policy Name:** `kyma-project.io--telemetry-log-gateway`
+   - **Ingress Rules:**
+     <!--- From: Any IP
+       Ports: 13133-->
+     - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed`
+       Ports: 8888, 15090(optional)
+     - From: Pod label matching `networking.kyma-project.io/telemetry-otlp: allowed`
+       Ports: 4318, 4317
+   - **Egress Rules:**
+     - To: Any IP
+       Ports: A set of ports used to connect to external logging services
+
+5. **OTel Metric Gateway**
+   - **Network Policy Name:** `kyma-project.io--telemetry-metric-gateway`
+   - **Ingress Rules:**
+     <!--- From: Any IP
+       Ports: 13133-->
+     - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed`
+       Ports: 8888, 15090(optional)
+     - From: Pod label matching `networking.kyma-project.io/telemetry-otlp: allowed`
+       Ports: 4318, 4317
+   - **Egress Rules:**
+     - To: Any IP
+       Ports: A set of ports used to connect to external metric services
+
+6. **OTel Trace Gateway**
+   - **Network Policy Name:** `kyma-project.io--telemetry-trace-gateway`
+   - **Ingress Rules:**
+     <!--- From: Any IP
+       Ports: 13133-->
+     - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed`
+       Ports: 8888, 15090(optional)
+     - From: Pod label matching `networking.kyma-project.io/telemetry-otlp: allowed`
+       Ports: 4318, 4317
+   - **Egress Rules:**
+     - To: Any IP
+       Ports: A set of ports used to connect to external tracing services
+
+7. **Self Monitor**
+   - **Network Policy Name:** `telemetry-self-monitor`
+   - **Ingress Rules:**
+     - From: Pod label matching `app.kubernetes.io/name: telemetry-manager`
+       Ports: 9090
+   - **Egress Rules:**
+     - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed`
+       Ports: Any
+
+8. **Telemetry Manager**
+   - **Network Policy Name:** `telemetry-manager-manager`
+   - **Ingress Rules:**
+     <!--- From: Any IP
+       Ports: 8081, 9443-->
+     - From: Any IP
+       Ports: 9443
+     - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed`
+       Ports: 8080
+   - **Egress Rules:**
+     - From: Pod label matching `app.kubernetes.io/name: self-monitor`
+       Ports: 9090
 
 ## Consequences
 
