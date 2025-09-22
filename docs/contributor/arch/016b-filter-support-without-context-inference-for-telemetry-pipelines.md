@@ -70,7 +70,7 @@ This approach:
 The functions `HasAttrKeyOnDatapoint` and `HasAttrOnDatapoint` can no longer be used, as they are only available within the metric context.
 
 ## Conclusion
-- We will implement a filter API that uses a lower context level, requiring users to include the context path in OTTL expressions.
+- We will implement a filter API that uses the lowest context level, requiring users to include the context path in OTTL expressions.
 - The existing OTTL Validator from the transform API will be reused to ensure that filter conditions are valid and contain a context path.
 - We will provide clear documentation and practical examples to help users construct filter conditions correctly.
 - We will monitor the development of the filter processor, adopt OTTL context inference once available, and migrate accordingly.
