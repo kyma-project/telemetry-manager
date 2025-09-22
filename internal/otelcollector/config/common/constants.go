@@ -86,6 +86,7 @@ const (
 	// ================================================================================
 
 	// Common Processors
+
 	ComponentIDBatchProcessor                          = "batch"
 	ComponentIDMemoryLimiterProcessor                  = "memory_limiter"
 	ComponentIDK8sAttributesProcessor                  = "k8sattributes"
@@ -98,11 +99,13 @@ const (
 	ComponentIDDropKymaAttributesProcessor             = "resource/drop-kyma-attributes"
 
 	// Log-Specific Processors
+
 	ComponentIDNamespaceFilterProcessor       = "filter/%s-filter-by-namespace" // dynamically filled with pipeline name and input source
 	ComponentIDSetObservedTimeIfZeroProcessor = "transform/set-observed-time-if-zero"
 	ComponentIDIstioEnrichmentProcessor       = "istio_enrichment"
 
 	// Metric-Specific Processors
+
 	ComponentIDDropIfInputSourceRuntimeProcessor           = "filter/drop-if-input-source-runtime"
 	ComponentIDDropIfInputSourcePrometheusProcessor        = "filter/drop-if-input-source-prometheus"
 	ComponentIDDropIfInputSourceIstioProcessor             = "filter/drop-if-input-source-istio"
@@ -145,6 +148,7 @@ const (
 	// ================================================================================
 	// EXTENSIONS
 	// ================================================================================
+
 	ComponentIDK8sLeaderElectorExtension = "k8s_leader_elector"
 	ComponentIDFileStorageExtension      = "file_storage"
 	ComponentIDHealthCheckExtension      = "health_check"

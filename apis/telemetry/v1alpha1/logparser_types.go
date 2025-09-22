@@ -25,8 +25,8 @@ func init() {
 	SchemeBuilder.Register(&LogParser{}, &LogParserList{})
 }
 
-// +kubebuilder:object:root=true
 // LogParserList contains a list of LogParser.
+// +kubebuilder:object:root=true
 type LogParserList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -34,6 +34,7 @@ type LogParserList struct {
 	Items []LogParser `json:"items"`
 }
 
+// LogParser is the Schema for the logparsers API.
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:metadata:labels={app.kubernetes.io/component=controller,app.kubernetes.io/managed-by=kyma,app.kubernetes.io/name=telemetry-manager,app.kubernetes.io/part-of=telemetry,kyma-project.io/module=telemetry}
@@ -41,7 +42,6 @@ type LogParserList struct {
 // +kubebuilder:printcolumn:name="Agent Healthy",type=string,JSONPath=`.status.conditions[?(@.type=="AgentHealthy")].status`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:deprecatedversion:warning="The LogParser API is deprecated. Instead, log in JSON format and use the JSON parsing feature of the LogPipeline"
-// LogParser is the Schema for the logparsers API.
 type LogParser struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

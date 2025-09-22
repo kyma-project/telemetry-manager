@@ -60,6 +60,7 @@ func WithCustomQueryInterval(interval time.Duration) BackendAssertionOption {
 	}
 }
 
+// BackendReachable asserts that the given backend is reachable via the proxy client.
 // TODO(TeodorSAP): Refactor this function to directly call BackendDataEventuallyMatches with custom query interval.
 func BackendReachable(t testkit.T, backend *kitbackend.Backend) {
 	t.Helper()
