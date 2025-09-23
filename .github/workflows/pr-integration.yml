@@ -124,13 +124,10 @@ jobs:
             mode: release
             type: e2e
           # METRICS
-          - name: metrics-set-a
+          - name: metric-agent
             mode: release
             type: e2e
-          - name: metrics-set-b
-            mode: release
-            type: e2e
-          - name: metrics-set-c
+          - name: metric-gateway
             mode: release
             type: e2e
           - name: metrics-max-pipeline
