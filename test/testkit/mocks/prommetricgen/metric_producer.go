@@ -17,7 +17,7 @@ const (
 	// A sample app instrumented with OpenTelemetry to generate metrics in the Prometheus exposition format
 	// https://github.com/kyma-project/telemetry-manager/tree/main/docs/user/integration/sample-app
 	metricProducerImage = "europe-docker.pkg.dev/kyma-project/prod/samples/telemetry-sample-app:latest"
-	avalancheImage      = "quay.io/prometheuscommunity/avalanche:latest"
+	avalancheImage      = "europe-docker.pkg.dev/kyma-project/prod/external/quay.io/prometheuscommunity/avalanche:v0.7.0"
 )
 
 type Metric struct {
