@@ -81,10 +81,7 @@ const (
 	LabelLogsMaxPipeline      = "logs-max-pipeline"
 
 	// Metrics labels
-	LabelMetrics            = "metrics"
-	LabelMetricsSetA        = "metrics-set-a"
-	LabelMetricsSetB        = "metrics-set-b"
-	LabelMetricsSetC        = "metrics-set-c"
+	LabelMetricsMisc        = "metrics-misc"
 	LabelMetricsMaxPipeline = "metrics-max-pipeline"
 	LabelMetricAgent        = "metric-agent"
 	LabelMetricGateway      = "metric-gateway"

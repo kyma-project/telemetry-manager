@@ -130,6 +130,9 @@ jobs:
           - name: metric-gateway
             mode: release
             type: e2e
+          - name: metrics-misc
+            mode: release
+            type: e2e
           - name: metrics-max-pipeline
             mode: release
             type: e2e

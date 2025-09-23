@@ -19,7 +19,7 @@ import (
 )
 
 func TestRuntimeNodeNamespace(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelMetricsSetC)
+	suite.RegisterTestCase(t, suite.LabelMetricAgent)
 
 	var (
 		uniquePrefix        = unique.Prefix()
