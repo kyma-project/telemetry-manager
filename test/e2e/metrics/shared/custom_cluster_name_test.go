@@ -71,8 +71,8 @@ func TestCustomClusterName(t *testing.T) {
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)
 
 			pipeline := testutils.NewMetricPipelineBuilder().
-				WithInput(tc.input).
 				WithName(pipelineName).
+				WithInput(tc.input).
 				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 				Build()
 
