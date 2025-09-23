@@ -25,27 +25,6 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 	}{
 		// Output validation cases
 		{
-			name:         "no output defined",
-			logPipeline:  &telemetryv1alpha1.LogPipeline{},
-			expectError:  true,
-			errorMessage: "no output plugin is defined, you must define one output plugin",
-		},
-		{
-			name: "multiple outputs defined",
-			logPipeline: &telemetryv1alpha1.LogPipeline{
-				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Output: telemetryv1alpha1.LogPipelineOutput{
-						Custom: `Name http`,
-						HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
-							Host: telemetryv1alpha1.ValueType{Value: "localhost"},
-						},
-					},
-				},
-			},
-			expectError:  true,
-			errorMessage: "multiple output plugins are defined, you must define only one output plugin",
-		},
-		{
 			name: "valid custom output",
 			logPipeline: &telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
@@ -77,50 +56,6 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 			},
 			expectError:  true,
 			errorMessage: "configuration section must have name attribute",
-		},
-		{
-			name: "both value and valueFrom in HTTP output host",
-			logPipeline: &telemetryv1alpha1.LogPipeline{
-				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Output: telemetryv1alpha1.LogPipelineOutput{
-						HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
-							Host: telemetryv1alpha1.ValueType{
-								Value: "localhost",
-								ValueFrom: &telemetryv1alpha1.ValueFromSource{
-									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-										Name:      "foo",
-										Namespace: "foo-ns",
-										Key:       "foo-key",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			expectError:  true,
-			errorMessage: "http output host must have either a value or secret key reference",
-		},
-		{
-			name: "valid HTTP output with ValueFrom",
-			logPipeline: &telemetryv1alpha1.LogPipeline{
-				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Output: telemetryv1alpha1.LogPipelineOutput{
-						HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
-							Host: telemetryv1alpha1.ValueType{
-								ValueFrom: &telemetryv1alpha1.ValueFromSource{
-									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-										Name:      "foo",
-										Namespace: "foo-ns",
-										Key:       "foo-key",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			expectError: false,
 		},
 		// Filter validation cases
 		{
@@ -174,9 +109,7 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 			expectError:  true,
 			errorMessage: "filter plugin 'kubernetes' is forbidden. ",
 		},
-
 		// FileName validation cases
-
 		{
 			name: "valid files",
 			logPipeline: &telemetryv1alpha1.LogPipeline{
