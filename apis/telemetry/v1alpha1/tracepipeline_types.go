@@ -55,7 +55,7 @@ type TracePipeline struct {
 
 // TracePipelineSpec defines the desired state of TracePipeline
 type TracePipelineSpec struct {
-	// Output configures the backend to which traces  are sent. You must specify exactly one output per pipeline.
+	// Output configures the backend to which traces are sent. You must specify exactly one output per pipeline.
 	Output TracePipelineOutput `json:"output"`
 
 	// Transforms specify a list of transformations to apply to telemetry data.
@@ -64,6 +64,8 @@ type TracePipelineSpec struct {
 }
 
 // TracePipelineOutput defines the output configuration section.
+// +kubebuilder:validation:MaxProperties=1
+// +kubebuilder:validation:MinProperties=1
 type TracePipelineOutput struct {
 	// OTLP output defines an output using the OpenTelemetry protocol.
 	OTLP *OTLPOutput `json:"otlp"`

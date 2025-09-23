@@ -12,17 +12,12 @@ import (
 )
 
 var (
-	forbiddenFilters             = []string{"kubernetes", "rewrite_tag"}
 	validHostNamePattern         = regexp.MustCompile(`^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$`)
 	ErrInvalidPipelineDefinition = errors.New("invalid log pipeline definition")
 )
 
 func validateSpec(lp *telemetryv1alpha1.LogPipeline) error {
 	if err := validateOutput(lp); err != nil {
-		return err
-	}
-
-	if err := validateFilters(lp); err != nil {
 		return err
 	}
 
@@ -116,46 +111,6 @@ func validateCustomOutput(content string) error {
 
 func secretRefAndValueIsPresent(v telemetryv1alpha1.ValueType) bool {
 	return v.Value != "" && v.ValueFrom != nil
-}
-
-func validateFilters(lp *telemetryv1alpha1.LogPipeline) error {
-	// TODO[k15r]: validate Filters in OTLP mode
-	for _, filterPlugin := range lp.Spec.Filters {
-		if err := validateCustomFilter(filterPlugin.Custom); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func validateCustomFilter(content string) error {
-	if content == "" {
-		return nil
-	}
-
-	section, err := config.ParseCustomSection(content)
-	if err != nil {
-		return err
-	}
-
-	if !section.ContainsKey("name") {
-		return fmt.Errorf("configuration section must have name attribute")
-	}
-
-	pluginName := section.GetByKey("name").Value
-
-	for _, forbiddenFilter := range forbiddenFilters {
-		if strings.EqualFold(pluginName, forbiddenFilter) {
-			return fmt.Errorf("filter plugin '%s' is forbidden. ", pluginName)
-		}
-	}
-
-	if section.ContainsKey("match") {
-		return fmt.Errorf("filter plugin '%s' contains match condition. Match conditions are forbidden", pluginName)
-	}
-
-	return nil
 }
 
 func validateInput(lp *telemetryv1alpha1.LogPipeline) error {

@@ -54,7 +54,7 @@ For details, see the [TracePipeline specification file](https://github.com/kyma-
 
 | Parameter | Type | Description |
 | ---- | ----------- | ---- |
-| **output** (required) | object | Output configures the backend to which traces  are sent. You must specify exactly one output per pipeline. |
+| **output** (required) | object | Output configures the backend to which traces are sent. You must specify exactly one output per pipeline. |
 | **output.&#x200b;otlp** (required) | object | OTLP output defines an output using the OpenTelemetry protocol. |
 | **output.&#x200b;otlp.&#x200b;authentication**  | object | Authentication defines authentication options for the OTLP output |
 | **output.&#x200b;otlp.&#x200b;authentication.&#x200b;basic**  | object | Basic activates `Basic` authentication for the destination providing relevant Secrets. |

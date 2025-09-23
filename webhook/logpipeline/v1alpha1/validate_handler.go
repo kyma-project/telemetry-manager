@@ -82,10 +82,5 @@ func (h *validateHandler) validateLogPipeline(ctx context.Context, logPipeline *
 		return err
 	}
 
-	if err := validateFiles(logPipeline, &logPipelines); err != nil {
-		log.Error(err, "Log pipeline file validation failed")
-		return err
-	}
-
 	return nil
 }

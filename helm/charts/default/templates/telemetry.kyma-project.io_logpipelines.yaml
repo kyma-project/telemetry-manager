@@ -164,6 +164,8 @@ spec:
                   type: object
                 output:
                   description: Output configures the backend to which logs are sent. You must specify exactly one output per pipeline.
+                  maxProperties: 1
+                  minProperties: 1
                   properties:
                     custom:
                       description: Custom defines a custom output in the [Fluent Bit syntax](https://docs.fluentbit.io/manual/pipeline/outputs) where you want to push the logs. If you use a `custom` output, you put the LogPipeline in unsupported mode. Only available when using an output of type `http` and `custom`.
