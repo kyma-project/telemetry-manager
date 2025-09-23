@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
 	"github.com/prometheus/client_golang/api"
 	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/client_golang/prometheus"
@@ -13,6 +12,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
+
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
 )
 
 const (

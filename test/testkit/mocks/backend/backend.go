@@ -197,6 +197,5 @@ func (b *Backend) buildResources() {
 			b.namespace,
 			b.name,
 		).WithFaultAbortPercentage(b.abortFaultPercentage).WithSourceMetricAgent(b.sourceMetricAgent)
-
 	}
 }

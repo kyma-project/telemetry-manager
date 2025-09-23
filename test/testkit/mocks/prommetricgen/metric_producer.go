@@ -204,6 +204,7 @@ func (p *Pod) WithAvalanche() *Pod {
 		"--histogram-metric-count=50",
 		"--port=" + strconv.Itoa(int(metricsPort)),
 	}
+
 	return p
 }
 

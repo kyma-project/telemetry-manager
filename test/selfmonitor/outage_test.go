@@ -3,7 +3,6 @@ package selfmonitor
 import (
 	"testing"
 
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -15,6 +14,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -177,6 +177,7 @@ func TestOutage(t *testing.T) {
 			},
 			generator: func(ns string) []client.Object {
 				metricProducer := prommetricgen.New(ns)
+
 				return []client.Object{
 					metricProducer.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).WithAvalanche().K8sObject(),
 					metricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
@@ -253,6 +254,7 @@ func TestOutage(t *testing.T) {
 			} else {
 				backend = kitbackend.New(backendNs, signalType(tc.kind), kitbackend.WithReplicas(0)) // simulate outage
 			}
+
 			pipeline := tc.pipeline(genNs, backend)
 			generator := tc.generator(genNs)
 

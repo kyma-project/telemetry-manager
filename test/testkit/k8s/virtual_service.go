@@ -34,6 +34,7 @@ func (s *VirtualService) WithSourceMetricAgent(sourceMetricAgent bool) *VirtualS
 	if sourceMetricAgent {
 		s.sourceMetricAgent = true
 	}
+
 	return s
 }
 
@@ -65,6 +66,7 @@ func (s *VirtualService) K8sObject() *istionetworkingclientv1.VirtualService {
 								if !s.sourceMetricAgent {
 									return map[string]string{}
 								}
+
 								return map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"}
 							}(),
 						},

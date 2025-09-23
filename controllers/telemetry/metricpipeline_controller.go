@@ -83,6 +83,7 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 	if err != nil {
 		return nil, err
 	}
+
 	pipelineLock := resourcelock.NewLocker(
 		client,
 		types.NamespacedName{

@@ -927,22 +927,22 @@ func TestReconcile(t *testing.T) {
 			expectedReason  string
 			expectedMessage string
 		}{
-			//{
-			//	name:            "prober fails",
-			//	probeErr:        assert.AnError,
-			//	expectedStatus:  metav1.ConditionUnknown,
-			//	expectedReason:  conditions.ReasonSelfMonAgentProbingFailed,
-			//	expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing of agent failed",
-			//},
-			//{
-			//	name: "healthy",
-			//	probe: prober.OTelAgentProbeResult{
-			//		PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
-			//	},
-			//	expectedStatus:  metav1.ConditionTrue,
-			//	expectedReason:  conditions.ReasonSelfMonFlowHealthy,
-			//	expectedMessage: "No problems detected in the telemetry flow",
-			//},
+			{
+				name:            "prober fails",
+				probeErr:        assert.AnError,
+				expectedStatus:  metav1.ConditionUnknown,
+				expectedReason:  conditions.ReasonSelfMonAgentProbingFailed,
+				expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing of agent failed",
+			},
+			{
+				name: "healthy",
+				probe: prober.OTelAgentProbeResult{
+					PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
+				},
+				expectedStatus:  metav1.ConditionTrue,
+				expectedReason:  conditions.ReasonSelfMonFlowHealthy,
+				expectedMessage: "No problems detected in the telemetry flow",
+			},
 			{
 				name: "buffer filling up",
 				probe: prober.OTelAgentProbeResult{
@@ -1006,7 +1006,7 @@ func TestReconcile(t *testing.T) {
 
 				agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 				agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-				
+
 				gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
 				gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -1070,7 +1070,6 @@ func TestReconcile(t *testing.T) {
 				)
 
 				agentConfigBuilderMock.AssertExpectations(t)
-
 			})
 		}
 	})
