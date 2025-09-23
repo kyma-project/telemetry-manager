@@ -309,7 +309,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
 				Reason:  "AgentBufferFillingUp",
-				Message: "Buffer nearing capacity. Incoming metric rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-buffer-filling-up",
+				Message: "Buffer nearing capacity. Incoming metric rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=buffer-filling-up",
 			},
 		},
 		{
