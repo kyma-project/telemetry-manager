@@ -38,6 +38,7 @@ func TestTransform(t *testing.T) {
 			},
 			generatorBuilder: func(ns string) []client.Object {
 				generator := prommetricgen.New(ns)
+
 				return []client.Object{
 					generator.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
 				}
@@ -59,6 +60,7 @@ func TestTransform(t *testing.T) {
 			},
 			generatorBuilder: func(ns string) []client.Object {
 				generator := prommetricgen.New(ns)
+
 				return []client.Object{
 					generator.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
 				}
@@ -80,6 +82,7 @@ func TestTransform(t *testing.T) {
 			},
 			generatorBuilder: func(ns string) []client.Object {
 				generator := prommetricgen.New(ns)
+
 				return []client.Object{
 					generator.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
 				}

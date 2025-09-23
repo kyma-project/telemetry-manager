@@ -36,6 +36,7 @@ func TestSinglePipelineV1Beta1(t *testing.T) {
 			},
 			generatorBuilder: func(ns string) []client.Object {
 				generator := prommetricgen.New(ns)
+
 				return []client.Object{
 					generator.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
 					generator.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
@@ -110,10 +111,12 @@ func TestSinglePipelineV1Beta1(t *testing.T) {
 			switch tc.label {
 			case suite.LabelMetricAgent:
 				assert.MetricsFromNamespaceDelivered(t, backend, genNs, runtime.DefaultMetricsNames)
+
 				agentMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.MetricAgentMetricsService.Namespace, kitkyma.MetricAgentMetricsService.Name, "metrics", ports.Metrics)
 				assert.EmitsOTelCollectorMetrics(t, agentMetricsURL)
 			case suite.LabelMetricGateway:
 				assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
+
 				gatewayMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.MetricGatewayMetricsService.Namespace, kitkyma.MetricGatewayMetricsService.Name, "metrics", ports.Metrics)
 				assert.EmitsOTelCollectorMetrics(t, gatewayMetricsURL)
 			}

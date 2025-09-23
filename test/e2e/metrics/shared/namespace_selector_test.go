@@ -22,12 +22,21 @@ import (
 func TestNamespaceSelector(t *testing.T) {
 	tests := []struct {
 		label            string
-		input            func(opts ...testutils.NamespaceSelectorOptions) telemetryv1alpha1.MetricPipelineInput
+		inputBuilder     func(includeNs, excludeNs string) telemetryv1alpha1.MetricPipelineInput
 		generatorBuilder func(ns1, ns2 string) []client.Object
 	}{
 		{
 			label: suite.LabelMetricAgent,
-			input: func(opts ...testutils.NamespaceSelectorOptions) telemetryv1alpha1.MetricPipelineInput {
+			inputBuilder: func(includeNs, excludeNs string) telemetryv1alpha1.MetricPipelineInput {
+				var opts []testutils.NamespaceSelectorOptions
+				if includeNs != "" {
+					opts = append(opts, testutils.IncludeNamespaces(includeNs))
+				}
+
+				if excludeNs != "" {
+					opts = append(opts, testutils.ExcludeNamespaces(excludeNs))
+				}
+
 				return testutils.BuildMetricPipelineAgentInput(true, true, true, opts...)
 			},
 			generatorBuilder: func(ns1, ns2 string) []client.Object {
@@ -40,7 +49,16 @@ func TestNamespaceSelector(t *testing.T) {
 		},
 		{
 			label: suite.LabelMetricGateway,
-			input: func(opts ...testutils.NamespaceSelectorOptions) telemetryv1alpha1.MetricPipelineInput {
+			inputBuilder: func(includeNs, excludeNs string) telemetryv1alpha1.MetricPipelineInput {
+				var opts []testutils.NamespaceSelectorOptions
+				if includeNs != "" {
+					opts = append(opts, testutils.IncludeNamespaces(includeNs))
+				}
+
+				if excludeNs != "" {
+					opts = append(opts, testutils.ExcludeNamespaces(excludeNs))
+				}
+
 				return testutils.BuildMetricPipelineOTLPInput(opts...)
 			},
 			generatorBuilder: func(ns1, ns2 string) []client.Object {
@@ -59,38 +77,38 @@ func TestNamespaceSelector(t *testing.T) {
 
 			var (
 				uniquePrefix            = unique.Prefix(tc.label)
-				app1Ns                  = uniquePrefix("app1")
-				app2Ns                  = uniquePrefix("app2")
+				gen1Ns                  = uniquePrefix("gen-1")
+				gen2Ns                  = uniquePrefix("gen-2")
 				backendNs               = uniquePrefix("backend")
-				backend1Name            = uniquePrefix("backend1")
-				backend2Name            = uniquePrefix("backend2")
-				pipelineNameIncludeApp1 = uniquePrefix("include-app1")
-				pipelineNameExcludeApp1 = uniquePrefix("exclude-app1")
+				backend1Name            = uniquePrefix("backend-1")
+				backend2Name            = uniquePrefix("backend-2")
+				pipelineNameIncludeGen1 = uniquePrefix("include")
+				pipelineNameExcludeGen1 = uniquePrefix("exclude")
 			)
 
 			backend1 := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithName(backend1Name))
 			backend2 := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithName(backend2Name))
 
 			pipelineIncludeApp1Ns := testutils.NewMetricPipelineBuilder().
-				WithName(pipelineNameIncludeApp1).
-				WithInput(tc.input(testutils.IncludeNamespaces(app1Ns))).
+				WithName(pipelineNameIncludeGen1).
+				WithInput(tc.inputBuilder(gen1Ns, "")).
 				WithOTLPOutput(testutils.OTLPEndpoint(backend1.Endpoint())).
 				Build()
 
 			pipelineExcludeApp1Ns := testutils.NewMetricPipelineBuilder().
-				WithName(pipelineNameExcludeApp1).
-				WithInput(tc.input(testutils.ExcludeNamespaces(app1Ns))).
+				WithName(pipelineNameExcludeGen1).
+				WithInput(tc.inputBuilder("", gen1Ns)).
 				WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
 				Build()
 
 			resources := []client.Object{
-				kitk8s.NewNamespace(app1Ns).K8sObject(),
-				kitk8s.NewNamespace(app2Ns).K8sObject(),
+				kitk8s.NewNamespace(gen1Ns).K8sObject(),
+				kitk8s.NewNamespace(gen2Ns).K8sObject(),
 				kitk8s.NewNamespace(backendNs).K8sObject(),
 				&pipelineIncludeApp1Ns,
 				&pipelineExcludeApp1Ns,
 			}
-			resources = append(resources, tc.generatorBuilder(app1Ns, app2Ns)...)
+			resources = append(resources, tc.generatorBuilder(gen1Ns, gen2Ns)...)
 			resources = append(resources, backend1.K8sObjects()...)
 			resources = append(resources, backend2.K8sObjects()...)
 
@@ -109,17 +127,17 @@ func TestNamespaceSelector(t *testing.T) {
 
 			switch tc.label {
 			case suite.LabelMetricAgent:
-				assert.MetricsFromNamespaceDelivered(t, backend1, app1Ns, runtime.DefaultMetricsNames)
-				assert.MetricsFromNamespaceDelivered(t, backend1, app1Ns, prommetricgen.CustomMetricNames())
-				assert.MetricsFromNamespaceDelivered(t, backend2, app2Ns, runtime.DefaultMetricsNames)
-				assert.MetricsFromNamespaceDelivered(t, backend2, app2Ns, prommetricgen.CustomMetricNames())
+				assert.MetricsFromNamespaceDelivered(t, backend1, gen1Ns, runtime.DefaultMetricsNames)
+				assert.MetricsFromNamespaceDelivered(t, backend1, gen1Ns, prommetricgen.CustomMetricNames())
+				assert.MetricsFromNamespaceDelivered(t, backend2, gen2Ns, runtime.DefaultMetricsNames)
+				assert.MetricsFromNamespaceDelivered(t, backend2, gen2Ns, prommetricgen.CustomMetricNames())
 			case suite.LabelMetricGateway:
-				assert.MetricsFromNamespaceDelivered(t, backend1, app1Ns, telemetrygen.MetricNames)
-				assert.MetricsFromNamespaceDelivered(t, backend2, app2Ns, telemetrygen.MetricNames)
+				assert.MetricsFromNamespaceDelivered(t, backend1, gen1Ns, telemetrygen.MetricNames)
+				assert.MetricsFromNamespaceDelivered(t, backend2, gen2Ns, telemetrygen.MetricNames)
 			}
 
-			assert.MetricsFromNamespaceNotDelivered(t, backend1, app2Ns)
-			assert.MetricsFromNamespaceNotDelivered(t, backend2, app1Ns)
+			assert.MetricsFromNamespaceNotDelivered(t, backend1, gen2Ns)
+			assert.MetricsFromNamespaceNotDelivered(t, backend2, gen1Ns)
 		})
 	}
 }

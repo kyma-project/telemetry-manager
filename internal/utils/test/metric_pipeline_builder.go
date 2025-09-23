@@ -5,9 +5,8 @@ import (
 	"math/rand"
 	"time"
 
-	"k8s.io/utils/ptr"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
