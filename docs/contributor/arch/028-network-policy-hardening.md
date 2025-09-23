@@ -110,10 +110,12 @@ date: 2025-09-18
 
 ### Issues/questions to address
 
-- Our network policies (loose) are already present, so `enableNetworkPolicies` toggle does not make sense for us. We should still use it to be consistent with other Kyma modules.
-- No way to restrict egress to external services (e.g., CLS, Dynatrace) since we can't predict their IP ranges. It's OK, just restrict the ports.
-- Use `networking.kyma-project.io/metrics-scraping: allowed` label selector to allow ingress from metric-agent, RMA and self-monitoring. What about scraping of Gardener components from kubeßszstem namespace?
-- Telemetry module collecting metrics from other modules?
+- The telemetry module already has basic network policies in place, making the `enableNetworkPolicies` toggle not logical for our use case (we still will have network policies even if it is set to false). However, we will maintain this toggle for consistency with other Kyma modules.
+- Network policies have to be renamed to follow the Kyma naming convention.
+- External services like CLS and Dynatrace use unpredictable IP address ranges, making IP-based egress restrictions impractical. We will address this by restricting egress traffic by port instead of IP address.
+- The `networking.kyma-project.io/metrics-scraping: allowed` label selector will control ingress access for metric agents, Resource Management Agent (RMA), self-monitoring components, and customer-managed Prometheus deployments. Gardener system pods cannot be labeled with Prometheus annotations, so these pods must either be excluded from restrictions or not scraped for metrics.
+- When the metric agent collects metrics from other modules, we need to establish a process to ensure all modules correctly label their pods for proper network policy enforcement.
+- Istio-generated spans and access logs function correctly in the current setup. However, in restricted network policy scenarios, all pods must be properly labeled to send OTLP data to telemetry gateways.
 
 ### What to do?
 
@@ -146,7 +148,7 @@ date: 2025-09-18
 1. **FluentBit Agent**
    - **Network Policy Name:** `kyma-project.io--telemetry-fluent-bit`
    - **Ingress Rules:**
-     - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed`<br>
+     - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed` in any namespace (empty namespace selector)<br>
        Ports: 2021, 15090(optional)
    - **Egress Rules:**
      - To: Any IP<br>
@@ -155,7 +157,7 @@ date: 2025-09-18
 2. **OTel Log Agent**
    - **Network Policy Name:** `kyma-project.io--telemetry-log-agent`
    - **Ingress Rules:**
-     - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed`<br>
+     - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed` in any namespace (empty namespace selector)<br>
        Ports: 8888, 15090(optional)
    - **Egress Rules:**
      - To: Any IP<br>
@@ -164,7 +166,7 @@ date: 2025-09-18
 3. **OTel Metric Agent**
    - **Network Policy Name:** `kyma-project.io--telemetry-metric-agent`
    - **Ingress Rules:**
-     - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed`<br>
+     - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed` in any namespace (empty namespace selector)<br>
        Ports: 8888, 15090(optional)
    - **Egress Rules:**
      - To: Any IP<br>
@@ -177,9 +179,9 @@ date: 2025-09-18
 4. **OTel Log Gateway**
    - **Network Policy Name:** `kyma-project.io--telemetry-log-gateway`
    - **Ingress Rules:**
-     - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed`<br>
+     - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed` in any namespace (empty namespace selector)<br>
        Ports: 8888, 15090(optional)
-     - From: Pod label matching `networking.kyma-project.io/telemetry-otlp: allowed`<br>
+     - From: Pod label matching `networking.kyma-project.io/telemetry-otlp: allowed` in any namespace (empty namespace selector)<br>
        Ports: 4318, 4317
    - **Egress Rules:**
      - To: Any IP<br>
@@ -188,9 +190,9 @@ date: 2025-09-18
 5. **OTel Metric Gateway**
    - **Network Policy Name:** `kyma-project.io--telemetry-metric-gateway`
    - **Ingress Rules:**
-     - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed`<br>
+     - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed` in any namespace (empty namespace selector)<br>
        Ports: 8888, 15090(optional)
-     - From: Pod label matching `networking.kyma-project.io/telemetry-otlp: allowed`<br>
+     - From: Pod label matching `networking.kyma-project.io/telemetry-otlp: allowed` in any namespace (empty namespace selector)<br>
        Ports: 4318, 4317
    - **Egress Rules:**
      - To: Any IP<br>
@@ -199,9 +201,9 @@ date: 2025-09-18
 6. **OTel Trace Gateway**
    - **Network Policy Name:** `kyma-project.io--telemetry-trace-gateway`
    - **Ingress Rules:**
-     - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed`<br>
+     - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed` in any namespace (empty namespace selector)<br>
        Ports: 8888, 15090(optional)
-     - From: Pod label matching `networking.kyma-project.io/telemetry-otlp: allowed`<br>
+     - From: Pod label matching `networking.kyma-project.io/telemetry-otlp: allowed` in any namespace (empty namespace selector)<br>
        Ports: 4318, 4317
    - **Egress Rules:**
      - To: Any IP<br>
@@ -212,10 +214,10 @@ date: 2025-09-18
    - **Ingress Rules:**
      - From: Pod label matching `app.kubernetes.io/name: telemetry-manager`<br>
        Ports: 9090
-     - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed`<br>
+     - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed` in any namespace (empty namespace selector)<br>
        Ports: 8080
    - **Egress Rules:**
-     - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed`<br>
+     - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed` in kyma-system namespace<br>
        Ports: Any
 
 8. **Telemetry Manager**
@@ -223,12 +225,8 @@ date: 2025-09-18
    - **Ingress Rules:**
      - From: Any IP<br>
        Ports: 9443
-     - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed`<br>
+     - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed` in any namespace (empty namespace selector)<br>
        Ports: 8080
    - **Egress Rules:**
-     - From: Pod label matching `app.kubernetes.io/name: self-monitor`<br>
+     - From: Pod label matching `app.kubernetes.io/name: self-monitor` in kyma-system namespace<br>
        Ports: 9090
-
-## Consequences
-
-What becomes easier or more difficult to do and any risks introduced by the change that will need to be mitigated.
