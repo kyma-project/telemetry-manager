@@ -71,6 +71,16 @@ The functions `HasAttrKeyOnDatapoint` and `HasAttrOnDatapoint` can no longer be 
 However, there are alternative functions that can be used instead, such as `ContainsValue(target, item)` instead of `HasAttrKeyOnDatapoint`, e.g. `ContainsValue(Keys(datapoint.attributes), "my.key")`.
 The `HasAttrOnDatapoint` function can be replaced with `datapoint.attributes["my.key"] == "my.value"`.
 
+```yaml
+processors:
+  filter:
+    error_mode: ignore
+    metrics:
+      datapoint:
+        - ContainsValue(Keys(datapoint.attributes), "my.key") # drops metrics containing "my.key" attribute, equal to HasAttrKeyOnDatapoint("my.key")
+        - datapoint.attributes["my.key"] == "my.value"        # drops metrics containing "my.key" attribute and "my.value" value, equal to HasAttrOnDatapoint("my.key", "my.value")
+```
+
 ## Conclusion
 - We will implement a filter API that uses the lowest context level, requiring users to include the context path in OTTL expressions.
 - The existing OTTL Validator from the transform API will be reused to ensure that filter conditions are valid and contain a context path.
