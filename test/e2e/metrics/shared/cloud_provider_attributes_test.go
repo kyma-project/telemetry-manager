@@ -24,12 +24,14 @@ import (
 func TestCloudProviderAttributes(t *testing.T) {
 	tests := []struct {
 		label            string
-		input            telemetryv1alpha1.MetricPipelineInput
+		inputBuilder     func(includeNs string) telemetryv1alpha1.MetricPipelineInput
 		generatorBuilder func(ns string) []client.Object
 	}{
 		{
 			label: suite.LabelMetricAgent,
-			input: testutils.BuildMetricPipelineRuntimeInput(),
+			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
+				return testutils.BuildMetricPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
+			},
 			generatorBuilder: func(ns string) []client.Object {
 				generator := prommetricgen.New(ns)
 
@@ -41,7 +43,9 @@ func TestCloudProviderAttributes(t *testing.T) {
 		},
 		{
 			label: suite.LabelMetricGateway,
-			input: testutils.BuildMetricPipelineOTLPInput(),
+			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
+				return testutils.BuildMetricPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
+			},
 			generatorBuilder: func(ns string) []client.Object {
 				return []client.Object{
 					telemetrygen.NewPod(ns, telemetrygen.SignalTypeMetrics).K8sObject(),
@@ -65,7 +69,7 @@ func TestCloudProviderAttributes(t *testing.T) {
 			backend := kitbackend.New(mockNs, kitbackend.SignalTypeMetrics)
 			pipeline := testutils.NewMetricPipelineBuilder().
 				WithName(pipelineName).
-				WithInput(tc.input).
+				WithInput(tc.inputBuilder(genNs)).
 				WithRuntimeInputContainerMetrics(true).
 				WithRuntimeInputPodMetrics(true).
 				WithRuntimeInputNodeMetrics(true).
