@@ -146,8 +146,6 @@ date: 2025-09-18
 1. **FluentBit Agent**
    - **Network Policy Name:** `kyma-project.io--telemetry-fluent-bit`
    - **Ingress Rules:**
-     <!--- From: Any IP
-       Ports: 2020-->
      - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed`<br>
        Ports: 2021, 15090(optional)
    - **Egress Rules:**
@@ -157,8 +155,6 @@ date: 2025-09-18
 2. **OTel Log Agent**
    - **Network Policy Name:** `kyma-project.io--telemetry-log-agent`
    - **Ingress Rules:**
-     <!--- From: Any IP
-       Ports: 13133-->
      - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed`<br>
        Ports: 8888, 15090(optional)
    - **Egress Rules:**
@@ -168,23 +164,19 @@ date: 2025-09-18
 3. **OTel Metric Agent**
    - **Network Policy Name:** `kyma-project.io--telemetry-metric-agent`
    - **Ingress Rules:**
-     <!--- From: Any IP
-       Ports: 13133-->
      - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed`<br>
        Ports: 8888, 15090(optional)
    - **Egress Rules:**
      - To: Any IP<br>
        Ports: A set of ports used to connect to external metric services
-     <!--- To: Any IP
-       Ports: 10255-->
+     - To: Any IP<br>
+       Ports: 10250
      - To: Pods matching `networking.kyma-project.io/metrics-scraping: allowed`<br>
        Ports: Any
 
 4. **OTel Log Gateway**
    - **Network Policy Name:** `kyma-project.io--telemetry-log-gateway`
    - **Ingress Rules:**
-     <!--- From: Any IP
-       Ports: 13133-->
      - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed`<br>
        Ports: 8888, 15090(optional)
      - From: Pod label matching `networking.kyma-project.io/telemetry-otlp: allowed`<br>
@@ -196,8 +188,6 @@ date: 2025-09-18
 5. **OTel Metric Gateway**
    - **Network Policy Name:** `kyma-project.io--telemetry-metric-gateway`
    - **Ingress Rules:**
-     <!--- From: Any IP
-       Ports: 13133-->
      - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed`<br>
        Ports: 8888, 15090(optional)
      - From: Pod label matching `networking.kyma-project.io/telemetry-otlp: allowed`<br>
@@ -209,8 +199,6 @@ date: 2025-09-18
 6. **OTel Trace Gateway**
    - **Network Policy Name:** `kyma-project.io--telemetry-trace-gateway`
    - **Ingress Rules:**
-     <!--- From: Any IP
-       Ports: 13133-->
      - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed`<br>
        Ports: 8888, 15090(optional)
      - From: Pod label matching `networking.kyma-project.io/telemetry-otlp: allowed`<br>
@@ -233,8 +221,6 @@ date: 2025-09-18
 8. **Telemetry Manager**
    - **Network Policy Name:** `kyma-project.io--telemetry-manager`
    - **Ingress Rules:**
-     <!--- From: Any IP
-       Ports: 8081-->
      - From: Any IP<br>
        Ports: 9443
      - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed`<br>
