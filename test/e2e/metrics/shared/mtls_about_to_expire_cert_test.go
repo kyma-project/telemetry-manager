@@ -7,6 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
@@ -22,7 +23,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestMultiPipelineBroken(t *testing.T) {
+func TestMTLSAboutToExpireCert(t *testing.T) {
 	tests := []struct {
 		label            string
 		inputBuilder     func(includeNs string) telemetryv1alpha1.MetricPipelineInput
@@ -35,7 +36,6 @@ func TestMultiPipelineBroken(t *testing.T) {
 			},
 			generatorBuilder: func(ns string) []client.Object {
 				generator := prommetricgen.New(ns)
-
 				return []client.Object{
 					generator.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
 					generator.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
@@ -60,32 +60,36 @@ func TestMultiPipelineBroken(t *testing.T) {
 			suite.RegisterTestCase(t, tc.label)
 
 			var (
-				uniquePrefix        = unique.Prefix(tc.label)
-				healthyPipelineName = uniquePrefix("healthy")
-				brokenPipelineName  = uniquePrefix("broken")
-				backendNs           = uniquePrefix("backend")
-				genNs               = uniquePrefix("gen")
+				uniquePrefix = unique.Prefix(tc.label)
+				pipelineName = uniquePrefix()
+				backendNs    = uniquePrefix("backend")
+				genNs        = uniquePrefix("gen")
 			)
 
-			backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)
-
-			healthyPipeline := testutils.NewMetricPipelineBuilder().
-				WithName(healthyPipelineName).
-				WithInput(tc.inputBuilder(genNs)).
-				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+			serverCerts, clientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).
+				WithAboutToExpireClientCert().
 				Build()
+			Expect(err).ToNot(HaveOccurred())
 
-			brokenPipeline := testutils.NewMetricPipelineBuilder().
-				WithName(brokenPipelineName).
+			backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithTLS(*serverCerts))
+
+			pipeline := testutils.NewMetricPipelineBuilder().
+				WithName(pipelineName).
 				WithInput(tc.inputBuilder(genNs)).
-				WithOTLPOutput(testutils.OTLPEndpointFromSecret("dummy", "dummy", "dummy")). // broken pipeline ref
+				WithOTLPOutput(
+					testutils.OTLPEndpoint(backend.Endpoint()),
+					testutils.OTLPClientTLSFromString(
+						clientCerts.CaCertPem.String(),
+						clientCerts.ClientCertPem.String(),
+						clientCerts.ClientKeyPem.String(),
+					),
+				).
 				Build()
 
 			resources := []client.Object{
 				kitk8s.NewNamespace(backendNs).K8sObject(),
 				kitk8s.NewNamespace(genNs).K8sObject(),
-				&healthyPipeline,
-				&brokenPipeline,
+				&pipeline,
 			}
 			resources = append(resources, tc.generatorBuilder(genNs)...)
 			resources = append(resources, backend.K8sObjects()...)
@@ -102,12 +106,19 @@ func TestMultiPipelineBroken(t *testing.T) {
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 			}
 
-			assert.MetricPipelineHealthy(t, healthyPipelineName)
+			assert.MetricPipelineHealthy(t, pipelineName)
 
-			assert.MetricPipelineHasCondition(t, brokenPipeline.Name, metav1.Condition{
+			assert.MetricPipelineHasCondition(t, pipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
-				Status: metav1.ConditionFalse,
-				Reason: conditions.ReasonReferencedSecretMissing,
+				Status: metav1.ConditionTrue,
+				Reason: conditions.ReasonTLSCertificateAboutToExpire,
+			})
+
+			assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+			assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
+				Type:   conditions.TypeMetricComponentsHealthy,
+				Status: metav1.ConditionTrue,
+				Reason: conditions.ReasonTLSCertificateAboutToExpire,
 			})
 
 			switch tc.label {
