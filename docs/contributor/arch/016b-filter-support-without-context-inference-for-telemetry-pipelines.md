@@ -77,8 +77,8 @@ processors:
     error_mode: ignore
     metrics:
       datapoint:
-        - ContainsValue(Keys(datapoint.attributes), "my.key") # drops metrics containing "my.key" attribute, equal to HasAttrKeyOnDatapoint("my.key")
-        - datapoint.attributes["my.key"] == "my.value"        # drops metrics containing "my.key" attribute and "my.value" value, equal to HasAttrOnDatapoint("my.key", "my.value")
+        - ContainsValue(Keys(datapoint.attributes), "my.key") # drops metrics containing "my.key" attribute key, same effect as the HasAttrKeyOnDatapoint("my.key") function
+        - datapoint.attributes["my.key"] == "my.value"        # drops metrics containing "my.key" attribute key and "my.value" value, same effect as the HasAttrOnDatapoint("my.key", "my.value") function
 ```
 
 ## Conclusion
