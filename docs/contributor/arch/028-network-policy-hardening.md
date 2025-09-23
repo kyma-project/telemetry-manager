@@ -112,7 +112,7 @@ date: 2025-09-18
 
 - Our network policies (loose) are already present, so `enableNetworkPolicies` toggle does not make sense for us. We should still use it to be consistent with other Kyma modules.
 - No way to restrict egress to external services (e.g., CLS, Dynatrace) since we can't predict their IP ranges. It's OK, just restrict the ports.
-- Use `networking.kyma-project.io/metrics-scraping: allowed` label selector to allow ingress from metric-agent, RMA and self-monitoring.
+- Use `networking.kyma-project.io/metrics-scraping: allowed` label selector to allow ingress from metric-agent, RMA and self-monitoring. What about scraping of Gardener components from kubeßszstem namespace?
 - Telemetry module collecting metrics from other modules?
 
 ### What to do?
@@ -171,7 +171,7 @@ date: 2025-09-18
        Ports: A set of ports used to connect to external metric services
      - To: Any IP<br>
        Ports: 10250
-     - To: Pods matching `networking.kyma-project.io/metrics-scraping: allowed`<br>
+     - To: Pods matching `networking.kyma-project.io/metrics-scraping: allowed` in any namespace (empty namespace selector)<br>
        Ports: Any
 
 4. **OTel Log Gateway**
