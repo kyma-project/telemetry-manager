@@ -79,7 +79,7 @@ func (a Client) Get(proxyURL string) (*http.Response, error) {
 	return a.GetWithContext(context.Background(), proxyURL)
 }
 
-// Get performs an HTTPS request to the in-cluster resource identifiable by ProxyURLForService or ProxyURLForPod.
+// GetWithContext performs an HTTPS request to the in-cluster resource identifiable by ProxyURLForService or ProxyURLForPod.
 func (a Client) GetWithContext(ctx context.Context, proxyURL string) (*http.Response, error) {
 	client := &http.Client{Transport: &http.Transport{
 		TLSClientConfig: a.tlsClientConfig,

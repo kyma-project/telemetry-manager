@@ -25,8 +25,8 @@ func init() {
 	SchemeBuilder.Register(&TracePipeline{}, &TracePipelineList{})
 }
 
-// +kubebuilder:object:root=true
 // TracePipelineList contains a list of TracePipeline
+// +kubebuilder:object:root=true
 type TracePipelineList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -34,6 +34,7 @@ type TracePipelineList struct {
 	Items []TracePipeline `json:"items"`
 }
 
+// TracePipeline is the Schema for the tracepipelines API
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Cluster,categories={kyma-telemetry,kyma-telemetry-pipelines}
 // +kubebuilder:metadata:labels={app.kubernetes.io/component=controller,app.kubernetes.io/managed-by=kyma,app.kubernetes.io/name=telemetry-manager,app.kubernetes.io/part-of=telemetry,kyma-project.io/module=telemetry}
@@ -43,7 +44,6 @@ type TracePipelineList struct {
 // +kubebuilder:printcolumn:name="Flow Healthy",type=string,JSONPath=`.status.conditions[?(@.type=="TelemetryFlowHealthy")].status`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:storageversion
-// TracePipeline is the Schema for the tracepipelines API
 type TracePipeline struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -70,7 +70,7 @@ type TracePipelineOutput struct {
 	OTLP *OTLPOutput `json:"otlp"`
 }
 
-// Defines the observed state of TracePipeline.
+// TracePipelineStatus defines the observed state of TracePipeline.
 type TracePipelineStatus struct {
 	// An array of conditions describing the status of the pipeline.
 	Conditions []metav1.Condition `json:"conditions,omitempty"`

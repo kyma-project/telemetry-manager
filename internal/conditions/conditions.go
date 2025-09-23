@@ -14,6 +14,7 @@ const (
 
 const (
 	// Common reasons
+
 	ReasonAgentNotReady                 = "AgentNotReady"
 	ReasonAgentReady                    = "AgentReady"
 	ReasonEndpointInvalid               = "EndpointInvalid"
@@ -41,16 +42,19 @@ const (
 	ReasonTransformSpecInvalid          = "TransformSpecInvalid"
 
 	// Telemetry reasons
+
 	ReasonComponentsRunning      = "ComponentsRunning"
 	ReasonNoPipelineDeployed     = "NoPipelineDeployed"
 	ReasonResourceBlocksDeletion = "ResourceBlocksDeletion"
 
 	// LogPipeline reasons
+
 	ReasonAgentConfigured             = "AgentConfigured"
 	ReasonSelfMonAgentNoLogsDelivered = "AgentNoLogsDelivered"
 	ReasonLogAgentNotRequired         = "AgentNotRequired"
 
 	// MetricPipeline reasons
+
 	ReasonMetricAgentNotRequired = "AgentNotRequired"
 )
 
