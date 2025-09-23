@@ -788,7 +788,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonGatewayBufferFillingUp,
-				expectedMessage: "Buffer nearing capacity. Incoming metric rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-buffer-filling-up",
+				expectedMessage: "Buffer nearing capacity. Incoming metric rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=buffer-filling-up",
 			},
 			{
 				name: "buffer filling up shadows other problems",
@@ -798,7 +798,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonGatewayBufferFillingUp,
-				expectedMessage: "Buffer nearing capacity. Incoming metric rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-buffer-filling-up",
+				expectedMessage: "Buffer nearing capacity. Incoming metric rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=buffer-filling-up",
 			},
 			{
 				name: "some data dropped",
@@ -807,7 +807,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
-				expectedMessage: "Backend is reachable, but rejecting metrics. Some metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
+				expectedMessage: "Backend is reachable, but rejecting metrics. Some metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=not-all-metrics-arrive-at-the-backend",
 			},
 			{
 				name: "some data dropped shadows other problems",
@@ -817,7 +817,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
-				expectedMessage: "Backend is reachable, but rejecting metrics. Some metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
+				expectedMessage: "Backend is reachable, but rejecting metrics. Some metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=not-all-metrics-arrive-at-the-backend",
 			},
 			{
 				name: "all data dropped",
@@ -951,7 +951,7 @@ func TestReconcile(t *testing.T) {
 				expectedStatus: metav1.ConditionFalse,
 				expectedReason: conditions.ReasonSelfMonAgentBufferFillingUp,
 				// TODO: change the link and header from gateway-buffer-filling-up to buffer-filling-up when the doc is created
-				expectedMessage: "Buffer nearing capacity. Incoming metric rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-buffer-filling-up",
+				expectedMessage: "Buffer nearing capacity. Incoming metric rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=buffer-filling-up",
 			},
 			{
 				name: "some data dropped",
@@ -961,7 +961,7 @@ func TestReconcile(t *testing.T) {
 				expectedStatus: metav1.ConditionFalse,
 				expectedReason: conditions.ReasonSelfMonAgentSomeDataDropped,
 				// TODO: Fix the documentation text in the link
-				expectedMessage: "Backend is reachable, but rejecting metrics. Some metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
+				expectedMessage: "Backend is reachable, but rejecting metrics. Some metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=not-all-metrics-arrive-at-the-backend",
 			},
 			{
 				name: "some data dropped shadows other problems",
@@ -971,7 +971,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonAgentSomeDataDropped,
-				expectedMessage: "Backend is reachable, but rejecting metrics. Some metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
+				expectedMessage: "Backend is reachable, but rejecting metrics. Some metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=not-all-metrics-arrive-at-the-backend",
 			},
 			{
 				name: "all data dropped",
