@@ -1,5 +1,8 @@
 package v1beta1
 
+// ValueType represents either a direct value or a reference to a value stored in a Secret.
+// +kubebuilder:validation:MaxProperties=1
+// +kubebuilder:validation:MinProperties=1
 type ValueType struct {
 	// Value as plain text.
 	Value string `json:"value,omitempty"`
@@ -7,6 +10,9 @@ type ValueType struct {
 	ValueFrom *ValueFromSource `json:"valueFrom,omitempty"`
 }
 
+// ValueFromSource represents the different FromSource options for a ValueType.
+// +kubebuilder:validation:MaxProperties=1
+// +kubebuilder:validation:MinProperties=1
 type ValueFromSource struct {
 	// SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`.
 	SecretKeyRef *SecretKeyRef `json:"secretKeyRef,omitempty"`

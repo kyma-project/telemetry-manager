@@ -39,11 +39,6 @@ func (h *validateHandler) Handle(ctx context.Context, req admission.Request) adm
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	if err := h.validateLogPipeline(ctx, logPipeline); err != nil {
-		log.Error(err, "LogPipeline rejected")
-		return admission.Errored(http.StatusBadRequest, err)
-	}
-
 	var warnMsg []string
 
 	if logpipelineutils.ContainsCustomPlugin(logPipeline) {
@@ -62,25 +57,4 @@ func (h *validateHandler) Handle(ctx context.Context, req admission.Request) adm
 	}
 
 	return admission.Allowed("LogPipeline validation successful")
-}
-
-func (h *validateHandler) validateLogPipeline(ctx context.Context, logPipeline *telemetryv1alpha1.LogPipeline) error {
-	log := logf.FromContext(ctx)
-
-	var logPipelines telemetryv1alpha1.LogPipelineList
-	if err := h.client.List(ctx, &logPipelines); err != nil {
-		return err
-	}
-
-	if err := validateSpec(logPipeline); err != nil {
-		log.Error(err, "Log pipeline spec validation failed")
-		return err
-	}
-
-	if err := validateVariables(logPipeline, &logPipelines); err != nil {
-		log.Error(err, "Log pipeline variable validation failed")
-		return err
-	}
-
-	return nil
 }

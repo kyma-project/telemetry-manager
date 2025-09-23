@@ -70,7 +70,8 @@ type LogPipeline struct {
 // +kubebuilder:validation:XValidation:rule="!(has(self.output.otlp) && has(self.filters))", message="filters are not supported with otlp output"
 // +kubebuilder:validation:XValidation:rule="!(has(self.output.otlp) && has(self.files))", message="files not supported with otlp output"
 // +kubebuilder:validation:XValidation:rule="!(has(self.output.otlp) && has(self.variables))", message="variables not supported with otlp output"
-// +kubebuilder:validation:XValidation:rule="!(!has(self.output.otlp) && has(self.transform))", message="transform is only supported with otlp output"
+// +kubebuilder:validation:XValidation:rule="has(self.output.otlp) || !(has(self.transform))", message="transform is only supported with otlp output"
+// +kubebuilder:validation:XValidation:rule="has(self.output.otlp) || !(has(self.input.otlp))", message="otlp input is only supported with otlp output"
 type LogPipelineSpec struct {
 	// Input configures additional inputs for log collection.
 	Input LogPipelineInput `json:"input,omitempty"`
@@ -116,6 +117,8 @@ type LogPipelineRuntimeInput struct {
 }
 
 // LogPipelineNamespaceSelector describes whether application logs from specific Namespaces are selected. The options are mutually exclusive. System Namespaces are excluded by default. Use the `system` attribute with value `true` to enable them.
+// +kubebuilder:validation:MaxProperties=1
+// +kubebuilder:validation:MinProperties=1
 type LogPipelineNamespaceSelector struct {
 	// Include only the container logs of the specified Namespace names.
 	Include []string `json:"include,omitempty"`
@@ -126,6 +129,8 @@ type LogPipelineNamespaceSelector struct {
 }
 
 // LogPipelineContainerSelector describes whether application logs from specific containers are selected. The options are mutually exclusive.
+// +kubebuilder:validation:MaxProperties=1
+// +kubebuilder:validation:MinProperties=1
 type LogPipelineContainerSelector struct {
 	// Include specifies to include only the container logs with the specified container names.
 	Include []string `json:"include,omitempty"`
@@ -158,12 +163,14 @@ type LogPipelineOutput struct {
 // LogPipelineHTTPOutput configures an HTTP-based output compatible with the Fluent Bit HTTP output plugin.
 type LogPipelineHTTPOutput struct {
 	// Host defines the host of the HTTP backend.
+	// +kubebuilder:validation:Required
 	Host ValueType `json:"host,omitempty"`
 	// User defines the basic auth user.
 	User ValueType `json:"user,omitempty"`
 	// Password defines the basic auth password.
 	Password ValueType `json:"password,omitempty"`
 	// URI defines the URI of the HTTP backend. Default is "/".
+	// +kubebuilder:validation:Pattern=`^/.*$
 	URI string `json:"uri,omitempty"`
 	// Port defines the port of the HTTP backend. Default is 443.
 	Port string `json:"port,omitempty"`
@@ -180,15 +187,20 @@ type LogPipelineHTTPOutput struct {
 // LogPipelineFileMount provides file content to be consumed by a LogPipeline configuration
 type LogPipelineFileMount struct {
 	// Name of the file under which the content is mounted in the Fluent Bit configuration.
+	// +kubebuilder:validation:Required
 	Name string `json:"name,omitempty"`
 	// Content of the file to be mounted in the Fluent Bit configuration.
+	// +kubebuilder:validation:Required
 	Content string `json:"content,omitempty"`
 }
 
 // LogPipelineVariableRef references a Kubernetes secret that should be provided as environment variable to Fluent Bit
 type LogPipelineVariableRef struct {
 	// Name of the variable to map.
-	Name      string          `json:"name,omitempty"`
+	// +kubebuilder:validation:Required
+	Name string `json:"name,omitempty"`
+	// ValueFrom specifies the secret and key to select the value to map.
+	// +kubebuilder:validation:Required
 	ValueFrom ValueFromSource `json:"valueFrom,omitempty"`
 }
 

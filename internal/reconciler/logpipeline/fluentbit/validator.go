@@ -3,6 +3,7 @@ package fluentbit
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -14,6 +15,7 @@ import (
 )
 
 var forbiddenFilters = []string{"kubernetes", "rewrite_tag"}
+var validHostNamePattern = regexp.MustCompile(`^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$`)
 
 type EndpointValidator interface {
 	Validate(ctx context.Context, endpoint *telemetryv1alpha1.ValueType, protocol string) error
@@ -74,6 +76,15 @@ func (v *Validator) Validate(ctx context.Context, pipeline *telemetryv1alpha1.Lo
 		return err
 	}
 
+	if err := validateCustomOutput(pipeline.Spec.Output.Custom); err != nil {
+		return err
+	}
+
+	httpOutput := pipeline.Spec.Output.HTTP
+	if httpOutput != nil && httpOutput.Host.Value != "" && !isValidHostname(httpOutput.Host.Value) {
+		return fmt.Errorf("invalid hostname '%s'", httpOutput.Host.Value)
+	}
+
 	return nil
 }
 
@@ -84,6 +95,11 @@ func tlsValidationRequired(pipeline *telemetryv1alpha1.LogPipeline) bool {
 	}
 
 	return http.TLS.Cert != nil || http.TLS.Key != nil || http.TLS.CA != nil
+}
+
+func isValidHostname(host string) bool {
+	host = strings.Trim(host, " ")
+	return validHostNamePattern.MatchString(host)
 }
 
 func validateFileNames(logpipeline *telemetryv1alpha1.LogPipeline) error {
@@ -135,6 +151,33 @@ func validateCustomFilter(content string) error {
 
 	if section.ContainsKey("match") {
 		return fmt.Errorf("filter plugin '%s' contains match condition. Match conditions are forbidden", pluginName)
+	}
+
+	return nil
+}
+
+func validateCustomOutput(content string) error {
+	if content == "" {
+		return nil
+	}
+
+	section, err := config.ParseCustomSection(content)
+	if err != nil {
+		return err
+	}
+
+	if !section.ContainsKey("name") {
+		return fmt.Errorf("configuration section must have name attribute")
+	}
+
+	pluginName := section.GetByKey("name").Value
+
+	if section.ContainsKey("match") {
+		return fmt.Errorf("output plugin '%s' contains match condition. Match conditions are forbidden", pluginName)
+	}
+
+	if section.ContainsKey("storage.total_limit_size") {
+		return fmt.Errorf("output plugin '%s' contains forbidden configuration key 'storage.total_limit_size'", pluginName)
 	}
 
 	return nil
