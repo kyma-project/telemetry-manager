@@ -68,6 +68,8 @@ This approach:
 ## Limitations
 
 The functions `HasAttrKeyOnDatapoint` and `HasAttrOnDatapoint` can no longer be used, as they are only available within the metric context.
+However, there are alternative functions that can be used instead, such as `ContainsValue(target, item)` instead of `HasAttrKeyOnDatapoint`, e.g. `ContainsValue(Keys(datapoint.attributes), "my.key")`.
+The `HasAttrOnDatapoint` function can be replaced with `datapoint.attributes["my.key"] == "my.value"`.
 
 ## Conclusion
 - We will implement a filter API that uses the lowest context level, requiring users to include the context path in OTTL expressions.
