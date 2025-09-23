@@ -60,6 +60,7 @@ jobs:
           - logs-otel-agent
           - logs-otel-gateway
           - metrics
+          - metrics-agent
           - traces
         scenario:
           - healthy
