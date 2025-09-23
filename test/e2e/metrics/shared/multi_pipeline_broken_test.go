@@ -4,24 +4,24 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/types"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
+	"github.com/kyma-project/telemetry-manager/test/testkit/metrics/runtime"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestCloudProviderAttributes(t *testing.T) {
+func TestMultiPipelineBroken(t *testing.T) {
 	tests := []struct {
 		label            string
 		inputBuilder     func(includeNs string) telemetryv1alpha1.MetricPipelineInput
@@ -56,40 +56,35 @@ func TestCloudProviderAttributes(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, suite.LabelGardener, tc.label)
+			suite.RegisterTestCase(t, tc.label)
 
 			var (
-				uniquePrefix   = unique.Prefix(tc.label)
-				pipelineName   = uniquePrefix()
-				deploymentName = uniquePrefix("deployment")
-				genNs          = uniquePrefix("gen")
-				mockNs         = uniquePrefix("mock")
+				uniquePrefix        = unique.Prefix(tc.label)
+				healthyPipelineName = uniquePrefix("healthy")
+				brokenPipelineName  = uniquePrefix("broken")
+				backendNs           = uniquePrefix("backend")
+				genNs               = uniquePrefix("gen")
 			)
 
-			backend := kitbackend.New(mockNs, kitbackend.SignalTypeMetrics)
-			pipeline := testutils.NewMetricPipelineBuilder().
-				WithName(pipelineName).
+			backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)
+
+			healthyPipeline := testutils.NewMetricPipelineBuilder().
+				WithName(healthyPipelineName).
 				WithInput(tc.inputBuilder(genNs)).
-				WithRuntimeInputContainerMetrics(true).
-				WithRuntimeInputPodMetrics(true).
-				WithRuntimeInputNodeMetrics(true).
-				WithRuntimeInputVolumeMetrics(true).
-				WithRuntimeInputDeploymentMetrics(false).
-				WithRuntimeInputStatefulSetMetrics(false).
-				WithRuntimeInputDaemonSetMetrics(false).
-				WithRuntimeInputJobMetrics(false).
 				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 				Build()
 
-			podSpec := telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics)
-
-			deployment := kitk8s.NewDeployment(deploymentName, mockNs).WithPodSpec(podSpec).WithLabel("name", deploymentName).K8sObject()
+			brokenPipeline := testutils.NewMetricPipelineBuilder().
+				WithName(brokenPipelineName).
+				WithInput(tc.inputBuilder(genNs)).
+				WithOTLPOutput(testutils.OTLPEndpointFromSecret("dummy", "dummy", "dummy")). // broken pipeline ref
+				Build()
 
 			resources := []client.Object{
-				kitk8s.NewNamespace(mockNs).K8sObject(),
+				kitk8s.NewNamespace(backendNs).K8sObject(),
 				kitk8s.NewNamespace(genNs).K8sObject(),
-				&pipeline,
-				deployment,
+				&healthyPipeline,
+				&brokenPipeline,
 			}
 			resources = append(resources, tc.generatorBuilder(genNs)...)
 			resources = append(resources, backend.K8sObjects()...)
@@ -106,27 +101,20 @@ func TestCloudProviderAttributes(t *testing.T) {
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 			}
 
-			assert.MetricPipelineHealthy(t, pipelineName)
+			assert.MetricPipelineHealthy(t, healthyPipelineName)
 
-			assert.DeploymentReady(t, types.NamespacedName{Name: deploymentName, Namespace: mockNs})
+			assert.MetricPipelineHasCondition(t, brokenPipeline.Name, metav1.Condition{
+				Type:   conditions.TypeConfigurationGenerated,
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonReferencedSecretMissing,
+			})
 
-			if tc.label == suite.LabelMetricAgent {
-				agentMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.MetricAgentMetricsService.Namespace, kitkyma.MetricAgentMetricsService.Name, "metrics", ports.Metrics)
-				assert.EmitsOTelCollectorMetrics(t, agentMetricsURL)
+			switch tc.label {
+			case suite.LabelMetricAgent:
+				assert.MetricsFromNamespaceDelivered(t, backend, genNs, runtime.DefaultMetricsNames)
+			case suite.LabelMetricGateway:
+				assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
 			}
-
-			assert.BackendDataEventuallyMatches(t, backend,
-				HaveFlatMetrics(
-					ContainElement(HaveResourceAttributes(SatisfyAll(
-						HaveKey("cloud.region"),
-						HaveKey("cloud.availability_zone"),
-						HaveKey("host.type"),
-						HaveKey("host.arch"),
-						HaveKey("k8s.cluster.name"),
-						HaveKey("cloud.provider"),
-					))),
-				), assert.WithOptionalDescription("Could not find metrics matching resource attributes"),
-			)
 		})
 	}
 }
