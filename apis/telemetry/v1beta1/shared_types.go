@@ -74,6 +74,7 @@ type Header struct {
 	Prefix string `json:"prefix,omitempty"`
 }
 
+// OutputTLS defines TLS options for an output.
 // +kubebuilder:validation:XValidation:rule="has(self.cert) == has(self.key)", message="Can define either both 'cert' and 'key', or neither"
 type OutputTLS struct {
 	// Disabled specifies if TLS is disabled or enabled. Default is `false`.
