@@ -81,6 +81,9 @@ spec:
                       description: Name of the file under which the content is mounted
                         in the Fluent Bit configuration.
                       type: string
+                  required:
+                  - content
+                  - name
                   type: object
                 type: array
               filters:
@@ -112,6 +115,8 @@ spec:
                         description: Containers describes whether application logs
                           from specific containers are selected. The options are mutually
                           exclusive.
+                        maxProperties: 1
+                        minProperties: 1
                         properties:
                           exclude:
                             description: Exclude specifies to exclude only the container
@@ -153,6 +158,8 @@ spec:
                           from specific namespaces are selected. The options are mutually
                           exclusive. System namespaces are excluded by default. Use
                           the `system` attribute with value `true` to enable them.
+                        maxProperties: 1
+                        minProperties: 1
                         properties:
                           exclude:
                             description: Exclude the container logs of the specified
@@ -211,6 +218,8 @@ spec:
               output:
                 description: Output configures the backend to which logs are sent.
                   You must specify exactly one output per pipeline.
+                maxProperties: 1
+                minProperties: 1
                 properties:
                   custom:
                     description: Custom defines a custom output in the [Fluent Bit
@@ -240,6 +249,8 @@ spec:
                         type: string
                       host:
                         description: Host defines the host of the HTTP backend.
+                        maxProperties: 1
+                        minProperties: 1
                         properties:
                           value:
                             description: Value as plain text.
@@ -247,6 +258,8 @@ spec:
                           valueFrom:
                             description: ValueFrom is the value as a reference to
                               a resource.
+                            maxProperties: 1
+                            minProperties: 1
                             properties:
                               secretKeyRef:
                                 description: SecretKeyRef refers to the value of a
@@ -275,6 +288,8 @@ spec:
                         type: object
                       password:
                         description: Password defines the basic auth password.
+                        maxProperties: 1
+                        minProperties: 1
                         properties:
                           value:
                             description: Value as plain text.
@@ -282,6 +297,8 @@ spec:
                           valueFrom:
                             description: ValueFrom is the value as a reference to
                               a resource.
+                            maxProperties: 1
+                            minProperties: 1
                             properties:
                               secretKeyRef:
                                 description: SecretKeyRef refers to the value of a
@@ -319,6 +336,8 @@ spec:
                             description: CA defines an optional CA certificate for
                               server certificate verification when using TLS. The
                               certificate must be provided in PEM format.
+                            maxProperties: 1
+                            minProperties: 1
                             properties:
                               value:
                                 description: Value as plain text.
@@ -326,6 +345,8 @@ spec:
                               valueFrom:
                                 description: ValueFrom is the value as a reference
                                   to a resource.
+                                maxProperties: 1
+                                minProperties: 1
                                 properties:
                                   secretKeyRef:
                                     description: SecretKeyRef refers to the value
@@ -356,6 +377,8 @@ spec:
                             description: Cert defines a client certificate to use
                               when using TLS. The certificate must be provided in
                               PEM format.
+                            maxProperties: 1
+                            minProperties: 1
                             properties:
                               value:
                                 description: Value as plain text.
@@ -363,6 +386,8 @@ spec:
                               valueFrom:
                                 description: ValueFrom is the value as a reference
                                   to a resource.
+                                maxProperties: 1
+                                minProperties: 1
                                 properties:
                                   secretKeyRef:
                                     description: SecretKeyRef refers to the value
@@ -396,6 +421,8 @@ spec:
                           key:
                             description: Key defines the client key to use when using
                               TLS. The key must be provided in PEM format.
+                            maxProperties: 1
+                            minProperties: 1
                             properties:
                               value:
                                 description: Value as plain text.
@@ -403,6 +430,8 @@ spec:
                               valueFrom:
                                 description: ValueFrom is the value as a reference
                                   to a resource.
+                                maxProperties: 1
+                                minProperties: 1
                                 properties:
                                   secretKeyRef:
                                     description: SecretKeyRef refers to the value
@@ -440,9 +469,12 @@ spec:
                       uri:
                         description: URI defines the URI of the HTTP backend. Default
                           is "/".
+                        pattern: ^/.*$
                         type: string
                       user:
                         description: User defines the basic auth user.
+                        maxProperties: 1
+                        minProperties: 1
                         properties:
                           value:
                             description: Value as plain text.
@@ -450,6 +482,8 @@ spec:
                           valueFrom:
                             description: ValueFrom is the value as a reference to
                               a resource.
+                            maxProperties: 1
+                            minProperties: 1
                             properties:
                               secretKeyRef:
                                 description: SecretKeyRef refers to the value of a
@@ -476,6 +510,8 @@ spec:
                                 type: object
                             type: object
                         type: object
+                    required:
+                    - host
                     type: object
                   otlp:
                     description: OTLP defines an output using the OpenTelemetry protocol.
@@ -491,6 +527,8 @@ spec:
                               password:
                                 description: Password contains the basic auth password
                                   or a Secret reference.
+                                maxProperties: 1
+                                minProperties: 1
                                 properties:
                                   value:
                                     description: Value as plain text.
@@ -498,6 +536,8 @@ spec:
                                   valueFrom:
                                     description: ValueFrom is the value as a reference
                                       to a resource.
+                                    maxProperties: 1
+                                    minProperties: 1
                                     properties:
                                       secretKeyRef:
                                         description: SecretKeyRef refers to the value
@@ -528,6 +568,8 @@ spec:
                               user:
                                 description: User contains the basic auth username
                                   or a Secret reference.
+                                maxProperties: 1
+                                minProperties: 1
                                 properties:
                                   value:
                                     description: Value as plain text.
@@ -535,6 +577,8 @@ spec:
                                   valueFrom:
                                     description: ValueFrom is the value as a reference
                                       to a resource.
+                                    maxProperties: 1
+                                    minProperties: 1
                                     properties:
                                       secretKeyRef:
                                         description: SecretKeyRef refers to the value
@@ -570,6 +614,8 @@ spec:
                       endpoint:
                         description: Endpoint defines the host and port (`<host>:<port>`)
                           of an OTLP endpoint.
+                        maxProperties: 1
+                        minProperties: 1
                         properties:
                           value:
                             description: Value as plain text.
@@ -577,6 +623,8 @@ spec:
                           valueFrom:
                             description: ValueFrom is the value as a reference to
                               a resource.
+                            maxProperties: 1
+                            minProperties: 1
                             properties:
                               secretKeyRef:
                                 description: SecretKeyRef refers to the value of a
@@ -607,6 +655,8 @@ spec:
                         description: Headers defines custom headers to be added to
                           outgoing HTTP or gRPC requests.
                         items:
+                          maxProperties: 1
+                          minProperties: 1
                           properties:
                             name:
                               description: Name defines the header name.
@@ -622,6 +672,8 @@ spec:
                             valueFrom:
                               description: ValueFrom is the value as a reference to
                                 a resource.
+                              maxProperties: 1
+                              minProperties: 1
                               properties:
                                 secretKeyRef:
                                   description: SecretKeyRef refers to the value of
@@ -671,6 +723,8 @@ spec:
                             description: Defines an optional CA certificate for server
                               certificate verification when using TLS. The certificate
                               must be provided in PEM format.
+                            maxProperties: 1
+                            minProperties: 1
                             properties:
                               value:
                                 description: Value as plain text.
@@ -678,6 +732,8 @@ spec:
                               valueFrom:
                                 description: ValueFrom is the value as a reference
                                   to a resource.
+                                maxProperties: 1
+                                minProperties: 1
                                 properties:
                                   secretKeyRef:
                                     description: SecretKeyRef refers to the value
@@ -707,6 +763,8 @@ spec:
                           cert:
                             description: Defines a client certificate to use when
                               using TLS. The certificate must be provided in PEM format.
+                            maxProperties: 1
+                            minProperties: 1
                             properties:
                               value:
                                 description: Value as plain text.
@@ -714,6 +772,8 @@ spec:
                               valueFrom:
                                 description: ValueFrom is the value as a reference
                                   to a resource.
+                                maxProperties: 1
+                                minProperties: 1
                                 properties:
                                   secretKeyRef:
                                     description: SecretKeyRef refers to the value
@@ -751,6 +811,8 @@ spec:
                           key:
                             description: Defines the client key to use when using
                               TLS. The key must be provided in PEM format.
+                            maxProperties: 1
+                            minProperties: 1
                             properties:
                               value:
                                 description: Value as plain text.
@@ -758,6 +820,8 @@ spec:
                               valueFrom:
                                 description: ValueFrom is the value as a reference
                                   to a resource.
+                                maxProperties: 1
+                                minProperties: 1
                                 properties:
                                   secretKeyRef:
                                     description: SecretKeyRef refers to the value
@@ -849,6 +913,10 @@ spec:
                       description: Name of the variable to map.
                       type: string
                     valueFrom:
+                      description: ValueFrom specifies the secret and key to select
+                        the value to map.
+                      maxProperties: 1
+                      minProperties: 1
                       properties:
                         secretKeyRef:
                           description: SecretKeyRef refers to the value of a specific
@@ -873,6 +941,9 @@ spec:
                           - namespace
                           type: object
                       type: object
+                  required:
+                  - name
+                  - valueFrom
                   type: object
                 type: array
             type: object
@@ -891,7 +962,9 @@ spec:
             - message: variables not supported with otlp output
               rule: '!(has(self.output.otlp) && has(self.variables))'
             - message: transform is only supported with otlp output
-              rule: '!(!has(self.output.otlp) && has(self.transform))'
+              rule: has(self.output.otlp) || !(has(self.transform))
+            - message: otlp input is only supported with otlp output
+              rule: has(self.output.otlp) || !(has(self.input.otlp))
           status:
             description: Shows the observed state of the LogPipeline
             properties:
@@ -1023,6 +1096,9 @@ spec:
                       description: Name of the file under which the content is mounted
                         in the Fluent Bit configuration.
                       type: string
+                  required:
+                  - content
+                  - name
                   type: object
                 type: array
               filters:
@@ -1086,6 +1162,8 @@ spec:
                         description: Containers describes whether application logs
                           from specific containers are selected. The options are mutually
                           exclusive.
+                        maxProperties: 1
+                        minProperties: 1
                         properties:
                           exclude:
                             description: Exclude specifies to exclude only the container
@@ -1127,6 +1205,8 @@ spec:
                           from specific namespaces are selected. The options are mutually
                           exclusive. System namespaces are excluded by default. Use
                           the `system` attribute with value `true` to enable them.
+                        maxProperties: 1
+                        minProperties: 1
                         properties:
                           exclude:
                             description: Exclude the container logs of the specified
@@ -1153,6 +1233,8 @@ spec:
               output:
                 description: Output configures the backend to which logs are sent.
                   You must specify exactly one output per pipeline.
+                maxProperties: 1
+                minProperties: 1
                 properties:
                   custom:
                     description: Custom defines a custom output in the [Fluent Bit
@@ -1182,6 +1264,8 @@ spec:
                         type: string
                       host:
                         description: Host defines the host of the HTTP backend.
+                        maxProperties: 1
+                        minProperties: 1
                         properties:
                           value:
                             description: Value as plain text.
@@ -1189,6 +1273,8 @@ spec:
                           valueFrom:
                             description: ValueFrom is the value as a reference to
                               a resource.
+                            maxProperties: 1
+                            minProperties: 1
                             properties:
                               secretKeyRef:
                                 description: SecretKeyRef refers to the value of a
@@ -1217,6 +1303,8 @@ spec:
                         type: object
                       password:
                         description: Password defines the basic auth password.
+                        maxProperties: 1
+                        minProperties: 1
                         properties:
                           value:
                             description: Value as plain text.
@@ -1224,6 +1312,8 @@ spec:
                           valueFrom:
                             description: ValueFrom is the value as a reference to
                               a resource.
+                            maxProperties: 1
+                            minProperties: 1
                             properties:
                               secretKeyRef:
                                 description: SecretKeyRef refers to the value of a
@@ -1261,6 +1351,8 @@ spec:
                             description: Defines an optional CA certificate for server
                               certificate verification when using TLS. The certificate
                               must be provided in PEM format.
+                            maxProperties: 1
+                            minProperties: 1
                             properties:
                               value:
                                 description: Value as plain text.
@@ -1268,6 +1360,8 @@ spec:
                               valueFrom:
                                 description: ValueFrom is the value as a reference
                                   to a resource.
+                                maxProperties: 1
+                                minProperties: 1
                                 properties:
                                   secretKeyRef:
                                     description: SecretKeyRef refers to the value
@@ -1297,6 +1391,8 @@ spec:
                           cert:
                             description: Defines a client certificate to use when
                               using TLS. The certificate must be provided in PEM format.
+                            maxProperties: 1
+                            minProperties: 1
                             properties:
                               value:
                                 description: Value as plain text.
@@ -1304,6 +1400,8 @@ spec:
                               valueFrom:
                                 description: ValueFrom is the value as a reference
                                   to a resource.
+                                maxProperties: 1
+                                minProperties: 1
                                 properties:
                                   secretKeyRef:
                                     description: SecretKeyRef refers to the value
@@ -1337,6 +1435,8 @@ spec:
                           key:
                             description: Defines the client key to use when using
                               TLS. The key must be provided in PEM format.
+                            maxProperties: 1
+                            minProperties: 1
                             properties:
                               value:
                                 description: Value as plain text.
@@ -1344,6 +1444,8 @@ spec:
                               valueFrom:
                                 description: ValueFrom is the value as a reference
                                   to a resource.
+                                maxProperties: 1
+                                minProperties: 1
                                 properties:
                                   secretKeyRef:
                                     description: SecretKeyRef refers to the value
@@ -1381,9 +1483,12 @@ spec:
                       uri:
                         description: URI defines the URI of the HTTP backend. Default
                           is "/".
+                        pattern: ^/.*$
                         type: string
                       user:
                         description: User defines the basic auth user.
+                        maxProperties: 1
+                        minProperties: 1
                         properties:
                           value:
                             description: Value as plain text.
@@ -1391,6 +1496,8 @@ spec:
                           valueFrom:
                             description: ValueFrom is the value as a reference to
                               a resource.
+                            maxProperties: 1
+                            minProperties: 1
                             properties:
                               secretKeyRef:
                                 description: SecretKeyRef refers to the value of a
@@ -1417,6 +1524,8 @@ spec:
                                 type: object
                             type: object
                         type: object
+                    required:
+                    - host
                     type: object
                   otlp:
                     description: OTLP defines an output using the OpenTelemetry protocol.
@@ -1432,6 +1541,8 @@ spec:
                               password:
                                 description: Password contains the basic auth password
                                   or a Secret reference.
+                                maxProperties: 1
+                                minProperties: 1
                                 properties:
                                   value:
                                     description: Value as plain text.
@@ -1439,6 +1550,8 @@ spec:
                                   valueFrom:
                                     description: ValueFrom is the value as a reference
                                       to a resource.
+                                    maxProperties: 1
+                                    minProperties: 1
                                     properties:
                                       secretKeyRef:
                                         description: SecretKeyRef refers to the value
@@ -1469,6 +1582,8 @@ spec:
                               user:
                                 description: User contains the basic auth username
                                   or a Secret reference.
+                                maxProperties: 1
+                                minProperties: 1
                                 properties:
                                   value:
                                     description: Value as plain text.
@@ -1476,6 +1591,8 @@ spec:
                                   valueFrom:
                                     description: ValueFrom is the value as a reference
                                       to a resource.
+                                    maxProperties: 1
+                                    minProperties: 1
                                     properties:
                                       secretKeyRef:
                                         description: SecretKeyRef refers to the value
@@ -1511,6 +1628,8 @@ spec:
                       endpoint:
                         description: Endpoint defines the host and port (`<host>:<port>`)
                           of an OTLP endpoint.
+                        maxProperties: 1
+                        minProperties: 1
                         properties:
                           value:
                             description: Value as plain text.
@@ -1518,6 +1637,8 @@ spec:
                           valueFrom:
                             description: ValueFrom is the value as a reference to
                               a resource.
+                            maxProperties: 1
+                            minProperties: 1
                             properties:
                               secretKeyRef:
                                 description: SecretKeyRef refers to the value of a
@@ -1548,6 +1669,8 @@ spec:
                         description: Headers defines custom headers to be added to
                           outgoing HTTP or gRPC requests.
                         items:
+                          maxProperties: 1
+                          minProperties: 1
                           properties:
                             name:
                               description: Name defines the header name.
@@ -1563,6 +1686,8 @@ spec:
                             valueFrom:
                               description: ValueFrom is the value as a reference to
                                 a resource.
+                              maxProperties: 1
+                              minProperties: 1
                               properties:
                                 secretKeyRef:
                                   description: SecretKeyRef refers to the value of
@@ -1611,6 +1736,8 @@ spec:
                             description: Defines an optional CA certificate for server
                               certificate verification when using TLS. The certificate
                               must be provided in PEM format.
+                            maxProperties: 1
+                            minProperties: 1
                             properties:
                               value:
                                 description: Value as plain text.
@@ -1618,6 +1745,8 @@ spec:
                               valueFrom:
                                 description: ValueFrom is the value as a reference
                                   to a resource.
+                                maxProperties: 1
+                                minProperties: 1
                                 properties:
                                   secretKeyRef:
                                     description: SecretKeyRef refers to the value
@@ -1647,6 +1776,8 @@ spec:
                           cert:
                             description: Defines a client certificate to use when
                               using TLS. The certificate must be provided in PEM format.
+                            maxProperties: 1
+                            minProperties: 1
                             properties:
                               value:
                                 description: Value as plain text.
@@ -1654,6 +1785,8 @@ spec:
                               valueFrom:
                                 description: ValueFrom is the value as a reference
                                   to a resource.
+                                maxProperties: 1
+                                minProperties: 1
                                 properties:
                                   secretKeyRef:
                                     description: SecretKeyRef refers to the value
@@ -1687,6 +1820,8 @@ spec:
                           key:
                             description: Defines the client key to use when using
                               TLS. The key must be provided in PEM format.
+                            maxProperties: 1
+                            minProperties: 1
                             properties:
                               value:
                                 description: Value as plain text.
@@ -1694,6 +1829,8 @@ spec:
                               valueFrom:
                                 description: ValueFrom is the value as a reference
                                   to a resource.
+                                maxProperties: 1
+                                minProperties: 1
                                 properties:
                                   secretKeyRef:
                                     description: SecretKeyRef refers to the value
@@ -1789,6 +1926,10 @@ spec:
                       description: Name of the variable to map.
                       type: string
                     valueFrom:
+                      description: ValueFrom specifies the secret and key to select
+                        the value to map.
+                      maxProperties: 1
+                      minProperties: 1
                       properties:
                         secretKeyRef:
                           description: SecretKeyRef refers to the value of a specific
@@ -1813,6 +1954,9 @@ spec:
                           - namespace
                           type: object
                       type: object
+                  required:
+                  - name
+                  - valueFrom
                   type: object
                 type: array
             type: object
@@ -1830,7 +1974,9 @@ spec:
             - message: variables not supported with otlp output
               rule: '!(has(self.output.otlp) && has(self.variables))'
             - message: transform is only supported with otlp output
-              rule: '!(!has(self.output.otlp) && has(self.transform))'
+              rule: has(self.output.otlp) || !(has(self.transform))
+            - message: otlp input is only supported with otlp output
+              rule: has(self.output.otlp) || !(has(self.input.otlp))
           status:
             description: Shows the observed state of the LogPipeline
             properties:

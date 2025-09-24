@@ -80,8 +80,8 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 | Parameter | Type | Description |
 | ---- | ----------- | ---- |
 | **files**  | \[\]object | Files is a list of content snippets that are mounted as files in the Fluent Bit configuration, which can be linked in the `custom` filters and a `custom` output. Only available when using an output of type `http` and `custom`. |
-| **files.&#x200b;content**  | string | Content of the file to be mounted in the Fluent Bit configuration. |
-| **files.&#x200b;name**  | string | Name of the file under which the content is mounted in the Fluent Bit configuration. |
+| **files.&#x200b;content** (required) | string | Content of the file to be mounted in the Fluent Bit configuration. |
+| **files.&#x200b;name** (required) | string | Name of the file under which the content is mounted in the Fluent Bit configuration. |
 | **filters**  | \[\]object | Filters configures custom Fluent Bit `filters` to transform logs. Only available when using an output of type `http` and `custom`. |
 | **filters.&#x200b;custom**  | string | Custom defines a custom filter in the [Fluent Bit syntax](https://docs.fluentbit.io/manual/pipeline/outputs). If you use a `custom` filter, you put the LogPipeline in unsupported mode. Only available when using an output of type `http` and `custom`. |
 | **input**  | object | Input configures additional inputs for log collection. |
@@ -108,7 +108,7 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 | **output.&#x200b;http.&#x200b;compress**  | string | Compress defines the compression algorithm to use. Either `none` or `gzip`. Default is `none`. |
 | **output.&#x200b;http.&#x200b;dedot**  | boolean | Dedot enables de-dotting of Kubernetes labels and annotations. For compatibility with OpenSearch-based backends, dots (.) are replaced by underscores (_). Default is `false`. |
 | **output.&#x200b;http.&#x200b;format**  | string | Format is the data format to be used in the HTTP request body. Either `gelf`, `json`, `json_stream`, `json_lines`, or `msgpack`. Default is `json`. |
-| **output.&#x200b;http.&#x200b;host**  | object | Host defines the host of the HTTP backend. |
+| **output.&#x200b;http.&#x200b;host** (required) | object | Host defines the host of the HTTP backend. |
 | **output.&#x200b;http.&#x200b;host.&#x200b;value**  | string | Value as plain text. |
 | **output.&#x200b;http.&#x200b;host.&#x200b;valueFrom**  | object | ValueFrom is the value as a reference to a resource. |
 | **output.&#x200b;http.&#x200b;host.&#x200b;valueFrom.&#x200b;secretKeyRef**  | object | SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
@@ -215,8 +215,8 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;key.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name** (required) | string | Name of the Secret containing the referenced value. |
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;key.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace** (required) | string | Namespace containing the Secret with the referenced value. |
 | **variables**  | \[\]object | Variables is a list of mappings from Kubernetes Secret keys to environment variables. Mapped keys are mounted as environment variables, so that they are available as [Variables](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/variables) in the `custom` filters and a `custom` output. Only available when using an output of type `http` and `custom`. |
-| **variables.&#x200b;name**  | string | Name of the variable to map. |
-| **variables.&#x200b;valueFrom**  | object |  |
+| **variables.&#x200b;name** (required) | string | Name of the variable to map. |
+| **variables.&#x200b;valueFrom** (required) | object | ValueFrom specifies the secret and key to select the value to map. |
 | **variables.&#x200b;valueFrom.&#x200b;secretKeyRef**  | object | SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
 | **variables.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key** (required) | string | Key defines the name of the attribute of the Secret holding the referenced value. |
 | **variables.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name** (required) | string | Name of the Secret containing the referenced value. |

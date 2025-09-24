@@ -170,7 +170,7 @@ type LogPipelineHTTPOutput struct {
 	// Password defines the basic auth password.
 	Password ValueType `json:"password,omitempty"`
 	// URI defines the URI of the HTTP backend. Default is "/".
-	// +kubebuilder:validation:Pattern=`^/.*$
+	// +kubebuilder:validation:Pattern=`^/.*$`
 	URI string `json:"uri,omitempty"`
 	// Port defines the port of the HTTP backend. Default is 443.
 	Port string `json:"port,omitempty"`
