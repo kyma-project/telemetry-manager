@@ -4,9 +4,9 @@ import testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 
 type Option func(*Backend)
 
-func WithSourceMetricAgent() Option {
+func WithDropFromSourceLabel(label map[string]string) Option {
 	return func(b *Backend) {
-		b.sourceMetricAgent = true
+		b.dropFromSourceLabel = label
 	}
 }
 

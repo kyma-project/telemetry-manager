@@ -250,7 +250,8 @@ func TestOutage(t *testing.T) {
 			)
 			if tc.kind == kindMetricsAgent {
 				// metric agent and gateway (using kyma stats receiver) both send data to backend. We want to simulate outage only on agent so block all traffic from agent.
-				backend = kitbackend.New(backendNs, signalType(tc.kind), kitbackend.WithAbortFaultInjection(100), kitbackend.WithSourceMetricAgent())
+				backend = kitbackend.New(backendNs, signalType(tc.kind), kitbackend.WithAbortFaultInjection(100),
+					kitbackend.WithDropFromSourceLabel(map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"}))
 			} else {
 				backend = kitbackend.New(backendNs, signalType(tc.kind), kitbackend.WithReplicas(0)) // simulate outage
 			}

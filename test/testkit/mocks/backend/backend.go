@@ -46,7 +46,7 @@ const (
 
 type Backend struct {
 	abortFaultPercentage float64
-	sourceMetricAgent    bool
+	dropFromSourceLabel  map[string]string
 	certs                *testutils.ServerCerts
 	name                 string
 	namespace            string
@@ -196,6 +196,6 @@ func (b *Backend) buildResources() {
 			"fault-injection",
 			b.namespace,
 			b.name,
-		).WithFaultAbortPercentage(b.abortFaultPercentage).WithSourceMetricAgent(b.sourceMetricAgent)
+		).WithFaultAbortPercentage(b.abortFaultPercentage).WithSourceLabel(b.dropFromSourceLabel)
 	}
 }

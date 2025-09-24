@@ -16,7 +16,7 @@ type VirtualService struct {
 	host                 string
 	faultAbortPercentage float64
 	faultDelayPercentage float64
-	sourceMetricAgent    bool
+	sourceLabel          map[string]string
 	faultDelayFixedDelay time.Duration
 }
 
@@ -30,11 +30,8 @@ func NewVirtualService(name, namespace, host string) *VirtualService {
 	}
 }
 
-func (s *VirtualService) WithSourceMetricAgent(sourceMetricAgent bool) *VirtualService {
-	if sourceMetricAgent {
-		s.sourceMetricAgent = true
-	}
-
+func (s *VirtualService) WithSourceLabel(sourceLabel map[string]string) *VirtualService {
+	s.sourceLabel = sourceLabel
 	return s
 }
 
@@ -63,7 +60,7 @@ func (s *VirtualService) K8sObject() *istionetworkingclientv1.VirtualService {
 					Match: []*istionetworkingv1.HTTPMatchRequest{
 						{
 							SourceLabels: func() map[string]string {
-								if !s.sourceMetricAgent {
+								if s.sourceLabel != nil {
 									return map[string]string{}
 								}
 
