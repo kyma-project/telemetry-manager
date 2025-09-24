@@ -84,8 +84,8 @@ func TestMultiPipelineBroken(t *testing.T) {
 			resources := []client.Object{
 				kitk8s.NewNamespace(backendNs).K8sObject(),
 				kitk8s.NewNamespace(genNs).K8sObject(),
-				&healthyPipeline,
 				&brokenPipeline,
+				&healthyPipeline,
 			}
 			resources = append(resources, tc.generatorBuilder(genNs)...)
 			resources = append(resources, backend.K8sObjects()...)
