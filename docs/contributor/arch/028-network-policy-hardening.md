@@ -114,7 +114,7 @@ The current network policies are too weak. They do not meet the requirements des
 
 We also decided to use `networking.kyma-project.io/metrics-scraping: allowed` label selector not only for RMA, but also for metric agent, self-monitoring, and customer-managed Prometheus deployments. Gardener system pods cannot be labeled in the zero-trust mode, so these pods must either be excluded from scraping.
 
-It is important to test the network policies using our E2E tests to ensure they function as intended. The problem is that k3s uses Flannel as the default CNI. Real Kyma clusters typically use Calico, which behaves slightly differently. We need to find a way to run our E2E tests with Calico to accurately validate the network policies.
+We must test the network policies using our E2E tests to ensure they function as intended. The problem is that k3s uses Flannel as the default CNI. Real Kyma clusters typically use Calico, which behaves slightly differently. We need to find a way to run our E2E tests with Calico to accurately validate the network policies.
 
 ### What to do?
 
