@@ -121,7 +121,7 @@ It is important to test the network policies using our E2E tests to ensure they 
 # Phase 1: Hardening Existing Network Policies
 
 - Rename existing network policies to follow new naming conventions: `kyma-project.io--telemetry-<network-policy-name>`
-- Remove health check ports from ingress rules since they have no impact.
+- Remove health check ports from ingress rules because they have no impact.
 - Remove Gardener system Pods from our scraping jobs.
 - Implement cross-component network policies to allow essential services like DNS and Kubernetes API access.
 - Harden telemetry manager and self-monitoring because it requires no breaking changes.
