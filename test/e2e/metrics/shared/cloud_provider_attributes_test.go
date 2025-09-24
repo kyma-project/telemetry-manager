@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -59,14 +58,13 @@ func TestCloudProviderAttributes(t *testing.T) {
 			suite.RegisterTestCase(t, suite.LabelGardener, tc.label)
 
 			var (
-				uniquePrefix   = unique.Prefix(tc.label)
-				pipelineName   = uniquePrefix()
-				deploymentName = uniquePrefix("deployment")
-				genNs          = uniquePrefix("gen")
-				mockNs         = uniquePrefix("mock")
+				uniquePrefix = unique.Prefix(tc.label)
+				pipelineName = uniquePrefix()
+				backendNs    = uniquePrefix("backend")
+				genNs        = uniquePrefix("gen")
 			)
 
-			backend := kitbackend.New(mockNs, kitbackend.SignalTypeMetrics)
+			backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)
 			pipeline := testutils.NewMetricPipelineBuilder().
 				WithName(pipelineName).
 				WithInput(tc.inputBuilder(genNs)).
@@ -81,15 +79,10 @@ func TestCloudProviderAttributes(t *testing.T) {
 				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 				Build()
 
-			podSpec := telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics)
-
-			deployment := kitk8s.NewDeployment(deploymentName, mockNs).WithPodSpec(podSpec).WithLabel("name", deploymentName).K8sObject()
-
 			resources := []client.Object{
-				kitk8s.NewNamespace(mockNs).K8sObject(),
+				kitk8s.NewNamespace(backendNs).K8sObject(),
 				kitk8s.NewNamespace(genNs).K8sObject(),
 				&pipeline,
-				deployment,
 			}
 			resources = append(resources, tc.generatorBuilder(genNs)...)
 			resources = append(resources, backend.K8sObjects()...)
@@ -107,8 +100,6 @@ func TestCloudProviderAttributes(t *testing.T) {
 			}
 
 			assert.MetricPipelineHealthy(t, pipelineName)
-
-			assert.DeploymentReady(t, types.NamespacedName{Name: deploymentName, Namespace: mockNs})
 
 			if suite.ExpectAgent(tc.label) {
 				agentMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.MetricAgentMetricsService.Namespace, kitkyma.MetricAgentMetricsService.Name, "metrics", ports.Metrics)
