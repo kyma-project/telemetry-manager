@@ -68,7 +68,7 @@ func TestRuntimeInput(t *testing.T) {
 
 	pipelineA := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineNameA).
-		WithRuntimeInput(true, testutils.IncludeNamespaces(genNs)).
+		WithRuntimeInput(true, testutils.IncludeNamespaces(genNs, podNs)).
 		WithRuntimeInputContainerMetrics(true).
 		WithRuntimeInputPodMetrics(true).
 		WithRuntimeInputNodeMetrics(true).
