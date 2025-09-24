@@ -61,8 +61,12 @@ type PipelineSyncer interface {
 	TryAcquireLock(ctx context.Context, owner metav1.Object) error
 }
 
-type FlowHealthProber interface {
+type GatewayFlowHealthProber interface {
 	Probe(ctx context.Context, pipelineName string) (prober.OTelGatewayProbeResult, error)
+}
+
+type AgentFlowHealthProber interface {
+	Probe(ctx context.Context, pipelineName string) (prober.OTelAgentProbeResult, error)
 }
 
 type OverridesHandler interface {
@@ -80,19 +84,20 @@ type Reconciler struct {
 	// TODO(skhalash): introduce an embed pkg exposing the module version set by go build
 	moduleVersion string
 
-	agentApplierDeleter   AgentApplierDeleter
-	agentConfigBuilder    AgentConfigBuilder
-	agentProber           commonstatus.Prober
-	flowHealthProber      FlowHealthProber
-	gatewayApplierDeleter GatewayApplierDeleter
-	gatewayConfigBuilder  GatewayConfigBuilder
-	gatewayProber         commonstatus.Prober
-	istioStatusChecker    IstioStatusChecker
-	overridesHandler      OverridesHandler
-	pipelineLock          PipelineLock
-	pipelineSync          PipelineSyncer
-	pipelineValidator     *Validator
-	errToMsgConverter     commonstatus.ErrorToMessageConverter
+	agentApplierDeleter     AgentApplierDeleter
+	agentConfigBuilder      AgentConfigBuilder
+	agentProber             commonstatus.Prober
+	gatewayFlowHealthProber GatewayFlowHealthProber
+	agentFlowHealthProber   AgentFlowHealthProber
+	gatewayApplierDeleter   GatewayApplierDeleter
+	gatewayConfigBuilder    GatewayConfigBuilder
+	gatewayProber           commonstatus.Prober
+	istioStatusChecker      IstioStatusChecker
+	overridesHandler        OverridesHandler
+	pipelineLock            PipelineLock
+	pipelineSync            PipelineSyncer
+	pipelineValidator       *Validator
+	errToMsgConverter       commonstatus.ErrorToMessageConverter
 }
 
 func New(
@@ -102,7 +107,8 @@ func New(
 	agentApplierDeleter AgentApplierDeleter,
 	agentConfigBuilder AgentConfigBuilder,
 	agentProber commonstatus.Prober,
-	flowHealthProber FlowHealthProber,
+	gatewayFlowHealthProber GatewayFlowHealthProber,
+	agentFlowHealthProber AgentFlowHealthProber,
 	gatewayApplierDeleter GatewayApplierDeleter,
 	gatewayConfigBuilder GatewayConfigBuilder,
 	gatewayProber commonstatus.Prober,
@@ -114,22 +120,23 @@ func New(
 	errToMsgConverter commonstatus.ErrorToMessageConverter,
 ) *Reconciler {
 	return &Reconciler{
-		Client:                client,
-		telemetryNamespace:    telemetryNamespace,
-		moduleVersion:         moduleVersion,
-		agentApplierDeleter:   agentApplierDeleter,
-		agentConfigBuilder:    agentConfigBuilder,
-		agentProber:           agentProber,
-		flowHealthProber:      flowHealthProber,
-		gatewayApplierDeleter: gatewayApplierDeleter,
-		gatewayConfigBuilder:  gatewayConfigBuilder,
-		gatewayProber:         gatewayProber,
-		istioStatusChecker:    istioStatusChecker,
-		overridesHandler:      overridesHandler,
-		pipelineLock:          pipelineLock,
-		pipelineSync:          pipelineSync,
-		pipelineValidator:     pipelineValidator,
-		errToMsgConverter:     errToMsgConverter,
+		Client:                  client,
+		telemetryNamespace:      telemetryNamespace,
+		moduleVersion:           moduleVersion,
+		agentApplierDeleter:     agentApplierDeleter,
+		agentConfigBuilder:      agentConfigBuilder,
+		agentProber:             agentProber,
+		gatewayFlowHealthProber: gatewayFlowHealthProber,
+		agentFlowHealthProber:   agentFlowHealthProber,
+		gatewayApplierDeleter:   gatewayApplierDeleter,
+		gatewayConfigBuilder:    gatewayConfigBuilder,
+		gatewayProber:           gatewayProber,
+		istioStatusChecker:      istioStatusChecker,
+		overridesHandler:        overridesHandler,
+		pipelineLock:            pipelineLock,
+		pipelineSync:            pipelineSync,
+		pipelineValidator:       pipelineValidator,
+		errToMsgConverter:       errToMsgConverter,
 	}
 }
 
