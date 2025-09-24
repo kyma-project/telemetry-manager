@@ -116,12 +116,24 @@ date: 2025-09-18
 - The `networking.kyma-project.io/metrics-scraping: allowed` label selector will control ingress access for metric agents, Resource Management Agent (RMA), self-monitoring components, and customer-managed Prometheus deployments. Gardener system pods cannot be labeled with Prometheus annotations, so these pods must either be excluded from restrictions or not scraped for metrics.
 - When the metric agent collects metrics from other modules, we need to establish a process to ensure all modules correctly label their pods for proper network policy enforcement.
 - Istio-generated spans and access logs function correctly in the current setup. However, in restricted network policy scenarios, all pods must be properly labeled to send OTLP data to telemetry gateways.
+- It is important to test the network policies using our E2E tests to ensure they function as intended. The problem is that k3s uses Flannel as the default CNI. Real Kyma clusters typically use Calico, which behaves slightly differently. We need to find a way to run our E2E tests with Calico to accurately validate the network policies.
 
 ### What to do?
 
-- Fluent Bit and OTel Collectors need to connect to external telemetry backends (CLS, Dynatrace, etc.). We can't predict what IP ranges these external backends will use, so we must allow egress to all IPs for these components and only limit the ports. This covers all other egress traffic that the component makes (for example, we don't need separate rules for the metric agent connecting to Kubelet since all IPs are already allowed).
-- Telemetry-manager and self-monitor are self-contained components and have no dependency on external services, their ingress and egress communication must be hardened.
-- Telemetry gateways receive traces, logs, and metrics from customer workloads, so they must allow ingress from any IPs. Currently, they allow ingress from any IPs. In the restricted mode we can limit them by using pod label selectors. It's a breaking change that requires customer action.
+# Phase 1: Hardening Existing Network Policies
+
+- Rename existing network policies to follow Kyma naming conventions.
+- Remove health check ports from ingress rules since they have no impact.
+- Remove Gardener system pods from our scraping jobs.
+- Implement cross-component network policies to allow essential services like DNS and Kubernetes API access.
+- Harden telemetry manager and self-monitoring since it requires no breaking changes.
+- Either expand Gardener E2E test suite to cover more scenarios or find a way to run E2E tests with Calico CNI.
+- Separate self-monitoring webhook from admission webhooks in telemetry manager to allow more fine-grained ingress rules.
+
+# Phase 2: Introduce Zero-trust Network Policies
+
+- Implement a feature toggle in the Telemetry CR to enable/disable extra rules that harden customer-to-telemetry communication as well as RMA, cross-Kyma module communication.
+- Document the required pod labels for customer workloads to ensure proper communication with telemetry components.
 
 ### Proposed Network Policy Changes
 
