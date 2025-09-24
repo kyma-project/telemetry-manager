@@ -23,7 +23,7 @@ func TestEndpointInvalid(t *testing.T) {
 		input telemetryv1alpha1.MetricPipelineInput
 	}{
 		{
-			label: suite.LabelMetricAgent,
+			label: suite.LabelMetricAgentSetA,
 			input: testutils.BuildMetricPipelineRuntimeInput(),
 		},
 		{

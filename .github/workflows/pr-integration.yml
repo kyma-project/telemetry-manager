@@ -124,7 +124,10 @@ jobs:
             mode: release
             type: e2e
           # METRICS
-          - name: metric-agent
+          - name: metric-agent-a
+            mode: release
+            type: e2e
+          - name: metric-agent-b
             mode: release
             type: e2e
           - name: metric-gateway

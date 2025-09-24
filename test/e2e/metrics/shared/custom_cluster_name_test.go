@@ -31,7 +31,7 @@ func TestCustomClusterName(t *testing.T) {
 		generatorBuilder func(ns string) []client.Object
 	}{
 		{
-			label: suite.LabelMetricAgent,
+			label: suite.LabelMetricAgentSetA,
 			input: testutils.BuildMetricPipelineRuntimeInput(),
 			generatorBuilder: func(ns string) []client.Object {
 				generator := prommetricgen.New(ns)
@@ -111,7 +111,7 @@ func TestCustomClusterName(t *testing.T) {
 			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 
-			if tc.label == suite.LabelMetricAgent {
+			if suite.ExpectAgent(tc.label) {
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 			}
 

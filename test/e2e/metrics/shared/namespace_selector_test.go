@@ -26,7 +26,7 @@ func TestNamespaceSelector(t *testing.T) {
 		generatorBuilder func(ns1, ns2 string) []client.Object
 	}{
 		{
-			label: suite.LabelMetricAgent,
+			label: suite.LabelMetricAgentSetA,
 			inputBuilder: func(includeNs, excludeNs string) telemetryv1alpha1.MetricPipelineInput {
 				var opts []testutils.NamespaceSelectorOptions
 				if includeNs != "" {
@@ -121,17 +121,16 @@ func TestNamespaceSelector(t *testing.T) {
 			assert.BackendReachable(t, backend2)
 			assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 
-			if tc.label == suite.LabelMetricAgent {
+			if suite.ExpectAgent(tc.label) {
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 			}
 
-			switch tc.label {
-			case suite.LabelMetricAgent:
+			if suite.ExpectAgent(tc.label) {
 				assert.MetricsFromNamespaceDelivered(t, backend1, gen1Ns, runtime.DefaultMetricsNames)
 				assert.MetricsFromNamespaceDelivered(t, backend1, gen1Ns, prommetricgen.CustomMetricNames())
 				assert.MetricsFromNamespaceDelivered(t, backend2, gen2Ns, runtime.DefaultMetricsNames)
 				assert.MetricsFromNamespaceDelivered(t, backend2, gen2Ns, prommetricgen.CustomMetricNames())
-			case suite.LabelMetricGateway:
+			} else {
 				assert.MetricsFromNamespaceDelivered(t, backend1, gen1Ns, telemetrygen.MetricNames)
 				assert.MetricsFromNamespaceDelivered(t, backend2, gen2Ns, telemetrygen.MetricNames)
 			}

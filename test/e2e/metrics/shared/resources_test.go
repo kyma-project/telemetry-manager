@@ -25,7 +25,7 @@ func TestResources(t *testing.T) {
 		expectedResources []assert.Resource
 	}{
 		{
-			label: suite.LabelMetricAgent,
+			label: suite.LabelMetricAgentSetA,
 			input: testutils.BuildMetricPipelineRuntimeInput(),
 			expectedResources: []assert.Resource{
 				assert.NewResource(&appsv1.DaemonSet{}, kitkyma.MetricAgentName),

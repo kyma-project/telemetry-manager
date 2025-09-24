@@ -28,7 +28,7 @@ import (
 )
 
 func TestRuntimeInput(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelGardener, suite.LabelMetricAgent)
+	suite.RegisterTestCase(t, suite.LabelGardener, suite.LabelMetricAgentSetA)
 
 	const (
 		podNetworkErrorsMetric  = "k8s.pod.network.errors"

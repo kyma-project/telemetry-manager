@@ -28,7 +28,7 @@ func TestCloudProviderAttributes(t *testing.T) {
 		generatorBuilder func(ns string) []client.Object
 	}{
 		{
-			label: suite.LabelMetricAgent,
+			label: suite.LabelMetricAgentSetA,
 			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
@@ -102,7 +102,7 @@ func TestCloudProviderAttributes(t *testing.T) {
 			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 
-			if tc.label == suite.LabelMetricAgent {
+			if suite.ExpectAgent(tc.label) {
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 			}
 
@@ -110,7 +110,7 @@ func TestCloudProviderAttributes(t *testing.T) {
 
 			assert.DeploymentReady(t, types.NamespacedName{Name: deploymentName, Namespace: mockNs})
 
-			if tc.label == suite.LabelMetricAgent {
+			if suite.ExpectAgent(tc.label) {
 				agentMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.MetricAgentMetricsService.Namespace, kitkyma.MetricAgentMetricsService.Name, "metrics", ports.Metrics)
 				assert.EmitsOTelCollectorMetrics(t, agentMetricsURL)
 			}

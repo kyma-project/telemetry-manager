@@ -28,7 +28,7 @@ func TestSinglePipelineV1Beta1(t *testing.T) {
 		generatorBuilder func(ns string) []client.Object
 	}{
 		{
-			label: suite.LabelMetricAgent,
+			label: suite.LabelMetricAgentSetB,
 			input: telemetryv1beta1.MetricPipelineInput{
 				Runtime: &telemetryv1beta1.MetricPipelineRuntimeInput{
 					Enabled: ptr.To(true),
@@ -108,13 +108,12 @@ func TestSinglePipelineV1Beta1(t *testing.T) {
 
 			assert.MetricPipelineHealthy(t, pipelineName)
 
-			switch tc.label {
-			case suite.LabelMetricAgent:
+			if suite.ExpectAgent(tc.label) {
 				assert.MetricsFromNamespaceDelivered(t, backend, genNs, runtime.DefaultMetricsNames)
 
 				agentMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.MetricAgentMetricsService.Namespace, kitkyma.MetricAgentMetricsService.Name, "metrics", ports.Metrics)
 				assert.EmitsOTelCollectorMetrics(t, agentMetricsURL)
-			case suite.LabelMetricGateway:
+			} else {
 				assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
 
 				gatewayMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.MetricGatewayMetricsService.Namespace, kitkyma.MetricGatewayMetricsService.Name, "metrics", ports.Metrics)
