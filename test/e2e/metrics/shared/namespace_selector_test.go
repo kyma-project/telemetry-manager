@@ -111,6 +111,7 @@ func TestNamespaceSelector(t *testing.T) {
 					excludeNss = append(excludeNss, namespace.Name)
 				}
 			}
+
 			excludePipeline := testutils.NewMetricPipelineBuilder().
 				WithName(excludePipelineName).
 				WithInput(tc.inputBuilder(nil, excludeNss)).
