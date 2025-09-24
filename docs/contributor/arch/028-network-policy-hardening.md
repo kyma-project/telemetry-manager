@@ -20,7 +20,7 @@ date: 2025-09-18
 
 #### Metric Agent:
 * Ingress: Metric scraping (self-monitoring and RMA), health checks
-* Egress: Kubernetes API, DNS, Kubelet, scraping customer workloads metrics, external telemetry backends (e.g., CLS, Dynatrace)
+* Egress: Kubernetes API, DNS, Kubelet, scraping customer workloads metrics, external telemetry backends (for example, CLS or Dynatrace)
 
 #### Self-Monitor:
 * Ingress: Metric scraping (self-monitoring and RMA), health checks, alert queries
