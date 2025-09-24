@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -22,19 +23,19 @@ import (
 func TestNamespaceSelector(t *testing.T) {
 	tests := []struct {
 		label            string
-		inputBuilder     func(includeNs, excludeNs string) telemetryv1alpha1.MetricPipelineInput
+		inputBuilder     func(includeNss, excludeNss []string) telemetryv1alpha1.MetricPipelineInput
 		generatorBuilder func(ns1, ns2 string) []client.Object
 	}{
 		{
 			label: suite.LabelMetricAgentSetA,
-			inputBuilder: func(includeNs, excludeNs string) telemetryv1alpha1.MetricPipelineInput {
+			inputBuilder: func(includeNss, excludeNss []string) telemetryv1alpha1.MetricPipelineInput {
 				var opts []testutils.NamespaceSelectorOptions
-				if includeNs != "" {
-					opts = append(opts, testutils.IncludeNamespaces(includeNs))
+				if len(includeNss) > 0 {
+					opts = append(opts, testutils.IncludeNamespaces(includeNss...))
 				}
 
-				if excludeNs != "" {
-					opts = append(opts, testutils.ExcludeNamespaces(excludeNs))
+				if len(excludeNss) > 0 {
+					opts = append(opts, testutils.ExcludeNamespaces(excludeNss...))
 				}
 
 				return testutils.BuildMetricPipelineAgentInput(true, true, true, opts...)
@@ -49,14 +50,14 @@ func TestNamespaceSelector(t *testing.T) {
 		},
 		{
 			label: suite.LabelMetricGateway,
-			inputBuilder: func(includeNs, excludeNs string) telemetryv1alpha1.MetricPipelineInput {
+			inputBuilder: func(includeNss, excludeNss []string) telemetryv1alpha1.MetricPipelineInput {
 				var opts []testutils.NamespaceSelectorOptions
-				if includeNs != "" {
-					opts = append(opts, testutils.IncludeNamespaces(includeNs))
+				if len(includeNss) > 0 {
+					opts = append(opts, testutils.IncludeNamespaces(includeNss...))
 				}
 
-				if excludeNs != "" {
-					opts = append(opts, testutils.ExcludeNamespaces(excludeNs))
+				if len(excludeNss) > 0 {
+					opts = append(opts, testutils.ExcludeNamespaces(excludeNss...))
 				}
 
 				return testutils.BuildMetricPipelineOTLPInput(opts...)
@@ -76,37 +77,52 @@ func TestNamespaceSelector(t *testing.T) {
 			suite.RegisterTestCase(t, tc.label)
 
 			var (
-				uniquePrefix            = unique.Prefix(tc.label)
-				gen1Ns                  = uniquePrefix("gen-1")
-				gen2Ns                  = uniquePrefix("gen-2")
-				backendNs               = uniquePrefix("backend")
-				backend1Name            = uniquePrefix("backend-1")
-				backend2Name            = uniquePrefix("backend-2")
-				pipelineNameIncludeGen1 = uniquePrefix("include")
-				pipelineNameExcludeGen1 = uniquePrefix("exclude")
+				uniquePrefix        = unique.Prefix(tc.label)
+				gen1Ns              = uniquePrefix("gen-1")
+				gen2Ns              = uniquePrefix("gen-2")
+				backendNs           = uniquePrefix("backend")
+				backend1Name        = uniquePrefix("backend-1")
+				backend2Name        = uniquePrefix("backend-2")
+				includePipelineName = uniquePrefix("include")
+				excludePipelineName = uniquePrefix("exclude")
 			)
 
 			backend1 := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithName(backend1Name))
 			backend2 := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithName(backend2Name))
 
-			pipelineIncludeApp1Ns := testutils.NewMetricPipelineBuilder().
-				WithName(pipelineNameIncludeGen1).
-				WithInput(tc.inputBuilder(gen1Ns, "")).
+			// Include gen1Ns only
+			includePipeline := testutils.NewMetricPipelineBuilder().
+				WithName(includePipelineName).
+				WithInput(tc.inputBuilder([]string{gen1Ns}, nil)).
 				WithOTLPOutput(testutils.OTLPEndpoint(backend1.Endpoint())).
 				Build()
 
-			pipelineExcludeApp1Ns := testutils.NewMetricPipelineBuilder().
-				WithName(pipelineNameExcludeGen1).
-				WithInput(tc.inputBuilder("", gen1Ns)).
+			// Exclude all namespaces except gen2Ns (gen1Ns and other unrelated namespaces)
+			// to avoid implicitly collecting logs from other namespaces
+			// and potentially overloading the backend.
+			var nsList corev1.NamespaceList
+
+			Expect(suite.K8sClient.List(t.Context(), &nsList)).To(Succeed())
+
+			excludeNss := []string{gen1Ns}
+
+			for _, namespace := range nsList.Items {
+				if namespace.Name != gen1Ns && namespace.Name != gen2Ns {
+					excludeNss = append(excludeNss, namespace.Name)
+				}
+			}
+			excludePipeline := testutils.NewMetricPipelineBuilder().
+				WithName(excludePipelineName).
+				WithInput(tc.inputBuilder(nil, excludeNss)).
 				WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
 				Build()
 
 			resources := []client.Object{
+				kitk8s.NewNamespace(backendNs).K8sObject(),
 				kitk8s.NewNamespace(gen1Ns).K8sObject(),
 				kitk8s.NewNamespace(gen2Ns).K8sObject(),
-				kitk8s.NewNamespace(backendNs).K8sObject(),
-				&pipelineIncludeApp1Ns,
-				&pipelineExcludeApp1Ns,
+				&includePipeline,
+				&excludePipeline,
 			}
 			resources = append(resources, tc.generatorBuilder(gen1Ns, gen2Ns)...)
 			resources = append(resources, backend1.K8sObjects()...)
