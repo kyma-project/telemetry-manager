@@ -108,8 +108,6 @@ date: 2025-09-18
 
 ## Decision
 
-### Issues/questions to address
-
 - The telemetry module already has basic network policies in place, making the `enableNetworkPolicies` toggle not logical for our use case (we still will have network policies even if it is set to false). However, we will maintain this toggle for consistency with other Kyma modules.
 - Network policies have to be renamed to follow the Kyma naming convention.
 - External services like CLS and Dynatrace use unpredictable IP address ranges, making IP-based egress restrictions impractical. We will address this by restricting egress traffic by port instead of IP address.
