@@ -34,6 +34,8 @@ date: 2025-09-18
 
 ### Current Network Policy Configuration
 
+Current network policies are too weak and do not meet the requirements desribed here: https://github.com/kyma-project/kyma/issues/18818.
+
 1. **FluentBit Agent**
    - **Network Policy Name:** `telemetry-fluent-bit`
    - **Ingress Rules:**
@@ -108,19 +110,17 @@ date: 2025-09-18
 
 ## Decision
 
-- The telemetry module already has basic network policies in place, making the `enableNetworkPolicies` toggle not logical for our use case (we still will have network policies even if it is set to false). However, we will maintain this toggle for consistency with other Kyma modules.
-- Network policies have to be renamed to follow the Kyma naming convention.
-- External services like CLS and Dynatrace use unpredictable IP address ranges, making IP-based egress restrictions impractical. We will address this by restricting egress traffic by port instead of IP address.
-- The `networking.kyma-project.io/metrics-scraping: allowed` label selector will control ingress access for metric agents, Resource Management Agent (RMA), self-monitoring components, and customer-managed Prometheus deployments. Gardener system pods cannot be labeled with Prometheus annotations, so these pods must either be excluded from restrictions or not scraped for metrics.
-- When the metric agent collects metrics from other modules, we need to establish a process to ensure all modules correctly label their pods for proper network policy enforcement.
-- Istio-generated spans and access logs function correctly in the current setup. However, in restricted network policy scenarios, all pods must be properly labeled to send OTLP data to telemetry gateways.
-- It is important to test the network policies using our E2E tests to ensure they function as intended. The problem is that k3s uses Flannel as the default CNI. Real Kyma clusters typically use Calico, which behaves slightly differently. We need to find a way to run our E2E tests with Calico to accurately validate the network policies.
+The current network policies are too weak. They do not meet the requirements described in https://github.com/kyma-project/kyma/issues/18818. These policies allow all IP addresses for both incoming and outgoing traffic. They only limit ports for incoming traffic, which means they can be made stronger. However, we will still need to allow any IP address (0.0.0.0/0) in some cases for incoming and outgoing rules. External services like CLS and Dynatrace, as well as Kube API server, use different IP address ranges that we cannot predict. This makes it hard to restrict outgoing traffic by IP address. Instead, we will restrict outgoing traffic by port number.
+
+We also decided to use `networking.kyma-project.io/metrics-scraping: allowed` label selector not only for RMA, but also for metric agent, self-monitoring, and customer-managed Prometheus deployments. Gardener system pods cannot be labeled in the zero-trust mode, so these pods must either be excluded from scraping.
+
+It is important to test the network policies using our E2E tests to ensure they function as intended. The problem is that k3s uses Flannel as the default CNI. Real Kyma clusters typically use Calico, which behaves slightly differently. We need to find a way to run our E2E tests with Calico to accurately validate the network policies.
 
 ### What to do?
 
 # Phase 1: Hardening Existing Network Policies
 
-- Rename existing network policies to follow Kyma naming conventions.
+- Rename existing network policies to follow new naming conventions: `kyma-project.io--telemetry-<network-policy-name>`
 - Remove health check ports from ingress rules since they have no impact.
 - Remove Gardener system pods from our scraping jobs.
 - Implement cross-component network policies to allow essential services like DNS and Kubernetes API access.
@@ -130,7 +130,7 @@ date: 2025-09-18
 
 # Phase 2: Introduce Zero-trust Network Policies
 
-- Implement a feature toggle in the Telemetry CR to enable/disable extra rules that harden customer-to-telemetry communication as well as RMA, cross-Kyma module communication.
+- Implement a feature toggle in the Telemetry CR to enable/disable extra rules that harden customer-to-telemetry communication as well as RMA, cross-Kyma module communication. The telemetry module already has basic network policies in place, making the `enableNetworkPolicies` toggle name not logical for our use case (we still will have network policies even if it is set to false). However, we will maintain this toggle for consistency with other Kyma modules.
 - Document the required pod labels for customer workloads to ensure proper communication with telemetry components.
 
 ### Proposed Network Policy Changes
