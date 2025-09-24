@@ -1,4 +1,4 @@
-package traces
+package misc
 
 import (
 	"testing"
@@ -19,8 +19,8 @@ const (
 	notFoundError         = "not found"
 )
 
-func TestMTLSMissingKey(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelTraces)
+func TestMTLSMissingKey_FluentBit(t *testing.T) {
+	suite.RegisterTestCase(t, suite.LabelFluentBit)
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -31,14 +31,14 @@ func TestMTLSMissingKey(t *testing.T) {
 	serverCerts, clientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
 	Expect(err).ToNot(HaveOccurred())
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces, kitbackend.WithTLS(*serverCerts))
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithTLS(*serverCerts))
 
-	pipeline := testutils.NewTracePipelineBuilder().
+	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
-		WithOTLPOutput(
-			testutils.OTLPEndpoint(backend.Endpoint()),
-			testutils.OTLPClientTLS(&telemetryv1alpha1.OTLPTLS{
-				CA:   &telemetryv1alpha1.ValueType{Value: clientCerts.CaCertPem.String()},
+		WithHTTPOutput(
+			testutils.HTTPHost(backend.Host()),
+			testutils.HTTPPort(backend.Port()),
+			testutils.HTTPClientTLS(telemetryv1alpha1.LogPipelineOutputTLS{
 				Cert: &telemetryv1alpha1.ValueType{Value: clientCerts.ClientCertPem.String()},
 			}),
 		).

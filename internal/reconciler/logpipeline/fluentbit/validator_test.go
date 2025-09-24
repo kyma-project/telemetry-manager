@@ -141,7 +141,6 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			scheme := runtime.NewScheme()
 			_ = clientgoscheme.AddToScheme(scheme)
 			_ = telemetryv1alpha1.AddToScheme(scheme)
