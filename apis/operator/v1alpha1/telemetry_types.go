@@ -93,6 +93,8 @@ type Scaling struct {
 	Static *StaticScaling `json:"static,omitempty"`
 }
 
+// ScalingStrategyType defines the available scaling strategies available for a gateway.
+// Currently the only supported strategy is Static, which allows defining a fixed number of replicas.
 // +enum
 type ScalingStrategyType string
 
@@ -192,11 +194,11 @@ type EnrichmentSpec struct {
 	Cluster *Cluster `json:"cluster,omitempty"`
 }
 
-// +kubebuilder:validation:XValidation:rule="(has(self.key) || has(self.keyPrefix))", message="Either 'key' or 'keyPrefix' must be specified"
-// +kubebuilder:validation:XValidation:rule="!(has(self.key) && has(self.keyPrefix))", message="Either 'key' or 'keyPrefix' must be specified"
 // PodLabel defines labels from a Pod used for telemetry data enrichments, which can be specified either by a key or a key prefix.
 // Either 'key' or 'keyPrefix' must be specified, but not both.
 // The enriched telemetry data contains resource attributes with key k8s.pod.label.<label_key>.
+// +kubebuilder:validation:XValidation:rule="(has(self.key) || has(self.keyPrefix))", message="Either 'key' or 'keyPrefix' must be specified"
+// +kubebuilder:validation:XValidation:rule="!(has(self.key) && has(self.keyPrefix))", message="Either 'key' or 'keyPrefix' must be specified"
 type PodLabel struct {
 	// Key specifies the exact label key to be used.
 	// This field is optional.
@@ -207,7 +209,7 @@ type PodLabel struct {
 	KeyPrefix string `json:"keyPrefix,omitempty"`
 }
 
-// Use Cluster to define custom cluster details to enrich your telemetry resource attributes.
+// Cluster defines custom cluster details to enrich your telemetry resource attributes.
 type Cluster struct {
 	// Name specifies a custom cluster name for the resource attribute `k8s.cluster.name`.
 	Name string `json:"name"`

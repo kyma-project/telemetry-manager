@@ -25,8 +25,8 @@ func init() {
 	SchemeBuilder.Register(&LogPipeline{}, &LogPipelineList{})
 }
 
-// +kubebuilder:object:root=true
 // LogPipelineList contains a list of LogPipeline
+// +kubebuilder:object:root=true
 type LogPipelineList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -34,6 +34,7 @@ type LogPipelineList struct {
 	Items []LogPipeline `json:"items"`
 }
 
+// LogPipeline is the Schema for the logpipelines API
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Cluster,categories={kyma-telemetry,kyma-telemetry-pipelines}
 // +kubebuilder:metadata:labels={app.kubernetes.io/component=controller,app.kubernetes.io/managed-by=kyma,app.kubernetes.io/name=telemetry-manager,app.kubernetes.io/part-of=telemetry,kyma-project.io/module=telemetry}
@@ -43,7 +44,6 @@ type LogPipelineList struct {
 // +kubebuilder:printcolumn:name="Flow Healthy",type=string,JSONPath=`.status.conditions[?(@.type=="TelemetryFlowHealthy")].status`
 // +kubebuilder:printcolumn:name="Unsupported Mode",type=boolean,JSONPath=`.status.unsupportedMode`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
-// LogPipeline is the Schema for the logpipelines API
 type LogPipeline struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -166,6 +166,7 @@ type LogPipelineHTTPOutput struct {
 	Dedot bool `json:"dedot,omitempty"`
 }
 
+// LogPipelineOutputTLS configures TLS for the HTTP backend.
 // +kubebuilder:validation:XValidation:rule="has(self.cert) == has(self.key)", message="Can define either both 'cert' and 'key', or neither"
 type LogPipelineOutputTLS struct {
 	// Disabled specifies if TLS is disabled or enabled. Default is `false`.
@@ -180,7 +181,7 @@ type LogPipelineOutputTLS struct {
 	Key *ValueType `json:"key,omitempty"`
 }
 
-// Provides file content to be consumed by a LogPipeline configuration
+// LogPipelineFileMount provides file content to be consumed by a LogPipeline configuration
 type LogPipelineFileMount struct {
 	// Name of the file under which the content is mounted in the Fluent Bit configuration.
 	Name string `json:"name,omitempty"`
@@ -188,7 +189,7 @@ type LogPipelineFileMount struct {
 	Content string `json:"content,omitempty"`
 }
 
-// References a Kubernetes secret that should be provided as environment variable to Fluent Bit
+// LogPipelineVariableRef references a Kubernetes secret that should be provided as environment variable to Fluent Bit
 type LogPipelineVariableRef struct {
 	// Name of the variable to map.
 	Name      string          `json:"name,omitempty"`
