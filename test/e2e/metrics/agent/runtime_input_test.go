@@ -54,7 +54,6 @@ func TestRuntimeInput(t *testing.T) {
 
 		backendNs = uniquePrefix("backend")
 		genNs     = uniquePrefix("gen")
-		podNs     = uniquePrefix("pod")
 
 		pvName                  = uniquePrefix()
 		pvcName                 = uniquePrefix()
@@ -68,7 +67,7 @@ func TestRuntimeInput(t *testing.T) {
 
 	pipelineA := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineNameA).
-		WithRuntimeInput(true, testutils.IncludeNamespaces(genNs, podNs)).
+		WithRuntimeInput(true, testutils.IncludeNamespaces(genNs)).
 		WithRuntimeInputContainerMetrics(true).
 		WithRuntimeInputPodMetrics(true).
 		WithRuntimeInputNodeMetrics(true).
@@ -104,7 +103,6 @@ func TestRuntimeInput(t *testing.T) {
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
-		kitk8s.NewNamespace(podNs).K8sObject(),
 		&pipelineA,
 		&pipelineB,
 		&pipelineC,
@@ -118,7 +116,7 @@ func TestRuntimeInput(t *testing.T) {
 	resources = append(resources, backendA.K8sObjects()...)
 	resources = append(resources, backendB.K8sObjects()...)
 	resources = append(resources, backendC.K8sObjects()...)
-	resources = append(resources, createPodsWithVolume(pvName, pvcName, podMountingPVCName, podMountingEmptyDirName, podNs)...)
+	resources = append(resources, createPodsWithVolume(pvName, pvcName, podMountingPVCName, podMountingEmptyDirName, genNs)...)
 
 	t.Cleanup(func() {
 		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
@@ -138,8 +136,8 @@ func TestRuntimeInput(t *testing.T) {
 	assert.DaemonSetReady(t, types.NamespacedName{Name: daemonSetName, Namespace: genNs})
 	assert.StatefulSetReady(t, types.NamespacedName{Name: statefulSetName, Namespace: genNs})
 	assert.JobReady(t, types.NamespacedName{Name: jobName, Namespace: genNs})
-	assert.PodReady(t, types.NamespacedName{Name: podMountingPVCName, Namespace: podNs})
-	assert.PodReady(t, types.NamespacedName{Name: podMountingEmptyDirName, Namespace: podNs})
+	assert.PodReady(t, types.NamespacedName{Name: podMountingPVCName, Namespace: genNs})
+	assert.PodReady(t, types.NamespacedName{Name: podMountingEmptyDirName, Namespace: genNs})
 	agentMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.MetricAgentMetricsService.Namespace, kitkyma.MetricAgentMetricsService.Name, "metrics", ports.Metrics)
 	assert.EmitsOTelCollectorMetrics(t, agentMetricsURL)
 
