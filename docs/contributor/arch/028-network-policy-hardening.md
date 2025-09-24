@@ -122,7 +122,7 @@ It is important to test the network policies using our E2E tests to ensure they 
 
 - Rename existing network policies to follow new naming conventions: `kyma-project.io--telemetry-<network-policy-name>`
 - Remove health check ports from ingress rules since they have no impact.
-- Remove Gardener system pods from our scraping jobs.
+- Remove Gardener system Pods from our scraping jobs.
 - Implement cross-component network policies to allow essential services like DNS and Kubernetes API access.
 - Harden telemetry manager and self-monitoring because it requires no breaking changes.
 - Either expand Gardener E2E test suite to cover more scenarios or find a way to run E2E tests with Calico CNI.
