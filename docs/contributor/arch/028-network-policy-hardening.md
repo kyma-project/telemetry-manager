@@ -124,7 +124,7 @@ It is important to test the network policies using our E2E tests to ensure they 
 - Remove health check ports from ingress rules since they have no impact.
 - Remove Gardener system pods from our scraping jobs.
 - Implement cross-component network policies to allow essential services like DNS and Kubernetes API access.
-- Harden telemetry manager and self-monitoring since it requires no breaking changes.
+- Harden telemetry manager and self-monitoring because it requires no breaking changes.
 - Either expand Gardener E2E test suite to cover more scenarios or find a way to run E2E tests with Calico CNI.
 - Separate self-monitoring webhook from admission webhooks in telemetry manager to allow more fine-grained ingress rules.
 
