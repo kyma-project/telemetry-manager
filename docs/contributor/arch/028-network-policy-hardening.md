@@ -12,7 +12,7 @@ date: 2025-09-18
 
 #### FluentBit, Log Agent:
 * Ingress: Metric scraping (self-monitoring and RMA) and health checks
-* Egress: Kubernetes API, DNS, external logging services (e.g., CLS)
+* Egress: Kubernetes API, DNS, external logging services (for example, CLS)
 
 #### Log, Trace, Metric Gateway:
 * Ingress: Metric scraping (self-monitoring and RMA), health checks, OTLP data ingested by customer workloads
