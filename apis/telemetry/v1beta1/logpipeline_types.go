@@ -78,6 +78,7 @@ type LogPipelineSpec struct {
 	// Filters configures custom Fluent Bit `filters` to transform logs. Only available when using an output of type `http` and `custom`.
 	Filters []LogPipelineFilter `json:"filters,omitempty"`
 	// Output configures the backend to which logs are sent. You must specify exactly one output per pipeline.
+	// +kubebuilder:validation:Required
 	Output LogPipelineOutput `json:"output,omitempty"`
 	// Files is a list of content snippets that are mounted as files in the Fluent Bit configuration, which can be linked in the `custom` filters and a `custom` output. Only available when using an output of type `http` and `custom`.
 	Files []LogPipelineFileMount `json:"files,omitempty"`
@@ -118,7 +119,6 @@ type LogPipelineRuntimeInput struct {
 
 // LogPipelineNamespaceSelector describes whether application logs from specific Namespaces are selected. The options are mutually exclusive. System Namespaces are excluded by default. Use the `system` attribute with value `true` to enable them.
 // +kubebuilder:validation:MaxProperties=1
-// +kubebuilder:validation:MinProperties=1
 type LogPipelineNamespaceSelector struct {
 	// Include only the container logs of the specified Namespace names.
 	Include []string `json:"include,omitempty"`
@@ -130,7 +130,6 @@ type LogPipelineNamespaceSelector struct {
 
 // LogPipelineContainerSelector describes whether application logs from specific containers are selected. The options are mutually exclusive.
 // +kubebuilder:validation:MaxProperties=1
-// +kubebuilder:validation:MinProperties=1
 type LogPipelineContainerSelector struct {
 	// Include specifies to include only the container logs with the specified container names.
 	Include []string `json:"include,omitempty"`
@@ -146,9 +145,6 @@ type LogPipelineFilter struct {
 
 // LogPipelineOutput configures the backend to which logs are sent. You must specify exactly one output per pipeline.
 // +kubebuilder:validation:XValidation:rule="has(self.otlp) == has(oldSelf.otlp)", message="Switching to or away from OTLP output is not supported. Please re-create the LogPipeline instead"
-// +kubebuilder:validation:XValidation:rule="(!has(self.custom) && !has(self.http)) || !(has(self.custom) && has(self.http))", message="Exactly one output must be defined"
-// +kubebuilder:validation:XValidation:rule="(!has(self.custom) && !has(self.otlp)) || ! (has(self.custom) && has(self.otlp))", message="Exactly one output must be defined"
-// +kubebuilder:validation:XValidation:rule="(!has(self.http) && !has(self.otlp)) || ! (has(self.http) && has(self.otlp))", message="Exactly one output must be defined"
 // +kubebuilder:validation:MaxProperties=1
 // +kubebuilder:validation:MinProperties=1
 type LogPipelineOutput struct {
@@ -163,7 +159,6 @@ type LogPipelineOutput struct {
 // LogPipelineHTTPOutput configures an HTTP-based output compatible with the Fluent Bit HTTP output plugin.
 type LogPipelineHTTPOutput struct {
 	// Host defines the host of the HTTP backend.
-	// +kubebuilder:validation:Required
 	Host ValueType `json:"host,omitempty"`
 	// User defines the basic auth user.
 	User ValueType `json:"user,omitempty"`
