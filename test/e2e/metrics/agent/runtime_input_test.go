@@ -68,7 +68,7 @@ func TestRuntimeInput(t *testing.T) {
 
 	pipelineA := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineNameA).
-		WithRuntimeInput(true).
+		WithRuntimeInput(true, testutils.IncludeNamespaces(genNs)).
 		WithRuntimeInputContainerMetrics(true).
 		WithRuntimeInputPodMetrics(true).
 		WithRuntimeInputNodeMetrics(true).
@@ -81,7 +81,7 @@ func TestRuntimeInput(t *testing.T) {
 		Build()
 	pipelineB := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineNameB).
-		WithRuntimeInput(true).
+		WithRuntimeInput(true, testutils.IncludeNamespaces(genNs)).
 		WithRuntimeInputPodMetrics(false).
 		WithRuntimeInputContainerMetrics(false).
 		WithRuntimeInputNodeMetrics(false).
@@ -94,7 +94,7 @@ func TestRuntimeInput(t *testing.T) {
 		Build()
 	pipelineC := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineNameC).
-		WithRuntimeInput(true).
+		WithRuntimeInput(true, testutils.IncludeNamespaces(genNs)).
 		WithOTLPOutput(testutils.OTLPEndpoint(backendC.Endpoint())).
 		Build()
 
