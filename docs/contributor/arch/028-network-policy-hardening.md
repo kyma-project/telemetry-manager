@@ -131,7 +131,7 @@ It is important to test the network policies using our E2E tests to ensure they 
 # Phase 2: Introduce Zero-trust Network Policies
 
 - Implement a feature toggle in the Telemetry CR to enable/disable extra rules that harden customer-to-telemetry communication as well as RMA, cross-Kyma module communication. The telemetry module already has basic network policies in place, making the `enableNetworkPolicies` toggle name not logical for our use case (we still will have network policies even if it is set to false). However, we will maintain this toggle for consistency with other Kyma modules.
-- Document the required pod labels for customer workloads to ensure proper communication with telemetry components.
+- Document the required Pod labels for customer workloads to ensure proper communication with telemetry components.
 
 ### Proposed Network Policy Changes
 
