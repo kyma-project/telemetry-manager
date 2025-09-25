@@ -24,11 +24,11 @@ func TestSecretMissing(t *testing.T) {
 		input telemetryv1alpha1.MetricPipelineInput
 	}{
 		{
-			label: suite.LabelMetricAgentSetB,
+			label: suite.LabelMetricAgentSetC,
 			input: testutils.BuildMetricPipelineRuntimeInput(),
 		},
 		{
-			label: suite.LabelMetricGateway,
+			label: suite.LabelMetricGatewaySetC,
 			input: testutils.BuildMetricPipelineOTLPInput(),
 		},
 	}

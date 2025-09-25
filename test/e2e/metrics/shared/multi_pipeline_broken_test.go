@@ -43,7 +43,7 @@ func TestMultiPipelineBroken(t *testing.T) {
 			},
 		},
 		{
-			label: suite.LabelMetricGateway,
+			label: suite.LabelMetricGatewaySetB,
 			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},

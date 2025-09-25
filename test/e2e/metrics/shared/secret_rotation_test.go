@@ -27,7 +27,7 @@ func TestSecretRotation(t *testing.T) {
 		generatorBuilder func(ns string) []client.Object
 	}{
 		{
-			label: suite.LabelMetricAgentSetB,
+			label: suite.LabelMetricAgentSetC,
 			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
@@ -41,7 +41,7 @@ func TestSecretRotation(t *testing.T) {
 			},
 		},
 		{
-			label: suite.LabelMetricGateway,
+			label: suite.LabelMetricGatewaySetC,
 			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},

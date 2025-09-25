@@ -24,11 +24,11 @@ func TestMTLSInvalidCA(t *testing.T) {
 		input telemetryv1alpha1.MetricPipelineInput
 	}{
 		{
-			label: suite.LabelMetricAgentSetB,
+			label: suite.LabelMetricAgentSetA,
 			input: testutils.BuildMetricPipelineRuntimeInput(),
 		},
 		{
-			label: suite.LabelMetricGateway,
+			label: suite.LabelMetricGatewaySetA,
 			input: testutils.BuildMetricPipelineOTLPInput(),
 		},
 	}

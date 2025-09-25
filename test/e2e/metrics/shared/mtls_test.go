@@ -20,14 +20,14 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestSinglePipeline(t *testing.T) {
+func TestMTLS(t *testing.T) {
 	tests := []struct {
 		label            string
 		inputBuilder     func(includeNs string) telemetryv1alpha1.MetricPipelineInput
 		generatorBuilder func(ns string) []client.Object
 	}{
 		{
-			label: suite.LabelMetricAgentSetC,
+			label: suite.LabelMetricAgentSetB,
 			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
@@ -41,7 +41,7 @@ func TestSinglePipeline(t *testing.T) {
 			},
 		},
 		{
-			label: suite.LabelMetricGatewaySetC,
+			label: suite.LabelMetricGatewaySetB,
 			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
@@ -64,11 +64,22 @@ func TestSinglePipeline(t *testing.T) {
 				genNs        = uniquePrefix("gen")
 			)
 
-			backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)
+			serverCerts, clientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
+			Expect(err).ToNot(HaveOccurred())
+
+			backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithTLS(*serverCerts))
+
 			pipeline := testutils.NewMetricPipelineBuilder().
 				WithName(pipelineName).
 				WithInput(tc.inputBuilder(genNs)).
-				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+				WithOTLPOutput(
+					testutils.OTLPEndpoint(backend.Endpoint()),
+					testutils.OTLPClientTLSFromString(
+						clientCerts.CaCertPem.String(),
+						clientCerts.ClientCertPem.String(),
+						clientCerts.ClientKeyPem.String(),
+					),
+				).
 				Build()
 
 			resources := []client.Object{

@@ -23,7 +23,7 @@ func TestEndpointWithPathValidation(t *testing.T) {
 			input: testutils.BuildMetricPipelineRuntimeInput(),
 		},
 		{
-			label: suite.LabelMetricGateway,
+			label: suite.LabelMetricGatewaySetA,
 			input: testutils.BuildMetricPipelineOTLPInput(),
 		},
 	}

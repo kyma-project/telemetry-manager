@@ -43,7 +43,7 @@ func TestCustomClusterName(t *testing.T) {
 			},
 		},
 		{
-			label: suite.LabelMetricGateway,
+			label: suite.LabelMetricGatewaySetA,
 			input: testutils.BuildMetricPipelineOTLPInput(),
 			generatorBuilder: func(ns string) []client.Object {
 				return []client.Object{

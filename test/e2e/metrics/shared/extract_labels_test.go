@@ -41,7 +41,7 @@ func TestExtractLabels(t *testing.T) {
 			},
 		},
 		{
-			label: suite.LabelMetricGateway,
+			label: suite.LabelMetricGatewaySetA,
 			input: testutils.BuildMetricPipelineOTLPInput(),
 			generatorBuilder: func(ns string, labels map[string]string) []client.Object {
 				return []client.Object{

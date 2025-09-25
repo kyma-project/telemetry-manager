@@ -28,7 +28,7 @@ func TestSinglePipelineV1Beta1(t *testing.T) {
 		generatorBuilder func(ns string) []client.Object
 	}{
 		{
-			label: suite.LabelMetricAgentSetB,
+			label: suite.LabelMetricAgentSetC,
 			input: telemetryv1beta1.MetricPipelineInput{
 				Runtime: &telemetryv1beta1.MetricPipelineRuntimeInput{
 					Enabled: ptr.To(true),
@@ -44,7 +44,7 @@ func TestSinglePipelineV1Beta1(t *testing.T) {
 			},
 		},
 		{
-			label: suite.LabelMetricGateway,
+			label: suite.LabelMetricGatewaySetC,
 			input: telemetryv1beta1.MetricPipelineInput{
 				OTLP: &telemetryv1beta1.OTLPInput{
 					Disabled: false,

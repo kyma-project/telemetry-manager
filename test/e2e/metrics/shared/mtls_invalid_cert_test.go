@@ -28,7 +28,7 @@ func TestMTLSInvalidCert(t *testing.T) {
 			input: testutils.BuildMetricPipelineRuntimeInput(),
 		},
 		{
-			label: suite.LabelMetricGateway,
+			label: suite.LabelMetricGatewaySetB,
 			input: testutils.BuildMetricPipelineOTLPInput(),
 		},
 	}

@@ -31,7 +31,7 @@ func TestTransform(t *testing.T) {
 		expectAgent      bool
 	}{
 		{
-			label: suite.LabelMetricAgentSetA,
+			label: suite.LabelMetricAgentSetC,
 			name:  "with-where",
 			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
@@ -53,7 +53,7 @@ func TestTransform(t *testing.T) {
 			expectAgent: true,
 		},
 		{
-			label: suite.LabelMetricAgentSetA,
+			label: suite.LabelMetricAgentSetC,
 			name:  "cond-and-stmts",
 			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
@@ -75,7 +75,7 @@ func TestTransform(t *testing.T) {
 			expectAgent: true,
 		},
 		{
-			label: suite.LabelMetricAgentSetA,
+			label: suite.LabelMetricAgentSetC,
 			name:  "infer-context",
 			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
@@ -99,7 +99,7 @@ func TestTransform(t *testing.T) {
 			expectAgent: true,
 		},
 		{
-			label: suite.LabelMetricGateway,
+			label: suite.LabelMetricGatewaySetC,
 			name:  "with-where",
 			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
@@ -118,7 +118,7 @@ func TestTransform(t *testing.T) {
 			))),
 		},
 		{
-			label: suite.LabelMetricGateway,
+			label: suite.LabelMetricGatewaySetC,
 			name:  "cond-and-stmts",
 			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
@@ -137,7 +137,7 @@ func TestTransform(t *testing.T) {
 			))),
 		},
 		{
-			label: suite.LabelMetricGateway,
+			label: suite.LabelMetricGatewaySetC,
 			name:  "infer-context",
 			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))

@@ -85,7 +85,10 @@ const (
 	LabelMetricsMaxPipeline = "metrics-max-pipeline"
 	LabelMetricAgentSetA    = "metric-agent-a"
 	LabelMetricAgentSetB    = "metric-agent-b"
-	LabelMetricGateway      = "metric-gateway"
+	LabelMetricAgentSetC    = "metric-agent-c"
+	LabelMetricGatewaySetA  = "metric-gateway-a"
+	LabelMetricGatewaySetB  = "metric-gateway-b"
+	LabelMetricGatewaySetC  = "metric-gateway-c"
 
 	// Traces labels
 	LabelTraces            = "traces"
@@ -121,6 +124,7 @@ const (
 func ExpectAgent(label string) bool {
 	return label == LabelMetricAgentSetA ||
 		label == LabelMetricAgentSetB ||
+		label == LabelMetricAgentSetC ||
 		label == LabelLogAgent
 }
 
