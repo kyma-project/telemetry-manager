@@ -50,6 +50,7 @@ func TestKymaInput(t *testing.T) {
 	assert.BackendReachable(t, backend)
 	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 	assert.MetricPipelineHealthy(t, pipelineName)
+	assert.TelemetryCRExists(t)
 
 	Eventually(func(g Gomega) {
 		backendURL := backend.ExportURL(suite.ProxyClient)
