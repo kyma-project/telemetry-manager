@@ -42,7 +42,7 @@ func TestMultiPipelineFanout(t *testing.T) {
 	// Other metric resources are tested in metrics_runtime_input_test.go, here the focus is on testing multiple pipelines withe different inputs (runtime and prometheus)
 	metricPipelineRuntime := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineRuntimeName).
-		WithRuntimeInput(true).
+		WithRuntimeInput(true, testutils.IncludeNamespaces(genNs)).
 		WithRuntimeInputContainerMetrics(true).
 		WithRuntimeInputPodMetrics(false).
 		WithRuntimeInputNodeMetrics(false).
@@ -56,7 +56,7 @@ func TestMultiPipelineFanout(t *testing.T) {
 
 	metricPipelinePrometheus := testutils.NewMetricPipelineBuilder().
 		WithName(pipelinePrometheusName).
-		WithPrometheusInput(true).
+		WithPrometheusInput(true, testutils.IncludeNamespaces(genNs)).
 		WithOTLPOutput(testutils.OTLPEndpoint(backendPrometheus.Endpoint())).
 		Build()
 
