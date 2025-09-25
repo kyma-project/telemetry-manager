@@ -83,6 +83,8 @@ func TestMultiPipelineFanout(t *testing.T) {
 	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 	assert.MetricPipelineHealthy(t, pipelineRuntimeName)
 	assert.MetricPipelineHealthy(t, pipelinePrometheusName)
+	assert.MetricsFromNamespaceDelivered(t, backendRuntime, genNs, runtime.DefaultMetricsNames)
+	assert.MetricsFromNamespaceDelivered(t, backendPrometheus, genNs, prommetricgen.CustomMetricNames())
 
 	Eventually(func(g Gomega) {
 		resp, err := suite.ProxyClient.Get(backendRuntimeExportURL)
