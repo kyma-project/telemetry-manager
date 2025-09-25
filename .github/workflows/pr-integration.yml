@@ -146,6 +146,9 @@ jobs:
           - name: metrics-misc
             mode: release
             type: e2e
+          - name: metrics-failing
+            mode: release
+            type: e2e
           - name: metrics-max-pipeline
             mode: release
             type: e2e
