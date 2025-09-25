@@ -214,8 +214,8 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return fmt.Errorf("failed to reconcile metric gateway: %w", err)
 	}
 
-	if isMetricAgentRequired(pipeline) {
-		if err = r.reconcileMetricAgents(ctx, pipeline, allPipelinesList.Items); err != nil {
+	if len(reconcilablePipelinesRequiringAgents) > 0 {
+		if err = r.reconcileMetricAgents(ctx, pipeline, reconcilablePipelinesRequiringAgents); err != nil {
 			return fmt.Errorf("failed to reconcile metric agents: %w", err)
 		}
 	}
