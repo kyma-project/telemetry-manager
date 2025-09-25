@@ -27,12 +27,12 @@ func TestKymaInput(t *testing.T) {
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
 		backendNs    = uniquePrefix("backend")
-		backendName  = uniquePrefix("be")
 	)
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithName(backendName))
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)
 	pipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineName).
+		WithOTLPInput(true, testutils.IncludeNamespaces(kitkyma.SystemNamespaceName)).
 		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 		Build()
 
