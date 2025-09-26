@@ -15,6 +15,7 @@ const (
 	kindLogsOTelGateway string = "logs-otel-gateway"
 	kindLogsFluentbit   string = "logs-fluentbit"
 	kindMetrics         string = "metrics"
+	kindMetricsAgent    string = "metrics-agent"
 	kindTraces          string = "traces"
 )
 
@@ -39,7 +40,7 @@ func signalType(testKind string) kitbackend.SignalType {
 		return kitbackend.SignalTypeLogsOTel
 	case kindLogsFluentbit:
 		return kitbackend.SignalTypeLogsFluentBit
-	case kindMetrics:
+	case kindMetrics, kindMetricsAgent:
 		return kitbackend.SignalTypeMetrics
 	case kindTraces:
 		return kitbackend.SignalTypeTraces

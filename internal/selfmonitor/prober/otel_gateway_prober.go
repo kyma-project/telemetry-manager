@@ -27,6 +27,10 @@ func NewOTelMetricGatewayProber(selfMonitorName types.NamespacedName) (*OTelGate
 	return newOTelGatewayProber(selfMonitorName, config.MatchesMetricPipelineRule)
 }
 
+func NewOTelMetricAgentProber(selfMonitorName types.NamespacedName) (*OTelAgentProber, error) {
+	return newOTelAgentProber(selfMonitorName, config.MatchesMetricPipelineRule)
+}
+
 func NewOTelTraceGatewayProber(selfMonitorName types.NamespacedName) (*OTelGatewayProber, error) {
 	return newOTelGatewayProber(selfMonitorName, config.MatchesTracePipelineRule)
 }

@@ -42,7 +42,7 @@ service:
                 - filter/drop-runtime-statefulset-metrics
                 - filter/drop-runtime-job-metrics
                 - resource/insert-cluster-attributes
-                - resource/delete-skip-enrichment-attribute
+                - resource/drop-skip-enrichment-attribute
                 - resource/drop-kyma-attributes
                 - batch
             exporters:
@@ -180,14 +180,14 @@ processors:
         check_interval: 1s
         limit_percentage: 75
         spike_limit_percentage: 15
-    resource/delete-skip-enrichment-attribute:
-        attributes:
-            - action: delete
-              key: io.kyma-project.telemetry.skip_enrichment
     resource/drop-kyma-attributes:
         attributes:
             - action: delete
               pattern: kyma.*
+    resource/drop-skip-enrichment-attribute:
+        attributes:
+            - action: delete
+              key: io.kyma-project.telemetry.skip_enrichment
     resource/insert-cluster-attributes:
         attributes:
             - action: insert

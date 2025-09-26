@@ -7,6 +7,7 @@ import (
 	"maps"
 	"slices"
 	"strconv"
+	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -62,6 +63,8 @@ type AgentApplyOptions struct {
 	IstioEnabled        bool
 	CollectorConfigYAML string
 	CollectorEnvVars    map[string][]byte
+	// BackendPorts is needed only for the metric agent to set the value of the annotation "traffic.sidecar.istio.io/includeOutboundPorts"
+	BackendPorts []string
 }
 
 func NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName string) *AgentApplierDeleter {
@@ -254,14 +257,16 @@ func makeMetricAgentAnnotations(configChecksum string, opts AgentApplyOptions) m
 	if opts.IstioEnabled {
 		annotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = strconv.Itoa(int(ports.Metrics))
 		// Provision Istio certificates for Prometheus Receiver running as a part of MetricAgent by injecting a sidecar which will rotate SDS certificates and output them to a volume.
-		// However, the sidecar should not intercept scraping requests  because Prometheus’s model of direct endpoint access is incompatible with Istio’s sidecar proxy model.
 		annotations[commonresources.AnnotationKeyIstioProxyConfig] = fmt.Sprintf(`# configure an env variable OUTPUT_CERTS to write certificates to the given folder
 proxyMetadata:
   OUTPUT_CERTS: %s
 `, IstioCertPath)
 		annotations[commonresources.AnnotationKeyIstioUserVolumeMount] = fmt.Sprintf(`[{"name": "%s", "mountPath": "%s"}]`, istioCertVolumeName, IstioCertPath)
+		// The Istio sidecar should not intercept scraping requests  because Prometheus’s model of direct endpoint access is incompatible with Istio’s sidecar proxy model.
+		// So, all outbound traffic should bypass Istio’s sidecar (traffic.sidecar.istio.io/includeOutboundIPRanges: "") with the exception of the traffic to the backends (traffic.sidecar.istio.io/includeOutboundPorts: {BACKEND_PORT_1},{BACKEND_PORT_2})
+		// For more details, check the ADR: https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/026-istio-outgoing-communication-for-metric-agent.md
 		annotations[commonresources.AnnotationKeyIstioIncludeOutboundIPRanges] = ""
-		annotations[commonresources.AnnotationKeyIstioIncludeOutboundPorts] = strconv.Itoa(int(ports.OTLPGRPC))
+		annotations[commonresources.AnnotationKeyIstioIncludeOutboundPorts] = strings.Join(opts.BackendPorts, ",")
 	}
 
 	return annotations

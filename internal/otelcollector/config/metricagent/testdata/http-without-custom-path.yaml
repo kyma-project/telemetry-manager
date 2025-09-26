@@ -40,7 +40,7 @@ service:
                 - resource/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp/test
+                - otlphttp/test
     telemetry:
         metrics:
             readers:
@@ -110,10 +110,16 @@ receivers:
         metrics:
             container.cpu.usage:
                 enabled: true
+            container.cpu.utilization:
+                enabled: false
             k8s.pod.cpu.usage:
                 enabled: true
+            k8s.pod.cpu.utilization:
+                enabled: false
             k8s.node.cpu.usage:
                 enabled: true
+            k8s.node.cpu.utilization:
+                enabled: false
             k8s.node.cpu.time:
                 enabled: false
             k8s.node.memory.major_page_faults:
@@ -228,7 +234,7 @@ processors:
                 - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
                 - set(scope.name, "io.kyma-project.telemetry/runtime") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
 exporters:
-    otlp/test:
+    otlphttp/test:
         endpoint: ${OTLP_ENDPOINT_TEST}
         tls:
             insecure: true
