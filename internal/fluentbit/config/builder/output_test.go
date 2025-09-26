@@ -60,8 +60,8 @@ func TestCreateOutputSectionWithHTTPOutput(t *testing.T) {
 					Dedot:    true,
 					Port:     "1234",
 					Host:     telemetryv1alpha1.ValueType{Value: "localhost"},
-					User:     telemetryv1alpha1.ValueType{Value: "user"},
-					Password: telemetryv1alpha1.ValueType{Value: "password"},
+					User:     &telemetryv1alpha1.ValueType{Value: "user"},
+					Password: &telemetryv1alpha1.ValueType{Value: "password"},
 					URI:      "/customindex/kyma",
 					Format:   "yaml",
 				},
@@ -102,8 +102,8 @@ func TestCreateOutputSectionWithHTTPOutputWithSecretReference(t *testing.T) {
 					Dedot: true,
 					URI:   "/my-uri",
 					Host:  telemetryv1alpha1.ValueType{Value: "localhost"},
-					User:  telemetryv1alpha1.ValueType{Value: "user"},
-					Password: telemetryv1alpha1.ValueType{
+					User:  &telemetryv1alpha1.ValueType{Value: "user"},
+					Password: &telemetryv1alpha1.ValueType{
 						ValueFrom: &telemetryv1alpha1.ValueFromSource{
 							SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 								Name:      "secret",

@@ -114,20 +114,27 @@ func TestEndpointInvalid_FluentBit(t *testing.T) {
 		WithHTTPOutput(testutils.HTTPHostFromSecret(secret.Name(), secret.Namespace(), hostKey)).
 		Build()
 
-	resourcesToSucceedCreation := []client.Object{
+	resourcesInvalidEndpointValueFrom := []client.Object{
 		secret.K8sObject(),
 		&pipelineInvalidEndpointValueFrom,
 	}
 
-	resourcesToFailCreation := []client.Object{
+	resourcesInvalidEndpointValue := []client.Object{
 		&pipelineInvalidEndpointValue,
 	}
 
 	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resourcesToSucceedCreation...)).To(Succeed())
+		Expect(kitk8s.DeleteObjects(resourcesInvalidEndpointValueFrom...)).To(Succeed())
+		Expect(kitk8s.DeleteObjects(resourcesInvalidEndpointValue...)).To(Succeed())
 	})
-	Expect(kitk8s.CreateObjects(t, resourcesToSucceedCreation...)).To(Succeed())
-	Expect(kitk8s.CreateObjects(t, resourcesToFailCreation...)).Should(MatchError(ContainSubstring("invalid hostname")))
+	Expect(kitk8s.CreateObjects(t, resourcesInvalidEndpointValueFrom...)).To(Succeed())
+	Expect(kitk8s.CreateObjects(t, resourcesInvalidEndpointValue...)).To(Succeed())
+
+	assert.LogPipelineHasCondition(t, pipelineNameValueFromSecret, metav1.Condition{
+		Type:   conditions.TypeConfigurationGenerated,
+		Status: metav1.ConditionFalse,
+		Reason: conditions.ReasonEndpointInvalid,
+	})
 
 	assert.LogPipelineHasCondition(t, pipelineNameValueFromSecret, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,

@@ -1,4 +1,4 @@
-package metrics
+package traces
 
 import (
 	"errors"
@@ -16,7 +16,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-func TestRejectMetricPipelineCreation(t *testing.T) {
+func TestRejectTracePipelineCreation(t *testing.T) {
 	const (
 		backendHost     = "example.com"
 		backendPort     = 4317
@@ -26,26 +26,26 @@ func TestRejectMetricPipelineCreation(t *testing.T) {
 	var backenEndpoint = backendHost + ":" + strconv.Itoa(backendPort)
 
 	tests := []struct {
-		pipeline  telemetryv1alpha1.MetricPipeline
+		pipeline  telemetryv1alpha1.TracePipeline
 		errorMsgs []string
 	}{
 		// output general
 		{
-			pipeline: telemetryv1alpha1.MetricPipeline{
+			pipeline: telemetryv1alpha1.TracePipeline{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "no-output",
 				},
-				Spec: telemetryv1alpha1.MetricPipelineSpec{},
+				Spec: telemetryv1alpha1.TracePipelineSpec{},
 			},
 			errorMsgs: []string{"spec.output in body should have at least 1 properties"},
 		},
 		{
-			pipeline: telemetryv1alpha1.MetricPipeline{
+			pipeline: telemetryv1alpha1.TracePipeline{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "valuefrom-accepts-only-one-option",
 				},
-				Spec: telemetryv1alpha1.MetricPipelineSpec{
-					Output: telemetryv1alpha1.MetricPipelineOutput{
+				Spec: telemetryv1alpha1.TracePipelineSpec{
+					Output: telemetryv1alpha1.TracePipelineOutput{
 						OTLP: &telemetryv1alpha1.OTLPOutput{
 							Endpoint: telemetryv1alpha1.ValueType{
 								Value: "example.com",
@@ -64,12 +64,12 @@ func TestRejectMetricPipelineCreation(t *testing.T) {
 			errorMsgs: []string{"Exactly one of 'value' or 'valueFrom' must be set"},
 		},
 		{
-			pipeline: telemetryv1alpha1.MetricPipeline{
+			pipeline: telemetryv1alpha1.TracePipeline{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "secretkeyref-requires-key",
 				},
-				Spec: telemetryv1alpha1.MetricPipelineSpec{
-					Output: telemetryv1alpha1.MetricPipelineOutput{
+				Spec: telemetryv1alpha1.TracePipelineSpec{
+					Output: telemetryv1alpha1.TracePipelineOutput{
 						OTLP: &telemetryv1alpha1.OTLPOutput{
 							Endpoint: telemetryv1alpha1.ValueType{
 								ValueFrom: &telemetryv1alpha1.ValueFromSource{
@@ -86,12 +86,12 @@ func TestRejectMetricPipelineCreation(t *testing.T) {
 			errorMsgs: []string{"spec.output.otlp.endpoint.valueFrom.secretKeyRef.key in body should be at least 1 chars long"},
 		},
 		{
-			pipeline: telemetryv1alpha1.MetricPipeline{
+			pipeline: telemetryv1alpha1.TracePipeline{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "secretkeyref-requires-namespace",
 				},
-				Spec: telemetryv1alpha1.MetricPipelineSpec{
-					Output: telemetryv1alpha1.MetricPipelineOutput{
+				Spec: telemetryv1alpha1.TracePipelineSpec{
+					Output: telemetryv1alpha1.TracePipelineOutput{
 						OTLP: &telemetryv1alpha1.OTLPOutput{
 							Endpoint: telemetryv1alpha1.ValueType{
 								ValueFrom: &telemetryv1alpha1.ValueFromSource{
@@ -108,12 +108,12 @@ func TestRejectMetricPipelineCreation(t *testing.T) {
 			errorMsgs: []string{"spec.output.otlp.endpoint.valueFrom.secretKeyRef.namespace in body should be at least 1 chars long"},
 		},
 		{
-			pipeline: telemetryv1alpha1.MetricPipeline{
+			pipeline: telemetryv1alpha1.TracePipeline{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "secretkeyref-requires-name",
 				},
-				Spec: telemetryv1alpha1.MetricPipelineSpec{
-					Output: telemetryv1alpha1.MetricPipelineOutput{
+				Spec: telemetryv1alpha1.TracePipelineSpec{
+					Output: telemetryv1alpha1.TracePipelineOutput{
 						OTLP: &telemetryv1alpha1.OTLPOutput{
 							Endpoint: telemetryv1alpha1.ValueType{
 								ValueFrom: &telemetryv1alpha1.ValueFromSource{
@@ -131,28 +131,28 @@ func TestRejectMetricPipelineCreation(t *testing.T) {
 		},
 		// otlp output
 		{
-			pipeline: testutils.NewMetricPipelineBuilder().
+			pipeline: testutils.NewTracePipelineBuilder().
 				WithName("otlp-output-with-default-proto-and-path").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
-					testutils.OTLPEndpointPath("/v1/mock/metrics"),
+					testutils.OTLPEndpointPath("/v1/mock/Traces"),
 				).
 				Build(),
 			errorMsgs: []string{"Path is only available with HTTP protocol"},
 		},
 		{
-			pipeline: testutils.NewMetricPipelineBuilder().
+			pipeline: testutils.NewTracePipelineBuilder().
 				WithName("otlp-output-with-grpc-proto-and-path").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
-					testutils.OTLPEndpointPath("/v1/mock/metrics"),
+					testutils.OTLPEndpointPath("/v1/mock/Traces"),
 					testutils.OTLPProtocol("grpc"),
 				).
 				Build(),
 			errorMsgs: []string{"Path is only available with HTTP protocol"},
 		},
 		{
-			pipeline: testutils.NewMetricPipelineBuilder().
+			pipeline: testutils.NewTracePipelineBuilder().
 				WithName("otlp-output-with-non-valid-proto").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
@@ -162,12 +162,12 @@ func TestRejectMetricPipelineCreation(t *testing.T) {
 			errorMsgs: []string{"spec.output.otlp.protocol: Unsupported value", validationError},
 		},
 		{
-			pipeline: telemetryv1alpha1.MetricPipeline{
+			pipeline: telemetryv1alpha1.TracePipeline{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "otlp-output-without-endpoint",
 				},
-				Spec: telemetryv1alpha1.MetricPipelineSpec{
-					Output: telemetryv1alpha1.MetricPipelineOutput{
+				Spec: telemetryv1alpha1.TracePipelineSpec{
+					Output: telemetryv1alpha1.TracePipelineOutput{
 						OTLP: &telemetryv1alpha1.OTLPOutput{},
 					},
 				},
@@ -175,7 +175,7 @@ func TestRejectMetricPipelineCreation(t *testing.T) {
 			errorMsgs: []string{"Exactly one of 'value' or 'valueFrom' must be set"},
 		},
 		{
-			pipeline: testutils.NewMetricPipelineBuilder().
+			pipeline: testutils.NewTracePipelineBuilder().
 				WithName("otlp-output-basic-auth-secretref-missing-password-key").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
@@ -185,7 +185,7 @@ func TestRejectMetricPipelineCreation(t *testing.T) {
 			errorMsgs: []string{"spec.output.otlp.authentication.basic.password.valueFrom.secretKeyRef.key in body should be at least 1 chars long"},
 		},
 		{
-			pipeline: testutils.NewMetricPipelineBuilder().
+			pipeline: testutils.NewTracePipelineBuilder().
 				WithName("otlp-output-basic-auth-secretref-missing-user-key").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
@@ -195,7 +195,7 @@ func TestRejectMetricPipelineCreation(t *testing.T) {
 			errorMsgs: []string{"spec.output.otlp.authentication.basic.user.valueFrom.secretKeyRef.key in body should be at least 1 chars long"},
 		},
 		{
-			pipeline: testutils.NewMetricPipelineBuilder().
+			pipeline: testutils.NewTracePipelineBuilder().
 				WithName("otlp-output-tls-missing-key").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
@@ -208,7 +208,7 @@ func TestRejectMetricPipelineCreation(t *testing.T) {
 			errorMsgs: []string{"Can define either both 'cert' and 'key', or neither"},
 		},
 		{
-			pipeline: testutils.NewMetricPipelineBuilder().
+			pipeline: testutils.NewTracePipelineBuilder().
 				WithName("otlp-output-tls-missing-cert").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
@@ -219,18 +219,6 @@ func TestRejectMetricPipelineCreation(t *testing.T) {
 				).
 				Build(),
 			errorMsgs: []string{"Can define either both 'cert' and 'key', or neither"},
-		},
-		// otlp input
-		{
-			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("otlp-input-namespaces-not-exclusive").
-				WithOTLPInput(true,
-					testutils.ExcludeNamespaces("ns1"),
-					testutils.IncludeNamespaces("ns2"),
-				).
-				WithOTLPOutput().
-				Build(),
-			errorMsgs: []string{"Too many: 2: must have at most 1 items", validationError},
 		},
 	}
 	for _, tc := range tests {

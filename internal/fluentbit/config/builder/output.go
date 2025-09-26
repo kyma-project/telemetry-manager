@@ -66,13 +66,13 @@ func generateHTTPOutput(httpOutput *telemetryv1alpha1.LogPipelineHTTPOutput, fsB
 		sb.AddConfigParam("host", value)
 	}
 
-	if sharedtypesutils.IsValid(&httpOutput.Password) {
-		value := resolveValue(httpOutput.Password, name)
+	if sharedtypesutils.IsValid(httpOutput.Password) {
+		value := resolveValue(*httpOutput.Password, name)
 		sb.AddConfigParam("http_passwd", value)
 	}
 
-	if sharedtypesutils.IsValid(&httpOutput.User) {
-		value := resolveValue(httpOutput.User, name)
+	if sharedtypesutils.IsValid(httpOutput.User) {
+		value := resolveValue(*httpOutput.User, name)
 		sb.AddConfigParam("http_user", value)
 	}
 

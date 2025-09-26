@@ -476,14 +476,14 @@ func TestLogPipeline_GetSecretRefs(t *testing.T) {
 									},
 								},
 							},
-							User: telemetryv1alpha1.ValueType{
+							User: &telemetryv1alpha1.ValueType{
 								ValueFrom: &telemetryv1alpha1.ValueFromSource{
 									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 										Name: "creds", Namespace: "default", Key: "user",
 									},
 								},
 							},
-							Password: telemetryv1alpha1.ValueType{
+							Password: &telemetryv1alpha1.ValueType{
 								ValueFrom: &telemetryv1alpha1.ValueFromSource{
 									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 										Name: "creds", Namespace: "default", Key: "password",
@@ -516,14 +516,14 @@ func TestLogPipeline_GetSecretRefs(t *testing.T) {
 									},
 								},
 							},
-							User: telemetryv1alpha1.ValueType{
+							User: &telemetryv1alpha1.ValueType{
 								ValueFrom: &telemetryv1alpha1.ValueFromSource{
 									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 										Name: "creds", Key: "user",
 									},
 								},
 							},
-							Password: telemetryv1alpha1.ValueType{
+							Password: &telemetryv1alpha1.ValueType{
 								ValueFrom: &telemetryv1alpha1.ValueFromSource{
 									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 										Namespace: "default", Key: "password",
@@ -598,6 +598,6 @@ func TestGetSecretRefsInOTLPOutput_TLSFieldsAndInsecure(t *testing.T) {
 }
 
 func TestAppendIfSecretRef_NonSecretValue(t *testing.T) {
-	refs := appendIfSecretRef(nil, telemetryv1alpha1.ValueType{Value: "not-a-secret"})
+	refs := appendIfSecretRef(nil, &telemetryv1alpha1.ValueType{Value: "not-a-secret"})
 	require.Empty(t, refs)
 }

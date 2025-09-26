@@ -89,6 +89,7 @@ spec:
                           type: object
                         namespaces:
                           description: Namespaces configures the namespaces for which the collection should be activated. By default, all namespaces including system namespaces are enabled.
+                          maxProperties: 1
                           properties:
                             exclude:
                               description: Exclude signals from the specified Namespace names only.
@@ -101,9 +102,6 @@ spec:
                                 type: string
                               type: array
                           type: object
-                          x-kubernetes-validations:
-                            - message: Can only define one namespace selector - either 'include' or 'exclude'
-                              rule: '!((has(self.include) && size(self.include) != 0) && (has(self.exclude) && size(self.exclude) != 0))'
                       type: object
                     otlp:
                       description: OTLP input configures the push endpoint to receive metrics from an OTLP source.
@@ -113,6 +111,7 @@ spec:
                           type: boolean
                         namespaces:
                           description: Namespaces describes whether push-based OTLP signals from specific namespaces are selected. System namespaces are enabled by default.
+                          maxProperties: 1
                           properties:
                             exclude:
                               description: Exclude signals from the specified Namespace names only.
@@ -125,9 +124,6 @@ spec:
                                 type: string
                               type: array
                           type: object
-                          x-kubernetes-validations:
-                            - message: Can only define one namespace selector - either 'include' or 'exclude'
-                              rule: '!((has(self.include) && size(self.include) != 0) && (has(self.exclude) && size(self.exclude) != 0))'
                       type: object
                     prometheus:
                       description: Prometheus input configures collection of application metrics in the pull-based Prometheus protocol using endpoint discovery based on annotations.
@@ -144,6 +140,7 @@ spec:
                           type: boolean
                         namespaces:
                           description: Namespaces specifies from which namespaces metrics are collected. By default, all namespaces except the system namespaces are enabled. To enable all namespaces including system namespaces, use an empty struct notation.
+                          maxProperties: 1
                           properties:
                             exclude:
                               description: Exclude signals from the specified Namespace names only.
@@ -156,9 +153,6 @@ spec:
                                 type: string
                               type: array
                           type: object
-                          x-kubernetes-validations:
-                            - message: Can only define one namespace selector - either 'include' or 'exclude'
-                              rule: '!((has(self.include) && size(self.include) != 0) && (has(self.exclude) && size(self.exclude) != 0))'
                       type: object
                     runtime:
                       description: Runtime input configures collection of Kubernetes runtime metrics.
@@ -168,6 +162,7 @@ spec:
                           type: boolean
                         namespaces:
                           description: Namespaces specifies from which namespaces metrics are collected. By default, all namespaces except the system namespaces are enabled. To enable all namespaces including system namespaces, use an empty struct notation.
+                          maxProperties: 1
                           properties:
                             exclude:
                               description: Exclude signals from the specified Namespace names only.
@@ -180,9 +175,6 @@ spec:
                                 type: string
                               type: array
                           type: object
-                          x-kubernetes-validations:
-                            - message: Can only define one namespace selector - either 'include' or 'exclude'
-                              rule: '!((has(self.include) && size(self.include) != 0) && (has(self.exclude) && size(self.exclude) != 0))'
                         resources:
                           description: Resources configures the Kubernetes resource types for which metrics are collected.
                           properties:
@@ -247,6 +239,8 @@ spec:
                   type: object
                 output:
                   description: Output configures the backend to which metrics are sent. You must specify exactly one output per pipeline.
+                  maxProperties: 1
+                  minProperties: 1
                   properties:
                     otlp:
                       description: OTLP output defines an output using the OpenTelemetry protocol.
@@ -271,20 +265,28 @@ spec:
                                           properties:
                                             key:
                                               description: Key defines the name of the attribute of the Secret holding the referenced value.
+                                              minLength: 1
                                               type: string
                                             name:
                                               description: Name of the Secret containing the referenced value.
+                                              minLength: 1
                                               type: string
                                             namespace:
                                               description: Namespace containing the Secret with the referenced value.
+                                              minLength: 1
                                               type: string
                                           required:
                                             - key
                                             - name
                                             - namespace
                                           type: object
+                                      required:
+                                        - secretKeyRef
                                       type: object
                                   type: object
+                                  x-kubernetes-validations:
+                                    - message: Exactly one of 'value' or 'valueFrom' must be set
+                                      rule: has(self.value) != has(self.valueFrom)
                                 user:
                                   description: User contains the basic auth username or a Secret reference.
                                   properties:
@@ -299,20 +301,28 @@ spec:
                                           properties:
                                             key:
                                               description: Key defines the name of the attribute of the Secret holding the referenced value.
+                                              minLength: 1
                                               type: string
                                             name:
                                               description: Name of the Secret containing the referenced value.
+                                              minLength: 1
                                               type: string
                                             namespace:
                                               description: Namespace containing the Secret with the referenced value.
+                                              minLength: 1
                                               type: string
                                           required:
                                             - key
                                             - name
                                             - namespace
                                           type: object
+                                      required:
+                                        - secretKeyRef
                                       type: object
                                   type: object
+                                  x-kubernetes-validations:
+                                    - message: Exactly one of 'value' or 'valueFrom' must be set
+                                      rule: has(self.value) != has(self.valueFrom)
                               required:
                                 - password
                                 - user
@@ -332,26 +342,35 @@ spec:
                                   properties:
                                     key:
                                       description: Key defines the name of the attribute of the Secret holding the referenced value.
+                                      minLength: 1
                                       type: string
                                     name:
                                       description: Name of the Secret containing the referenced value.
+                                      minLength: 1
                                       type: string
                                     namespace:
                                       description: Namespace containing the Secret with the referenced value.
+                                      minLength: 1
                                       type: string
                                   required:
                                     - key
                                     - name
                                     - namespace
                                   type: object
+                              required:
+                                - secretKeyRef
                               type: object
                           type: object
+                          x-kubernetes-validations:
+                            - message: Exactly one of 'value' or 'valueFrom' must be set
+                              rule: has(self.value) != has(self.valueFrom)
                         headers:
                           description: Headers defines custom headers to be added to outgoing HTTP or gRPC requests.
                           items:
                             properties:
                               name:
                                 description: Name defines the header name.
+                                minLength: 1
                                 type: string
                               prefix:
                                 description: Prefix defines an optional header value prefix. The prefix is separated from the value by a space character.
@@ -367,22 +386,31 @@ spec:
                                     properties:
                                       key:
                                         description: Key defines the name of the attribute of the Secret holding the referenced value.
+                                        minLength: 1
                                         type: string
                                       name:
                                         description: Name of the Secret containing the referenced value.
+                                        minLength: 1
                                         type: string
                                       namespace:
                                         description: Namespace containing the Secret with the referenced value.
+                                        minLength: 1
                                         type: string
                                     required:
                                       - key
                                       - name
                                       - namespace
                                     type: object
+                                required:
+                                  - secretKeyRef
                                 type: object
                             required:
+                              - ""
                               - name
                             type: object
+                            x-kubernetes-validations:
+                              - message: Exactly one of 'value' or 'valueFrom' must be set
+                                rule: has(self.value) != has(self.valueFrom)
                           type: array
                         path:
                           description: Path defines OTLP export URL path (only for the HTTP protocol). This value overrides auto-appended paths `/v1/metrics` and `/v1/traces`
@@ -392,7 +420,6 @@ spec:
                           enum:
                             - grpc
                             - http
-                          minLength: 1
                           type: string
                         tls:
                           description: TLS defines TLS options for the OTLP output.
@@ -411,20 +438,28 @@ spec:
                                       properties:
                                         key:
                                           description: Key defines the name of the attribute of the Secret holding the referenced value.
+                                          minLength: 1
                                           type: string
                                         name:
                                           description: Name of the Secret containing the referenced value.
+                                          minLength: 1
                                           type: string
                                         namespace:
                                           description: Namespace containing the Secret with the referenced value.
+                                          minLength: 1
                                           type: string
                                       required:
                                         - key
                                         - name
                                         - namespace
                                       type: object
+                                  required:
+                                    - secretKeyRef
                                   type: object
                               type: object
+                              x-kubernetes-validations:
+                                - message: Exactly one of 'value' or 'valueFrom' must be set
+                                  rule: has(self.value) != has(self.valueFrom)
                             cert:
                               description: Defines a client certificate to use when using TLS. The certificate must be provided in PEM format.
                               properties:
@@ -439,20 +474,28 @@ spec:
                                       properties:
                                         key:
                                           description: Key defines the name of the attribute of the Secret holding the referenced value.
+                                          minLength: 1
                                           type: string
                                         name:
                                           description: Name of the Secret containing the referenced value.
+                                          minLength: 1
                                           type: string
                                         namespace:
                                           description: Namespace containing the Secret with the referenced value.
+                                          minLength: 1
                                           type: string
                                       required:
                                         - key
                                         - name
                                         - namespace
                                       type: object
+                                  required:
+                                    - secretKeyRef
                                   type: object
                               type: object
+                              x-kubernetes-validations:
+                                - message: Exactly one of 'value' or 'valueFrom' must be set
+                                  rule: has(self.value) != has(self.valueFrom)
                             insecure:
                               description: Insecure defines whether to send requests using plaintext instead of TLS.
                               type: boolean
@@ -473,20 +516,28 @@ spec:
                                       properties:
                                         key:
                                           description: Key defines the name of the attribute of the Secret holding the referenced value.
+                                          minLength: 1
                                           type: string
                                         name:
                                           description: Name of the Secret containing the referenced value.
+                                          minLength: 1
                                           type: string
                                         namespace:
                                           description: Namespace containing the Secret with the referenced value.
+                                          minLength: 1
                                           type: string
                                       required:
                                         - key
                                         - name
                                         - namespace
                                       type: object
+                                  required:
+                                    - secretKeyRef
                                   type: object
                               type: object
+                              x-kubernetes-validations:
+                                - message: Exactly one of 'value' or 'valueFrom' must be set
+                                  rule: has(self.value) != has(self.valueFrom)
                           type: object
                           x-kubernetes-validations:
                             - message: Can define either both 'cert' and 'key', or neither
@@ -497,9 +548,9 @@ spec:
                       x-kubernetes-validations:
                         - message: Path is only available with HTTP protocol
                           rule: ((!has(self.path) || size(self.path) <= 0) && (has(self.protocol) && self.protocol == 'grpc')) || (has(self.protocol) && self.protocol == 'http')
-                  required:
-                    - otlp
                   type: object
+              required:
+                - output
               type: object
             status:
               description: Status represents the current information/status of MetricPipeline.

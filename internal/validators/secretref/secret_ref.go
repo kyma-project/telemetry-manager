@@ -128,22 +128,16 @@ func getSecretRefsInHTTPOutput(httpOutput *telemetryv1alpha1.LogPipelineHTTPOutp
 	var refs []telemetryv1alpha1.SecretKeyRef
 
 	if httpOutput != nil {
-		refs = appendIfSecretRef(refs, httpOutput.Host)
+		refs = appendIfSecretRef(refs, &httpOutput.Host)
 		refs = appendIfSecretRef(refs, httpOutput.User)
 		refs = appendIfSecretRef(refs, httpOutput.Password)
 
 		tlsConfig := httpOutput.TLS
-		if tlsConfig.CA != nil {
-			refs = appendIfSecretRef(refs, *tlsConfig.CA)
-		}
+		refs = appendIfSecretRef(refs, tlsConfig.CA)
 
-		if tlsConfig.Cert != nil {
-			refs = appendIfSecretRef(refs, *tlsConfig.Cert)
-		}
+		refs = appendIfSecretRef(refs, tlsConfig.Cert)
 
-		if tlsConfig.Key != nil {
-			refs = appendIfSecretRef(refs, *tlsConfig.Key)
-		}
+		refs = appendIfSecretRef(refs, tlsConfig.Key)
 	}
 
 	return refs
@@ -152,36 +146,30 @@ func getSecretRefsInHTTPOutput(httpOutput *telemetryv1alpha1.LogPipelineHTTPOutp
 func getSecretRefsInOTLPOutput(otlpOut *telemetryv1alpha1.OTLPOutput) []telemetryv1alpha1.SecretKeyRef {
 	var refs []telemetryv1alpha1.SecretKeyRef
 
-	refs = appendIfSecretRef(refs, otlpOut.Endpoint)
+	refs = appendIfSecretRef(refs, &otlpOut.Endpoint)
 
 	if otlpOut.Authentication != nil && otlpOut.Authentication.Basic != nil {
-		refs = appendIfSecretRef(refs, otlpOut.Authentication.Basic.User)
-		refs = appendIfSecretRef(refs, otlpOut.Authentication.Basic.Password)
+		refs = appendIfSecretRef(refs, &otlpOut.Authentication.Basic.User)
+		refs = appendIfSecretRef(refs, &otlpOut.Authentication.Basic.Password)
 	}
 
 	for _, header := range otlpOut.Headers {
-		refs = appendIfSecretRef(refs, header.ValueType)
+		refs = appendIfSecretRef(refs, &header.ValueType)
 	}
 
 	if otlpOut.TLS != nil && !otlpOut.TLS.Insecure {
-		if otlpOut.TLS.CA != nil {
-			refs = appendIfSecretRef(refs, *otlpOut.TLS.CA)
-		}
+		refs = appendIfSecretRef(refs, otlpOut.TLS.CA)
 
-		if otlpOut.TLS.Cert != nil {
-			refs = appendIfSecretRef(refs, *otlpOut.TLS.Cert)
-		}
+		refs = appendIfSecretRef(refs, otlpOut.TLS.Cert)
 
-		if otlpOut.TLS.Key != nil {
-			refs = appendIfSecretRef(refs, *otlpOut.TLS.Key)
-		}
+		refs = appendIfSecretRef(refs, otlpOut.TLS.Key)
 	}
 
 	return refs
 }
 
-func appendIfSecretRef(secretKeyRefs []telemetryv1alpha1.SecretKeyRef, valueType telemetryv1alpha1.ValueType) []telemetryv1alpha1.SecretKeyRef {
-	if valueType.Value == "" && valueType.ValueFrom != nil && valueType.ValueFrom.SecretKeyRef != nil {
+func appendIfSecretRef(secretKeyRefs []telemetryv1alpha1.SecretKeyRef, valueType *telemetryv1alpha1.ValueType) []telemetryv1alpha1.SecretKeyRef {
+	if valueType != nil && valueType.Value == "" && valueType.ValueFrom != nil && valueType.ValueFrom.SecretKeyRef != nil {
 		secretKeyRefs = append(secretKeyRefs, *valueType.ValueFrom.SecretKeyRef)
 	}
 

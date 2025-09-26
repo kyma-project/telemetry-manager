@@ -59,10 +59,10 @@ func TestConvertTo(t *testing.T) {
 					Host: ValueType{
 						Value: "http://localhost",
 					},
-					User: ValueType{
+					User: &ValueType{
 						Value: "user",
 					},
-					Password: ValueType{
+					Password: &ValueType{
 						ValueFrom: &ValueFromSource{
 							SecretKeyRef: &SecretKeyRef{
 								Name:      "secret-name",
@@ -211,10 +211,10 @@ func TestConvertFrom(t *testing.T) {
 					Host: telemetryv1beta1.ValueType{
 						Value: "http://localhost",
 					},
-					User: telemetryv1beta1.ValueType{
+					User: &telemetryv1beta1.ValueType{
 						Value: "user",
 					},
-					Password: telemetryv1beta1.ValueType{
+					Password: &telemetryv1beta1.ValueType{
 						ValueFrom: &telemetryv1beta1.ValueFromSource{
 							SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 								Name:      "secret-name",
