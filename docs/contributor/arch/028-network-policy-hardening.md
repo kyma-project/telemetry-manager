@@ -15,7 +15,7 @@ date: 2025-09-18
 * Egress: Kubernetes API, DNS, external logging services (for example, CLS)
 
 #### Log, Trace, Metric Gateway:
-* Ingress: Metric scraping (self-monitoring and RMA), health checks, OTLP data ingested by customer workloads
+* Ingress: Metric scraping (self-monitoring and RMA), health checks, OTLP data ingested from customer workloads
 * Egress: Kubernetes API, DNS, external telemetry backends (for example, CLS or Dynatrace)
 
 #### Metric Agent:
