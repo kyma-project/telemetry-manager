@@ -82,6 +82,7 @@ const (
 	LabelLogsMaxPipeline      = "logs-max-pipeline"
 
 	// Metrics labels
+
 	LabelMetricsMisc        = "metrics-misc"
 	LabelMetricsMaxPipeline = "metrics-max-pipeline"
 	LabelMetricAgentSetA    = "metric-agent-a"
@@ -125,8 +126,7 @@ const (
 	LabelUpgrade = "upgrade"
 )
 
-// TODO(TeodorSAP): Use this for log e2e tests as well
-func ExpectAgent(label string) bool {
+func ExpectAgent(label string) bool { // TODO(TeodorSAP): Use this for log e2e tests as well
 	return label == LabelMetricAgentSetA ||
 		label == LabelMetricAgentSetB ||
 		label == LabelMetricAgentSetC ||
