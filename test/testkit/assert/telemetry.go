@@ -14,6 +14,15 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
+func TelemetryCRExists(t testkit.T) {
+	t.Helper()
+
+	Eventually(func(g Gomega) {
+		var telemetryCR operatorv1alpha1.Telemetry
+		g.Expect(suite.K8sClient.Get(t.Context(), kitkyma.TelemetryName, &telemetryCR)).To(Succeed())
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+}
+
 func TelemetryHasState(t testkit.T, expectedState operatorv1alpha1.State) {
 	t.Helper()
 

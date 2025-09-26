@@ -179,7 +179,7 @@ func TestOutage(t *testing.T) {
 				metricProducer := prommetricgen.New(ns)
 
 				return []client.Object{
-					metricProducer.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).WithAvalanche().K8sObject(),
+					metricProducer.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).WithAvalanche(160, 100, 50).K8sObject(),
 					metricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
 				}
 			},

@@ -1,7 +1,6 @@
 package metricagent
 
 import (
-	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -15,7 +14,6 @@ import (
 )
 
 func TestBuildConfig(t *testing.T) {
-	ctx := context.Background()
 	fakeClient := fake.NewClientBuilder().Build()
 	sut := Builder{
 		Reader: fakeClient,
@@ -330,7 +328,7 @@ func TestBuildConfig(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			config, _, err := sut.Build(ctx, tt.pipelines, buildOptions)
+			config, _, err := sut.Build(t.Context(), tt.pipelines, buildOptions)
 			require.NoError(t, err)
 
 			configYAML, err := yaml.Marshal(config)
@@ -350,4 +348,60 @@ func TestBuildConfig(t *testing.T) {
 			require.Equal(t, string(goldenFile), string(configYAML))
 		})
 	}
+}
+
+func TestBuildConfigShuffled(t *testing.T) {
+	fakeClient := fake.NewClientBuilder().Build()
+
+	sut := Builder{
+		Reader: fakeClient,
+	}
+
+	buildOptions := BuildOptions{
+		IstioCertPath:               "/etc/istio-output-certs",
+		InstrumentationScopeVersion: "main",
+	}
+
+	pipelines := []telemetryv1alpha1.MetricPipeline{
+		testutils.NewMetricPipelineBuilder().
+			WithName("test1").
+			WithRuntimeInput(true, testutils.IncludeNamespaces("default")).
+			WithPrometheusInput(true, testutils.ExcludeNamespaces("kube-system")).
+			WithIstioInput(false).
+			WithOTLPOutput(testutils.OTLPEndpoint("https://foo")).Build(),
+		testutils.NewMetricPipelineBuilder().
+			WithName("test2").
+			WithRuntimeInput(false).
+			WithPrometheusInput(false).
+			WithIstioInput(true).
+			WithOTLPOutput(testutils.OTLPEndpoint("https://foo")).Build(),
+		testutils.NewMetricPipelineBuilder().
+			WithName("test3").
+			WithRuntimeInput(true).
+			WithPrometheusInput(false).
+			WithIstioInput(false).
+			WithOTLPOutput(testutils.OTLPEndpoint("https://bar")).Build(),
+	}
+
+	config1, _, err := sut.Build(t.Context(), []telemetryv1alpha1.MetricPipeline{pipelines[0], pipelines[1], pipelines[2]}, buildOptions)
+	require.NoError(t, err)
+
+	config2, _, err := sut.Build(t.Context(), []telemetryv1alpha1.MetricPipeline{pipelines[1], pipelines[0], pipelines[2]}, buildOptions)
+	require.NoError(t, err)
+
+	config3, _, err := sut.Build(t.Context(), []telemetryv1alpha1.MetricPipeline{pipelines[2], pipelines[1], pipelines[0]}, buildOptions)
+	require.NoError(t, err)
+
+	config1YAML, err := yaml.Marshal(config1)
+	require.NoError(t, err, "failed to marshal config1")
+
+	config2YAML, err := yaml.Marshal(config2)
+	require.NoError(t, err, "failed to marshal config2")
+
+	config3YAML, err := yaml.Marshal(config3)
+	require.NoError(t, err, "failed to marshal config3")
+
+	require.Equal(t, string(config1YAML), string(config2YAML), "config1 and config2 should be equal regardless of pipeline order")
+	require.Equal(t, string(config2YAML), string(config3YAML), "config2 and config3 should be equal regardless of pipeline order")
+	require.Equal(t, string(config1YAML), string(config3YAML), "config1 and config3 should be equal regardless of pipeline order")
 }

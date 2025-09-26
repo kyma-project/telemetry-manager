@@ -3,6 +3,8 @@ package metricagent
 import (
 	"context"
 	"fmt"
+	"slices"
+	"strings"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -57,6 +59,11 @@ type runtimeResourceSources struct {
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) (*common.Config, common.EnvVars, error) {
+	// Sort pipelines to ensure consistent order and checksum for generated ConfigMap
+	slices.SortFunc(pipelines, func(a, b telemetryv1alpha1.MetricPipeline) int {
+		return strings.Compare(a.Name, b.Name)
+	})
+
 	b.Config = common.NewConfig()
 	b.AddExtension(common.ComponentIDK8sLeaderElectorExtension,
 		common.K8sLeaderElector{
