@@ -45,7 +45,7 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 				},
 			},
 			expectError:  true,
-			errorMessage: "output plugin 'http' contains forbidden configuration key 'storage.total_limit_size'",
+			errorMessage: "custom output plugin 'http' contains forbidden configuration key 'storage.total_limit_size'",
 		},
 		{
 			name: "custom output missing name",
@@ -55,7 +55,7 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 				},
 			},
 			expectError:  true,
-			errorMessage: "configuration section must have name attribute",
+			errorMessage: "custom output configuration section must have name attribute",
 		},
 		// Filter validation cases
 		{
@@ -81,7 +81,7 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 				},
 			},
 			expectError:  true,
-			errorMessage: "configuration section must have name attribute",
+			errorMessage: "custom filter configuration must have name attribute",
 		},
 		{
 			name: "custom filter with forbidden match condition",
@@ -94,7 +94,7 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 				},
 			},
 			expectError:  true,
-			errorMessage: "filter plugin 'grep' contains match condition. Match conditions are forbidden",
+			errorMessage: "custom filter plugin 'grep' contains match condition. Match conditions are forbidden",
 		},
 		{
 			name: "denied filter plugin",
@@ -107,7 +107,7 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 				},
 			},
 			expectError:  true,
-			errorMessage: "filter plugin 'kubernetes' is forbidden. ",
+			errorMessage: "custom filter plugin 'kubernetes' is not supported. ",
 		},
 		// FileName validation cases
 		{

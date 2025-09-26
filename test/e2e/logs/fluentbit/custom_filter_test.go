@@ -41,6 +41,7 @@ func TestCustomFilterDenied(t *testing.T) {
 		&pipeline,
 	}
 	resources = append(resources, backend.K8sObjects()...)
+
 	t.Cleanup(func() {
 		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 	})
@@ -77,6 +78,7 @@ func TestCustomOutputDenied(t *testing.T) {
 		&pipeline,
 	}
 	resources = append(resources, backend.K8sObjects()...)
+
 	t.Cleanup(func() {
 		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 	})
