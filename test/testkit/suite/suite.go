@@ -73,6 +73,7 @@ func sanitizeSpecID(filePath string) string {
 
 const (
 	// Logs labels
+
 	LabelLogAgent             = "log-agent"
 	LabelLogGateway           = "log-gateway"
 	LabelFluentBit            = "fluent-bit"
@@ -91,32 +92,36 @@ const (
 	LabelMetricGatewaySetC  = "metric-gateway-c"
 
 	// Traces labels
+
 	LabelTraces            = "traces"
 	LabelTracesMaxPipeline = "traces-max-pipeline"
 
 	// Telemetry labels
+
 	LabelTelemetry = "telemetry"
 
 	// Test "sub-suites" labels
+
 	LabelExperimental = "experimental"
 	LabelSkip         = "skip"
 
 	// Selfmonitor test labels
+
 	LabelSelfMonitorHealthy      = "selfmonitor-healthy"
 	LabelSelfMonitorBackpressure = "selfmonitor-backpressure"
 	LabelSelfMonitorOutage       = "selfmonitor-outage"
 
-	// Miscellaneous test label (for edge-cases and unrelated tests)
+	// LabelMisc defines the label for miscellaneous tests (for edge-cases and unrelated tests)
 	// [please avoid adding tests to this category if it already fits in a more specific one]
 	LabelMisc = "misc"
 
-	// Istio Integration test label
+	// LabelIstio defines the label for Istio Integration tests
 	LabelIstio = "istio"
 
-	// Gardener Integration test label
+	// LabelGardener defines the label for Gardener Integration tests
 	LabelGardener = "gardener"
 
-	// Upgrade tests preserve K8s objects between test runs.
+	// LabelUpgrade defines the label for Upgrade tests, which preserve K8s objects between test runs.
 	LabelUpgrade = "upgrade"
 )
 

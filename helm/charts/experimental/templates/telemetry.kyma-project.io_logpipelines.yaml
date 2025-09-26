@@ -70,8 +70,8 @@ spec:
                   the `custom` filters and a `custom` output. Only available when
                   using an output of type `http` and `custom`.
                 items:
-                  description: Provides file content to be consumed by a LogPipeline
-                    configuration
+                  description: LogPipelineFileMount provides file content to be consumed
+                    by a LogPipeline configuration
                   properties:
                     content:
                       description: Content of the file to be mounted in the Fluent
@@ -842,8 +842,8 @@ spec:
                   in the `custom` filters and a `custom` output. Only available when
                   using an output of type `http` and `custom`.
                 items:
-                  description: References a Kubernetes secret that should be provided
-                    as environment variable to Fluent Bit
+                  description: LogPipelineVariableRef references a Kubernetes secret
+                    that should be provided as environment variable to Fluent Bit
                   properties:
                     name:
                       description: Name of the variable to map.
@@ -1012,8 +1012,8 @@ spec:
                   the `custom` filters and a `custom` output. Only available when
                   using an output of type `http` and `custom`.
                 items:
-                  description: Provides file content to be consumed by a LogPipeline
-                    configuration
+                  description: LogPipelineFileMount provides file content to be consumed
+                    by a LogPipeline configuration
                   properties:
                     content:
                       description: Content of the file to be mounted in the Fluent
@@ -1782,8 +1782,8 @@ spec:
                   in the `custom` filters and a `custom` output. Only available when
                   using an output of type `http` and `custom`.
                 items:
-                  description: References a Kubernetes secret that should be provided
-                    as environment variable to Fluent Bit
+                  description: LogPipelineVariableRef references a Kubernetes secret
+                    that should be provided as environment variable to Fluent Bit
                   properties:
                     name:
                       description: Name of the variable to map.

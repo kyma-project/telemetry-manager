@@ -73,6 +73,7 @@ type Header struct {
 	Prefix string `json:"prefix,omitempty"`
 }
 
+// OTLPTLS defines the TLS configuration for an OTLP output.
 // +kubebuilder:validation:XValidation:rule="has(self.cert) == has(self.key)", message="Can define either both 'cert' and 'key', or neither"
 type OTLPTLS struct {
 	// Insecure defines whether to send requests using plaintext instead of TLS.
