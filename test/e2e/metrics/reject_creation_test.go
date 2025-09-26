@@ -248,6 +248,7 @@ func TestRejectMetricPipelineCreation(t *testing.T) {
 			Expect(err).ShouldNot(Succeed(), "unexpected success for pipeline %s, this test expects an error", tc.pipeline.Name)
 
 			errStatus := &apierrors.StatusError{}
+
 			ok := errors.As(err, &errStatus)
 			if ok && errStatus.Status().Details != nil {
 				Expect(errStatus.Status().Details.Causes).

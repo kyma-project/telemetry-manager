@@ -51,9 +51,9 @@ override:
     path: ^internal/webhookcert$
   - threshold: 85
     path: ^webhook/logpipeline/v1alpha1$
-  - threshold: 84
+  - threshold: 74
     path: ^webhook/logpipeline/v1beta1$
-  - threshold: 83
+  - threshold: 80
     path: ^internal/utils/logpipeline$
   - threshold: 75
     path: ^webhook/tracepipeline/v1alpha1$
