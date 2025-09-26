@@ -17,13 +17,14 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/metrics/runtime"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestMultiPipelineFanout(t *testing.T) {
-	suite.RegisterTestCase(t, "failing")
+func TestMultiPipelineFanout_Agent(t *testing.T) {
+	suite.RegisterTestCase(t, suite.LabelMetricAgentSetB)
 
 	var (
 		uniquePrefix           = unique.Prefix()
@@ -141,6 +142,9 @@ func TestMultiPipelineFanout(t *testing.T) {
 		checkInstrumentationScopeAndVersion(t, g, bodyContent, common.InstrumentationScopePrometheus, common.InstrumentationScopeKyma)
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).To(Succeed())
 
+	// TODO: Rewrite using helper function, 2 calls:
+	// - HaveUniqueNames
+	// - instrumentation scope checks
 	Eventually(func(g Gomega) {
 		resp, err := suite.ProxyClient.Get(backendRuntimeExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
@@ -168,10 +172,62 @@ func TestMultiPipelineFanout(t *testing.T) {
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).To(Succeed())
 }
 
+func TestMultiPipelineFanout_Gateway(t *testing.T) {
+	suite.RegisterTestCase(t, suite.LabelMetricGatewaySetB)
+
+	var (
+		uniquePrefix  = unique.Prefix()
+		backendNs     = uniquePrefix("backend")
+		genNs         = uniquePrefix("gen")
+		pipeline1Name = uniquePrefix("1")
+		pipeline2Name = uniquePrefix("2")
+	)
+
+	backend1 := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithName("backend1"))
+	backend2 := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithName("backend2"))
+
+	pipeline1 := testutils.NewMetricPipelineBuilder().
+		WithName(pipeline1Name).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend1.Endpoint())).
+		Build()
+
+	pipeline2 := testutils.NewMetricPipelineBuilder().
+		WithName(pipeline2Name).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
+		Build()
+
+	resources := []client.Object{
+		kitk8s.NewNamespace(backendNs).K8sObject(),
+		kitk8s.NewNamespace(genNs).K8sObject(),
+		&pipeline1,
+		&pipeline2,
+		telemetrygen.NewPod(genNs, telemetrygen.SignalTypeMetrics).K8sObject(),
+	}
+	resources = append(resources, backend1.K8sObjects()...)
+	resources = append(resources, backend2.K8sObjects()...)
+
+	t.Cleanup(func() {
+		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
+	})
+	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
+
+	assert.BackendReachable(t, backend1)
+	assert.BackendReachable(t, backend2)
+	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.MetricPipelineHealthy(t, pipeline1Name)
+	assert.MetricPipelineHealthy(t, pipeline2Name)
+
+	assert.MetricsFromNamespaceDelivered(t, backend1, genNs, telemetrygen.MetricNames)
+	assert.MetricsFromNamespaceDelivered(t, backend2, genNs, telemetrygen.MetricNames)
+}
+
+// TODO:
+// OPTION 1: Rewrite into checkRuntimeInputInstrumentationScope and checkPrometheusInputInstrumentationScope
+// OPTION 2: HaveEach -> Contains (loosen-up test)
 func checkInstrumentationScopeAndVersion(t *testing.T, g Gomega, body []byte, scope1, scope2 string) {
 	t.Helper()
 
-	g.Expect(body).To(HaveFlatMetrics(HaveEach(
+	g.Expect(body).To(HaveFlatMetrics(ContainElements(
 		SatisfyAny(
 			SatisfyAll(
 				HaveScopeName(Equal(scope1)),
@@ -199,5 +255,5 @@ func checkInstrumentationScopeAndVersion(t *testing.T, g Gomega, body []byte, sc
 						ContainSubstring("0."),
 					)),
 			)),
-	)), "only scope '%v' must be sent to the runtime backend", common.InstrumentationScopeRuntime)
+	)), "only scope '%v' or '%v' must be sent to the runtime backend", scope1, scope2)
 }
