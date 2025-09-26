@@ -23,7 +23,7 @@ date: 2025-09-18
 * Egress: Kubernetes API, DNS, Kubelet, scraping customer workloads metrics, external telemetry backends (for example, CLS or Dynatrace)
 
 #### Self-Monitor:
-* Ingress: Metric scraping (self-monitoring and RMA), health checks, alert queries
+* Ingress: Metric scraping (RMA), health checks, alert queries
 * Egress: Kubernetes API, DNS, scraping module components metrics
 
 #### Telemetry Manager:
