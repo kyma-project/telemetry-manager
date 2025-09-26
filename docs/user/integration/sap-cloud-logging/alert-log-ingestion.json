@@ -1,0 +1,78 @@
+{
+    "type": "monitor",
+    "schema_version": 8,
+    "name": "Kyma Log Ingestion",
+    "monitor_type": "query_level_monitor",
+    "enabled": true,
+    "schedule": {
+      "period": {
+        "interval": 1,
+        "unit": "MINUTES"
+      }
+    },
+    "inputs": [
+      {
+        "search": {
+          "indices": [
+            "logs-otel-v1-*"
+          ],
+          "query": {
+            "size": 0,
+            "query": {
+              "bool": {
+                "filter": [
+                  {
+                    "range": {
+                      "time": {
+                        "from": "{{period_end}}||-5m",
+                        "to": "{{period_end}}",
+                        "include_lower": true,
+                        "include_upper": true,
+                        "format": "epoch_millis",
+                        "boost": 1
+                      }
+                    }
+                  }
+                ],
+                "adjust_pure_negative": true,
+                "boost": 1
+              }
+            }
+          }
+        }
+      }
+    ],
+    "triggers": [
+      {
+        "query_level_trigger": {
+          "name": "No OTLP Log Ingestion",
+          "severity": "2",
+          "condition": {
+            "script": {
+              "source": "ctx.results[0].hits.total.value < 1",
+              "lang": "painless"
+            }
+          },
+          "actions": [
+            {
+              "name": "Slack me",
+              "destination_id": "",
+              "message_template": {
+                "source": "Monitor {{ctx.monitor.name}} just entered alert status. Please investigate the issue.\n  - Trigger: {{ctx.trigger.name}}\n  - Severity: {{ctx.trigger.severity}}\n  - Period start: {{ctx.periodStart}}\n  - Period end: {{ctx.periodEnd}}\n  - <link to your instance>/app/alerting",
+                "lang": "mustache"
+              },
+              "throttle_enabled": true,
+              "subject_template": {
+                "source": "No OTLP Logs from a Kyma runtime ingested since 5 min",
+                "lang": "mustache"
+              },
+              "throttle": {
+                "value": 60,
+                "unit": "MINUTES"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }

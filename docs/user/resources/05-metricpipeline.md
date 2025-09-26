@@ -18,13 +18,12 @@ metadata:
   generation: 1
 spec:
   input:
-    application:
-      prometheus:
-        enabled: false
-      istio:
-        enabled: false
-      runtime:
-        enabled: false
+    prometheus:
+      enabled: false
+    istio:
+      enabled: false
+    runtime:
+      enabled: false
   output:
     otlp:
       endpoint:
