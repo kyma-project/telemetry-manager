@@ -279,8 +279,6 @@ spec:
                                 - name
                                 - namespace
                                 type: object
-                            required:
-                            - secretKeyRef
                             type: object
                         type: object
                       password:
@@ -317,8 +315,6 @@ spec:
                                 - name
                                 - namespace
                                 type: object
-                            required:
-                            - secretKeyRef
                             type: object
                         type: object
                       port:
@@ -364,8 +360,6 @@ spec:
                                     - name
                                     - namespace
                                     type: object
-                                required:
-                                - secretKeyRef
                                 type: object
                             type: object
                           cert:
@@ -404,8 +398,6 @@ spec:
                                     - name
                                     - namespace
                                     type: object
-                                required:
-                                - secretKeyRef
                                 type: object
                             type: object
                           disabled:
@@ -447,8 +439,6 @@ spec:
                                     - name
                                     - namespace
                                     type: object
-                                required:
-                                - secretKeyRef
                                 type: object
                             type: object
                           skipCertificateValidation:
@@ -498,10 +488,10 @@ spec:
                                 - name
                                 - namespace
                                 type: object
-                            required:
-                            - secretKeyRef
                             type: object
                         type: object
+                    required:
+                    - host
                     type: object
                   otlp:
                     description: OTLP defines an output using the OpenTelemetry protocol.
@@ -550,8 +540,6 @@ spec:
                                         - name
                                         - namespace
                                         type: object
-                                    required:
-                                    - secretKeyRef
                                     type: object
                                 type: object
                               user:
@@ -590,8 +578,6 @@ spec:
                                         - name
                                         - namespace
                                         type: object
-                                    required:
-                                    - secretKeyRef
                                     type: object
                                 type: object
                             required:
@@ -634,8 +620,6 @@ spec:
                                 - name
                                 - namespace
                                 type: object
-                            required:
-                            - secretKeyRef
                             type: object
                         type: object
                       headers:
@@ -682,8 +666,6 @@ spec:
                                   - name
                                   - namespace
                                   type: object
-                              required:
-                              - secretKeyRef
                               type: object
                           required:
                           - name
@@ -741,8 +723,6 @@ spec:
                                     - name
                                     - namespace
                                     type: object
-                                required:
-                                - secretKeyRef
                                 type: object
                             type: object
                           cert:
@@ -780,8 +760,6 @@ spec:
                                     - name
                                     - namespace
                                     type: object
-                                required:
-                                - secretKeyRef
                                 type: object
                             type: object
                           insecure:
@@ -827,8 +805,6 @@ spec:
                                     - name
                                     - namespace
                                     type: object
-                                required:
-                                - secretKeyRef
                                 type: object
                             type: object
                         type: object
@@ -844,10 +820,6 @@ spec:
                         && self.protocol == 'grpc')) || (has(self.protocol) && self.protocol
                         == 'http')
                 type: object
-                x-kubernetes-validations:
-                - message: Switching to or away from OTLP output is not supported.
-                    Please re-create the LogPipeline instead
-                  rule: has(self.otlp) == has(oldSelf.otlp)
               transform:
                 description: Transforms specify a list of transformations to apply
                   to telemetry data.
@@ -912,8 +884,6 @@ spec:
                           - name
                           - namespace
                           type: object
-                      required:
-                      - secretKeyRef
                       type: object
                   required:
                   - name
@@ -923,24 +893,6 @@ spec:
             required:
             - output
             type: object
-            x-kubernetes-validations:
-            - message: otlp input is only supported with otlp output
-              rule: '!((has(self.output.http) || has(self.output.custom))  && has(self.input.otlp))'
-            - message: input.application.dropLabels is not supported with otlp output
-              rule: '!(has(self.output.otlp) && has(self.input.application.dropLabels))'
-            - message: input.application.keepAnnotations is not supported with otlp
-                output
-              rule: '!(has(self.output.otlp) && has(self.input.application.keepAnnotations))'
-            - message: filters are not supported with otlp output
-              rule: '!(has(self.output.otlp) && has(self.filters))'
-            - message: files not supported with otlp output
-              rule: '!(has(self.output.otlp) && has(self.files))'
-            - message: variables not supported with otlp output
-              rule: '!(has(self.output.otlp) && has(self.variables))'
-            - message: transform is only supported with otlp output
-              rule: has(self.output.otlp) || !(has(self.transform))
-            - message: otlp input is only supported with otlp output
-              rule: has(self.output.otlp) || !(has(self.input.otlp))
           status:
             description: Shows the observed state of the LogPipeline
             properties:
@@ -1270,8 +1222,6 @@ spec:
                                 - name
                                 - namespace
                                 type: object
-                            required:
-                            - secretKeyRef
                             type: object
                         type: object
                       password:
@@ -1308,8 +1258,6 @@ spec:
                                 - name
                                 - namespace
                                 type: object
-                            required:
-                            - secretKeyRef
                             type: object
                         type: object
                       port:
@@ -1355,8 +1303,6 @@ spec:
                                     - name
                                     - namespace
                                     type: object
-                                required:
-                                - secretKeyRef
                                 type: object
                             type: object
                           cert:
@@ -1394,8 +1340,6 @@ spec:
                                     - name
                                     - namespace
                                     type: object
-                                required:
-                                - secretKeyRef
                                 type: object
                             type: object
                           disabled:
@@ -1437,8 +1381,6 @@ spec:
                                     - name
                                     - namespace
                                     type: object
-                                required:
-                                - secretKeyRef
                                 type: object
                             type: object
                           skipCertificateValidation:
@@ -1488,8 +1430,6 @@ spec:
                                 - name
                                 - namespace
                                 type: object
-                            required:
-                            - secretKeyRef
                             type: object
                         type: object
                     type: object
@@ -1540,8 +1480,6 @@ spec:
                                         - name
                                         - namespace
                                         type: object
-                                    required:
-                                    - secretKeyRef
                                     type: object
                                 type: object
                               user:
@@ -1580,8 +1518,6 @@ spec:
                                         - name
                                         - namespace
                                         type: object
-                                    required:
-                                    - secretKeyRef
                                     type: object
                                 type: object
                             required:
@@ -1624,8 +1560,6 @@ spec:
                                 - name
                                 - namespace
                                 type: object
-                            required:
-                            - secretKeyRef
                             type: object
                         type: object
                       headers:
@@ -1672,8 +1606,6 @@ spec:
                                   - name
                                   - namespace
                                   type: object
-                              required:
-                              - secretKeyRef
                               type: object
                           required:
                           - name
@@ -1730,8 +1662,6 @@ spec:
                                     - name
                                     - namespace
                                     type: object
-                                required:
-                                - secretKeyRef
                                 type: object
                             type: object
                           cert:
@@ -1769,8 +1699,6 @@ spec:
                                     - name
                                     - namespace
                                     type: object
-                                required:
-                                - secretKeyRef
                                 type: object
                             type: object
                           disabled:
@@ -1812,8 +1740,6 @@ spec:
                                     - name
                                     - namespace
                                     type: object
-                                required:
-                                - secretKeyRef
                                 type: object
                             type: object
                           skipCertificateValidation:
@@ -1901,20 +1827,15 @@ spec:
                           - name
                           - namespace
                           type: object
-                      required:
-                      - secretKeyRef
                       type: object
                   required:
                   - name
-                  - valueFrom
                   type: object
                 type: array
             required:
             - output
             type: object
             x-kubernetes-validations:
-            - message: otlp input is only supported with otlp output
-              rule: '!((has(self.output.http) || has(self.output.custom))  && has(self.input.otlp))'
             - message: input.runtime.dropLabels is not supported with otlp output
               rule: '!(has(self.output.otlp) && has(self.input.runtime.dropLabels))'
             - message: input.runtime.keepAnnotations is not supported with otlp output

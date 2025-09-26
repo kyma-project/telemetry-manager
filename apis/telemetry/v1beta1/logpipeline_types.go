@@ -64,7 +64,6 @@ type LogPipeline struct {
 }
 
 // LogPipelineSpec defines the desired state of LogPipeline
-// +kubebuilder:validation:XValidation:rule="!((has(self.output.http) || has(self.output.custom))  && has(self.input.otlp))", message="otlp input is only supported with otlp output"
 // +kubebuilder:validation:XValidation:rule="!(has(self.output.otlp) && has(self.input.runtime.dropLabels))", message="input.runtime.dropLabels is not supported with otlp output"
 // +kubebuilder:validation:XValidation:rule="!(has(self.output.otlp) && has(self.input.runtime.keepAnnotations))", message="input.runtime.keepAnnotations is not supported with otlp output"
 // +kubebuilder:validation:XValidation:rule="!(has(self.output.otlp) && has(self.filters))", message="filters are not supported with otlp output"
@@ -161,9 +160,9 @@ type LogPipelineHTTPOutput struct {
 	// Host defines the host of the HTTP backend.
 	Host ValueType `json:"host,omitempty"`
 	// User defines the basic auth user.
-	User ValueType `json:"user,omitempty"`
+	User *ValueType `json:"user,omitempty"`
 	// Password defines the basic auth password.
-	Password ValueType `json:"password,omitempty"`
+	Password *ValueType `json:"password,omitempty"`
 	// URI defines the URI of the HTTP backend. Default is "/".
 	// +kubebuilder:validation:Pattern=`^/.*$`
 	URI string `json:"uri,omitempty"`
@@ -195,7 +194,6 @@ type LogPipelineVariableRef struct {
 	// +kubebuilder:validation:Required
 	Name string `json:"name,omitempty"`
 	// ValueFrom specifies the secret and key to select the value to map.
-	// +kubebuilder:validation:Required
 	ValueFrom ValueFromSource `json:"valueFrom,omitempty"`
 }
 

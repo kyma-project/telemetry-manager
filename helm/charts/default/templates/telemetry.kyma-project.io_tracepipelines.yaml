@@ -77,7 +77,6 @@ spec:
                               properties:
                                 password:
                                   description: Password contains the basic auth password or a Secret reference.
-                                  maxProperties: 1
                                   properties:
                                     value:
                                       description: Value as plain text.
@@ -106,9 +105,11 @@ spec:
                                         - secretKeyRef
                                       type: object
                                   type: object
+                                  x-kubernetes-validations:
+                                    - message: Exactly one of 'value' or 'valueFrom' must be set
+                                      rule: has(self.value) != has(self.valueFrom)
                                 user:
                                   description: User contains the basic auth username or a Secret reference.
-                                  maxProperties: 1
                                   properties:
                                     value:
                                       description: Value as plain text.
@@ -137,6 +138,9 @@ spec:
                                         - secretKeyRef
                                       type: object
                                   type: object
+                                  x-kubernetes-validations:
+                                    - message: Exactly one of 'value' or 'valueFrom' must be set
+                                      rule: has(self.value) != has(self.valueFrom)
                               required:
                                 - password
                                 - user
@@ -144,7 +148,6 @@ spec:
                           type: object
                         endpoint:
                           description: Endpoint defines the host and port (`<host>:<port>`) of an OTLP endpoint.
-                          maxProperties: 1
                           properties:
                             value:
                               description: Value as plain text.
@@ -173,10 +176,12 @@ spec:
                                 - secretKeyRef
                               type: object
                           type: object
+                          x-kubernetes-validations:
+                            - message: Exactly one of 'value' or 'valueFrom' must be set
+                              rule: has(self.value) != has(self.valueFrom)
                         headers:
                           description: Headers defines custom headers to be added to outgoing HTTP or gRPC requests.
                           items:
-                            maxProperties: 1
                             properties:
                               name:
                                 description: Name defines the header name.
@@ -211,8 +216,12 @@ spec:
                                   - secretKeyRef
                                 type: object
                             required:
+                              - ""
                               - name
                             type: object
+                            x-kubernetes-validations:
+                              - message: Exactly one of 'value' or 'valueFrom' must be set
+                                rule: has(self.value) != has(self.valueFrom)
                           type: array
                         path:
                           description: Path defines OTLP export URL path (only for the HTTP protocol). This value overrides auto-appended paths `/v1/metrics` and `/v1/traces`
@@ -229,7 +238,6 @@ spec:
                           properties:
                             ca:
                               description: Defines an optional CA certificate for server certificate verification when using TLS. The certificate must be provided in PEM format.
-                              maxProperties: 1
                               properties:
                                 value:
                                   description: Value as plain text.
@@ -258,9 +266,11 @@ spec:
                                     - secretKeyRef
                                   type: object
                               type: object
+                              x-kubernetes-validations:
+                                - message: Exactly one of 'value' or 'valueFrom' must be set
+                                  rule: has(self.value) != has(self.valueFrom)
                             cert:
                               description: Defines a client certificate to use when using TLS. The certificate must be provided in PEM format.
-                              maxProperties: 1
                               properties:
                                 value:
                                   description: Value as plain text.
@@ -289,6 +299,9 @@ spec:
                                     - secretKeyRef
                                   type: object
                               type: object
+                              x-kubernetes-validations:
+                                - message: Exactly one of 'value' or 'valueFrom' must be set
+                                  rule: has(self.value) != has(self.valueFrom)
                             insecure:
                               description: Insecure defines whether to send requests using plaintext instead of TLS.
                               type: boolean
@@ -297,7 +310,6 @@ spec:
                               type: boolean
                             key:
                               description: Defines the client key to use when using TLS. The key must be provided in PEM format.
-                              maxProperties: 1
                               properties:
                                 value:
                                   description: Value as plain text.
@@ -326,6 +338,9 @@ spec:
                                     - secretKeyRef
                                   type: object
                               type: object
+                              x-kubernetes-validations:
+                                - message: Exactly one of 'value' or 'valueFrom' must be set
+                                  rule: has(self.value) != has(self.valueFrom)
                           type: object
                           x-kubernetes-validations:
                             - message: Can define either both 'cert' and 'key', or neither

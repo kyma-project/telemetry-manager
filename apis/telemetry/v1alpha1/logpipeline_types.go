@@ -55,7 +55,6 @@ type LogPipeline struct {
 }
 
 // LogPipelineSpec defines the desired state of LogPipeline
-// +kubebuilder:validation:XValidation:rule="!((has(self.output.http) || has(self.output.custom))  && has(self.input.otlp))", message="otlp input is only supported with otlp output"
 // +kubebuilder:validation:XValidation:rule="!(has(self.output.otlp) && has(self.input.application.dropLabels))", message="input.application.dropLabels is not supported with otlp output"
 // +kubebuilder:validation:XValidation:rule="!(has(self.output.otlp) && has(self.input.application.keepAnnotations))", message="input.application.keepAnnotations is not supported with otlp output"
 // +kubebuilder:validation:XValidation:rule="!(has(self.output.otlp) && has(self.filters))", message="filters are not supported with otlp output"
@@ -150,11 +149,12 @@ type LogPipelineOutput struct {
 // LogPipelineHTTPOutput configures an HTTP-based output compatible with the Fluent Bit HTTP output plugin.
 type LogPipelineHTTPOutput struct {
 	// Host defines the host of the HTTP backend.
-	Host ValueType `json:"host,omitempty"`
+	// +kubebuilder:validation:Required
+	Host ValueType `json:"host"`
 	// User defines the basic auth user.
-	User ValueType `json:"user,omitempty"`
+	User *ValueType `json:"user,omitempty"`
 	// Password defines the basic auth password.
-	Password ValueType `json:"password,omitempty"`
+	Password *ValueType `json:"password,omitempty"`
 	// URI defines the URI of the HTTP backend. Default is "/".
 	// +kubebuilder:validation:Pattern=`^/.*$`
 	URI string `json:"uri,omitempty"`
@@ -189,20 +189,20 @@ type LogPipelineOutputTLS struct {
 type LogPipelineFileMount struct {
 	// Name of the file under which the content is mounted in the Fluent Bit configuration.
 	// +kubebuilder:validation:Required
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// Content of the file to be mounted in the Fluent Bit configuration.
 	// +kubebuilder:validation:Required
-	Content string `json:"content,omitempty"`
+	Content string `json:"content"`
 }
 
 // LogPipelineVariableRef references a Kubernetes secret that should be provided as environment variable to Fluent Bit
 type LogPipelineVariableRef struct {
 	// Name of the variable to map.
 	// +kubebuilder:validation:Required
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// ValueFrom specifies the secret and key to select the value to map.
 	// +kubebuilder:validation:Required
-	ValueFrom ValueFromSource `json:"valueFrom,omitempty"`
+	ValueFrom ValueFromSource `json:"valueFrom"`
 }
 
 // LogPipelineStatus shows the observed state of the LogPipeline

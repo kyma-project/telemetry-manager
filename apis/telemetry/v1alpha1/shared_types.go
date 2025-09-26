@@ -1,7 +1,7 @@
 package v1alpha1
 
 // ValueType represents either a direct value or a reference to a value stored in a Secret.
-// +kubebuilder:validation:MaxProperties=1
+// +kubebuilder:validation:XValidation:rule="has(self.value) != has(self.valueFrom)",message="Exactly one of 'value' or 'valueFrom' must be set"
 type ValueType struct {
 	// Value as plain text.
 	Value string `json:"value,omitempty"`
@@ -13,19 +13,19 @@ type ValueType struct {
 type ValueFromSource struct {
 	// SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`.
 	// +kubebuilder:validation:Required
-	SecretKeyRef *SecretKeyRef `json:"secretKeyRef,omitempty"`
+	SecretKeyRef *SecretKeyRef `json:"secretKeyRef"`
 }
 
 type SecretKeyRef struct {
 	// Name of the Secret containing the referenced value.
 	// +kubebuilder:validation:Required
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// Namespace containing the Secret with the referenced value.
 	// +kubebuilder:validation:Required
-	Namespace string `json:"namespace,omitempty"`
+	Namespace string `json:"namespace"`
 	// Key defines the name of the attribute of the Secret holding the referenced value.
 	// +kubebuilder:validation:Required
-	Key string `json:"key,omitempty"`
+	Key string `json:"key"`
 }
 
 const (
@@ -69,9 +69,11 @@ type BasicAuthOptions struct {
 
 type Header struct {
 	// Defines the header value.
+	// +kubebuilder:validation:Required
 	ValueType `json:",inline"`
 
 	// Name defines the header name.
+	// +kubebuilder:validation:Required
 	Name string `json:"name"`
 	// Prefix defines an optional header value prefix. The prefix is separated from the value by a space character.
 	Prefix string `json:"prefix,omitempty"`
@@ -102,7 +104,7 @@ type OTLPInput struct {
 }
 
 // NamespaceSelector describes whether signals from specific namespaces are selected.
-// +kubebuilder:validation:XValidation:rule="!((has(self.include) && size(self.include) != 0) && (has(self.exclude) && size(self.exclude) != 0))", message="Can only define one namespace selector - either 'include' or 'exclude'"
+// +kubebuilder:validation:XValidation:rule="has(self.include) != has(self.exclude)",message="Exactly one of 'include' or 'exclude' must be set"
 type NamespaceSelector struct {
 	// Include signals from the specified Namespace names only.
 	Include []string `json:"include,omitempty"`

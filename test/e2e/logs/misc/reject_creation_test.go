@@ -1,7 +1,6 @@
 package misc
 
 import (
-	"log"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -13,6 +12,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"k8s.io/apimachinery/pkg/api/errors"
 )
 
 func TestRejectLogPipelineCreation(t *testing.T) {
@@ -28,8 +28,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithTLS(*serverCerts))
 
 	tests := []struct {
-		pipeline telemetryv1alpha1.LogPipeline
-		errorMsg string
+		pipeline  telemetryv1alpha1.LogPipeline
+		errorMsgs []string
 	}{
 		// output general
 		{
@@ -39,7 +39,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				},
 				Spec: telemetryv1alpha1.LogPipelineSpec{},
 			},
-			errorMsg: "spec.output in body should have at least 1 properties",
+			errorMsgs: []string{"spec.output in body should have at least 1 properties"},
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -50,79 +50,166 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				).
 				WithHTTPOutput().
 				Build(),
-			errorMsg: "spec.output: Too many: 2: must have at most 1 items",
+			errorMsgs: []string{"spec.output: Too many: 2: must have at most 1 items", "some validation rules were not checked"},
+		},
+		{
+			pipeline: telemetryv1alpha1.LogPipeline{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "valuefrom-accepts-only-one-option",
+				},
+				Spec: telemetryv1alpha1.LogPipelineSpec{
+					Output: telemetryv1alpha1.LogPipelineOutput{
+						OTLP: &telemetryv1alpha1.OTLPOutput{
+							Endpoint: telemetryv1alpha1.ValueType{
+								Value: "example.com",
+								ValueFrom: &telemetryv1alpha1.ValueFromSource{
+									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+										Name:      "name",
+										Namespace: "namespace",
+										Key:       "key",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			errorMsgs: []string{"Exactly one of 'value' or 'valueFrom' must be set"},
+		},
+		{
+			pipeline: telemetryv1alpha1.LogPipeline{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "secretkeyref-requires-key",
+				},
+				Spec: telemetryv1alpha1.LogPipelineSpec{
+					Output: telemetryv1alpha1.LogPipelineOutput{
+						OTLP: &telemetryv1alpha1.OTLPOutput{
+							Endpoint: telemetryv1alpha1.ValueType{
+								ValueFrom: &telemetryv1alpha1.ValueFromSource{
+									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+										Name:      "name",
+										Namespace: "namespace",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			errorMsgs: []string{"spec.output.otlp.endpoint.valueFrom.secretKeyRef.key: Required value", "some validation rules were not checked"},
+		},
+		{
+			pipeline: telemetryv1alpha1.LogPipeline{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "secretkeyref-requires-namespace",
+				},
+				Spec: telemetryv1alpha1.LogPipelineSpec{
+					Output: telemetryv1alpha1.LogPipelineOutput{
+						OTLP: &telemetryv1alpha1.OTLPOutput{
+							Endpoint: telemetryv1alpha1.ValueType{
+								ValueFrom: &telemetryv1alpha1.ValueFromSource{
+									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+										Name: "name",
+										Key:  "key",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			errorMsgs: []string{"spec.output.otlp.endpoint.valueFrom.secretKeyRef.namespace: Required value", "some validation rules were not checked"},
+		},
+		{
+			pipeline: telemetryv1alpha1.LogPipeline{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "secretkeyref-requires-name",
+				},
+				Spec: telemetryv1alpha1.LogPipelineSpec{
+					Output: telemetryv1alpha1.LogPipelineOutput{
+						OTLP: &telemetryv1alpha1.OTLPOutput{
+							Endpoint: telemetryv1alpha1.ValueType{
+								ValueFrom: &telemetryv1alpha1.ValueFromSource{
+									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+										Namespace: "namespace",
+										Key:       "key",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			errorMsgs: []string{"spec.output.otlp.endpoint.valueFrom.secretKeyRef.name: Required value", "some validation rules were not checked"},
 		},
 		// otlp output
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("otlp-output-with-default-proto-and-path").
-				WithApplicationInput(false).
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backend.Endpoint()),
 					testutils.OTLPEndpointPath("/v1/mock/metrics"),
 				).
 				Build(),
-			errorMsg: "Path is only available with HTTP protocol",
+			errorMsgs: []string{"Path is only available with HTTP protocol"},
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("otlp-output-with-grpc-proto-and-path").
-				WithApplicationInput(false).
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backend.Endpoint()),
 					testutils.OTLPEndpointPath("/v1/mock/metrics"),
 					testutils.OTLPProtocol("grpc"),
 				).
 				Build(),
-			errorMsg: "Path is only available with HTTP protocol",
+			errorMsgs: []string{"Path is only available with HTTP protocol"},
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("otlp-output-with-non-valid-proto").
-				WithApplicationInput(false).
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backend.Endpoint()),
 					testutils.OTLPProtocol("icke"),
 				).
 				Build(),
-			errorMsg: "spec.output.otlp.protocol: Unsupported value",
+			errorMsgs: []string{"spec.output.otlp.protocol: Unsupported value", "some validation rules were not checked"},
 		},
 		{
-			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("otlp-output-without-endpoint").
-				WithApplicationInput(false).
-				WithOTLPOutput(
-					testutils.OTLPEndpoint(""),
-				).
-				Build(),
-			errorMsg: "spec.output.otlp.protocol: Unsupported value",
+			pipeline: telemetryv1alpha1.LogPipeline{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "otlp-output-without-endpoint",
+				},
+				Spec: telemetryv1alpha1.LogPipelineSpec{
+					Output: telemetryv1alpha1.LogPipelineOutput{
+						OTLP: &telemetryv1alpha1.OTLPOutput{},
+					},
+				},
+			},
+			errorMsgs: []string{"Exactly one of 'value' or 'valueFrom' must be set"},
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("otlp-output-basic-auth-secretref-missing-password-key").
-				WithApplicationInput(false).
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backend.Endpoint()),
 					testutils.OTLPBasicAuthFromSecret("name", "namespace", "user", ""),
 				).
 				Build(),
-			errorMsg: "spec.output.otlp.authentication.basic.password.valueFrom.secretKeyRef.key: Required value",
+			errorMsgs: []string{"spec.output.otlp.authentication.basic.password.valueFrom.secretKeyRef.key: Required value"},
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("otlp-output-basic-auth-secretref-missing-user-key").
-				WithApplicationInput(false).
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backend.Endpoint()),
 					testutils.OTLPBasicAuthFromSecret("name", "namespace", "", "password"),
 				).
 				Build(),
-			errorMsg: "spec.output.otlp.authentication.basic.user.valueFrom.secretKeyRef.key: Required value",
+			errorMsgs: []string{"spec.output.otlp.authentication.basic.user.valueFrom.secretKeyRef.key: Required value"},
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("otlp-output-tls-missing-key").
-				WithApplicationInput(false).
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backend.Endpoint()),
 					testutils.OTLPClientTLS(&telemetryv1alpha1.OTLPTLS{
@@ -131,21 +218,49 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					}),
 				).
 				Build(),
-			errorMsg: "Can define either both 'cert' and 'key', or neither",
+			errorMsgs: []string{"Can define either both 'cert' and 'key', or neither"},
 		},
 		// http output
 		{
+			pipeline: telemetryv1alpha1.LogPipeline{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "http-output-tls-missing-key2",
+				},
+				Spec: telemetryv1alpha1.LogPipelineSpec{
+					Output: telemetryv1alpha1.LogPipelineOutput{
+						HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
+							Host: telemetryv1alpha1.ValueType{Value: "example.com"},
+							TLS: telemetryv1alpha1.LogPipelineOutputTLS{
+								Cert: &telemetryv1alpha1.ValueType{Value: clientCerts.ClientCertPem.String()},
+							},
+						},
+					},
+				},
+			},
+			// pipeline: testutils.NewLogPipelineBuilder().
+			// 	WithName("http-output-tls-missing-key2").
+			// 	WithHTTPOutput(
+			// 		testutils.HTTPHost(backend.Host()),
+			// 		testutils.HTTPPort(backend.Port()),
+			// 		testutils.HTTPClientTLS(telemetryv1alpha1.LogPipelineOutputTLS{
+			// 			Cert: &telemetryv1alpha1.ValueType{Value: clientCerts.ClientCertPem.String()},
+			// 		}),
+			// 	).
+			// 	Build(),
+			errorMsgs: []string{"Can define either both 'cert' and 'key', or neither"},
+		},
+		{
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("http-output-tls-missing-key").
+				WithName("http-output-tls-missing-cert").
 				WithHTTPOutput(
 					testutils.HTTPHost(backend.Host()),
 					testutils.HTTPPort(backend.Port()),
 					testutils.HTTPClientTLS(telemetryv1alpha1.LogPipelineOutputTLS{
-						Cert: &telemetryv1alpha1.ValueType{Value: clientCerts.ClientCertPem.String()},
+						Key: &telemetryv1alpha1.ValueType{Value: "key"},
 					}),
 				).
 				Build(),
-			errorMsg: "Can define either both 'cert' and 'key', or neither",
+			errorMsgs: []string{"Can define either both 'cert' and 'key', or neither"},
 		},
 		{
 			pipeline: telemetryv1alpha1.LogPipeline{
@@ -155,12 +270,26 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Output: telemetryv1alpha1.LogPipelineOutput{
 						HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
-							URI: "without-leading-slash",
+							Host: telemetryv1alpha1.ValueType{Value: "example.com"},
+							URI:  "without-leading-slash",
 						},
 					},
 				},
 			},
-			errorMsg: "spec.output.http.uri in body should match '^/.*$'",
+			errorMsgs: []string{"spec.output.http.uri in body should match '^/.*$'"},
+		},
+		{
+			pipeline: telemetryv1alpha1.LogPipeline{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "http-output-host-required",
+				},
+				Spec: telemetryv1alpha1.LogPipelineSpec{
+					Output: telemetryv1alpha1.LogPipelineOutput{
+						HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{},
+					},
+				},
+			},
+			errorMsgs: []string{"Host is required on HTTP output"},
 		},
 		// application input
 		{
@@ -171,7 +300,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithExcludeNamespaces("ns2").
 				WithOTLPOutput().
 				Build(),
-			errorMsg: "spec.input.application.namespaces: Too many: 2: must have at most 1 items",
+			errorMsgs: []string{"spec.input.application.namespaces: Too many: 2: must have at most 1 items"},
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -181,7 +310,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithExcludeContainers("c2").
 				WithOTLPOutput().
 				Build(),
-			errorMsg: "spec.input.application.containers: Too many: 2: must have at most 1 items",
+			errorMsgs: []string{"spec.input.application.containers: Too many: 2: must have at most 1 items"},
 		},
 		// files validation
 		{
@@ -190,7 +319,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithFile("", "icke").
 				WithHTTPOutput().
 				Build(),
-			errorMsg: "spec.files[0].name: Required value",
+			errorMsgs: []string{"spec.files[0].name: Required value"},
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -198,16 +327,34 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithFile("file1", "").
 				WithHTTPOutput().
 				Build(),
-			errorMsg: "spec.files[0].content: Required value",
+			errorMsgs: []string{"spec.files[0].content: Required value"},
 		},
 		// variables validation
 		{
-			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("variables-name-required").
-				WithVariable("", "secName", "secNs", "secKey").
-				WithHTTPOutput().
-				Build(),
-			errorMsg: "spec.variables[0].name: Required value",
+			pipeline: telemetryv1alpha1.LogPipeline{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "variables-name-required",
+				},
+				Spec: telemetryv1alpha1.LogPipelineSpec{
+					Variables: []telemetryv1alpha1.LogPipelineVariableRef{
+						{
+							ValueFrom: telemetryv1alpha1.ValueFromSource{
+								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+									Name:      "secName",
+									Namespace: "secNs",
+									Key:       "secKey",
+								},
+							},
+						},
+					},
+					Output: telemetryv1alpha1.LogPipelineOutput{
+						HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
+							Host: telemetryv1alpha1.ValueType{Value: "example.com"},
+						},
+					},
+				},
+			},
+			errorMsgs: []string{"spec.variables[0].name: Required value"},
 		},
 		{
 			pipeline: telemetryv1alpha1.LogPipeline{
@@ -225,7 +372,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					},
 				},
 			},
-			errorMsg: "spec.variables[0].valueFrom.secretKeyRef: Required value",
+			errorMsgs: []string{"spec.variables[0].valueFrom.secretKeyRef: Required value"},
 		},
 		// legacy validations
 		{
@@ -234,7 +381,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithHTTPOutput().
 				WithOTLPInput(true).
 				Build(),
-			errorMsg: "otlp input is only supported with otlp output",
+			errorMsgs: []string{"otlp input is only supported with otlp output"},
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -242,7 +389,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithCustomOutput("name icke").
 				WithOTLPInput(true).
 				Build(),
-			errorMsg: "otlp input is only supported with otlp output",
+			errorMsgs: []string{"otlp input is only supported with otlp output"},
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -253,7 +400,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					testutils.OTLPEndpoint(backend.Endpoint()),
 				).
 				Build(),
-			errorMsg: "input.application.dropLabels is not supported with otlp output",
+			errorMsgs: []string{"input.application.dropLabels is not supported with otlp output"},
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -264,7 +411,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					testutils.OTLPEndpoint(backend.Endpoint()),
 				).
 				Build(),
-			errorMsg: "input.application.keepAnnotations is not supported with otlp output",
+			errorMsgs: []string{"input.application.keepAnnotations is not supported with otlp output"},
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -275,7 +422,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					testutils.OTLPEndpoint(backend.Endpoint()),
 				).
 				Build(),
-			errorMsg: "files not supported with otlp output",
+			errorMsgs: []string{"files not supported with otlp output"},
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -286,7 +433,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					testutils.OTLPEndpoint(backend.Endpoint()),
 				).
 				Build(),
-			errorMsg: "filters are not supported with otlp output",
+			errorMsgs: []string{"filters are not supported with otlp output"},
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -297,7 +444,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					testutils.OTLPEndpoint(backend.Endpoint()),
 				).
 				Build(),
-			errorMsg: "variables not supported with otlp output",
+			errorMsgs: []string{"variables not supported with otlp output"},
 		},
 	}
 	for _, tc := range tests {
@@ -312,12 +459,18 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 
 			err := kitk8s.CreateObjects(t, resources...)
 
-			log.Println("Icke", err)
+			Expect(err).ShouldNot(Succeed(), "unexpected success for pipeline %s, this test expects an error", tc.pipeline.Name)
 
-			if len(tc.errorMsg) > 0 {
-				Expect(err).Should(MatchError(ContainSubstring(tc.errorMsg)))
-			} else {
-				Expect(err).ShouldNot(Succeed(), "unexpected success, this test expects an error")
+			errStatus, ok := err.(*errors.StatusError)
+			if ok && errStatus.Status().Details != nil {
+				Expect(errStatus.Status().Details.Causes).
+					To(HaveLen(len(tc.errorMsgs)),
+						"status error for pipeline %s has more than %d cause: %+v",
+						tc.pipeline.Name, len(tc.errorMsgs), errStatus.Status().Details.Causes)
+			}
+
+			for _, msg := range tc.errorMsgs {
+				Expect(err).Should(MatchError(ContainSubstring(msg)), "Error for pipeline %s does not contain expected message %s", tc.pipeline.Name, msg)
 			}
 		})
 	}
