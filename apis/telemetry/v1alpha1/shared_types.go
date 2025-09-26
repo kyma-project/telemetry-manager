@@ -82,6 +82,7 @@ type Header struct {
 	// Defines the header value.
 	// +kubebuilder:validation:Required
 	ValueType `json:",inline"`
+
 	// Name defines the header name.
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinLength=1

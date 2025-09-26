@@ -1,31 +1,27 @@
 package misc
 
 import (
+	"strconv"
 	"testing"
 
 	. "github.com/onsi/gomega"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"k8s.io/apimachinery/pkg/api/errors"
 )
 
 func TestRejectLogPipelineCreation(t *testing.T) {
-	var (
-		label     = suite.LabelMisc
-		backendNs = "backend"
+	const (
+		backendHost = "example.com"
+		backendPort = 4317
 	)
-	suite.RegisterTestCase(t, label)
 
-	serverCerts, clientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
-	Expect(err).ToNot(HaveOccurred())
-
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithTLS(*serverCerts))
+	var backenEndpoint = backendHost + ":" + strconv.Itoa(backendPort)
 
 	tests := []struct {
 		pipeline  telemetryv1alpha1.LogPipeline
@@ -45,7 +41,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("multiple-outputs").
 				WithOTLPOutput(
-					testutils.OTLPEndpoint(backend.Endpoint()),
+					testutils.OTLPEndpoint(backenEndpoint),
 					testutils.OTLPEndpointPath("/v1/mock/metrics"),
 				).
 				WithHTTPOutput().
@@ -147,7 +143,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("otlp-output-with-default-proto-and-path").
 				WithOTLPOutput(
-					testutils.OTLPEndpoint(backend.Endpoint()),
+					testutils.OTLPEndpoint(backenEndpoint),
 					testutils.OTLPEndpointPath("/v1/mock/metrics"),
 				).
 				Build(),
@@ -157,7 +153,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("otlp-output-with-grpc-proto-and-path").
 				WithOTLPOutput(
-					testutils.OTLPEndpoint(backend.Endpoint()),
+					testutils.OTLPEndpoint(backenEndpoint),
 					testutils.OTLPEndpointPath("/v1/mock/metrics"),
 					testutils.OTLPProtocol("grpc"),
 				).
@@ -168,7 +164,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("otlp-output-with-non-valid-proto").
 				WithOTLPOutput(
-					testutils.OTLPEndpoint(backend.Endpoint()),
+					testutils.OTLPEndpoint(backenEndpoint),
 					testutils.OTLPProtocol("icke"),
 				).
 				Build(),
@@ -191,7 +187,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("otlp-output-basic-auth-secretref-missing-password-key").
 				WithOTLPOutput(
-					testutils.OTLPEndpoint(backend.Endpoint()),
+					testutils.OTLPEndpoint(backenEndpoint),
 					testutils.OTLPBasicAuthFromSecret("name", "namespace", "user", ""),
 				).
 				Build(),
@@ -201,7 +197,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("otlp-output-basic-auth-secretref-missing-user-key").
 				WithOTLPOutput(
-					testutils.OTLPEndpoint(backend.Endpoint()),
+					testutils.OTLPEndpoint(backenEndpoint),
 					testutils.OTLPBasicAuthFromSecret("name", "namespace", "", "password"),
 				).
 				Build(),
@@ -211,10 +207,10 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("otlp-output-tls-missing-key").
 				WithOTLPOutput(
-					testutils.OTLPEndpoint(backend.Endpoint()),
+					testutils.OTLPEndpoint(backenEndpoint),
 					testutils.OTLPClientTLS(&telemetryv1alpha1.OTLPTLS{
-						CA:   &telemetryv1alpha1.ValueType{Value: clientCerts.CaCertPem.String()},
-						Cert: &telemetryv1alpha1.ValueType{Value: clientCerts.ClientCertPem.String()},
+						CA:   &telemetryv1alpha1.ValueType{Value: "myCACert"},
+						Cert: &telemetryv1alpha1.ValueType{Value: "myClientCert"},
 					}),
 				).
 				Build(),
@@ -224,10 +220,10 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("otlp-output-tls-missing-cert").
 				WithOTLPOutput(
-					testutils.OTLPEndpoint(backend.Endpoint()),
+					testutils.OTLPEndpoint(backenEndpoint),
 					testutils.OTLPClientTLS(&telemetryv1alpha1.OTLPTLS{
-						CA:  &telemetryv1alpha1.ValueType{Value: clientCerts.CaCertPem.String()},
-						Key: &telemetryv1alpha1.ValueType{Value: "bla"},
+						CA:  &telemetryv1alpha1.ValueType{Value: "myCACert"},
+						Key: &telemetryv1alpha1.ValueType{Value: "myKey"},
 					}),
 				).
 				Build(),
@@ -250,10 +246,10 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("http-output-tls-missing-key").
 				WithHTTPOutput(
-					testutils.HTTPHost(backend.Host()),
-					testutils.HTTPPort(backend.Port()),
+					testutils.HTTPHost(backendHost),
+					testutils.HTTPPort(backendPort),
 					testutils.HTTPClientTLS(telemetryv1alpha1.LogPipelineOutputTLS{
-						Cert: &telemetryv1alpha1.ValueType{Value: clientCerts.ClientCertPem.String()},
+						Cert: &telemetryv1alpha1.ValueType{Value: "myClientCert"},
 					}),
 				).
 				Build(),
@@ -263,8 +259,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("http-output-tls-missing-cert").
 				WithHTTPOutput(
-					testutils.HTTPHost(backend.Host()),
-					testutils.HTTPPort(backend.Port()),
+					testutils.HTTPHost(backendHost),
+					testutils.HTTPPort(backendPort),
 					testutils.HTTPClientTLS(telemetryv1alpha1.LogPipelineOutputTLS{
 						Key: &telemetryv1alpha1.ValueType{Value: "key"},
 					}),
@@ -389,7 +385,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithApplicationInput(true).
 				WithDropLabels(false).
 				WithOTLPOutput(
-					testutils.OTLPEndpoint(backend.Endpoint()),
+					testutils.OTLPEndpoint(backenEndpoint),
 				).
 				Build(),
 			errorMsgs: []string{"input.application.dropLabels is not supported with otlp output"},
@@ -400,7 +396,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithApplicationInput(true).
 				WithKeepAnnotations(false).
 				WithOTLPOutput(
-					testutils.OTLPEndpoint(backend.Endpoint()),
+					testutils.OTLPEndpoint(backenEndpoint),
 				).
 				Build(),
 			errorMsgs: []string{"input.application.keepAnnotations is not supported with otlp output"},
@@ -411,7 +407,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithApplicationInput(false).
 				WithFile("file1.json", "icke").
 				WithOTLPOutput(
-					testutils.OTLPEndpoint(backend.Endpoint()),
+					testutils.OTLPEndpoint(backenEndpoint),
 				).
 				Build(),
 			errorMsgs: []string{"files not supported with otlp output"},
@@ -422,7 +418,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithApplicationInput(false).
 				WithCustomFilter("name grep").
 				WithOTLPOutput(
-					testutils.OTLPEndpoint(backend.Endpoint()),
+					testutils.OTLPEndpoint(backenEndpoint),
 				).
 				Build(),
 			errorMsgs: []string{"filters are not supported with otlp output"},
@@ -433,15 +429,15 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithApplicationInput(false).
 				WithVariable("var1", "secName", "secNs", "secKey").
 				WithOTLPOutput(
-					testutils.OTLPEndpoint(backend.Endpoint()),
+					testutils.OTLPEndpoint(backenEndpoint),
 				).
 				Build(),
 			errorMsgs: []string{"variables not supported with otlp output"},
 		},
 	}
 	for _, tc := range tests {
-		t.Run(label, func(t *testing.T) {
-			suite.RegisterTestCase(t, label)
+		t.Run(suite.LabelMisc, func(t *testing.T) {
+			suite.RegisterTestCase(t, suite.LabelMisc)
 
 			resources := []client.Object{&tc.pipeline}
 
@@ -453,7 +449,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 
 			Expect(err).ShouldNot(Succeed(), "unexpected success for pipeline %s, this test expects an error", tc.pipeline.Name)
 
-			errStatus, ok := err.(*errors.StatusError)
+			errStatus, ok := err.(*apierrors.StatusError)
 			if ok && errStatus.Status().Details != nil {
 				Expect(errStatus.Status().Details.Causes).
 					To(HaveLen(len(tc.errorMsgs)),
