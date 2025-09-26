@@ -12,27 +12,32 @@ import (
 
 const (
 	// OTel Collector rule names for gateways. Note that the actual full names will be prefixed with Metric, or Trace, or Log
+
 	RuleNameGatewayAllDataDropped  = "GatewayAllDataDropped"
 	RuleNameGatewaySomeDataDropped = "GatewaySomeDataDropped"
 	RuleNameGatewayQueueAlmostFull = "GatewayQueueAlmostFull"
 	RuleNameGatewayThrottling      = "GatewayThrottling"
 
 	// OTel Collector rule names for agents. Note that the actual full names will be prefixed with Log
+
 	RuleNameAgentAllDataDropped  = "AgentAllDataDropped"
 	RuleNameAgentSomeDataDropped = "AgentSomeDataDropped"
 	RuleNameAgentQueueAlmostFull = "AgentQueueAlmostFull"
 
 	// Fluent Bit rule names. Note that the actual full names will be prefixed with Log
+
 	RuleNameLogFluentBitAllDataDropped  = "FluentBitAllDataDropped"
 	RuleNameLogFluentBitSomeDataDropped = "FluentBitSomeDataDropped"
 	RuleNameLogFluentBitBufferInUse     = "FluentBitBufferInUse"
 	RuleNameLogFluentBitNoLogsDelivered = "FluentBitNoLogsDelivered"
 
 	// Common rule labels
+
 	labelService      = "service"
 	labelPipelineName = "pipeline_name"
 
 	// OTel Collector rule labels
+
 	labelReceiver = "receiver"
 )
 

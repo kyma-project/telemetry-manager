@@ -88,8 +88,10 @@ func TestMultiPipelineFanout(t *testing.T) {
 		resp, err := suite.ProxyClient.Get(backendRuntimeExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+
 		bodyContent, err := io.ReadAll(resp.Body)
 		defer resp.Body.Close()
+
 		g.Expect(err).NotTo(HaveOccurred())
 
 		g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNamesForRuntimeScope(ConsistOf(runtime.ContainerMetricsNames))), "Not all required runtime metrics are sent to runtime backend")
@@ -100,8 +102,10 @@ func TestMultiPipelineFanout(t *testing.T) {
 		resp, err := suite.ProxyClient.Get(backendPrometheusExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+
 		bodyContent, err := io.ReadAll(resp.Body)
 		defer resp.Body.Close()
+
 		g.Expect(err).NotTo(HaveOccurred())
 
 		g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNames(Not(ContainElements(runtime.DefaultMetricsNames)))), "Unwanted runtime metrics sent to prometheus backend")
@@ -123,8 +127,10 @@ func TestMultiPipelineFanout(t *testing.T) {
 		resp, err := suite.ProxyClient.Get(backendPrometheusExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+
 		bodyContent, err := io.ReadAll(resp.Body)
 		defer resp.Body.Close()
+
 		g.Expect(err).NotTo(HaveOccurred())
 
 		// we expect additional elements such as 'go_memstats_gc_sys_bytes'. Therefor we use 'ContainElements' instead of 'ConsistOf'
@@ -137,8 +143,10 @@ func TestMultiPipelineFanout(t *testing.T) {
 		resp, err := suite.ProxyClient.Get(backendRuntimeExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+
 		bodyContent, err := io.ReadAll(resp.Body)
 		defer resp.Body.Close()
+
 		g.Expect(err).NotTo(HaveOccurred())
 
 		g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNames(Not(ContainElements(prommetricgen.CustomMetricNames())))), "Unwanted prometheus metrics sent to runtime backend")

@@ -25,8 +25,8 @@ func init() {
 	SchemeBuilder.Register(&MetricPipeline{}, &MetricPipelineList{})
 }
 
-// +kubebuilder:object:root=true
 // MetricPipelineList contains a list of MetricPipeline.
+// +kubebuilder:object:root=true
 type MetricPipelineList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -34,6 +34,7 @@ type MetricPipelineList struct {
 	Items []MetricPipeline `json:"items"`
 }
 
+// MetricPipeline is the Schema for the metricpipelines API.
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Cluster,categories={kyma-telemetry,kyma-telemetry-pipelines}
 // +kubebuilder:metadata:labels={app.kubernetes.io/component=controller,app.kubernetes.io/managed-by=kyma,app.kubernetes.io/name=telemetry-manager,app.kubernetes.io/part-of=telemetry,kyma-project.io/module=telemetry}
@@ -44,7 +45,6 @@ type MetricPipelineList struct {
 // +kubebuilder:printcolumn:name="Flow Healthy",type=string,JSONPath=`.status.conditions[?(@.type=="TelemetryFlowHealthy")].status`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:storageversion
-// MetricPipeline is the Schema for the metricpipelines API.
 type MetricPipeline struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

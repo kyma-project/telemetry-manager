@@ -174,11 +174,8 @@ func TestKubeletStatsReceiver(t *testing.T) {
 				MetricGroups:       test.expectedMetricGroups,
 				Metrics: KubeletStatsMetricsConfig{
 					ContainerCPUUsage:            MetricConfig{Enabled: true},
-					ContainerCPUUtilization:      MetricConfig{Enabled: false},
 					K8sPodCPUUsage:               MetricConfig{Enabled: true},
-					K8sPodCPUUtilization:         MetricConfig{Enabled: false},
 					K8sNodeCPUUsage:              MetricConfig{Enabled: true},
-					K8sNodeCPUUtilization:        MetricConfig{Enabled: false},
 					K8sNodeCPUTime:               MetricConfig{Enabled: false},
 					K8sNodeMemoryMajorPageFaults: MetricConfig{Enabled: false},
 					K8sNodeMemoryPageFaults:      MetricConfig{Enabled: false},

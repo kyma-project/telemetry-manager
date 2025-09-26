@@ -62,6 +62,7 @@ func TestDisabledInput_OTel(t *testing.T) {
 	// If Application input is disabled, THEN the log agent must not be deployed
 	Eventually(func(g Gomega) {
 		var daemonSet appsv1.DaemonSet
+
 		err := suite.K8sClient.Get(t.Context(), kitkyma.LogAgentName, &daemonSet)
 		g.Expect(apierrors.IsNotFound(err)).To(BeTrue(), "Log agent DaemonSet must not exist")
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).To(Succeed())
@@ -103,6 +104,7 @@ func TestDisabledInput_FluentBit(t *testing.T) {
 
 	Eventually(func(g Gomega) {
 		var daemonSet appsv1.DaemonSet
+
 		err := suite.K8sClient.Get(t.Context(), kitkyma.FluentBitDaemonSetName, &daemonSet)
 		g.Expect(apierrors.IsNotFound(err)).To(BeTrue(), "Fluent Bit DaemonSet must not exist")
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).To(Succeed())

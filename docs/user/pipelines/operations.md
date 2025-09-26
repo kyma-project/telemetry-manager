@@ -16,7 +16,7 @@ Or verify the overall status of the module, see [Telemetry Status](./../resource
 
 ## Health Monitoring
 
-> [! WARNING]
+> [!WARNING]
 > It's not recommended to access the metrics endpoint of the used OTel Collector instances directly, because the exposed metrics are no official API of the Telemetry module. Breaking changes can happen if the underlying OTel Collector version introduces such.
 > Instead, use the eachs pipeline status.
 

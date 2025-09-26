@@ -47,7 +47,7 @@ var (
 
 	MetricCPUEnergyHistogram = Metric{
 		Type:   pmetric.MetricTypeHistogram,
-		Name:   "cpu.energy.watt",
+		Name:   "cpu.energy.watt_core",
 		Labels: []string{"core"},
 	}
 
@@ -61,6 +61,7 @@ var (
 
 	// For each configured URL parameter, the MetricPromhttpMetricHandlerRequestsTotal metric
 	// will include a label with the parameter name and a corresponding label with its value.
+
 	ScrapingURLParamName = "format"
 	ScrapingURLParamVal  = "prometheus"
 

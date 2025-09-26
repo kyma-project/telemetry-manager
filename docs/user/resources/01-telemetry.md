@@ -69,7 +69,7 @@ Status:
       type: TraceComponentsHealthy
 ```
 
-For further examples, see the [samples](https://github.com/kyma-project/telemetry-manager/tree/main/config/samples) directory.
+For further examples, see the [samples](https://github.com/kyma-project/telemetry-manager/tree/main/samples) directory.
 
 ## Custom Resource Parameters
 

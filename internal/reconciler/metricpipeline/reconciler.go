@@ -19,7 +19,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricagent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricgateway"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
@@ -215,8 +214,8 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return fmt.Errorf("failed to reconcile metric gateway: %w", err)
 	}
 
-	if isMetricAgentRequired(pipeline) {
-		if err = r.reconcileMetricAgents(ctx, pipeline, allPipelinesList.Items); err != nil {
+	if len(reconcilablePipelinesRequiringAgents) > 0 {
+		if err = r.reconcileMetricAgents(ctx, pipeline, reconcilablePipelinesRequiringAgents); err != nil {
 			return fmt.Errorf("failed to reconcile metric agents: %w", err)
 		}
 	}
@@ -317,17 +316,10 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 
 	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
 
-	allowedPorts := getGatewayPorts()
-	if isIstioActive {
-		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
-	}
-
 	opts := otelcollector.GatewayApplyOptions{
-		AllowedPorts:                   allowedPorts,
 		CollectorConfigYAML:            string(collectorConfigYAML),
 		CollectorEnvVars:               collectorEnvVars,
 		IstioEnabled:                   isIstioActive,
-		IstioExcludePorts:              []int32{ports.Metrics},
 		Replicas:                       r.getReplicaCountFromTelemetry(ctx),
 		ResourceRequirementsMultiplier: len(allPipelines),
 	}
@@ -361,16 +353,11 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to marshal collector config: %w", err)
 	}
 
-	allowedPorts := getAgentPorts()
-	if isIstioActive {
-		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
-	}
-
 	if err := r.agentApplierDeleter.ApplyResources(
 		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		otelcollector.AgentApplyOptions{
-			AllowedPorts:        allowedPorts,
+			IstioEnabled:        isIstioActive,
 			CollectorConfigYAML: string(agentConfigYAML),
 		},
 	); err != nil {
@@ -426,20 +413,4 @@ func (r *Reconciler) getK8sClusterUID(ctx context.Context) (string, error) {
 	}
 
 	return string(kubeSystem.UID), nil
-}
-
-func getAgentPorts() []int32 {
-	return []int32{
-		ports.Metrics,
-		ports.HealthCheck,
-	}
-}
-
-func getGatewayPorts() []int32 {
-	return []int32{
-		ports.Metrics,
-		ports.HealthCheck,
-		ports.OTLPHTTP,
-		ports.OTLPGRPC,
-	}
 }

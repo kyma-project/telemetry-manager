@@ -37,7 +37,7 @@ type OTLPOutput struct {
 	// Protocol defines the OTLP protocol (`http` or `grpc`). Default is `grpc``.
 	// +kubebuilder:validation:Enum=grpc;http
 	Protocol OTLPProtocol `json:"protocol,omitempty"`
-	// Endpoint defines the host and port (<host>:<port>) of an OTLP endpoint.
+	// Endpoint defines the host and port (`<host>:<port>`) of an OTLP endpoint.
 	// +kubebuilder:validation:Required
 	Endpoint ValueType `json:"endpoint"`
 	// Path defines OTLP export URL path (only for the HTTP protocol). This value overrides auto-appended paths `/v1/metrics` and `/v1/traces`
@@ -74,6 +74,7 @@ type Header struct {
 	Prefix string `json:"prefix,omitempty"`
 }
 
+// OutputTLS defines TLS options for an output.
 // +kubebuilder:validation:XValidation:rule="has(self.cert) == has(self.key)", message="Can define either both 'cert' and 'key', or neither"
 type OutputTLS struct {
 	// Disabled specifies if TLS is disabled or enabled. Default is `false`.

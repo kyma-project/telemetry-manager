@@ -36,9 +36,21 @@ func TestGateway_ApplyResources(t *testing.T) {
 			goldenFilePath: "testdata/metric-gateway.yaml",
 		},
 		{
+			name:           "metric gateway with istio",
+			sut:            NewMetricGatewayApplierDeleter(image, namespace, priorityClassName),
+			istioEnabled:   true,
+			goldenFilePath: "testdata/metric-gateway-istio.yaml",
+		},
+		{
 			name:           "trace gateway",
 			sut:            NewTraceGatewayApplierDeleter(image, namespace, priorityClassName),
 			goldenFilePath: "testdata/trace-gateway.yaml",
+		},
+		{
+			name:           "trace gateway with istio",
+			sut:            NewTraceGatewayApplierDeleter(image, namespace, priorityClassName),
+			istioEnabled:   true,
+			goldenFilePath: "testdata/trace-gateway-istio.yaml",
 		},
 		{
 			name:           "log gateway",
@@ -46,10 +58,10 @@ func TestGateway_ApplyResources(t *testing.T) {
 			goldenFilePath: "testdata/log-gateway.yaml",
 		},
 		{
-			name:           "metric gateway with istio",
-			sut:            NewMetricGatewayApplierDeleter(image, namespace, priorityClassName),
+			name:           "log gateway with istio",
+			sut:            NewLogGatewayApplierDeleter(image, namespace, priorityClassName),
 			istioEnabled:   true,
-			goldenFilePath: "testdata/metric-gateway-istio.yaml",
+			goldenFilePath: "testdata/log-gateway-istio.yaml",
 		},
 	}
 
@@ -70,7 +82,6 @@ func TestGateway_ApplyResources(t *testing.T) {
 			}).Build()
 
 			err := tt.sut.ApplyResources(t.Context(), client, GatewayApplyOptions{
-				AllowedPorts:        []int32{5555, 6666},
 				CollectorConfigYAML: "dummy",
 				CollectorEnvVars: map[string][]byte{
 					"DUMMY_ENV_VAR": []byte("foo"),
@@ -110,16 +121,26 @@ func TestGateway_DeleteResources(t *testing.T) {
 			sut:  NewMetricGatewayApplierDeleter(image, namespace, priorityClassName),
 		},
 		{
+			name:         "metric gateway with istio",
+			sut:          NewMetricGatewayApplierDeleter(image, namespace, priorityClassName),
+			istioEnabled: true,
+		},
+		{
 			name: "trace gateway",
 			sut:  NewTraceGatewayApplierDeleter(image, namespace, priorityClassName),
+		},
+		{
+			name:         "trace gateway with istio",
+			sut:          NewTraceGatewayApplierDeleter(image, namespace, priorityClassName),
+			istioEnabled: true,
 		},
 		{
 			name: "log gateway",
 			sut:  NewLogGatewayApplierDeleter(image, namespace, priorityClassName),
 		},
 		{
-			name:         "metric gateway with istio",
-			sut:          NewMetricGatewayApplierDeleter(image, namespace, priorityClassName),
+			name:         "log gateway with istio",
+			sut:          NewLogGatewayApplierDeleter(image, namespace, priorityClassName),
 			istioEnabled: true,
 		},
 	}
@@ -140,9 +161,7 @@ func TestGateway_DeleteResources(t *testing.T) {
 			}).Build()
 
 			err := tt.sut.ApplyResources(t.Context(), fakeClient, GatewayApplyOptions{
-				AllowedPorts:        []int32{5555, 6666},
-				CollectorConfigYAML: "dummy",
-				IstioEnabled:        tt.istioEnabled,
+				IstioEnabled: tt.istioEnabled,
 			})
 			require.NoError(t, err)
 

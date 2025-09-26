@@ -105,6 +105,6 @@ Additionally, all metrics will have attached these resource attributes, identify
 
 Usually you want to alert on a negative health of a pipeline. In the following example, a promql based alert is triggered if metrics are not delivered to the backend:
 
-```promql
+```text
  min by (k8s_resource_name) ((kyma_resource_status_conditions{type="TelemetryFlowHealthy",k8s_resource_kind="metricpipelines"})) == 0
 ```

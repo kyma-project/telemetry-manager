@@ -36,7 +36,7 @@ type OTLPOutput struct {
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:Enum=grpc;http
 	Protocol string `json:"protocol,omitempty"`
-	// Endpoint defines the host and port (<host>:<port>) of an OTLP endpoint.
+	// Endpoint defines the host and port (`<host>:<port>`) of an OTLP endpoint.
 	// +kubebuilder:validation:Required
 	Endpoint ValueType `json:"endpoint"`
 	// Path defines OTLP export URL path (only for the HTTP protocol). This value overrides auto-appended paths `/v1/metrics` and `/v1/traces`
@@ -73,6 +73,7 @@ type Header struct {
 	Prefix string `json:"prefix,omitempty"`
 }
 
+// OTLPTLS defines the TLS configuration for an OTLP output.
 // +kubebuilder:validation:XValidation:rule="has(self.cert) == has(self.key)", message="Can define either both 'cert' and 'key', or neither"
 type OTLPTLS struct {
 	// Insecure defines whether to send requests using plaintext instead of TLS.
