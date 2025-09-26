@@ -55,6 +55,9 @@ func BuildLogPipelineApplicationInput(opts ...ExtendedNamespaceSelectorOptions) 
 
 func BuildLogPipelineOTLPInput(opts ...NamespaceSelectorOptions) telemetryv1alpha1.LogPipelineInput {
 	input := telemetryv1alpha1.LogPipelineInput{
+		Application: &telemetryv1alpha1.LogPipelineApplicationInput{
+			Enabled: ptr.To(false),
+		},
 		OTLP: &telemetryv1alpha1.OTLPInput{
 			Disabled:   false,
 			Namespaces: &telemetryv1alpha1.NamespaceSelector{},
