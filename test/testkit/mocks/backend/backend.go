@@ -115,7 +115,6 @@ func (b *Backend) HostSecretRefV1Beta1() *telemetryv1beta1.SecretKeyRef {
 	return b.hostSecret.SecretKeyRefV1Beta1("host")
 }
 
-// [Deprecated]: use QueryPath, QueryPort instead
 func (b *Backend) ExportURL(proxyClient *apiserverproxy.Client) string {
 	return proxyClient.ProxyURLForService(b.namespace, b.name, QueryPath, QueryPort)
 }

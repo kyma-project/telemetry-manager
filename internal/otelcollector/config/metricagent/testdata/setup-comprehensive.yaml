@@ -137,16 +137,10 @@ receivers:
         metrics:
             container.cpu.usage:
                 enabled: true
-            container.cpu.utilization:
-                enabled: false
             k8s.pod.cpu.usage:
                 enabled: true
-            k8s.pod.cpu.utilization:
-                enabled: false
             k8s.node.cpu.usage:
                 enabled: true
-            k8s.node.cpu.utilization:
-                enabled: false
             k8s.node.cpu.time:
                 enabled: false
             k8s.node.memory.major_page_faults:
