@@ -37,7 +37,7 @@ func TestRejectMetricPipelineCreation(t *testing.T) {
 				},
 				Spec: telemetryv1alpha1.MetricPipelineSpec{},
 			},
-			errorMsgs: []string{"spec.output.otlp in body must be of type object", validationError},
+			errorMsgs: []string{"spec.output in body should have at least 1 properties"},
 		},
 		{
 			pipeline: telemetryv1alpha1.MetricPipeline{
