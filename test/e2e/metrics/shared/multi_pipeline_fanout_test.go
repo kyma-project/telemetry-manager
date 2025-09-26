@@ -101,19 +101,13 @@ func TestMultiPipelineFanout_Agent(t *testing.T) {
 		checkInstrumentationScopeAndVersion(t, g, bodyContent, common.InstrumentationScopeRuntime)
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).To(Succeed())
 
-	Eventually(func(g Gomega) {
-		resp, err := suite.ProxyClient.Get(backendPrometheusExportURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+	assert.BackendDataConsistentlyMatches(t, backendPrometheus,
+		HaveFlatMetrics(HaveUniqueNames(Not(ContainElements(runtime.DefaultMetricsNames)))),
+		assert.WithOptionalDescription("Unwanted runtime metrics sent to prometheus backend"),
+	)
 
-		bodyContent, err := io.ReadAll(resp.Body)
-		defer resp.Body.Close()
-
-		g.Expect(err).NotTo(HaveOccurred())
-
-		g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNames(Not(ContainElements(runtime.DefaultMetricsNames)))), "Unwanted runtime metrics sent to prometheus backend")
-
-		g.Expect(bodyContent).NotTo(HaveFlatMetrics(
+	assert.BackendDataConsistentlyMatches(t, backendPrometheus,
+		Not(HaveFlatMetrics(
 			SatisfyAll(
 				ContainElement(HaveScopeName(Equal(common.InstrumentationScopeRuntime))),
 				ContainElement(HaveScopeVersion(
@@ -123,8 +117,9 @@ func TestMultiPipelineFanout_Agent(t *testing.T) {
 						ContainSubstring("PR-"),
 					))),
 			),
-		), "scope '%v' must not be sent to the prometheus backend", common.InstrumentationScopeRuntime)
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).To(Succeed())
+		)),
+		assert.WithOptionalDescription("scope '%v' must not be sent to the prometheus backend", common.InstrumentationScopeRuntime),
+	)
 
 	Eventually(func(g Gomega) {
 		resp, err := suite.ProxyClient.Get(backendPrometheusExportURL)
@@ -142,12 +137,12 @@ func TestMultiPipelineFanout_Agent(t *testing.T) {
 		checkInstrumentationScopeAndVersion(t, g, bodyContent, common.InstrumentationScopePrometheus)
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).To(Succeed())
 
-	assert.BackendDataEventuallyMatches(t, backendRuntime,
+	assert.BackendDataConsistentlyMatches(t, backendRuntime,
 		HaveFlatMetrics(HaveUniqueNames(Not(ContainElements(prommetricgen.CustomMetricNames())))),
 		assert.WithOptionalDescription("Unwanted prometheus metrics sent to runtime backend"),
 	)
 
-	assert.BackendDataEventuallyMatches(t, backendRuntime,
+	assert.BackendDataConsistentlyMatches(t, backendRuntime,
 		Not(HaveFlatMetrics(SatisfyAny(
 			SatisfyAll(
 				ContainElement(HaveScopeName(Equal(common.InstrumentationScopePrometheus))),
@@ -160,7 +155,7 @@ func TestMultiPipelineFanout_Agent(t *testing.T) {
 				)),
 			),
 		))),
-		assert.WithOptionalDescription("'%v' must not be sent to the runtime backend", common.InstrumentationScopePrometheus),
+		assert.WithOptionalDescription("scope '%v' must not be sent to the runtime backend", common.InstrumentationScopePrometheus),
 	)
 }
 
