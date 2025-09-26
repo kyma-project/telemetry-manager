@@ -5,8 +5,8 @@ images:
     tag: "v1.32.8-k3s1" # used by k3d - current k8s version
   - source: "rancher/k3s@sha256:f9f125ef9c662a231a98c507afdd3ba9a94d5f02631f946d1d34000ef67f7263"
     tag: "v1.33.4-k3s1" # used by k3d - future k3s version
-  - source: "library/registry@sha256:a3d8aaa63ed8681a604f1dea0aa03f100d5895b6a58ace528858a7b332415373"
-    tag: "2" # used by k3d
+  - source: "library/registry@sha256:3725021071ec9383eb3d87ddbdff9ed602439b3f7c958c9c2fb941049ea6531d"
+    tag: "3" # used by k3d
   - source: "library/alpine@sha256:4bcff63911fcb4448bd4fdacec207030997caf25e9bea4045fa6c8c44de311d1"
     tag: "3.22.1" # used for init containers in log agent and fluentbit
   - source: quay.io/prometheuscommunity/avalanche
