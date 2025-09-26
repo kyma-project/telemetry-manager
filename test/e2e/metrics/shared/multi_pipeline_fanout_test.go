@@ -23,7 +23,7 @@ import (
 )
 
 func TestMultiPipelineFanout(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelMetricsFailing)
+	suite.RegisterTestCase(t, "failing-3")
 
 	var (
 		uniquePrefix           = unique.Prefix()

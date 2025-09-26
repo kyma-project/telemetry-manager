@@ -83,7 +83,6 @@ const (
 	// Metrics labels
 	LabelMetricsMisc        = "metrics-misc"
 	LabelMetricsMaxPipeline = "metrics-max-pipeline"
-	LabelMetricsFailing     = "metrics-failing"
 	LabelMetricAgentSetA    = "metric-agent-a"
 	LabelMetricAgentSetB    = "metric-agent-b"
 	LabelMetricAgentSetC    = "metric-agent-c"
