@@ -138,19 +138,19 @@ func validateCustomFilter(content string) error {
 	}
 
 	if !section.ContainsKey("name") {
-		return fmt.Errorf("configuration section must have name attribute")
+		return fmt.Errorf("custom filter configuration must have name attribute")
 	}
 
 	pluginName := section.GetByKey("name").Value
 
 	for _, forbiddenFilter := range forbiddenFilters {
 		if strings.EqualFold(pluginName, forbiddenFilter) {
-			return fmt.Errorf("filter plugin '%s' is forbidden. ", pluginName)
+			return fmt.Errorf("custom filter plugin '%s' is not supported. ", pluginName)
 		}
 	}
 
 	if section.ContainsKey("match") {
-		return fmt.Errorf("filter plugin '%s' contains match condition. Match conditions are forbidden", pluginName)
+		return fmt.Errorf("custom filter plugin '%s' contains match condition. Match conditions are forbidden", pluginName)
 	}
 
 	return nil
@@ -167,17 +167,17 @@ func validateCustomOutput(content string) error {
 	}
 
 	if !section.ContainsKey("name") {
-		return fmt.Errorf("configuration section must have name attribute")
+		return fmt.Errorf("custom output configuration section must have name attribute")
 	}
 
 	pluginName := section.GetByKey("name").Value
 
 	if section.ContainsKey("match") {
-		return fmt.Errorf("output plugin '%s' contains match condition. Match conditions are forbidden", pluginName)
+		return fmt.Errorf("custom output plugin '%s' contains match condition. Match conditions are forbidden", pluginName)
 	}
 
 	if section.ContainsKey("storage.total_limit_size") {
-		return fmt.Errorf("output plugin '%s' contains forbidden configuration key 'storage.total_limit_size'", pluginName)
+		return fmt.Errorf("custom output plugin '%s' contains forbidden configuration key 'storage.total_limit_size'", pluginName)
 	}
 
 	return nil
