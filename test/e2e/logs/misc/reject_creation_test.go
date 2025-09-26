@@ -1,6 +1,7 @@
 package misc
 
 import (
+	"errors"
 	"strconv"
 	"testing"
 
@@ -17,8 +18,9 @@ import (
 
 func TestRejectLogPipelineCreation(t *testing.T) {
 	const (
-		backendHost = "example.com"
-		backendPort = 4317
+		backendHost     = "example.com"
+		backendPort     = 4317
+		validationError = "some validation rules were not checked"
 	)
 
 	var backenEndpoint = backendHost + ":" + strconv.Itoa(backendPort)
@@ -36,17 +38,6 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				Spec: telemetryv1alpha1.LogPipelineSpec{},
 			},
 			errorMsgs: []string{"spec.output in body should have at least 1 properties"},
-		},
-		{
-			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("multiple-outputs").
-				WithOTLPOutput(
-					testutils.OTLPEndpoint(backenEndpoint),
-					testutils.OTLPEndpointPath("/v1/mock/metrics"),
-				).
-				WithHTTPOutput().
-				Build(),
-			errorMsgs: []string{"spec.output: Too many: 2: must have at most 1 items", "some validation rules were not checked"},
 		},
 		{
 			pipeline: telemetryv1alpha1.LogPipeline{
@@ -168,7 +159,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					testutils.OTLPProtocol("icke"),
 				).
 				Build(),
-			errorMsgs: []string{"spec.output.otlp.protocol: Unsupported value", "some validation rules were not checked"},
+			errorMsgs: []string{"spec.output.otlp.protocol: Unsupported value", validationError},
 		},
 		{
 			pipeline: telemetryv1alpha1.LogPipeline{
@@ -239,7 +230,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				).
 				WithOTLPOutput().
 				Build(),
-			errorMsgs: []string{"Too many: 2: must have at most 1 items", "some validation rules were not checked because the object was invalid"},
+			errorMsgs: []string{"Too many: 2: must have at most 1 items", validationError},
 		},
 		// http output
 		{
@@ -306,7 +297,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithExcludeNamespaces("ns2").
 				WithOTLPOutput().
 				Build(),
-			errorMsgs: []string{"spec.input.application.namespaces: Too many: 2: must have at most 1 items", "some validation rules were not checked because the object was invalid"},
+			errorMsgs: []string{"spec.input.application.namespaces: Too many: 2: must have at most 1 items", validationError},
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -316,7 +307,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithExcludeContainers("c2").
 				WithOTLPOutput().
 				Build(),
-			errorMsgs: []string{"spec.input.application.containers: Too many: 2: must have at most 1 items", "some validation rules were not checked because the object was invalid"},
+			errorMsgs: []string{"spec.input.application.containers: Too many: 2: must have at most 1 items", validationError},
 		},
 		// files validation
 		{
@@ -360,9 +351,20 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					},
 				},
 			},
-			errorMsgs: []string{"spec.variables[0].valueFrom.secretKeyRef in body must be of type object", "some validation rules were not checked because the object was invalid"},
+			errorMsgs: []string{"spec.variables[0].valueFrom.secretKeyRef in body must be of type object", validationError},
 		},
 		// legacy validations
+		{
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("multiple-outputs").
+				WithOTLPOutput(
+					testutils.OTLPEndpoint(backenEndpoint),
+					testutils.OTLPEndpointPath("/v1/mock/metrics"),
+				).
+				WithHTTPOutput().
+				Build(),
+			errorMsgs: []string{"spec.output: Too many: 2: must have at most 1 items", validationError},
+		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("legacy-http-output-using-otlp-input").
@@ -449,7 +451,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 
 			Expect(err).ShouldNot(Succeed(), "unexpected success for pipeline %s, this test expects an error", tc.pipeline.Name)
 
-			errStatus, ok := err.(*apierrors.StatusError)
+			errStatus := &apierrors.StatusError{}
+			ok := errors.As(err, &errStatus)
 			if ok && errStatus.Status().Details != nil {
 				Expect(errStatus.Status().Details.Causes).
 					To(HaveLen(len(tc.errorMsgs)),

@@ -50,134 +50,148 @@ type MetricPipeline struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// Spec defines the desired characteristics of MetricPipeline.
+	// +kubebuilder:validation:Optional
 	Spec MetricPipelineSpec `json:"spec,omitempty"`
 
 	// Status represents the current information/status of MetricPipeline.
+	// +kubebuilder:validation:Optional
 	Status MetricPipelineStatus `json:"status,omitempty"`
 }
 
 // MetricPipelineSpec defines the desired state of MetricPipeline.
 type MetricPipelineSpec struct {
 	// Input configures additional inputs for metric collection.
+	// +kubebuilder:validation:Optional
 	Input MetricPipelineInput `json:"input,omitempty"`
 
 	// Output configures the backend to which metrics are sent. You must specify exactly one output per pipeline.
-	Output MetricPipelineOutput `json:"output,omitempty"`
+	// +kubebuilder:validation:Required
+	Output MetricPipelineOutput `json:"output"`
 
 	// Transforms specify a list of transformations to apply to telemetry data.
-	// +optional
+	// +kubebuilder:validation:Optional
 	Transforms []TransformSpec `json:"transform,omitempty"`
 }
 
 // MetricPipelineInput configures additional inputs for metric collection.
 type MetricPipelineInput struct {
 	// Prometheus input configures collection of application metrics in the pull-based Prometheus protocol using endpoint discovery based on annotations.
-	// +optional
+	// +kubebuilder:validation:Optional
 	Prometheus *MetricPipelinePrometheusInput `json:"prometheus,omitempty"`
 	// Runtime input configures collection of Kubernetes runtime metrics.
-	// +optional
+	// +kubebuilder:validation:Optional
 	Runtime *MetricPipelineRuntimeInput `json:"runtime,omitempty"`
 	// Istio input configures collection of Istio metrics from applications running in the Istio service mesh.
-	// +optional
+	// +kubebuilder:validation:Optional
 	Istio *MetricPipelineIstioInput `json:"istio,omitempty"`
 	// OTLP input configures the push endpoint to receive metrics from an OTLP source.
-	// +optional
+	// +kubebuilder:validation:Optional
 	OTLP *OTLPInput `json:"otlp,omitempty"`
 }
 
 // MetricPipelinePrometheusInput collection of application metrics in the pull-based Prometheus protocol using endpoint discovery based on annotations.
 type MetricPipelinePrometheusInput struct {
 	// Enabled specifies whether Service endpoints and Pods marked with `prometheus.io/scrape=true` annotation are scraped. The default is `false`.
+	// +kubebuilder:validation:Optional
 	Enabled *bool `json:"enabled,omitempty"`
 	// Namespaces specifies from which namespaces metrics are collected. By default, all namespaces except the system namespaces are enabled. To enable all namespaces including system namespaces, use an empty struct notation.
-	// +optional
+	// +kubebuilder:validation:Optional
 	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
 	// DiagnosticMetrics configures collection of additional diagnostic metrics. The default is `false`.
+	// +kubebuilder:validation:Optional
 	DiagnosticMetrics *MetricPipelineIstioInputDiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
 }
 
 // MetricPipelineRuntimeInput configures collection of Kubernetes runtime metrics.
 type MetricPipelineRuntimeInput struct {
 	// Enabled specifies whether runtime metrics are collected. The default is `false`.
+	// +kubebuilder:validation:Optional
 	Enabled *bool `json:"enabled,omitempty"`
 	// Namespaces specifies from which namespaces metrics are collected. By default, all namespaces except the system namespaces are enabled. To enable all namespaces including system namespaces, use an empty struct notation.
-	// +optional
+	// +kubebuilder:validation:Optional
 	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
 	// Resources configures the Kubernetes resource types for which metrics are collected.
-	// +optional
+	// +kubebuilder:validation:Optional
 	Resources *MetricPipelineRuntimeInputResources `json:"resources,omitempty"`
 }
 
 // MetricPipelineRuntimeInputResources configures the Kubernetes resource types for which metrics are collected.
 type MetricPipelineRuntimeInputResources struct {
 	// Pod configures Pod runtime metrics collection.
-	// +optional
+	// +kubebuilder:validation:Optional
 	Pod *MetricPipelineRuntimeInputResource `json:"pod,omitempty"`
 	// Container configures container runtime metrics collection.
-	// +optional
+	// +kubebuilder:validation:Optional
 	Container *MetricPipelineRuntimeInputResource `json:"container,omitempty"`
 	// Node configures Node runtime metrics collection.
-	// +optional
+	// +kubebuilder:validation:Optional
 	Node *MetricPipelineRuntimeInputResource `json:"node,omitempty"`
 	// Volume configures Volume runtime metrics collection.
-	// +optional
+	// +kubebuilder:validation:Optional
 	Volume *MetricPipelineRuntimeInputResource `json:"volume,omitempty"`
 	// DaemonSet configures DaemonSet runtime metrics collection.
-	// +optional
+	// +kubebuilder:validation:Optional
 	DaemonSet *MetricPipelineRuntimeInputResource `json:"daemonset,omitempty"`
 	// Deployment configures Deployment runtime metrics collection.
-	// +optional
+	// +kubebuilder:validation:Optional
 	Deployment *MetricPipelineRuntimeInputResource `json:"deployment,omitempty"`
 	// StatefulSet configures StatefulSet runtime metrics collection.
-	// +optional
+	// +kubebuilder:validation:Optional
 	StatefulSet *MetricPipelineRuntimeInputResource `json:"statefulset,omitempty"`
 	// Job configures Job runtime metrics collection.
-	// +optional
+	// +kubebuilder:validation:Optional
 	Job *MetricPipelineRuntimeInputResource `json:"job,omitempty"`
 }
 
 // MetricPipelineRuntimeInputResource configures if the collection of runtime metrics is enabled for a specific resource type. The collection is enabled by default.
 type MetricPipelineRuntimeInputResource struct {
 	// Enabled specifies that the runtime metrics for the resource type are collected. The default is `true`.
-	// +optional
+	// +kubebuilder:validation:Optional
 	Enabled *bool `json:"enabled,omitempty"`
 }
 
 // MetricPipelineIstioInput defines the Istio scraping section.
 type MetricPipelineIstioInput struct {
 	// Enabled specifies that istio-proxy metrics are scraped from Pods that have the istio-proxy sidecar injected. The default is `false`.
+	// +kubebuilder:validation:Optional
 	Enabled *bool `json:"enabled,omitempty"`
 	// Namespaces configures the namespaces for which the collection should be activated. By default, all namespaces including system namespaces are enabled.
-	// +optional
+	// +kubebuilder:validation:Optional
 	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
 	// DiagnosticMetrics configures collection of additional diagnostic metrics. The default is `false`.
+	// +kubebuilder:validation:Optional
 	DiagnosticMetrics *MetricPipelineIstioInputDiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
 	// EnvoyMetrics enables the collection of additional Envoy metrics with prefix `envoy_`. The default is `false`.
+	// +kubebuilder:validation:Optional
 	EnvoyMetrics *EnvoyMetrics `json:"envoyMetrics,omitempty"`
 }
 
 // MetricPipelineIstioInputDiagnosticMetrics defines the diagnostic metrics configuration section
 type MetricPipelineIstioInputDiagnosticMetrics struct {
 	// If enabled, diagnostic metrics are collected. The default is `false`.
+	// +kubebuilder:validation:Optional
 	Enabled *bool `json:"enabled,omitempty"`
 }
 
 // MetricPipelineOutput defines the output configuration section.
-// +kubebuilder:validation:MaxProperties=1
 // +kubebuilder:validation:MinProperties=1
+// +kubebuilder:validation:MaxProperties=1
 type MetricPipelineOutput struct {
 	// OTLP output defines an output using the OpenTelemetry protocol.
-	OTLP *OTLPOutput `json:"otlp"`
+	// +kubebuilder:validation:Optional
+	OTLP *OTLPOutput `json:"otlp,omitempty"`
 }
 
 // MetricPipelineStatus defines the observed state of MetricPipeline.
 type MetricPipelineStatus struct {
 	// An array of conditions describing the status of the pipeline.
+	// +kubebuilder:validation:Optional
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 // EnvoyMetrics defines the configuration for scraping Envoy metrics.
 type EnvoyMetrics struct {
 	// Enabled specifies that Envoy metrics with prefix `envoy_` are scraped additionally. The default is `false`.
+	// +kubebuilder:validation:Optional
 	Enabled *bool `json:"enabled,omitempty"`
 }

@@ -49,31 +49,36 @@ type TracePipeline struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// Spec defines the desired state of TracePipeline
+	// +kubebuilder:validation:Optional
 	Spec TracePipelineSpec `json:"spec,omitempty"`
 	// Status shows the observed state of the TracePipeline
+	// +kubebuilder:validation:Optional
 	Status TracePipelineStatus `json:"status,omitempty"`
 }
 
 // TracePipelineSpec defines the desired state of TracePipeline
 type TracePipelineSpec struct {
 	// Output configures the backend to which traces are sent. You must specify exactly one output per pipeline.
+	// +kubebuilder:validation:Required
 	Output TracePipelineOutput `json:"output"`
 
 	// Transforms specify a list of transformations to apply to telemetry data.
-	// +optional
+	// +kubebuilder:validation:Optional
 	Transforms []TransformSpec `json:"transform,omitempty"`
 }
 
 // TracePipelineOutput defines the output configuration section.
-// +kubebuilder:validation:MaxProperties=1
 // +kubebuilder:validation:MinProperties=1
+// +kubebuilder:validation:MaxProperties=1
 type TracePipelineOutput struct {
 	// OTLP output defines an output using the OpenTelemetry protocol.
-	OTLP *OTLPOutput `json:"otlp"`
+	// +kubebuilder:validation:Optional
+	OTLP *OTLPOutput `json:"otlp,omitempty"`
 }
 
 // TracePipelineStatus defines the observed state of TracePipeline.
 type TracePipelineStatus struct {
 	// An array of conditions describing the status of the pipeline.
+	// +kubebuilder:validation:Optional
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
