@@ -27,6 +27,9 @@ spec:
         - jsonPath: .status.conditions[?(@.type=="ConfigurationGenerated")].status
           name: Configuration Generated
           type: string
+        - jsonPath: .status.conditions[?(@.type=="GatewayHealthy")].status
+          name: Gateway Healthy
+          type: string
         - jsonPath: .status.conditions[?(@.type=="AgentHealthy")].status
           name: Agent Healthy
           type: string
@@ -71,9 +74,11 @@ spec:
                     properties:
                       content:
                         description: Content of the file to be mounted in the Fluent Bit configuration.
+                        minLength: 1
                         type: string
                       name:
                         description: Name of the file under which the content is mounted in the Fluent Bit configuration.
+                        minLength: 1
                         type: string
                     required:
                       - content
@@ -150,6 +155,7 @@ spec:
                           type: boolean
                         namespaces:
                           description: Namespaces describes whether push-based OTLP signals from specific namespaces are selected. System namespaces are enabled by default.
+                          maxProperties: 1
                           properties:
                             exclude:
                               description: Exclude signals from the specified Namespace names only.
@@ -162,9 +168,6 @@ spec:
                                 type: string
                               type: array
                           type: object
-                          x-kubernetes-validations:
-                            - message: Exactly one of 'include' or 'exclude' must be set
-                              rule: has(self.include) != has(self.exclude)
                       type: object
                   type: object
                 output:
@@ -201,12 +204,15 @@ spec:
                                   properties:
                                     key:
                                       description: Key defines the name of the attribute of the Secret holding the referenced value.
+                                      minLength: 1
                                       type: string
                                     name:
                                       description: Name of the Secret containing the referenced value.
+                                      minLength: 1
                                       type: string
                                     namespace:
                                       description: Namespace containing the Secret with the referenced value.
+                                      minLength: 1
                                       type: string
                                   required:
                                     - key
@@ -234,12 +240,15 @@ spec:
                                   properties:
                                     key:
                                       description: Key defines the name of the attribute of the Secret holding the referenced value.
+                                      minLength: 1
                                       type: string
                                     name:
                                       description: Name of the Secret containing the referenced value.
+                                      minLength: 1
                                       type: string
                                     namespace:
                                       description: Namespace containing the Secret with the referenced value.
+                                      minLength: 1
                                       type: string
                                   required:
                                     - key
@@ -273,12 +282,15 @@ spec:
                                       properties:
                                         key:
                                           description: Key defines the name of the attribute of the Secret holding the referenced value.
+                                          minLength: 1
                                           type: string
                                         name:
                                           description: Name of the Secret containing the referenced value.
+                                          minLength: 1
                                           type: string
                                         namespace:
                                           description: Namespace containing the Secret with the referenced value.
+                                          minLength: 1
                                           type: string
                                       required:
                                         - key
@@ -306,12 +318,15 @@ spec:
                                       properties:
                                         key:
                                           description: Key defines the name of the attribute of the Secret holding the referenced value.
+                                          minLength: 1
                                           type: string
                                         name:
                                           description: Name of the Secret containing the referenced value.
+                                          minLength: 1
                                           type: string
                                         namespace:
                                           description: Namespace containing the Secret with the referenced value.
+                                          minLength: 1
                                           type: string
                                       required:
                                         - key
@@ -342,12 +357,15 @@ spec:
                                       properties:
                                         key:
                                           description: Key defines the name of the attribute of the Secret holding the referenced value.
+                                          minLength: 1
                                           type: string
                                         name:
                                           description: Name of the Secret containing the referenced value.
+                                          minLength: 1
                                           type: string
                                         namespace:
                                           description: Namespace containing the Secret with the referenced value.
+                                          minLength: 1
                                           type: string
                                       required:
                                         - key
@@ -386,12 +404,15 @@ spec:
                                   properties:
                                     key:
                                       description: Key defines the name of the attribute of the Secret holding the referenced value.
+                                      minLength: 1
                                       type: string
                                     name:
                                       description: Name of the Secret containing the referenced value.
+                                      minLength: 1
                                       type: string
                                     namespace:
                                       description: Namespace containing the Secret with the referenced value.
+                                      minLength: 1
                                       type: string
                                   required:
                                     - key
@@ -431,12 +452,15 @@ spec:
                                           properties:
                                             key:
                                               description: Key defines the name of the attribute of the Secret holding the referenced value.
+                                              minLength: 1
                                               type: string
                                             name:
                                               description: Name of the Secret containing the referenced value.
+                                              minLength: 1
                                               type: string
                                             namespace:
                                               description: Namespace containing the Secret with the referenced value.
+                                              minLength: 1
                                               type: string
                                           required:
                                             - key
@@ -464,12 +488,15 @@ spec:
                                           properties:
                                             key:
                                               description: Key defines the name of the attribute of the Secret holding the referenced value.
+                                              minLength: 1
                                               type: string
                                             name:
                                               description: Name of the Secret containing the referenced value.
+                                              minLength: 1
                                               type: string
                                             namespace:
                                               description: Namespace containing the Secret with the referenced value.
+                                              minLength: 1
                                               type: string
                                           required:
                                             - key
@@ -502,12 +529,15 @@ spec:
                                   properties:
                                     key:
                                       description: Key defines the name of the attribute of the Secret holding the referenced value.
+                                      minLength: 1
                                       type: string
                                     name:
                                       description: Name of the Secret containing the referenced value.
+                                      minLength: 1
                                       type: string
                                     namespace:
                                       description: Namespace containing the Secret with the referenced value.
+                                      minLength: 1
                                       type: string
                                   required:
                                     - key
@@ -527,6 +557,7 @@ spec:
                             properties:
                               name:
                                 description: Name defines the header name.
+                                minLength: 1
                                 type: string
                               prefix:
                                 description: Prefix defines an optional header value prefix. The prefix is separated from the value by a space character.
@@ -542,12 +573,15 @@ spec:
                                     properties:
                                       key:
                                         description: Key defines the name of the attribute of the Secret holding the referenced value.
+                                        minLength: 1
                                         type: string
                                       name:
                                         description: Name of the Secret containing the referenced value.
+                                        minLength: 1
                                         type: string
                                       namespace:
                                         description: Namespace containing the Secret with the referenced value.
+                                        minLength: 1
                                         type: string
                                     required:
                                       - key
@@ -573,7 +607,6 @@ spec:
                           enum:
                             - grpc
                             - http
-                          minLength: 1
                           type: string
                         tls:
                           description: TLS defines TLS options for the OTLP output.
@@ -592,12 +625,15 @@ spec:
                                       properties:
                                         key:
                                           description: Key defines the name of the attribute of the Secret holding the referenced value.
+                                          minLength: 1
                                           type: string
                                         name:
                                           description: Name of the Secret containing the referenced value.
+                                          minLength: 1
                                           type: string
                                         namespace:
                                           description: Namespace containing the Secret with the referenced value.
+                                          minLength: 1
                                           type: string
                                       required:
                                         - key
@@ -625,12 +661,15 @@ spec:
                                       properties:
                                         key:
                                           description: Key defines the name of the attribute of the Secret holding the referenced value.
+                                          minLength: 1
                                           type: string
                                         name:
                                           description: Name of the Secret containing the referenced value.
+                                          minLength: 1
                                           type: string
                                         namespace:
                                           description: Namespace containing the Secret with the referenced value.
+                                          minLength: 1
                                           type: string
                                       required:
                                         - key
@@ -664,12 +703,15 @@ spec:
                                       properties:
                                         key:
                                           description: Key defines the name of the attribute of the Secret holding the referenced value.
+                                          minLength: 1
                                           type: string
                                         name:
                                           description: Name of the Secret containing the referenced value.
+                                          minLength: 1
                                           type: string
                                         namespace:
                                           description: Namespace containing the Secret with the referenced value.
+                                          minLength: 1
                                           type: string
                                       required:
                                         - key
@@ -704,6 +746,7 @@ spec:
                     properties:
                       name:
                         description: Name of the variable to map.
+                        minLength: 1
                         type: string
                       valueFrom:
                         description: ValueFrom specifies the secret and key to select the value to map.
@@ -713,12 +756,15 @@ spec:
                             properties:
                               key:
                                 description: Key defines the name of the attribute of the Secret holding the referenced value.
+                                minLength: 1
                                 type: string
                               name:
                                 description: Name of the Secret containing the referenced value.
+                                minLength: 1
                                 type: string
                               namespace:
                                 description: Namespace containing the Secret with the referenced value.
+                                minLength: 1
                                 type: string
                             required:
                               - key

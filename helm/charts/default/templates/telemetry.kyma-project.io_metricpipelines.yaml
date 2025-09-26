@@ -89,6 +89,7 @@ spec:
                           type: object
                         namespaces:
                           description: Namespaces configures the namespaces for which the collection should be activated. By default, all namespaces including system namespaces are enabled.
+                          maxProperties: 1
                           properties:
                             exclude:
                               description: Exclude signals from the specified Namespace names only.
@@ -101,9 +102,6 @@ spec:
                                 type: string
                               type: array
                           type: object
-                          x-kubernetes-validations:
-                            - message: Exactly one of 'include' or 'exclude' must be set
-                              rule: has(self.include) != has(self.exclude)
                       type: object
                     otlp:
                       description: OTLP input configures the push endpoint to receive metrics from an OTLP source.
@@ -113,6 +111,7 @@ spec:
                           type: boolean
                         namespaces:
                           description: Namespaces describes whether push-based OTLP signals from specific namespaces are selected. System namespaces are enabled by default.
+                          maxProperties: 1
                           properties:
                             exclude:
                               description: Exclude signals from the specified Namespace names only.
@@ -125,9 +124,6 @@ spec:
                                 type: string
                               type: array
                           type: object
-                          x-kubernetes-validations:
-                            - message: Exactly one of 'include' or 'exclude' must be set
-                              rule: has(self.include) != has(self.exclude)
                       type: object
                     prometheus:
                       description: Prometheus input configures collection of application metrics in the pull-based Prometheus protocol using endpoint discovery based on annotations.
@@ -144,6 +140,7 @@ spec:
                           type: boolean
                         namespaces:
                           description: Namespaces specifies from which namespaces metrics are collected. By default, all namespaces except the system namespaces are enabled. To enable all namespaces including system namespaces, use an empty struct notation.
+                          maxProperties: 1
                           properties:
                             exclude:
                               description: Exclude signals from the specified Namespace names only.
@@ -156,9 +153,6 @@ spec:
                                 type: string
                               type: array
                           type: object
-                          x-kubernetes-validations:
-                            - message: Exactly one of 'include' or 'exclude' must be set
-                              rule: has(self.include) != has(self.exclude)
                       type: object
                     runtime:
                       description: Runtime input configures collection of Kubernetes runtime metrics.
@@ -168,6 +162,7 @@ spec:
                           type: boolean
                         namespaces:
                           description: Namespaces specifies from which namespaces metrics are collected. By default, all namespaces except the system namespaces are enabled. To enable all namespaces including system namespaces, use an empty struct notation.
+                          maxProperties: 1
                           properties:
                             exclude:
                               description: Exclude signals from the specified Namespace names only.
@@ -180,9 +175,6 @@ spec:
                                 type: string
                               type: array
                           type: object
-                          x-kubernetes-validations:
-                            - message: Exactly one of 'include' or 'exclude' must be set
-                              rule: has(self.include) != has(self.exclude)
                         resources:
                           description: Resources configures the Kubernetes resource types for which metrics are collected.
                           properties:
@@ -273,12 +265,15 @@ spec:
                                           properties:
                                             key:
                                               description: Key defines the name of the attribute of the Secret holding the referenced value.
+                                              minLength: 1
                                               type: string
                                             name:
                                               description: Name of the Secret containing the referenced value.
+                                              minLength: 1
                                               type: string
                                             namespace:
                                               description: Namespace containing the Secret with the referenced value.
+                                              minLength: 1
                                               type: string
                                           required:
                                             - key
@@ -306,12 +301,15 @@ spec:
                                           properties:
                                             key:
                                               description: Key defines the name of the attribute of the Secret holding the referenced value.
+                                              minLength: 1
                                               type: string
                                             name:
                                               description: Name of the Secret containing the referenced value.
+                                              minLength: 1
                                               type: string
                                             namespace:
                                               description: Namespace containing the Secret with the referenced value.
+                                              minLength: 1
                                               type: string
                                           required:
                                             - key
@@ -344,12 +342,15 @@ spec:
                                   properties:
                                     key:
                                       description: Key defines the name of the attribute of the Secret holding the referenced value.
+                                      minLength: 1
                                       type: string
                                     name:
                                       description: Name of the Secret containing the referenced value.
+                                      minLength: 1
                                       type: string
                                     namespace:
                                       description: Namespace containing the Secret with the referenced value.
+                                      minLength: 1
                                       type: string
                                   required:
                                     - key
@@ -369,6 +370,7 @@ spec:
                             properties:
                               name:
                                 description: Name defines the header name.
+                                minLength: 1
                                 type: string
                               prefix:
                                 description: Prefix defines an optional header value prefix. The prefix is separated from the value by a space character.
@@ -384,12 +386,15 @@ spec:
                                     properties:
                                       key:
                                         description: Key defines the name of the attribute of the Secret holding the referenced value.
+                                        minLength: 1
                                         type: string
                                       name:
                                         description: Name of the Secret containing the referenced value.
+                                        minLength: 1
                                         type: string
                                       namespace:
                                         description: Namespace containing the Secret with the referenced value.
+                                        minLength: 1
                                         type: string
                                     required:
                                       - key
@@ -415,7 +420,6 @@ spec:
                           enum:
                             - grpc
                             - http
-                          minLength: 1
                           type: string
                         tls:
                           description: TLS defines TLS options for the OTLP output.
@@ -434,12 +438,15 @@ spec:
                                       properties:
                                         key:
                                           description: Key defines the name of the attribute of the Secret holding the referenced value.
+                                          minLength: 1
                                           type: string
                                         name:
                                           description: Name of the Secret containing the referenced value.
+                                          minLength: 1
                                           type: string
                                         namespace:
                                           description: Namespace containing the Secret with the referenced value.
+                                          minLength: 1
                                           type: string
                                       required:
                                         - key
@@ -467,12 +474,15 @@ spec:
                                       properties:
                                         key:
                                           description: Key defines the name of the attribute of the Secret holding the referenced value.
+                                          minLength: 1
                                           type: string
                                         name:
                                           description: Name of the Secret containing the referenced value.
+                                          minLength: 1
                                           type: string
                                         namespace:
                                           description: Namespace containing the Secret with the referenced value.
+                                          minLength: 1
                                           type: string
                                       required:
                                         - key
@@ -506,12 +516,15 @@ spec:
                                       properties:
                                         key:
                                           description: Key defines the name of the attribute of the Secret holding the referenced value.
+                                          minLength: 1
                                           type: string
                                         name:
                                           description: Name of the Secret containing the referenced value.
+                                          minLength: 1
                                           type: string
                                         namespace:
                                           description: Namespace containing the Secret with the referenced value.
+                                          minLength: 1
                                           type: string
                                       required:
                                         - key

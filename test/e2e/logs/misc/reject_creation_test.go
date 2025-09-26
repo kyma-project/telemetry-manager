@@ -96,7 +96,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					},
 				},
 			},
-			errorMsgs: []string{"spec.output.otlp.endpoint.valueFrom.secretKeyRef.key: Required value", "some validation rules were not checked"},
+			errorMsgs: []string{"spec.output.otlp.endpoint.valueFrom.secretKeyRef.key in body should be at least 1 chars long"},
 		},
 		{
 			pipeline: telemetryv1alpha1.LogPipeline{
@@ -118,7 +118,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					},
 				},
 			},
-			errorMsgs: []string{"spec.output.otlp.endpoint.valueFrom.secretKeyRef.namespace: Required value", "some validation rules were not checked"},
+			errorMsgs: []string{"spec.output.otlp.endpoint.valueFrom.secretKeyRef.namespace in body should be at least 1 chars long"},
 		},
 		{
 			pipeline: telemetryv1alpha1.LogPipeline{
@@ -140,7 +140,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					},
 				},
 			},
-			errorMsgs: []string{"spec.output.otlp.endpoint.valueFrom.secretKeyRef.name: Required value", "some validation rules were not checked"},
+			errorMsgs: []string{"spec.output.otlp.endpoint.valueFrom.secretKeyRef.name in body should be at least 1 chars long"},
 		},
 		// otlp output
 		{
@@ -195,7 +195,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					testutils.OTLPBasicAuthFromSecret("name", "namespace", "user", ""),
 				).
 				Build(),
-			errorMsgs: []string{"spec.output.otlp.authentication.basic.password.valueFrom.secretKeyRef.key: Required value"},
+			errorMsgs: []string{"spec.output.otlp.authentication.basic.password.valueFrom.secretKeyRef.key in body should be at least 1 chars long"},
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -205,7 +205,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					testutils.OTLPBasicAuthFromSecret("name", "namespace", "", "password"),
 				).
 				Build(),
-			errorMsgs: []string{"spec.output.otlp.authentication.basic.user.valueFrom.secretKeyRef.key: Required value"},
+			errorMsgs: []string{"spec.output.otlp.authentication.basic.user.valueFrom.secretKeyRef.key in body should be at least 1 chars long"},
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -220,33 +220,43 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				Build(),
 			errorMsgs: []string{"Can define either both 'cert' and 'key', or neither"},
 		},
+		{
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("otlp-output-tls-missing-cert").
+				WithOTLPOutput(
+					testutils.OTLPEndpoint(backend.Endpoint()),
+					testutils.OTLPClientTLS(&telemetryv1alpha1.OTLPTLS{
+						CA:  &telemetryv1alpha1.ValueType{Value: clientCerts.CaCertPem.String()},
+						Key: &telemetryv1alpha1.ValueType{Value: "bla"},
+					}),
+				).
+				Build(),
+			errorMsgs: []string{"Can define either both 'cert' and 'key', or neither"},
+		},
+		// otlp input
+		{
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("otlp-input-namespaces-not-exclusive").
+				WithOTLPInput(true,
+					testutils.ExcludeNamespaces("ns1"),
+					testutils.IncludeNamespaces("ns2"),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsgs: []string{"Too many: 2: must have at most 1 items", "some validation rules were not checked because the object was invalid"},
+		},
 		// http output
 		{
-			pipeline: telemetryv1alpha1.LogPipeline{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "http-output-tls-missing-key2",
-				},
-				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Output: telemetryv1alpha1.LogPipelineOutput{
-						HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
-							Host: telemetryv1alpha1.ValueType{Value: "example.com"},
-							TLS: telemetryv1alpha1.LogPipelineOutputTLS{
-								Cert: &telemetryv1alpha1.ValueType{Value: clientCerts.ClientCertPem.String()},
-							},
-						},
-					},
-				},
-			},
-			// pipeline: testutils.NewLogPipelineBuilder().
-			// 	WithName("http-output-tls-missing-key2").
-			// 	WithHTTPOutput(
-			// 		testutils.HTTPHost(backend.Host()),
-			// 		testutils.HTTPPort(backend.Port()),
-			// 		testutils.HTTPClientTLS(telemetryv1alpha1.LogPipelineOutputTLS{
-			// 			Cert: &telemetryv1alpha1.ValueType{Value: clientCerts.ClientCertPem.String()},
-			// 		}),
-			// 	).
-			// 	Build(),
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("http-output-tls-missing-key").
+				WithHTTPOutput(
+					testutils.HTTPHost(backend.Host()),
+					testutils.HTTPPort(backend.Port()),
+					testutils.HTTPClientTLS(telemetryv1alpha1.LogPipelineOutputTLS{
+						Cert: &telemetryv1alpha1.ValueType{Value: clientCerts.ClientCertPem.String()},
+					}),
+				).
+				Build(),
 			errorMsgs: []string{"Can define either both 'cert' and 'key', or neither"},
 		},
 		{
@@ -289,7 +299,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					},
 				},
 			},
-			errorMsgs: []string{"Host is required on HTTP output"},
+			errorMsgs: []string{"Exactly one of 'value' or 'valueFrom' must be set"},
 		},
 		// application input
 		{
@@ -300,7 +310,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithExcludeNamespaces("ns2").
 				WithOTLPOutput().
 				Build(),
-			errorMsgs: []string{"spec.input.application.namespaces: Too many: 2: must have at most 1 items"},
+			errorMsgs: []string{"spec.input.application.namespaces: Too many: 2: must have at most 1 items", "some validation rules were not checked because the object was invalid"},
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -310,7 +320,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithExcludeContainers("c2").
 				WithOTLPOutput().
 				Build(),
-			errorMsgs: []string{"spec.input.application.containers: Too many: 2: must have at most 1 items"},
+			errorMsgs: []string{"spec.input.application.containers: Too many: 2: must have at most 1 items", "some validation rules were not checked because the object was invalid"},
 		},
 		// files validation
 		{
@@ -319,7 +329,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithFile("", "icke").
 				WithHTTPOutput().
 				Build(),
-			errorMsgs: []string{"spec.files[0].name: Required value"},
+			errorMsgs: []string{"spec.files[0].name in body should be at least 1 chars long"},
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -327,34 +337,16 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithFile("file1", "").
 				WithHTTPOutput().
 				Build(),
-			errorMsgs: []string{"spec.files[0].content: Required value"},
+			errorMsgs: []string{"spec.files[0].content in body should be at least 1 chars long"},
 		},
 		// variables validation
 		{
-			pipeline: telemetryv1alpha1.LogPipeline{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "variables-name-required",
-				},
-				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Variables: []telemetryv1alpha1.LogPipelineVariableRef{
-						{
-							ValueFrom: telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-									Name:      "secName",
-									Namespace: "secNs",
-									Key:       "secKey",
-								},
-							},
-						},
-					},
-					Output: telemetryv1alpha1.LogPipelineOutput{
-						HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
-							Host: telemetryv1alpha1.ValueType{Value: "example.com"},
-						},
-					},
-				},
-			},
-			errorMsgs: []string{"spec.variables[0].name: Required value"},
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("variables-name-required").
+				WithVariable("", "secName", "secNs", "secKey").
+				WithHTTPOutput().
+				Build(),
+			errorMsgs: []string{"spec.variables[0].name in body should be at least 1 chars long"},
 		},
 		{
 			pipeline: telemetryv1alpha1.LogPipeline{
@@ -372,7 +364,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					},
 				},
 			},
-			errorMsgs: []string{"spec.variables[0].valueFrom.secretKeyRef: Required value"},
+			errorMsgs: []string{"spec.variables[0].valueFrom.secretKeyRef in body must be of type object", "some validation rules were not checked because the object was invalid"},
 		},
 		// legacy validations
 		{
