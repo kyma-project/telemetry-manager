@@ -98,7 +98,7 @@ func TestMultiPipelineFanout_Agent(t *testing.T) {
 		g.Expect(err).NotTo(HaveOccurred())
 
 		g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNamesForRuntimeScope(ConsistOf(runtime.ContainerMetricsNames))), "Not all required runtime metrics are sent to runtime backend")
-		checkInstrumentationScopeAndVersion(t, g, bodyContent, common.InstrumentationScopeRuntime, common.InstrumentationScopeKyma)
+		checkInstrumentationScopeAndVersion(t, g, bodyContent, common.InstrumentationScopeRuntime)
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).To(Succeed())
 
 	Eventually(func(g Gomega) {
@@ -139,25 +139,16 @@ func TestMultiPipelineFanout_Agent(t *testing.T) {
 		// we expect additional elements such as 'go_memstats_gc_sys_bytes'. Therefor we use 'ContainElements' instead of 'ConsistOf'
 		g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNames(ContainElements(prommetricgen.CustomMetricNames()))), "Not all required prometheus metrics are sent to prometheus backend")
 
-		checkInstrumentationScopeAndVersion(t, g, bodyContent, common.InstrumentationScopePrometheus, common.InstrumentationScopeKyma)
+		checkInstrumentationScopeAndVersion(t, g, bodyContent, common.InstrumentationScopePrometheus)
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).To(Succeed())
 
-	// TODO: Rewrite using helper function, 2 calls:
-	// - HaveUniqueNames
-	// - instrumentation scope checks
-	Eventually(func(g Gomega) {
-		resp, err := suite.ProxyClient.Get(backendRuntimeExportURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+	assert.BackendDataEventuallyMatches(t, backendRuntime,
+		HaveFlatMetrics(HaveUniqueNames(Not(ContainElements(prommetricgen.CustomMetricNames())))),
+		assert.WithOptionalDescription("Unwanted prometheus metrics sent to runtime backend"),
+	)
 
-		bodyContent, err := io.ReadAll(resp.Body)
-		defer resp.Body.Close()
-
-		g.Expect(err).NotTo(HaveOccurred())
-
-		g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNames(Not(ContainElements(prommetricgen.CustomMetricNames())))), "Unwanted prometheus metrics sent to runtime backend")
-
-		g.Expect(bodyContent).NotTo(HaveFlatMetrics(SatisfyAny(
+	assert.BackendDataEventuallyMatches(t, backendRuntime,
+		Not(HaveFlatMetrics(SatisfyAny(
 			SatisfyAll(
 				ContainElement(HaveScopeName(Equal(common.InstrumentationScopePrometheus))),
 				ContainElement(HaveScopeVersion(
@@ -165,11 +156,12 @@ func TestMultiPipelineFanout_Agent(t *testing.T) {
 						ContainSubstring("main"),
 						ContainSubstring("1."),
 						ContainSubstring("PR-"),
-					))),
+					),
+				)),
 			),
-		),
-		), "'%v' must not be sent to the runtime backend", common.InstrumentationScopePrometheus)
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).To(Succeed())
+		))),
+		assert.WithOptionalDescription("'%v' must not be sent to the runtime backend", common.InstrumentationScopePrometheus),
+	)
 }
 
 func TestMultiPipelineFanout_Gateway(t *testing.T) {
@@ -221,39 +213,19 @@ func TestMultiPipelineFanout_Gateway(t *testing.T) {
 	assert.MetricsFromNamespaceDelivered(t, backend2, genNs, telemetrygen.MetricNames)
 }
 
-// TODO:
-// OPTION 1: Rewrite into checkRuntimeInputInstrumentationScope and checkPrometheusInputInstrumentationScope
-// OPTION 2: HaveEach -> Contains (loosen-up test)
-func checkInstrumentationScopeAndVersion(t *testing.T, g Gomega, body []byte, scope1, scope2 string) {
+func checkInstrumentationScopeAndVersion(t *testing.T, g Gomega, body []byte, scope string) {
 	t.Helper()
 
 	g.Expect(body).To(HaveFlatMetrics(ContainElements(
 		SatisfyAny(
 			SatisfyAll(
-				HaveScopeName(Equal(scope1)),
+				HaveScopeName(Equal(scope)),
 				HaveScopeVersion(
 					SatisfyAny(
 						ContainSubstring("main"),
 						ContainSubstring("1."),
 						ContainSubstring("PR-"),
-					)),
-			),
-			SatisfyAll(
-				HaveScopeName(Equal(scope2)),
-				HaveScopeVersion(
-					SatisfyAny(
-						ContainSubstring("main"),
-						ContainSubstring("1."),
-						ContainSubstring("PR-"),
-					)),
-			),
-			SatisfyAll(
-				// the sample app is exposing some auto-instrumented metrics which the prometheus receiver will not change with the runtime scope
-				HaveScopeName(Equal("go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp")),
-				HaveScopeVersion(
-					SatisfyAny(
-						ContainSubstring("0."),
 					)),
 			)),
-	)), "only scope '%v' or '%v' must be sent to the runtime backend", scope1, scope2)
+	)), "scope '%v' must be sent to the given backend", scope)
 }
