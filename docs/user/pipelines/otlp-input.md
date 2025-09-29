@@ -1,16 +1,42 @@
-# Telemetry Pipeline OTLP Input
+# Set Up the OTLP Input
 
-With OpenTelemetry, applications are pushing telemetry data in the OTLP format to the backend. By default, a Telemetry Pipeline will serve a cluster internal endpoint accepting OTLP data, to enrich and dispatch the data to the configured backend, so that the application requires no additional backend configuration for the push.
+Use the default OTLP input to collect telemetry data from your instrumented applications and customize how that data is processed by the pipeline. You can specify which input data goes to which backend. If you're using Istio, data is collected from the service mesh.
 
-## Push Endpoint
+## Overview
 
-To see whether you've set up your push endpoints successfully, check the status of the default Telemetry resource:
+When you create any `LogPipeline`, `TracePipeline`, or `MetricPipeline`, the Telemetry module automatically deploys the respective gateway. This opens a stable, cluster-internal [OTLP](https://opentelemetry.io/docs/specs/otel/protocol/) endpoint for each signal type, ready to receive data from your applications.
+
+Each endpoint listens on port `4317` for gRPC (default) and on port `4318` for HTTP.
+
+![Gateways-Plain](./../assets/gateways-plain-input.drawio.svg) <!-- THIS LOOKS NEW TOO-->
+
+## Configure Your Application's OTLP Exporter
+
+To send data from your application, first instrument your code using an [OTel SDK](https://opentelemetry.io/docs/languages/) for your programming language. The SDK's OTLP exporter sends the collected telemetry data to a backend.
+
+It's recommended that you configure the exporter's destination by setting the standard [environment variables](https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/#otel_exporter_otlp_traces_endpoint) in your application's deployment. This method avoids hardcoding endpoints in your application code.
+
+Use the following environment variables to set the OTLP endpoint for each signal type:
+
+- Traces GRPC: `export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT="http://telemetry-otlp-traces.kyma-system:4317"`
+- Traces HTTP: `export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT="http://telemetry-otlp-traces.kyma-system:4318/v1/traces"`
+- Metrics GRPC: `export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT="http://telemetry-otlp-metrics.kyma-system:4317"`
+- Metrics HTTP: `export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT="http://telemetry-otlp-metrics.kyma-system:4318/v1/metrics"`
+- Logs GRPC: `export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT="http://telemetry-otlp-logs.kyma-system:4317"`
+- Logs HTTP: `export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT="http://telemetry-otlp-logs.kyma-system:4318/v1/logs"`
+
+> **Note:** 
+> If your cluster uses Istio, communication with these endpoints is automatically secured with mTLS. For details, see [Istio Integration](ADD LINK).
+
+## Verify the Endpoints
+
+To see whether you've set up your gateways and their push endpoints successfully, check the status of the default `Telemetry` resource:
 
 ```sh
 kubectl -n kyma-system get telemetries.operator.kyma-project.io default -oyaml
 ```
 
-In the status of the returned resource, you see the pipeline health as well as the available push endpoints:
+The output shows the available endpoints and the pipeline health under the status.endpoints section:
 
 ```yaml
   endpoints:
@@ -25,26 +51,14 @@ In the status of the returned resource, you see the pipeline health as well as t
       http: http://telemetry-otlp-logs.kyma-system:4318
 ```
 
-For every signal type, there's a dedicated endpoint to which you can push data using [OTLP](https://opentelemetry.io/docs/specs/otel/protocol/). OTLP supports GRPC and HTTP-based communication, each having its individual port on every endpoint. Use port `4317` for GRPC and `4318` for HTTP.
+## Route Specific Inputs to Different Backends
 
-![Gateways-Plain](./../assets/gateways-plain-input.drawio.svg)
+For logs and metrics: If you have multiple pipelines sending data to different backends, you can specify which inputs are active for each pipeline. This is useful if you want one pipeline to handle only OTLP data and another to handle only data from a different source.
 
-Applications that support OTLP typically use the [OTel SDK](https://opentelemetry.io/docs/languages/) for instrumentation of the data. You can either configure the endpoints hardcoded in the SDK setup, or you use standard [environment variables](https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/#otel_exporter_otlp_traces_endpoint) configuring the OTel exporter, for example:
+> **Tip:**
+> For more granular control, you can also filter incoming OTLP data by namespace. For details, see [Filter Logs](ADD LINK) and [Filter Metrics](ADD LINK).
 
-- Traces GRPC: `export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT="http://telemetry-otlp-traces.kyma-system:4317"`
-- Traces HTTP: `export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT="http://telemetry-otlp-traces.kyma-system:4318/v1/traces"`
-- Metrics GRPC: `export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT="http://telemetry-otlp-metrics.kyma-system:4317"`
-- Metrics HTTP: `export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT="http://telemetry-otlp-metrics.kyma-system:4318/v1/metrics"`
-- Logs GRPC: `export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT="http://telemetry-otlp-logs.kyma-system:4317"`
-- Logs HTTP: `export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT="http://telemetry-otlp-logs.kyma-system:4318/v1/logs"`
-
-## Disable Input
-
-If you have more than one backend, you can specify from which `input` data is pushed to each backend. For example, if `otlp` input data should go to one backend and only data from the log-specific `application` input to the other backend, then disable the `otlp` input for the second backend.
-
-By default, `otlp` input is enabled.
-
-To drop the push-based OTLP logs that are received by the log gateway, define a LogPipeline that has the `otlp` section disabled as an input:
+For example, if you want to analyze **otlp** input data in one backend and only data from the log-specific **application** input in another backend, then disable the **otlp** input for the second backend. By default, **otlp** input is enabled.
 
 ```yaml
 ...
@@ -54,38 +68,3 @@ To drop the push-based OTLP logs that are received by the log gateway, define a 
     otlp:
       disabled: true
 ```
-
-With this, the agent starts collecting all container logs, while the push-based OTLP logs are dropped by the gateway.
-
-## Namespace Filtering
-
-The input supports filtering of incoming data by namespaces.
-
-```yaml
-...
-  input:
-    otlp:
-      namespaces:
-        include:
-          - namespaceA
-          - namespaceB
-        exclude:
-          - namespaceC
-```
-
-By default, all system namespaces are excluded. To collect all namespaces without using any inclusion or exclusion list, use an empty struct syntax like in:
-
-```yaml
-...
-  input:
-    otlp:
-      namespaces: {}
-```
-
-## Istio Support
-
-The OTLP endpoints natively support ingestion with mTLS based on Istio. The Telemetry module automatically detects whether the Istio module is added to your cluster, and injects Istio sidecars to the Telemetry components. The ingestion endpoints of gateways are then configured to allow traffic in the permissive mode, so they accept mTLS-based communication as well as plain text.
-
-![Gateways-Istio](./../assets/gateways-istio-input.drawio.svg)
-
-Clients in the Istio service mesh transparently communicate to the gateway with mTLS. Clients that don't use Istio can communicate with the gateway in plain text mode.

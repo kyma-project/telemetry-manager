@@ -1,34 +1,52 @@
 # Telemetry Module
 
-Learn more about the Telemetry Module. Use it to enable observability for your applications.
+Use the Telemetry module to collect telemetry signals (logs, traces, and metrics) from your applications and send them to your preferred observability backend.
 
 ## What Is Telemetry?
 
-Fundamentally, "Observability" is a measure of how well the application's external outputs can reflect the internal states of single components. The insights that an application and the surrounding infrastructure expose are displayed in the form of metrics, traces, and logs - collectively, that's called "telemetry" or ["signals"](https://opentelemetry.io/docs/concepts/signals/). These can be exposed by employing modern instrumentation.
+With telemetry signals, you can understand the behavior and health of your applications and infrastructure. The Telemetry module provides a standardized way to collect these signals and send them to your observability backend, where you can analyze them and troubleshoot issues.
+
+The Telemetry module processes three types of signals:
+
+- Logs: Time-stamped records of events that happen over time.
+- Traces: The path of a request as it travels through your application's components.
+- Metrics: Aggregated numerical data about the performance or state of a component over time.
 
 ![Stages of Observability](./assets/telemetry-stages.drawio.svg)
 
-1. In order to implement Day-2 operations for a distributed application running in a container runtime, the single components of an application must expose these signals by employing modern instrumentation.
-2. Furthermore, the signals must be collected and enriched with the infrastructural metadata in order to ship them to a target system.
-3. Instead of providing a one-size-for-all backend solution, the Telemetry module supports you with instrumenting and shipping your telemetry data in a vendor-neutral way.
-4. This way, you can conveniently enable observability for your application by integrating it into your existing or desired backends. Pick your favorite among many observability backends (available either as a service or as a self-manageable solution) that focus on different aspects and scenarios.
+Telemetry signals flow through the following stages:
 
-The Telemetry module focuses exactly on the aspects of instrumentation, collection, and shipment that happen in the runtime and explicitly defocuses on backends.
+1.  You instrument your application so that its components expose telemetry signals.
+2.  The signals are collected and enriched with infrastructural metadata.
+3.  You send the enriched signals to your preferred observability backend.
+4.  The backend stores your data, where you can analyze and visualize it.
 
-> [!TIP]
-> An enterprise-grade setup demands a central solution outside the cluster, so we recommend in-cluster solutions only for testing purposes. If you want to install lightweight in-cluster backends for demo or development purposes, see [Integration Guides](./integration/README.md).
+The Telemetry module focuses on the collection, processing, and shipment stages of the observability workflow. It offers a vendor-neutral approach based on [OpenTelemetry](https://opentelemetry.io/) and doesn't force you into a specific backend. This means you can integrate with your existing observability platforms or choose from a wide range of available backends that best suit your operational needs.
+
+> **Tip:**
+> Build your first telemetry pipeline with the hands-on lesson [Collecting Application Logs and Shipping them to SAP Cloud Logging](https://learning.sap.com/learning-journeys/developing-applications-in-sap-btp-kyma-runtime/collecting-application-logs-and-shipping-to-sap-cloud-logging).
 
 ## Features
 
 To support telemetry for your applications, the Telemetry module provides the following features:
 
-- A [Pipeline](pipelines/README.md) API for collection, filtering, and shipment: Based on the [Open Telemetry Collector](https://opentelemetry.io/docs/collector/), you can configure basic pipelines to collect, enrich, filter and ship telemetry data, and these for all three signal types [Logs](./logs/README.md), [Traces](./traces/README.md) and [Metrics](./metrics/README.md).
-- Integration in a vendor-neutral way to a vendor-specific observability system: Based on the [OpenTelemetry protocol (OTLP)](https://opentelemetry.io/docs/reference/specification/protocol/), you can integrate backend systems.
-- Guidance for the instrumentation: Based on [Open Telemetry](https://opentelemetry.io/), you get community samples on how to instrument your code using the [Open Telemetry SDKs](https://opentelemetry.io/docs/instrumentation/) in nearly every programming language.
-- Enriching telemetry data by automatically adding metadata attributes (OTel resource attributes). This is done in compliance with established semantic conventions of OTel, ensuring that the enriched data adheres to industry best practices and is more meaningful for analysis. For details, see [Data Enrichment](./pipelines/enrichment.md).
-- Opt-out of features for advanced scenarios: At any time, you can opt out for each data type, and use custom tooling to collect and ship the telemetry data.
-- SAP BTP as first-class integration: Integration into SAP BTP Observability services, such as SAP Cloud Logging, is prioritized. For more information, see [Integrate with SAP Cloud Logging](integration/sap-cloud-logging/README.md).
-- [Integration guides](./integration/README.md) to connect to typical backends.
+
+- **Consistent Telemetry Pipeline API**: Use a streamlined set of APIs based on the [OTel Collector](https://opentelemetry.io/docs/collector/) to collect, filter, and ship your logs, metrics, and traces (see [Telemetry Pipeline API](ADD LINK)). You define a pipeline for each signal type to control how the data is processed and where it's sent. For details, see [Collecting Logs](ADD LINK), [Collecting Traces](ADD LINK), and [Collecting Metrics](ADD LINK).
+
+- **Flexible Backend Integration**: The Telemetry module is optimized for integration with SAP BTP observability services, such as SAP Cloud Logging service. You can also send data to any backend that supports the [OpenTelemetry protocol (OTLP)](https://opentelemetry.io/docs/specs/otel/protocol/), giving you the freedom to choose your preferred solution (see [Integrate With Your OTLP Backend](ADD LINK)).
+
+  > **Recommendation:**
+  > For production deployments, we recommend using a central telemetry solution located outside your cluster. For an example with SAP Cloud Logging service, see [Integrate With SAP Cloud Logging](ADD LINK).
+  >
+  > For testing or development, in-cluster solutions may be suitable. For examples such as Dynatrace (or to learn how to collect data from applications based on the OpenTelemetry Demo App), see [Integration Guides](https://kyma-project.io/#/telemetry-manager/user/integration/README).
+
+- **Seamless Istio Integration**: The Telemetry module seamlessly integrates with the Istio module when both are present in your cluster. For details, see [Istio Integration](ADD LINK).
+
+- **Automatic Data Enrichment**: The Telemetry module adds resource attributes as metadata, following OTel semantic conventions. This makes your data more consistent, meaningful, and ready for analysis in your observability backend. For details, see [Automatic Data Enrichment](ADD LINK).
+
+- **Instrumentation Guidance**: To generate telemetry data, you must instrument your code. Based on [Open Telemetry](https://opentelemetry.io/), you get community samples on how to instrument your code using the [Open Telemetry SDKs](https://opentelemetry.io/docs/languages/) in most programming languages.
+
+- **Custom Tooling Support**: For advanced scenarios, you can opt out of the module's default collection and shipment mechanisms for individual data types. This enables you to use custom tooling to collect and ship the telemetry data.
 
 ## Scope
 
@@ -38,13 +56,24 @@ Supported integration scenarios are neutral to the vendor of the target system.
 
 ## Architecture
 
-The module consists of a manager component, which continuosly watches the API resources (pipelines) provided by the user and deploys sets of OTel Collectors doing. For more information, see [Architecture](architecture.md).
+The Telemetry module is built around a central controller, the Telemetry Manager, which dynamically configures and deploys data collection components based on your pipeline resources.
+
+To understand how the core components interact, see [Architecture](architecture.md).
+
+To learn how this model applies to each signal type, see:
+
+- [Logging Architecture](ADD LINK)
+- [Tracing Architecture](ADD LINK)
+- [Metrics Architecture](ADD LINK)
 
 ## API / Custom Resource Definitions
 
-The API of the Telemetry module is based on Kubernetes Custom Resource Definitions (CRD), which extend the Kubernetes API with custom additions. To inspect the specification of the Telemetry module API, see:
+You configure the Telemetry module and its pipelines by creating and applying Kubernetes Custom Resource Definitions (CRD), which extend the Kubernetes API with custom additions.
 
-- [Telemetry CRD](./resources/01-telemetry.md)
+To understand and configure the module's global settings, refer to the [Telemetry CRD](./resources/01-telemetry.md).
+
+To define how to collect, process, and ship a specific signal, use the pipeline CRDs:
+
 - [LogPipeline CRD](./resources/02-logpipeline.md)
 - [TracePipeline CRD](./resources/04-tracepipeline.md)
 - [MetricPipeline CRD](./resources/05-metricpipeline.md)

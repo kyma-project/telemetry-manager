@@ -1,44 +1,30 @@
-# Logs Istio Support
+# Configure Istio Access Logs
 
-Use the Istio Telemetry API to selectively enable the Istio access logs and filter them if needed.
+Enable Istio access logs to get details about traffic to your workloads in the Istio service mesh. You can use these logs to monitor the "four golden signals" (latency, traffic, errors, and saturation) and to troubleshoot anomalies.
 
 ## Prerequisites
 
-* You have the Istio module added.
+- You have the Istio module enabled in your cluster. See [Adding and Deleting a Kyma Module](ADD LINK).
+- You have access to Kyma dashboard. Alternatively, if you prefer CLI, you need [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl).
 
 ## Context
 
-You can enable [Istio access logs](https://istio.io/latest/docs/tasks/observability/logs/access-log/) to provide fine-grained details about the access to workloads that are part of the Istio service mesh. This can help indicate the four “golden signals” of monitoring (latency, traffic, errors, and saturation) and troubleshooting anomalies.
-The Istio setup shipped with the Kyma Istio module provides a pre-configured [extension provider](https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig-ExtensionProvider) called `kyma-logs` for access logs based on OTLP. It can be enabled via the [Istio Telemetry API](https://istio.io/latest/docs/tasks/observability/telemetry), which configures the Istio proxies to push access logs to the push-endpoint of the telemetry module.
+[Istio access logs](https://istio.io/latest/docs/tasks/observability/logs/access-log/) are disabled by default because they can generate a high volume of data. To collect them, you apply an Istio `Telemetry` resource to a specific namespace, a specific workload, or the entire mesh. After you enable the logs, you can add a filter to reduce noise and focus on relevant data.
 
-> [!WARNING]
-> When using LogPipelines with `http` output, then the integration via OTLP is not supported and the legacy extension provider `stdout-json` needs to be used
-> Enabling access logs may drastically increase logs volume and might quickly fill up your log storage.
+> **Caution:**
+> Enabling access logs, especially for the entire mesh, can significantly increase log volume and may lead to higher storage costs. Enable this feature only for the specific resources you need to monitor.
 
-For more details on how to enable the Istio tracing using the same API, see [Traces Istio Support](./../traces/README.md#istio) 
+The Istio module provides a preconfigured [extension provider](https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig-ExtensionProvider) called `kyma-logs`. This provider tells Istio to send access logs to the Telemetry module's OTLP endpoint. If your `LogPipeline` uses the legacy **http** output, you must use the `stdout-json` provider instead.
 
-## Configuration
+## Enable Istio Logs for a Namespace
 
-Use the Telemetry API to selectively enable Istio access logs. See:
+1. Export the name of the target namespace as environment variable:
 
-<!-- no toc -->
-* [Configure Istio Access Logs for a Namespace](#configure-istio-access-logs-for-a-namespace)
-* [Configure Istio Access Logs for a Selective Workload](#configure-istio-access-logs-for-a-selective-workload)
-* [Configure Istio Access Logs for a Specific Gateway](#configure-istio-access-logs-for-a-selective-gateway)
-* [Configure Istio Access Logs for the Entire Mesh](#configure-istio-access-logs-for-the-entire-mesh)
-* [Filter Access Logs](#filter-access-logs)
+   ```bash
+   export YOUR_NAMESPACE={NAMESPACE_NAME}
+   ```
 
-To filter the enabled access logs, you can edit the Telemetry API by adding a filter expression. See [Filter Access logs](#filter-access-logs).
-
-### Configure Istio Access Logs for a Namespace
-
-1. Export the name of the namespace for which you want to configure Istio access logs.
-
-    ```bash
-    export YOUR_NAMESPACE={NAMESPACE_NAME}
-    ```
-
-2. To apply the configuration, run:
+2. Apply the Istio `Telemetry` resource:
 
     ```bash
     cat <<EOF | kubectl apply -f -
@@ -54,13 +40,13 @@ To filter the enabled access logs, you can edit the Telemetry API by adding a fi
     EOF
     ```
 
-3. To verify that the resource is applied, run:
+3. Verify that the resource is applied to the target namespace:
 
-    ```bash
-    kubectl -n $YOUR_NAMESPACE get telemetries.telemetry.istio.io
-    ```
+   ```bash
+   kubectl -n $YOUR_NAMESPACE get telemetries.telemetry.istio.io
+   ```
 
-### Configure Istio Access Logs for a Selective Workload
+## Enable Istio Logs for a Specific Workload
 
 To configure label-based selection of workloads, use a [selector](https://istio.io/latest/docs/reference/config/type/workload-selector/#WorkloadSelector).
 
@@ -71,7 +57,7 @@ To configure label-based selection of workloads, use a [selector](https://istio.
     export YOUR_LABEL={LABEL}
     ```
 
-2. To apply the configuration, run:
+2. Apply the Istio `Telemetry` resource with the selector:
 
     ```bash
     cat <<EOF | kubectl apply -f -
@@ -90,17 +76,17 @@ To configure label-based selection of workloads, use a [selector](https://istio.
     EOF
     ```
 
-3. To verify that the resource is applied, run:
+3. Verify that the resource is applied to the target namespace:
 
     ```bash
     kubectl -n $YOUR_NAMESPACE get telemetries.telemetry.istio.io
     ```
 
-### Configure Istio Access Logs for a Selective Gateway
+## Enable Istio Logs for the Ingress Gateway
 
-Instead of enabling the access logs for all the individual proxies of the workloads you have, you can enable the logs for the proxy used by the related Istio Ingress Gateway.
+To monitor all traffic entering your mesh, enable access logs on the Istio Ingress Gateway (instead of the individual proxies of your workloads).
 
-1. To apply the configuration, run:
+1. Apply the Istio `Telemetry` resource to the `istio-system` namespace, selecting the gateway Pods:
 
     ```bash
     cat <<EOF | kubectl apply -f -
@@ -119,17 +105,21 @@ Instead of enabling the access logs for all the individual proxies of the worklo
     EOF
     ```
 
-2. To verify that the resource is applied, run:
+2. Verify that the resource is applied to the `istio-system` namespace:
 
     ```bash
     kubectl -n istio-system get telemetries.telemetry.istio.io
     ```
 
-### Configure Istio Access Logs for the Entire Mesh
+## Enable Istio Logs for the Entire Mesh
 
-Enable access logs for all individual proxies of the workloads and Istio Ingress Gateways.
+You can enable access logs globally for all proxies in the mesh. Use this option with caution due to the high data volume.
 
-1. To apply the configuration, run:
+> [!NOTE]
+> You can only have one mesh-wide Istio `Telemetry` resource. If you also plan to enable Istio tracing (see [Configure Istio Tracing]()), configure both access logging and tracing in this single resource.
+
+
+1. Apply the Istio `Telemetry` resource to the `istio-system` namespace:
 
     ```bash
     cat <<EOF | kubectl apply -f -
@@ -145,31 +135,8 @@ Enable access logs for all individual proxies of the workloads and Istio Ingress
     EOF
     ```
 
-2. To verify that the resource is applied, run:
+2. Verify that the resource is applied to the `istio-system` namespace:
 
     ```bash
     kubectl -n istio-system get telemetries.telemetry.istio.io
     ```
-
-> [!NOTE]
-> There can be only one Istio Telemetry resource on global mesh level. If you also enable Istio tracing, assure that the configuration happens in the same resource. See [Traces Istio Support](./../traces/istio-support.md)
-
-### Filter Access Logs
-
-Often, access logs emitted by Envoy do not contain data relevant to your observations, especially when the traffic is not based on an HTTP-based protocol. In such a situation, you can directly configure the Istio Envoys to filter out logs using a filter expression. To filter access logs, you can leverage the same [Istio Telemetry API](https://istio.io/latest/docs/reference/config/telemetry/#AccessLogging) that you used to enable them. To formulate which logs to **keep**, define a filter expression leveraging the typical [Envoy attributes](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/attributes).
-
-For example, to filter out all logs having no protocol defined (which is the case if they are not HTTP-based), you can use a configuration similar to this example:
-
-```yaml
-apiVersion: telemetry.istio.io/v1
-kind: Telemetry
-metadata:
- name: mesh-default
- namespace: istio-system
-spec:
- accessLogging:
- - filter:
-     expression: 'has(request.protocol)'
-   providers:
-   - name: kyma-logs
-```
