@@ -130,9 +130,10 @@ jobs:
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
           path: perf-results
+          merge-multiple: true
       - name: Print Results
         run: |
-          ls -la
+          ls -la perf-results
           python3 hack/load-tests/convert-results.py perf-results
       - name: Send to GitHub Summary
         run: python3 hack/load-tests/convert-results.py -m perf-results >> $GITHUB_STEP_SUMMARY
