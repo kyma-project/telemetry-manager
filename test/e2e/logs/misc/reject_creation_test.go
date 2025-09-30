@@ -18,16 +18,18 @@ import (
 
 func TestRejectLogPipelineCreation(t *testing.T) {
 	const (
-		backendHost     = "example.com"
-		backendPort     = 4317
-		validationError = "some validation rules were not checked"
+		backendHost = "example.com"
+		backendPort = 4317
 	)
 
 	var backenEndpoint = backendHost + ":" + strconv.Itoa(backendPort)
 
 	tests := []struct {
-		pipeline  telemetryv1alpha1.LogPipeline
-		errorMsgs []string
+		pipeline telemetryv1alpha1.LogPipeline
+		errorMsg string
+		field    string
+		causes   int
+		label    string
 	}{
 		// output general
 		{
@@ -37,7 +39,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				},
 				Spec: telemetryv1alpha1.LogPipelineSpec{},
 			},
-			errorMsgs: []string{"spec.output in body should have at least 1 properties"},
+			errorMsg: "Exactly one output out of 'custom', 'http' or 'otlp' must be defined",
+			field:    "spec.output",
 		},
 		{
 			pipeline: telemetryv1alpha1.LogPipeline{
@@ -61,7 +64,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					},
 				},
 			},
-			errorMsgs: []string{"Exactly one of 'value' or 'valueFrom' must be set"},
+			errorMsg: "Exactly one of 'value' or 'valueFrom' must be set",
+			field:    "spec.output.otlp.endpoint",
 		},
 		{
 			pipeline: telemetryv1alpha1.LogPipeline{
@@ -83,7 +87,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					},
 				},
 			},
-			errorMsgs: []string{"spec.output.otlp.endpoint.valueFrom.secretKeyRef.key in body should be at least 1 chars long"},
+			errorMsg: "should be at least 1 chars long",
+			field:    "spec.output.otlp.endpoint.valueFrom.secretKeyRef.key",
 		},
 		{
 			pipeline: telemetryv1alpha1.LogPipeline{
@@ -105,7 +110,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					},
 				},
 			},
-			errorMsgs: []string{"spec.output.otlp.endpoint.valueFrom.secretKeyRef.namespace in body should be at least 1 chars long"},
+			errorMsg: "should be at least 1 chars long",
+			field:    "spec.output.otlp.endpoint.valueFrom.secretKeyRef.namespace",
 		},
 		{
 			pipeline: telemetryv1alpha1.LogPipeline{
@@ -127,7 +133,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					},
 				},
 			},
-			errorMsgs: []string{"spec.output.otlp.endpoint.valueFrom.secretKeyRef.name in body should be at least 1 chars long"},
+			errorMsg: "should be at least 1 chars long",
+			field:    "spec.output.otlp.endpoint.valueFrom.secretKeyRef.name",
 		},
 		// otlp output
 		{
@@ -138,7 +145,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					testutils.OTLPEndpointPath("/v1/mock/metrics"),
 				).
 				Build(),
-			errorMsgs: []string{"Path is only available with HTTP protocol"},
+			errorMsg: "Path is only available with HTTP protocol",
+			field:    "spec.output.otlp",
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -149,7 +157,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					testutils.OTLPProtocol("grpc"),
 				).
 				Build(),
-			errorMsgs: []string{"Path is only available with HTTP protocol"},
+			errorMsg: "Path is only available with HTTP protocol",
+			field:    "spec.output.otlp",
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -159,7 +168,9 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					testutils.OTLPProtocol("icke"),
 				).
 				Build(),
-			errorMsgs: []string{"spec.output.otlp.protocol: Unsupported value", validationError},
+			errorMsg: "Unsupported value",
+			causes:   2,
+			field:    "spec.output.otlp.protocol",
 		},
 		{
 			pipeline: telemetryv1alpha1.LogPipeline{
@@ -172,7 +183,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					},
 				},
 			},
-			errorMsgs: []string{"Exactly one of 'value' or 'valueFrom' must be set"},
+			errorMsg: "Exactly one of 'value' or 'valueFrom' must be set",
+			field:    "spec.output.otlp.endpoint",
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -182,7 +194,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					testutils.OTLPBasicAuthFromSecret("name", "namespace", "user", ""),
 				).
 				Build(),
-			errorMsgs: []string{"spec.output.otlp.authentication.basic.password.valueFrom.secretKeyRef.key in body should be at least 1 chars long"},
+			errorMsg: "should be at least 1 chars long",
+			field:    "spec.output.otlp.authentication.basic.password.valueFrom.secretKeyRef.key",
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -192,7 +205,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					testutils.OTLPBasicAuthFromSecret("name", "namespace", "", "password"),
 				).
 				Build(),
-			errorMsgs: []string{"spec.output.otlp.authentication.basic.user.valueFrom.secretKeyRef.key in body should be at least 1 chars long"},
+			errorMsg: "should be at least 1 chars long",
+			field:    "spec.output.otlp.authentication.basic.user.valueFrom.secretKeyRef.key",
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -205,7 +219,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					}),
 				).
 				Build(),
-			errorMsgs: []string{"Can define either both 'cert' and 'key', or neither"},
+			errorMsg: "Can define either both 'cert' and 'key', or neither",
+			field:    "spec.output.otlp.tls",
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -218,7 +233,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					}),
 				).
 				Build(),
-			errorMsgs: []string{"Can define either both 'cert' and 'key', or neither"},
+			errorMsg: "Can define either both 'cert' and 'key', or neither",
+			field:    "spec.output.otlp.tls",
 		},
 		// otlp input
 		{
@@ -230,7 +246,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				).
 				WithOTLPOutput().
 				Build(),
-			errorMsgs: []string{"Too many: 2: must have at most 1 items", validationError},
+			errorMsg: "Only one of 'include' or 'exclude' can be defined",
+			field:    "spec.input.otlp.namespaces",
 		},
 		// http output
 		{
@@ -244,7 +261,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					}),
 				).
 				Build(),
-			errorMsgs: []string{"Can define either both 'cert' and 'key', or neither"},
+			errorMsg: "Can define either both 'cert' and 'key', or neither",
+			field:    "spec.output.http.tls",
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -257,7 +275,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					}),
 				).
 				Build(),
-			errorMsgs: []string{"Can define either both 'cert' and 'key', or neither"},
+			errorMsg: "Can define either both 'cert' and 'key', or neither",
+			field:    "spec.output.http.tls",
 		},
 		{
 			pipeline: telemetryv1alpha1.LogPipeline{
@@ -273,7 +292,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					},
 				},
 			},
-			errorMsgs: []string{"spec.output.http.uri in body should match '^/.*$'"},
+			errorMsg: "should match '^/.*$'",
+			field:    "spec.output.http.uri",
 		},
 		{
 			pipeline: telemetryv1alpha1.LogPipeline{
@@ -286,18 +306,31 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					},
 				},
 			},
-			errorMsgs: []string{"Exactly one of 'value' or 'valueFrom' must be set"},
+			errorMsg: "Exactly one of 'value' or 'valueFrom' must be set",
+			field:    "spec.output.http.host",
 		},
 		// application input
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("application-input-namespaces-not-exclusive").
+				WithName("application-input-namespaces-include-exclude-not-exclusive").
 				WithApplicationInput(true).
 				WithIncludeNamespaces("ns1").
 				WithExcludeNamespaces("ns2").
 				WithOTLPOutput().
 				Build(),
-			errorMsgs: []string{"spec.input.application.namespaces: Too many: 2: must have at most 1 items", validationError},
+			errorMsg: "Only one of 'include', 'exclude' or 'system' can be defined",
+			field:    "spec.input.application.namespaces",
+		},
+		{
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("application-input-namespaces-include-system-not-exclusive").
+				WithApplicationInput(true).
+				WithIncludeNamespaces("ns1").
+				WithSystemNamespaces(true).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "Only one of 'include', 'exclude' or 'system' can be defined",
+			field:    "spec.input.application.namespaces",
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -307,7 +340,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithExcludeContainers("c2").
 				WithOTLPOutput().
 				Build(),
-			errorMsgs: []string{"spec.input.application.containers: Too many: 2: must have at most 1 items", validationError},
+			errorMsg: "Only one of 'include' or 'exclude' can be defined",
+			field:    "spec.input.application.containers",
 		},
 		// files validation
 		{
@@ -316,7 +350,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithFile("", "icke").
 				WithHTTPOutput().
 				Build(),
-			errorMsgs: []string{"spec.files[0].name in body should be at least 1 chars long"},
+			errorMsg: "should be at least 1 chars long",
+			field:    "spec.files[0].name",
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -324,7 +359,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithFile("file1", "").
 				WithHTTPOutput().
 				Build(),
-			errorMsgs: []string{"spec.files[0].content in body should be at least 1 chars long"},
+			errorMsg: "should be at least 1 chars long",
+			field:    "spec.files[0].content",
 		},
 		// variables validation
 		{
@@ -333,7 +369,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithVariable("", "secName", "secNs", "secKey").
 				WithHTTPOutput().
 				Build(),
-			errorMsgs: []string{"spec.variables[0].name in body should be at least 1 chars long"},
+			errorMsg: "should be at least 1 chars long",
+			field:    "spec.variables[0].name",
 		},
 		{
 			pipeline: telemetryv1alpha1.LogPipeline{
@@ -351,7 +388,9 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					},
 				},
 			},
-			errorMsgs: []string{"spec.variables[0].valueFrom.secretKeyRef in body must be of type object", validationError},
+			errorMsg: "must be of type object",
+			causes:   2,
+			field:    "spec.variables[0].valueFrom.secretKeyRef",
 		},
 		// legacy validations
 		{
@@ -359,11 +398,11 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithName("multiple-outputs").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
-					testutils.OTLPEndpointPath("/v1/mock/metrics"),
 				).
 				WithHTTPOutput().
 				Build(),
-			errorMsgs: []string{"spec.output: Too many: 2: must have at most 1 items", validationError},
+			errorMsg: "Exactly one output out of 'custom', 'http' or 'otlp' must be defined",
+			field:    "spec.output",
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -371,7 +410,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithHTTPOutput().
 				WithOTLPInput(true).
 				Build(),
-			errorMsgs: []string{"otlp input is only supported with otlp output"},
+			errorMsg: "otlp input is only supported with otlp output",
+			field:    "spec",
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -379,7 +419,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithCustomOutput("name icke").
 				WithOTLPInput(true).
 				Build(),
-			errorMsgs: []string{"otlp input is only supported with otlp output"},
+			errorMsg: "otlp input is only supported with otlp output",
+			field:    "spec",
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -390,7 +431,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					testutils.OTLPEndpoint(backenEndpoint),
 				).
 				Build(),
-			errorMsgs: []string{"input.application.dropLabels is not supported with otlp output"},
+			errorMsg: "input.application.dropLabels is not supported with otlp output",
+			field:    "spec",
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -401,7 +443,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					testutils.OTLPEndpoint(backenEndpoint),
 				).
 				Build(),
-			errorMsgs: []string{"input.application.keepAnnotations is not supported with otlp output"},
+			errorMsg: "input.application.keepAnnotations is not supported with otlp output",
+			field:    "spec",
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -412,7 +455,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					testutils.OTLPEndpoint(backenEndpoint),
 				).
 				Build(),
-			errorMsgs: []string{"files not supported with otlp output"},
+			errorMsg: "files not supported with otlp output",
+			field:    "spec",
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -423,7 +467,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					testutils.OTLPEndpoint(backenEndpoint),
 				).
 				Build(),
-			errorMsgs: []string{"filters are not supported with otlp output"},
+			errorMsg: "filters are not supported with otlp output",
+			field:    "spec",
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -434,12 +479,30 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					testutils.OTLPEndpoint(backenEndpoint),
 				).
 				Build(),
-			errorMsgs: []string{"variables not supported with otlp output"},
+			errorMsg: "variables not supported with otlp output",
+			field:    "spec",
+		},
+		{
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("legacy-transform-with-http-output").
+				WithApplicationInput(false).
+				WithTransform(telemetryv1alpha1.TransformSpec{
+					Statements: []string{"set(attributes[\"log.level\"], \"error\")", "set(body, \"transformed1\")"},
+				}).
+				WithHTTPOutput().
+				Build(),
+			errorMsg: "transform is only supported with otlp output",
+			field:    "spec",
+			label:    suite.LabelExperimental,
 		},
 	}
 	for _, tc := range tests {
-		t.Run(suite.LabelMisc, func(t *testing.T) {
-			suite.RegisterTestCase(t, suite.LabelMisc)
+		if tc.label == "" {
+			tc.label = suite.LabelMisc
+		}
+
+		t.Run(tc.label, func(t *testing.T) {
+			suite.RegisterTestCase(t, tc.label)
 
 			resources := []client.Object{&tc.pipeline}
 
@@ -449,21 +512,27 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 
 			err := kitk8s.CreateObjects(t, resources...)
 
-			Expect(err).ShouldNot(Succeed(), "unexpected success for pipeline %s, this test expects an error", tc.pipeline.Name)
+			Expect(err).ShouldNot(Succeed(), "unexpected success for pipeline '%s', this test expects an error", tc.pipeline.Name)
 
 			errStatus := &apierrors.StatusError{}
 
 			ok := errors.As(err, &errStatus)
-			if ok && errStatus.Status().Details != nil {
+			Expect(ok).To(BeTrue(), "pipeline '%s' has wrong error type %s", tc.pipeline.Name, err.Error())
+			Expect(errStatus.Status().Details).ToNot(BeNil(), "error of pipeline '%s' has no details %w", tc.pipeline.Name, err.Error())
+
+			if tc.causes == 0 {
 				Expect(errStatus.Status().Details.Causes).
-					To(HaveLen(len(tc.errorMsgs)),
-						"status error for pipeline %s has more than %d cause: %+v",
-						tc.pipeline.Name, len(tc.errorMsgs), errStatus.Status().Details.Causes)
+					To(HaveLen(1),
+						"pipeline '%s' has more or less than 1 cause: %+v", tc.pipeline.Name, errStatus.Status().Details.Causes)
+			} else {
+				Expect(errStatus.Status().Details.Causes).
+					To(HaveLen(tc.causes),
+						"pipeline '%s' has more or less than %d causes: %+v", tc.pipeline.Name, tc.causes, errStatus.Status().Details.Causes)
 			}
 
-			for _, msg := range tc.errorMsgs {
-				Expect(err).Should(MatchError(ContainSubstring(msg)), "Error for pipeline %s does not contain expected message %s", tc.pipeline.Name, msg)
-			}
+			Expect(errStatus.Status().Details.Causes[0].Field).To(Equal(tc.field), "the first error cause for pipeline '%s' does not contain expected field %s", tc.pipeline.Name, tc.field)
+
+			Expect(errStatus.Status().Details.Causes[0].Message).Should(ContainSubstring(tc.errorMsg), "the error for pipeline '%s' does not contain expected message %s", tc.pipeline.Name, tc.errorMsg)
 		})
 	}
 }

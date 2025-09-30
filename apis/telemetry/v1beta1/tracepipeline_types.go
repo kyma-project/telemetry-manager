@@ -68,12 +68,10 @@ type TracePipelineSpec struct {
 }
 
 // TracePipelineOutput defines the output configuration section.
-// +kubebuilder:validation:MinProperties=1
-// +kubebuilder:validation:MaxProperties=1
 type TracePipelineOutput struct {
 	// OTLP output defines an output using the OpenTelemetry protocol.
-	// +kubebuilder:validation:Optional
-	OTLP *OTLPOutput `json:"otlp,omitempty"`
+	// +kubebuilder:validation:Required
+	OTLP *OTLPOutput `json:"otlp"`
 }
 
 // TracePipelineStatus defines the observed state of TracePipeline.

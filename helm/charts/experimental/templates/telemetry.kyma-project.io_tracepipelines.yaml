@@ -64,8 +64,6 @@ spec:
               output:
                 description: Output configures the backend to which traces are sent.
                   You must specify exactly one output per pipeline.
-                maxProperties: 1
-                minProperties: 1
                 properties:
                   otlp:
                     description: OTLP output defines an output using the OpenTelemetry
@@ -450,6 +448,8 @@ spec:
                       rule: ((!has(self.path) || size(self.path) <= 0) && (has(self.protocol)
                         && self.protocol == 'grpc')) || (has(self.protocol) && self.protocol
                         == 'http')
+                required:
+                - otlp
                 type: object
               transform:
                 description: Transforms specify a list of transformations to apply
@@ -586,8 +586,6 @@ spec:
               output:
                 description: Output configures the backend to which traces are sent.
                   You must specify exactly one output per pipeline.
-                maxProperties: 1
-                minProperties: 1
                 properties:
                   otlp:
                     description: OTLP output defines an output using the OpenTelemetry
@@ -972,6 +970,8 @@ spec:
                       rule: ((!has(self.path) || size(self.path) <= 0) && (has(self.protocol)
                         && self.protocol == 'grpc')) || (has(self.protocol) && self.protocol
                         == 'http')
+                required:
+                - otlp
                 type: object
               transform:
                 description: Transforms specify a list of transformations to apply

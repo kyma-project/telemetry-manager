@@ -103,7 +103,6 @@ spec:
                       properties:
                         containers:
                           description: Containers describes whether application logs from specific containers are selected. The options are mutually exclusive.
-                          maxProperties: 1
                           properties:
                             exclude:
                               description: Exclude specifies to exclude only the container logs with the specified container names.
@@ -116,6 +115,9 @@ spec:
                                 type: string
                               type: array
                           type: object
+                          x-kubernetes-validations:
+                            - message: Only one of 'include' or 'exclude' can be defined
+                              rule: '(has(self.include) == true ? 1 : 0) + (has(self.exclude) == true ? 1 : 0) <= 1'
                         dropLabels:
                           description: DropLabels defines whether to drop all Kubernetes labels. The default is `false`. Only available when using an output of type `http` and `custom`. For an `otlp` output, use the label enrichement feature in the Telemetry resource instead.
                           type: boolean
@@ -130,7 +132,6 @@ spec:
                           type: boolean
                         namespaces:
                           description: Namespaces describes whether application logs from specific namespaces are selected. The options are mutually exclusive. System namespaces are excluded by default. Use the `system` attribute with value `true` to enable them.
-                          maxProperties: 1
                           properties:
                             exclude:
                               description: Exclude the container logs of the specified Namespace names.
@@ -146,6 +147,9 @@ spec:
                               description: System specifies whether to collect logs from system namespaces. If set to `true`, you collect logs from all namespaces including system namespaces, such as like kube-system, istio-system, and kyma-system. The default is `false`.
                               type: boolean
                           type: object
+                          x-kubernetes-validations:
+                            - message: Only one of 'include', 'exclude' or 'system' can be defined
+                              rule: '(has(self.include) == true ? 1 : 0) + (has(self.exclude) == true ? 1 : 0) + (has(self.system) == true ? 1 : 0) <= 1'
                       type: object
                     otlp:
                       description: OTLP input configures the push endpoint to receive logs from a OTLP source.
@@ -155,7 +159,6 @@ spec:
                           type: boolean
                         namespaces:
                           description: Namespaces describes whether push-based OTLP signals from specific namespaces are selected. System namespaces are enabled by default.
-                          maxProperties: 1
                           properties:
                             exclude:
                               description: Exclude signals from the specified Namespace names only.
@@ -168,12 +171,13 @@ spec:
                                 type: string
                               type: array
                           type: object
+                          x-kubernetes-validations:
+                            - message: Only one of 'include' or 'exclude' can be defined
+                              rule: '(has(self.include) == true ? 1 : 0) + (has(self.exclude) == true ? 1 : 0) <= 1'
                       type: object
                   type: object
                 output:
                   description: Output configures the backend to which logs are sent. You must specify exactly one output per pipeline.
-                  maxProperties: 1
-                  minProperties: 1
                   properties:
                     custom:
                       description: Custom defines a custom output in the [Fluent Bit syntax](https://docs.fluentbit.io/manual/pipeline/outputs) where you want to push the logs. If you use a `custom` output, you put the LogPipeline in unsupported mode. Only available when using an output of type `http` and `custom`.
@@ -739,6 +743,8 @@ spec:
                   x-kubernetes-validations:
                     - message: Switching to or away from OTLP output is not supported. Please re-create the LogPipeline instead
                       rule: has(self.otlp) == has(oldSelf.otlp)
+                    - message: Exactly one output out of 'custom', 'http' or 'otlp' must be defined
+                      rule: '(has(self.custom) == true ? 1 : 0) + (has(self.http) == true ? 1 : 0) + (has(self.otlp) == true ? 1 : 0) == 1'
                 variables:
                   description: Variables is a list of mappings from Kubernetes Secret keys to environment variables. Mapped keys are mounted as environment variables, so that they are available as [Variables](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/variables) in the `custom` filters and a `custom` output. Only available when using an output of type `http` and `custom`.
                   items:

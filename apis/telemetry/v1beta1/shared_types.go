@@ -125,7 +125,7 @@ type OTLPInput struct {
 }
 
 // NamespaceSelector describes whether signals from specific namespaces are selected.
-// +kubebuilder:validation:MaxProperties=1
+// +kubebuilder:validation:XValidation:rule="(has(self.include) == true ? 1 : 0) + (has(self.exclude) == true ? 1 : 0) <= 1",message="Only one of 'include' or 'exclude' can be defined"
 type NamespaceSelector struct {
 	// Include signals from the specified Namespace names only.
 	// +kubebuilder:validation:Optional

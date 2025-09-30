@@ -127,7 +127,7 @@ type LogPipelineRuntimeInput struct {
 }
 
 // LogPipelineNamespaceSelector describes whether application logs from specific Namespaces are selected. The options are mutually exclusive. System Namespaces are excluded by default. Use the `system` attribute with value `true` to enable them.
-// +kubebuilder:validation:MaxProperties=1
+// +kubebuilder:validation:XValidation:rule="(has(self.include) == true ? 1 : 0) + (has(self.exclude) == true ? 1 : 0) + (has(self.system) == true ? 1 : 0) <= 1",message="Only one of 'include', 'exclude' or 'system' can be defined"
 type LogPipelineNamespaceSelector struct {
 	// Include only the container logs of the specified Namespace names.
 	// +kubebuilder:validation:Optional
@@ -141,7 +141,7 @@ type LogPipelineNamespaceSelector struct {
 }
 
 // LogPipelineContainerSelector describes whether application logs from specific containers are selected. The options are mutually exclusive.
-// +kubebuilder:validation:MaxProperties=1
+// +kubebuilder:validation:XValidation:rule="(has(self.include) == true ? 1 : 0) + (has(self.exclude) == true ? 1 : 0) <= 1",message="Only one of 'include' or 'exclude' can be defined"
 type LogPipelineContainerSelector struct {
 	// Include specifies to include only the container logs with the specified container names.
 	// +kubebuilder:validation:Optional
@@ -160,8 +160,7 @@ type LogPipelineFilter struct {
 
 // LogPipelineOutput configures the backend to which logs are sent. You must specify exactly one output per pipeline.
 // +kubebuilder:validation:XValidation:rule="has(self.otlp) == has(oldSelf.otlp)", message="Switching to or away from OTLP output is not supported. Please re-create the LogPipeline instead"
-// +kubebuilder:validation:MaxProperties=1
-// +kubebuilder:validation:MinProperties=1
+// +kubebuilder:validation:XValidation:rule="(has(self.custom) == true ? 1 : 0) + (has(self.http) == true ? 1 : 0) + (has(self.otlp) == true ? 1 : 0) == 1",message="Exactly one output out of 'custom', 'http' or 'otlp' must be defined"
 type LogPipelineOutput struct {
 	// Custom defines a custom output in the [Fluent Bit syntax](https://docs.fluentbit.io/manual/pipeline/outputs) where you want to push the logs. If you use a `custom` output, you put the LogPipeline in unsupported mode. Only available when using an output of type `http` and `custom`.
 	// +kubebuilder:validation:Optional
