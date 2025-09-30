@@ -54,9 +54,9 @@ func TestMetricsIstioSamePort(t *testing.T) {
 		&metricPipeline,
 		&istiofiedMetricPipeline,
 		generator.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).WithAvalanche(1, 1, 1).K8sObject(),
-		istiofiedGenerator.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).WithAvalanche(1, 1, 1).K8sObject(),
+		istiofiedGenerator.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTPS).WithAvalanche(1, 1, 1).K8sObject(),
 		generator.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
-		istiofiedGenerator.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
+		istiofiedGenerator.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTPS).K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
 	resources = append(resources, istiofiedBackend.K8sObjects()...)
