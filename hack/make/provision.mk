@@ -3,6 +3,7 @@
 provision-k3d: $(K3D)
 	$(K3D) cluster create --config .k3d-kyma.yaml
 	kubectl create ns kyma-system
+	hack/install-calico.sh
 
 .PHONY: provision-k3d-istio
 provision-k3d-istio: provision-k3d
