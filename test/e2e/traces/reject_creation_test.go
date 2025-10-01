@@ -143,7 +143,7 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 				WithName("otlp-output-with-default-proto-and-path").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
-					testutils.OTLPEndpointPath("/v1/mock/metrics"),
+					testutils.OTLPEndpointPath("/v1/dummy"),
 				).
 				Build(),
 			errorMsg: "Path is only available with HTTP protocol",
@@ -154,7 +154,7 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 				WithName("otlp-output-with-grpc-proto-and-path").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
-					testutils.OTLPEndpointPath("/v1/mock/metrics"),
+					testutils.OTLPEndpointPath("/v1/dummy"),
 					testutils.OTLPProtocol("grpc"),
 				).
 				Build(),
