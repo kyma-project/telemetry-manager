@@ -90,7 +90,6 @@ spec:
       namespaces:
         include:
         - log-gen-fluentbit
-        system: true
   output:
     http:
       dedot: true
