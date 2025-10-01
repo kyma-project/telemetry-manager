@@ -113,7 +113,7 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 | **input.&#x200b;runtime.&#x200b;resources.&#x200b;volume**  | object | Volume configures Volume runtime metrics collection. |
 | **input.&#x200b;runtime.&#x200b;resources.&#x200b;volume.&#x200b;enabled**  | boolean | Enabled specifies that the runtime metrics for the resource type are collected. The default is `true`. |
 | **output** (required) | object | Output configures the backend to which metrics are sent. You must specify exactly one output per pipeline. |
-| **output.&#x200b;otlp**  | object | OTLP output defines an output using the OpenTelemetry protocol. |
+| **output.&#x200b;otlp** (required) | object | OTLP output defines an output using the OpenTelemetry protocol. |
 | **output.&#x200b;otlp.&#x200b;authentication**  | object | Authentication defines authentication options for the OTLP output |
 | **output.&#x200b;otlp.&#x200b;authentication.&#x200b;basic**  | object | Basic activates `Basic` authentication for the destination providing relevant Secrets. |
 | **output.&#x200b;otlp.&#x200b;authentication.&#x200b;basic.&#x200b;password** (required) | object | Password contains the basic auth password or a Secret reference. |

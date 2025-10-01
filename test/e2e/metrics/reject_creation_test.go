@@ -38,7 +38,7 @@ func TestRejectMetricPipelineCreation(t *testing.T) {
 				},
 				Spec: telemetryv1alpha1.MetricPipelineSpec{},
 			},
-			errorMsg: "Required value",
+			errorMsg: "must be of type object",
 			field:    "spec.output.otlp",
 			causes:   2,
 		},
