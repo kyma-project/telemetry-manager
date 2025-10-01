@@ -18,6 +18,7 @@ manager:
       selfMonitorImage: europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:3.6.0-4de7b7a
     image:
       repository: europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:main
+      pullPolicy: "IfNotPresent"
     resources:
       limits:
         memory: 384Mi
