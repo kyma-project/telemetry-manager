@@ -85,10 +85,10 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 | ---- | ----------- | ---- |
 | **enrichments**  | object | Enrichments configures optional enrichments of all telemetry data collected by pipelines. This field is optional. |
 | **enrichments.&#x200b;cluster**  | object | Cluster provides user-defined cluster definitions to enrich resource attributes. |
-| **enrichments.&#x200b;cluster.&#x200b;name** (required) | string | Name specifies a custom cluster name for the resource attribute `k8s.cluster.name`. |
-| **enrichments.&#x200b;extractPodLabels**  | \[\]object | ExtractPodLabels specifies the list of Pod labels to be used for enrichment. This field is optional. |
-| **enrichments.&#x200b;extractPodLabels.&#x200b;key**  | string | Key specifies the exact label key to be used. This field is optional. |
-| **enrichments.&#x200b;extractPodLabels.&#x200b;keyPrefix**  | string | KeyPrefix specifies a prefix for label keys to be used. This field is optional. |
+| **enrichments.&#x200b;cluster.&#x200b;name**  | string | Name specifies a custom cluster name for the resource attribute `k8s.cluster.name`. |
+| **enrichments.&#x200b;extractPodLabels**  | \[\]object | ExtractPodLabels specifies the list of Pod labels to be used for enrichment. |
+| **enrichments.&#x200b;extractPodLabels.&#x200b;key**  | string | Key specifies the exact label key to be used. |
+| **enrichments.&#x200b;extractPodLabels.&#x200b;keyPrefix**  | string | KeyPrefix specifies a prefix for label keys to be used. |
 | **log**  | object | Log configures module settings specific to the log features. This field is optional. |
 | **log.&#x200b;gateway**  | object | Gateway configures the log gateway. |
 | **log.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type. |
