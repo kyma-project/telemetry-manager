@@ -255,6 +255,14 @@ form: |
     name: Enrichments
     widget: FormGroup
     children:
+      - name: Cluster
+        path: cluster
+        defaultExpanded: true
+        widget: FormGroup
+        children:
+        - name: Name
+          path: name
+          widget: Text
       - name: Pod Labels
         widget: GenericList
         path: extractPodLabels

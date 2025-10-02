@@ -73,7 +73,7 @@ func NewFluentBitConfigBuilder(client client.Reader) *ConfigBuilder {
 	}
 }
 
-func (b *ConfigBuilder) Build(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline) (*FluentBitConfig, error) {
+func (b *ConfigBuilder) Build(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline, clusterName string) (*FluentBitConfig, error) {
 	config := FluentBitConfig{
 		SectionsConfig:  make(map[string]string),
 		FilesConfig:     make(map[string]string),
@@ -84,7 +84,7 @@ func (b *ConfigBuilder) Build(ctx context.Context, allPipelines []telemetryv1alp
 	for _, pipeline := range allPipelines {
 		sectionsConfigMapKey := pipeline.Name + ".conf"
 
-		sectionsConfigMapContent, err := buildFluentBitSectionsConfig(&pipeline, b.cfg)
+		sectionsConfigMapContent, err := buildFluentBitSectionsConfig(&pipeline, b.cfg, clusterName)
 		if err != nil {
 			return nil, fmt.Errorf("unable to build section: %w", err)
 		}
