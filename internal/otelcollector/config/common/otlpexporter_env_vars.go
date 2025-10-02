@@ -59,12 +59,12 @@ func makeEnvVars(ctx context.Context, c client.Reader, output *telemetryv1alpha1
 
 func makeAuthenticationEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1alpha1.OTLPOutput, pipelineName string) error {
 	if output.Authentication != nil && sharedtypesutils.IsValid(&output.Authentication.Basic.User) && sharedtypesutils.IsValid(&output.Authentication.Basic.Password) {
-		username, err := resolveValue(ctx, c, output.Authentication.Basic.User)
+		username, err := ResolveValue(ctx, c, output.Authentication.Basic.User)
 		if err != nil {
 			return err
 		}
 
-		password, err := resolveValue(ctx, c, output.Authentication.Basic.Password)
+		password, err := ResolveValue(ctx, c, output.Authentication.Basic.Password)
 		if err != nil {
 			return err
 		}
@@ -94,7 +94,7 @@ func makeHeaderEnvVar(ctx context.Context, c client.Reader, secretData map[strin
 	for _, header := range output.Headers {
 		key := makeHeaderVariable(header, pipelineName)
 
-		value, err := resolveValue(ctx, c, header.ValueType)
+		value, err := ResolveValue(ctx, c, header.ValueType)
 		if err != nil {
 			return err
 		}
@@ -108,7 +108,7 @@ func makeHeaderEnvVar(ctx context.Context, c client.Reader, secretData map[strin
 func makeTLSEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1alpha1.OTLPOutput, pipelineName string) error {
 	if output.TLS != nil {
 		if sharedtypesutils.IsValid(output.TLS.CA) {
-			ca, err := resolveValue(ctx, c, *output.TLS.CA)
+			ca, err := ResolveValue(ctx, c, *output.TLS.CA)
 			if err != nil {
 				return err
 			}
@@ -118,12 +118,12 @@ func makeTLSEnvVar(ctx context.Context, c client.Reader, secretData map[string][
 		}
 
 		if sharedtypesutils.IsValid(output.TLS.Cert) && sharedtypesutils.IsValid(output.TLS.Key) {
-			cert, err := resolveValue(ctx, c, *output.TLS.Cert)
+			cert, err := ResolveValue(ctx, c, *output.TLS.Cert)
 			if err != nil {
 				return err
 			}
 
-			key, err := resolveValue(ctx, c, *output.TLS.Key)
+			key, err := ResolveValue(ctx, c, *output.TLS.Key)
 			if err != nil {
 				return err
 			}
@@ -152,7 +152,7 @@ func prefixHeaderValue(header telemetryv1alpha1.Header, value []byte) []byte {
 }
 
 func resolveEndpointURL(ctx context.Context, c client.Reader, output *telemetryv1alpha1.OTLPOutput) ([]byte, error) {
-	endpoint, err := resolveValue(ctx, c, output.Endpoint)
+	endpoint, err := ResolveValue(ctx, c, output.Endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +175,7 @@ func formatBasicAuthHeader(username string, password string) string {
 	return fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(username+":"+password)))
 }
 
-func resolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.ValueType) ([]byte, error) {
+func ResolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.ValueType) ([]byte, error) {
 	if value.Value != "" {
 		return []byte(value.Value), nil
 	}

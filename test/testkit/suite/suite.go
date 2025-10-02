@@ -83,11 +83,14 @@ const (
 
 	// Metrics labels
 
-	LabelMetrics            = "metrics"
-	LabelMetricsSetA        = "metrics-set-a"
-	LabelMetricsSetB        = "metrics-set-b"
-	LabelMetricsSetC        = "metrics-set-c"
+	LabelMetricsMisc        = "metrics-misc"
 	LabelMetricsMaxPipeline = "metrics-max-pipeline"
+	LabelMetricAgentSetA    = "metric-agent-a"
+	LabelMetricAgentSetB    = "metric-agent-b"
+	LabelMetricAgentSetC    = "metric-agent-c"
+	LabelMetricGatewaySetA  = "metric-gateway-a"
+	LabelMetricGatewaySetB  = "metric-gateway-b"
+	LabelMetricGatewaySetC  = "metric-gateway-c"
 
 	// Traces labels
 
@@ -122,6 +125,13 @@ const (
 	// LabelUpgrade defines the label for Upgrade tests, which preserve K8s objects between test runs.
 	LabelUpgrade = "upgrade"
 )
+
+func ExpectAgent(label string) bool { // TODO(TeodorSAP): Use this for log e2e tests as well
+	return label == LabelMetricAgentSetA ||
+		label == LabelMetricAgentSetB ||
+		label == LabelMetricAgentSetC ||
+		label == LabelLogAgent
+}
 
 func RegisterTestCase(t *testing.T, labels ...string) {
 	RegisterTestingT(t)

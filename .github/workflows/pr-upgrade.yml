@@ -9,6 +9,7 @@ on:
     branches:
       - "main"
       - "release-*"
+      - chore/metric-agent-decoupling # TODO: Remove after the decoupling is done
     # only include PRs that change:
     # go files
     # go mod files

@@ -13,6 +13,7 @@ on:
     branches:
       - "main"
       - "release-*"
+      - chore/metric-agent-decoupling # TODO: Remove after the decoupling is done
     # only include PRs that change:
     # go files
     # go mod files
@@ -59,6 +60,7 @@ jobs:
           - logs-otel-agent
           - logs-otel-gateway
           - metrics
+          - metrics-agent
           - traces
         scenario:
           - healthy
@@ -123,13 +125,25 @@ jobs:
             mode: release
             type: e2e
           # METRICS
-          - name: metrics-set-a
+          - name: metric-agent-a
             mode: release
             type: e2e
-          - name: metrics-set-b
+          - name: metric-agent-b
             mode: release
             type: e2e
-          - name: metrics-set-c
+          - name: metric-agent-c
+            mode: release
+            type: e2e
+          - name: metric-gateway-a
+            mode: release
+            type: e2e
+          - name: metric-gateway-b
+            mode: release
+            type: e2e
+          - name: metric-gateway-c
+            mode: release
+            type: e2e
+          - name: metrics-misc
             mode: release
             type: e2e
           - name: metrics-max-pipeline
@@ -199,6 +213,7 @@ jobs:
   summary:
     needs: [e2e-selfmonitor, e2e]
     runs-on: ubuntu-latest
+    if: always()
     steps:
       - name: Checkout repo
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0

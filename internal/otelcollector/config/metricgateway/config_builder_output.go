@@ -48,8 +48,8 @@ func (b *Builder) addDropIfRuntimeInputDisabledProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return &FilterProcessor{
-				Metrics: FilterProcessorMetrics{
+			return &common.FilterProcessor{
+				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{common.ScopeNameEquals(common.InstrumentationScopeRuntime)},
 				},
 			}
@@ -65,8 +65,8 @@ func (b *Builder) addDropIfPrometheusInputDisabledProcessor() buildComponentFunc
 				return nil
 			}
 
-			return &FilterProcessor{
-				Metrics: FilterProcessorMetrics{
+			return &common.FilterProcessor{
+				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{common.ResourceAttributeEquals(common.KymaInputNameAttribute, common.KymaInputPrometheus)},
 				},
 			}
@@ -82,8 +82,8 @@ func (b *Builder) addDropIfIstioInputDisabledProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return &FilterProcessor{
-				Metrics: FilterProcessorMetrics{
+			return &common.FilterProcessor{
+				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{common.ScopeNameEquals(common.InstrumentationScopeIstio)},
 				},
 			}
@@ -99,8 +99,8 @@ func (b *Builder) addDropIfOTLPInputDisabledProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return &FilterProcessor{
-				Metrics: FilterProcessorMetrics{
+			return &common.FilterProcessor{
+				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{ottlUknownInputSource()},
 				},
 			}
@@ -116,8 +116,8 @@ func (b *Builder) addDropEnvoyMetricsIfDisabledProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return &FilterProcessor{
-				Metrics: FilterProcessorMetrics{
+			return &common.FilterProcessor{
+				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{
 						common.JoinWithAnd(common.IsMatch("name", "^envoy_.*"), common.ScopeNameEquals(common.InstrumentationScopeIstio)),
 					},
@@ -203,8 +203,8 @@ func (b *Builder) addDropRuntimePodMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return &FilterProcessor{
-				Metrics: FilterProcessorMetrics{
+			return &common.FilterProcessor{
+				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{
 						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.pod.*")),
 					},
@@ -222,8 +222,8 @@ func (b *Builder) addDropRuntimeContainerMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return &FilterProcessor{
-				Metrics: FilterProcessorMetrics{
+			return &common.FilterProcessor{
+				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{
 						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "(^k8s.container.*)|(^container.*)")),
 					},
@@ -241,8 +241,8 @@ func (b *Builder) addDropRuntimeNodeMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return &FilterProcessor{
-				Metrics: FilterProcessorMetrics{
+			return &common.FilterProcessor{
+				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{
 						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.node.*")),
 					},
@@ -260,8 +260,8 @@ func (b *Builder) addDropRuntimeVolumeMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return &FilterProcessor{
-				Metrics: FilterProcessorMetrics{
+			return &common.FilterProcessor{
+				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{
 						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.volume.*")),
 					},
@@ -279,8 +279,8 @@ func (b *Builder) addDropRuntimeDeploymentMetricsProcessor() buildComponentFunc 
 				return nil
 			}
 
-			return &FilterProcessor{
-				Metrics: FilterProcessorMetrics{
+			return &common.FilterProcessor{
+				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{
 						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.deployment.*")),
 					},
@@ -298,8 +298,8 @@ func (b *Builder) addDropRuntimeDaemonSetMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return &FilterProcessor{
-				Metrics: FilterProcessorMetrics{
+			return &common.FilterProcessor{
+				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{
 						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.daemonset.*")),
 					},
@@ -317,8 +317,8 @@ func (b *Builder) addDropRuntimeStatefulSetMetricsProcessor() buildComponentFunc
 				return nil
 			}
 
-			return &FilterProcessor{
-				Metrics: FilterProcessorMetrics{
+			return &common.FilterProcessor{
+				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{
 						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.statefulset.*")),
 					},
@@ -336,8 +336,8 @@ func (b *Builder) addDropRuntimeJobMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return &FilterProcessor{
-				Metrics: FilterProcessorMetrics{
+			return &common.FilterProcessor{
+				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{
 						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.job.*")),
 					},
@@ -397,7 +397,7 @@ func ottlUknownInputSource() string {
 	)
 }
 
-func filterByNamespaceProcessorConfig(namespaceSelector *telemetryv1alpha1.NamespaceSelector, inputSourceCondition string) *FilterProcessor {
+func filterByNamespaceProcessorConfig(namespaceSelector *telemetryv1alpha1.NamespaceSelector, inputSourceCondition string) *common.FilterProcessor {
 	var filterExpressions []string
 
 	if len(namespaceSelector.Exclude) > 0 {
@@ -416,8 +416,8 @@ func filterByNamespaceProcessorConfig(namespaceSelector *telemetryv1alpha1.Names
 		filterExpressions = append(filterExpressions, includeNamespacesExpr)
 	}
 
-	return &FilterProcessor{
-		Metrics: FilterProcessorMetrics{
+	return &common.FilterProcessor{
+		Metrics: common.FilterProcessorMetrics{
 			Metric: filterExpressions,
 		},
 	}
@@ -445,7 +445,7 @@ func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildCo
 
 func (b *Builder) addDeleteSkipEnrichmentAttributeProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		b.StaticComponentID(common.ComponentIDDeleteSkipEnrichmentAttributeProcessor),
+		b.StaticComponentID(common.ComponentIDDropSkipEnrichmentAttributeProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return &common.ResourceProcessor{
 				Attributes: []common.AttributeAction{
@@ -519,15 +519,15 @@ func (b *Builder) addOTLPExporter(queueSize int) buildComponentFunc {
 	)
 }
 
-func dropDiagnosticMetricsFilterConfig(inputSourceCondition string) *FilterProcessor {
+func dropDiagnosticMetricsFilterConfig(inputSourceCondition string) *common.FilterProcessor {
 	var filterExpressions []string
 
 	metricNameConditions := nameConditions(diagnosticMetricNames)
 	excludeScrapeMetricsExpr := common.JoinWithAnd(inputSourceCondition, common.JoinWithOr(metricNameConditions...))
 	filterExpressions = append(filterExpressions, excludeScrapeMetricsExpr)
 
-	return &FilterProcessor{
-		Metrics: FilterProcessorMetrics{
+	return &common.FilterProcessor{
+		Metrics: common.FilterProcessorMetrics{
 			Metric: filterExpressions,
 		},
 	}

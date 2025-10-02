@@ -41,7 +41,7 @@ func (_m *AgentConfigBuilder) EXPECT() *AgentConfigBuilder_Expecter {
 }
 
 // Build provides a mock function for the type AgentConfigBuilder
-func (_mock *AgentConfigBuilder) Build(ctx context.Context, pipelines []v1alpha1.MetricPipeline, options metricagent.BuildOptions) (*common.Config, error) {
+func (_mock *AgentConfigBuilder) Build(ctx context.Context, pipelines []v1alpha1.MetricPipeline, options metricagent.BuildOptions) (*common.Config, common.EnvVars, error) {
 	ret := _mock.Called(ctx, pipelines, options)
 
 	if len(ret) == 0 {
@@ -49,8 +49,9 @@ func (_mock *AgentConfigBuilder) Build(ctx context.Context, pipelines []v1alpha1
 	}
 
 	var r0 *common.Config
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, []v1alpha1.MetricPipeline, metricagent.BuildOptions) (*common.Config, error)); ok {
+	var r1 common.EnvVars
+	var r2 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []v1alpha1.MetricPipeline, metricagent.BuildOptions) (*common.Config, common.EnvVars, error)); ok {
 		return returnFunc(ctx, pipelines, options)
 	}
 	if returnFunc, ok := ret.Get(0).(func(context.Context, []v1alpha1.MetricPipeline, metricagent.BuildOptions) *common.Config); ok {
@@ -60,12 +61,19 @@ func (_mock *AgentConfigBuilder) Build(ctx context.Context, pipelines []v1alpha1
 			r0 = ret.Get(0).(*common.Config)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, []v1alpha1.MetricPipeline, metricagent.BuildOptions) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, []v1alpha1.MetricPipeline, metricagent.BuildOptions) common.EnvVars); ok {
 		r1 = returnFunc(ctx, pipelines, options)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(common.EnvVars)
+		}
 	}
-	return r0, r1
+	if returnFunc, ok := ret.Get(2).(func(context.Context, []v1alpha1.MetricPipeline, metricagent.BuildOptions) error); ok {
+		r2 = returnFunc(ctx, pipelines, options)
+	} else {
+		r2 = ret.Error(2)
+	}
+	return r0, r1, r2
 }
 
 // AgentConfigBuilder_Build_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Build'
@@ -104,12 +112,12 @@ func (_c *AgentConfigBuilder_Build_Call) Run(run func(ctx context.Context, pipel
 	return _c
 }
 
-func (_c *AgentConfigBuilder_Build_Call) Return(config *common.Config, err error) *AgentConfigBuilder_Build_Call {
-	_c.Call.Return(config, err)
+func (_c *AgentConfigBuilder_Build_Call) Return(config *common.Config, envVars common.EnvVars, err error) *AgentConfigBuilder_Build_Call {
+	_c.Call.Return(config, envVars, err)
 	return _c
 }
 
-func (_c *AgentConfigBuilder_Build_Call) RunAndReturn(run func(ctx context.Context, pipelines []v1alpha1.MetricPipeline, options metricagent.BuildOptions) (*common.Config, error)) *AgentConfigBuilder_Build_Call {
+func (_c *AgentConfigBuilder_Build_Call) RunAndReturn(run func(ctx context.Context, pipelines []v1alpha1.MetricPipeline, options metricagent.BuildOptions) (*common.Config, common.EnvVars, error)) *AgentConfigBuilder_Build_Call {
 	_c.Call.Return(run)
 	return _c
 }
