@@ -317,8 +317,16 @@ func (in *LogPipelineFilter) DeepCopy() *LogPipelineFilter {
 func (in *LogPipelineHTTPOutput) DeepCopyInto(out *LogPipelineHTTPOutput) {
 	*out = *in
 	in.Host.DeepCopyInto(&out.Host)
-	in.User.DeepCopyInto(&out.User)
-	in.Password.DeepCopyInto(&out.Password)
+	if in.User != nil {
+		in, out := &in.User, &out.User
+		*out = new(ValueType)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.Password != nil {
+		in, out := &in.Password, &out.Password
+		*out = new(ValueType)
+		(*in).DeepCopyInto(*out)
+	}
 	in.TLS.DeepCopyInto(&out.TLS)
 }
 

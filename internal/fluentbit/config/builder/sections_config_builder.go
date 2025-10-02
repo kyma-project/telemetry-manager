@@ -21,17 +21,7 @@ func buildFluentBitSectionsConfig(pipeline *telemetryv1alpha1.LogPipeline, confi
 		return "", fmt.Errorf("%w: unsupported pipeline mode: %s", errInvalidPipelineDefinition, pm.String())
 	}
 
-	err := validateOutput(pipeline)
-	if err != nil {
-		return "", err
-	}
-
-	err = validateInput(pipeline)
-	if err != nil {
-		return "", err
-	}
-
-	err = validateCustomSections(pipeline)
+	err := validateCustomSections(pipeline)
 	if err != nil {
 		return "", err
 	}
@@ -96,26 +86,6 @@ func validateCustomSections(pipeline *telemetryv1alpha1.LogPipeline) error {
 		if err != nil {
 			return err
 		}
-	}
-
-	return nil
-}
-
-func validateOutput(pipeline *telemetryv1alpha1.LogPipeline) error {
-	if !logpipelineutils.IsAnyDefined(&pipeline.Spec.Output) {
-		return fmt.Errorf("%w: No output plugin defined", errInvalidPipelineDefinition)
-	}
-
-	return nil
-}
-
-func validateInput(pipeline *telemetryv1alpha1.LogPipeline) error {
-	if pipeline.Spec.Input.OTLP != nil {
-		return fmt.Errorf("%w: cannot use OTLP input for pipeline in FluentBit mode", errInvalidPipelineDefinition)
-	}
-
-	if pipeline.Spec.Input.Application == nil {
-		return nil
 	}
 
 	return nil
