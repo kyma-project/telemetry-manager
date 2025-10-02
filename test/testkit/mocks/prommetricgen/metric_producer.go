@@ -238,12 +238,24 @@ func (p *Pod) WithLabels(labels map[string]string) *Pod {
 	return p
 }
 
-func (p *Pod) WithAvalanche(gaugeMetricCount, counterMetricCount, histogramMetricCount int32) *Pod {
+func (p *Pod) WithAvalancheHighLoad() *Pod {
 	p.image = avalancheImage
 	p.args = []string{
-		"--gauge-metric-count=" + strconv.Itoa(int(gaugeMetricCount)),
-		"--counter-metric-count=" + strconv.Itoa(int(counterMetricCount)),
-		"--histogram-metric-count=" + strconv.Itoa(int(histogramMetricCount)),
+		"--gauge-metric-count=" + strconv.Itoa(int(160)),
+		"--counter-metric-count=" + strconv.Itoa(int(100)),
+		"--histogram-metric-count=" + strconv.Itoa(int(50)),
+		"--port=" + strconv.Itoa(int(p.metricsPort)),
+	}
+
+	return p
+}
+
+func (p *Pod) WithAvalancheLowLoad() *Pod {
+	p.image = avalancheImage
+	p.args = []string{
+		"--gauge-metric-count=" + strconv.Itoa(int(1)),
+		"--counter-metric-count=" + strconv.Itoa(int(1)),
+		"--histogram-metric-count=" + strconv.Itoa(int(1)),
 		"--port=" + strconv.Itoa(int(p.metricsPort)),
 	}
 

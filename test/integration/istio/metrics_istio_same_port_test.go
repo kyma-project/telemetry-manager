@@ -53,8 +53,8 @@ func TestMetricsIstioSamePort(t *testing.T) {
 		kitk8s.NewNamespace(istiofiedBackendNs, kitk8s.WithIstioInjection()).K8sObject(),
 		&metricPipeline,
 		&istiofiedMetricPipeline,
-		generator.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).WithAvalanche(1, 1, 1).K8sObject(),
-		istiofiedGenerator.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTPS).WithAvalanche(1, 1, 1).K8sObject(),
+		generator.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).WithAvalancheLowLoad().K8sObject(),
+		istiofiedGenerator.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTPS).WithAvalancheLowLoad().K8sObject(),
 		generator.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
 		istiofiedGenerator.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTPS).K8sObject(),
 	}
