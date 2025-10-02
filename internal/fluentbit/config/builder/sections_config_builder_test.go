@@ -16,12 +16,12 @@ func TestCreateRecordModifierFilter(t *testing.T) {
 	expected := `[FILTER]
     name   record_modifier
     match  foo.*
-    record cluster_identifier ${KUBERNETES_SERVICE_HOST}
+    record cluster_identifier test-cluster-name
 
 `
 	logPipeline := &telemetryv1alpha1.LogPipeline{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}
 
-	actual := createRecordModifierFilter(logPipeline)
+	actual := createRecordModifierFilter(logPipeline, "test-cluster-name")
 	require.Equal(t, expected, actual, "Fluent Bit Permanent parser config is invalid")
 }
 
@@ -138,7 +138,7 @@ func TestMergeSectionsConfig(t *testing.T) {
 [FILTER]
     name   record_modifier
     match  foo.*
-    record cluster_identifier ${KUBERNETES_SERVICE_HOST}
+    record cluster_identifier test-cluster-name
 
 [FILTER]
     name                kubernetes
@@ -230,7 +230,7 @@ func TestMergeSectionsConfig(t *testing.T) {
 		FsBufferLimit:     "1G",
 	}
 
-	actual, err := buildFluentBitSectionsConfig(logPipeline, builderConfig{pipelineDefaults: defaults})
+	actual, err := buildFluentBitSectionsConfig(logPipeline, builderConfig{pipelineDefaults: defaults}, "test-cluster-name")
 	require.NoError(t, err)
 	require.Equal(t, expected, actual)
 }
@@ -257,7 +257,7 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
 [FILTER]
     name   record_modifier
     match  foo.*
-    record cluster_identifier ${KUBERNETES_SERVICE_HOST}
+    record cluster_identifier test-cluster-name
 
 [FILTER]
     name                kubernetes
@@ -309,7 +309,7 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
 		collectAgentLogs: true,
 	}
 
-	actual, err := buildFluentBitSectionsConfig(logPipeline, config)
+	actual, err := buildFluentBitSectionsConfig(logPipeline, config, "test-cluster-name")
 	require.NoError(t, err)
 	require.Equal(t, expected, actual)
 }
