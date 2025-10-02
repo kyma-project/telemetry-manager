@@ -28,7 +28,7 @@ func TestIsIstioActive(t *testing.T) {
 			name: "should return true if peerauthentication crd found",
 			resources: []*metav1.APIResourceList{
 				{
-					GroupVersion: "peerauthentication.security.istio.io/v1beta1",
+					GroupVersion: "peerauthentication.security.istio.io/v1",
 					APIResources: []metav1.APIResource{},
 				},
 			},
