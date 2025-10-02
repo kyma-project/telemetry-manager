@@ -61,71 +61,9 @@ func TestPrometheusInput(t *testing.T) {
 	assert.MetricPipelineHealthy(t, pipelineName)
 	assert.MetricsFromNamespaceDelivered(t, backend, genNs, prommetricgen.CustomMetricNames())
 
-	Eventually(func(g Gomega) {
-		backendURL := backend.ExportURL(suite.ProxyClient)
-		resp, err := suite.ProxyClient.Get(backendURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		// here we are discovering the same metric-producer workload twice: once via the annotated service and once via the annotated pod
-		// targets discovered via annotated pods must have no service label
-		bodyContent, err := io.ReadAll(resp.Body)
-		defer resp.Body.Close()
-
-		g.Expect(err).NotTo(HaveOccurred())
-
-		for _, metric := range prommetricgen.CustomMetrics() {
-			g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
-				HaveName(Equal(metric.Name)),
-				HaveType(Equal(metric.Type.String())),
-			))))
-		}
-
-		// Verify that the URL parameter counter labels match the ones defined
-		// in the prometheus.io/param_<name>:<value> annotations.
-		// This ensures that the parameters were correctly processed and handled.
-		g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
-			HaveName(Equal(prommetricgen.MetricPromhttpMetricHandlerRequestsTotal.Name)),
-			HaveMetricAttributes(HaveKeyWithValue(
-				prommetricgen.MetricPromhttpMetricHandlerRequestsTotalLabelKey,
-				prommetricgen.ScrapingURLParamName)),
-			HaveMetricAttributes(HaveKeyWithValue(
-				prommetricgen.MetricPromhttpMetricHandlerRequestsTotalLabelVal,
-				prommetricgen.ScrapingURLParamVal)),
-		))))
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed(), "Annotated Pods scraping failed")
-
-	Eventually(func(g Gomega) {
-		backendURL := backend.ExportURL(suite.ProxyClient)
-		resp, err := suite.ProxyClient.Get(backendURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-
-		bodyContent, err := io.ReadAll(resp.Body)
-		defer resp.Body.Close()
-
-		g.Expect(err).NotTo(HaveOccurred())
-
-		for _, metric := range prommetricgen.CustomMetrics() {
-			g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
-				HaveName(Equal(metric.Name)),
-				HaveType(Equal(metric.Type.String())),
-				HaveMetricAttributes(HaveKey("service")),
-			))))
-		}
-
-		// Verify that the URL parameter counter labels match the ones defined
-		// in the prometheus.io/param_<name>:<value> annotations.
-		// This ensures that the parameters were correctly processed and handled.
-		g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
-			HaveName(Equal(prommetricgen.MetricPromhttpMetricHandlerRequestsTotal.Name)),
-			HaveMetricAttributes(HaveKeyWithValue(
-				prommetricgen.MetricPromhttpMetricHandlerRequestsTotalLabelKey,
-				prommetricgen.ScrapingURLParamName)),
-			HaveMetricAttributes(HaveKeyWithValue(
-				prommetricgen.MetricPromhttpMetricHandlerRequestsTotalLabelVal,
-				prommetricgen.ScrapingURLParamVal)),
-		))))
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed(), "Annotated Services scraping failed")
+	// Check that the same metrics are scraped from both annotated pods and services
+	checkAnnotatedScraping(t, backend, false)
+	checkAnnotatedScraping(t, backend, true)
 
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatMetrics(
@@ -141,4 +79,54 @@ func TestPrometheusInput(t *testing.T) {
 	assert.BackendDataConsistentlyMatches(t, backend, HaveFlatMetrics(
 		Not(ContainElement(HaveName(BeElementOf(diagnosticMetrics...)))),
 	), assert.WithOptionalDescription("Unwanted diagnostic metrics sent to backend"))
+}
+
+func checkAnnotatedScraping(t *testing.T, backend *kitbackend.Backend, fromService bool) {
+	t.Helper()
+
+	resourceName := "Pods"
+	if fromService {
+		resourceName = "Services"
+	}
+
+	Eventually(func(g Gomega) {
+		backendURL := backend.ExportURL(suite.ProxyClient)
+		resp, err := suite.ProxyClient.Get(backendURL)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+
+		bodyContent, err := io.ReadAll(resp.Body)
+		defer resp.Body.Close()
+
+		g.Expect(err).NotTo(HaveOccurred())
+
+		for _, metric := range prommetricgen.CustomMetrics() {
+			if fromService {
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
+					HaveName(Equal(metric.Name)),
+					HaveType(Equal(metric.Type.String())),
+					HaveMetricAttributes(HaveKey("service")),
+				))))
+			} else {
+				// targets discovered via annotated pods must have no service label
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
+					HaveName(Equal(metric.Name)),
+					HaveType(Equal(metric.Type.String())),
+				))))
+			}
+		}
+
+		// Verify that the URL parameter counter labels match the ones defined
+		// in the prometheus.io/param_<name>:<value> annotations.
+		// This ensures that the parameters were correctly processed and handled.
+		g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
+			HaveName(Equal(prommetricgen.MetricPromhttpMetricHandlerRequestsTotal.Name)),
+			HaveMetricAttributes(HaveKeyWithValue(
+				prommetricgen.MetricPromhttpMetricHandlerRequestsTotalLabelKey,
+				prommetricgen.ScrapingURLParamName)),
+			HaveMetricAttributes(HaveKeyWithValue(
+				prommetricgen.MetricPromhttpMetricHandlerRequestsTotalLabelVal,
+				prommetricgen.ScrapingURLParamVal)),
+		))))
+	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed(), "Annotated %s scraping failed", resourceName)
 }
