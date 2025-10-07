@@ -175,6 +175,7 @@ func TestRuntimeInput(t *testing.T) {
 	backendContainsDesiredResourceAttributes(t, backendB, "k8s.daemonset.current_scheduled_nodes", runtime.DaemonSetResourceAttributes)
 	backendContainsDesiredResourceAttributes(t, backendB, "k8s.statefulset.current_pods", runtime.StatefulSetResourceAttributes)
 	backendContainsDesiredResourceAttributes(t, backendB, "k8s.job.active_pods", runtime.JobResourceAttributes)
+
 	expectedMetrics := slices.Concat(runtime.DeploymentMetricsNames, runtime.DaemonSetMetricsNames, runtime.StatefulSetMetricsNames, runtime.JobsMetricsNames)
 	backendConsistsOfMetricsDeliveredForResource(t, backendB, expectedMetrics)
 
