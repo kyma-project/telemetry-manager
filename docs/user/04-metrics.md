@@ -1,3 +1,3 @@
 # Metrics
 
-The content got redesigned and can be found at [Metrics](./collecting-metrics/README.md).
+This content moved to [Collecting Metrics](./collecting-metrics/README.md).
