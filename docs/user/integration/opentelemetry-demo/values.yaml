@@ -353,6 +353,8 @@ components:
         env:
           - name: FLAGD_METRICS_EXPORTER
             value: otel
+          - name: OTEL_EXPORTER_OTLP_ENDPOINT
+            value: http://$(OTEL_COLLECTOR_NAME):4318
           - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
             value: 'http://telemetry-otlp-traces.kyma-system:4317'
           - name: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
