@@ -1,6 +1,15 @@
-# Metrics Prometheus Input
+# Collect Prometheus Metrics
 
-To enable collection of Prometheus-based metrics, define a MetricPipeline that has the `prometheus` section enabled as input:
+If your applications emit Prometheus-based metrics, enable the `prometheus` input in your `MetricPipeline` and annotate your application's Service or Pod. You can collect diagnostic metrics and control from which namespaces the system collects metrics.
+
+## Prerequisites
+
+Instrument your application using a library like the [Prometheus client library](https://prometheus.io/docs/instrumenting/clientlibs/) or the OTel SDK (with [Prometheus exporter](https://opentelemetry.io/docs/specs/otel/metrics/sdk_exporters/prometheus/)). Expose a port in your workload as a Prometheus metrics endpoint.
+
+## Activate Prometheus Metrics
+
+The `prometheus` input is disabled by default. If your applications emit Prometheus metrics, enable Prometheus-based metric collection:
+
 
 ```yaml
   ...
@@ -9,17 +18,16 @@ To enable collection of Prometheus-based metrics, define a MetricPipeline that h
       enabled: true
 ```
 
-> [!NOTE]
-> For the following approach, you must have instrumented your application using a library like the [Prometheus client library](https://prometheus.io/docs/instrumenting/clientlibs/) or the [OTel SDK having the Prometheus exporter configured](https://opentelemetry.io/docs/specs/otel/metrics/sdk_exporters/prometheus/), with a port in your workload exposed serving as a Prometheus metrics endpoint.
+> [!TIP]
+> To validate or debug your configuration, use diagnostic metrics (see [Collect Diagnostic Metrics](#diagnostic-metrics)).
 
-## Endpoint Discovery
+## Enable Metrics Collection With Annotations
 
-The Metric agent is configured with a generic scrape configuration, which uses annotations to discover the endpoints to scrape in the cluster.
+The metric agent automatically discovers Prometheus endpoints in your cluster. It looks for specific annotations on your Kubernetes Services or Pods.
 
-For metrics ingestion to start automatically, use the annotations of the following table.
-If an Istio sidecar is present, apply them to a Service that resolves your metrics port.
-By annotating the Service, all endpoints targeted by the Service are resolved and scraped by the Metric agent bypassing the Service itself.
-Only if Istio sidecar is not present, you can alternatively apply the annotations directly to the Pod.
+Apply the following annotations to enable automatic metric collection. If your Pod has an Istio sidecar, annotate the Service. Otherwise, annotate the Pod directly.
+
+> **Note:** If your service mesh enforces `STRICT` mTLS, the agent scrapes the endpoint over HTTPS automatically. If you do not use `STRICT` mTLS, add the `prometheus.io/scheme: http` annotation to force scraping over plain HTTP.
 
 | Annotation Key | Example Values | Default Value | Description |
 |--|--|--|--|
@@ -53,50 +61,23 @@ spec:
   type: ClusterIP
 ```
 
-> [!NOTE]
-> The Metric agent can scrape endpoints even if the workload is a part of the Istio service mesh and accepts mTLS communication. However, there's a constraint: For scraping through HTTPS, Istio must configure the workload using 'STRICT' mTLS mode. Without 'STRICT' mTLS mode, you can set up scraping through HTTP by applying the annotation `prometheus.io/scheme=http`. For related troubleshooting, see [Log Entry: Failed to Scrape Prometheus Endpoint](./README.md#log-entry-failed-to-scrape-prometheus-endpoint).
+## Scrape Metrics from Istio-enabled Workloads
 
-## Filters
+If your application is part of an Istio service mesh, you must consider service port naming and mutual TLS (mTLS) configuration:
 
-To filter metrics by namespaces, define a MetricPipeline that has the `namespaces` section defined in one of the inputs. For example, you can specify the namespaces from which metrics are collected or the namespaces from which metrics are dropped. Learn more about the available [parameters and attributes](./../resources/05-metricpipeline.md).
+- Istio must be able to identify the `appProtocol` from the Service port definition; otherwise Istio may block the scrape request.
+  You must either prefix the port name with the protocol like in `http-metrics`, or explicitly define the `appProtocol` attribute.
 
-By default, the sidecars of all namespaces are getting collected excluding system namespaces. To include system namespaces as well, please explicitly configure an empty namespcae object: `namespaces: {}`.
+- The metric agent can scrape endpoints from workloads that enforce mutual TLS (mTLS). For scraping through HTTPS, Istio must configure the workload using STRICT mTLS mode.
+  If you can't use STRICT mTLS mode, you can set up scraping through plain HTTP by adding the following annotation to your Service: `prometheus.io/scheme: http`. For related troubleshooting, see [Log Entry: Failed to Scrape Prometheus Endpoint](ADD LINK).
 
-The following example collects runtime metrics **only** from the `foo` and `bar` namespaces:
+## Collect Diagnostic Metrics
 
-```yaml
-  ...
-  input:
-    prometheus:
-      enabled: true
-      namespaces:
-        include:
-          - foo
-          - bar
-```
+To validate or debug your scraping configuration for the `prometheus` and `istio` input, you can use diagnostic metrics. By default, they are disabled.
 
-The following example collects runtime metrics from all namespaces **except** the `foo` and `bar` namespaces:
+> **Note:** Unlike the `prometheus` and `istio` inputs, the `runtime`  input gathers data directly from Kubernetes APIs instead of using a scraping process, so it does not generate scrape-specific diagnostic metrics.
 
-```yaml
-  ...
-  input:
-    prometheus:
-      enabled: true
-      namespaces:
-        exclude:
-          - foo
-          - bar
-```
-
-## Diagnostic Metrics
-
-When the metric agent is scraping metrics, it instruments operational metrics for every source of a metric, such as `up`, `scrape_duration_seconds`, `scrape_samples_scraped`, `scrape_samples_post_metric_relabeling`, and `scrape_series_added`.
-
-By default, these operational metrics are disabled.
-
-If you want to use them for debugging and diagnostic purposes, you can activate them. To activate diagnostic metrics, define a MetricPipeline that has the `diagnosticMetrics` section defined.
-
-The following example enables diagnostic metrics:
+To use diagnostic metrics, enable the `diagnosticMetrics` for the input in your MetricPipeline:
 
 ```yaml
   ...
@@ -106,3 +87,10 @@ The following example enables diagnostic metrics:
     diagnosticMetrics:
         enabled: true
 ```
+
+When enabled, the metric agent generates metrics about its own scrape jobs, such as the following:
+
+- `scrape_duration_seconds`
+- `scrape_samples_scraped`
+- `scrape_samples_post_metric_relabeling`
+- `scrape_series_added`
