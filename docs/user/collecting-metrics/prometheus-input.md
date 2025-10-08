@@ -68,7 +68,7 @@ If your application is part of an Istio service mesh, you must consider service 
   You must either prefix the port name with the protocol like in `http-metrics`, or explicitly define the `appProtocol` attribute.
 
 - The metric agent can scrape endpoints from workloads that enforce mutual TLS (mTLS). For scraping through HTTPS, Istio must configure the workload using STRICT mTLS mode.
-  If you can't use STRICT mTLS mode, you can set up scraping through plain HTTP by adding the following annotation to your Service: `prometheus.io/scheme: http`. For related troubleshooting, see [Log Entry: Failed to Scrape Prometheus Endpoint](ADD LINK).
+  If you can't use STRICT mTLS mode, you can set up scraping through plain HTTP by adding the following annotation to your Service: `prometheus.io/scheme: http`. For related troubleshooting, see [Log Entry: Failed to Scrape Prometheus Endpoint](../troubleshooting.md#metricpipeline-failed-to-scrape-prometheus-endpoint).
 
 ## Collect Diagnostic Metrics
 <!-- identical section for Prometheus and Istio docs -->

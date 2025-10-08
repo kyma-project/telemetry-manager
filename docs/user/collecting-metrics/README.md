@@ -43,7 +43,7 @@ By default, this minimal pipeline collects these types of metrics:
 - OTLP Metrics: Activates cluster-internal endpoints to receive metrics in the OTLP format. Applications push metrics directly to these URLs:
   - gRPC: `http://telemetry-otlp-metrics.kyma-system:4317`
   - HTTP: `http://telemetry-otlp-metrics.kyma-system:4318`
-- Health Metrics: Collects health and performance metrics about the Telemetry module's components. This input is always active; you cannot disable it. See [Monitor Pipeline Health](ADD LINK).
+- Health Metrics: Collects health and performance metrics about the Telemetry module's components. This input is always active; you cannot disable it. See [Monitor Pipeline Health](../monitor-pipeline-health.md).
 
 To collect metrics from Kyma modules like Istio, Eventing, or Serverless, enable additional inputs.
 
@@ -55,7 +55,7 @@ You can adjust the MetricPipeline using runtime configuration with the available
 - Collect `istio` service mesh metrics from Istio proxies and control plane components. See [Collect Istio Metrics](istio-input.md).
 - Collect `runtime` resource usage and status metrics from Kubernetes components like Pods, Nodes, and Deployments. See [Collect Runtime Metrics](runtime-input.md).
 - Use diagnostic metrics to debug your `prometheus` and `istio` configuration. See [Collect Diagnostic Metrics](./prometheus-input.md#collect-diagnostic-metrics).
-- Choose specific namespaces to include or drop metrics. See [Filter Metrics](ADD LINK).
+- Choose specific namespaces to include or drop metrics. See [Filter Metrics](../filter-and-process/filter-metrics.md).
 - Avoid redundancy by dropping push-based OTLP metrics sent directly to the metric gateway. See [Route Specific Inputs to Different Backends](./../otlp-input.md#route-specific-inputs-to-different-backends).
 
 ## Limitations

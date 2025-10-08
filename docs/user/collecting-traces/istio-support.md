@@ -4,7 +4,7 @@ Enable Istio tracing to get a complete, end-to-end view of requests as they trav
 
 ## Prerequisites
 
-- You have the Istio module in your cluster. See [Adding and Deleting a Kyma Module](ADD LINK).
+- You have the Istio module in your cluster. See [Quick Install](https://kyma-project.io/#/02-get-started/01-quick-install).
 - You have access to Kyma dashboard. Alternatively, if you prefer CLI, you need [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl) and [curl](https://curl.se/).
 
 ## Context
@@ -46,7 +46,7 @@ To enable tracing for all workloads in the service mesh, apply an Istio `Telemet
    kubectl -n istio-system get telemetries.telemetry.istio.io
    ```
 
-3. After setting a mesh-wide default, you can apply more specific tracing configurations for an entire namespace or for individual workloads within a namespace. This is useful for debugging a particular service by increasing its sampling rate without affecting the entire mesh. For details, see [Filter Traces](ADD LINK).
+3. After setting a mesh-wide default, you can apply more specific tracing configurations for an entire namespace or for individual workloads within a namespace. This is useful for debugging a particular service by increasing its sampling rate without affecting the entire mesh. For details, see [Filter Traces](../filter-and-process/filter-traces.md).
 
 ## Configure the Sampling Rate
 

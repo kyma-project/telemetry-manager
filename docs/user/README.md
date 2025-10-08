@@ -35,13 +35,13 @@ To support telemetry for your applications, the Telemetry module provides the fo
 - **Flexible Backend Integration**: The Telemetry module is optimized for integration with SAP BTP observability services, such as SAP Cloud Logging service. You can also send data to any backend that supports the [OpenTelemetry protocol (OTLP)](https://opentelemetry.io/docs/specs/otel/protocol/), giving you the freedom to choose your preferred solution (see [Integrate With Your OTLP Backend](./integrate-otlp-backend/)).
 
   > **Recommendation:**
-  > For production deployments, we recommend using a central telemetry solution located outside your cluster. For an example with SAP Cloud Logging service, see [Integrate With SAP Cloud Logging](ADD LINK).
+  > For production deployments, we recommend using a central telemetry solution located outside your cluster. For an example with SAP Cloud Logging service, see [Integrate With SAP Cloud Logging](./integrate-otlp-backend/ADD LINK).
   >
   > For testing or development, in-cluster solutions may be suitable. For examples such as Dynatrace (or to learn how to collect data from applications based on the OpenTelemetry Demo App), see [Integration Guides](https://kyma-project.io/#/telemetry-manager/user/integration/README).
 
-- **Seamless Istio Integration**: The Telemetry module seamlessly integrates with the Istio module when both are present in your cluster. For details, see [Istio Integration](ADD LINK).
+- **Seamless Istio Integration**: The Telemetry module seamlessly integrates with the Istio module when both are present in your cluster. For details, see [Istio Integration](./architecture/istio-integration.md).
 
-- **Automatic Data Enrichment**: The Telemetry module adds resource attributes as metadata, following OTel semantic conventions. This makes your data more consistent, meaningful, and ready for analysis in your observability backend. For details, see [Automatic Data Enrichment](ADD LINK).
+- **Automatic Data Enrichment**: The Telemetry module adds resource attributes as metadata, following OTel semantic conventions. This makes your data more consistent, meaningful, and ready for analysis in your observability backend. For details, see [Automatic Data Enrichment](./filter-and-process/automatic-data-enrichment.md).
 
 - **Instrumentation Guidance**: To generate telemetry data, you must instrument your code. Based on [Open Telemetry](https://opentelemetry.io/), you get community samples on how to instrument your code using the [Open Telemetry SDKs](https://opentelemetry.io/docs/languages/) in most programming languages.
 

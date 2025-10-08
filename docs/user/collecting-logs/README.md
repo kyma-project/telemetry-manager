@@ -47,10 +47,10 @@ By default, this minimal pipeline enables the following types of log collection:
 
 You can customize your `LogPipeline` using the available parameters and attributes (see [LogPipeline: Custom Resource Parameters](https://kyma-project.io/#/telemetry-manager/user/resources/02-logpipeline?id=custom-resource-parameters)). For example, you can:
 
-- Configure or disable the collection of application logs from the `stdout`/`stderr` channel (see [Configure Application Logs](ADD LINK)).
-- Set up the collection of Istio access logs (see [Configure Istio Access Logs](ADD LINK)).
-- Choose specific namespaces from which to include or exclude logs (see [Filter Logs](ADD LINK)).
-- If you have more than one backend, specify which **input** source sends logs to which backend (see [Route Specific Inputs to Different Backends](ADD LINK)).
+- Configure or disable the collection of application logs from the `stdout`/`stderr` channel (see [Configure Application Logs](../collecting-logs/application-input.md)).
+- Set up the collection of Istio access logs (see [Configure Istio Access Logs](../collecting-logs/istio-support.md)).
+- Choose specific namespaces from which to include or exclude logs (see [Filter Logs](../filter-and-process/filter-logs.md)).
+- If you have more than one backend, specify which **input** source sends logs to which backend (see [Route Specific Inputs to Different Backends](../otlp-input.md#route-specific-inputs-to-different-backends)).
 
 ## Limitations
 

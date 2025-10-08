@@ -4,7 +4,7 @@ Enable Istio access logs to get details about traffic to your workloads in the I
 
 ## Prerequisites
 
-- You have the Istio module enabled in your cluster. See [Adding and Deleting a Kyma Module](ADD LINK).
+- You have the Istio module enabled in your cluster. See [Adding and Deleting a Kyma Module](https://kyma-project.io/#/02-get-started/01-quick-install).
 - You have access to Kyma dashboard. Alternatively, if you prefer CLI, you need [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl).
 
 ## Context

@@ -26,7 +26,7 @@ Use the following environment variables to set the OTLP endpoint for each signal
 - Logs HTTP: `export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT="http://telemetry-otlp-logs.kyma-system:4318/v1/logs"`
 
 > **Note:** 
-> If your cluster uses Istio, communication with these endpoints is automatically secured with mTLS. For details, see [Istio Integration](ADD LINK).
+> If your cluster uses Istio, communication with these endpoints is automatically secured with mTLS. For details, see [Istio Integration](./architecture/istio-integration.md).
 
 ## Verify the Endpoints
 
@@ -56,7 +56,7 @@ The output shows the available endpoints and the pipeline health under the statu
 For logs and metrics: If you have multiple pipelines sending data to different backends, you can specify which inputs are active for each pipeline. This is useful if you want one pipeline to handle only OTLP data and another to handle only data from a different source.
 
 > **Tip:**
-> For more granular control, you can also filter incoming OTLP data by namespace. For details, see [Filter Logs](ADD LINK) and [Filter Metrics](ADD LINK).
+> For more granular control, you can also filter incoming OTLP data by namespace. For details, see [Filter Logs](./filter-and-process/filter-logs.md) and [Filter Metrics](./filter-and-process/filter-metrics.md).
 
 For example, if you want to analyze **otlp** input data in one backend and only data from the log-specific **application** input in another backend, then disable the **otlp** input for the second backend. By default, **otlp** input is enabled.
 
