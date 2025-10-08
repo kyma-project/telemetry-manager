@@ -356,11 +356,17 @@ components:
             value: 'http://telemetry-otlp-metrics.kyma-system:4317'
           - name: OTEL_EXPORTER_OTLP_LOGS_ENDPOINT
             value: 'http://telemetry-otlp-logs.kyma-system:4317'
+          - name: FLAGD_UI_PORT
+            value: "4000"
+          - name: SECRET_KEY_BASE
+            value: yYrECL4qbNwleYInGJYvVnSkwJuSQJ4ijPTx5tirGUXrbznFIBFVJdPl5t6O9ASw
+          - name: PHX_HOST
+            value: localhost
         resources:
           requests:
             memory: 50Mi
           limits:
-            memory: 200Mi
+            memory: 250Mi
         volumeMounts:
           - name: config-rw
             mountPath: /app/data
