@@ -72,7 +72,7 @@ If your application is part of an Istio service mesh, you must consider service 
   If you can't use STRICT mTLS mode, you can set up scraping through plain HTTP by adding the following annotation to your Service: `prometheus.io/scheme: http`. For related troubleshooting, see [Log Entry: Failed to Scrape Prometheus Endpoint](ADD LINK).
 
 ## Collect Diagnostic Metrics
-
+<!-- identical section for Prometheus and Istio docs -->
 To validate or debug your scraping configuration for the `prometheus` and `istio` input, you can use diagnostic metrics. By default, they are disabled.
 
 > **Note:** Unlike the `prometheus` and `istio` inputs, the `runtime`  input gathers data directly from Kubernetes APIs instead of using a scraping process, so it does not generate scrape-specific diagnostic metrics.
