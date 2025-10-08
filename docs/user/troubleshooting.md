@@ -1,4 +1,6 @@
-# Telemetry Pipeline Troubleshooting
+# Troubleshooting for the Telemetry Module
+
+Troubleshoot problems related to the Telemetry module and its pipelines.
 
 ## No Data Arrive at the Backend
 
@@ -56,6 +58,44 @@
 **Cause**: Gateway cannot receive data at the given rate.
 
 **Solution**: Manually scale out the gateway by increasing the number of replicas for the gateway. See [Module Configuration and Status](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
+
+### Custom Spans Don’t Arrive at the Backend, but Istio Spans Do
+
+**Cause**: Your SDK version is incompatible with the OTel Collector version.
+
+**Solution**:
+
+1. Check which SDK version you are using for instrumentation.
+2. Investigate whether it is compatible with the OTel Collector version.
+3. If required, upgrade to a supported SDK version.
+
+### Trace Backend Shows Fewer Traces than Expected
+
+**Cause**: By default, only 1% of the requests are sent to the trace backend for trace recording, see [Traces Istio Support](./istio-support.md).
+
+**Solution**:
+
+To see more traces in the trace backend, increase the percentage of requests by changing the default settings.
+If you just want to see traces for one particular request, you can manually force sampling:
+
+1. Create a `values.yaml` file.
+   The following example sets the value to `60`, which means 60% of the requests are sent to the tracing backend.
+
+```yaml
+  apiVersion: telemetry.istio.io/v1
+  kind: Telemetry
+  metadata:
+    name: kyma-traces
+    namespace: istio-system
+  spec:
+    tracing:
+    - providers:
+      - name: "kyma-traces"
+      randomSamplingPercentage: 60
+```
+
+2. To override the default percentage, change the value for the **randomSamplingPercentage** attribute.
+3. Deploy the `values.yaml` to your existing Kyma installation.
 
 ### MetricPipeline: Failed to Scrape Prometheus Endpoint
 
