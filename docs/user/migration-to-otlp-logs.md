@@ -1,125 +1,111 @@
-# Migration of LogPipelines from HTTP/Custom Output to OTLP Output
+# Migrate Your LogPipeline From HTTP to OTLP
 
-## Overview
+To use the OpenTelemetry Protocol (OTLP) for sending logs, you must migrate your `LogPipeline` from the `http` or `custom` output to the `otlp` output. With OTLP, you can correlate logs with traces and metrics, collect logs pushed directly from applications, and use features available only for the OTLP-based stack.
 
-This guide explains how to migrate existing LogPipelines using HTTP or custom outputs to the new OTLP output format.
+### Prerequisites
 
-## Motivation
+* You have an active Kyma cluster with the Telemetry module added.
+* You have one or more `LogPipeline` resources that use the `http` or `custom` output.
+* Your observability backend has an OTLP ingestion endpoint.
+  If your backend doesn't support OTLP natively, you must run a custom OTel Collector as gateway between the Telemetry module and the target backend.
 
-- Use the vendor-neutral OTLP protocol opening up a broad variety of supported backends
-- Have the same resource attributes used on your log data as on traces and metrics, allowing cross-correlation between signal types
-- Support for OTLP push-based collection of log data
-- New features will be added for the OTel Collector based technology stack only, so be future-ready
+### Context
 
-## Prerequisites
+When you want to migrate to the `otlp` output, create a new `LogPipeline`. To prevent data loss, run it in parallel with your existing pipeline. After verifying that the new pipeline works correctly, you can delete the old one.
 
-- Telemetry module is enabled and existing LogPipeline with HTTP or custom output are in use
+You can't modify an existing `LogPipeline` to change its output type. You must create a new resource.
 
-## Important Notes
+### Procedure
 
-- Direct modification of existing LogPipelines to OTLP output is not supported, a new LogPipeline must be created with OTLP output
-- A migration without data loss is possible by establishing a OTLP based LogPipeline before removing the existing one. They can exist in parallel.
+1. Create a new `LogPipeline` that uses the `otlp` output.
 
-## Basic Migration Steps
+    Pay special attention to the following settings (for details, see **Integrate With Your OTLP Backend** [ADD LINK]:
 
-### Enable OTLP Ingestion at your Backend
+    * Endpoint URL: Use the OTLP-specific ingestion endpoint from your observability backend. This URL is different from the one used for the legacy `http` output.
+    * Protocol: The `otlp` output defaults to the gRPC protocol. If your backend uses HTTP, you must include the protocol in the endpoint URL (for example, https://my-otlp-http-endpoint:4318).
+    * Authentication: The OTLP endpoint often uses different credentials or API permissions than your previous log ingestion endpoint. Verify that your credentials have the necessary permissions for OTLP log ingestion.
 
-The modernized LogPipeline API is based on OTLP fully and supports OTlP only as output protocol. With that, it is essential to switch to an OTLP based ingestion on your backend. Assure that this is supported natively and identify the OTLP endpoints to be configured in the new LogPipeline. Usually the OTLP endpoints are different to the ones used before. Also check if GRPC is supported, otherwise you will need to configure the HTTP protocol explicitly. For authentication potentially the same approach could be used, usually different permissions are required to inject in OTLP.
+    ```yaml
+    apiVersion: telemetry.kyma-project.io/v1alpha1
+    kind: LogPipeline
+    metadata:
+      name: my-otlp-pipeline
+    spec:
+      output:
+        otlp:
+          endpoint:
+            value: "my-backend:4317"
+    ```
 
-In case native OTLP is not supported, you will need to run a custom OTel Collector as gateway between the Telemetry module and the target backend.
+2. (Optional) If your old pipeline uses `custom` filters, rewrite them using the OpenTelemetry Transformation Language ([OTTL](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/README.md)) and add them to your new LogPipeline.
+  
+   Example: You want to replace a legacy Fluent Bit filter that dropped health checks and added a `tenant` attribute:
 
-### 1. Create New LogPipeline
+   ```yaml
+   apiVersion: telemetry.kyma-project.io/v1alpha1
+   kind: LogPipeline
+   metadata:
+     name: my-http-pipeline
+   spec:
+     filter:
+       - custom: |
+         Name    grep
+         Exclude path /healthz/ready
+       - custom: |
+         Name    record_modifier
+         Record  tenant myTenant
+     output:
+       http:
+         ...
+   ```
 
-Create a new LogPipeline manifest with an OTLP output. Use the identified OTLP endpoint and configure it as endpoint. For details on the different configuration options please see [Telemetry Pipeline OTLP Output](./pipelines/otlp-output.md). Hereby, verify the used protocol and authentication method.
+   In your new OTLP pipeline, use the `filter` and `transform` sections with OTTL expressions:
 
-```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: LogPipeline
-metadata:
-  name: my-otlp-pipeline
-spec:
-  output:
-    otlp:
-      endpoint:
-        value: "my-backend:4317"
-```
+   ```yaml
+   apiVersion: telemetry.kyma-project.io/v1alpha1
+   kind: LogPipeline
+   metadata:
+     name: my-http-pipeline
+   spec:
+     transform:
+       - conditions:
+         - log.attributes["tenant"] == ""
+         statements:
+         - set(log.attributes["tenant"], "myTenant")
+     filter:
+       conditions:
+         - log.attributes["path"] == "/healthz/ready"
+     output:
+       otlp:
+         ...
+   ```
 
-### 2. Deploy Both Pipelines
+3. (Optional) To enrich logs with labels, configure the central Telemetry resource.
 
-Deploy the new OTLP pipeline alongside your existing pipeline:
+   In contrast to a Fluent Bit LogPipeline, the `otlp` output doesn't automatically add all Pod labels. To continue enriching logs with specific labels, you must explicitly enable it in the spec.enrichments.extractPodLabels field.
 
-```bash
-kubectl apply -f logpipeline.yaml
-```
+   > **Note:** Enrichment with Pod annotations is no longer supported.
 
-### 3. Verify the New Pipeline
+4. Deploy the new `LogPipeline`:
 
-Check that logs are flowing through the new pipeline by checking the status:
+   ```shell
+   kubectl apply -f logpipeline.yaml
+   ```
 
-```bash
-kubectl get logpipeline my-otlp-pipeline
-```
+5. Check that the new `LogPipeline` is healthy:
 
-### 4. Remove Old Pipeline
+   ```shell
+   kubectl get logpipeline my-otlp-pipeline
+   ```
 
-After verification, remove the old pipeline:
+6. Check your observability backend to confirm that log data is arriving.
 
-```bash
-kubectl delete logpipeline my-old-pipeline
-```
+7. Delete the old `LogPipeline`:
 
-## Custom Transformation and Filtering
+   ```shell
+   kubectl delete logpipeline my-old-pipeline
+   ```
 
-The old LogPipeline offers the `filters` element (in combination with the `files` and `variables` attributes) which supports custom transformation and filtering of the log payload and the proprietary metadata attributes, based on a FLuent-Bit native configuration, requiring advanced knowledge in the available filter plugins and there concrete usage.
+### Result
 
-With the introduction of the OTLP support, a new powerful transform and filter API got introduced which fully rely on one well-defined langauge [OTTL](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/README.md). With that, you can transform or extend the existing resource and log attributes, transform the log data and perform advanced filtering.
-
-With that, an old LogPipeline like this:
-
-```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: LogPipeline
-metadata:
-  name: my-http-pipeline
-spec:
-  filter:
-    - custom: |
-      Name    grep
-      Exclude path /healthz/ready
-    - custom: |
-      Name    record_modifier
-      Record  tenant myTenant
-  output:
-    http:
-      ...
-```
-
-could be transformed to a new LogPipeline:
-
-```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: LogPipeline
-metadata:
-  name: my-http-pipeline
-spec:
-  transform:
-    - conditions:
-      - log.attributes["tenant"] == ""
-      statements:
-      - set(log.attributes["tenant"], "myTenant")
-  filter:
-    conditions:
-      - log.attributes["path"] == "/healthz/ready"
-  output:
-    otlp:
-      ...
-```
-
-There is no golden rule to re-write these transform and filter rules, so please have a look at the documentation of the [Transform & Filter](./pipelines/enrichment.md) API
-
-## Selective Enrichement
-
-The old LogPipeline is automatically enriching all labels of the source Pod as metadata. There is an option `input.application.dropLabels` to disable the enrichment fully.
-With the new LogPipeline, the enrichment is disabled by default and can be enabled selectively by label names or groups. The enrichemnt can be configured centrally only, not individually per pipeline, and can be found in the Telemetry resource. For details see [Enrichment](./pipelines/enrichment.md)
-
-The enrichment of annotations of a source Pod via the flag `input.application.keepAnnotations` is not supported anymore.
+Your cluster now sends logs exclusively through your new OTLP-based `LogPipeline`. Your filter and enrichment logic is preserved.

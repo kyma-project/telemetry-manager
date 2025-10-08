@@ -1,20 +1,17 @@
-# Logs
+# Collecting Logs
 
-With application logs, you can debug an application and derive the internal state of an application. The Telemetry module supports observing your applications with logs of the correct severity level and context.
+Use the Telemetry module to collect, process, and export logs for observing and debugging your applications. To start, you create a `LogPipeline` resource. This pipeline automatically collects OTLP logs and application logs from the `stdout`/`stderr` channel. You can also activate Istio log collection.
 
 ## Overview
 
-The Telemetry module provides an API which configures a log gateway for push-based collection of logs using OTLP and, optionally, an agent for the collection of logs of any container printing logs to the `stdout/stderr` channel running in the Kyma runtime. Kyma modules like [Istio](https://kyma-project.io/#/istio/user/README) contribute access logs. The Telemetry module enriches the data and ships them to your chosen backend (see [Vendors who natively support OpenTelemetry](https://opentelemetry.io/ecosystem/vendors/)).
+A `LogPipeline` is a Kubernetes Custom Resource (CR) that you use to configure log collection for your cluster. When you create a `LogPipeline`, the Telemetry module automatically deploys the necessary components (for details, see [Logging Architecture](architecture.md)):
 
-You can configure the log gateway and agent with external systems using runtime configuration with a dedicated Kubernetes API ([CRD](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions)) named LogPipeline. A LogPipeline is following the structure and characteristic of a Telemetry [pipeline](./../pipelines/README.md) and offers these collection features:
+- A **log gateway** that provides a central OTLP endpoint for receiving logs pushed from your applications.
+- A **log agent** that runs on each cluster node to collect logs written to `stdout` and `stderr` by your application containers.
 
-- `otlp` input: Ingest OTLP logs via the push endpoints, see [Telemetry Pipeline OTLP Input](./../pipelines/otlp-input.md)
-- `application` input: Activate collection of application logs from `stdout/stderr` channels of any container in the cluster using the `application` input, see [Logs Application Input](./application-input.md)
-- Activate Istio access logs. For details, see [Logs Istio Support](./istio-support.md).
+The pipeline enriches all collected logs with Kubernetes metadata and transforms them into the OTLP format before sending them to your chosen backend.
 
-For an example, see [Sample LogPipeline](sample.md), check out the available parameters and attributes under [LogPipeline](./../resources/02-logpipeline.md) and checkout the involved components of a LogPipeline at the [Logs Architecture](architecture.md).
-
-The Log feature is optional. If you don’t want to use it, simply don’t set up a LogPipeline.
+The log collection feature is optional. If you do not create a `LogPipeline`, the log collection components are not deployed.
 
 ## Prerequisites
 
@@ -24,9 +21,9 @@ The Log feature is optional. If you don’t want to use it, simply don’t set u
 
 - If you prefer the push-based alternative with OTLP, also use a logger library like log4J. However, you additionally instrument that logger and bridge it to the OTel SDK. For details, see [OpenTelemetry: New First-Party Application Logs](https://opentelemetry.io/docs/specs/otel/logs/#new-first-party-application-logs).
 
-## Basic Pipeline
+## Create a Minimal LogPipeline
 
-The minimal pipeline will define an `otlp` output and have the `otlp` input enabled by default, see [Telemetry Pipeline OTLP Output](./../pipelines/otlp-output.md) and [Telemetry Pipeline OTLP Input](./../pipelines/otlp-input.md).
+For a minimal setup, you only need to create a `LogPipeline` that specifies your backend destination (see [Integrate With Your OTLP Backend](./../pipelines/otlp-output.md)):
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -39,56 +36,21 @@ output:
         value: http://myEndpoint:4317
 ```
 
-This example will accept traffic from the OTLP log endpoint, filtered by system namespaces, and will forward them to the configured backend. The following push URLs are set up:
+By default, this minimal pipeline enables the following types of log collection:
 
-- GRPC: `http://telemetry-otlp-logs.kyma-system:4317`
-- HTTP: `http://telemetry-otlp-logs.kyma-system:4318`
+- **Application logs**: Collects `stdout` and `stderr` logs from all containers running in non-system namespaces (such as `kyma-system` and `kube-system`).
+- **OTLP logs**: Activates cluster-internal endpoints to receive logs in the OTLP format. Your applications can push logs directly to these URLs:
+  - gRPC: `http://telemetry-otlp-logs.kyma-system:4317`
+  - HTTP: `http://telemetry-otlp-logs.kyma-system:4318`
 
-The default protocol for shipping the data to a backend is GRPC, but you can choose HTTP instead. Ensure that the correct port is configured as part of the endpoint.
+## Configure Your LogPipeline
 
-## Application Input
+You can customize your `LogPipeline` using the available parameters and attributes (see [LogPipeline: Custom Resource Parameters](https://kyma-project.io/#/telemetry-manager/user/resources/02-logpipeline?id=custom-resource-parameters)). For example, you can:
 
-The most common input used on a LogPipline is the `application` input. It will enable the collection of application logs from all containers tailing the log files of the container runtime. The most basic example which is enabling collection on all namespaces except the system namespaces:
-
-```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: LogPipeline
-metadata:
-  name: backend
-input:
-  application:
-    enabled: true
-output:
-    otlp:
-      endpoint:
-        value: http://myEndpoint:4317
-```
-
-For more details, please see [Logs Application Input](./application-input.md).
-
-## Kyma Modules With Logging Capabilities
-
-Kyma bundles modules that can be involved in user flows. If you want to collect all logs of all modules, enable the `application` input for the `kyma-system` namespace, see [Logs Application Input](./application-input.md).
-
-### Istio
-
-The Istio module is crucial as it provides the [Ingress Gateway](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/). Typically, this is where external requests enter the cluster scope. Furthermore, every component that’s part of the Istio Service Mesh runs an Istio proxy. Using the Istio telemetry API, you can enable access logs for the Ingress Gateway and the proxies individually.
-
-The following example configures all Istio proxies with the `kyma-logs` extension provider, which, by default, reports access logs to the log gateway of the Telemetry module.
-
-```yaml
-apiVersion: telemetry.istio.io/v1
-kind: Telemetry
-metadata:
-  name: mesh-default
-  namespace: istio-system
-spec:
-  accessLogging:
-    - providers:
-        - name: kyma-logs
-```
-
-More details and configuration options can be found at [Logs Istio Support](./istio-support.md).
+- Configure or disable the collection of application logs from the `stdout`/`stderr` channel (see [Configure Application Logs](ADD LINK)).
+- Set up the collection of Istio access logs (see [Configure Istio Access Logs](ADD LINK)).
+- Choose specific namespaces from which to include or exclude logs (see [Filter Logs](ADD LINK)).
+- If you have more than one backend, specify which **input** source sends logs to which backend (see [Route Specific Inputs to Different Backends](ADD LINK)).
 
 ## Limitations
 
@@ -100,8 +62,3 @@ More details and configuration options can be found at [Logs Istio Support](./is
 - **Unavailability of Output**: For up to 5 minutes, a retry for data is attempted when the destination is unavailable. After that, data is dropped.
 - **No Guaranteed Delivery**: The used buffers are volatile. If the gateway or agent instances crash, logs data can be lost.
 - **Multiple LogPipeline Support**: The maximum amount of LogPipeline resources is 5.
-
-## Troubleshooting and Operations
-
-Operational remarks can be found at [Telemetry Pipeline Operations](./../pipelines/operations.md).
-For pipeline troubleshooting please see [Telemetry Pipeline Troubleshooting](./../pipelines/troubleshooting.md).

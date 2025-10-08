@@ -1,20 +1,14 @@
-# Traces
+# Collecting Traces
 
-The Telemetry module supports you in collecting all relevant trace data in a Kyma cluster, enriches them and ships them to a backend for further analysis.
+With the Telemetry module, you can collect distributed traces to understand the flow of requests through your applications and infrastructure. To begin collecting traces, you create a `TracePipeline` resource. It automatically collects OTLP traces and can be configured to collect traces from the Istio service mesh.
 
 ## Overview
 
-The Telemetry module provides a trace gateway for the shipment of traces of any container running in the Kyma runtime. Kyma modules like Istio or Serverless contribute traces transparently and the Telemetry module enriches the data. You can choose among multiple [vendors for OTLP-based backends](https://opentelemetry.io/ecosystem/vendors/).
+The TracePipeline is a Kubernetes Custom Resource (CR) that configures trace collection for your cluster. When you create a TracePipeline, it automatically provisions a trace gateway that provides a central OTLP endpoint receiving traces pushed from applications (for details, see [Tracing Architecture](architecture.md)).
 
-You can configure the trace gateway with external systems using runtime configuration with a dedicated Kubernetes API ([CRD](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions)) named TracePipeline. A TracePipeline is following the structure and characteristic of a Telemetry [pipeline](./../pipelines/README.md) and offers these collection features:
+The pipeline enriches all collected traces with Kubernetes metadata before sending them to your chosen backend.
 
-- `otlp` input: Ingest OTLP traces via the push endpoints, see [Telemetry Pipeline OTLP Input](./../pipelines/otlp-input.md).
-- Activate Istio tracing. For details, see [Traces Istio Support](./istio-support.md).
-- Collect traces from [Eventing](#eventing) and [Serverless Functions](#serverless).
-
-For an example, see [Sample TracePipeline](./sample.md) and check out the available parameters and attributes under [TracePipeline](./../resources/04-tracepipeline.md) and checkout the involved components of a TracePipeline at the [Traces Architecture](architecture.md).
-
-The Trace feature is optional. If you don't want to use it, simply don't set up a TracePipeline. For details, see Creating a Telemetry Pipeline.
+The Traces feature is optional. If you don't create a `TracePipeline`, the trace gateway is not deployed.
 
 ## Prerequisites
 
@@ -24,9 +18,11 @@ For the recording of a distributed trace, every involved component must propagat
 - Your application also must propagate the W3C Trace Context for any user-related activity. This can be achieved easily using the [Open Telemetry SDKs](https://opentelemetry.io/docs/instrumentation/) available for all common programming languages. If your application follows that guidance and is part of the Istio Service Mesh, it’s already outlined with dedicated span data in the trace data collected by the Kyma telemetry setup.
 - Furthermore, your application must enrich a trace with additional span data and send these data to the cluster-central telemetry services. You can achieve this with [Open Telemetry SDKs](https://opentelemetry.io/docs/instrumentation/).
 
-## Basic Pipeline
+With the default configuration, the trace gateway collects push-based OTLP traces of any container running in the Kyma runtime, and the data is shipped to your backend.
 
-The minimal pipeline will define an `otlp` output and have the `otlp` input enabled by default, see [Telemetry Pipeline OTLP Output](./../pipelines/otlp-output.md) and [Telemetry Pipeline OTLP Input](./../pipelines/otlp-input.md).
+## Minimal TracePipeline
+
+For a minimal setup, you only need to create a TracePipeline that specifies your backend destination (see [Integrate With Your OTLP Backend](./../pipelines/otlp-output.md)).
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -39,47 +35,20 @@ output:
         value: http://myEndpoint:4317
 ```
 
-This example will accept traffic from the OTLP metric endpoint filtered by system namespaces and will forward them to the configured backend. The following push URLs are set up:
+By default, this minimal pipeline collects push-based OTLP traces of any container running in the Kyma runtime.
+
+It activates cluster-internal endpoints to receive traces in the OTLP format. Applications can push traces directly to these URLs:
 
 - GRPC: `http://telemetry-otlp-traces.kyma-system:4317`
 - HTTP: `http://telemetry-otlp-traces.kyma-system:4318`
 
-The default protocol for shipping the data to a backend is GRPC, but you can choose HTTP instead. Ensure that the correct port is configured as part of the endpoint.
+## Configure Trace Collection
 
-## Kyma Modules With Tracing Capabilities
+You can adjust the TracePipeline using runtime configuration with the available parameters and attributes (see [TracePipeline: Custom Resource Parameters](https://kyma-project.io/#/telemetry-manager/user/resources/04-tracepipeline?id=custom-resource-parameters)).
 
-Kyma bundles several modules that can be involved in user flows. Applications involved in a distributed trace must propagate the trace context to keep the trace complete. Optionally, they can enrich the trace with custom spans, which requires reporting them to the backend.
-
-### Istio
-
-The Istio module is crucial in distributed tracing because it provides the [Ingress Gateway](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/). Typically, this is where external requests enter the cluster scope and are enriched with trace context if it hasn’t happened earlier. Furthermore, every component that’s part of the Istio Service Mesh runs an Istio proxy, which propagates the context properly but also creates span data. If Istio tracing is activated and taking care of trace propagation in your application, you get a complete picture of a trace, because every component automatically contributes span data. Also, Istio tracing is pre-configured to be based on the vendor-neutral [W3C Trace Context](https://www.w3.org/TR/trace-context/) protocol.
-
-The following example configures all Istio proxies with the `kyma-traces` extension provider, which, by default, reports spans logs to the trace gateway of the Telemetry module.
-
-```yaml
-apiVersion: telemetry.istio.io/v1
-kind: Telemetry
-metadata:
-  name: mesh-default
-  namespace: istio-system
-spec:
-  tracing:
-  - providers:
-    - name: "kyma-traces"
-    randomSamplingPercentage: 5.00
-```
-
-More details and configuration options can be found at [Traces Istio Support](./istio-support.md).
-
-### Eventing
-
-The [Eventing](https://kyma-project.io/#/eventing-manager/user/README) module uses the [CloudEvents](https://cloudevents.io/) protocol (which natively supports the [W3C Trace Context](https://www.w3.org/TR/trace-context) propagation). Because of that, it propagates trace context properly. However, it doesn't enrich a trace with more advanced span data.
-
-### Serverless
-
-By default, all engines for the [Serverless](https://kyma-project.io/#/serverless-manager/user/README) module integrate the [Open Telemetry SDK](https://opentelemetry.io/docs/reference/specification/metrics/sdk/). Thus, the used middlewares are configured to automatically propagate the trace context for chained calls.
-
-Because the Telemetry endpoints are configured by default, Serverless also reports custom spans for incoming and outgoing requests. You can [customize Function traces](https://kyma-project.io/#/serverless-manager/user/tutorials/01-100-customize-function-traces) to add more spans as part of your Serverless source code.
+- If you use Istio, activate Istio tracing. For details, see [Configure Istio Tracing](istio-support.md). You can adjust which percentage of the trace data is collected.
+- The Serverless module integrates the [OpenTelemetry SDK](https://opentelemetry.io/docs/specs/otel/metrics/sdk/) by default. It automatically propagates the trace context for chained calls and reports custom spans for incoming and outgoing requests. You can add more spans within your Function's source code. For details, see [Customize Function Traces](https://kyma-project.io/#/serverless-manager/user/tutorials/01-100-customize-function-traces).
+- The Eventing module uses the CloudEvents protocol, which natively supports [W3C Trace Context](https://www.w3.org/TR/trace-context/) propagation. It ensures the trace context is passed along but doesn't enrich a trace with more advanced span data.
 
 ## Limitations
 

@@ -1,62 +1,58 @@
-# Traces Istio Support
+# Configure Istio Tracing
 
-Use the Istio Telemetry API to selectively enable integration of Istio traces with the Telemetry module.
+Enable Istio tracing to get a complete, end-to-end view of requests as they travel through the Istio service mesh in your cluster. When you enable this feature, the Istio proxy sidecars automatically propagate the trace context and report spans for traffic between your services. You can choose from which namespaces traces are collected, and you can adjust the sampling rate.
 
 ## Prerequisites
 
-* You have the Istio module added.
-* To use CLI instruction, you must install [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl) and [curl](https://curl.se/). Alternatively, you can use Kyma dashboard.
+- You have the Istio module in your cluster. See [Adding and Deleting a Kyma Module](ADD LINK).
+- You have access to Kyma dashboard. Alternatively, if you prefer CLI, you need [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl) and [curl](https://curl.se/).
 
 ## Context
 
-The Istio module is crucial in distributed tracing because it provides the [Ingress Gateway](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/). Typically, this is where external requests enter the cluster scope and are enriched with trace context if it hasn’t happened earlier. Furthermore, every component that’s part of the Istio Service Mesh runs an Istio proxy, which propagates the context properly but also creates span data. If Istio tracing is activated and taking care of trace propagation in your application, you get a complete picture of a trace, because every component automatically contributes span data. Also, Istio tracing is pre-configured to be based on the vendor-neutral [W3C Trace Context](https://www.w3.org/TR/trace-context/) protocol.
+By default, Istio traces are disabled because they can generate a high volume of data. To collect them, you create an Istio `Telemetry` resource in the `istio-system` namespace. This configures the Istio proxies in your service mesh to automatically generate and report trace spans for traffic between your services.
 
-The Istio module is configured with an [extension provider](https://istio.io/latest/docs/tasks/observability/telemetry/) called `kyma-traces`. To activate the provider on the global mesh level using the Istio [Telemetry API](https://istio.io/latest/docs/reference/config/telemetry/#Tracing), place a resource to the `istio-system` namespace. The following code samples help setting up the Istio tracing feature:
+The Istio module provides a preconfigured [extension provider](https://istio.io/latest/docs/tasks/observability/telemetry/) called `kyma-traces` to send this data to the Telemetry module's trace gateway.
 
-> [!WARNING]
-> Enabling Istio traces may drastically increase data volume and might quickly fill up your trace storage.
+Istio plays a key role in distributed tracing. Its [Ingress Gateway](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/) is typically where external requests enter your cluster. If a request doesn't have a trace context, Istio adds it. Furthermore, every component within the Istio Service Mesh runs an Istio proxy, which propagates the trace context and creates span data. When you enable Istio tracing, and it manages trace propagation in your application, you get a complete picture of a trace, because every component automatically contributes span data. Also, Istio tracing is preconfigured to use the vendor-neutral [W3C Trace Context](https://www.w3.org/TR/trace-context/) protocol.
 
-For more details on how to enable Istio access logs using the same API, see [Logs Istio Support](./../logs/istio-support.md)
+> **Caution**
+> Enabling Istio traces can significantly increase data volume and might quickly consume your trace storage. Start with a low sampling rate in production environments.
 
-## Configuration
+## Enable Istio Tracing for the Entire Mesh
 
-Use the Telemetry API to selectively enable Istio tracing. See:
-
-<!-- no toc -->
-* [Configure Istio Tracing for the Entire Mesh](#configure-istio-tracing-for-the-entire-mesh)
-* [Configure a Sampling Rate](#configure-a-sampling-rate)
-* [Configure Istio Tracing for Namespaces or Workloads](#configure-istio-tracing-for-namespaces-or-workloads)
-* [Propagate Trace Context Without reporting Spans](#propagate-trace-context-without-reporting-spans)
-
-### Configure Istio Tracing for the Entire Mesh
-
-The following example configures all Istio proxies with the `kyma-traces` extension provider, which, by default, reports span data to the trace gateway of the Telemetry module.
-
-```yaml
-apiVersion: telemetry.istio.io/v1
-kind: Telemetry
-metadata:
-  name: mesh-default
-  namespace: istio-system
-spec:
-  tracing:
-  - providers:
-    - name: "kyma-traces"
-    randomSamplingPercentage: 5.00
-```
+To enable tracing for all workloads in the service mesh, apply an Istio `Telemetry` resource to the istio-system namespace. Use this option to establish a baseline configuration for your mesh.
 
 > [!NOTE]
-> There can be only one Istio Telemetry resource on global mesh level. If you also enable Istio access logs, assure that the configuration happens in the same resource, see [Logs Istio Support](./../logs/istio-support.md).
+> You can only have one mesh-wide Istio Telemetry resource in the istio-system namespace. If you also want to configure Istio access logs, combine both configurations into a single resource (see [Configure Istio Access Logs](./../logs/istio-support.md)).
 
-### Configure a Sampling Rate
+1. Apply the Telemetry resource. The following command enables tracing with a default sampling rate of 1%:.
 
-By default, the sampling rate is configured to 1%. That means that only 1 trace out of 100 traces is reported to the trace gateway, and all others are dropped. The sampling decision itself is propagated as part of the [trace context](https://www.w3.org/TR/trace-context/#sampled-flag) so that either all involved components are reporting the span data of a trace, or none.
+   ```yaml
+   apiVersion: telemetry.istio.io/v1
+   kind: Telemetry
+   metadata:
+     name: mesh-default
+     namespace: istio-system
+   spec:
+     tracing:
+     - providers:
+       - name: "kyma-traces"
+       randomSamplingPercentage: 1.00
+   ```
+2.  Verify that the resource is applied to the `istio-system` namespace:
 
-> [!TIP]
-> If you increase the sampling rate, you send more data your tracing backend and cause much higher network utilization in the cluster.
-> To reduce costs and performance impacts in a production setup, a very low percentage of around 5% is recommended.
+   ```bash
+   kubectl -n istio-system get telemetries.telemetry.istio.io
+   ```
 
-To configure an "always-on" sampling, set the sampling rate to 100%:
+3.  After setting a mesh-wide default, you can apply more specific tracing configurations for an entire namespace or for individual workloads within a namespace. This is useful for debugging a particular service by increasing its sampling rate without affecting the entire mesh. For details, see [Filter Traces](ADD LINK).
+
+## Configure the Sampling Rate
+
+By default, Istio samples 1% of traces to reduce data volume. To change it, set the `randomSamplingPercentage`. The sampling decision is propagated within the [trace context](https://www.w3.org/TR/trace-context/#sampled-flag) to ensure that either all or no spans for a given trace are reported.
+
+> [!NOTE]
+> For production environments, a low sampling rate (1–5%) is recommended to manage costs and performance. For development or debugging, you can set it to 100.00 to capture every trace.
 
 ```yaml
 apiVersion: telemetry.istio.io/v1
@@ -68,42 +64,24 @@ spec:
   tracing:
   - providers:
     - name: "kyma-traces"
-    randomSamplingPercentage: 100.00
+    randomSamplingPercentage: 5.00 # Samples 5% of all traces
 ```
 
-### Configure Istio Tracing for Namespaces or Workloads
+### Propagate Trace Context Without Reporting Spans
 
-If you need specific settings for individual namespaces or workloads, place additional Telemetry resources. If you don't want to report spans at all for a specific workload, activate the `disableSpanReporting` flag with the selector expression.
+In some cases, you may want Istio to propagate the W3C Trace Context for context-aware logging but not report any trace spans. This approach enriches your access logs with **traceId** and **spanId** without the overhead of full distributed tracing.
+
+To achieve this, set **randomSamplingPercentage** to `0.00` in your mesh-wide configuration.
 
 ```yaml
 apiVersion: telemetry.istio.io/v1
 kind: Telemetry
 metadata:
-  name: tracing
-  namespace: my-namespace
+  name: mesh-default
+  namespace: istio-system
 spec:
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: "my-app"
   tracing:
   - providers:
     - name: "kyma-traces"
-    randomSamplingPercentage: 100.00
+    randomSamplingPercentage: 0
 ```
-
-### Propagate Trace Context Without reporting Spans
-
-To enable the propagation of the [W3C Trace Context](https://www.w3.org/TR/trace-context/) only, without reporting any spans (so the actual tracing feature is disabled), you must enable the `kyma-traces` provider with a sampling rate of 0. With this configuration, you get the relevant trace context into the [access logs](https://kyma-project.io/#/istio/user/tutorials/01-45-enable-istio-access-logs) without any active trace reporting.
-
-  ```yaml
-  apiVersion: telemetry.istio.io/v1
-  kind: Telemetry
-  metadata:
-    name: mesh-default
-    namespace: istio-system
-  spec:
-    tracing:
-    - providers:
-      - name: "kyma-traces"
-      randomSamplingPercentage: 0
-  ```
