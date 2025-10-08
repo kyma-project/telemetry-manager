@@ -64,6 +64,7 @@ type LogPipeline struct {
 // +kubebuilder:validation:XValidation:rule="!(has(self.output.otlp) && has(self.files))", message="files not supported with otlp output"
 // +kubebuilder:validation:XValidation:rule="!(has(self.output.otlp) && has(self.variables))", message="variables not supported with otlp output"
 // +kubebuilder:validation:XValidation:rule="has(self.output.otlp) || !(has(self.transform))", message="transform is only supported with otlp output"
+// +kubebuilder:validation:XValidation:rule="has(self.output.otlp) || !(has(self.filter))", message="filter is only supported with otlp output"
 // +kubebuilder:validation:XValidation:rule="has(self.output.otlp) || !(has(self.input.otlp))", message="otlp input is only supported with otlp output"
 type LogPipelineSpec struct {
 	// Input configures additional inputs for log collection.
@@ -84,6 +85,9 @@ type LogPipelineSpec struct {
 	// Transforms specify a list of transformations to apply to telemetry data.
 	// +kubebuilder:validation:Optional
 	Transforms []TransformSpec `json:"transform,omitempty"`
+	// Filter specifies a list of filters to apply to telemetry data.
+	// +kubebuilder:validation:Optional
+	Filter []FilterSpec `json:"filter,omitempty"`
 }
 
 // LogPipelineInput configures additional inputs for log collection.
