@@ -18,11 +18,12 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
+	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
 type AgentConfigBuilder interface {
-	Build(ctx context.Context, reconcilablePipelines []telemetryv1alpha1.LogPipeline) (*builder.FluentBitConfig, error)
+	Build(ctx context.Context, reconcilablePipelines []telemetryv1alpha1.LogPipeline, clusterName string) (*builder.FluentBitConfig, error)
 }
 
 type AgentApplierDeleter interface {
@@ -174,7 +175,10 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return nil
 	}
 
-	config, err := r.agentConfigBuilder.Build(ctx, reconcilablePipelines)
+	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
+	clusterName := r.getClusterNameFromTelemetry(ctx, shootInfo.ClusterName)
+
+	config, err := r.agentConfigBuilder.Build(ctx, reconcilablePipelines, clusterName)
 	if err != nil {
 		return fmt.Errorf("failed to build fluentbit config: %w", err)
 	}
@@ -200,6 +204,22 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}
 
 	return nil
+}
+
+func (r *Reconciler) getClusterNameFromTelemetry(ctx context.Context, defaultName string) string {
+	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.telemetryNamespace)
+	if err != nil {
+		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: using default shoot name as cluster name")
+		return defaultName
+	}
+
+	if telemetry.Spec.Enrichments != nil &&
+		telemetry.Spec.Enrichments.Cluster != nil &&
+		telemetry.Spec.Enrichments.Cluster.Name != "" {
+		return telemetry.Spec.Enrichments.Cluster.Name
+	}
+
+	return defaultName
 }
 
 // getReconcilablePipelines returns the list of log pipelines that are ready to be rendered into the Fluent Bit configuration.
