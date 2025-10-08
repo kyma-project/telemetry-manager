@@ -4,7 +4,7 @@ With the Telemetry module, you can collect distributed traces to understand the 
 
 ## Overview
 
-The TracePipeline is a Kubernetes Custom Resource (CR) that configures trace collection for your cluster. When you create a TracePipeline, it automatically provisions a trace gateway that provides a central OTLP endpoint receiving traces pushed from applications (for details, see [Traces Architecture](architecture/traces-architecture.md)).
+The TracePipeline is a Kubernetes Custom Resource (CR) that configures trace collection for your cluster. When you create a TracePipeline, it automatically provisions a trace gateway that provides a central OTLP endpoint receiving traces pushed from applications (for details, see [Traces Architecture](./../architecture/traces-architecture.md)).
 
 The pipeline enriches all collected traces with Kubernetes metadata before sending them to your chosen backend.
 
@@ -22,7 +22,7 @@ With the default configuration, the trace gateway collects push-based OTLP trace
 
 ## Minimal TracePipeline
 
-For a minimal setup, you only need to create a TracePipeline that specifies your backend destination (see [Integrate With Your OTLP Backend](./../pipelines/otlp-output.md)).
+For a minimal setup, you only need to create a TracePipeline that specifies your backend destination (see [Integrate With Your OTLP Backend](./../integrate-otlp-backend/README.md)).
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1

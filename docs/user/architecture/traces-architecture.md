@@ -25,4 +25,4 @@ The TracePipeline resource is watched by Telemetry Manager, which is responsible
 
 ## Trace Gateway
 
-In a Kyma cluster, the trace gateway is the central component to which all components can send their individual spans. The gateway collects, enriches, and dispatches the data to the configured backend. For more information, see [otlp-input](./../pipelines/otlp-input.md).
+In a Kyma cluster, the trace gateway is the central component to which all components can send their individual spans. The gateway collects, enriches, and dispatches the data to the configured backend. For more information, see [Set Up the OTLP Input](./../otlp-input.md).

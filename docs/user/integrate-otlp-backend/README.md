@@ -2,7 +2,7 @@
 
 The `otlp` output is the only output usually supported by a pipeline and is mandatory to configure. It will define where to push the telemetry data, what protocoll to use and which means of authentication to use.
 
-![Gateways-Plain](./../assets/gateways-plain-output.drawio.svg)
+![OTLP-Output](./../assets/otlp-output.drawio.svg)
 
 ## Basic configuration
 
@@ -214,4 +214,4 @@ Communication to cluster-internal backends running in the Istio service mesh can
 
 The Telemetry module automatically detects whether the Istio module is added to your cluster, and injects Istio sidecars to the Telemetry components and will automatically support Istio mTLS if possible.
 
-![Gateways-Istio](./../assets/gateways-istio-output.drawio.svg)
+![Istio-Output](./../assets/istio-output.drawio.svg)

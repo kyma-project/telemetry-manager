@@ -28,7 +28,7 @@ The LogPipeline resource is watched by Telemetry Manager, which is responsible f
 
 ## Log Gateway
 
-In a Kyma cluster, the log gateway is the central component to which all components can send their individual logs. The gateway collects, enriches, and dispatches the data to the configured backend. For more information, see [Telemetry Pipeline OTLP Input](./../pipelines/otlp-input.md).
+In a Kyma cluster, the log gateway is the central component to which all components can send their individual logs. The gateway collects, enriches, and dispatches the data to the configured backend. For more information, see [Telemetry Pipeline OTLP Input](./../otlp-input.md).
 
 ## Log Agent
 

@@ -116,8 +116,7 @@ To monitor all traffic entering your mesh, enable access logs on the Istio Ingre
 You can enable access logs globally for all proxies in the mesh. Use this option with caution due to the high data volume.
 
 > [!NOTE]
-> You can only have one mesh-wide Istio `Telemetry` resource. If you also plan to enable Istio tracing (see [Configure Istio Tracing]()), configure both access logging and tracing in this single resource.
-
+> You can only have one mesh-wide Istio `Telemetry` resource. If you also plan to enable Istio tracing (see [Configure Istio Tracing](./../collecting-traces/istio-support.md)), configure both access logging and tracing in this single resource.
 
 1. Apply the Istio `Telemetry` resource to the `istio-system` namespace:
 

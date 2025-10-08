@@ -8,7 +8,7 @@ When you create any `LogPipeline`, `TracePipeline`, or `MetricPipeline`, the Tel
 
 Each endpoint listens on port `4317` for gRPC (default) and on port `4318` for HTTP.
 
-![Gateways-Plain](./../assets/otlp-input.drawio.svg) <!-- THIS LOOKS NEW TOO-->
+![Gateways-Plain](./assets/otlp-input.drawio.svg) <!-- THIS LOOKS NEW TOO-->
 
 ## Configure Your Application's OTLP Exporter
 

@@ -95,3 +95,4 @@ If `job` metrics are enabled, the following metrics are collected:
   - `k8s.job.failed_pods`
   - `k8s.job.max_parallel_pods`
   - `k8s.job.successful_pods`
+  

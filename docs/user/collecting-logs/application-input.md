@@ -17,7 +17,6 @@ When you apply the `LogPipeline`, a log agent on each node starts collecting the
 
 The **application** input is enabled by default. To create a pipeline that only accepts logs pushed via OTLP, you can disable the **application** input.
 
-
 To enable collection of logs printed by containers to the `stdout/stderr` channel, define a LogPipeline that has the **application** section enabled as input:
 
 ```yaml
@@ -41,7 +40,9 @@ By default, logs from `kube-system`, `istio-system`, and `kyma-system` are exclu
         namespaces:
           system: true
 ```
+
 ## Discard the Original Log Body
+
 By default, the log agent preserves the original JSON log message by moving it to the **attributes."log.original"** field after parsing. For details, see [Transformation to OTLP Logs](ADD LINK).
 
 To reduce data volume, you can disable this behavior. Set the parameter to `false` to discard the original JSON string after its contents are parsed into attributes.

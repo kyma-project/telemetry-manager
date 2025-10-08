@@ -30,7 +30,6 @@ The Telemetry module focuses on the collection, processing, and shipment stages 
 
 To support telemetry for your applications, the Telemetry module provides the following features:
 
-
 - **Consistent Telemetry Pipeline API**: Use a streamlined set of APIs based on the [OTel Collector](https://opentelemetry.io/docs/collector/) to collect, filter, and ship your logs, metrics, and traces (see [Telemetry Pipeline API](ADD LINK)). You define a pipeline for each signal type to control how the data is processed and where it's sent. For details, see [Collecting Logs](ADD LINK), [Collecting Traces](ADD LINK), and [Collecting Metrics](ADD LINK).
 
 - **Flexible Backend Integration**: The Telemetry module is optimized for integration with SAP BTP observability services, such as SAP Cloud Logging service. You can also send data to any backend that supports the [OpenTelemetry protocol (OTLP)](https://opentelemetry.io/docs/specs/otel/protocol/), giving you the freedom to choose your preferred solution (see [Integrate With Your OTLP Backend](ADD LINK)).

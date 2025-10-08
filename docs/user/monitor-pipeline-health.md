@@ -6,7 +6,7 @@ The Telemetry module is designed to be reliable and resilient. However, there ma
 
 The Telemetry module automatically handles temporary issues to prevent data loss and ensure that the OTel Collector instances of your pipelines are operational and healthy. For example, if your backend is temporarily unavailable, the module buffers your data and attempts to resend it when the connection is restored.
 
-Telemetry module continuously monitors the health of your pipelines (see [Self Monitor](../architecture/README.md#self-monitor)). To ensure that your Telemetry pipelines operate reliably, you can monitor their health data in the following ways:
+Telemetry module continuously monitors the health of your pipelines (see [Self Monitor](./architecture/README.md#self-monitor)). To ensure that your Telemetry pipelines operate reliably, you can monitor their health data in the following ways:
 
 - Perform manual checks by inspecting the status conditions of your pipeline resources with `kubectl`.
 - Set up continuous monitoring by using a `MetricPipeline` to export health metrics to your observability backend, where you can set up dashboards and alerts.

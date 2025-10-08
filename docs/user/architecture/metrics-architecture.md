@@ -29,7 +29,7 @@ The MetricPipeline resource is watched by Telemetry Manager, which is responsibl
 
 ## Metric Gateway
 
-In a Kyma cluster, the metric gateway is the central component to which all applications can send their individual metrics. The gateway collects, enriches, and dispatches the data to the configured backend. For more information, see [otlp-input](./../pipelines/otlp-input.md).
+In a Kyma cluster, the metric gateway is the central component to which all applications can send their individual metrics. The gateway collects, enriches, and dispatches the data to the configured backend. For more information, see [Set Up the OTLP Input](./../otlp-input.md).
 
 ## Metric Agent
 

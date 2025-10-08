@@ -71,7 +71,7 @@ Troubleshoot problems related to the Telemetry module and its pipelines.
 
 ### Trace Backend Shows Fewer Traces than Expected
 
-**Cause**: By default, only 1% of the requests are sent to the trace backend for trace recording, see [Traces Istio Support](./istio-support.md).
+**Cause**: By default, only 1% of the requests are sent to the trace backend for trace recording, see [Traces Istio Support](./collecting-traces/istio-support.md).
 
 **Solution**:
 

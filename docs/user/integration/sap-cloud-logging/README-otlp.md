@@ -214,7 +214,7 @@ You can set up ingestion of metrics from applications and the Istio service mesh
 
 1. If you want to use additional metric collection, configure the presets under `input`.
 
-   For the available options, see [Metrics](./../..collecting-README.md).
+   For the available options, see [Metrics](./../../collecting-metrics/README.md).
 
 1. Wait for the MetricPipeline to be in the `Running` state. To check the state, run: `kubectl get metricpipelines`.
 

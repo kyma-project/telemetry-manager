@@ -25,7 +25,7 @@ For instrumentation, use an SDK, such as the Prometheus client libraries or the 
 
 ## Minimal MetricPipeline
 
-For a minimal setup, create a `MetricPipeline` that specifies your backend destination. See [Integrate With Your OTLP Backend](../pipelines/otlp-input.md).
+For a minimal setup, create a `MetricPipeline` that specifies your backend destination. See [Integrate With Your OTLP Backend](./../integrate-otlp-backend/README.md).
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -54,9 +54,9 @@ You can adjust the MetricPipeline using runtime configuration with the available
 - Scrape `prometheus` metrics from applications that expose a Prometheus-compatible endpoint. See [Collect Prometheus Metrics](prometheus-input.md).
 - Collect `istio` service mesh metrics from Istio proxies and control plane components. See [Collect Istio Metrics](istio-input.md).
 - Collect `runtime` resource usage and status metrics from Kubernetes components like Pods, Nodes, and Deployments. See [Collect Runtime Metrics](runtime-input.md).
-- Use diagnostic metrics to debug your `prometheus` and `istio` configuration. See [Collect Diagnostic Metrics](prometheus-input.md#diagnostic-metrics).
+- Use diagnostic metrics to debug your `prometheus` and `istio` configuration. See [Collect Diagnostic Metrics](./prometheus-input.md#collect-diagnostic-metrics).
 - Choose specific namespaces to include or drop metrics. See [Filter Metrics](ADD LINK).
-- Avoid redundancy by dropping push-based OTLP metrics sent directly to the metric gateway. See [Route Specific Inputs to Different Backends](../pipelines/otlp-input.md#route-specific-inputs-to-different-backends).
+- Avoid redundancy by dropping push-based OTLP metrics sent directly to the metric gateway. See [Route Specific Inputs to Different Backends](./../otlp-input.md#route-specific-inputs-to-different-backends).
 
 ## Limitations
 

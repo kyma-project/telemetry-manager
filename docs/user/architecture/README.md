@@ -11,7 +11,7 @@ The Telemetry API provides a robust, pre-configured OpenTelemetry (OTel) Collect
 - Native Kubernetes Support: Offers seamless integration with Secrets, for example, served by the SAP BTP Service Operator, and the Telemetry Manager automatically handles the full lifecycle of all components.
 - Focus: Reduces the need to understand intricate underlying OTel Collector concepts, allowing you to focus on your application development.
 
-![Components](./assets/telemetry-arch.drawio.svg)
+![Components](./../assets/telemetry-arch.drawio.svg)
 
 ## Telemetry Manager
 
@@ -22,7 +22,7 @@ Telemetry Manager, the core component of the module, is a Kubernetes [operator](
 3. Manage the lifecycle of the self monitor and the user-configured agents and gateways.
    For example, only if you defined a LogPipeline resource, the Fluent Bit DaemonSet is deployed as log agent.
 
-![Manager](assets/manager-resources.drawio.svg)
+![Manager](./../assets/manager-resources.drawio.svg)
 
 ## Gateways and Agents
 
@@ -52,6 +52,6 @@ The trace gateway provides a central OTLP endpoint to which your applications ca
 
 The Telemetry module includes a [Prometheus](https://prometheus.io/)-based self-monitor that collects and evaluates health metrics from the gateways and agents. Telemetry Manager uses this data to report the current health status in your pipeline resources.
 
-You can also use these health metrics in your own monitoring backend to set up alerts and dashboards for your telemetry pipelines. For details, see [Pipelines Operations](./../pipelines/operations.md).
+You can also use these health metrics in your own monitoring backend to set up alerts and dashboards for your telemetry pipelines. For details, see [Moniotor Pipeline Health](./../monitor-pipeline-health.md).
 
-![Self-Monitor](assets/manager-arch.drawio.svg)
+![Self-Monitor](./../assets/manager-arch.drawio.svg)

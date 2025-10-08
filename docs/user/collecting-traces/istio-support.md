@@ -39,13 +39,14 @@ To enable tracing for all workloads in the service mesh, apply an Istio `Telemet
        - name: "kyma-traces"
        randomSamplingPercentage: 1.00
    ```
-2.  Verify that the resource is applied to the `istio-system` namespace:
+
+2. Verify that the resource is applied to the `istio-system` namespace:
 
    ```bash
    kubectl -n istio-system get telemetries.telemetry.istio.io
    ```
 
-3.  After setting a mesh-wide default, you can apply more specific tracing configurations for an entire namespace or for individual workloads within a namespace. This is useful for debugging a particular service by increasing its sampling rate without affecting the entire mesh. For details, see [Filter Traces](ADD LINK).
+3. After setting a mesh-wide default, you can apply more specific tracing configurations for an entire namespace or for individual workloads within a namespace. This is useful for debugging a particular service by increasing its sampling rate without affecting the entire mesh. For details, see [Filter Traces](ADD LINK).
 
 ## Configure the Sampling Rate
 

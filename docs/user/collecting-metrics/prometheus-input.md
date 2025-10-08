@@ -10,7 +10,6 @@ Instrument your application using a library like the [Prometheus client library]
 
 The `prometheus` input is disabled by default. If your applications emit Prometheus metrics, enable Prometheus-based metric collection:
 
-
 ```yaml
   ...
   input:
@@ -19,7 +18,7 @@ The `prometheus` input is disabled by default. If your applications emit Prometh
 ```
 
 > [!TIP]
-> To validate or debug your configuration, use diagnostic metrics (see [Collect Diagnostic Metrics](#diagnostic-metrics)).
+> To validate or debug your configuration, use diagnostic metrics (see [Collect Diagnostic Metrics](#collect-diagnostic-metrics)).
 
 ## Enable Metrics Collection With Annotations
 

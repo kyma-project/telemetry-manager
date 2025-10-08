@@ -87,10 +87,10 @@ Typically, a log message includes a log level in the `level` field. Based on thi
 
 OTLP natively attaches trace context to log records. When possible, the log agent parses the following log attributes according to the [W3C-Tracecontext specification](https://www.w3.org/TR/trace-context/#traceparent-header):
 
-*   `trace_id`
-*   `span_id`
-*   `trace_flags`
-*   `traceparent`
+* `trace_id`
+* `span_id`
+* `trace_flags`
+* `traceparent`
 
 ## Log Body Determination
 

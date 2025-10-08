@@ -16,7 +16,7 @@ The Telemetry gateways are automatically configured to accept OTLP data from app
 > - Configure Istio Tracing
 > - Collect Istio Metrics
 
-![arch](./../assets/gateways-istio-input.drawio.svg)
+![arch](./../assets/istio-input.drawio.svg)
 
 ## Sending Data to In-Cluster Backends
 
@@ -24,6 +24,6 @@ Telemetry gateways automatically secure the connection when sending data to your
 
 If you're using an in-cluster backend that is part of the Istio mesh, the Telemetry gateways automatically use mTLS to send data to the backend securely. You don't need any special configuration for this.
 
-For sending data to backends outside the cluster, see [Integrate With Your OTLP Backend](./../pipelines/otlp-output.md).
+For sending data to backends outside the cluster, see [Integrate With Your OTLP Backend](./../integrate-otlp-backend/README.md).
 
-![arch](./../assets/gateways-istio-output.drawio.svg)
+![arch](./../assets/istio-output.drawio.svg)

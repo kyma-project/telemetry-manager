@@ -52,12 +52,12 @@ Additionally, you can apply specific **input** configurations for each signal ty
 
 You can control the volume and focus of your telemetry data by filtering it based on Kubernetes resources like namespaces, containers, and workloads. For details, see [Filtering and Processing Data](ADD LINK).
 
-All pipelines automatically enrich telemetry data with Kubernetes resource attributes, such as Pod name, namespace, and labels. With this context information, you can easily identify the source of telemetry data in your backend. For details, see [Automatic Data Enrichment](./filter-and-process/automatic-data-enrichment.md).
+All pipelines automatically enrich telemetry data with Kubernetes resource attributes, such as Pod name, namespace, and labels. With this context information, you can easily identify the source of telemetry data in your backend. For details, see [Automatic Data Enrichment](./../filter-and-process/automatic-data-enrichment.md).
 
 ## Output
 
 In the **spec.output** section, you define the destination for your telemetry data. Each pipeline resource supports exactly one output, which sends data using OTLP.
 
-You must specify the endpoint address of your observability backend. You can also configure the protocol (gRPC or HTTP) and the authentication details required to connect securely. For details, see [Integrate With Your OTLP Backend](./integrate-otlp-backend/README.md).
+You must specify the endpoint address of your observability backend. You can also configure the protocol (gRPC or HTTP) and the authentication details required to connect securely. For details, see [Integrate With Your OTLP Backend](./../integrate-otlp-backend/README.md).
 
 To send the same signal to multiple backends, create a separate pipeline resource for each destination. For details, see [Route Specific Inputs to Different Backends](./../otlp-input.md).
