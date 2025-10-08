@@ -1,6 +1,10 @@
-# Runtime Input
+# Collect Runtime Metrics
 
-To enable collection of runtime metrics, define a MetricPipeline that has the `runtime` section enabled as input:
+To monitor the health and resource usage of your Kubernetes cluster, enable the `runtime` input in your `MetricPipeline`. You can choose the specific resources you want to monitor, and you can control from which namespaces metrics are collected.
+
+## Activate Runtime Metrics
+
+By default, the `runtime` input is disabled. If you want to monitor your Kubernetes resources, enable the collection of runtime metrics:
 
 ```yaml
 ...
@@ -9,10 +13,11 @@ To enable collection of runtime metrics, define a MetricPipeline that has the `r
       enabled: true
 ```
 
-## Resource Selection
+With this, the metric agent starts collecting all runtime metrics from all resources (Pod, container, Node, Volume, DaemonSet, Deployment, StatefulSet, and Job).
 
-By default, metrics for all resources (Pod, container, Node, Volume, DaemonSet, Deployment, StatefulSet, and Job) are collected.
-To enable or disable the collection of metrics for a specific resource, use the `resources` section in the `runtime` input.
+## Select Resource Types
+
+By default, metrics for all supported resource types are collected. To enable or disable the collection of metrics for a specific resource, use the `resources` section in the `runtime` input.
 
 The following example collects only DaemonSet, Deployment, StatefulSet, and Job metrics:
 
@@ -40,146 +45,17 @@ The following example collects only DaemonSet, Deployment, StatefulSet, and Job 
             enabled: true
   ```
 
-## Pod Metrics
+See a summary of the types of information you can gather for each resource:
 
-If `pod` metrics are enabled, the following metrics are collected:
+|   Resource  |                            Metrics Collected                            |
+|-------------|-------------------------------------------------------------------------|
+| pod         | CPU, memory, filesystem, and network usage; current Pod phase           |
+| container   | CPU/memory requests, limits, and usage; container restart count         |
+| node        | Aggregated CPU, memory, filesystem, and network usage for the Node      |
+| volume      | Filesystem capacity, usage, and inode statistics for persistent volumes |
+| deployment  | Number of desired versus available replicas                             |
+| daemonset   | Number of desired, current, and ready Nodes                             |
+| statefulset | Number of desired, current, and ready Pods                              |
+| job         | Counts of active, successful, and failed Pods                           |
 
-- From the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver):
-  - `k8s.pod.cpu.capacity`
-  - `k8s.pod.cpu.usage`
-  - `k8s.pod.filesystem.available`
-  - `k8s.pod.filesystem.capacity`
-  - `k8s.pod.filesystem.usage`
-  - `k8s.pod.memory.available`
-  - `k8s.pod.memory.major_page_faults`
-  - `k8s.pod.memory.page_faults`
-  - `k8s.pod.memory.rss`
-  - `k8s.pod.memory.usage`
-  - `k8s.pod.memory.working_set`
-  - `k8s.pod.network.errors`
-  - `k8s.pod.network.io`
-- From the [k8sclusterreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver):
-  - `k8s.pod.phase`
-
-If `container` metrics are enabled, the following metrics are collected:
-
-- From the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver):
-  - `container.cpu.time`
-  - `container.cpu.usage`
-  - `container.filesystem.available`
-  - `container.filesystem.capacity`
-  - `container.filesystem.usage`
-  - `container.memory.available`
-  - `container.memory.major_page_faults`
-  - `container.memory.page_faults`
-  - `container.memory.rss`
-  - `container.memory.usage`
-  - `container.memory.working_set`
-- From the [k8sclusterreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver):
-  - `k8s.container.cpu_request`
-  - `k8s.container.cpu_limit`
-  - `k8s.container.memory_request`
-  - `k8s.container.memory_limit`
-  - `k8s.container.restarts`
-
-If `node` metrics are enabled, the following metrics are collected:
-
-- From the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver):
-  - `k8s.node.cpu.usage`
-  - `k8s.node.filesystem.available`
-  - `k8s.node.filesystem.capacity`
-  - `k8s.node.filesystem.usage`
-  - `k8s.node.memory.available`
-  - `k8s.node.memory.usage`
-  - `k8s.node.memory.rss`
-  - `k8s.node.memory.working_set`
-  - `k8s.node.network.errors`,
-  - `k8s.node.network.io`,
-
-If `volume` metrics are enabled, the following metrics are collected:
-
-- From the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver):
-  - `k8s.volume.available`
-  - `k8s.volume.capacity`
-  - `k8s.volume.inodes`
-  - `k8s.volume.inodes.free`
-  - `k8s.volume.inodes.used`
-
-If `deployment` metrics are enabled, the following metrics are collected:
-
-- From the [k8sclusterreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver):
-  - `k8s.deployment.available`
-  - `k8s.deployment.desired`
-
-If `daemonset` metrics are enabled, the following metrics are collected:
-
-- From the [k8sclusterreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver):
-  - `k8s.daemonset.current_scheduled_nodes`
-  - `k8s.daemonset.desired_scheduled_nodes`
-  - `k8s.daemonset.misscheduled_nodes`
-  - `k8s.daemonset.ready_nodes`
-
-If `statefulset` metrics are enabled, the following metrics are collected:
-
-- From the [k8sclusterreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver):
-  - `k8s.statefulset.current_pods`
-  - `k8s.statefulset.desired_pods`
-  - `k8s.statefulset.ready_pods`
-  - `k8s.statefulset.updated_pods`
-
-If `job` metrics are enabled, the following metrics are collected:
-
-- From the [k8sclusterreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver):
-  - `k8s.job.active_pods`
-  - `k8s.job.desired_successful_pods`
-  - `k8s.job.failed_pods`
-  - `k8s.job.max_parallel_pods`
-  - `k8s.job.successful_pods`
-
-## Filters
-
-To filter metrics by namespaces, define a MetricPipeline that has the `namespaces` section defined in one of the inputs. For example, you can specify the namespaces from which metrics are collected or the namespaces from which metrics are dropped. Learn more about the available [parameters and attributes](./../resources/05-metricpipeline.md).
-
-By default, the sidecars of all namespaces are getting collected excluding system namespaces. To include system namespaces as well, please explicitly configure an empty namespcae object: `namespaces: {}`.
-
-The following example collects runtime metrics **only** from the `foo` and `bar` namespaces:
-
-```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: MetricPipeline
-metadata:
-  name: backend
-spec:
-  input:
-    runtime:
-      enabled: true
-      namespaces:
-        include:
-          - foo
-          - bar
-  output:
-    otlp:
-      endpoint:
-        value: https://backend.example.com:4317
-```
-
-The following example collects runtime metrics from all namespaces **except** the `foo` and `bar` namespaces:
-
-```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: MetricPipeline
-metadata:
-  name: backend
-spec:
-  input:
-    runtime:
-      enabled: true
-      namespaces:
-        exclude:
-          - foo
-          - bar
-  output:
-    otlp:
-      endpoint:
-        value: https://backend.example.com:4317
-```
+To learn which specific metrics are collected from which source (`kubletstatsreceiver` or `k8sclusterreceiver`), see [Runtime Metrics](runtime-metrics.md).
