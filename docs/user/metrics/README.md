@@ -67,8 +67,3 @@ You can adjust the MetricPipeline using runtime configuration with the available
 - **Unavailability of Output**: For up to 5 minutes, a retry for data is attempted when the destination is unavailable. After that, data is dropped.
 - **No Guaranteed Delivery**: The used buffers are volatile. If the gateway or agent instances crash, metric data can be lost.
 - **Multiple MetricPipeline Support**: The maximum amount of MetricPipeline resources is 5.
-
-## Troubleshooting and Operations
-
-Operational remarks can be found at [Telemetry Pipeline Operations](./../pipelines/operations.md).
-For pipeline troubleshooting please see [Telemetry Pipeline Troubleshooting](./../pipelines/troubleshooting.md).

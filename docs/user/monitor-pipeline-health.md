@@ -21,7 +21,7 @@ For a quick check, you can inspect the `status` of a pipeline resource directly.
    - For `MetricPipeline`: `kubectl get tracepipeline <your-pipeline-name>`
 2. Review the output. A healthy pipeline shows `True` for all status conditions.
 
-    ```
+    ```txt
     NAME      CONFIGURATION GENERATED   GATEWAY HEALTHY   FLOW HEALTHY
     backend   True                      True              True
     ```
@@ -61,7 +61,7 @@ The Telemetry module emits the following metrics for health monitoring:
 
 To create an alert, define a rule that triggers on a specific metric value. For example, to create an alert that fires if a pipeline's `TelemetryFlowHealthy` condition becomes "False" (indicating data flow issues), use the following PromQL query:
 
-```
+```txt
 min by (k8s_resource_name) ((kyma_resource_status_conditions{type="TelemetryFlowHealthy",k8s_resource_kind="metricpipelines"})) == 0
 ```
 
