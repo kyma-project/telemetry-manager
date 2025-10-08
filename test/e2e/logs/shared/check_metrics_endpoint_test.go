@@ -79,6 +79,7 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 
 			if tc.expectAgent {
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
+
 				agentMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.LogAgentMetricsService.Namespace, kitkyma.LogAgentMetricsService.Name, "metrics", ports.Metrics)
 				assert.EmitsOTelCollectorMetrics(t, agentMetricsURL)
 			}
