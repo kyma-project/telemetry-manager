@@ -4,7 +4,7 @@ The Telemetry module ensures that the OTel Collector instances of your pipelines
 
 ## Health Status
 
-The Telemetry module monitors the metrics from the managed gateways and agents, and accordingly sets the health status of the module and your pipeline resources. For details, see [Telemetry Self Monitor](./../architecture.md#self-monitor).
+The Telemetry module monitors the metrics from the managed gateways and agents, and accordingly sets the health status of the module and your pipeline resources. For details, see [Telemetry Self Monitor](./../architecture/README.md#self-monitor).
 
 To detect situations when the instances drop data or cannot handle the load, use the respective status conditions for your pipelines:
 

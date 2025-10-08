@@ -58,13 +58,13 @@ Supported integration scenarios are neutral to the vendor of the target system.
 
 The Telemetry module is built around a central controller, the Telemetry Manager, which dynamically configures and deploys data collection components based on your pipeline resources.
 
-To understand how the core components interact, see [Architecture](architecture.md).
+To understand how the core components interact, see [Architecture](architecture/README.md).
 
 To learn how this model applies to each signal type, see:
 
-- [Logging Architecture](ADD LINK)
-- [Tracing Architecture](ADD LINK)
-- [Metrics Architecture](ADD LINK)
+- [Logs Architecture](./architecture/logs-architecture.md)
+- [Traces Architecture](./architecture/traces-architecture.md)
+- [Metrics Architecture](./architecture/metrics-architecture.md)
 
 ## API / Custom Resource Definitions
 

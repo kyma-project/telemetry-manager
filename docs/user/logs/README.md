@@ -4,7 +4,7 @@ Use the Telemetry module to collect, process, and export logs for observing and 
 
 ## Overview
 
-A `LogPipeline` is a Kubernetes Custom Resource (CR) that you use to configure log collection for your cluster. When you create a `LogPipeline`, the Telemetry module automatically deploys the necessary components (for details, see [Logging Architecture](architecture.md)):
+A `LogPipeline` is a Kubernetes Custom Resource (CR) that you use to configure log collection for your cluster. When you create a `LogPipeline`, the Telemetry module automatically deploys the necessary components (for details, see [Logs Architecture](./architecture/README.md)):
 
 - A **log gateway** that provides a central OTLP endpoint for receiving logs pushed from your applications.
 - A **log agent** that runs on each cluster node to collect logs written to `stdout` and `stderr` by your application containers.

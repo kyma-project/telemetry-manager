@@ -13,7 +13,7 @@ You can configure the metric gateway with external systems using runtime configu
 - `runtime` input: Enables collecting Kubernetes runtime metrics. You can configure which resource types (Pods, containers, Nodes, and so on) to include or exclude, see [Metrics Runtime Input](./runtime-input.md).
 - `istio` input: Collects Istio metrics and, optionally, Envoy proxy metrics (if envoyMetrics.enabled: true), see [Metrics Istio Input](./istio-input.md).
 
-For an example, see [Sample MetricPipeline](./sample.md) and check out the available parameters and attributes under [MetricPipeline](./../resources/05-metricpipeline.md) and checkout the involved components of a MetricPipeline at the [Metrics Architecture](architecture.md).
+For an example, see [Sample MetricPipeline](./sample.md) and check out the available parameters and attributes under [MetricPipeline](./../resources/05-metricpipeline.md) and checkout the involved components of a MetricPipeline at the [Metrics Architecture](./../architecture/metrics-architecture.md).
 
 The Metric feature is optional. If you don't want to use it, simply don't set up a MetricPipeline.
 

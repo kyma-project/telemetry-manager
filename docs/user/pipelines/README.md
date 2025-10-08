@@ -61,4 +61,3 @@ In the **spec.output** section, you define the destination for your telemetry da
 You must specify the endpoint address of your observability backend. You can also configure the protocol (gRPC or HTTP) and the authentication details required to connect securely. For details, see [Integrate With Your OTLP Backend](./otlp-output.md).
 
 To send the same signal to multiple backends, create a separate pipeline resource for each destination. For details, see [Route Specific Inputs to Different Backends](ADD LINK).
-
