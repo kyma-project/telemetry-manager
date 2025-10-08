@@ -23,7 +23,7 @@ Istio plays a key role in distributed tracing. Its [Ingress Gateway](https://ist
 To enable tracing for all workloads in the service mesh, apply an Istio `Telemetry` resource to the istio-system namespace. Use this option to establish a baseline configuration for your mesh.
 
 > [!NOTE]
-> You can only have one mesh-wide Istio Telemetry resource in the istio-system namespace. If you also want to configure Istio access logs, combine both configurations into a single resource (see [Configure Istio Access Logs](./../logs/istio-support.md)).
+> You can only have one mesh-wide Istio Telemetry resource in the istio-system namespace. If you also want to configure Istio access logs, combine both configurations into a single resource (see [Configure Istio Access Logs](./../collecting-logs/istio-support.md)).
 
 1. Apply the Telemetry resource. The following command enables tracing with a default sampling rate of 1%:.
 

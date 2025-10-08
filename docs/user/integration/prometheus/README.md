@@ -108,7 +108,7 @@ The provided `values.yaml` covers the following adjustments:
 
 ### Activate a MetricPipeline
 
-1. Apply a [MetricPipeline](./../../metrics/README.md) resource that has the output configured with the local Prometheus URL and has the inputs enabled for collecting Istio metrics and collecting application metrics whose workloads are annotated with Prometheus annotations.
+1. Apply a [MetricPipeline](./../../collecting-metrics/README.md) resource that has the output configured with the local Prometheus URL and has the inputs enabled for collecting Istio metrics and collecting application metrics whose workloads are annotated with Prometheus annotations.
 
     ```yaml
     SERVICE=$(kubectl -n ${K8S_PROM_NAMESPACE} get service -l app=kube-prometheus-stack-prometheus -ojsonpath='{.items[*].metadata.name}')

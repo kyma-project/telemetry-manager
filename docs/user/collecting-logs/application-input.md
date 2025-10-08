@@ -1,4 +1,4 @@
-# Configure Application Log Collection
+# Configure Application Logs
 
 By default, a `LogPipeline` collects logs from all non-system namespaces that your containers write to `stdout` and `stderr`. You can configure this behavior in the **application** input section of your pipeline.
 

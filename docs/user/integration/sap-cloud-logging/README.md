@@ -161,7 +161,7 @@ By default, Istio sidecar injection and Istio access logs are disabled in Kyma. 
 
 You can set up ingestion of distributed traces from applications and the Istio service mesh to the OTLP endpoint of the SAP Cloud Logging service instance.
 
-1. Deploy the [Istio Telemetry](./../../traces/istio-support.md) resource with the following script:
+1. Deploy the [Istio Telemetry](./../../collecting-traces/istio-support.md) resource with the following script:
 
    <div tabs name="istiotraces">
      <details><summary>Script: Istio Traces</summary>
@@ -185,7 +185,7 @@ You can set up ingestion of distributed traces from applications and the Istio s
 
    The default configuration has the **randomSamplingPercentage** property set to `1.0`, meaning it samples 1% of all requests. To change the sampling rate, adjust the property to the desired value, up to 100 percent.
 
-1. Deploy the [TracePipeline](./../../traces/README.md) with the following script:
+1. Deploy the [TracePipeline](./../../collecting-traces/README.md) with the following script:
 
    <div tabs name="distributedtraces">
      <details><summary>Script: Distributed Traces</summary>
@@ -230,7 +230,7 @@ You can set up ingestion of distributed traces from applications and the Istio s
 
 You can set up ingestion of metrics from applications and the Istio service mesh to the OTLP endpoint of the SAP Cloud Logging service instance.
 
-1. Deploy the [MetricPipeline](./../../metrics/README.md) with the following script:
+1. Deploy the [MetricPipeline](./../../collecting-metrics/README.md) with the following script:
 
    <div tabs name="SAPCloudLogging">
      <details><summary>Script: SAP Cloud Logging</summary>
@@ -280,7 +280,7 @@ You can set up ingestion of metrics from applications and the Istio service mesh
 
 1. If you want to use additional metric collection, configure the presets under `input`.
 
-   For the available options, see [Metrics](./../../metrics/README.md).
+   For the available options, see [Metrics](./../../collecting-metrics/README.md).
 
 1. Wait for the MetricPipeline to be in the `Running` state. To check the state, run: `kubectl get metricpipelines`.
 

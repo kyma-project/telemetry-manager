@@ -481,7 +481,7 @@ The enriched timestamp attributes have the following meaning:
 
 The Telemetry module ensures that the log agent instances are operational and healthy at any time, for example, with buffering and retries. However, there may be situations when the instances drop logs, or cannot handle the log load.
 
-To detect and fix such situations, check the [pipeline status](./resources/02-logpipeline.md#logpipeline-status) and check out [Troubleshooting](#troubleshooting). If you have set up [pipeline health monitoring](./metrics/health-input.md), check the alerts and reports in an integrated backend like [SAP Cloud Logging](./integration/sap-cloud-logging/README.md#use-sap-cloud-logging-alerts).
+To detect and fix such situations, check the [pipeline status](./resources/02-logpipeline.md#logpipeline-status) and check out [Troubleshooting](#troubleshooting). If you have set up [pipeline health monitoring](./monitor-pipeline-health.md), check the alerts and reports in an integrated backend like [SAP Cloud Logging](./integration/sap-cloud-logging/README.md#use-sap-cloud-logging-alerts).
 
 > [!WARNING]
 > It's not recommended to access the metrics endpoint of the used FluentBit instances directly, because the exposed metrics are no official API of the Kyma Telemetry module. Breaking changes can happen if the underlying FluentBit version introduces such.

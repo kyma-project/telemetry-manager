@@ -117,9 +117,9 @@ Next, you set up the ingestion of custom span and Istio span data, and, optional
 
 ### Ingest Traces
 
-To start ingesting custom spans and Istio spans, you must enable the Istio tracing feature and then deploy a [TracePipeline](./../../traces/README.md).
+To start ingesting custom spans and Istio spans, you must enable the Istio tracing feature and then deploy a [TracePipeline](./../../collecting-traces/README.md).
 
-1. Deploy the [Istio Telemetry](./../../traces/istio-support.md) resource:
+1. Deploy the [Istio Telemetry](./../../collecting-traces/istio-support.md) resource:
 
     ```bash
     kubectl apply -n istio-system -f - <<EOF
@@ -181,7 +181,7 @@ To start ingesting custom spans and Istio spans, you must enable the Istio traci
 
 Depending on they way your applications emit metrics, choose one of the following approaches to ingest custom metrics to Dynatrace:
 
-- Use a [MetricPipeline](./../../metrics/README.md) together with a custom OTel Collector Deployment.
+- Use a [MetricPipeline](./../../collecting-metrics/README.md) together with a custom OTel Collector Deployment.
 
   This approach adds the required "cumulative to delta" transformation by running an additional custom OTel Collector. The Telemetry Metric gateway ships the metrics to the custom collector, and the collector transforms them before shipping the data to the Dynatrace endpoint. This approach enables support for all metric types and inputs for the MetricPipeline. However, you must operate the additional OTel Collector in a custom way.
 
@@ -215,7 +215,7 @@ Depending on they way your applications emit metrics, choose one of the followin
         EOF
         ```
 
-- If your application pushes metrics in delta temporality with OTLP, you can use a [MetricPipeline](./../../metrics/README.md) to push metrics directly.
+- If your application pushes metrics in delta temporality with OTLP, you can use a [MetricPipeline](./../../collecting-metrics/README.md) to push metrics directly.
 
   To use this setup, you must explicitly enable the "delta" aggregation temporality in your applications. You cannot enable additional inputs for the MetricPipeline because these produce metrics with "cumulative" temperability.
 

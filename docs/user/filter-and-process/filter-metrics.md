@@ -11,7 +11,7 @@ Filter metrics from the OTLP, Istio, Prometheus, and runtime input to control wh
 | Prometheus  | Namespace                                 | excludes system namespaces          | Add `namespaces: {}` to the input's configuration | Use the `include` or `exclude` selector |
 | Runtime     | Namespace, Resource Type\*                | excludes system namespaces          | Add `namespaces: {}` to the input's configuration | Use the `include` or `exclude` selector |
 
-\* The `runtime` input provides additional filters for Kubernetes resources such as Pods or Nodes. For details, see [Select Resource Types](../metrics/runtime-input.md#select-resource-types).
+\* The `runtime` input provides additional filters for Kubernetes resources such as Pods or Nodes. For details, see [Select Resource Types](../collecting-metrics/runtime-input.md#select-resource-types).
 
 ## Filter OTLP Input by Namespaces
 

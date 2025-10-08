@@ -101,7 +101,7 @@ By default, Istio sidecar injection and Istio access logs are disabled in Kyma. 
 
 1. Enable Istio sidecar injection for your workload. See [Enabling Istio Sidecar Injection](https://kyma-project.io/#/istio/user/tutorials/01-40-enable-sidecar-injection).
 
-1. Enable Istio access logs for your workload. See [Logs Istio Support](./../../logs/istio-support.md). Assure that you are using the `kyma-logs` provider based on OTLP.
+1. Enable Istio access logs for your workload. See [Logs Istio Support](./../../collecting-logs/istio-support.md). Assure that you are using the `kyma-logs` provider based on OTLP.
 
 ## Ship Distributed Traces to SAP Cloud Logging
 
@@ -158,7 +158,7 @@ By default, Istio sidecar injection and Istio Traces are disabled in Kyma. To an
 
 1. Enable Istio sidecar injection for your workload. See [Enabling Istio Sidecar Injection](https://kyma-project.io/#/istio/user/tutorials/01-40-enable-sidecar-injection).
 
-1. Enable Istio Traces for your workload. See [Logs Istio Support](./../../traces/istio-support.md). Assure that you are using the `kyma-traces`provider based on OTLP.
+1. Enable Istio Traces for your workload. See [Logs Istio Support](./../../collecting-traces/istio-support.md). Assure that you are using the `kyma-traces`provider based on OTLP.
 
 ## Ship Metrics to SAP Cloud Logging
 
@@ -214,7 +214,7 @@ You can set up ingestion of metrics from applications and the Istio service mesh
 
 1. If you want to use additional metric collection, configure the presets under `input`.
 
-   For the available options, see [Metrics](./../../metrics/README.md).
+   For the available options, see [Metrics](./../..collecting-README.md).
 
 1. Wait for the MetricPipeline to be in the `Running` state. To check the state, run: `kubectl get metricpipelines`.
 

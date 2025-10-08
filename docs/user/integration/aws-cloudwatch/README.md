@@ -99,7 +99,7 @@ The previous command uses the [values.yaml](https://raw.githubusercontent.com/ky
 
 Use the Kyma Telemetry module to enable ingestion of the signals from your workloads:
 
-1. Deploy a [LogPipeline](./../../logs/README.md):
+1. Deploy a [LogPipeline](./../../collecting-logs/README.md):
 
     ```bash
     kubectl apply -f - <<EOF
@@ -119,7 +119,7 @@ Use the Kyma Telemetry module to enable ingestion of the signals from your workl
    EOF
    ```
 
-2. Deploy a [TracePipeline](./../../traces/README.md):
+2. Deploy a [TracePipeline](./../../collecting-traces/README.md):
 
    ```bash
    kubectl apply -f - <<EOF
@@ -135,7 +135,7 @@ Use the Kyma Telemetry module to enable ingestion of the signals from your workl
    EOF
    ```
 
-3. Deploy a [MetricPipeline](./../../metrics/README.md):
+3. Deploy a [MetricPipeline](./../../collecting-metrics/README.md):
 
    ```bash
    kubectl apply -f - <<EOF

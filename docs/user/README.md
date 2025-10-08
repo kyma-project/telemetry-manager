@@ -16,10 +16,10 @@ The Telemetry module processes three types of signals:
 
 Telemetry signals flow through the following stages:
 
-1.  You instrument your application so that its components expose telemetry signals.
-2.  The signals are collected and enriched with infrastructural metadata.
-3.  You send the enriched signals to your preferred observability backend.
-4.  The backend stores your data, where you can analyze and visualize it.
+1. You instrument your application so that its components expose telemetry signals.
+2. The signals are collected and enriched with infrastructural metadata.
+3. You send the enriched signals to your preferred observability backend.
+4. The backend stores your data, where you can analyze and visualize it.
 
 The Telemetry module focuses on the collection, processing, and shipment stages of the observability workflow. It offers a vendor-neutral approach based on [OpenTelemetry](https://opentelemetry.io/) and doesn't force you into a specific backend. This means you can integrate with your existing observability platforms or choose from a wide range of available backends that best suit your operational needs.
 
