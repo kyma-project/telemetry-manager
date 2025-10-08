@@ -1,7 +1,7 @@
 <!-- markdown-link-check-disable -->
 - [Back to Kyma Home](/)
 - [Kyma Telemetry Module](/telemetry-manager/user/README.md)
-- [Telemetry Pipeline API](/telemetry-manager/user/pipelines/README.md)
+- [Telemetry Pipeline API](/telemetry-manager/user/pipelines.md)
 - [Set Up the OTLP Input](/telemetry-manager/user/otlp-input.md)
 - [Collecting Logs](/telemetry-manager/user/collecting-logs/README.md)
   - [Configure Application Logs](/telemetry-manager/user/collecting-logs/application-input.md)

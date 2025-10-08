@@ -1,3 +1,3 @@
 # Telemetry Gateways
 
-The content got redesigned and can be found at [Pipelines](./pipelines/README.md).
+The content got redesigned and can be found at [Pipelines](./pipelines.md).
