@@ -58,13 +58,14 @@ func TestCheckChain(t *testing.T) {
 		t.Run(tc.summary, func(t *testing.T) {
 			sut := certChainCheckerImpl{}
 			valid, err := sut.checkRoot(t.Context(), tc.serverCertPEM, tc.caCertPEM)
-			require.Equal(t, tc.expectValid, valid)
 
 			if tc.expectError {
-				require.Error(t, err)
+				require.Error(t, err, "Expected error but got nil")
 			} else {
-				require.NoError(t, err)
+				require.NoError(t, err, "Did not expect error but got one: %s", err.Error())
 			}
+
+			require.Equal(t, tc.expectValid, valid, "Expected valid to be %v but got %v", tc.expectValid, valid)
 		})
 	}
 }
