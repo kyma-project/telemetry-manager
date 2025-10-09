@@ -273,6 +273,7 @@ You can set up ingestion of distributed traces from applications and the Istio s
 #### Set Up Istio Tracing
 
 By default, Istio sidecar injection and Istio tracing are disabled in Kyma. To analyze them, you must enable them:
+
 1. Enable Istio sidecar injection for your workload (see [Enabling Istio Sidecar Proxy Injection](https://kyma-project.io/#/istio/user/tutorials/01-40-enable-sidecar-injection)).
 1. Configure the Istio Telemetry resource to use the kyma-traces extension provider based on OTLP (see [Configure Istio Tracing](./../../collecting-traces/istio-support.md)).
 
@@ -395,7 +396,7 @@ You can view logs, traces, and metrics in SAP Cloud Logging dashboards. Several 
 
 ### Context
 
-The preconfigured Kyma_* dashboards in SAP Cloud Logging are compatible only with the legacy (HTTP) logging method.
+The preconfigured `Kyma_*` dashboards in SAP Cloud Logging are compatible only with the legacy (HTTP) logging method.
 
 ### Procedure
 
