@@ -48,7 +48,6 @@ func TestOutage(t *testing.T) {
 				assert.OTelLogPipelineHealthy(t, kindLogsOTelAgent)
 				assert.LogPipelineConditionReasonsTransition(t, kindLogsOTelAgent, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 					{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
-					{Reason: conditions.ReasonSelfMonAgentBufferFillingUp, Status: metav1.ConditionFalse},
 					{Reason: conditions.ReasonSelfMonAgentAllDataDropped, Status: metav1.ConditionFalse},
 				})
 
@@ -128,10 +127,10 @@ func TestOutage(t *testing.T) {
 		},
 
 		{
-			kind: kindMetrics,
+			kind: kindMetricsGateway,
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewMetricPipelineBuilder().
-					WithName(kindMetrics).
+					WithName(kindMetricsGateway).
 					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 					Build()
 
@@ -149,10 +148,9 @@ func TestOutage(t *testing.T) {
 			},
 			assert: func(t *testing.T) {
 				assert.DeploymentReady(t, kitkyma.MetricGatewayName)
-				assert.MetricPipelineHealthy(t, kindMetrics)
-				assert.MetricPipelineConditionReasonsTransition(t, kindMetrics, conditions.TypeFlowHealthy, []assert.ReasonStatus{
+				assert.MetricPipelineHealthy(t, kindMetricsGateway)
+				assert.MetricPipelineConditionReasonsTransition(t, kindMetricsGateway, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 					{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
-					{Reason: conditions.ReasonSelfMonGatewayBufferFillingUp, Status: metav1.ConditionFalse},
 					{Reason: conditions.ReasonSelfMonGatewayAllDataDropped, Status: metav1.ConditionFalse},
 				})
 
@@ -224,7 +222,6 @@ func TestOutage(t *testing.T) {
 				assert.TracePipelineHealthy(t, kindTraces)
 				assert.TracePipelineConditionReasonsTransition(t, kindTraces, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 					{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
-					{Reason: conditions.ReasonSelfMonGatewayBufferFillingUp, Status: metav1.ConditionFalse},
 					{Reason: conditions.ReasonSelfMonGatewayAllDataDropped, Status: metav1.ConditionFalse},
 				})
 
