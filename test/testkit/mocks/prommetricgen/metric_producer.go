@@ -17,6 +17,7 @@ const (
 	// A sample app instrumented with OpenTelemetry to generate metrics in the Prometheus exposition format
 	// https://github.com/kyma-project/telemetry-manager/tree/main/docs/user/integration/sample-app
 	metricProducerImage = "europe-docker.pkg.dev/kyma-project/prod/samples/telemetry-sample-app:latest"
+	avalancheImage      = "europe-docker.pkg.dev/kyma-project/prod/external/quay.io/prometheuscommunity/avalanche:v0.7.0"
 )
 
 type Metric struct {
@@ -59,16 +60,31 @@ var (
 	MetricPromhttpMetricHandlerRequestsTotalLabelKey = "name"
 	MetricPromhttpMetricHandlerRequestsTotalLabelVal = "value"
 
+	MetricAvalancheCounter = Metric{
+		Type: pmetric.MetricTypeSum,
+		Name: "avalanche_counter_metric_mmmmm_0_0_total",
+	}
+
+	MetricAvalancheGauge = Metric{
+		Type: pmetric.MetricTypeGauge,
+		Name: "avalanche_gauge_metric_mmmmm_0_0",
+	}
+
+	MetricAvalancheHistogram = Metric{
+		Type: pmetric.MetricTypeHistogram,
+		Name: "avalanche_histogram_metric_mmmmm_0_0",
+	}
+
 	// For each configured URL parameter, the MetricPromhttpMetricHandlerRequestsTotal metric
 	// will include a label with the parameter name and a corresponding label with its value.
 
 	ScrapingURLParamName = "format"
 	ScrapingURLParamVal  = "prometheus"
 
-	metricsPort     int32 = 8080
-	metricsPortName       = "http-metrics"
-	metricsEndpoint       = "/metrics"
-	selectorLabels        = map[string]string{
+	defaultMetricsPort int32 = 8080
+	metricsPortName          = "http-metrics"
+	metricsEndpoint          = "/metrics"
+	selectorLabels           = map[string]string{
 		"app.kubernetes.io/name": "metric-producer",
 	}
 )
@@ -82,8 +98,23 @@ func CustomMetrics() []Metric {
 	}
 }
 
+func AvalancheMetrics() []Metric {
+	return []Metric{
+		MetricAvalancheCounter,
+		MetricAvalancheGauge,
+		MetricAvalancheHistogram,
+	}
+}
+
 func CustomMetricNames() []string {
-	metrics := CustomMetrics()
+	return metricNames(CustomMetrics())
+}
+
+func AvalancheMetricNames() []string {
+	return metricNames(AvalancheMetrics())
+}
+
+func metricNames(metrics []Metric) []string {
 	names := make([]string, len(metrics))
 
 	for i, metric := range metrics {
@@ -95,9 +126,10 @@ func CustomMetricNames() []string {
 
 // MetricProducer represents a workload that exposes dummy metrics in the Prometheus exposition format
 type MetricProducer struct {
-	name      string
-	namespace string
-	labels    map[string]string
+	name        string
+	namespace   string
+	labels      map[string]string
+	metricsPort int32
 }
 
 func (mp *MetricProducer) PodURL(proxyClient *apiserverproxy.Client) string {
@@ -113,7 +145,7 @@ func (mp *MetricProducer) MetricsEndpoint() string {
 }
 
 func (mp *MetricProducer) MetricsPort() int32 {
-	return metricsPort
+	return mp.metricsPort
 }
 
 type Pod struct {
@@ -121,12 +153,16 @@ type Pod struct {
 	namespace   string
 	labels      map[string]string
 	annotations map[string]string
+	image       string
+	args        []string
+	metricsPort int32
 }
 
 type Service struct {
 	name        string
 	namespace   string
 	annotations map[string]string
+	metricsPort int32
 }
 
 type Option = func(mp *MetricProducer)
@@ -137,11 +173,18 @@ func WithName(name string) Option {
 	}
 }
 
+func WithMetricsPort(port int32) Option {
+	return func(mp *MetricProducer) {
+		mp.metricsPort = port
+	}
+}
+
 func New(namespace string, opts ...Option) *MetricProducer {
 	mp := &MetricProducer{
-		name:      "metric-producer",
-		namespace: namespace,
-		labels:    make(map[string]string),
+		name:        "metric-producer",
+		namespace:   namespace,
+		labels:      make(map[string]string),
+		metricsPort: defaultMetricsPort,
 	}
 	for _, opt := range opts {
 		opt(mp)
@@ -156,11 +199,14 @@ func (mp *MetricProducer) Pod() *Pod {
 		namespace:   mp.namespace,
 		labels:      make(map[string]string),
 		annotations: make(map[string]string),
+		image:       metricProducerImage,
+		args:        []string{},
+		metricsPort: mp.metricsPort,
 	}
 }
 
 func (p *Pod) WithPrometheusAnnotations(scheme ScrapingScheme) *Pod {
-	maps.Copy(p.annotations, makePrometheusAnnotations(scheme))
+	maps.Copy(p.annotations, makePrometheusAnnotations(scheme, p.metricsPort))
 	return p
 }
 
@@ -173,7 +219,7 @@ func (p *Pod) WithLabel(key, value string) *Pod {
 	return p
 }
 
-func makePrometheusAnnotations(scheme ScrapingScheme) map[string]string {
+func makePrometheusAnnotations(scheme ScrapingScheme, metricsPort int32) map[string]string {
 	annotations := map[string]string{
 		"prometheus.io/scrape":                        "true",
 		"prometheus.io/path":                          metricsEndpoint,
@@ -192,6 +238,30 @@ func (p *Pod) WithLabels(labels map[string]string) *Pod {
 	return p
 }
 
+func (p *Pod) WithAvalancheHighLoad() *Pod {
+	p.image = avalancheImage
+	p.args = []string{
+		"--gauge-metric-count=" + strconv.Itoa(int(160)),
+		"--counter-metric-count=" + strconv.Itoa(int(100)),
+		"--histogram-metric-count=" + strconv.Itoa(int(50)),
+		"--port=" + strconv.Itoa(int(p.metricsPort)),
+	}
+
+	return p
+}
+
+func (p *Pod) WithAvalancheLowLoad() *Pod {
+	p.image = avalancheImage
+	p.args = []string{
+		"--gauge-metric-count=" + strconv.Itoa(int(1)),
+		"--counter-metric-count=" + strconv.Itoa(int(1)),
+		"--histogram-metric-count=" + strconv.Itoa(int(1)),
+		"--port=" + strconv.Itoa(int(p.metricsPort)),
+	}
+
+	return p
+}
+
 func (p *Pod) K8sObject() *corev1.Pod {
 	labels := p.labels
 	maps.Copy(labels, selectorLabels)
@@ -207,11 +277,12 @@ func (p *Pod) K8sObject() *corev1.Pod {
 			Containers: []corev1.Container{
 				{
 					Name:  "metric-producer",
-					Image: metricProducerImage,
+					Image: p.image,
+					Args:  p.args,
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          metricsPortName,
-							ContainerPort: metricsPort,
+							ContainerPort: p.metricsPort,
 							Protocol:      corev1.ProtocolTCP,
 						},
 					},
@@ -247,13 +318,14 @@ func (p *Pod) K8sObject() *corev1.Pod {
 
 func (mp *MetricProducer) Service() *Service {
 	return &Service{
-		name:      mp.name,
-		namespace: mp.namespace,
+		name:        mp.name,
+		namespace:   mp.namespace,
+		metricsPort: mp.metricsPort,
 	}
 }
 
 func (s *Service) WithPrometheusAnnotations(scheme ScrapingScheme) *Service {
-	s.annotations = makePrometheusAnnotations(scheme)
+	s.annotations = makePrometheusAnnotations(scheme, s.metricsPort)
 	return s
 }
 
@@ -270,7 +342,7 @@ func (s *Service) K8sObject() *corev1.Service {
 				{
 					Name:       metricsPortName,
 					Protocol:   corev1.ProtocolTCP,
-					Port:       metricsPort,
+					Port:       s.metricsPort,
 					TargetPort: intstr.FromString(metricsPortName),
 				},
 			},

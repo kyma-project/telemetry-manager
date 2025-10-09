@@ -13,6 +13,15 @@ groups:
         - alert: MetricGatewayThrottling
           expr: sum by (receiver) (rate(otelcol_receiver_refused_metric_points_total{service="telemetry-metric-gateway-metrics"}[5m])) > 0
           for: 1m0s
+        - alert: MetricAgentAllDataDropped
+          expr: ((sum by (pipeline_name) (rate(otelcol_exporter_enqueue_failed_metric_points_total{service="telemetry-metric-agent-metrics"}[5m])) > 0) or (sum by (pipeline_name) (rate(otelcol_exporter_send_failed_metric_points_total{service="telemetry-metric-agent-metrics"}[5m])) > 0)) unless (sum by (pipeline_name) (rate(otelcol_exporter_sent_metric_points_total{service="telemetry-metric-agent-metrics"}[5m])) > 0)
+          for: 1m0s
+        - alert: MetricAgentSomeDataDropped
+          expr: ((sum by (pipeline_name) (rate(otelcol_exporter_enqueue_failed_metric_points_total{service="telemetry-metric-agent-metrics"}[5m])) > 0) or (sum by (pipeline_name) (rate(otelcol_exporter_send_failed_metric_points_total{service="telemetry-metric-agent-metrics"}[5m])) > 0)) and (sum by (pipeline_name) (rate(otelcol_exporter_sent_metric_points_total{service="telemetry-metric-agent-metrics"}[5m])) > 0)
+          for: 1m0s
+        - alert: MetricAgentQueueAlmostFull
+          expr: max by (pipeline_name) (otelcol_exporter_queue_size{service="telemetry-metric-agent-metrics"} / ignoring(data_type) otelcol_exporter_queue_capacity{service="telemetry-metric-agent-metrics"}) > 0.8
+          for: 1m0s
         - alert: TraceGatewayAllDataDropped
           expr: ((sum by (pipeline_name) (rate(otelcol_exporter_enqueue_failed_spans_total{service="telemetry-trace-gateway-metrics"}[5m])) > 0) or (sum by (pipeline_name) (rate(otelcol_exporter_send_failed_spans_total{service="telemetry-trace-gateway-metrics"}[5m])) > 0)) unless (sum by (pipeline_name) (rate(otelcol_exporter_sent_spans_total{service="telemetry-trace-gateway-metrics"}[5m])) > 0)
           for: 1m0s

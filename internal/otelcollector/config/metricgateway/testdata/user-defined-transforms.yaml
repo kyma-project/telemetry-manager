@@ -35,7 +35,7 @@ service:
                 - filter/drop-if-input-source-istio
                 - filter/drop-envoy-metrics-if-disabled
                 - resource/insert-cluster-attributes
-                - resource/delete-skip-enrichment-attribute
+                - resource/drop-skip-enrichment-attribute
                 - resource/drop-kyma-attributes
                 - transform/cls-user-defined
                 - batch
@@ -68,7 +68,7 @@ service:
                 - filter/drop-if-input-source-istio
                 - filter/drop-envoy-metrics-if-disabled
                 - resource/insert-cluster-attributes
-                - resource/delete-skip-enrichment-attribute
+                - resource/drop-skip-enrichment-attribute
                 - resource/drop-kyma-attributes
                 - transform/dynatrace-user-defined
                 - batch
@@ -179,14 +179,14 @@ processors:
         check_interval: 1s
         limit_percentage: 75
         spike_limit_percentage: 15
-    resource/delete-skip-enrichment-attribute:
-        attributes:
-            - action: delete
-              key: io.kyma-project.telemetry.skip_enrichment
     resource/drop-kyma-attributes:
         attributes:
             - action: delete
               pattern: kyma.*
+    resource/drop-skip-enrichment-attribute:
+        attributes:
+            - action: delete
+              key: io.kyma-project.telemetry.skip_enrichment
     resource/insert-cluster-attributes:
         attributes:
             - action: insert
