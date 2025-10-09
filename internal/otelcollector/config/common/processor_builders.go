@@ -177,7 +177,6 @@ func ResolveServiceNameConfig() *ServiceEnrichmentProcessor {
 
 // LogFilterProcessorConfig creates a FilterProcessor for logs with error_mode set to "ignore"
 func LogFilterProcessorConfig(statements []FilterProcessorStatements) *FilterProcessor {
-	//result := LogFilterStatement{}
 	logRecords := make([]string, 0, len(statements))
 	for _, s := range statements {
 		logRecords = append(logRecords, s.Statements...)
@@ -185,7 +184,6 @@ func LogFilterProcessorConfig(statements []FilterProcessorStatements) *FilterPro
 
 	// Sort to prevent changes in the order in every reconciliation loop
 	sort.Strings(logRecords)
-	//result.LogRecord = logRecords
 
 	return &FilterProcessor{
 		ErrorMode: DefaultFilterProcessorErrorMode,
@@ -197,7 +195,6 @@ func LogFilterProcessorConfig(statements []FilterProcessorStatements) *FilterPro
 
 // MetricFilterProcessorConfig creates a FilterProcessor for metrics with the default error mode
 func MetricFilterProcessorConfig(statements []FilterProcessorStatements) *FilterProcessor {
-	result := MetricFilterStatement{}
 	dataPoints := make([]string, 0, len(statements))
 	for _, s := range statements {
 		dataPoints = append(dataPoints, s.Statements...)
@@ -205,7 +202,6 @@ func MetricFilterProcessorConfig(statements []FilterProcessorStatements) *Filter
 
 	// Sort to prevent changes in the order in every reconciliation loop
 	sort.Strings(dataPoints)
-	result.DataPoint = dataPoints
 
 	return &FilterProcessor{
 		ErrorMode: DefaultFilterProcessorErrorMode,
@@ -217,7 +213,6 @@ func MetricFilterProcessorConfig(statements []FilterProcessorStatements) *Filter
 
 // TraceFilterProcessorConfig creates a FilterProcessor for traces with the default error mode
 func TraceFilterProcessorConfig(statements []FilterProcessorStatements) *FilterProcessor {
-	result := TraceFilterStatement{}
 	spanEvents := make([]string, 0, len(statements))
 	for _, s := range statements {
 		spanEvents = append(spanEvents, s.Statements...)
@@ -225,7 +220,6 @@ func TraceFilterProcessorConfig(statements []FilterProcessorStatements) *FilterP
 
 	// Sort to prevent changes in the order in every reconciliation loop
 	sort.Strings(spanEvents)
-	result.SpanEvent = spanEvents
 
 	return &FilterProcessor{
 		ErrorMode: DefaultFilterProcessorErrorMode,

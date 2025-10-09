@@ -397,6 +397,7 @@ func requireLogPipelinesEquivalent(t *testing.T, x *LogPipeline, y *telemetryv1b
 	xFilter := x.Spec.Filter
 	yFilter := y.Spec.Filter
 	require.Len(t, xFilter, len(yFilter), "expected same number of filters")
+
 	for i := range xFilter {
 		require.Equal(t, xFilter[i].Conditions, yFilter[i].Conditions, "filter conditions mismatch at index %d", i)
 	}

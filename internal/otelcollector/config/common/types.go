@@ -201,7 +201,7 @@ type TransformProcessorStatements struct {
 	Conditions []string `yaml:"conditions,omitempty"`
 }
 
-//type FilterProcessor struct {
+// type FilterProcessor struct {
 //	ErrorMode        string                `yaml:"error_mode"`
 //	LogStatements    LogFilterStatement    `yaml:"logs,omitempty"`
 //	MetricStatements MetricFilterStatement `yaml:"metrics,omitempty"`
