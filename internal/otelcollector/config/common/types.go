@@ -244,7 +244,8 @@ type FilterProcessorMetrics struct {
 }
 
 type FilterProcessorTraces struct {
-	Span []string `yaml:"span,omitempty"`
+	Span      []string `yaml:"span,omitempty"`
+	SpanEvent []string `yaml:"spanevent,omitempty"`
 }
 
 type FilterProcessorLogs struct {

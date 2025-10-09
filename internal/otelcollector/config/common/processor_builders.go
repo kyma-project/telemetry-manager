@@ -230,7 +230,7 @@ func TraceFilterProcessorConfig(statements []FilterProcessorStatements) *FilterP
 	return &FilterProcessor{
 		ErrorMode: DefaultFilterProcessorErrorMode,
 		Traces: FilterProcessorTraces{
-			Span: spanEvents,
+			SpanEvent: spanEvents,
 		},
 	}
 }
