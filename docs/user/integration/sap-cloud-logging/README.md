@@ -363,34 +363,46 @@ Depending on the output you use in your LogPipeline, apply the ConfigMap. If you
 
 ## Use SAP Cloud Logging Alerts
 
-Learn how to define and import recommended alerts for SAP Cloud Logging. The following alerts are based on JSON documents defining a `Monitor` for the alerting plugin.
+You can import predefined alerts for SAP Cloud Logging to monitor the health of your telemetry integration.
 
-1. Define a `destination`, which will be used by all your alerts.
-2. To import a monitor, use the development tools of the SAP Cloud Logging dashboard.
-3. Execute `POST _plugins/_alerting/monitors`, followed by the contents of the respective JSON file.
-4. Depending on the pipelines you are using, enable the some or all of the following alerts:
+### Procedure
+
+1. In the SAP Cloud Logging dashboard, define a “notification channel” to receive alert notifications.
+1. To import a monitor, use the development tools of the SAP Cloud Logging dashboard.
+1. Execute `POST _plugins/_alerting/monitors`, followed by the contents of the respective JSON file.
+1. Depending on the pipelines you are using, enable some or all of the following alerts:
+   The alerts are based on JSON documents defining a Monitor for the alerting plugin.
+
 <!-- markdown-link-check-disable -->
-   | Category                   | File                                                                                                                                                                    | Description                                                                                                                                                                                   |
-   | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-   | SAP Cloud Logging          | [OpenSearch cluster health](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-health.json)            | The OpenSearch cluster might become unhealthy, which is indicated by a "red" status using the [cluster health API](https://opensearch.org/docs/1.3/api-reference/cluster-api/cluster-health). |
-   | Kyma Telemetry Integration | [Application log ingestion](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-app-log-ingestion.json) | The LogPipeline for shipping [application logs](#ship-logs-to-sap-cloud-logging) might lose connectivity to SAP Cloud Logging, with the effect that no application logs are ingested anymore. |
-   | Kyma Telemetry Integration | [Access log ingestion](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-access-log-ingestion.json)   | The LogPipeline for shipping [access logs](#ship-logs-to-sap-cloud-logging) might lose connectivity to SAP Cloud Logging, with the effect that no access logs are ingested anymore.           |
-   | Kyma Telemetry Integration | [Trace ingestion](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-trace-ingestion.json)             | The TracePipeline for shipping [traces](#ship-distributed-traces-to-sap-cloud-logging) might lose connectivity to SAP Cloud Logging, with the effect that no traces are ingested anymore.     |
-   | Kyma Telemetry Integration | [Metric ingestion](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-metric-ingestion.json)           | The MetricPipeline for shipping [metrics](#ship-metrics-to-sap-cloud-logging) might lose connectivity to SAP Cloud Logging, with the effect that no metrics are ingested anymore.             |
-   | Kyma Telemetry Integration | [Kyma Telemetry Status](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-telemetry-status.json)      | The Telemetry module might report a non-ready state indicating a configuration or data flow problem.                                                                                          |
+   | Monitored Component | File | Description |
+   | -- | -- | -- |
+   | SAP Cloud Logging | [alert-health.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-health.json) | Monitors the health of the underlying OpenSearch cluster in SAP Cloud Logging using the [cluster health API](https://opensearch.org/docs/1.3/api-reference/cluster-api/cluster-health). Triggers if the cluster status becomes `red`. |
+   | Kyma Telemetry Integration | [alert-telemetry-status.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-app-log-ingestion.json) | Monitors the status of the Telemetry module. Triggers if the module reports a non-ready state. |
+   | Kyma Telemetry Integration | [alert-log-ingestion.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-log-ingestion.json) | For OTLP: Monitors the single LogPipeline used in the OTLP method. Triggers if log data stops flowing. |
+   | Kyma Telemetry Integration | [alert-app-log-ingestion.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-access-log-ingestion.json) | For HTTP (legacy): Monitors the application log LogPipeline. Triggers if log data stops flowing. |
+   | Kyma Telemetry Integration | [alert-access-log-ingestion.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-access-log-ingestion.json) | For HTTP (legacy): Monitors the Istio access log LogPipeline. Triggers if log data stops flowing. |
+   | Kyma Telemetry Integration | [alert-trace-ingestion.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-trace-ingestion.json) | Monitors the TracePipeline. Triggers if trace data stops flowing to SAP Cloud Logging. |
+   | Kyma Telemetry Integration | [alert-metric-ingestion.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-metric-ingestion.json) | Monitors the MetricPipeline. Triggers if metric data stops flowing to SAP Cloud Logging. |
+   | SAP Cloud Logging | [alert-rejection-in-progress.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-rejection-in-progress.json) | Monitors the `cls-rejected-*` index for new data. Triggers if new rejected data gets observed. |
+
 <!-- markdown-link-check-enable -->
-5. Edit notification action: Add the `destination` and adjust the intervals and thresholds to your needs.
+5. After importing, edit the monitor to attach your notification channel or destination and adjust thresholds as needed.
 6. Verify that the new monitor definition is listed among the SAP Cloud Logging alerts.
 
 ## Use SAP Cloud Logging Dashboards
 
-You can view logs, traces, and metrics in SAP Cloud Logging dashboards:
+You can view logs, traces, and metrics in SAP Cloud Logging dashboards. Several dashboards come with SAP Cloud Logging, and you can import additional dashboards as needed.
+
+### Context
+
+The preconfigured Kyma_* dashboards in SAP Cloud Logging are compatible only with the legacy (HTTP) logging method.
+
+### Procedure
 
 <!-- markdown-link-check-disable -->
-- To view the traffic and application logs, use the SAP Cloud Logging dashboards prefixed with `Kyma_`, which are based on both kinds of log ingestion: application and access logs.
-- To view distributed traces, use the OpenSearch plugin **Observability**.
-- To view the container- and Pod-related metrics collected by the MetricPipeline `runtime` input, use the dashboard **[OTel] K8s Container Metrics**.
-- To view further Kubernetes related metrics collected by the MetricPipeline `runtime` input, manually import the file [K8s Runtime](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/dashboard-runtime.ndjson).
-- To view the status of the SAP Cloud Logging integration with the Kyma Telemetry module, manually import the file [Kyma Telemetry Status](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/dashboard-status.ndjson).
-- To use the dashboard for Istio metrics of Pods that have an active Istio sidecar injection (collected by the MetricPipeline `istio` input), manually import the file [Kyma Istio Service Metrics](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/dashboard-istio.ndjson).
+- Telemetry Status: For the status of the SAP Cloud Logging integration with the Telemetry module, import the file [dashboard-status.ndjson](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/dashboard-status.ndjson).
+- Logs (HTTP): For application logs and Istio access logs using the http output: Use the preconfigured dashboards prefixed with Kyma_*.
+- Traces: Use the OpenSearch plugin “Observability”.
+- Runtime Metrics: For runtime metrics, import the file [dashboard-runtime.ndjson](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/dashboard-runtime.ndjson).
+- For Istio Pod metrics, import the file [dashboard-istio.ndjson](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/dashboard-istio.ndjson).
 <!-- markdown-link-check-enable -->
