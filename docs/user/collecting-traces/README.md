@@ -22,7 +22,7 @@ With the default configuration, the trace gateway collects push-based OTLP trace
 
 ## Minimal TracePipeline
 
-For a minimal setup, you only need to create a TracePipeline that specifies your backend destination (see [Integrate With Your OTLP Backend](./../integrate-otlp-backend/README.md)).
+For a minimal setup, you only need to create a TracePipeline that specifies your backend destination (see [Integrate With Your OTLP Backend](./../integrate-otlp-backend/README.md)):
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -39,7 +39,7 @@ By default, this minimal pipeline collects push-based OTLP traces of any contain
 
 It activates cluster-internal endpoints to receive traces in the OTLP format. Applications can push traces directly to these URLs:
 
-- GRPC: `http://telemetry-otlp-traces.kyma-system:4317`
+- gRPC: `http://telemetry-otlp-traces.kyma-system:4317`
 - HTTP: `http://telemetry-otlp-traces.kyma-system:4318`
 
 ## Configure Trace Collection
@@ -48,11 +48,11 @@ You can adjust the TracePipeline using runtime configuration with the available 
 
 - If you use Istio, activate Istio tracing. For details, see [Configure Istio Tracing](istio-support.md). You can adjust which percentage of the trace data is collected.
 - The Serverless module integrates the [OpenTelemetry SDK](https://opentelemetry.io/docs/specs/otel/metrics/sdk/) by default. It automatically propagates the trace context for chained calls and reports custom spans for incoming and outgoing requests. You can add more spans within your Function's source code. For details, see [Customize Function Traces](https://kyma-project.io/#/serverless-manager/user/tutorials/01-100-customize-function-traces).
-- The Eventing module uses the CloudEvents protocol, which natively supports [W3C Trace Context](https://www.w3.org/TR/trace-context/) propagation. It ensures the trace context is passed along but doesn't enrich a trace with more advanced span data.
+- The Eventing module uses the CloudEvents protocol, which natively supports [W3C Trace Context](https://www.w3.org/TR/trace-context/) propagation. It ensures that the trace context is passed along but doesn't enrich a trace with more advanced span data.
 
 ## Limitations
 
-- **Throughput**: Assuming an average span with 40 attributes with 64 characters, the maximum throughput is 4200 span/sec ~= 15.000.000 spans/hour. If this limit is exceeded, spans are refused. To increase the maximum throughput, manually scale out the gateway by increasing the number of replicas for the trace gateway. See [Module Configuration and Status](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
+- **Throughput**: Assuming an average span with 40 attributes with 64 characters, the maximum throughput is 4200 span/sec ~= 15.000.000 spans/hour. If this limit is exceeded, spans are refused. To increase the maximum throughput, manually scale out the gateway by increasing the number of replicas for the trace gateway (see [Module Configuration and Status](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration)).
 - **Unavailability of Output**: For up to 5 minutes, a retry for data is attempted when the destination is unavailable. After that, data is dropped.
 - **No Guaranteed Delivery**: The used buffers are volatile. If the OTel Collector instance crashes, trace data can be lost.
 - **Multiple TracePipeline Support**: The maximum amount of TracePipeline resources is 5.
