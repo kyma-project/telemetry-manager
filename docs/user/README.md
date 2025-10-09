@@ -30,20 +30,20 @@ The Telemetry module focuses on the collection, processing, and shipment stages 
 
 To support telemetry for your applications, the Telemetry module provides the following features:
 
-- **Consistent Telemetry Pipeline API**: Use a streamlined set of APIs based on the [OTel Collector](https://opentelemetry.io/docs/collector/) to collect, filter, and ship your logs, metrics, and traces (see [Telemetry Pipeline API](ADD LINK)). You define a pipeline for each signal type to control how the data is processed and where it's sent. For details, see [Collecting Logs](ADD LINK), [Collecting Traces](ADD LINK), and [Collecting Metrics](ADD LINK).
+- **Consistent Telemetry Pipeline API**: Use a streamlined set of APIs based on the [OTel Collector](https://opentelemetry.io/docs/collector/) to collect, filter, and ship your logs, metrics, and traces (see [Telemetry Pipeline API](pipelines.md)). You define a pipeline for each signal type to control how the data is processed and where it's sent. For details, see [Collecting Logs](./collecting-logs/README.md), [Collecting Traces](./collecting-traces/README.md), and [Collecting Metrics](./collecting-metrics/README.md).
 
-- **Flexible Backend Integration**: The Telemetry module is optimized for integration with SAP BTP observability services, such as SAP Cloud Logging service. You can also send data to any backend that supports the [OpenTelemetry protocol (OTLP)](https://opentelemetry.io/docs/specs/otel/protocol/), giving you the freedom to choose your preferred solution (see [Integrate With Your OTLP Backend](ADD LINK)).
+- **Flexible Backend Integration**: The Telemetry module is optimized for integration with SAP BTP observability services, such as SAP Cloud Logging service. You can also send data to any backend that supports the [OpenTelemetry protocol (OTLP)](https://opentelemetry.io/docs/specs/otel/protocol/), giving you the freedom to choose your preferred solution (see [Integrate With Your OTLP Backend](./integrate-otlp-backend/)).
 
   > **Recommendation:**
-  > For production deployments, we recommend using a central telemetry solution located outside your cluster. For an example with SAP Cloud Logging service, see [Integrate With SAP Cloud Logging](ADD LINK).
+  > For production deployments, we recommend using a central telemetry solution located outside your cluster. For an example with SAP Cloud Logging, see [Integrate With SAP Cloud Logging](./integrate-otlp-backend/ADD LINK).
   >
   > For testing or development, in-cluster solutions may be suitable. For examples such as Dynatrace (or to learn how to collect data from applications based on the OpenTelemetry Demo App), see [Integration Guides](https://kyma-project.io/#/telemetry-manager/user/integration/README).
 
-- **Seamless Istio Integration**: The Telemetry module seamlessly integrates with the Istio module when both are present in your cluster. For details, see [Istio Integration](ADD LINK).
+- **Seamless Istio Integration**: The Telemetry module seamlessly integrates with the Istio module when both are present in your cluster. For details, see [Istio Integration](./architecture/istio-integration.md).
 
-- **Automatic Data Enrichment**: The Telemetry module adds resource attributes as metadata, following OTel semantic conventions. This makes your data more consistent, meaningful, and ready for analysis in your observability backend. For details, see [Automatic Data Enrichment](ADD LINK).
+- **Automatic Data Enrichment**: The Telemetry module adds resource attributes as metadata, following OTel semantic conventions. This makes your data more consistent, meaningful, and ready for analysis in your observability backend. For details, see [Automatic Data Enrichment](./filter-and-process/automatic-data-enrichment.md).
 
-- **Instrumentation Guidance**: To generate telemetry data, you must instrument your code. Based on [Open Telemetry](https://opentelemetry.io/), you get community samples on how to instrument your code using the [Open Telemetry SDKs](https://opentelemetry.io/docs/languages/) in most programming languages.
+- **Instrumentation Guidance**: To generate telemetry data, you must instrument your code. Based on [Open Telemetry](https://opentelemetry.io/) (OTel), you get community samples on how to instrument your code using the [Open Telemetry SDKs](https://opentelemetry.io/docs/languages/) in most programming languages.
 
 - **Custom Tooling Support**: For advanced scenarios, you can opt out of the module's default collection and shipment mechanisms for individual data types. This enables you to use custom tooling to collect and ship the telemetry data.
 

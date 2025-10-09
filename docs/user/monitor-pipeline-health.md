@@ -65,4 +65,4 @@ To create an alert, define a rule that triggers on a specific metric value. For 
 min by (k8s_resource_name) ((kyma_resource_status_conditions{type="TelemetryFlowHealthy",k8s_resource_kind="metricpipelines"})) == 0
 ```
 
-If there are issues with one of the pipelines, see [Troubleshooting for the Telemetry Module](ADD LINK).
+If there are issues with one of the pipelines, see [Troubleshooting for the Telemetry Module](troubleshooting.md).

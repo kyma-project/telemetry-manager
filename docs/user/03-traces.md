@@ -1,3 +1,3 @@
 # Traces
 
-The content got redesigned and can be found at [Traces](./collecting-traces/README.md).
+This content moved to [Collecting Traces](./collecting-traces/README.md).

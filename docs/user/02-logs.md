@@ -1,7 +1,7 @@
 # Application Logs (Fluent Bit)
 
 > [!NOTE]
-> The API described in this document is based on the LogPipeline output `http` and `custom` based on a FluentBit agent. New users should start with the OpenTelemtry based approach as documented in [Logs](logs.md).
+> The following API uses the LogPipeline output `http` and `custom` based on a FluentBit agent. As a new user, start with the approach based on OpenTelemetry: [Collecting Logs](./collecting-logs/README.md).
 
 With application logs, you can debug an application and derive the internal state of an application. When logs are emitted with the correct severity level and context, they're essential for observing an application.
 

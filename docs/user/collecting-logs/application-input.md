@@ -11,7 +11,7 @@ By default, a `LogPipeline` collects logs from all non-system namespaces that yo
 
 You use the **spec.input.application** section in your `LogPipeline` Custom Resource to define how the log agent collects logs from your application Pods. You can specify which namespaces to include or exclude, enable collection from system namespaces, and control other collection behaviors. For a full list of parameters, see the [LogPipeline: Custom Resource Parameters](https://kyma-project.io/#/telemetry-manager/user/resources/02-logpipeline?id=custom-resource-parameters).
 
-When you apply the `LogPipeline`, a log agent on each node starts collecting the log data, transforms it to the OTLP format, and sends it to your backend. For details, see [Transformation to OTLP Logs](ADD LINK).
+When you apply the `LogPipeline`, a log agent on each node starts collecting the log data, transforms it to the OTLP format, and sends it to your backend. For details, see [Transformation to OTLP Logs](../filter-and-process/transformation-to-otlp-logs.md).
 
 ## Enable or Disable Application Log Input
 
@@ -43,6 +43,6 @@ By default, logs from `kube-system`, `istio-system`, and `kyma-system` are exclu
 
 ## Discard the Original Log Body
 
-By default, the log agent preserves the original JSON log message by moving it to the **attributes."log.original"** field after parsing. For details, see [Transformation to OTLP Logs](ADD LINK).
+By default, the log agent preserves the original JSON log message by moving it to the **attributes."log.original"** field after parsing. For details, see [Transformation to OTLP Logs](../filter-and-process/transformation-to-otlp-logs.md).
 
 To reduce data volume, you can disable this behavior. Set the parameter to `false` to discard the original JSON string after its contents are parsed into attributes.
