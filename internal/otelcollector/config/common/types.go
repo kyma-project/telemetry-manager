@@ -201,6 +201,29 @@ type TransformProcessorStatements struct {
 	Conditions []string `yaml:"conditions,omitempty"`
 }
 
+type FilterProcessor struct {
+	ErrorMode        string                `yaml:"error_mode"`
+	LogStatements    LogFilterStatement    `yaml:"logs,omitempty"`
+	MetricStatements MetricFilterStatement `yaml:"metrics,omitempty"`
+	TraceStatements  TraceFilterStatement  `yaml:"traces,omitempty"`
+}
+
+type LogFilterStatement struct {
+	LogRecord []string `yaml:"log_record"`
+}
+
+type TraceFilterStatement struct {
+	SpanEvent []string `yaml:"spanevent"`
+}
+
+type MetricFilterStatement struct {
+	DataPoint []string `yaml:"datapoint"`
+}
+
+type FilterProcessorStatements struct {
+	Statements []string
+}
+
 type ServiceEnrichmentProcessor struct {
 	ResourceAttributes []string `yaml:"resource_attributes"`
 }

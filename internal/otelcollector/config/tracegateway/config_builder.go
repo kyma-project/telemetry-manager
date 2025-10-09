@@ -49,6 +49,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Trace
 			b.addServiceEnrichmentProcessor(),
 			b.addDropKymaAttributesProcessor(),
 			b.addUserDefinedTransformProcessor(),
+			b.addUserDefinedFilterProcessor(),
 			b.addBatchProcessor(),
 			b.addOTLPExporter(queueSize),
 		); err != nil {
@@ -155,6 +156,21 @@ func (b *Builder) addUserDefinedTransformProcessor() buildComponentFunc {
 	)
 }
 
+func (b *Builder) addUserDefinedFilterProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		formatUserDefinedFilterProcessorID,
+		func(tp *telemetryv1alpha1.TracePipeline) any {
+			if len(tp.Spec.Filter) == 0 {
+				return nil
+			}
+			filterStatements := common.FilterSpecsToProcessorStatements(tp.Spec.Filter)
+			filterProcessor := common.TraceFilterProcessorConfig(filterStatements)
+
+			return filterProcessor
+
+		})
+}
+
 //nolint:mnd // hardcoded values
 func (b *Builder) addBatchProcessor() buildComponentFunc {
 	return b.AddProcessor(
@@ -192,6 +208,10 @@ func formatTraceServicePipelineID(tp *telemetryv1alpha1.TracePipeline) string {
 
 func formatUserDefinedTransformProcessorID(tp *telemetryv1alpha1.TracePipeline) string {
 	return fmt.Sprintf(common.ComponentIDUserDefinedTransformProcessor, tp.Name)
+}
+
+func formatUserDefinedFilterProcessorID(tp *telemetryv1alpha1.TracePipeline) string {
+	return fmt.Sprintf(common.ComponentIDUserDefinedFilterProcessor, tp.Name)
 }
 
 func formatOTLPExporterID(tp *telemetryv1alpha1.TracePipeline) string {

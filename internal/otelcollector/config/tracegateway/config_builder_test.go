@@ -77,6 +77,22 @@ func TestBuildConfig(t *testing.T) {
 			},
 			goldenFileName: "two-pipelines-with-transforms.yaml",
 		},
+		{
+			name: "pipeline with user-defined filters",
+			pipelines: []telemetryv1alpha1.TracePipeline{
+				testutils.NewTracePipelineBuilder().
+					WithName("test1").
+					WithFilter(telemetryv1alpha1.FilterSpec{
+						Conditions: []string{"IsMatch(span.name, \".*grpc.*\")"},
+					}).Build(),
+				testutils.NewTracePipelineBuilder().
+					WithName("test2").
+					WithFilter(telemetryv1alpha1.FilterSpec{
+						Conditions: []string{"IsMatch(spanevent.attributes[\"foo\"], \".*bar.*\")"},
+					}).Build(),
+			},
+			goldenFileName: "two-pipelines-with-filter.yaml",
+		},
 	}
 
 	buildOptions := BuildOptions{
