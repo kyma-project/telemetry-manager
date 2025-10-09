@@ -5,7 +5,7 @@ By default, a `LogPipeline` collects logs from all non-system namespaces that yo
 ## Prerequisites
 
 - You have the Telemetry module in your cluster.
-- You have access to Kyma dashboard. Alternatively, if you prefer CLI, you have installed [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl) and [curl](https://curl.se/).
+- You have access to Kyma dashboard. Alternatively, if you prefer CLI, you have installed [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl).
 
 ## Context
 

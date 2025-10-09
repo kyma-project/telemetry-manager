@@ -1,10 +1,10 @@
 # Configure Istio Access Logs
 
-Enable Istio access logs to get details about traffic to your workloads in the Istio service mesh. You can use these logs to monitor the "four golden signals" (latency, traffic, errors, and saturation) and to troubleshoot anomalies.
+To get details about the access to workloads that are part of the Istio service mesh, enable Istio access logs. These logs help you monitor the "four golden signals" (latency, traffic, errors, and saturation) and troubleshoot anomalies.
 
 ## Prerequisites
 
-- You have the Istio module enabled in your cluster. See [Adding and Deleting a Kyma Module](https://kyma-project.io/#/02-get-started/01-quick-install).
+- You have the Istio module in your cluster. See [Quick Install](https://kyma-project.io/#/02-get-started/01-quick-install).
 - You have access to Kyma dashboard. Alternatively, if you prefer CLI, you need [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl).
 
 ## Context
