@@ -15,10 +15,6 @@ import (
 
 type buildComponentFunc = common.BuildComponentFunc[*telemetryv1alpha1.LogPipeline]
 
-const (
-	maxQueueSize = 256 // Maximum number of batches kept in memory before dropping
-)
-
 type Builder struct {
 	common.ComponentBuilder[*telemetryv1alpha1.LogPipeline]
 
@@ -38,7 +34,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPi
 	b.EnvVars = make(common.EnvVars)
 
 	// Iterate over each LogPipeline CR and enrich the config with pipeline-specific components
-	queueSize := maxQueueSize / len(pipelines)
+	queueSize := common.BatchingMaxQueueSize / len(pipelines)
 
 	for _, pipeline := range pipelines {
 		pipelineID := formatLogServicePipelineID(&pipeline)

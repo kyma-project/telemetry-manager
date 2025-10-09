@@ -231,6 +231,25 @@ type ServiceEnrichmentProcessor struct {
 type IstioNoiseFilterProcessor struct {
 }
 
+type FilterProcessor struct {
+	Metrics FilterProcessorMetrics `yaml:"metrics,omitempty"`
+	Logs    FilterProcessorLogs    `yaml:"logs,omitempty"`
+	Traces  FilterProcessorTraces  `yaml:"traces,omitempty"`
+}
+
+type FilterProcessorMetrics struct {
+	Metric    []string `yaml:"metric,omitempty"`
+	Datapoint []string `yaml:"datapoint,omitempty"`
+}
+
+type FilterProcessorTraces struct {
+	Span []string `yaml:"span,omitempty"`
+}
+
+type FilterProcessorLogs struct {
+	Log []string `yaml:"log_record,omitempty"`
+}
+
 // =============================================================================
 // CONNECTOR TYPES
 // =============================================================================
@@ -244,6 +263,7 @@ type RoutingConnector struct {
 type RoutingConnectorTableEntry struct {
 	Statement string   `yaml:"statement"`
 	Pipelines []string `yaml:"pipelines"`
+	Context   string   `yaml:"context,omitempty"`
 }
 
 type ForwardConnector struct {
