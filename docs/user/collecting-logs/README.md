@@ -11,7 +11,7 @@ A `LogPipeline` is a Kubernetes Custom Resource (CR) that configures log collect
 
 The pipeline enriches all collected logs with Kubernetes metadata and transforms them into the OTLP format before sending them to your chosen backend.
 
-The log collection feature is optional. If you don't create a `LogPipeline`, the log collection components are not deployed.
+Log collection is optional. If you don't create a `LogPipeline`, the log collection components are not deployed.
 
 ## Prerequisites
 
