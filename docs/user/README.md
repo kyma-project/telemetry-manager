@@ -32,10 +32,10 @@ To support telemetry for your applications, the Telemetry module provides the fo
 
 - **Consistent Telemetry Pipeline API**: Use a streamlined set of APIs based on the [OTel Collector](https://opentelemetry.io/docs/collector/) to collect, filter, and ship your logs, metrics, and traces (see [Telemetry Pipeline API](pipelines.md)). You define a pipeline for each signal type to control how the data is processed and where it's sent. For details, see [Collecting Logs](./collecting-logs/README.md), [Collecting Traces](./collecting-traces/README.md), and [Collecting Metrics](./collecting-metrics/README.md).
 
-- **Flexible Backend Integration**: The Telemetry module is optimized for integration with SAP BTP observability services, such as SAP Cloud Logging service. You can also send data to any backend that supports the [OpenTelemetry protocol (OTLP)](https://opentelemetry.io/docs/specs/otel/protocol/), giving you the freedom to choose your preferred solution (see [Integrate With Your OTLP Backend](./integrate-otlp-backend/)).
+- **Flexible Backend Integration**: The Telemetry module is optimized for integration with SAP BTP observability services, such as SAP Cloud Logging. You can also send data to any backend that supports the [OpenTelemetry protocol (OTLP)](https://opentelemetry.io/docs/specs/otel/protocol/), giving you the freedom to choose your preferred solution (see [Integrate With Your OTLP Backend](./integrate-otlp-backend/)).
 
   > **Recommendation:**
-  > For production deployments, we recommend using a central telemetry solution located outside your cluster. For an example with SAP Cloud Logging, see [Integrate With SAP Cloud Logging](./integrate-otlp-backend/ADD LINK).
+  > For production deployments, we recommend using a central telemetry solution located outside your cluster. For an example with SAP Cloud Logging, see [Integrate With SAP Cloud Logging](./integration/sap-cloud-logging/README.md).
   >
   > For testing or development, in-cluster solutions may be suitable. For examples such as Dynatrace (or to learn how to collect data from applications based on the OpenTelemetry Demo App), see [Integration Guides](https://kyma-project.io/#/telemetry-manager/user/integration/README).
 
@@ -65,7 +65,7 @@ To learn how this model applies to each signal type, see:
 - [Traces Architecture](./architecture/traces-architecture.md)
 - [Metrics Architecture](./architecture/metrics-architecture.md)
 
-## API / Custom Resource Definitions
+## API/Custom Resource Definitions
 
 You configure the Telemetry module and its pipelines by creating and applying Kubernetes Custom Resource Definitions (CRD), which extend the Kubernetes API with custom additions.
 
