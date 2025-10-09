@@ -4,20 +4,18 @@ By default, a `LogPipeline` collects logs from all non-system namespaces that yo
 
 ## Prerequisites
 
-- You have enabled the Telemetry module.
-- You have access to the Kyma dashboard or have [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl) installed to use the command line.
+- You have the Telemetry module in your cluster.
+- You have access to Kyma dashboard. Alternatively, if you prefer CLI, you have installed [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl) and [curl](https://curl.se/).
 
 ## Context
 
-You use the **spec.input.application** section in your `LogPipeline` Custom Resource to define how the log agent collects logs from your application Pods. You can specify which namespaces to include or exclude, enable collection from system namespaces, and control other collection behaviors. For a full list of parameters, see the [LogPipeline: Custom Resource Parameters](https://kyma-project.io/#/telemetry-manager/user/resources/02-logpipeline?id=custom-resource-parameters).
+Use the **application** input section to restrict or specify which resources you want to include. You can define the namespaces to include in the input collection, exclude namespaces from the input collection, or choose that only system namespaces are included. For details, see [LogPipeline: Custom Resource Parameters](https://kyma-project.io/#/telemetry-manager/user/resources/02-logpipeline?id=custom-resource-parameters).
 
-When you apply the `LogPipeline`, a log agent on each node starts collecting the log data, transforms it to the OTLP format, and sends it to your backend. For details, see [Transformation to OTLP Logs](../filter-and-process/transformation-to-otlp-logs.md).
+When you apply the LogPipeline resource to your Kubernetes cluster, a log agent is deployed and starts collecting the log data, transforms them to OTLP, and sends them to your backend. For details, see [Transformation to OTLP Logs](../filter-and-process/transformation-to-otlp-logs.md).
 
-## Enable or Disable Application Log Input
+## Enable or Disable Log Collection
 
-The **application** input is enabled by default. To create a pipeline that only accepts logs pushed via OTLP, you can disable the **application** input.
-
-To enable collection of logs printed by containers to the `stdout/stderr` channel, define a LogPipeline that has the **application** section enabled as input:
+The **application** input is enabled by default. To create a pipeline that only accepts logs pushed with OTLP, you can disable it.
 
 ```yaml
   ...
@@ -28,7 +26,7 @@ To enable collection of logs printed by containers to the `stdout/stderr` channe
 
 By default, input is collected from all namespaces, except the system namespaces `kube-system`, `istio-system`, `kyma-system`, which are excluded by default.
 
-## Collect Logs from System Namespaces
+## Collect Application Logs from System Namespaces
 
 By default, logs from `kube-system`, `istio-system`, and `kyma-system` are excluded. To override this and collect logs from them, set the **system** attribute to true:
 
@@ -46,3 +44,10 @@ By default, logs from `kube-system`, `istio-system`, and `kyma-system` are exclu
 By default, the log agent preserves the original JSON log message by moving it to the **attributes."log.original"** field after parsing. For details, see [Transformation to OTLP Logs](../filter-and-process/transformation-to-otlp-logs.md).
 
 To reduce data volume, you can disable this behavior. Set the parameter to `false` to discard the original JSON string after its contents are parsed into attributes.
+
+```yaml
+  ...
+    input:
+      application:
+        enabled: false     # Default is true
+```
