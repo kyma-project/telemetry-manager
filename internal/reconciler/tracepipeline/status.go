@@ -142,21 +142,14 @@ func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *
 }
 
 func flowHealthReasonFor(probeResult prober.OTelGatewayProbeResult) string {
-	if probeResult.AllDataDropped {
+	switch {
+	case probeResult.AllDataDropped:
 		return conditions.ReasonSelfMonGatewayAllDataDropped
-	}
-
-	if probeResult.SomeDataDropped {
+	case probeResult.SomeDataDropped:
 		return conditions.ReasonSelfMonGatewaySomeDataDropped
-	}
-
-	if probeResult.QueueAlmostFull {
-		return conditions.ReasonSelfMonGatewayBufferFillingUp
-	}
-
-	if probeResult.Throttling {
+	case probeResult.Throttling:
 		return conditions.ReasonSelfMonGatewayThrottling
+	default:
+		return conditions.ReasonSelfMonFlowHealthy
 	}
-
-	return conditions.ReasonSelfMonFlowHealthy
 }

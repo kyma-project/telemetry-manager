@@ -12,12 +12,6 @@ const (
 	otelExporterSendFailed    = "otelcol_exporter_send_failed"
 	otelExporterEnqueueFailed = "otelcol_exporter_enqueue_failed"
 	otelReceiverRefused       = "otelcol_receiver_refused"
-
-	// queue size/capacacity metrics do not have data type suffixes unlike other metrics
-	otelExporterQueueSize     = "otelcol_exporter_queue_size"
-	otelExporterQueueCapacity = "otelcol_exporter_queue_capacity"
-
-	thresholdQueueAlmostFull = 0.8
 )
 
 type otelCollectorRuleBuilder struct {
@@ -30,7 +24,6 @@ func (rb otelCollectorRuleBuilder) gatewayRules() []Rule {
 	return []Rule{
 		rb.makeRule(RuleNameGatewayAllDataDropped, rb.allDataDroppedExpr()),
 		rb.makeRule(RuleNameGatewaySomeDataDropped, rb.someDataDroppedExpr()),
-		rb.makeRule(RuleNameGatewayQueueAlmostFull, rb.queueAlmostFullExpr()),
 		rb.makeRule(RuleNameGatewayThrottling, rb.throttlingExpr()),
 	}
 }
@@ -39,7 +32,6 @@ func (rb otelCollectorRuleBuilder) agentRules() []Rule {
 	return []Rule{
 		rb.makeRule(RuleNameAgentAllDataDropped, rb.allDataDroppedExpr()),
 		rb.makeRule(RuleNameAgentSomeDataDropped, rb.someDataDroppedExpr()),
-		rb.makeRule(RuleNameAgentQueueAlmostFull, rb.queueAlmostFullExpr()),
 	}
 }
 
@@ -86,17 +78,6 @@ func (rb otelCollectorRuleBuilder) exporterEnqueueFailedExpr() string {
 	return rate(metricName, selectService(rb.serviceName)).
 		sumBy(labelPipelineName).
 		greaterThan(0).
-		build()
-}
-
-// Check if the queue is almost full.
-func (rb otelCollectorRuleBuilder) queueAlmostFullExpr() string {
-	numMetric := otelExporterQueueSize
-	denumMetric := otelExporterQueueCapacity
-
-	return div(numMetric, denumMetric, ignoringLabelsMatch("data_type"), selectService(rb.serviceName)).
-		maxBy(labelPipelineName).
-		greaterThan(thresholdQueueAlmostFull).
 		build()
 }
 

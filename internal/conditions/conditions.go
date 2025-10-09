@@ -28,7 +28,6 @@ const (
 	ReasonSelfMonAgentAllDataDropped    = "AgentAllTelemetryDataDropped"
 	ReasonSelfMonGatewaySomeDataDropped = "GatewaySomeTelemetryDataDropped"
 	ReasonSelfMonAgentSomeDataDropped   = "AgentSomeTelemetryDataDropped"
-	ReasonSelfMonGatewayBufferFillingUp = "GatewayBufferFillingUp"
 	ReasonSelfMonAgentBufferFillingUp   = "AgentBufferFillingUp"
 	ReasonSelfMonGatewayProbingFailed   = "GatewayProbingFailed"
 	ReasonSelfMonAgentProbingFailed     = "AgentProbingFailed"
@@ -101,7 +100,6 @@ var otelLogPipelineMessages = map[string]string{
 
 	ReasonSelfMonGatewayAllDataDropped:  "Backend is not reachable or rejecting logs. All logs are dropped in Log gateway. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=no-logs-arrive-at-the-backend",
 	ReasonSelfMonAgentAllDataDropped:    "Backend is not reachable or rejecting logs. All logs are dropped in Log agent. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=no-logs-arrive-at-the-backend",
-	ReasonSelfMonGatewayBufferFillingUp: "Buffer in Log gateway nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=buffer-filling-up",
 	ReasonSelfMonAgentBufferFillingUp:   "Buffer in Log agent nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=buffer-filling-up",
 	ReasonSelfMonGatewaySomeDataDropped: "Backend is reachable, but rejecting logs. Some logs are dropped in Log gateway. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=not-all-logs-arrive-at-the-backend",
 	ReasonSelfMonAgentSomeDataDropped:   "Backend is reachable, but rejecting logs. Some logs are dropped in Log agent. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=not-all-logs-arrive-at-the-backend",
@@ -116,7 +114,6 @@ var tracePipelineMessages = map[string]string{
 	ReasonGatewayNotReady:               "Trace gateway Deployment is not ready",
 	ReasonGatewayReady:                  "Trace gateway Deployment is ready",
 	ReasonSelfMonGatewayAllDataDropped:  "Backend is not reachable or rejecting spans. All spans are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=no-spans-arrive-at-the-backend",
-	ReasonSelfMonGatewayBufferFillingUp: "Buffer nearing capacity. Incoming span rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-buffer-filling-up",
 	ReasonSelfMonConfigNotGenerated:     "No spans delivered to backend because TracePipeline specification is not applied to the configuration of Trace gateway. Check the 'ConfigurationGenerated' condition for more details",
 	ReasonSelfMonGatewayThrottling:      "Trace gateway is unable to receive spans at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-throttling",
 	ReasonSelfMonGatewaySomeDataDropped: "Backend is reachable, but rejecting spans. Some spans are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=not-all-spans-arrive-at-the-backend",
@@ -132,7 +129,6 @@ var metricPipelineMessages = map[string]string{
 	ReasonGatewayReady:                  "Metric gateway Deployment is ready",
 	ReasonSelfMonGatewayAllDataDropped:  "Backend is not reachable or rejecting metrics. All metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=no-metrics-arrive-at-the-backend",
 	ReasonSelfMonAgentAllDataDropped:    "Backend is not reachable or rejecting metrics. All metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=no-metrics-arrive-at-the-backend",
-	ReasonSelfMonGatewayBufferFillingUp: "Buffer nearing capacity. Incoming metric rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=buffer-filling-up",
 	ReasonSelfMonAgentBufferFillingUp:   "Buffer nearing capacity. Incoming metric rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=buffer-filling-up",
 	ReasonSelfMonConfigNotGenerated:     "No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of Metric gateway. Check the 'ConfigurationGenerated' condition for more details",
 	ReasonSelfMonGatewayThrottling:      "Metric gateway is unable to receive metrics at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-throttling",
