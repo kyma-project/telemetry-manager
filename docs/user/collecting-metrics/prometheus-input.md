@@ -1,6 +1,6 @@
 # Collect Prometheus Metrics
 
-If your applications emit Prometheus-based metrics, enable the `prometheus` input in your `MetricPipeline` and annotate your application's Service or Pod. You can collect diagnostic metrics and control from which namespaces the system collects metrics.
+If your applications emit Prometheus-based metrics, enable the `prometheus` input in your `MetricPipeline` and annotate your application's Service or Pod. You can choose to collect diagnostic metrics, and you can control from which namespaces metrics are collected.
 
 ## Prerequisites
 
@@ -8,7 +8,7 @@ Instrument your application using a library like the [Prometheus client library]
 
 ## Activate Prometheus Metrics
 
-The `prometheus` input is disabled by default. If your applications emit Prometheus metrics, enable Prometheus-based metric collection:
+By default, the `prometheus` input is disabled. If your applications emit Prometheus metrics, enable the collection of Prometheus-based metrics:
 
 ```yaml
   ...
@@ -22,21 +22,19 @@ The `prometheus` input is disabled by default. If your applications emit Prometh
 
 ## Enable Metrics Collection With Annotations
 
-The metric agent automatically discovers Prometheus endpoints in your cluster. It looks for specific annotations on your Kubernetes Services or Pods.
+The metric agent automatically discovers Prometheus endpoints in your cluster by looking for specific annotations on your Kubernetes Services or Pods.
 
-Apply the following annotations to enable automatic metric collection. If your Pod has an Istio sidecar, annotate the Service. Otherwise, annotate the Pod directly.
+To enable automatic metrics collection, apply the following annotations. If your Pod has an Istio sidecar, annotate the Service. Otherwise, annotate the Pod directly.
 
-> **Note:** If your service mesh enforces `STRICT` mTLS, the agent scrapes the endpoint over HTTPS automatically. If you do not use `STRICT` mTLS, add the `prometheus.io/scheme: http` annotation to force scraping over plain HTTP.
+> **Note:** If your service mesh enforces `STRICT` mTLS, the agent scrapes the endpoint over HTTPS automatically. If you don't use `STRICT` mTLS, add the annotation `prometheus.io/scheme: http` to force scraping over plain HTTP.
 
-| Annotation Key | Example Values | Default Value | Description |
-|--|--|--|--|
-| `prometheus.io/scrape` (mandatory) | `true`, `false` | none | Controls whether Prometheus Receiver automatically scrapes metrics from this target. |
-| `prometheus.io/port` (mandatory) | `8080`, `9100` | none | Specifies the port of the Pod where the metrics are exposed. |
-| `prometheus.io/path` | `/metrics`, `/custom_metrics` | `/metrics` | Defines the HTTP path where Prometheus Receiver can find metrics data. |
-| `prometheus.io/scheme` (only relevant when annotating a Service) | `http`, `https` | If Istio is active, `https` is supported; otherwise, only `http` is available. The default scheme is `http` unless an Istio sidecar is present, denoted by the label `security.istio.io/tlsMode=istio`, in which case `https` becomes the default. | Determines the protocol used for scraping metrics — either HTTPS with mTLS or plain HTTP. |
-| `prometheus.io/param_<name>: <value>` | `prometheus.io/param_format: prometheus` | none | Instructs Prometheus Receiver to pass name-value pairs as URL parameters when calling the metrics endpoint. |
-
-If you're running the Pod targeted by a Service with Istio, Istio must be able to derive the [appProtocol](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol) from the Service port definition; otherwise the communication for scraping the metric endpoint cannot be established. You must either prefix the port name with the protocol like in `http-metrics`, or explicitly define the `appProtocol` attribute.
+| Annotation Key                   | Values                                                           | Description                                                                                                                        |
+|----------------------------------|------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| `prometheus.io/scrape` (mandatory) | true, false (no default value)                                   | Set to true to enable scraping for this target.                                                                                    |
+| `prometheus.io/port` (mandatory)   | 8080, 9100 (no default value)                                    | Specify the port on the Pod where your application exposes metrics.                                                                |
+| `prometheus.io/path`               | /metrics (default), /custom_metrics                              | Set the HTTP path for the metrics endpoint.                                                                                        |
+| `prometheus.io/scheme`             | https-metrics (default with Istio), http (default without Istio) | Define the protocol for scraping: Either HTTPS with mTLS, or plain HTTP.                                                           |
+| `prometheus.io/param_<name>`       | Example: format: prometheus (no default)                         | Add a URL parameter to the scrape request. For example, prometheus.io/param_format: prometheus adds ?format=prometheus to the URL. |
 
 For example, see the following `Service` configuration:
 
@@ -81,7 +79,7 @@ To use diagnostic metrics, enable the `diagnosticMetrics` for the input in your 
 ```yaml
   ...
   input:
-    istio:
+    <istio | prometheus>:
     enabled: true
     diagnosticMetrics:
         enabled: true

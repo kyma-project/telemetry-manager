@@ -32,6 +32,15 @@ Envoy metrics help you understand the performance and behavior of your Envoy pro
 
 To use Envoy metrics to observe and troubleshoot service mesh traffic, enable the `envoyMetrics` section under the `istio` input:
 
+```yaml
+  ...
+    input:
+      istio:
+        enabled: true
+        envoyMetrics:
+          enabled: true
+```
+
 ## Collect Diagnostic Metrics
 <!-- identical section for Prometheus and Istio docs -->
 To validate or debug your scraping configuration for the `prometheus` and `istio` input, you can use diagnostic metrics. By default, they are disabled.
@@ -43,7 +52,7 @@ To use diagnostic metrics, enable the `diagnosticMetrics` for the input in your 
 ```yaml
   ...
   input:
-    istio:
+    <istio | prometheus>:
     enabled: true
     diagnosticMetrics:
         enabled: true
