@@ -37,7 +37,7 @@ service:
                 - resource/insert-cluster-attributes
                 - resource/drop-skip-enrichment-attribute
                 - resource/drop-kyma-attributes
-                - transform/cls-user-defined
+                - transform/user-defined-cls
                 - batch
             exporters:
                 - otlp/cls
@@ -172,19 +172,19 @@ processors:
         resource_attributes:
             - kyma.kubernetes_io_app_name
             - kyma.app_name
-    transform/cls-user-defined:
-        error_mode: ignore
-        metric_statements:
-            - statements:
-                - set(attributes["environment"], "prod")
-              conditions:
-                - resource.attributes["k8s.namespace.name"] == "production"
     transform/set-instrumentation-scope-kyma:
         error_mode: ignore
         metric_statements:
             - statements:
                 - set(scope.version, "") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
                 - set(scope.name, "io.kyma-project.telemetry/kyma") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
+    transform/user-defined-cls:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(attributes["environment"], "prod")
+              conditions:
+                - resource.attributes["k8s.namespace.name"] == "production"
 exporters:
     otlp/cls:
         endpoint: ${OTLP_ENDPOINT_CLS}

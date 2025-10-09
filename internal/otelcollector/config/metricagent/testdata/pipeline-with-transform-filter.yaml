@@ -39,22 +39,10 @@ service:
                 - resource/drop-skip-enrichment-attribute
                 - resource/drop-kyma-attributes
                 - transform/user-defined-test1
+                - filter/user-defined-test1
                 - batch
             exporters:
                 - otlp/test1
-        metrics/output-test2:
-            receivers:
-                - routing/enrichment
-                - routing/runtime-input
-            processors:
-                - filter/drop-envoy-metrics-if-disabled
-                - resource/insert-cluster-attributes
-                - resource/drop-skip-enrichment-attribute
-                - resource/drop-kyma-attributes
-                - transform/user-defined-test2
-                - batch
-            exporters:
-                - otlp/test2
     telemetry:
         metrics:
             readers:
@@ -158,6 +146,11 @@ processors:
         metrics:
             datapoint:
                 - IsMatch(metric.name, "^k8s.node.network.*") and not(IsMatch(attributes["interface"], "^(eth|en).*"))
+    filter/user-defined-test1:
+        error_mode: ignore
+        metrics:
+            metric:
+                - metric.type == METRIC_DATA_TYPE_SUMMARY
     k8sattributes:
         auth_type: serviceAccount
         passthrough: false
@@ -249,14 +242,6 @@ processors:
         metric_statements:
             - statements:
                 - set(attributes["log.level"], "error")
-                - set(body, "transformed1")
-              conditions:
-                - IsMatch(body, ".*error.*")
-    transform/user-defined-test2:
-        error_mode: ignore
-        metric_statements:
-            - statements:
-                - set(attributes["log.level"], "error")
                 - set(body, "transformed2")
               conditions:
                 - IsMatch(body, ".*error.*")
@@ -265,17 +250,7 @@ exporters:
         endpoint: ${OTLP_ENDPOINT_TEST1}
         sending_queue:
             enabled: true
-            queue_size: 128
-        retry_on_failure:
-            enabled: true
-            initial_interval: 5s
-            max_interval: 30s
-            max_elapsed_time: 300s
-    otlp/test2:
-        endpoint: ${OTLP_ENDPOINT_TEST2}
-        sending_queue:
-            enabled: true
-            queue_size: 128
+            queue_size: 256
         retry_on_failure:
             enabled: true
             initial_interval: 5s
@@ -289,7 +264,6 @@ connectors:
             - statement: route() where instrumentation_scope.name == "io.kyma-project.telemetry/runtime"
               pipelines:
                 - metrics/output-test1
-                - metrics/output-test2
               context: metric
     routing/runtime-input:
         default_pipelines:
@@ -299,4 +273,3 @@ connectors:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
               pipelines:
                 - metrics/output-test1
-                - metrics/output-test2

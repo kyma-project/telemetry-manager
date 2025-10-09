@@ -38,7 +38,7 @@ service:
                 - resource/insert-cluster-attributes
                 - resource/drop-skip-enrichment-attribute
                 - resource/drop-kyma-attributes
-                - transform/user-defined-test1
+                - filter/user-defined-test1
                 - batch
             exporters:
                 - otlp/test1
@@ -51,7 +51,7 @@ service:
                 - resource/insert-cluster-attributes
                 - resource/drop-skip-enrichment-attribute
                 - resource/drop-kyma-attributes
-                - transform/user-defined-test2
+                - filter/user-defined-test2
                 - batch
             exporters:
                 - otlp/test2
@@ -158,6 +158,16 @@ processors:
         metrics:
             datapoint:
                 - IsMatch(metric.name, "^k8s.node.network.*") and not(IsMatch(attributes["interface"], "^(eth|en).*"))
+    filter/user-defined-test1:
+        error_mode: ignore
+        metrics:
+            metric:
+                - metric.type == METRIC_DATA_TYPE_SUMMARY
+    filter/user-defined-test2:
+        error_mode: ignore
+        metrics:
+            metric:
+                - metric.type == METRIC_DATA_TYPE_GAUGE
     k8sattributes:
         auth_type: serviceAccount
         passthrough: false
@@ -244,22 +254,6 @@ processors:
                 - set(scope.name, "io.kyma-project.telemetry/runtime") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
                 - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
                 - set(scope.name, "io.kyma-project.telemetry/runtime") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
-    transform/user-defined-test1:
-        error_mode: ignore
-        metric_statements:
-            - statements:
-                - set(attributes["log.level"], "error")
-                - set(body, "transformed1")
-              conditions:
-                - IsMatch(body, ".*error.*")
-    transform/user-defined-test2:
-        error_mode: ignore
-        metric_statements:
-            - statements:
-                - set(attributes["log.level"], "error")
-                - set(body, "transformed2")
-              conditions:
-                - IsMatch(body, ".*error.*")
 exporters:
     otlp/test1:
         endpoint: ${OTLP_ENDPOINT_TEST1}
