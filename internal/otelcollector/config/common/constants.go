@@ -56,7 +56,7 @@ const (
 	kymaK8sIOAppName                   = "kyma.kubernetes_io_app_name"
 	kymaAppName                        = "kyma.app_name"
 	defaultTransformProcessorErrorMode = "ignore"
-	defaultFilterProcessorErrorMode    = "ignore"
+	DefaultFilterProcessorErrorMode    = "ignore"
 )
 
 const (

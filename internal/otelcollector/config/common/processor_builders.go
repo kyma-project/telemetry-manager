@@ -177,7 +177,7 @@ func ResolveServiceNameConfig() *ServiceEnrichmentProcessor {
 
 // LogFilterProcessorConfig creates a FilterProcessor for logs with error_mode set to "ignore"
 func LogFilterProcessorConfig(statements []FilterProcessorStatements) *FilterProcessor {
-	result := LogFilterStatement{}
+	//result := LogFilterStatement{}
 	logRecords := make([]string, 0, len(statements))
 	for _, s := range statements {
 		logRecords = append(logRecords, s.Statements...)
@@ -185,11 +185,13 @@ func LogFilterProcessorConfig(statements []FilterProcessorStatements) *FilterPro
 
 	// Sort to prevent changes in the order in every reconciliation loop
 	sort.Strings(logRecords)
-	result.LogRecord = logRecords
+	//result.LogRecord = logRecords
 
 	return &FilterProcessor{
-		ErrorMode:     defaultFilterProcessorErrorMode,
-		LogStatements: result,
+		ErrorMode: DefaultFilterProcessorErrorMode,
+		Logs: FilterProcessorLogs{
+			Log: logRecords,
+		},
 	}
 }
 
@@ -206,8 +208,10 @@ func MetricFilterProcessorConfig(statements []FilterProcessorStatements) *Filter
 	result.DataPoint = dataPoints
 
 	return &FilterProcessor{
-		ErrorMode:        defaultFilterProcessorErrorMode,
-		MetricStatements: result,
+		ErrorMode: DefaultFilterProcessorErrorMode,
+		Metrics: FilterProcessorMetrics{
+			Metric: dataPoints,
+		},
 	}
 }
 
@@ -224,8 +228,10 @@ func TraceFilterProcessorConfig(statements []FilterProcessorStatements) *FilterP
 	result.SpanEvent = spanEvents
 
 	return &FilterProcessor{
-		ErrorMode:       defaultFilterProcessorErrorMode,
-		TraceStatements: result,
+		ErrorMode: DefaultFilterProcessorErrorMode,
+		Traces: FilterProcessorTraces{
+			Span: spanEvents,
+		},
 	}
 }
 
