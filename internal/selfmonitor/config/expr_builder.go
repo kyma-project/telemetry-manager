@@ -8,8 +8,6 @@ import (
 
 const defaultRateDuration = "5m"
 
-type vectorMatch func() string
-
 type exprBuilder struct {
 	expr string
 }
