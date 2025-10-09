@@ -25,7 +25,7 @@ To enable tracing for all workloads in the service mesh, apply an Istio `Telemet
 > [!NOTE]
 > You can only have one mesh-wide Istio Telemetry resource in the istio-system namespace. If you also want to configure Istio access logs, combine both configurations into a single resource (see [Configure Istio Access Logs](./../collecting-logs/istio-support.md)).
 
-1. Apply the Telemetry resource. The following command enables tracing with a default sampling rate of 1%:.
+1. Apply the Telemetry resource. The following command enables tracing with a default sampling rate of 1%:
 
    ```yaml
    apiVersion: telemetry.istio.io/v1
@@ -73,6 +73,9 @@ spec:
 In some cases, you may want Istio to propagate the W3C Trace Context for context-aware logging but not report any trace spans. This approach enriches your access logs with **traceId** and **spanId** without the overhead of full distributed tracing.
 
 To achieve this, set **randomSamplingPercentage** to `0.00` in your mesh-wide configuration.
+
+> **TIP:** For guidance on Istio access logs, see [Configure Istio Access Logs](../collecting-logs/istio-support.md).
+
 
 ```yaml
 apiVersion: telemetry.istio.io/v1
