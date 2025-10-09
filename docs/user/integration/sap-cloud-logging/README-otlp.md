@@ -8,9 +8,6 @@
 
 Learn how to configure the Telemetry module to ingest application and access logs as well as distributed trace data and metrics in instances of SAP Cloud Logging.
 
-> [!WARNING]
-> The default Dashboards in SAP Cloud Logging are still relying on the Fluent-Bit based integration. If you rely on these dashboards, please follow [Integrate with SAP Cloud Logging](./README.md) instead
-
 ## Table of Content
 
 - [Table of Content](#table-of-content)

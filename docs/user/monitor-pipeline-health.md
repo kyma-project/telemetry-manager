@@ -36,7 +36,7 @@ To understand the meaning of each status condition, see the detailed reference f
 
 ## Set Up Health Monitoring and Alerts
 
-For production environments, set up continuous monitoring by exporting the health metrics to your observability backend, where you can create dashboards and configure alerts using alert rules. For an example, see [Integrate With SAP Cloud Logging](../integration/sap-cloud-logging/README.md)
+For production environments, set up continuous monitoring by exporting the health metrics to your observability backend, where you can create dashboards and configure alerts using alert rules. For an example, see [Integrate With SAP Cloud Logging](./integration/sap-cloud-logging/README.md)
 
 > **Caution:** Don't access the metrics endpoint of the used OTel Collector instances directly, because the exposed metrics are no official API of the Telemetry module. Breaking changes can happen if the underlying OTel Collector version introduces such. Instead, use the respective status conditions for each pipeline.
 

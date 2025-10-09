@@ -24,7 +24,7 @@ spec:
       ...
 ```
 
-![structure](./../assets/pipeline-structure.drawio.svg) <!-- THIS IS NEW, NEED TO REVIEW IT LATER -->
+![structure](./assets/pipeline-structure.drawio.svg) <!-- THIS IS NEW, NEED TO REVIEW IT LATER -->
 
 ## Pipeline Types
 
@@ -44,20 +44,20 @@ By default, the **otlp** input is enabled for all signal types, which provisions
 
 Additionally, you can apply specific **input** configurations for each signal type:
 
-- `LogPipeline`: The **application** input is enabled by default. Additionally, you can collect Istio access logs through the default **otlp** input. For both inputs, you can restrict from which Kubernetes resources you want to collect signals. For details, see [Configure Application Logs](./../collecting-logs/application-input.md) and [Configure Istio Access Logs](./../collecting-logs/istio-support.md).
-- `TracePipeline`: Tracing is a push-based model, so **otlp** is the only available input. The pipeline's OTLP endpoint receives span data pushed from your applications and Istio proxies. For Istio tracing, you can configure the sampling rate and apply individual settings to namespaces or workloads (see [Configure Istio Tracing](./../collecting-traces/istio-support.md)).
-- `MetricPipeline`: You can select which metrics are collected by enabling inputs: **prometheus** (for scraping annotated workloads), **runtime** (for Kubernetes resource metrics), and **istio** (for service mesh metrics). You can filter all inputs by namespace. For details, see [Collect Istio Metrics](./../collecting-metrics/istio-input.md), [Collect Prometheus Metrics](./../collecting-metrics/prometheus-input.md), and [Collect Runtime Metrics](./../collecting-metrics/runtime-input.md).
+- `LogPipeline`: The **application** input is enabled by default. Additionally, you can collect Istio access logs through the default **otlp** input. For both inputs, you can restrict from which Kubernetes resources you want to collect signals. For details, see [Configure Application Logs](./collecting-logs/application-input.md) and [Configure Istio Access Logs](./collecting-logs/istio-support.md).
+- `TracePipeline`: Tracing is a push-based model, so **otlp** is the only available input. The pipeline's OTLP endpoint receives span data pushed from your applications and Istio proxies. For Istio tracing, you can configure the sampling rate and apply individual settings to namespaces or workloads (see [Configure Istio Tracing](./collecting-traces/istio-support.md)).
+- `MetricPipeline`: You can select which metrics are collected by enabling inputs: **prometheus** (for scraping annotated workloads), **runtime** (for Kubernetes resource metrics), and **istio** (for service mesh metrics). You can filter all inputs by namespace. For details, see [Collect Istio Metrics](./collecting-metrics/istio-input.md), [Collect Prometheus Metrics](./collecting-metrics/prometheus-input.md), and [Collect Runtime Metrics](./collecting-metrics/runtime-input.md).
 
 ## Filtering and Processing
 
 You can control the volume and focus of your telemetry data by filtering it based on Kubernetes resources like namespaces, containers, and workloads. For details, see [Filtering and Processing Data](ADD LINK).
 
-All pipelines automatically enrich telemetry data with Kubernetes resource attributes, such as Pod name, namespace, and labels. With this context information, you can easily identify the source of telemetry data in your backend. For details, see [Automatic Data Enrichment](./../filter-and-process/automatic-data-enrichment.md).
+All pipelines automatically enrich telemetry data with Kubernetes resource attributes, such as Pod name, namespace, and labels. With this context information, you can easily identify the source of telemetry data in your backend. For details, see [Automatic Data Enrichment](./filter-and-process/automatic-data-enrichment.md).
 
 ## Output
 
 In the **spec.output** section, you define the destination for your telemetry data. Each pipeline resource supports exactly one output, which sends data using OTLP.
 
-You must specify the endpoint address of your observability backend. You can also configure the protocol (gRPC or HTTP) and the authentication details required to connect securely. For details, see [Integrate With Your OTLP Backend](./../integrate-otlp-backend/README.md).
+You must specify the endpoint address of your observability backend. You can also configure the protocol (gRPC or HTTP) and the authentication details required to connect securely. For details, see [Integrate With Your OTLP Backend](./integrate-otlp-backend/README.md).
 
-To send the same signal to multiple backends, create a separate pipeline resource for each destination. For details, see [Route Specific Inputs to Different Backends](./../otlp-input.md).
+To send the same signal to multiple backends, create a separate pipeline resource for each destination. For details, see [Route Specific Inputs to Different Backends](./otlp-input.md).
