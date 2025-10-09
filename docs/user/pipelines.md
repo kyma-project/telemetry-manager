@@ -1,7 +1,6 @@
-
 # Telemetry Pipeline API
 
-To collect and export telemetry data from your Kyma environment cluster, you define one or more pipelines for each signal type (logs, traces, metrics). You choose which data to collect and to which backend it's sent.
+To collect and export telemetry data from your Kyma cluster, you define one or more pipelines for each signal type (logs, traces, metrics). You choose which data to collect and to which backend it's sent.
 
 ## Pipeline Structure
 
@@ -11,15 +10,15 @@ While each pipeline is tailored to a specific signal, they all share a common st
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: <Kind>Pipeline     # Choose pipeline kind depending on signal type
+kind: <LogPipeline | TracePipeline | MetricPipeline>     # Choose pipeline kind depending on signal type
 metadata:
-  name: backend
+  name: my-observability-backend
 spec:
   input:                 # Enable additional inputs depending on signal type
     otlp:
       ...
   output:
-    otlp:                # Reference your telemetry backend
+    otlp:                # Integrate with your telemetry backend
       endpoint:
       ...
 ```
@@ -38,9 +37,9 @@ The **kind** attribute in the CRD specifies the type of telemetry data that the 
 
 In the **spec.input** section, you define the sources of your telemetry data. This section is the primary difference between the pipeline types.
 
-All pipelines share **otlp** as the default input and can be configured with additional, signal-specific inputs.
+All pipelines share **otlp** as the default input and can be configured with additional, signal-specific inputs:
 
-By default, the **otlp** input is enabled for all signal types, which provisions a cluster-internal endpoint accepting OTLP data. For details, see [Configure the OTLP Input](./otlp-input.md).
+By default, the **otlp** input is enabled for all signal types, which provisions a cluster-internal endpoint accepting OTLP data. For details, see [Set Up the OTLP Input](./otlp-input.md).
 
 Additionally, you can apply specific **input** configurations for each signal type:
 
