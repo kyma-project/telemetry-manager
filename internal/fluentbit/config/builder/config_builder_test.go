@@ -36,6 +36,8 @@ const (
 	keyValue      = "test-key-value"
 
 	secretNamespace = "test-secret-namespace"
+
+	clusterName = "test-cluster-name"
 )
 
 func TestMakeConfig(t *testing.T) {
@@ -53,10 +55,10 @@ func TestMakeConfig(t *testing.T) {
 		}
 		fluentBitConfig, err := sut.Build(
 			ctx,
-			pipelines)
+			pipelines, clusterName)
 		require.NoError(t, err)
 
-		sectionsConfig, err := buildFluentBitSectionsConfig(&pipelines[0], sut.cfg)
+		sectionsConfig, err := buildFluentBitSectionsConfig(&pipelines[0], sut.cfg, clusterName)
 		require.NoError(t, err)
 
 		expectedConfig := &FluentBitConfig{
@@ -116,10 +118,10 @@ func TestBuildEnvConfigSecret(t *testing.T) {
 		}
 		fluentBitConfig, err := sut.Build(
 			ctx,
-			pipelines)
+			pipelines, clusterName)
 		require.NoError(t, err)
 
-		sectionsConfig, err := buildFluentBitSectionsConfig(&pipelines[0], sut.cfg)
+		sectionsConfig, err := buildFluentBitSectionsConfig(&pipelines[0], sut.cfg, clusterName)
 		require.NoError(t, err)
 
 		envConfigSecretKey := formatEnvVarName("test-pipeline", secretNamespace, hostSecretName, hostSecretKey)
@@ -148,10 +150,10 @@ func TestBuildEnvConfigSecret(t *testing.T) {
 		}
 		fluentBitConfig, err := sut.Build(
 			ctx,
-			pipelines)
+			pipelines, clusterName)
 		require.NoError(t, err)
 
-		sectionsConfig, err := buildFluentBitSectionsConfig(&pipelines[0], sut.cfg)
+		sectionsConfig, err := buildFluentBitSectionsConfig(&pipelines[0], sut.cfg, clusterName)
 		require.NoError(t, err)
 
 		envConfigUserSecretKey := formatEnvVarName("test-pipeline", secretNamespace, basicAuthSecretName, basicAuthUserKey)
@@ -187,12 +189,12 @@ func TestBuildEnvConfigSecret(t *testing.T) {
 		}
 		fluentBitConfig, err := sut.Build(
 			ctx,
-			pipelines)
+			pipelines, clusterName)
 		require.NoError(t, err)
 
-		sectionsConfig, err := buildFluentBitSectionsConfig(&pipelines[0], sut.cfg)
+		sectionsConfig, err := buildFluentBitSectionsConfig(&pipelines[0], sut.cfg, clusterName)
 		require.NoError(t, err)
-		sectionsConfig2, err := buildFluentBitSectionsConfig(&pipelines[1], sut.cfg)
+		sectionsConfig2, err := buildFluentBitSectionsConfig(&pipelines[1], sut.cfg, clusterName)
 		require.NoError(t, err)
 
 		envConfigUserSecretKey := formatEnvVarName("test-pipeline", secretNamespace, basicAuthSecretName, basicAuthUserKey)
@@ -230,7 +232,7 @@ func TestBuildEnvConfigSecret(t *testing.T) {
 		}
 		fluentBitConfig, err := sut.Build(
 			ctx,
-			pipelines)
+			pipelines, clusterName)
 
 		require.ErrorContains(t, err, "unable to read secret 'test-invalid-secret' from namespace 'test-invalid-secret-namespace'")
 		require.Nil(t, fluentBitConfig)
@@ -247,7 +249,7 @@ func TestBuildEnvConfigSecret(t *testing.T) {
 		}
 		fluentBitConfig, err := sut.Build(
 			ctx,
-			pipelines)
+			pipelines, clusterName)
 
 		require.ErrorContains(t, err, "unable to find key 'test-invalid-key' in secret 'test-host-secret' from namespace 'test-secret-namespace'")
 		require.Nil(t, fluentBitConfig)
@@ -281,10 +283,10 @@ func TestBuildTLSConfigSecret(t *testing.T) {
 		}
 		fluentBitConfig, err := sut.Build(
 			ctx,
-			pipelines)
+			pipelines, clusterName)
 		require.NoError(t, err)
 
-		sectionsConfig, err := buildFluentBitSectionsConfig(&pipelines[0], sut.cfg)
+		sectionsConfig, err := buildFluentBitSectionsConfig(&pipelines[0], sut.cfg, clusterName)
 		require.NoError(t, err)
 
 		expectedConfig := &FluentBitConfig{
@@ -332,10 +334,10 @@ func TestBuildTLSConfigSecret(t *testing.T) {
 				).
 				Build(),
 		}
-		fluentBitConfig, err := sut.Build(ctx, pipelines)
+		fluentBitConfig, err := sut.Build(ctx, pipelines, clusterName)
 		require.NoError(t, err)
 
-		sectionsConfig, err := buildFluentBitSectionsConfig(&pipelines[0], sut.cfg)
+		sectionsConfig, err := buildFluentBitSectionsConfig(&pipelines[0], sut.cfg, clusterName)
 		require.NoError(t, err)
 
 		expectedConfig := &FluentBitConfig{
@@ -385,7 +387,7 @@ func TestBuildTLSConfigSecret(t *testing.T) {
 		}
 		fluentBitConfig, err := sut.Build(
 			ctx,
-			pipelines)
+			pipelines, clusterName)
 
 		require.ErrorContains(t, err, "unable to build tls secret")
 		require.Nil(t, fluentBitConfig)
