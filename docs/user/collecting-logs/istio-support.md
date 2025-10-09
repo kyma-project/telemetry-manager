@@ -9,12 +9,14 @@ To get details about the access to workloads that are part of the Istio service 
 
 ## Context
 
-[Istio access logs](https://istio.io/latest/docs/tasks/observability/logs/access-log/) are disabled by default because they can generate a high volume of data. To collect them, you apply an Istio `Telemetry` resource to a specific namespace, a specific workload, or the entire mesh. After you enable the logs, you can add a filter to reduce noise and focus on relevant data.
+By default, Istio access logs are disabled because they can generate a high volume of data. To collect them, you apply an Istio `Telemetry` resource to a specific namespace, for a specific workload, or for the entire mesh.
+
+After enabling logs, you can add a filter to reduce noise and focus on relevant data.
 
 > **Caution:**
-> Enabling access logs, especially for the entire mesh, can significantly increase log volume and may lead to higher storage costs. Enable this feature only for the specific resources you need to monitor.
+> Enabling access logs, especially for the entire mesh, can significantly increase log volume and may lead to higher storage costs. Enable this feature only for the resources or components you want to monitor.
 
-The Istio module provides a preconfigured [extension provider](https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig-ExtensionProvider) called `kyma-logs`. This provider tells Istio to send access logs to the Telemetry module's OTLP endpoint. If your `LogPipeline` uses the legacy **http** output, you must use the `stdout-json` provider instead.
+The Istio module provides a preconfigured [extension provider](https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig-ExtensionProvider) called `kyma-logs`, which tells Istio to send access logs to the Telemetry module's OTLP endpoint.  If your `LogPipeline` uses the legacy **http** output, you must use the `stdout-json` provider instead.
 
 ## Enable Istio Logs for a Namespace
 
@@ -50,7 +52,7 @@ The Istio module provides a preconfigured [extension provider](https://istio.io/
 
 To configure label-based selection of workloads, use a [selector](https://istio.io/latest/docs/reference/config/type/workload-selector/#WorkloadSelector).
 
-1. Export the name of the workloads' namespace and their label as environment variables:
+1. Export the name of the workload's namespace and label as environment variables:
 
     ```bash
     export YOUR_NAMESPACE={NAMESPACE_NAME}
