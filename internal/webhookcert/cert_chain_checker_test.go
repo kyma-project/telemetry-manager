@@ -62,7 +62,7 @@ func TestCheckChain(t *testing.T) {
 			if tc.expectError {
 				require.Error(t, err, "Expected error but got nil")
 			} else {
-				require.NoError(t, err, "Did not expect error but got one: %s", err.Error())
+				require.NoError(t, err, "Did not expect error but got one")
 			}
 
 			require.Equal(t, tc.expectValid, valid, "Expected valid to be %v but got %v", tc.expectValid, valid)
