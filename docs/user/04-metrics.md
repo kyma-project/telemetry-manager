@@ -808,7 +808,7 @@ To detect and fix such situations, check the [pipeline status](./resources/05-me
 1. Check the `telemetry-metric-gateway` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`. Also, check your observability backend to investigate potential causes.
 2. If the backend is limiting the rate by refusing metrics, try the following options:
     - Option 1: Increase maximum backend ingestion rate. For example, by scaling out the SAP Cloud Logging instances.
-    - Option 2: Reduce emitted metrics by re-configuring the MetricPipeline (for example, by disabling certain inputs or applying namespace filters).
+    - Option 2: Reduce emitted metrics by re-configuring the MetricPipeline. For example, by disabling certain inputs or applying namespace filters.
     - Option 3: Reduce emitted metrics in your applications.
 3. Otherwise, take the actions appropriate to the cause indicated in the logs.
 

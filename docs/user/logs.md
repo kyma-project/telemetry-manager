@@ -585,7 +585,7 @@ To detect and fix such situations, check the [pipeline status](./resources/02-lo
 2. Check your observability backend to investigate potential causes.
 3. If the backend is limiting the rate by refusing logs, try the following options:
     - Option 1: Increase maximum backend ingestion rate. For example, by scaling out the SAP Cloud Logging instances.
-    - Option 2: Reduce emitted logs by re-configuring the LogPipeline (for example, by disabling certain inputs or applying namespace filters).
+    - Option 2: Reduce emitted logs by re-configuring the LogPipeline. For example, by disabling certain inputs or applying namespace filters.
     - Option 3: Reduce emitted logs in your applications.
 4. Otherwise, take the actions appropriate to the cause indicated in the logs.
 
