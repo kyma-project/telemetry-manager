@@ -782,25 +782,6 @@ func TestReconcile(t *testing.T) {
 				expectedMessage: "Metric gateway is unable to receive metrics at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-throttling",
 			},
 			{
-				name: "buffer filling up",
-				probe: prober.OTelGatewayProbeResult{
-					QueueAlmostFull: true,
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonGatewayBufferFillingUp,
-				expectedMessage: "Buffer nearing capacity. Incoming metric rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=buffer-filling-up",
-			},
-			{
-				name: "buffer filling up shadows other problems",
-				probe: prober.OTelGatewayProbeResult{
-					QueueAlmostFull: true,
-					Throttling:      true,
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonGatewayBufferFillingUp,
-				expectedMessage: "Buffer nearing capacity. Incoming metric rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=buffer-filling-up",
-			},
-			{
 				name: "some data dropped",
 				probe: prober.OTelGatewayProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
@@ -944,16 +925,6 @@ func TestReconcile(t *testing.T) {
 				expectedMessage: "No problems detected in the telemetry flow",
 			},
 			{
-				name: "buffer filling up",
-				probe: prober.OTelAgentProbeResult{
-					QueueAlmostFull: true,
-				},
-				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonSelfMonAgentBufferFillingUp,
-				// TODO: change the link and header from gateway-buffer-filling-up to buffer-filling-up when the doc is created
-				expectedMessage: "Buffer nearing capacity. Incoming metric rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=buffer-filling-up",
-			},
-			{
 				name: "some data dropped",
 				probe: prober.OTelAgentProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
@@ -961,16 +932,6 @@ func TestReconcile(t *testing.T) {
 				expectedStatus: metav1.ConditionFalse,
 				expectedReason: conditions.ReasonSelfMonAgentSomeDataDropped,
 				// TODO: Fix the documentation text in the link
-				expectedMessage: "Backend is reachable, but rejecting metrics. Some metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=not-all-metrics-arrive-at-the-backend",
-			},
-			{
-				name: "some data dropped shadows other problems",
-				probe: prober.OTelAgentProbeResult{
-					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
-					QueueAlmostFull:     true,
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonAgentSomeDataDropped,
 				expectedMessage: "Backend is reachable, but rejecting metrics. Some metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=not-all-metrics-arrive-at-the-backend",
 			},
 			{
@@ -985,8 +946,7 @@ func TestReconcile(t *testing.T) {
 			{
 				name: "all data dropped shadows other problems",
 				probe: prober.OTelAgentProbeResult{
-					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
-					QueueAlmostFull:     true,
+					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true, SomeDataDropped: true},
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonAgentAllDataDropped,

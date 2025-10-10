@@ -104,16 +104,12 @@ func flowHealthReasonFor(gatewayProbeResult prober.OTelGatewayProbeResult, agent
 		return conditions.ReasonSelfMonGatewayAllDataDropped
 	case gatewayProbeResult.SomeDataDropped:
 		return conditions.ReasonSelfMonGatewaySomeDataDropped
-	case gatewayProbeResult.QueueAlmostFull:
-		return conditions.ReasonSelfMonGatewayBufferFillingUp
 	case gatewayProbeResult.Throttling:
 		return conditions.ReasonSelfMonGatewayThrottling
 	case agentProbeResult.AllDataDropped:
 		return conditions.ReasonSelfMonAgentAllDataDropped
 	case agentProbeResult.SomeDataDropped:
 		return conditions.ReasonSelfMonAgentSomeDataDropped
-	case agentProbeResult.QueueAlmostFull:
-		return conditions.ReasonSelfMonAgentBufferFillingUp
 	default:
 		return conditions.ReasonSelfMonFlowHealthy
 	}
