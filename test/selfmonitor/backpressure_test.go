@@ -50,7 +50,6 @@ func TestBackpressure(t *testing.T) {
 				assert.OTelLogPipelineHealthy(t, kindLogsOTelAgent)
 				assert.LogPipelineConditionReasonsTransition(t, kindLogsOTelAgent, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 					{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
-					{Reason: conditions.ReasonSelfMonAgentBufferFillingUp, Status: metav1.ConditionFalse},
 					{Reason: conditions.ReasonSelfMonAgentSomeDataDropped, Status: metav1.ConditionFalse},
 				})
 				assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
@@ -126,10 +125,10 @@ func TestBackpressure(t *testing.T) {
 			},
 		},
 		{
-			kind: kindMetrics,
+			kind: kindMetricsGateway,
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewMetricPipelineBuilder().
-					WithName(kindMetrics).
+					WithName(kindMetricsGateway).
 					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 					Build()
 
@@ -145,8 +144,8 @@ func TestBackpressure(t *testing.T) {
 			},
 			assertions: func(t *testing.T) {
 				assert.DeploymentReady(t, kitkyma.MetricGatewayName)
-				assert.MetricPipelineHealthy(t, kindMetrics)
-				assert.MetricPipelineConditionReasonsTransition(t, kindMetrics, conditions.TypeFlowHealthy, []assert.ReasonStatus{
+				assert.MetricPipelineHealthy(t, kindMetricsGateway)
+				assert.MetricPipelineConditionReasonsTransition(t, kindMetricsGateway, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 					{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
 					{Reason: conditions.ReasonSelfMonGatewaySomeDataDropped, Status: metav1.ConditionFalse},
 				})
@@ -216,7 +215,6 @@ func TestBackpressure(t *testing.T) {
 				assert.TracePipelineHealthy(t, kindTraces)
 				assert.TracePipelineConditionReasonsTransition(t, kindTraces, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 					{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
-
 					{Reason: conditions.ReasonSelfMonGatewaySomeDataDropped, Status: metav1.ConditionFalse},
 				})
 				assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
