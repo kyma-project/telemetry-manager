@@ -95,6 +95,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addDeleteSkipEnrichmentAttributeProcessor(),
 			b.addDropKymaAttributesProcessor(),
 			b.addUserDefinedTransformProcessor(),
+			b.addUserDefinedFilterProcessor(),
 			// Batch processor (always last)
 			b.addBatchProcessor(),
 			// OTLP exporter

@@ -196,6 +196,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addDropSkipEnrichmentAttributeProcessor(),
 			b.addDropKymaAttributesProcessor(),
 			b.addUserDefinedTransformProcessor(),
+			b.addUserDefinedFilterProcessor(),
 			b.addBatchProcessor(), // always last
 			// OTLP exporter
 			b.addOTLPExporter(queueSize),
@@ -410,9 +411,7 @@ func (b *Builder) addDropKymaAttributesProcessor() buildComponentFunc {
 
 func (b *Builder) addUserDefinedTransformProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		func(mp *telemetryv1alpha1.MetricPipeline) string {
-			return fmt.Sprintf("transform/%s-user-defined", mp.Name)
-		},
+		formatUserDefinedTransformProcessorID,
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			if len(mp.Spec.Transforms) == 0 {
 				return nil // No transforms, no processor needed
@@ -422,6 +421,22 @@ func (b *Builder) addUserDefinedTransformProcessor() buildComponentFunc {
 			transformProcessor := common.MetricTransformProcessorConfig(transformStatements)
 
 			return transformProcessor
+		},
+	)
+}
+
+func (b *Builder) addUserDefinedFilterProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		formatUserDefinedFilterProcessorID,
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			if len(mp.Spec.Filter) == 0 {
+				return nil // No transforms, no processor needed
+			}
+
+			filterStatements := common.FilterSpecsToProcessorStatements(mp.Spec.Filter)
+			filterProcessor := common.MetricFilterProcessorConfig(filterStatements)
+
+			return filterProcessor
 		},
 	)
 }
@@ -496,6 +511,7 @@ func filterByNamespaceProcessorConfig(namespaceSelector *telemetryv1alpha1.Names
 	}
 
 	return &common.FilterProcessor{
+		ErrorMode: common.DefaultFilterProcessorErrorMode,
 		Metrics: common.FilterProcessorMetrics{
 			Metric: filterExpressions,
 		},
@@ -522,6 +538,7 @@ func (b *Builder) addDropRuntimePodMetricsProcessor() buildComponentFunc {
 			}
 
 			return &common.FilterProcessor{
+				ErrorMode: common.DefaultFilterProcessorErrorMode,
 				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{
 						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.pod.*")),
@@ -541,6 +558,7 @@ func (b *Builder) addDropRuntimeContainerMetricsProcessor() buildComponentFunc {
 			}
 
 			return &common.FilterProcessor{
+				ErrorMode: common.DefaultFilterProcessorErrorMode,
 				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{
 						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "(^k8s.container.*)|(^container.*)")),
@@ -560,6 +578,7 @@ func (b *Builder) addDropRuntimeNodeMetricsProcessor() buildComponentFunc {
 			}
 
 			return &common.FilterProcessor{
+				ErrorMode: common.DefaultFilterProcessorErrorMode,
 				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{
 						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.node.*")),
@@ -579,6 +598,7 @@ func (b *Builder) addDropRuntimeVolumeMetricsProcessor() buildComponentFunc {
 			}
 
 			return &common.FilterProcessor{
+				ErrorMode: common.DefaultFilterProcessorErrorMode,
 				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{
 						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.volume.*")),
@@ -598,6 +618,7 @@ func (b *Builder) addDropRuntimeDeploymentMetricsProcessor() buildComponentFunc 
 			}
 
 			return &common.FilterProcessor{
+				ErrorMode: common.DefaultFilterProcessorErrorMode,
 				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{
 						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.deployment.*")),
@@ -617,6 +638,7 @@ func (b *Builder) addDropRuntimeDaemonSetMetricsProcessor() buildComponentFunc {
 			}
 
 			return &common.FilterProcessor{
+				ErrorMode: common.DefaultFilterProcessorErrorMode,
 				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{
 						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.daemonset.*")),
@@ -636,6 +658,7 @@ func (b *Builder) addDropRuntimeStatefulSetMetricsProcessor() buildComponentFunc
 			}
 
 			return &common.FilterProcessor{
+				ErrorMode: common.DefaultFilterProcessorErrorMode,
 				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{
 						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.statefulset.*")),
@@ -655,6 +678,7 @@ func (b *Builder) addDropRuntimeJobMetricsProcessor() buildComponentFunc {
 			}
 
 			return &common.FilterProcessor{
+				ErrorMode: common.DefaultFilterProcessorErrorMode,
 				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{
 						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.job.*")),
@@ -702,6 +726,7 @@ func dropDiagnosticMetricsFilterProcessorConfig(inputSource common.InputSourceTy
 	filterExpressions = append(filterExpressions, excludeScrapeMetricsExpr)
 
 	return &common.FilterProcessor{
+		ErrorMode: common.DefaultFilterProcessorErrorMode,
 		Metrics: common.FilterProcessorMetrics{
 			Metric: filterExpressions,
 		},
@@ -728,6 +753,7 @@ func (b *Builder) addDropEnvoyMetricsIfDisabledProcessor() buildComponentFunc {
 			}
 
 			return &common.FilterProcessor{
+				ErrorMode: common.DefaultFilterProcessorErrorMode,
 				Metrics: common.FilterProcessorMetrics{
 					Metric: []string{
 						common.JoinWithAnd(common.IsMatch("name", "^envoy_.*"), common.ScopeNameEquals(common.InstrumentationScopeIstio)),
@@ -1096,6 +1122,7 @@ func insertSkipEnrichmentAttributeProcessorConfig() *common.TransformProcessor {
 
 func dropNonPVCVolumesMetricsProcessorConfig() *common.FilterProcessor {
 	return &common.FilterProcessor{
+		ErrorMode: common.DefaultFilterProcessorErrorMode,
 		Metrics: common.FilterProcessorMetrics{
 			Metric: []string{
 				common.JoinWithAnd(
@@ -1110,6 +1137,7 @@ func dropNonPVCVolumesMetricsProcessorConfig() *common.FilterProcessor {
 
 func dropVirtualNetworkInterfacesProcessorConfig() *common.FilterProcessor {
 	return &common.FilterProcessor{
+		ErrorMode: common.DefaultFilterProcessorErrorMode,
 		Metrics: common.FilterProcessorMetrics{
 			Datapoint: []string{
 				common.JoinWithAnd(
@@ -1130,4 +1158,12 @@ func metricNameConditionsWithIsMatch(metrics []string) []string {
 	}
 
 	return conditions
+}
+
+func formatUserDefinedTransformProcessorID(mp *telemetryv1alpha1.MetricPipeline) string {
+	return fmt.Sprintf(common.ComponentIDUserDefinedTransformProcessor, mp.Name)
+}
+
+func formatUserDefinedFilterProcessorID(mp *telemetryv1alpha1.MetricPipeline) string {
+	return fmt.Sprintf(common.ComponentIDUserDefinedFilterProcessor, mp.Name)
 }

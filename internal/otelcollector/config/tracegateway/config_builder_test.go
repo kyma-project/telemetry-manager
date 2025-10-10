@@ -77,6 +77,40 @@ func TestBuildConfig(t *testing.T) {
 			},
 			goldenFileName: "two-pipelines-with-transforms.yaml",
 		},
+		{
+			name: "pipeline with user-defined filters",
+			pipelines: []telemetryv1alpha1.TracePipeline{
+				testutils.NewTracePipelineBuilder().
+					WithName("test1").
+					WithFilter(telemetryv1alpha1.FilterSpec{
+						Conditions: []string{"IsMatch(span.name, \".*grpc.*\")"},
+					}).Build(),
+				testutils.NewTracePipelineBuilder().
+					WithName("test2").
+					WithFilter(telemetryv1alpha1.FilterSpec{
+						Conditions: []string{"IsMatch(spanevent.attributes[\"foo\"], \".*bar.*\")"},
+					}).Build(),
+			},
+			goldenFileName: "two-pipelines-with-filter.yaml",
+		},
+		{
+			name: "pipeline with user-defined transform and filters",
+			pipelines: []telemetryv1alpha1.TracePipeline{
+				testutils.NewTracePipelineBuilder().
+					WithName("test1").
+					WithFilter(telemetryv1alpha1.FilterSpec{
+						Conditions: []string{"IsMatch(span.name, \".*grpc.*\")"},
+					}).
+					WithTransform(telemetryv1alpha1.TransformSpec{
+						Conditions: []string{"IsMatch(body, \".*error.*\")"},
+						Statements: []string{
+							"set(attributes[\"trace.status_code\"], \"error\")",
+							"set(body, \"transformed2\")",
+						},
+					}).Build(),
+			},
+			goldenFileName: "pipeline-with-transform-filter.yaml",
+		},
 	}
 
 	buildOptions := BuildOptions{

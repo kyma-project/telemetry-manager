@@ -201,6 +201,29 @@ type TransformProcessorStatements struct {
 	Conditions []string `yaml:"conditions,omitempty"`
 }
 
+// type FilterProcessor struct {
+//	ErrorMode        string                `yaml:"error_mode"`
+//	LogStatements    LogFilterStatement    `yaml:"logs,omitempty"`
+//	MetricStatements MetricFilterStatement `yaml:"metrics,omitempty"`
+//	TraceStatements  TraceFilterStatement  `yaml:"traces,omitempty"`
+//}
+
+type LogFilterStatement struct {
+	LogRecord []string `yaml:"log_record"`
+}
+
+type TraceFilterStatement struct {
+	SpanEvent []string `yaml:"spanevent"`
+}
+
+type MetricFilterStatement struct {
+	DataPoint []string `yaml:"datapoint"`
+}
+
+type FilterProcessorStatements struct {
+	Statements []string
+}
+
 type ServiceEnrichmentProcessor struct {
 	ResourceAttributes []string `yaml:"resource_attributes"`
 }
@@ -209,9 +232,10 @@ type IstioNoiseFilterProcessor struct {
 }
 
 type FilterProcessor struct {
-	Metrics FilterProcessorMetrics `yaml:"metrics,omitempty"`
-	Logs    FilterProcessorLogs    `yaml:"logs,omitempty"`
-	Traces  FilterProcessorTraces  `yaml:"traces,omitempty"`
+	ErrorMode string                 `yaml:"error_mode"`
+	Metrics   FilterProcessorMetrics `yaml:"metrics,omitempty"`
+	Logs      FilterProcessorLogs    `yaml:"logs,omitempty"`
+	Traces    FilterProcessorTraces  `yaml:"traces,omitempty"`
 }
 
 type FilterProcessorMetrics struct {
@@ -220,7 +244,8 @@ type FilterProcessorMetrics struct {
 }
 
 type FilterProcessorTraces struct {
-	Span []string `yaml:"span,omitempty"`
+	Span      []string `yaml:"span,omitempty"`
+	SpanEvent []string `yaml:"spanevent,omitempty"`
 }
 
 type FilterProcessorLogs struct {

@@ -17,6 +17,7 @@ type TracePipelineBuilder struct {
 	labels map[string]string
 
 	transforms       []telemetryv1alpha1.TransformSpec
+	filters          []telemetryv1alpha1.FilterSpec
 	statusConditions []metav1.Condition
 	outOTLP          *telemetryv1alpha1.OTLPOutput
 }
@@ -63,6 +64,11 @@ func (b *TracePipelineBuilder) WithTransform(transform telemetryv1alpha1.Transfo
 	return b
 }
 
+func (b *TracePipelineBuilder) WithFilter(filter telemetryv1alpha1.FilterSpec) *TracePipelineBuilder {
+	b.filters = append(b.filters, filter)
+	return b
+}
+
 func (b *TracePipelineBuilder) Build() telemetryv1alpha1.TracePipeline {
 	name := b.name
 	if name == "" {
@@ -80,6 +86,7 @@ func (b *TracePipelineBuilder) Build() telemetryv1alpha1.TracePipeline {
 				OTLP: b.outOTLP,
 			},
 			Transforms: b.transforms,
+			Filter:     b.filters,
 		},
 		Status: telemetryv1alpha1.TracePipelineStatus{
 			Conditions: b.statusConditions,

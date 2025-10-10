@@ -263,6 +263,46 @@ func TestMakeConfig(t *testing.T) {
 					}).Build(),
 			},
 		},
+		{
+			name:           "two pipelines with user-defined Filter",
+			goldenFileName: "two-pipelines-with-filter.yaml",
+			pipelines: []telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("cls").
+					WithOTLPInput(true).
+					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
+					WithFilter(telemetryv1alpha1.FilterSpec{
+						Conditions: []string{"metric.type == METRIC_DATA_TYPE_SUMMARY"},
+					}).Build(),
+				testutils.NewMetricPipelineBuilder().
+					WithName("dynatrace").
+					WithOTLPInput(true).
+					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
+					WithFilter(telemetryv1alpha1.FilterSpec{
+						Conditions: []string{"metric.type == METRIC_DATA_TYPE_HISTOGRAM"},
+					}).Build(),
+			},
+		},
+		{
+			name:           "pipeline with user-defined Transform Filter",
+			goldenFileName: "pipeline-with-transform-filter.yaml",
+			pipelines: []telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("cls").
+					WithOTLPInput(true).
+					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
+					WithTransform(telemetryv1alpha1.TransformSpec{
+						Conditions: []string{"IsMatch(body, \".*error.*\")"},
+						Statements: []string{
+							"set(attributes[\"log.level\"], \"error\")",
+							"set(body, \"transformed2\")",
+						},
+					}).
+					WithFilter(telemetryv1alpha1.FilterSpec{
+						Conditions: []string{"metric.type == METRIC_DATA_TYPE_SUMMARY"},
+					}).Build(),
+			},
+		},
 	}
 
 	buildOptions := BuildOptions{

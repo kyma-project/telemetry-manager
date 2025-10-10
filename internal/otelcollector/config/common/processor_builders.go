@@ -2,6 +2,7 @@ package common
 
 import (
 	"fmt"
+	"sort"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -168,6 +169,75 @@ func ResolveServiceNameConfig() *ServiceEnrichmentProcessor {
 			kymaAppName,
 		},
 	}
+}
+
+// =============================================================================
+// FILTER PROCESSOR BUILDERS
+// =============================================================================
+
+// LogFilterProcessorConfig creates a FilterProcessor for logs with error_mode set to "ignore"
+func LogFilterProcessorConfig(statements []FilterProcessorStatements) *FilterProcessor {
+	logRecords := make([]string, 0, len(statements))
+	for _, s := range statements {
+		logRecords = append(logRecords, s.Statements...)
+	}
+
+	// Sort to prevent changes in the order in every reconciliation loop
+	sort.Strings(logRecords)
+
+	return &FilterProcessor{
+		ErrorMode: DefaultFilterProcessorErrorMode,
+		Logs: FilterProcessorLogs{
+			Log: logRecords,
+		},
+	}
+}
+
+// MetricFilterProcessorConfig creates a FilterProcessor for metrics with the default error mode
+func MetricFilterProcessorConfig(statements []FilterProcessorStatements) *FilterProcessor {
+	dataPoints := make([]string, 0, len(statements))
+	for _, s := range statements {
+		dataPoints = append(dataPoints, s.Statements...)
+	}
+
+	// Sort to prevent changes in the order in every reconciliation loop
+	sort.Strings(dataPoints)
+
+	return &FilterProcessor{
+		ErrorMode: DefaultFilterProcessorErrorMode,
+		Metrics: FilterProcessorMetrics{
+			Datapoint: dataPoints,
+		},
+	}
+}
+
+// TraceFilterProcessorConfig creates a FilterProcessor for traces with the default error mode
+func TraceFilterProcessorConfig(statements []FilterProcessorStatements) *FilterProcessor {
+	spans := make([]string, 0, len(statements))
+	for _, s := range statements {
+		spans = append(spans, s.Statements...)
+	}
+
+	// Sort to prevent changes in the order in every reconciliation loop
+	sort.Strings(spans)
+
+	return &FilterProcessor{
+		ErrorMode: DefaultFilterProcessorErrorMode,
+		Traces: FilterProcessorTraces{
+			Span: spans,
+		},
+	}
+}
+
+func FilterSpecsToProcessorStatements(specs []telemetryv1alpha1.FilterSpec) []FilterProcessorStatements {
+	result := make([]FilterProcessorStatements, 0, len(specs))
+	for _, spec := range specs {
+		result = append(result, FilterProcessorStatements{
+			Statements: spec.Conditions,
+		})
+	}
+
+	return result
 }
 
 // =============================================================================

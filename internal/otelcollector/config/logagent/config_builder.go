@@ -52,6 +52,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPi
 			b.addServiceEnrichmentProcessor(),
 			b.addDropKymaAttributesProcessor(),
 			b.addUserDefinedTransformProcessor(),
+			b.addUserDefinedFilterProcessor(),
 			b.addOTLPExporter(),
 		); err != nil {
 			return nil, nil, fmt.Errorf("failed to add service pipeline: %w", err)
@@ -150,6 +151,22 @@ func (b *Builder) addUserDefinedTransformProcessor() buildComponentFunc {
 	)
 }
 
+func (b *Builder) addUserDefinedFilterProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		formatUserDefinedFilterProcessorID,
+		func(lp *telemetryv1alpha1.LogPipeline) any {
+			if len(lp.Spec.Filter) == 0 {
+				return nil // No transforms, no processor needed
+			}
+
+			filterStatements := common.FilterSpecsToProcessorStatements(lp.Spec.Filter)
+			filterProcessor := common.LogFilterProcessorConfig(filterStatements)
+
+			return filterProcessor
+		},
+	)
+}
+
 func (b *Builder) addOTLPExporter() buildComponentFunc {
 	return b.AddExporter(
 		formatOTLPExporterID,
@@ -177,6 +194,10 @@ func formatFileLogReceiverID(lp *telemetryv1alpha1.LogPipeline) string {
 
 func formatUserDefinedTransformProcessorID(lp *telemetryv1alpha1.LogPipeline) string {
 	return fmt.Sprintf(common.ComponentIDUserDefinedTransformProcessor, lp.Name)
+}
+
+func formatUserDefinedFilterProcessorID(lp *telemetryv1alpha1.LogPipeline) string {
+	return fmt.Sprintf(common.ComponentIDUserDefinedFilterProcessor, lp.Name)
 }
 
 func formatOTLPExporterID(lp *telemetryv1alpha1.LogPipeline) string {
