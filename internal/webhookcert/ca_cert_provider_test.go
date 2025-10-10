@@ -259,7 +259,7 @@ func generateCACert(creationTime time.Time) []byte {
 
 func generateServerCert(caCert, caKey []byte, creationTime time.Time) []byte {
 	generator := &serverCertGeneratorImpl{clock: mockClock{t: creationTime}, keySize: testRsaKeySize}
-	cert, _, _ := generator.generateCert(serverCertConfig{caCertPEM: caCert, caKeyPEM: caKey})
+	cert, _, _ := generator.generateCert(serverCertConfig{host: "pod.namespace.svc.cluster.local", caCertPEM: caCert, caKeyPEM: caKey})
 
 	return cert
 }
