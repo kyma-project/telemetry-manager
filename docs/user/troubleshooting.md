@@ -34,22 +34,11 @@ Troubleshoot problems related to the Telemetry module and its pipelines.
    - For **GatewaySomeTelemetryDataDropped**, check Pod `telemetry-(log|trace|metric)-gateway`.
    - For **AgentSomeTelemetryDataDropped**, check Pod `telemetry-(log|trace|metric)-agent`.
 2. Check your observability backend to investigate potential causes.
-3. If the backend is limiting the rate by refusing logs, try the options described in [Buffer Filling Up](#buffer-filling-up).
+3. If the backend is limiting the rate by refusing logs, try these options:
+   - Increase the ingestion rate of your backend (for example, by scaling out your SAP Cloud Logging instances).
+   - Reduce emitted data by re-configuring the pipeline (for example, by disabling certain inputs or applying filters).
+   - Reduce emitted data in your applications.
 4. Otherwise, take the actions appropriate to the cause indicated in the logs.
-
-## Buffer Filling Up
-
-**Symptom**: In the pipeline status, the `TelemetryFlowHealthy` condition has status **GatewayBufferFillingUp** or **AgentBufferFillingUp**.
-
-**Cause**: The backend ingestion rate is too low compared to the export rate of the gateway or agent.
-
-**Solution**:
-
-- Option 1: Increase maximum backend ingestion rate. For example, by scaling out the SAP Cloud Logging instances.
-
-- Option 2: Reduce emitted data by re-configuring the pipeline (for example, by disabling certain inputs or applying namespace filters).
-
-- Option 3: Reduce emitted data in your applications.
 
 ## Gateway Throttling
 
@@ -68,6 +57,20 @@ Troubleshoot problems related to the Telemetry module and its pipelines.
 1. Check which SDK version you are using for instrumentation.
 2. Investigate whether it is compatible with the OTel Collector version.
 3. If required, upgrade to a supported SDK version.
+
+## Log Buffer Filling Up
+
+**Symptom**: In the pipeline status, the `TelemetryFlowHealthy` condition has status **AgentBufferFillingUp**.
+
+**Cause**: The backend ingestion rate is too low compared to the export rate of the gateway or agent.
+
+**Solution**:
+
+- Option 1: Increase maximum backend ingestion rate. For example, by scaling out the SAP Cloud Logging instances.
+
+- Option 2: Reduce emitted data by re-configuring the pipeline (for example, by disabling certain inputs or applying namespace filters).
+
+- Option 3: Reduce emitted data in your applications.
 
 ### Trace Backend Shows Fewer Traces than Expected
 
