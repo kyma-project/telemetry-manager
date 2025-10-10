@@ -37,7 +37,8 @@ packages:
     interfaces:
       AgentApplierDeleter:
       AgentConfigBuilder:
-      FlowHealthProber:
+      GatewayFlowHealthProber:
+      AgentFlowHealthProber:
       GatewayApplierDeleter:
       GatewayConfigBuilder:
       OverridesHandler:
