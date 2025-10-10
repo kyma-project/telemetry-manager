@@ -213,18 +213,18 @@ func MetricFilterProcessorConfig(statements []FilterProcessorStatements) *Filter
 
 // TraceFilterProcessorConfig creates a FilterProcessor for traces with the default error mode
 func TraceFilterProcessorConfig(statements []FilterProcessorStatements) *FilterProcessor {
-	spanEvents := make([]string, 0, len(statements))
+	spans := make([]string, 0, len(statements))
 	for _, s := range statements {
-		spanEvents = append(spanEvents, s.Statements...)
+		spans = append(spans, s.Statements...)
 	}
 
 	// Sort to prevent changes in the order in every reconciliation loop
-	sort.Strings(spanEvents)
+	sort.Strings(spans)
 
 	return &FilterProcessor{
 		ErrorMode: DefaultFilterProcessorErrorMode,
 		Traces: FilterProcessorTraces{
-			SpanEvent: spanEvents,
+			Span: spans,
 		},
 	}
 }

@@ -15,24 +15,11 @@ service:
                 - resource/insert-cluster-attributes
                 - service_enrichment
                 - resource/drop-kyma-attributes
+                - transform/user-defined-test1
                 - filter/user-defined-test1
                 - batch
             exporters:
                 - otlp/test1
-        traces/test2:
-            receivers:
-                - otlp
-            processors:
-                - memory_limiter
-                - k8sattributes
-                - istio_noise_filter
-                - resource/insert-cluster-attributes
-                - service_enrichment
-                - resource/drop-kyma-attributes
-                - filter/user-defined-test2
-                - batch
-            exporters:
-                - otlp/test2
     telemetry:
         metrics:
             readers:
@@ -64,11 +51,6 @@ processors:
         traces:
             span:
                 - IsMatch(span.name, ".*grpc.*")
-    filter/user-defined-test2:
-        error_mode: ignore
-        traces:
-            span:
-                - IsMatch(spanevent.attributes["foo"], ".*bar.*")
     istio_noise_filter: {}
     k8sattributes:
         auth_type: serviceAccount
@@ -133,22 +115,20 @@ processors:
         resource_attributes:
             - kyma.kubernetes_io_app_name
             - kyma.app_name
+    transform/user-defined-test1:
+        error_mode: ignore
+        trace_statements:
+            - statements:
+                - set(attributes["trace.status_code"], "error")
+                - set(body, "transformed2")
+              conditions:
+                - IsMatch(body, ".*error.*")
 exporters:
     otlp/test1:
         endpoint: ${OTLP_ENDPOINT_TEST1}
         sending_queue:
             enabled: true
-            queue_size: 128
-        retry_on_failure:
-            enabled: true
-            initial_interval: 5s
-            max_interval: 30s
-            max_elapsed_time: 300s
-    otlp/test2:
-        endpoint: ${OTLP_ENDPOINT_TEST2}
-        sending_queue:
-            enabled: true
-            queue_size: 128
+            queue_size: 256
         retry_on_failure:
             enabled: true
             initial_interval: 5s
