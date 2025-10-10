@@ -161,12 +161,12 @@ processors:
     filter/user-defined-test1:
         error_mode: ignore
         metrics:
-            metric:
+            datapoint:
                 - metric.type == METRIC_DATA_TYPE_SUMMARY
     filter/user-defined-test2:
         error_mode: ignore
         metrics:
-            metric:
+            datapoint:
                 - metric.type == METRIC_DATA_TYPE_GAUGE
     k8sattributes:
         auth_type: serviceAccount

@@ -206,7 +206,7 @@ func MetricFilterProcessorConfig(statements []FilterProcessorStatements) *Filter
 	return &FilterProcessor{
 		ErrorMode: DefaultFilterProcessorErrorMode,
 		Metrics: FilterProcessorMetrics{
-			Metric: dataPoints,
+			Datapoint: dataPoints,
 		},
 	}
 }
