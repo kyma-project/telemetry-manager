@@ -34,12 +34,6 @@ components:
         memory: 50Mi
       limits:
         memory: 300Mi
-    initContainers:
-      - name: wait-for-kafka
-        image: busybox:latest
-        command: ["sh", "-c", "until nc -z -v -w30 kafka 9092; do echo waiting for kafka; sleep 2; done;"]
-        securityContext:
-          runAsUser: 1337
 
   ad:
     enabled: true
@@ -75,12 +69,6 @@ components:
     ports:
       - name: grpc
         value: 8080
-    initContainers:
-      - name: wait-for-valkey-cart
-        image: busybox:latest
-        command: ["sh", "-c", "until nc -z -v -w30 valkey-cart 6379; do echo waiting for valkey-cart; sleep 2; done;"]
-        securityContext:
-          runAsUser: 1337
 
   checkout:
     enabled: true
@@ -101,12 +89,6 @@ components:
         memory: 10Mi
       limits:
         memory: 100Mi
-    initContainers:
-      - name: wait-for-kafka
-        image: busybox:latest
-        command: ["sh", "-c", "until nc -z -v -w30 kafka 9092; do echo waiting for kafka; sleep 2; done;"]
-        securityContext:
-          runAsUser: 1337
 
   currency:
     enabled: true
@@ -152,12 +134,6 @@ components:
         value: 'http://telemetry-otlp-metrics.kyma-system:4317'
       - name: OTEL_EXPORTER_OTLP_LOGS_ENDPOINT
         value: 'http://telemetry-otlp-logs.kyma-system:4317'
-    initContainers:
-      - name: wait-for-kafka
-        image: busybox:latest
-        command: ["sh", "-c", "until nc -z -v -w30 kafka 9092; do echo waiting for kafka; sleep 2; done;"]
-        securityContext:
-          runAsUser: 1337
     resources:
       requests:
         memory: 50Mi
