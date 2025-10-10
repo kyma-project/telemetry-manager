@@ -141,12 +141,12 @@ processors:
     filter/user-defined-cls:
         error_mode: ignore
         metrics:
-            metric:
+            datapoint:
                 - metric.type == METRIC_DATA_TYPE_SUMMARY
     filter/user-defined-dynatrace:
         error_mode: ignore
         metrics:
-            metric:
+            datapoint:
                 - metric.type == METRIC_DATA_TYPE_HISTOGRAM
     k8sattributes:
         auth_type: serviceAccount
