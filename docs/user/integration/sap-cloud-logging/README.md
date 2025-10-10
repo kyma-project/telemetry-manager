@@ -401,7 +401,7 @@ The preconfigured `Kyma_*` dashboards in SAP Cloud Logging are compatible only w
 ### Procedure
 
 <!-- markdown-link-check-disable -->
-- Telemetry Status: For the status of the SAP Cloud Logging integration with the Telemetry module, import the file [dashboard-status.ndjson](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/dashboard-status.ndjson).
+- Integration Status: For the status of the SAP Cloud Logging integration with the Telemetry module, import the file [dashboard-status.ndjson](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/dashboard-status.ndjson).
 - Logs (HTTP): For application logs and Istio access logs using the http output: Use the preconfigured dashboards prefixed with Kyma_*.
 - Traces: Use the OpenSearch plugin “Observability”.
 - Runtime Metrics: For runtime metrics, import the file [dashboard-runtime.ndjson](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/dashboard-runtime.ndjson).
