@@ -1,0 +1,108 @@
+{
+   "name": "Rejection in progress",
+   "type": "monitor",
+   "monitor_type": "query_level_monitor",
+   "enabled": true,
+   "schedule": {
+      "period": {
+         "unit": "MINUTES",
+         "interval": 1
+      }
+   },
+   "inputs": [
+      {
+         "search": {
+            "indices": [
+               "cls-rejected-*"
+            ],
+            "query": {
+               "size": 0,
+               "aggregations": {},
+               "query": {
+                  "bool": {
+                     "filter": [
+                        {
+                           "range": {
+                              "@timestamp": {
+                                 "gte": "{{period_end}}||-1h",
+                                 "lte": "{{period_end}}",
+                                 "format": "epoch_millis"
+                              }
+                           }
+                        }
+                     ]
+                  }
+               }
+            }
+         }
+      }
+   ],
+   "triggers": [
+      {
+         "query_level_trigger": {
+            "name": "Rejections in progress",
+            "severity": "2",
+            "condition": {
+               "script": {
+                  "source": "ctx.results[0].hits.total.value > 1",
+                  "lang": "painless"
+               }
+            },
+            "actions": [
+               {
+                  "name": "Notify",
+                  "destination_id": "",
+                  "message_template": {
+                     "source": "Monitor {{ctx.monitor.name}} just entered alert status. Please investigate the issue.\n  - Trigger: {{ctx.trigger.name}}\n  - Severity: {{ctx.trigger.severity}}\n  - Period start: {{ctx.periodStart}}\n  - Period end: {{ctx.periodEnd}}",
+                     "lang": "mustache"
+                  },
+                  "throttle_enabled": true,
+                  "subject_template": {
+                     "source": "Rejection in progress",
+                     "lang": "mustache"
+                  },
+                  "throttle": {
+                     "value": 60,
+                     "unit": "MINUTES"
+                  }
+               }
+            ]
+         }
+      }
+   ],
+   "ui_metadata": {
+      "schedule": {
+         "timezone": null,
+         "frequency": "interval",
+         "period": {
+            "unit": "MINUTES",
+            "interval": 1
+         },
+         "daily": 0,
+         "weekly": {
+            "tue": false,
+            "wed": false,
+            "thur": false,
+            "sat": false,
+            "fri": false,
+            "mon": false,
+            "sun": false
+         },
+         "monthly": {
+            "type": "day",
+            "day": 1
+         },
+         "cronExpression": "0 */1 * * *"
+      },
+      "monitor_type": "query_level_monitor",
+      "search": {
+         "searchType": "graph",
+         "timeField": "@timestamp",
+         "aggregations": [],
+         "groupBy": [],
+         "bucketValue": 1,
+         "bucketUnitOfTime": "h",
+         "filters": []
+      }
+   }
+}

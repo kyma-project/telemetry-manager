@@ -8,7 +8,7 @@
 | Backend type | custom in-cluster |
 | OTLP-native | yes |
 
-Learn how to use [Jaeger](https://github.com/jaegertracing/helm-charts/tree/main/charts/jaeger) as a tracing backend with Kyma's [TracePipeline](../../03-traces.md).
+Learn how to use [Jaeger](https://github.com/jaegertracing/helm-charts/tree/main/charts/jaeger) as a tracing backend with Kyma's [TracePipeline](../../collecting-traces/README.md).
 
 ![setup](./../assets/jaeger.drawio.svg)
 
@@ -71,7 +71,7 @@ kubectl -n $K8S_NAMESPACE rollout status deploy $HELM_JAEGER_RELEASE
 
 ### Activate a TracePipeline
 
-To configure the Kyma trace gateway with the deployed Jaeger instance as the backend. To create a new [TracePipeline](../../03-traces.md), execute the following command:
+To configure the Kyma trace gateway with the deployed Jaeger instance as the backend. To create a new [TracePipeline](../../collecting-traces/README.md), execute the following command:
 
 ```bash
 cat <<EOF | kubectl -n $K8S_NAMESPACE apply -f -
@@ -90,7 +90,7 @@ EOF
   
 ### Activate Istio Tracing
 
-To [enable Istio](../../03-traces.md#2-enable-istio-tracing) to report span data, apply an Istio telemetry resource and set the sampling rate to 100%. This approach is not recommended for production.
+To [enable Istio](../../collecting-traces/istio-support.md) to report span data, apply an Istio telemetry resource and set the sampling rate to 100%. This approach is not recommended for production.
 
 ```bash
 cat <<EOF | kubectl apply -f -
