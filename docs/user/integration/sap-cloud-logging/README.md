@@ -14,7 +14,7 @@ Configure the Telemetry module to send logs, metrics, and traces from your clust
 - [Prerequisites](#prerequisites)
 - [Context](#context)
 - [Ship Logs to SAP Cloud Logging](#ship-logs-to-sap-cloud-logging)
-- [Ship Distributed Traces to SAP Cloud Logging](#ship-distributed-traces-to-sap-cloud-logging)
+- [Ship Distributed Traces to SAP Cloud Logging](#ship-traces-to-sap-cloud-logging)
 - [Ship Metrics to SAP Cloud Logging](#ship-metrics-to-sap-cloud-logging)
 - [Set Up Kyma Dashboard Integration](#set-up-kyma-dashboard-integration)
 - [Use SAP Cloud Logging Alerts](#use-sap-cloud-logging-alerts)

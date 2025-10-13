@@ -34,7 +34,7 @@ Troubleshoot problems related to the Telemetry module and its pipelines.
 - The backend is reachable and the connection is properly configured, but some data points are refused.
 - In the pipeline status, the `TelemetryFlowHealthy` condition has status **GatewaySomeTelemetryDataDropped** or **AgentSomeTelemetryDataDropped**.
 
-**Causes** 
+**Causes**
 
 This status indicates that the telemetry gateway or agent is successfully sending data, but the backend is rejecting some of it. Common reasons are:
 
@@ -67,7 +67,7 @@ The gateway is receiving data faster than it can process and forward it.
 
 Manually scale out the capacity by increasing the number of replicas for the affected gateway. For details, see [Telemetry CRD](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
 
-### Custom Spans Don’t Arrive at the Backend, but Istio Spans Do
+### TracePipeline: Custom Spans Don’t Arrive at the Backend, but Istio Spans Do
 
 **Symptom**
 
@@ -100,7 +100,7 @@ For example, in low-traffic environments (for development or testing) or for low
 
 - Alternatively, to trace a single request, force sampling by adding a traceparent HTTP header to your client request. This header contains a sampled flag that instructs the system to capture the trace, bypassing the global sampling rate (see [Trace Context: Sampled Flag](https://www.w3.org/TR/trace-context/#sampled-flag)).
 
-### Log Entry: Failed to Scrape Prometheus Endpoint
+### MetricPipeline: Failed to Scrape Prometheus Endpoint
 
 **Symptom**
 
@@ -120,6 +120,7 @@ There's a configuration or network issue between the metric agent and your appli
 - A deny-all NetworkPolicy in your application's namespace prevents that the agent can scrape metrics from annotated workloads.
 
 **Solution**
+
 - Define the application protocol in the Service port definition by either prefixing the port name with the protocol, or define the appProtocol attribute.
 - If the issue is with mTLS, either configure your workload to use STRICT mTLS, or switch to unencrypted scraping by adding the prometheus.io/scheme: "http" annotation to your workload.
 - Create a new NetworkPolicy to explicitly allow ingress traffic from the metric agent; such as the following example:
@@ -146,7 +147,7 @@ There's a configuration or network issue between the metric agent and your appli
 
   ```
 
-## Log Buffer Filling Up
+## LogPiepline: Log Buffer Filling Up
 
 **Symptom**
 
