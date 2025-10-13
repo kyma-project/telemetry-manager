@@ -60,8 +60,8 @@ To use diagnostic metrics, enable the `diagnosticMetrics` for the input in your 
 
 When enabled, the metric agent generates metrics about its own scrape jobs, such as the following:
 
-- `up` - The scraping was successful
-- `scrape_duration_seconds` - Duration of the scrape
-- `scrape_samples_scraped` - The number of samples the target exposed
-- `scrape_samples_post_metric_relabeling` - The number of samples remaining after metric relabeling was applied
-- `scrape_series_added` - The approximate number of new series in this scrape
+- `up`: The scraping was successful
+- `scrape_duration_seconds`: Duration of the scrape
+- `scrape_samples_scraped`: The number of samples the target exposed
+- `scrape_samples_post_metric_relabeling`: The number of samples remaining after metric relabeling was applied
+- `scrape_series_added`: The approximate number of new series in this scrape
