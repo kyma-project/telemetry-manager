@@ -86,6 +86,7 @@ spec:
         app.kubernetes.io/part-of: telemetry
         kyma-project.io/module: telemetry
         sidecar.istio.io/inject: "true"
+        telemetry.kyma-project.io/metric-export: "true"
         telemetry.kyma-project.io/metric-scrape: "true"
     spec:
       containers:

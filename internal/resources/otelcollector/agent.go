@@ -114,6 +114,7 @@ func NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName stri
 func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string) *AgentApplierDeleter {
 	extraLabels := map[string]string{
 		commonresources.LabelKeyTelemetryMetricScrape: "true",
+		commonresources.LabelKeyTelemetryMetricExport: "true",
 		commonresources.LabelKeyIstioInject:           "true", // inject Istio sidecar
 	}
 
