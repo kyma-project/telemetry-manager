@@ -16,8 +16,9 @@ const _FeatureFlag_name = "V1Beta1"
 var _FeatureFlag_index = [...]uint8{0, 7}
 
 func (i FeatureFlag) String() string {
-	if i < 0 || i >= FeatureFlag(len(_FeatureFlag_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_FeatureFlag_index)-1 {
 		return "FeatureFlag(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _FeatureFlag_name[_FeatureFlag_index[i]:_FeatureFlag_index[i+1]]
+	return _FeatureFlag_name[_FeatureFlag_index[idx]:_FeatureFlag_index[idx+1]]
 }

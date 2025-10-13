@@ -14,7 +14,7 @@ require (
 	github.com/vektra/mockery/v3 v3.5.5
 	github.com/vladopajic/go-test-coverage/v2 v2.17.0
 	github.com/yeya24/promlinter v0.3.0
-	golang.org/x/tools v0.37.0
+	golang.org/x/tools v0.38.0
 	gotest.tools/gotestsum v1.13.0
 	helm.sh/helm/v3 v3.19.0
 	sigs.k8s.io/controller-tools v0.19.0
@@ -469,7 +469,7 @@ require (
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20250911091902-df9299821621 // indirect
 	golang.org/x/image v0.18.0 // indirect
-	golang.org/x/mod v0.28.0 // indirect
+	golang.org/x/mod v0.29.0 // indirect
 	golang.org/x/net v0.46.0 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect
 	golang.org/x/sync v0.17.0 // indirect
