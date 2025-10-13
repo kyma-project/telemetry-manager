@@ -10,7 +10,7 @@ require (
 	github.com/itchyny/gojq v0.12.17
 	github.com/k3d-io/k3d/v5 v5.8.3
 	github.com/kyma-project/kyma/hack/table-gen v0.0.0-20250404123224-5afb7a10791b
-	github.com/mikefarah/yq/v4 v4.47.2
+	github.com/mikefarah/yq/v4 v4.48.1
 	github.com/vektra/mockery/v3 v3.5.5
 	github.com/vladopajic/go-test-coverage/v2 v2.17.0
 	github.com/yeya24/promlinter v0.3.0
