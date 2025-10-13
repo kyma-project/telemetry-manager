@@ -15,14 +15,12 @@ const (
 
 	RuleNameGatewayAllDataDropped  = "GatewayAllDataDropped"
 	RuleNameGatewaySomeDataDropped = "GatewaySomeDataDropped"
-	RuleNameGatewayQueueAlmostFull = "GatewayQueueAlmostFull"
 	RuleNameGatewayThrottling      = "GatewayThrottling"
 
 	// OTel Collector rule names for agents. Note that the actual full names will be prefixed with Log
 
 	RuleNameAgentAllDataDropped  = "AgentAllDataDropped"
 	RuleNameAgentSomeDataDropped = "AgentSomeDataDropped"
-	RuleNameAgentQueueAlmostFull = "AgentQueueAlmostFull"
 
 	// Fluent Bit rule names. Note that the actual full names will be prefixed with Log
 

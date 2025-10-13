@@ -477,25 +477,6 @@ func TestReconcile(t *testing.T) {
 				expectedMessage: "Trace gateway is unable to receive spans at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-throttling",
 			},
 			{
-				name: "buffer filling up",
-				probe: prober.OTelGatewayProbeResult{
-					QueueAlmostFull: true,
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonGatewayBufferFillingUp,
-				expectedMessage: "Buffer nearing capacity. Incoming span rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-buffer-filling-up",
-			},
-			{
-				name: "buffer filling up shadows other problems",
-				probe: prober.OTelGatewayProbeResult{
-					QueueAlmostFull: true,
-					Throttling:      true,
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonGatewayBufferFillingUp,
-				expectedMessage: "Buffer nearing capacity. Incoming span rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-buffer-filling-up",
-			},
-			{
 				name: "some data dropped",
 				probe: prober.OTelGatewayProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
