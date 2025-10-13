@@ -76,6 +76,12 @@ func PodsHaveContainer(t testkit.T, listOptions client.ListOptions, containerNam
 				return true, nil
 			}
 		}
+
+		for _, container := range pod.Spec.InitContainers {
+			if container.Name == containerName {
+				return true, nil
+			}
+		}
 	}
 
 	return false, nil
