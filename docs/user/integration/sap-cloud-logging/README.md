@@ -29,7 +29,7 @@ Configure the Telemetry module to send logs, metrics, and traces from your clust
 - An instance of [SAP Cloud Logging](https://help.sap.com/docs/cloud-logging?locale=en-US&version=Cloud) with OpenTelemetry ingestion enabled. For details, see [Ingest via OpenTelemetry API Endpoint](https://help.sap.com/docs/SAP_CLOUD_LOGGING/d82d23dc499c44079e1e779c1d3a5191/fdc78af7c69246bc87315d90a061b321.html?locale=en-US).
   > [!TIP]
   > Create the SAP Cloud Logging instance with the SAP BTP service operator (see [Create an SAP Cloud Logging Instance through SAP BTP Service Operator](https://help.sap.com/docs/cloud-logging/cloud-logging/create-sap-cloud-logging-instance-through-sap-btp-service-operator?locale=en-US&version=Cloud)), because it takes care of creation and rotation of the required Secret. However, you can choose any other method of creating the instance and the Secret, as long as the parameter for OTLP ingestion is enabled in the instance. For details, see [Configuration Parameters](https://help.sap.com/docs/cloud-logging/cloud-logging/configuration-parameters?locale=en-US&version=Cloud).
-- A Secret in the respective namespace in your Kyma cluster, holding the credentials and endpoints for the instance It’s recommended that you rotate your Secret (see [SAP BTP Security Recommendation BTP-CLS-0003](https://help.sap.com/docs/btp/sap-btp-security-recommendations-c8a9bb59fe624f0981efa0eff2497d7d/sap-btp-security-recommendations?seclist-index=BTP-CLS-0003&version=Cloud&locale=en-US)). In the following example, the Secret is named `sap-cloud-logging` and the namespace `sap-cloud-logging-integration`, as illustrated in the [secret-example.yaml](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/integration/sap-cloud-logging/secret-example.yaml).
+- A Secret in the respective namespace in your Kyma cluster, holding the credentials and endpoints for the instance. It’s recommended that you rotate your Secret (see [SAP BTP Security Recommendation BTP-CLS-0003](https://help.sap.com/docs/btp/sap-btp-security-recommendations-c8a9bb59fe624f0981efa0eff2497d7d/sap-btp-security-recommendations?seclist-index=BTP-CLS-0003&version=Cloud&locale=en-US)). In the following example, the Secret is named `sap-cloud-logging` and the namespace `sap-cloud-logging-integration`, as illustrated in the [secret-example.yaml](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/integration/sap-cloud-logging/secret-example.yaml).
 <!-- markdown-link-check-disable -->
 - Kubernetes CLI (kubectl) (see [Install the Kubernetes Command Line Tool](https://developers.sap.com/tutorials/cp-kyma-download-cli.html)).
 <!-- markdown-link-check-enable -->
@@ -231,7 +231,7 @@ You can set up ingestion of distributed traces from applications and the Istio s
      <details><summary>Script: Distributed Traces</summary>
 
     ```bash
-    kubectl apply -n sap-cloud-logging-integration -f - <<EOF
+    kubectl apply -f - <<EOF
     apiVersion: telemetry.kyma-project.io/v1alpha1
     kind: TracePipeline
     metadata:
@@ -378,13 +378,13 @@ You can import predefined alerts for SAP Cloud Logging to monitor the health of 
    | Monitored Component | File | Description |
    | -- | -- | -- |
    | SAP Cloud Logging | [alert-health.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-health.json) | Monitors the health of the underlying OpenSearch cluster in SAP Cloud Logging using the [cluster health API](https://opensearch.org/docs/1.3/api-reference/cluster-api/cluster-health). Triggers if the cluster status becomes `red`. |
+   | SAP Cloud Logging | [alert-rejection-in-progress.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-rejection-in-progress.json) | Monitors the `cls-rejected-*` index for new data. Triggers if new rejected data is observed. |
    | Kyma Telemetry Integration | [alert-telemetry-status.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-app-log-ingestion.json) | Monitors the status of the Telemetry module. Triggers if the module reports a non-ready state. |
    | Kyma Telemetry Integration | [alert-log-ingestion.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-log-ingestion.json) | For OTLP: Monitors the single LogPipeline used in the OTLP method. Triggers if log data stops flowing. |
    | Kyma Telemetry Integration | [alert-app-log-ingestion.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-access-log-ingestion.json) | For HTTP (legacy): Monitors the application log LogPipeline. Triggers if log data stops flowing. |
    | Kyma Telemetry Integration | [alert-access-log-ingestion.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-access-log-ingestion.json) | For HTTP (legacy): Monitors the Istio access log LogPipeline. Triggers if log data stops flowing. |
    | Kyma Telemetry Integration | [alert-trace-ingestion.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-trace-ingestion.json) | Monitors the TracePipeline. Triggers if trace data stops flowing to SAP Cloud Logging. |
    | Kyma Telemetry Integration | [alert-metric-ingestion.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-metric-ingestion.json) | Monitors the MetricPipeline. Triggers if metric data stops flowing to SAP Cloud Logging. |
-   | SAP Cloud Logging | [alert-rejection-in-progress.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-rejection-in-progress.json) | Monitors the `cls-rejected-*` index for new data. Triggers if new rejected data is observed. |
 
 <!-- markdown-link-check-enable -->
 5. After importing, edit the monitor to attach your notification channel or destination and adjust thresholds as needed.
@@ -401,9 +401,9 @@ The preconfigured `Kyma_*` dashboards in SAP Cloud Logging are compatible only w
 ### Procedure
 
 <!-- markdown-link-check-disable -->
-- Integration Status: For the status of the SAP Cloud Logging integration with the Telemetry module, import the file [dashboard-status.ndjson](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/dashboard-status.ndjson).
-- Logs (HTTP): For application logs and Istio access logs using the http output: Use the preconfigured dashboards prefixed with Kyma_*.
-- Traces: Use the OpenSearch plugin “Observability”.
-- Runtime Metrics: For runtime metrics, import the file [dashboard-runtime.ndjson](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/dashboard-runtime.ndjson).
+- For the status of the SAP Cloud Logging integration with the Telemetry module, import the file [dashboard-status.ndjson](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/dashboard-status.ndjson).
+- For application logs and Istio access logs using the http output: Use the preconfigured dashboards prefixed with `Kyma_*`.
+- For traces, use the OpenSearch plugin “Observability”.
+- For runtime metrics, import the file [dashboard-runtime.ndjson](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/dashboard-runtime.ndjson).
 - For Istio Pod metrics, import the file [dashboard-istio.ndjson](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/dashboard-istio.ndjson).
 <!-- markdown-link-check-enable -->
