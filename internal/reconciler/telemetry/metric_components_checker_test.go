@@ -300,16 +300,16 @@ func TestMetricComponentsCheck(t *testing.T) {
 					WithStatusCondition(metav1.Condition{
 						Type:    conditions.TypeFlowHealthy,
 						Status:  metav1.ConditionFalse,
-						Reason:  conditions.ReasonSelfMonAgentBufferFillingUp,
-						Message: conditions.MessageForMetricPipeline(conditions.ReasonSelfMonAgentBufferFillingUp),
+						Reason:  conditions.ReasonSelfMonAgentAllDataDropped,
+						Message: conditions.MessageForMetricPipeline(conditions.ReasonSelfMonAgentAllDataDropped),
 					}).
 					Build(),
 			},
 			expectedCondition: &metav1.Condition{
 				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
-				Reason:  "AgentBufferFillingUp",
-				Message: "Buffer nearing capacity. Incoming metric rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=buffer-filling-up",
+				Reason:  "AgentAllTelemetryDataDropped",
+				Message: "Backend is not reachable or rejecting metrics. All metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=no-metrics-arrive-at-the-backend",
 			},
 		},
 		{

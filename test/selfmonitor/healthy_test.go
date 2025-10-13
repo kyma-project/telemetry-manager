@@ -90,10 +90,10 @@ func TestHealthy(t *testing.T) {
 			},
 		},
 		{
-			kind: kindMetrics,
+			kind: kindMetricsGateway,
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewMetricPipelineBuilder().
-					WithName(kindMetrics).
+					WithName(kindMetricsGateway).
 					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 					Build()
 
@@ -104,9 +104,9 @@ func TestHealthy(t *testing.T) {
 			},
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend) {
 				assert.DeploymentReady(t, kitkyma.MetricGatewayName)
-				assert.MetricPipelineHealthy(t, kindMetrics)
+				assert.MetricPipelineHealthy(t, kindMetricsGateway)
 				assert.MetricsFromNamespaceDelivered(t, backend, ns, telemetrygen.MetricNames)
-				assert.MetricPipelineSelfMonitorIsHealthy(t, suite.K8sClient, kindMetrics)
+				assert.MetricPipelineSelfMonitorIsHealthy(t, suite.K8sClient, kindMetricsGateway)
 			},
 		},
 		{
