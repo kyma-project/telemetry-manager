@@ -1,6 +1,6 @@
 # Istio Integration
 
-When you add the Istio module to your cluster, the Telemetry module automatically integrates with it. It detects the Istio installation and injects sidecars into the Telemetry components, adding them to the service mesh. This enables secure mTLS communication for your Telemetry pipelines by default.
+When you have the Istio module in your cluster, the Telemetry module automatically integrates with it. It detects the Istio installation and injects sidecars into the Telemetry components, adding them to the service mesh. This enables secure mTLS communication for your Telemetry pipelines by default.
 
 ## Receiving Data from Your Applications
 
