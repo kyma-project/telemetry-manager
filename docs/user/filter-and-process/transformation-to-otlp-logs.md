@@ -1,10 +1,10 @@
 # Transformation to OTLP Logs
 
-This topic explains how the log agent processes original container logs and transforms them into structured OpenTelemetry (OTLP) log records.
+Learn how the log agent processes the original container logs and transforms them into structured OpenTelemetry (OTLP) log records.
 
 ## Original Log Message
 
-This example shows a container `myContainer` in Pod `myPod`, running in namespace `myNamespace`, logging to `stdout` with the following JSON message:
+The following example shows a container `myContainer` in Pod `myPod`, running in namespace `myNamespace`, logging to `stdout` with the following JSON message:
 
 ```json
 {
@@ -17,7 +17,7 @@ This example shows a container `myContainer` in Pod `myPod`, running in namespac
 
 ## Log Tailing
 
-The log agent reads the log message from a log file managed by the container runtime. The file name contains namespace, Pod, and Container information that becomes available later as log attributes. The raw log record shows the following example:
+The log agent reads the log message from a log file managed by the container runtime. The file name contains namespace, Pod, and Container information that becomes available later as log attributes. The raw log record looks like the following example:
 
 ```json
 {
@@ -28,7 +28,7 @@ The log agent reads the log message from a log file managed by the container run
 }
 ```
 
-The OTLP record created after tailing shows the following example:
+After the tailing, the created OTLP record looks like the following example:
 
 ```json
 {
@@ -54,7 +54,7 @@ The agent enriches all information identifying the log source (such as Container
 
 If the `body` value is a JSON document, the agent parses the value and enriches all JSON root attributes as additional log attributes. The agent moves the original body into the `log.original` attribute (managed with the `LogPipeline` attribute `input.application.keepOriginalBody: true`).
 
-After JSON parsing, the OTLP record shows the following example:
+After JSON parsing, the OTLP record looks like the following example:
 
 ```json
 {
@@ -85,7 +85,7 @@ Typically, a log message includes a log level in the `level` field. Based on thi
 
 ## Trace Parsing
 
-OTLP natively attaches trace context to log records. When possible, the log agent parses the following log attributes according to the [W3C-Tracecontext specification](https://www.w3.org/TR/trace-context/#traceparent-header):
+OTLP natively attaches trace context to log records. If possible, the log agent parses the following log attributes according to the [W3C-Tracecontext specification](https://www.w3.org/TR/trace-context/#traceparent-header):
 
 * `trace_id`
 * `span_id`
@@ -96,7 +96,7 @@ OTLP natively attaches trace context to log records. When possible, the log agen
 
 Because the original log message typically resides in the `body` attribute, the agent moves a log attribute called `message` (or `msg`) into the body.
 
-At this point, before further enrichment, the resulting overall log record shows the following example:
+At this point, before further enrichment, the resulting overall log record looks like the following example:
 
 ```json
 {
@@ -121,4 +121,4 @@ At this point, before further enrichment, the resulting overall log record shows
 }
 ```
 
-You can now ship this structured record to your observability backend. For details on further enrichment, see [Automatic Data Enrichment](automatic-data-enrichment.md).
+This structured record is now ready to be shipped to your observability backend. For details on further enrichment, see [Automatic Data Enrichment](automatic-data-enrichment.md).
