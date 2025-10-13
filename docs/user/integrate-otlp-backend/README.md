@@ -1,12 +1,19 @@
-# Telemetry Pipeline OTLP Output
+# Integrate With Your OTLP Backend
 
-The `otlp` output is the only output usually supported by a pipeline and is mandatory to configure. It will define where to push the telemetry data, what protocoll to use and which means of authentication to use.
+Define the backend destination for your telemetry data by configuring the OTLP output, including the protocol and authentication method.
+
+## Overview
+
+In every pipeline, you must configure an `output` section, which defines the destination for your telemetry data using OTLP. This is where you specify your chosen observability backend (see [OpenTelemetry: Vendors](https://opentelemetry.io/ecosystem/vendors/)).
 
 ![OTLP-Output](./../assets/otlp-output.drawio.svg)
 
-## Basic configuration
+> **Note**
+> Each pipeline resource supports exactly one backend. However, you can send specific inputs to different backends by setting up designated pipelines. For details, see [Route Specific Inputs to Different Backends](../otlp-input.md#route-specific-inputs-to-different-backends).
 
-The minimal configuration to define an output is to specify an OTLP endpoint without authentication using GRPC as underlying protocol.
+## Specify the OTLP Endpoint
+
+For the minimal pipeline configuration, you only specify an OTLP endpoint; though it's recommended that you use authentication.
 
 ```yaml
 ...
@@ -16,11 +23,54 @@ The minimal configuration to define an output is to specify an OTLP endpoint wit
         value: https://backend.example.com:4317
 ```
 
-## Protocol
+## Choose a Protocol
 
-The default protocol for shipping the data to a backend is GRPC, but you can choose HTTP instead. Depending on the configured protocol, an `otlp` or an `otlphttp` exporter is used. Ensure that the correct port is configured as part of the endpoint.
+The default protocol for shipping the data to a backend is gRPC. If your backend requires the HTTP protocol instead, set the `protocol` attribute to `http`. Based on this setting, the gateway chooses the exporter: `otlp` for gRPC (the default) or `otlphttp` for HTTP.
 
-- For GRPC, use:
+Ensure the port in your endpoint URL is correct for the chosen protocol.
+
+```yaml
+ ...
+ output:
+    otlp:
+      protocol: http
+      endpoint:
+        value: https://backend.example.com:4318
+```
+
+## Set Up Authentication
+
+For each pipeline, add authentication details (like user names, passwords, certificates, or tokens) to connect securely to your telemetry backend. You can use mutual TLS (mTLS), custom headers, or Basic Authentication.
+
+While you can choose to add your authentication details from plain text, it’s recommended to store these sensitive details in a Kubernetes `Secret` and reference the Secret's keys in your pipeline configuration. When you rotate the `Secret` and update its values, Telemetry Manager detects the changes and applies the new `Secret` to your setup.
+
+> **Tip**
+> If you use a Secret owned by the [SAP BTP Service Operator](https://github.com/SAP/sap-btp-service-operator), you can configure an automated rotation policy with a specific rotation frequency and don’t have to intervene manually.
+
+- To use client certificates for mTLS, configure the `tls` section with your public certificate and private key.
+
+  ```yaml
+    ...
+    output:
+      otlp:
+        endpoint:
+          value: https://backend.example.com/otlp:4317
+        tls:
+          cert:
+            valueFrom:
+              secretKeyRef:
+                name: backend
+                namespace: default
+                key: cert
+          key:
+            valueFrom:
+              secretKeyRef:
+                name: backend
+                namespace: default
+                key: key
+  ```
+
+- To send an authentication token (such as a bearer token) in an HTTP header, configure the `headers` section.
 
   ```yaml
     ...
@@ -28,190 +78,62 @@ The default protocol for shipping the data to a backend is GRPC, but you can cho
       otlp:
         endpoint:
           value: https://backend.example.com:4317
+        headers:
+        - name: Authorization
+          prefix: Bearer
+          valueFrom:
+            secretKeyRef:
+                name: backend
+                namespace: default
+                key: token
   ```
 
-- For HTTP, use the `protocol` attribute:
+- To use a username and password for authentication, configure the `authentication.basic` section.
 
   ```yaml
-   ...
-   output:
+    ...
+    output:
       otlp:
-        protocol: http
         endpoint:
-          value: https://backend.example.com:4318
+          valueFrom:
+            secretKeyRef:
+                name: backend
+                namespace: default
+                key: endpoint
+        authentication:
+          basic:
+            user:
+              valueFrom:
+                secretKeyRef:
+                  name: backend
+                  namespace: default
+                  key: user
+            password:
+              valueFrom:
+                secretKeyRef:
+                  name: backend
+                  namespace: default
+                  key: password
   ```
 
-## Authentication Details From Secrets
+- If you want to configure authentication details from plain text, use the following pattern. The example shows mTLS, but you can also use Basic Authentication or custom headers:
 
-Integrations into external systems usually need authentication details dealing with sensitive data. To handle that data properly in Secrets, TracePipeline supports the reference of Secrets.
+    ```yaml
+      ...
+      output:
+        otlp:
+          endpoint:
+            value: https://backend.example.com/otlp:4317
+          tls:
+            cert:
+              value: |
+                -----BEGIN CERTIFICATE-----
+                ...
+            key:
+              value: |
+                -----BEGIN RSA PRIVATE KEY-----
+                ...
+    ```
 
-Using the **valueFrom** attribute, you can map Secret keys for mutual TLS (mTLS), Basic Authentication, or with custom headers.
-
-You can store the value of the token in the referenced Secret without any prefix or scheme, and you can configure it in the `headers` section of the TracePipeline. In the following example, the token has the prefix "Bearer".
-
-<!-- tabs:start -->
-
-### **mTLS**
-
-```yaml
-  ...
-  output:
-    otlp:
-      endpoint:
-        value: https://backend.example.com/otlp:4317
-      tls:
-        cert:
-          valueFrom:
-            secretKeyRef:
-              name: backend
-              namespace: default
-              key: cert
-        key:
-          valueFrom:
-            secretKeyRef:
-              name: backend
-              namespace: default
-              key: key
-```
-
-### **Basic Authentication**
-
-```yaml
-  ...
-  output:
-    otlp:
-      endpoint:
-        valueFrom:
-          secretKeyRef:
-              name: backend
-              namespace: default
-              key: endpoint
-      authentication:
-        basic:
-          user:
-            valueFrom:
-              secretKeyRef:
-                name: backend
-                namespace: default
-                key: user
-          password:
-            valueFrom:
-              secretKeyRef:
-                name: backend
-                namespace: default
-                key: password
-```
-
-### **Token-based authentication with custom headers**
-
-```yaml
-  ...
-  output:
-    otlp:
-      endpoint:
-        value: https://backend.example.com:4317
-      headers:
-      - name: Authorization
-        prefix: Bearer
-        valueFrom:
-          secretKeyRef:
-              name: backend
-              namespace: default
-              key: token
-```
-
-<!-- tabs:end -->
-
-The related Secret must have the referenced name, be located in the referenced namespace, and contain the mapped key. See the following example:
-
-```yaml
-kind: Secret
-apiVersion: v1
-metadata:
-  name: backend
-  namespace: default
-stringData:
-  endpoint: https://backend.example.com:4317
-  user: myUser
-  password: XXX
-  token: YYY
-  key: |
-    -----BEGIN CERTIFICATE-----
-    ...
-  
-  cert: |
-    -----BEGIN RSA PRIVATE KEY-----
-    ...
-```
-
-### Secret Rotation
-
-Telemetry Manager continuously watches the Secret referenced with the **secretKeyRef** construct. You can update the Secret’s values, and Telemetry Manager detects the changes and applies the new Secret to the setup.
-
-> [!TIP]
-> If you use a Secret owned by the [SAP BTP Service Operator](https://github.com/SAP/sap-btp-service-operator), you can configure an automated rotation using a `credentialsRotationPolicy` with a specific `rotationFrequency` and don’t have to intervene manually.
-
-## Authentication Details From Plain Text
-
-To integrate with external systems, you must configure authentication  details. You can use mutual TLS (mTLS), Basic Authentication, or custom headers:
-
-<!-- tabs:start -->
-
-### **mTLS**
-
-```yaml
-  ...
-  output:
-    otlp:
-      endpoint:
-        value: https://backend.example.com/otlp:4317
-      tls:
-        cert:
-          value: |
-            -----BEGIN CERTIFICATE-----
-            ...
-        key:
-          value: |
-            -----BEGIN RSA PRIVATE KEY-----
-            ...
-```
-
-### **Basic Authentication**
-
-```yaml
-  ...
-  output:
-    otlp:
-      endpoint:
-        value: https://backend.example.com/otlp:4317
-      authentication:
-        basic:
-          user:
-            value: myUser
-          password:
-            value: myPwd
-```
-
-### **Token-based authentication with custom headers**
-
-```yaml
-  ...
-  output:
-    otlp:
-      endpoint:
-        value: https://backend.example.com/otlp:4317
-      headers:
-      - name: Authorization
-        prefix: Bearer
-        value: "myToken"
-```
-
-<!-- tabs:end -->
-
-## Istio Support
-
-Communication to cluster-internal backends running in the Istio service mesh can leverage mTLS communication and with that improve the security of that communication channel.
-
-The Telemetry module automatically detects whether the Istio module is added to your cluster, and injects Istio sidecars to the Telemetry components and will automatically support Istio mTLS if possible.
-
-![Istio-Output](./../assets/istio-output.drawio.svg)
+> **Note**
+> If your backend is running inside the cluster and is part of the Istio service mesh, the gateways automatically secure the connection and you don't have to configure the `authentication` block. For details, see [Sending Data to In-Cluster Backends](../architecture/istio-integration.md#sending-data-to-in-cluster-backends).
