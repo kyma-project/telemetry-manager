@@ -46,7 +46,7 @@ spec:
 
 For the `istio` input, system namespaces are included by default.
 
-To include system namespaces for `prometheus` and `runtime` metrics without specifying any other namespaces, explicitly configure an empty namespace object: `namespaces: {}`.
+To include system namespaces for `prometheus` and `runtime` metrics without specifying any other namespaces, explicitly configure an empty namespace object: `namespaces: {}`:
 
 ```yaml
 ...
