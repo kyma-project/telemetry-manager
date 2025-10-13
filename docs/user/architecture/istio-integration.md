@@ -20,7 +20,7 @@ The Telemetry gateways are automatically configured to accept OTLP data from app
 
 ## Sending Data to In-Cluster Backends
 
-Telemetry gateways automatically secure the connection when sending data to your telemetry backends.
+Telemetry gateways automatically secure the connection when sending data to your observability backends.
 
 If you're using an in-cluster backend that is part of the Istio mesh, the Telemetry gateways automatically use mTLS to send data to the backend securely. You don't need any special configuration for this.
 

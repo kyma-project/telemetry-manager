@@ -18,7 +18,7 @@ spec:
     otlp:
       ...
   output:
-    otlp:                # Integrate with your telemetry backend
+    otlp:                # Integrate with your observability backend
       endpoint:
       ...
 ```

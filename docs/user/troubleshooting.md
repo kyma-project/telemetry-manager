@@ -83,10 +83,10 @@ The OpenTelemetry (OTel) SDK version used in your application is incompatible wi
 2. Investigate whether it's compatible with the OTel Collector version.
 3. If necessary, upgrade to a supported SDK version.
 
-### Trace Backend Shows Fewer Traces than Expected
+### Observability Backend Shows Fewer Traces than Expected
 
 **Symptom**
-The trace backend shows significantly fewer traces than the number of requests your application receives.
+The observability backend shows significantly fewer traces than the number of requests your application receives.
 
 **Cause**
 
@@ -96,9 +96,9 @@ For example, in low-traffic environments (for development or testing) or for low
 
 **Solution**
 
-To see more traces in the trace backend, increase the percentage of requests that are sampled (see [Configure the Sampling Rate](./collecting-traces/istio-support.md#configure-the-sampling-rate)).
+- To see more traces in the trace backend, increase the percentage of requests that are sampled (see [Configure the Sampling Rate](./collecting-traces/istio-support.md#configure-the-sampling-rate)).
 
-Alternatively, to trace a single request, force sampling by adding a traceparent HTTP header to your client request. This header contains a sampled flag that instructs the system to capture the trace, bypassing the global sampling rate (see [Trace Context: Sampled Flag](https://www.w3.org/TR/trace-context/#sampled-flag)).
+- Alternatively, to trace a single request, force sampling by adding a traceparent HTTP header to your client request. This header contains a sampled flag that instructs the system to capture the trace, bypassing the global sampling rate (see [Trace Context: Sampled Flag](https://www.w3.org/TR/trace-context/#sampled-flag)).
 
 ### Log Entry: Failed to Scrape Prometheus Endpoint
 

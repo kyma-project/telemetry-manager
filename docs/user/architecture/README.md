@@ -50,6 +50,6 @@ The trace gateway provides a central [OTLP](https://opentelemetry.io/docs/specs/
 
 The Telemetry module includes a [Prometheus](https://prometheus.io/)-based self-monitor that collects and evaluates health metrics from the gateways and agents. Telemetry Manager uses this data to report the current health status in your pipeline resources.
 
-You can also use these health metrics in your own monitoring backend to set up alerts and dashboards for your telemetry pipelines. For details, see [Monitor Pipeline Health](./../monitor-pipeline-health.md).
+You can also use these health metrics in your own observability backend to set up alerts and dashboards for your telemetry pipelines. For details, see [Monitor Pipeline Health](./../monitor-pipeline-health.md).
 
 ![Self-Monitor](./../assets/manager-arch.drawio.svg)

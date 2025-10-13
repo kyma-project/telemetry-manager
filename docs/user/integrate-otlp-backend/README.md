@@ -40,7 +40,7 @@ Ensure the port in your endpoint URL is correct for the chosen protocol.
 
 ## Set Up Authentication
 
-For each pipeline, add authentication details (like user names, passwords, certificates, or tokens) to connect securely to your telemetry backend. You can use mutual TLS (mTLS), custom headers, or Basic Authentication.
+For each pipeline, add authentication details (like user names, passwords, certificates, or tokens) to connect securely to your observability backend. You can use mutual TLS (mTLS), custom headers, or Basic Authentication.
 
 While you can choose to add your authentication details from plain text, it’s recommended to store these sensitive details in a Kubernetes `Secret` and reference the Secret's keys in your pipeline configuration. When you rotate the `Secret` and update its values, Telemetry Manager detects the changes and applies the new `Secret` to your setup.
 
