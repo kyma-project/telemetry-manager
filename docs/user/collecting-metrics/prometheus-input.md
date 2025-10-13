@@ -1,6 +1,6 @@
 # Collect Prometheus Metrics
 
-If your applications emit Prometheus-based metrics, enable the `prometheus` input in your `MetricPipeline` and annotate your application's Service or Pod. You can choose to collect diagnostic metrics, and you can control from which namespaces metrics are collected.
+If your applications emit Prometheus-based metrics, enable the `prometheus` input in your MetricPipeline and annotate your application's Service or Pod. You can choose to collect diagnostic metrics, and you can control from which namespaces metrics are collected.
 
 ## Prerequisites
 

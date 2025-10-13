@@ -1,6 +1,6 @@
 # Collect Runtime Metrics
 
-To monitor the health and resource usage of your Kubernetes cluster, enable the `runtime` input in your `MetricPipeline`. You can choose the specific resources you want to monitor, and you can control from which namespaces metrics are collected.
+To monitor the health and resource usage of your Kubernetes cluster, enable the `runtime` input in your MetricPipeline. You can choose the specific resources you want to monitor, and you can control from which namespaces metrics are collected.
 
 ## Activate Runtime Metrics
 

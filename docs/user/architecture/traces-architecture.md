@@ -8,8 +8,8 @@ In the Kyma cluster, the Telemetry module provides a central deployment of an [O
 2. After contributing a new span to the trace, the involved components send the related span data to the trace gateway using the `telemetry-otlp-traces` service. The communication happens based on the [OpenTelemetry Protocol (OTLP)](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/otlp.md) either using GRPC or HTTP.
 3. Istio sends the related span data to the trace gateway as well.
 4. The trace gateway discovers metadata that's typical for sources running on Kubernetes, like Pod identifiers, and then enriches the span data with that metadata.
-5. Telemetry Manager configures the gateway according to the `TracePipeline` resource, including the target backend for the trace gateway. Also, it observes the trace flow to the backend and reports problems in the `TracePipeline` status.
-6. The trace gateway sends the data to the observability system that's specified in your `TracePipeline` resource - either within the Kyma cluster, or, if authentication is set up, to an external observability backend.
+5. Telemetry Manager configures the gateway according to the TracePipeline resource, including the target backend for the trace gateway. Also, it observes the trace flow to the backend and reports problems in the TracePipeline status.
+6. The trace gateway sends the data to the observability system that's specified in your TracePipeline resource - either within the Kyma cluster, or, if authentication is set up, to an external observability backend.
 7. You can analyze the trace data with your preferred backend system.
 
 ## Telemetry Manager

@@ -4,14 +4,14 @@ With the Telemetry module, you can collect metrics from your workloads and Kuber
 
 ## Overview
 
-A `MetricPipeline` is a Kubernetes Custom Resource (CR) that configures metric collection for your cluster. When you create a `MetricPipeline`, it automatically provisions the necessary components (for details, see [Metrics Architecture](../architecture/metrics-architecture.md)):
+A MetricPipeline is a Kubernetes Custom Resource (CR) that configures metric collection for your cluster. When you create a MetricPipeline, it automatically provisions the necessary components (for details, see [Metrics Architecture](../architecture/metrics-architecture.md)):
 
 - A metric gateway that provides a central OTLP endpoint for receiving metrics pushed from applications.
 - A metric agent that runs on each cluster node to pull (scrape) metrics from applications and Kubernetes resources.
 
 The pipeline enriches all collected metrics with Kubernetes metadata. It also transforms non-OTLP formats (like Prometheus) into the OTLP standard before sending them to your chosen backend.
 
-Metrics collection is optional. If you don't create a `MetricPipeline`, the metric collection components are not deployed.
+Metrics collection is optional. If you don't create a MetricPipeline, the metric collection components are not deployed.
 
 ## Prerequisites
 
@@ -25,7 +25,7 @@ For instrumentation, use an SDK, such as the Prometheus client libraries or the 
 
 ## Minimal MetricPipeline
 
-For a minimal setup, you only need to create a `MetricPipeline` that specifies your backend destination (see [Integrate With Your OTLP Backend](./../integrate-otlp-backend/README.md)):
+For a minimal setup, you only need to create a MetricPipeline that specifies your backend destination (see [Integrate With Your OTLP Backend](./../integrate-otlp-backend/README.md)):
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1

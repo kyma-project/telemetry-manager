@@ -4,7 +4,7 @@ Use the default OTLP input to collect telemetry data from your instrumented appl
 
 ## Overview
 
-When you create any `LogPipeline`, `TracePipeline`, or `MetricPipeline`, the Telemetry module automatically deploys the respective gateway. This opens a stable, cluster-internal [OTLP](https://opentelemetry.io/docs/specs/otel/protocol/) endpoint for each signal type, ready to receive data from your applications.
+When you create any LogPipeline, TracePipeline, or MetricPipeline, the Telemetry module automatically deploys the respective gateway. This opens a stable, cluster-internal [OTLP](https://opentelemetry.io/docs/specs/otel/protocol/) endpoint for each signal type, ready to receive data from your applications.
 
 Each endpoint listens on port `4317` for gRPC (default) and on port `4318` for HTTP.
 

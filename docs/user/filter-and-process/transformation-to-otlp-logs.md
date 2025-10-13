@@ -52,7 +52,7 @@ The agent enriches all information identifying the log source (such as Container
 
 ## JSON Parsing
 
-If the `body` value is a JSON document, the agent parses the value and enriches all JSON root attributes as additional log attributes. The agent moves the original body into the `log.original` attribute (managed with the `LogPipeline` attribute `input.application.keepOriginalBody: true`).
+If the `body` value is a JSON document, the agent parses the value and enriches all JSON root attributes as additional log attributes. The agent moves the original body into the `log.original` attribute (managed with the LogPipeline attribute `input.application.keepOriginalBody: true`).
 
 After JSON parsing, the OTLP record looks like the following example:
 

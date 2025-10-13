@@ -6,7 +6,7 @@ When you configure the inputs for your logs, traces, and metrics, you can choose
 
 The Telemetry module supports the following mechanisms to filter the data, which apply at different stages of the collection process:
 
-- Filtering within a pipeline (`LogPipeline`, `MetricPipeline`): You can configure the `input` section of a pipeline to select or reject data before it is processed by the agent. This is the most common method for filtering application logs, runtime metrics, and Prometheus metrics.
+- Filtering within a pipeline (LogPipeline, MetricPipeline): You can configure the `input` section of a pipeline to select or reject data before it is processed by the agent. This is the most common method for filtering application logs, runtime metrics, and Prometheus metrics.
 - Configuring the data source (Istio `Telemetry` CRD): For Istio-generated data (access logs and traces), you configure the Istio `Telemetry` resource itself. This controls which workloads generate data and at what volume (sampling rate), before it is even sent to a pipeline.
 
 ## Processing Data

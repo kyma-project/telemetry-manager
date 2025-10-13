@@ -11,8 +11,8 @@ You can choose whether you also want an agent, based on a DaemonSet of an OTel C
 2. If you choose to use the agent, an OTel Collector runs as a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) (one instance per Node), detects any new log files in the folder, and tails and parses them.
 3. An application (exposing logs in OTLP) sends logs to the central log gateway service. Istio is configured to push access logs with OTLP as well.
 4. The gateway and agent discover the metadata and enrich all received data with metadata of the source by communicating with the Kubernetes APIServer. Furthermore, they filter data according to the pipeline configuration.
-5. Telemetry Manager configures the agent and gateway according to the `LogPipeline` resource specification, including the target backend. Also, it observes the logs flow to the backend and reports problems in the LogPipeline status.
-8. The log agent and gateway send the data to the observability system that's specified in your `LogPipeline` resource - either within the Kyma cluster, or, if authentication is set up, to an external observability backend.
+5. Telemetry Manager configures the agent and gateway according to the LogPipeline resource specification, including the target backend. Also, it observes the logs flow to the backend and reports problems in the LogPipeline status.
+8. The log agent and gateway send the data to the observability system that's specified in your LogPipeline resource - either within the Kyma cluster, or, if authentication is set up, to an external observability backend.
 9. You can analyze the logs data with your preferred backend.
 
 ## Telemetry Manager

@@ -1,6 +1,6 @@
 # Collect Istio Metrics
 
-To monitor the health and performance of your service mesh, enable the `istio` input in your `MetricPipeline`. This collects metrics from the Istio proxies (sidecars) running alongside your applications. You can choose to collect Envoy metrics and diagnostic metrics, and you can control from which namespaces metrics are collected.
+To monitor the health and performance of your service mesh, enable the `istio` input in your MetricPipeline. This collects metrics from the Istio proxies (sidecars) running alongside your applications. You can choose to collect Envoy metrics and diagnostic metrics, and you can control from which namespaces metrics are collected.
 
 ## Prerequisites
 

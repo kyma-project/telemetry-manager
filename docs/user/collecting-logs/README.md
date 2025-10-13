@@ -4,14 +4,14 @@ With the Telemetry module, you can observe and debug your applications by collec
 
 ## Overview
 
-A `LogPipeline` is a Kubernetes Custom Resource (CR) that configures log collection for your cluster. When you create a `LogPipeline`, the Telemetry Manager automatically deploys the necessary components (for details, see [Logs Architecture](./../architecture/README.md)):
+A LogPipeline is a Kubernetes Custom Resource (CR) that configures log collection for your cluster. When you create a LogPipeline, the Telemetry Manager automatically deploys the necessary components (for details, see [Logs Architecture](./../architecture/README.md)):
 
 - A **log gateway** that provides a central OTLP endpoint for receiving logs pushed from your applications.
 - A **log agent** that runs on each cluster node to collect logs written to `stdout` and `stderr` by your application containers.
 
 The pipeline enriches all collected logs with Kubernetes metadata and transforms them into the OTLP format before sending them to your chosen backend.
 
-Log collection is optional. If you don't create a `LogPipeline`, the log collection components are not deployed.
+Log collection is optional. If you don't create a LogPipeline, the log collection components are not deployed.
 
 ## Prerequisites
 
@@ -23,7 +23,7 @@ Log collection is optional. If you don't create a `LogPipeline`, the log collect
 
 ## Minimal LogPipeline
 
-For a minimal setup, you only need to create a `LogPipeline` that specifies your backend destination (see [Integrate With Your OTLP Backend](./../integrate-otlp-backend/README.md)):
+For a minimal setup, you only need to create a LogPipeline that specifies your backend destination (see [Integrate With Your OTLP Backend](./../integrate-otlp-backend/README.md)):
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -45,7 +45,7 @@ By default, this minimal pipeline enables the following types of log collection:
 
 ## Configure Log Collection
 
-You can customize your `LogPipeline` using the available parameters and attributes (see [LogPipeline: Custom Resource Parameters](https://kyma-project.io/#/telemetry-manager/user/resources/02-logpipeline?id=custom-resource-parameters)):
+You can customize your LogPipeline using the available parameters and attributes (see [LogPipeline: Custom Resource Parameters](https://kyma-project.io/#/telemetry-manager/user/resources/02-logpipeline?id=custom-resource-parameters)):
 
 - Configure or disable the collection of application logs from the `stdout`/`stderr` channel (see [Configure Application Logs](../collecting-logs/application-input.md)).
 - Set up the collection of Istio access logs (see [Configure Istio Access Logs](../collecting-logs/istio-support.md)).

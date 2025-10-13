@@ -12,8 +12,8 @@ Optionally, the Telemetry module provides a DaemonSet of an OTel Collector actin
 4. The agent supports collecting metrics from the Kubelet and Kubernetes APIServer.
 5. The agent converts and sends all collected metric data to the gateway in OTLP.
 6. The gateway discovers the metadata and enriches all received data with typical metadata of the source by communicating with the Kubernetes APIServer. Furthermore, it filters data according to the pipeline configuration.
-7. Telemetry Manager configures the agent and gateway according to the `MetricPipeline` resource specification, including the target backend for the metric gateway. Also, it observes the metrics flow to the backend and reports problems in the MetricPipeline status.
-8. The metric gateway sends the data to the observability system that's specified in your `MetricPipeline` resource - either within the Kyma cluster, or, if authentication is set up, to an external observability backend.
+7. Telemetry Manager configures the agent and gateway according to the MetricPipeline resource specification, including the target backend for the metric gateway. Also, it observes the metrics flow to the backend and reports problems in the MetricPipeline status.
+8. The metric gateway sends the data to the observability system that's specified in your MetricPipeline resource - either within the Kyma cluster, or, if authentication is set up, to an external observability backend.
 9. You can analyze the metric data with your preferred backend system.
 
 ## Telemetry Manager

@@ -1,6 +1,6 @@
 # Collecting Traces
 
-With the Telemetry module, you can collect distributed traces to understand the flow of requests through your applications and infrastructure. To begin collecting traces, you create a `TracePipeline` resource. It automatically collects OTLP traces and can be configured to collect traces from the Istio service mesh.
+With the Telemetry module, you can collect distributed traces to understand the flow of requests through your applications and infrastructure. To begin collecting traces, you create a TracePipeline resource. It automatically collects OTLP traces and can be configured to collect traces from the Istio service mesh.
 
 ## Overview
 
@@ -8,7 +8,7 @@ A TracePipeline is a Kubernetes Custom Resource (CR) that configures trace colle
 
 The pipeline enriches all collected traces with Kubernetes metadata before sending them to your chosen backend.
 
-Trace collection is optional. If you don't create a `TracePipeline`, the trace gateway is not deployed.
+Trace collection is optional. If you don't create a TracePipeline, the trace gateway is not deployed.
 
 ## Prerequisites
 

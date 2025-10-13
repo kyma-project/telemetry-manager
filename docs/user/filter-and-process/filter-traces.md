@@ -1,6 +1,6 @@
 # Filter Traces
 
-`TracePipeline` resources have no `input` specification. You can configure Istio trace collection by applying the Istio `Telemetry` resource to specific namespaces.
+TracePipeline resources have no `input` specification. You can configure Istio trace collection by applying the Istio `Telemetry` resource to specific namespaces.
 
 ## Override Tracing for a Namespace or Workload
 

@@ -9,16 +9,16 @@ The Telemetry module automatically handles temporary issues to prevent data loss
 Telemetry module continuously monitors the health of your pipelines (see [Self Monitor](./architecture/README.md#self-monitor)). To ensure that your Telemetry pipelines operate reliably, you can monitor their health data in the following ways:
 
 - Perform manual checks by inspecting the status conditions of your pipeline resources with `kubectl`.
-- Set up continuous monitoring by using a `MetricPipeline` to export health metrics to your observability backend, where you can set up dashboards and alerts.
+- Set up continuous monitoring by using a MetricPipeline to export health metrics to your observability backend, where you can set up dashboards and alerts.
 
 ## Check Pipeline Status
 
 For a quick check, you can inspect the `status` of a pipeline resource directly.
 
 1. Run `kubectl get` for the pipeline that you want to inspect:
-   - For `LogPipeline`: `kubectl get logpipeline <your-pipeline-name>`
-   - For `TracePipeline`: `kubectl get tracepipeline <your-pipeline-name>`
-   - For `MetricPipeline`: `kubectl get tracepipeline <your-pipeline-name>`
+   - For LogPipeline: `kubectl get logpipeline <your-pipeline-name>`
+   - For TracePipeline: `kubectl get tracepipeline <your-pipeline-name>`
+   - For MetricPipeline: `kubectl get tracepipeline <your-pipeline-name>`
 2. Review the output. A healthy pipeline shows `True` for all status conditions.
 
     ```txt
@@ -40,7 +40,7 @@ For production environments, set up continuous monitoring by exporting the healt
 
 > **Caution:** Don't access the metrics endpoint of the used OTel Collector instances directly, because the exposed metrics are no official API of the Telemetry module. Breaking changes can happen if the underlying OTel Collector version introduces such. Instead, use the respective status conditions for each pipeline.
 
-To collect these health metrics, you must have at least one active `MetricPipeline` in your cluster. This pipeline automatically collects and exports health data for all of your pipelines, including `LogPipeline` and `TracePipeline` resources.
+To collect these health metrics, you must have at least one active MetricPipeline in your cluster. This pipeline automatically collects and exports health data for all of your pipelines, including LogPipeline and TracePipeline resources.
 
 The Telemetry module emits the following metrics for health monitoring:
 
