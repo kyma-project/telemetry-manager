@@ -18,9 +18,9 @@ The Telemetry API provides a robust, pre-configured OpenTelemetry (OTel) Collect
 Telemetry Manager, the core component of the module, is a Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) that implements the Kubernetes controller pattern and manages the whole lifecycle of all other Telemetry components. It performs the following tasks:
 
 1. Watch the module configuration for changes and sync the module status to it.
-2. Watch for the user-created Kubernetes resources LogPipeline, TracePipeline, and MetricPipeline. In these resources, you specify what data of a signal type to collect and where to ship it.
+2. Watch the user-created Kubernetes resources LogPipeline, TracePipeline, and MetricPipeline. In these resources, you specify what data of a signal type to collect and where to ship it.
 3. Manage the lifecycle of the self monitor and the user-configured agents and gateways.
-   For example, only if you defined a LogPipeline resource, the Fluent Bit DaemonSet is deployed as log agent.
+   For example, only if you defined a LogPipeline resource, the log gateway is deployed.
 
 ![Manager](./../assets/manager-resources.drawio.svg)
 
@@ -40,9 +40,7 @@ Agents run as [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controll
 
 - Trace Gateway
 
-The trace gateway provides a central OTLP endpoint to which your applications can push the trace signals. Kyma modules like Istio or Serverless contribute traces transparently. For details, see Tracing Architecture.
-
-  The trace gateway provides a central [OTLP](https://opentelemetry.io/docs/specs/otel/protocol/) endpoint to which your applications can push the trace signals. Kyma modules like Istio or Serverless contribute traces transparently. For details, see [Traces Architecture](./traces-architecture.md).
+The trace gateway provides a central [OTLP](https://opentelemetry.io/docs/specs/otel/protocol/) endpoint to which your applications can push the trace signals. Kyma modules like Istio or Serverless contribute traces transparently. For details, see [Traces Architecture](./traces-architecture.md).
 
 - Metric Gateway and Agent
 
@@ -52,6 +50,6 @@ The trace gateway provides a central OTLP endpoint to which your applications ca
 
 The Telemetry module includes a [Prometheus](https://prometheus.io/)-based self-monitor that collects and evaluates health metrics from the gateways and agents. Telemetry Manager uses this data to report the current health status in your pipeline resources.
 
-You can also use these health metrics in your own monitoring backend to set up alerts and dashboards for your telemetry pipelines. For details, see [Moniotor Pipeline Health](./../monitor-pipeline-health.md).
+You can also use these health metrics in your own monitoring backend to set up alerts and dashboards for your telemetry pipelines. For details, see [Monitor Pipeline Health](./../monitor-pipeline-health.md).
 
 ![Self-Monitor](./../assets/manager-arch.drawio.svg)
