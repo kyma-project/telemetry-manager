@@ -67,13 +67,10 @@ spec:
                         description: Name specifies a custom cluster name for the
                           resource attribute `k8s.cluster.name`.
                         type: string
-                    required:
-                    - name
                     type: object
                   extractPodLabels:
-                    description: |-
-                      ExtractPodLabels specifies the list of Pod labels to be used for enrichment.
-                      This field is optional.
+                    description: ExtractPodLabels specifies the list of Pod labels
+                      to be used for enrichment.
                     items:
                       description: |-
                         PodLabel defines labels from a Pod used for telemetry data enrichments, which can be specified either by a key or a key prefix.
@@ -81,14 +78,11 @@ spec:
                         The enriched telemetry data contains resource attributes with key k8s.pod.label.<label_key>.
                       properties:
                         key:
-                          description: |-
-                            Key specifies the exact label key to be used.
-                            This field is optional.
+                          description: Key specifies the exact label key to be used.
                           type: string
                         keyPrefix:
-                          description: |-
-                            KeyPrefix specifies a prefix for label keys to be used.
-                            This field is optional.
+                          description: KeyPrefix specifies a prefix for label keys
+                            to be used.
                           type: string
                       type: object
                       x-kubernetes-validations:

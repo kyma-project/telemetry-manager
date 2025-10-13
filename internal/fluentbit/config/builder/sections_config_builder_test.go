@@ -5,25 +5,23 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
 func TestCreateRecordModifierFilter(t *testing.T) {
 	expected := `[FILTER]
     name   record_modifier
     match  foo.*
-    record cluster_identifier ${KUBERNETES_SERVICE_HOST}
+    record cluster_identifier test-cluster-name
 
 `
 	logPipeline := &telemetryv1alpha1.LogPipeline{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}
 
-	actual := createRecordModifierFilter(logPipeline)
+	actual := createRecordModifierFilter(logPipeline, "test-cluster-name")
 	require.Equal(t, expected, actual, "Fluent Bit Permanent parser config is invalid")
 }
 
@@ -140,7 +138,7 @@ func TestMergeSectionsConfig(t *testing.T) {
 [FILTER]
     name   record_modifier
     match  foo.*
-    record cluster_identifier ${KUBERNETES_SERVICE_HOST}
+    record cluster_identifier test-cluster-name
 
 [FILTER]
     name                kubernetes
@@ -232,7 +230,7 @@ func TestMergeSectionsConfig(t *testing.T) {
 		FsBufferLimit:     "1G",
 	}
 
-	actual, err := buildFluentBitSectionsConfig(logPipeline, builderConfig{pipelineDefaults: defaults})
+	actual, err := buildFluentBitSectionsConfig(logPipeline, builderConfig{pipelineDefaults: defaults}, "test-cluster-name")
 	require.NoError(t, err)
 	require.Equal(t, expected, actual)
 }
@@ -259,7 +257,7 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
 [FILTER]
     name   record_modifier
     match  foo.*
-    record cluster_identifier ${KUBERNETES_SERVICE_HOST}
+    record cluster_identifier test-cluster-name
 
 [FILTER]
     name                kubernetes
@@ -311,88 +309,7 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
 		collectAgentLogs: true,
 	}
 
-	actual, err := buildFluentBitSectionsConfig(logPipeline, config)
+	actual, err := buildFluentBitSectionsConfig(logPipeline, config, "test-cluster-name")
 	require.NoError(t, err)
 	require.Equal(t, expected, actual)
-}
-
-func TestMergeSectionsConfigWithMissingOutput(t *testing.T) {
-	logPipeline := &telemetryv1alpha1.LogPipeline{}
-	logPipeline.Name = "foo"
-	defaults := pipelineDefaults{
-		InputTag:          "kube",
-		MemoryBufferLimit: "10M",
-		StorageType:       "filesystem",
-		FsBufferLimit:     "1G",
-	}
-
-	actual, err := buildFluentBitSectionsConfig(logPipeline, builderConfig{pipelineDefaults: defaults})
-	require.Error(t, err)
-	require.Empty(t, actual)
-}
-
-func TestBuildFluentBitConfig_Validation(t *testing.T) {
-	type args struct {
-		pipeline *telemetryv1alpha1.LogPipeline
-		config   builderConfig
-	}
-
-	tests := []struct {
-		name    string
-		args    args
-		want    string
-		wantErr error
-	}{
-		{
-			name: "Should return error when pipeline mode is not FluentBit",
-			args: args{
-				pipeline: func() *telemetryv1alpha1.LogPipeline {
-					lp := testutils.NewLogPipelineBuilder().WithOTLPOutput().Build()
-					return &lp
-				}(),
-			},
-			want:    "",
-			wantErr: errInvalidPipelineDefinition,
-		},
-		{
-			name: "Should return error when input OTLP is defined",
-			args: args{
-				pipeline: func() *telemetryv1alpha1.LogPipeline {
-					lp := testutils.NewLogPipelineBuilder().WithHTTPOutput().WithOTLPInput(true).Build()
-					return &lp
-				}(),
-			},
-			want:    "",
-			wantErr: errInvalidPipelineDefinition,
-		},
-		{
-			name: "Should return error when output plugin is not defined",
-			args: args{
-				pipeline: func() *telemetryv1alpha1.LogPipeline {
-					lp := testutils.NewLogPipelineBuilder().Build()
-					lp.Spec.Output = telemetryv1alpha1.LogPipelineOutput{}
-
-					return &lp
-				}(),
-			},
-			want:    "",
-			wantErr: errInvalidPipelineDefinition,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := buildFluentBitSectionsConfig(tt.args.pipeline, tt.args.config)
-			if tt.wantErr == nil {
-				assert.NoError(t, err)
-			}
-
-			if tt.wantErr != nil {
-				assert.ErrorIs(t, err, tt.wantErr)
-			}
-
-			if got != tt.want {
-				t.Errorf("buildFluentBitSectionsConfig() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
 }

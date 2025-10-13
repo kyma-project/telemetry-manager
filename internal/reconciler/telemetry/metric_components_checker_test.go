@@ -292,6 +292,27 @@ func TestMetricComponentsCheck(t *testing.T) {
 			},
 		},
 		{
+			name: "should not be healthy if telemetry flow probing enabled and metric agent flow is not healthy",
+			pipelines: []telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithStatusCondition(healthyGatewayCond).
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(metav1.Condition{
+						Type:    conditions.TypeFlowHealthy,
+						Status:  metav1.ConditionFalse,
+						Reason:  conditions.ReasonSelfMonAgentAllDataDropped,
+						Message: conditions.MessageForMetricPipeline(conditions.ReasonSelfMonAgentAllDataDropped),
+					}).
+					Build(),
+			},
+			expectedCondition: &metav1.Condition{
+				Type:    conditions.TypeMetricComponentsHealthy,
+				Status:  "False",
+				Reason:  "AgentAllTelemetryDataDropped",
+				Message: "Backend is not reachable or rejecting metrics. All metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=no-metrics-arrive-at-the-backend",
+			},
+		},
+		{
 			name: "should show tlsCertExpert if one pipeline has invalid tls cert and the other pipeline has an about to expire cert",
 			pipelines: []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().

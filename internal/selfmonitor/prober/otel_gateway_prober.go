@@ -19,12 +19,15 @@ type OTelGatewayProber struct {
 type OTelGatewayProbeResult struct {
 	PipelineProbeResult
 
-	QueueAlmostFull bool
-	Throttling      bool
+	Throttling bool
 }
 
 func NewOTelMetricGatewayProber(selfMonitorName types.NamespacedName) (*OTelGatewayProber, error) {
 	return newOTelGatewayProber(selfMonitorName, config.MatchesMetricPipelineRule)
+}
+
+func NewOTelMetricAgentProber(selfMonitorName types.NamespacedName) (*OTelAgentProber, error) {
+	return newOTelAgentProber(selfMonitorName, config.MatchesMetricPipelineRule)
 }
 
 func NewOTelTraceGatewayProber(selfMonitorName types.NamespacedName) (*OTelGatewayProber, error) {
@@ -56,9 +59,8 @@ func (p *OTelGatewayProber) Probe(ctx context.Context, pipelineName string) (OTe
 
 	allDropped := p.isFiring(alerts, config.RuleNameGatewayAllDataDropped, pipelineName)
 	someDropped := p.isFiring(alerts, config.RuleNameGatewaySomeDataDropped, pipelineName)
-	queueAlmostFull := p.isFiring(alerts, config.RuleNameGatewayQueueAlmostFull, pipelineName)
 	throttling := p.isFiring(alerts, config.RuleNameGatewayThrottling, pipelineName)
-	healthy := !allDropped && !someDropped && !queueAlmostFull && !throttling
+	healthy := !allDropped && !someDropped && !throttling
 
 	return OTelGatewayProbeResult{
 		PipelineProbeResult: PipelineProbeResult{
@@ -66,8 +68,7 @@ func (p *OTelGatewayProber) Probe(ctx context.Context, pipelineName string) (OTe
 			SomeDataDropped: someDropped,
 			Healthy:         healthy,
 		},
-		QueueAlmostFull: queueAlmostFull,
-		Throttling:      throttling,
+		Throttling: throttling,
 	}, nil
 }
 

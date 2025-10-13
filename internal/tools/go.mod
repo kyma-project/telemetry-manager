@@ -1,16 +1,16 @@
 module github.com/kyma-project/telemetry-manager/internal/tools
 
-go 1.25.1
+go 1.25.2
 
 require (
-	github.com/bombsimon/wsl/v5 v5.2.0
+	github.com/bombsimon/wsl/v5 v5.3.0
 	github.com/golangci/golangci-lint/v2 v2.5.0
 	github.com/google/yamlfmt v0.17.2
 	github.com/hairyhenderson/gomplate/v4 v4.3.3
 	github.com/itchyny/gojq v0.12.17
 	github.com/k3d-io/k3d/v5 v5.8.3
 	github.com/kyma-project/kyma/hack/table-gen v0.0.0-20250404123224-5afb7a10791b
-	github.com/mikefarah/yq/v4 v4.47.2
+	github.com/mikefarah/yq/v4 v4.48.1
 	github.com/vektra/mockery/v3 v3.5.5
 	github.com/vladopajic/go-test-coverage/v2 v2.17.0
 	github.com/yeya24/promlinter v0.3.0
@@ -465,17 +465,17 @@ require (
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
 	go4.org/unsafe/assume-no-moving-gc v0.0.0-20231121144256-b99613f794b6 // indirect
 	gocloud.dev v0.41.0 // indirect
-	golang.org/x/crypto v0.42.0 // indirect
+	golang.org/x/crypto v0.43.0 // indirect
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20250911091902-df9299821621 // indirect
 	golang.org/x/image v0.18.0 // indirect
 	golang.org/x/mod v0.28.0 // indirect
-	golang.org/x/net v0.44.0 // indirect
+	golang.org/x/net v0.46.0 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect
 	golang.org/x/sync v0.17.0 // indirect
-	golang.org/x/sys v0.36.0 // indirect
-	golang.org/x/term v0.35.0 // indirect
-	golang.org/x/text v0.29.0 // indirect
+	golang.org/x/sys v0.37.0 // indirect
+	golang.org/x/term v0.36.0 // indirect
+	golang.org/x/text v0.30.0 // indirect
 	golang.org/x/time v0.12.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	google.golang.org/api v0.246.0 // indirect

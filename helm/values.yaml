@@ -12,12 +12,13 @@ manager:
       alpineImage: europe-docker.pkg.dev/kyma-project/prod/external/library/alpine:3.22.1
       appLogLevel: info
       fluentBitExporterImage: europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20250910-86122076
-      fluentBitImage: europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:4.0.9
+      fluentBitImage: europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:4.1.0
       gomemlimit: 300MiB
       otelCollectorImage: europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.136.0-main
-      selfMonitorImage: europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:3.5.0-8d9d348
+      selfMonitorImage: europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:3.6.0-4de7b7a
     image:
       repository: europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:main
+      pullPolicy: "IfNotPresent"
     resources:
       limits:
         memory: 384Mi

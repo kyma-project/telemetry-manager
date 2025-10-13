@@ -145,9 +145,6 @@ func scrapableMetricsRegex() string {
 		otelCollectorMetrics[i] += "_.*"
 	}
 
-	// exporter_queue_size and exporter_queue_capacity do not have a suffix
-	otelCollectorMetrics = append(otelCollectorMetrics, otelExporterQueueSize, otelExporterQueueCapacity)
-
 	return strings.Join(append(fluentBitMetrics,
 		otelCollectorMetrics...), "|")
 }

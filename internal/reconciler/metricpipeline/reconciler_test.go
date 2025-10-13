@@ -70,8 +70,11 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(&workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"})
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+		gatewayFlowHealthProberStub := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProberStub := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:      stubs.NewEndpointValidator(nil),
@@ -90,7 +93,8 @@ func TestReconcile(t *testing.T) {
 			agentApplierDeleterMock,
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
-			flowHealthProberStub,
+			gatewayFlowHealthProberStub,
+			agentFlowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
@@ -140,8 +144,11 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(workloadstatus.ErrDeploymentFetching)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+		gatewayFlowHealthProberStub := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProberStub := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
@@ -160,7 +167,8 @@ func TestReconcile(t *testing.T) {
 			agentApplierDeleterMock,
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
-			flowHealthProberStub,
+			gatewayFlowHealthProberStub,
+			agentFlowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
@@ -210,8 +218,11 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+		gatewayFlowHealthProberStub := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProberStub := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:      stubs.NewEndpointValidator(nil),
@@ -230,7 +241,8 @@ func TestReconcile(t *testing.T) {
 			agentApplierDeleterMock,
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
-			flowHealthProberStub,
+			gatewayFlowHealthProberStub,
+			agentFlowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
@@ -262,7 +274,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-		agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil).Times(1)
+		agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
@@ -284,8 +296,11 @@ func TestReconcile(t *testing.T) {
 
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(&workloadstatus.PodIsPendingError{Message: "Error"})
 
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+		gatewayFlowHealthProberStub := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProberStub := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:      stubs.NewEndpointValidator(nil),
@@ -303,7 +318,8 @@ func TestReconcile(t *testing.T) {
 			agentApplierDeleterMock,
 			agentConfigBuilderMock,
 			agentProberStub,
-			flowHealthProberStub,
+			gatewayFlowHealthProberStub,
+			agentFlowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
@@ -336,7 +352,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-		agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil).Times(1)
+		agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
@@ -358,8 +374,11 @@ func TestReconcile(t *testing.T) {
 
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(workloadstatus.ErrDaemonSetNotFound)
 
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+		gatewayFlowHealthProberStub := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProberStub := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:      stubs.NewEndpointValidator(nil),
@@ -378,7 +397,8 @@ func TestReconcile(t *testing.T) {
 			agentApplierDeleterMock,
 			agentConfigBuilderMock,
 			agentProberStub,
-			flowHealthProberStub,
+			gatewayFlowHealthProberStub,
+			agentFlowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
@@ -411,7 +431,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-		agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil).Times(1)
+		agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
@@ -433,8 +453,11 @@ func TestReconcile(t *testing.T) {
 
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+		gatewayFlowHealthProberStub := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProberStub := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:      stubs.NewEndpointValidator(nil),
@@ -453,7 +476,8 @@ func TestReconcile(t *testing.T) {
 			agentApplierDeleterMock,
 			agentConfigBuilderMock,
 			agentProberStub,
-			flowHealthProberStub,
+			gatewayFlowHealthProberStub,
+			agentFlowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
@@ -512,8 +536,11 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+		gatewayFlowHealthProberStub := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProberStub := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:      stubs.NewEndpointValidator(nil),
@@ -532,7 +559,8 @@ func TestReconcile(t *testing.T) {
 			agentApplierDeleterMock,
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
-			flowHealthProberStub,
+			gatewayFlowHealthProberStub,
+			agentFlowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
@@ -582,8 +610,11 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+		gatewayFlowHealthProberStub := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProberStub := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:      stubs.NewEndpointValidator(nil),
@@ -602,7 +633,8 @@ func TestReconcile(t *testing.T) {
 			agentApplierDeleterMock,
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
-			flowHealthProberStub,
+			gatewayFlowHealthProberStub,
+			agentFlowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
@@ -657,8 +689,11 @@ func TestReconcile(t *testing.T) {
 
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+		gatewayFlowHealthProberStub := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProberStub := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:      stubs.NewEndpointValidator(nil),
@@ -676,7 +711,8 @@ func TestReconcile(t *testing.T) {
 			agentApplierDeleterMock,
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
-			flowHealthProberStub,
+			gatewayFlowHealthProberStub,
+			agentFlowHealthProberStub,
 			&mocks.GatewayApplierDeleter{},
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
@@ -711,7 +747,7 @@ func TestReconcile(t *testing.T) {
 		gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything)
 	})
 
-	t.Run("flow healthy", func(t *testing.T) {
+	t.Run("gateway flow healthy", func(t *testing.T) {
 		tests := []struct {
 			name            string
 			probe           prober.OTelGatewayProbeResult
@@ -746,32 +782,13 @@ func TestReconcile(t *testing.T) {
 				expectedMessage: "Metric gateway is unable to receive metrics at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-throttling",
 			},
 			{
-				name: "buffer filling up",
-				probe: prober.OTelGatewayProbeResult{
-					QueueAlmostFull: true,
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonGatewayBufferFillingUp,
-				expectedMessage: "Buffer nearing capacity. Incoming metric rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-buffer-filling-up",
-			},
-			{
-				name: "buffer filling up shadows other problems",
-				probe: prober.OTelGatewayProbeResult{
-					QueueAlmostFull: true,
-					Throttling:      true,
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonGatewayBufferFillingUp,
-				expectedMessage: "Buffer nearing capacity. Incoming metric rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-buffer-filling-up",
-			},
-			{
 				name: "some data dropped",
 				probe: prober.OTelGatewayProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
-				expectedMessage: "Backend is reachable, but rejecting metrics. Some metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
+				expectedMessage: "Backend is reachable, but rejecting metrics. Some metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=not-all-metrics-arrive-at-the-backend",
 			},
 			{
 				name: "some data dropped shadows other problems",
@@ -781,7 +798,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
-				expectedMessage: "Backend is reachable, but rejecting metrics. Some metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
+				expectedMessage: "Backend is reachable, but rejecting metrics. Some metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=not-all-metrics-arrive-at-the-backend",
 			},
 			{
 				name: "all data dropped",
@@ -829,8 +846,11 @@ func TestReconcile(t *testing.T) {
 
 				agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-				flowHealthProberStub := &mocks.FlowHealthProber{}
-				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
+				gatewayFlowHealthProberStub := &mocks.GatewayFlowHealthProber{}
+				gatewayFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
+
+				agentFlowHealthProberStub := &mocks.AgentFlowHealthProber{}
+				agentFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 				pipelineValidatorWithStubs := &Validator{
 					EndpointValidator:      stubs.NewEndpointValidator(nil),
@@ -848,7 +868,8 @@ func TestReconcile(t *testing.T) {
 					agentApplierDeleterMock,
 					&mocks.AgentConfigBuilder{},
 					agentProberStub,
-					flowHealthProberStub,
+					gatewayFlowHealthProberStub,
+					agentFlowHealthProberStub,
 					gatewayApplierDeleterMock,
 					gatewayConfigBuilderMock,
 					gatewayProberStub,
@@ -874,6 +895,141 @@ func TestReconcile(t *testing.T) {
 				)
 
 				gatewayConfigBuilderMock.AssertExpectations(t)
+			})
+		}
+	})
+
+	t.Run("agent flow healthy", func(t *testing.T) {
+		tests := []struct {
+			name            string
+			probe           prober.OTelAgentProbeResult
+			probeErr        error
+			expectedStatus  metav1.ConditionStatus
+			expectedReason  string
+			expectedMessage string
+		}{
+			{
+				name:            "prober fails",
+				probeErr:        assert.AnError,
+				expectedStatus:  metav1.ConditionUnknown,
+				expectedReason:  conditions.ReasonSelfMonAgentProbingFailed,
+				expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing of agent failed",
+			},
+			{
+				name: "healthy",
+				probe: prober.OTelAgentProbeResult{
+					PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
+				},
+				expectedStatus:  metav1.ConditionTrue,
+				expectedReason:  conditions.ReasonSelfMonFlowHealthy,
+				expectedMessage: "No problems detected in the telemetry flow",
+			},
+			{
+				name: "some data dropped",
+				probe: prober.OTelAgentProbeResult{
+					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
+				},
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonSelfMonAgentSomeDataDropped,
+				// TODO: Fix the documentation text in the link
+				expectedMessage: "Backend is reachable, but rejecting metrics. Some metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=not-all-metrics-arrive-at-the-backend",
+			},
+			{
+				name: "all data dropped",
+				probe: prober.OTelAgentProbeResult{
+					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
+				},
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonSelfMonAgentAllDataDropped,
+				expectedMessage: "Backend is not reachable or rejecting metrics. All metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=no-metrics-arrive-at-the-backend",
+			},
+			{
+				name: "all data dropped shadows other problems",
+				probe: prober.OTelAgentProbeResult{
+					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true, SomeDataDropped: true},
+				},
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonSelfMonAgentAllDataDropped,
+				expectedMessage: "Backend is not reachable or rejecting metrics. All metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=no-metrics-arrive-at-the-backend",
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				pipeline := testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build()
+				fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+				gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+				gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
+
+				agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
+				agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
+
+				agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+				agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+				gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+				gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+				pipelineLockStub := &mocks.PipelineLock{}
+				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
+
+				pipelineSyncStub := &mocks.PipelineSyncer{}
+				pipelineSyncStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
+				gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+
+				agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
+
+				gatewayFlowHealthProberStub := &mocks.GatewayFlowHealthProber{}
+				gatewayFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+				agentFlowHealthProberStub := &mocks.AgentFlowHealthProber{}
+				agentFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
+
+				pipelineValidatorWithStubs := &Validator{
+					EndpointValidator:      stubs.NewEndpointValidator(nil),
+					TLSCertValidator:       stubs.NewTLSCertValidator(nil),
+					SecretRefValidator:     stubs.NewSecretRefValidator(nil),
+					PipelineLock:           pipelineLockStub,
+					TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
+				}
+
+				errToMsg := &conditions.ErrorToMessageConverter{}
+				sut := New(
+					fakeClient,
+					telemetryNamespace,
+					moduleVersion,
+					agentApplierDeleterMock,
+					agentConfigBuilderMock,
+					agentProberStub,
+					gatewayFlowHealthProberStub,
+					agentFlowHealthProberStub,
+					gatewayApplierDeleterMock,
+					gatewayConfigBuilderMock,
+					gatewayProberStub,
+					istioStatusCheckerStub,
+					overridesHandlerStub,
+					pipelineLockStub,
+					pipelineSyncStub,
+					pipelineValidatorWithStubs,
+					errToMsg,
+				)
+				_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+				require.NoError(t, err)
+
+				var updatedPipeline telemetryv1alpha1.MetricPipeline
+
+				_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+				requireHasStatusCondition(t, updatedPipeline,
+					conditions.TypeFlowHealthy,
+					tt.expectedStatus,
+					tt.expectedReason,
+					tt.expectedMessage,
+				)
+
+				agentConfigBuilderMock.AssertExpectations(t)
 			})
 		}
 	})
@@ -972,8 +1128,11 @@ func TestReconcile(t *testing.T) {
 				gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 				agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-				flowHealthProberStub := &mocks.FlowHealthProber{}
-				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+				gatewayFlowHealthProberStub := &mocks.GatewayFlowHealthProber{}
+				gatewayFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+				agentFlowHealthProberStub := &mocks.AgentFlowHealthProber{}
+				agentFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 				pipelineValidatorWithStubs := &Validator{
 					EndpointValidator:      stubs.NewEndpointValidator(nil),
@@ -992,7 +1151,8 @@ func TestReconcile(t *testing.T) {
 					agentApplierDeleterMock,
 					&mocks.AgentConfigBuilder{},
 					agentProberStub,
-					flowHealthProberStub,
+					gatewayFlowHealthProberStub,
+					agentFlowHealthProberStub,
 					gatewayApplierDeleterMock,
 					gatewayConfigBuilderMock,
 					gatewayProberStub,
@@ -1060,8 +1220,11 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+		gatewayFlowHealthProberStub := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProberStub := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
@@ -1084,7 +1247,8 @@ func TestReconcile(t *testing.T) {
 			agentApplierDeleterMock,
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
-			flowHealthProberStub,
+			gatewayFlowHealthProberStub,
+			agentFlowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
@@ -1150,8 +1314,11 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+		gatewayFlowHealthProberStub := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProberStub := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 		serverErr := errors.New("failed to get secret: server error")
 		pipelineValidatorWithStubs := &Validator{
@@ -1171,7 +1338,8 @@ func TestReconcile(t *testing.T) {
 			agentApplierDeleterMock,
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
-			flowHealthProberStub,
+			gatewayFlowHealthProberStub,
+			agentFlowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
@@ -1231,8 +1399,11 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+		gatewayFlowHealthProberStub := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProberStub := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:      stubs.NewEndpointValidator(nil),
@@ -1251,7 +1422,8 @@ func TestReconcile(t *testing.T) {
 			agentApplierDeleterMock,
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
-			flowHealthProberStub,
+			gatewayFlowHealthProberStub,
+			agentFlowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
@@ -1312,8 +1484,11 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+		gatewayFlowHealthProberStub := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProberStub := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:      stubs.NewEndpointValidator(nil),
@@ -1332,7 +1507,8 @@ func TestReconcile(t *testing.T) {
 			agentApplierDeleterMock,
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
-			flowHealthProberStub,
+			gatewayFlowHealthProberStub,
+			agentFlowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
@@ -1377,8 +1553,11 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+		gatewayFlowHealthProberStub := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProberStub := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:      stubs.NewEndpointValidator(nil),
@@ -1397,7 +1576,8 @@ func TestReconcile(t *testing.T) {
 			agentApplierDeleterMock,
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
-			flowHealthProberStub,
+			gatewayFlowHealthProberStub,
+			agentFlowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
@@ -1446,7 +1626,7 @@ func TestReconcile(t *testing.T) {
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.MetricPipeline{pipeline1, pipeline2}), mock.Anything).Return(&common.Config{}, nil, nil)
 
 		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-		agentConfigBuilderMock.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.MetricPipeline{pipeline2}), mock.Anything).Return(&common.Config{}, nil)
+		agentConfigBuilderMock.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.MetricPipeline{pipeline2}), mock.Anything).Return(&common.Config{}, nil, nil)
 
 		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Times(2)
@@ -1464,9 +1644,13 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline1.Name).Return(prober.OTelGatewayProbeResult{}, nil)
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline2.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+		gatewayFlowHealthProberStub := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHealthProberStub.On("Probe", mock.Anything, pipeline1.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+		gatewayFlowHealthProberStub.On("Probe", mock.Anything, pipeline2.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProberStub := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProberStub.On("Probe", mock.Anything, pipeline1.Name).Return(prober.OTelAgentProbeResult{}, nil)
+		agentFlowHealthProberStub.On("Probe", mock.Anything, pipeline2.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:      stubs.NewEndpointValidator(nil),
@@ -1485,7 +1669,8 @@ func TestReconcile(t *testing.T) {
 			agentApplierDeleterMock,
 			agentConfigBuilderMock,
 			agentProberStub,
-			flowHealthProberStub,
+			gatewayFlowHealthProberStub,
+			agentFlowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
@@ -1553,9 +1738,13 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline1.Name).Return(prober.OTelGatewayProbeResult{}, nil)
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline2.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+		gatewayFlowHealthProberStub := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHealthProberStub.On("Probe", mock.Anything, pipeline1.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+		gatewayFlowHealthProberStub.On("Probe", mock.Anything, pipeline2.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProberStub := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProberStub.On("Probe", mock.Anything, pipeline1.Name).Return(prober.OTelAgentProbeResult{}, nil)
+		agentFlowHealthProberStub.On("Probe", mock.Anything, pipeline2.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
 			EndpointValidator:      stubs.NewEndpointValidator(nil),
@@ -1574,7 +1763,8 @@ func TestReconcile(t *testing.T) {
 			agentApplierDeleterMock,
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
-			flowHealthProberStub,
+			gatewayFlowHealthProberStub,
+			agentFlowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
@@ -1685,7 +1875,7 @@ func TestReconcile(t *testing.T) {
 				fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 				agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-				agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil).Times(1)
+				agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
 
 				gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 				gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
@@ -1699,8 +1889,11 @@ func TestReconcile(t *testing.T) {
 				gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(tt.probeGatewayErr)
 				agentProberMock := commonStatusStubs.NewDaemonSetProber(tt.probeAgentErr)
 
-				flowHealthProberStub := &mocks.FlowHealthProber{}
-				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+				gatewayFlowHealthProberStub := &mocks.GatewayFlowHealthProber{}
+				gatewayFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+				agentFlowHealthProberStub := &mocks.AgentFlowHealthProber{}
+				agentFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
 
 				pipelineLockStub := &mocks.PipelineLock{}
 				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -1720,22 +1913,23 @@ func TestReconcile(t *testing.T) {
 				errToMsg := &conditions.ErrorToMessageConverter{}
 
 				sut := Reconciler{
-					Client:                fakeClient,
-					telemetryNamespace:    telemetryNamespace,
-					moduleVersion:         moduleVersion,
-					agentConfigBuilder:    agentConfigBuilderMock,
-					gatewayConfigBuilder:  gatewayConfigBuilderMock,
-					agentApplierDeleter:   agentApplierDeleterMock,
-					gatewayApplierDeleter: gatewayApplierDeleterMock,
-					pipelineLock:          pipelineLockStub,
-					pipelineSync:          pipelineSync,
-					gatewayProber:         gatewayProberStub,
-					agentProber:           agentProberMock,
-					flowHealthProber:      flowHealthProberStub,
-					overridesHandler:      overridesHandlerStub,
-					istioStatusChecker:    istioStatusCheckerStub,
-					pipelineValidator:     pipelineValidatorWithStubs,
-					errToMsgConverter:     errToMsg,
+					Client:                  fakeClient,
+					telemetryNamespace:      telemetryNamespace,
+					moduleVersion:           moduleVersion,
+					agentConfigBuilder:      agentConfigBuilderMock,
+					gatewayConfigBuilder:    gatewayConfigBuilderMock,
+					agentApplierDeleter:     agentApplierDeleterMock,
+					gatewayApplierDeleter:   gatewayApplierDeleterMock,
+					pipelineLock:            pipelineLockStub,
+					pipelineSync:            pipelineSync,
+					gatewayProber:           gatewayProberStub,
+					agentProber:             agentProberMock,
+					gatewayFlowHealthProber: gatewayFlowHealthProberStub,
+					agentFlowHealthProber:   agentFlowHealthProberStub,
+					overridesHandler:        overridesHandlerStub,
+					istioStatusChecker:      istioStatusCheckerStub,
+					pipelineValidator:       pipelineValidatorWithStubs,
+					errToMsgConverter:       errToMsg,
 				}
 				_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)

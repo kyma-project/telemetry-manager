@@ -40,8 +40,8 @@ func (_m *AgentConfigBuilder) EXPECT() *AgentConfigBuilder_Expecter {
 }
 
 // Build provides a mock function for the type AgentConfigBuilder
-func (_mock *AgentConfigBuilder) Build(ctx context.Context, reconcilablePipelines []v1alpha1.LogPipeline) (*builder.FluentBitConfig, error) {
-	ret := _mock.Called(ctx, reconcilablePipelines)
+func (_mock *AgentConfigBuilder) Build(ctx context.Context, reconcilablePipelines []v1alpha1.LogPipeline, clusterName string) (*builder.FluentBitConfig, error) {
+	ret := _mock.Called(ctx, reconcilablePipelines, clusterName)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Build")
@@ -49,18 +49,18 @@ func (_mock *AgentConfigBuilder) Build(ctx context.Context, reconcilablePipeline
 
 	var r0 *builder.FluentBitConfig
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, []v1alpha1.LogPipeline) (*builder.FluentBitConfig, error)); ok {
-		return returnFunc(ctx, reconcilablePipelines)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []v1alpha1.LogPipeline, string) (*builder.FluentBitConfig, error)); ok {
+		return returnFunc(ctx, reconcilablePipelines, clusterName)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, []v1alpha1.LogPipeline) *builder.FluentBitConfig); ok {
-		r0 = returnFunc(ctx, reconcilablePipelines)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []v1alpha1.LogPipeline, string) *builder.FluentBitConfig); ok {
+		r0 = returnFunc(ctx, reconcilablePipelines, clusterName)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*builder.FluentBitConfig)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, []v1alpha1.LogPipeline) error); ok {
-		r1 = returnFunc(ctx, reconcilablePipelines)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, []v1alpha1.LogPipeline, string) error); ok {
+		r1 = returnFunc(ctx, reconcilablePipelines, clusterName)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -75,11 +75,12 @@ type AgentConfigBuilder_Build_Call struct {
 // Build is a helper method to define mock.On call
 //   - ctx context.Context
 //   - reconcilablePipelines []v1alpha1.LogPipeline
-func (_e *AgentConfigBuilder_Expecter) Build(ctx interface{}, reconcilablePipelines interface{}) *AgentConfigBuilder_Build_Call {
-	return &AgentConfigBuilder_Build_Call{Call: _e.mock.On("Build", ctx, reconcilablePipelines)}
+//   - clusterName string
+func (_e *AgentConfigBuilder_Expecter) Build(ctx interface{}, reconcilablePipelines interface{}, clusterName interface{}) *AgentConfigBuilder_Build_Call {
+	return &AgentConfigBuilder_Build_Call{Call: _e.mock.On("Build", ctx, reconcilablePipelines, clusterName)}
 }
 
-func (_c *AgentConfigBuilder_Build_Call) Run(run func(ctx context.Context, reconcilablePipelines []v1alpha1.LogPipeline)) *AgentConfigBuilder_Build_Call {
+func (_c *AgentConfigBuilder_Build_Call) Run(run func(ctx context.Context, reconcilablePipelines []v1alpha1.LogPipeline, clusterName string)) *AgentConfigBuilder_Build_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -89,9 +90,14 @@ func (_c *AgentConfigBuilder_Build_Call) Run(run func(ctx context.Context, recon
 		if args[1] != nil {
 			arg1 = args[1].([]v1alpha1.LogPipeline)
 		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
 		run(
 			arg0,
 			arg1,
+			arg2,
 		)
 	})
 	return _c
@@ -102,7 +108,7 @@ func (_c *AgentConfigBuilder_Build_Call) Return(fluentBitConfig *builder.FluentB
 	return _c
 }
 
-func (_c *AgentConfigBuilder_Build_Call) RunAndReturn(run func(ctx context.Context, reconcilablePipelines []v1alpha1.LogPipeline) (*builder.FluentBitConfig, error)) *AgentConfigBuilder_Build_Call {
+func (_c *AgentConfigBuilder_Build_Call) RunAndReturn(run func(ctx context.Context, reconcilablePipelines []v1alpha1.LogPipeline, clusterName string) (*builder.FluentBitConfig, error)) *AgentConfigBuilder_Build_Call {
 	_c.Call.Return(run)
 	return _c
 }
