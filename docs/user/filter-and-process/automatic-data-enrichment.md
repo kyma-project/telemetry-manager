@@ -1,12 +1,12 @@
 # Automatic Data Enrichment
 
-Telemetry gateways automatically enrich your data with OTel resource attributes, so you can easily identify the source of the data in your backend.
+The Telemetry gateways automatically enrich your data with OTel resource attributes, so you can easily identify the source of the data in your backend.
 
 ## Service Name
 
-The service name is the logical name of the service that emits telemetry data. The gateway ensures this attribute always has a valid value.
+The service name is the logical name of the service that emits the telemetry data. The gateway ensures that this attribute always has a valid value.
 
-If you do not provide a service name, or if its value follows the pattern `unknown_service:<process.executable.name>` as described in the [specification](https://opentelemetry.io/docs/specs/semconv/resource/#service), the gateway generates it from Kubernetes metadata.
+If you don't provide a service name, or if its value follows the pattern `unknown_service:<process.executable.name>` as described in the [specification](https://opentelemetry.io/docs/specs/semconv/resource/#service), the gateway generates it from Kubernetes metadata.
 
 The gateway determines the service name based on the following hierarchy of labels and names:
 
@@ -14,7 +14,7 @@ The gateway determines the service name based on the following hierarchy of labe
 2. `app`: Pod label value
 3. Deployment/DaemonSet/StatefulSet/Job name
 4. Pod name
-5. If none of the above are available, the value is `unknown_service`
+5. If none of the above is available, the value is `unknown_service`
 
 ## Kubernetes Metadata
 
@@ -25,7 +25,7 @@ The gateway determines the service name based on the following hierarchy of labe
 - `k8s.<workload kind>.name`: The Kubernetes workload name to which the emitting Pod belongs. Workload is either Deployment, DaemonSet, StatefulSet, Job, or CronJob.
 - `k8s.namespace.name`: The Kubernetes namespace name with which the emitting Pod is associated.
 - `k8s.cluster.name`: A logical identifier of the cluster, which, by default, is the API Server URL. To set a custom name, configure the `enrichments.cluster.name` field in the Telemetry CRD.
-- `k8s.cluster.uid`: A unique identifier of the cluster, identified by the UID of the `kube-system` namespace.
+- `k8s.cluster.uid`: A unique identifier of the cluster, realized by the UID of the `kube-system` namespace.
 - `k8s.node.name`: The Kubernetes node name to which the emitting Pod is scheduled.
 - `k8s.node.uid`: The Kubernetes Node ID to which the emitting Pod belongs.
 
