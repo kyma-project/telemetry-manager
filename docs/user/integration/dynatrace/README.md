@@ -6,7 +6,7 @@
 | - | - |
 | Signal types | traces, metrics |
 | Backend type | third-party remote |
-| OTLP-native | yes, but dynatrace agent in parallel |
+| OTLP-native | yes |
 
 [Dynatrace](https://www.dynatrace.com) is an advanced Application Performance Management solution available as SaaS offering. It supports monitoring both the Kubernetes cluster itself and the workloads running in the cluster. To use all of its features, the proprietary agent technology of Dynatrace must be installed.
 
@@ -59,9 +59,9 @@ There are different ways to deploy Dynatrace on Kubernetes. All [deployment opti
    > [!NOTE]
    > By default, Dynatrace used the classic full-stack injection. However, for better stability, we recommend using the [cloud-native fullstack injection](https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/guides/operation/migration/classic-to-cloud-native).
 
-2. In the DynaKube resource, configure the correct `apiurl` of your environment.
+1. In the DynaKube resource, configure the correct `apiurl` of your environment.
 
-3. In the DynaKube resource, exclude Kyma system namespaces by adding the following snippet:
+1. In the DynaKube resource, exclude Kyma system namespaces by adding the following snippet:
 
     ```yaml
     spec:
@@ -84,17 +84,29 @@ There are different ways to deploy Dynatrace on Kubernetes. All [deployment opti
                 - kyma
     ```
 
-4. In the environment, go to **Settings > Cloud and virtualization > Kubernetes** and enable the relevant Kubernetes features, especially `Monitor annotated Prometheus exporters` to collect Istio metrics.
+1. In the DynaKube resource, enable OTLP ingestion using the OTel Collector:
 
-5. In the Dynatrace Hub, enable the **Istio Service Mesh** extension and annotate your services as outlined in the description.
+    ```yaml
+    spec:
+      telemetryIngest:
+        protocols:
+        - otlp
+      templates:
+        otelCollector:
+          imageRef:
+            repository: public.ecr.aws/dynatrace/dynatrace-otel-collector
+            tag: latest
+    ```
 
-6. If you have a workload exposing metrics in the Prometheus format, you can collect custom metrics in Prometheus format by [annotating the workload](https://docs.dynatrace.com/docs/observe/infrastructure-monitoring/container-platform-monitoring/kubernetes-monitoring/monitor-prometheus-metrics#annotate-kubernetes-services). If the workload has an Istio sidecar, you must either weaken the mTLS setting for the metrics port by defining an [Istio PeerAuthentication](https://istio.io/latest/docs/reference/config/security/peer_authentication/#PeerAuthentication) or exclude the port from interception by the Istio proxy by placing an `traffic.sidecar.istio.io/excludeInboundPorts` annotaion on your Pod that lists the metrics port.
+1. In the environment, go to **Settings > Cloud and virtualization > Kubernetes** and enable relevant Kubernetes features.
 
-As a result, you see data arriving in your environment, advanced Kubernetes monitoring is possible, and Istio metrics are available.
+1. In the Dynatrace Hub, enable the **Istio Service Mesh** extension and annotate your services as outlined in the description.
+
+As a result, you see data arriving in your environment and Kubernetes monitoring is possible.
 
 ## Telemetry Module Setup
 
-Next, you set up the ingestion of custom span and Istio span data, and, optionally, custom metrics based on OTLP.
+Next, you set up the ingestion of custom span/metrics and Istio span/metric data.
 
 ### Create Secret
 
@@ -117,30 +129,7 @@ Next, you set up the ingestion of custom span and Istio span data, and, optional
 
 ### Ingest Traces
 
-To start ingesting custom spans and Istio spans, you must enable the Istio tracing feature and then deploy a TracePipeline.
-
-1. Deploy the Istio Telemetry resource:
-
-    ```bash
-    kubectl apply -n istio-system -f - <<EOF
-    apiVersion: telemetry.istio.io/v1
-    kind: Telemetry
-    metadata:
-      name: tracing-default
-    spec:
-      tracing:
-      - providers:
-        - name: "kyma-traces"
-        randomSamplingPercentage: 1.0
-    EOF
-    ```
-
-    The default configuration has the **randomSamplingPercentage** property set to `1.0`, meaning it samples 1% of all requests. To change the sampling rate, adjust the property to the desired value, up to 100 percent.
-
-    > [!WARNING]
-    > Be cautious when you configure the **randomSamplingPercentage**:
-    > - Could cause high volume of traces.
-    > - The Kyma trace gateway component does not scale automatically.
+To start ingesting custom spans and Istio spans, you must deploy a TracePipeline and then optionally enable the Istio tracing feature.
 
 1. Deploy the TracePipeline:
 
@@ -172,9 +161,34 @@ To start ingesting custom spans and Istio spans, you must enable the Istio traci
     EOF
     ```
 
+1. Deploy the Istio Telemetry resource, (see also [Traces Istio Support](./../../03-traces.md#istio)):
+
+    ```bash
+    kubectl apply -n istio-system -f - <<EOF
+    apiVersion: telemetry.istio.io/v1
+    kind: Telemetry
+    metadata:
+      name: tracing-default
+    spec:
+      tracing:
+      - providers:
+        - name: "kyma-traces"
+        randomSamplingPercentage: 1.0
+    EOF
+    ```
+
+    The default configuration has the **randomSamplingPercentage** property set to `1.0`, meaning it samples 1% of all requests. To change the sampling rate, adjust the property to the desired value, up to 100 percent.
+
+    > [!WARNING]
+    > Be cautious when you configure the **randomSamplingPercentage**:
+    > - Could cause high volume of traces.
+    > - The Kyma trace gateway component does not scale automatically.
+
 1. To find traces from your Kyma cluster in the Dynatrace UI, go to **Applications & Microservices** > **Distributed traces**.
 
 ### Ingest Metrics
+
+To start ingesting custom metrics and Istio metrics, you must deploy a MetricPipeline with the optional `istio` input enabled.
 
 > [!NOTE]
 > The Dynatrace OTLP API exclusively supports "delta" [aggregation temporality](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/getting-started/metrics/limitations#aggregation-temporality). If your metrics are emitted in cumulative temporality (the default temporality in OTel), you must set up the transformation with a custom OTel Collector Deployment in addition to your MetricPipeline.
