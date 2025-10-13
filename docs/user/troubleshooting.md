@@ -67,7 +67,7 @@ The gateway is receiving data faster than it can process and forward it.
 
 Manually scale out the capacity by increasing the number of replicas for the affected gateway. For details, see [Telemetry CRD](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
 
-### TracePipeline: Custom Spans Don’t Arrive at the Backend, but Istio Spans Do
+### Custom Spans Don’t Arrive at the Backend, but Istio Spans Do
 
 **Symptom**
 
