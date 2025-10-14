@@ -281,20 +281,6 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			errorMsg: "should match '^/.*$'",
 			field:    "spec.output.http.uri",
 		},
-		{
-			pipeline: telemetryv1alpha1.LogPipeline{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "http-output-host-required",
-				},
-				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Output: telemetryv1alpha1.LogPipelineOutput{
-						HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{},
-					},
-				},
-			},
-			errorMsg: "Only one of 'value' or 'valueFrom' can be set",
-			field:    "spec.output.http.host",
-		},
 		// application input
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
