@@ -109,6 +109,24 @@ details: |-
         source: spec.metric.gateway.scaling.static.replicas
       - name: Scaling Type
         source: spec.metric.gateway.scaling.type
+    - name: Enrichments
+      visibility: $exists(spec.enrichments)
+      widget: Panel
+      children:
+        - name: Cluster Name
+          source: spec.enrichments.cluster.name
+          visibility: $exists(spec.enrichments.cluster.name)
+        - name: Pod Labels
+          source: spec.enrichments.extractPodLabels[]
+          visibility: $exists(sspec.enrichments.extractPodLabels)
+          widget: Panel
+          children:
+            - name: Key
+              source: key
+              visibility: $exists(key)
+            - name: KeyPrefix
+              source: keyPrefix
+              visibility: $exists(keyPrefix)
   resourceGraph:
     colorVariant: 2
     dataSources:
