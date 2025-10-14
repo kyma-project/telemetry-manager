@@ -176,15 +176,15 @@ func ResolveServiceNameConfig() *ServiceEnrichmentProcessor {
 // =============================================================================
 
 // LogFilterProcessorConfig creates a FilterProcessor for logs with error_mode set to "ignore"
-func LogFilterProcessorConfig(statements FilterProcessorStatements) *FilterProcessor {
-	logRecords := make([]string, 0, len(statements.Conditions))
-	logRecords = append(logRecords, statements.Conditions...)
+func LogFilterProcessorConfig(conditions []string) *FilterProcessor {
+	logRecords := make([]string, 0, len(conditions))
+	logRecords = append(logRecords, conditions...)
 
 	// Sort to prevent changes in the order in every reconciliation loop
 	sort.Strings(logRecords)
 
 	return &FilterProcessor{
-		ErrorMode: DefaultFilterProcessorErrorMode,
+		ErrorMode: defaultFilterProcessorErrorMode,
 		Logs: FilterProcessorLogs{
 			Log: logRecords,
 		},
@@ -218,21 +218,21 @@ func MetricFilterProcessorConfig(conditions []string, opts ...UserMetricFilterPr
 	}
 
 	return &FilterProcessor{
-		ErrorMode: DefaultFilterProcessorErrorMode,
+		ErrorMode: defaultFilterProcessorErrorMode,
 		Metrics:   metrics,
 	}
 }
 
-// UserTraceFilterProcessorConfig creates a FilterProcessor for traces with the default error mode
-func UserTraceFilterProcessorConfig(statements FilterProcessorStatements) *FilterProcessor {
-	spans := make([]string, 0, len(statements.Conditions))
-	spans = append(spans, statements.Conditions...)
+// TraceFilterProcessorConfig creates a FilterProcessor for traces with the default error mode
+func TraceFilterProcessorConfig(conditions []string) *FilterProcessor {
+	spans := make([]string, 0, len(conditions))
+	spans = append(spans, conditions...)
 
 	// Sort to prevent changes in the order in every reconciliation loop
 	sort.Strings(spans)
 
 	return &FilterProcessor{
-		ErrorMode: DefaultFilterProcessorErrorMode,
+		ErrorMode: defaultFilterProcessorErrorMode,
 		Traces: FilterProcessorTraces{
 			Span: spans,
 		},

@@ -181,15 +181,9 @@ func (b *Builder) addDropRuntimePodMetricsProcessor() buildComponentFunc {
 			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimePodInputEnabled(mp.Spec.Input) {
 				return nil
 			}
-
-			return &common.FilterProcessor{
-				ErrorMode: common.DefaultFilterProcessorErrorMode,
-				Metrics: common.FilterProcessorMetrics{
-					Metric: []string{
-						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.pod.*")),
-					},
-				},
-			}
+			return common.MetricFilterProcessorConfig([]string{
+				common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.pod.*")),
+			})
 		},
 	)
 }
@@ -202,14 +196,9 @@ func (b *Builder) addDropRuntimeContainerMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return &common.FilterProcessor{
-				ErrorMode: common.DefaultFilterProcessorErrorMode,
-				Metrics: common.FilterProcessorMetrics{
-					Metric: []string{
-						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "(^k8s.container.*)|(^container.*)")),
-					},
-				},
-			}
+			return common.MetricFilterProcessorConfig([]string{
+				common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "(^k8s.container.*)|(^container.*)")),
+			})
 		},
 	)
 }
@@ -222,14 +211,9 @@ func (b *Builder) addDropRuntimeNodeMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return &common.FilterProcessor{
-				ErrorMode: common.DefaultFilterProcessorErrorMode,
-				Metrics: common.FilterProcessorMetrics{
-					Metric: []string{
-						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.node.*")),
-					},
-				},
-			}
+			return common.MetricFilterProcessorConfig([]string{
+				common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.node.*")),
+			})
 		},
 	)
 }
@@ -242,14 +226,9 @@ func (b *Builder) addDropRuntimeVolumeMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return &common.FilterProcessor{
-				ErrorMode: common.DefaultFilterProcessorErrorMode,
-				Metrics: common.FilterProcessorMetrics{
-					Metric: []string{
-						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.volume.*")),
-					},
-				},
-			}
+			return common.MetricFilterProcessorConfig([]string{
+				common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.volume.*")),
+			})
 		},
 	)
 }
@@ -262,14 +241,9 @@ func (b *Builder) addDropRuntimeDeploymentMetricsProcessor() buildComponentFunc 
 				return nil
 			}
 
-			return &common.FilterProcessor{
-				ErrorMode: common.DefaultFilterProcessorErrorMode,
-				Metrics: common.FilterProcessorMetrics{
-					Metric: []string{
-						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.deployment.*")),
-					},
-				},
-			}
+			return common.MetricFilterProcessorConfig([]string{
+				common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.deployment.*")),
+			})
 		},
 	)
 }
@@ -282,14 +256,9 @@ func (b *Builder) addDropRuntimeDaemonSetMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return &common.FilterProcessor{
-				ErrorMode: common.DefaultFilterProcessorErrorMode,
-				Metrics: common.FilterProcessorMetrics{
-					Metric: []string{
-						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.daemonset.*")),
-					},
-				},
-			}
+			return common.MetricFilterProcessorConfig([]string{
+				common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.daemonset.*")),
+			})
 		},
 	)
 }
@@ -302,14 +271,9 @@ func (b *Builder) addDropRuntimeStatefulSetMetricsProcessor() buildComponentFunc
 				return nil
 			}
 
-			return &common.FilterProcessor{
-				ErrorMode: common.DefaultFilterProcessorErrorMode,
-				Metrics: common.FilterProcessorMetrics{
-					Metric: []string{
-						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.statefulset.*")),
-					},
-				},
-			}
+			return common.MetricFilterProcessorConfig([]string{
+				common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.statefulset.*")),
+			})
 		},
 	)
 }
@@ -322,14 +286,9 @@ func (b *Builder) addDropRuntimeJobMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return &common.FilterProcessor{
-				ErrorMode: common.DefaultFilterProcessorErrorMode,
-				Metrics: common.FilterProcessorMetrics{
-					Metric: []string{
-						common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.job.*")),
-					},
-				},
-			}
+			return common.MetricFilterProcessorConfig([]string{
+				common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.job.*")),
+			})
 		},
 	)
 }

@@ -213,7 +213,7 @@ func (b *Builder) addUserDefinedFilterProcessor() buildComponentFunc {
 				return nil // No Filter, no processor need
 			}
 
-			filterStatements := common.FilterSpecsToProcessorStatements(lp.Spec.Filter)
+			filterStatements := lp.Spec.Filter.Conditions
 			filterProcessor := common.LogFilterProcessorConfig(filterStatements)
 
 			return filterProcessor
