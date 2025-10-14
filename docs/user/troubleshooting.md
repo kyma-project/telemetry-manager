@@ -147,7 +147,7 @@ There's a configuration or network issue between the metric agent and your appli
 
   ```
 
-## LogPiepline: Log Buffer Filling Up
+## LogPipeline: Log Buffer Filling Up
 
 **Symptom**
 
