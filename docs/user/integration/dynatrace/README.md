@@ -211,7 +211,7 @@ Depending on they way your applications emit metrics, choose one of the followin
             output:
                 otlp:
                     endpoint:
-                        value: http://dynatrace-exporter-opentelemetry-collector.${DYNATRACE_NS}:4317
+                        value: http://dynakube-telemetry-ingest.${DYNATRACE_NS}:4317
         EOF
         ```
 
