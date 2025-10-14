@@ -53,10 +53,8 @@ func TestConvertTo(t *testing.T) {
 					Statements: []string{"set(resource.attributes[\"k8s.pod.name\"]", "nginx"},
 				},
 			},
-			Filter: []FilterSpec{
-				{
-					Conditions: []string{"log.time == nil"},
-				},
+			Filter: FilterSpec{
+				Conditions: []string{"log.time == nil"},
 			},
 			Output: LogPipelineOutput{
 				Custom: "custom-output",
@@ -210,10 +208,8 @@ func TestConvertFrom(t *testing.T) {
 					Statements: []string{"set(resource.attributes[\"k8s.pod.name\"]", "nginx"},
 				},
 			},
-			Filter: []telemetryv1beta1.FilterSpec{
-				{
-					Conditions: []string{"log.time == nil"},
-				},
+			Filter: telemetryv1beta1.FilterSpec{
+				Conditions: []string{"log.time == nil"},
 			},
 			Output: telemetryv1beta1.LogPipelineOutput{
 				Custom: "custom-output",
@@ -396,9 +392,8 @@ func requireLogPipelinesEquivalent(t *testing.T, x *LogPipeline, y *telemetryv1b
 
 	xFilter := x.Spec.Filter
 	yFilter := y.Spec.Filter
-	require.Len(t, xFilter, len(yFilter), "expected same number of filters")
+	require.Len(t, xFilter.Conditions, len(yFilter.Conditions), "expected same number of filters")
 
-	for i := range xFilter {
-		require.Equal(t, xFilter[i].Conditions, yFilter[i].Conditions, "filter conditions mismatch at index %d", i)
-	}
+	require.Equal(t, xFilter.Conditions, yFilter.Conditions, "filter conditions mismatch")
+
 }
