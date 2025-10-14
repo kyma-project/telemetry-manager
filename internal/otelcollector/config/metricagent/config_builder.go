@@ -531,6 +531,7 @@ func (b *Builder) addDropRuntimePodMetricsProcessor() buildComponentFunc {
 			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimePodInputEnabled(mp.Spec.Input) {
 				return nil
 			}
+
 			return common.MetricFilterProcessorConfig([]string{
 				common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.pod.*")),
 			})
@@ -545,10 +546,10 @@ func (b *Builder) addDropRuntimeContainerMetricsProcessor() buildComponentFunc {
 			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeContainerInputEnabled(mp.Spec.Input) {
 				return nil
 			}
+
 			return common.MetricFilterProcessorConfig([]string{
 				common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "(^k8s.container.*)|(^container.*)")),
 			})
-
 		},
 	)
 }
@@ -560,10 +561,10 @@ func (b *Builder) addDropRuntimeNodeMetricsProcessor() buildComponentFunc {
 			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeNodeInputEnabled(mp.Spec.Input) {
 				return nil
 			}
+
 			return common.MetricFilterProcessorConfig([]string{
 				common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.node.*")),
 			})
-
 		},
 	)
 }
@@ -579,7 +580,6 @@ func (b *Builder) addDropRuntimeVolumeMetricsProcessor() buildComponentFunc {
 			return common.MetricFilterProcessorConfig([]string{
 				common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.volume.*")),
 			})
-
 		},
 	)
 }
@@ -621,6 +621,7 @@ func (b *Builder) addDropRuntimeStatefulSetMetricsProcessor() buildComponentFunc
 			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeStatefulSetInputEnabled(mp.Spec.Input) {
 				return nil
 			}
+
 			return common.MetricFilterProcessorConfig([]string{
 				common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.statefulset.*")),
 			})
@@ -680,7 +681,6 @@ func dropDiagnosticMetricsFilterProcessorConfig(inputSource common.InputSourceTy
 	filterExpressions = append(filterExpressions, excludeScrapeMetricsExpr)
 
 	return common.MetricFilterProcessorConfig(filterExpressions)
-
 }
 
 func nameConditions(names []string) []string {

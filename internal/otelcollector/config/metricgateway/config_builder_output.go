@@ -47,6 +47,7 @@ func (b *Builder) addDropIfRuntimeInputDisabledProcessor() buildComponentFunc {
 			if metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) {
 				return nil
 			}
+
 			return common.MetricFilterProcessorConfig([]string{common.ScopeNameEquals(common.InstrumentationScopeRuntime)})
 		},
 	)
@@ -72,6 +73,7 @@ func (b *Builder) addDropIfIstioInputDisabledProcessor() buildComponentFunc {
 			if metricpipelineutils.IsIstioInputEnabled(mp.Spec.Input) {
 				return nil
 			}
+
 			return common.MetricFilterProcessorConfig([]string{common.ScopeNameEquals(common.InstrumentationScopeIstio)})
 		},
 	)
@@ -181,6 +183,7 @@ func (b *Builder) addDropRuntimePodMetricsProcessor() buildComponentFunc {
 			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimePodInputEnabled(mp.Spec.Input) {
 				return nil
 			}
+
 			return common.MetricFilterProcessorConfig([]string{
 				common.JoinWithAnd(inputSourceEquals(common.InputSourceRuntime), common.IsMatch("name", "^k8s.pod.*")),
 			})
