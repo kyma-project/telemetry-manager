@@ -47,13 +47,7 @@ func (b *Builder) addDropIfRuntimeInputDisabledProcessor() buildComponentFunc {
 			if metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) {
 				return nil
 			}
-
-			return &common.FilterProcessor{
-				ErrorMode: common.DefaultFilterProcessorErrorMode,
-				Metrics: common.FilterProcessorMetrics{
-					Metric: []string{common.ScopeNameEquals(common.InstrumentationScopeRuntime)},
-				},
-			}
+			return common.MetricFilterProcessorConfig([]string{common.ScopeNameEquals(common.InstrumentationScopeRuntime)})
 		},
 	)
 }
@@ -66,12 +60,7 @@ func (b *Builder) addDropIfPrometheusInputDisabledProcessor() buildComponentFunc
 				return nil
 			}
 
-			return &common.FilterProcessor{
-				ErrorMode: common.DefaultFilterProcessorErrorMode,
-				Metrics: common.FilterProcessorMetrics{
-					Metric: []string{common.ResourceAttributeEquals(common.KymaInputNameAttribute, common.KymaInputPrometheus)},
-				},
-			}
+			return common.MetricFilterProcessorConfig([]string{common.ResourceAttributeEquals(common.KymaInputNameAttribute, common.KymaInputPrometheus)})
 		},
 	)
 }
@@ -83,13 +72,7 @@ func (b *Builder) addDropIfIstioInputDisabledProcessor() buildComponentFunc {
 			if metricpipelineutils.IsIstioInputEnabled(mp.Spec.Input) {
 				return nil
 			}
-
-			return &common.FilterProcessor{
-				ErrorMode: common.DefaultFilterProcessorErrorMode,
-				Metrics: common.FilterProcessorMetrics{
-					Metric: []string{common.ScopeNameEquals(common.InstrumentationScopeIstio)},
-				},
-			}
+			return common.MetricFilterProcessorConfig([]string{common.ScopeNameEquals(common.InstrumentationScopeIstio)})
 		},
 	)
 }
@@ -102,12 +85,7 @@ func (b *Builder) addDropIfOTLPInputDisabledProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return &common.FilterProcessor{
-				ErrorMode: common.DefaultFilterProcessorErrorMode,
-				Metrics: common.FilterProcessorMetrics{
-					Metric: []string{ottlUknownInputSource()},
-				},
-			}
+			return common.MetricFilterProcessorConfig([]string{ottlUknownInputSource()})
 		},
 	)
 }
@@ -120,14 +98,10 @@ func (b *Builder) addDropEnvoyMetricsIfDisabledProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return &common.FilterProcessor{
-				ErrorMode: common.DefaultFilterProcessorErrorMode,
-				Metrics: common.FilterProcessorMetrics{
-					Metric: []string{
-						common.JoinWithAnd(common.IsMatch("name", "^envoy_.*"), common.ScopeNameEquals(common.InstrumentationScopeIstio)),
-					},
-				},
-			}
+			return common.MetricFilterProcessorConfig([]string{
+				common.JoinWithAnd(common.IsMatch("name", "^envoy_.*"),
+					common.ScopeNameEquals(common.InstrumentationScopeIstio)),
+			})
 		},
 	)
 }
@@ -429,12 +403,7 @@ func filterByNamespaceProcessorConfig(namespaceSelector *telemetryv1alpha1.Names
 		filterExpressions = append(filterExpressions, includeNamespacesExpr)
 	}
 
-	return &common.FilterProcessor{
-		ErrorMode: common.DefaultFilterProcessorErrorMode,
-		Metrics: common.FilterProcessorMetrics{
-			Metric: filterExpressions,
-		},
-	}
+	return common.MetricFilterProcessorConfig(filterExpressions)
 }
 
 func namespacesConditions(namespaces []string) []string {
@@ -506,8 +475,8 @@ func (b *Builder) addUserDefinedFilterProcessor() buildComponentFunc {
 				return nil // No filter, no processor needed
 			}
 
-			filterStatements := common.FilterSpecsToProcessorStatements(mp.Spec.Filter)
-			filterProcessor := common.MetricFilterProcessorConfig(filterStatements)
+			filterStatements := mp.Spec.Filter.Conditions
+			filterProcessor := common.MetricFilterProcessorConfig(filterStatements, common.UseDatapoints(true))
 
 			return filterProcessor
 		},
@@ -554,12 +523,7 @@ func dropDiagnosticMetricsFilterConfig(inputSourceCondition string) *common.Filt
 	excludeScrapeMetricsExpr := common.JoinWithAnd(inputSourceCondition, common.JoinWithOr(metricNameConditions...))
 	filterExpressions = append(filterExpressions, excludeScrapeMetricsExpr)
 
-	return &common.FilterProcessor{
-		ErrorMode: common.DefaultFilterProcessorErrorMode,
-		Metrics: common.FilterProcessorMetrics{
-			Metric: filterExpressions,
-		},
-	}
+	return common.MetricFilterProcessorConfig(filterExpressions)
 }
 
 func nameConditions(names []string) []string {

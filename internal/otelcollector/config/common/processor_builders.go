@@ -206,14 +206,14 @@ func UseDatapoints(enabled bool) UserMetricFilterProcessorOption {
 }
 
 // MetricFilterProcessorConfig creates a FilterProcessor for metrics with the default error mode
-func MetricFilterProcessorConfig(statements FilterProcessorStatements, opts ...UserMetricFilterProcessorOption) *FilterProcessor {
+func MetricFilterProcessorConfig(conditions []string, opts ...UserMetricFilterProcessorOption) *FilterProcessor {
 	metrics := FilterProcessorMetrics{}
 
 	if len(opts) == 0 {
-		metrics.Metric = statements.Conditions
+		metrics.Metric = conditions
 	} else {
 		for _, opt := range opts {
-			opt(&metrics, statements.Conditions)
+			opt(&metrics, conditions)
 		}
 	}
 
