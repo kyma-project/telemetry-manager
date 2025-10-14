@@ -156,7 +156,7 @@ func (b *Builder) addUserDefinedFilterProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		formatUserDefinedFilterProcessorID,
 		func(tp *telemetryv1alpha1.TracePipeline) any {
-			if len(tp.Spec.Filter) == 0 {
+			if len(tp.Spec.Filter.Conditions) == 0 {
 				return nil
 			}
 

@@ -77,12 +77,7 @@ func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 		}
 	}
 
-	if src.Spec.Filter != nil {
-		for _, t := range src.Spec.Filter {
-			dst.Spec.Filter = append(dst.Spec.Filter, v1Alpha1FilterSpecToV1Beta1(t))
-		}
-	}
-
+	dst.Spec.Filter = v1Alpha1FilterSpecToV1Beta1(src.Spec.Filter)
 	dst.Status = telemetryv1beta1.LogPipelineStatus(src.Status)
 
 	return nil
@@ -317,11 +312,7 @@ func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 		}
 	}
 
-	if src.Spec.Filter != nil {
-		for _, t := range src.Spec.Filter {
-			dst.Spec.Filter = append(dst.Spec.Filter, v1Beta1FilterSpecToV1Alpha1(t))
-		}
-	}
+	dst.Spec.Filter = v1Beta1FilterSpecToV1Alpha1(src.Spec.Filter)
 
 	dst.Status = LogPipelineStatus(src.Status)
 

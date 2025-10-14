@@ -87,7 +87,7 @@ type LogPipelineSpec struct {
 	Transforms []TransformSpec `json:"transform,omitempty"`
 	// Filter specifies a list of filters to apply to telemetry data.
 	// +kubebuilder:validation:Optional
-	Filter []FilterSpec `json:"filter,omitempty"`
+	Filter FilterSpec `json:"filter,omitempty"`
 }
 
 // LogPipelineInput configures additional inputs for log collection.

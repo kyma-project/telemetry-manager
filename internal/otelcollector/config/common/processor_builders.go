@@ -176,10 +176,10 @@ func ResolveServiceNameConfig() *ServiceEnrichmentProcessor {
 // =============================================================================
 
 // LogFilterProcessorConfig creates a FilterProcessor for logs with error_mode set to "ignore"
-func LogFilterProcessorConfig(statements []FilterProcessorStatements) *FilterProcessor {
-	logRecords := make([]string, 0, len(statements))
-	for _, s := range statements {
-		logRecords = append(logRecords, s.Statements...)
+func LogFilterProcessorConfig(statements FilterProcessorStatements) *FilterProcessor {
+	logRecords := make([]string, 0, len(statements.Statements))
+	for _, s := range statements.Statements {
+		logRecords = append(logRecords, s)
 	}
 
 	// Sort to prevent changes in the order in every reconciliation loop
@@ -194,11 +194,9 @@ func LogFilterProcessorConfig(statements []FilterProcessorStatements) *FilterPro
 }
 
 // MetricFilterProcessorConfig creates a FilterProcessor for metrics with the default error mode
-func MetricFilterProcessorConfig(statements []FilterProcessorStatements) *FilterProcessor {
-	dataPoints := make([]string, 0, len(statements))
-	for _, s := range statements {
-		dataPoints = append(dataPoints, s.Statements...)
-	}
+func MetricFilterProcessorConfig(statements FilterProcessorStatements) *FilterProcessor {
+	dataPoints := make([]string, 0, len(statements.Statements))
+	dataPoints = append(dataPoints, statements.Statements...)
 
 	// Sort to prevent changes in the order in every reconciliation loop
 	sort.Strings(dataPoints)
@@ -212,10 +210,10 @@ func MetricFilterProcessorConfig(statements []FilterProcessorStatements) *Filter
 }
 
 // TraceFilterProcessorConfig creates a FilterProcessor for traces with the default error mode
-func TraceFilterProcessorConfig(statements []FilterProcessorStatements) *FilterProcessor {
-	spans := make([]string, 0, len(statements))
-	for _, s := range statements {
-		spans = append(spans, s.Statements...)
+func TraceFilterProcessorConfig(statements FilterProcessorStatements) *FilterProcessor {
+	spans := make([]string, 0, len(statements.Statements))
+	for _, s := range statements.Statements {
+		spans = append(spans, s)
 	}
 
 	// Sort to prevent changes in the order in every reconciliation loop
@@ -229,15 +227,15 @@ func TraceFilterProcessorConfig(statements []FilterProcessorStatements) *FilterP
 	}
 }
 
-func FilterSpecsToProcessorStatements(specs []telemetryv1alpha1.FilterSpec) []FilterProcessorStatements {
-	result := make([]FilterProcessorStatements, 0, len(specs))
-	for _, spec := range specs {
-		result = append(result, FilterProcessorStatements{
-			Statements: spec.Conditions,
-		})
+func FilterSpecsToProcessorStatements(specs telemetryv1alpha1.FilterSpec) FilterProcessorStatements {
+	//result := make([]FilterProcessorStatements, 0, len(specs.Conditions))
+	//for _, spec := range specs {
+	return FilterProcessorStatements{
+		Statements: specs.Conditions,
 	}
+	//}
 
-	return result
+	//return result
 }
 
 // =============================================================================

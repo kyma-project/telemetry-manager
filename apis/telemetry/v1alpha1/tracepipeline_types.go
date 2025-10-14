@@ -67,7 +67,7 @@ type TracePipelineSpec struct {
 
 	// Filter specifies a list of filters to apply to telemetry data.
 	// +kubebuilder:validation:Optional
-	Filter []FilterSpec `json:"filter,omitempty"`
+	Filter FilterSpec `json:"filter,omitempty"`
 }
 
 // TracePipelineOutput defines the output configuration section.
