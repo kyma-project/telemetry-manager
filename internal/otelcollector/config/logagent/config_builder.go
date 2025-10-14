@@ -155,7 +155,7 @@ func (b *Builder) addUserDefinedFilterProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		formatUserDefinedFilterProcessorID,
 		func(lp *telemetryv1alpha1.LogPipeline) any {
-			if len(lp.Spec.Filter.Conditions) == 0 {
+			if lp.Spec.Filter == nil {
 				return nil // No Filter, no processor needed
 			}
 

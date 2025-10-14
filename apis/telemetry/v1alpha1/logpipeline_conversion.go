@@ -77,7 +77,9 @@ func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 		}
 	}
 
-	dst.Spec.Filter = v1Alpha1FilterSpecToV1Beta1(src.Spec.Filter)
+	if src.Spec.Filter != nil {
+		dst.Spec.Filter = v1Alpha1FilterSpecToV1Beta1(src.Spec.Filter)
+	}
 	dst.Status = telemetryv1beta1.LogPipelineStatus(src.Status)
 
 	return nil
@@ -239,12 +241,12 @@ func v1Alpha1TransformSpecToV1Beta1(src TransformSpec) telemetryv1beta1.Transfor
 	return dst
 }
 
-func v1Alpha1FilterSpecToV1Beta1(src FilterSpec) telemetryv1beta1.FilterSpec {
+func v1Alpha1FilterSpecToV1Beta1(src *FilterSpec) *telemetryv1beta1.FilterSpec {
 	var dst telemetryv1beta1.FilterSpec
 
 	dst.Conditions = append(dst.Conditions, src.Conditions...)
 
-	return dst
+	return &dst
 }
 
 // ConvertFrom converts from the Hub version (v1beta1) to this version.
@@ -312,8 +314,9 @@ func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 		}
 	}
 
-	dst.Spec.Filter = v1Beta1FilterSpecToV1Alpha1(src.Spec.Filter)
-
+	if src.Spec.Filter != nil {
+		dst.Spec.Filter = v1Beta1FilterSpecToV1Alpha1(src.Spec.Filter)
+	}
 	dst.Status = LogPipelineStatus(src.Status)
 
 	return nil
@@ -475,10 +478,10 @@ func v1Beta1TransformSpecToV1Alpha1(src telemetryv1beta1.TransformSpec) Transfor
 	return dst
 }
 
-func v1Beta1FilterSpecToV1Alpha1(src telemetryv1beta1.FilterSpec) FilterSpec {
+func v1Beta1FilterSpecToV1Alpha1(src *telemetryv1beta1.FilterSpec) *FilterSpec {
 	var dst FilterSpec
 
 	dst.Conditions = append(dst.Conditions, src.Conditions...)
 
-	return dst
+	return &dst
 }

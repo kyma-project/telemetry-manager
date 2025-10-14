@@ -429,7 +429,7 @@ func (b *Builder) addUserDefinedFilterProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		formatUserDefinedFilterProcessorID,
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			if len(mp.Spec.Filter.Conditions) == 0 {
+			if mp.Spec.Filter == nil {
 				return nil // No filter, no processor needed
 			}
 

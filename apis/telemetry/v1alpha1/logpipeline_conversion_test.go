@@ -53,7 +53,7 @@ func TestConvertTo(t *testing.T) {
 					Statements: []string{"set(resource.attributes[\"k8s.pod.name\"]", "nginx"},
 				},
 			},
-			Filter: FilterSpec{
+			Filter: &FilterSpec{
 				Conditions: []string{"log.time == nil"},
 			},
 			Output: LogPipelineOutput{
@@ -208,7 +208,7 @@ func TestConvertFrom(t *testing.T) {
 					Statements: []string{"set(resource.attributes[\"k8s.pod.name\"]", "nginx"},
 				},
 			},
-			Filter: telemetryv1beta1.FilterSpec{
+			Filter: &telemetryv1beta1.FilterSpec{
 				Conditions: []string{"log.time == nil"},
 			},
 			Output: telemetryv1beta1.LogPipelineOutput{

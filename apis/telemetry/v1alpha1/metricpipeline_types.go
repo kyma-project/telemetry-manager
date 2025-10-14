@@ -73,7 +73,7 @@ type MetricPipelineSpec struct {
 
 	// Filter specifies a list of filters to apply to telemetry data.
 	// +kubebuilder:validation:Optional
-	Filter FilterSpec `json:"filter,omitempty"`
+	Filter *FilterSpec `json:"filter,omitempty"`
 }
 
 // MetricPipelineInput configures additional inputs for metric collection.

@@ -2,7 +2,6 @@ package common
 
 import (
 	"fmt"
-	"sort"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -180,9 +179,6 @@ func LogFilterProcessorConfig(conditions []string) *FilterProcessor {
 	logRecords := make([]string, 0, len(conditions))
 	logRecords = append(logRecords, conditions...)
 
-	// Sort to prevent changes in the order in every reconciliation loop
-	sort.Strings(logRecords)
-
 	return &FilterProcessor{
 		ErrorMode: defaultFilterProcessorErrorMode,
 		Logs: FilterProcessorLogs{
@@ -198,7 +194,6 @@ func UseDatapoints(enabled bool) UserMetricFilterProcessorOption {
 		if enabled {
 			dataPoints := make([]string, 0, len(conditions))
 			dataPoints = append(dataPoints, conditions...)
-			sort.Strings(dataPoints)
 
 			metrics.Datapoint = dataPoints
 		}
@@ -228,20 +223,11 @@ func TraceFilterProcessorConfig(conditions []string) *FilterProcessor {
 	spans := make([]string, 0, len(conditions))
 	spans = append(spans, conditions...)
 
-	// Sort to prevent changes in the order in every reconciliation loop
-	sort.Strings(spans)
-
 	return &FilterProcessor{
 		ErrorMode: defaultFilterProcessorErrorMode,
 		Traces: FilterProcessorTraces{
 			Span: spans,
 		},
-	}
-}
-
-func FilterSpecsToProcessorStatements(specs telemetryv1alpha1.FilterSpec) FilterProcessorStatements {
-	return FilterProcessorStatements{
-		Conditions: specs.Conditions,
 	}
 }
 
