@@ -7,10 +7,10 @@ Filter logs from the OTLP, application, and Istio input to control which data yo
 | Source      | Granularity                                       | If you omit the namespaces block... | To collect from **all** namespaces... | To collect from specific namespaces... |
 | :---------- | :------------------------------------------------ | :---------------------------------- | :------------------------------------ | :------------------------------------- |
 | OTLP (default) | Namespace                                         | **includes** system namespaces      | This is the default, no action needed. | Use the `include` or `exclude` selector |
-| Application | Namespace, Container\*                            | **excludes** system namespaces      | Set the `system` attribute to `true`  | Use the `include` or `exclude` selector |
+| Application | Namespace, Container\*                            | **excludes** system namespaces      | Set the **system** attribute to `true`  | Use the `include` or `exclude` selector |
 | Istio       | Namespace, Workload (`selector`), Log content (`filter.expression`) | n/a                                 | You apply the Istio `Telemetry` resource mesh-wide | You apply the Istio `Telemetry` resource to specific namespaces |
 
-\* The `application` input provides an additional `containers` selector that behaves the same way as the `namespaces` selector.
+\* The **application** input provides an additional **containers** selector that behaves the same way as the **namespaces** selector.
 
 ## Filter OTLP Input by Namespaces
 

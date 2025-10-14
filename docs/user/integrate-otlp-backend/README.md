@@ -25,7 +25,7 @@ For the minimal pipeline configuration, you only specify an OTLP endpoint; thoug
 
 ## Choose a Protocol
 
-The default protocol for shipping the data to a backend is gRPC. If your backend requires the HTTP protocol instead, set the `protocol` attribute to `http`. Based on this setting, the gateway chooses the exporter: `otlp` for gRPC (the default) or `otlphttp` for HTTP.
+The default protocol for shipping the data to a backend is gRPC. If your backend requires the HTTP protocol instead, set the **protocol** attribute to `http`. Based on this setting, the gateway chooses the exporter: `otlp` for gRPC (the default) or `otlphttp` for HTTP.
 
 Ensure the port in your endpoint URL is correct for the chosen protocol.
 

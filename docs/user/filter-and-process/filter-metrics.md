@@ -11,7 +11,7 @@ Filter metrics from the OTLP, Istio, Prometheus, and runtime input to control wh
 | Prometheus  | Namespace                                 | excludes system namespaces          | Add `namespaces: {}` to the input's configuration | Use the `include` or `exclude` selector |
 | Runtime     | Namespace, Resource Type\*                | excludes system namespaces          | Add `namespaces: {}` to the input's configuration | Use the `include` or `exclude` selector |
 
-\* The `runtime` input provides additional filters for Kubernetes resources such as Pods or Nodes. For details, see [Select Resource Types](../collecting-metrics/runtime-input.md#select-resource-types).
+\* The **runtime** input provides additional filters for Kubernetes resources such as Pods or Nodes. For details, see [Select Resource Types](../collecting-metrics/runtime-input.md#select-resource-types).
 
 ## Filter OTLP Input by Namespaces
 
@@ -44,9 +44,9 @@ spec:
 
 ## Collect Istio Metrics From System Namespaces
 
-For the `istio` input, system namespaces are included by default.
+For the **istio** input, system namespaces are included by default.
 
-To include system namespaces for `prometheus` and `runtime` metrics without specifying any other namespaces, explicitly configure an empty namespace object: `namespaces: {}`:
+To include system namespaces for **prometheus** and **runtime** metrics without specifying any other namespaces, explicitly configure an empty namespace object: `namespaces: {}`:
 
 ```yaml
 ...

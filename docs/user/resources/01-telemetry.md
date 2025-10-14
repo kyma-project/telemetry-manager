@@ -136,7 +136,7 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 
 <!-- TABLE-END -->
 
-The `state` attribute of the Telemetry CR is derived from the combined state of all the subcomponents, namely, from the condition types `LogComponentsHealthy`, `TraceComponentsHealthy` and `MetricComponentsHealthy`.
+The **state** attribute of the Telemetry CR is derived from the combined state of all the subcomponents, namely, from the condition types `LogComponentsHealthy`, `TraceComponentsHealthy` and `MetricComponentsHealthy`.
 
 ### Log Components State
 

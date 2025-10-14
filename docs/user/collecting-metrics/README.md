@@ -51,10 +51,10 @@ To collect metrics from Kyma modules like Istio, Eventing, or Serverless, enable
 
 You can adjust the MetricPipeline using runtime configuration with the available parameters (see [MetricPipeline: Custom Resource Parameters](https://kyma-project.io/#/telemetry-manager/user/resources/05-metricpipeline?id=custom-resource-parameters)).
 
-- Scrape `prometheus` metrics from applications that expose a Prometheus-compatible endpoint (see [Collect Prometheus Metrics](prometheus-input.md)).
-- Collect `istio` service mesh metrics from Istio proxies and control plane components (see [Collect Istio Metrics](istio-input.md)).
-- Collect `runtime` resource usage and status metrics from Kubernetes components like Pods, Nodes, and Deployments (see [Collect Runtime Metrics](runtime-input.md)).
-- Use diagnostic metrics to debug your `prometheus` and `istio` configuration (see [Collect Diagnostic Metrics](./prometheus-input.md#collect-diagnostic-metrics)).
+- Scrape **prometheus** metrics from applications that expose a Prometheus-compatible endpoint (see [Collect Prometheus Metrics](prometheus-input.md)).
+- Collect **istio** service mesh metrics from Istio proxies and control plane components (see [Collect Istio Metrics](istio-input.md)).
+- Collect **runtime** resource usage and status metrics from Kubernetes components like Pods, Nodes, and Deployments (see [Collect Runtime Metrics](runtime-input.md)).
+- Use diagnostic metrics to debug your **prometheus** and **istio** configuration (see [Collect Diagnostic Metrics](./prometheus-input.md#collect-diagnostic-metrics)).
 - Choose from which specific namespaces you want to include or exclude metrics (see [Filter Metrics](../filter-and-process/filter-metrics.md)).
 - Avoid redundancy by dropping push-based OTLP metrics that are sent directly to the metric gateway (see [Route Specific Inputs to Different Backends](./../otlp-input.md#route-specific-inputs-to-different-backends)).
 

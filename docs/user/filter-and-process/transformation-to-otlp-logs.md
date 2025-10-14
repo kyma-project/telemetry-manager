@@ -48,11 +48,11 @@ After the tailing, the created OTLP record looks like the following example:
 }
 ```
 
-The agent enriches all information identifying the log source (such as Container, Pod, and namespace name) as resource attributes, following [Kubernetes conventions](https://opentelemetry.io/docs/specs/semconv/resource/k8s/). It enriches further metadata, like the original file name and channel, as log attributes, following [log attribute conventions](https://opentelemetry.io/docs/specs/semconv/general/logs/). The agent uses the `time` value from the container runtime's log entry as the `time` attribute in the new OTel record, as it closely matches the actual log event time. Additionally, the agent sets `observedTime` with the time it actually reads the log record, as the OTel log specification recommends. The agent moves the log payload to the OTLP `body` field.
+The agent enriches all information identifying the log source (such as Container, Pod, and namespace name) as resource attributes, following [Kubernetes conventions](https://opentelemetry.io/docs/specs/semconv/resource/k8s/). It enriches further metadata, like the original file name and channel, as log attributes, following [log attribute conventions](https://opentelemetry.io/docs/specs/semconv/general/logs/). The agent uses the `time` value from the container runtime's log entry as the **time** attribute in the new OTel record, as it closely matches the actual log event time. Additionally, the agent sets `observedTime` with the time it actually reads the log record, as the OTel log specification recommends. The agent moves the log payload to the OTLP `body` field.
 
 ## JSON Parsing
 
-If the `body` value is a JSON document, the agent parses the value and enriches all JSON root attributes as additional log attributes. The agent moves the original body into the `log.original` attribute (managed with the LogPipeline attribute `input.application.keepOriginalBody: true`).
+If the `body` value is a JSON document, the agent parses the value and enriches all JSON root attributes as additional log attributes. The agent moves the original body into the **log.original** attribute (managed with the LogPipeline attribute `input.application.keepOriginalBody: true`).
 
 After JSON parsing, the OTLP record looks like the following example:
 
@@ -94,7 +94,7 @@ OTLP natively attaches trace context to log records. If possible, the log agent 
 
 ## Log Body Determination
 
-Because the original log message typically resides in the `body` attribute, the agent moves a log attribute called `message` (or `msg`) into the body.
+Because the original log message typically resides in the **body** attribute, the agent moves a log attribute called **message** (or **msg**) into the body.
 
 At this point, before further enrichment, the resulting overall log record looks like the following example:
 
