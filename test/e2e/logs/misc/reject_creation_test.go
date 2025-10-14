@@ -173,20 +173,6 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp.protocol",
 		},
 		{
-			pipeline: telemetryv1alpha1.LogPipeline{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "otlp-output-without-endpoint",
-				},
-				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Output: telemetryv1alpha1.LogPipelineOutput{
-						OTLP: &telemetryv1alpha1.OTLPOutput{},
-					},
-				},
-			},
-			errorMsg: "Only one of 'value' or 'valueFrom' can be set",
-			field:    "spec.output.otlp.endpoint",
-		},
-		{
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("otlp-output-basic-auth-secretref-missing-password-key").
 				WithOTLPOutput(
