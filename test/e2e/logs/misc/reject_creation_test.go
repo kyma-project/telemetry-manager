@@ -495,6 +495,19 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec",
 			label:    suite.LabelExperimental,
 		},
+		{
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("legacy-filter-with-http-output").
+				WithApplicationInput(false).
+				WithFilter(telemetryv1alpha1.FilterSpec{
+					Conditions: []string{"isMatch(log.attributes[\"log.level\"], \"error\"))"},
+				}).
+				WithHTTPOutput().
+				Build(),
+			errorMsg: "filter is only supported with otlp output",
+			field:    "spec",
+			label:    suite.LabelExperimental,
+		},
 	}
 	for _, tc := range tests {
 		if tc.label == "" {
