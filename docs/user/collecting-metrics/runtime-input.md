@@ -1,10 +1,10 @@
 # Collect Runtime Metrics
 
-To monitor the health and resource usage of your Kubernetes cluster, enable the `runtime` input in your MetricPipeline. You can choose the specific resources you want to monitor, and you can control from which namespaces metrics are collected.
+To monitor the health and resource usage of your Kubernetes cluster, enable the **runtime** input in your MetricPipeline. This uses an agent on each node to gather metrics for resources like Pods, Nodes, and Deployments. You can choose the specific resources to monitor and control from which namespaces metrics are collected.
 
 ## Activate Runtime Metrics
 
-By default, the `runtime` input is disabled. If you want to monitor your Kubernetes resources, enable the collection of runtime metrics:
+By default, the **runtime** input is disabled. If you want to monitor your Kubernetes resources, enable the collection of runtime metrics:
 
 ```yaml
 ...
@@ -17,7 +17,7 @@ With this, the metric agent starts collecting all runtime metrics from all resou
 
 ## Select Resource Types
 
-By default, metrics for all supported resource types are collected. To enable or disable the collection of metrics for a specific resource, use the `resources` section in the `runtime` input.
+By default, metrics for all supported resource types are collected. To enable or disable the collection of metrics for a specific resource, use the **resources** section in the **runtime** input.
 
 The following example collects only DaemonSet, Deployment, StatefulSet, and Job metrics:
 

@@ -1,6 +1,6 @@
 # Collect Prometheus Metrics
 
-If your applications emit Prometheus-based metrics, enable the `prometheus` input in your MetricPipeline and annotate your application's Service or Pod. You can choose to collect diagnostic metrics, and you can control from which namespaces metrics are collected.
+To collect metrics from applications that expose a Prometheus-compatible endpoint, enable the **prometheus** input in your MetricPipeline and annotate your Pods or Services for discovery. You can enable diagnostic metrics and control from which namespaces metrics are collected.
 
 ## Prerequisites
 
@@ -8,7 +8,7 @@ Instrument your application using a library like the [Prometheus client library]
 
 ## Activate Prometheus Metrics
 
-By default, the `prometheus` input is disabled. If your applications emit Prometheus metrics, enable the collection of Prometheus-based metrics:
+By default, the **prometheus** input is disabled. If your applications emit Prometheus metrics, enable the collection of Prometheus-based metrics:
 
 ```yaml
   ...
@@ -62,19 +62,19 @@ spec:
 
 If your application is part of an Istio service mesh, you must consider service port naming and mutual TLS (mTLS) configuration:
 
-- Istio must be able to identify the `appProtocol` from the Service port definition; otherwise Istio may block the scrape request.
-  You must either prefix the port name with the protocol like in `http-metrics`, or explicitly define the `appProtocol` attribute.
+- Istio must be able to identify the **appProtocol** from the Service port definition; otherwise Istio may block the scrape request.
+  You must either prefix the port name with the protocol like in `http-metrics`, or explicitly define the **appProtocol** attribute.
 
 - The metric agent can scrape endpoints from workloads that enforce mutual TLS (mTLS). For scraping through HTTPS, Istio must configure the workload using STRICT mTLS mode.
   If you can't use STRICT mTLS mode, you can set up scraping through plain HTTP by adding the following annotation to your Service: `prometheus.io/scheme: http`. For related troubleshooting, see [MetricPipeline: Failed to Scrape Prometheus Endpoint](../troubleshooting.md#metricpipeline-failed-to-scrape-prometheus-endpoint).
 
 ## Collect Diagnostic Metrics
 <!-- identical section for Prometheus and Istio docs -->
-To validate or debug your scraping configuration for the `prometheus` and `istio` input, you can use diagnostic metrics. By default, they are disabled.
+To validate or debug your scraping configuration for the **prometheus** and **istio** input, you can use diagnostic metrics. By default, they are disabled.
 
-> **Note:** Unlike the `prometheus` and `istio` inputs, the `runtime`  input gathers data directly from Kubernetes APIs instead of using a scraping process, so it does not generate scrape-specific diagnostic metrics.
+> **Note:** Unlike the **prometheus** and **istio** inputs, the **runtime**  input gathers data directly from Kubernetes APIs instead of using a scraping process, so it does not generate scrape-specific diagnostic metrics.
 
-To use diagnostic metrics, enable the `diagnosticMetrics` for the input in your MetricPipeline:
+To use diagnostic metrics, enable the **diagnosticMetrics** for the input in your MetricPipeline:
 
 ```yaml
   ...

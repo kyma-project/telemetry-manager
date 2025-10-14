@@ -1,6 +1,6 @@
 # Configure Istio Access Logs
 
-To get details about the access to workloads that are part of the Istio service mesh, enable Istio access logs. These logs help you monitor the "four golden signals" (latency, traffic, errors, and saturation) and troubleshoot anomalies.
+To monitor traffic in your service mesh, configure Istio to send access logs in OTLP format. The LogPipeline automatically receives these logs through its default OTLP input. You can filter the collected logs by namespace to focus on specific workloads.
 
 ## Prerequisites
 
@@ -9,7 +9,9 @@ To get details about the access to workloads that are part of the Istio service 
 
 ## Context
 
-By default, Istio access logs are disabled because they can generate a high volume of data. To collect them, you apply an Istio `Telemetry` resource to a specific namespace, for a specific workload, or for the entire mesh.
+Istio access logs help you monitor the "four golden signals" (latency, traffic, errors, and saturation) and troubleshoot anomalies.
+
+By default, these logs are disabled because they can generate a high volume of data. To collect them, you apply an [Istio](https://istio.io/latest/docs/reference/config/telemetry/) `Telemetry` resource to a specific namespace, for a specific workload, or for the entire mesh.
 
 After enabling logs, you can add a filter to reduce noise and focus on relevant data.
 

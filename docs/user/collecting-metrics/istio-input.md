@@ -1,6 +1,6 @@
 # Collect Istio Metrics
 
-To monitor the health and performance of your service mesh, enable the `istio` input in your MetricPipeline. This collects metrics from the Istio proxies (sidecars) running alongside your applications. You can choose to collect Envoy metrics and diagnostic metrics, and you can control from which namespaces metrics are collected.
+To monitor the health and performance of your service mesh, enable the **istio** input in your MetricPipeline. This scrapes metrics directly from Istio proxies (sidecars) and the control plane. You can enable Envoy and diagnostic metrics, and control from which namespaces metrics are collected.
 
 ## Prerequisites
 
@@ -11,7 +11,7 @@ To monitor the health and performance of your service mesh, enable the `istio` i
 
 ## Activate Istio Metrics
 
-By default, the `istio` input is disabled. If you are using Istio, enable the collection of Istio metrics:
+By default, the **istio** input is disabled. If you are using Istio, enable the collection of Istio metrics:
 
 ```yaml
   ...
@@ -26,11 +26,11 @@ With this, the metric agent starts collecting all Istio metrics from Istio sidec
 
 ## Collect Envoy Metrics
 
-By default, the metric agent collects only `istio` metrics (prefixed with `istio_`) and ignores Envoy metrics (prefixed with `envoy_`).
+By default, the metric agent collects only Istio metrics (prefixed with `istio_`) and ignores Envoy metrics (prefixed with `envoy_`).
 
 Envoy metrics help you understand the performance and behavior of your Envoy proxy, providing details like request rates, latencies, and error counts. For details, see [Envoy metrics](https://www.envoyproxy.io/docs/envoy/latest/configuration/upstream/cluster_manager/cluster_stats) and [server metrics](https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/statistics).
 
-To use Envoy metrics to observe and troubleshoot service mesh traffic, enable the `envoyMetrics` section under the `istio` input:
+To use Envoy metrics to observe and troubleshoot service mesh traffic, enable the **envoyMetrics** section under the **istio** input:
 
 ```yaml
   ...
@@ -43,11 +43,11 @@ To use Envoy metrics to observe and troubleshoot service mesh traffic, enable th
 
 ## Collect Diagnostic Metrics
 <!-- identical section for Prometheus and Istio docs -->
-To validate or debug your scraping configuration for the `prometheus` and `istio` input, you can use diagnostic metrics. By default, they are disabled.
+To validate or debug your scraping configuration for the **prometheus** and **istio** input, you can use diagnostic metrics. By default, they are disabled.
 
-> **Note:** Unlike the `prometheus` and `istio` inputs, the `runtime`  input gathers data directly from Kubernetes APIs instead of using a scraping process, so it does not generate scrape-specific diagnostic metrics.
+> **Note:** Unlike the **prometheus** and **istio** inputs, the **runtime** input gathers data directly from Kubernetes APIs instead of using a scraping process, so it does not generate scrape-specific diagnostic metrics.
 
-To use diagnostic metrics, enable the `diagnosticMetrics` for the input in your MetricPipeline:
+To use diagnostic metrics, enable the **diagnosticMetrics** for the input in your MetricPipeline:
 
 ```yaml
   ...
