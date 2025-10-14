@@ -16,7 +16,7 @@ By default, these logs are disabled because they can generate a high volume of d
 After enabling logs, you can add a filter to reduce noise and focus on relevant data.
 
 > **Caution:**
-> Enabling access logs, especially for the entire mesh, can significantly increase log volume and may lead to higher storage costs. Enable this feature only for the resources or components you want to monitor.
+> Enabling access logs, especially for the entire mesh, can significantly increase log volume and may lead to higher storage costs. Enable this feature only for the resources or components that you want to monitor.
 
 The Istio module provides a preconfigured [extension provider](https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig-ExtensionProvider) called `kyma-logs`, which tells Istio to send access logs to the Telemetry module's OTLP endpoint. If your LogPipeline uses the legacy **http** output, you must use the `stdout-json` provider instead.
 

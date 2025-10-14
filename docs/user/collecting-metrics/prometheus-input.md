@@ -62,7 +62,7 @@ spec:
 
 If your application is part of an Istio service mesh, you must consider service port naming and mutual TLS (mTLS) configuration:
 
-- Istio must be able to identify the **appProtocol** from the Service port definition; otherwise Istio may block the scrape request.
+- Istio must be able to identify the **appProtocol** from the Service port definition. Otherwise, Istio may block the scrape request.
   You must either prefix the port name with the protocol like in `http-metrics`, or explicitly define the **appProtocol** attribute.
 
 - The metric agent can scrape endpoints from workloads that enforce mutual TLS (mTLS). For scraping through HTTPS, Istio must configure the workload using STRICT mTLS mode.

@@ -117,7 +117,7 @@ There's a configuration or network issue between the metric agent and your appli
 
 - The Service that exposes your metrics port doesn't specify the application protocol.
 - The workload is not configured to use STRICT mTLS mode, which the metric agent uses by default.
-- A deny-all NetworkPolicy in your application's namespace prevents that the agent can scrape metrics from annotated workloads.
+- A deny-all NetworkPolicy in your application's namespace prevents the agent from scraping metrics from annotated workloads.
 
 **Solution**
 
