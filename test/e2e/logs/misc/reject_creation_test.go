@@ -64,7 +64,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					},
 				},
 			},
-			errorMsg: "Exactly one of 'value' or 'valueFrom' must be set",
+			errorMsg: "Only one of 'value' or 'valueFrom' can be set",
 			field:    "spec.output.otlp.endpoint",
 		},
 		{
@@ -183,7 +183,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					},
 				},
 			},
-			errorMsg: "Exactly one of 'value' or 'valueFrom' must be set",
+			errorMsg: "Only one of 'value' or 'valueFrom' can be set",
 			field:    "spec.output.otlp.endpoint",
 		},
 		{
@@ -306,7 +306,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					},
 				},
 			},
-			errorMsg: "Exactly one of 'value' or 'valueFrom' must be set",
+			errorMsg: "Only one of 'value' or 'valueFrom' can be set",
 			field:    "spec.output.http.host",
 		},
 		// application input
