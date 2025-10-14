@@ -125,7 +125,7 @@ func TestBuildConfig(t *testing.T) {
 			goldenFileName: "two-pipelines-with-filter.yaml",
 		},
 		{
-			name: "Pipeline with user-defined transform and filter",
+			name: "pipeline with user-defined transform and filter",
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithName("test1").

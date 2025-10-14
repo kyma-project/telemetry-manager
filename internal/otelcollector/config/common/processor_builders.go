@@ -177,10 +177,8 @@ func ResolveServiceNameConfig() *ServiceEnrichmentProcessor {
 
 // LogFilterProcessorConfig creates a FilterProcessor for logs with error_mode set to "ignore"
 func LogFilterProcessorConfig(statements FilterProcessorStatements) *FilterProcessor {
-	logRecords := make([]string, 0, len(statements.Statements))
-	for _, s := range statements.Statements {
-		logRecords = append(logRecords, s)
-	}
+	logRecords := make([]string, 0, len(statements.Conditions))
+	logRecords = append(logRecords, statements.Conditions...)
 
 	// Sort to prevent changes in the order in every reconciliation loop
 	sort.Strings(logRecords)
@@ -193,28 +191,42 @@ func LogFilterProcessorConfig(statements FilterProcessorStatements) *FilterProce
 	}
 }
 
-// MetricFilterProcessorConfig creates a FilterProcessor for metrics with the default error mode
-func MetricFilterProcessorConfig(statements FilterProcessorStatements) *FilterProcessor {
-	dataPoints := make([]string, 0, len(statements.Statements))
-	dataPoints = append(dataPoints, statements.Statements...)
+type UserMetricFilterProcessorOption func(*FilterProcessorMetrics, []string)
 
-	// Sort to prevent changes in the order in every reconciliation loop
-	sort.Strings(dataPoints)
+func UseDatapoints(enabled bool) UserMetricFilterProcessorOption {
+	return func(metrics *FilterProcessorMetrics, conditions []string) {
+		if enabled {
+			dataPoints := make([]string, 0, len(conditions))
+			dataPoints = append(dataPoints, conditions...)
+			sort.Strings(dataPoints)
 
-	return &FilterProcessor{
-		ErrorMode: DefaultFilterProcessorErrorMode,
-		Metrics: FilterProcessorMetrics{
-			Datapoint: dataPoints,
-		},
+			metrics.Datapoint = dataPoints
+		}
 	}
 }
 
-// TraceFilterProcessorConfig creates a FilterProcessor for traces with the default error mode
-func TraceFilterProcessorConfig(statements FilterProcessorStatements) *FilterProcessor {
-	spans := make([]string, 0, len(statements.Statements))
-	for _, s := range statements.Statements {
-		spans = append(spans, s)
+// MetricFilterProcessorConfig creates a FilterProcessor for metrics with the default error mode
+func MetricFilterProcessorConfig(statements FilterProcessorStatements, opts ...UserMetricFilterProcessorOption) *FilterProcessor {
+	metrics := FilterProcessorMetrics{}
+
+	if len(opts) == 0 {
+		metrics.Metric = statements.Conditions
+	} else {
+		for _, opt := range opts {
+			opt(&metrics, statements.Conditions)
+		}
 	}
+
+	return &FilterProcessor{
+		ErrorMode: DefaultFilterProcessorErrorMode,
+		Metrics:   metrics,
+	}
+}
+
+// UserTraceFilterProcessorConfig creates a FilterProcessor for traces with the default error mode
+func UserTraceFilterProcessorConfig(statements FilterProcessorStatements) *FilterProcessor {
+	spans := make([]string, 0, len(statements.Conditions))
+	spans = append(spans, statements.Conditions...)
 
 	// Sort to prevent changes in the order in every reconciliation loop
 	sort.Strings(spans)
@@ -228,14 +240,9 @@ func TraceFilterProcessorConfig(statements FilterProcessorStatements) *FilterPro
 }
 
 func FilterSpecsToProcessorStatements(specs telemetryv1alpha1.FilterSpec) FilterProcessorStatements {
-	//result := make([]FilterProcessorStatements, 0, len(specs.Conditions))
-	//for _, spec := range specs {
 	return FilterProcessorStatements{
-		Statements: specs.Conditions,
+		Conditions: specs.Conditions,
 	}
-	//}
-
-	//return result
 }
 
 // =============================================================================

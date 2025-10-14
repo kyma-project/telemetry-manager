@@ -161,7 +161,7 @@ func (b *Builder) addUserDefinedFilterProcessor() buildComponentFunc {
 			}
 
 			filterStatements := common.FilterSpecsToProcessorStatements(tp.Spec.Filter)
-			filterProcessor := common.TraceFilterProcessorConfig(filterStatements)
+			filterProcessor := common.UserTraceFilterProcessorConfig(filterStatements)
 
 			return filterProcessor
 		})
