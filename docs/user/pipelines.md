@@ -4,7 +4,7 @@ To collect and export telemetry data from your Kyma cluster, you define one or m
 
 ## Pipeline Structure
 
-You define Telemetry pipelines using Kubernetes Custom Resource Definitions (CRDs). The Telemetry module provides three CRDs that extend the Kubernetes API: LogPipeline, TracePipeline, and MetricPipeline.
+You define Telemetry pipelines using three dedicated Kubernetes Custom Resource Definitions (CRDs) that extend the Kubernetes API: LogPipeline, TracePipeline, and MetricPipeline.
 
 While each pipeline is tailored to a specific signal, they all share a common structure. A pipeline defines a data flow from one or more inputs to a single output. The pipelines use the [OpenTelemetry Protocol](https://opentelemetry.io/docs/specs/otel/protocol/) (OTLP) as the primary method to ingest and export data, which gives you the flexibility to integrate with a wide range of observability backends.
 
