@@ -30,7 +30,7 @@ type LogPipelineBuilder struct {
 	files      []telemetryv1alpha1.LogPipelineFileMount
 	variables  []telemetryv1alpha1.LogPipelineVariableRef
 	transforms []telemetryv1alpha1.TransformSpec
-	filter     *telemetryv1alpha1.FilterSpec
+	filter     []telemetryv1alpha1.FilterSpec
 
 	statusConditions []metav1.Condition
 }
@@ -288,7 +288,7 @@ func (b *LogPipelineBuilder) WithTransform(transform telemetryv1alpha1.Transform
 }
 
 func (b *LogPipelineBuilder) WithFilter(filter telemetryv1alpha1.FilterSpec) *LogPipelineBuilder {
-	b.filter = &filter
+	b.filter = append(b.filter, filter)
 	return b
 }
 

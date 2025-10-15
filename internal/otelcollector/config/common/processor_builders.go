@@ -175,9 +175,11 @@ func ResolveServiceNameConfig() *ServiceEnrichmentProcessor {
 // =============================================================================
 
 // LogFilterProcessorConfig creates a FilterProcessor for logs with error_mode set to "ignore"
-func LogFilterProcessorConfig(conditions []string) *FilterProcessor {
-	logRecords := make([]string, 0, len(conditions))
-	logRecords = append(logRecords, conditions...)
+func LogFilterProcessorConfig(filters []FilterProcessorStatements) *FilterProcessor {
+	logRecords := make([]string, 0, len(filters))
+	for _, filter := range filters {
+		logRecords = append(logRecords, filter.Conditions...)
+	}
 
 	return &FilterProcessor{
 		ErrorMode: defaultFilterProcessorErrorMode,
@@ -187,13 +189,15 @@ func LogFilterProcessorConfig(conditions []string) *FilterProcessor {
 	}
 }
 
-type UserMetricFilterProcessorOption func(*FilterProcessorMetrics, []string)
+type UserMetricFilterProcessorOption func(*FilterProcessorMetrics, []FilterProcessorStatements)
 
 func UseDatapoints(enabled bool) UserMetricFilterProcessorOption {
-	return func(metrics *FilterProcessorMetrics, conditions []string) {
+	return func(metrics *FilterProcessorMetrics, filters []FilterProcessorStatements) {
 		if enabled {
-			dataPoints := make([]string, 0, len(conditions))
-			dataPoints = append(dataPoints, conditions...)
+			dataPoints := make([]string, 0, len(filters))
+			for _, filter := range filters {
+				dataPoints = append(dataPoints, filter.Conditions...)
+			}
 
 			metrics.Datapoint = dataPoints
 		}
@@ -201,14 +205,17 @@ func UseDatapoints(enabled bool) UserMetricFilterProcessorOption {
 }
 
 // MetricFilterProcessorConfig creates a FilterProcessor for metrics with the default error mode
-func MetricFilterProcessorConfig(conditions []string, opts ...UserMetricFilterProcessorOption) *FilterProcessor {
+func MetricFilterProcessorConfig(filters []FilterProcessorStatements, opts ...UserMetricFilterProcessorOption) *FilterProcessor {
 	metrics := FilterProcessorMetrics{}
 
 	if len(opts) == 0 {
-		metrics.Metric = conditions
+		for _, filter := range filters {
+			metrics.Metric = filter.Conditions
+		}
+
 	} else {
 		for _, opt := range opts {
-			opt(&metrics, conditions)
+			opt(&metrics, filters)
 		}
 	}
 
@@ -219,9 +226,11 @@ func MetricFilterProcessorConfig(conditions []string, opts ...UserMetricFilterPr
 }
 
 // TraceFilterProcessorConfig creates a FilterProcessor for traces with the default error mode
-func TraceFilterProcessorConfig(conditions []string) *FilterProcessor {
-	spans := make([]string, 0, len(conditions))
-	spans = append(spans, conditions...)
+func TraceFilterProcessorConfig(filters []FilterProcessorStatements) *FilterProcessor {
+	spans := make([]string, 0, len(filters))
+	for _, filter := range filters {
+		spans = append(spans, filter.Conditions...)
+	}
 
 	return &FilterProcessor{
 		ErrorMode: defaultFilterProcessorErrorMode,
@@ -229,6 +238,17 @@ func TraceFilterProcessorConfig(conditions []string) *FilterProcessor {
 			Span: spans,
 		},
 	}
+}
+
+func FilterSpecsToProcessorStatements(specs []telemetryv1alpha1.FilterSpec) []FilterProcessorStatements {
+	result := make([]FilterProcessorStatements, 0, len(specs))
+	for _, spec := range specs {
+		result = append(result, FilterProcessorStatements{
+			Conditions: spec.Conditions,
+		})
+	}
+
+	return result
 }
 
 // =============================================================================

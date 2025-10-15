@@ -402,8 +402,10 @@ func (in *LogPipelineSpec) DeepCopyInto(out *LogPipelineSpec) {
 	}
 	if in.Filter != nil {
 		in, out := &in.Filter, &out.Filter
-		*out = new(FilterSpec)
-		(*in).DeepCopyInto(*out)
+		*out = make([]FilterSpec, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
 	}
 }
 
@@ -778,8 +780,10 @@ func (in *MetricPipelineSpec) DeepCopyInto(out *MetricPipelineSpec) {
 	}
 	if in.Filter != nil {
 		in, out := &in.Filter, &out.Filter
-		*out = new(FilterSpec)
-		(*in).DeepCopyInto(*out)
+		*out = make([]FilterSpec, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
 	}
 }
 
@@ -1030,8 +1034,10 @@ func (in *TracePipelineSpec) DeepCopyInto(out *TracePipelineSpec) {
 	}
 	if in.Filter != nil {
 		in, out := &in.Filter, &out.Filter
-		*out = new(FilterSpec)
-		(*in).DeepCopyInto(*out)
+		*out = make([]FilterSpec, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
 	}
 }
 
