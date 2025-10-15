@@ -10,7 +10,7 @@
 
 [Dynatrace](https://www.dynatrace.com) is an advanced Application Performance Management solution available as SaaS offering. It supports monitoring both the Kubernetes cluster itself and the workloads running in the cluster. To use all of its features, the proprietary agent technology of Dynatrace must be installed.
 
-With the Kyma Telemetry module, you gain even more visibility by adding custom spans and metrics and Istio spans and metrics. Get an introduction on how to set up Dynatrace and learn how to integrate the Kyma Telemetry module.
+With the Kyma Telemetry module, you gain even more visibility by adding custom spans and metrics, as well as Istio spans and metrics. Get an introduction on how to set up Dynatrace and learn how to integrate the Kyma Telemetry module.
 
 ![setup](./../assets/dynatrace.drawio.svg)
 
@@ -81,7 +81,7 @@ There are different ways to deploy Dynatrace on Kubernetes. All [deployment opti
                 - kyma
     ```
 
-1. In the DynaKube resource, enable OTLP ingestion using the OTel Collector, see also [Enable Dynatrace telemetry ingest endpoints](https://docs.dynatrace.com/managed/ingest-from/setup-on-k8s/extend-observability-k8s/telemetry-ingest):
+1. In the DynaKube resource, enable OTLP ingestion using the OTel Collector (see [Enable Dynatrace telemetry ingest endpoints](https://docs.dynatrace.com/managed/ingest-from/setup-on-k8s/extend-observability-k8s/telemetry-ingest)):
 
     ```yaml
     spec:
@@ -103,7 +103,7 @@ As a result, you see data arriving in your environment and Kubernetes monitoring
 
 ## Telemetry Module Setup
 
-Next, you set up the ingestion of custom span/metrics and Istio span/metric data.
+Next, you set up the ingestion of custom spans and metrics, as well as Istio span and metric data.
 
 ### Create Secret
 
@@ -126,7 +126,7 @@ Next, you set up the ingestion of custom span/metrics and Istio span/metric data
 
 ### Ingest Traces
 
-To start ingesting custom spans and Istio spans, you must deploy a TracePipeline and then optionally enable the Istio tracing feature.
+To start ingesting custom spans, you must deploy a TracePipeline and then, optionally, enable the Istio tracing feature to ingest Istio spans.
 
 1. Deploy the TracePipeline:
 
@@ -174,7 +174,7 @@ To start ingesting custom spans and Istio spans, you must deploy a TracePipeline
     EOF
     ```
 
-    The default configuration has the **randomSamplingPercentage** property set to `1.0`, meaning it samples 1% of all requests. To change the sampling rate, adjust the property to the desired value, up to 100 percent.
+    The default **randomSamplingPercentage** is set to `1.0`, meaning it samples 1% of all requests. To change the sampling rate, adjust it as needed, up to 100 percent.
 
     > [!WARNING]
     > Be cautious when you configure the **randomSamplingPercentage**:
@@ -185,14 +185,14 @@ To start ingesting custom spans and Istio spans, you must deploy a TracePipeline
 
 ### Ingest Metrics
 
-To start ingesting custom metrics and Istio metrics, you must deploy a MetricPipeline with the optional `istio` input enabled.
+To start ingesting custom and Istio metrics, deploy a MetricPipeline. The configuration of this pipeline depends on the aggregation temporality of your metrics.
 
 > [!NOTE]
-> The Dynatrace OTLP API exclusively supports "delta" [aggregation temporality](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/getting-started/metrics/limitations#aggregation-temporality). If your metrics are emitted in cumulative temporality (the default temporality in OTel) or you want to collect Istio metrics using the `istio` input, you must set up the transformation using the OTel-Collector provided by Dynatrace, in addition to your MetricPipeline.
+> The Dynatrace OpenTelemetry (OTLP) ingest API only accepts metrics with **delta** [aggregation temporality](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/getting-started/metrics/limitations#aggregation-temporality). By contrast, many tools, including the OpenTelemetry SDK and the MetricPipeline `istio` input, produce metrics with **cumulative** aggregation temporality by default. If your metrics are cumulative, you must use the Dynatrace OTel Collector, which transforms them to delta before sending them to Dynatrace.
 
-Depending on they way your applications emit metrics, choose one of the following approaches to ingest custom metrics to Dynatrace:
+Depending on your metrics source and temporality, choose one of the following methods:
 
-- Use a MetricPipeline together with the Dynatrace provided OTel Collector.
+- Ingest cumulative metrics using the Dynatrace OTel Collector for transformation.
 
   1. Deploy the MetricPipeline that ships to the Dynatrace OTel Collector:
 
@@ -215,7 +215,7 @@ Depending on they way your applications emit metrics, choose one of the followin
         EOF
         ```
 
-- If your application pushes metrics in delta temporality with OTLP only and you don't want to collect Istio metrics, you can use a MetricPipeline to push metrics directly.
+- If your application pushes metrics in delta temporality with OTLP (and you don't want to collect Istio metrics), push the metrics directly to Dynatrace.
 
   To use this setup, you must explicitly enable the "delta" aggregation temporality in your applications. You cannot enable additional inputs for the MetricPipeline because these produce metrics with "cumulative" temperability.
 
