@@ -118,7 +118,6 @@ details: |-
           visibility: $exists(spec.enrichments.cluster.name)
         - name: Pod Labels
           source: spec.enrichments.extractPodLabels[]
-          visibility: $exists(sspec.enrichments.extractPodLabels)
           widget: Panel
           children:
             - name: Key
