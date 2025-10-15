@@ -378,7 +378,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to marshal collector config: %w", err)
 	}
 
-	backendPorts, err := metricpipelineutils.GetBackendPorts(ctx, r.Client, allPipelines)
+	backendPorts, err := metricpipelineutils.OTLPOutputPorts(ctx, r.Client, allPipelines)
 	if err != nil {
 		return fmt.Errorf("failed to get ports of the backends: %w", err)
 	}
