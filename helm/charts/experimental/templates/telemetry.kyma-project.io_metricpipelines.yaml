@@ -368,7 +368,8 @@ spec:
                                 x-kubernetes-validations:
                                 - message: Only one of 'value' or 'valueFrom' can
                                     be set
-                                  rule: '!(size(self.value) > 0 && has(self.valueFrom))'
+                                  rule: '!(has(self.value) && size(self.value) > 0
+                                    && has(self.valueFrom))'
                               user:
                                 description: User contains the basic auth username
                                   or a Secret reference.
@@ -414,7 +415,8 @@ spec:
                                 x-kubernetes-validations:
                                 - message: Only one of 'value' or 'valueFrom' can
                                     be set
-                                  rule: '!(size(self.value) > 0 && has(self.valueFrom))'
+                                  rule: '!(has(self.value) && size(self.value) > 0
+                                    && has(self.valueFrom))'
                             required:
                             - password
                             - user
@@ -463,7 +465,7 @@ spec:
                         type: object
                         x-kubernetes-validations:
                         - message: Only one of 'value' or 'valueFrom' can be set
-                          rule: '!(size(self.value) > 0 && has(self.valueFrom))'
+                          rule: '!(has(self.value) && size(self.value) > 0 && has(self.valueFrom))'
                       headers:
                         description: Headers defines custom headers to be added to
                           outgoing HTTP or gRPC requests.
@@ -520,7 +522,7 @@ spec:
                           type: object
                           x-kubernetes-validations:
                           - message: Only one of 'value' or 'valueFrom' can be set
-                            rule: '!(size(self.value) > 0 && has(self.valueFrom))'
+                            rule: '!(has(self.value) && size(self.value) > 0 && has(self.valueFrom))'
                         type: array
                       path:
                         description: Path defines OTLP export URL path (only for the
@@ -581,7 +583,8 @@ spec:
                             type: object
                             x-kubernetes-validations:
                             - message: Only one of 'value' or 'valueFrom' can be set
-                              rule: '!(size(self.value) > 0 && has(self.valueFrom))'
+                              rule: '!(has(self.value) && size(self.value) > 0 &&
+                                has(self.valueFrom))'
                           cert:
                             description: Defines a client certificate to use when
                               using TLS. The certificate must be provided in PEM format.
@@ -625,7 +628,8 @@ spec:
                             type: object
                             x-kubernetes-validations:
                             - message: Only one of 'value' or 'valueFrom' can be set
-                              rule: '!(size(self.value) > 0 && has(self.valueFrom))'
+                              rule: '!(has(self.value) && size(self.value) > 0 &&
+                                has(self.valueFrom))'
                           insecure:
                             description: Insecure defines whether to send requests
                               using plaintext instead of TLS.
@@ -677,7 +681,8 @@ spec:
                             type: object
                             x-kubernetes-validations:
                             - message: Only one of 'value' or 'valueFrom' can be set
-                              rule: '!(size(self.value) > 0 && has(self.valueFrom))'
+                              rule: '!(has(self.value) && size(self.value) > 0 &&
+                                has(self.valueFrom))'
                         type: object
                         x-kubernetes-validations:
                         - message: Can define either both 'cert' and 'key', or neither
