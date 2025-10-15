@@ -43,24 +43,18 @@ type Validator struct {
 }
 
 func New(signalType SignalType) (*Validator, error) {
-	var (
-		parserCollection *genericParserCollection
-		err              error
-	)
-
-	switch signalType {
-	case SignalTypeLog:
-		parserCollection, err = newLogParserCollection()
-	case SignalTypeMetric:
-		parserCollection, err = newMetricParserCollection()
-	case SignalTypeTrace:
-		parserCollection, err = newTraceParserCollection()
-	default:
-		return nil, fmt.Errorf("unexpected signal type: %s", signalType)
+	opts, err := newTransformParserCollectionOpts(signalType)
+	if err != nil {
+		return nil, err
 	}
 
+	telemetrySettings := component.TelemetrySettings{
+		Logger: zap.New(zapcore.NewNopCore()),
+	}
+
+	parserCollection, err := newGenericParserCollection(telemetrySettings, opts...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create TransformSpec validator: %w", err)
+		return nil, err
 	}
 
 	return &Validator{parserCollection: parserCollection}, nil
@@ -82,86 +76,52 @@ func (v *Validator) Validate(transforms []telemetryv1alpha1.TransformSpec) error
 	return nil
 }
 
-//nolint:dupl // new*ParserCollection() functions are similar, but not identical
-func newLogParserCollection() (*genericParserCollection, error) {
-	telemetrySettings := component.TelemetrySettings{
-		Logger: zap.New(zapcore.NewNopCore()),
+func newTransformParserCollectionOpts(signalType SignalType) ([]genericParserCollectionOption, error) {
+	var opts []genericParserCollectionOption
+
+	switch signalType {
+	case SignalTypeLog:
+		opts = []genericParserCollectionOption{
+			withLogParser(
+				ottl.CreateFactoryMap(transformprocessor.DefaultLogFunctions()...),
+				ottl.WithStatementConverter(convertLogStatements),
+				ottl.WithConditionConverter(convertLogConditions),
+			),
+		}
+	case SignalTypeMetric:
+		opts = []genericParserCollectionOption{
+			withMetricParser(
+				ottl.CreateFactoryMap(transformprocessor.DefaultMetricFunctions()...),
+				ottl.WithStatementConverter(convertMetricStatements),
+				ottl.WithConditionConverter(convertMetricConditions),
+			),
+			withDataPointParser(
+				ottl.CreateFactoryMap(transformprocessor.DefaultDataPointFunctions()...),
+				ottl.WithStatementConverter(convertDataPointStatements),
+				ottl.WithConditionConverter(convertDataPointConditions),
+			),
+		}
+	case SignalTypeTrace:
+		opts = []genericParserCollectionOption{
+			withSpanParser(
+				ottl.CreateFactoryMap(transformprocessor.DefaultSpanFunctions()...),
+				ottl.WithStatementConverter(convertSpanStatements),
+				ottl.WithConditionConverter(convertSpanConditions),
+			),
+			withSpanEventParser(
+				ottl.CreateFactoryMap(transformprocessor.DefaultSpanEventFunctions()...),
+				ottl.WithStatementConverter(convertSpanEventStatements),
+				ottl.WithConditionConverter(convertSpanEventConditions),
+			),
+		}
+	default:
+		return nil, fmt.Errorf("unexpected signal type: %s", signalType)
 	}
 
-	parserCollectionOpts := []genericParserCollectionOption{
-		withLogParser(
-			ottl.CreateFactoryMap(transformprocessor.DefaultLogFunctions()...),
-			ottl.WithStatementConverter(convertLogStatements),
-			ottl.WithConditionConverter(convertLogConditions),
-		),
-	}
+	// Always include common context parsers
+	opts = append(opts, withCommonContextsParsers()...)
 
-	parserCollectionOpts = append(parserCollectionOpts, withCommonContextsParsers()...)
-
-	logParserCollection, err := newGenericParserCollection(telemetrySettings, parserCollectionOpts...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create log parser collection: %w", err)
-	}
-
-	return logParserCollection, nil
-}
-
-//nolint:dupl // new*ParserCollection() functions are similar, but not identical
-func newMetricParserCollection() (*genericParserCollection, error) {
-	telemetrySettings := component.TelemetrySettings{
-		Logger: zap.New(zapcore.NewNopCore()),
-	}
-
-	parserCollectionOpts := []genericParserCollectionOption{
-		withMetricParser(
-			ottl.CreateFactoryMap(transformprocessor.DefaultMetricFunctions()...),
-			ottl.WithStatementConverter(convertMetricStatements),
-			ottl.WithConditionConverter(convertMetricConditions),
-		),
-		withDataPointParser(
-			ottl.CreateFactoryMap(transformprocessor.DefaultDataPointFunctions()...),
-			ottl.WithStatementConverter(convertDataPointStatements),
-			ottl.WithConditionConverter(convertDataPointConditions),
-		),
-	}
-
-	parserCollectionOpts = append(parserCollectionOpts, withCommonContextsParsers()...)
-
-	metricParserCollection, err := newGenericParserCollection(telemetrySettings, parserCollectionOpts...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create metric parser collection: %w", err)
-	}
-
-	return metricParserCollection, nil
-}
-
-//nolint:dupl // new*ParserCollection() functions are similar, but not identical
-func newTraceParserCollection() (*genericParserCollection, error) {
-	telemetrySettings := component.TelemetrySettings{
-		Logger: zap.New(zapcore.NewNopCore()),
-	}
-
-	parserCollectionOpts := []genericParserCollectionOption{
-		withSpanParser(
-			ottl.CreateFactoryMap(transformprocessor.DefaultSpanFunctions()...),
-			ottl.WithStatementConverter(convertSpanStatements),
-			ottl.WithConditionConverter(convertSpanConditions),
-		),
-		withSpanEventParser(
-			ottl.CreateFactoryMap(transformprocessor.DefaultSpanEventFunctions()...),
-			ottl.WithStatementConverter(convertSpanEventStatements),
-			ottl.WithConditionConverter(convertSpanEventConditions),
-		),
-	}
-
-	parserCollectionOpts = append(parserCollectionOpts, withCommonContextsParsers()...)
-
-	traceParserCollection, err := newGenericParserCollection(telemetrySettings, parserCollectionOpts...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create trace parser collection: %w", err)
-	}
-
-	return traceParserCollection, nil
+	return opts, nil
 }
 
 func withCommonContextsParsers() []genericParserCollectionOption {
