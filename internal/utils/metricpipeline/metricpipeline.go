@@ -151,7 +151,8 @@ func extractPort(s string) string {
 	// adds a scheme if there are none, since url.Parse only accepts valid URLs
 	// without scheme, url.Parse assumes the whole string is the host
 	if !hasScheme {
-		normalizedURL = "plhd://" + s
+		dummyScheme := "plhd://"
+		normalizedURL = dummyScheme + s
 	}
 
 	endpoint, err := url.Parse(normalizedURL)
