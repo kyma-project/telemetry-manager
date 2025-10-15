@@ -64,4 +64,16 @@ func TestOTLPOutputPort(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, []string{"443", "80", "9090"}, ports)
 	})
+	t.Run("ports get sorted properly", func(t *testing.T) {
+		metricPipelines := []telemetryv1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("http://sample.test.com:7070/api/test")).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("http://sample.test.com:80")).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("sample.test.com:9090/api/test")).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("https://sample.test.com:4317")).Build(),
+		}
+
+		ports, err := OTLPOutputPorts(t.Context(), fakeClient, metricPipelines)
+		require.NoError(t, err)
+		require.Equal(t, []string{"4317", "7070", "80", "9090"}, ports)
+	})
 }
