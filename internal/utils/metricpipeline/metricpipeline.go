@@ -164,6 +164,7 @@ func extractPort(s string) string {
 		if !ok {
 			return ""
 		}
+
 		return port
 	}
 

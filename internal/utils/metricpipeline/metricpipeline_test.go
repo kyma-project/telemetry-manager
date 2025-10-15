@@ -3,16 +3,18 @@ package metricpipeline
 import (
 	"testing"
 
-	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
 func TestOTLPOutputPort(t *testing.T) {
 	fakeClient := fake.NewFakeClient()
+
 	t.Run("metric pipelines all have valid endpoints", func(t *testing.T) {
-		metricPipelines := []v1alpha1.MetricPipeline{
+		metricPipelines := []telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("https://sample.test.com:4317")).Build(),
 			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("sample.test.com:4318/api/test")).Build(),
 			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("http://sample.test.com")).Build(),
@@ -25,7 +27,7 @@ func TestOTLPOutputPort(t *testing.T) {
 	})
 
 	t.Run("some metric pipelines have invalid endpoints", func(t *testing.T) {
-		metricPipelines := []v1alpha1.MetricPipeline{
+		metricPipelines := []telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("https://sample.test.com:4317")).Build(),
 			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("://sample.test.com/:4318/api/test")).Build(),
 			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("sample.test.com")).Build(),
@@ -38,7 +40,7 @@ func TestOTLPOutputPort(t *testing.T) {
 	})
 
 	t.Run("all metric pipelines have invalid endpoints", func(t *testing.T) {
-		metricPipelines := []v1alpha1.MetricPipeline{
+		metricPipelines := []telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("sample.test.com")).Build(),
 			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("sample.test.com/api/test")).Build(),
 			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("grpc://sample.test.com")).Build(),
@@ -51,7 +53,7 @@ func TestOTLPOutputPort(t *testing.T) {
 	})
 
 	t.Run("duplicated ports get compacted", func(t *testing.T) {
-		metricPipelines := []v1alpha1.MetricPipeline{
+		metricPipelines := []telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("https://sample.test.com")).Build(),
 			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("http://sample.test.com/api/test")).Build(),
 			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("http://sample.test.com:80")).Build(),
@@ -62,7 +64,6 @@ func TestOTLPOutputPort(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, []string{"443", "80", "9090"}, ports)
 	})
-
 }
 
 func TestExtractBackendPort(t *testing.T) {
