@@ -1,6 +1,17 @@
 package metricpipeline
 
-import telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+import (
+	"context"
+	"fmt"
+	"net/url"
+	"slices"
+	"strings"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+)
 
 func IsIstioInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
 	return input.Istio != nil && input.Istio.Enabled != nil && *input.Istio.Enabled
@@ -100,4 +111,63 @@ func IsRuntimeJobInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool 
 	}
 
 	return *input.Runtime.Resources.Job.Enabled
+}
+
+var schemeToPort map[string]string = map[string]string{
+	"http":  "80",
+	"https": "443",
+}
+
+// OTLPOutputPorts returns the list of ports of the backends defined in all given MetricPipelines
+func OTLPOutputPorts(ctx context.Context, c client.Reader, allPipelines []telemetryv1alpha1.MetricPipeline) ([]string, error) {
+	backendPorts := []string{}
+
+	for _, pipeline := range allPipelines {
+		endpoint, err := common.ResolveValue(ctx, c, pipeline.Spec.Output.OTLP.Endpoint)
+		if err != nil {
+			return nil, fmt.Errorf("failed to resolve the value of the OTLP output endpoint: %w", err)
+		}
+
+		port := extractPort(string(endpoint))
+
+		if port != "" {
+			backendPorts = append(backendPorts, port)
+		}
+
+		// List of ports needs to be sorted
+		// Otherwise, metric agent will continuously restart, because in each reconciliation we can have the ports list in a different order
+		slices.Sort(backendPorts)
+		// Remove duplication in ports in case multiple backends are defined with the same port
+		backendPorts = slices.Compact(backendPorts)
+	}
+
+	return backendPorts, nil
+}
+
+func extractPort(s string) string {
+	normalizedURL := s
+	hasScheme := strings.Contains(s, "://")
+
+	// adds a scheme if there are none, since url.Parse only accepts valid URLs
+	// without scheme, url.Parse assumes the whole string is the host
+	if !hasScheme {
+		dummyScheme := "plhd://"
+		normalizedURL = dummyScheme + s
+	}
+
+	endpoint, err := url.Parse(normalizedURL)
+	if err != nil {
+		return ""
+	}
+
+	if endpoint.Port() == "" {
+		port, ok := schemeToPort[endpoint.Scheme]
+		if !ok {
+			return ""
+		}
+
+		return port
+	}
+
+	return endpoint.Port()
 }
