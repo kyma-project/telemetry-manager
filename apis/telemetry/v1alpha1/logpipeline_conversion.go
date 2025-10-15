@@ -45,12 +45,12 @@ func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 			Dedot:     srcHTTPOutput.Dedot,
 		}
 
-		if srcHTTPOutput.User != nil {
+		if srcHTTPOutput.User != nil && (srcHTTPOutput.User.Value != "" || srcHTTPOutput.User.ValueFrom != nil) {
 			user := v1Alpha1ValueTypeToV1Beta1(*srcHTTPOutput.User)
 			dst.Spec.Output.HTTP.User = &user
 		}
 
-		if srcHTTPOutput.Password != nil {
+		if srcHTTPOutput.Password != nil && (srcHTTPOutput.Password.Value != "" || srcHTTPOutput.Password.ValueFrom != nil) {
 			password := v1Alpha1ValueTypeToV1Beta1(*srcHTTPOutput.Password)
 			dst.Spec.Output.HTTP.Password = &password
 		}
