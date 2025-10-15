@@ -139,20 +139,20 @@ func withCommonContextsParsers() []genericParserCollectionOption {
 	}
 }
 
-func newGenericParserCollection(options ...genericParserCollectionOption) (*genericParserCollection, error) {
-	parserCollectionOptions := []ottl.ParserCollectionOption[any]{
+func newGenericParserCollection(opts ...genericParserCollectionOption) (*genericParserCollection, error) {
+	ottlOpts := []ottl.ParserCollectionOption[any]{
 		ottl.EnableParserCollectionModifiedPathsLogging[any](true),
 	}
 
-	for _, option := range options {
-		parserCollectionOptions = append(parserCollectionOptions, ottl.ParserCollectionOption[any](option))
+	for _, option := range opts {
+		ottlOpts = append(ottlOpts, ottl.ParserCollectionOption[any](option))
 	}
 
 	telemetrySettings := component.TelemetrySettings{
 		Logger: zap.New(zapcore.NewNopCore()),
 	}
 
-	parserCollection, err := ottl.NewParserCollection(telemetrySettings, parserCollectionOptions...)
+	parserCollection, err := ottl.NewParserCollection(telemetrySettings, ottlOpts...)
 	if err != nil {
 		return nil, err
 	}
