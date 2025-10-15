@@ -1,4 +1,4 @@
-package transformspec
+package ottl
 
 import (
 	"errors"

@@ -1,4 +1,4 @@
-package transformspec
+package ottl
 
 import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl"

@@ -50,7 +50,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
-	"github.com/kyma-project/telemetry-manager/internal/validators/transformspec"
+	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
@@ -93,7 +93,7 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 		},
 	)
 
-	transformSpecValidator, err := transformspec.New(transformspec.SignalTypeTrace)
+	transformSpecValidator, err := ottl.New(ottl.SignalTypeTrace)
 	if err != nil {
 		return nil, err
 	}

@@ -23,7 +23,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
-	"github.com/kyma-project/telemetry-manager/internal/validators/transformspec"
+	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
@@ -724,7 +724,7 @@ func TestReconcile(t *testing.T) {
 			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
 			TransformSpecValidator: stubs.NewTransformSpecValidator(
-				&transformspec.InvalidTransformSpecError{
+				&ottl.InvalidTransformSpecError{
 					Err: fmt.Errorf("invalid TransformSpec: error while parsing statements"),
 				},
 			),
