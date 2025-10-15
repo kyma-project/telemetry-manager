@@ -1,6 +1,16 @@
 package metricpipeline
 
-import telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+import (
+	"context"
+	"errors"
+	"fmt"
+	"net/url"
+	"strings"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+)
 
 func IsIstioInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
 	return input.Istio != nil && input.Istio.Enabled != nil && *input.Istio.Enabled
@@ -100,4 +110,63 @@ func IsRuntimeJobInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool 
 	}
 
 	return *input.Runtime.Resources.Job.Enabled
+}
+
+var schemeToPort map[string]string = map[string]string{
+	"http":  "80",
+	"https": "443",
+}
+
+// GetBackendPorts returns the list of ports of the backends defined in all given MetricPipelines
+func GetBackendPorts(ctx context.Context, c client.Reader, allPipelines []telemetryv1alpha1.MetricPipeline) ([]string, error) {
+	var backendPorts []string
+
+	for _, pipeline := range allPipelines {
+		endpoint, err := common.ResolveValue(ctx, c, pipeline.Spec.Output.OTLP.Endpoint)
+		if err != nil {
+			return nil, fmt.Errorf("failed to resolve the value of the OTLP output endpoint: %w", err)
+		}
+
+		port, err := extractPort(string(endpoint))
+
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse the URL of the OTLP output endpoint: %w", err)
+		}
+
+		backendPorts = append(backendPorts, port)
+
+	}
+	return backendPorts, nil
+}
+
+func extractPort(s string) (string, error) {
+	normalizedURL := s
+	hasScheme := strings.Contains(s, "://")
+
+	if !hasScheme {
+		normalizedURL = "http://" + s
+	}
+
+	endpoint, err := url.Parse(normalizedURL)
+
+	if err != nil {
+		return "", err
+	}
+
+	if endpoint.Port() == "" {
+		port, err := guessPort(endpoint.Scheme)
+		if err != nil {
+			return "", err
+		}
+		return port, nil
+	}
+	return endpoint.Port(), nil
+}
+
+func guessPort(scheme string) (string, error) {
+	port, ok := schemeToPort[scheme]
+	if !ok {
+		return "", errors.New("failed to identify OTLP output endpoint port")
+	}
+	return port, nil
 }
