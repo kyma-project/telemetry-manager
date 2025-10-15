@@ -212,7 +212,6 @@ func MetricFilterProcessorConfig(filters []FilterProcessorStatements, opts ...Us
 		for _, filter := range filters {
 			metrics.Metric = filter.Conditions
 		}
-
 	} else {
 		for _, opt := range opts {
 			opt(&metrics, filters)
