@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"slices"
 	"strings"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -119,7 +120,7 @@ var schemeToPort map[string]string = map[string]string{
 
 // OTLPOutputPorts returns the list of ports of the backends defined in all given MetricPipelines
 func OTLPOutputPorts(ctx context.Context, c client.Reader, allPipelines []telemetryv1alpha1.MetricPipeline) ([]string, error) {
-	var backendPorts []string
+	backendPorts := []string{}
 
 	for _, pipeline := range allPipelines {
 		endpoint, err := common.ResolveValue(ctx, c, pipeline.Spec.Output.OTLP.Endpoint)
@@ -132,6 +133,12 @@ func OTLPOutputPorts(ctx context.Context, c client.Reader, allPipelines []teleme
 		if port != "" {
 			backendPorts = append(backendPorts, port)
 		}
+
+		// List of ports needs to be sorted
+		// Otherwise, metric agent will continuously restart, because in each reconciliation we can have the ports list in a different order
+		slices.Sort(backendPorts)
+		// Remove duplication in ports in case multiple backends are defined with the same port
+		backendPorts = slices.Compact(backendPorts)
 	}
 
 	return backendPorts, nil
@@ -144,12 +151,20 @@ func extractPort(s string) string {
 	// adds a scheme if there are none, since url.Parse only accepts valid URLs
 	// without scheme, url.Parse assumes the whole string is the host
 	if !hasScheme {
-		normalizedURL = "http://" + s
+		normalizedURL = "plhd://" + s
 	}
 
 	endpoint, err := url.Parse(normalizedURL)
 	if err != nil {
 		return ""
+	}
+
+	if endpoint.Port() == "" {
+		port, ok := schemeToPort[endpoint.Scheme]
+		if !ok {
+			return ""
+		}
+		return port
 	}
 
 	return endpoint.Port()
