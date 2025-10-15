@@ -10,6 +10,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlspan"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlspanevent"
 	"go.opentelemetry.io/collector/component"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 type genericParserCollection ottl.ParserCollection[any]
@@ -121,7 +123,7 @@ func withScopeParser(functions map[string]ottl.Factory[ottlscope.TransformContex
 	}
 }
 
-func newGenericParserCollection(settings component.TelemetrySettings, options ...genericParserCollectionOption) (*genericParserCollection, error) {
+func newGenericParserCollection(options ...genericParserCollectionOption) (*genericParserCollection, error) {
 	parserCollectionOptions := []ottl.ParserCollectionOption[any]{
 		ottl.EnableParserCollectionModifiedPathsLogging[any](true),
 	}
@@ -130,7 +132,11 @@ func newGenericParserCollection(settings component.TelemetrySettings, options ..
 		parserCollectionOptions = append(parserCollectionOptions, ottl.ParserCollectionOption[any](option))
 	}
 
-	parserCollection, err := ottl.NewParserCollection(settings, parserCollectionOptions...)
+	telemetrySettings := component.TelemetrySettings{
+		Logger: zap.New(zapcore.NewNopCore()),
+	}
+
+	parserCollection, err := ottl.NewParserCollection(telemetrySettings, parserCollectionOptions...)
 	if err != nil {
 		return nil, err
 	}

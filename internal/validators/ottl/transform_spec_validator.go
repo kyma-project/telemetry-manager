@@ -9,9 +9,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlscope"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/ottlfuncs"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
-	"go.opentelemetry.io/collector/component"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
@@ -48,11 +45,7 @@ func New(signalType SignalType) (*Validator, error) {
 		return nil, err
 	}
 
-	telemetrySettings := component.TelemetrySettings{
-		Logger: zap.New(zapcore.NewNopCore()),
-	}
-
-	parserCollection, err := newGenericParserCollection(telemetrySettings, opts...)
+	parserCollection, err := newGenericParserCollection(opts...)
 	if err != nil {
 		return nil, err
 	}
