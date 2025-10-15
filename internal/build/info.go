@@ -21,7 +21,7 @@ func InfoMap() map[string]string {
 		"git_commit":        shortenedGitCommit(),
 		"go_version":        goVersion(),
 		"git_tree_state":    gitTreeState,
-		"fips_mode_enabled": strconv.FormatBool(isFIPSModeEnabled()),
+		"fips_mode_enabled": strconv.FormatBool(fips140.Enabled()),
 	}
 }
 
@@ -51,12 +51,4 @@ func goVersion() string {
 	}
 
 	return buildInfo.GoVersion
-}
-
-func isFIPSModeEnabled() bool {
-	if fips140.Enabled() {
-		return true
-	}
-
-	return false
 }
