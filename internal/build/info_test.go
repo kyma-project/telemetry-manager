@@ -6,6 +6,15 @@ import (
 	"testing"
 )
 
+func TestReturnsCorrectGitTag(t *testing.T) {
+	expected := "main"
+	actual := GitTag()
+
+	if actual != expected {
+		t.Errorf("expected %s, got %s", expected, actual)
+	}
+}
+
 func TestReturnsShortenedGitCommit(t *testing.T) {
 	gitCommit = "123456789abcdef"
 	expected := "1234567"
