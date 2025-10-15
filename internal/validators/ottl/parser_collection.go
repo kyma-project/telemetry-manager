@@ -15,6 +15,8 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+// genericParserCollection is a wrapper around ottl.ParserCollection[any] that simplifies the API
+// to be used in the TransformSpec and FilterSpec validators.
 type genericParserCollection ottl.ParserCollection[any]
 
 type genericParserCollectionOption ottl.ParserCollectionOption[any]
