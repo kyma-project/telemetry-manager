@@ -596,7 +596,6 @@ spec:
                                   - secretKeyRef
                                 type: object
                             required:
-                              - ""
                               - name
                             type: object
                             x-kubernetes-validations:
