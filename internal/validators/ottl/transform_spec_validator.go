@@ -5,9 +5,6 @@ import (
 	"fmt"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlresource"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlscope"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/ottlfuncs"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -115,19 +112,4 @@ func newTransformParserCollectionOpts(signalType SignalType) ([]genericParserCol
 	opts = append(opts, withCommonContextsParsers()...)
 
 	return opts, nil
-}
-
-func withCommonContextsParsers() []genericParserCollectionOption {
-	return []genericParserCollectionOption{
-		withResourceParser(
-			ottlfuncs.StandardFuncs[ottlresource.TransformContext](),
-			ottl.WithStatementConverter(convertResourceStatements),
-			ottl.WithConditionConverter(convertResourceConditions),
-		),
-		withScopeParser(
-			ottlfuncs.StandardFuncs[ottlscope.TransformContext](),
-			ottl.WithStatementConverter(convertScopeStatements),
-			ottl.WithConditionConverter(convertScopeConditions),
-		),
-	}
 }
