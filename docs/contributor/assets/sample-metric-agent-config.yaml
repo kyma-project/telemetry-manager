@@ -9,7 +9,7 @@ extensions:
     lease_namespace: kyma-system
 service:
   pipelines:
-    metrics/enrichment:
+    metrics/enrichment-conditional:
       receivers:
         - routing/prometheus-input
         - routing/istio-input
@@ -31,21 +31,37 @@ service:
         - transform/set-instrumentation-scope-prometheus
       exporters:
         - routing/prometheus-input
-    metrics/prometheus-cls-1-backend-output:
+    metrics/cls-1-backend-output:
       receivers:
+        - routing/prometheus-input
+        - routing/istio-input
+        - routing/runtime-input
         - routing/enrichment
       processors:
         - filter/drop-diagnostic-metrics-if-input-source-prometheus
         - filter/sample-1-filter-by-namespace-prometheus-input
+        - filter/drop-diagnostic-metrics-if-input-source-istio
+        - filter/drop-envoy-metrics-if-disabled
+        - filter/sample-1-filter-by-namespace-istio-input
+        - resource/delete-skip-enrichment-attribute
+        - filter/sample-1-filter-by-namespace-runtime-input
         - batch
       exporters:
         - otlp/sample-1
-    metrics/prometheus-cls-2-backend-output:
+    metrics/cls-2-backend-output:
       receivers:
+        - routing/prometheus-input
+        - routing/istio-input
+        - routing/runtime-input
         - routing/enrichment
       processors:
         - filter/drop-diagnostic-metrics-if-input-source-prometheus
         - filter/sample-2-filter-by-namespace-prometheus-input
+        - filter/drop-diagnostic-metrics-if-input-source-istio
+        - filter/drop-envoy-metrics-if-disabled
+        - filter/sample-2-filter-by-namespace-istio-input
+        - resource/delete-skip-enrichment-attribute
+        - filter/sample-2-filter-by-namespace-runtime-input
         - batch
       exporters:
         - otlp/sample-2
@@ -59,46 +75,7 @@ service:
         - transform/set-instrumentation-scope-istio
       exporters:
         - routing/istio-input
-    metrics/istio-cls-1-backend-output:
-      receivers:
-        - routing/enrichment
-      processors:
-        - filter/drop-diagnostic-metrics-if-input-source-istio
-        - filter/drop-envoy-metrics-if-disabled
-        - filter/sample-1-filter-by-namespace-istio-input
-        - batch
-      exporters:
-        - otlp/sample-1
-    metrics/istio-cls-2-backend-output:
-      receivers:
-        - routing/enrichment
-      processors:
-        - filter/drop-diagnostic-metrics-if-input-source-istio
-        - filter/drop-envoy-metrics-if-disabled
-        - filter/sample-2-filter-by-namespace-istio-input
-        - batch
-      exporters:
-        - otlp/sample-2
-    metrics/runtime-cls-2-backend-output:
-      receivers:
-        - routing/enrichment
-        - routing/runtime-input
-      processors:
-        - resource/delete-skip-enrichment-attribute
-        - filter/sample-2-filter-by-namespace-runtime-input
-        - batch
-      exporters:
-        - otlp/sample-2
-    metrics/runtime-cls-1-backend-output:
-      receivers:
-        - routing/enrichment
-        - routing/runtime-input
-      processors:
-        - resource/delete-skip-enrichment-attribute
-        - filter/sample-1-filter-by-namespace-runtime-input
-        - batch
-      exporters:
-        - otlp/sample-1
+
     metrics/runtime-input:
       receivers:
         - kubeletstats
@@ -140,16 +117,10 @@ receivers:
     metrics:
       container.cpu.usage:
         enabled: true
-      container.cpu.utilization:
-        enabled: false
       k8s.pod.cpu.usage:
         enabled: true
-      k8s.pod.cpu.utilization:
-        enabled: false
       k8s.node.cpu.usage:
         enabled: true
-      k8s.node.cpu.utilization:
-        enabled: false
       k8s.node.cpu.time:
         enabled: false
       k8s.node.memory.major_page_faults:
@@ -559,7 +530,7 @@ connectors:
   routing/runtime-input:
     error_mode: ignore
     default_pipelines:
-      - metrics/enrichment
+      - metrics/enrichment-conditional
     table:
       - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
         pipelines:
@@ -567,18 +538,22 @@ connectors:
           - metrics/runtime-cls-1-backend-output
   routing/prometheus-input:
     error_mode: ignore
+    default_pipelines:
+      - metrics/enrichment-conditional
     table:
-      - pipelines:
-          - metrics/enrichment
-        condition: name != ""
-        context: metric
+      - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
+        pipelines:
+          - metrics/runtime-cls-2-backend-output
+          - metrics/runtime-cls-1-backend-output
   routing/istio-input:
     error_mode: ignore
+    default_pipelines:
+      - metrics/enrichment-conditional
     table:
-      - pipelines:
-          - metrics/enrichment
-        condition: name != ""
-        context: metric
+      - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
+        pipelines:
+          - metrics/runtime-cls-2-backend-output
+          - metrics/runtime-cls-1-backend-output
   routing/enrichment:
     error_mode: ignore
     table:

@@ -33,6 +33,7 @@ func TestHealthy(t *testing.T) {
 					WithInput(testutils.BuildLogPipelineApplicationInput(testutils.ExtIncludeNamespaces(includeNs))).
 					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 					Build()
+
 				return &p
 			},
 			generator: func(ns string) *appsv1.Deployment {
@@ -54,6 +55,7 @@ func TestHealthy(t *testing.T) {
 					WithInput(testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))).
 					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 					Build()
+
 				return &p
 			},
 			generator: func(ns string) *appsv1.Deployment {
@@ -74,6 +76,7 @@ func TestHealthy(t *testing.T) {
 					WithApplicationInput(true, testutils.ExtIncludeNamespaces(includeNs)).
 					WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 					Build()
+
 				return &p
 			},
 			generator: func(ns string) *appsv1.Deployment {
@@ -87,12 +90,13 @@ func TestHealthy(t *testing.T) {
 			},
 		},
 		{
-			kind: kindMetrics,
+			kind: kindMetricsGateway,
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewMetricPipelineBuilder().
-					WithName(kindMetrics).
+					WithName(kindMetricsGateway).
 					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 					Build()
+
 				return &p
 			},
 			generator: func(ns string) *appsv1.Deployment {
@@ -100,9 +104,9 @@ func TestHealthy(t *testing.T) {
 			},
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend) {
 				assert.DeploymentReady(t, kitkyma.MetricGatewayName)
-				assert.MetricPipelineHealthy(t, kindMetrics)
+				assert.MetricPipelineHealthy(t, kindMetricsGateway)
 				assert.MetricsFromNamespaceDelivered(t, backend, ns, telemetrygen.MetricNames)
-				assert.MetricPipelineSelfMonitorIsHealthy(t, suite.K8sClient, kindMetrics)
+				assert.MetricPipelineSelfMonitorIsHealthy(t, suite.K8sClient, kindMetricsGateway)
 			},
 		},
 		{
@@ -112,6 +116,7 @@ func TestHealthy(t *testing.T) {
 					WithName(kindTraces).
 					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 					Build()
+
 				return &p
 			},
 			generator: func(ns string) *appsv1.Deployment {

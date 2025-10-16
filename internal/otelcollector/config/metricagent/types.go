@@ -25,11 +25,8 @@ type MetricConfig struct {
 
 type KubeletStatsMetricsConfig struct {
 	ContainerCPUUsage            MetricConfig `yaml:"container.cpu.usage"`
-	ContainerCPUUtilization      MetricConfig `yaml:"container.cpu.utilization"`
 	K8sPodCPUUsage               MetricConfig `yaml:"k8s.pod.cpu.usage"`
-	K8sPodCPUUtilization         MetricConfig `yaml:"k8s.pod.cpu.utilization"`
 	K8sNodeCPUUsage              MetricConfig `yaml:"k8s.node.cpu.usage"`
-	K8sNodeCPUUtilization        MetricConfig `yaml:"k8s.node.cpu.utilization"`
 	K8sNodeCPUTime               MetricConfig `yaml:"k8s.node.cpu.time"`
 	K8sNodeMemoryMajorPageFaults MetricConfig `yaml:"k8s.node.memory.major_page_faults"`
 	K8sNodeMemoryPageFaults      MetricConfig `yaml:"k8s.node.memory.page_faults"`
@@ -196,12 +193,3 @@ const (
 	Drop     RelabelAction = "drop"
 	LabelMap RelabelAction = "labelmap"
 )
-
-type FilterProcessor struct {
-	Metrics FilterProcessorMetrics `yaml:"metrics"`
-}
-
-type FilterProcessorMetrics struct {
-	Metric    []string `yaml:"metric,omitempty"`
-	Datapoint []string `yaml:"datapoint,omitempty"`
-}

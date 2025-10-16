@@ -19,8 +19,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
+	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
-	"github.com/kyma-project/telemetry-manager/internal/validators/transformspec"
 )
 
 func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) error {
@@ -104,16 +104,12 @@ func flowHealthReasonFor(gatewayProbeResult prober.OTelGatewayProbeResult, agent
 		return conditions.ReasonSelfMonGatewayAllDataDropped
 	case gatewayProbeResult.SomeDataDropped:
 		return conditions.ReasonSelfMonGatewaySomeDataDropped
-	case gatewayProbeResult.QueueAlmostFull:
-		return conditions.ReasonSelfMonGatewayBufferFillingUp
 	case gatewayProbeResult.Throttling:
 		return conditions.ReasonSelfMonGatewayThrottling
 	case agentProbeResult.AllDataDropped:
 		return conditions.ReasonSelfMonAgentAllDataDropped
 	case agentProbeResult.SomeDataDropped:
 		return conditions.ReasonSelfMonAgentSomeDataDropped
-	case agentProbeResult.QueueAlmostFull:
-		return conditions.ReasonSelfMonAgentBufferFillingUp
 	default:
 		return conditions.ReasonSelfMonFlowHealthy
 	}
@@ -182,7 +178,7 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 			fmt.Sprintf(conditions.MessageForOtelLogPipeline(conditions.ReasonEndpointInvalid), err.Error())
 	}
 
-	if transformspec.IsInvalidTransformSpecError(err) {
+	if ottl.IsInvalidTransformSpecError(err) {
 		return metav1.ConditionFalse, conditions.ReasonTransformSpecInvalid, conditions.ConvertErrToMsg(err)
 	}
 

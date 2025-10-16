@@ -19,8 +19,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
+	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
-	"github.com/kyma-project/telemetry-manager/internal/validators/transformspec"
 )
 
 func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) error {
@@ -113,7 +113,7 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 			fmt.Sprintf(conditions.MessageForMetricPipeline(conditions.ReasonEndpointInvalid), err.Error())
 	}
 
-	if transformspec.IsInvalidTransformSpecError(err) {
+	if ottl.IsInvalidTransformSpecError(err) {
 		return metav1.ConditionFalse, conditions.ReasonTransformSpecInvalid, conditions.ConvertErrToMsg(err)
 	}
 
@@ -145,38 +145,44 @@ func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *
 		return metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated
 	}
 
-	probeResult, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
+	gatewayProbeResult, err := r.gatewayFlowHealthProber.Probe(ctx, pipeline.Name)
 	if err != nil {
 		logf.FromContext(ctx).Error(err, "Failed to probe flow health")
 		return metav1.ConditionUnknown, conditions.ReasonSelfMonGatewayProbingFailed
 	}
 
-	logf.FromContext(ctx).V(1).Info("Probed flow health", "result", probeResult)
+	logf.FromContext(ctx).V(1).Info("Probed gateway flow health", "result", gatewayProbeResult)
 
-	reason := flowHealthReasonFor(probeResult)
-	if probeResult.Healthy {
+	// Probe agent flow health
+	agentProbeResult, err := r.agentFlowHealthProber.Probe(ctx, pipeline.Name)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Failed to probe agent flow health")
+		return metav1.ConditionUnknown, conditions.ReasonSelfMonAgentProbingFailed
+	}
+
+	logf.FromContext(ctx).V(1).Info("Probed agent flow health", "result", agentProbeResult)
+
+	reason := flowHealthReasonFor(gatewayProbeResult, agentProbeResult)
+	if reason == conditions.ReasonSelfMonFlowHealthy {
 		return metav1.ConditionTrue, reason
 	}
 
 	return metav1.ConditionFalse, reason
 }
 
-func flowHealthReasonFor(probeResult prober.OTelGatewayProbeResult) string {
-	if probeResult.AllDataDropped {
+func flowHealthReasonFor(gatewayProbeResult prober.OTelGatewayProbeResult, agentProbeResult prober.OTelAgentProbeResult) string {
+	switch {
+	case gatewayProbeResult.AllDataDropped:
 		return conditions.ReasonSelfMonGatewayAllDataDropped
-	}
-
-	if probeResult.SomeDataDropped {
+	case gatewayProbeResult.SomeDataDropped:
 		return conditions.ReasonSelfMonGatewaySomeDataDropped
-	}
-
-	if probeResult.QueueAlmostFull {
-		return conditions.ReasonSelfMonGatewayBufferFillingUp
-	}
-
-	if probeResult.Throttling {
+	case gatewayProbeResult.Throttling:
 		return conditions.ReasonSelfMonGatewayThrottling
+	case agentProbeResult.AllDataDropped:
+		return conditions.ReasonSelfMonAgentAllDataDropped
+	case agentProbeResult.SomeDataDropped:
+		return conditions.ReasonSelfMonAgentSomeDataDropped
+	default:
+		return conditions.ReasonSelfMonFlowHealthy
 	}
-
-	return conditions.ReasonSelfMonFlowHealthy
 }

@@ -19,7 +19,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricagent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricgateway"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
@@ -34,7 +33,7 @@ import (
 const defaultReplicaCount int32 = 2
 
 type AgentConfigBuilder interface {
-	Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, options metricagent.BuildOptions) (*common.Config, error)
+	Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, options metricagent.BuildOptions) (*common.Config, common.EnvVars, error)
 }
 
 type GatewayConfigBuilder interface {
@@ -60,8 +59,12 @@ type PipelineSyncer interface {
 	TryAcquireLock(ctx context.Context, owner metav1.Object) error
 }
 
-type FlowHealthProber interface {
+type GatewayFlowHealthProber interface {
 	Probe(ctx context.Context, pipelineName string) (prober.OTelGatewayProbeResult, error)
+}
+
+type AgentFlowHealthProber interface {
+	Probe(ctx context.Context, pipelineName string) (prober.OTelAgentProbeResult, error)
 }
 
 type OverridesHandler interface {
@@ -79,19 +82,20 @@ type Reconciler struct {
 	// TODO(skhalash): introduce an embed pkg exposing the module version set by go build
 	moduleVersion string
 
-	agentApplierDeleter   AgentApplierDeleter
-	agentConfigBuilder    AgentConfigBuilder
-	agentProber           commonstatus.Prober
-	flowHealthProber      FlowHealthProber
-	gatewayApplierDeleter GatewayApplierDeleter
-	gatewayConfigBuilder  GatewayConfigBuilder
-	gatewayProber         commonstatus.Prober
-	istioStatusChecker    IstioStatusChecker
-	overridesHandler      OverridesHandler
-	pipelineLock          PipelineLock
-	pipelineSync          PipelineSyncer
-	pipelineValidator     *Validator
-	errToMsgConverter     commonstatus.ErrorToMessageConverter
+	agentApplierDeleter     AgentApplierDeleter
+	agentConfigBuilder      AgentConfigBuilder
+	agentProber             commonstatus.Prober
+	gatewayFlowHealthProber GatewayFlowHealthProber
+	agentFlowHealthProber   AgentFlowHealthProber
+	gatewayApplierDeleter   GatewayApplierDeleter
+	gatewayConfigBuilder    GatewayConfigBuilder
+	gatewayProber           commonstatus.Prober
+	istioStatusChecker      IstioStatusChecker
+	overridesHandler        OverridesHandler
+	pipelineLock            PipelineLock
+	pipelineSync            PipelineSyncer
+	pipelineValidator       *Validator
+	errToMsgConverter       commonstatus.ErrorToMessageConverter
 }
 
 func New(
@@ -101,7 +105,8 @@ func New(
 	agentApplierDeleter AgentApplierDeleter,
 	agentConfigBuilder AgentConfigBuilder,
 	agentProber commonstatus.Prober,
-	flowHealthProber FlowHealthProber,
+	gatewayFlowHealthProber GatewayFlowHealthProber,
+	agentFlowHealthProber AgentFlowHealthProber,
 	gatewayApplierDeleter GatewayApplierDeleter,
 	gatewayConfigBuilder GatewayConfigBuilder,
 	gatewayProber commonstatus.Prober,
@@ -113,22 +118,23 @@ func New(
 	errToMsgConverter commonstatus.ErrorToMessageConverter,
 ) *Reconciler {
 	return &Reconciler{
-		Client:                client,
-		telemetryNamespace:    telemetryNamespace,
-		moduleVersion:         moduleVersion,
-		agentApplierDeleter:   agentApplierDeleter,
-		agentConfigBuilder:    agentConfigBuilder,
-		agentProber:           agentProber,
-		flowHealthProber:      flowHealthProber,
-		gatewayApplierDeleter: gatewayApplierDeleter,
-		gatewayConfigBuilder:  gatewayConfigBuilder,
-		gatewayProber:         gatewayProber,
-		istioStatusChecker:    istioStatusChecker,
-		overridesHandler:      overridesHandler,
-		pipelineLock:          pipelineLock,
-		pipelineSync:          pipelineSync,
-		pipelineValidator:     pipelineValidator,
-		errToMsgConverter:     errToMsgConverter,
+		Client:                  client,
+		telemetryNamespace:      telemetryNamespace,
+		moduleVersion:           moduleVersion,
+		agentApplierDeleter:     agentApplierDeleter,
+		agentConfigBuilder:      agentConfigBuilder,
+		agentProber:             agentProber,
+		gatewayFlowHealthProber: gatewayFlowHealthProber,
+		agentFlowHealthProber:   agentFlowHealthProber,
+		gatewayApplierDeleter:   gatewayApplierDeleter,
+		gatewayConfigBuilder:    gatewayConfigBuilder,
+		gatewayProber:           gatewayProber,
+		istioStatusChecker:      istioStatusChecker,
+		overridesHandler:        overridesHandler,
+		pipelineLock:            pipelineLock,
+		pipelineSync:            pipelineSync,
+		pipelineValidator:       pipelineValidator,
+		errToMsgConverter:       errToMsgConverter,
 	}
 }
 
@@ -215,8 +221,8 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return fmt.Errorf("failed to reconcile metric gateway: %w", err)
 	}
 
-	if isMetricAgentRequired(pipeline) {
-		if err = r.reconcileMetricAgents(ctx, pipeline, allPipelinesList.Items); err != nil {
+	if len(reconcilablePipelinesRequiringAgents) > 0 {
+		if err = r.reconcileMetricAgents(ctx, pipeline, reconcilablePipelinesRequiringAgents); err != nil {
 			return fmt.Errorf("failed to reconcile metric agents: %w", err)
 		}
 	}
@@ -317,17 +323,10 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 
 	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
 
-	allowedPorts := getGatewayPorts()
-	if isIstioActive {
-		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
-	}
-
 	opts := otelcollector.GatewayApplyOptions{
-		AllowedPorts:                   allowedPorts,
 		CollectorConfigYAML:            string(collectorConfigYAML),
 		CollectorEnvVars:               collectorEnvVars,
 		IstioEnabled:                   isIstioActive,
-		IstioExcludePorts:              []int32{ports.Metrics},
 		Replicas:                       r.getReplicaCountFromTelemetry(ctx),
 		ResourceRequirementsMultiplier: len(allPipelines),
 	}
@@ -345,12 +344,30 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 
 func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
 	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
+	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
+	clusterName := r.getClusterNameFromTelemetry(ctx, shootInfo.ClusterName)
 
-	agentConfig, err := r.agentConfigBuilder.Build(ctx, allPipelines, metricagent.BuildOptions{
+	clusterUID, err := r.getK8sClusterUID(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get kube-system namespace for cluster UID: %w", err)
+	}
+
+	var enrichments *operatorv1alpha1.EnrichmentSpec
+
+	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.telemetryNamespace)
+	if err == nil {
+		enrichments = t.Spec.Enrichments
+	}
+
+	agentConfig, collectorEnvVars, err := r.agentConfigBuilder.Build(ctx, allPipelines, metricagent.BuildOptions{
 		IstioEnabled:                isIstioActive,
 		IstioCertPath:               otelcollector.IstioCertPath,
 		InstrumentationScopeVersion: r.moduleVersion,
 		AgentNamespace:              r.telemetryNamespace,
+		ClusterName:                 clusterName,
+		ClusterUID:                  clusterUID,
+		CloudProvider:               shootInfo.CloudProvider,
+		Enrichments:                 enrichments,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)
@@ -361,17 +378,19 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to marshal collector config: %w", err)
 	}
 
-	allowedPorts := getAgentPorts()
-	if isIstioActive {
-		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
+	backendPorts, err := metricpipelineutils.OTLPOutputPorts(ctx, r.Client, allPipelines)
+	if err != nil {
+		return fmt.Errorf("failed to get ports of the backends: %w", err)
 	}
 
 	if err := r.agentApplierDeleter.ApplyResources(
 		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		otelcollector.AgentApplyOptions{
-			AllowedPorts:        allowedPorts,
+			IstioEnabled:        isIstioActive,
 			CollectorConfigYAML: string(agentConfigYAML),
+			CollectorEnvVars:    collectorEnvVars,
+			BackendPorts:        backendPorts,
 		},
 	); err != nil {
 		return fmt.Errorf("failed to apply agent resources: %w", err)
@@ -426,20 +445,4 @@ func (r *Reconciler) getK8sClusterUID(ctx context.Context) (string, error) {
 	}
 
 	return string(kubeSystem.UID), nil
-}
-
-func getAgentPorts() []int32 {
-	return []int32{
-		ports.Metrics,
-		ports.HealthCheck,
-	}
-}
-
-func getGatewayPorts() []int32 {
-	return []int32{
-		ports.Metrics,
-		ports.HealthCheck,
-		ports.OTLPHTTP,
-		ports.OTLPGRPC,
-	}
 }

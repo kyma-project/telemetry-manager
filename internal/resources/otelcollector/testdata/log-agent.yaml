@@ -85,14 +85,6 @@ spec:
     metadata:
       annotations:
         checksum/config: 1d8e9f768e6b24485bbdd6b9aa417d37fec897a7dafc8321355abc0d45259c9e
-        proxy.istio.io/config: |
-          # configure an env variable OUTPUT_CERTS to write certificates to the given folder
-          proxyMetadata:
-            OUTPUT_CERTS: /etc/istio-output-certs
-        sidecar.istio.io/userVolumeMount: '[{"name": "istio-certs", "mountPath": "/etc/istio-output-certs"}]'
-        traffic.sidecar.istio.io/excludeInboundPorts: "8888"
-        traffic.sidecar.istio.io/includeOutboundIPRanges: ""
-        traffic.sidecar.istio.io/includeOutboundPorts: "4317"
       labels:
         app.kubernetes.io/component: agent
         app.kubernetes.io/managed-by: telemetry-manager
@@ -147,44 +139,11 @@ spec:
         volumeMounts:
         - mountPath: /conf
           name: config
-        - mountPath: /etc/istio-output-certs
-          name: istio-certs
-          readOnly: true
         - mountPath: /var/log/pods
           name: varlogpods
           readOnly: true
-        - mountPath: /var/lib/telemetry-log-agent/file-log-receiver
-          name: varlibfilelogreceiver
-      initContainers:
-      - command:
-        - chown
-        - -R
-        - "10001:0"
-        - /var/lib/telemetry-log-agent/file-log-receiver
-        image: alpine:latest
-        name: checkpoint-dir-ownership-modifier
-        resources:
-          limits:
-            memory: 50Mi
-          requests:
-            cpu: 10m
-            memory: 10Mi
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            add:
-            - CHOWN
-            drop:
-            - ALL
-          privileged: false
-          readOnlyRootFilesystem: true
-          runAsNonRoot: false
-          runAsUser: 0
-          seccompProfile:
-            type: RuntimeDefault
-        volumeMounts:
-        - mountPath: /var/lib/telemetry-log-agent/file-log-receiver
-          name: varlibfilelogreceiver
+        - mountPath: /tmp
+          name: tmp
       priorityClassName: normal
       securityContext:
         runAsNonRoot: true
@@ -204,15 +163,13 @@ spec:
             path: relay.conf
           name: telemetry-log-agent
         name: config
-      - emptyDir: {}
-        name: istio-certs
       - hostPath:
           path: /var/log/pods
         name: varlogpods
       - hostPath:
-          path: /var/lib/telemetry-log-agent/file-log-receiver
+          path: /tmp
           type: DirectoryOrCreate
-        name: varlibfilelogreceiver
+        name: tmp
   updateStrategy: {}
 status:
   currentNumberScheduled: 0
@@ -245,9 +202,9 @@ spec:
     - ipBlock:
         cidr: ::/0
     ports:
-    - port: 5555
+    - port: 8888
       protocol: TCP
-    - port: 6666
+    - port: 13133
       protocol: TCP
   podSelector:
     matchLabels:

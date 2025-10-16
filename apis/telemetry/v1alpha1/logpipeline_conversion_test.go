@@ -44,7 +44,7 @@ func TestConvertTo(t *testing.T) {
 			Files: []LogPipelineFileMount{
 				{Name: "file1", Content: "file1-content"},
 			},
-			Filters: []LogPipelineFilter{
+			FluentBitFilters: []LogPipelineFilter{
 				{Custom: "name stdout"},
 			},
 			Transforms: []TransformSpec{
@@ -53,16 +53,21 @@ func TestConvertTo(t *testing.T) {
 					Statements: []string{"set(resource.attributes[\"k8s.pod.name\"]", "nginx"},
 				},
 			},
+			Filters: []FilterSpec{
+				{
+					Conditions: []string{"log.time == nil"},
+				},
+			},
 			Output: LogPipelineOutput{
 				Custom: "custom-output",
 				HTTP: &LogPipelineHTTPOutput{
 					Host: ValueType{
 						Value: "http://localhost",
 					},
-					User: ValueType{
+					User: &ValueType{
 						Value: "user",
 					},
-					Password: ValueType{
+					Password: &ValueType{
 						ValueFrom: &ValueFromSource{
 							SecretKeyRef: &SecretKeyRef{
 								Name:      "secret-name",
@@ -196,7 +201,7 @@ func TestConvertFrom(t *testing.T) {
 			Files: []telemetryv1beta1.LogPipelineFileMount{
 				{Name: "file1", Content: "file1-content"},
 			},
-			Filters: []telemetryv1beta1.LogPipelineFilter{
+			FluentBitFilters: []telemetryv1beta1.LogPipelineFilter{
 				{Custom: "name stdout"},
 			},
 			Transforms: []telemetryv1beta1.TransformSpec{
@@ -205,16 +210,21 @@ func TestConvertFrom(t *testing.T) {
 					Statements: []string{"set(resource.attributes[\"k8s.pod.name\"]", "nginx"},
 				},
 			},
+			Filters: []telemetryv1beta1.FilterSpec{
+				{
+					Conditions: []string{"log.time == nil"},
+				},
+			},
 			Output: telemetryv1beta1.LogPipelineOutput{
 				Custom: "custom-output",
 				HTTP: &telemetryv1beta1.LogPipelineHTTPOutput{
 					Host: telemetryv1beta1.ValueType{
 						Value: "http://localhost",
 					},
-					User: telemetryv1beta1.ValueType{
+					User: &telemetryv1beta1.ValueType{
 						Value: "user",
 					},
-					Password: telemetryv1beta1.ValueType{
+					Password: &telemetryv1beta1.ValueType{
 						ValueFrom: &telemetryv1beta1.ValueFromSource{
 							SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 								Name:      "secret-name",
@@ -328,8 +338,8 @@ func requireLogPipelinesEquivalent(t *testing.T, x *LogPipeline, y *telemetryv1b
 	require.Len(t, y.Spec.Files, 1, "expected one file")
 	require.Equal(t, x.Spec.Files[0].Name, y.Spec.Files[0].Name, "file name mismatch")
 
-	require.Len(t, y.Spec.Filters, 1, "expected one filter")
-	require.Equal(t, x.Spec.Filters[0].Custom, y.Spec.Filters[0].Custom, "custom filter mismatch")
+	require.Len(t, y.Spec.FluentBitFilters, 1, "expected one filter")
+	require.Equal(t, x.Spec.FluentBitFilters[0].Custom, y.Spec.FluentBitFilters[0].Custom, "custom filter mismatch")
 
 	require.Equal(t, x.Spec.Output.Custom, y.Spec.Output.Custom, "custom output mismatch")
 
@@ -380,7 +390,16 @@ func requireLogPipelinesEquivalent(t *testing.T, x *LogPipeline, y *telemetryv1b
 	require.Len(t, xTransforms, len(yTransforms), "expected same number of transforms")
 
 	for i := range xTransforms {
-		require.Equal(t, xTransforms[i].Conditions, yTransforms[i].Conditions, "transform conditions mismatch at index %d", i)
+		require.ElementsMatch(t, xTransforms[i].Conditions, yTransforms[i].Conditions, "transform conditions mismatch at index %d", i)
 		require.Equal(t, xTransforms[i].Statements, yTransforms[i].Statements, "transform statements mismatch at index %d", i)
+	}
+
+	xFilter := x.Spec.Filters
+	yFilter := y.Spec.Filters
+
+	require.Len(t, xFilter, len(yFilter), "expected same number of filters")
+
+	for i := range xFilter {
+		require.ElementsMatch(t, xFilter[i].Conditions, yFilter[i].Conditions, "filter conditions mismatch at index %d", i)
 	}
 }

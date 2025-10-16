@@ -81,7 +81,9 @@ func TestAccessLogsOTLP(t *testing.T) {
 	Eventually(func(g Gomega) {
 		resp, err := suite.ProxyClient.Get(metricPodURL)
 		g.Expect(err).NotTo(HaveOccurred())
+
 		defer resp.Body.Close()
+
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed(),
 		"Should invoke the metrics endpoint to generate access logs",

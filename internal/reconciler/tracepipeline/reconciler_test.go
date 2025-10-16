@@ -28,9 +28,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
+	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
-	"github.com/kyma-project/telemetry-manager/internal/validators/transformspec"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
@@ -477,25 +477,6 @@ func TestReconcile(t *testing.T) {
 				expectedMessage: "Trace gateway is unable to receive spans at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-throttling",
 			},
 			{
-				name: "buffer filling up",
-				probe: prober.OTelGatewayProbeResult{
-					QueueAlmostFull: true,
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonGatewayBufferFillingUp,
-				expectedMessage: "Buffer nearing capacity. Incoming span rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-buffer-filling-up",
-			},
-			{
-				name: "buffer filling up shadows other problems",
-				probe: prober.OTelGatewayProbeResult{
-					QueueAlmostFull: true,
-					Throttling:      true,
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonGatewayBufferFillingUp,
-				expectedMessage: "Buffer nearing capacity. Incoming span rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-buffer-filling-up",
-			},
-			{
 				name: "some data dropped",
 				probe: prober.OTelGatewayProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
@@ -776,7 +757,7 @@ func TestReconcile(t *testing.T) {
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
 			PipelineLock:       pipelineLockStub,
 			TransformSpecValidator: stubs.NewTransformSpecValidator(
-				&transformspec.InvalidTransformSpecError{
+				&ottl.InvalidTransformSpecError{
 					Err: fmt.Errorf("invalid TransformSpec: error while parsing statements"),
 				},
 			),

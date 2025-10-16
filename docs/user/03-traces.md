@@ -469,7 +469,9 @@ To detect and fix such situations, check the [pipeline status](./resources/04-tr
 **Solution**:
 
 1. Check the `telemetry-trace-gateway` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`. Also, check your observability backend to investigate potential causes.
-2. If the backend is limiting the rate by refusing spans, try the options desribed in [Gateway Buffer Filling Up](#gateway-buffer-filling-up).
+2. If the backend is limiting the rate by refusing spans, try the following options:
+    - Option 1: Increase maximum backend ingestion rate. For example, by scaling out the SAP Cloud Logging instances.
+    - Option 2: Reduce the emitted spans in your applications.
 3. Otherwise, take the actions appropriate to the cause indicated in the logs.
 
 ### Custom Spans Don’t Arrive at the Backend, but Istio Spans Do
@@ -509,17 +511,6 @@ If you just want to see traces for one particular request, you can manually forc
 
 2. To override the default percentage, change the value for the **randomSamplingPercentage** attribute.
 3. Deploy the `values.yaml` to your existing Kyma installation.
-
-### Gateway Buffer Filling Up
-
-**Symptom**: In the TracePipeline status, the `TelemetryFlowHealthy` condition has status **GatewayBufferFillingUp**.
-
-**Cause**: The backend ingestion rate is too low compared to the gateway export rate.
-
-**Solution**:
-
-- Option 1: Increase the maximum backend ingestion rate - for example, by scaling out the SAP Cloud Logging instances.
-- Option 2: Reduce the emitted spans in your applications.
 
 ### Gateway Throttling
 

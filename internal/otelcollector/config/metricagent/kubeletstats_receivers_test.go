@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -25,9 +25,9 @@ const (
 
 func TestKubeletStatsReceiver(t *testing.T) {
 	ctx := context.Background()
-	gatewayServiceName := types.NamespacedName{Name: "metrics", Namespace: "telemetry-system"}
+	fakeClient := fake.NewClientBuilder().Build()
 	sut := Builder{
-		GatewayOTLPServiceName: gatewayServiceName,
+		Reader: fakeClient,
 	}
 
 	t.Run("runtime input enabled verify k8sClusterReceiver", func(t *testing.T) {
@@ -93,7 +93,7 @@ func TestKubeletStatsReceiver(t *testing.T) {
 			},
 		}
 		for _, test := range tests {
-			collectorConfig, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
+			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
 				test.pipeline,
 			}, BuildOptions{
 				AgentNamespace: agentNamespace,
@@ -158,7 +158,7 @@ func TestKubeletStatsReceiver(t *testing.T) {
 		}
 
 		for _, test := range tests {
-			collectorConfig, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
+			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
 				test.pipeline,
 			}, BuildOptions{})
 			require.NoError(t, err)
@@ -174,11 +174,8 @@ func TestKubeletStatsReceiver(t *testing.T) {
 				MetricGroups:       test.expectedMetricGroups,
 				Metrics: KubeletStatsMetricsConfig{
 					ContainerCPUUsage:            MetricConfig{Enabled: true},
-					ContainerCPUUtilization:      MetricConfig{Enabled: false},
 					K8sPodCPUUsage:               MetricConfig{Enabled: true},
-					K8sPodCPUUtilization:         MetricConfig{Enabled: false},
 					K8sNodeCPUUsage:              MetricConfig{Enabled: true},
-					K8sNodeCPUUtilization:        MetricConfig{Enabled: false},
 					K8sNodeCPUTime:               MetricConfig{Enabled: false},
 					K8sNodeMemoryMajorPageFaults: MetricConfig{Enabled: false},
 					K8sNodeMemoryPageFaults:      MetricConfig{Enabled: false},

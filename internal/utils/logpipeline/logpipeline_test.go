@@ -44,7 +44,7 @@ func TestLogPipelineOutput(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require.Equal(t, test.expectedCustom, IsCustomDefined(&test.given))
 			require.Equal(t, test.expectedHTTP, IsHTTPDefined(&test.given))
-			require.Equal(t, test.expectedAny, IsAnyDefined(&test.given))
+			require.Equal(t, test.expectedAny, IsCustomDefined(&test.given) || IsHTTPDefined(&test.given) || test.given.OTLP != nil)
 		})
 	}
 }
@@ -52,7 +52,7 @@ func TestLogPipelineOutput(t *testing.T) {
 func TestLogPipelineContainsCustomPluginWithCustomFilter(t *testing.T) {
 	logPipeline := &telemetryv1alpha1.LogPipeline{
 		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Filters: []telemetryv1alpha1.LogPipelineFilter{
+			FluentBitFilters: []telemetryv1alpha1.LogPipelineFilter{
 				{Custom: `
     Name    some-filter`,
 				},

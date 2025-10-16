@@ -782,13 +782,15 @@ To detect and fix such situations, check the [pipeline status](./resources/05-me
 **Symptom**:
 
 - No metrics arrive at the backend.
-- In the MetricPipeline status, the `TelemetryFlowHealthy` condition has status **GatewayAllTelemetryDataDropped**.
+- In the MetricPipeline status, the `TelemetryFlowHealthy` condition has status **GatewayAllTelemetryDataDropped** or **AgentAllTelemetryDataDropped**.
 
 **Cause**: Incorrect backend endpoint configuration (such as using the wrong authentication credentials) or the backend is unreachable.
 
 **Solution**:
 
-1. Check the `telemetry-metric-gateway` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
+1. Check the error logs for the affected Pod by calling `kubectl logs -n kyma-system {POD_NAME}`
+   - For **GatewayAllTelemetryDataDropped**, check  pods `telemetry-metric-gateway`.
+   - For **AgentAllTelemetryDataDropped**, check pods `telemetry-metric-agent`.
 2. Check if the backend is up and reachable.
 3. Fix the errors.
 
@@ -797,14 +799,17 @@ To detect and fix such situations, check the [pipeline status](./resources/05-me
 **Symptom**:
 
 - The backend is reachable and the connection is properly configured, but some metrics are refused.
-- In the MetricPipeline status, the `TelemetryFlowHealthy` condition has status **GatewaySomeTelemetryDataDropped**.
+- In the MetricPipeline status, the `TelemetryFlowHealthy` condition has status **GatewaySomeTelemetryDataDropped** or **AgentSomeTelemetryDataDropped**.
 
 **Cause**: It can happen due to a variety of reasons - for example, the backend is limiting the ingestion rate.
 
 **Solution**:
 
 1. Check the `telemetry-metric-gateway` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`. Also, check your observability backend to investigate potential causes.
-2. If the backend is limiting the rate by refusing metrics, try the options described in [Gateway Buffer Filling Up](#gateway-buffer-filling-up).
+2. If the backend is limiting the rate by refusing metrics, try the following options:
+    - Option 1: Increase maximum backend ingestion rate. For example, by scaling out the SAP Cloud Logging instances.
+    - Option 2: Reduce emitted metrics by re-configuring the MetricPipeline. For example, by disabling certain inputs or applying namespace filters.
+    - Option 3: Reduce emitted metrics in your applications.
 3. Otherwise, take the actions appropriate to the cause indicated in the logs.
 
 ### Only Istio Metrics Arrive at the Backend
@@ -864,20 +869,6 @@ spec:
   policyTypes:
   - Ingress
 ```
-
-### Gateway Buffer Filling Up
-
-**Symptom**: In the MetricPipeline status, the `TelemetryFlowHealthy` condition has status **GatewayBufferFillingUp**.
-
-**Cause**: The backend ingestion rate is too low compared to the gateway export rate.
-
-**Solution**:
-
-- Option 1: Increase maximum backend ingestion rate. For example, by scaling out the SAP Cloud Logging instances.
-
-- Option 2: Reduce emitted metrics by re-configuring the MetricPipeline (for example, by disabling certain inputs or applying namespace filters).
-
-- Option 3: Reduce emitted metrics in your applications.
 
 ### Gateway Throttling
 

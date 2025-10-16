@@ -91,7 +91,7 @@ func (b *ConfigBuilder) extractHTTPSecrets(ctx context.Context, pipeline *teleme
 	}
 
 	// Extract host secret if needed
-	if shouldCopySecret(httpOutput.Host) {
+	if shouldCopySecret(&httpOutput.Host) {
 		hostSecret, err := getEnvConfigSecret(ctx, b.reader, pipeline.Name, &httpOutput.Host)
 		if err != nil {
 			return fmt.Errorf("failed to get host secret: %w", err)
@@ -102,7 +102,7 @@ func (b *ConfigBuilder) extractHTTPSecrets(ctx context.Context, pipeline *teleme
 
 	// Extract user secret if needed
 	if shouldCopySecret(httpOutput.User) {
-		userSecret, err := getEnvConfigSecret(ctx, b.reader, pipeline.Name, &httpOutput.User)
+		userSecret, err := getEnvConfigSecret(ctx, b.reader, pipeline.Name, httpOutput.User)
 		if err != nil {
 			return fmt.Errorf("failed to get user secret: %w", err)
 		}
@@ -112,7 +112,7 @@ func (b *ConfigBuilder) extractHTTPSecrets(ctx context.Context, pipeline *teleme
 
 	// Extract password secret if needed
 	if shouldCopySecret(httpOutput.Password) {
-		passwordSecret, err := getEnvConfigSecret(ctx, b.reader, pipeline.Name, &httpOutput.Password)
+		passwordSecret, err := getEnvConfigSecret(ctx, b.reader, pipeline.Name, httpOutput.Password)
 		if err != nil {
 			return fmt.Errorf("failed to get password secret: %w", err)
 		}
@@ -187,8 +187,9 @@ func getSecretData(ctx context.Context, client client.Reader, ref telemetryv1alp
 		ref.Namespace)
 }
 
-func shouldCopySecret(value telemetryv1alpha1.ValueType) bool {
-	return value.Value == "" &&
+func shouldCopySecret(value *telemetryv1alpha1.ValueType) bool {
+	return value != nil &&
+		value.Value == "" &&
 		value.ValueFrom != nil &&
 		value.ValueFrom.SecretKeyRef != nil
 }

@@ -66,7 +66,7 @@ Status:
       type: TraceComponentsHealthy
 ```
 
-For further examples, see the [samples](https://github.com/kyma-project/telemetry-manager/tree/main/config/samples) directory.
+For further examples, see the [samples](https://github.com/kyma-project/telemetry-manager/tree/main/samples) directory.
 
 ## Custom Resource Parameters
 
@@ -85,10 +85,10 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 | ---- | ----------- | ---- |
 | **enrichments**  | object | Enrichments configures optional enrichments of all telemetry data collected by pipelines. This field is optional. |
 | **enrichments.&#x200b;cluster**  | object | Cluster provides user-defined cluster definitions to enrich resource attributes. |
-| **enrichments.&#x200b;cluster.&#x200b;name** (required) | string | Name specifies a custom cluster name for the resource attribute `k8s.cluster.name`. |
-| **enrichments.&#x200b;extractPodLabels**  | \[\]object | ExtractPodLabels specifies the list of Pod labels to be used for enrichment. This field is optional. |
-| **enrichments.&#x200b;extractPodLabels.&#x200b;key**  | string | Key specifies the exact label key to be used. This field is optional. |
-| **enrichments.&#x200b;extractPodLabels.&#x200b;keyPrefix**  | string | KeyPrefix specifies a prefix for label keys to be used. This field is optional. |
+| **enrichments.&#x200b;cluster.&#x200b;name**  | string | Name specifies a custom cluster name for the resource attribute `k8s.cluster.name`. |
+| **enrichments.&#x200b;extractPodLabels**  | \[\]object | ExtractPodLabels specifies the list of Pod labels to be used for enrichment. |
+| **enrichments.&#x200b;extractPodLabels.&#x200b;key**  | string | Key specifies the exact label key to be used. |
+| **enrichments.&#x200b;extractPodLabels.&#x200b;keyPrefix**  | string | KeyPrefix specifies a prefix for label keys to be used. |
 | **log**  | object | Log configures module settings specific to the log features. This field is optional. |
 | **log.&#x200b;gateway**  | object | Gateway configures the log gateway. |
 | **log.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type. |
@@ -175,7 +175,6 @@ The state of the trace components is determined by the status condition of type 
 | False            | TLSConfigurationInvalid        | TLS configuration invalid                                                                                                                                                                                               |
 | False            | ValidationFailed               | Pipeline validation failed due to an error from the Kubernetes API server                                                                                                                                               |
 | False            | GatewayAllTelemetryDataDropped | Backend is not reachable or rejecting spans. All spans are dropped. See troubleshooting: [No Spans Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/03-traces?id=no-spans-arrive-at-the-backend) |
-| False            | GatewayBufferFillingUp         | Buffer nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: [Gateway Buffer Filling Up](https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-buffer-filling-up)               |
 | False            | GatewayThrottling              | Trace gateway is unable to receive spans at current rate. See troubleshooting: [Gateway Throttling](https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-throttling)                                   |
 | False            | GatewaySomeTelemetryDataDropped             | Backend is reachable, but rejecting spans. Some spans are dropped. [No All Spans Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/03-traces?id=not-all-spans-arrive-at-the-backend)              |
 
@@ -198,7 +197,6 @@ The state of the metric components is determined by the status condition of type
 | False            | TLSConfigurationInvalid         | TLS configuration invalid                                                                                                                                                                                                                |
 | False            | ValidationFailed                | Pipeline validation failed due to an error from the Kubernetes API server                                                                                                                                                                |
 | False            | GatewayAllTelemetryDataDropped  | Backend is not reachable or rejecting metrics. All metrics are dropped. See troubleshooting: [No Metrics Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=no-metrics-arrive-at-the-backend)         |
-| False            | GatewayBufferFillingUp          | Buffer nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: [Gateway Buffer Filling Up](https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-buffer-filling-up)                               |
 | False            | GatewayThrottling               | Metric gateway is unable to receive metrics at current rate. See troubleshooting: [Gateway Throttling](https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-throttling)                                                |
 | False            | GatewaySomeTelemetryDataDropped | Backend is reachable, but rejecting metrics. Some metrics are dropped. See troubleshooting: [No All Metrics Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=not-all-metrics-arrive-at-the-backend) |
 

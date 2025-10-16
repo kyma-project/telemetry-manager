@@ -20,16 +20,17 @@ import (
 
 func TestAgent_ApplyResources(t *testing.T) {
 	collectorImage := "opentelemetry/collector:dummy"
-	alpineImage := "alpine:latest"
 	namespace := "kyma-system"
 	priorityClassName := "normal"
 
 	tests := []struct {
 		name             string
 		sut              *AgentApplierDeleter
+		collectorEnvVars map[string][]byte
+		istioEnabled     bool
+		backendPorts     []string
 		goldenFilePath   string
 		saveGoldenFile   bool
-		collectorEnvVars map[string][]byte
 	}{
 		{
 			name:           "metric agent",
@@ -37,12 +38,28 @@ func TestAgent_ApplyResources(t *testing.T) {
 			goldenFilePath: "testdata/metric-agent.yaml",
 		},
 		{
-			name:           "log agent",
-			sut:            NewLogAgentApplierDeleter(collectorImage, alpineImage, namespace, priorityClassName),
-			goldenFilePath: "testdata/log-agent.yaml",
+			name:           "metric agent with istio",
+			sut:            NewMetricAgentApplierDeleter(collectorImage, namespace, priorityClassName),
+			istioEnabled:   true,
+			backendPorts:   []string{"4317", "9090"},
+			goldenFilePath: "testdata/metric-agent-istio.yaml",
+		},
+		{
+			name: "log agent",
+			sut:  NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName),
 			collectorEnvVars: map[string][]byte{
 				"DUMMY_ENV_VAR": []byte("foo"),
 			},
+			goldenFilePath: "testdata/log-agent.yaml",
+		},
+		{
+			name: "log agent with istio",
+			sut:  NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName),
+			collectorEnvVars: map[string][]byte{
+				"DUMMY_ENV_VAR": []byte("foo"),
+			},
+			istioEnabled:   true,
+			goldenFilePath: "testdata/log-agent-istio.yaml",
 		},
 	}
 
@@ -63,9 +80,10 @@ func TestAgent_ApplyResources(t *testing.T) {
 
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.sut.ApplyResources(t.Context(), fakeClient, AgentApplyOptions{
-				AllowedPorts:        []int32{5555, 6666},
+				IstioEnabled:        tt.istioEnabled,
 				CollectorConfigYAML: "dummy",
 				CollectorEnvVars:    tt.collectorEnvVars,
+				BackendPorts:        tt.backendPorts,
 			})
 			require.NoError(t, err)
 
@@ -106,14 +124,15 @@ func TestAgent_DeleteResources(t *testing.T) {
 			name: "metric agent",
 			sut:  NewMetricAgentApplierDeleter(image, namespace, priorityClassName),
 		},
+		{
+			name: "log agent",
+			sut:  NewLogAgentApplierDeleter(image, namespace, priorityClassName),
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.sut.ApplyResources(t.Context(), fakeClient, AgentApplyOptions{
-				AllowedPorts:        []int32{5555, 6666},
-				CollectorConfigYAML: "dummy",
-			})
+			err := tt.sut.ApplyResources(t.Context(), fakeClient, AgentApplyOptions{})
 			require.NoError(t, err)
 
 			err = tt.sut.DeleteResources(t.Context(), fakeClient)

@@ -23,7 +23,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
-	"github.com/kyma-project/telemetry-manager/internal/validators/transformspec"
+	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
@@ -442,25 +442,6 @@ func TestReconcile(t *testing.T) {
 				expectedMessage: "Log gateway is unable to receive logs at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=gateway-throttling",
 			},
 			{
-				name: "buffer filling up",
-				probe: prober.OTelGatewayProbeResult{
-					QueueAlmostFull: true,
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonGatewayBufferFillingUp,
-				expectedMessage: "Buffer in Log gateway nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=buffer-filling-up",
-			},
-			{
-				name: "buffer filling up shadows other problems",
-				probe: prober.OTelGatewayProbeResult{
-					QueueAlmostFull: true,
-					Throttling:      true,
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonGatewayBufferFillingUp,
-				expectedMessage: "Buffer in Log gateway nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=buffer-filling-up",
-			},
-			{
 				name: "some data dropped",
 				probe: prober.OTelGatewayProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
@@ -601,28 +582,9 @@ func TestReconcile(t *testing.T) {
 				expectedMessage: "No problems detected in the telemetry flow",
 			},
 			{
-				name: "buffer filling up",
-				probe: prober.OTelAgentProbeResult{
-					QueueAlmostFull: true,
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonAgentBufferFillingUp,
-				expectedMessage: "Buffer in Log agent nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=buffer-filling-up",
-			},
-			{
 				name: "some data dropped",
 				probe: prober.OTelAgentProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonAgentSomeDataDropped,
-				expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in Log agent. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=not-all-logs-arrive-at-the-backend",
-			},
-			{
-				name: "some data dropped shadows other problems",
-				probe: prober.OTelAgentProbeResult{
-					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
-					QueueAlmostFull:     true,
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonAgentSomeDataDropped,
@@ -640,8 +602,7 @@ func TestReconcile(t *testing.T) {
 			{
 				name: "all data dropped shadows other problems",
 				probe: prober.OTelAgentProbeResult{
-					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
-					QueueAlmostFull:     true,
+					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true, SomeDataDropped: true},
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonAgentAllDataDropped,
@@ -763,7 +724,7 @@ func TestReconcile(t *testing.T) {
 			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
 			TransformSpecValidator: stubs.NewTransformSpecValidator(
-				&transformspec.InvalidTransformSpecError{
+				&ottl.InvalidTransformSpecError{
 					Err: fmt.Errorf("invalid TransformSpec: error while parsing statements"),
 				},
 			),

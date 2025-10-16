@@ -41,34 +41,9 @@ func IsOTLPDefined(o *telemetryv1alpha1.LogPipelineOutput) bool {
 	return o.OTLP != nil
 }
 
-func IsAnyDefined(o *telemetryv1alpha1.LogPipelineOutput) bool {
-	return pluginCount(o) > 0
-}
-
-func IsSingleDefined(o *telemetryv1alpha1.LogPipelineOutput) bool {
-	return pluginCount(o) == 1
-}
-
-func pluginCount(o *telemetryv1alpha1.LogPipelineOutput) int {
-	plugins := 0
-	if IsCustomDefined(o) {
-		plugins++
-	}
-
-	if IsHTTPDefined(o) {
-		plugins++
-	}
-
-	if IsOTLPDefined(o) {
-		plugins++
-	}
-
-	return plugins
-}
-
 // ContainsCustomPlugin returns true if the pipeline contains any custom filters or outputs
 func ContainsCustomPlugin(lp *telemetryv1alpha1.LogPipeline) bool {
-	for _, filter := range lp.Spec.Filters {
+	for _, filter := range lp.Spec.FluentBitFilters {
 		if filter.Custom != "" {
 			return true
 		}

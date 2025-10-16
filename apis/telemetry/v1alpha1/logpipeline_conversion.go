@@ -30,21 +30,29 @@ func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 		dst.Spec.Files = append(dst.Spec.Files, telemetryv1beta1.LogPipelineFileMount(f))
 	}
 
-	for _, f := range src.Spec.Filters {
-		dst.Spec.Filters = append(dst.Spec.Filters, telemetryv1beta1.LogPipelineFilter(f))
+	for _, f := range src.Spec.FluentBitFilters {
+		dst.Spec.FluentBitFilters = append(dst.Spec.FluentBitFilters, telemetryv1beta1.LogPipelineFilter(f))
 	}
 
 	if srcHTTPOutput := src.Spec.Output.HTTP; srcHTTPOutput != nil {
 		dst.Spec.Output.HTTP = &telemetryv1beta1.LogPipelineHTTPOutput{
 			Host:      v1Alpha1ValueTypeToV1Beta1(srcHTTPOutput.Host),
-			User:      v1Alpha1ValueTypeToV1Beta1(srcHTTPOutput.User),
-			Password:  v1Alpha1ValueTypeToV1Beta1(srcHTTPOutput.Password),
 			URI:       srcHTTPOutput.URI,
 			Port:      srcHTTPOutput.Port,
 			Compress:  srcHTTPOutput.Compress,
 			Format:    srcHTTPOutput.Format,
 			TLSConfig: v1Alpha1TLSToV1Beta1(srcHTTPOutput.TLS),
 			Dedot:     srcHTTPOutput.Dedot,
+		}
+
+		if srcHTTPOutput.User != nil && (srcHTTPOutput.User.Value != "" || srcHTTPOutput.User.ValueFrom != nil) {
+			user := v1Alpha1ValueTypeToV1Beta1(*srcHTTPOutput.User)
+			dst.Spec.Output.HTTP.User = &user
+		}
+
+		if srcHTTPOutput.Password != nil && (srcHTTPOutput.Password.Value != "" || srcHTTPOutput.Password.ValueFrom != nil) {
+			password := v1Alpha1ValueTypeToV1Beta1(*srcHTTPOutput.Password)
+			dst.Spec.Output.HTTP.Password = &password
 		}
 	}
 
@@ -66,6 +74,12 @@ func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 	if src.Spec.Transforms != nil {
 		for _, t := range src.Spec.Transforms {
 			dst.Spec.Transforms = append(dst.Spec.Transforms, v1Alpha1TransformSpecToV1Beta1(t))
+		}
+	}
+
+	if src.Spec.Filters != nil {
+		for _, t := range src.Spec.Filters {
+			dst.Spec.Filters = append(dst.Spec.Filters, v1Alpha1FilterSpecToV1Beta1(t))
 		}
 	}
 
@@ -230,6 +244,14 @@ func v1Alpha1TransformSpecToV1Beta1(src TransformSpec) telemetryv1beta1.Transfor
 	return dst
 }
 
+func v1Alpha1FilterSpecToV1Beta1(src FilterSpec) telemetryv1beta1.FilterSpec {
+	var dst telemetryv1beta1.FilterSpec
+
+	dst.Conditions = append(dst.Conditions, src.Conditions...)
+
+	return dst
+}
+
 // ConvertFrom converts from the Hub version (v1beta1) to this version.
 func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 	dst := lp
@@ -248,21 +270,29 @@ func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 		dst.Spec.Files = append(dst.Spec.Files, LogPipelineFileMount(f))
 	}
 
-	for _, f := range src.Spec.Filters {
-		dst.Spec.Filters = append(dst.Spec.Filters, LogPipelineFilter(f))
+	for _, f := range src.Spec.FluentBitFilters {
+		dst.Spec.FluentBitFilters = append(dst.Spec.FluentBitFilters, LogPipelineFilter(f))
 	}
 
 	if srcHTTPOutput := src.Spec.Output.HTTP; srcHTTPOutput != nil {
 		dst.Spec.Output.HTTP = &LogPipelineHTTPOutput{
 			Host:     v1Beta1ValueTypeToV1Alpha1(srcHTTPOutput.Host),
-			User:     v1Beta1ValueTypeToV1Alpha1(srcHTTPOutput.User),
-			Password: v1Beta1ValueTypeToV1Alpha1(srcHTTPOutput.Password),
 			URI:      srcHTTPOutput.URI,
 			Port:     srcHTTPOutput.Port,
 			Compress: srcHTTPOutput.Compress,
 			Format:   srcHTTPOutput.Format,
 			TLS:      v1Beta1TLSToV1Alpha1(srcHTTPOutput.TLSConfig),
 			Dedot:    srcHTTPOutput.Dedot,
+		}
+
+		if srcHTTPOutput.User != nil {
+			user := v1Beta1ValueTypeToV1Alpha1(*srcHTTPOutput.User)
+			dst.Spec.Output.HTTP.User = &user
+		}
+
+		if srcHTTPOutput.Password != nil {
+			password := v1Beta1ValueTypeToV1Alpha1(*srcHTTPOutput.Password)
+			dst.Spec.Output.HTTP.Password = &password
 		}
 	}
 
@@ -284,6 +314,12 @@ func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 	if src.Spec.Transforms != nil {
 		for _, t := range src.Spec.Transforms {
 			dst.Spec.Transforms = append(dst.Spec.Transforms, v1Beta1TransformSpecToV1Alpha1(t))
+		}
+	}
+
+	if src.Spec.Filters != nil {
+		for _, t := range src.Spec.Filters {
+			dst.Spec.Filters = append(dst.Spec.Filters, v1Beta1FilterSpecToV1Alpha1(t))
 		}
 	}
 
@@ -444,6 +480,14 @@ func v1Beta1TransformSpecToV1Alpha1(src telemetryv1beta1.TransformSpec) Transfor
 	dst.Conditions = append(dst.Conditions, src.Conditions...)
 
 	dst.Statements = append(dst.Statements, src.Statements...)
+
+	return dst
+}
+
+func v1Beta1FilterSpecToV1Alpha1(src telemetryv1beta1.FilterSpec) FilterSpec {
+	var dst FilterSpec
+
+	dst.Conditions = append(dst.Conditions, src.Conditions...)
 
 	return dst
 }

@@ -15,23 +15,13 @@ var (
 )
 
 // buildFluentBitSectionsConfig merges Fluent Bit filters and outputs to a single Fluent Bit configuration.
-func buildFluentBitSectionsConfig(pipeline *telemetryv1alpha1.LogPipeline, config builderConfig) (string, error) {
+func buildFluentBitSectionsConfig(pipeline *telemetryv1alpha1.LogPipeline, config builderConfig, clusterName string) (string, error) {
 	pm := logpipelineutils.PipelineMode(pipeline)
 	if pm != logpipelineutils.FluentBit {
 		return "", fmt.Errorf("%w: unsupported pipeline mode: %s", errInvalidPipelineDefinition, pm.String())
 	}
 
-	err := validateOutput(pipeline)
-	if err != nil {
-		return "", err
-	}
-
-	err = validateInput(pipeline)
-	if err != nil {
-		return "", err
-	}
-
-	err = validateCustomSections(pipeline)
+	err := validateCustomSections(pipeline)
 	if err != nil {
 		return "", err
 	}
@@ -45,7 +35,7 @@ func buildFluentBitSectionsConfig(pipeline *telemetryv1alpha1.LogPipeline, confi
 	// skip if the filter is a multiline filter, multiline filter should be first filter in the pipeline filter chain
 	// see for more details https://docs.fluentbit.io/manual/pipeline/filters/multiline-stacktrace
 	sb.WriteString(createCustomFilters(pipeline, multilineFilter))
-	sb.WriteString(createRecordModifierFilter(pipeline))
+	sb.WriteString(createRecordModifierFilter(pipeline, clusterName))
 	sb.WriteString(createKubernetesFilter(pipeline))
 	sb.WriteString(createTimestampModifyFilter(pipeline))
 	sb.WriteString(createCustomFilters(pipeline, nonMultilineFilter))
@@ -55,11 +45,11 @@ func buildFluentBitSectionsConfig(pipeline *telemetryv1alpha1.LogPipeline, confi
 	return sb.String(), nil
 }
 
-func createRecordModifierFilter(pipeline *telemetryv1alpha1.LogPipeline) string {
+func createRecordModifierFilter(pipeline *telemetryv1alpha1.LogPipeline, clusterName string) string {
 	return NewFilterSectionBuilder().
 		AddConfigParam("name", "record_modifier").
 		AddConfigParam("match", fmt.Sprintf("%s.*", pipeline.Name)).
-		AddConfigParam("record", "cluster_identifier ${KUBERNETES_SERVICE_HOST}").
+		AddConfigParam("record", fmt.Sprintf("cluster_identifier %s", clusterName)).
 		Build()
 }
 
@@ -91,31 +81,11 @@ func validateCustomSections(pipeline *telemetryv1alpha1.LogPipeline) error {
 		}
 	}
 
-	for _, filter := range pipeline.Spec.Filters {
+	for _, filter := range pipeline.Spec.FluentBitFilters {
 		_, err := config.ParseCustomSection(filter.Custom)
 		if err != nil {
 			return err
 		}
-	}
-
-	return nil
-}
-
-func validateOutput(pipeline *telemetryv1alpha1.LogPipeline) error {
-	if !logpipelineutils.IsAnyDefined(&pipeline.Spec.Output) {
-		return fmt.Errorf("%w: No output plugin defined", errInvalidPipelineDefinition)
-	}
-
-	return nil
-}
-
-func validateInput(pipeline *telemetryv1alpha1.LogPipeline) error {
-	if pipeline.Spec.Input.OTLP != nil {
-		return fmt.Errorf("%w: cannot use OTLP input for pipeline in FluentBit mode", errInvalidPipelineDefinition)
-	}
-
-	if pipeline.Spec.Input.Application == nil {
-		return nil
 	}
 
 	return nil

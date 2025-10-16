@@ -207,24 +207,6 @@ func TestOTelTraceGatewayProber(t *testing.T) {
 			},
 		},
 		{
-			name:         "queue almost full alert firing",
-			pipelineName: "cls",
-			alerts: promv1.AlertsResult{
-				Alerts: []promv1.Alert{
-					{
-						Labels: model.LabelSet{
-							"alertname":     "TraceGatewayQueueAlmostFull",
-							"pipeline_name": "cls",
-						},
-						State: promv1.AlertStateFiring,
-					},
-				},
-			},
-			expected: OTelGatewayProbeResult{
-				QueueAlmostFull: true,
-			},
-		},
-		{
 			name:         "throttling alert firing",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{

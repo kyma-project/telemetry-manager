@@ -49,9 +49,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
+	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
-	"github.com/kyma-project/telemetry-manager/internal/validators/transformspec"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
@@ -74,7 +74,12 @@ type MetricPipelineControllerConfig struct {
 }
 
 func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config MetricPipelineControllerConfig) (*MetricPipelineController, error) {
-	flowHealthProber, err := prober.NewOTelMetricGatewayProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
+	gatewayFlowHealthProber, err := prober.NewOTelMetricGatewayProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
+	if err != nil {
+		return nil, err
+	}
+
+	agentFlowHealthProber, err := prober.NewOTelMetricAgentProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +101,7 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 		},
 	)
 
-	transformSpecValidator, err := transformspec.New(transformspec.SignalTypeMetric)
+	transformSpecValidator, err := ottl.NewTransformSpecValidator(ottl.SignalTypeMetric)
 	if err != nil {
 		return nil, err
 	}
@@ -114,10 +119,7 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 		return nil, err
 	}
 
-	agentConfigBuilder := &metricagent.Builder{
-		GatewayOTLPServiceName: types.NamespacedName{Namespace: config.TelemetryNamespace, Name: otelcollector.MetricOTLPServiceName},
-	}
-
+	agentConfigBuilder := &metricagent.Builder{Reader: client}
 	gatewayConfigBuilder := &metricgateway.Builder{Reader: client}
 
 	reconciler := metricpipeline.New(
@@ -127,7 +129,8 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 		otelcollector.NewMetricAgentApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.MetricAgentPriorityClassName),
 		agentConfigBuilder,
 		&workloadstatus.DaemonSetProber{Client: client},
-		flowHealthProber,
+		gatewayFlowHealthProber,
+		agentFlowHealthProber,
 		otelcollector.NewMetricGatewayApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.MetricGatewayPriorityClassName),
 		gatewayConfigBuilder,
 		&workloadstatus.DeploymentProber{Client: client},

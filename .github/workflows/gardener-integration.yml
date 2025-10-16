@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false # if one version is not working, continue tests on other versions
       matrix:
-        k8s_version: [1.32, 1.33]
+        k8s_version: [1.33]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -91,12 +91,12 @@ jobs:
 
       - name: Create Telemetry CR
         shell: bash
-        run: kubectl apply -f config/samples/operator_v1alpha1_telemetry.yaml -n kyma-system
+        run: kubectl apply -f samples/operator_v1alpha1_telemetry.yaml -n kyma-system
 
       # Deploying  a deny-all Network Policy to simulate a typical setup on a Kyma cluster
       - name: Create Network Policy
         shell: bash
-        run: kubectl apply -f config/samples/networkpolicy-deny-all.yaml -n kyma-system
+        run: kubectl apply -f samples/networkpolicy-deny-all.yaml -n kyma-system
 
       - name: Execute istio tests subset
         uses: "./.github/template/test-execute"
