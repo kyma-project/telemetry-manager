@@ -114,8 +114,8 @@ func IsRuntimeJobInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool 
 }
 
 var schemeToPort map[string]string = map[string]string{
-	"http":  "80",
-	"https": "443",
+	"http":  "4318",
+	"https": "4318",
 }
 
 // OTLPOutputPorts returns the list of ports of the backends defined in all given MetricPipelines
