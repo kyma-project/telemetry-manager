@@ -29,6 +29,7 @@ RUN go mod tidy && \
   CGO_ENABLED=0 \
   GOOS=${TARGETOS:-linux} \
   GOARCH=${TARGETARCH} \
+  GOFIPS140=v1.0.0 \
   go build \
     -ldflags="-X github.com/kyma-project/telemetry-manager/internal/build.gitCommit=${COMMIT} \
     -X github.com/kyma-project/telemetry-manager/internal/build.gitTag=${TAG} \
@@ -44,5 +45,8 @@ WORKDIR /
 COPY --from=builder /telemetry-manager-workspace/manager .
 
 USER 65532:65532
+
+# Enable FIPS only mode and disable TLS ML-KEM as it is not FIPS compliant (https://pkg.go.dev/crypto/tls#Config.CurvePreferences)
+ENV GODEBUG=fips140=only,tlsmlkem=0
 
 ENTRYPOINT ["/manager"]

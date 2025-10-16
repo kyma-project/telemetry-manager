@@ -244,7 +244,7 @@ gen-webhook-cert: tls.key tls.crt
 
 .PHONY: run
 run: gen-webhook-cert manifests generate fmt vet tidy ## Run a controller from your host.
-	go run ./main.go
+	GODEBUG=fips140=only,tlsmlkem=0 go run ./main.go
 
 .PHONY: docker-build
 docker-build: ## Build docker image with the manager.

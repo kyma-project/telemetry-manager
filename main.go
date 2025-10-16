@@ -271,17 +271,17 @@ func logBuildAndProcessInfo() {
 		Subsystem:   "",
 		Name:        "build_info",
 		Help:        "Build information of the Telemetry Manager",
-		ConstLabels: build.AsLabels(),
+		ConstLabels: build.InfoMap(),
 	})
 	buildInfoGauge.Set(1)
+
+	setupLog.Info("Starting Telemetry Manager", "Build info:", build.InfoMap())
 
 	featureFlagsGaugeVec := promauto.With(metrics.Registry).NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "telemetry",
 		Name:      "feature_flags_info",
 		Help:      "Enabled feature flags in the Telemetry Manager",
 	}, []string{"flag"})
-
-	setupLog.Info("Starting Telemetry Manager", "GitCommit", build.GitCommit(), "GitTag", build.GitTag(), "GitTreeState", build.GitTreeState(), "GoVersion", build.GoVersion())
 
 	for _, flg := range featureflags.EnabledFlags() {
 		featureFlagsGaugeVec.WithLabelValues(flg.String()).Set(1)
