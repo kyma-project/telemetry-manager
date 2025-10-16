@@ -86,7 +86,7 @@ spec:
                     type: object
                   type: array
                 filters:
-                  description: Filters configures custom Fluent Bit `filters` to transform logs. Only available when using an output of type `http` and `custom`.
+                  description: FluentBitFilters configures custom Fluent Bit `filters` to transform logs. Only available when using an output of type `http` and `custom`.
                   items:
                     description: LogPipelineFilter configures custom Fluent Bit `filters` to transform logs. Only available when using an output of type `http` and `custom`.
                     properties:

@@ -81,7 +81,7 @@ func validateCustomSections(pipeline *telemetryv1alpha1.LogPipeline) error {
 		}
 	}
 
-	for _, filter := range pipeline.Spec.Filters {
+	for _, filter := range pipeline.Spec.FluentBitFilters {
 		_, err := config.ParseCustomSection(filter.Custom)
 		if err != nil {
 			return err

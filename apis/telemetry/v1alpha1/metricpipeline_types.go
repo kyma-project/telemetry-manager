@@ -70,6 +70,10 @@ type MetricPipelineSpec struct {
 	// Transforms specify a list of transformations to apply to telemetry data.
 	// +kubebuilder:validation:Optional
 	Transforms []TransformSpec `json:"transform,omitempty"`
+
+	// Filters specifies a list of filters to apply to telemetry data.
+	// +kubebuilder:validation:Optional
+	Filters []FilterSpec `json:"filter,omitempty"`
 }
 
 // MetricPipelineInput configures additional inputs for metric collection.

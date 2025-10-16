@@ -158,6 +158,7 @@ processors:
         timeout: 10s
         send_batch_max_size: 1024
     filter/drop-envoy-metrics-if-disabled:
+        error_mode: ignore
         metrics:
             metric:
                 - IsMatch(name, "^envoy_.*") and instrumentation_scope.name == "io.kyma-project.telemetry/istio"
