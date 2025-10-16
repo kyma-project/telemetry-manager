@@ -113,7 +113,7 @@ type OTLPTLS struct {
 
 // OTLPInput defines the collection of push-based metrics that use the OpenTelemetry protocol.
 type OTLPInput struct {
-	// If set to `true`, no push-based OTLP signals are collected. The default is `false`.
+	// Disabled specifies if the 'otlp' is deactivated, so that no push-based OTLP signals are collected. The default is `false`.
 	// +kubebuilder:validation:Optional
 	Disabled bool `json:"disabled,omitempty"`
 	// Namespaces describes whether push-based OTLP signals from specific namespaces are selected. System namespaces are enabled by default.
@@ -124,11 +124,15 @@ type OTLPInput struct {
 // NamespaceSelector describes whether signals from specific namespaces are selected.
 // +kubebuilder:validation:XValidation:rule="(has(self.include) == true ? 1 : 0) + (has(self.exclude) == true ? 1 : 0) <= 1",message="Only one of 'include' or 'exclude' can be defined"
 type NamespaceSelector struct {
-	// Include signals from the specified Namespace names only.
+	// Include telemetry data from the specified Namespace names only. By default all namespaces (except system namespaes dependent on input type). An include list cannot be specified together with an exclude list.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Items=Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
+	// +kubebuilder:validation:Items=MaxLength=63
 	Include []string `json:"include,omitempty"`
-	// Exclude signals from the specified Namespace names only.
+	// Exclude telemetry data from the specified Namespace names only. By default all namespaces (except system namespaes dependent on input type). An exclude list cannot be specified together with an include list.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Items=Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
+	// +kubebuilder:validation:Items=MaxLength=63
 	Exclude []string `json:"exclude,omitempty"`
 }
 

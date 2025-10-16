@@ -99,9 +99,9 @@ spec:
                             type: boolean
                         type: object
                       enabled:
-                        description: Enabled specifies that istio-proxy metrics are
-                          scraped from Pods that have the istio-proxy sidecar injected.
-                          The default is `false`.
+                        description: Enabled specifies if the 'istio' input is enabled,
+                          so that istio-proxy metrics are scraped from Pods that have
+                          the istio-proxy sidecar injected. The default is `false`.
                         type: boolean
                       envoyMetrics:
                         description: EnvoyMetrics enables the collection of additional
@@ -119,14 +119,18 @@ spec:
                           including system namespaces are enabled.
                         properties:
                           exclude:
-                            description: Exclude signals from the specified Namespace
-                              names only.
+                            description: Exclude telemetry data from the specified
+                              Namespace names only. By default all namespaces (except
+                              system namespaes dependent on input type). An exclude
+                              list cannot be specified together with an include list.
                             items:
                               type: string
                             type: array
                           include:
-                            description: Include signals from the specified Namespace
-                              names only.
+                            description: Include telemetry data from the specified
+                              Namespace names only. By default all namespaces (except
+                              system namespaes dependent on input type). An include
+                              list cannot be specified together with an exclude list.
                             items:
                               type: string
                             type: array
@@ -141,8 +145,9 @@ spec:
                       metrics from an OTLP source.
                     properties:
                       disabled:
-                        description: If set to `true`, no push-based OTLP signals
-                          are collected. The default is `false`.
+                        description: Disabled specifies if the 'otlp' is deactivated,
+                          so that no push-based OTLP signals are collected. The default
+                          is `false`.
                         type: boolean
                       namespaces:
                         description: Namespaces describes whether push-based OTLP
@@ -150,14 +155,18 @@ spec:
                           are enabled by default.
                         properties:
                           exclude:
-                            description: Exclude signals from the specified Namespace
-                              names only.
+                            description: Exclude telemetry data from the specified
+                              Namespace names only. By default all namespaces (except
+                              system namespaes dependent on input type). An exclude
+                              list cannot be specified together with an include list.
                             items:
                               type: string
                             type: array
                           include:
-                            description: Include signals from the specified Namespace
-                              names only.
+                            description: Include telemetry data from the specified
+                              Namespace names only. By default all namespaces (except
+                              system namespaes dependent on input type). An include
+                              list cannot be specified together with an exclude list.
                             items:
                               type: string
                             type: array
@@ -182,9 +191,10 @@ spec:
                             type: boolean
                         type: object
                       enabled:
-                        description: Enabled specifies whether Service endpoints and
-                          Pods marked with `prometheus.io/scrape=true` annotation
-                          are scraped. The default is `false`.
+                        description: Enabled specifies if the 'prometheus' input is
+                          enabled, so that whether Service endpoints and Pods marked
+                          with `prometheus.io/scrape=true` annotation are scraped.
+                          The default is `false`.
                         type: boolean
                       namespaces:
                         description: Namespaces specifies from which namespaces metrics
@@ -193,14 +203,18 @@ spec:
                           system namespaces, use an empty struct notation.
                         properties:
                           exclude:
-                            description: Exclude signals from the specified Namespace
-                              names only.
+                            description: Exclude telemetry data from the specified
+                              Namespace names only. By default all namespaces (except
+                              system namespaes dependent on input type). An exclude
+                              list cannot be specified together with an include list.
                             items:
                               type: string
                             type: array
                           include:
-                            description: Include signals from the specified Namespace
-                              names only.
+                            description: Include telemetry data from the specified
+                              Namespace names only. By default all namespaces (except
+                              system namespaes dependent on input type). An include
+                              list cannot be specified together with an exclude list.
                             items:
                               type: string
                             type: array
@@ -215,8 +229,8 @@ spec:
                       runtime metrics.
                     properties:
                       enabled:
-                        description: Enabled specifies whether runtime metrics are
-                          collected. The default is `false`.
+                        description: Enabled specifies if the 'runtime' input is enabled,
+                          so that runtime metrics are collected. The default is `false`.
                         type: boolean
                       namespaces:
                         description: Namespaces specifies from which namespaces metrics
@@ -225,14 +239,18 @@ spec:
                           system namespaces, use an empty struct notation.
                         properties:
                           exclude:
-                            description: Exclude signals from the specified Namespace
-                              names only.
+                            description: Exclude telemetry data from the specified
+                              Namespace names only. By default all namespaces (except
+                              system namespaes dependent on input type). An exclude
+                              list cannot be specified together with an include list.
                             items:
                               type: string
                             type: array
                           include:
-                            description: Include signals from the specified Namespace
-                              names only.
+                            description: Include telemetry data from the specified
+                              Namespace names only. By default all namespaces (except
+                              system namespaes dependent on input type). An include
+                              list cannot be specified together with an exclude list.
                             items:
                               type: string
                             type: array
@@ -885,9 +903,9 @@ spec:
                             type: boolean
                         type: object
                       enabled:
-                        description: Enabled specifies that istio-proxy metrics are
-                          scraped from Pods that have the istio-proxy sidecar injected.
-                          The default is `false`.
+                        description: Enabled specifies if the 'istio' input is enabled,
+                          so that istio-proxy metrics are scraped from Pods that have
+                          the istio-proxy sidecar injected. The default is `false`.
                         type: boolean
                       envoyMetrics:
                         description: EnvoyMetrics enables the collection of additional
@@ -905,14 +923,18 @@ spec:
                           including system namespaces are enabled.
                         properties:
                           exclude:
-                            description: Exclude signals from the specified Namespace
-                              names only.
+                            description: Exclude telemetry data from the specified
+                              Namespace names only. By default all namespaces (except
+                              system namespaes dependent on input type). An exclude
+                              list cannot be specified together with an include list.
                             items:
                               type: string
                             type: array
                           include:
-                            description: Include signals from the specified Namespace
-                              names only.
+                            description: Include telemetry data from the specified
+                              Namespace names only. By default all namespaces (except
+                              system namespaes dependent on input type). An include
+                              list cannot be specified together with an exclude list.
                             items:
                               type: string
                             type: array
@@ -927,8 +949,9 @@ spec:
                       metrics from an OTLP source.
                     properties:
                       disabled:
-                        description: If set to `true`, no push-based OTLP signals
-                          are collected. The default is `false`.
+                        description: Disabled specifies if the 'otlp' is deactivated,
+                          so that no push-based OTLP signals are collected. The default
+                          is `false`.
                         type: boolean
                       namespaces:
                         description: Namespaces describes whether push-based OTLP
@@ -936,14 +959,18 @@ spec:
                           are enabled by default.
                         properties:
                           exclude:
-                            description: Exclude signals from the specified Namespace
-                              names only.
+                            description: Exclude telemetry data from the specified
+                              Namespace names only. By default all namespaces (except
+                              system namespaes dependent on input type). An exclude
+                              list cannot be specified together with an include list.
                             items:
                               type: string
                             type: array
                           include:
-                            description: Include signals from the specified Namespace
-                              names only.
+                            description: Include telemetry data from the specified
+                              Namespace names only. By default all namespaces (except
+                              system namespaes dependent on input type). An include
+                              list cannot be specified together with an exclude list.
                             items:
                               type: string
                             type: array
@@ -968,9 +995,10 @@ spec:
                             type: boolean
                         type: object
                       enabled:
-                        description: Enabled specifies whether Service endpoints and
-                          Pods marked with `prometheus.io/scrape=true` annotation
-                          are scraped. The default is `false`.
+                        description: Enabled specifies if the 'prometheus' input is
+                          enabled, so that whether Service endpoints and Pods marked
+                          with `prometheus.io/scrape=true` annotation are scraped.
+                          The default is `false`.
                         type: boolean
                       namespaces:
                         description: Namespaces specifies from which namespaces metrics
@@ -979,14 +1007,18 @@ spec:
                           system namespaces, use an empty struct notation.
                         properties:
                           exclude:
-                            description: Exclude signals from the specified Namespace
-                              names only.
+                            description: Exclude telemetry data from the specified
+                              Namespace names only. By default all namespaces (except
+                              system namespaes dependent on input type). An exclude
+                              list cannot be specified together with an include list.
                             items:
                               type: string
                             type: array
                           include:
-                            description: Include signals from the specified Namespace
-                              names only.
+                            description: Include telemetry data from the specified
+                              Namespace names only. By default all namespaces (except
+                              system namespaes dependent on input type). An include
+                              list cannot be specified together with an exclude list.
                             items:
                               type: string
                             type: array
@@ -1001,8 +1033,8 @@ spec:
                       runtime metrics.
                     properties:
                       enabled:
-                        description: Enabled specifies whether runtime metrics are
-                          collected. The default is `false`.
+                        description: Enabled specifies if the 'runtime' input is enabled,
+                          so that runtime metrics are collected. The default is `false`.
                         type: boolean
                       namespaces:
                         description: Namespaces specifies from which namespaces metrics
@@ -1011,14 +1043,18 @@ spec:
                           system namespaces, use an empty struct notation.
                         properties:
                           exclude:
-                            description: Exclude signals from the specified Namespace
-                              names only.
+                            description: Exclude telemetry data from the specified
+                              Namespace names only. By default all namespaces (except
+                              system namespaes dependent on input type). An exclude
+                              list cannot be specified together with an include list.
                             items:
                               type: string
                             type: array
                           include:
-                            description: Include signals from the specified Namespace
-                              names only.
+                            description: Include telemetry data from the specified
+                              Namespace names only. By default all namespaces (except
+                              system namespaes dependent on input type). An include
+                              list cannot be specified together with an exclude list.
                             items:
                               type: string
                             type: array

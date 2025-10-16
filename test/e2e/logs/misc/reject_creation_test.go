@@ -20,6 +20,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 	const (
 		backendHost = "example.com"
 		backendPort = 4317
+		// Example string longer than 63 characters
+		veryLongString = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz123"
 	)
 
 	var backenEndpoint = backendHost + ":" + strconv.Itoa(backendPort)
@@ -235,6 +237,50 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			errorMsg: "Only one of 'include' or 'exclude' can be defined",
 			field:    "spec.input.otlp.namespaces",
 		},
+		{
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("otlp-input-namespaces-include-invalid").
+				WithOTLPInput(true,
+					testutils.IncludeNamespaces("Test"),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "Only one of 'include' or 'exclude' can be defined",
+			field:    "spec.input.otlp.namespaces",
+		},
+		{
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("otlp-input-namespaces-include-too-long").
+				WithOTLPInput(true,
+					testutils.IncludeNamespaces(veryLongString),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "Only one of 'include' or 'exclude' can be defined",
+			field:    "spec.input.otlp.namespaces",
+		},
+		{
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("otlp-input-namespaces-exclude-invalid").
+				WithOTLPInput(true,
+					testutils.ExcludeNamespaces("Test"),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "Only one of 'include' or 'exclude' can be defined",
+			field:    "spec.input.otlp.namespaces",
+		},
+		{
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("otlp-input-namespaces-exclude-too-long").
+				WithOTLPInput(true,
+					testutils.ExcludeNamespaces(veryLongString),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "Only one of 'include' or 'exclude' can be defined",
+			field:    "spec.input.otlp.namespaces",
+		},
 		// http output
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -314,6 +360,46 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				Build(),
 			errorMsg: "Only one of 'include' or 'exclude' can be defined",
 			field:    "spec.input.application.containers",
+		},
+		{
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("application-input-namespaces-include-invalid").
+				WithApplicationInput(true).
+				WithIncludeNamespaces("*").
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "Only one of 'include', 'exclude' or 'system' can be defined",
+			field:    "spec.input.application.namespaces",
+		},
+		{
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("application-input-namespaces-include-too-long").
+				WithApplicationInput(true).
+				WithIncludeNamespaces(veryLongString).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "Only one of 'include', 'exclude' or 'system' can be defined",
+			field:    "spec.input.application.namespaces",
+		},
+		{
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("application-input-namespaces-exclude-invalid").
+				WithApplicationInput(true).
+				WithExcludeNamespaces("a*a").
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "Only one of 'include', 'exclude' or 'system' can be defined",
+			field:    "spec.input.application.namespaces",
+		},
+		{
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("application-input-namespaces-exclude-too-long").
+				WithApplicationInput(true).
+				WithExcludeNamespaces(veryLongString).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "Only one of 'include', 'exclude' or 'system' can be defined",
+			field:    "spec.input.application.namespaces",
 		},
 		// files validation
 		{

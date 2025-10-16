@@ -122,7 +122,7 @@ spec:
                           description: DropLabels defines whether to drop all Kubernetes labels. The default is `false`. Only available when using an output of type `http` and `custom`. For an `otlp` output, use the label enrichement feature in the Telemetry resource instead.
                           type: boolean
                         enabled:
-                          description: If enabled, application logs are collected from application containers stdout/stderr. The default is `true`.
+                          description: Enabled specifies if the 'application' input is enabled, so that application logs are collected from application containers stdout/stderr. The default is `true`.
                           type: boolean
                         keepAnnotations:
                           description: KeepAnnotations defines whether to keep all Kubernetes annotations. The default is `false`.  Only available when using an output of type `http` and `custom`.
@@ -134,12 +134,12 @@ spec:
                           description: Namespaces describes whether application logs from specific namespaces are selected. The options are mutually exclusive. System namespaces are excluded by default. Use the `system` attribute with value `true` to enable them.
                           properties:
                             exclude:
-                              description: Exclude the container logs of the specified Namespace names.
+                              description: Exclude specifies the list of Namespace names to exclude when collecting container logs. By default logs from all namespaces are getting collected except system namespaces. An exclude list cannot be specified together with an include list.
                               items:
                                 type: string
                               type: array
                             include:
-                              description: Include only the container logs of the specified Namespace names.
+                              description: Include specifies the list of Namespace names to include when collecting container logs. By default logs from all namespaces are getting collected except system namespaces. An include list cannot be specified together with an exclude list.
                               items:
                                 type: string
                               type: array
@@ -155,18 +155,18 @@ spec:
                       description: OTLP input configures the push endpoint to receive logs from a OTLP source.
                       properties:
                         disabled:
-                          description: If set to `true`, no push-based OTLP signals are collected. The default is `false`.
+                          description: Disabled specifies if the 'otlp' is deactivated, so that no push-based OTLP signals are collected. The default is `false`.
                           type: boolean
                         namespaces:
                           description: Namespaces describes whether push-based OTLP signals from specific namespaces are selected. System namespaces are enabled by default.
                           properties:
                             exclude:
-                              description: Exclude signals from the specified Namespace names only.
+                              description: Exclude telemetry data from the specified Namespace names only. By default all namespaces (except system namespaes dependent on input type). An exclude list cannot be specified together with an include list.
                               items:
                                 type: string
                               type: array
                             include:
-                              description: Include signals from the specified Namespace names only.
+                              description: Include telemetry data from the specified Namespace names only. By default all namespaces (except system namespaes dependent on input type). An include list cannot be specified together with an exclude list.
                               items:
                                 type: string
                               type: array

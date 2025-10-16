@@ -237,6 +237,97 @@ func TestRejectPipelineCreation(t *testing.T) {
 			errorMsg: "Only one of 'include' or 'exclude' can be defined",
 			field:    "spec.input.otlp.namespaces",
 		},
+		{
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithName("otlp-input-namespaces-include-invalid").
+				WithOTLPInput(true,
+					testutils.IncludeNamespaces("aa!"),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "Only one of 'include' or 'exclude' can be defined",
+			field:    "spec.input.otlp.namespaces",
+		},
+		{
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithName("otlp-input-namespaces-exclude-invalid").
+				WithOTLPInput(true,
+					testutils.ExcludeNamespaces("aa!"),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "Only one of 'include' or 'exclude' can be defined",
+			field:    "spec.input.prometheus.namespaces",
+		},
+		// prometheus input
+		{
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithName("prometheus-input-namespaces-include-invalid").
+				WithPrometheusInput(true,
+					testutils.IncludeNamespaces("aa-"),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "Only one of 'include' or 'exclude' can be defined",
+			field:    "spec.input.prometheus.namespaces",
+		},
+		{
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithName("prometheus-input-namespaces-exclude-invalid").
+				WithPrometheusInput(true,
+					testutils.ExcludeNamespaces("-aa"),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "Only one of 'include' or 'exclude' can be defined",
+			field:    "spec.input.otlp.namespaces",
+		},
+		// istio input
+		{
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithName("istio-input-namespaces-include-invalid").
+				WithIstioInput(true,
+					testutils.IncludeNamespaces("#"),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "Only one of 'include' or 'exclude' can be defined",
+			field:    "spec.input.istio.namespaces",
+		},
+		{
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithName("istio-input-namespaces-exclude-invalid").
+				WithIstioInput(true,
+					testutils.ExcludeNamespaces("/"),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "Only one of 'include' or 'exclude' can be defined",
+			field:    "spec.input.istio.namespaces",
+		},
+		// runtime input
+		{
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithName("istio-input-namespaces-include-invalid").
+				WithRuntimeInput(true,
+					testutils.IncludeNamespaces("aa", "bb", "??"),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "Only one of 'include' or 'exclude' can be defined",
+			field:    "spec.input.runtime.namespaces",
+		},
+		{
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithName("istio-input-namespaces-exclude-invalid").
+				WithRuntimeInput(true,
+					testutils.ExcludeNamespaces("öö", "aa", "bb"),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "Only one of 'include' or 'exclude' can be defined",
+			field:    "spec.input.runtime.namespaces",
+		},
 	}
 	for _, tc := range tests {
 		t.Run(suite.LabelMisc, func(t *testing.T) {

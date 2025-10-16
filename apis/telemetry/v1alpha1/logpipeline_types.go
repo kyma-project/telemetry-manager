@@ -102,7 +102,7 @@ type LogPipelineInput struct {
 
 // LogPipelineApplicationInput configures the log collection from application containers stdout/stderr by tailing the log files of the underlying container runtime.
 type LogPipelineApplicationInput struct {
-	// If enabled, application logs are collected from application containers stdout/stderr. The default is `true`.
+	// Enabled specifies if the 'application' input is enabled, so that application logs are collected from application containers stdout/stderr. The default is `true`.
 	// +kubebuilder:validation:Optional
 	Enabled *bool `json:"enabled,omitempty"`
 	// Namespaces describes whether application logs from specific namespaces are selected. The options are mutually exclusive. System namespaces are excluded by default. Use the `system` attribute with value `true` to enable them.
@@ -125,11 +125,15 @@ type LogPipelineApplicationInput struct {
 // LogPipelineNamespaceSelector describes whether application logs from specific Namespaces are selected. The options are mutually exclusive. System Namespaces are excluded by default. Use the `system` attribute with value `true` to enable them.
 // +kubebuilder:validation:XValidation:rule="(has(self.include) == true ? 1 : 0) + (has(self.exclude) == true ? 1 : 0) + (has(self.system) == true ? 1 : 0) <= 1",message="Only one of 'include', 'exclude' or 'system' can be defined"
 type LogPipelineNamespaceSelector struct {
-	// Include only the container logs of the specified Namespace names.
+	// Include specifies the list of Namespace names to include when collecting container logs. By default logs from all namespaces are getting collected except system namespaces. An include list cannot be specified together with an exclude list.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Items=Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
+	// +kubebuilder:validation:Items=MaxLength=63
 	Include []string `json:"include,omitempty"`
-	// Exclude the container logs of the specified Namespace names.
+	// Exclude specifies the list of Namespace names to exclude when collecting container logs. By default logs from all namespaces are getting collected except system namespaces. An exclude list cannot be specified together with an include list.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Items=Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
+	// +kubebuilder:validation:Items=MaxLength=63
 	Exclude []string `json:"exclude,omitempty"`
 	// System specifies whether to collect logs from system namespaces. If set to `true`, you collect logs from all namespaces including system namespaces, such as like kube-system, istio-system, and kyma-system. The default is `false`.
 	// +kubebuilder:validation:Optional
