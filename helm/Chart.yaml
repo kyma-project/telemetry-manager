@@ -1,9 +1,9 @@
 apiVersion: v2
 name: telemetry-manager
 description: Kyma Telemetry Manager Helm Chart
-version: 1.50.1
+version: 1.50.2
 type: application
-appVersion: "1.50.1"
+appVersion: "1.50.2"
 keywords:
   - kyma
   - telemetry
@@ -17,8 +17,8 @@ maintainers:
     url: https://kyma-project.io
 dependencies:
   - name: experimental
-    version: 1.50.1
+    version: 1.50.2
     condition: experimental.enabled
   - name: default
-    version: 1.50.1
+    version: 1.50.2
     condition: default.enabled
