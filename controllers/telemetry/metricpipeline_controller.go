@@ -101,7 +101,7 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 		},
 	)
 
-	transformSpecValidator, err := ottl.New(ottl.SignalTypeMetric)
+	transformSpecValidator, err := ottl.NewTransformSpecValidator(ottl.SignalTypeMetric)
 	if err != nil {
 		return nil, err
 	}

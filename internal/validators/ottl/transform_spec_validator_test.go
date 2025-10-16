@@ -22,7 +22,7 @@ func TestValidateForLogPipeline(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			validator, err := New(SignalTypeLog)
+			validator, err := NewTransformSpecValidator(SignalTypeLog)
 			require.NoError(t, err)
 
 			err = validator.Validate(test.transforms)
@@ -47,7 +47,7 @@ func TestValidateForTracePipeline(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			validator, err := New(SignalTypeTrace)
+			validator, err := NewTransformSpecValidator(SignalTypeTrace)
 			require.NoError(t, err)
 
 			err = validator.Validate(test.transforms)
@@ -72,7 +72,7 @@ func TestValidateForMetricPipeline(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			validator, err := New(SignalTypeMetric)
+			validator, err := NewTransformSpecValidator(SignalTypeMetric)
 			require.NoError(t, err)
 
 			err = validator.Validate(test.transforms)

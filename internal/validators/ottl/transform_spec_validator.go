@@ -31,12 +31,12 @@ const (
 	SignalTypeTrace  SignalType = "trace"
 )
 
-type Validator struct {
+type TransformSpecValidator struct {
 	// The parserCollection is intentionally not exported, because it should be initialized internally only by the constructor
 	parserCollection *genericParserCollection
 }
 
-func New(signalType SignalType) (*Validator, error) {
+func NewTransformSpecValidator(signalType SignalType) (*TransformSpecValidator, error) {
 	opts, err := newTransformParserCollectionOpts(signalType)
 	if err != nil {
 		return nil, err
@@ -47,10 +47,10 @@ func New(signalType SignalType) (*Validator, error) {
 		return nil, err
 	}
 
-	return &Validator{parserCollection: parserCollection}, nil
+	return &TransformSpecValidator{parserCollection: parserCollection}, nil
 }
 
-func (v *Validator) Validate(transforms []telemetryv1alpha1.TransformSpec) error {
+func (v *TransformSpecValidator) Validate(transforms []telemetryv1alpha1.TransformSpec) error {
 	const errorMessage = "invalid TransformSpec"
 
 	for _, ts := range transforms {

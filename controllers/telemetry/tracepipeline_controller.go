@@ -93,7 +93,7 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 		},
 	)
 
-	transformSpecValidator, err := ottl.New(ottl.SignalTypeTrace)
+	transformSpecValidator, err := ottl.NewTransformSpecValidator(ottl.SignalTypeTrace)
 	if err != nil {
 		return nil, err
 	}
