@@ -1,19 +1,17 @@
 # Metrics Architecture
 
-In the Telemetry module, a central in-cluster Deployment of an [OTel Collector](https://opentelemetry.io/docs/collector/) acts as a gateway. The gateway exposes endpoints for the [OpenTelemetry Protocol (OTLP)](https://opentelemetry.io/docs/specs/otlp/) for GRPC and HTTP-based communication using the dedicated `telemetry-otlp-metrics` service, to which all Kyma modules and users’ applications send the metrics data.
-
-Optionally, the Telemetry module provides a DaemonSet of an OTel Collector acting as an agent. This agent can pull metrics of a workload and the Istio sidecar in the [Prometheus pull-based format](https://prometheus.io/docs/instrumenting/exposition_formats) and can provide runtime-specific metrics for the workload.
+The Telemetry module provides a central Deployment of an [OTel Collector](https://opentelemetry.io/docs/collector/) acting as a gateway, and an optional DaemonSet acting as an agent. The gateway exposes endpoints that receive OTLP metrics from your applications, while the agent pulls metrics from Prometheus-annotated endpoints. To control their behavior and data destination, you define a MetricPipeline.
 
 ![Architecture](./../assets/metrics-arch.drawio.svg)
 
-1. An application (exposing metrics in OTLP) sends metrics to the central metric gateway service.
-2. An application (exposing metrics in Prometheus protocol) activates the agent to scrape the metrics with an annotation-based configuration.
+1. An application (exposing metrics in [OTLP](https://opentelemetry.io/docs/specs/otlp/)) sends metrics to the central metric gateway using the `telemetry-otlp-metrics` service.
+2. An application (exposing metrics in [Prometheus](https://prometheus.io/docs/instrumenting/exposition_formats) protocol) activates the agent to scrape the metrics with an annotation-based configuration.
 3. Additionally, you can activate the agent to pull metrics of each Istio sidecar.
 4. The agent supports collecting metrics from the Kubelet and Kubernetes APIServer.
-5. The gateway and the agent discovers the metadata and enriches all received data with typical metadata of the source by communicating with the Kubernetes APIServer. Furthermore, it filters data according to the pipeline configuration.
+5. The gateway and the agent discover the metadata and enrich all received data with typical metadata of the source by communicating with the Kubernetes APIServer. Furthermore, they filter data according to the pipeline configuration.
 6. Telemetry Manager configures the agent and gateway according to the MetricPipeline resource specification, including the target backend for the metric gateway. Also, it observes the metrics flow to the backend and reports problems in the MetricPipeline status.
-7. The gateway and the agent send the data to the observability system that's specified in your MetricPipeline resource - either within the Kyma cluster, or, if authentication is set up, to an external observability backend.
-8. You can analyze the metric data with your preferred backend system.
+7. The gateway and the agent send the data to the observability backend that's specified in your MetricPipeline resource - either within your cluster, or, if authentication is set up, to an external observability backend.
+8. You can analyze the metric data with your preferred observability backend.
 
 ## Telemetry Manager
 
@@ -28,7 +26,7 @@ The MetricPipeline resource is watched by Telemetry Manager, which is responsibl
 
 ## Metric Gateway
 
-In a Kyma cluster, the metric gateway is the central component to which all applications can send their individual metrics. The gateway collects, enriches, and dispatches the data to the configured backend. For more information, see [Set Up the OTLP Input](./../otlp-input.md).
+In your cluster, the metric gateway is the central component to which all applications can send their individual metrics. The gateway collects, enriches, and dispatches the data to the configured backend. For more information, see [Set Up the OTLP Input](./../otlp-input.md).
 
 ## Metric Agent
 
