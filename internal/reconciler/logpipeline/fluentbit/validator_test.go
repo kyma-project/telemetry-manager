@@ -62,7 +62,7 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 			name: "valid custom filter",
 			logPipeline: &telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Filters: []telemetryv1alpha1.LogPipelineFilter{
+					FluentBitFilters: []telemetryv1alpha1.LogPipelineFilter{
 						{Custom: "Name grep"},
 					},
 					Output: telemetryv1alpha1.LogPipelineOutput{Custom: "Name http"},
@@ -74,7 +74,7 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 			name: "custom filter without name",
 			logPipeline: &telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Filters: []telemetryv1alpha1.LogPipelineFilter{
+					FluentBitFilters: []telemetryv1alpha1.LogPipelineFilter{
 						{Custom: "foo bar"},
 					},
 					Output: telemetryv1alpha1.LogPipelineOutput{Custom: "Name http"},
@@ -87,7 +87,7 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 			name: "custom filter with forbidden match condition",
 			logPipeline: &telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Filters: []telemetryv1alpha1.LogPipelineFilter{
+					FluentBitFilters: []telemetryv1alpha1.LogPipelineFilter{
 						{Custom: "Name grep\nMatch *"},
 					},
 					Output: telemetryv1alpha1.LogPipelineOutput{Custom: "Name http"},
@@ -100,7 +100,7 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 			name: "denied filter plugin",
 			logPipeline: &telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Filters: []telemetryv1alpha1.LogPipelineFilter{
+					FluentBitFilters: []telemetryv1alpha1.LogPipelineFilter{
 						{Custom: "Name kubernetes"},
 					},
 					Output: telemetryv1alpha1.LogPipelineOutput{Custom: "Name http"},
