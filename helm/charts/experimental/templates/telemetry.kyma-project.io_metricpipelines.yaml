@@ -65,7 +65,7 @@ spec:
             description: Spec defines the desired characteristics of MetricPipeline.
             properties:
               filter:
-                description: Filter specifies a list of filters to apply to telemetry
+                description: Filters specifies a list of filters to apply to telemetry
                   data.
                 items:
                   description: FilterSpec defines a filter to apply to telemetry data.
