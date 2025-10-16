@@ -159,6 +159,15 @@ manifests: $(CONTROLLER_GEN) $(YQ) $(YAMLFMT) ## Generate WebhookConfiguration, 
 	$(YQ) eval 'del(.. | select(has("x-kubernetes-validations"))."x-kubernetes-validations"[] | select(.rule|contains("transform")) )' -i ./helm/charts/default/templates/telemetry.kyma-project.io_tracepipelines.yaml
 	$(YAMLFMT)
 
+# Strip off filter field from CRDs until the feature is fully implemented
+	$(YQ) eval 'del(.. | select(has("filter")).filter)' -i ./helm/charts/default/templates/telemetry.kyma-project.io_logpipelines.yaml
+	$(YQ) eval 'del(.. | select(has("filter")).filter)' -i ./helm/charts/default/templates/telemetry.kyma-project.io_tracepipelines.yaml
+	$(YQ) eval 'del(.. | select(has("filter")).filter)' -i ./helm/charts/default/templates/telemetry.kyma-project.io_metricpipelines.yaml
+	$(YQ) eval 'del(.. | select(has("x-kubernetes-validations"))."x-kubernetes-validations"[] | select((.rule | type == "!!str") and (.rule | test("filter")) and (.rule | test("filters") | not)))' -i ./helm/charts/default/templates/telemetry.kyma-project.io_logpipelines.yaml
+	$(YQ) eval 'del(.. | select(has("x-kubernetes-validations"))."x-kubernetes-validations"[] | select(.rule|contains("filter")) )' -i ./helm/charts/default/templates/telemetry.kyma-project.io_metricpipelines.yaml
+	$(YQ) eval 'del(.. | select(has("x-kubernetes-validations"))."x-kubernetes-validations"[] | select(.rule|contains("filter")) )' -i ./helm/charts/default/templates/telemetry.kyma-project.io_tracepipelines.yaml
+	$(YAMLFMT)
+
 .PHONY: manifests-experimental
 manifests-experimental: $(CONTROLLER_GEN) $(YAMLFMT) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition for v1alpha1 and v1beta1.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook crd paths="./..." output:crd:artifacts:config=helm/charts/experimental/templates

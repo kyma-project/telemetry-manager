@@ -38,7 +38,7 @@ service:
                 - resource/insert-cluster-attributes
                 - resource/drop-skip-enrichment-attribute
                 - resource/drop-kyma-attributes
-                - transform/test1-user-defined
+                - transform/user-defined-test1
                 - batch
             exporters:
                 - otlp/test1
@@ -51,7 +51,7 @@ service:
                 - resource/insert-cluster-attributes
                 - resource/drop-skip-enrichment-attribute
                 - resource/drop-kyma-attributes
-                - transform/test2-user-defined
+                - transform/user-defined-test2
                 - batch
             exporters:
                 - otlp/test2
@@ -144,14 +144,17 @@ processors:
         timeout: 10s
         send_batch_max_size: 1024
     filter/drop-envoy-metrics-if-disabled:
+        error_mode: ignore
         metrics:
             metric:
                 - IsMatch(name, "^envoy_.*") and instrumentation_scope.name == "io.kyma-project.telemetry/istio"
     filter/drop-non-pvc-volumes-metrics:
+        error_mode: ignore
         metrics:
             metric:
                 - resource.attributes["k8s.volume.name"] != nil and resource.attributes["k8s.volume.type"] != "persistentVolumeClaim"
     filter/drop-virtual-network-interfaces:
+        error_mode: ignore
         metrics:
             datapoint:
                 - IsMatch(metric.name, "^k8s.node.network.*") and not(IsMatch(attributes["interface"], "^(eth|en).*"))
@@ -241,7 +244,7 @@ processors:
                 - set(scope.name, "io.kyma-project.telemetry/runtime") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
                 - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
                 - set(scope.name, "io.kyma-project.telemetry/runtime") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
-    transform/test1-user-defined:
+    transform/user-defined-test1:
         error_mode: ignore
         metric_statements:
             - statements:
@@ -249,7 +252,7 @@ processors:
                 - set(body, "transformed1")
               conditions:
                 - IsMatch(body, ".*error.*")
-    transform/test2-user-defined:
+    transform/user-defined-test2:
         error_mode: ignore
         metric_statements:
             - statements:

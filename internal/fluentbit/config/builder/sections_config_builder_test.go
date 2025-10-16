@@ -198,7 +198,7 @@ func TestMergeSectionsConfig(t *testing.T) {
 					KeepOriginalBody: ptr.To(true),
 				},
 			},
-			Filters: []telemetryv1alpha1.LogPipelineFilter{
+			FluentBitFilters: []telemetryv1alpha1.LogPipelineFilter{
 				{
 					Custom: `
 						name grep

@@ -98,7 +98,7 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 | **files**  | \[\]object | Files is a list of content snippets that are mounted as files in the Fluent Bit configuration, which can be linked in the `custom` filters and a `custom` output. Only available when using an output of type `http` and `custom`. |
 | **files.&#x200b;content** (required) | string | Content of the file to be mounted in the Fluent Bit configuration. |
 | **files.&#x200b;name** (required) | string | Name of the file under which the content is mounted in the Fluent Bit configuration. |
-| **filters**  | \[\]object | Filters configures custom Fluent Bit `filters` to transform logs. Only available when using an output of type `http` and `custom`. |
+| **filters**  | \[\]object | FluentBitFilters configures custom Fluent Bit `filters` to transform logs. Only available when using an output of type `http` and `custom`. |
 | **filters.&#x200b;custom**  | string | Custom defines a custom filter in the [Fluent Bit syntax](https://docs.fluentbit.io/manual/pipeline/outputs). If you use a `custom` filter, you put the LogPipeline in unsupported mode. Only available when using an output of type `http` and `custom`. |
 | **input**  | object | Input configures additional inputs for log collection. |
 | **input.&#x200b;application**  | object | Application input configures the log collection from application containers stdout/stderr by tailing the log files of the underlying container runtime. |
