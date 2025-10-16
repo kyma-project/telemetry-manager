@@ -245,8 +245,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				).
 				WithOTLPOutput().
 				Build(),
-			errorMsg: "Only one of 'include' or 'exclude' can be defined",
-			field:    "spec.input.otlp.namespaces",
+			errorMsg: "should match",
+			field:    "spec.input.otlp.namespaces.include[0]",
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -256,8 +256,9 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				).
 				WithOTLPOutput().
 				Build(),
-			errorMsg: "Only one of 'include' or 'exclude' can be defined",
-			field:    "spec.input.otlp.namespaces",
+			errorMsg: "Too long:",
+			field:    "spec.input.otlp.namespaces.include[0]",
+			causes:   2,
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -267,8 +268,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				).
 				WithOTLPOutput().
 				Build(),
-			errorMsg: "Only one of 'include' or 'exclude' can be defined",
-			field:    "spec.input.otlp.namespaces",
+			errorMsg: "should match",
+			field:    "spec.input.otlp.namespaces.exclude[0]",
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -278,8 +279,9 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				).
 				WithOTLPOutput().
 				Build(),
-			errorMsg: "Only one of 'include' or 'exclude' can be defined",
-			field:    "spec.input.otlp.namespaces",
+			errorMsg: "Too long:",
+			field:    "spec.input.otlp.namespaces.exclude[0]",
+			causes:   2,
 		},
 		// http output
 		{
@@ -368,8 +370,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithIncludeNamespaces("*").
 				WithOTLPOutput().
 				Build(),
-			errorMsg: "Only one of 'include', 'exclude' or 'system' can be defined",
-			field:    "spec.input.application.namespaces",
+			errorMsg: "should match",
+			field:    "spec.input.application.namespaces.include[0]",
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -378,8 +380,9 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithIncludeNamespaces(veryLongString).
 				WithOTLPOutput().
 				Build(),
-			errorMsg: "Only one of 'include', 'exclude' or 'system' can be defined",
-			field:    "spec.input.application.namespaces",
+			errorMsg: "Too long:",
+			field:    "spec.input.application.namespaces.include[0]",
+			causes:   2,
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -388,8 +391,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithExcludeNamespaces("a*a").
 				WithOTLPOutput().
 				Build(),
-			errorMsg: "Only one of 'include', 'exclude' or 'system' can be defined",
-			field:    "spec.input.application.namespaces",
+			errorMsg: "should match",
+			field:    "spec.input.application.namespaces.exclude[0]",
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -398,8 +401,9 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithExcludeNamespaces(veryLongString).
 				WithOTLPOutput().
 				Build(),
-			errorMsg: "Only one of 'include', 'exclude' or 'system' can be defined",
-			field:    "spec.input.application.namespaces",
+			errorMsg: "Too long:",
+			field:    "spec.input.application.namespaces.exclude[0]",
+			causes:   2,
 		},
 		// files validation
 		{

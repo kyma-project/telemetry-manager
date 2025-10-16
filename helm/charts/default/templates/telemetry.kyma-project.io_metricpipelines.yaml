@@ -93,11 +93,15 @@ spec:
                             exclude:
                               description: Exclude telemetry data from the specified Namespace names only. By default all namespaces (except system namespaes dependent on input type). An exclude list cannot be specified together with an include list.
                               items:
+                                maxLength: 63
+                                pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                 type: string
                               type: array
                             include:
                               description: Include telemetry data from the specified Namespace names only. By default all namespaces (except system namespaes dependent on input type). An include list cannot be specified together with an exclude list.
                               items:
+                                maxLength: 63
+                                pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                 type: string
                               type: array
                           type: object
@@ -117,11 +121,15 @@ spec:
                             exclude:
                               description: Exclude telemetry data from the specified Namespace names only. By default all namespaces (except system namespaes dependent on input type). An exclude list cannot be specified together with an include list.
                               items:
+                                maxLength: 63
+                                pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                 type: string
                               type: array
                             include:
                               description: Include telemetry data from the specified Namespace names only. By default all namespaces (except system namespaes dependent on input type). An include list cannot be specified together with an exclude list.
                               items:
+                                maxLength: 63
+                                pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                 type: string
                               type: array
                           type: object
@@ -148,11 +156,15 @@ spec:
                             exclude:
                               description: Exclude telemetry data from the specified Namespace names only. By default all namespaces (except system namespaes dependent on input type). An exclude list cannot be specified together with an include list.
                               items:
+                                maxLength: 63
+                                pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                 type: string
                               type: array
                             include:
                               description: Include telemetry data from the specified Namespace names only. By default all namespaces (except system namespaes dependent on input type). An include list cannot be specified together with an exclude list.
                               items:
+                                maxLength: 63
+                                pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                 type: string
                               type: array
                           type: object
@@ -172,11 +184,15 @@ spec:
                             exclude:
                               description: Exclude telemetry data from the specified Namespace names only. By default all namespaces (except system namespaes dependent on input type). An exclude list cannot be specified together with an include list.
                               items:
+                                maxLength: 63
+                                pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                 type: string
                               type: array
                             include:
                               description: Include telemetry data from the specified Namespace names only. By default all namespaces (except system namespaes dependent on input type). An include list cannot be specified together with an exclude list.
                               items:
+                                maxLength: 63
+                                pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                 type: string
                               type: array
                           type: object

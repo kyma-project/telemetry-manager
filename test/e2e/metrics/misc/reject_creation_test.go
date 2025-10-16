@@ -245,8 +245,8 @@ func TestRejectPipelineCreation(t *testing.T) {
 				).
 				WithOTLPOutput().
 				Build(),
-			errorMsg: "Only one of 'include' or 'exclude' can be defined",
-			field:    "spec.input.otlp.namespaces",
+			errorMsg: "should match",
+			field:    "spec.input.otlp.namespaces.include[0]",
 		},
 		{
 			pipeline: testutils.NewMetricPipelineBuilder().
@@ -256,8 +256,8 @@ func TestRejectPipelineCreation(t *testing.T) {
 				).
 				WithOTLPOutput().
 				Build(),
-			errorMsg: "Only one of 'include' or 'exclude' can be defined",
-			field:    "spec.input.prometheus.namespaces",
+			errorMsg: "should match",
+			field:    "spec.input.otlp.namespaces.exclude[0]",
 		},
 		// prometheus input
 		{
@@ -268,8 +268,8 @@ func TestRejectPipelineCreation(t *testing.T) {
 				).
 				WithOTLPOutput().
 				Build(),
-			errorMsg: "Only one of 'include' or 'exclude' can be defined",
-			field:    "spec.input.prometheus.namespaces",
+			errorMsg: "should match",
+			field:    "spec.input.prometheus.namespaces.include[0]",
 		},
 		{
 			pipeline: testutils.NewMetricPipelineBuilder().
@@ -279,8 +279,8 @@ func TestRejectPipelineCreation(t *testing.T) {
 				).
 				WithOTLPOutput().
 				Build(),
-			errorMsg: "Only one of 'include' or 'exclude' can be defined",
-			field:    "spec.input.otlp.namespaces",
+			errorMsg: "should match",
+			field:    "spec.input.prometheus.namespaces.exclude[0]",
 		},
 		// istio input
 		{
@@ -291,8 +291,8 @@ func TestRejectPipelineCreation(t *testing.T) {
 				).
 				WithOTLPOutput().
 				Build(),
-			errorMsg: "Only one of 'include' or 'exclude' can be defined",
-			field:    "spec.input.istio.namespaces",
+			errorMsg: "should match",
+			field:    "spec.input.istio.namespaces.include[0]",
 		},
 		{
 			pipeline: testutils.NewMetricPipelineBuilder().
@@ -302,8 +302,8 @@ func TestRejectPipelineCreation(t *testing.T) {
 				).
 				WithOTLPOutput().
 				Build(),
-			errorMsg: "Only one of 'include' or 'exclude' can be defined",
-			field:    "spec.input.istio.namespaces",
+			errorMsg: "should match",
+			field:    "spec.input.istio.namespaces.exclude[0]",
 		},
 		// runtime input
 		{
@@ -314,8 +314,8 @@ func TestRejectPipelineCreation(t *testing.T) {
 				).
 				WithOTLPOutput().
 				Build(),
-			errorMsg: "Only one of 'include' or 'exclude' can be defined",
-			field:    "spec.input.runtime.namespaces",
+			errorMsg: "should match",
+			field:    "spec.input.runtime.namespaces.include[2]",
 		},
 		{
 			pipeline: testutils.NewMetricPipelineBuilder().
@@ -325,8 +325,8 @@ func TestRejectPipelineCreation(t *testing.T) {
 				).
 				WithOTLPOutput().
 				Build(),
-			errorMsg: "Only one of 'include' or 'exclude' can be defined",
-			field:    "spec.input.runtime.namespaces",
+			errorMsg: "should match",
+			field:    "spec.input.runtime.namespaces.exclude[0]",
 		},
 	}
 	for _, tc := range tests {

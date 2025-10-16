@@ -124,6 +124,8 @@ spec:
                               system namespaes dependent on input type). An exclude
                               list cannot be specified together with an include list.
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
@@ -132,6 +134,8 @@ spec:
                               system namespaes dependent on input type). An include
                               list cannot be specified together with an exclude list.
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                         type: object
@@ -160,6 +164,8 @@ spec:
                               system namespaes dependent on input type). An exclude
                               list cannot be specified together with an include list.
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
@@ -168,6 +174,8 @@ spec:
                               system namespaes dependent on input type). An include
                               list cannot be specified together with an exclude list.
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                         type: object
@@ -208,6 +216,8 @@ spec:
                               system namespaes dependent on input type). An exclude
                               list cannot be specified together with an include list.
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
@@ -216,6 +226,8 @@ spec:
                               system namespaes dependent on input type). An include
                               list cannot be specified together with an exclude list.
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                         type: object
@@ -244,6 +256,8 @@ spec:
                               system namespaes dependent on input type). An exclude
                               list cannot be specified together with an include list.
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
@@ -252,6 +266,8 @@ spec:
                               system namespaes dependent on input type). An include
                               list cannot be specified together with an exclude list.
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                         type: object
@@ -928,6 +944,8 @@ spec:
                               system namespaes dependent on input type). An exclude
                               list cannot be specified together with an include list.
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
@@ -936,6 +954,8 @@ spec:
                               system namespaes dependent on input type). An include
                               list cannot be specified together with an exclude list.
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                         type: object
@@ -964,6 +984,8 @@ spec:
                               system namespaes dependent on input type). An exclude
                               list cannot be specified together with an include list.
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
@@ -972,6 +994,8 @@ spec:
                               system namespaes dependent on input type). An include
                               list cannot be specified together with an exclude list.
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                         type: object
@@ -1012,6 +1036,8 @@ spec:
                               system namespaes dependent on input type). An exclude
                               list cannot be specified together with an include list.
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
@@ -1020,6 +1046,8 @@ spec:
                               system namespaes dependent on input type). An include
                               list cannot be specified together with an exclude list.
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                         type: object
@@ -1048,6 +1076,8 @@ spec:
                               system namespaes dependent on input type). An exclude
                               list cannot be specified together with an include list.
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
@@ -1056,6 +1086,8 @@ spec:
                               system namespaes dependent on input type). An include
                               list cannot be specified together with an exclude list.
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                         type: object

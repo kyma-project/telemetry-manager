@@ -127,13 +127,13 @@ type LogPipelineApplicationInput struct {
 type LogPipelineNamespaceSelector struct {
 	// Include specifies the list of Namespace names to include when collecting container logs. By default logs from all namespaces are getting collected except system namespaces. An include list cannot be specified together with an exclude list.
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:Items=Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
-	// +kubebuilder:validation:Items=MaxLength=63
+	// +kubebuilder:validation:items:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
+	// +kubebuilder:validation:items:MaxLength=63
 	Include []string `json:"include,omitempty"`
 	// Exclude specifies the list of Namespace names to exclude when collecting container logs. By default logs from all namespaces are getting collected except system namespaces. An exclude list cannot be specified together with an include list.
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:Items=Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
-	// +kubebuilder:validation:Items=MaxLength=63
+	// +kubebuilder:validation:items:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
+	// +kubebuilder:validation:items:MaxLength=63
 	Exclude []string `json:"exclude,omitempty"`
 	// System specifies whether to collect logs from system namespaces. If set to `true`, you collect logs from all namespaces including system namespaces, such as like kube-system, istio-system, and kyma-system. The default is `false`.
 	// +kubebuilder:validation:Optional
