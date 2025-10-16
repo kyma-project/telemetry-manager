@@ -10,7 +10,7 @@
 
 [Dynatrace](https://www.dynatrace.com) is an advanced Application Performance Management solution available as SaaS offering. It supports monitoring both the Kubernetes cluster itself and the workloads running in the cluster. To use all of its features, the proprietary agent technology of Dynatrace must be installed.
 
-With the Kyma Telemetry module, you gain even more visibility by adding custom spans and metrics, as well as Istio spans and metrics. Get an introduction on how to set up Dynatrace and learn how to integrate the Kyma Telemetry module.
+With the Kyma Telemetry module on top, you can collect custom spans and metrics, as well as Istio spans and metrics in a vendor-neutral way and ship them to Dynatrace. Get an introduction on how to set up Dynatrace and learn how to integrate the Kyma Telemetry module.
 
 ![setup](./../assets/dynatrace.drawio.svg)
 
@@ -126,7 +126,7 @@ Next, you set up the ingestion of custom spans and metrics, as well as Istio spa
 
 ### Ingest Traces
 
-To start ingesting custom spans, you must deploy a TracePipeline and then, optionally, enable the Istio tracing feature to ingest Istio spans.
+To start ingesting custom spans, you must deploy a TracePipeline and then, optionally, enable the Istio tracing feature to ingest Istio spans. Here, the direct integration to the Dynatrace server is recommended to reduce the number of involved parties processing the data and with that improving resource consumption and the resiliency of the data shipment. An integration via the Dynatrace OTel Collector is possible as alternative, by applying the same output as done in [Ingest Metrics](#ingest-metrics).
 
 1. Deploy the TracePipeline:
 
@@ -188,11 +188,11 @@ To start ingesting custom spans, you must deploy a TracePipeline and then, optio
 To start ingesting custom and Istio metrics, deploy a MetricPipeline. The configuration of this pipeline depends on the aggregation temporality of your metrics.
 
 > [!NOTE]
-> The Dynatrace OpenTelemetry (OTLP) ingest API only accepts metrics with **delta** [aggregation temporality](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/getting-started/metrics/limitations#aggregation-temporality). By contrast, many tools, including the OpenTelemetry SDK and the MetricPipeline `istio` input, produce metrics with **cumulative** aggregation temporality by default. If your metrics are cumulative, you must use the Dynatrace OTel Collector, which transforms them to delta before sending them to Dynatrace.
+> The Dynatrace OpenTelemetry (OTLP) ingest API only accepts metrics with **delta** [aggregation temporality](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/getting-started/metrics/limitations#aggregation-temporality). By contrast, many tools, including the OpenTelemetry SDK and the MetricPipeline `istio` and `prometheus` input, produce metrics with **cumulative** aggregation temporality by default. If your metrics are cumulative, you must use the Dynatrace OTel Collector, which transforms them to delta before sending them to Dynatrace.
 
 Depending on your metrics source and temporality, choose one of the following methods:
 
-- Ingest cumulative metrics using the Dynatrace OTel Collector for transformation.
+- Ingest cumulative metrics using the Dynatrace OTel Collector for transformation. This solution is recommended as it often cumulative metrics cannot be avoided and it will provide the most flexibility. However, it will increase the number of additional components processing the data in the cluster (OTel Collector, ActiveGate) leading to increased resource consumption and increased chance of lossing data.
 
   1. Deploy the MetricPipeline that ships to the Dynatrace OTel Collector:
 
@@ -215,9 +215,9 @@ Depending on your metrics source and temporality, choose one of the following me
         EOF
         ```
 
-- If your application pushes metrics in delta temporality with OTLP (and you don't want to collect Istio metrics), push the metrics directly to Dynatrace.
+- If your application pushes metrics in delta temporality with OTLP (and you don't want to collect metrics using the MetricPipeline `istio` and `prometheus` input), push the metrics directly to Dynatrace. This setup will ship data directly to the Dynatrace backend and will avoid unneccessary processing in additional components.
 
-  To use this setup, you must explicitly enable the "delta" aggregation temporality in your applications. You cannot enable additional inputs for the MetricPipeline because these produce metrics with "cumulative" temperability.
+  To use this setup, you must explicitly enable the "delta" aggregation temporality as prefered tempoarility in your applications. You cannot enable additional inputs for the MetricPipeline because these produce metrics with "cumulative" temporability.
 
   1. Deploy the MetricPipeline:
 
