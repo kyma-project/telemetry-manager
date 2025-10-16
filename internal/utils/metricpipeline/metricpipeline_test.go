@@ -86,5 +86,4 @@ func TestOTLPOutputPort(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, []string{"4318"}, ports)
 	})
-
 }
