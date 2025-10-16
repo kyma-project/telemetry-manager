@@ -44,7 +44,7 @@ func TestConvertTo(t *testing.T) {
 			Files: []LogPipelineFileMount{
 				{Name: "file1", Content: "file1-content"},
 			},
-			Filters: []LogPipelineFilter{
+			FluentBitFilters: []LogPipelineFilter{
 				{Custom: "name stdout"},
 			},
 			Transforms: []TransformSpec{
@@ -53,7 +53,7 @@ func TestConvertTo(t *testing.T) {
 					Statements: []string{"set(resource.attributes[\"k8s.pod.name\"]", "nginx"},
 				},
 			},
-			Filter: []FilterSpec{
+			Filters: []FilterSpec{
 				{
 					Conditions: []string{"log.time == nil"},
 				},
@@ -201,7 +201,7 @@ func TestConvertFrom(t *testing.T) {
 			Files: []telemetryv1beta1.LogPipelineFileMount{
 				{Name: "file1", Content: "file1-content"},
 			},
-			Filters: []telemetryv1beta1.LogPipelineFilter{
+			FluentBitFilters: []telemetryv1beta1.LogPipelineFilter{
 				{Custom: "name stdout"},
 			},
 			Transforms: []telemetryv1beta1.TransformSpec{
@@ -210,7 +210,7 @@ func TestConvertFrom(t *testing.T) {
 					Statements: []string{"set(resource.attributes[\"k8s.pod.name\"]", "nginx"},
 				},
 			},
-			Filter: []telemetryv1beta1.FilterSpec{
+			Filters: []telemetryv1beta1.FilterSpec{
 				{
 					Conditions: []string{"log.time == nil"},
 				},
@@ -338,8 +338,8 @@ func requireLogPipelinesEquivalent(t *testing.T, x *LogPipeline, y *telemetryv1b
 	require.Len(t, y.Spec.Files, 1, "expected one file")
 	require.Equal(t, x.Spec.Files[0].Name, y.Spec.Files[0].Name, "file name mismatch")
 
-	require.Len(t, y.Spec.Filters, 1, "expected one filter")
-	require.Equal(t, x.Spec.Filters[0].Custom, y.Spec.Filters[0].Custom, "custom filter mismatch")
+	require.Len(t, y.Spec.FluentBitFilters, 1, "expected one filter")
+	require.Equal(t, x.Spec.FluentBitFilters[0].Custom, y.Spec.FluentBitFilters[0].Custom, "custom filter mismatch")
 
 	require.Equal(t, x.Spec.Output.Custom, y.Spec.Output.Custom, "custom output mismatch")
 
@@ -394,8 +394,8 @@ func requireLogPipelinesEquivalent(t *testing.T, x *LogPipeline, y *telemetryv1b
 		require.Equal(t, xTransforms[i].Statements, yTransforms[i].Statements, "transform statements mismatch at index %d", i)
 	}
 
-	xFilter := x.Spec.Filter
-	yFilter := y.Spec.Filter
+	xFilter := x.Spec.Filters
+	yFilter := y.Spec.Filters
 
 	require.Len(t, xFilter, len(yFilter), "expected same number of filters")
 

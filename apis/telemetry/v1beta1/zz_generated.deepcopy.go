@@ -375,8 +375,8 @@ func (in *LogPipelineRuntimeInput) DeepCopy() *LogPipelineRuntimeInput {
 func (in *LogPipelineSpec) DeepCopyInto(out *LogPipelineSpec) {
 	*out = *in
 	in.Input.DeepCopyInto(&out.Input)
-	if in.Filters != nil {
-		in, out := &in.Filters, &out.Filters
+	if in.FluentBitFilters != nil {
+		in, out := &in.FluentBitFilters, &out.FluentBitFilters
 		*out = make([]LogPipelineFilter, len(*in))
 		copy(*out, *in)
 	}
@@ -400,8 +400,8 @@ func (in *LogPipelineSpec) DeepCopyInto(out *LogPipelineSpec) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-	if in.Filter != nil {
-		in, out := &in.Filter, &out.Filter
+	if in.Filters != nil {
+		in, out := &in.Filters, &out.Filters
 		*out = make([]FilterSpec, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])

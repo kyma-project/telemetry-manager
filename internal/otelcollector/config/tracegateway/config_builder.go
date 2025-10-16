@@ -156,14 +156,11 @@ func (b *Builder) addUserDefinedFilterProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		formatUserDefinedFilterProcessorID,
 		func(tp *telemetryv1alpha1.TracePipeline) any {
-			if tp.Spec.Filter == nil {
-				return nil
+			if tp.Spec.Filters == nil {
+				return nil // No filters, no processor needed
 			}
 
-			filterStatements := common.FilterSpecsToProcessorStatements(tp.Spec.Filter)
-			filterProcessor := common.TraceFilterProcessorConfig(filterStatements)
-
-			return filterProcessor
+			return common.FilterSpecsToTraceFilterProcessorConfig(tp.Spec.Filters)
 		})
 }
 

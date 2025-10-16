@@ -65,9 +65,9 @@ type TracePipelineSpec struct {
 	// +kubebuilder:validation:Optional
 	Transforms []TransformSpec `json:"transform,omitempty"`
 
-	// Filter specifies a list of filters to apply to telemetry data.
+	// Filters specifies a list of filters to apply to telemetry data.
 	// +kubebuilder:validation:Optional
-	Filter []FilterSpec `json:"filter,omitempty"`
+	Filters []FilterSpec `json:"filter,omitempty"`
 }
 
 // TracePipelineOutput defines the output configuration section.

@@ -30,8 +30,8 @@ func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 		dst.Spec.Files = append(dst.Spec.Files, telemetryv1beta1.LogPipelineFileMount(f))
 	}
 
-	for _, f := range src.Spec.Filters {
-		dst.Spec.Filters = append(dst.Spec.Filters, telemetryv1beta1.LogPipelineFilter(f))
+	for _, f := range src.Spec.FluentBitFilters {
+		dst.Spec.FluentBitFilters = append(dst.Spec.FluentBitFilters, telemetryv1beta1.LogPipelineFilter(f))
 	}
 
 	if srcHTTPOutput := src.Spec.Output.HTTP; srcHTTPOutput != nil {
@@ -77,9 +77,9 @@ func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 		}
 	}
 
-	if src.Spec.Filter != nil {
-		for _, t := range src.Spec.Filter {
-			dst.Spec.Filter = append(dst.Spec.Filter, v1Alpha1FilterSpecToV1Beta1(t))
+	if src.Spec.Filters != nil {
+		for _, t := range src.Spec.Filters {
+			dst.Spec.Filters = append(dst.Spec.Filters, v1Alpha1FilterSpecToV1Beta1(t))
 		}
 	}
 
@@ -270,8 +270,8 @@ func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 		dst.Spec.Files = append(dst.Spec.Files, LogPipelineFileMount(f))
 	}
 
-	for _, f := range src.Spec.Filters {
-		dst.Spec.Filters = append(dst.Spec.Filters, LogPipelineFilter(f))
+	for _, f := range src.Spec.FluentBitFilters {
+		dst.Spec.FluentBitFilters = append(dst.Spec.FluentBitFilters, LogPipelineFilter(f))
 	}
 
 	if srcHTTPOutput := src.Spec.Output.HTTP; srcHTTPOutput != nil {
@@ -317,9 +317,9 @@ func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 		}
 	}
 
-	if src.Spec.Filter != nil {
-		for _, t := range src.Spec.Filter {
-			dst.Spec.Filter = append(dst.Spec.Filter, v1Beta1FilterSpecToV1Alpha1(t))
+	if src.Spec.Filters != nil {
+		for _, t := range src.Spec.Filters {
+			dst.Spec.Filters = append(dst.Spec.Filters, v1Beta1FilterSpecToV1Alpha1(t))
 		}
 	}
 

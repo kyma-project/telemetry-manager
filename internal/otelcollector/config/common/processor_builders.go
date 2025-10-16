@@ -175,49 +175,15 @@ func ResolveServiceNameConfig() *ServiceEnrichmentProcessor {
 // =============================================================================
 
 // LogFilterProcessorConfig creates a FilterProcessor for logs with error_mode set to "ignore"
-func LogFilterProcessorConfig(filters []FilterProcessorStatements) *FilterProcessor {
-	logRecords := make([]string, 0, len(filters))
-	for _, filter := range filters {
-		logRecords = append(logRecords, filter.Conditions...)
-	}
-
+func LogFilterProcessorConfig(logs FilterProcessorLogs) *FilterProcessor {
 	return &FilterProcessor{
 		ErrorMode: defaultFilterProcessorErrorMode,
-		Logs: FilterProcessorLogs{
-			Log: logRecords,
-		},
-	}
-}
-
-type UserMetricFilterProcessorOption func(*FilterProcessorMetrics, []FilterProcessorStatements)
-
-func UseDatapoints(enabled bool) UserMetricFilterProcessorOption {
-	return func(metrics *FilterProcessorMetrics, filters []FilterProcessorStatements) {
-		if enabled {
-			dataPoints := make([]string, 0, len(filters))
-			for _, filter := range filters {
-				dataPoints = append(dataPoints, filter.Conditions...)
-			}
-
-			metrics.Datapoint = dataPoints
-		}
+		Logs:      logs,
 	}
 }
 
 // MetricFilterProcessorConfig creates a FilterProcessor for metrics with the default error mode
-func MetricFilterProcessorConfig(filters []FilterProcessorStatements, opts ...UserMetricFilterProcessorOption) *FilterProcessor {
-	metrics := FilterProcessorMetrics{}
-
-	if len(opts) == 0 {
-		for _, filter := range filters {
-			metrics.Metric = filter.Conditions
-		}
-	} else {
-		for _, opt := range opts {
-			opt(&metrics, filters)
-		}
-	}
-
+func MetricFilterProcessorConfig(metrics FilterProcessorMetrics) *FilterProcessor {
 	return &FilterProcessor{
 		ErrorMode: defaultFilterProcessorErrorMode,
 		Metrics:   metrics,
@@ -225,29 +191,57 @@ func MetricFilterProcessorConfig(filters []FilterProcessorStatements, opts ...Us
 }
 
 // TraceFilterProcessorConfig creates a FilterProcessor for traces with the default error mode
-func TraceFilterProcessorConfig(filters []FilterProcessorStatements) *FilterProcessor {
-	spans := make([]string, 0, len(filters))
-	for _, filter := range filters {
-		spans = append(spans, filter.Conditions...)
+func TraceFilterProcessorConfig(traces FilterProcessorTraces) *FilterProcessor {
+	return &FilterProcessor{
+		ErrorMode: defaultFilterProcessorErrorMode,
+		Traces:    traces,
+	}
+}
+
+func FilterSpecsToLogFilterProcessorConfig(specs []telemetryv1alpha1.FilterSpec) *FilterProcessor {
+	var mergedConditions []string
+	for _, spec := range specs {
+		mergedConditions = append(mergedConditions, spec.Conditions...)
+	}
+
+	return &FilterProcessor{
+		ErrorMode: defaultFilterProcessorErrorMode,
+		Logs: FilterProcessorLogs{
+			// Use log context as it is the lowest one and it is always present
+			Log: mergedConditions,
+		},
+	}
+}
+
+func FilterSpecsToMetricFilterProcessorConfig(specs []telemetryv1alpha1.FilterSpec) *FilterProcessor {
+	var mergedConditions []string
+	for _, spec := range specs {
+		mergedConditions = append(mergedConditions, spec.Conditions...)
+	}
+
+	return &FilterProcessor{
+		ErrorMode: defaultFilterProcessorErrorMode,
+		Metrics: FilterProcessorMetrics{
+			// Use datapoint context as it is the lowest one and it is always present
+			Datapoint: mergedConditions,
+		},
+	}
+}
+
+func FilterSpecsToTraceFilterProcessorConfig(specs []telemetryv1alpha1.FilterSpec) *FilterProcessor {
+	var mergedConditions []string
+	for _, spec := range specs {
+		mergedConditions = append(mergedConditions, spec.Conditions...)
 	}
 
 	return &FilterProcessor{
 		ErrorMode: defaultFilterProcessorErrorMode,
 		Traces: FilterProcessorTraces{
-			Span: spans,
+			// Use span context as it is it is always present even though spanevents is the lowest one
+			// span event filtering is not supported by user-defined filter until filter processor supports context inference
+			Span: mergedConditions,
 		},
 	}
-}
-
-func FilterSpecsToProcessorStatements(specs []telemetryv1alpha1.FilterSpec) []FilterProcessorStatements {
-	result := make([]FilterProcessorStatements, 0, len(specs))
-	for _, spec := range specs {
-		result = append(result, FilterProcessorStatements{
-			Conditions: spec.Conditions,
-		})
-	}
-
-	return result
 }
 
 // =============================================================================

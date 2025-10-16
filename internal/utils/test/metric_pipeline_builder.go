@@ -429,7 +429,7 @@ func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
 				OTLP: b.outOTLP,
 			},
 			Transforms: b.transforms,
-			Filter:     b.filter,
+			Filters:    b.filter,
 		},
 	}
 
