@@ -517,7 +517,6 @@ spec:
                               - secretKeyRef
                               type: object
                           required:
-                          - ""
                           - name
                           type: object
                           x-kubernetes-validations:
@@ -1284,7 +1283,6 @@ spec:
                               - secretKeyRef
                               type: object
                           required:
-                          - ""
                           - name
                           type: object
                           x-kubernetes-validations:
