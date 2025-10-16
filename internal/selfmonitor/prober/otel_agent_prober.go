@@ -18,8 +18,6 @@ type OTelAgentProber struct {
 
 type OTelAgentProbeResult struct {
 	PipelineProbeResult
-
-	QueueAlmostFull bool
 }
 
 func NewOTelLogAgentProber(selfMonitorName types.NamespacedName) (*OTelAgentProber, error) {
@@ -46,8 +44,7 @@ func (p *OTelAgentProber) Probe(ctx context.Context, pipelineName string) (OTelA
 
 	allDropped := p.isFiring(alerts, config.RuleNameAgentAllDataDropped, pipelineName)
 	someDropped := p.isFiring(alerts, config.RuleNameAgentSomeDataDropped, pipelineName)
-	queueAlmostFull := p.isFiring(alerts, config.RuleNameAgentQueueAlmostFull, pipelineName)
-	healthy := !allDropped && !someDropped && !queueAlmostFull
+	healthy := !allDropped && !someDropped
 
 	return OTelAgentProbeResult{
 		PipelineProbeResult: PipelineProbeResult{
@@ -55,7 +52,6 @@ func (p *OTelAgentProber) Probe(ctx context.Context, pipelineName string) (OTelA
 			SomeDataDropped: someDropped,
 			Healthy:         healthy,
 		},
-		QueueAlmostFull: queueAlmostFull,
 	}, nil
 }
 

@@ -207,24 +207,6 @@ func TestOTelLogAgentProber(t *testing.T) {
 			},
 		},
 		{
-			name:         "queue almost full alert firing",
-			pipelineName: "cls",
-			alerts: promv1.AlertsResult{
-				Alerts: []promv1.Alert{
-					{
-						Labels: model.LabelSet{
-							"alertname":     "LogAgentQueueAlmostFull",
-							"pipeline_name": "cls",
-						},
-						State: promv1.AlertStateFiring,
-					},
-				},
-			},
-			expected: OTelAgentProbeResult{
-				QueueAlmostFull: true,
-			},
-		},
-		{
 			name:         "healthy",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{

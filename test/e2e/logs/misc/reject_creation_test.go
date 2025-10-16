@@ -64,7 +64,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					},
 				},
 			},
-			errorMsg: "Exactly one of 'value' or 'valueFrom' must be set",
+			errorMsg: "Only one of 'value' or 'valueFrom' can be set",
 			field:    "spec.output.otlp.endpoint",
 		},
 		{
@@ -171,20 +171,6 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			errorMsg: "Unsupported value",
 			causes:   2,
 			field:    "spec.output.otlp.protocol",
-		},
-		{
-			pipeline: telemetryv1alpha1.LogPipeline{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "otlp-output-without-endpoint",
-				},
-				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Output: telemetryv1alpha1.LogPipelineOutput{
-						OTLP: &telemetryv1alpha1.OTLPOutput{},
-					},
-				},
-			},
-			errorMsg: "Exactly one of 'value' or 'valueFrom' must be set",
-			field:    "spec.output.otlp.endpoint",
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -294,20 +280,6 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			},
 			errorMsg: "should match '^/.*$'",
 			field:    "spec.output.http.uri",
-		},
-		{
-			pipeline: telemetryv1alpha1.LogPipeline{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "http-output-host-required",
-				},
-				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Output: telemetryv1alpha1.LogPipelineOutput{
-						HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{},
-					},
-				},
-			},
-			errorMsg: "Exactly one of 'value' or 'valueFrom' must be set",
-			field:    "spec.output.http.host",
 		},
 		// application input
 		{
