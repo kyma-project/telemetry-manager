@@ -396,7 +396,6 @@ func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan
 	if featureflags.IsEnabled(featureflags.V1Beta1) {
 		setupLog.Info("Registering conversion webhooks for LogPipelines")
 		utilruntime.Must(telemetryv1beta1.AddToScheme(scheme))
-		// Register conversion webhooks for LogPipelines
 		if err := ctrl.NewWebhookManagedBy(mgr).
 			For(&telemetryv1alpha1.LogPipeline{}).
 			Complete(); err != nil {
@@ -405,6 +404,19 @@ func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan
 
 		if err := ctrl.NewWebhookManagedBy(mgr).
 			For(&telemetryv1beta1.LogPipeline{}).
+			Complete(); err != nil {
+			return fmt.Errorf("failed to create v1beta1 conversion webhook: %w", err)
+		}
+
+		setupLog.Info("Registering conversion webhooks for MetricPipelines")
+		if err := ctrl.NewWebhookManagedBy(mgr).
+			For(&telemetryv1alpha1.MetricPipeline{}).
+			Complete(); err != nil {
+			return fmt.Errorf("failed to create v1alpha1 conversion webhook: %w", err)
+		}
+
+		if err := ctrl.NewWebhookManagedBy(mgr).
+			For(&telemetryv1beta1.MetricPipeline{}).
 			Complete(); err != nil {
 			return fmt.Errorf("failed to create v1beta1 conversion webhook: %w", err)
 		}

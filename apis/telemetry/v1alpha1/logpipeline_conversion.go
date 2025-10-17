@@ -11,7 +11,7 @@ import (
 var errSrcTypeUnsupported = errors.New("source type is not LogPipeline v1alpha1")
 var errDstTypeUnsupported = errors.New("destination type is not LogPipeline v1beta1")
 
-// ConvertTo converts this LogPipeline to the Hub version (v1beta1).
+// ConvertTo converts this LogPipeline to the Hub version (v1alpha1 -> v1beta1).
 func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 	src := lp
 
@@ -96,12 +96,8 @@ func v1Alpha1OTLPInputToV1Beta1(otlp *OTLPInput) *telemetryv1beta1.OTLPInput {
 	input := &telemetryv1beta1.OTLPInput{
 		Disabled: otlp.Disabled,
 	}
-	if otlp.Namespaces != nil {
-		input.Namespaces = &telemetryv1beta1.NamespaceSelector{
-			Include: otlp.Namespaces.Include,
-			Exclude: otlp.Namespaces.Exclude,
-		}
-	}
+
+	input.Namespaces = convertNamespaceSelectorToBeta(otlp.Namespaces)
 
 	return input
 }
@@ -114,8 +110,8 @@ func v1Alpha1ApplicationToV1Beta1(application *LogPipelineApplicationInput) *tel
 	runtime := &telemetryv1beta1.LogPipelineRuntimeInput{
 		Enabled: application.Enabled,
 		Namespaces: telemetryv1beta1.LogPipelineNamespaceSelector{
-			Include: application.Namespaces.Include,
-			Exclude: application.Namespaces.Exclude,
+			Include: sanitizeNamespaceNames(application.Namespaces.Include),
+			Exclude: sanitizeNamespaceNames(application.Namespaces.Exclude),
 			System:  application.Namespaces.System,
 		},
 		Containers: telemetryv1beta1.LogPipelineContainerSelector{
@@ -252,7 +248,7 @@ func v1Alpha1FilterSpecToV1Beta1(src FilterSpec) telemetryv1beta1.FilterSpec {
 	return dst
 }
 
-// ConvertFrom converts from the Hub version (v1beta1) to this version.
+// ConvertFrom converts from the Hub version (v1beta1 -> v1alpha1) to this version.
 func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 	dst := lp
 
