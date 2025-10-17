@@ -939,22 +939,20 @@ spec:
                           including system namespaces are enabled.
                         properties:
                           exclude:
-                            description: 'Exclude telemetry data from the specified
-                              namespace names only. By default, all namespaces (depending
-                              on input type: except system namespaces) are collected.
-                              You can not specify an exclude list together with an
-                              include list.'
+                            description: Exclude telemetry data from the specified
+                              Namespace names only. By default all namespaces (except
+                              system namespaes dependent on input type). An exclude
+                              list cannot be specified together with an include list.
                             items:
                               maxLength: 63
                               pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
-                            description: 'Include telemetry data from the specified
-                              namespace names only. By default, all namespaces (depending
-                              on input type: except system namespaces) are included.
-                              You can not specify an include list together with an
-                              exclude list.'
+                            description: Include telemetry data from the specified
+                              Namespace names only. By default all namespaces (except
+                              system namespaes dependent on input type). An include
+                              list cannot be specified together with an exclude list.
                             items:
                               maxLength: 63
                               pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -981,22 +979,20 @@ spec:
                           are enabled by default.
                         properties:
                           exclude:
-                            description: 'Exclude telemetry data from the specified
-                              namespace names only. By default, all namespaces (depending
-                              on input type: except system namespaces) are collected.
-                              You can not specify an exclude list together with an
-                              include list.'
+                            description: Exclude telemetry data from the specified
+                              Namespace names only. By default all namespaces (except
+                              system namespaes dependent on input type). An exclude
+                              list cannot be specified together with an include list.
                             items:
                               maxLength: 63
                               pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
-                            description: 'Include telemetry data from the specified
-                              namespace names only. By default, all namespaces (depending
-                              on input type: except system namespaces) are included.
-                              You can not specify an include list together with an
-                              exclude list.'
+                            description: Include telemetry data from the specified
+                              Namespace names only. By default all namespaces (except
+                              system namespaes dependent on input type). An include
+                              list cannot be specified together with an exclude list.
                             items:
                               maxLength: 63
                               pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -1035,22 +1031,20 @@ spec:
                           system namespaces, use an empty struct notation.
                         properties:
                           exclude:
-                            description: 'Exclude telemetry data from the specified
-                              namespace names only. By default, all namespaces (depending
-                              on input type: except system namespaces) are collected.
-                              You can not specify an exclude list together with an
-                              include list.'
+                            description: Exclude telemetry data from the specified
+                              Namespace names only. By default all namespaces (except
+                              system namespaes dependent on input type). An exclude
+                              list cannot be specified together with an include list.
                             items:
                               maxLength: 63
                               pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
-                            description: 'Include telemetry data from the specified
-                              namespace names only. By default, all namespaces (depending
-                              on input type: except system namespaces) are included.
-                              You can not specify an include list together with an
-                              exclude list.'
+                            description: Include telemetry data from the specified
+                              Namespace names only. By default all namespaces (except
+                              system namespaes dependent on input type). An include
+                              list cannot be specified together with an exclude list.
                             items:
                               maxLength: 63
                               pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -1077,22 +1071,20 @@ spec:
                           system namespaces, use an empty struct notation.
                         properties:
                           exclude:
-                            description: 'Exclude telemetry data from the specified
-                              namespace names only. By default, all namespaces (depending
-                              on input type: except system namespaces) are collected.
-                              You can not specify an exclude list together with an
-                              include list.'
+                            description: Exclude telemetry data from the specified
+                              Namespace names only. By default all namespaces (except
+                              system namespaes dependent on input type). An exclude
+                              list cannot be specified together with an include list.
                             items:
                               maxLength: 63
                               pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
-                            description: 'Include telemetry data from the specified
-                              namespace names only. By default, all namespaces (depending
-                              on input type: except system namespaces) are included.
-                              You can not specify an include list together with an
-                              exclude list.'
+                            description: Include telemetry data from the specified
+                              Namespace names only. By default all namespaces (except
+                              system namespaes dependent on input type). An include
+                              list cannot be specified together with an exclude list.
                             items:
                               maxLength: 63
                               pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
