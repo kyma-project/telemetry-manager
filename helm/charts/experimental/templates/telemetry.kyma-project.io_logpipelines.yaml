@@ -1237,8 +1237,8 @@ spec:
                       logs from a OTLP source.
                     properties:
                       disabled:
-                        description: If set to `true`, no push-based OTLP signals
-                          are collected. The default is `false`.
+                        description: If set to `false`, no push-based OTLP signals
+                          are collected. The default is `true`.
                         type: boolean
                       namespaces:
                         description: Namespaces describes whether push-based OTLP
@@ -1315,35 +1315,27 @@ spec:
                       namespaces:
                         description: Namespaces describes whether application logs
                           from specific namespaces are selected. The options are mutually
-                          exclusive. System namespaces are excluded by default. Use
-                          the `system` attribute with value `true` to enable them.
+                          exclusive. By default, all namespaces except the system
+                          namespaces are enabled. To enable all namespaces including
+                          system namespaces, use an empty struct notation.
                         properties:
                           exclude:
-                            description: Exclude the container logs of the specified
-                              Namespace names.
+                            description: Exclude signals from the specified Namespace
+                              names only.
                             items:
                               type: string
                             type: array
                           include:
-                            description: Include only the container logs of the specified
-                              Namespace names.
+                            description: Include signals from the specified Namespace
+                              names only.
                             items:
                               type: string
                             type: array
-                          system:
-                            description: System specifies whether to collect logs
-                              from system namespaces. If set to `true`, you collect
-                              logs from all namespaces including system namespaces,
-                              such as like kube-system, istio-system, and kyma-system.
-                              The default is `false`.
-                            type: boolean
                         type: object
                         x-kubernetes-validations:
-                        - message: Only one of 'include', 'exclude' or 'system' can
-                            be defined
+                        - message: Only one of 'include' or 'exclude' can be defined
                           rule: '(has(self.include) == true ? 1 : 0) + (has(self.exclude)
-                            == true ? 1 : 0) + (has(self.system) == true ? 1 : 0)
-                            <= 1'
+                            == true ? 1 : 0) <= 1'
                     type: object
                 type: object
               output:

@@ -927,8 +927,8 @@ spec:
                       metrics from an OTLP source.
                     properties:
                       disabled:
-                        description: If set to `true`, no push-based OTLP signals
-                          are collected. The default is `false`.
+                        description: If set to `false`, no push-based OTLP signals
+                          are collected. The default is `true`.
                         type: boolean
                       namespaces:
                         description: Namespaces describes whether push-based OTLP

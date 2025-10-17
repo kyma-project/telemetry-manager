@@ -3,13 +3,14 @@ package v1alpha1
 import (
 	"errors"
 
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
-var errSrcTypeUnsupported = errors.New("source type is not LogPipeline v1alpha1")
-var errDstTypeUnsupported = errors.New("destination type is not LogPipeline v1beta1")
+var errSrcTypeUnsupportedLogPipeline = errors.New("source type is not LogPipeline v1alpha1")
+var errDstTypeUnsupportedLogPipeline = errors.New("destination type is not LogPipeline v1beta1")
 
 // ConvertTo converts this LogPipeline to the Hub version (v1alpha1 -> v1beta1).
 func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
@@ -17,14 +18,22 @@ func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 
 	dst, ok := dstRaw.(*telemetryv1beta1.LogPipeline)
 	if !ok {
-		return errDstTypeUnsupported
+		return errDstTypeUnsupportedLogPipeline
 	}
 
+	// Copy metadata
 	dst.ObjectMeta = src.ObjectMeta
 
+	// Copy Spec fields
 	dst.Spec.Input = telemetryv1beta1.LogPipelineInput{}
-	dst.Spec.Input.Runtime = v1Alpha1ApplicationToV1Beta1(src.Spec.Input.Application)
-	dst.Spec.Input.OTLP = v1Alpha1OTLPInputToV1Beta1(src.Spec.Input.OTLP)
+	dst.Spec.Input.Runtime = convertApplicationToBeta(src.Spec.Input.Application)
+
+	if src.Spec.Input.OTLP != nil {
+		dst.Spec.Input.OTLP = &telemetryv1beta1.OTLPInput{
+			Enabled:    ptr.To(!src.Spec.Input.OTLP.Disabled),
+			Namespaces: convertNamespaceSelectorToBeta(src.Spec.Input.OTLP.Namespaces),
+		}
+	}
 
 	for _, f := range src.Spec.Files {
 		dst.Spec.Files = append(dst.Spec.Files, telemetryv1beta1.LogPipelineFileMount(f))
@@ -36,35 +45,28 @@ func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 
 	if srcHTTPOutput := src.Spec.Output.HTTP; srcHTTPOutput != nil {
 		dst.Spec.Output.HTTP = &telemetryv1beta1.LogPipelineHTTPOutput{
-			Host:      v1Alpha1ValueTypeToV1Beta1(srcHTTPOutput.Host),
+			Host:      convertValueTypeToBeta(srcHTTPOutput.Host),
 			URI:       srcHTTPOutput.URI,
 			Port:      srcHTTPOutput.Port,
 			Compress:  srcHTTPOutput.Compress,
 			Format:    srcHTTPOutput.Format,
-			TLSConfig: v1Alpha1TLSToV1Beta1(srcHTTPOutput.TLS),
+			TLSConfig: convertOutputTLSToBeta(srcHTTPOutput.TLS),
 			Dedot:     srcHTTPOutput.Dedot,
 		}
 
 		if srcHTTPOutput.User != nil && (srcHTTPOutput.User.Value != "" || srcHTTPOutput.User.ValueFrom != nil) {
-			user := v1Alpha1ValueTypeToV1Beta1(*srcHTTPOutput.User)
+			user := convertValueTypeToBeta(*srcHTTPOutput.User)
 			dst.Spec.Output.HTTP.User = &user
 		}
 
 		if srcHTTPOutput.Password != nil && (srcHTTPOutput.Password.Value != "" || srcHTTPOutput.Password.ValueFrom != nil) {
-			password := v1Alpha1ValueTypeToV1Beta1(*srcHTTPOutput.Password)
+			password := convertValueTypeToBeta(*srcHTTPOutput.Password)
 			dst.Spec.Output.HTTP.Password = &password
 		}
 	}
 
-	if srcOTLPOutput := src.Spec.Output.OTLP; srcOTLPOutput != nil {
-		dst.Spec.Output.OTLP = &telemetryv1beta1.OTLPOutput{
-			Protocol:       telemetryv1beta1.OTLPProtocol(srcOTLPOutput.Protocol),
-			Endpoint:       v1Alpha1ValueTypeToV1Beta1(srcOTLPOutput.Endpoint),
-			Path:           srcOTLPOutput.Path,
-			Authentication: v1Alpha1AuthenticationToV1Beta1(srcOTLPOutput.Authentication),
-			Headers:        v1Alpha1HeadersToV1Beta1(srcOTLPOutput.Headers),
-			TLS:            v1Alpha1OTLPTLSToV1Beta1(srcOTLPOutput.TLS),
-		}
+	if src.Spec.Output.OTLP != nil {
+		dst.Spec.Output.OTLP = convertOTLPOutputToBeta(src.Spec.Output.OTLP)
 	}
 
 	if srcCustomOutput := src.Spec.Output.Custom; srcCustomOutput != "" {
@@ -73,13 +75,13 @@ func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 
 	if src.Spec.Transforms != nil {
 		for _, t := range src.Spec.Transforms {
-			dst.Spec.Transforms = append(dst.Spec.Transforms, v1Alpha1TransformSpecToV1Beta1(t))
+			dst.Spec.Transforms = append(dst.Spec.Transforms, convertTransformSpecToBeta(t))
 		}
 	}
 
 	if src.Spec.Filters != nil {
 		for _, t := range src.Spec.Filters {
-			dst.Spec.Filters = append(dst.Spec.Filters, v1Alpha1FilterSpecToV1Beta1(t))
+			dst.Spec.Filters = append(dst.Spec.Filters, convertFilterSpecToBeta(t))
 		}
 	}
 
@@ -88,31 +90,23 @@ func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 	return nil
 }
 
-func v1Alpha1OTLPInputToV1Beta1(otlp *OTLPInput) *telemetryv1beta1.OTLPInput {
-	if otlp == nil {
-		return nil
-	}
-
-	input := &telemetryv1beta1.OTLPInput{
-		Disabled: otlp.Disabled,
-	}
-
-	input.Namespaces = convertNamespaceSelectorToBeta(otlp.Namespaces)
-
-	return input
-}
-
-func v1Alpha1ApplicationToV1Beta1(application *LogPipelineApplicationInput) *telemetryv1beta1.LogPipelineRuntimeInput {
+func convertApplicationToBeta(application *LogPipelineApplicationInput) *telemetryv1beta1.LogPipelineRuntimeInput {
 	if application == nil {
 		return nil
 	}
 
+	var excludes []string
+	if len(application.Namespaces.Include) == 0 && len(application.Namespaces.Exclude) == 0 && !application.Namespaces.System {
+		excludes = []string{"kyma-system", "kube-system", "istio-system", "compass-system"}
+	} else {
+		excludes = application.Namespaces.Exclude
+	}
+
 	runtime := &telemetryv1beta1.LogPipelineRuntimeInput{
 		Enabled: application.Enabled,
-		Namespaces: telemetryv1beta1.LogPipelineNamespaceSelector{
+		Namespaces: &telemetryv1beta1.NamespaceSelector{
 			Include: sanitizeNamespaceNames(application.Namespaces.Include),
-			Exclude: sanitizeNamespaceNames(application.Namespaces.Exclude),
-			System:  application.Namespaces.System,
+			Exclude: sanitizeNamespaceNames(excludes),
 		},
 		Containers: telemetryv1beta1.LogPipelineContainerSelector{
 			Include: application.Containers.Include,
@@ -126,124 +120,14 @@ func v1Alpha1ApplicationToV1Beta1(application *LogPipelineApplicationInput) *tel
 	return runtime
 }
 
-func v1Alpha1OTLPTLSToV1Beta1(tls *OTLPTLS) *telemetryv1beta1.OutputTLS {
-	if tls == nil {
-		return nil
-	}
-
-	betaTLS := &telemetryv1beta1.OutputTLS{
-		Disabled:                  tls.Insecure,
-		SkipCertificateValidation: tls.InsecureSkipVerify,
-	}
-
-	if tls.CA != nil {
-		ca := v1Alpha1ValueTypeToV1Beta1(*tls.CA)
-		betaTLS.CA = &ca
-	}
-
-	if tls.Key != nil {
-		key := v1Alpha1ValueTypeToV1Beta1(*tls.Key)
-		betaTLS.Key = &key
-	}
-
-	if tls.Cert != nil {
-		cert := v1Alpha1ValueTypeToV1Beta1(*tls.Cert)
-		betaTLS.Cert = &cert
-	}
-
-	return betaTLS
-}
-
-func v1Alpha1HeadersToV1Beta1(headers []Header) []telemetryv1beta1.Header {
-	var dst []telemetryv1beta1.Header
-	for _, h := range headers {
-		dst = append(dst, v1Alpha1HeaderToV1Beta1(h))
-	}
-
-	return dst
-}
-
-func v1Alpha1HeaderToV1Beta1(h Header) telemetryv1beta1.Header {
-	return telemetryv1beta1.Header{
-		Name:      h.Name,
-		ValueType: v1Alpha1ValueTypeToV1Beta1(h.ValueType),
-		Prefix:    h.Prefix,
-	}
-}
-
-func v1Alpha1AuthenticationToV1Beta1(authentication *AuthenticationOptions) *telemetryv1beta1.AuthenticationOptions {
-	if authentication == nil {
-		return nil
-	}
-
-	return &telemetryv1beta1.AuthenticationOptions{
-		Basic: v1Alpha1BasicAuthOptionsToV1Beta1(authentication.Basic),
-	}
-}
-
-func v1Alpha1BasicAuthOptionsToV1Beta1(basic *BasicAuthOptions) *telemetryv1beta1.BasicAuthOptions {
-	if basic == nil {
-		return nil
-	}
-
-	return &telemetryv1beta1.BasicAuthOptions{
-		User:     v1Alpha1ValueTypeToV1Beta1(basic.User),
-		Password: v1Alpha1ValueTypeToV1Beta1(basic.Password),
-	}
-}
-
-func v1Alpha1ValueTypeToV1Beta1(src ValueType) telemetryv1beta1.ValueType {
-	if src.ValueFrom != nil && src.ValueFrom.SecretKeyRef != nil {
-		return telemetryv1beta1.ValueType{
-			ValueFrom: &telemetryv1beta1.ValueFromSource{
-				SecretKeyRef: (*telemetryv1beta1.SecretKeyRef)(src.ValueFrom.SecretKeyRef),
-			},
-		}
-	}
-
-	return telemetryv1beta1.ValueType{
-		Value: src.Value,
-	}
-}
-
-func v1Alpha1TLSToV1Beta1(src LogPipelineOutputTLS) telemetryv1beta1.OutputTLS {
+func convertOutputTLSToBeta(src LogPipelineOutputTLS) telemetryv1beta1.OutputTLS {
 	var dst telemetryv1beta1.OutputTLS
 
-	if src.CA != nil {
-		ca := v1Alpha1ValueTypeToV1Beta1(*src.CA)
-		dst.CA = &ca
-	}
-
-	if src.Cert != nil {
-		cert := v1Alpha1ValueTypeToV1Beta1(*src.Cert)
-		dst.Cert = &cert
-	}
-
-	if src.Key != nil {
-		key := v1Alpha1ValueTypeToV1Beta1(*src.Key)
-		dst.Key = &key
-	}
-
+	dst.CA = convertValueTypeToBetaPtr(src.CA)
+	dst.Cert = convertValueTypeToBetaPtr(src.Cert)
+	dst.Key = convertValueTypeToBetaPtr(src.Key)
 	dst.Disabled = src.Disabled
 	dst.SkipCertificateValidation = src.SkipCertificateValidation
-
-	return dst
-}
-
-func v1Alpha1TransformSpecToV1Beta1(src TransformSpec) telemetryv1beta1.TransformSpec {
-	var dst telemetryv1beta1.TransformSpec
-
-	dst.Conditions = append(dst.Conditions, src.Conditions...)
-
-	dst.Statements = append(dst.Statements, src.Statements...)
-
-	return dst
-}
-
-func v1Alpha1FilterSpecToV1Beta1(src FilterSpec) telemetryv1beta1.FilterSpec {
-	var dst telemetryv1beta1.FilterSpec
-
-	dst.Conditions = append(dst.Conditions, src.Conditions...)
 
 	return dst
 }
@@ -254,13 +138,21 @@ func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 
 	src, ok := srcRaw.(*telemetryv1beta1.LogPipeline)
 	if !ok {
-		return errSrcTypeUnsupported
+		return errSrcTypeUnsupportedLogPipeline
 	}
 
+	// Copy metadata
 	dst.ObjectMeta = src.ObjectMeta
 
-	dst.Spec.Input.Application = v1Beta1RuntimeToV1Alpha1(src.Spec.Input.Runtime)
-	dst.Spec.Input.OTLP = v1Beta1OTLPInputToV1Alpha1(src.Spec.Input.OTLP)
+	// Copy Spec fields
+	dst.Spec.Input.Application = convertRuntimeToAlpha(src.Spec.Input.Runtime)
+
+	if src.Spec.Input.OTLP != nil {
+		dst.Spec.Input.OTLP = &OTLPInput{
+			Disabled:   src.Spec.Input.OTLP.Enabled != nil && !*src.Spec.Input.OTLP.Enabled,
+			Namespaces: convertNamespaceSelectorToAlpha(src.Spec.Input.OTLP.Namespaces),
+		}
+	}
 
 	for _, f := range src.Spec.Files {
 		dst.Spec.Files = append(dst.Spec.Files, LogPipelineFileMount(f))
@@ -272,35 +164,21 @@ func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 
 	if srcHTTPOutput := src.Spec.Output.HTTP; srcHTTPOutput != nil {
 		dst.Spec.Output.HTTP = &LogPipelineHTTPOutput{
-			Host:     v1Beta1ValueTypeToV1Alpha1(srcHTTPOutput.Host),
+			Host:     convertValueTypeToAlpha(srcHTTPOutput.Host),
 			URI:      srcHTTPOutput.URI,
 			Port:     srcHTTPOutput.Port,
 			Compress: srcHTTPOutput.Compress,
 			Format:   srcHTTPOutput.Format,
-			TLS:      v1Beta1TLSToV1Alpha1(srcHTTPOutput.TLSConfig),
+			TLS:      convertOutputTLSToAlpha(srcHTTPOutput.TLSConfig),
 			Dedot:    srcHTTPOutput.Dedot,
 		}
 
-		if srcHTTPOutput.User != nil {
-			user := v1Beta1ValueTypeToV1Alpha1(*srcHTTPOutput.User)
-			dst.Spec.Output.HTTP.User = &user
-		}
-
-		if srcHTTPOutput.Password != nil {
-			password := v1Beta1ValueTypeToV1Alpha1(*srcHTTPOutput.Password)
-			dst.Spec.Output.HTTP.Password = &password
-		}
+		dst.Spec.Output.HTTP.User = convertValueTypeToAlphaPtr(srcHTTPOutput.User)
+		dst.Spec.Output.HTTP.Password = convertValueTypeToAlphaPtr(srcHTTPOutput.Password)
 	}
 
-	if srcOTLPOutput := src.Spec.Output.OTLP; srcOTLPOutput != nil {
-		dst.Spec.Output.OTLP = &OTLPOutput{
-			Protocol:       (string)(srcOTLPOutput.Protocol),
-			Endpoint:       v1Beta1ValueTypeToV1Alpha1(srcOTLPOutput.Endpoint),
-			Path:           srcOTLPOutput.Path,
-			Authentication: v1Beta1AuthenticationToV1Alpha1(srcOTLPOutput.Authentication),
-			Headers:        v1Beta1HeadersToV1Alpha1(srcOTLPOutput.Headers),
-			TLS:            v1Beta1OTLPTLSToV1Alpha1(srcOTLPOutput.TLS),
-		}
+	if src.Spec.Output.OTLP != nil {
+		dst.Spec.Output.OTLP = convertOTLPOutputToAlpha(src.Spec.Output.OTLP)
 	}
 
 	if srcCustomOutput := src.Spec.Output.Custom; srcCustomOutput != "" {
@@ -309,13 +187,13 @@ func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 
 	if src.Spec.Transforms != nil {
 		for _, t := range src.Spec.Transforms {
-			dst.Spec.Transforms = append(dst.Spec.Transforms, v1Beta1TransformSpecToV1Alpha1(t))
+			dst.Spec.Transforms = append(dst.Spec.Transforms, convertTransformSpecToAlpha(t))
 		}
 	}
 
 	if src.Spec.Filters != nil {
 		for _, t := range src.Spec.Filters {
-			dst.Spec.Filters = append(dst.Spec.Filters, v1Beta1FilterSpecToV1Alpha1(t))
+			dst.Spec.Filters = append(dst.Spec.Filters, convertFilterSpecToAlpha(t))
 		}
 	}
 
@@ -324,7 +202,7 @@ func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 	return nil
 }
 
-func v1Beta1RuntimeToV1Alpha1(runtime *telemetryv1beta1.LogPipelineRuntimeInput) *LogPipelineApplicationInput {
+func convertRuntimeToAlpha(runtime *telemetryv1beta1.LogPipelineRuntimeInput) *LogPipelineApplicationInput {
 	if runtime == nil {
 		return nil
 	}
@@ -334,7 +212,7 @@ func v1Beta1RuntimeToV1Alpha1(runtime *telemetryv1beta1.LogPipelineRuntimeInput)
 		Namespaces: LogPipelineNamespaceSelector{
 			Include: runtime.Namespaces.Include,
 			Exclude: runtime.Namespaces.Exclude,
-			System:  runtime.Namespaces.System,
+			System:  false,
 		},
 		Containers: LogPipelineContainerSelector{
 			Include: runtime.Containers.Include,
@@ -348,142 +226,15 @@ func v1Beta1RuntimeToV1Alpha1(runtime *telemetryv1beta1.LogPipelineRuntimeInput)
 	return application
 }
 
-func v1Beta1OTLPInputToV1Alpha1(otlp *telemetryv1beta1.OTLPInput) *OTLPInput {
-	if otlp == nil {
-		return nil
-	}
-
-	input := &OTLPInput{
-		Disabled: otlp.Disabled,
-	}
-	if otlp.Namespaces != nil {
-		input.Namespaces = &NamespaceSelector{
-			Include: otlp.Namespaces.Include,
-			Exclude: otlp.Namespaces.Exclude,
-		}
-	}
-
-	return input
-}
-
-func v1Beta1OTLPTLSToV1Alpha1(tls *telemetryv1beta1.OutputTLS) *OTLPTLS {
-	if tls == nil {
-		return nil
-	}
-
-	alphaTLS := &OTLPTLS{
-		Insecure:           tls.Disabled,
-		InsecureSkipVerify: tls.SkipCertificateValidation,
-	}
-
-	if tls.CA != nil {
-		ca := v1Beta1ValueTypeToV1Alpha1(*tls.CA)
-		alphaTLS.CA = &ca
-	}
-
-	if tls.Key != nil {
-		key := v1Beta1ValueTypeToV1Alpha1(*tls.Key)
-		alphaTLS.Key = &key
-	}
-
-	if tls.Cert != nil {
-		cert := v1Beta1ValueTypeToV1Alpha1(*tls.Cert)
-		alphaTLS.Cert = &cert
-	}
-
-	return alphaTLS
-}
-
-func v1Beta1HeadersToV1Alpha1(headers []telemetryv1beta1.Header) []Header {
-	var dst []Header
-	for _, h := range headers {
-		dst = append(dst, v1Beta1HeaderToV1Alpha1(h))
-	}
-
-	return dst
-}
-
-func v1Beta1HeaderToV1Alpha1(h telemetryv1beta1.Header) Header {
-	return Header{
-		Name:      h.Name,
-		ValueType: v1Beta1ValueTypeToV1Alpha1(h.ValueType),
-		Prefix:    h.Prefix,
-	}
-}
-
-func v1Beta1AuthenticationToV1Alpha1(authentication *telemetryv1beta1.AuthenticationOptions) *AuthenticationOptions {
-	if authentication == nil {
-		return nil
-	}
-
-	return &AuthenticationOptions{
-		Basic: v1Beta1BasicAuthOptionsToV1Alpha1(authentication.Basic),
-	}
-}
-
-func v1Beta1BasicAuthOptionsToV1Alpha1(basic *telemetryv1beta1.BasicAuthOptions) *BasicAuthOptions {
-	if basic == nil {
-		return nil
-	}
-
-	return &BasicAuthOptions{
-		User:     v1Beta1ValueTypeToV1Alpha1(basic.User),
-		Password: v1Beta1ValueTypeToV1Alpha1(basic.Password),
-	}
-}
-
-func v1Beta1TLSToV1Alpha1(src telemetryv1beta1.OutputTLS) LogPipelineOutputTLS {
+func convertOutputTLSToAlpha(src telemetryv1beta1.OutputTLS) LogPipelineOutputTLS {
 	var dst LogPipelineOutputTLS
 
-	if src.CA != nil {
-		ca := v1Beta1ValueTypeToV1Alpha1(*src.CA)
-		dst.CA = &ca
-	}
-
-	if src.Cert != nil {
-		cert := v1Beta1ValueTypeToV1Alpha1(*src.Cert)
-		dst.Cert = &cert
-	}
-
-	if src.Key != nil {
-		key := v1Beta1ValueTypeToV1Alpha1(*src.Key)
-		dst.Key = &key
-	}
+	dst.CA = convertValueTypeToAlphaPtr(src.CA)
+	dst.Cert = convertValueTypeToAlphaPtr(src.Cert)
+	dst.Key = convertValueTypeToAlphaPtr(src.Key)
 
 	dst.Disabled = src.Disabled
 	dst.SkipCertificateValidation = src.SkipCertificateValidation
-
-	return dst
-}
-
-func v1Beta1ValueTypeToV1Alpha1(src telemetryv1beta1.ValueType) ValueType {
-	if src.ValueFrom != nil && src.ValueFrom.SecretKeyRef != nil {
-		return ValueType{
-			ValueFrom: &ValueFromSource{
-				SecretKeyRef: (*SecretKeyRef)(src.ValueFrom.SecretKeyRef),
-			},
-		}
-	}
-
-	return ValueType{
-		Value: src.Value,
-	}
-}
-
-func v1Beta1TransformSpecToV1Alpha1(src telemetryv1beta1.TransformSpec) TransformSpec {
-	var dst TransformSpec
-
-	dst.Conditions = append(dst.Conditions, src.Conditions...)
-
-	dst.Statements = append(dst.Statements, src.Statements...)
-
-	return dst
-}
-
-func v1Beta1FilterSpecToV1Alpha1(src telemetryv1beta1.FilterSpec) FilterSpec {
-	var dst FilterSpec
-
-	dst.Conditions = append(dst.Conditions, src.Conditions...)
 
 	return dst
 }

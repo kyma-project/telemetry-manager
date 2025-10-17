@@ -113,9 +113,9 @@ type LogPipelineRuntimeInput struct {
 	// If enabled, application logs are collected from application containers stdout/stderr. The default is `true`.
 	// +kubebuilder:validation:Optional
 	Enabled *bool `json:"enabled,omitempty"`
-	// Namespaces describes whether application logs from specific namespaces are selected. The options are mutually exclusive. System namespaces are excluded by default. Use the `system` attribute with value `true` to enable them.
+	// Namespaces describes whether application logs from specific namespaces are selected. The options are mutually exclusive. By default, all namespaces except the system namespaces are enabled. To enable all namespaces including system namespaces, use an empty struct notation.
 	// +kubebuilder:validation:Optional
-	Namespaces LogPipelineNamespaceSelector `json:"namespaces,omitempty"`
+	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
 	// Containers describes whether application logs from specific containers are selected. The options are mutually exclusive.
 	// +kubebuilder:validation:Optional
 	Containers LogPipelineContainerSelector `json:"containers,omitempty"`

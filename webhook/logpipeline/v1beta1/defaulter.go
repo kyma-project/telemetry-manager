@@ -14,9 +14,11 @@ import (
 var _ webhook.CustomDefaulter = &defaulter{}
 
 type defaulter struct {
+	ExcludeNamespaces            []string
 	RuntimeInputEnabled          bool
 	RuntimeInputKeepOriginalBody bool
 	DefaultOTLPOutputProtocol    telemetryv1beta1.OTLPProtocol
+	OTLPInputEnabled             bool
 }
 
 func (ld defaulter) Default(ctx context.Context, obj runtime.Object) error {
@@ -39,9 +41,22 @@ func (ld defaulter) applyDefaults(pipeline *telemetryv1beta1.LogPipeline) {
 		if *pipeline.Spec.Input.Runtime.Enabled && pipeline.Spec.Input.Runtime.KeepOriginalBody == nil {
 			pipeline.Spec.Input.Runtime.KeepOriginalBody = &ld.RuntimeInputKeepOriginalBody
 		}
+		if *pipeline.Spec.Input.Runtime.Enabled && pipeline.Spec.Input.Runtime.Namespaces == nil {
+			pipeline.Spec.Input.Runtime.Namespaces = &telemetryv1beta1.NamespaceSelector{
+				Exclude: ld.ExcludeNamespaces,
+			}
+		}
 	}
 
 	if pipeline.Spec.Output.OTLP != nil && pipeline.Spec.Output.OTLP.Protocol == "" {
 		pipeline.Spec.Output.OTLP.Protocol = ld.DefaultOTLPOutputProtocol
+	}
+
+	if pipeline.Spec.Input.OTLP == nil {
+		pipeline.Spec.Input.OTLP = &telemetryv1beta1.OTLPInput{}
+	}
+
+	if pipeline.Spec.Input.OTLP.Enabled == nil {
+		pipeline.Spec.Input.OTLP.Enabled = &ld.OTLPInputEnabled
 	}
 }

@@ -15,6 +15,7 @@ var _ webhook.CustomDefaulter = &defaulter{}
 
 type defaulter struct {
 	ExcludeNamespaces         []string
+	OTLPInputEnabled          bool
 	RuntimeInputResources     runtimeInputResourceDefaults
 	DefaultOTLPOutputProtocol telemetryv1beta1.OTLPProtocol
 	DiagnosticMetricsEnabled  bool
@@ -86,6 +87,14 @@ func (md defaulter) applyDefaults(pipeline *telemetryv1beta1.MetricPipeline) {
 		pipeline.Spec.Input.Prometheus.DiagnosticMetrics = &telemetryv1beta1.MetricPipelineIstioInputDiagnosticMetrics{
 			Enabled: &md.DiagnosticMetricsEnabled,
 		}
+	}
+
+	if pipeline.Spec.Input.OTLP == nil {
+		pipeline.Spec.Input.OTLP = &telemetryv1beta1.OTLPInput{}
+	}
+
+	if pipeline.Spec.Input.OTLP.Enabled == nil {
+		pipeline.Spec.Input.OTLP.Enabled = &md.OTLPInputEnabled
 	}
 }
 
