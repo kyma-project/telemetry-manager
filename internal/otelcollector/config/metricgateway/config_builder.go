@@ -42,57 +42,18 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 	queueSize := common.BatchingMaxQueueSize / len(pipelines)
 
 	for _, pipeline := range pipelines {
-		inputPipelineID := formatInputMetricServicePipelineID(&pipeline)
-		if err := b.AddServicePipeline(ctx, &pipeline, inputPipelineID,
+		pipelineID := formatInputMetricServicePipelineID(&pipeline)
+		if err := b.AddServicePipeline(ctx, &pipeline, pipelineID,
 			b.addOTLPReceiver(),
 			b.addKymaStatsReceiver(),
 			b.addMemoryLimiterProcessor(),
-			b.addInputRoutingExporter(),
-		); err != nil {
-			return nil, nil, fmt.Errorf("failed to add input service pipeline: %w", err)
-		}
-
-		enrichmentPipelineID := formatEnrichmentServicePipelineID(&pipeline)
-		if err := b.AddServicePipeline(ctx, &pipeline, enrichmentPipelineID,
-			b.addEnrichmentRoutingReceiver(),
 			b.addK8sAttributesProcessor(opts),
-			b.addServiceEnrichmentProcessor(),
-			b.addEnrichmentForwardExporter(),
-		); err != nil {
-			return nil, nil, fmt.Errorf("failed to add enrichment service pipeline: %w", err)
-		}
-
-		ouputPipelineID := formatOutputServicePipelineID(&pipeline)
-		if err := b.AddServicePipeline(ctx, &pipeline, ouputPipelineID,
-			b.addOutputRoutingReceiver(),
-			b.addOutputForwardReceiver(),
+			b.addServiceEnrichmentProcessor(), // we need it ?
 			b.addSetInstrumentationScopeToKymaProcessor(opts),
 			// Input source filters
-			b.addDropIfRuntimeInputDisabledProcessor(),
-			b.addDropIfPrometheusInputDisabledProcessor(),
-			b.addDropIfIstioInputDisabledProcessor(),
-			b.addDropEnvoyMetricsIfDisabledProcessor(),
 			b.addDropIfOTLPInputDisabledProcessor(),
 			// Namespace filters
-			b.addRuntimeNamespaceFilterProcessor(),
-			b.addPrometheusNamespaceFilterProcessor(),
-			b.addIstioNamespaceFilterProcessor(),
 			b.addOTLPNamespaceFilterProcessor(),
-			// Runtime resource filters
-			b.addDropRuntimePodMetricsProcessor(),
-			b.addDropRuntimeContainerMetricsProcessor(),
-			b.addDropRuntimeNodeMetricsProcessor(),
-			b.addDropRuntimeVolumeMetricsProcessor(),
-			b.addDropRuntimeDeploymentMetricsProcessor(),
-			b.addDropRuntimeDaemonSetMetricsProcessor(),
-			b.addDropRuntimeStatefulSetMetricsProcessor(),
-			b.addDropRuntimeJobMetricsProcessor(),
-			// Diagnostic metric filters
-			b.addDropIstioDiagnosticMetricsProcessor(),
-			b.addDropPrometheusDiagnosticMetricsProcessor(),
-
-			b.addInsertClusterAttributesProcessor(opts),
-			b.addDeleteSkipEnrichmentAttributeProcessor(),
 			b.addDropKymaAttributesProcessor(),
 			b.addUserDefinedTransformProcessor(),
 			// Batch processor (always last)
@@ -100,8 +61,34 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			// OTLP exporter
 			b.addOTLPExporter(queueSize),
 		); err != nil {
-			return nil, nil, fmt.Errorf("failed to add output service pipeline: %w", err)
+			return nil, nil, fmt.Errorf("failed to add input service pipeline: %w", err)
 		}
+
+		//enrichmentPipelineID := formatEnrichmentServicePipelineID(&pipeline)
+		//if err := b.AddServicePipeline(ctx, &pipeline, enrichmentPipelineID); err != nil {
+		//	return nil, nil, fmt.Errorf("failed to add enrichment service pipeline: %w", err)
+		//}
+		//
+		//ouputPipelineID := formatOutputServicePipelineID(&pipeline)
+		//if err := b.AddServicePipeline(ctx, &pipeline, ouputPipelineID,
+		//	b.addOutputRoutingReceiver(),
+		//	b.addOutputForwardReceiver(),
+		//	b.addSetInstrumentationScopeToKymaProcessor(opts),
+		//	// Input source filters
+		//	b.addDropIfOTLPInputDisabledProcessor(),
+		//	// Namespace filters
+		//	b.addOTLPNamespaceFilterProcessor(),
+		//
+		//	b.addInsertClusterAttributesProcessor(opts),
+		//	b.addDropKymaAttributesProcessor(),
+		//	b.addUserDefinedTransformProcessor(),
+		//	// Batch processor (always last)
+		//	b.addBatchProcessor(),
+		//	// OTLP exporter
+		//	b.addOTLPExporter(queueSize),
+		//); err != nil {
+		//	return nil, nil, fmt.Errorf("failed to add output service pipeline: %w", err)
+		//}
 	}
 
 	return b.Config, b.EnvVars, nil
