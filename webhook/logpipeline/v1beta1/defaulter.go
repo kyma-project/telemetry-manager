@@ -41,6 +41,7 @@ func (ld defaulter) applyDefaults(pipeline *telemetryv1beta1.LogPipeline) {
 		if *pipeline.Spec.Input.Runtime.Enabled && pipeline.Spec.Input.Runtime.KeepOriginalBody == nil {
 			pipeline.Spec.Input.Runtime.KeepOriginalBody = &ld.RuntimeInputKeepOriginalBody
 		}
+
 		if *pipeline.Spec.Input.Runtime.Enabled && pipeline.Spec.Input.Runtime.Namespaces == nil {
 			pipeline.Spec.Input.Runtime.Namespaces = &telemetryv1beta1.NamespaceSelector{
 				Exclude: ld.ExcludeNamespaces,
