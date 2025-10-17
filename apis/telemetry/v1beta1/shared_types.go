@@ -115,9 +115,9 @@ type OutputTLS struct {
 
 // OTLPInput defines the collection of push-based metrics that use the OpenTelemetry protocol.
 type OTLPInput struct {
-	// If set to `true`, no push-based OTLP signals are collected. The default is `false`.
+	// If set to `false`, no push-based OTLP signals are collected. The default is `true`.
 	// +kubebuilder:validation:Optional
-	Disabled bool `json:"disabled,omitempty"`
+	Enabled *bool `json:"disabled,omitempty"`
 	// Namespaces describes whether push-based OTLP signals from specific namespaces are selected. System namespaces are enabled by default.
 	// +kubebuilder:validation:Optional
 	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`

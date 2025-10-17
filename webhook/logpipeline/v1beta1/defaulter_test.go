@@ -11,9 +11,11 @@ import (
 
 func TestDefault(t *testing.T) {
 	sut := defaulter{
+		ExcludeNamespaces:            []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
 		RuntimeInputEnabled:          true,
 		RuntimeInputKeepOriginalBody: true,
 		DefaultOTLPOutputProtocol:    telemetryv1beta1.OTLPProtocolGRPC,
+		OTLPInputEnabled:             true,
 	}
 
 	tests := []struct {
@@ -33,9 +35,15 @@ func TestDefault(t *testing.T) {
 			expected: &telemetryv1beta1.LogPipeline{
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Input: telemetryv1beta1.LogPipelineInput{
+						OTLP: &telemetryv1beta1.OTLPInput{
+							Enabled: ptr.To(true),
+						},
 						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
 							Enabled:          ptr.To(true),
 							KeepOriginalBody: ptr.To(true),
+							Namespaces: &telemetryv1beta1.NamespaceSelector{
+								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
+							},
 						},
 					},
 				},
@@ -55,9 +63,15 @@ func TestDefault(t *testing.T) {
 			expected: &telemetryv1beta1.LogPipeline{
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Input: telemetryv1beta1.LogPipelineInput{
+						OTLP: &telemetryv1beta1.OTLPInput{
+							Enabled: ptr.To(true),
+						},
 						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
 							Enabled:          ptr.To(true),
 							KeepOriginalBody: ptr.To(false),
+							Namespaces: &telemetryv1beta1.NamespaceSelector{
+								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
+							},
 						},
 					},
 				},
@@ -77,6 +91,9 @@ func TestDefault(t *testing.T) {
 			expected: &telemetryv1beta1.LogPipeline{
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Input: telemetryv1beta1.LogPipelineInput{
+						OTLP: &telemetryv1beta1.OTLPInput{
+							Enabled: ptr.To(true),
+						},
 						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
 							Enabled: ptr.To(false),
 						},
@@ -95,9 +112,27 @@ func TestDefault(t *testing.T) {
 			},
 			expected: &telemetryv1beta1.LogPipeline{
 				Spec: telemetryv1beta1.LogPipelineSpec{
+					Input: telemetryv1beta1.LogPipelineInput{
+						OTLP: &telemetryv1beta1.OTLPInput{
+							Enabled: ptr.To(true),
+						},
+					},
 					Output: telemetryv1beta1.LogPipelineOutput{
 						OTLP: &telemetryv1beta1.OTLPOutput{
 							Protocol: telemetryv1beta1.OTLPProtocolGRPC,
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "should enable otlp input by default",
+			input: &telemetryv1beta1.LogPipeline{},
+			expected: &telemetryv1beta1.LogPipeline{
+				Spec: telemetryv1beta1.LogPipelineSpec{
+					Input: telemetryv1beta1.LogPipelineInput{
+						OTLP: &telemetryv1beta1.OTLPInput{
+							Enabled: ptr.To(true),
 						},
 					},
 				},
