@@ -126,12 +126,12 @@ type OTLPInput struct {
 // NamespaceSelector describes whether signals from specific namespaces are selected.
 // +kubebuilder:validation:XValidation:rule="(has(self.include) == true ? 1 : 0) + (has(self.exclude) == true ? 1 : 0) <= 1",message="Only one of 'include' or 'exclude' can be defined"
 type NamespaceSelector struct {
-	// Include telemetry data from the specified Namespace names only. By default all namespaces (except system namespaes dependent on input type). An include list cannot be specified together with an exclude list.
+	// Include telemetry data from the specified namespace names only. By default, all namespaces (depending on input type: except system namespaces) are included. You can not specify an include list together with an exclude list.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:items:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
 	// +kubebuilder:validation:items:MaxLength=63
 	Include []string `json:"include,omitempty"`
-	// Exclude telemetry data from the specified Namespace names only. By default all namespaces (except system namespaes dependent on input type). An exclude list cannot be specified together with an include list.
+	// Exclude telemetry data from the specified namespace names only. By default, all namespaces (depending on input type: except system namespaces) are collected. You can not specify an exclude list together with an include list.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:items:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
 	// +kubebuilder:validation:items:MaxLength=63
