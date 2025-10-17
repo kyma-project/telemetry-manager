@@ -155,8 +155,7 @@ spec:
                         type: object
                         x-kubernetes-validations:
                         - message: Only one of 'include' or 'exclude' can be defined
-                          rule: '(has(self.include) == true ? 1 : 0) + (has(self.exclude)
-                            == true ? 1 : 0) <= 1'
+                          rule: '!(has(self.include) && has(self.exclude))'
                       dropLabels:
                         description: DropLabels defines whether to drop all Kubernetes
                           labels. The default is `false`. Only available when using
@@ -262,8 +261,7 @@ spec:
                         type: object
                         x-kubernetes-validations:
                         - message: Only one of 'include' or 'exclude' can be defined
-                          rule: '(has(self.include) == true ? 1 : 0) + (has(self.exclude)
-                            == true ? 1 : 0) <= 1'
+                          rule: '!(has(self.include) && has(self.exclude))'
                     type: object
                 type: object
               output:
@@ -968,9 +966,8 @@ spec:
                     type: object
                     x-kubernetes-validations:
                     - message: Path is only available with HTTP protocol
-                      rule: ((!has(self.path) || size(self.path) <= 0) && (has(self.protocol)
-                        && self.protocol == 'grpc')) || (has(self.protocol) && self.protocol
-                        == 'http')
+                      rule: '(has(self.path) && size(self.path) > 0) ? self.protocol
+                        == ''http'' : true'
                 type: object
                 x-kubernetes-validations:
                 - message: Switching to or away from OTLP output is not supported.
@@ -1293,8 +1290,7 @@ spec:
                         type: object
                         x-kubernetes-validations:
                         - message: Only one of 'include' or 'exclude' can be defined
-                          rule: '(has(self.include) == true ? 1 : 0) + (has(self.exclude)
-                            == true ? 1 : 0) <= 1'
+                          rule: '!(has(self.include) && has(self.exclude))'
                     type: object
                   runtime:
                     description: Runtime input configures the log collection from
@@ -1321,8 +1317,7 @@ spec:
                         type: object
                         x-kubernetes-validations:
                         - message: Only one of 'include' or 'exclude' can be defined
-                          rule: '(has(self.include) == true ? 1 : 0) + (has(self.exclude)
-                            == true ? 1 : 0) <= 1'
+                          rule: '!(has(self.include) && has(self.exclude))'
                       dropLabels:
                         description: DropLabels defines whether to drop all Kubernetes
                           labels. The default is `false`. Only available when using
@@ -2090,9 +2085,8 @@ spec:
                     type: object
                     x-kubernetes-validations:
                     - message: Path is only available with HTTP protocol
-                      rule: ((!has(self.path) || size(self.path) <= 0) && (has(self.protocol)
-                        && self.protocol == 'grpc')) || (has(self.protocol) && self.protocol
-                        == 'http')
+                      rule: '(has(self.path) && size(self.path) > 0) ? self.protocol
+                        == ''http'' : true'
                 type: object
                 x-kubernetes-validations:
                 - message: Switching to or away from OTLP output is not supported.

@@ -40,7 +40,7 @@ const (
 )
 
 // OTLPOutput OTLP output configuration
-// +kubebuilder:validation:XValidation:rule="((!has(self.path) || size(self.path) <= 0) && (has(self.protocol) && self.protocol == 'grpc')) || (has(self.protocol) && self.protocol == 'http')", message="Path is only available with HTTP protocol"
+// +kubebuilder:validation:XValidation:rule="(has(self.path) && size(self.path) > 0) ? self.protocol == 'http' : true",message="Path is only available with HTTP protocol"
 type OTLPOutput struct {
 	// Protocol defines the OTLP protocol (`http` or `grpc`). Default is `grpc`.
 	// +kubebuilder:validation:Optional
@@ -122,7 +122,7 @@ type OTLPInput struct {
 }
 
 // NamespaceSelector describes whether signals from specific namespaces are selected.
-// +kubebuilder:validation:XValidation:rule="(has(self.include) == true ? 1 : 0) + (has(self.exclude) == true ? 1 : 0) <= 1",message="Only one of 'include' or 'exclude' can be defined"
+// +kubebuilder:validation:XValidation:rule="!(has(self.include) && has(self.exclude))",message="Only one of 'include' or 'exclude' can be defined"
 type NamespaceSelector struct {
 	// Include telemetry data from the specified namespace names only. By default, all namespaces (depending on input type: except system namespaces) are included. You can not specify an include list together with an exclude list.
 	// +kubebuilder:validation:Optional

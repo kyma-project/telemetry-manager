@@ -107,7 +107,7 @@ spec:
                           type: object
                           x-kubernetes-validations:
                             - message: Only one of 'include' or 'exclude' can be defined
-                              rule: '(has(self.include) == true ? 1 : 0) + (has(self.exclude) == true ? 1 : 0) <= 1'
+                              rule: '!(has(self.include) && has(self.exclude))'
                       type: object
                     otlp:
                       description: OTLP input configures the push endpoint to receive metrics from an OTLP source.
@@ -135,7 +135,7 @@ spec:
                           type: object
                           x-kubernetes-validations:
                             - message: Only one of 'include' or 'exclude' can be defined
-                              rule: '(has(self.include) == true ? 1 : 0) + (has(self.exclude) == true ? 1 : 0) <= 1'
+                              rule: '!(has(self.include) && has(self.exclude))'
                       type: object
                     prometheus:
                       description: Prometheus input configures collection of application metrics in the pull-based Prometheus protocol using endpoint discovery based on annotations.
@@ -170,7 +170,7 @@ spec:
                           type: object
                           x-kubernetes-validations:
                             - message: Only one of 'include' or 'exclude' can be defined
-                              rule: '(has(self.include) == true ? 1 : 0) + (has(self.exclude) == true ? 1 : 0) <= 1'
+                              rule: '!(has(self.include) && has(self.exclude))'
                       type: object
                     runtime:
                       description: Runtime input configures collection of Kubernetes runtime metrics.
@@ -198,7 +198,7 @@ spec:
                           type: object
                           x-kubernetes-validations:
                             - message: Only one of 'include' or 'exclude' can be defined
-                              rule: '(has(self.include) == true ? 1 : 0) + (has(self.exclude) == true ? 1 : 0) <= 1'
+                              rule: '!(has(self.include) && has(self.exclude))'
                         resources:
                           description: Resources configures the Kubernetes resource types for which metrics are collected.
                           properties:
@@ -568,7 +568,7 @@ spec:
                       type: object
                       x-kubernetes-validations:
                         - message: Path is only available with HTTP protocol
-                          rule: ((!has(self.path) || size(self.path) <= 0) && (has(self.protocol) && self.protocol == 'grpc')) || (has(self.protocol) && self.protocol == 'http')
+                          rule: '(has(self.path) && size(self.path) > 0) ? self.protocol == ''http'' : true'
                   required:
                     - otlp
                   type: object

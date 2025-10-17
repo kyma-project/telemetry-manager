@@ -149,7 +149,7 @@ type LogPipelineNamespaceSelector struct {
 }
 
 // LogPipelineContainerSelector describes whether application logs from specific containers are selected. The options are mutually exclusive.
-// +kubebuilder:validation:XValidation:rule="(has(self.include) == true ? 1 : 0) + (has(self.exclude) == true ? 1 : 0) <= 1",message="Only one of 'include' or 'exclude' can be defined"
+// +kubebuilder:validation:XValidation:rule="!(has(self.include) && has(self.exclude))",message="Only one of 'include' or 'exclude' can be defined"
 type LogPipelineContainerSelector struct {
 	// Include specifies to include only the container logs with the specified container names.
 	// +kubebuilder:validation:Optional
