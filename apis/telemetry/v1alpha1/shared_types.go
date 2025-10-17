@@ -113,7 +113,7 @@ type OTLPTLS struct {
 
 // OTLPInput defines the collection of push-based metrics that use the OpenTelemetry protocol.
 type OTLPInput struct {
-	// Disabled specifies if the 'otlp' is deactivated, so that no push-based OTLP signals are collected. The default is `false`.
+	// Disabled specifies if the 'otlp' input is deactivated, so that no push-based OTLP signals are collected. The default is `false`.
 	// +kubebuilder:validation:Optional
 	Disabled bool `json:"disabled,omitempty"`
 	// Namespaces describes whether push-based OTLP signals from specific namespaces are selected. System namespaces are enabled by default.

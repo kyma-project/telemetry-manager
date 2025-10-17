@@ -95,7 +95,7 @@ type MetricPipelineInput struct {
 
 // MetricPipelinePrometheusInput collection of application metrics in the pull-based Prometheus protocol using endpoint discovery based on annotations.
 type MetricPipelinePrometheusInput struct {
-	// Enabled specifies if the 'prometheus' input is enabled, so that whether Service endpoints and Pods marked with `prometheus.io/scrape=true` annotation are scraped. The default is `false`.
+	// Enabled specifies if the 'prometheus' input is enabled, so that Service endpoints and Pods marked with `prometheus.io/scrape=true` annotation are scraped. The default is `false`.
 	// +kubebuilder:validation:Optional
 	Enabled *bool `json:"enabled,omitempty"`
 	// Namespaces specifies from which namespaces metrics are collected. By default, all namespaces except the system namespaces are enabled. To enable all namespaces including system namespaces, use an empty struct notation.

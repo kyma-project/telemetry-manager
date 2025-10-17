@@ -134,14 +134,14 @@ spec:
                           description: Namespaces describes whether application logs from specific namespaces are selected. The options are mutually exclusive. System namespaces are excluded by default. Use the `system` attribute with value `true` to enable them.
                           properties:
                             exclude:
-                              description: Exclude specifies the list of Namespace names to exclude when collecting container logs. By default logs from all namespaces are getting collected except system namespaces. An exclude list cannot be specified together with an include list.
+                              description: Exclude specifies the list of namespace names to exclude when collecting container logs. By default, logs from all namespaces are collected, except system namespaces. You can not specify an exclude list together with an include list.
                               items:
                                 maxLength: 63
                                 pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                 type: string
                               type: array
                             include:
-                              description: Include specifies the list of Namespace names to include when collecting container logs. By default logs from all namespaces are getting collected except system namespaces. An include list cannot be specified together with an exclude list.
+                              description: Include specifies the list of namespace names to include when collecting container logs. By default, logs from all namespaces are collected, except system namespaces. You can not specify an include list together with an exclude list.
                               items:
                                 maxLength: 63
                                 pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -159,7 +159,7 @@ spec:
                       description: OTLP input configures the push endpoint to receive logs from a OTLP source.
                       properties:
                         disabled:
-                          description: Disabled specifies if the 'otlp' is deactivated, so that no push-based OTLP signals are collected. The default is `false`.
+                          description: Disabled specifies if the 'otlp' input is deactivated, so that no push-based OTLP signals are collected. The default is `false`.
                           type: boolean
                         namespaces:
                           description: Namespaces describes whether push-based OTLP signals from specific namespaces are selected. System namespaces are enabled by default.

@@ -113,7 +113,7 @@ spec:
                       description: OTLP input configures the push endpoint to receive metrics from an OTLP source.
                       properties:
                         disabled:
-                          description: Disabled specifies if the 'otlp' is deactivated, so that no push-based OTLP signals are collected. The default is `false`.
+                          description: Disabled specifies if the 'otlp' input is deactivated, so that no push-based OTLP signals are collected. The default is `false`.
                           type: boolean
                         namespaces:
                           description: Namespaces describes whether push-based OTLP signals from specific namespaces are selected. System namespaces are enabled by default.
@@ -148,7 +148,7 @@ spec:
                               type: boolean
                           type: object
                         enabled:
-                          description: Enabled specifies if the 'prometheus' input is enabled, so that whether Service endpoints and Pods marked with `prometheus.io/scrape=true` annotation are scraped. The default is `false`.
+                          description: Enabled specifies if the 'prometheus' input is enabled, so that Service endpoints and Pods marked with `prometheus.io/scrape=true` annotation are scraped. The default is `false`.
                           type: boolean
                         namespaces:
                           description: Namespaces specifies from which namespaces metrics are collected. By default, all namespaces except the system namespaces are enabled. To enable all namespaces including system namespaces, use an empty struct notation.

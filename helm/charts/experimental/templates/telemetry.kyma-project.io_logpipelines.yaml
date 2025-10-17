@@ -187,22 +187,22 @@ spec:
                           the `system` attribute with value `true` to enable them.
                         properties:
                           exclude:
-                            description: Exclude specifies the list of Namespace names
-                              to exclude when collecting container logs. By default
-                              logs from all namespaces are getting collected except
-                              system namespaces. An exclude list cannot be specified
-                              together with an include list.
+                            description: Exclude specifies the list of namespace names
+                              to exclude when collecting container logs. By default,
+                              logs from all namespaces are collected, except system
+                              namespaces. You can not specify an exclude list together
+                              with an include list.
                             items:
                               maxLength: 63
                               pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
-                            description: Include specifies the list of Namespace names
-                              to include when collecting container logs. By default
-                              logs from all namespaces are getting collected except
-                              system namespaces. An include list cannot be specified
-                              together with an exclude list.
+                            description: Include specifies the list of namespace names
+                              to include when collecting container logs. By default,
+                              logs from all namespaces are collected, except system
+                              namespaces. You can not specify an include list together
+                              with an exclude list.
                             items:
                               maxLength: 63
                               pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -228,7 +228,7 @@ spec:
                       logs from a OTLP source.
                     properties:
                       disabled:
-                        description: Disabled specifies if the 'otlp' is deactivated,
+                        description: Disabled specifies if the 'otlp' input is deactivated,
                           so that no push-based OTLP signals are collected. The default
                           is `false`.
                         type: boolean
@@ -1257,7 +1257,7 @@ spec:
                       logs from a OTLP source.
                     properties:
                       disabled:
-                        description: Disabled specifies if the 'otlp' is deactivated,
+                        description: Disabled specifies if the 'otlp' input is deactivated,
                           so that no push-based OTLP signals are collected. The default
                           is `false`.
                         type: boolean
@@ -1267,20 +1267,22 @@ spec:
                           are enabled by default.
                         properties:
                           exclude:
-                            description: Exclude telemetry data from the specified
-                              Namespace names only. By default all namespaces (except
-                              system namespaes dependent on input type). An exclude
-                              list cannot be specified together with an include list.
+                            description: 'Exclude telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are collected.
+                              You can not specify an exclude list together with an
+                              include list.'
                             items:
                               maxLength: 63
                               pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
-                            description: Include telemetry data from the specified
-                              Namespace names only. By default all namespaces (except
-                              system namespaes dependent on input type). An include
-                              list cannot be specified together with an exclude list.
+                            description: 'Include telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are included.
+                              You can not specify an include list together with an
+                              exclude list.'
                             items:
                               maxLength: 63
                               pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -1349,22 +1351,22 @@ spec:
                           the `system` attribute with value `true` to enable them.
                         properties:
                           exclude:
-                            description: Exclude specifies the list of Namespace names
-                              to exclude when collecting container logs. By default
-                              logs from all namespaces are getting collected except
-                              system namespaces. An exclude list cannot be specified
-                              together with an include list.
+                            description: Exclude specifies the list of namespace names
+                              to exclude when collecting container logs. By default,
+                              logs from all namespaces are collected, except system
+                              namespaces. You can not specify an exclude list together
+                              with an include list.
                             items:
                               maxLength: 63
                               pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
-                            description: Include specifies the list of Namespace names
-                              to include when collecting container logs. By default
-                              logs from all namespaces are getting collected except
-                              system namespaces. An include list cannot be specified
-                              together with an exclude list.
+                            description: Include specifies the list of namespace names
+                              to include when collecting container logs. By default,
+                              logs from all namespaces are collected, except system
+                              namespaces. You can not specify an include list together
+                              with an exclude list.
                             items:
                               maxLength: 63
                               pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$

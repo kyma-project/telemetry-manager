@@ -149,7 +149,7 @@ spec:
                       metrics from an OTLP source.
                     properties:
                       disabled:
-                        description: Disabled specifies if the 'otlp' is deactivated,
+                        description: Disabled specifies if the 'otlp' input is deactivated,
                           so that no push-based OTLP signals are collected. The default
                           is `false`.
                         type: boolean
@@ -200,9 +200,9 @@ spec:
                         type: object
                       enabled:
                         description: Enabled specifies if the 'prometheus' input is
-                          enabled, so that whether Service endpoints and Pods marked
-                          with `prometheus.io/scrape=true` annotation are scraped.
-                          The default is `false`.
+                          enabled, so that Service endpoints and Pods marked with
+                          `prometheus.io/scrape=true` annotation are scraped. The
+                          default is `false`.
                         type: boolean
                       namespaces:
                         description: Namespaces specifies from which namespaces metrics
@@ -939,20 +939,22 @@ spec:
                           including system namespaces are enabled.
                         properties:
                           exclude:
-                            description: Exclude telemetry data from the specified
-                              Namespace names only. By default all namespaces (except
-                              system namespaes dependent on input type). An exclude
-                              list cannot be specified together with an include list.
+                            description: 'Exclude telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are collected.
+                              You can not specify an exclude list together with an
+                              include list.'
                             items:
                               maxLength: 63
                               pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
-                            description: Include telemetry data from the specified
-                              Namespace names only. By default all namespaces (except
-                              system namespaes dependent on input type). An include
-                              list cannot be specified together with an exclude list.
+                            description: 'Include telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are included.
+                              You can not specify an include list together with an
+                              exclude list.'
                             items:
                               maxLength: 63
                               pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -969,7 +971,7 @@ spec:
                       metrics from an OTLP source.
                     properties:
                       disabled:
-                        description: Disabled specifies if the 'otlp' is deactivated,
+                        description: Disabled specifies if the 'otlp' input is deactivated,
                           so that no push-based OTLP signals are collected. The default
                           is `false`.
                         type: boolean
@@ -979,20 +981,22 @@ spec:
                           are enabled by default.
                         properties:
                           exclude:
-                            description: Exclude telemetry data from the specified
-                              Namespace names only. By default all namespaces (except
-                              system namespaes dependent on input type). An exclude
-                              list cannot be specified together with an include list.
+                            description: 'Exclude telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are collected.
+                              You can not specify an exclude list together with an
+                              include list.'
                             items:
                               maxLength: 63
                               pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
-                            description: Include telemetry data from the specified
-                              Namespace names only. By default all namespaces (except
-                              system namespaes dependent on input type). An include
-                              list cannot be specified together with an exclude list.
+                            description: 'Include telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are included.
+                              You can not specify an include list together with an
+                              exclude list.'
                             items:
                               maxLength: 63
                               pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -1020,9 +1024,9 @@ spec:
                         type: object
                       enabled:
                         description: Enabled specifies if the 'prometheus' input is
-                          enabled, so that whether Service endpoints and Pods marked
-                          with `prometheus.io/scrape=true` annotation are scraped.
-                          The default is `false`.
+                          enabled, so that Service endpoints and Pods marked with
+                          `prometheus.io/scrape=true` annotation are scraped. The
+                          default is `false`.
                         type: boolean
                       namespaces:
                         description: Namespaces specifies from which namespaces metrics
@@ -1031,20 +1035,22 @@ spec:
                           system namespaces, use an empty struct notation.
                         properties:
                           exclude:
-                            description: Exclude telemetry data from the specified
-                              Namespace names only. By default all namespaces (except
-                              system namespaes dependent on input type). An exclude
-                              list cannot be specified together with an include list.
+                            description: 'Exclude telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are collected.
+                              You can not specify an exclude list together with an
+                              include list.'
                             items:
                               maxLength: 63
                               pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
-                            description: Include telemetry data from the specified
-                              Namespace names only. By default all namespaces (except
-                              system namespaes dependent on input type). An include
-                              list cannot be specified together with an exclude list.
+                            description: 'Include telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are included.
+                              You can not specify an include list together with an
+                              exclude list.'
                             items:
                               maxLength: 63
                               pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -1071,20 +1077,22 @@ spec:
                           system namespaces, use an empty struct notation.
                         properties:
                           exclude:
-                            description: Exclude telemetry data from the specified
-                              Namespace names only. By default all namespaces (except
-                              system namespaes dependent on input type). An exclude
-                              list cannot be specified together with an include list.
+                            description: 'Exclude telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are collected.
+                              You can not specify an exclude list together with an
+                              include list.'
                             items:
                               maxLength: 63
                               pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
-                            description: Include telemetry data from the specified
-                              Namespace names only. By default all namespaces (except
-                              system namespaes dependent on input type). An include
-                              list cannot be specified together with an exclude list.
+                            description: 'Include telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are included.
+                              You can not specify an include list together with an
+                              exclude list.'
                             items:
                               maxLength: 63
                               pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
