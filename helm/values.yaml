@@ -8,6 +8,7 @@ manager:
       - --cert-dir=/tmp
       - --high-priority-class-name=telemetry-priority-class-high
       - --normal-priority-class-name=telemetry-priority-class
+      - --is-restricted-market=false
     env:
       alpineImage: europe-docker.pkg.dev/kyma-project/prod/external/library/alpine:3.22.1
       appLogLevel: info

@@ -67,7 +67,7 @@ type AgentApplyOptions struct {
 	BackendPorts []string
 }
 
-func NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName string) *AgentApplierDeleter {
+func NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName string, enableFIPSMode bool) *AgentApplierDeleter {
 	extraLabels := map[string]string{
 		commonresources.LabelKeyIstioInject: "true", // inject Istio sidecar
 	}
@@ -104,6 +104,7 @@ func NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName stri
 			commonresources.WithResources(collectorResources),
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
 			commonresources.WithGoMemLimitEnvVar(logAgentMemoryLimit),
+			commonresources.WithGoDebugEnvVar(enableFIPSMode),
 			commonresources.WithVolumeMounts(collectorVolumeMounts),
 			commonresources.WithRunAsGroup(commonresources.GroupRoot),
 			commonresources.WithRunAsUser(commonresources.UserDefault),
@@ -111,7 +112,7 @@ func NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName stri
 	}
 }
 
-func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string) *AgentApplierDeleter {
+func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string, enableFIPSMode bool) *AgentApplierDeleter {
 	extraLabels := map[string]string{
 		commonresources.LabelKeyTelemetryMetricScrape: "true",
 		commonresources.LabelKeyTelemetryMetricExport: "true",
@@ -133,6 +134,7 @@ func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string) *A
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
 			commonresources.WithGoMemLimitEnvVar(metricAgentMemoryLimit),
+			commonresources.WithGoDebugEnvVar(enableFIPSMode),
 			commonresources.WithResources(commonresources.MakeResourceRequirements(
 				metricAgentMemoryLimit,
 				metricAgentMemoryRequest,
