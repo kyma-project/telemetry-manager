@@ -9,16 +9,16 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
-type testCase struct {
+type transformTestCase struct {
 	name            string
 	transforms      []telemetryv1alpha1.TransformSpec
 	isErrorExpected bool
 }
 
-func TestValidateForLogPipeline(t *testing.T) {
-	tests := resourceContextTestCases()
-	tests = append(tests, scopeContextTestCases()...)
-	tests = append(tests, logContextTestCases()...)
+func TestValidateLogPipelineTransforms(t *testing.T) {
+	tests := transformResourceContextTestCases()
+	tests = append(tests, transformScopeContextTestCases()...)
+	tests = append(tests, transformLogContextTestCases()...)
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -39,11 +39,11 @@ func TestValidateForLogPipeline(t *testing.T) {
 	}
 }
 
-func TestValidateForTracePipeline(t *testing.T) {
-	tests := resourceContextTestCases()
-	tests = append(tests, scopeContextTestCases()...)
-	tests = append(tests, spanContextTestCases()...)
-	tests = append(tests, spanEventContextTestCases()...)
+func TestValidateTracePipelineTransforms(t *testing.T) {
+	tests := transformResourceContextTestCases()
+	tests = append(tests, transformScopeContextTestCases()...)
+	tests = append(tests, transformSpanContextTestCases()...)
+	tests = append(tests, transformSpanEventContextTestCases()...)
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -64,11 +64,11 @@ func TestValidateForTracePipeline(t *testing.T) {
 	}
 }
 
-func TestValidateForMetricPipeline(t *testing.T) {
-	tests := resourceContextTestCases()
-	tests = append(tests, scopeContextTestCases()...)
-	tests = append(tests, metricContextTestCases()...)
-	tests = append(tests, dataPointContextTestCases()...)
+func TestMetricPipelineTransforms(t *testing.T) {
+	tests := transformResourceContextTestCases()
+	tests = append(tests, transformScopeContextTestCases()...)
+	tests = append(tests, transformMetricContextTestCases()...)
+	tests = append(tests, transformDataPointContextTestCases()...)
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -89,11 +89,11 @@ func TestValidateForMetricPipeline(t *testing.T) {
 	}
 }
 
-// resourceContextTestCases generates test cases for the validation of the "resource" context
+// transformResourceContextTestCases generates test cases for the validation of the "resource" context
 // The "resource" context is common in log_statements, metric_statements and trace_statements
 // For more info, check https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/transformprocessor#config
-func resourceContextTestCases() []testCase {
-	return []testCase{
+func transformResourceContextTestCases() []transformTestCase {
+	return []transformTestCase{
 		{
 			name: "[resource context] valid transform spec with both statement and condition",
 			transforms: []telemetryv1alpha1.TransformSpec{
@@ -202,11 +202,11 @@ func resourceContextTestCases() []testCase {
 	}
 }
 
-// scopeContextTestCases generates test cases for the validation of the "scope" context
+// transformScopeContextTestCases generates test cases for the validation of the "scope" context
 // The "scope" context is common in log_statements, metric_statements and trace_statements
 // For more info, check https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/transformprocessor#config
-func scopeContextTestCases() []testCase {
-	return []testCase{
+func transformScopeContextTestCases() []transformTestCase {
+	return []transformTestCase{
 		{
 			name: "[scope context] valid transform spec with both statement and condition",
 			transforms: []telemetryv1alpha1.TransformSpec{
@@ -316,9 +316,9 @@ func scopeContextTestCases() []testCase {
 	}
 }
 
-// logContextTestCases generates test cases for the validation of the "log" context
-func logContextTestCases() []testCase {
-	return []testCase{
+// transformLogContextTestCases generates test cases for the validation of the "log" context
+func transformLogContextTestCases() []transformTestCase {
+	return []transformTestCase{
 		{
 			name: "[log context] valid transform spec with both statement and condition",
 			transforms: []telemetryv1alpha1.TransformSpec{
@@ -438,9 +438,9 @@ func logContextTestCases() []testCase {
 	}
 }
 
-// spanContextTestCases generates test cases for the validation of the "span" context
-func spanContextTestCases() []testCase {
-	return []testCase{
+// transformSpanContextTestCases generates test cases for the validation of the "span" context
+func transformSpanContextTestCases() []transformTestCase {
+	return []transformTestCase{
 		{
 			name: "[span context] valid transform spec with both statement and condition",
 			transforms: []telemetryv1alpha1.TransformSpec{
@@ -569,9 +569,9 @@ func spanContextTestCases() []testCase {
 	}
 }
 
-// spanEventContextTestCases generates test cases for the validation of the "spanevent" context
-func spanEventContextTestCases() []testCase {
-	return []testCase{
+// transformSpanEventContextTestCases generates test cases for the validation of the "spanevent" context
+func transformSpanEventContextTestCases() []transformTestCase {
+	return []transformTestCase{
 		{
 			name: "[spanevent context] valid transform spec with both statement and condition",
 			transforms: []telemetryv1alpha1.TransformSpec{
@@ -691,9 +691,9 @@ func spanEventContextTestCases() []testCase {
 	}
 }
 
-// metricContextTestCases generates test cases for the validation of the "metric" context
-func metricContextTestCases() []testCase {
-	return []testCase{
+// transformMetricContextTestCases generates test cases for the validation of the "metric" context
+func transformMetricContextTestCases() []transformTestCase {
+	return []transformTestCase{
 		{
 			name: "[metric context] valid transform spec with both statement and condition",
 			transforms: []telemetryv1alpha1.TransformSpec{
@@ -825,9 +825,9 @@ func metricContextTestCases() []testCase {
 	}
 }
 
-// dataPointContextTestCases generates test cases for the validation of the "datapoint" context
-func dataPointContextTestCases() []testCase {
-	return []testCase{
+// transformDataPointContextTestCases generates test cases for the validation of the "datapoint" context
+func transformDataPointContextTestCases() []transformTestCase {
+	return []transformTestCase{
 		{
 			name: "[datapoint context] valid transform spec with both statement and condition",
 			transforms: []telemetryv1alpha1.TransformSpec{
