@@ -27,11 +27,7 @@ func withLogParser(functions map[string]ottl.Factory[ottllog.TransformContext], 
 			return err
 		}
 
-		return ottl.WithParserCollectionContext(
-			ottllog.ContextName,
-			&logParser,
-			opts...,
-		)(pc)
+		return ottl.WithParserCollectionContext(ottllog.ContextName, &logParser, opts...)(pc)
 	}
 }
 
@@ -42,11 +38,7 @@ func withDataPointParser(functions map[string]ottl.Factory[ottldatapoint.Transfo
 			return err
 		}
 
-		return ottl.WithParserCollectionContext(
-			ottldatapoint.ContextName,
-			&datapointParser,
-			opts...,
-		)(pc)
+		return ottl.WithParserCollectionContext(ottldatapoint.ContextName, &datapointParser, opts...)(pc)
 	}
 }
 
@@ -57,11 +49,7 @@ func withMetricParser(functions map[string]ottl.Factory[ottlmetric.TransformCont
 			return err
 		}
 
-		return ottl.WithParserCollectionContext(
-			ottlmetric.ContextName,
-			&metricParser,
-			opts...,
-		)(pc)
+		return ottl.WithParserCollectionContext(ottlmetric.ContextName, &metricParser, opts...)(pc)
 	}
 }
 
@@ -72,11 +60,7 @@ func withSpanEventParser(functions map[string]ottl.Factory[ottlspanevent.Transfo
 			return err
 		}
 
-		return ottl.WithParserCollectionContext(
-			ottlspanevent.ContextName,
-			&spanEventParser,
-			opts...,
-		)(pc)
+		return ottl.WithParserCollectionContext(ottlspanevent.ContextName, &spanEventParser, opts...)(pc)
 	}
 }
 
@@ -87,11 +71,7 @@ func withSpanParser(functions map[string]ottl.Factory[ottlspan.TransformContext]
 			return err
 		}
 
-		return ottl.WithParserCollectionContext(
-			ottlspan.ContextName,
-			&spanParser,
-			opts...,
-		)(pc)
+		return ottl.WithParserCollectionContext(ottlspan.ContextName, &spanParser, opts...)(pc)
 	}
 }
 
@@ -102,11 +82,7 @@ func withResourceParser(functions map[string]ottl.Factory[ottlresource.Transform
 			return err
 		}
 
-		return ottl.WithParserCollectionContext(
-			ottlresource.ContextName,
-			&resourceParser,
-			opts...,
-		)(pc)
+		return ottl.WithParserCollectionContext(ottlresource.ContextName, &resourceParser, opts...)(pc)
 	}
 }
 
@@ -117,11 +93,7 @@ func withScopeParser(functions map[string]ottl.Factory[ottlscope.TransformContex
 			return err
 		}
 
-		return ottl.WithParserCollectionContext(
-			ottlscope.ContextName,
-			&scopeParser,
-			opts...,
-		)(pc)
+		return ottl.WithParserCollectionContext(ottlscope.ContextName, &scopeParser, opts...)(pc)
 	}
 }
 
