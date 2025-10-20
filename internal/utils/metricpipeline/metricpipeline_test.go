@@ -23,7 +23,7 @@ func TestOTLPOutputPort(t *testing.T) {
 
 		ports, err := OTLPOutputPorts(t.Context(), fakeClient, metricPipelines)
 		require.NoError(t, err)
-		require.Equal(t, []string{"4317", "4318", "80", "9090"}, ports)
+		require.Equal(t, []string{"4317", "4318", "9090"}, ports)
 	})
 
 	t.Run("some metric pipelines have invalid endpoints", func(t *testing.T) {
@@ -62,7 +62,7 @@ func TestOTLPOutputPort(t *testing.T) {
 
 		ports, err := OTLPOutputPorts(t.Context(), fakeClient, metricPipelines)
 		require.NoError(t, err)
-		require.Equal(t, []string{"443", "80", "9090"}, ports)
+		require.Equal(t, []string{"80", "9090"}, ports)
 	})
 	t.Run("ports get sorted properly", func(t *testing.T) {
 		metricPipelines := []telemetryv1alpha1.MetricPipeline{
@@ -75,5 +75,15 @@ func TestOTLPOutputPort(t *testing.T) {
 		ports, err := OTLPOutputPorts(t.Context(), fakeClient, metricPipelines)
 		require.NoError(t, err)
 		require.Equal(t, []string{"4317", "7070", "80", "9090"}, ports)
+	})
+
+	t.Run("otlp/http output with no port gets the default port", func(t *testing.T) {
+		metricPipelines := []telemetryv1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("http://sample.test.com/api/test"), testutils.OTLPProtocol(telemetryv1alpha1.OTLPProtocolHTTP)).Build(),
+		}
+
+		ports, err := OTLPOutputPorts(t.Context(), fakeClient, metricPipelines)
+		require.NoError(t, err)
+		require.Equal(t, []string{"4318"}, ports)
 	})
 }

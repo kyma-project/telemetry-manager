@@ -43,7 +43,7 @@ func IsOTLPDefined(o *telemetryv1alpha1.LogPipelineOutput) bool {
 
 // ContainsCustomPlugin returns true if the pipeline contains any custom filters or outputs
 func ContainsCustomPlugin(lp *telemetryv1alpha1.LogPipeline) bool {
-	for _, filter := range lp.Spec.Filters {
+	for _, filter := range lp.Spec.FluentBitFilters {
 		if filter.Custom != "" {
 			return true
 		}

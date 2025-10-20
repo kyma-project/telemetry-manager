@@ -57,6 +57,7 @@ const (
 	kymaK8sIOAppName                   = "kyma.kubernetes_io_app_name"
 	kymaAppName                        = "kyma.app_name"
 	defaultTransformProcessorErrorMode = "ignore"
+	defaultFilterProcessorErrorMode    = "ignore"
 )
 
 const (
@@ -97,6 +98,7 @@ const (
 	ComponentIDK8sAttributesProcessor                  = "k8sattributes"
 	ComponentIDServiceEnrichmentProcessor              = "service_enrichment"
 	ComponentIDIstioNoiseFilterProcessor               = "istio_noise_filter"
+	ComponentIDUserDefinedFilterProcessor              = "filter/user-defined-%s" // dynamically filled with pipeline name
 	ComponentIDSetInstrumentationScopeKymaProcessor    = "transform/set-instrumentation-scope-kyma"
 	ComponentIDSetInstrumentationScopeRuntimeProcessor = "transform/set-instrumentation-scope-runtime"
 	ComponentIDUserDefinedTransformProcessor           = "transform/user-defined-%s" // dynamically filled with pipeline name

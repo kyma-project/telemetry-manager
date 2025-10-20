@@ -91,9 +91,28 @@ spec:
                   - name
                   type: object
                 type: array
+              filter:
+                description: Filters specifies a list of filters to apply to telemetry
+                  data.
+                items:
+                  description: FilterSpec defines a filter to apply to telemetry data.
+                  properties:
+                    conditions:
+                      description: Conditions specify a list of multiple where clauses,
+                        which will be processed as global conditions for the accompanying
+                        set of statements. The conditions are ORed together, which
+                        means only one condition needs to evaluate to true in order
+                        for the statements (including their individual where clauses)
+                        to be executed.
+                      items:
+                        type: string
+                      type: array
+                  type: object
+                type: array
               filters:
-                description: Filters configures custom Fluent Bit `filters` to transform
-                  logs. Only available when using an output of type `http` and `custom`.
+                description: FluentBitFilters configures custom Fluent Bit `filters`
+                  to transform logs. Only available when using an output of type `http`
+                  and `custom`.
                 items:
                   description: LogPipelineFilter configures custom Fluent Bit `filters`
                     to transform logs. Only available when using an output of type
@@ -1032,6 +1051,8 @@ spec:
               rule: '!(has(self.output.otlp) && has(self.variables))'
             - message: transform is only supported with otlp output
               rule: has(self.output.otlp) || !(has(self.transform))
+            - message: filter is only supported with otlp output
+              rule: has(self.output.otlp) || !(has(self.filter))
             - message: otlp input is only supported with otlp output
               rule: has(self.output.otlp) || !(has(self.input.otlp))
           status:
@@ -1172,9 +1193,28 @@ spec:
                   - name
                   type: object
                 type: array
+              filter:
+                description: Filters specifies a list of filters to apply to telemetry
+                  data.
+                items:
+                  description: FilterSpec defines a filter to apply to telemetry data.
+                  properties:
+                    conditions:
+                      description: Conditions specify a list of multiple where clauses,
+                        which will be processed as global conditions for the accompanying
+                        set of statements. The conditions are ORed together, which
+                        means only one condition needs to evaluate to true in order
+                        for the statements (including their individual where clauses)
+                        to be executed.
+                      items:
+                        type: string
+                      type: array
+                  type: object
+                type: array
               filters:
-                description: Filters configures custom Fluent Bit `filters` to transform
-                  logs. Only available when using an output of type `http` and `custom`.
+                description: FluentBitFilters configures custom Fluent Bit `filters`
+                  to transform logs. Only available when using an output of type `http`
+                  and `custom`.
                 items:
                   description: LogPipelineFilter configures custom Fluent Bit `filters`
                     to transform logs. Only available when using an output of type
@@ -2110,6 +2150,8 @@ spec:
               rule: '!(has(self.output.otlp) && has(self.variables))'
             - message: transform is only supported with otlp output
               rule: has(self.output.otlp) || !(has(self.transform))
+            - message: filter is only supported with otlp output
+              rule: has(self.output.otlp) || !(has(self.filter))
             - message: otlp input is only supported with otlp output
               rule: has(self.output.otlp) || !(has(self.input.otlp))
           status:

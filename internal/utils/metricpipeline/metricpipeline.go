@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"net/url"
 	"slices"
+	"strconv"
 	"strings"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
 func IsIstioInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
@@ -113,11 +115,6 @@ func IsRuntimeJobInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool 
 	return *input.Runtime.Resources.Job.Enabled
 }
 
-var schemeToPort map[string]string = map[string]string{
-	"http":  "80",
-	"https": "443",
-}
-
 // OTLPOutputPorts returns the list of ports of the backends defined in all given MetricPipelines
 func OTLPOutputPorts(ctx context.Context, c client.Reader, allPipelines []telemetryv1alpha1.MetricPipeline) ([]string, error) {
 	backendPorts := []string{}
@@ -128,7 +125,7 @@ func OTLPOutputPorts(ctx context.Context, c client.Reader, allPipelines []teleme
 			return nil, fmt.Errorf("failed to resolve the value of the OTLP output endpoint: %w", err)
 		}
 
-		port := extractPort(string(endpoint))
+		port := extractPort(string(endpoint), pipeline.Spec.Output.OTLP.Protocol)
 
 		if port != "" {
 			backendPorts = append(backendPorts, port)
@@ -144,30 +141,25 @@ func OTLPOutputPorts(ctx context.Context, c client.Reader, allPipelines []teleme
 	return backendPorts, nil
 }
 
-func extractPort(s string) string {
-	normalizedURL := s
-	hasScheme := strings.Contains(s, "://")
+func extractPort(endpoint, protocol string) string {
+	normalizedURL := endpoint
+	hasScheme := strings.Contains(endpoint, "://")
 
 	// adds a scheme if there are none, since url.Parse only accepts valid URLs
 	// without scheme, url.Parse assumes the whole string is the host
 	if !hasScheme {
 		dummyScheme := "plhd://"
-		normalizedURL = dummyScheme + s
+		normalizedURL = dummyScheme + endpoint
 	}
 
-	endpoint, err := url.Parse(normalizedURL)
+	endpointURL, err := url.Parse(normalizedURL)
 	if err != nil {
 		return ""
 	}
-
-	if endpoint.Port() == "" {
-		port, ok := schemeToPort[endpoint.Scheme]
-		if !ok {
-			return ""
-		}
-
-		return port
+	// OTLP exporter accepts a URL without a port when protocol is OTLP/HTTP
+	if endpointURL.Port() == "" && protocol == telemetryv1alpha1.OTLPProtocolHTTP {
+		return strconv.Itoa(int(ports.OTLPHTTP))
 	}
 
-	return endpoint.Port()
+	return endpointURL.Port()
 }

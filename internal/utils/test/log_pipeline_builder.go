@@ -26,10 +26,11 @@ type LogPipelineBuilder struct {
 	otlpOutput   *telemetryv1alpha1.OTLPOutput
 	customOutput string
 
-	filters    []telemetryv1alpha1.LogPipelineFilter
-	files      []telemetryv1alpha1.LogPipelineFileMount
-	variables  []telemetryv1alpha1.LogPipelineVariableRef
-	transforms []telemetryv1alpha1.TransformSpec
+	fluentBitFilters []telemetryv1alpha1.LogPipelineFilter
+	files            []telemetryv1alpha1.LogPipelineFileMount
+	variables        []telemetryv1alpha1.LogPipelineVariableRef
+	transforms       []telemetryv1alpha1.TransformSpec
+	filters          []telemetryv1alpha1.FilterSpec
 
 	statusConditions []metav1.Condition
 }
@@ -230,7 +231,7 @@ func (b *LogPipelineBuilder) WithKeepOriginalBody(keep bool) *LogPipelineBuilder
 }
 
 func (b *LogPipelineBuilder) WithCustomFilter(filter string) *LogPipelineBuilder {
-	b.filters = append(b.filters, telemetryv1alpha1.LogPipelineFilter{Custom: filter})
+	b.fluentBitFilters = append(b.fluentBitFilters, telemetryv1alpha1.LogPipelineFilter{Custom: filter})
 	return b
 }
 
@@ -286,6 +287,11 @@ func (b *LogPipelineBuilder) WithTransform(transform telemetryv1alpha1.Transform
 	return b
 }
 
+func (b *LogPipelineBuilder) WithFilter(filter telemetryv1alpha1.FilterSpec) *LogPipelineBuilder {
+	b.filters = append(b.filters, filter)
+	return b
+}
+
 func (b *LogPipelineBuilder) WithDeletionTimeStamp(ts metav1.Time) *LogPipelineBuilder {
 	b.deletionTimeStamp = ts
 	return b
@@ -317,8 +323,8 @@ func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 			Finalizers: b.finalizers,
 		},
 		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Input:   b.input,
-			Filters: b.filters,
+			Input:            b.input,
+			FluentBitFilters: b.fluentBitFilters,
 			Output: telemetryv1alpha1.LogPipelineOutput{
 				HTTP:   b.httpOutput,
 				Custom: b.customOutput,
@@ -327,6 +333,7 @@ func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 			Files:      b.files,
 			Variables:  b.variables,
 			Transforms: b.transforms,
+			Filters:    b.filters,
 		},
 		Status: telemetryv1alpha1.LogPipelineStatus{
 			Conditions: b.statusConditions,
