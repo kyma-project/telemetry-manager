@@ -9,24 +9,6 @@ import (
 	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 )
 
-func (b *Builder) addOutputForwardReceiver() buildComponentFunc {
-	return b.AddReceiver(
-		formatForwardConnectorID,
-		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			return &common.ForwardConnector{}
-		},
-	)
-}
-
-func (b *Builder) addOutputRoutingReceiver() buildComponentFunc {
-	return b.AddReceiver(
-		formatRoutingConnectorID,
-		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			return enrichmentRoutingConnectorConfig(mp)
-		},
-	)
-}
-
 func (b *Builder) addSetInstrumentationScopeToKymaProcessor(opts BuildOptions) buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDSetInstrumentationScopeKymaProcessor),
@@ -77,10 +59,6 @@ func shouldFilterByNamespace(namespaceSelector *telemetryv1alpha1.NamespaceSelec
 	return namespaceSelector != nil && (len(namespaceSelector.Include) > 0 || len(namespaceSelector.Exclude) > 0)
 }
 
-func inputSourceEquals(inputSourceType common.InputSourceType) string {
-	return common.ScopeNameEquals(common.InstrumentationScope[inputSourceType])
-}
-
 // When instrumentation scope is not set to any of the following values
 // io.kyma-project.telemetry/runtime, io.kyma-project.telemetry/prometheus, io.kyma-project.telemetry/istio, and io.kyma-project.telemetry/kyma
 // we assume the metric is being pushed directly to metrics gateway.
@@ -95,6 +73,7 @@ func ottlUknownInputSource() string {
 
 func filterByNamespaceProcessorConfig(namespaceSelector *telemetryv1alpha1.NamespaceSelector, inputSourceCondition string) *common.FilterProcessor {
 	var filterExpressions []string
+
 	if len(namespaceSelector.Exclude) > 0 {
 		namespacesConditions := namespacesConditionsBuilder(namespaceSelector.Exclude)
 		excludeNamespacesExpr := common.JoinWithAnd(inputSourceCondition, common.JoinWithOr(namespacesConditions...))

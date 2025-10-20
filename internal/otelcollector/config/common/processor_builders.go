@@ -237,7 +237,7 @@ func FilterSpecsToTraceFilterProcessorConfig(specs []telemetryv1alpha1.FilterSpe
 	return &FilterProcessor{
 		ErrorMode: defaultFilterProcessorErrorMode,
 		Traces: FilterProcessorTraces{
-			// Use span context as it is it is always present even though spanevents is the lowest one
+			// Use span context as it is always present even though spanevents is the lowest one
 			// span event filtering is not supported by user-defined filter until filter processor supports context inference
 			Span: mergedConditions,
 		},

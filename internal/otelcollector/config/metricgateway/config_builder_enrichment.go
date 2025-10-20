@@ -5,15 +5,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 )
 
-//func (b *Builder) addEnrichmentRoutingReceiver() buildComponentFunc {
-//	return b.AddReceiver(
-//		formatRoutingConnectorID,
-//		func(mp *telemetryv1alpha1.MetricPipeline) any {
-//			return enrichmentRoutingConnectorConfig(mp)
-//		},
-//	)
-//}
-
 func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDK8sAttributesProcessor),
@@ -31,12 +22,3 @@ func (b *Builder) addServiceEnrichmentProcessor() buildComponentFunc {
 		},
 	)
 }
-
-//func (b *Builder) addEnrichmentForwardExporter() buildComponentFunc {
-//	return b.AddExporter(
-//		formatForwardConnectorID,
-//		func(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline) (any, common.EnvVars, error) {
-//			return &common.ForwardConnector{}, nil, nil
-//		},
-//	)
-//}

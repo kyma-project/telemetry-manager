@@ -65,32 +65,6 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 		); err != nil {
 			return nil, nil, fmt.Errorf("failed to add input service pipeline: %w", err)
 		}
-
-		//enrichmentPipelineID := formatEnrichmentServicePipelineID(&pipeline)
-		//if err := b.AddServicePipeline(ctx, &pipeline, enrichmentPipelineID); err != nil {
-		//	return nil, nil, fmt.Errorf("failed to add enrichment service pipeline: %w", err)
-		//}
-		//
-		//ouputPipelineID := formatOutputServicePipelineID(&pipeline)
-		//if err := b.AddServicePipeline(ctx, &pipeline, ouputPipelineID,
-		//	b.addOutputRoutingReceiver(),
-		//	b.addOutputForwardReceiver(),
-		//	b.addSetInstrumentationScopeToKymaProcessor(opts),
-		//	// Input source filters
-		//	b.addDropIfOTLPInputDisabledProcessor(),
-		//	// Namespace filters
-		//	b.addOTLPNamespaceFilterProcessor(),
-		//
-		//	b.addInsertClusterAttributesProcessor(opts),
-		//	b.addDropKymaAttributesProcessor(),
-		//	b.addUserDefinedTransformProcessor(),
-		//	// Batch processor (always last)
-		//	b.addBatchProcessor(),
-		//	// OTLP exporter
-		//	b.addOTLPExporter(queueSize),
-		//); err != nil {
-		//	return nil, nil, fmt.Errorf("failed to add output service pipeline: %w", err)
-		//}
 	}
 
 	return b.Config, b.EnvVars, nil
@@ -98,38 +72,6 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 
 // Helper functions
 
-func enrichmentRoutingConnectorConfig(mp *telemetryv1alpha1.MetricPipeline) common.RoutingConnector {
-	enrichmentPipelineID := formatEnrichmentServicePipelineID(mp)
-	outputPipelineID := formatOutputServicePipelineID(mp)
-
-	return common.RoutingConnector{
-		DefaultPipelines: []string{enrichmentPipelineID},
-		ErrorMode:        "ignore",
-		Table: []common.RoutingConnectorTableEntry{
-			{
-				Statement: fmt.Sprintf("route() where attributes[\"%s\"] == \"true\"", common.SkipEnrichmentAttribute),
-				Pipelines: []string{outputPipelineID},
-			},
-		},
-	}
-}
-
 func formatInputMetricServicePipelineID(mp *telemetryv1alpha1.MetricPipeline) string {
 	return fmt.Sprintf("metrics/%s-input", mp.Name)
-}
-
-func formatEnrichmentServicePipelineID(mp *telemetryv1alpha1.MetricPipeline) string {
-	return fmt.Sprintf("metrics/%s-attributes-enrichment", mp.Name)
-}
-
-func formatOutputServicePipelineID(mp *telemetryv1alpha1.MetricPipeline) string {
-	return fmt.Sprintf("metrics/%s-output", mp.Name)
-}
-
-func formatRoutingConnectorID(mp *telemetryv1alpha1.MetricPipeline) string {
-	return fmt.Sprintf(common.ComponentIDRoutingConnector, mp.Name)
-}
-
-func formatForwardConnectorID(mp *telemetryv1alpha1.MetricPipeline) string {
-	return fmt.Sprintf(common.ComponentIDForwardConnector, mp.Name)
 }
