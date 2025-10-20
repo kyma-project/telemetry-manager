@@ -28,9 +28,9 @@ func TestValidateLogPipelineTransforms(t *testing.T) {
 			err = validator.Validate(test.transforms)
 			if test.isErrorExpected {
 				require.Error(t, err)
-				require.True(t, IsInvalidTransformSpecError(err))
+				require.True(t, IsInvalidOTTLSpecError(err))
 
-				var invalidTransformSpecErr *InvalidTransformSpecError
+				var invalidTransformSpecErr *InvalidOTTLSpecError
 				require.True(t, errors.As(err, &invalidTransformSpecErr))
 			} else {
 				require.NoError(t, err)
@@ -53,9 +53,9 @@ func TestValidateTracePipelineTransforms(t *testing.T) {
 			err = validator.Validate(test.transforms)
 			if test.isErrorExpected {
 				require.Error(t, err)
-				require.True(t, IsInvalidTransformSpecError(err))
+				require.True(t, IsInvalidOTTLSpecError(err))
 
-				var invalidTransformSpecErr *InvalidTransformSpecError
+				var invalidTransformSpecErr *InvalidOTTLSpecError
 				require.True(t, errors.As(err, &invalidTransformSpecErr))
 			} else {
 				require.NoError(t, err)
@@ -78,9 +78,9 @@ func TestMetricPipelineTransforms(t *testing.T) {
 			err = validator.Validate(test.transforms)
 			if test.isErrorExpected {
 				require.Error(t, err)
-				require.True(t, IsInvalidTransformSpecError(err))
+				require.True(t, IsInvalidOTTLSpecError(err))
 
-				var invalidTransformSpecErr *InvalidTransformSpecError
+				var invalidTransformSpecErr *InvalidOTTLSpecError
 				require.True(t, errors.As(err, &invalidTransformSpecErr))
 			} else {
 				require.NoError(t, err)

@@ -113,7 +113,7 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 			fmt.Sprintf(conditions.MessageForMetricPipeline(conditions.ReasonEndpointInvalid), err.Error())
 	}
 
-	if ottl.IsInvalidTransformSpecError(err) {
+	if ottl.IsInvalidOTTLSpecError(err) {
 		return metav1.ConditionFalse, conditions.ReasonTransformSpecInvalid, conditions.ConvertErrToMsg(err)
 	}
 

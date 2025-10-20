@@ -1232,7 +1232,7 @@ func TestReconcile(t *testing.T) {
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
 			PipelineLock:       pipelineLockStub,
 			TransformSpecValidator: stubs.NewTransformSpecValidator(
-				&ottl.InvalidTransformSpecError{
+				&ottl.InvalidOTTLSpecError{
 					Err: fmt.Errorf("invalid TransformSpec: error while parsing statements"),
 				},
 			),

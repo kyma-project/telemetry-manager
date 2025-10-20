@@ -9,7 +9,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlscope"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlspan"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlspanevent"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/ottlfuncs"
 	"go.opentelemetry.io/collector/component"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -123,21 +122,6 @@ func withScopeParser(functions map[string]ottl.Factory[ottlscope.TransformContex
 			&scopeParser,
 			opts...,
 		)(pc)
-	}
-}
-
-func withCommonContextsParsers() []genericParserCollectionOption {
-	return []genericParserCollectionOption{
-		withResourceParser(
-			ottlfuncs.StandardFuncs[ottlresource.TransformContext](),
-			ottl.WithStatementConverter(convertResourceStatements),
-			ottl.WithConditionConverter(convertResourceConditions),
-		),
-		withScopeParser(
-			ottlfuncs.StandardFuncs[ottlscope.TransformContext](),
-			ottl.WithStatementConverter(convertScopeStatements),
-			ottl.WithConditionConverter(convertScopeConditions),
-		),
 	}
 }
 

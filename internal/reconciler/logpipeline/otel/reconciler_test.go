@@ -724,7 +724,7 @@ func TestReconcile(t *testing.T) {
 			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
 			TransformSpecValidator: stubs.NewTransformSpecValidator(
-				&ottl.InvalidTransformSpecError{
+				&ottl.InvalidOTTLSpecError{
 					Err: fmt.Errorf("invalid TransformSpec: error while parsing statements"),
 				},
 			),
