@@ -99,9 +99,9 @@ spec:
                             type: boolean
                         type: object
                       enabled:
-                        description: Enabled specifies if the 'istio' input is enabled,
-                          so that istio-proxy metrics are scraped from Pods that have
-                          the istio-proxy sidecar injected. The default is `false`.
+                        description: Enabled specifies if the 'istio' input is enabled.
+                          If enabled, istio-proxy metrics are scraped from Pods that
+                          have the istio-proxy sidecar injected. The default is `false`.
                         type: boolean
                       envoyMetrics:
                         description: EnvoyMetrics enables the collection of additional
@@ -150,9 +150,9 @@ spec:
                       metrics from an OTLP source.
                     properties:
                       disabled:
-                        description: Disabled specifies if the 'otlp' input is deactivated,
-                          so that no push-based OTLP signals are collected. The default
-                          is `false`.
+                        description: Disabled specifies if the 'otlp' input is deactivated.
+                          If set to `true`, no push-based OTLP signals are collected.
+                          The default is `false`.
                         type: boolean
                       namespaces:
                         description: Namespaces describes whether push-based OTLP
@@ -202,7 +202,7 @@ spec:
                         type: object
                       enabled:
                         description: Enabled specifies if the 'prometheus' input is
-                          enabled, so that Service endpoints and Pods marked with
+                          enabled. If enabled, Service endpoints and Pods marked with
                           `prometheus.io/scrape=true` annotation are scraped. The
                           default is `false`.
                         type: boolean
@@ -244,8 +244,9 @@ spec:
                       runtime metrics.
                     properties:
                       enabled:
-                        description: Enabled specifies if the 'runtime' input is enabled,
-                          so that runtime metrics are collected. The default is `false`.
+                        description: Enabled specifies if the 'runtime' input is enabled.
+                          If enabled, runtime metrics are collected. The default is
+                          `false`.
                         type: boolean
                       namespaces:
                         description: Namespaces specifies from which namespaces metrics
@@ -922,9 +923,9 @@ spec:
                             type: boolean
                         type: object
                       enabled:
-                        description: Enabled specifies if the 'istio' input is enabled,
-                          so that istio-proxy metrics are scraped from Pods that have
-                          the istio-proxy sidecar injected. The default is `false`.
+                        description: Enabled specifies if the 'istio' input is enabled.
+                          If enabled, istio-proxy metrics are scraped from Pods that
+                          have the istio-proxy sidecar injected. The default is `false`.
                         type: boolean
                       envoyMetrics:
                         description: EnvoyMetrics enables the collection of additional
@@ -973,9 +974,9 @@ spec:
                       metrics from an OTLP source.
                     properties:
                       disabled:
-                        description: Disabled specifies if the 'otlp' input is deactivated,
-                          so that no push-based OTLP signals are collected. The default
-                          is `false`.
+                        description: Disabled specifies if the 'otlp' input is deactivated.
+                          If disabled, then no push-based OTLP signals are collected.
+                          The default is `false`.
                         type: boolean
                       namespaces:
                         description: Namespaces describes whether push-based OTLP
@@ -1025,7 +1026,7 @@ spec:
                         type: object
                       enabled:
                         description: Enabled specifies if the 'prometheus' input is
-                          enabled, so that Service endpoints and Pods marked with
+                          enabled. If enabled, Service endpoints and Pods marked with
                           `prometheus.io/scrape=true` annotation are scraped. The
                           default is `false`.
                         type: boolean
@@ -1067,8 +1068,9 @@ spec:
                       runtime metrics.
                     properties:
                       enabled:
-                        description: Enabled specifies if the 'runtime' input is enabled,
-                          so that runtime metrics are collected. The default is `false`.
+                        description: Enabled specifies if the 'runtime' input is enabled.
+                          If enabled, runtime metrics are collected. The default is
+                          `false`.
                         type: boolean
                       namespaces:
                         description: Namespaces specifies from which namespaces metrics
