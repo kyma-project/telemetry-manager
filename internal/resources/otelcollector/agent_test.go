@@ -34,19 +34,19 @@ func TestAgent_ApplyResources(t *testing.T) {
 	}{
 		{
 			name:           "metric agent",
-			sut:            NewMetricAgentApplierDeleter(collectorImage, namespace, priorityClassName),
+			sut:            NewMetricAgentApplierDeleter(collectorImage, namespace, priorityClassName, false),
 			goldenFilePath: "testdata/metric-agent.yaml",
 		},
 		{
 			name:           "metric agent with istio",
-			sut:            NewMetricAgentApplierDeleter(collectorImage, namespace, priorityClassName),
+			sut:            NewMetricAgentApplierDeleter(collectorImage, namespace, priorityClassName, false),
 			istioEnabled:   true,
 			backendPorts:   []string{"4317", "9090"},
 			goldenFilePath: "testdata/metric-agent-istio.yaml",
 		},
 		{
 			name: "log agent",
-			sut:  NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName),
+			sut:  NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName, false),
 			collectorEnvVars: map[string][]byte{
 				"DUMMY_ENV_VAR": []byte("foo"),
 			},
@@ -54,7 +54,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 		},
 		{
 			name: "log agent with istio",
-			sut:  NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName),
+			sut:  NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName, false),
 			collectorEnvVars: map[string][]byte{
 				"DUMMY_ENV_VAR": []byte("foo"),
 			},
@@ -122,11 +122,11 @@ func TestAgent_DeleteResources(t *testing.T) {
 	}{
 		{
 			name: "metric agent",
-			sut:  NewMetricAgentApplierDeleter(image, namespace, priorityClassName),
+			sut:  NewMetricAgentApplierDeleter(image, namespace, priorityClassName, false),
 		},
 		{
 			name: "log agent",
-			sut:  NewLogAgentApplierDeleter(image, namespace, priorityClassName),
+			sut:  NewLogAgentApplierDeleter(image, namespace, priorityClassName, false),
 		},
 	}
 
