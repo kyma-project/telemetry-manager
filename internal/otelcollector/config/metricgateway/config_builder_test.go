@@ -194,7 +194,6 @@ func TestMakeConfig(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			config, _, err := sut.Build(t.Context(), tt.pipelines, buildOptions)
 			require.NoError(t, err)
-			tt.overwriteGoldenFile = true
 			configYAML, err := yaml.Marshal(config)
 			require.NoError(t, err, "failed to marshal config")
 
