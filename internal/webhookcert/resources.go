@@ -75,7 +75,7 @@ func makeConversionWebhookConfig(caBundle []byte, config Config) apiextensionsv1
 func updatePipelineCRDWithConversionWebhookConfig(ctx context.Context, c client.Client, pipelineType types.NamespacedName, conversion apiextensionsv1.CustomResourceConversion) error {
 	var crd apiextensionsv1.CustomResourceDefinition
 	if err := c.Get(ctx, pipelineType, &crd); err != nil {
-		return fmt.Errorf("failed to get logpipelines CRD: %w", err)
+		return fmt.Errorf("failed to get CRD %s: %w", pipelineType, err)
 	}
 
 	crd.Spec.Conversion = &conversion
