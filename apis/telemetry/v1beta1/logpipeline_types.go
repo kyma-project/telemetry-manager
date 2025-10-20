@@ -130,20 +130,6 @@ type LogPipelineRuntimeInput struct {
 	KeepOriginalBody *bool `json:"keepOriginalBody,omitempty"`
 }
 
-// LogPipelineNamespaceSelector describes whether application logs from specific Namespaces are selected. The options are mutually exclusive. System Namespaces are excluded by default. Use the `system` attribute with value `true` to enable them.
-// +kubebuilder:validation:XValidation:rule="(has(self.include) == true ? 1 : 0) + (has(self.exclude) == true ? 1 : 0) + (has(self.system) == true ? 1 : 0) <= 1",message="Only one of 'include', 'exclude' or 'system' can be defined"
-type LogPipelineNamespaceSelector struct {
-	// Include only the container logs of the specified Namespace names.
-	// +kubebuilder:validation:Optional
-	Include []string `json:"include,omitempty"`
-	// Exclude the container logs of the specified Namespace names.
-	// +kubebuilder:validation:Optional
-	Exclude []string `json:"exclude,omitempty"`
-	// System specifies whether to collect logs from system namespaces. If set to `true`, you collect logs from all namespaces including system namespaces, such as like kube-system, istio-system, and kyma-system. The default is `false`.
-	// +kubebuilder:validation:Optional
-	System bool `json:"system,omitempty"`
-}
-
 // LogPipelineContainerSelector describes whether application logs from specific containers are selected. The options are mutually exclusive.
 // +kubebuilder:validation:XValidation:rule="(has(self.include) == true ? 1 : 0) + (has(self.exclude) == true ? 1 : 0) <= 1",message="Only one of 'include' or 'exclude' can be defined"
 type LogPipelineContainerSelector struct {
