@@ -189,7 +189,7 @@ spec:
                             description: Exclude specifies the list of namespace names
                               to exclude when collecting container logs. By default,
                               logs from all namespaces are collected, except system
-                              namespaces. You can not specify an exclude list together
+                              namespaces. You cannot specify an exclude list together
                               with an include list.
                             items:
                               maxLength: 63
@@ -200,7 +200,7 @@ spec:
                             description: Include specifies the list of namespace names
                               to include when collecting container logs. By default,
                               logs from all namespaces are collected, except system
-                              namespaces. You can not specify an include list together
+                              namespaces. You cannot specify an include list together
                               with an exclude list.
                             items:
                               maxLength: 63
@@ -240,7 +240,7 @@ spec:
                             description: 'Exclude telemetry data from the specified
                               namespace names only. By default, all namespaces (depending
                               on input type: except system namespaces) are collected.
-                              You can not specify an exclude list together with an
+                              You cannot specify an exclude list together with an
                               include list.'
                             items:
                               maxLength: 63
@@ -251,7 +251,7 @@ spec:
                             description: 'Include telemetry data from the specified
                               namespace names only. By default, all namespaces (depending
                               on input type: except system namespaces) are included.
-                              You can not specify an include list together with an
+                              You cannot specify an include list together with an
                               exclude list.'
                             items:
                               maxLength: 63
@@ -1269,7 +1269,7 @@ spec:
                             description: 'Exclude telemetry data from the specified
                               namespace names only. By default, all namespaces (depending
                               on input type: except system namespaces) are collected.
-                              You can not specify an exclude list together with an
+                              You cannot specify an exclude list together with an
                               include list.'
                             items:
                               maxLength: 63
@@ -1280,7 +1280,7 @@ spec:
                             description: 'Include telemetry data from the specified
                               namespace names only. By default, all namespaces (depending
                               on input type: except system namespaces) are included.
-                              You can not specify an include list together with an
+                              You cannot specify an include list together with an
                               exclude list.'
                             items:
                               maxLength: 63
@@ -1351,7 +1351,7 @@ spec:
                             description: Exclude specifies the list of namespace names
                               to exclude when collecting container logs. By default,
                               logs from all namespaces are collected, except system
-                              namespaces. You can not specify an exclude list together
+                              namespaces. You cannot specify an exclude list together
                               with an include list.
                             items:
                               maxLength: 63
@@ -1362,7 +1362,7 @@ spec:
                             description: Include specifies the list of namespace names
                               to include when collecting container logs. By default,
                               logs from all namespaces are collected, except system
-                              namespaces. You can not specify an include list together
+                              namespaces. You cannot specify an include list together
                               with an exclude list.
                             items:
                               maxLength: 63
