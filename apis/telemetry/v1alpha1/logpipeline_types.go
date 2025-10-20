@@ -102,7 +102,7 @@ type LogPipelineInput struct {
 
 // LogPipelineApplicationInput configures the log collection from application containers stdout/stderr by tailing the log files of the underlying container runtime.
 type LogPipelineApplicationInput struct {
-	// Enabled specifies if the 'application' input is enabled, so that application logs are collected from application containers stdout/stderr. The default is `true`.
+	// Enabled specifies if the 'application' input is enabled. If enabled, logs are collected from application containers stdout/stderr. The default is `true`.
 	// +kubebuilder:validation:Optional
 	Enabled *bool `json:"enabled,omitempty"`
 	// Namespaces describes whether application logs from specific namespaces are selected. The options are mutually exclusive. System namespaces are excluded by default. Use the `system` attribute with value `true` to enable them.
