@@ -48,12 +48,13 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addKymaStatsReceiver(),
 			b.addMemoryLimiterProcessor(),
 			b.addK8sAttributesProcessor(opts),
-			b.addServiceEnrichmentProcessor(), // we need it ?
+			b.addServiceEnrichmentProcessor(),
 			b.addSetInstrumentationScopeToKymaProcessor(opts),
 			// Input source filters
 			b.addDropIfOTLPInputDisabledProcessor(),
 			// Namespace filters
 			b.addOTLPNamespaceFilterProcessor(),
+			b.addInsertClusterAttributesProcessor(opts),
 			b.addDropKymaAttributesProcessor(),
 			b.addUserDefinedTransformProcessor(),
 			b.addUserDefinedFilterProcessor(),
