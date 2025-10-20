@@ -79,6 +79,7 @@ var v1alpha1LogPipeline = &LogPipeline{
 				Compress: "on",
 				Format:   "json",
 				TLS: LogPipelineOutputTLS{
+					Disabled:                  true,
 					SkipCertificateValidation: true,
 					CA: &ValueType{
 						Value: "ca",
@@ -221,7 +222,8 @@ var v1beta1LogPipeline = &telemetryv1beta1.LogPipeline{
 				Compress: "on",
 				Format:   "json",
 				TLSConfig: telemetryv1beta1.OutputTLS{
-					SkipCertificateValidation: true,
+					Insecure:           true,
+					InsecureSkipVerify: true,
 					CA: &telemetryv1beta1.ValueType{
 						Value: "ca",
 					},
@@ -263,11 +265,11 @@ var v1beta1LogPipeline = &telemetryv1beta1.LogPipeline{
 					},
 				},
 				TLS: &telemetryv1beta1.OutputTLS{
-					Disabled:                  true,
-					SkipCertificateValidation: true,
-					CA:                        &telemetryv1beta1.ValueType{Value: "ca"},
-					Cert:                      &telemetryv1beta1.ValueType{Value: "cert"},
-					Key:                       &telemetryv1beta1.ValueType{Value: "key"},
+					Insecure:           true,
+					InsecureSkipVerify: true,
+					CA:                 &telemetryv1beta1.ValueType{Value: "ca"},
+					Cert:               &telemetryv1beta1.ValueType{Value: "cert"},
+					Key:                &telemetryv1beta1.ValueType{Value: "key"},
 				},
 			},
 		},

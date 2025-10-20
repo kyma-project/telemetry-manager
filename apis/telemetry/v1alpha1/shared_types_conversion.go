@@ -3,6 +3,8 @@ package v1alpha1
 import (
 	"regexp"
 
+	"k8s.io/utils/ptr"
+
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
@@ -18,6 +20,28 @@ func sanitizeNamespaceNames(names []string) []string {
 	}
 
 	return valid
+}
+
+func convertOTLPInputToBeta(src *OTLPInput) *telemetryv1beta1.OTLPInput {
+	if src == nil {
+		return nil
+	}
+
+	return &telemetryv1beta1.OTLPInput{
+		Enabled:    ptr.To(!src.Disabled),
+		Namespaces: convertNamespaceSelectorToBeta(src.Namespaces),
+	}
+}
+
+func convertOTLPInputToAlpha(src *telemetryv1beta1.OTLPInput) *OTLPInput {
+	if src == nil {
+		return nil
+	}
+
+	return &OTLPInput{
+		Disabled:   src.Enabled != nil && !*src.Enabled,
+		Namespaces: convertNamespaceSelectorToAlpha(src.Namespaces),
+	}
 }
 
 func convertNamespaceSelectorToBeta(ns *NamespaceSelector) *telemetryv1beta1.NamespaceSelector {
@@ -213,11 +237,11 @@ func convertOTLPTLSToBeta(t *OTLPTLS) *telemetryv1beta1.OutputTLS {
 	}
 
 	return &telemetryv1beta1.OutputTLS{
-		Disabled:                  t.Insecure,
-		SkipCertificateValidation: t.InsecureSkipVerify,
-		CA:                        convertValueTypeToBetaPtr(t.CA),
-		Cert:                      convertValueTypeToBetaPtr(t.Cert),
-		Key:                       convertValueTypeToBetaPtr(t.Key),
+		Insecure:           t.Insecure,
+		InsecureSkipVerify: t.InsecureSkipVerify,
+		CA:                 convertValueTypeToBetaPtr(t.CA),
+		Cert:               convertValueTypeToBetaPtr(t.Cert),
+		Key:                convertValueTypeToBetaPtr(t.Key),
 	}
 }
 
@@ -227,8 +251,8 @@ func convertOTLPTLSToAlpha(t *telemetryv1beta1.OutputTLS) *OTLPTLS {
 	}
 
 	return &OTLPTLS{
-		Insecure:           t.Disabled,
-		InsecureSkipVerify: t.SkipCertificateValidation,
+		Insecure:           t.Insecure,
+		InsecureSkipVerify: t.InsecureSkipVerify,
 		CA:                 convertValueTypeToAlphaPtr(t.CA),
 		Cert:               convertValueTypeToAlphaPtr(t.Cert),
 		Key:                convertValueTypeToAlphaPtr(t.Key),

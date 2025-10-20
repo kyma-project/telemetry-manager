@@ -22,7 +22,7 @@ func (src *MetricPipeline) ConvertTo(dstRaw conversion.Hub) error {
 	// Copy metadata
 	dst.ObjectMeta = src.ObjectMeta
 
-	// Copy Spec fields
+	// Copy input fields
 	dst.Spec.Input = telemetryv1beta1.MetricPipelineInput{}
 	if src.Spec.Input.Prometheus != nil {
 		dst.Spec.Input.Prometheus = &telemetryv1beta1.MetricPipelinePrometheusInput{
@@ -56,11 +56,11 @@ func (src *MetricPipeline) ConvertTo(dstRaw conversion.Hub) error {
 		}
 	}
 
+	// Copy output fields
 	dst.Spec.Output = telemetryv1beta1.MetricPipelineOutput{}
-	if src.Spec.Output.OTLP != nil {
-		dst.Spec.Output.OTLP = convertOTLPOutputToBeta(src.Spec.Output.OTLP)
-	}
+	dst.Spec.Output.OTLP = convertOTLPOutputToBeta(src.Spec.Output.OTLP)
 
+	// Copy everything else
 	if src.Spec.Transforms != nil {
 		for _, t := range src.Spec.Transforms {
 			dst.Spec.Transforms = append(dst.Spec.Transforms, convertTransformSpecToBeta(t))
@@ -88,7 +88,7 @@ func (dst *MetricPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 	// Copy metadata
 	dst.ObjectMeta = src.ObjectMeta
 
-	// Copy Spec fields
+	// Copy input fields
 	dst.Spec.Input = MetricPipelineInput{}
 	if src.Spec.Input.Prometheus != nil {
 		dst.Spec.Input.Prometheus = &MetricPipelinePrometheusInput{
@@ -122,11 +122,13 @@ func (dst *MetricPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 		}
 	}
 
+	// Copy output fields
 	dst.Spec.Output = MetricPipelineOutput{}
 	if src.Spec.Output.OTLP != nil {
 		dst.Spec.Output.OTLP = convertOTLPOutputToAlpha(src.Spec.Output.OTLP)
 	}
 
+	// Copy everything else
 	if src.Spec.Transforms != nil {
 		for _, t := range src.Spec.Transforms {
 			dst.Spec.Transforms = append(dst.Spec.Transforms, convertTransformSpecToAlpha(t))

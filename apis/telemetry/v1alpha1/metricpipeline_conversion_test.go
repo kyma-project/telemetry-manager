@@ -87,7 +87,7 @@ var v1alpha1MetricPipeline = &MetricPipeline{
 					Value: "otlp-collector:4317",
 				},
 				TLS: &OTLPTLS{
-					Insecure:           false,
+					Insecure:           true,
 					InsecureSkipVerify: true,
 					CA:                 &ValueType{Value: "ca-cert"},
 					Cert:               &ValueType{Value: "cert"},
@@ -188,11 +188,11 @@ var v1beta1MetricPipeline = &telemetryv1beta1.MetricPipeline{
 					Value: "otlp-collector:4317",
 				},
 				TLS: &telemetryv1beta1.OutputTLS{
-					Disabled:                  false,
-					SkipCertificateValidation: true,
-					CA:                        &telemetryv1beta1.ValueType{Value: "ca-cert"},
-					Cert:                      &telemetryv1beta1.ValueType{Value: "cert"},
-					Key:                       &telemetryv1beta1.ValueType{Value: "key"},
+					Insecure:           true,
+					InsecureSkipVerify: true,
+					CA:                 &telemetryv1beta1.ValueType{Value: "ca-cert"},
+					Cert:               &telemetryv1beta1.ValueType{Value: "cert"},
+					Key:                &telemetryv1beta1.ValueType{Value: "key"},
 				},
 				Headers: []telemetryv1beta1.Header{
 					{Name: "header1", ValueType: telemetryv1beta1.ValueType{Value: "value1"}, Prefix: "myPrefix"},

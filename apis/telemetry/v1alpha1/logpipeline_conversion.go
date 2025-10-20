@@ -3,7 +3,6 @@ package v1alpha1
 import (
 	"errors"
 
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
@@ -24,53 +23,27 @@ func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 	// Copy metadata
 	dst.ObjectMeta = src.ObjectMeta
 
-	// Copy Spec fields
+	// Copy Input fields
 	dst.Spec.Input = telemetryv1beta1.LogPipelineInput{}
 	dst.Spec.Input.Runtime = convertApplicationToBeta(src.Spec.Input.Application)
+	dst.Spec.Input.OTLP = convertOTLPInputToBeta(src.Spec.Input.OTLP)
 
-	if src.Spec.Input.OTLP != nil {
-		dst.Spec.Input.OTLP = &telemetryv1beta1.OTLPInput{
-			Enabled:    ptr.To(!src.Spec.Input.OTLP.Disabled),
-			Namespaces: convertNamespaceSelectorToBeta(src.Spec.Input.OTLP.Namespaces),
-		}
+	// Copy Output fields
+	dst.Spec.Output = telemetryv1beta1.LogPipelineOutput{}
+	dst.Spec.Output.HTTP = convertHTTPOutputToBeta(src.Spec.Output.HTTP)
+
+	dst.Spec.Output.OTLP = convertOTLPOutputToBeta(src.Spec.Output.OTLP)
+	if src.Spec.Output.Custom != "" {
+		dst.Spec.Output.Custom = src.Spec.Output.Custom
 	}
 
+	// Copy everything else
 	for _, f := range src.Spec.Files {
 		dst.Spec.Files = append(dst.Spec.Files, telemetryv1beta1.LogPipelineFileMount(f))
 	}
 
 	for _, f := range src.Spec.FluentBitFilters {
 		dst.Spec.FluentBitFilters = append(dst.Spec.FluentBitFilters, telemetryv1beta1.LogPipelineFilter(f))
-	}
-
-	if srcHTTPOutput := src.Spec.Output.HTTP; srcHTTPOutput != nil {
-		dst.Spec.Output.HTTP = &telemetryv1beta1.LogPipelineHTTPOutput{
-			Host:      convertValueTypeToBeta(srcHTTPOutput.Host),
-			URI:       srcHTTPOutput.URI,
-			Port:      srcHTTPOutput.Port,
-			Compress:  srcHTTPOutput.Compress,
-			Format:    srcHTTPOutput.Format,
-			TLSConfig: convertOutputTLSToBeta(srcHTTPOutput.TLS),
-			Dedot:     srcHTTPOutput.Dedot,
-		}
-
-		if srcHTTPOutput.User != nil && (srcHTTPOutput.User.Value != "" || srcHTTPOutput.User.ValueFrom != nil) {
-			user := convertValueTypeToBeta(*srcHTTPOutput.User)
-			dst.Spec.Output.HTTP.User = &user
-		}
-
-		if srcHTTPOutput.Password != nil && (srcHTTPOutput.Password.Value != "" || srcHTTPOutput.Password.ValueFrom != nil) {
-			password := convertValueTypeToBeta(*srcHTTPOutput.Password)
-			dst.Spec.Output.HTTP.Password = &password
-		}
-	}
-
-	if src.Spec.Output.OTLP != nil {
-		dst.Spec.Output.OTLP = convertOTLPOutputToBeta(src.Spec.Output.OTLP)
-	}
-
-	if srcCustomOutput := src.Spec.Output.Custom; srcCustomOutput != "" {
-		dst.Spec.Output.Custom = srcCustomOutput
 	}
 
 	if src.Spec.Transforms != nil {
@@ -88,6 +61,34 @@ func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 	dst.Status = telemetryv1beta1.LogPipelineStatus(src.Status)
 
 	return nil
+}
+
+func convertHTTPOutputToBeta(output *LogPipelineHTTPOutput) *telemetryv1beta1.LogPipelineHTTPOutput {
+	if output == nil {
+		return nil
+	}
+
+	result := &telemetryv1beta1.LogPipelineHTTPOutput{
+		Host:      convertValueTypeToBeta(output.Host),
+		URI:       output.URI,
+		Port:      output.Port,
+		Compress:  output.Compress,
+		Format:    output.Format,
+		TLSConfig: convertOutputTLSToBeta(output.TLS),
+		Dedot:     output.Dedot,
+	}
+
+	if output.User != nil && (output.User.Value != "" || output.User.ValueFrom != nil) {
+		user := convertValueTypeToBeta(*output.User)
+		result.User = &user
+	}
+
+	if output.Password != nil && (output.Password.Value != "" || output.Password.ValueFrom != nil) {
+		password := convertValueTypeToBeta(*output.Password)
+		result.Password = &password
+	}
+
+	return result
 }
 
 func convertApplicationToBeta(application *LogPipelineApplicationInput) *telemetryv1beta1.LogPipelineRuntimeInput {
@@ -126,8 +127,8 @@ func convertOutputTLSToBeta(src LogPipelineOutputTLS) telemetryv1beta1.OutputTLS
 	dst.CA = convertValueTypeToBetaPtr(src.CA)
 	dst.Cert = convertValueTypeToBetaPtr(src.Cert)
 	dst.Key = convertValueTypeToBetaPtr(src.Key)
-	dst.Disabled = src.Disabled
-	dst.SkipCertificateValidation = src.SkipCertificateValidation
+	dst.Insecure = src.Disabled
+	dst.InsecureSkipVerify = src.SkipCertificateValidation
 
 	return dst
 }
@@ -144,45 +145,27 @@ func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 	// Copy metadata
 	dst.ObjectMeta = src.ObjectMeta
 
-	// Copy Spec fields
+	// Copy input fields
+	dst.Spec.Input = LogPipelineInput{}
 	dst.Spec.Input.Application = convertRuntimeToAlpha(src.Spec.Input.Runtime)
+	dst.Spec.Input.OTLP = convertOTLPInputToAlpha(src.Spec.Input.OTLP)
 
-	if src.Spec.Input.OTLP != nil {
-		dst.Spec.Input.OTLP = &OTLPInput{
-			Disabled:   src.Spec.Input.OTLP.Enabled != nil && !*src.Spec.Input.OTLP.Enabled,
-			Namespaces: convertNamespaceSelectorToAlpha(src.Spec.Input.OTLP.Namespaces),
-		}
+	// Copy output fields
+	dst.Spec.Output = LogPipelineOutput{}
+	dst.Spec.Output.HTTP = convertHTTPOutputToAlpha(src.Spec.Output.HTTP)
+	dst.Spec.Output.OTLP = convertOTLPOutputToAlpha(src.Spec.Output.OTLP)
+
+	if src.Spec.Output.Custom != "" {
+		dst.Spec.Output.Custom = src.Spec.Output.Custom
 	}
 
+	// Copy everything else
 	for _, f := range src.Spec.Files {
 		dst.Spec.Files = append(dst.Spec.Files, LogPipelineFileMount(f))
 	}
 
 	for _, f := range src.Spec.FluentBitFilters {
 		dst.Spec.FluentBitFilters = append(dst.Spec.FluentBitFilters, LogPipelineFilter(f))
-	}
-
-	if srcHTTPOutput := src.Spec.Output.HTTP; srcHTTPOutput != nil {
-		dst.Spec.Output.HTTP = &LogPipelineHTTPOutput{
-			Host:     convertValueTypeToAlpha(srcHTTPOutput.Host),
-			URI:      srcHTTPOutput.URI,
-			Port:     srcHTTPOutput.Port,
-			Compress: srcHTTPOutput.Compress,
-			Format:   srcHTTPOutput.Format,
-			TLS:      convertOutputTLSToAlpha(srcHTTPOutput.TLSConfig),
-			Dedot:    srcHTTPOutput.Dedot,
-		}
-
-		dst.Spec.Output.HTTP.User = convertValueTypeToAlphaPtr(srcHTTPOutput.User)
-		dst.Spec.Output.HTTP.Password = convertValueTypeToAlphaPtr(srcHTTPOutput.Password)
-	}
-
-	if src.Spec.Output.OTLP != nil {
-		dst.Spec.Output.OTLP = convertOTLPOutputToAlpha(src.Spec.Output.OTLP)
-	}
-
-	if srcCustomOutput := src.Spec.Output.Custom; srcCustomOutput != "" {
-		dst.Spec.Output.Custom = srcCustomOutput
 	}
 
 	if src.Spec.Transforms != nil {
@@ -200,6 +183,34 @@ func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.Status = LogPipelineStatus(src.Status)
 
 	return nil
+}
+
+func convertHTTPOutputToAlpha(output *telemetryv1beta1.LogPipelineHTTPOutput) *LogPipelineHTTPOutput {
+	if output == nil {
+		return nil
+	}
+
+	result := &LogPipelineHTTPOutput{
+		Host:     convertValueTypeToAlpha(output.Host),
+		URI:      output.URI,
+		Port:     output.Port,
+		Compress: output.Compress,
+		Format:   output.Format,
+		TLS:      convertOutputTLSToAlpha(output.TLSConfig),
+		Dedot:    output.Dedot,
+	}
+
+	if output.User != nil && (output.User.Value != "" || output.User.ValueFrom != nil) {
+		user := convertValueTypeToAlpha(*output.User)
+		result.User = &user
+	}
+
+	if output.Password != nil && (output.Password.Value != "" || output.Password.ValueFrom != nil) {
+		password := convertValueTypeToAlpha(*output.Password)
+		result.Password = &password
+	}
+
+	return result
 }
 
 func convertRuntimeToAlpha(runtime *telemetryv1beta1.LogPipelineRuntimeInput) *LogPipelineApplicationInput {
@@ -233,8 +244,8 @@ func convertOutputTLSToAlpha(src telemetryv1beta1.OutputTLS) LogPipelineOutputTL
 	dst.Cert = convertValueTypeToAlphaPtr(src.Cert)
 	dst.Key = convertValueTypeToAlphaPtr(src.Key)
 
-	dst.Disabled = src.Disabled
-	dst.SkipCertificateValidation = src.SkipCertificateValidation
+	dst.Disabled = src.Insecure
+	dst.SkipCertificateValidation = src.InsecureSkipVerify
 
 	return dst
 }

@@ -71,8 +71,8 @@ func TestSinglePipelineV1Beta1_OTel(t *testing.T) {
 							},
 							Protocol: telemetryv1beta1.OTLPProtocolGRPC,
 							TLS: &telemetryv1beta1.OutputTLS{
-								Disabled:                  true,
-								SkipCertificateValidation: true,
+								Insecure:           true,
+								InsecureSkipVerify: true,
 							},
 						},
 					},
@@ -130,8 +130,8 @@ func TestSinglePipelineV1Beta1_FluentBit(t *testing.T) {
 					Port: strconv.Itoa(int(backend.Port())),
 					URI:  "/",
 					TLSConfig: telemetryv1beta1.OutputTLS{
-						Disabled:                  true,
-						SkipCertificateValidation: true,
+						Insecure:           true,
+						InsecureSkipVerify: true,
 					},
 				},
 			},

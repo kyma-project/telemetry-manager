@@ -96,12 +96,12 @@ type Header struct {
 // OutputTLS defines TLS options for an output.
 // +kubebuilder:validation:XValidation:rule="has(self.cert) == has(self.key)", message="Can define either both 'cert' and 'key', or neither"
 type OutputTLS struct {
-	// Disabled specifies if TLS is disabled or enabled. Default is `false`.
+	// Insecure defines whether to send requests using plaintext instead of TLS.
 	// +kubebuilder:validation:Optional
-	Disabled bool `json:"disabled,omitempty"`
-	// If `true`, the validation of certificates is skipped. Default is `false`.
+	Insecure bool `json:"insecure,omitempty"`
+	// InsecureSkipVerify defines whether to skip server certificate verification when using TLS.
 	// +kubebuilder:validation:Optional
-	SkipCertificateValidation bool `json:"skipCertificateValidation,omitempty"`
+	InsecureSkipVerify bool `json:"insecureSkipVerify,omitempty"`
 	// Defines an optional CA certificate for server certificate verification when using TLS. The certificate must be provided in PEM format.
 	// +kubebuilder:validation:Optional
 	CA *ValueType `json:"ca,omitempty"`
