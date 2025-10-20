@@ -31,6 +31,7 @@ func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 	// Copy Output fields
 	dst.Spec.Output = telemetryv1beta1.LogPipelineOutput{}
 	dst.Spec.Output.HTTP = convertHTTPOutputToBeta(src.Spec.Output.HTTP)
+
 	dst.Spec.Output.OTLP = convertOTLPOutputToBeta(src.Spec.Output.OTLP)
 	if src.Spec.Output.Custom != "" {
 		dst.Spec.Output.Custom = src.Spec.Output.Custom
@@ -152,6 +153,7 @@ func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 	// Copy output fields
 	dst.Spec.Output = LogPipelineOutput{}
 	dst.Spec.Output.HTTP = convertHTTPOutputToAlpha(src.Spec.Output.HTTP)
+
 	dst.Spec.Output.OTLP = convertOTLPOutputToAlpha(src.Spec.Output.OTLP)
 	if src.Spec.Output.Custom != "" {
 		dst.Spec.Output.Custom = src.Spec.Output.Custom

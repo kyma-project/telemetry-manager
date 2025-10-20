@@ -108,6 +108,7 @@ func (dst *MetricPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 			EnvoyMetrics:      convertEnvoyMetricsToAlpha(src.Spec.Input.Istio.EnvoyMetrics),
 		}
 	}
+
 	dst.Spec.Input.OTLP = convertOTLPInputToAlpha(src.Spec.Input.OTLP)
 
 	// Copy output fields
