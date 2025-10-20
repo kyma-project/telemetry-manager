@@ -48,6 +48,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPi
 			b.addNamespaceFilterProcessor(),
 			b.addInsertClusterAttributesProcessor(opts),
 			b.addServiceEnrichmentProcessor(),
+			b.addInsertClusterAttributesProcessor(opts),
 			b.addDropKymaAttributesProcessor(),
 			b.addIstioAccessLogsEnrichmentProcessor(opts),
 			b.addUserDefinedTransformProcessor(),
