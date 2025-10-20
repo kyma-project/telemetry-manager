@@ -1236,7 +1236,7 @@ spec:
                     description: OTLP input configures the push endpoint to receive
                       logs from a OTLP source.
                     properties:
-                      disabled:
+                      enabled:
                         description: If set to `false`, no push-based OTLP signals
                           are collected. The default is `true`.
                         type: boolean
