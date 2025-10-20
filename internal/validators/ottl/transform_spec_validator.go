@@ -115,14 +115,14 @@ func newTransformParserCollectionOpts(signalType SignalType) ([]genericParserCol
 		withResourceParser(
 			// Include all standard OTTL functions (editors and converters) for resource context
 			ottlfuncs.StandardFuncs[ottlresource.TransformContext](),
-			ottl.WithStatementConverter(convertResourceStatements),
-			ottl.WithConditionConverter(convertResourceConditions),
+			ottl.WithStatementConverter(nopStatementConverter[ottlresource.TransformContext]),
+			ottl.WithConditionConverter(nopConditionConverter[ottlresource.TransformContext]),
 		),
 		withScopeParser(
 			// Include all standard OTTL functions (editors and converters) for scope context
 			ottlfuncs.StandardFuncs[ottlscope.TransformContext](),
-			ottl.WithStatementConverter(convertScopeStatements),
-			ottl.WithConditionConverter(convertScopeConditions),
+			ottl.WithStatementConverter(nopStatementConverter[ottlscope.TransformContext]),
+			ottl.WithConditionConverter(nopConditionConverter[ottlscope.TransformContext]),
 		),
 	)
 

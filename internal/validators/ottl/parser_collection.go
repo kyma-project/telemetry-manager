@@ -144,20 +144,12 @@ func (gpc *genericParserCollection) parseConditions(conditions []string) error {
 	return nil
 }
 
-func convertResourceStatements(_ *ottl.ParserCollection[any], _ ottl.StatementsGetter, _ []*ottl.Statement[ottlresource.TransformContext]) (any, error) {
-	return struct{}{}, nil
+func nopConditionConverter[T any](_ *ottl.ParserCollection[any], _ ottl.ConditionsGetter, parsedConditions []*ottl.Condition[T]) (any, error) {
+	return parsedConditions, nil
 }
 
-func convertResourceConditions(_ *ottl.ParserCollection[any], _ ottl.ConditionsGetter, _ []*ottl.Condition[ottlresource.TransformContext]) (any, error) {
-	return struct{}{}, nil
-}
-
-func convertScopeStatements(_ *ottl.ParserCollection[any], _ ottl.StatementsGetter, _ []*ottl.Statement[ottlscope.TransformContext]) (any, error) {
-	return struct{}{}, nil
-}
-
-func convertScopeConditions(_ *ottl.ParserCollection[any], _ ottl.ConditionsGetter, _ []*ottl.Condition[ottlscope.TransformContext]) (any, error) {
-	return struct{}{}, nil
+func nopStatementConverter[T any](_ *ottl.ParserCollection[any], _ ottl.StatementsGetter, parsedStatements []*ottl.Statement[T]) (any, error) {
+	return parsedStatements, nil
 }
 
 func convertLogStatements(_ *ottl.ParserCollection[any], _ ottl.StatementsGetter, _ []*ottl.Statement[ottllog.TransformContext]) (any, error) {

@@ -5,6 +5,9 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottldatapoint"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottllog"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlmetric"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlresource"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlscope"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlspan"
@@ -47,13 +50,38 @@ func newFilterParserCollectionOpts(signalType SignalType) ([]genericParserCollec
 	switch signalType {
 	case SignalTypeTrace:
 		opts = append(opts,
+			// Since context inference is not available in the filter processor yet,
+			// we set the context to span as the minimum required context.
+			// Span event context is not supported.
 			withSpanParser(
 				ottlfuncs.StandardConverters[ottlspan.TransformContext](),
-				ottl.WithConditionConverter(convertSpanConditions),
+				ottl.WithConditionConverter(nopConditionConverter[ottlspan.TransformContext]),
+			),
+		)
+	case SignalTypeLog:
+		opts = append(opts,
+			withLogParser(
+				ottlfuncs.StandardConverters[ottllog.TransformContext](),
+				ottl.WithConditionConverter(nopConditionConverter[ottllog.TransformContext]),
+			),
+		)
+	case SignalTypeMetric:
+		opts = append(opts,
+			// Since context inference is not available in the filter processor yet,
+			// we set the context to datapoint as the minimum required context.
+			// That is why metric-context-level functions (like HasAttrKeyOnDatapoint or HasAttrOnDatapoint) are not supported here.
+			// That is the reason why only standard converters are included.
+			withMetricParser(
+				ottlfuncs.StandardConverters[ottlmetric.TransformContext](),
+				ottl.WithConditionConverter(nopConditionConverter[ottlmetric.TransformContext]),
+			),
+			withDataPointParser(
+				ottlfuncs.StandardConverters[ottldatapoint.TransformContext](),
+				ottl.WithConditionConverter(nopConditionConverter[ottldatapoint.TransformContext]),
 			),
 		)
 	default:
-		// return nil, fmt.Errorf("unsupported signal type: %s", signalType)
+		return nil, fmt.Errorf("unsupported signal type: %s", signalType)
 	}
 
 	// Always include common context parsers, no matter the signal type
@@ -61,12 +89,12 @@ func newFilterParserCollectionOpts(signalType SignalType) ([]genericParserCollec
 		withResourceParser(
 			// Include all standard OTTL converters (NO editors) for resource context
 			ottlfuncs.StandardConverters[ottlresource.TransformContext](),
-			ottl.WithConditionConverter(convertResourceConditions),
+			ottl.WithConditionConverter(nopConditionConverter[ottlresource.TransformContext]),
 		),
 		withScopeParser(
 			// Include all standard OTTL converters (NO editors) for scope context
 			ottlfuncs.StandardConverters[ottlscope.TransformContext](),
-			ottl.WithConditionConverter(convertScopeConditions),
+			ottl.WithConditionConverter(nopConditionConverter[ottlscope.TransformContext]),
 		),
 	)
 

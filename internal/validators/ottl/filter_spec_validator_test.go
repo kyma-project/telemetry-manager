@@ -22,7 +22,10 @@ func TestFilterValidator(t *testing.T) {
 	}
 
 	runFilterValidatorTestCases(t, "span", SignalTypeTrace, filterSpanContextTestCases())
-	runFilterValidatorTestCases(t, "spanevent", SignalTypeLog, filterSpanEventContextTestCases())
+	runFilterValidatorTestCases(t, "spanevent", SignalTypeTrace, filterSpanEventContextTestCases())
+	runFilterValidatorTestCases(t, "log", SignalTypeLog, filterLogContextTestCases())
+	runFilterValidatorTestCases(t, "metric", SignalTypeMetric, filterMetricContextTestCases())
+	runFilterValidatorTestCases(t, "datapoint", SignalTypeMetric, filterDataPointContextTestCases())
 }
 
 func runFilterValidatorTestCases(t *testing.T, context string, signalType SignalType, tests []filterResourceContextTestCase) {
@@ -328,6 +331,310 @@ func filterSpanEventContextTestCases() []filterResourceContextTestCase {
 				{
 					Conditions: []string{
 						`spanevent.name == "exception`,
+					},
+				},
+			},
+			isErrorExpected: true,
+		},
+	}
+}
+
+func filterLogContextTestCases() []filterResourceContextTestCase {
+	return []filterResourceContextTestCase{
+		{
+			name: "valid filter spec - simple condition",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`log.severity_text == "ERROR"`,
+					},
+				},
+			},
+			isErrorExpected: false,
+		},
+		{
+			name: "valid filter spec - multiple conditions",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`log.severity_text == "ERROR"`,
+						`log.body == "Database connection failed"`,
+					},
+				},
+			},
+			isErrorExpected: false,
+		},
+		{
+			name: "valid filter spec - attributes access",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`log.attributes["service.name"] == "auth-service"`,
+					},
+				},
+			},
+			isErrorExpected: false,
+		},
+		{
+			name: "valid filter spec - severity number",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`log.severity_number >= 17`,
+					},
+				},
+			},
+			isErrorExpected: false,
+		},
+		{
+			name: "valid filter spec - timestamp access",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`log.time_unix_nano != nil`,
+					},
+				},
+			},
+			isErrorExpected: false,
+		},
+		{
+			name: "invalid filter spec - invalid syntax",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`log.severity_text == "ERROR`,
+					},
+				},
+			},
+			isErrorExpected: true,
+		},
+		{
+			name: "invalid filter spec - invalid function",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`get(log.body) == "error message"`,
+					},
+				},
+			},
+			isErrorExpected: true,
+		},
+		{
+			name: "invalid filter spec - converter function",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`truncate_all(log.attributes, 100)`,
+					},
+				},
+			},
+			isErrorExpected: true,
+		},
+		{
+			name: "invalid filter spec - invalid path",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`log.invalid == "value"`,
+					},
+				},
+			},
+			isErrorExpected: true,
+		},
+	}
+}
+
+func filterMetricContextTestCases() []filterResourceContextTestCase {
+	return []filterResourceContextTestCase{
+		{
+			name: "valid filter spec - simple condition",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`metric.name == "http_requests_total"`,
+					},
+				},
+			},
+			isErrorExpected: false,
+		},
+		{
+			name: "valid filter spec - multiple conditions",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`metric.name == "http_requests_total"`,
+						`metric.type == 1`,
+					},
+				},
+			},
+			isErrorExpected: false,
+		},
+		{
+			name: "valid filter spec - data point access",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`metric.data_points != nil`,
+					},
+				},
+			},
+			isErrorExpected: false,
+		},
+		{
+			name: "valid filter spec - unit access",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`metric.unit == "ms"`,
+					},
+				},
+			},
+			isErrorExpected: false,
+		},
+		{
+			name: "invalid filter spec - invalid syntax",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`metric.name == "http_requests_total`,
+					},
+				},
+			},
+			isErrorExpected: true,
+		},
+		{
+			name: "invalid filter spec - invalid function",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`get(metric.name) == "http_requests_total"`,
+					},
+				},
+			},
+			isErrorExpected: true,
+		},
+		{
+			name: "invalid filter spec - converter function",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`truncate_all(metric.attributes, 100)`,
+					},
+				},
+			},
+			isErrorExpected: true,
+		},
+		{
+			name: "invalid filter spec - invalid path",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`metric.invalid == "value"`,
+					},
+				},
+			},
+			isErrorExpected: true,
+		},
+	}
+}
+
+func filterDataPointContextTestCases() []filterResourceContextTestCase {
+	return []filterResourceContextTestCase{
+		{
+			name: "valid filter spec - simple condition",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`datapoint.value_int > 100`,
+					},
+				},
+			},
+			isErrorExpected: false,
+		},
+		{
+			name: "valid filter spec - multiple conditions",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`datapoint.value_int > 100`,
+						`datapoint.time_unix_nano != nil`,
+					},
+				},
+			},
+			isErrorExpected: false,
+		},
+		{
+			name: "valid filter spec - attributes access",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`datapoint.attributes["service.name"] == "auth-service"`,
+					},
+				},
+			},
+			isErrorExpected: false,
+		},
+		{
+			name: "valid filter spec - timestamp access",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`datapoint.start_time_unix_nano != nil`,
+					},
+				},
+			},
+			isErrorExpected: false,
+		},
+		{
+			name: "valid filter spec - exemplars access",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`datapoint.exemplars != nil`,
+					},
+				},
+			},
+			isErrorExpected: false,
+		},
+		{
+			name: "invalid filter spec - invalid syntax",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`datapoint.value > 100`,
+					},
+				},
+			},
+			isErrorExpected: true,
+		},
+		{
+			name: "invalid filter spec - invalid function",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`get(datapoint.value_int) > 100`,
+					},
+				},
+			},
+			isErrorExpected: true,
+		},
+		{
+			name: "invalid filter spec - converter function",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`truncate_all(datapoint.attributes, 100)`,
+					},
+				},
+			},
+			isErrorExpected: true,
+		},
+		{
+			name: "invalid filter spec - invalid path",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`datapoint.invalid == "value"`,
 					},
 				},
 			},
