@@ -159,7 +159,7 @@ We recommend direct integration with the Dynatrace server. This approach reduces
     EOF
     ```
 
-1. Deploy the Istio Telemetry resource, (see also [Traces Istio Support](./../../03-traces.md#istio)):
+1. Deploy the Istio Telemetry resource, (see also [Traces Istio Support](./../../collecting-traces/istio-support.md)):
 
     ```bash
     kubectl apply -n istio-system -f - <<EOF
