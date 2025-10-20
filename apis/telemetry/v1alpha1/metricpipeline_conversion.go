@@ -3,7 +3,6 @@ package v1alpha1
 import (
 	"errors"
 
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
@@ -49,12 +48,7 @@ func (src *MetricPipeline) ConvertTo(dstRaw conversion.Hub) error {
 		}
 	}
 
-	if src.Spec.Input.OTLP != nil {
-		dst.Spec.Input.OTLP = &telemetryv1beta1.OTLPInput{
-			Enabled:    ptr.To(!src.Spec.Input.OTLP.Disabled),
-			Namespaces: convertNamespaceSelectorToBeta(src.Spec.Input.OTLP.Namespaces),
-		}
-	}
+	dst.Spec.Input.OTLP = convertOTLPInputToBeta(src.Spec.Input.OTLP)
 
 	// Copy output fields
 	dst.Spec.Output = telemetryv1beta1.MetricPipelineOutput{}
@@ -114,13 +108,7 @@ func (dst *MetricPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 			EnvoyMetrics:      convertEnvoyMetricsToAlpha(src.Spec.Input.Istio.EnvoyMetrics),
 		}
 	}
-
-	if src.Spec.Input.OTLP != nil {
-		dst.Spec.Input.OTLP = &OTLPInput{
-			Disabled:   src.Spec.Input.OTLP.Enabled != nil && ptr.Deref(src.Spec.Input.OTLP.Enabled, false),
-			Namespaces: convertNamespaceSelectorToAlpha(src.Spec.Input.OTLP.Namespaces),
-		}
-	}
+	dst.Spec.Input.OTLP = convertOTLPInputToAlpha(src.Spec.Input.OTLP)
 
 	// Copy output fields
 	dst.Spec.Output = MetricPipelineOutput{}
