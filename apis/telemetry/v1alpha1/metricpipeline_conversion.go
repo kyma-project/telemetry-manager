@@ -117,7 +117,7 @@ func (dst *MetricPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 
 	if src.Spec.Input.OTLP != nil {
 		dst.Spec.Input.OTLP = &OTLPInput{
-			Disabled:   src.Spec.Input.OTLP.Enabled != nil && !*src.Spec.Input.OTLP.Enabled,
+			Disabled:   src.Spec.Input.OTLP.Enabled != nil && ptr.Deref(src.Spec.Input.OTLP.Enabled, false),
 			Namespaces: convertNamespaceSelectorToAlpha(src.Spec.Input.OTLP.Namespaces),
 		}
 	}

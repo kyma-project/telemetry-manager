@@ -39,7 +39,7 @@ func convertOTLPInputToAlpha(src *telemetryv1beta1.OTLPInput) *OTLPInput {
 	}
 
 	return &OTLPInput{
-		Disabled:   src.Enabled != nil && !*src.Enabled,
+		Disabled:   src.Enabled != nil && ptr.Deref(src.Enabled, false),
 		Namespaces: convertNamespaceSelectorToAlpha(src.Namespaces),
 	}
 }
