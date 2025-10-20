@@ -41,7 +41,7 @@ func TestValidateLogPipelineFilters(t *testing.T) {
 func filterResourceContextTestCases() []filterResourceContextTestCase {
 	return []filterResourceContextTestCase{
 		{
-			name: "[resource context] valid filter spec",
+			name: "[resource context] valid filter spec - simple condition",
 			filters: []telemetryv1alpha1.FilterSpec{
 				{
 					Conditions: []string{
@@ -50,6 +50,62 @@ func filterResourceContextTestCases() []filterResourceContextTestCase {
 				},
 			},
 			isErrorExpected: false,
+		},
+		{
+			name: "[resource context] valid filter spec - multiple conditions",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`resource.attributes["service.name"] == "auth-service"`,
+						`resource.attributes["environment"] == "production"`,
+					},
+				},
+			},
+			isErrorExpected: false,
+		},
+		{
+			name: "[resource context] invalid filter spec - missing context",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`attributes["service.name"] == "auth-service"`,
+					},
+				},
+			},
+			isErrorExpected: true,
+		},
+		{
+			name: "[resource context] invalid filter spec - invalid syntax",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`resource.attributes["service.name" == "auth-service"`,
+					},
+				},
+			},
+			isErrorExpected: true,
+		},
+		{
+			name: "[resource context] invalid filter spec - invalid function",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`Get(resource.attributes["service.name"]) == "auth-service"`,
+					},
+				},
+			},
+			isErrorExpected: true,
+		},
+		{
+			name: "[resource context] invalid filter spec - invaid path",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`resource.invalid["service.name"] == "auth-service"`,
+					},
+				},
+			},
+			isErrorExpected: true,
 		},
 	}
 }
