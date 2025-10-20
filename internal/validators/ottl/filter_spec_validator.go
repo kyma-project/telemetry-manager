@@ -7,6 +7,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlresource"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlscope"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlspan"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/ottlfuncs"
 )
 
@@ -42,6 +43,18 @@ func (v *FilterSpecValidator) Validate(filters []telemetryv1alpha1.FilterSpec) e
 
 func newFilterParserCollectionOpts(signalType SignalType) ([]genericParserCollectionOption, error) {
 	var opts []genericParserCollectionOption
+
+	switch signalType {
+	case SignalTypeTrace:
+		opts = append(opts,
+			withSpanParser(
+				ottlfuncs.StandardConverters[ottlspan.TransformContext](),
+				ottl.WithConditionConverter(convertSpanConditions),
+			),
+		)
+	default:
+		// return nil, fmt.Errorf("unsupported signal type: %s", signalType)
+	}
 
 	// Always include common context parsers, no matter the signal type
 	opts = append(opts,
