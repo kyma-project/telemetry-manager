@@ -90,7 +90,18 @@ func filterResourceContextTestCases() []filterResourceContextTestCase {
 			filters: []telemetryv1alpha1.FilterSpec{
 				{
 					Conditions: []string{
-						`Get(resource.attributes["service.name"]) == "auth-service"`,
+						`get(resource.attributes["service.name"]) == "auth-service"`,
+					},
+				},
+			},
+			isErrorExpected: true,
+		},
+		{
+			name: "[resource context] invalid filter spec - converter function",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`truncate_all(resource.attributes, 100)`,
 					},
 				},
 			},
