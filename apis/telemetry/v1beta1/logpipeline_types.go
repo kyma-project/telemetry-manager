@@ -133,12 +133,12 @@ type LogPipelineRuntimeInput struct {
 // LogPipelineNamespaceSelector describes whether application logs from specific Namespaces are selected. The options are mutually exclusive. System Namespaces are excluded by default. Use the `system` attribute with value `true` to enable them.
 // +kubebuilder:validation:XValidation:rule="(has(self.include) == true ? 1 : 0) + (has(self.exclude) == true ? 1 : 0) + (has(self.system) == true ? 1 : 0) <= 1",message="Only one of 'include', 'exclude' or 'system' can be defined"
 type LogPipelineNamespaceSelector struct {
-	// Include specifies the list of namespace names to include when collecting container logs. By default, logs from all namespaces are collected, except system namespaces. You can not specify an include list together with an exclude list.
+	// Include specifies the list of namespace names to include when collecting container logs. By default, logs from all namespaces are collected, except system namespaces. You cannot specify an include list together with an exclude list.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:items:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
 	// +kubebuilder:validation:items:MaxLength=63
 	Include []string `json:"include,omitempty"`
-	// Exclude specifies the list of namespace names to exclude when collecting container logs. By default, logs from all namespaces are collected, except system namespaces. You can not specify an exclude list together with an include list.
+	// Exclude specifies the list of namespace names to exclude when collecting container logs. By default, logs from all namespaces are collected, except system namespaces. You cannot specify an exclude list together with an include list.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:items:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
 	// +kubebuilder:validation:items:MaxLength=63
