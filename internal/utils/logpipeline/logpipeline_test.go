@@ -52,7 +52,7 @@ func TestLogPipelineOutput(t *testing.T) {
 func TestLogPipelineContainsCustomPluginWithCustomFilter(t *testing.T) {
 	logPipeline := &telemetryv1alpha1.LogPipeline{
 		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Filters: []telemetryv1alpha1.LogPipelineFilter{
+			FluentBitFilters: []telemetryv1alpha1.LogPipelineFilter{
 				{Custom: `
     Name    some-filter`,
 				},

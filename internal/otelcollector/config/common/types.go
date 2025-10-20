@@ -209,9 +209,10 @@ type IstioNoiseFilterProcessor struct {
 }
 
 type FilterProcessor struct {
-	Metrics FilterProcessorMetrics `yaml:"metrics,omitempty"`
-	Logs    FilterProcessorLogs    `yaml:"logs,omitempty"`
-	Traces  FilterProcessorTraces  `yaml:"traces,omitempty"`
+	ErrorMode string                 `yaml:"error_mode"`
+	Metrics   FilterProcessorMetrics `yaml:"metrics,omitempty"`
+	Logs      FilterProcessorLogs    `yaml:"logs,omitempty"`
+	Traces    FilterProcessorTraces  `yaml:"traces,omitempty"`
 }
 
 type FilterProcessorMetrics struct {
@@ -220,7 +221,8 @@ type FilterProcessorMetrics struct {
 }
 
 type FilterProcessorTraces struct {
-	Span []string `yaml:"span,omitempty"`
+	Span      []string `yaml:"span,omitempty"`
+	SpanEvent []string `yaml:"spanevent,omitempty"`
 }
 
 type FilterProcessorLogs struct {

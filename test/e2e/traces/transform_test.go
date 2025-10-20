@@ -46,7 +46,7 @@ func TestTransform(t *testing.T) {
 				return telemetrygen.NewPod(ns, telemetrygen.SignalTypeTraces, telemetrygen.WithTelemetryAttribute("component", "proxy")).K8sObject()
 			},
 			transformSpec: telemetryv1alpha1.TransformSpec{
-				Conditions: []string{"span.attributes[\"component\"]== \"proxy\""},
+				Conditions: []string{"span.attributes[\"component\"] == \"proxy\""},
 				Statements: []string{"set(span.attributes[\"FromProxy\"], \"true\")"},
 			},
 			assertion: HaveFlatTraces(ContainElement(SatisfyAll(

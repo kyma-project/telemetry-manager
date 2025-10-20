@@ -102,6 +102,46 @@ func TestBuildConfig(t *testing.T) {
 			},
 			goldenFileName: "two-pipelines-with-transforms.yaml",
 		},
+		{
+			name: "two pipelines with user-defined filter",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithName("test1").
+					WithApplicationInput(true).
+					WithOTLPOutput().
+					WithFilter(telemetryv1alpha1.FilterSpec{
+						Conditions: []string{"IsMatch(log.attributes[\"foo\"], \".*bar.*\")"},
+					}).
+					Build(),
+				testutils.NewLogPipelineBuilder().
+					WithName("test2").
+					WithApplicationInput(true).
+					WithOTLPOutput().
+					WithFilter(telemetryv1alpha1.FilterSpec{
+						Conditions: []string{"IsMatch(log.body, \".*error.*\")"},
+					}).
+					Build(),
+			},
+			goldenFileName: "two-pipelines-with-filter.yaml",
+		},
+		{
+			name: "pipeline with user-defined transform and filter",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithName("test1").
+					WithApplicationInput(true).
+					WithOTLPOutput().
+					WithTransform(telemetryv1alpha1.TransformSpec{
+						Conditions: []string{"IsMatch(body, \".*error.*\")"},
+						Statements: []string{"set(attributes[\"log.level\"], \"error\")", "set(body, \"transformed1\")"},
+					}).
+					WithFilter(telemetryv1alpha1.FilterSpec{
+						Conditions: []string{"IsMatch(log.attributes[\"foo\"], \".*bar.*\")"},
+					}).
+					Build(),
+			},
+			goldenFileName: "pipeline-with-transform-filter.yaml",
+		},
 	}
 
 	buildOptions := BuildOptions{

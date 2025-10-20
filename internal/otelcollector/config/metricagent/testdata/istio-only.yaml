@@ -90,10 +90,12 @@ processors:
         timeout: 10s
         send_batch_max_size: 1024
     filter/drop-diagnostic-metrics-if-input-source-istio:
+        error_mode: ignore
         metrics:
             metric:
                 - instrumentation_scope.name == "io.kyma-project.telemetry/istio" and (name == "up" or name == "scrape_duration_seconds" or name == "scrape_samples_scraped" or name == "scrape_samples_post_metric_relabeling" or name == "scrape_series_added")
     filter/drop-envoy-metrics-if-disabled:
+        error_mode: ignore
         metrics:
             metric:
                 - IsMatch(name, "^envoy_.*") and instrumentation_scope.name == "io.kyma-project.telemetry/istio"

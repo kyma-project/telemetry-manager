@@ -1,4 +1,4 @@
-package transformspec
+package ottl
 
 import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl"
@@ -9,9 +9,14 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlscope"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlspan"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlspanevent"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/ottlfuncs"
 	"go.opentelemetry.io/collector/component"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
+// genericParserCollection is a wrapper around ottl.ParserCollection[any] that simplifies the API
+// to be used in the TransformSpec and FilterSpec validators.
 type genericParserCollection ottl.ParserCollection[any]
 
 type genericParserCollectionOption ottl.ParserCollectionOption[any]
@@ -121,16 +126,35 @@ func withScopeParser(functions map[string]ottl.Factory[ottlscope.TransformContex
 	}
 }
 
-func newGenericParserCollection(settings component.TelemetrySettings, options ...genericParserCollectionOption) (*genericParserCollection, error) {
-	parserCollectionOptions := []ottl.ParserCollectionOption[any]{
+func withCommonContextsParsers() []genericParserCollectionOption {
+	return []genericParserCollectionOption{
+		withResourceParser(
+			ottlfuncs.StandardFuncs[ottlresource.TransformContext](),
+			ottl.WithStatementConverter(convertResourceStatements),
+			ottl.WithConditionConverter(convertResourceConditions),
+		),
+		withScopeParser(
+			ottlfuncs.StandardFuncs[ottlscope.TransformContext](),
+			ottl.WithStatementConverter(convertScopeStatements),
+			ottl.WithConditionConverter(convertScopeConditions),
+		),
+	}
+}
+
+func newGenericParserCollection(opts ...genericParserCollectionOption) (*genericParserCollection, error) {
+	ottlOpts := []ottl.ParserCollectionOption[any]{
 		ottl.EnableParserCollectionModifiedPathsLogging[any](true),
 	}
 
-	for _, option := range options {
-		parserCollectionOptions = append(parserCollectionOptions, ottl.ParserCollectionOption[any](option))
+	for _, option := range opts {
+		ottlOpts = append(ottlOpts, ottl.ParserCollectionOption[any](option))
 	}
 
-	parserCollection, err := ottl.NewParserCollection(settings, parserCollectionOptions...)
+	telemetrySettings := component.TelemetrySettings{
+		Logger: zap.New(zapcore.NewNopCore()),
+	}
+
+	parserCollection, err := ottl.NewParserCollection(telemetrySettings, ottlOpts...)
 	if err != nil {
 		return nil, err
 	}

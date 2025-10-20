@@ -46,11 +46,9 @@ func (b *Builder) addDropIfOTLPInputDisabledProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return &common.FilterProcessor{
-				Metrics: common.FilterProcessorMetrics{
-					Metric: []string{ottlUknownInputSource()},
-				},
-			}
+			return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
+				Metric: []string{ottlUknownInputSource()},
+			})
 		},
 	)
 }
@@ -113,11 +111,9 @@ func filterByNamespaceProcessorConfig(namespaceSelector *telemetryv1alpha1.Names
 		filterExpressions = append(filterExpressions, includeNamespacesExpr)
 	}
 
-	return &common.FilterProcessor{
-		Metrics: common.FilterProcessorMetrics{
-			Metric: filterExpressions,
-		},
-	}
+	return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
+		Metric: filterExpressions,
+	})
 }
 
 func namespacesConditionsBuilder(namespaces []string) []string {
@@ -151,9 +147,7 @@ func (b *Builder) addDropKymaAttributesProcessor() buildComponentFunc {
 
 func (b *Builder) addUserDefinedTransformProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		func(mp *telemetryv1alpha1.MetricPipeline) string {
-			return fmt.Sprintf("transform/%s-user-defined", mp.Name)
-		},
+		formatUserDefinedTransformProcessorID,
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			if len(mp.Spec.Transforms) == 0 {
 				return nil // No transforms, no processor needed
@@ -163,6 +157,19 @@ func (b *Builder) addUserDefinedTransformProcessor() buildComponentFunc {
 			transformProcessor := common.MetricTransformProcessorConfig(transformStatements)
 
 			return transformProcessor
+		},
+	)
+}
+
+func (b *Builder) addUserDefinedFilterProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		formatUserDefinedFilterProcessorID,
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			if mp.Spec.Filters == nil {
+				return nil // No filters, no processor needed
+			}
+
+			return common.FilterSpecsToMetricFilterProcessorConfig(mp.Spec.Filters)
 		},
 	)
 }
@@ -206,4 +213,12 @@ func formatNamespaceFilterID(pipelineName string, inputSourceType common.InputSo
 
 func formatOTLPExporterID(pipeline *telemetryv1alpha1.MetricPipeline) string {
 	return common.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)
+}
+
+func formatUserDefinedTransformProcessorID(mp *telemetryv1alpha1.MetricPipeline) string {
+	return fmt.Sprintf(common.ComponentIDUserDefinedTransformProcessor, mp.Name)
+}
+
+func formatUserDefinedFilterProcessorID(mp *telemetryv1alpha1.MetricPipeline) string {
+	return fmt.Sprintf(common.ComponentIDUserDefinedFilterProcessor, mp.Name)
 }
