@@ -16,7 +16,7 @@ const (
 func createCustomFilters(pipeline *telemetryv1alpha1.LogPipeline, filterType string) string {
 	var filters []string
 
-	for _, filter := range pipeline.Spec.Filters {
+	for _, filter := range pipeline.Spec.FluentBitFilters {
 		customFilterParams := parseMultiline(filter.Custom)
 		isMultiline := isMultilineFilter(customFilterParams)
 

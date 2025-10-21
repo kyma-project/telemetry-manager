@@ -64,6 +64,24 @@ spec:
           spec:
             description: Spec defines the desired characteristics of MetricPipeline.
             properties:
+              filter:
+                description: Filters specifies a list of filters to apply to telemetry
+                  data.
+                items:
+                  description: FilterSpec defines a filter to apply to telemetry data.
+                  properties:
+                    conditions:
+                      description: Conditions specify a list of multiple where clauses,
+                        which will be processed as global conditions for the accompanying
+                        set of statements. The conditions are ORed together, which
+                        means only one condition needs to evaluate to true in order
+                        for the statements (including their individual where clauses)
+                        to be executed.
+                      items:
+                        type: string
+                      type: array
+                  type: object
+                type: array
               input:
                 description: Input configures additional inputs for metric collection.
                 properties:
@@ -81,9 +99,9 @@ spec:
                             type: boolean
                         type: object
                       enabled:
-                        description: Enabled specifies that istio-proxy metrics are
-                          scraped from Pods that have the istio-proxy sidecar injected.
-                          The default is `false`.
+                        description: Enabled specifies if the 'istio' input is enabled.
+                          If enabled, istio-proxy metrics are scraped from Pods that
+                          have the istio-proxy sidecar injected. The default is `false`.
                         type: boolean
                       envoyMetrics:
                         description: EnvoyMetrics enables the collection of additional
@@ -101,30 +119,40 @@ spec:
                           including system namespaces are enabled.
                         properties:
                           exclude:
-                            description: Exclude signals from the specified Namespace
-                              names only.
+                            description: 'Exclude telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are collected.
+                              You cannot specify an exclude list together with an
+                              include list.'
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
-                            description: Include signals from the specified Namespace
-                              names only.
+                            description: 'Include telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are included.
+                              You cannot specify an include list together with an
+                              exclude list.'
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                         type: object
                         x-kubernetes-validations:
                         - message: Only one of 'include' or 'exclude' can be defined
-                          rule: '(has(self.include) == true ? 1 : 0) + (has(self.exclude)
-                            == true ? 1 : 0) <= 1'
+                          rule: '!(has(self.include) && has(self.exclude))'
                     type: object
                   otlp:
                     description: OTLP input configures the push endpoint to receive
                       metrics from an OTLP source.
                     properties:
                       disabled:
-                        description: If set to `true`, no push-based OTLP signals
-                          are collected. The default is `false`.
+                        description: Disabled specifies if the 'otlp' input is deactivated.
+                          If set to `true`, no push-based OTLP signals are collected.
+                          The default is `false`.
                         type: boolean
                       namespaces:
                         description: Namespaces describes whether push-based OTLP
@@ -132,22 +160,31 @@ spec:
                           are enabled by default.
                         properties:
                           exclude:
-                            description: Exclude signals from the specified Namespace
-                              names only.
+                            description: 'Exclude telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are collected.
+                              You cannot specify an exclude list together with an
+                              include list.'
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
-                            description: Include signals from the specified Namespace
-                              names only.
+                            description: 'Include telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are included.
+                              You cannot specify an include list together with an
+                              exclude list.'
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                         type: object
                         x-kubernetes-validations:
                         - message: Only one of 'include' or 'exclude' can be defined
-                          rule: '(has(self.include) == true ? 1 : 0) + (has(self.exclude)
-                            == true ? 1 : 0) <= 1'
+                          rule: '!(has(self.include) && has(self.exclude))'
                     type: object
                   prometheus:
                     description: Prometheus input configures collection of application
@@ -164,9 +201,10 @@ spec:
                             type: boolean
                         type: object
                       enabled:
-                        description: Enabled specifies whether Service endpoints and
-                          Pods marked with `prometheus.io/scrape=true` annotation
-                          are scraped. The default is `false`.
+                        description: Enabled specifies if the 'prometheus' input is
+                          enabled. If enabled, Service endpoints and Pods marked with
+                          `prometheus.io/scrape=true` annotation are scraped. The
+                          default is `false`.
                         type: boolean
                       namespaces:
                         description: Namespaces specifies from which namespaces metrics
@@ -175,30 +213,40 @@ spec:
                           system namespaces, use an empty struct notation.
                         properties:
                           exclude:
-                            description: Exclude signals from the specified Namespace
-                              names only.
+                            description: 'Exclude telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are collected.
+                              You cannot specify an exclude list together with an
+                              include list.'
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
-                            description: Include signals from the specified Namespace
-                              names only.
+                            description: 'Include telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are included.
+                              You cannot specify an include list together with an
+                              exclude list.'
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                         type: object
                         x-kubernetes-validations:
                         - message: Only one of 'include' or 'exclude' can be defined
-                          rule: '(has(self.include) == true ? 1 : 0) + (has(self.exclude)
-                            == true ? 1 : 0) <= 1'
+                          rule: '!(has(self.include) && has(self.exclude))'
                     type: object
                   runtime:
                     description: Runtime input configures collection of Kubernetes
                       runtime metrics.
                     properties:
                       enabled:
-                        description: Enabled specifies whether runtime metrics are
-                          collected. The default is `false`.
+                        description: Enabled specifies if the 'runtime' input is enabled.
+                          If enabled, runtime metrics are collected. The default is
+                          `false`.
                         type: boolean
                       namespaces:
                         description: Namespaces specifies from which namespaces metrics
@@ -207,22 +255,31 @@ spec:
                           system namespaces, use an empty struct notation.
                         properties:
                           exclude:
-                            description: Exclude signals from the specified Namespace
-                              names only.
+                            description: 'Exclude telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are collected.
+                              You cannot specify an exclude list together with an
+                              include list.'
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
-                            description: Include signals from the specified Namespace
-                              names only.
+                            description: 'Include telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are included.
+                              You cannot specify an include list together with an
+                              exclude list.'
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                         type: object
                         x-kubernetes-validations:
                         - message: Only one of 'include' or 'exclude' can be defined
-                          rule: '(has(self.include) == true ? 1 : 0) + (has(self.exclude)
-                            == true ? 1 : 0) <= 1'
+                          rule: '!(has(self.include) && has(self.exclude))'
                       resources:
                         description: Resources configures the Kubernetes resource
                           types for which metrics are collected.
@@ -366,9 +423,10 @@ spec:
                                     type: object
                                 type: object
                                 x-kubernetes-validations:
-                                - message: Exactly one of 'value' or 'valueFrom' must
+                                - message: Only one of 'value' or 'valueFrom' can
                                     be set
-                                  rule: has(self.value) != has(self.valueFrom)
+                                  rule: '!(has(self.value) && size(self.value) > 0
+                                    && has(self.valueFrom))'
                               user:
                                 description: User contains the basic auth username
                                   or a Secret reference.
@@ -412,9 +470,10 @@ spec:
                                     type: object
                                 type: object
                                 x-kubernetes-validations:
-                                - message: Exactly one of 'value' or 'valueFrom' must
+                                - message: Only one of 'value' or 'valueFrom' can
                                     be set
-                                  rule: has(self.value) != has(self.valueFrom)
+                                  rule: '!(has(self.value) && size(self.value) > 0
+                                    && has(self.valueFrom))'
                             required:
                             - password
                             - user
@@ -462,8 +521,8 @@ spec:
                             type: object
                         type: object
                         x-kubernetes-validations:
-                        - message: Exactly one of 'value' or 'valueFrom' must be set
-                          rule: has(self.value) != has(self.valueFrom)
+                        - message: Only one of 'value' or 'valueFrom' can be set
+                          rule: '!(has(self.value) && size(self.value) > 0 && has(self.valueFrom))'
                       headers:
                         description: Headers defines custom headers to be added to
                           outgoing HTTP or gRPC requests.
@@ -515,13 +574,11 @@ spec:
                               - secretKeyRef
                               type: object
                           required:
-                          - ""
                           - name
                           type: object
                           x-kubernetes-validations:
-                          - message: Exactly one of 'value' or 'valueFrom' must be
-                              set
-                            rule: has(self.value) != has(self.valueFrom)
+                          - message: Only one of 'value' or 'valueFrom' can be set
+                            rule: '!(has(self.value) && size(self.value) > 0 && has(self.valueFrom))'
                         type: array
                       path:
                         description: Path defines OTLP export URL path (only for the
@@ -581,9 +638,9 @@ spec:
                                 type: object
                             type: object
                             x-kubernetes-validations:
-                            - message: Exactly one of 'value' or 'valueFrom' must
-                                be set
-                              rule: has(self.value) != has(self.valueFrom)
+                            - message: Only one of 'value' or 'valueFrom' can be set
+                              rule: '!(has(self.value) && size(self.value) > 0 &&
+                                has(self.valueFrom))'
                           cert:
                             description: Defines a client certificate to use when
                               using TLS. The certificate must be provided in PEM format.
@@ -626,9 +683,9 @@ spec:
                                 type: object
                             type: object
                             x-kubernetes-validations:
-                            - message: Exactly one of 'value' or 'valueFrom' must
-                                be set
-                              rule: has(self.value) != has(self.valueFrom)
+                            - message: Only one of 'value' or 'valueFrom' can be set
+                              rule: '!(has(self.value) && size(self.value) > 0 &&
+                                has(self.valueFrom))'
                           insecure:
                             description: Insecure defines whether to send requests
                               using plaintext instead of TLS.
@@ -679,9 +736,9 @@ spec:
                                 type: object
                             type: object
                             x-kubernetes-validations:
-                            - message: Exactly one of 'value' or 'valueFrom' must
-                                be set
-                              rule: has(self.value) != has(self.valueFrom)
+                            - message: Only one of 'value' or 'valueFrom' can be set
+                              rule: '!(has(self.value) && size(self.value) > 0 &&
+                                has(self.valueFrom))'
                         type: object
                         x-kubernetes-validations:
                         - message: Can define either both 'cert' and 'key', or neither
@@ -691,9 +748,8 @@ spec:
                     type: object
                     x-kubernetes-validations:
                     - message: Path is only available with HTTP protocol
-                      rule: ((!has(self.path) || size(self.path) <= 0) && (has(self.protocol)
-                        && self.protocol == 'grpc')) || (has(self.protocol) && self.protocol
-                        == 'http')
+                      rule: '(has(self.path) && size(self.path) > 0) ? self.protocol
+                        == ''http'' : true'
                 required:
                 - otlp
                 type: object
@@ -832,6 +888,24 @@ spec:
           spec:
             description: Spec defines the desired characteristics of MetricPipeline.
             properties:
+              filter:
+                description: Filter specifies a list of filters to apply to telemetry
+                  data.
+                items:
+                  description: FilterSpec defines a filter to apply to telemetry data.
+                  properties:
+                    conditions:
+                      description: Conditions specify a list of multiple where clauses,
+                        which will be processed as global conditions for the accompanying
+                        set of statements. The conditions are ORed together, which
+                        means only one condition needs to evaluate to true in order
+                        for the statements (including their individual where clauses)
+                        to be executed.
+                      items:
+                        type: string
+                      type: array
+                  type: object
+                type: array
               input:
                 description: Input configures additional inputs for metric collection.
                 properties:
@@ -849,9 +923,9 @@ spec:
                             type: boolean
                         type: object
                       enabled:
-                        description: Enabled specifies that istio-proxy metrics are
-                          scraped from Pods that have the istio-proxy sidecar injected.
-                          The default is `false`.
+                        description: Enabled specifies if the 'istio' input is enabled.
+                          If enabled, istio-proxy metrics are scraped from Pods that
+                          have the istio-proxy sidecar injected. The default is `false`.
                         type: boolean
                       envoyMetrics:
                         description: EnvoyMetrics enables the collection of additional
@@ -869,30 +943,40 @@ spec:
                           including system namespaces are enabled.
                         properties:
                           exclude:
-                            description: Exclude signals from the specified Namespace
-                              names only.
+                            description: 'Exclude telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are collected.
+                              You cannot specify an exclude list together with an
+                              include list.'
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
-                            description: Include signals from the specified Namespace
-                              names only.
+                            description: 'Include telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are included.
+                              You cannot specify an include list together with an
+                              exclude list.'
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                         type: object
                         x-kubernetes-validations:
                         - message: Only one of 'include' or 'exclude' can be defined
-                          rule: '(has(self.include) == true ? 1 : 0) + (has(self.exclude)
-                            == true ? 1 : 0) <= 1'
+                          rule: '!(has(self.include) && has(self.exclude))'
                     type: object
                   otlp:
                     description: OTLP input configures the push endpoint to receive
                       metrics from an OTLP source.
                     properties:
                       disabled:
-                        description: If set to `true`, no push-based OTLP signals
-                          are collected. The default is `false`.
+                        description: Disabled specifies if the 'otlp' input is deactivated.
+                          If disabled, then no push-based OTLP signals are collected.
+                          The default is `false`.
                         type: boolean
                       namespaces:
                         description: Namespaces describes whether push-based OTLP
@@ -900,22 +984,31 @@ spec:
                           are enabled by default.
                         properties:
                           exclude:
-                            description: Exclude signals from the specified Namespace
-                              names only.
+                            description: 'Exclude telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are collected.
+                              You cannot specify an exclude list together with an
+                              include list.'
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
-                            description: Include signals from the specified Namespace
-                              names only.
+                            description: 'Include telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are included.
+                              You cannot specify an include list together with an
+                              exclude list.'
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                         type: object
                         x-kubernetes-validations:
                         - message: Only one of 'include' or 'exclude' can be defined
-                          rule: '(has(self.include) == true ? 1 : 0) + (has(self.exclude)
-                            == true ? 1 : 0) <= 1'
+                          rule: '!(has(self.include) && has(self.exclude))'
                     type: object
                   prometheus:
                     description: Prometheus input configures collection of application
@@ -932,9 +1025,10 @@ spec:
                             type: boolean
                         type: object
                       enabled:
-                        description: Enabled specifies whether Service endpoints and
-                          Pods marked with `prometheus.io/scrape=true` annotation
-                          are scraped. The default is `false`.
+                        description: Enabled specifies if the 'prometheus' input is
+                          enabled. If enabled, Service endpoints and Pods marked with
+                          `prometheus.io/scrape=true` annotation are scraped. The
+                          default is `false`.
                         type: boolean
                       namespaces:
                         description: Namespaces specifies from which namespaces metrics
@@ -943,30 +1037,40 @@ spec:
                           system namespaces, use an empty struct notation.
                         properties:
                           exclude:
-                            description: Exclude signals from the specified Namespace
-                              names only.
+                            description: 'Exclude telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are collected.
+                              You cannot specify an exclude list together with an
+                              include list.'
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
-                            description: Include signals from the specified Namespace
-                              names only.
+                            description: 'Include telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are included.
+                              You cannot specify an include list together with an
+                              exclude list.'
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                         type: object
                         x-kubernetes-validations:
                         - message: Only one of 'include' or 'exclude' can be defined
-                          rule: '(has(self.include) == true ? 1 : 0) + (has(self.exclude)
-                            == true ? 1 : 0) <= 1'
+                          rule: '!(has(self.include) && has(self.exclude))'
                     type: object
                   runtime:
                     description: Runtime input configures collection of Kubernetes
                       runtime metrics.
                     properties:
                       enabled:
-                        description: Enabled specifies whether runtime metrics are
-                          collected. The default is `false`.
+                        description: Enabled specifies if the 'runtime' input is enabled.
+                          If enabled, runtime metrics are collected. The default is
+                          `false`.
                         type: boolean
                       namespaces:
                         description: Namespaces specifies from which namespaces metrics
@@ -975,22 +1079,31 @@ spec:
                           system namespaces, use an empty struct notation.
                         properties:
                           exclude:
-                            description: Exclude signals from the specified Namespace
-                              names only.
+                            description: 'Exclude telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are collected.
+                              You cannot specify an exclude list together with an
+                              include list.'
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
-                            description: Include signals from the specified Namespace
-                              names only.
+                            description: 'Include telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are included.
+                              You cannot specify an include list together with an
+                              exclude list.'
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                         type: object
                         x-kubernetes-validations:
                         - message: Only one of 'include' or 'exclude' can be defined
-                          rule: '(has(self.include) == true ? 1 : 0) + (has(self.exclude)
-                            == true ? 1 : 0) <= 1'
+                          rule: '!(has(self.include) && has(self.exclude))'
                       resources:
                         description: Resources configures the Kubernetes resource
                           types for which metrics are collected.
@@ -1283,7 +1396,6 @@ spec:
                               - secretKeyRef
                               type: object
                           required:
-                          - ""
                           - name
                           type: object
                           x-kubernetes-validations:
@@ -1459,9 +1571,8 @@ spec:
                     type: object
                     x-kubernetes-validations:
                     - message: Path is only available with HTTP protocol
-                      rule: ((!has(self.path) || size(self.path) <= 0) && (has(self.protocol)
-                        && self.protocol == 'grpc')) || (has(self.protocol) && self.protocol
-                        == 'http')
+                      rule: '(has(self.path) && size(self.path) > 0) ? self.protocol
+                        == ''http'' : true'
                 required:
                 - otlp
                 type: object

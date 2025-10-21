@@ -64,14 +64,15 @@ type LogPipeline struct {
 // +kubebuilder:validation:XValidation:rule="!(has(self.output.otlp) && has(self.files))", message="files not supported with otlp output"
 // +kubebuilder:validation:XValidation:rule="!(has(self.output.otlp) && has(self.variables))", message="variables not supported with otlp output"
 // +kubebuilder:validation:XValidation:rule="has(self.output.otlp) || !(has(self.transform))", message="transform is only supported with otlp output"
+// +kubebuilder:validation:XValidation:rule="has(self.output.otlp) || !(has(self.filter))", message="filter is only supported with otlp output"
 // +kubebuilder:validation:XValidation:rule="has(self.output.otlp) || !(has(self.input.otlp))", message="otlp input is only supported with otlp output"
 type LogPipelineSpec struct {
 	// Input configures additional inputs for log collection.
 	// +kubebuilder:validation:Optional
 	Input LogPipelineInput `json:"input,omitempty"`
-	// Filters configures custom Fluent Bit `filters` to transform logs. Only available when using an output of type `http` and `custom`.
+	// FluentBitFilters configures custom Fluent Bit `filters` to transform logs. Only available when using an output of type `http` and `custom`.
 	// +kubebuilder:validation:Optional
-	Filters []LogPipelineFilter `json:"filters,omitempty"`
+	FluentBitFilters []LogPipelineFilter `json:"filters,omitempty"`
 	// Output configures the backend to which logs are sent. You must specify exactly one output per pipeline.
 	// +kubebuilder:validation:Required
 	Output LogPipelineOutput `json:"output"`
@@ -84,6 +85,9 @@ type LogPipelineSpec struct {
 	// Transforms specify a list of transformations to apply to telemetry data.
 	// +kubebuilder:validation:Optional
 	Transforms []TransformSpec `json:"transform,omitempty"`
+	// Filters specifies a list of filters to apply to telemetry data.
+	// +kubebuilder:validation:Optional
+	Filters []FilterSpec `json:"filter,omitempty"`
 }
 
 // LogPipelineInput configures additional inputs for log collection.
@@ -98,7 +102,7 @@ type LogPipelineInput struct {
 
 // LogPipelineApplicationInput configures the log collection from application containers stdout/stderr by tailing the log files of the underlying container runtime.
 type LogPipelineApplicationInput struct {
-	// If enabled, application logs are collected from application containers stdout/stderr. The default is `true`.
+	// Enabled specifies if the 'application' input is enabled. If enabled, logs are collected from application containers stdout/stderr. The default is `true`.
 	// +kubebuilder:validation:Optional
 	Enabled *bool `json:"enabled,omitempty"`
 	// Namespaces describes whether application logs from specific namespaces are selected. The options are mutually exclusive. System namespaces are excluded by default. Use the `system` attribute with value `true` to enable them.
@@ -121,11 +125,15 @@ type LogPipelineApplicationInput struct {
 // LogPipelineNamespaceSelector describes whether application logs from specific Namespaces are selected. The options are mutually exclusive. System Namespaces are excluded by default. Use the `system` attribute with value `true` to enable them.
 // +kubebuilder:validation:XValidation:rule="(has(self.include) == true ? 1 : 0) + (has(self.exclude) == true ? 1 : 0) + (has(self.system) == true ? 1 : 0) <= 1",message="Only one of 'include', 'exclude' or 'system' can be defined"
 type LogPipelineNamespaceSelector struct {
-	// Include only the container logs of the specified Namespace names.
+	// Include specifies the list of namespace names to include when collecting container logs. By default, logs from all namespaces are collected, except system namespaces. You cannot specify an include list together with an exclude list.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:items:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
+	// +kubebuilder:validation:items:MaxLength=63
 	Include []string `json:"include,omitempty"`
-	// Exclude the container logs of the specified Namespace names.
+	// Exclude specifies the list of namespace names to exclude when collecting container logs. By default, logs from all namespaces are collected, except system namespaces. You cannot specify an exclude list together with an include list.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:items:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
+	// +kubebuilder:validation:items:MaxLength=63
 	Exclude []string `json:"exclude,omitempty"`
 	// System specifies whether to collect logs from system namespaces. If set to `true`, you collect logs from all namespaces including system namespaces, such as like kube-system, istio-system, and kyma-system. The default is `false`.
 	// +kubebuilder:validation:Optional
@@ -133,7 +141,7 @@ type LogPipelineNamespaceSelector struct {
 }
 
 // LogPipelineContainerSelector describes whether application logs from specific containers are selected. The options are mutually exclusive.
-// +kubebuilder:validation:XValidation:rule="(has(self.include) == true ? 1 : 0) + (has(self.exclude) == true ? 1 : 0) <= 1",message="Only one of 'include' or 'exclude' can be defined"
+// +kubebuilder:validation:XValidation:rule="!(has(self.include) && has(self.exclude))",message="Only one of 'include' or 'exclude' can be defined"
 type LogPipelineContainerSelector struct {
 	// Include specifies to include only the container logs with the specified container names.
 	// +kubebuilder:validation:Optional

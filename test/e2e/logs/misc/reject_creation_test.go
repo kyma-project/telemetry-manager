@@ -20,6 +20,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 	const (
 		backendHost = "example.com"
 		backendPort = 4317
+		// Example string longer than 63 characters
+		veryLongString = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz123"
 	)
 
 	var backenEndpoint = backendHost + ":" + strconv.Itoa(backendPort)
@@ -64,7 +66,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					},
 				},
 			},
-			errorMsg: "Exactly one of 'value' or 'valueFrom' must be set",
+			errorMsg: "Only one of 'value' or 'valueFrom' can be set",
 			field:    "spec.output.otlp.endpoint",
 		},
 		{
@@ -173,20 +175,6 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp.protocol",
 		},
 		{
-			pipeline: telemetryv1alpha1.LogPipeline{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "otlp-output-without-endpoint",
-				},
-				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Output: telemetryv1alpha1.LogPipelineOutput{
-						OTLP: &telemetryv1alpha1.OTLPOutput{},
-					},
-				},
-			},
-			errorMsg: "Exactly one of 'value' or 'valueFrom' must be set",
-			field:    "spec.output.otlp.endpoint",
-		},
-		{
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("otlp-output-basic-auth-secretref-missing-password-key").
 				WithOTLPOutput(
@@ -249,6 +237,52 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			errorMsg: "Only one of 'include' or 'exclude' can be defined",
 			field:    "spec.input.otlp.namespaces",
 		},
+		{
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("otlp-input-namespaces-include-invalid").
+				WithOTLPInput(true,
+					testutils.IncludeNamespaces("Test"),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "should match",
+			field:    "spec.input.otlp.namespaces.include[0]",
+		},
+		{
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("otlp-input-namespaces-include-too-long").
+				WithOTLPInput(true,
+					testutils.IncludeNamespaces(veryLongString),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "Too long:",
+			field:    "spec.input.otlp.namespaces.include[0]",
+			causes:   2,
+		},
+		{
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("otlp-input-namespaces-exclude-invalid").
+				WithOTLPInput(true,
+					testutils.ExcludeNamespaces("Test"),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "should match",
+			field:    "spec.input.otlp.namespaces.exclude[0]",
+		},
+		{
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("otlp-input-namespaces-exclude-too-long").
+				WithOTLPInput(true,
+					testutils.ExcludeNamespaces(veryLongString),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "Too long:",
+			field:    "spec.input.otlp.namespaces.exclude[0]",
+			causes:   2,
+		},
 		// http output
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -295,20 +329,6 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			errorMsg: "should match '^/.*$'",
 			field:    "spec.output.http.uri",
 		},
-		{
-			pipeline: telemetryv1alpha1.LogPipeline{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "http-output-host-required",
-				},
-				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Output: telemetryv1alpha1.LogPipelineOutput{
-						HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{},
-					},
-				},
-			},
-			errorMsg: "Exactly one of 'value' or 'valueFrom' must be set",
-			field:    "spec.output.http.host",
-		},
 		// application input
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -342,6 +362,48 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				Build(),
 			errorMsg: "Only one of 'include' or 'exclude' can be defined",
 			field:    "spec.input.application.containers",
+		},
+		{
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("application-input-namespaces-include-invalid").
+				WithApplicationInput(true).
+				WithIncludeNamespaces("*").
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "should match",
+			field:    "spec.input.application.namespaces.include[0]",
+		},
+		{
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("application-input-namespaces-include-too-long").
+				WithApplicationInput(true).
+				WithIncludeNamespaces(veryLongString).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "Too long:",
+			field:    "spec.input.application.namespaces.include[0]",
+			causes:   2,
+		},
+		{
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("application-input-namespaces-exclude-invalid").
+				WithApplicationInput(true).
+				WithExcludeNamespaces("a*a").
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "should match",
+			field:    "spec.input.application.namespaces.exclude[0]",
+		},
+		{
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("application-input-namespaces-exclude-too-long").
+				WithApplicationInput(true).
+				WithExcludeNamespaces(veryLongString).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "Too long:",
+			field:    "spec.input.application.namespaces.exclude[0]",
+			causes:   2,
 		},
 		// files validation
 		{
@@ -492,6 +554,19 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithHTTPOutput().
 				Build(),
 			errorMsg: "transform is only supported with otlp output",
+			field:    "spec",
+			label:    suite.LabelExperimental,
+		},
+		{
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("legacy-filter-with-http-output").
+				WithApplicationInput(false).
+				WithFilter(telemetryv1alpha1.FilterSpec{
+					Conditions: []string{"isMatch(log.attributes[\"log.level\"], \"error\"))"},
+				}).
+				WithHTTPOutput().
+				Build(),
+			errorMsg: "filter is only supported with otlp output",
 			field:    "spec",
 			label:    suite.LabelExperimental,
 		},

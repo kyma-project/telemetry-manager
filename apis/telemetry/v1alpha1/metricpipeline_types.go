@@ -70,6 +70,10 @@ type MetricPipelineSpec struct {
 	// Transforms specify a list of transformations to apply to telemetry data.
 	// +kubebuilder:validation:Optional
 	Transforms []TransformSpec `json:"transform,omitempty"`
+
+	// Filters specifies a list of filters to apply to telemetry data.
+	// +kubebuilder:validation:Optional
+	Filters []FilterSpec `json:"filter,omitempty"`
 }
 
 // MetricPipelineInput configures additional inputs for metric collection.
@@ -90,7 +94,7 @@ type MetricPipelineInput struct {
 
 // MetricPipelinePrometheusInput collection of application metrics in the pull-based Prometheus protocol using endpoint discovery based on annotations.
 type MetricPipelinePrometheusInput struct {
-	// Enabled specifies whether Service endpoints and Pods marked with `prometheus.io/scrape=true` annotation are scraped. The default is `false`.
+	// Enabled specifies if the 'prometheus' input is enabled. If enabled, Service endpoints and Pods marked with `prometheus.io/scrape=true` annotation are scraped. The default is `false`.
 	// +kubebuilder:validation:Optional
 	Enabled *bool `json:"enabled,omitempty"`
 	// Namespaces specifies from which namespaces metrics are collected. By default, all namespaces except the system namespaces are enabled. To enable all namespaces including system namespaces, use an empty struct notation.
@@ -103,7 +107,7 @@ type MetricPipelinePrometheusInput struct {
 
 // MetricPipelineRuntimeInput configures collection of Kubernetes runtime metrics.
 type MetricPipelineRuntimeInput struct {
-	// Enabled specifies whether runtime metrics are collected. The default is `false`.
+	// Enabled specifies if the 'runtime' input is enabled. If enabled, runtime metrics are collected. The default is `false`.
 	// +kubebuilder:validation:Optional
 	Enabled *bool `json:"enabled,omitempty"`
 	// Namespaces specifies from which namespaces metrics are collected. By default, all namespaces except the system namespaces are enabled. To enable all namespaces including system namespaces, use an empty struct notation.
@@ -151,7 +155,7 @@ type MetricPipelineRuntimeInputResource struct {
 
 // MetricPipelineIstioInput defines the Istio scraping section.
 type MetricPipelineIstioInput struct {
-	// Enabled specifies that istio-proxy metrics are scraped from Pods that have the istio-proxy sidecar injected. The default is `false`.
+	// Enabled specifies if the 'istio' input is enabled. If enabled, istio-proxy metrics are scraped from Pods that have the istio-proxy sidecar injected. The default is `false`.
 	// +kubebuilder:validation:Optional
 	Enabled *bool `json:"enabled,omitempty"`
 	// Namespaces configures the namespaces for which the collection should be activated. By default, all namespaces including system namespaces are enabled.

@@ -118,7 +118,7 @@ func validateFileNames(logpipeline *telemetryv1alpha1.LogPipeline) error {
 }
 
 func validateFilters(lp *telemetryv1alpha1.LogPipeline) error {
-	for _, filterPlugin := range lp.Spec.Filters {
+	for _, filterPlugin := range lp.Spec.FluentBitFilters {
 		if err := validateCustomFilter(filterPlugin.Custom); err != nil {
 			return err
 		}

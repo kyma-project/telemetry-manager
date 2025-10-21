@@ -72,29 +72,29 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 | **input.&#x200b;istio**  | object | Istio input configures collection of Istio metrics from applications running in the Istio service mesh. |
 | **input.&#x200b;istio.&#x200b;diagnosticMetrics**  | object | DiagnosticMetrics configures collection of additional diagnostic metrics. The default is `false`. |
 | **input.&#x200b;istio.&#x200b;diagnosticMetrics.&#x200b;enabled**  | boolean | If enabled, diagnostic metrics are collected. The default is `false`. |
-| **input.&#x200b;istio.&#x200b;enabled**  | boolean | Enabled specifies that istio-proxy metrics are scraped from Pods that have the istio-proxy sidecar injected. The default is `false`. |
+| **input.&#x200b;istio.&#x200b;enabled**  | boolean | Enabled specifies if the 'istio' input is enabled. If enabled, istio-proxy metrics are scraped from Pods that have the istio-proxy sidecar injected. The default is `false`. |
 | **input.&#x200b;istio.&#x200b;envoyMetrics**  | object | EnvoyMetrics enables the collection of additional Envoy metrics with prefix `envoy_`. The default is `false`. |
 | **input.&#x200b;istio.&#x200b;envoyMetrics.&#x200b;enabled**  | boolean | Enabled specifies that Envoy metrics with prefix `envoy_` are scraped additionally. The default is `false`. |
 | **input.&#x200b;istio.&#x200b;namespaces**  | object | Namespaces configures the namespaces for which the collection should be activated. By default, all namespaces including system namespaces are enabled. |
-| **input.&#x200b;istio.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude signals from the specified Namespace names only. |
-| **input.&#x200b;istio.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include signals from the specified Namespace names only. |
+| **input.&#x200b;istio.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude telemetry data from the specified namespace names only. By default, all namespaces (depending on input type: except system namespaces) are collected. You cannot specify an exclude list together with an include list. |
+| **input.&#x200b;istio.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include telemetry data from the specified namespace names only. By default, all namespaces (depending on input type: except system namespaces) are included. You cannot specify an include list together with an exclude list. |
 | **input.&#x200b;otlp**  | object | OTLP input configures the push endpoint to receive metrics from an OTLP source. |
-| **input.&#x200b;otlp.&#x200b;disabled**  | boolean | If set to `true`, no push-based OTLP signals are collected. The default is `false`. |
+| **input.&#x200b;otlp.&#x200b;disabled**  | boolean | Disabled specifies if the 'otlp' input is deactivated. If set to `true`, no push-based OTLP signals are collected. The default is `false`. |
 | **input.&#x200b;otlp.&#x200b;namespaces**  | object | Namespaces describes whether push-based OTLP signals from specific namespaces are selected. System namespaces are enabled by default. |
-| **input.&#x200b;otlp.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude signals from the specified Namespace names only. |
-| **input.&#x200b;otlp.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include signals from the specified Namespace names only. |
+| **input.&#x200b;otlp.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude telemetry data from the specified namespace names only. By default, all namespaces (depending on input type: except system namespaces) are collected. You cannot specify an exclude list together with an include list. |
+| **input.&#x200b;otlp.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include telemetry data from the specified namespace names only. By default, all namespaces (depending on input type: except system namespaces) are included. You cannot specify an include list together with an exclude list. |
 | **input.&#x200b;prometheus**  | object | Prometheus input configures collection of application metrics in the pull-based Prometheus protocol using endpoint discovery based on annotations. |
 | **input.&#x200b;prometheus.&#x200b;diagnosticMetrics**  | object | DiagnosticMetrics configures collection of additional diagnostic metrics. The default is `false`. |
 | **input.&#x200b;prometheus.&#x200b;diagnosticMetrics.&#x200b;enabled**  | boolean | If enabled, diagnostic metrics are collected. The default is `false`. |
-| **input.&#x200b;prometheus.&#x200b;enabled**  | boolean | Enabled specifies whether Service endpoints and Pods marked with `prometheus.io/scrape=true` annotation are scraped. The default is `false`. |
+| **input.&#x200b;prometheus.&#x200b;enabled**  | boolean | Enabled specifies if the 'prometheus' input is enabled. If enabled, Service endpoints and Pods marked with `prometheus.io/scrape=true` annotation are scraped. The default is `false`. |
 | **input.&#x200b;prometheus.&#x200b;namespaces**  | object | Namespaces specifies from which namespaces metrics are collected. By default, all namespaces except the system namespaces are enabled. To enable all namespaces including system namespaces, use an empty struct notation. |
-| **input.&#x200b;prometheus.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude signals from the specified Namespace names only. |
-| **input.&#x200b;prometheus.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include signals from the specified Namespace names only. |
+| **input.&#x200b;prometheus.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude telemetry data from the specified namespace names only. By default, all namespaces (depending on input type: except system namespaces) are collected. You cannot specify an exclude list together with an include list. |
+| **input.&#x200b;prometheus.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include telemetry data from the specified namespace names only. By default, all namespaces (depending on input type: except system namespaces) are included. You cannot specify an include list together with an exclude list. |
 | **input.&#x200b;runtime**  | object | Runtime input configures collection of Kubernetes runtime metrics. |
-| **input.&#x200b;runtime.&#x200b;enabled**  | boolean | Enabled specifies whether runtime metrics are collected. The default is `false`. |
+| **input.&#x200b;runtime.&#x200b;enabled**  | boolean | Enabled specifies if the 'runtime' input is enabled. If enabled, runtime metrics are collected. The default is `false`. |
 | **input.&#x200b;runtime.&#x200b;namespaces**  | object | Namespaces specifies from which namespaces metrics are collected. By default, all namespaces except the system namespaces are enabled. To enable all namespaces including system namespaces, use an empty struct notation. |
-| **input.&#x200b;runtime.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude signals from the specified Namespace names only. |
-| **input.&#x200b;runtime.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include signals from the specified Namespace names only. |
+| **input.&#x200b;runtime.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude telemetry data from the specified namespace names only. By default, all namespaces (depending on input type: except system namespaces) are collected. You cannot specify an exclude list together with an include list. |
+| **input.&#x200b;runtime.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include telemetry data from the specified namespace names only. By default, all namespaces (depending on input type: except system namespaces) are included. You cannot specify an include list together with an exclude list. |
 | **input.&#x200b;runtime.&#x200b;resources**  | object | Resources configures the Kubernetes resource types for which metrics are collected. |
 | **input.&#x200b;runtime.&#x200b;resources.&#x200b;container**  | object | Container configures container runtime metrics collection. |
 | **input.&#x200b;runtime.&#x200b;resources.&#x200b;container.&#x200b;enabled**  | boolean | Enabled specifies that the runtime metrics for the resource type are collected. The default is `true`. |

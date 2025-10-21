@@ -61,6 +61,24 @@ spec:
           spec:
             description: Spec defines the desired state of TracePipeline
             properties:
+              filter:
+                description: Filters specifies a list of filters to apply to telemetry
+                  data.
+                items:
+                  description: FilterSpec defines a filter to apply to telemetry data.
+                  properties:
+                    conditions:
+                      description: Conditions specify a list of multiple where clauses,
+                        which will be processed as global conditions for the accompanying
+                        set of statements. The conditions are ORed together, which
+                        means only one condition needs to evaluate to true in order
+                        for the statements (including their individual where clauses)
+                        to be executed.
+                      items:
+                        type: string
+                      type: array
+                  type: object
+                type: array
               output:
                 description: Output configures the backend to which traces are sent.
                   You must specify exactly one output per pipeline.
@@ -120,9 +138,10 @@ spec:
                                     type: object
                                 type: object
                                 x-kubernetes-validations:
-                                - message: Exactly one of 'value' or 'valueFrom' must
+                                - message: Only one of 'value' or 'valueFrom' can
                                     be set
-                                  rule: has(self.value) != has(self.valueFrom)
+                                  rule: '!(has(self.value) && size(self.value) > 0
+                                    && has(self.valueFrom))'
                               user:
                                 description: User contains the basic auth username
                                   or a Secret reference.
@@ -166,9 +185,10 @@ spec:
                                     type: object
                                 type: object
                                 x-kubernetes-validations:
-                                - message: Exactly one of 'value' or 'valueFrom' must
+                                - message: Only one of 'value' or 'valueFrom' can
                                     be set
-                                  rule: has(self.value) != has(self.valueFrom)
+                                  rule: '!(has(self.value) && size(self.value) > 0
+                                    && has(self.valueFrom))'
                             required:
                             - password
                             - user
@@ -216,8 +236,8 @@ spec:
                             type: object
                         type: object
                         x-kubernetes-validations:
-                        - message: Exactly one of 'value' or 'valueFrom' must be set
-                          rule: has(self.value) != has(self.valueFrom)
+                        - message: Only one of 'value' or 'valueFrom' can be set
+                          rule: '!(has(self.value) && size(self.value) > 0 && has(self.valueFrom))'
                       headers:
                         description: Headers defines custom headers to be added to
                           outgoing HTTP or gRPC requests.
@@ -269,13 +289,11 @@ spec:
                               - secretKeyRef
                               type: object
                           required:
-                          - ""
                           - name
                           type: object
                           x-kubernetes-validations:
-                          - message: Exactly one of 'value' or 'valueFrom' must be
-                              set
-                            rule: has(self.value) != has(self.valueFrom)
+                          - message: Only one of 'value' or 'valueFrom' can be set
+                            rule: '!(has(self.value) && size(self.value) > 0 && has(self.valueFrom))'
                         type: array
                       path:
                         description: Path defines OTLP export URL path (only for the
@@ -335,9 +353,9 @@ spec:
                                 type: object
                             type: object
                             x-kubernetes-validations:
-                            - message: Exactly one of 'value' or 'valueFrom' must
-                                be set
-                              rule: has(self.value) != has(self.valueFrom)
+                            - message: Only one of 'value' or 'valueFrom' can be set
+                              rule: '!(has(self.value) && size(self.value) > 0 &&
+                                has(self.valueFrom))'
                           cert:
                             description: Defines a client certificate to use when
                               using TLS. The certificate must be provided in PEM format.
@@ -380,9 +398,9 @@ spec:
                                 type: object
                             type: object
                             x-kubernetes-validations:
-                            - message: Exactly one of 'value' or 'valueFrom' must
-                                be set
-                              rule: has(self.value) != has(self.valueFrom)
+                            - message: Only one of 'value' or 'valueFrom' can be set
+                              rule: '!(has(self.value) && size(self.value) > 0 &&
+                                has(self.valueFrom))'
                           insecure:
                             description: Insecure defines whether to send requests
                               using plaintext instead of TLS.
@@ -433,9 +451,9 @@ spec:
                                 type: object
                             type: object
                             x-kubernetes-validations:
-                            - message: Exactly one of 'value' or 'valueFrom' must
-                                be set
-                              rule: has(self.value) != has(self.valueFrom)
+                            - message: Only one of 'value' or 'valueFrom' can be set
+                              rule: '!(has(self.value) && size(self.value) > 0 &&
+                                has(self.valueFrom))'
                         type: object
                         x-kubernetes-validations:
                         - message: Can define either both 'cert' and 'key', or neither
@@ -445,9 +463,8 @@ spec:
                     type: object
                     x-kubernetes-validations:
                     - message: Path is only available with HTTP protocol
-                      rule: ((!has(self.path) || size(self.path) <= 0) && (has(self.protocol)
-                        && self.protocol == 'grpc')) || (has(self.protocol) && self.protocol
-                        == 'http')
+                      rule: '(has(self.path) && size(self.path) > 0) ? self.protocol
+                        == ''http'' : true'
                 required:
                 - otlp
                 type: object
@@ -583,6 +600,24 @@ spec:
           spec:
             description: Spec defines the desired state of TracePipeline
             properties:
+              filter:
+                description: Filter specifies a list of filters to apply to telemetry
+                  data.
+                items:
+                  description: FilterSpec defines a filter to apply to telemetry data.
+                  properties:
+                    conditions:
+                      description: Conditions specify a list of multiple where clauses,
+                        which will be processed as global conditions for the accompanying
+                        set of statements. The conditions are ORed together, which
+                        means only one condition needs to evaluate to true in order
+                        for the statements (including their individual where clauses)
+                        to be executed.
+                      items:
+                        type: string
+                      type: array
+                  type: object
+                type: array
               output:
                 description: Output configures the backend to which traces are sent.
                   You must specify exactly one output per pipeline.
@@ -791,7 +826,6 @@ spec:
                               - secretKeyRef
                               type: object
                           required:
-                          - ""
                           - name
                           type: object
                           x-kubernetes-validations:
@@ -967,9 +1001,8 @@ spec:
                     type: object
                     x-kubernetes-validations:
                     - message: Path is only available with HTTP protocol
-                      rule: ((!has(self.path) || size(self.path) <= 0) && (has(self.protocol)
-                        && self.protocol == 'grpc')) || (has(self.protocol) && self.protocol
-                        == 'http')
+                      rule: '(has(self.path) && size(self.path) > 0) ? self.protocol
+                        == ''http'' : true'
                 required:
                 - otlp
                 type: object

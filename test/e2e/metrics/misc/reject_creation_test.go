@@ -66,7 +66,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 					},
 				},
 			},
-			errorMsg: "Exactly one of 'value' or 'valueFrom' must be set",
+			errorMsg: "Only one of 'value' or 'valueFrom' can be set",
 			field:    "spec.output.otlp.endpoint",
 		},
 		{
@@ -175,20 +175,6 @@ func TestRejectPipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp.protocol",
 		},
 		{
-			pipeline: telemetryv1alpha1.MetricPipeline{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "otlp-output-without-endpoint",
-				},
-				Spec: telemetryv1alpha1.MetricPipelineSpec{
-					Output: telemetryv1alpha1.MetricPipelineOutput{
-						OTLP: &telemetryv1alpha1.OTLPOutput{},
-					},
-				},
-			},
-			errorMsg: "Exactly one of 'value' or 'valueFrom' must be set",
-			field:    "spec.output.otlp.endpoint",
-		},
-		{
 			pipeline: testutils.NewMetricPipelineBuilder().
 				WithName("otlp-output-basic-auth-secretref-missing-password-key").
 				WithOTLPOutput(
@@ -250,6 +236,97 @@ func TestRejectPipelineCreation(t *testing.T) {
 				Build(),
 			errorMsg: "Only one of 'include' or 'exclude' can be defined",
 			field:    "spec.input.otlp.namespaces",
+		},
+		{
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithName("otlp-input-namespaces-include-invalid").
+				WithOTLPInput(true,
+					testutils.IncludeNamespaces("aa!"),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "should match",
+			field:    "spec.input.otlp.namespaces.include[0]",
+		},
+		{
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithName("otlp-input-namespaces-exclude-invalid").
+				WithOTLPInput(true,
+					testutils.ExcludeNamespaces("aa!"),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "should match",
+			field:    "spec.input.otlp.namespaces.exclude[0]",
+		},
+		// prometheus input
+		{
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithName("prometheus-input-namespaces-include-invalid").
+				WithPrometheusInput(true,
+					testutils.IncludeNamespaces("aa-"),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "should match",
+			field:    "spec.input.prometheus.namespaces.include[0]",
+		},
+		{
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithName("prometheus-input-namespaces-exclude-invalid").
+				WithPrometheusInput(true,
+					testutils.ExcludeNamespaces("-aa"),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "should match",
+			field:    "spec.input.prometheus.namespaces.exclude[0]",
+		},
+		// istio input
+		{
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithName("istio-input-namespaces-include-invalid").
+				WithIstioInput(true,
+					testutils.IncludeNamespaces("#"),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "should match",
+			field:    "spec.input.istio.namespaces.include[0]",
+		},
+		{
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithName("istio-input-namespaces-exclude-invalid").
+				WithIstioInput(true,
+					testutils.ExcludeNamespaces("/"),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "should match",
+			field:    "spec.input.istio.namespaces.exclude[0]",
+		},
+		// runtime input
+		{
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithName("istio-input-namespaces-include-invalid").
+				WithRuntimeInput(true,
+					testutils.IncludeNamespaces("aa", "bb", "??"),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "should match",
+			field:    "spec.input.runtime.namespaces.include[2]",
+		},
+		{
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithName("istio-input-namespaces-exclude-invalid").
+				WithRuntimeInput(true,
+					testutils.ExcludeNamespaces("öö", "aa", "bb"),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "should match",
+			field:    "spec.input.runtime.namespaces.exclude[0]",
 		},
 	}
 	for _, tc := range tests {

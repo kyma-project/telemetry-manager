@@ -42,7 +42,7 @@ const (
 )
 
 // OTLPOutput OTLP output configuration
-// +kubebuilder:validation:XValidation:rule="((!has(self.path) || size(self.path) <= 0) && (has(self.protocol) && self.protocol == 'grpc')) || (has(self.protocol) && self.protocol == 'http')", message="Path is only available with HTTP protocol"
+// +kubebuilder:validation:XValidation:rule="(has(self.path) && size(self.path) > 0) ? self.protocol == 'http' : true",message="Path is only available with HTTP protocol"
 type OTLPOutput struct {
 	// Protocol defines the OTLP protocol (`http` or `grpc`). Default is `grpc`.
 	// +kubebuilder:validation:Optional
@@ -82,7 +82,6 @@ type BasicAuthOptions struct {
 
 type Header struct {
 	// Defines the header value.
-	// +kubebuilder:validation:Required
 	ValueType `json:",inline"`
 
 	// Name defines the header name.
@@ -116,7 +115,7 @@ type OutputTLS struct {
 
 // OTLPInput defines the collection of push-based metrics that use the OpenTelemetry protocol.
 type OTLPInput struct {
-	// If set to `true`, no push-based OTLP signals are collected. The default is `false`.
+	// Disabled specifies if the 'otlp' input is deactivated. If disabled, then no push-based OTLP signals are collected. The default is `false`.
 	// +kubebuilder:validation:Optional
 	Disabled bool `json:"disabled,omitempty"`
 	// Namespaces describes whether push-based OTLP signals from specific namespaces are selected. System namespaces are enabled by default.
@@ -125,13 +124,17 @@ type OTLPInput struct {
 }
 
 // NamespaceSelector describes whether signals from specific namespaces are selected.
-// +kubebuilder:validation:XValidation:rule="(has(self.include) == true ? 1 : 0) + (has(self.exclude) == true ? 1 : 0) <= 1",message="Only one of 'include' or 'exclude' can be defined"
+// +kubebuilder:validation:XValidation:rule="!(has(self.include) && has(self.exclude))",message="Only one of 'include' or 'exclude' can be defined"
 type NamespaceSelector struct {
-	// Include signals from the specified Namespace names only.
+	// Include telemetry data from the specified namespace names only. By default, all namespaces (depending on input type: except system namespaces) are included. You cannot specify an include list together with an exclude list.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:items:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
+	// +kubebuilder:validation:items:MaxLength=63
 	Include []string `json:"include,omitempty"`
-	// Exclude signals from the specified Namespace names only.
+	// Exclude telemetry data from the specified namespace names only. By default, all namespaces (depending on input type: except system namespaces) are collected. You cannot specify an exclude list together with an include list.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:items:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
+	// +kubebuilder:validation:items:MaxLength=63
 	Exclude []string `json:"exclude,omitempty"`
 }
 
@@ -143,4 +146,11 @@ type TransformSpec struct {
 	// Statements specify a list of OTTL statements to perform the transformation.
 	// +kubebuilder:validation:Optional
 	Statements []string `json:"statements,omitempty"`
+}
+
+// FilterSpec defines a filter to apply to telemetry data.
+type FilterSpec struct {
+	// Conditions specify a list of multiple where clauses, which will be processed as global conditions for the accompanying set of statements. The conditions are ORed together, which means only one condition needs to evaluate to true in order for the statements (including their individual where clauses) to be executed.
+	// +kubebuilder:validation:Optional
+	Conditions []string `json:"conditions,omitempty"`
 }
