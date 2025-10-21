@@ -27,6 +27,7 @@ func TestFilterValidator(t *testing.T) {
 	runFilterValidatorTestCases(t, "log", SignalTypeLog, filterLogContextTestCases())
 	runFilterValidatorTestCases(t, "metric", SignalTypeMetric, filterMetricContextTestCases())
 	runFilterValidatorTestCases(t, "datapoint", SignalTypeMetric, filterDataPointContextTestCases())
+	runFilterValidatorTestCases(t, "mixed", SignalTypeMetric, filterMixedMetricContextTestCases())
 }
 
 func runFilterValidatorTestCases(t *testing.T, context string, signalType SignalType, tests []filterResourceContextTestCase) {
@@ -625,6 +626,33 @@ func filterDataPointContextTestCases() []filterResourceContextTestCase {
 				{
 					Conditions: []string{
 						`datapoint.invalid == "value"`,
+					},
+				},
+			},
+			isErrorExpected: true,
+		},
+	}
+}
+
+func filterMixedMetricContextTestCases() []filterResourceContextTestCase {
+	return []filterResourceContextTestCase{
+		{
+			name: "valid filter spec - metric and datapoint access",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`metric.name == "http_requests_total" and datapoint.value_int > 100`,
+					},
+				},
+			},
+			isErrorExpected: false,
+		},
+		{
+			name: "invalid filter spec - invalid mixed context access",
+			filters: []telemetryv1alpha1.FilterSpec{
+				{
+					Conditions: []string{
+						`metric.invalid_field == "value" and datapoint.value_int > 100`,
 					},
 				},
 			},
