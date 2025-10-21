@@ -45,8 +45,8 @@ func runFilterValidatorTestCases(t *testing.T, context string, signalType Signal
 					require.Error(t, err)
 					require.True(t, IsInvalidOTTLSpecError(err))
 
-					var invalidTransformSpecErr *InvalidOTTLSpecError
-					require.True(t, errors.As(err, &invalidTransformSpecErr))
+					var typedErr *InvalidOTTLSpecError
+					require.True(t, errors.As(err, &typedErr))
 				} else {
 					require.NoError(t, err)
 				}
@@ -67,11 +67,6 @@ func filterResourceContextTestCases() []filterTestCase {
 				`resource.attributes["service.name"] == "auth-service"`,
 				`resource.attributes["environment"] == "production"`,
 			},
-		},
-		{
-			name:            "missing context",
-			conditions:      []string{`attributes["service.name"] == "auth-service"`},
-			isErrorExpected: true,
 		},
 		{
 			name:            "invalid syntax",
@@ -348,6 +343,11 @@ func filterMixedMetricContextTestCases() []filterTestCase {
 		{
 			name:            "invalid mixed context access",
 			conditions:      []string{`metric.invalid_field == "value" and datapoint.value_int > 100`},
+			isErrorExpected: true,
+		},
+		{
+			name:            "missing context",
+			conditions:      []string{`attributes["service.name"] == "auth-service"`},
 			isErrorExpected: true,
 		},
 	}
