@@ -2,6 +2,7 @@ package ottl
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -11,938 +12,617 @@ import (
 
 type transformTestCase struct {
 	name            string
-	transforms      []telemetryv1alpha1.TransformSpec
+	conditions      []string
+	statements      []string
 	isErrorExpected bool
 }
 
-func TestValidateLogPipelineTransforms(t *testing.T) {
-	tests := transformResourceContextTestCases()
-	tests = append(tests, transformScopeContextTestCases()...)
-	tests = append(tests, transformLogContextTestCases()...)
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			validator, err := NewTransformSpecValidator(SignalTypeLog)
-			require.NoError(t, err)
-
-			err = validator.Validate(test.transforms)
-			if test.isErrorExpected {
-				require.Error(t, err)
-				require.True(t, IsInvalidOTTLSpecError(err))
-
-				var invalidTransformSpecErr *InvalidOTTLSpecError
-				require.True(t, errors.As(err, &invalidTransformSpecErr))
-			} else {
-				require.NoError(t, err)
-			}
-		})
+func TestTransformValidator(t *testing.T) {
+	for _, signalType := range []SignalType{SignalTypeLog, SignalTypeMetric, SignalTypeTrace} {
+		runTransformValidatorTestCases(t, "resource", signalType, transformResourceContextTestCases())
+		runTransformValidatorTestCases(t, "scope", signalType, transformScopeContextTestCases())
 	}
+
+	runTransformValidatorTestCases(t, "span", SignalTypeTrace, transformSpanContextTestCases())
+	runTransformValidatorTestCases(t, "spanevent", SignalTypeTrace, transformSpanEventContextTestCases())
+	runTransformValidatorTestCases(t, "log", SignalTypeLog, transformLogContextTestCases())
+	runTransformValidatorTestCases(t, "metric", SignalTypeMetric, transformMetricContextTestCases())
+	runTransformValidatorTestCases(t, "datapoint", SignalTypeMetric, transformDataPointContextTestCases())
 }
 
-func TestValidateTracePipelineTransforms(t *testing.T) {
-	tests := transformResourceContextTestCases()
-	tests = append(tests, transformScopeContextTestCases()...)
-	tests = append(tests, transformSpanContextTestCases()...)
-	tests = append(tests, transformSpanEventContextTestCases()...)
+func runTransformValidatorTestCases(t *testing.T, context string, signalType SignalType, tests []transformTestCase) {
+	t.Helper()
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			validator, err := NewTransformSpecValidator(SignalTypeTrace)
-			require.NoError(t, err)
-
-			err = validator.Validate(test.transforms)
-			if test.isErrorExpected {
-				require.Error(t, err)
-				require.True(t, IsInvalidOTTLSpecError(err))
-
-				var invalidTransformSpecErr *InvalidOTTLSpecError
-				require.True(t, errors.As(err, &invalidTransformSpecErr))
-			} else {
+	t.Run(fmt.Sprintf("%s_%s", signalType, context), func(t *testing.T) {
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				validator, err := NewTransformSpecValidator(signalType)
 				require.NoError(t, err)
-			}
-		})
-	}
+
+				transforms := []telemetryv1alpha1.TransformSpec{{
+					Conditions: test.conditions,
+					Statements: test.statements,
+				}}
+				err = validator.Validate(transforms)
+				if test.isErrorExpected {
+					require.Error(t, err)
+					require.True(t, IsInvalidOTTLSpecError(err))
+
+					var typedErr *InvalidOTTLSpecError
+					require.True(t, errors.As(err, &typedErr))
+				} else {
+					require.NoError(t, err)
+				}
+			})
+		}
+	})
 }
 
-func TestMetricPipelineTransforms(t *testing.T) {
-	tests := transformResourceContextTestCases()
-	tests = append(tests, transformScopeContextTestCases()...)
-	tests = append(tests, transformMetricContextTestCases()...)
-	tests = append(tests, transformDataPointContextTestCases()...)
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			validator, err := NewTransformSpecValidator(SignalTypeMetric)
-			require.NoError(t, err)
-
-			err = validator.Validate(test.transforms)
-			if test.isErrorExpected {
-				require.Error(t, err)
-				require.True(t, IsInvalidOTTLSpecError(err))
-
-				var invalidTransformSpecErr *InvalidOTTLSpecError
-				require.True(t, errors.As(err, &invalidTransformSpecErr))
-			} else {
-				require.NoError(t, err)
-			}
-		})
-	}
-}
-
-// transformResourceContextTestCases generates test cases for the validation of the "resource" context
-// The "resource" context is common in log_statements, metric_statements and trace_statements
-// For more info, check https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/transformprocessor#config
 func transformResourceContextTestCases() []transformTestCase {
 	return []transformTestCase{
 		{
-			name: "[resource context] valid transform spec with both statement and condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(resource.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(resource.attributes[\"test\"], \"foo\")"},
-				},
-			},
-			isErrorExpected: false,
+			name:       "statement and condition",
+			conditions: []string{`IsMatch(resource.attributes["test"], "bar")`},
+			statements: []string{`set(resource.attributes["test"], "foo")`},
 		},
 		{
-			name: "[resource context] valid transform spec with condition only",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(resource.attributes[\"test\"], \"bar\")"},
-				},
-			},
-			isErrorExpected: false,
+			name:       "condition only",
+			conditions: []string{`IsMatch(resource.attributes["test"], "bar")`},
 		},
 		{
-			name: "[resource context] valid transform spec with statement only",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Statements: []string{"set(resource.attributes[\"test\"], \"foo\")"},
-				},
-			},
-			isErrorExpected: false,
+			name:       "statement only",
+			statements: []string{`set(resource.attributes["test"], "foo")`},
 		},
 		{
-			name: "[resource context] valid statement but incorrectly used as a condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"set(resource.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "statement used as condition",
+			conditions:      []string{`set(resource.attributes["test"], "foo")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[resource context] valid condition but incorrectly used as a statement",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Statements: []string{"IsMatch(resource.attributes[\"test\"], \"bar\")"}},
-			},
+			name:            "condition used as statement",
+			statements:      []string{`IsMatch(resource.attributes["test"], "bar")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[resource context] invalid function name in condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IisMatch(resource.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(resource.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid function in condition",
+			conditions:      []string{`IisMatch(resource.attributes["test"], "bar")`},
+			statements:      []string{`set(resource.attributes["test"], "foo")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[resource context] invalid path in condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(resource.aattributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(resource.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid function in statement",
+			conditions:      []string{`IsMatch(resource.attributes["test"], "bar")`},
+			statements:      []string{`sset(resource.attributes["test"], "foo")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[resource context] invalid syntax in condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(resource.attributes[\"test\"],, \"bar\")"},
-					Statements: []string{"set(resource.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid syntax in condition",
+			conditions:      []string{`IsMatch(resource.attributes["test"], "bar"`},
+			statements:      []string{`set(resource.attributes["test"], "foo")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[resource context] invalid function name in statement",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(resource.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"sset(resource.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid syntax in statement",
+			conditions:      []string{`IsMatch(resource.attributes["test"], "bar")`},
+			statements:      []string{`set(resource.attributes["test"], "foo"`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[resource context] invalid path in statement",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(resource.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(resource.aattributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid path in condition",
+			conditions:      []string{`IsMatch(resource.invalid["test"], "bar")`},
+			statements:      []string{`set(resource.attributes["test"], "foo")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[resource context] invalid syntax in statement",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(resource.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(resource.attributes[\"test\"],, \"foo\")"},
-				},
-			},
+			name:            "invalid path in statement",
+			conditions:      []string{`IsMatch(resource.attributes["test"], "bar")`},
+			statements:      []string{`set(resource.invalid["test"], "foo")`},
 			isErrorExpected: true,
+		},
+		{
+			name: "multiple conditions and statements",
+			conditions: []string{
+				`IsMatch(resource.attributes["service"], "auth")`,
+				`resource.attributes["environment"] == "prod"`,
+			},
+			statements: []string{
+				`set(resource.attributes["service.name"], "auth-service")`,
+				`set(resource.attributes["version"], "1.0.0")`,
+			},
 		},
 	}
 }
 
-// transformScopeContextTestCases generates test cases for the validation of the "scope" context
-// The "scope" context is common in log_statements, metric_statements and trace_statements
-// For more info, check https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/transformprocessor#config
 func transformScopeContextTestCases() []transformTestCase {
 	return []transformTestCase{
 		{
-			name: "[scope context] valid transform spec with both statement and condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(scope.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(scope.attributes[\"test\"], \"foo\")"},
-				},
-			},
-			isErrorExpected: false,
+			name:       "statement and condition",
+			conditions: []string{`IsMatch(scope.name, "opentelemetry")`},
+			statements: []string{`set(scope.attributes["version"], "1.0.0")`},
 		},
 		{
-			name: "[scope context] valid transform spec with condition only",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(scope.attributes[\"test\"], \"bar\")"},
-				},
-			},
-			isErrorExpected: false,
+			name:       "condition only",
+			conditions: []string{`IsMatch(scope.name, "opentelemetry")`},
 		},
 		{
-			name: "[scope context] valid transform spec with statement only",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Statements: []string{"set(scope.attributes[\"test\"], \"foo\")"},
-				},
-			},
-			isErrorExpected: false,
+			name:       "statement only",
+			statements: []string{`set(scope.attributes["version"], "1.0.0")`},
 		},
 		{
-			name: "[scope context] valid statement but incorrectly used as a condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"set(scope.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "statement used as condition",
+			conditions:      []string{`set(scope.attributes["version"], "1.0.0")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[scope context] valid condition but incorrectly used as a statement",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Statements: []string{"IsMatch(scope.attributes[\"test\"], \"bar\")"},
-				},
-			},
+			name:            "condition used as statement",
+			statements:      []string{`IsMatch(scope.name, "opentelemetry")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[scope context] invalid function name in condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IisMatch(scope.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(scope.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid function in condition",
+			conditions:      []string{`IisMatch(scope.name, "opentelemetry")`},
+			statements:      []string{`set(scope.attributes["version"], "1.0.0")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[scope context] invalid path in condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(scope.aattributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(scope.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid function in statement",
+			conditions:      []string{`IsMatch(scope.name, "opentelemetry")`},
+			statements:      []string{`sset(scope.attributes["version"], "1.0.0")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[scope context] invalid syntax in condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(scope.attributes[\"test\"],, \"bar\")"},
-					Statements: []string{"set(scope.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid syntax in condition",
+			conditions:      []string{`IsMatch(scope.name, "opentelemetry"`},
+			statements:      []string{`set(scope.attributes["version"], "1.0.0")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[scope context] invalid function name in statement",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(scope.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"sset(scope.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid syntax in statement",
+			conditions:      []string{`IsMatch(scope.name, "opentelemetry")`},
+			statements:      []string{`set(scope.attributes["version"], "1.0.0"`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[scope context] invalid path in statement",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(scope.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(scope.aattributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid path in condition",
+			conditions:      []string{`IsMatch(scope.invalid, "opentelemetry")`},
+			statements:      []string{`set(scope.attributes["version"], "1.0.0")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[scope context] invalid syntax in statement",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(scope.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(scope.attributes[\"test\"],, \"foo\")"},
-				},
-			},
+			name:            "invalid path in statement",
+			conditions:      []string{`IsMatch(scope.name, "opentelemetry")`},
+			statements:      []string{`set(scope.invalid["version"], "1.0.0")`},
 			isErrorExpected: true,
+		},
+		{
+			name: "multiple conditions and statements",
+			conditions: []string{
+				`IsMatch(scope.name, "opentelemetry")`,
+				`scope.version != nil`,
+			},
+			statements: []string{
+				`set(scope.attributes["processed"], "true")`,
+				`set(scope.attributes["timestamp"], Now())`,
+			},
 		},
 	}
 }
 
-// transformLogContextTestCases generates test cases for the validation of the "log" context
 func transformLogContextTestCases() []transformTestCase {
 	return []transformTestCase{
 		{
-			name: "[log context] valid transform spec with both statement and condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(log.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(log.attributes[\"test\"], \"foo\")"},
-				},
-			},
-			isErrorExpected: false,
+			name:       "statement and condition",
+			conditions: []string{`log.severity_text == "ERROR"`},
+			statements: []string{`set(log.attributes["processed"], "true")`},
 		},
 		{
-			name: "[log context] valid transform spec with condition only",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(log.attributes[\"test\"], \"bar\")"},
-				},
-			},
-			isErrorExpected: false,
+			name:       "condition only",
+			conditions: []string{`log.severity_text == "ERROR"`},
 		},
 		{
-			name: "[log context] valid transform spec with statement only",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Statements: []string{"set(log.attributes[\"test\"], \"foo\")"},
-				},
-			},
-			isErrorExpected: false,
+			name:       "statement only",
+			statements: []string{`set(log.attributes["processed"], "true")`},
 		},
 		{
-			name: "[log context] valid statement but incorrectly used as a condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"set(log.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "statement used as condition",
+			conditions:      []string{`set(log.attributes["processed"], "true")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[log context] valid condition but incorrectly used as a statement",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Statements: []string{"IsMatch(log.attributes[\"test\"], \"bar\")"},
-				},
-			},
+			name:            "condition used as statement",
+			statements:      []string{`log.severity_text == "ERROR"`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[log context] invalid context",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(datapoint.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(datapoint.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid function in condition",
+			conditions:      []string{`llog.severity_text == "ERROR"`},
+			statements:      []string{`set(log.attributes["processed"], "true")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[log context] invalid function name in condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IisMatch(log.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(log.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid function in statement",
+			conditions:      []string{`log.severity_text == "ERROR"`},
+			statements:      []string{`sset(log.attributes["processed"], "true")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[log context] invalid path in condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(log.aattributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(log.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid syntax in condition",
+			conditions:      []string{`log.severity_text == "ERROR`},
+			statements:      []string{`set(log.attributes["processed"], "true")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[log context] invalid syntax in condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(log.attributes[\"test\"],, \"bar\")"},
-					Statements: []string{"set(log.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid syntax in statement",
+			conditions:      []string{`log.severity_text == "ERROR"`},
+			statements:      []string{`set(log.attributes["processed"], "true"`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[log context] invalid function name in statement",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(log.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"sset(log.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid path in condition",
+			conditions:      []string{`log.invalid == "ERROR"`},
+			statements:      []string{`set(log.attributes["processed"], "true")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[log context] invalid path in statement",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(log.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(log.aattributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid path in statement",
+			conditions:      []string{`log.severity_text == "ERROR"`},
+			statements:      []string{`set(log.invalid["processed"], "true")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[log context] invalid syntax in statement",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(log.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(log.attributes[\"test\"],, \"foo\")"},
-				},
+			name: "multiple conditions and statements",
+			conditions: []string{
+				`log.severity_text == "ERROR"`,
+				`IsMatch(log.body, "database")`,
 			},
-			isErrorExpected: true,
+			statements: []string{
+				`set(log.attributes["error_category"], "database")`,
+				`set(log.attributes["processed"], "true")`,
+			},
+		},
+		{
+			name:       "body manipulation",
+			statements: []string{`replace_pattern(log.body, "password=\\w+", "password=***")`},
+		},
+		{
+			name:       "severity manipulation",
+			conditions: []string{`log.severity_number >= 17`},
+			statements: []string{`set(log.severity_text, "CRITICAL")`},
 		},
 	}
 }
 
-// transformSpanContextTestCases generates test cases for the validation of the "span" context
 func transformSpanContextTestCases() []transformTestCase {
 	return []transformTestCase{
 		{
-			name: "[span context] valid transform spec with both statement and condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(span.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(span.attributes[\"test\"], \"foo\")"},
-				},
-			},
-			isErrorExpected: false,
+			name:       "statement and condition",
+			conditions: []string{`span.name == "HTTP GET"`},
+			statements: []string{`set(span.attributes["processed"], "true")`},
 		},
 		{
-			name: "[span context] valid transform spec with condition only",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(span.attributes[\"test\"], \"bar\")"},
-				},
-			},
-			isErrorExpected: false,
+			name:       "condition only",
+			conditions: []string{`span.name == "HTTP GET"`},
 		},
 		{
-			name: "[span context] valid transform spec with statement only",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Statements: []string{"set(span.attributes[\"test\"], \"foo\")"},
-				},
-			},
-			isErrorExpected: false,
+			name:       "statement only",
+			statements: []string{`set(span.attributes["processed"], "true")`},
 		},
 		{
-			name: "[span context] valid transform spec with IsRootSpan() function",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Statements: []string{"set(span.attributes[\"isRoot\"], \"true\") where IsRootSpan()"},
-				},
-			},
-			isErrorExpected: false,
-		},
-		{
-			name: "[span context] valid statement but incorrectly used as a condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"set(span.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "statement used as condition",
+			conditions:      []string{`set(span.attributes["processed"], "true")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[span context] valid condition but incorrectly used as a statement",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Statements: []string{"IsMatch(span.attributes[\"test\"], \"bar\")"},
-				},
-			},
+			name:            "condition used as statement",
+			statements:      []string{`span.name == "HTTP GET"`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[span context] invalid context",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(datapoint.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(datapoint.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid function in condition",
+			conditions:      []string{`sspan.name == "HTTP GET"`},
+			statements:      []string{`set(span.attributes["processed"], "true")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[span context] invalid function name in condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IisMatch(span.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(span.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid function in statement",
+			conditions:      []string{`span.name == "HTTP GET"`},
+			statements:      []string{`sset(span.attributes["processed"], "true")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[span context] invalid path in condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(span.aattributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(span.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid syntax in condition",
+			conditions:      []string{`span.name == "HTTP GET`},
+			statements:      []string{`set(span.attributes["processed"], "true")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[span context] invalid syntax in condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(span.attributes[\"test\"],, \"bar\")"},
-					Statements: []string{"set(span.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid syntax in statement",
+			conditions:      []string{`span.name == "HTTP GET"`},
+			statements:      []string{`set(span.attributes["processed"], "true"`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[span context] invalid function name in statement",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(span.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"sset(span.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid path in condition",
+			conditions:      []string{`span.invalid == "HTTP GET"`},
+			statements:      []string{`set(span.attributes["processed"], "true")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[span context] invalid path in statement",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(span.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(span.aattributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid path in statement",
+			conditions:      []string{`span.name == "HTTP GET"`},
+			statements:      []string{`set(span.invalid["processed"], "true")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[span context] invalid syntax in statement",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(span.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(span.attributes[\"test\"],, \"foo\")"},
-				},
+			name: "multiple conditions and statements",
+			conditions: []string{
+				`span.name == "HTTP GET"`,
+				`span.status.code == 1`,
 			},
-			isErrorExpected: true,
+			statements: []string{
+				`set(span.attributes["http_method"], "GET")`,
+				`set(span.attributes["processed"], "true")`,
+			},
+		},
+		{
+			name:       "span name manipulation",
+			statements: []string{`replace_pattern(span.name, "^HTTP\\s+", "HTTP_")`},
+		},
+		{
+			name:       "span status manipulation",
+			conditions: []string{`span.status.code == 2`},
+			statements: []string{`set(span.status.message, "Request failed")`},
 		},
 	}
 }
 
-// transformSpanEventContextTestCases generates test cases for the validation of the "spanevent" context
 func transformSpanEventContextTestCases() []transformTestCase {
 	return []transformTestCase{
 		{
-			name: "[spanevent context] valid transform spec with both statement and condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(spanevent.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(spanevent.attributes[\"test\"], \"foo\")"},
-				},
-			},
-			isErrorExpected: false,
+			name:       "statement and condition",
+			conditions: []string{`spanevent.name == "exception"`},
+			statements: []string{`set(spanevent.attributes["processed"], "true")`},
 		},
 		{
-			name: "[spanevent context] valid transform spec with condition only",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(spanevent.attributes[\"test\"], \"bar\")"},
-				},
-			},
-			isErrorExpected: false,
+			name:       "condition only",
+			conditions: []string{`spanevent.name == "exception"`},
 		},
 		{
-			name: "[spanevent context] valid transform spec with statement only",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Statements: []string{"set(spanevent.attributes[\"test\"], \"foo\")"},
-				},
-			},
-			isErrorExpected: false,
+			name:       "statement only",
+			statements: []string{`set(spanevent.attributes["processed"], "true")`},
 		},
 		{
-			name: "[spanevent context] valid statement but incorrectly used as a condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"set(spanevent.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "statement used as condition",
+			conditions:      []string{`set(spanevent.attributes["processed"], "true")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[spanevent context] valid condition but incorrectly used as a statement",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Statements: []string{"IsMatch(spanevent.attributes[\"test\"], \"bar\")"},
-				},
-			},
+			name:            "condition used as statement",
+			statements:      []string{`spanevent.name == "exception"`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[spanevent context] invalid context",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(datapoint.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(datapoint.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid function in condition",
+			conditions:      []string{`sspanevent.name == "exception"`},
+			statements:      []string{`set(spanevent.attributes["processed"], "true")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[spanevent context] invalid function name in condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IisMatch(spanevent.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(spanevent.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid function in statement",
+			conditions:      []string{`spanevent.name == "exception"`},
+			statements:      []string{`sset(spanevent.attributes["processed"], "true")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[spanevent context] invalid path in condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(spanevent.aattributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(spanevent.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid syntax in condition",
+			conditions:      []string{`spanevent.name == "exception`},
+			statements:      []string{`set(spanevent.attributes["processed"], "true")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[spanevent context] invalid syntax in condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(spanevent.attributes[\"test\"],, \"bar\")"},
-					Statements: []string{"set(spanevent.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid syntax in statement",
+			conditions:      []string{`spanevent.name == "exception"`},
+			statements:      []string{`set(spanevent.attributes["processed"], "true"`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[spanevent context] invalid function name in statement",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(spanevent.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"sset(spanevent.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid path in condition",
+			conditions:      []string{`spanevent.invalid == "exception"`},
+			statements:      []string{`set(spanevent.attributes["processed"], "true")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[spanevent context] invalid path in statement",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(spanevent.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(spanevent.aattributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid path in statement",
+			conditions:      []string{`spanevent.name == "exception"`},
+			statements:      []string{`set(spanevent.invalid["processed"], "true")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[spanevent context] invalid syntax in statement",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(spanevent.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(spanevent.attributes[\"test\"],, \"foo\")"},
-				},
+			name: "multiple conditions and statements",
+			conditions: []string{
+				`spanevent.name == "exception"`,
+				`IsMatch(spanevent.attributes["exception.type"], ".*Error")`,
 			},
-			isErrorExpected: true,
+			statements: []string{
+				`set(spanevent.attributes["severity"], "high")`,
+				`set(spanevent.attributes["processed"], "true")`,
+			},
+		},
+		{
+			name:       "event name manipulation",
+			statements: []string{`replace_pattern(spanevent.name, "^exception$", "error_event")`},
+		},
+		{
+			name:       "timestamp manipulation",
+			statements: []string{`set(spanevent.time_unix_nano, Now())`},
 		},
 	}
 }
 
-// transformMetricContextTestCases generates test cases for the validation of the "metric" context
 func transformMetricContextTestCases() []transformTestCase {
 	return []transformTestCase{
 		{
-			name: "[metric context] valid transform spec with both statement and condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(metric.name, \"bar\")"},
-					Statements: []string{"set(metric.name, \"foo\")"},
-				},
-			},
-			isErrorExpected: false,
+			name:       "statement and condition",
+			conditions: []string{`metric.name == "http_requests_total"`},
+			statements: []string{`set(metric.description, "Total HTTP requests")`},
 		},
 		{
-			name: "[metric context] valid transform spec with condition only",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(metric.name, \"bar\")"},
-				},
-			},
-			isErrorExpected: false,
+			name:       "condition only",
+			conditions: []string{`metric.name == "http_requests_total"`},
 		},
 		{
-			name: "[metric context] valid transform spec with statement only",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Statements: []string{"set(metric.name, \"foo\")"},
-				},
-			},
-			isErrorExpected: false,
+			name:       "statement only",
+			statements: []string{`set(metric.description, "Total HTTP requests")`},
 		},
 		{
-			name: "[metric context] valid statement but incorrectly used as a condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"set(metric.name, \"foo\")"},
-				},
-			},
+			name:            "statement used as condition",
+			conditions:      []string{`set(metric.description, "Total HTTP requests")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[metric context] valid condition but incorrectly used as a statement",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Statements: []string{"IsMatch(metric.name, \"bar\")"},
-				},
-			},
+			name:            "condition used as statement",
+			statements:      []string{`metric.name == "http_requests_total"`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[metric context] invalid context",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(log.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(log.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid function in condition",
+			conditions:      []string{`mmetric.name == "http_requests_total"`},
+			statements:      []string{`set(metric.description, "Total HTTP requests")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[metric context] invalid function name in condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IisMatch(metric.name, \"bar\")"},
-					Statements: []string{"set(metric.name, \"foo\")"},
-				},
-			},
+			name:            "invalid function in statement",
+			conditions:      []string{`metric.name == "http_requests_total"`},
+			statements:      []string{`sset(metric.description, "Total HTTP requests")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[metric context] invalid path in condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(metric.nname, \"bar\")"},
-					Statements: []string{"set(metric.name, \"foo\")"},
-				},
-			},
+			name:            "invalid syntax in condition",
+			conditions:      []string{`metric.name == "http_requests_total`},
+			statements:      []string{`set(metric.description, "Total HTTP requests")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[metric context] invalid syntax in condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(metric.name,, \"bar\")"},
-					Statements: []string{"set(metric.name, \"foo\")"},
-				},
-			},
+			name:            "invalid syntax in statement",
+			conditions:      []string{`metric.name == "http_requests_total"`},
+			statements:      []string{`set(metric.description, "Total HTTP requests"`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[metric context] invalid function name in statement",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(metric.name, \"bar\")"},
-					Statements: []string{"sset(metric.name, \"foo\")"},
-				},
-			},
+			name:            "invalid path in condition",
+			conditions:      []string{`metric.invalid == "http_requests_total"`},
+			statements:      []string{`set(metric.description, "Total HTTP requests")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[metric context] invalid path in statement",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(metric.name, \"bar\")"},
-					Statements: []string{"set(metric.nname, \"foo\")"},
-				},
-			},
+			name:            "invalid path in statement",
+			conditions:      []string{`metric.name == "http_requests_total"`},
+			statements:      []string{`set(metric.invalid, "Total HTTP requests")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[metric context] invalid syntax in statement",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(metric.name, \"bar\")"},
-					Statements: []string{"set(metric.name,, \"foo\")"},
-				},
+			name: "multiple conditions and statements",
+			conditions: []string{
+				`metric.name == "http_requests_total"`,
+				`metric.type == 1`,
 			},
-			isErrorExpected: true,
+			statements: []string{
+				`set(metric.description, "Total HTTP requests")`,
+				`set(metric.unit, "requests")`,
+			},
 		},
 		{
-			name: "[metric context] context inference is not possible",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Statements: []string{
-						"convert_sum_to_gauge() where metric.name == \"system.processes.count\"",
-						"limit(datapoint.attributes, 100, [\"host.name\"])",
-					},
-				},
-			},
-			isErrorExpected: true,
+			name:       "name manipulation",
+			statements: []string{`replace_pattern(metric.name, "^kube_", "k8s_")`},
+		},
+		{
+			name:       "unit manipulation",
+			conditions: []string{`metric.unit == "ms"`},
+			statements: []string{`set(metric.unit, "milliseconds")`},
 		},
 	}
 }
 
-// transformDataPointContextTestCases generates test cases for the validation of the "datapoint" context
 func transformDataPointContextTestCases() []transformTestCase {
 	return []transformTestCase{
 		{
-			name: "[datapoint context] valid transform spec with both statement and condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(datapoint.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(datapoint.attributes[\"test\"], \"foo\")"},
-				},
-			},
-			isErrorExpected: false,
+			name:       "statement and condition",
+			conditions: []string{`datapoint.value_int > 100`},
+			statements: []string{`set(datapoint.attributes["high_value"], "true")`},
 		},
 		{
-			name: "[datapoint context] valid transform spec with condition only",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(datapoint.attributes[\"test\"], \"bar\")"},
-				},
-			},
-			isErrorExpected: false,
+			name:       "condition only",
+			conditions: []string{`datapoint.value_int > 100`},
 		},
 		{
-			name: "[datapoint context] valid transform spec with statement only",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Statements: []string{"set(datapoint.attributes[\"test\"], \"foo\")"},
-				},
-			},
-			isErrorExpected: false,
+			name:       "statement only",
+			statements: []string{`set(datapoint.attributes["processed"], "true")`},
 		},
 		{
-			name: "[datapoint context] valid statement but incorrectly used as a condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"set(datapoint.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "statement used as condition",
+			conditions:      []string{`set(datapoint.attributes["processed"], "true")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[datapoint context] valid condition but incorrectly used as a statement",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Statements: []string{"IsMatch(datapoint.attributes[\"test\"], \"bar\")"},
-				},
-			},
+			name:            "condition used as statement",
+			statements:      []string{`datapoint.value_int > 100`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[datapoint context] invalid context",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(log.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(log.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid function in condition",
+			conditions:      []string{`ddatapoint.value_int > 100`},
+			statements:      []string{`set(datapoint.attributes["processed"], "true")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[datapoint context] invalid function name in condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IisMatch(datapoint.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(datapoint.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid function in statement",
+			conditions:      []string{`datapoint.value_int > 100`},
+			statements:      []string{`sset(datapoint.attributes["processed"], "true")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[datapoint context] invalid path in condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(datapoint.aattributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(datapoint.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid syntax in condition",
+			conditions:      []string{`datapoint.value_int ~ 100`},
+			statements:      []string{`set(datapoint.attributes["processed"], "true")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[datapoint context] invalid syntax in condition",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(datapoint.attributes[\"test\"],, \"bar\")"},
-					Statements: []string{"set(datapoint.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid syntax in statement",
+			conditions:      []string{`datapoint.value_int > 100`},
+			statements:      []string{`set(datapoint.attributes["processed"], "true"`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[datapoint context] invalid function name in statement",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(datapoint.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"sset(datapoint.attributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid path in condition",
+			conditions:      []string{`datapoint.invalid > 100`},
+			statements:      []string{`set(datapoint.attributes["processed"], "true")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[datapoint context] invalid path in statement",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(datapoint.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(datapoint.aattributes[\"test\"], \"foo\")"},
-				},
-			},
+			name:            "invalid path in statement",
+			conditions:      []string{`datapoint.value_int > 100`},
+			statements:      []string{`set(datapoint.invalid["processed"], "true")`},
 			isErrorExpected: true,
 		},
 		{
-			name: "[datapoint context] invalid syntax in statement",
-			transforms: []telemetryv1alpha1.TransformSpec{
-				{
-					Conditions: []string{"IsMatch(datapoint.attributes[\"test\"], \"bar\")"},
-					Statements: []string{"set(datapoint.attributes[\"test\"],, \"foo\")"},
-				},
+			name: "multiple conditions and statements",
+			conditions: []string{
+				`datapoint.value_int > 100`,
+				`datapoint.time_unix_nano != nil`,
 			},
-			isErrorExpected: true,
+			statements: []string{
+				`set(datapoint.attributes["high_value"], "true")`,
+				`set(datapoint.attributes["processed"], "true")`,
+			},
+		},
+		{
+			name:       "value manipulation",
+			conditions: []string{`datapoint.value_double < 0`},
+			statements: []string{`set(datapoint.value_double, 0.0)`},
+		},
+		{
+			name:       "timestamp manipulation",
+			statements: []string{`set(datapoint.start_time_unix_nano, datapoint.time_unix_nano)`},
 		},
 	}
 }
