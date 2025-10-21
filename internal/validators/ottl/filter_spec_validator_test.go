@@ -48,6 +48,7 @@ func runFilterValidatorTestCases(t *testing.T, context string, signalType Signal
 
 					var typedErr *InvalidOTTLSpecError
 					require.True(t, errors.As(err, &typedErr))
+					require.Contains(t, typedErr.Error(), "invalid FilterSpec")
 				} else {
 					require.NoError(t, err)
 				}

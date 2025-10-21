@@ -81,8 +81,6 @@ func newFilterParserCollectionOpts(signalType SignalType) ([]genericParserCollec
 				ottl.WithConditionConverter(nopConditionConverter[ottldatapoint.TransformContext]),
 			),
 		)
-	default:
-		return nil, fmt.Errorf("unsupported signal type: %s", signalType)
 	}
 
 	// Always include common context parsers, no matter the signal type

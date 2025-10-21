@@ -111,8 +111,6 @@ func newTransformParserCollectionOpts(signalType SignalType) ([]genericParserCol
 				ottl.WithConditionConverter(nopConditionConverter[ottlspanevent.TransformContext]),
 			),
 		}
-	default:
-		return nil, fmt.Errorf("unexpected signal type: %s", signalType)
 	}
 
 	// Always include common context parsers, no matter the signal type

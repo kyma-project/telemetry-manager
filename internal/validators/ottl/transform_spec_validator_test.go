@@ -51,6 +51,7 @@ func runTransformValidatorTestCases(t *testing.T, context string, signalType Sig
 
 					var typedErr *InvalidOTTLSpecError
 					require.True(t, errors.As(err, &typedErr))
+					require.Contains(t, typedErr.Error(), "invalid TransformSpec")
 				} else {
 					require.NoError(t, err)
 				}
