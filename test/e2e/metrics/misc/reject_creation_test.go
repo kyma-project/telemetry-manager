@@ -237,6 +237,97 @@ func TestRejectPipelineCreation(t *testing.T) {
 			errorMsg: "Only one of 'include' or 'exclude' can be defined",
 			field:    "spec.input.otlp.namespaces",
 		},
+		{
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithName("otlp-input-namespaces-include-invalid").
+				WithOTLPInput(true,
+					testutils.IncludeNamespaces("aa!"),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "should match",
+			field:    "spec.input.otlp.namespaces.include[0]",
+		},
+		{
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithName("otlp-input-namespaces-exclude-invalid").
+				WithOTLPInput(true,
+					testutils.ExcludeNamespaces("aa!"),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "should match",
+			field:    "spec.input.otlp.namespaces.exclude[0]",
+		},
+		// prometheus input
+		{
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithName("prometheus-input-namespaces-include-invalid").
+				WithPrometheusInput(true,
+					testutils.IncludeNamespaces("aa-"),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "should match",
+			field:    "spec.input.prometheus.namespaces.include[0]",
+		},
+		{
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithName("prometheus-input-namespaces-exclude-invalid").
+				WithPrometheusInput(true,
+					testutils.ExcludeNamespaces("-aa"),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "should match",
+			field:    "spec.input.prometheus.namespaces.exclude[0]",
+		},
+		// istio input
+		{
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithName("istio-input-namespaces-include-invalid").
+				WithIstioInput(true,
+					testutils.IncludeNamespaces("#"),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "should match",
+			field:    "spec.input.istio.namespaces.include[0]",
+		},
+		{
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithName("istio-input-namespaces-exclude-invalid").
+				WithIstioInput(true,
+					testutils.ExcludeNamespaces("/"),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "should match",
+			field:    "spec.input.istio.namespaces.exclude[0]",
+		},
+		// runtime input
+		{
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithName("istio-input-namespaces-include-invalid").
+				WithRuntimeInput(true,
+					testutils.IncludeNamespaces("aa", "bb", "??"),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "should match",
+			field:    "spec.input.runtime.namespaces.include[2]",
+		},
+		{
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithName("istio-input-namespaces-exclude-invalid").
+				WithRuntimeInput(true,
+					testutils.ExcludeNamespaces("öö", "aa", "bb"),
+				).
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "should match",
+			field:    "spec.input.runtime.namespaces.exclude[0]",
+		},
 	}
 	for _, tc := range tests {
 		t.Run(suite.LabelMisc, func(t *testing.T) {

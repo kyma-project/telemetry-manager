@@ -110,7 +110,7 @@ type LogPipelineInput struct {
 
 // LogPipelineRuntimeInput configures the log collection from application containers stdout/stderr by tailing the log files of the underlying container runtime.
 type LogPipelineRuntimeInput struct {
-	// If enabled, application logs are collected from application containers stdout/stderr. The default is `true`.
+	// Enabled specifies if the 'runtime' input is enabled. If enabled, application logs are collected from application containers stdout/stderr. The default is `true`.
 	// +kubebuilder:validation:Optional
 	Enabled *bool `json:"enabled,omitempty"`
 	// Namespaces describes whether application logs from specific namespaces are selected. The options are mutually exclusive. By default, all namespaces except the system namespaces are enabled. To enable all namespaces including system namespaces, use an empty struct notation.
@@ -131,7 +131,7 @@ type LogPipelineRuntimeInput struct {
 }
 
 // LogPipelineContainerSelector describes whether application logs from specific containers are selected. The options are mutually exclusive.
-// +kubebuilder:validation:XValidation:rule="(has(self.include) == true ? 1 : 0) + (has(self.exclude) == true ? 1 : 0) <= 1",message="Only one of 'include' or 'exclude' can be defined"
+// +kubebuilder:validation:XValidation:rule="!(has(self.include) && has(self.exclude))",message="Only one of 'include' or 'exclude' can be defined"
 type LogPipelineContainerSelector struct {
 	// Include specifies to include only the container logs with the specified container names.
 	// +kubebuilder:validation:Optional

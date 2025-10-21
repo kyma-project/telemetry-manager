@@ -155,8 +155,7 @@ spec:
                         type: object
                         x-kubernetes-validations:
                         - message: Only one of 'include' or 'exclude' can be defined
-                          rule: '(has(self.include) == true ? 1 : 0) + (has(self.exclude)
-                            == true ? 1 : 0) <= 1'
+                          rule: '!(has(self.include) && has(self.exclude))'
                       dropLabels:
                         description: DropLabels defines whether to drop all Kubernetes
                           labels. The default is `false`. Only available when using
@@ -165,8 +164,9 @@ spec:
                           instead.
                         type: boolean
                       enabled:
-                        description: If enabled, application logs are collected from
-                          application containers stdout/stderr. The default is `true`.
+                        description: Enabled specifies if the 'application' input
+                          is enabled. If enabled, logs are collected from application
+                          containers stdout/stderr. The default is `true`.
                         type: boolean
                       keepAnnotations:
                         description: KeepAnnotations defines whether to keep all Kubernetes
@@ -186,15 +186,25 @@ spec:
                           the `system` attribute with value `true` to enable them.
                         properties:
                           exclude:
-                            description: Exclude the container logs of the specified
-                              Namespace names.
+                            description: Exclude specifies the list of namespace names
+                              to exclude when collecting container logs. By default,
+                              logs from all namespaces are collected, except system
+                              namespaces. You cannot specify an exclude list together
+                              with an include list.
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
-                            description: Include only the container logs of the specified
-                              Namespace names.
+                            description: Include specifies the list of namespace names
+                              to include when collecting container logs. By default,
+                              logs from all namespaces are collected, except system
+                              namespaces. You cannot specify an include list together
+                              with an exclude list.
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           system:
@@ -217,8 +227,9 @@ spec:
                       logs from a OTLP source.
                     properties:
                       disabled:
-                        description: If set to `true`, no push-based OTLP signals
-                          are collected. The default is `false`.
+                        description: Disabled specifies if the 'otlp' input is deactivated.
+                          If set to `true`, no push-based OTLP signals are collected.
+                          The default is `false`.
                         type: boolean
                       namespaces:
                         description: Namespaces describes whether push-based OTLP
@@ -226,22 +237,31 @@ spec:
                           are enabled by default.
                         properties:
                           exclude:
-                            description: Exclude signals from the specified Namespace
-                              names only.
+                            description: 'Exclude telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are collected.
+                              You cannot specify an exclude list together with an
+                              include list.'
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
-                            description: Include signals from the specified Namespace
-                              names only.
+                            description: 'Include telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are included.
+                              You cannot specify an include list together with an
+                              exclude list.'
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                         type: object
                         x-kubernetes-validations:
                         - message: Only one of 'include' or 'exclude' can be defined
-                          rule: '(has(self.include) == true ? 1 : 0) + (has(self.exclude)
-                            == true ? 1 : 0) <= 1'
+                          rule: '!(has(self.include) && has(self.exclude))'
                     type: object
                 type: object
               output:
@@ -946,9 +966,8 @@ spec:
                     type: object
                     x-kubernetes-validations:
                     - message: Path is only available with HTTP protocol
-                      rule: ((!has(self.path) || size(self.path) <= 0) && (has(self.protocol)
-                        && self.protocol == 'grpc')) || (has(self.protocol) && self.protocol
-                        == 'http')
+                      rule: '(has(self.path) && size(self.path) > 0) ? self.protocol
+                        == ''http'' : true'
                 type: object
                 x-kubernetes-validations:
                 - message: Switching to or away from OTLP output is not supported.
@@ -1236,9 +1255,16 @@ spec:
                     description: OTLP input configures the push endpoint to receive
                       logs from a OTLP source.
                     properties:
+<<<<<<< HEAD
                       enabled:
                         description: If set to `false`, no push-based OTLP signals
                           are collected. The default is `true`.
+=======
+                      disabled:
+                        description: Disabled specifies if the 'otlp' input is deactivated.
+                          If disabled, then no push-based OTLP signals are collected.
+                          The default is `false`.
+>>>>>>> main
                         type: boolean
                       namespaces:
                         description: Namespaces describes whether push-based OTLP
@@ -1246,22 +1272,31 @@ spec:
                           are enabled by default.
                         properties:
                           exclude:
-                            description: Exclude signals from the specified Namespace
-                              names only.
+                            description: 'Exclude telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are collected.
+                              You cannot specify an exclude list together with an
+                              include list.'
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
-                            description: Include signals from the specified Namespace
-                              names only.
+                            description: 'Include telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are included.
+                              You cannot specify an include list together with an
+                              exclude list.'
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                         type: object
                         x-kubernetes-validations:
                         - message: Only one of 'include' or 'exclude' can be defined
-                          rule: '(has(self.include) == true ? 1 : 0) + (has(self.exclude)
-                            == true ? 1 : 0) <= 1'
+                          rule: '!(has(self.include) && has(self.exclude))'
                     type: object
                   runtime:
                     description: Runtime input configures the log collection from
@@ -1288,8 +1323,7 @@ spec:
                         type: object
                         x-kubernetes-validations:
                         - message: Only one of 'include' or 'exclude' can be defined
-                          rule: '(has(self.include) == true ? 1 : 0) + (has(self.exclude)
-                            == true ? 1 : 0) <= 1'
+                          rule: '!(has(self.include) && has(self.exclude))'
                       dropLabels:
                         description: DropLabels defines whether to drop all Kubernetes
                           labels. The default is `false`. Only available when using
@@ -1298,8 +1332,9 @@ spec:
                           instead.
                         type: boolean
                       enabled:
-                        description: If enabled, application logs are collected from
-                          application containers stdout/stderr. The default is `true`.
+                        description: Enabled specifies if the 'runtime' input is enabled.
+                          If enabled, application logs are collected from application
+                          containers stdout/stderr. The default is `true`.
                         type: boolean
                       keepAnnotations:
                         description: KeepAnnotations defines whether to keep all Kubernetes
@@ -1320,15 +1355,35 @@ spec:
                           system namespaces, use an empty struct notation.
                         properties:
                           exclude:
+<<<<<<< HEAD
                             description: Exclude signals from the specified Namespace
                               names only.
+=======
+                            description: Exclude specifies the list of namespace names
+                              to exclude when collecting container logs. By default,
+                              logs from all namespaces are collected, except system
+                              namespaces. You cannot specify an exclude list together
+                              with an include list.
+>>>>>>> main
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
+<<<<<<< HEAD
                             description: Include signals from the specified Namespace
                               names only.
+=======
+                            description: Include specifies the list of namespace names
+                              to include when collecting container logs. By default,
+                              logs from all namespaces are collected, except system
+                              namespaces. You cannot specify an include list together
+                              with an exclude list.
+>>>>>>> main
                             items:
+                              maxLength: 63
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                         type: object
@@ -2038,9 +2093,8 @@ spec:
                     type: object
                     x-kubernetes-validations:
                     - message: Path is only available with HTTP protocol
-                      rule: ((!has(self.path) || size(self.path) <= 0) && (has(self.protocol)
-                        && self.protocol == 'grpc')) || (has(self.protocol) && self.protocol
-                        == 'http')
+                      rule: '(has(self.path) && size(self.path) > 0) ? self.protocol
+                        == ''http'' : true'
                 type: object
                 x-kubernetes-validations:
                 - message: Switching to or away from OTLP output is not supported.
