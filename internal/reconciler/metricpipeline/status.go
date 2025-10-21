@@ -114,7 +114,7 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 	}
 
 	if ottl.IsInvalidOTTLSpecError(err) {
-		return metav1.ConditionFalse, conditions.ReasonTransformSpecInvalid, conditions.ConvertErrToMsg(err)
+		return metav1.ConditionFalse, conditions.ReasonOTTLSpecInvalid, conditions.ConvertErrToMsg(err)
 	}
 
 	var APIRequestFailed *errortypes.APIRequestFailedError

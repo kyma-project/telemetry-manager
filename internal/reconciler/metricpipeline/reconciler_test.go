@@ -1282,7 +1282,7 @@ func TestReconcile(t *testing.T) {
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeConfigurationGenerated,
 			metav1.ConditionFalse,
-			conditions.ReasonTransformSpecInvalid,
+			conditions.ReasonOTTLSpecInvalid,
 			"Invalid TransformSpec: error while parsing statements",
 		)
 
@@ -1371,7 +1371,7 @@ func TestReconcile(t *testing.T) {
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeConfigurationGenerated,
 			metav1.ConditionFalse,
-			conditions.ReasonTransformSpecInvalid,
+			conditions.ReasonOTTLSpecInvalid,
 			"Invalid FilterSpec: error while parsing statements",
 		)
 

@@ -16,7 +16,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestTransformInvalid(t *testing.T) {
+func TestFilterInvalid(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelExperimental)
 
 	var (
@@ -26,8 +26,8 @@ func TestTransformInvalid(t *testing.T) {
 
 	pipeline := testutils.NewTracePipelineBuilder().
 		WithName(pipelineName).
-		WithTransform(telemetryv1alpha1.TransformSpec{
-			Statements: []string{"sset(span.attributes[\"test\"], \"foo\")"},
+		WithFilter(telemetryv1alpha1.FilterSpec{
+			Conditions: []string{"invalid_condition_syntax"},
 		}).
 		WithOTLPOutput(testutils.OTLPEndpoint("https://backend.example.com:4317")).
 		Build()
