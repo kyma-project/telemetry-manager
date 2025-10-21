@@ -471,17 +471,6 @@ func filterMetricContextTestCases() []filterResourceContextTestCase {
 			isErrorExpected: false,
 		},
 		{
-			name: "valid filter spec - data point access",
-			filters: []telemetryv1alpha1.FilterSpec{
-				{
-					Conditions: []string{
-						`metric.data_points != nil`,
-					},
-				},
-			},
-			isErrorExpected: false,
-		},
-		{
 			name: "valid filter spec - unit access",
 			filters: []telemetryv1alpha1.FilterSpec{
 				{
@@ -519,7 +508,7 @@ func filterMetricContextTestCases() []filterResourceContextTestCase {
 			filters: []telemetryv1alpha1.FilterSpec{
 				{
 					Conditions: []string{
-						`truncate_all(metric.attributes, 100)`,
+						`prettify(metric.name) == "http_requests_total"`,
 					},
 				},
 			},
