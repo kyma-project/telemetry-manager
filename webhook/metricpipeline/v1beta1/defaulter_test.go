@@ -7,11 +7,12 @@ import (
 	"k8s.io/utils/ptr"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/namespaces"
 )
 
 func TestDefault(t *testing.T) {
 	sut := defaulter{
-		ExcludeNamespaces: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
+		ExcludeNamespaces: namespaces.System(),
 		OTLPInputEnabled:  true,
 		RuntimeInputResources: runtimeInputResourceDefaults{
 			Pod:         true,
@@ -46,7 +47,7 @@ func TestDefault(t *testing.T) {
 						OTLP: &telemetryv1beta1.OTLPInput{
 							Enabled: ptr.To(true),
 							Namespaces: &telemetryv1beta1.NamespaceSelector{
-								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
+								Exclude: namespaces.System(),
 							},
 						},
 					},
@@ -112,7 +113,7 @@ func TestDefault(t *testing.T) {
 						Prometheus: &telemetryv1beta1.MetricPipelinePrometheusInput{
 							Enabled: ptr.To(true),
 							Namespaces: &telemetryv1beta1.NamespaceSelector{
-								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
+								Exclude: namespaces.System(),
 							},
 							DiagnosticMetrics: &telemetryv1beta1.MetricPipelineIstioInputDiagnosticMetrics{
 								Enabled: ptr.To(false),
@@ -145,7 +146,7 @@ func TestDefault(t *testing.T) {
 						Istio: &telemetryv1beta1.MetricPipelineIstioInput{
 							Enabled: ptr.To(true),
 							Namespaces: &telemetryv1beta1.NamespaceSelector{
-								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
+								Exclude: namespaces.System(),
 							},
 							EnvoyMetrics: &telemetryv1beta1.EnvoyMetrics{
 								Enabled: ptr.To(false),
@@ -182,7 +183,7 @@ func TestDefault(t *testing.T) {
 						Runtime: &telemetryv1beta1.MetricPipelineRuntimeInput{
 							Enabled: ptr.To(true),
 							Namespaces: &telemetryv1beta1.NamespaceSelector{
-								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
+								Exclude: namespaces.System(),
 							},
 							Resources: &telemetryv1beta1.MetricPipelineRuntimeInputResources{
 								Pod: &telemetryv1beta1.MetricPipelineRuntimeInputResource{
@@ -251,7 +252,7 @@ func TestDefault(t *testing.T) {
 						Runtime: &telemetryv1beta1.MetricPipelineRuntimeInput{
 							Enabled: ptr.To(true),
 							Namespaces: &telemetryv1beta1.NamespaceSelector{
-								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
+								Exclude: namespaces.System(),
 							},
 							Resources: &telemetryv1beta1.MetricPipelineRuntimeInputResources{
 								Pod: &telemetryv1beta1.MetricPipelineRuntimeInputResource{
@@ -327,7 +328,7 @@ func TestDefault(t *testing.T) {
 						OTLP: &telemetryv1beta1.OTLPInput{
 							Enabled: ptr.To(true),
 							Namespaces: &telemetryv1beta1.NamespaceSelector{
-								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
+								Exclude: namespaces.System(),
 							},
 						},
 					},
@@ -414,7 +415,7 @@ func TestDefault(t *testing.T) {
 						Istio: &telemetryv1beta1.MetricPipelineIstioInput{
 							Enabled: ptr.To(true),
 							Namespaces: &telemetryv1beta1.NamespaceSelector{
-								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
+								Exclude: namespaces.System(),
 							},
 							EnvoyMetrics: &telemetryv1beta1.EnvoyMetrics{
 								Enabled: ptr.To(true),
@@ -451,7 +452,7 @@ func TestDefault(t *testing.T) {
 						Istio: &telemetryv1beta1.MetricPipelineIstioInput{
 							Enabled: ptr.To(true),
 							Namespaces: &telemetryv1beta1.NamespaceSelector{
-								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
+								Exclude: namespaces.System(),
 							},
 							EnvoyMetrics: &telemetryv1beta1.EnvoyMetrics{
 								Enabled: ptr.To(false),
@@ -488,7 +489,7 @@ func TestDefault(t *testing.T) {
 						Prometheus: &telemetryv1beta1.MetricPipelinePrometheusInput{
 							Enabled: ptr.To(true),
 							Namespaces: &telemetryv1beta1.NamespaceSelector{
-								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
+								Exclude: namespaces.System(),
 							},
 							DiagnosticMetrics: &telemetryv1beta1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: ptr.To(true)},
 						},

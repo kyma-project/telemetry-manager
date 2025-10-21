@@ -6,6 +6,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/namespaces"
 )
 
 var errSrcTypeUnsupportedLogPipeline = errors.New("source type is not LogPipeline v1alpha1")
@@ -98,7 +99,7 @@ func convertApplicationToBeta(application *LogPipelineApplicationInput) *telemet
 
 	var excludes []string
 	if len(application.Namespaces.Include) == 0 && len(application.Namespaces.Exclude) == 0 && !application.Namespaces.System {
-		excludes = []string{"kyma-system", "kube-system", "istio-system", "compass-system"}
+		excludes = namespaces.System()
 	} else {
 		excludes = application.Namespaces.Exclude
 	}

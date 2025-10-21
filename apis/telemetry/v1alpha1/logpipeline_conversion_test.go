@@ -8,6 +8,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/namespaces"
 )
 
 var v1alpha1LogPipeline = &LogPipeline{
@@ -364,7 +365,7 @@ func TestLogPipelineConvertTo(t *testing.T) {
 					Input: telemetryv1beta1.LogPipelineInput{
 						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
 							Namespaces: &telemetryv1beta1.NamespaceSelector{
-								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
+								Exclude: namespaces.System(),
 							},
 						},
 					},

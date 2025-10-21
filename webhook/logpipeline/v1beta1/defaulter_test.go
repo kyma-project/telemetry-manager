@@ -7,11 +7,12 @@ import (
 	"k8s.io/utils/ptr"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/namespaces"
 )
 
 func TestDefault(t *testing.T) {
 	sut := defaulter{
-		ExcludeNamespaces:            []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
+		ExcludeNamespaces:            namespaces.System(),
 		RuntimeInputEnabled:          true,
 		RuntimeInputKeepOriginalBody: true,
 		DefaultOTLPOutputProtocol:    telemetryv1beta1.OTLPProtocolGRPC,
@@ -46,7 +47,7 @@ func TestDefault(t *testing.T) {
 							Enabled:          ptr.To(true),
 							KeepOriginalBody: ptr.To(true),
 							Namespaces: &telemetryv1beta1.NamespaceSelector{
-								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
+								Exclude: namespaces.System(),
 							},
 						},
 					},
@@ -85,7 +86,7 @@ func TestDefault(t *testing.T) {
 							Enabled:          ptr.To(true),
 							KeepOriginalBody: ptr.To(false),
 							Namespaces: &telemetryv1beta1.NamespaceSelector{
-								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
+								Exclude: namespaces.System(),
 							},
 						},
 					},
@@ -149,7 +150,7 @@ func TestDefault(t *testing.T) {
 						OTLP: &telemetryv1beta1.OTLPInput{
 							Enabled: ptr.To(true),
 							Namespaces: &telemetryv1beta1.NamespaceSelector{
-								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
+								Exclude: namespaces.System(),
 							},
 						},
 					},
