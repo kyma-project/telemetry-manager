@@ -45,6 +45,11 @@ func TestAgent_ApplyResources(t *testing.T) {
 			goldenFilePath: "testdata/metric-agent-istio.yaml",
 		},
 		{
+			name:           "metric agent with FIPS mode enabled",
+			sut:            NewMetricAgentApplierDeleter(collectorImage, namespace, priorityClassName, true),
+			goldenFilePath: "testdata/metric-agent-fips-enabled.yaml",
+		},
+		{
 			name: "log agent",
 			sut:  NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName, false),
 			collectorEnvVars: map[string][]byte{
@@ -60,6 +65,14 @@ func TestAgent_ApplyResources(t *testing.T) {
 			},
 			istioEnabled:   true,
 			goldenFilePath: "testdata/log-agent-istio.yaml",
+		},
+		{
+			name: "log agent with FIPS mode enabled",
+			sut:  NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName, true),
+			collectorEnvVars: map[string][]byte{
+				"DUMMY_ENV_VAR": []byte("foo"),
+			},
+			goldenFilePath: "testdata/log-agent-fips-enabled.yaml",
 		},
 	}
 
