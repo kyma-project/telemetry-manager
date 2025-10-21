@@ -973,16 +973,10 @@ spec:
                     description: OTLP input configures the push endpoint to receive
                       metrics from an OTLP source.
                     properties:
-<<<<<<< HEAD
                       enabled:
-                        description: If set to `false`, no push-based OTLP signals
-                          are collected. The default is `true`.
-=======
-                      disabled:
-                        description: Disabled specifies if the 'otlp' input is deactivated.
-                          If disabled, then no push-based OTLP signals are collected.
-                          The default is `false`.
->>>>>>> main
+                        description: Enabled specifies if the 'otlp' input is enabled.
+                          If enabled, then push-based OTLP signals are collected.
+                          The default is `true`.
                         type: boolean
                       namespaces:
                         description: Namespaces describes whether push-based OTLP

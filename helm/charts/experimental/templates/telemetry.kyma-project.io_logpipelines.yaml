@@ -1255,16 +1255,10 @@ spec:
                     description: OTLP input configures the push endpoint to receive
                       logs from a OTLP source.
                     properties:
-<<<<<<< HEAD
                       enabled:
-                        description: If set to `false`, no push-based OTLP signals
-                          are collected. The default is `true`.
-=======
-                      disabled:
-                        description: Disabled specifies if the 'otlp' input is deactivated.
-                          If disabled, then no push-based OTLP signals are collected.
-                          The default is `false`.
->>>>>>> main
+                        description: Enabled specifies if the 'otlp' input is enabled.
+                          If enabled, then push-based OTLP signals are collected.
+                          The default is `true`.
                         type: boolean
                       namespaces:
                         description: Namespaces describes whether push-based OTLP
@@ -1355,32 +1349,22 @@ spec:
                           system namespaces, use an empty struct notation.
                         properties:
                           exclude:
-<<<<<<< HEAD
-                            description: Exclude signals from the specified Namespace
-                              names only.
-=======
-                            description: Exclude specifies the list of namespace names
-                              to exclude when collecting container logs. By default,
-                              logs from all namespaces are collected, except system
-                              namespaces. You cannot specify an exclude list together
-                              with an include list.
->>>>>>> main
+                            description: 'Exclude telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are collected.
+                              You cannot specify an exclude list together with an
+                              include list.'
                             items:
                               maxLength: 63
                               pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
-<<<<<<< HEAD
-                            description: Include signals from the specified Namespace
-                              names only.
-=======
-                            description: Include specifies the list of namespace names
-                              to include when collecting container logs. By default,
-                              logs from all namespaces are collected, except system
-                              namespaces. You cannot specify an include list together
-                              with an exclude list.
->>>>>>> main
+                            description: 'Include telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are included.
+                              You cannot specify an include list together with an
+                              exclude list.'
                             items:
                               maxLength: 63
                               pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -1389,8 +1373,7 @@ spec:
                         type: object
                         x-kubernetes-validations:
                         - message: Only one of 'include' or 'exclude' can be defined
-                          rule: '(has(self.include) == true ? 1 : 0) + (has(self.exclude)
-                            == true ? 1 : 0) <= 1'
+                          rule: '!(has(self.include) && has(self.exclude))'
                     type: object
                 type: object
               output:
