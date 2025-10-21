@@ -31,8 +31,8 @@ func TestDefault(t *testing.T) {
 						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{},
 					},
 					Output: telemetryv1beta1.LogPipelineOutput{
-						OTLP: &telemetryv1beta1.OTLPOutput{
-							Endpoint: telemetryv1beta1.ValueType{
+						HTTP: &telemetryv1beta1.LogPipelineHTTPOutput{
+							Host: telemetryv1beta1.ValueType{
 								Value: "localhost:4317",
 							},
 						},
@@ -42,9 +42,6 @@ func TestDefault(t *testing.T) {
 			expected: &telemetryv1beta1.LogPipeline{
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Input: telemetryv1beta1.LogPipelineInput{
-						OTLP: &telemetryv1beta1.OTLPInput{
-							Enabled: ptr.To(true),
-						},
 						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
 							Enabled:          ptr.To(true),
 							KeepOriginalBody: ptr.To(true),
@@ -54,11 +51,10 @@ func TestDefault(t *testing.T) {
 						},
 					},
 					Output: telemetryv1beta1.LogPipelineOutput{
-						OTLP: &telemetryv1beta1.OTLPOutput{
-							Endpoint: telemetryv1beta1.ValueType{
+						HTTP: &telemetryv1beta1.LogPipelineHTTPOutput{
+							Host: telemetryv1beta1.ValueType{
 								Value: "localhost:4317",
 							},
-							Protocol: telemetryv1beta1.OTLPProtocolGRPC,
 						},
 					},
 				},
@@ -74,11 +70,10 @@ func TestDefault(t *testing.T) {
 						},
 					},
 					Output: telemetryv1beta1.LogPipelineOutput{
-						OTLP: &telemetryv1beta1.OTLPOutput{
-							Endpoint: telemetryv1beta1.ValueType{
+						HTTP: &telemetryv1beta1.LogPipelineHTTPOutput{
+							Host: telemetryv1beta1.ValueType{
 								Value: "localhost:4317",
 							},
-							Protocol: telemetryv1beta1.OTLPProtocolGRPC,
 						},
 					},
 				},
@@ -86,9 +81,6 @@ func TestDefault(t *testing.T) {
 			expected: &telemetryv1beta1.LogPipeline{
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Input: telemetryv1beta1.LogPipelineInput{
-						OTLP: &telemetryv1beta1.OTLPInput{
-							Enabled: ptr.To(true),
-						},
 						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
 							Enabled:          ptr.To(true),
 							KeepOriginalBody: ptr.To(false),
@@ -98,11 +90,10 @@ func TestDefault(t *testing.T) {
 						},
 					},
 					Output: telemetryv1beta1.LogPipelineOutput{
-						OTLP: &telemetryv1beta1.OTLPOutput{
-							Endpoint: telemetryv1beta1.ValueType{
+						HTTP: &telemetryv1beta1.LogPipelineHTTPOutput{
+							Host: telemetryv1beta1.ValueType{
 								Value: "localhost:4317",
 							},
-							Protocol: telemetryv1beta1.OTLPProtocolGRPC,
 						},
 					},
 				},
@@ -118,11 +109,10 @@ func TestDefault(t *testing.T) {
 						},
 					},
 					Output: telemetryv1beta1.LogPipelineOutput{
-						OTLP: &telemetryv1beta1.OTLPOutput{
-							Endpoint: telemetryv1beta1.ValueType{
+						HTTP: &telemetryv1beta1.LogPipelineHTTPOutput{
+							Host: telemetryv1beta1.ValueType{
 								Value: "localhost:4317",
 							},
-							Protocol: telemetryv1beta1.OTLPProtocolGRPC,
 						},
 					},
 				},
@@ -130,26 +120,22 @@ func TestDefault(t *testing.T) {
 			expected: &telemetryv1beta1.LogPipeline{
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Input: telemetryv1beta1.LogPipelineInput{
-						OTLP: &telemetryv1beta1.OTLPInput{
-							Enabled: ptr.To(true),
-						},
 						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
 							Enabled: ptr.To(false),
 						},
 					},
 					Output: telemetryv1beta1.LogPipelineOutput{
-						OTLP: &telemetryv1beta1.OTLPOutput{
-							Endpoint: telemetryv1beta1.ValueType{
+						HTTP: &telemetryv1beta1.LogPipelineHTTPOutput{
+							Host: telemetryv1beta1.ValueType{
 								Value: "localhost:4317",
 							},
-							Protocol: telemetryv1beta1.OTLPProtocolGRPC,
 						},
 					},
 				},
 			},
 		},
 		{
-			name: "should set default OTLPOutput if not set",
+			name: "should set default OTLPOutput protocol and OTLP Input namespaces if not set",
 			input: &telemetryv1beta1.LogPipeline{
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Output: telemetryv1beta1.LogPipelineOutput{
@@ -162,6 +148,9 @@ func TestDefault(t *testing.T) {
 					Input: telemetryv1beta1.LogPipelineInput{
 						OTLP: &telemetryv1beta1.OTLPInput{
 							Enabled: ptr.To(true),
+							Namespaces: &telemetryv1beta1.NamespaceSelector{
+								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
+							},
 						},
 					},
 					Output: telemetryv1beta1.LogPipelineOutput{
@@ -173,9 +162,16 @@ func TestDefault(t *testing.T) {
 			},
 		},
 		{
-			name: "should enable otlp input by default for OTLP output pipelines",
+			name: "should enable otlp input by default for OTLP output pipelines but do not override existing settings",
 			input: &telemetryv1beta1.LogPipeline{
 				Spec: telemetryv1beta1.LogPipelineSpec{
+					Input: telemetryv1beta1.LogPipelineInput{
+						OTLP: &telemetryv1beta1.OTLPInput{
+							Namespaces: &telemetryv1beta1.NamespaceSelector{
+								Exclude: []string{"custom-namespace"},
+							},
+						},
+					},
 					Output: telemetryv1beta1.LogPipelineOutput{
 						OTLP: &telemetryv1beta1.OTLPOutput{
 							Endpoint: telemetryv1beta1.ValueType{
@@ -191,6 +187,9 @@ func TestDefault(t *testing.T) {
 					Input: telemetryv1beta1.LogPipelineInput{
 						OTLP: &telemetryv1beta1.OTLPInput{
 							Enabled: ptr.To(true),
+							Namespaces: &telemetryv1beta1.NamespaceSelector{
+								Exclude: []string{"custom-namespace"},
+							},
 						},
 					},
 					Output: telemetryv1beta1.LogPipelineOutput{

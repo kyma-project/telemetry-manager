@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
@@ -53,7 +54,7 @@ func (ld defaulter) applyDefaults(pipeline *telemetryv1beta1.LogPipeline) {
 		pipeline.Spec.Output.OTLP.Protocol = ld.DefaultOTLPOutputProtocol
 	}
 
-	if isOTLPPipeline(pipeline) {
+	if isOTLPPipelineBeta(pipeline) {
 		if pipeline.Spec.Input.OTLP == nil {
 			pipeline.Spec.Input.OTLP = &telemetryv1beta1.OTLPInput{}
 		}
@@ -61,9 +62,15 @@ func (ld defaulter) applyDefaults(pipeline *telemetryv1beta1.LogPipeline) {
 		if pipeline.Spec.Input.OTLP.Enabled == nil {
 			pipeline.Spec.Input.OTLP.Enabled = &ld.OTLPInputEnabled
 		}
+
+		if ptr.Deref(pipeline.Spec.Input.OTLP.Enabled, false) && pipeline.Spec.Input.OTLP.Namespaces == nil {
+			pipeline.Spec.Input.OTLP.Namespaces = &telemetryv1beta1.NamespaceSelector{
+				Exclude: ld.ExcludeNamespaces,
+			}
+		}
 	}
 }
 
-func isOTLPPipeline(pipeline *telemetryv1beta1.LogPipeline) bool {
+func isOTLPPipelineBeta(pipeline *telemetryv1beta1.LogPipeline) bool {
 	return pipeline.Spec.Output.OTLP != nil
 }

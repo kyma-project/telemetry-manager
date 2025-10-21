@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
@@ -95,6 +96,12 @@ func (md defaulter) applyDefaults(pipeline *telemetryv1beta1.MetricPipeline) {
 
 	if pipeline.Spec.Input.OTLP.Enabled == nil {
 		pipeline.Spec.Input.OTLP.Enabled = &md.OTLPInputEnabled
+	}
+
+	if ptr.Deref(pipeline.Spec.Input.OTLP.Enabled, false) && pipeline.Spec.Input.OTLP.Namespaces == nil {
+		pipeline.Spec.Input.OTLP.Namespaces = &telemetryv1beta1.NamespaceSelector{
+			Exclude: md.ExcludeNamespaces,
+		}
 	}
 
 	if pipeline.Spec.Output.OTLP != nil && pipeline.Spec.Output.OTLP.Protocol == "" {

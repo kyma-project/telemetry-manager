@@ -32,7 +32,7 @@ func TestDefault(t *testing.T) {
 		expected *telemetryv1beta1.MetricPipeline
 	}{
 		{
-			name: "should set default OTLP protocol if not set",
+			name: "should set default OTLP protocol and otlp input if not set",
 			input: &telemetryv1beta1.MetricPipeline{
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Output: telemetryv1beta1.MetricPipelineOutput{
@@ -45,6 +45,9 @@ func TestDefault(t *testing.T) {
 					Input: telemetryv1beta1.MetricPipelineInput{
 						OTLP: &telemetryv1beta1.OTLPInput{
 							Enabled: ptr.To(true),
+							Namespaces: &telemetryv1beta1.NamespaceSelector{
+								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
+							},
 						},
 					},
 					Output: telemetryv1beta1.MetricPipelineOutput{
@@ -59,6 +62,11 @@ func TestDefault(t *testing.T) {
 			name: "should not override existing OTLP protocol",
 			input: &telemetryv1beta1.MetricPipeline{
 				Spec: telemetryv1beta1.MetricPipelineSpec{
+					Input: telemetryv1beta1.MetricPipelineInput{
+						OTLP: &telemetryv1beta1.OTLPInput{
+							Enabled: ptr.To(false),
+						},
+					},
 					Output: telemetryv1beta1.MetricPipelineOutput{
 						OTLP: &telemetryv1beta1.OTLPOutput{
 							Protocol: telemetryv1beta1.OTLPProtocolHTTP,
@@ -70,7 +78,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Input: telemetryv1beta1.MetricPipelineInput{
 						OTLP: &telemetryv1beta1.OTLPInput{
-							Enabled: ptr.To(true),
+							Enabled: ptr.To(false),
 						},
 					},
 					Output: telemetryv1beta1.MetricPipelineOutput{
@@ -86,6 +94,9 @@ func TestDefault(t *testing.T) {
 			input: &telemetryv1beta1.MetricPipeline{
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Input: telemetryv1beta1.MetricPipelineInput{
+						OTLP: &telemetryv1beta1.OTLPInput{
+							Enabled: ptr.To(false),
+						},
 						Prometheus: &telemetryv1beta1.MetricPipelinePrometheusInput{
 							Enabled: ptr.To(true),
 						},
@@ -96,7 +107,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Input: telemetryv1beta1.MetricPipelineInput{
 						OTLP: &telemetryv1beta1.OTLPInput{
-							Enabled: ptr.To(true),
+							Enabled: ptr.To(false),
 						},
 						Prometheus: &telemetryv1beta1.MetricPipelinePrometheusInput{
 							Enabled: ptr.To(true),
@@ -116,6 +127,9 @@ func TestDefault(t *testing.T) {
 			input: &telemetryv1beta1.MetricPipeline{
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Input: telemetryv1beta1.MetricPipelineInput{
+						OTLP: &telemetryv1beta1.OTLPInput{
+							Enabled: ptr.To(false),
+						},
 						Istio: &telemetryv1beta1.MetricPipelineIstioInput{
 							Enabled: ptr.To(true),
 						},
@@ -126,7 +140,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Input: telemetryv1beta1.MetricPipelineInput{
 						OTLP: &telemetryv1beta1.OTLPInput{
-							Enabled: ptr.To(true),
+							Enabled: ptr.To(false),
 						},
 						Istio: &telemetryv1beta1.MetricPipelineIstioInput{
 							Enabled: ptr.To(true),
@@ -150,6 +164,9 @@ func TestDefault(t *testing.T) {
 			input: &telemetryv1beta1.MetricPipeline{
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Input: telemetryv1beta1.MetricPipelineInput{
+						OTLP: &telemetryv1beta1.OTLPInput{
+							Enabled: ptr.To(false),
+						},
 						Runtime: &telemetryv1beta1.MetricPipelineRuntimeInput{
 							Enabled: ptr.To(true),
 						},
@@ -160,7 +177,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Input: telemetryv1beta1.MetricPipelineInput{
 						OTLP: &telemetryv1beta1.OTLPInput{
-							Enabled: ptr.To(true),
+							Enabled: ptr.To(false),
 						},
 						Runtime: &telemetryv1beta1.MetricPipelineRuntimeInput{
 							Enabled: ptr.To(true),
@@ -211,6 +228,9 @@ func TestDefault(t *testing.T) {
 			input: &telemetryv1beta1.MetricPipeline{
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Input: telemetryv1beta1.MetricPipelineInput{
+						OTLP: &telemetryv1beta1.OTLPInput{
+							Enabled: ptr.To(false),
+						},
 						Runtime: &telemetryv1beta1.MetricPipelineRuntimeInput{
 							Enabled: ptr.To(true),
 							Resources: &telemetryv1beta1.MetricPipelineRuntimeInputResources{
@@ -226,7 +246,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Input: telemetryv1beta1.MetricPipelineInput{
 						OTLP: &telemetryv1beta1.OTLPInput{
-							Enabled: ptr.To(true),
+							Enabled: ptr.To(false),
 						},
 						Runtime: &telemetryv1beta1.MetricPipelineRuntimeInput{
 							Enabled: ptr.To(true),
@@ -276,6 +296,9 @@ func TestDefault(t *testing.T) {
 			input: &telemetryv1beta1.MetricPipeline{
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Input: telemetryv1beta1.MetricPipelineInput{
+						OTLP: &telemetryv1beta1.OTLPInput{
+							Enabled: ptr.To(false),
+						},
 						Prometheus: &telemetryv1beta1.MetricPipelinePrometheusInput{
 							Enabled: ptr.To(false),
 						},
@@ -286,7 +309,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Input: telemetryv1beta1.MetricPipelineInput{
 						OTLP: &telemetryv1beta1.OTLPInput{
-							Enabled: ptr.To(true),
+							Enabled: ptr.To(false),
 						},
 						Prometheus: &telemetryv1beta1.MetricPipelinePrometheusInput{
 							Enabled: ptr.To(false),
@@ -303,6 +326,9 @@ func TestDefault(t *testing.T) {
 					Input: telemetryv1beta1.MetricPipelineInput{
 						OTLP: &telemetryv1beta1.OTLPInput{
 							Enabled: ptr.To(true),
+							Namespaces: &telemetryv1beta1.NamespaceSelector{
+								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
+							},
 						},
 					},
 				},
@@ -313,6 +339,9 @@ func TestDefault(t *testing.T) {
 			input: &telemetryv1beta1.MetricPipeline{
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Input: telemetryv1beta1.MetricPipelineInput{
+						OTLP: &telemetryv1beta1.OTLPInput{
+							Enabled: ptr.To(false),
+						},
 						Istio: &telemetryv1beta1.MetricPipelineIstioInput{
 							Enabled: ptr.To(false),
 						},
@@ -323,7 +352,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Input: telemetryv1beta1.MetricPipelineInput{
 						OTLP: &telemetryv1beta1.OTLPInput{
-							Enabled: ptr.To(true),
+							Enabled: ptr.To(false),
 						},
 						Istio: &telemetryv1beta1.MetricPipelineIstioInput{
 							Enabled: ptr.To(false),
@@ -337,6 +366,9 @@ func TestDefault(t *testing.T) {
 			input: &telemetryv1beta1.MetricPipeline{
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Input: telemetryv1beta1.MetricPipelineInput{
+						OTLP: &telemetryv1beta1.OTLPInput{
+							Enabled: ptr.To(false),
+						},
 						Runtime: &telemetryv1beta1.MetricPipelineRuntimeInput{
 							Enabled: ptr.To(false),
 						},
@@ -347,7 +379,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Input: telemetryv1beta1.MetricPipelineInput{
 						OTLP: &telemetryv1beta1.OTLPInput{
-							Enabled: ptr.To(true),
+							Enabled: ptr.To(false),
 						},
 						Runtime: &telemetryv1beta1.MetricPipelineRuntimeInput{
 							Enabled: ptr.To(false),
@@ -361,6 +393,9 @@ func TestDefault(t *testing.T) {
 			input: &telemetryv1beta1.MetricPipeline{
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Input: telemetryv1beta1.MetricPipelineInput{
+						OTLP: &telemetryv1beta1.OTLPInput{
+							Enabled: ptr.To(false),
+						},
 						Istio: &telemetryv1beta1.MetricPipelineIstioInput{
 							Enabled: ptr.To(true),
 							EnvoyMetrics: &telemetryv1beta1.EnvoyMetrics{
@@ -374,7 +409,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Input: telemetryv1beta1.MetricPipelineInput{
 						OTLP: &telemetryv1beta1.OTLPInput{
-							Enabled: ptr.To(true),
+							Enabled: ptr.To(false),
 						},
 						Istio: &telemetryv1beta1.MetricPipelineIstioInput{
 							Enabled: ptr.To(true),
@@ -397,6 +432,9 @@ func TestDefault(t *testing.T) {
 			input: &telemetryv1beta1.MetricPipeline{
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Input: telemetryv1beta1.MetricPipelineInput{
+						OTLP: &telemetryv1beta1.OTLPInput{
+							Enabled: ptr.To(false),
+						},
 						Istio: &telemetryv1beta1.MetricPipelineIstioInput{
 							Enabled:           ptr.To(true),
 							DiagnosticMetrics: &telemetryv1beta1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: ptr.To(true)},
@@ -408,7 +446,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Input: telemetryv1beta1.MetricPipelineInput{
 						OTLP: &telemetryv1beta1.OTLPInput{
-							Enabled: ptr.To(true),
+							Enabled: ptr.To(false),
 						},
 						Istio: &telemetryv1beta1.MetricPipelineIstioInput{
 							Enabled: ptr.To(true),
@@ -431,6 +469,9 @@ func TestDefault(t *testing.T) {
 			input: &telemetryv1beta1.MetricPipeline{
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Input: telemetryv1beta1.MetricPipelineInput{
+						OTLP: &telemetryv1beta1.OTLPInput{
+							Enabled: ptr.To(false),
+						},
 						Prometheus: &telemetryv1beta1.MetricPipelinePrometheusInput{
 							Enabled:           ptr.To(true),
 							DiagnosticMetrics: &telemetryv1beta1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: ptr.To(true)},
@@ -442,7 +483,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Input: telemetryv1beta1.MetricPipelineInput{
 						OTLP: &telemetryv1beta1.OTLPInput{
-							Enabled: ptr.To(true),
+							Enabled: ptr.To(false),
 						},
 						Prometheus: &telemetryv1beta1.MetricPipelinePrometheusInput{
 							Enabled: ptr.To(true),

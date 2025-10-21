@@ -89,6 +89,14 @@ func (md defaulter) applyDefaults(pipeline *telemetryv1alpha1.MetricPipeline) {
 		}
 	}
 
+	if pipeline.Spec.Input.OTLP == nil {
+		pipeline.Spec.Input.OTLP = &telemetryv1alpha1.OTLPInput{}
+	}
+
+	if pipeline.Spec.Input.OTLP.Namespaces == nil {
+		pipeline.Spec.Input.OTLP.Namespaces = &telemetryv1alpha1.NamespaceSelector{}
+	}
+
 	if pipeline.Spec.Output.OTLP != nil && pipeline.Spec.Output.OTLP.Protocol == "" {
 		pipeline.Spec.Output.OTLP.Protocol = md.DefaultOTLPOutputProtocol
 	}

@@ -92,6 +92,7 @@ func TestSinglePipelineV1Beta1_OTel(t *testing.T) {
 			})
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
+			assert.OTelLogPipelineHealthy(t, pipelineName)
 			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.LogGatewayName)
 
@@ -99,7 +100,6 @@ func TestSinglePipelineV1Beta1_OTel(t *testing.T) {
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
 			}
 
-			assert.OTelLogPipelineHealthy(t, pipelineName)
 			assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
 		})
 	}
