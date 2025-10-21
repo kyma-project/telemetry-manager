@@ -71,21 +71,12 @@ spec:
           initialDelaySeconds: 5
           periodSeconds: 10
         resources: {{- toYaml .Values.manager.container.resources | nindent 10 }}
-        securityContext:
-          allowPrivilegeEscalation: false
-          privileged: false
-          readOnlyRootFilesystem: false
-          capabilities:
-            drop:
-              - ALL
+        securityContext: {{- toYaml .Values.manager.container.securityContext | nindent 10 }}
         volumeMounts:
         - mountPath: /tmp
           name: crt-volume
       priorityClassName: telemetry-priority-class
-      securityContext:
-        runAsNonRoot: true
-        seccompProfile:
-          type: RuntimeDefault
+      securityContext: {{- toYaml .Values.manager.securityContext | nindent 8 }}
       serviceAccountName: {{ include "telemetry-manager.fullname" . }}-manager
       terminationGracePeriodSeconds: 10
       volumes:
