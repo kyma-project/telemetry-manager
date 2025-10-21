@@ -53,11 +53,17 @@ func (ld defaulter) applyDefaults(pipeline *telemetryv1beta1.LogPipeline) {
 		pipeline.Spec.Output.OTLP.Protocol = ld.DefaultOTLPOutputProtocol
 	}
 
-	if pipeline.Spec.Input.OTLP == nil {
-		pipeline.Spec.Input.OTLP = &telemetryv1beta1.OTLPInput{}
-	}
+	if isOTLPPipeline(pipeline) {
+		if pipeline.Spec.Input.OTLP == nil {
+			pipeline.Spec.Input.OTLP = &telemetryv1beta1.OTLPInput{}
+		}
 
-	if pipeline.Spec.Input.OTLP.Enabled == nil {
-		pipeline.Spec.Input.OTLP.Enabled = &ld.OTLPInputEnabled
+		if pipeline.Spec.Input.OTLP.Enabled == nil {
+			pipeline.Spec.Input.OTLP.Enabled = &ld.OTLPInputEnabled
+		}
 	}
+}
+
+func isOTLPPipeline(pipeline *telemetryv1beta1.LogPipeline) bool {
+	return pipeline.Spec.Output.OTLP != nil
 }
