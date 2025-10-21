@@ -98,12 +98,18 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 		return nil, err
 	}
 
+	filterSpecValidator, err := ottl.NewFilterSpecValidator(ottl.SignalTypeTrace)
+	if err != nil {
+		return nil, err
+	}
+
 	pipelineValidator := &tracepipeline.Validator{
 		EndpointValidator:      &endpoint.Validator{Client: client},
 		TLSCertValidator:       tlscert.New(client),
 		SecretRefValidator:     &secretref.Validator{Client: client},
 		PipelineLock:           pipelineLock,
 		TransformSpecValidator: transformSpecValidator,
+		FilterSpecValidator:    filterSpecValidator,
 	}
 
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)

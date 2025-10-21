@@ -43,6 +43,7 @@ func runTransformValidatorTestCases(t *testing.T, context string, signalType Sig
 					Conditions: test.conditions,
 					Statements: test.statements,
 				}}
+
 				err = validator.Validate(transforms)
 				if test.isErrorExpected {
 					require.Error(t, err)

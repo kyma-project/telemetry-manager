@@ -40,6 +40,7 @@ func runFilterValidatorTestCases(t *testing.T, context string, signalType Signal
 				require.NoError(t, err)
 
 				filters := []telemetryv1alpha1.FilterSpec{{Conditions: test.conditions}}
+
 				err = validator.Validate(filters)
 				if test.isErrorExpected {
 					require.Error(t, err)
