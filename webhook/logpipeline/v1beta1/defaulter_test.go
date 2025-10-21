@@ -30,6 +30,13 @@ func TestDefault(t *testing.T) {
 					Input: telemetryv1beta1.LogPipelineInput{
 						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{},
 					},
+					Output: telemetryv1beta1.LogPipelineOutput{
+						OTLP: &telemetryv1beta1.OTLPOutput{
+							Endpoint: telemetryv1beta1.ValueType{
+								Value: "localhost:4317",
+							},
+						},
+					},
 				},
 			},
 			expected: &telemetryv1beta1.LogPipeline{
@@ -46,6 +53,14 @@ func TestDefault(t *testing.T) {
 							},
 						},
 					},
+					Output: telemetryv1beta1.LogPipelineOutput{
+						OTLP: &telemetryv1beta1.OTLPOutput{
+							Endpoint: telemetryv1beta1.ValueType{
+								Value: "localhost:4317",
+							},
+							Protocol: telemetryv1beta1.OTLPProtocolGRPC,
+						},
+					},
 				},
 			},
 		},
@@ -56,6 +71,14 @@ func TestDefault(t *testing.T) {
 					Input: telemetryv1beta1.LogPipelineInput{
 						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
 							KeepOriginalBody: ptr.To(false),
+						},
+					},
+					Output: telemetryv1beta1.LogPipelineOutput{
+						OTLP: &telemetryv1beta1.OTLPOutput{
+							Endpoint: telemetryv1beta1.ValueType{
+								Value: "localhost:4317",
+							},
+							Protocol: telemetryv1beta1.OTLPProtocolGRPC,
 						},
 					},
 				},
@@ -74,6 +97,14 @@ func TestDefault(t *testing.T) {
 							},
 						},
 					},
+					Output: telemetryv1beta1.LogPipelineOutput{
+						OTLP: &telemetryv1beta1.OTLPOutput{
+							Endpoint: telemetryv1beta1.ValueType{
+								Value: "localhost:4317",
+							},
+							Protocol: telemetryv1beta1.OTLPProtocolGRPC,
+						},
+					},
 				},
 			},
 		},
@@ -86,6 +117,14 @@ func TestDefault(t *testing.T) {
 							Enabled: ptr.To(false),
 						},
 					},
+					Output: telemetryv1beta1.LogPipelineOutput{
+						OTLP: &telemetryv1beta1.OTLPOutput{
+							Endpoint: telemetryv1beta1.ValueType{
+								Value: "localhost:4317",
+							},
+							Protocol: telemetryv1beta1.OTLPProtocolGRPC,
+						},
+					},
 				},
 			},
 			expected: &telemetryv1beta1.LogPipeline{
@@ -96,6 +135,14 @@ func TestDefault(t *testing.T) {
 						},
 						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
 							Enabled: ptr.To(false),
+						},
+					},
+					Output: telemetryv1beta1.LogPipelineOutput{
+						OTLP: &telemetryv1beta1.OTLPOutput{
+							Endpoint: telemetryv1beta1.ValueType{
+								Value: "localhost:4317",
+							},
+							Protocol: telemetryv1beta1.OTLPProtocolGRPC,
 						},
 					},
 				},
@@ -126,13 +173,58 @@ func TestDefault(t *testing.T) {
 			},
 		},
 		{
-			name:  "should enable otlp input by default",
-			input: &telemetryv1beta1.LogPipeline{},
+			name: "should enable otlp input by default for OTLP output pipelines",
+			input: &telemetryv1beta1.LogPipeline{
+				Spec: telemetryv1beta1.LogPipelineSpec{
+					Output: telemetryv1beta1.LogPipelineOutput{
+						OTLP: &telemetryv1beta1.OTLPOutput{
+							Endpoint: telemetryv1beta1.ValueType{
+								Value: "localhost:4317",
+							},
+							Protocol: telemetryv1beta1.OTLPProtocolGRPC,
+						},
+					},
+				},
+			},
 			expected: &telemetryv1beta1.LogPipeline{
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Input: telemetryv1beta1.LogPipelineInput{
 						OTLP: &telemetryv1beta1.OTLPInput{
 							Enabled: ptr.To(true),
+						},
+					},
+					Output: telemetryv1beta1.LogPipelineOutput{
+						OTLP: &telemetryv1beta1.OTLPOutput{
+							Endpoint: telemetryv1beta1.ValueType{
+								Value: "localhost:4317",
+							},
+							Protocol: telemetryv1beta1.OTLPProtocolGRPC,
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "should not activate otlp input by default for non-OTLP output pipelines",
+			input: &telemetryv1beta1.LogPipeline{
+				Spec: telemetryv1beta1.LogPipelineSpec{
+					Output: telemetryv1beta1.LogPipelineOutput{
+						HTTP: &telemetryv1beta1.LogPipelineHTTPOutput{
+							Host: telemetryv1beta1.ValueType{
+								Value: "localhost",
+							},
+						},
+					},
+				},
+			},
+			expected: &telemetryv1beta1.LogPipeline{
+				Spec: telemetryv1beta1.LogPipelineSpec{
+					Input: telemetryv1beta1.LogPipelineInput{},
+					Output: telemetryv1beta1.LogPipelineOutput{
+						HTTP: &telemetryv1beta1.LogPipelineHTTPOutput{
+							Host: telemetryv1beta1.ValueType{
+								Value: "localhost",
+							},
 						},
 					},
 				},
