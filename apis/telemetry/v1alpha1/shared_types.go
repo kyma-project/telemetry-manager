@@ -40,7 +40,7 @@ const (
 )
 
 // OTLPOutput OTLP output configuration
-// +kubebuilder:validation:XValidation:rule="((!has(self.path) || size(self.path) <= 0) && (has(self.protocol) && self.protocol == 'grpc')) || (has(self.protocol) && self.protocol == 'http')", message="Path is only available with HTTP protocol"
+// +kubebuilder:validation:XValidation:rule="(has(self.path) && size(self.path) > 0) ? self.protocol == 'http' : true",message="Path is only available with HTTP protocol"
 type OTLPOutput struct {
 	// Protocol defines the OTLP protocol (`http` or `grpc`). Default is `grpc`.
 	// +kubebuilder:validation:Optional
@@ -113,7 +113,7 @@ type OTLPTLS struct {
 
 // OTLPInput defines the collection of push-based metrics that use the OpenTelemetry protocol.
 type OTLPInput struct {
-	// If set to `true`, no push-based OTLP signals are collected. The default is `false`.
+	// Disabled specifies if the 'otlp' input is deactivated. If set to `true`, no push-based OTLP signals are collected. The default is `false`.
 	// +kubebuilder:validation:Optional
 	Disabled bool `json:"disabled,omitempty"`
 	// Namespaces describes whether push-based OTLP signals from specific namespaces are selected. System namespaces are enabled by default.
@@ -122,13 +122,17 @@ type OTLPInput struct {
 }
 
 // NamespaceSelector describes whether signals from specific namespaces are selected.
-// +kubebuilder:validation:XValidation:rule="(has(self.include) == true ? 1 : 0) + (has(self.exclude) == true ? 1 : 0) <= 1",message="Only one of 'include' or 'exclude' can be defined"
+// +kubebuilder:validation:XValidation:rule="!(has(self.include) && has(self.exclude))",message="Only one of 'include' or 'exclude' can be defined"
 type NamespaceSelector struct {
-	// Include signals from the specified Namespace names only.
+	// Include telemetry data from the specified namespace names only. By default, all namespaces (depending on input type: except system namespaces) are included. You cannot specify an include list together with an exclude list.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:items:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
+	// +kubebuilder:validation:items:MaxLength=63
 	Include []string `json:"include,omitempty"`
-	// Exclude signals from the specified Namespace names only.
+	// Exclude telemetry data from the specified namespace names only. By default, all namespaces (depending on input type: except system namespaces) are collected. You cannot specify an exclude list together with an include list.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:items:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
+	// +kubebuilder:validation:items:MaxLength=63
 	Exclude []string `json:"exclude,omitempty"`
 }
 

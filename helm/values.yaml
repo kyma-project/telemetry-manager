@@ -26,6 +26,17 @@ manager:
       requests:
         cpu: 5m
         memory: 50Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      privileged: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+          - ALL
+  securityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
 managerMetrics:
   ports:
     - name: http-metrics
