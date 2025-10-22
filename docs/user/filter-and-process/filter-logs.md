@@ -6,38 +6,39 @@ Filter logs from the OTLP, application, and Istio input to control which data yo
 
 | Source      | Granularity                                       | If you omit the namespaces block... | To collect from **all** namespaces... | To collect from specific namespaces... |
 | :---------- | :------------------------------------------------ | :---------------------------------- | :------------------------------------ | :------------------------------------- |
-| OTLP (default) | Namespace                                         | **includes** system namespaces      | This is the default, no action needed. | Use the `include` or `exclude` selector |
-| Application | Namespace, Container\*                            | **excludes** system namespaces      | Set the **system** attribute to `true`  | Use the `include` or `exclude` selector |
-| Istio       | Namespace, Workload (`selector`), Log content (`filter.expression`) | n/a                                 | You apply the Istio `Telemetry` resource mesh-wide | You apply the Istio `Telemetry` resource to specific namespaces |
+| OTLP (default) | Namespace                                         | **includes** system namespaces      | This is the default, no action needed. | Use the `include` or `exclude` filter |
+| Application | Namespace, Container\*                            | **excludes** system namespaces      | Set the **system** attribute to `true`  | Use the `include` or `exclude` filter |
+| Istio       | Namespace, Workload (`selector`), Log content (`filter.expression`) | n/a                                 | Apply the Istio `Telemetry` resource mesh-wide | Apply the Istio `Telemetry` resource to specific namespaces |
 
 \* The **application** input provides an additional **containers** selector that behaves the same way as the **namespaces** selector.
 
-## Filter OTLP Input by Namespaces
+## Filter OTLP Logs by Namespaces
 
-For logs and metrics, you can filter incoming OTLP data by namespaces. By default, all system namespaces are included.
+You can filter incoming OTLP logs by namespaces. By default, all system namespaces are included. The `include` and `exclude` filters are mutually exclusive.
 
-The following example configures the pipeline to only accept OTLP data from `namespaceA` and `namespaceB`, and explicitly reject data from `namespaceC`:
+- To collect metrics from specific namespaces, use the `include` filter:
 
-```yaml
-spec:
-  input:
-    otlp:
-      namespaces:
-        include:
-          - namespaceA
-          - namespaceB
-        exclude:
-          - namespaceC
-```
+  ```yaml
+  spec:
+    input:
+      otlp:
+        namespaces:
+          include:
+            - namespaceA
+            - namespaceB
+  ```
 
-To collect all namespaces without using any inclusion or exclusion list, use an empty struct syntax like `namespaces: {}`.
+- To collect OTLP logs from all namespaces **except** specific ones, use the `exclude` filter:
 
-```yaml
-spec:
-  input:
-    otlp:
-      namespaces: {}
-```
+  ```yaml
+  spec:
+    input:
+      otlp:
+        namespaces:
+          include:
+            - namespaceA
+            - namespaceB
+  ```
 
 ## Filter Application Logs by Namespace
 
