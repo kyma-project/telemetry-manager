@@ -1,7 +1,6 @@
 package ottl
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl"
@@ -16,27 +15,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-)
-
-type InvalidOTTLSpecError struct {
-	Err error
-}
-
-func (e *InvalidOTTLSpecError) Error() string {
-	return e.Err.Error()
-}
-
-func IsInvalidOTTLSpecError(err error) bool {
-	var errInvalidTransformSpec *InvalidOTTLSpecError
-	return errors.As(err, &errInvalidTransformSpec)
-}
-
-type SignalType string
-
-const (
-	SignalTypeLog    SignalType = "log"
-	SignalTypeMetric SignalType = "metric"
-	SignalTypeTrace  SignalType = "trace"
 )
 
 type TransformSpecValidator struct {

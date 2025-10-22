@@ -1,6 +1,8 @@
 package ottl
 
 import (
+	"errors"
+
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottldatapoint"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottllog"
@@ -12,6 +14,27 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+)
+
+type InvalidOTTLSpecError struct {
+	Err error
+}
+
+func (e *InvalidOTTLSpecError) Error() string {
+	return e.Err.Error()
+}
+
+func IsInvalidOTTLSpecError(err error) bool {
+	var errInvalidTransformSpec *InvalidOTTLSpecError
+	return errors.As(err, &errInvalidTransformSpec)
+}
+
+type SignalType string
+
+const (
+	SignalTypeLog    SignalType = "log"
+	SignalTypeMetric SignalType = "metric"
+	SignalTypeTrace  SignalType = "trace"
 )
 
 // genericParserCollection is a wrapper around ottl.ParserCollection[any] that simplifies the API

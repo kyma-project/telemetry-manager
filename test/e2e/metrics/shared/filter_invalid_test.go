@@ -27,7 +27,10 @@ func TestFilterInvalid(t *testing.T) {
 	pipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineName).
 		WithFilter(telemetryv1alpha1.FilterSpec{
-			Conditions: []string{"invalid_condition_syntax"},
+			Conditions: []string{
+				`Len(resource.attributes["k8s.namespace.name"]) > 0`, // perfectly valid condition with context prefix
+				`attributes["foo"] == "bar"`,                         // invalid condition (missing context prefix)
+			},
 		}).
 		WithOTLPOutput(testutils.OTLPEndpoint("https://backend.example.com:4317")).
 		Build()
