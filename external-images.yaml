@@ -1,6 +1,6 @@
 images:
-  - source: "fluent/fluent-bit@sha256:4d2d8b84bb33b1a641ecd03904c4c610ce374819546cc175bf88025a1c1683e2"
-    tag: "4.1.0" # used by the kyma telemetry module
+  - source: "fluent/fluent-bit@sha256:2a5cb41f99b7c5f3386bb34d42ce3b19eb47fbef6d93b64c0bd4afe9e6ec389c"
+    tag: "4.1.1" # used by the kyma telemetry module
   - source: "rancher/k3s@sha256:f9f125ef9c662a231a98c507afdd3ba9a94d5f02631f946d1d34000ef67f7263"
     tag: "v1.32.8-k3s1" # used by k3d - current k8s version
   - source: "rancher/k3s@sha256:f9f125ef9c662a231a98c507afdd3ba9a94d5f02631f946d1d34000ef67f7263"
