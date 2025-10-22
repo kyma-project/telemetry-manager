@@ -58,7 +58,7 @@ To include system namespaces for **prometheus** and **runtime** metrics without 
 
 ## Collect Metrics From Specific Namespaces
 
-The following example collects runtime metrics **only** from the `foo` and `bar` namespaces:
+The following example collects runtime metrics **only** from `namespaceA` and `namespaceB`:
 
 ```yaml
 ...
@@ -67,13 +67,13 @@ The following example collects runtime metrics **only** from the `foo` and `bar`
       enabled: true
       namespaces:
         include:
-          - foo
-          - bar
+          - namespaceA
+          - namespaceB
 ```
 
 ## Drop Metrics From Specific Namespaces
 
-The following example collects runtime metrics from all namespaces **except** the `foo` and `bar` namespaces:
+The following example collects runtime metrics from all namespaces **except** `namespaceA` and `namespaceB` namespaces:
 
 ```yaml
 ...
@@ -82,6 +82,6 @@ The following example collects runtime metrics from all namespaces **except** th
       enabled: true
       namespaces:
         exclude:
-          - foo
-          - bar
+          - namespaceA
+          - namespaceB
 ```

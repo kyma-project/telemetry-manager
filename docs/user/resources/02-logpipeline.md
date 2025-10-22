@@ -8,7 +8,7 @@ kubectl get crd logpipeline.telemetry.kyma-project.io -o yaml
 
 ## Sample Custom Resource
 
-The following LogPipeline object defines a pipeline integrating with the otlp output. It uses mTLS taking connection details from a Secret, filters OTLP logs from the namespace "foo" and includes application logs emitted in the "myNamespace" namespace.
+The following LogPipeline object defines a pipeline integrating with the otlp output. It uses mTLS taking connection details from a Secret, excludes OTLP logs from "namespaceA" and includes application logs emitted in "namespaceB".
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -19,12 +19,12 @@ spec:
   otlp:
     namespaces:
       exclude:
-      - foo
+      - namespaceA
   input:
     application:
       namespaces:
         include:
-        - myNamespace
+        - namespaceB
       enabled: true
       keepOriginalBody: true
   output:
