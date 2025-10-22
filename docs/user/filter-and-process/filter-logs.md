@@ -14,7 +14,7 @@ Filter logs from the OTLP, application, and Istio input to control which data yo
 
 ## Filter OTLP Input by Namespaces
 
-For logs and metrics, you can filter incoming OTLP data by namespaces. By default, all system namespaces are excluded.
+For logs and metrics, you can filter incoming OTLP data by namespaces. By default, all system namespaces are included.
 
 The following example configures the pipeline to only accept OTLP data from `namespaceA` and `namespaceB`, and explicitly reject data from `namespaceC`:
 
