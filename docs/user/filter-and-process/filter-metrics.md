@@ -7,7 +7,7 @@ Filter metrics from the OTLP, Istio, Prometheus, and runtime input to control wh
 | Source      | Granularity                               | If you omit the namespaces block... | To collect from **all** namespaces... | To collect from specific namespaces... |
 | :---------- | :---------------------------------------- | :---------------------------------- | :------------------------------------ | :------------------------------------- |
 | OTLP (default) | Namespace                                 | includes system namespaces          | This is the default, no action needed. | Use the `include` or `exclude` filter |
-| Istio       | Namespace                                 | includes system namespaces          | This is the default, no action needed. | Use the `include` or `exclude` filter |
+| Istio       | Namespace                                 | excludes system namespaces          | Add `namespaces: {}` to the input's configuration | Use the `include` or `exclude` filter |
 | Prometheus  | Namespace                                 | excludes system namespaces          | Add `namespaces: {}` to the input's configuration | Use the `include` or `exclude` filter |
 | Runtime     | Namespace, Resource Type\*                | excludes system namespaces          | Add `namespaces: {}` to the input's configuration | Use the `include` or `exclude` filter |
 
@@ -46,9 +46,9 @@ For the all inputs (`otlp`, `prometheus`, `istio`, and `runtime`), you can filte
 
 ## Collect Metrics From System Namespaces
 
-For **otlp** and **istio** metrics, system namespaces are included by default.
+For **otlp** metrics, system namespaces are included by default.
 
-To include system namespaces for **prometheus** and **runtime** metrics without specifying any other namespaces, explicitly configure an empty namespace object: `namespaces: {}`:
+To include system namespaces for **prometheus**, **istio**, and **runtime** metrics without specifying any other namespaces, explicitly configure an empty namespace object: `namespaces: {}`:
 
 ```yaml
 ...
