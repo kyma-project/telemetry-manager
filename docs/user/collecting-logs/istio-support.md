@@ -24,6 +24,8 @@ You can only have one mesh-wide Istio `Telemetry` resource. If you also plan to 
 
 ## Enable Istio Logs for a Namespace
 
+Apply the Istio `Telemetry` resource to a specifc namespace:
+
 ```yaml
 apiVersion: telemetry.istio.io/v1
 kind: Telemetry
