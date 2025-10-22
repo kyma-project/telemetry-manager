@@ -8,6 +8,7 @@ manager:
       - --cert-dir=/tmp
       - --high-priority-class-name=telemetry-priority-class-high
       - --normal-priority-class-name=telemetry-priority-class
+      - --enable-fips-mode=false
     env:
       alpineImage: europe-docker.pkg.dev/kyma-project/prod/external/library/alpine:3.22.1
       appLogLevel: info
@@ -25,6 +26,17 @@ manager:
       requests:
         cpu: 5m
         memory: 50Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      privileged: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+          - ALL
+  securityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
 managerMetrics:
   ports:
     - name: http-metrics
