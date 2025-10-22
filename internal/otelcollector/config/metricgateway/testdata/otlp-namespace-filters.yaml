@@ -77,8 +77,8 @@ processors:
         error_mode: ignore
         metrics:
             metric:
-                - instrumentation_scope.name == "io.kyma-project.telemetry/kyma" and (resource.attributes["k8s.namespace.name"] == "kube-system" or resource.attributes["k8s.namespace.name"] == "istio-system")
-                - instrumentation_scope.name == "io.kyma-project.telemetry/kyma" and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "monitoring" or resource.attributes["k8s.namespace.name"] == "observability")
+                - not(instrumentation_scope.name == "io.kyma-project.telemetry/kyma") and (resource.attributes["k8s.namespace.name"] == "kube-system" or resource.attributes["k8s.namespace.name"] == "istio-system")
+                - not(instrumentation_scope.name == "io.kyma-project.telemetry/kyma") and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "monitoring" or resource.attributes["k8s.namespace.name"] == "observability")
     k8sattributes:
         auth_type: serviceAccount
         passthrough: false
