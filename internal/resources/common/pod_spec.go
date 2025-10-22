@@ -184,6 +184,23 @@ func WithGoMemLimitEnvVar(memory resource.Quantity) ContainerOption {
 	}
 }
 
+func WithGoDebugEnvVar(enableFIPSMode bool) ContainerOption {
+	var value string
+	if enableFIPSMode {
+		// Enable FIPS only mode and disable TLS ML-KEM as it is not FIPS compliant (https://pkg.go.dev/crypto/tls#Config.CurvePreferences)
+		value = "fips140=only,tlsmlkem=0"
+	} else {
+		value = "fips140=off"
+	}
+
+	return func(c *corev1.Container) {
+		c.Env = append(c.Env, corev1.EnvVar{
+			Name:  common.EnvVarGoDebug,
+			Value: value,
+		})
+	}
+}
+
 func WithResources(resources corev1.ResourceRequirements) ContainerOption {
 	return func(c *corev1.Container) {
 		c.Resources = resources

@@ -92,7 +92,7 @@ type GatewayApplyOptions struct {
 }
 
 //nolint:dupl // repeating the code as we have three different signals
-func NewLogGatewayApplierDeleter(image, namespace, priorityClassName string) *GatewayApplierDeleter {
+func NewLogGatewayApplierDeleter(image, namespace, priorityClassName string, enableFIPSMode bool) *GatewayApplierDeleter {
 	extraLabels := map[string]string{
 		commonresources.LabelKeyTelemetryLogIngest: "true",
 		commonresources.LabelKeyTelemetryLogExport: "true",
@@ -119,12 +119,13 @@ func NewLogGatewayApplierDeleter(image, namespace, priorityClassName string) *Ga
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
+			commonresources.WithGoDebugEnvVar(enableFIPSMode),
 		},
 	}
 }
 
 //nolint:dupl // repeating the code as we have three different signals
-func NewMetricGatewayApplierDeleter(image, namespace, priorityClassName string) *GatewayApplierDeleter {
+func NewMetricGatewayApplierDeleter(image, namespace, priorityClassName string, enableFIPSMode bool) *GatewayApplierDeleter {
 	extraLabels := map[string]string{
 		commonresources.LabelKeyTelemetryMetricIngest: "true",
 		commonresources.LabelKeyTelemetryMetricExport: "true",
@@ -151,12 +152,13 @@ func NewMetricGatewayApplierDeleter(image, namespace, priorityClassName string) 
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
+			commonresources.WithGoDebugEnvVar(enableFIPSMode),
 		},
 	}
 }
 
 //nolint:dupl // repeating the code as we have three different signals
-func NewTraceGatewayApplierDeleter(image, namespace, priorityClassName string) *GatewayApplierDeleter {
+func NewTraceGatewayApplierDeleter(image, namespace, priorityClassName string, enableFIPSMode bool) *GatewayApplierDeleter {
 	extraLabels := map[string]string{
 		commonresources.LabelKeyTelemetryTraceIngest: "true",
 		commonresources.LabelKeyTelemetryTraceExport: "true",
@@ -183,6 +185,7 @@ func NewTraceGatewayApplierDeleter(image, namespace, priorityClassName string) *
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
+			commonresources.WithGoDebugEnvVar(enableFIPSMode),
 		},
 	}
 }
