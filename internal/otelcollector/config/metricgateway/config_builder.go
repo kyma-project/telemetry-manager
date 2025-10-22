@@ -178,7 +178,7 @@ func (b *Builder) addDropIfOTLPInputDisabledProcessor() buildComponentFunc {
 			}
 
 			return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
-				Metric: []string{common.ScopeNameEquals(fmt.Sprintf("not(%s)", common.InstrumentationScopeKyma))},
+				Metric: []string{fmt.Sprintf("not(%s)", common.ScopeNameEquals(common.InstrumentationScopeKyma))},
 			})
 		},
 	)
