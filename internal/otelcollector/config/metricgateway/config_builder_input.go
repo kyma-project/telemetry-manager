@@ -62,7 +62,7 @@ func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
 
 func (b *Builder) addInputRoutingExporter() buildComponentFunc {
 	return b.AddExporter(
-		formatForwardConnectorID,
+		b.StaticComponentID(common.ComponentIDForwardConnector),
 		func(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline) (any, common.EnvVars, error) {
 			return &common.ForwardConnector{}, nil, nil
 		},

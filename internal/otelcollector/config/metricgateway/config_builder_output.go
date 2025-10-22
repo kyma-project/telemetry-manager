@@ -11,7 +11,7 @@ import (
 
 func (b *Builder) addOutputForwardReceiver() buildComponentFunc {
 	return b.AddReceiver(
-		formatForwardConnectorID,
+		b.StaticComponentID(common.ComponentIDForwardConnector),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return &common.ForwardConnector{}
 		},

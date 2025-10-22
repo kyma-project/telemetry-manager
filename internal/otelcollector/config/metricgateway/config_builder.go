@@ -40,23 +40,21 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 	b.EnvVars = make(common.EnvVars)
 
 	queueSize := common.BatchingMaxQueueSize / len(pipelines)
+	if err := b.AddServicePipeline(ctx, nil, "metrics/input",
+		b.addOTLPReceiver(),
+		b.addKymaStatsReceiver(),
+		b.addMemoryLimiterProcessor(),
+		b.addK8sAttributesProcessor(opts),
+		b.addServiceEnrichmentProcessor(),
+		b.addSetInstrumentationScopeToKymaProcessor(opts),
+		b.addDropKymaAttributesProcessor(),
+		b.addInsertClusterAttributesProcessor(opts),
+		b.addInputRoutingExporter(),
+	); err != nil {
+		return nil, nil, fmt.Errorf("failed to add input service pipeline: %w", err)
+	}
 
 	for _, pipeline := range pipelines {
-		inputPipelineID := formatInputMetricServicePipelineID(&pipeline)
-		if err := b.AddServicePipeline(ctx, &pipeline, inputPipelineID,
-			b.addOTLPReceiver(),
-			b.addKymaStatsReceiver(),
-			b.addMemoryLimiterProcessor(),
-			b.addK8sAttributesProcessor(opts),
-			b.addServiceEnrichmentProcessor(),
-			b.addSetInstrumentationScopeToKymaProcessor(opts),
-			b.addDropKymaAttributesProcessor(),
-			b.addInsertClusterAttributesProcessor(opts),
-			b.addInputRoutingExporter(),
-		); err != nil {
-			return nil, nil, fmt.Errorf("failed to add input service pipeline: %w", err)
-		}
-
 		outputPipelineID := formatOutputServicePipelineID(&pipeline)
 		if err := b.AddServicePipeline(ctx, &pipeline, outputPipelineID,
 			b.addOutputForwardReceiver(),
@@ -85,8 +83,8 @@ func formatInputMetricServicePipelineID(mp *telemetryv1alpha1.MetricPipeline) st
 	return fmt.Sprintf("metrics/%s-input", mp.Name)
 }
 
-func formatForwardConnectorID(mp *telemetryv1alpha1.MetricPipeline) string {
-	return fmt.Sprintf(common.ComponentIDForwardConnector, mp.Name)
+func formatForwardConnectorID() string {
+	return common.ComponentIDForwardConnector
 }
 
 func formatOutputServicePipelineID(mp *telemetryv1alpha1.MetricPipeline) string {
