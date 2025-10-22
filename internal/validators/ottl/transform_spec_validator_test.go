@@ -28,6 +28,7 @@ func TestTransformValidator(t *testing.T) {
 	runTransformValidatorTestCases(t, "log", SignalTypeLog, transformLogContextTestCases())
 	runTransformValidatorTestCases(t, "metric", SignalTypeMetric, transformMetricContextTestCases())
 	runTransformValidatorTestCases(t, "datapoint", SignalTypeMetric, transformDataPointContextTestCases())
+	runTransformValidatorTestCases(t, "mixed", SignalTypeMetric, transformMixedMetricContextTestCases())
 }
 
 func runTransformValidatorTestCases(t *testing.T, context string, signalType SignalType, tests []transformTestCase) {
@@ -226,6 +227,23 @@ func transformLogContextTestCases() []transformTestCase {
 			statements: []string{`set(log.attributes["processed"], "true")`},
 		},
 		{
+			name: "multiple conditions and statements",
+			conditions: []string{
+				`log.severity_text == "ERROR"`,
+				`IsMatch(log.body, "database")`,
+			},
+			statements: []string{
+				`set(log.attributes["error_category"], "database")`,
+				`set(log.attributes["processed"], "true")`,
+			},
+		},
+		{
+			name:            "invalid context",
+			conditions:      []string{`log.severity_text == "ERROR"`},
+			statements:      []string{`set(datapoint.attributes["error_category"], "database")`},
+			isErrorExpected: true,
+		},
+		{
 			name:            "statement used as condition",
 			conditions:      []string{`set(log.attributes["processed"], "true")`},
 			isErrorExpected: true,
@@ -271,26 +289,6 @@ func transformLogContextTestCases() []transformTestCase {
 			statements:      []string{`set(log.invalid["processed"], "true")`},
 			isErrorExpected: true,
 		},
-		{
-			name: "multiple conditions and statements",
-			conditions: []string{
-				`log.severity_text == "ERROR"`,
-				`IsMatch(log.body, "database")`,
-			},
-			statements: []string{
-				`set(log.attributes["error_category"], "database")`,
-				`set(log.attributes["processed"], "true")`,
-			},
-		},
-		{
-			name:       "body manipulation",
-			statements: []string{`replace_pattern(log.body, "password=\\w+", "password=***")`},
-		},
-		{
-			name:       "severity manipulation",
-			conditions: []string{`log.severity_number >= 17`},
-			statements: []string{`set(log.severity_text, "CRITICAL")`},
-		},
 	}
 }
 
@@ -308,6 +306,27 @@ func transformSpanContextTestCases() []transformTestCase {
 		{
 			name:       "statement only",
 			statements: []string{`set(span.attributes["processed"], "true")`},
+		},
+		{
+			name: "multiple conditions and statements",
+			conditions: []string{
+				`span.name == "HTTP GET"`,
+				`span.status.code == 1`,
+			},
+			statements: []string{
+				`set(span.attributes["http_method"], "GET")`,
+				`set(span.attributes["processed"], "true")`,
+			},
+		},
+		{
+			name:       "uses IsRootSpan() function",
+			statements: []string{`set(span.attributes["isRoot"], "true") where IsRootSpan()`},
+		},
+		{
+			name:            "invalid context",
+			conditions:      []string{`span.name == "HTTP GET"`},
+			statements:      []string{`set(datapoint.attributes["http_method"], "GET")`},
+			isErrorExpected: true,
 		},
 		{
 			name:            "statement used as condition",
@@ -355,26 +374,6 @@ func transformSpanContextTestCases() []transformTestCase {
 			statements:      []string{`set(span.invalid["processed"], "true")`},
 			isErrorExpected: true,
 		},
-		{
-			name: "multiple conditions and statements",
-			conditions: []string{
-				`span.name == "HTTP GET"`,
-				`span.status.code == 1`,
-			},
-			statements: []string{
-				`set(span.attributes["http_method"], "GET")`,
-				`set(span.attributes["processed"], "true")`,
-			},
-		},
-		{
-			name:       "span name manipulation",
-			statements: []string{`replace_pattern(span.name, "^HTTP\\s+", "HTTP_")`},
-		},
-		{
-			name:       "span status manipulation",
-			conditions: []string{`span.status.code == 2`},
-			statements: []string{`set(span.status.message, "Request failed")`},
-		},
 	}
 }
 
@@ -394,8 +393,20 @@ func transformSpanEventContextTestCases() []transformTestCase {
 			statements: []string{`set(spanevent.attributes["processed"], "true")`},
 		},
 		{
-			name:            "statement used as condition",
-			conditions:      []string{`set(spanevent.attributes["processed"], "true")`},
+			name: "multiple conditions and statements",
+			conditions: []string{
+				`spanevent.name == "exception"`,
+				`IsMatch(spanevent.attributes["exception.type"], ".*Error")`,
+			},
+			statements: []string{
+				`set(spanevent.attributes["severity"], "high")`,
+				`set(spanevent.attributes["processed"], "true")`,
+			},
+		},
+		{
+			name:            "invalid context",
+			conditions:      []string{`spanevent.name == "exception"`},
+			statements:      []string{`set(datapoint.attributes["severity"], "high")`},
 			isErrorExpected: true,
 		},
 		{
@@ -439,25 +450,6 @@ func transformSpanEventContextTestCases() []transformTestCase {
 			statements:      []string{`set(spanevent.invalid["processed"], "true")`},
 			isErrorExpected: true,
 		},
-		{
-			name: "multiple conditions and statements",
-			conditions: []string{
-				`spanevent.name == "exception"`,
-				`IsMatch(spanevent.attributes["exception.type"], ".*Error")`,
-			},
-			statements: []string{
-				`set(spanevent.attributes["severity"], "high")`,
-				`set(spanevent.attributes["processed"], "true")`,
-			},
-		},
-		{
-			name:       "event name manipulation",
-			statements: []string{`replace_pattern(spanevent.name, "^exception$", "error_event")`},
-		},
-		{
-			name:       "timestamp manipulation",
-			statements: []string{`set(spanevent.time_unix_nano, Now())`},
-		},
 	}
 }
 
@@ -475,6 +467,23 @@ func transformMetricContextTestCases() []transformTestCase {
 		{
 			name:       "statement only",
 			statements: []string{`set(metric.description, "Total HTTP requests")`},
+		},
+		{
+			name: "multiple conditions and statements",
+			conditions: []string{
+				`metric.name == "http_requests_total"`,
+				`metric.type == 1`,
+			},
+			statements: []string{
+				`set(metric.description, "Total HTTP requests")`,
+				`set(metric.unit, "requests")`,
+			},
+		},
+		{
+			name:            "invalid context",
+			conditions:      []string{`metric.name == "http_requests_total"`},
+			statements:      []string{`set(log.attributes["high_value"], "true")`},
+			isErrorExpected: true,
 		},
 		{
 			name:            "statement used as condition",
@@ -523,24 +532,11 @@ func transformMetricContextTestCases() []transformTestCase {
 			isErrorExpected: true,
 		},
 		{
-			name: "multiple conditions and statements",
-			conditions: []string{
-				`metric.name == "http_requests_total"`,
-				`metric.type == 1`,
-			},
-			statements: []string{
-				`set(metric.description, "Total HTTP requests")`,
-				`set(metric.unit, "requests")`,
-			},
-		},
-		{
-			name:       "name manipulation",
-			statements: []string{`replace_pattern(metric.name, "^kube_", "k8s_")`},
-		},
-		{
-			name:       "unit manipulation",
-			conditions: []string{`metric.unit == "ms"`},
-			statements: []string{`set(metric.unit, "milliseconds")`},
+			//https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/transformprocessor#context-inference
+			name:            "context inference is not possible",
+			conditions:      []string{`metric.name == "system.processes.count"`},
+			statements:      []string{`convert_sum_to_gauge()`, `limit(datapoint.attributes, 100, ["host.name"])`},
+			isErrorExpected: true,
 		},
 	}
 }
@@ -559,6 +555,23 @@ func transformDataPointContextTestCases() []transformTestCase {
 		{
 			name:       "statement only",
 			statements: []string{`set(datapoint.attributes["processed"], "true")`},
+		},
+		{
+			name: "multiple conditions and statements",
+			conditions: []string{
+				`datapoint.value_int > 100`,
+				`datapoint.time_unix_nano != nil`,
+			},
+			statements: []string{
+				`set(datapoint.attributes["high_value"], "true")`,
+				`set(datapoint.attributes["processed"], "true")`,
+			},
+		},
+		{
+			name:            "invalid context",
+			conditions:      []string{`datapoint.value_int > 100`},
+			statements:      []string{`set(log.attributes["high_value"], "true")`},
+			isErrorExpected: true,
 		},
 		{
 			name:            "statement used as condition",
@@ -606,25 +619,23 @@ func transformDataPointContextTestCases() []transformTestCase {
 			statements:      []string{`set(datapoint.aattributes["processed"], "true"`},
 			isErrorExpected: true,
 		},
+	}
+}
+
+func transformMixedMetricContextTestCases() []transformTestCase {
+	return []transformTestCase{
 		{
-			name: "multiple conditions and statements",
+			name:       "metric and datapoint access",
+			conditions: []string{`metric.name == "http_requests_total" and datapoint.value_int > 100`},
+			statements: []string{`set(datapoint.attributes["high_value"], "true")`},
+		},
+		{
+			name: "datapoint and resource access",
 			conditions: []string{
 				`datapoint.value_int > 100`,
-				`datapoint.time_unix_nano != nil`,
+				`resource.attributes["environment"] == "prod"`,
 			},
-			statements: []string{
-				`set(datapoint.attributes["high_value"], "true")`,
-				`set(datapoint.attributes["processed"], "true")`,
-			},
-		},
-		{
-			name:       "value manipulation",
-			conditions: []string{`datapoint.value_double < 0`},
-			statements: []string{`set(datapoint.value_double, 0.0)`},
-		},
-		{
-			name:       "timestamp manipulation",
-			statements: []string{`set(datapoint.start_time_unix_nano, datapoint.time_unix_nano)`},
+			statements: []string{`set(datapoint.attributes["high_value_in_prod"], "true")`},
 		},
 	}
 }
