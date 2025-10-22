@@ -5,7 +5,7 @@ To collect logs that your applications write to `stdout` and `stderr`, create a 
 ## Prerequisites
 
 - You have the Telemetry module in your cluster.
-- You have access to Kyma dashboard. Alternatively, if you prefer CLI, you have installed [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl).
+- You have access to Kyma dashboard. Alternatively, if you prefer CLI, you need [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl).
 
 ## Context
 
@@ -38,5 +38,5 @@ To reduce data volume, you can disable this behavior. Set the parameter to `fals
   ...
     input:
       application:
-        enabled: false     # Default is true
+        keepOriginalBody: false     # Default is true
 ```

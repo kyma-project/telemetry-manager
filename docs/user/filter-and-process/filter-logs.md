@@ -14,7 +14,7 @@ Filter logs from the OTLP, application, and Istio input to control which data yo
 
 ## Filter OTLP Logs by Namespaces
 
-You can filter incoming OTLP logs by namespaces. By default, all system namespaces are included. The `include` and `exclude` filters are mutually exclusive.
+You can filter incoming OTLP logs by namespace. By default, all system namespaces are included. The `include` and `exclude` filters are mutually exclusive.
 
 - To collect metrics from specific namespaces, use the `include` filter:
 
@@ -35,7 +35,7 @@ You can filter incoming OTLP logs by namespaces. By default, all system namespac
     input:
       otlp:
         namespaces:
-          include:
+          exclude:
             - namespaceA
             - namespaceB
   ```
@@ -69,7 +69,7 @@ You can control which namespaces to collect logs from using `include`, `exclude`
 
 ## Filter Application Logs by Container
 
-You can also filter logs based on the container name using `include` and `exclude` filters. These filters apply in addition to any namespace filters.
+You can also filter logs based on the container name with `include` and `exclude` filters. These filters apply in addition to any namespace filters.
 
 The following pipeline collects input from all namespaces excluding `kyma-system` and only from the `istio-proxy` containers:
 
@@ -90,7 +90,7 @@ The following pipeline collects input from all namespaces excluding `kyma-system
 
 ## Collect Application Logs from System Namespaces
 
-By default, logs from `kube-system`, `istio-system`, and `kyma-system` are excluded. To override this and collect logs from them, set the **system** attribute to true:
+By default, application logs from `kube-system`, `istio-system`, and `kyma-system` are excluded. To override this and collect logs from them, set the **system** attribute to true:
 
 ```yaml
   ...
@@ -101,39 +101,9 @@ By default, logs from `kube-system`, `istio-system`, and `kyma-system` are exclu
           system: true
 ```
 
-## Enable Istio Logs for a Namespace
+## Select Istio Logs from a Specific Application
 
-1. Export the name of the target namespace as environment variable:
-
-   ```bash
-   export YOUR_NAMESPACE=<NAMESPACE_NAME>
-   ```
-
-2. Apply the Istio `Telemetry` resource:
-
-   ```yaml
-   cat <<EOF | kubectl apply -f -
-   apiVersion: telemetry.istio.io/v1
-   kind: Telemetry
-   metadata:
-     name: access-config
-     namespace: $YOUR_NAMESPACE
-   spec:
-     accessLogging:
-       - providers:
-         - name: kyma-logs
-   EOF
-   ```
-
-3. Verify that the resource is applied to the target namespace:
-
-   ```bash
-   kubectl -n $YOUR_NAMESPACE get telemetries.telemetry.istio.io
-   ```
-
-## Enable Istio Logs for a Specific Workload
-
-To configure label-based selection of workloads, use a [selector](https://istio.io/latest/docs/reference/config/type/workload-selector/#WorkloadSelector).
+To limit logging to a single application within a namespace, configure label-based selection for this workload with a [selector](https://istio.io/latest/docs/reference/config/type/workload-selector/#WorkloadSelector).
 
 1. Export the name of the workload's namespace and label as environment variables:
 
@@ -145,7 +115,6 @@ To configure label-based selection of workloads, use a [selector](https://istio.
 2. Apply the Istio `Telemetry` resource with the selector:
 
    ```yaml
-   cat <<EOF | kubectl apply -f -
    apiVersion: telemetry.istio.io/v1
    kind: Telemetry
    metadata:
@@ -158,7 +127,6 @@ To configure label-based selection of workloads, use a [selector](https://istio.
      accessLogging:
        - providers:
          - name: kyma-logs
-   EOF
    ```
 
 3. Verify that the resource is applied to the target namespace:
@@ -167,40 +135,11 @@ To configure label-based selection of workloads, use a [selector](https://istio.
    kubectl -n $YOUR_NAMESPACE get telemetries.telemetry.istio.io
    ```
 
-## Enable Istio Logs for the Ingress Gateway
-
-To monitor all traffic entering your mesh, enable access logs on the Istio Ingress Gateway (instead of the individual proxies of your workloads).
-
-1. Apply the Istio `Telemetry` resource to the `istio-system` namespace, selecting the gateway Pods:
-
-   ```yaml
-   cat <<EOF | kubectl apply -f -
-   apiVersion: telemetry.istio.io/v1
-   kind: Telemetry
-   metadata:
-     name: access-config
-     namespace: istio-system
-   spec:
-     selector:
-       matchLabels:
-         istio: ingressgateway
-     accessLogging:
-       - providers:
-         - name: kyma-logs
-   EOF
-   ```
-
-2. Verify that the resource is applied to the `istio-system` namespace:
-
-   ```bash
-   kubectl -n istio-system get telemetries.telemetry.istio.io
-   ```
-
-## Filter Istio Logs
+## Filter Istio Logs by Content
 
 To reduce noise and cost, filter your Istio access logs. This is especially useful for filtering out traffic that doesn't use an HTTP-based protocol, as those log entries often lack useful details.
 
-Add a `filter` expression to the same `accessLogging` block you used to enable the logs. The expression uses [Envoy attributes](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/attributes) to define which log entries to keep.
+Add a `filter` expression to the same `accessLogging` block that you used to enable the logs. The expression uses [Envoy attributes](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/attributes) to define which log entries to keep.
 
 The following example enables mesh-wide logging but only keeps logs that have a defined request protocol, effectively filtering out most non-HTTP traffic.
 

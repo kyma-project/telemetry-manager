@@ -1,6 +1,6 @@
 # Configure Istio Access Logs
 
-To monitor traffic in your service mesh, configure Istio to send access logs in OTLP format. The LogPipeline automatically receives these logs through its default OTLP input. You can filter the collected logs by namespace to focus on specific workloads.
+To monitor traffic in your service mesh, configure Istio to send access logs. The LogPipeline automatically receives these logs through its default OTLP input.
 
 ## Prerequisites
 
@@ -13,7 +13,7 @@ Istio access logs help you monitor the "four golden signals" (latency, traffic, 
 
 By default, these logs are disabled because they can generate a high volume of data. To collect them, you apply an [Istio](https://istio.io/latest/docs/reference/config/telemetry/) `Telemetry` resource to a specific namespace, for a specific workload, or for the entire mesh.
 
-After enabling logs, you can add a filter to reduce noise and focus on relevant data.
+After enabling Istio access logs, reduce data volume and costs by filtering them (see [Filter Logs](../filter-and-process/filter-logs.md)).
 
 > **Caution:**
 > Enabling access logs, especially for the entire mesh, can significantly increase log volume and may lead to higher storage costs. Enable this feature only for the resources or components that you want to monitor.
@@ -30,8 +30,7 @@ The Istio module provides a preconfigured [extension provider](https://istio.io/
 
 2. Apply the Istio `Telemetry` resource:
 
-    ```bash
-    cat <<EOF | kubectl apply -f -
+    ```yaml
     apiVersion: telemetry.istio.io/v1
     kind: Telemetry
     metadata:
@@ -41,7 +40,6 @@ The Istio module provides a preconfigured [extension provider](https://istio.io/
       accessLogging:
         - providers:
           - name: kyma-logs
-    EOF
     ```
 
 3. Verify that the resource is applied to the target namespace:
@@ -63,8 +61,7 @@ To configure label-based selection of workloads, use a [selector](https://istio.
 
 2. Apply the Istio `Telemetry` resource with the selector:
 
-    ```bash
-    cat <<EOF | kubectl apply -f -
+    ```yaml
     apiVersion: telemetry.istio.io/v1
     kind: Telemetry
     metadata:
@@ -77,7 +74,6 @@ To configure label-based selection of workloads, use a [selector](https://istio.
       accessLogging:
         - providers:
           - name: kyma-logs
-    EOF
     ```
 
 3. Verify that the resource is applied to the target namespace:
