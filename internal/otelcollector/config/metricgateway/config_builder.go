@@ -178,7 +178,7 @@ func (b *Builder) addDropIfOTLPInputDisabledProcessor() buildComponentFunc {
 			}
 
 			return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
-				Metric: []string{common.ScopeNameEquals(common.InstrumentationScopeKyma)},
+				Metric: []string{common.ScopeNameEquals(fmt.Sprintf("not(%s)", common.InstrumentationScopeKyma))},
 			})
 		},
 	)
@@ -197,7 +197,7 @@ func (b *Builder) addOTLPNamespaceFilterProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return filterByNamespaceProcessorConfig(input.OTLP.Namespaces, common.ScopeNameEquals(common.InstrumentationScopeKyma))
+			return filterByNamespaceProcessorConfig(input.OTLP.Namespaces, fmt.Sprintf("not(%s)", common.ScopeNameEquals(common.InstrumentationScopeKyma)))
 		},
 	)
 }
