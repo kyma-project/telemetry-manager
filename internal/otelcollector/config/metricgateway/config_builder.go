@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
-	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 )
 
 type buildComponentFunc = common.BuildComponentFunc[*telemetryv1alpha1.MetricPipeline]
@@ -42,6 +42,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 	b.EnvVars = make(common.EnvVars)
 
 	queueSize := common.BatchingMaxQueueSize / len(pipelines)
+
 	if err := b.AddServicePipeline(ctx, nil, "metrics/input",
 		b.addOTLPReceiver(),
 		b.addKymaStatsReceiver(),
