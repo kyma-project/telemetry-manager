@@ -87,6 +87,19 @@ The following pipeline collects input from all namespaces excluding `kyma-system
       ...
 ```
 
+## Collect Application Logs from System Namespaces
+
+By default, logs from `kube-system`, `istio-system`, and `kyma-system` are excluded. To override this and collect logs from them, set the **system** attribute to true:
+
+```yaml
+  ...
+  input:
+    application:
+      enabled: true
+        namespaces:
+          system: true
+```
+
 ## Enable Istio Logs for a Namespace
 
 1. Export the name of the target namespace as environment variable:

@@ -26,18 +26,7 @@ The **application** input is enabled by default. To create a pipeline that only 
 
 By default, input is collected from all namespaces, except the system namespaces `kube-system`, `istio-system`, `kyma-system`, which are excluded by default.
 
-## Collect Application Logs from System Namespaces
-
-By default, logs from `kube-system`, `istio-system`, and `kyma-system` are excluded. To override this and collect logs from them, set the **system** attribute to true:
-
-```yaml
-  ...
-  input:
-    application:
-      enabled: true
-        namespaces:
-          system: true
-```
+> **TIP:** To select logs from specific namespaces and containers, or to include system namespaces, see [Filter Logs](../filter-and-process/filter-logs.md).
 
 ## Discard the Original Log Body
 
