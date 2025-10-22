@@ -13,34 +13,36 @@ Filter metrics from the OTLP, Istio, Prometheus, and runtime input to control wh
 
 \* The **runtime** input provides additional filters for Kubernetes resources such as Pods or Nodes. For details, see [Select Resource Types](../collecting-metrics/runtime-input.md#select-resource-types).
 
-## Filter OTLP Input by Namespaces
 
-For logs and metrics, you can filter incoming OTLP data by namespaces. By default, all system namespaces are included.
+## Filter Metrics by Namespace
 
-The following example configures the pipeline to only accept OTLP data from `namespaceA` and `namespaceB`, and explicitly reject data from `namespaceC`:
+For the all inputs (`otlp`, `prometheus`, `istio`, and `runtime`), you can filter incoming metrics by namespace. The `include` and `exclude` filters are mutually exclusive.
 
-```yaml
-spec:
-  input:
-    otlp:
-      namespaces:
-        include:
-          - namespaceA
-          - namespaceB
-        exclude:
-          - namespaceC
-...
-```
+- To collect metrics from specific namespaces, use the `include` filter:
 
-To collect all namespaces without using any inclusion or exclusion list, use an empty struct syntax like `namespaces: {}`.
+  ```yaml
+  ...
+    input:
+      <otlp | prometheus | istio | runtime>:
+        enabled: true
+        namespaces:
+          include:
+            - namespaceA
+            - namespaceB
+  ```
 
-```yaml
-spec:
-  input:
-    otlp:
-      namespaces: {}
-...
-```
+- To collect metrics from all namespaces **except** specific ones, use the `exclude` filter:
+
+  ```yaml
+  ...
+    input:
+      <otlp | prometheus | istio | runtime>:
+        enabled: true
+        namespaces:
+          exclude:
+            - namespaceA
+            - namespaceB
+  ```
 
 ## Collect Metrics From System Namespaces
 
@@ -54,34 +56,4 @@ To include system namespaces for **prometheus** and **runtime** metrics without 
     <prometheus | runtime>:
       enabled: true
       namespaces: {}
-```
-
-## Collect Metrics From Specific Namespaces
-
-The following example collects runtime metrics **only** from `namespaceA` and `namespaceB`:
-
-```yaml
-...
-  input:
-    runtime:
-      enabled: true
-      namespaces:
-        include:
-          - namespaceA
-          - namespaceB
-```
-
-## Drop Metrics From Specific Namespaces
-
-The following example collects runtime metrics from all namespaces **except** `namespaceA` and `namespaceB` namespaces:
-
-```yaml
-...
-  input:
-    runtime:
-      enabled: true
-      namespaces:
-        exclude:
-          - namespaceA
-          - namespaceB
 ```
