@@ -8,7 +8,27 @@ extensions:
         endpoint: 127.0.0.1:1777
 service:
     pipelines:
-        metrics/cls-input:
+        metrics/cls-output:
+            receivers:
+                - forward/output
+            processors:
+                - filter/cls-filter-by-namespace-otlp-input
+                - transform/user-defined-cls
+                - filter/user-defined-cls
+                - batch
+            exporters:
+                - otlp/cls
+        metrics/dynatrace-output:
+            receivers:
+                - forward/output
+            processors:
+                - filter/dynatrace-filter-by-namespace-otlp-input
+                - transform/user-defined-dynatrace
+                - filter/user-defined-dynatrace
+                - batch
+            exporters:
+                - otlp/dynatrace
+        metrics/input:
             receivers:
                 - otlp
                 - kymastats
@@ -20,16 +40,7 @@ service:
                 - resource/drop-kyma-attributes
                 - resource/insert-cluster-attributes
             exporters:
-                - forward/cls
-        metrics/cls-output:
-            receivers:
-                - forward/cls
-            processors:
-                - filter/cls-filter-by-namespace-otlp-input
-                - transform/user-defined-cls
-                - batch
-            exporters:
-                - otlp/cls
+                - forward/output
     telemetry:
         metrics:
             readers:
@@ -78,7 +89,22 @@ processors:
         error_mode: ignore
         metrics:
             metric:
-                - not(instrumentation_scope.name == "io.kyma-project.telemetry/runtime" or resource.attributes["kyma.input.name"] == "prometheus" or instrumentation_scope.name == "io.kyma-project.telemetry/istio" or instrumentation_scope.name == "io.kyma-project.telemetry/kyma") and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "apps")
+                - not(instrumentation_scope.name == "io.kyma-project.telemetry/runtime" or resource.attributes["kyma.input.name"] == "prometheus" or instrumentation_scope.name == "io.kyma-project.telemetry/istio" or instrumentation_scope.name == "io.kyma-project.telemetry/kyma") and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "apps-cls")
+    filter/dynatrace-filter-by-namespace-otlp-input:
+        error_mode: ignore
+        metrics:
+            metric:
+                - not(instrumentation_scope.name == "io.kyma-project.telemetry/runtime" or resource.attributes["kyma.input.name"] == "prometheus" or instrumentation_scope.name == "io.kyma-project.telemetry/istio" or instrumentation_scope.name == "io.kyma-project.telemetry/kyma") and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "apps-dynatrace")
+    filter/user-defined-cls:
+        error_mode: ignore
+        metrics:
+            datapoint:
+                - metric.type == METRIC_DATA_TYPE_GAUGE
+    filter/user-defined-dynatrace:
+        error_mode: ignore
+        metrics:
+            datapoint:
+                - metric.type == METRIC_DATA_TYPE_SUMMARY
     k8sattributes:
         auth_type: serviceAccount
         passthrough: false
@@ -155,16 +181,33 @@ processors:
                 - set(attributes["environment"], "prod")
               conditions:
                 - resource.attributes["k8s.namespace.name"] == "production"
+    transform/user-defined-dynatrace:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(attributes["environment"], "staging")
+              conditions:
+                - resource.attributes["k8s.namespace.name"] == "staging"
 exporters:
     otlp/cls:
         endpoint: ${OTLP_ENDPOINT_CLS}
         sending_queue:
             enabled: true
-            queue_size: 256
+            queue_size: 128
+        retry_on_failure:
+            enabled: true
+            initial_interval: 5s
+            max_interval: 30s
+            max_elapsed_time: 300s
+    otlp/dynatrace:
+        endpoint: ${OTLP_ENDPOINT_DYNATRACE}
+        sending_queue:
+            enabled: true
+            queue_size: 128
         retry_on_failure:
             enabled: true
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
 connectors:
-    forward/cls: {}
+    forward/output: {}

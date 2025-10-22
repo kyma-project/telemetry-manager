@@ -8,28 +8,23 @@ extensions:
         endpoint: 127.0.0.1:1777
 service:
     pipelines:
-        metrics/cls-input:
-            receivers:
-                - otlp
-                - kymastats
-            processors:
-                - memory_limiter
-                - k8sattributes
-                - service_enrichment
-                - transform/set-instrumentation-scope-kyma
-                - resource/drop-kyma-attributes
-                - resource/insert-cluster-attributes
-            exporters:
-                - forward/cls
         metrics/cls-output:
             receivers:
-                - forward/cls
+                - forward/output
             processors:
                 - transform/user-defined-cls
                 - batch
             exporters:
                 - otlp/cls
-        metrics/dynatrace-input:
+        metrics/dynatrace-output:
+            receivers:
+                - forward/output
+            processors:
+                - transform/user-defined-dynatrace
+                - batch
+            exporters:
+                - otlp/dynatrace
+        metrics/input:
             receivers:
                 - otlp
                 - kymastats
@@ -41,15 +36,7 @@ service:
                 - resource/drop-kyma-attributes
                 - resource/insert-cluster-attributes
             exporters:
-                - forward/dynatrace
-        metrics/dynatrace-output:
-            receivers:
-                - forward/dynatrace
-            processors:
-                - transform/user-defined-dynatrace
-                - batch
-            exporters:
-                - otlp/dynatrace
+                - forward/output
     telemetry:
         metrics:
             readers:
@@ -201,5 +188,4 @@ exporters:
             max_interval: 30s
             max_elapsed_time: 300s
 connectors:
-    forward/cls: {}
-    forward/dynatrace: {}
+    forward/output: {}

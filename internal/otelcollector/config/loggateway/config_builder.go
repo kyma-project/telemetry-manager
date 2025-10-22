@@ -48,6 +48,8 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPi
 			b.addNamespaceFilterProcessor(),
 			b.addInsertClusterAttributesProcessor(opts),
 			b.addServiceEnrichmentProcessor(),
+			// Kyma attributes are dropped before user-defined transform and filter processors
+			// to prevent user access to internal attributes.
 			b.addDropKymaAttributesProcessor(),
 			b.addIstioAccessLogsEnrichmentProcessor(opts),
 			b.addUserDefinedTransformProcessor(),

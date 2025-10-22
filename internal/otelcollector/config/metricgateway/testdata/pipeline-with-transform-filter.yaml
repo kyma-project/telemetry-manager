@@ -8,7 +8,16 @@ extensions:
         endpoint: 127.0.0.1:1777
 service:
     pipelines:
-        metrics/cls-input:
+        metrics/cls-output:
+            receivers:
+                - forward/output
+            processors:
+                - transform/user-defined-cls
+                - filter/user-defined-cls
+                - batch
+            exporters:
+                - otlp/cls
+        metrics/input:
             receivers:
                 - otlp
                 - kymastats
@@ -20,16 +29,7 @@ service:
                 - resource/drop-kyma-attributes
                 - resource/insert-cluster-attributes
             exporters:
-                - forward/cls
-        metrics/cls-output:
-            receivers:
-                - forward/cls
-            processors:
-                - transform/user-defined-cls
-                - filter/user-defined-cls
-                - batch
-            exporters:
-                - otlp/cls
+                - forward/output
     telemetry:
         metrics:
             readers:
@@ -168,4 +168,4 @@ exporters:
             max_interval: 30s
             max_elapsed_time: 300s
 connectors:
-    forward/cls: {}
+    forward/output: {}

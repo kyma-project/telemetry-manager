@@ -57,25 +57,29 @@ func TestMakeConfig(t *testing.T) {
 			},
 		},
 		{
-			name:           "complex pipeline with comprehensive configuration",
+			name:           "two pipelines with comprehensive configuration",
 			goldenFileName: "setup-comprehensive.yaml",
 			pipelines: []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("cls").
-					WithRuntimeInput(true, testutils.IncludeNamespaces("production", "staging")).
-					WithRuntimeInputPodMetrics(true).
-					WithRuntimeInputContainerMetrics(true).
-					WithRuntimeInputNodeMetrics(true).
-					WithPrometheusInput(true, testutils.ExcludeNamespaces("kube-system")).
-					WithPrometheusInputDiagnosticMetrics(true).
-					WithIstioInput(true).
-					WithIstioInputEnvoyMetrics(true).
-					WithOTLPInput(true, testutils.IncludeNamespaces("apps")).
+					WithOTLPInput(true, testutils.IncludeNamespaces("apps-cls")).
 					WithOTLPOutput(testutils.OTLPEndpoint("https://backend.example.com")).
 					WithTransform(telemetryv1alpha1.TransformSpec{
 						Conditions: []string{"resource.attributes[\"k8s.namespace.name\"] == \"production\""},
 						Statements: []string{"set(attributes[\"environment\"], \"prod\")"},
-					}).Build(),
+					}).WithFilter(telemetryv1alpha1.FilterSpec{
+					Conditions: []string{"metric.type == METRIC_DATA_TYPE_GAUGE"},
+				}).Build(),
+				testutils.NewMetricPipelineBuilder().
+					WithName("dynatrace").
+					WithOTLPInput(true, testutils.IncludeNamespaces("apps-dynatrace")).
+					WithOTLPOutput(testutils.OTLPEndpoint("https://backend.example.com")).
+					WithTransform(telemetryv1alpha1.TransformSpec{
+						Conditions: []string{"resource.attributes[\"k8s.namespace.name\"] == \"staging\""},
+						Statements: []string{"set(attributes[\"environment\"], \"staging\")"},
+					}).WithFilter(telemetryv1alpha1.FilterSpec{
+					Conditions: []string{"metric.type == METRIC_DATA_TYPE_SUMMARY"},
+				}).Build(),
 			},
 		},
 		{
