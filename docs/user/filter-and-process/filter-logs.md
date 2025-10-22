@@ -103,37 +103,22 @@ By default, application logs from `kube-system`, `istio-system`, and `kyma-syste
 
 ## Select Istio Logs from a Specific Application
 
-To limit logging to a single application within a namespace, configure label-based selection for this workload with a [selector](https://istio.io/latest/docs/reference/config/type/workload-selector/#WorkloadSelector).
+To limit logging to a single application within a namespace, configure label-based selection for this workload with a [selector](https://istio.io/latest/docs/reference/config/type/workload-selector/#WorkloadSelector) in the Istio `Telemetry` resource.
 
-1. Export the name of the workload's namespace and label as environment variables:
-
-    ```bash
-    export YOUR_NAMESPACE=<NAMESPACE_NAME>
-    export YOUR_LABEL=<LABEL>
-    ```
-
-2. Apply the Istio `Telemetry` resource with the selector:
-
-   ```yaml
-   apiVersion: telemetry.istio.io/v1
-   kind: Telemetry
-   metadata:
-     name: access-config
-     namespace: $YOUR_NAMESPACE
-   spec:
-     selector:
-       matchLabels:
-         service.istio.io/canonical-name: $YOUR_LABEL
-     accessLogging:
-       - providers:
-         - name: kyma-logs
-   ```
-
-3. Verify that the resource is applied to the target namespace:
-
-   ```bash
-   kubectl -n $YOUR_NAMESPACE get telemetries.telemetry.istio.io
-   ```
+```yaml
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata:
+  name: access-config
+  namespace: $YOUR_NAMESPACE
+spec:
+  selector:
+    matchLabels:
+      service.istio.io/canonical-name: $YOUR_LABEL
+  accessLogging:
+    - providers:
+      - name: kyma-logs
+```
 
 ## Filter Istio Logs by Content
 

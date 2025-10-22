@@ -25,7 +25,7 @@ To enable tracing for all workloads in the service mesh, apply an Istio `Telemet
 > [!NOTE]
 > You can only have one mesh-wide [Istio](https://istio.io/latest/docs/reference/config/telemetry/) Telemetry resource in the `istio-system` namespace. If you also want to configure Istio access logs, combine both configurations into a single resource (see [Configure Istio Access Logs](./../collecting-logs/istio-support.md)).
 
-1. Apply the Telemetry resource. The following command enables tracing with a default sampling rate of 1%:
+The following example enables tracing with a default sampling rate of 1%:
 
    ```yaml
    apiVersion: telemetry.istio.io/v1
@@ -40,13 +40,8 @@ To enable tracing for all workloads in the service mesh, apply an Istio `Telemet
        randomSamplingPercentage: 1.00
    ```
 
-2. Verify that the resource is applied to the `istio-system` namespace:
 
-   ```bash
-   kubectl -n istio-system get telemetries.telemetry.istio.io
-   ```
-
-3. After setting a mesh-wide default in the `istio-system` namespace, you can apply more specific tracing configurations for an entire namespace or for individual workloads within a namespace. This is useful for debugging a particular service by increasing its sampling rate without affecting the entire mesh. For details, see [Filter Traces](../filter-and-process/filter-traces.md).
+> **TIP:** After setting a mesh-wide default in the `istio-system` namespace, you can apply more specific tracing configurations for an entire namespace or for individual workloads within a namespace. This is useful for debugging a particular service by increasing its sampling rate without affecting the entire mesh. For details, see [Filter Traces](../filter-and-process/filter-traces.md).
 
 ## Configure the Sampling Rate
 

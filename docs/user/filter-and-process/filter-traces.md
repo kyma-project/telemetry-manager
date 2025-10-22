@@ -4,40 +4,27 @@ TracePipeline resources have no `input` specification. You can configure Istio t
 
 ## Override Tracing for a Namespace or Workload
 
-After setting a mesh-wide default, apply more specific tracing configurations for an entire namespace or for individual workloads within a namespace. Use this to debug a particular service by increasing its sampling rate without affecting the entire mesh.
+After setting a mesh-wide default, apply more specific tracing configurations for an entire namespace or for individual workloads within a namespace. 
 
-To do this, create a `Telemetry` resource in the workload's namespace. To apply a tracing configuration to a specific workload within the namespace, add a `selector` that matches the workload's labels.
+To do this, create an Istio `Telemetry` resource in the workload's namespace. To apply a tracing configuration to a specific workload within the namespace, add a `selector` that matches the workload's labels.
 
-1. Export the name of the workload's namespace and application name as environment variables:
+For example, increase the sampling rate (in this example, to `100.00`) to debug a specific application without affecting the entire mesh:
 
-   ```bash
-   export YOUR_NAMESPACE=<NAMESPACE_NAME>
-   export YOUR_APP_NAME=<APP_NAME>
-   ```
-
-2. Apply the `Telemetry` resource with the `selector`. The following example increases the sampling rate to `100.00` only for the target app.
-
-   ```yaml
-   apiVersion: telemetry.istio.io/v1
-   kind: Telemetry
-   metadata:
-     name: tracing
-     namespace: $YOUR_NAMESPACE
-   spec:
-     selector:
-       matchLabels:
-         app.kubernetes.io/name: "my-app"
-     tracing:
-     - providers:
-       - name: "kyma-traces"
-       randomSamplingPercentage: 100.00
-   ```
-
-3. Verify that the resource is applied to the target namespace:
-
-   ```bash
-   kubectl -n $YOUR_NAMESPACE get telemetries.telemetry.istio.io
-   ```
+```yaml
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata:
+  name: tracing
+  namespace: $YOUR_NAMESPACE
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: "my-app"
+  tracing:
+  - providers:
+    - name: "kyma-traces"
+    randomSamplingPercentage: 100.00
+```
 
 ## Disable Tracing for a Specific Workload
 
