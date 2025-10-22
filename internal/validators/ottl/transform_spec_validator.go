@@ -44,10 +44,7 @@ type TransformSpecValidator struct {
 }
 
 func NewTransformSpecValidator(signalType SignalType) (*TransformSpecValidator, error) {
-	opts, err := newTransformParserCollectionOpts(signalType)
-	if err != nil {
-		return nil, err
-	}
+	opts := newTransformParserCollectionOpts(signalType)
 
 	parserCollection, err := newGenericParserCollection(opts...)
 	if err != nil {
@@ -73,7 +70,7 @@ func (v *TransformSpecValidator) Validate(transforms []telemetryv1alpha1.Transfo
 	return nil
 }
 
-func newTransformParserCollectionOpts(signalType SignalType) ([]genericParserCollectionOption, error) {
+func newTransformParserCollectionOpts(signalType SignalType) []genericParserCollectionOption {
 	var opts []genericParserCollectionOption
 
 	switch signalType {
@@ -129,5 +126,5 @@ func newTransformParserCollectionOpts(signalType SignalType) ([]genericParserCol
 		),
 	)
 
-	return opts, nil
+	return opts
 }

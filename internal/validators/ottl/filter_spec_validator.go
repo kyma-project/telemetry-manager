@@ -20,10 +20,7 @@ type FilterSpecValidator struct {
 }
 
 func NewFilterSpecValidator(signalType SignalType) (*FilterSpecValidator, error) {
-	opts, err := newFilterParserCollectionOpts(signalType)
-	if err != nil {
-		return nil, err
-	}
+	opts := newFilterParserCollectionOpts(signalType)
 
 	parserCollection, err := newGenericParserCollection(opts...)
 	if err != nil {
@@ -45,7 +42,7 @@ func (v *FilterSpecValidator) Validate(filters []telemetryv1alpha1.FilterSpec) e
 	return nil
 }
 
-func newFilterParserCollectionOpts(signalType SignalType) ([]genericParserCollectionOption, error) {
+func newFilterParserCollectionOpts(signalType SignalType) []genericParserCollectionOption {
 	var opts []genericParserCollectionOption
 
 	switch signalType {
@@ -97,5 +94,5 @@ func newFilterParserCollectionOpts(signalType SignalType) ([]genericParserCollec
 		),
 	)
 
-	return opts, nil
+	return opts
 }
