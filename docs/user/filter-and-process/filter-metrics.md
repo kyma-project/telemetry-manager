@@ -53,7 +53,7 @@ To include system namespaces for **prometheus**, **istio**, and **runtime** metr
 ```yaml
 ...
   input:
-    <prometheus | runtime>:
+    <prometheus | istio | runtime>:
       enabled: true
       namespaces: {}
 ```
