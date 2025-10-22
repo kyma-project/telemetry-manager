@@ -71,14 +71,6 @@ spec:
     metadata:
       annotations:
         checksum/config: 6a334c19c8f1698c843d1c40ef9c228c222b0c04f9945a359a3e932c2aa11ac7
-        proxy.istio.io/config: |
-          # configure an env variable OUTPUT_CERTS to write certificates to the given folder
-          proxyMetadata:
-            OUTPUT_CERTS: /etc/istio-output-certs
-        sidecar.istio.io/userVolumeMount: '[{"name": "istio-certs", "mountPath": "/etc/istio-output-certs"}]'
-        traffic.sidecar.istio.io/excludeInboundPorts: "8888"
-        traffic.sidecar.istio.io/includeOutboundIPRanges: ""
-        traffic.sidecar.istio.io/includeOutboundPorts: 4317,9090
       labels:
         app.kubernetes.io/component: agent
         app.kubernetes.io/managed-by: telemetry-manager
@@ -106,7 +98,7 @@ spec:
         - name: GOMEMLIMIT
           value: "1006632960"
         - name: GODEBUG
-          value: fips140=off
+          value: fips140=only,tlsmlkem=0
         envFrom:
         - secretRef:
             name: telemetry-metric-agent
@@ -200,8 +192,6 @@ spec:
     - port: 8888
       protocol: TCP
     - port: 13133
-      protocol: TCP
-    - port: 15090
       protocol: TCP
   podSelector:
     matchLabels:

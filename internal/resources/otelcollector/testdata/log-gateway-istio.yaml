@@ -155,6 +155,8 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
+        - name: GODEBUG
+          value: fips140=off
         - name: GOMEMLIMIT
           value: "419430400"
         envFrom:
