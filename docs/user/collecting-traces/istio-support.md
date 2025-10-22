@@ -20,7 +20,7 @@ Istio plays a key role in distributed tracing. Its [Ingress Gateway](https://ist
 
 ## Enable Istio Tracing for the Entire Mesh
 
-To enable tracing for all workloads in the service mesh, apply an Istio `Telemetry` resource to the istio-system namespace. Use this option to establish a baseline configuration for your mesh.
+To enable tracing for all workloads in the service mesh, apply an Istio `Telemetry` resource to the `istio-system` namespace. Use this option to establish a baseline configuration for your mesh.
 
 > [!NOTE]
 > You can only have one mesh-wide [Istio](https://istio.io/latest/docs/reference/config/telemetry/) Telemetry resource in the `istio-system` namespace. If you also want to configure Istio access logs, combine both configurations into a single resource (see [Configure Istio Access Logs](./../collecting-logs/istio-support.md)).
@@ -46,7 +46,7 @@ To enable tracing for all workloads in the service mesh, apply an Istio `Telemet
    kubectl -n istio-system get telemetries.telemetry.istio.io
    ```
 
-3. After setting a mesh-wide default, you can apply more specific tracing configurations for an entire namespace or for individual workloads within a namespace. This is useful for debugging a particular service by increasing its sampling rate without affecting the entire mesh. For details, see [Filter Traces](../filter-and-process/filter-traces.md).
+3. After setting a mesh-wide default in the `istio-system` namespace, you can apply more specific tracing configurations for an entire namespace or for individual workloads within a namespace. This is useful for debugging a particular service by increasing its sampling rate without affecting the entire mesh. For details, see [Filter Traces](../filter-and-process/filter-traces.md).
 
 ## Configure the Sampling Rate
 

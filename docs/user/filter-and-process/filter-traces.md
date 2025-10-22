@@ -22,7 +22,7 @@ To do this, create a `Telemetry` resource in the workload's namespace. To apply 
    kind: Telemetry
    metadata:
      name: tracing
-     namespace: my-namespace
+     namespace: $YOUR_NAMESPACE
    spec:
      selector:
        matchLabels:
