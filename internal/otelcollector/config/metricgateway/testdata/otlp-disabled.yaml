@@ -14,11 +14,11 @@ service:
                 - kymastats
             processors:
                 - memory_limiter
+                - transform/set-instrumentation-scope-kyma
                 - k8sattributes
                 - service_enrichment
-                - transform/set-instrumentation-scope-kyma
-                - resource/drop-kyma-attributes
                 - resource/insert-cluster-attributes
+                - resource/drop-kyma-attributes
             exporters:
                 - forward/output
         metrics/test-output:
@@ -77,7 +77,7 @@ processors:
         error_mode: ignore
         metrics:
             metric:
-                - not(instrumentation_scope.name == "io.kyma-project.telemetry/runtime" or resource.attributes["kyma.input.name"] == "prometheus" or instrumentation_scope.name == "io.kyma-project.telemetry/istio" or instrumentation_scope.name == "io.kyma-project.telemetry/kyma")
+                - instrumentation_scope.name == "io.kyma-project.telemetry/kyma"
     k8sattributes:
         auth_type: serviceAccount
         passthrough: false

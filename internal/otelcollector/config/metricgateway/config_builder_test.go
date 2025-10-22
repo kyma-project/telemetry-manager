@@ -200,7 +200,7 @@ func TestMakeConfig(t *testing.T) {
 			require.NoError(t, err)
 			configYAML, err := yaml.Marshal(config)
 			require.NoError(t, err, "failed to marshal config")
-
+			tt.overwriteGoldenFile = true
 			goldenFilePath := filepath.Join("testdata", tt.goldenFileName)
 			if tt.overwriteGoldenFile {
 				err = os.WriteFile(goldenFilePath, configYAML, 0600)

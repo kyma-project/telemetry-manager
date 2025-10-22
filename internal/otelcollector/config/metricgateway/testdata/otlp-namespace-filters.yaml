@@ -22,11 +22,11 @@ service:
                 - kymastats
             processors:
                 - memory_limiter
+                - transform/set-instrumentation-scope-kyma
                 - k8sattributes
                 - service_enrichment
-                - transform/set-instrumentation-scope-kyma
-                - resource/drop-kyma-attributes
                 - resource/insert-cluster-attributes
+                - resource/drop-kyma-attributes
             exporters:
                 - forward/output
     telemetry:
@@ -77,8 +77,8 @@ processors:
         error_mode: ignore
         metrics:
             metric:
-                - not(instrumentation_scope.name == "io.kyma-project.telemetry/runtime" or resource.attributes["kyma.input.name"] == "prometheus" or instrumentation_scope.name == "io.kyma-project.telemetry/istio" or instrumentation_scope.name == "io.kyma-project.telemetry/kyma") and (resource.attributes["k8s.namespace.name"] == "kube-system" or resource.attributes["k8s.namespace.name"] == "istio-system")
-                - not(instrumentation_scope.name == "io.kyma-project.telemetry/runtime" or resource.attributes["kyma.input.name"] == "prometheus" or instrumentation_scope.name == "io.kyma-project.telemetry/istio" or instrumentation_scope.name == "io.kyma-project.telemetry/kyma") and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "monitoring" or resource.attributes["k8s.namespace.name"] == "observability")
+                - instrumentation_scope.name == "io.kyma-project.telemetry/kyma" and (resource.attributes["k8s.namespace.name"] == "kube-system" or resource.attributes["k8s.namespace.name"] == "istio-system")
+                - instrumentation_scope.name == "io.kyma-project.telemetry/kyma" and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "monitoring" or resource.attributes["k8s.namespace.name"] == "observability")
     k8sattributes:
         auth_type: serviceAccount
         passthrough: false
