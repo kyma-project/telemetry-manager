@@ -74,7 +74,6 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 		); err != nil {
 			return nil, nil, fmt.Errorf("failed to add output service pipeline: %w", err)
 		}
-
 	}
 
 	return b.Config, b.EnvVars, nil
