@@ -9,6 +9,15 @@ import (
 	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 )
 
+func (b *Builder) addOutputForwardReceiver() buildComponentFunc {
+	return b.AddReceiver(
+		formatForwardConnectorID,
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			return &common.ForwardConnector{}
+		},
+	)
+}
+
 func (b *Builder) addSetInstrumentationScopeToKymaProcessor(opts BuildOptions) buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDSetInstrumentationScopeKymaProcessor),

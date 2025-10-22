@@ -1,6 +1,7 @@
 package metricgateway
 
 import (
+	"context"
 	"fmt"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -55,6 +56,15 @@ func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
 				LimitPercentage:      75,
 				SpikeLimitPercentage: 15,
 			}
+		},
+	)
+}
+
+func (b *Builder) addInputRoutingExporter() buildComponentFunc {
+	return b.AddExporter(
+		formatForwardConnectorID,
+		func(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline) (any, common.EnvVars, error) {
+			return &common.ForwardConnector{}, nil, nil
 		},
 	)
 }

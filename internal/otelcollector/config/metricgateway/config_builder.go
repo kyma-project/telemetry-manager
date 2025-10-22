@@ -42,20 +42,29 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 	queueSize := common.BatchingMaxQueueSize / len(pipelines)
 
 	for _, pipeline := range pipelines {
-		pipelineID := formatInputMetricServicePipelineID(&pipeline)
-		if err := b.AddServicePipeline(ctx, &pipeline, pipelineID,
+		inputPipelineID := formatInputMetricServicePipelineID(&pipeline)
+		if err := b.AddServicePipeline(ctx, &pipeline, inputPipelineID,
 			b.addOTLPReceiver(),
 			b.addKymaStatsReceiver(),
 			b.addMemoryLimiterProcessor(),
 			b.addK8sAttributesProcessor(opts),
 			b.addServiceEnrichmentProcessor(),
 			b.addSetInstrumentationScopeToKymaProcessor(opts),
+			b.addDropKymaAttributesProcessor(),
+			b.addInsertClusterAttributesProcessor(opts),
+			b.addInputRoutingExporter(),
+		); err != nil {
+			return nil, nil, fmt.Errorf("failed to add input service pipeline: %w", err)
+		}
+
+		outputPipelineID := formatOutputServicePipelineID(&pipeline)
+		if err := b.AddServicePipeline(ctx, &pipeline, outputPipelineID,
+			b.addOutputForwardReceiver(),
 			// Input source filters
 			b.addDropIfOTLPInputDisabledProcessor(),
 			// Namespace filters
 			b.addOTLPNamespaceFilterProcessor(),
-			b.addInsertClusterAttributesProcessor(opts),
-			b.addDropKymaAttributesProcessor(),
+			// User defined Transfor and Filter
 			b.addUserDefinedTransformProcessor(),
 			b.addUserDefinedFilterProcessor(),
 			// Batch processor (always last)
@@ -63,8 +72,9 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			// OTLP exporter
 			b.addOTLPExporter(queueSize),
 		); err != nil {
-			return nil, nil, fmt.Errorf("failed to add input service pipeline: %w", err)
+			return nil, nil, fmt.Errorf("failed to add output service pipeline: %w", err)
 		}
+
 	}
 
 	return b.Config, b.EnvVars, nil
@@ -74,4 +84,12 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 
 func formatInputMetricServicePipelineID(mp *telemetryv1alpha1.MetricPipeline) string {
 	return fmt.Sprintf("metrics/%s-input", mp.Name)
+}
+
+func formatForwardConnectorID(mp *telemetryv1alpha1.MetricPipeline) string {
+	return fmt.Sprintf(common.ComponentIDForwardConnector, mp.Name)
+}
+
+func formatOutputServicePipelineID(mp *telemetryv1alpha1.MetricPipeline) string {
+	return fmt.Sprintf("metrics/%s-output", mp.Name)
 }
