@@ -61,9 +61,10 @@ spec:
       statements:
       - set(status.code, 1) where attributes["http.path"] == "/health"
   filter:
-      conditions:
-      - attributes["grpc"] == true
-      - IsMatch(span.resource.attributes["k8s.pod.name"], "my-pod-name.*")
+      - conditions:
+        - attributes["grpc"] == true
+      - conditions:
+        - IsMatch(span.resource.attributes["k8s.pod.name"], "my-pod-name.*")
   output:
     otlp:
       endpoint:
@@ -145,3 +146,5 @@ To mitigate this risk, we suggest the following measures:
 - Thorough Testing: We will maintain strict version control of the OTTL library, ensuring that each update is thoroughly tested. Automated tests will validate that existing pipelines continue to work as expected.
 - Documentation: We will provide detailed documentation and practical examples of how to configure filter and transformation processors using OTTL expressions.
 - Community Support: We will actively engage with the OpenTelemetry community to address any issues or concerns that arise from using the OTTL library.
+
+
