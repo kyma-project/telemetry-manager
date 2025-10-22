@@ -37,6 +37,13 @@ const (
 	SignalTypeTrace  SignalType = "trace"
 )
 
+// NOTE: The following statements apply to OTel Collector Contrib v0.136.0 and may change in future versions.
+// The transform processor uses ottl.ParserCollection[T], which supports both hard-coded context and context inference.
+// The filter processor does not yet use ottl.ParserCollection[T] because it lacks context inference support. Instead, it uses ottl.ConditionSequence[T].
+// However, we use ottl.ParserCollection[T] for both validators here to provide a consistent experience for our users.
+// Essentially, the real filter processor supports missing context in paths, while our validator does not. In the future the filter processor will supports context inference and use ParserCollection[T].
+// You can see this in their draft PR: https://github.com/open-telemetry/opentelemetry-collector-contrib/pull/39688.
+
 // genericParserCollection is a wrapper around ottl.ParserCollection[any] that simplifies the API
 // to be used in the TransformSpec and FilterSpec validators.
 type genericParserCollection ottl.ParserCollection[any]
@@ -166,6 +173,8 @@ func (gpc *genericParserCollection) parseConditions(conditions []string) error {
 
 	return nil
 }
+
+// Since we do not need to evluate OTTL expressions in the validators, these converters are no-ops that just return the parsed conditions/statements.
 
 func nopConditionConverter[T any](_ *ottl.ParserCollection[any], _ ottl.ConditionsGetter, parsedConditions []*ottl.Condition[T]) (any, error) {
 	return parsedConditions, nil
