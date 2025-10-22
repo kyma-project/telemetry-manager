@@ -42,9 +42,9 @@ spec:
 ...
 ```
 
-## Collect Istio Metrics From System Namespaces
+## Collect Metrics From System Namespaces
 
-For the **istio** input, system namespaces are included by default.
+For **otlp** and **istio** metrics, system namespaces are included by default.
 
 To include system namespaces for **prometheus** and **runtime** metrics without specifying any other namespaces, explicitly configure an empty namespace object: `namespaces: {}`:
 
@@ -56,7 +56,7 @@ To include system namespaces for **prometheus** and **runtime** metrics without 
       namespaces: {}
 ```
 
-## Collect Runtime Metrics From Specific Namespaces
+## Collect Metrics From Specific Namespaces
 
 The following example collects runtime metrics **only** from the `foo` and `bar` namespaces:
 
@@ -71,7 +71,7 @@ The following example collects runtime metrics **only** from the `foo` and `bar`
           - bar
 ```
 
-## Drop Runtime Metrics From Specific Namespaces
+## Drop Metrics From Specific Namespaces
 
 The following example collects runtime metrics from all namespaces **except** the `foo` and `bar` namespaces:
 

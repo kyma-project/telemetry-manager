@@ -23,6 +23,7 @@ By default, the **istio** input is disabled. If you are using Istio, enable the 
 With this, the metric agent starts collecting all Istio metrics from Istio sidecars from all namespaces (including system namespaces).
 
 > **Tip:** To validate or debug your configuration, use diagnostic metrics (see [Collect Diagnostic Metrics](#collect-diagnostic-metrics)).
+> To select metrics from specific namespaces, see [Filter Metrics](../filter-and-process/filter-metrics.md).
 
 ## Collect Envoy Metrics
 
