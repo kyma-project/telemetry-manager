@@ -345,7 +345,7 @@ func transformSpanContextTestCases() []transformTestCase {
 		},
 		{
 			name:            "invalid function in condition",
-			conditions:      []string{`sspan.name == "HTTP GET"`},
+			conditions:      []string{`len(span.name) > 0`}, // should be Len, not len
 			statements:      []string{`set(span.attributes["processed"], "true")`},
 			isErrorExpected: true,
 		},
@@ -421,7 +421,7 @@ func transformSpanEventContextTestCases() []transformTestCase {
 		},
 		{
 			name:            "invalid function in condition",
-			conditions:      []string{`sspanevent.name == "exception"`},
+			conditions:      []string{`len(spanevent.name) > 0`}, // should be Len, not len
 			statements:      []string{`set(spanevent.attributes["processed"], "true")`},
 			isErrorExpected: true,
 		},
@@ -502,7 +502,7 @@ func transformMetricContextTestCases() []transformTestCase {
 		},
 		{
 			name:            "invalid function in condition",
-			conditions:      []string{`mmetric.name == "http_requests_total"`},
+			conditions:      []string{`len(metric.name) > 0"`}, // should be Len, not len
 			statements:      []string{`set(metric.description, "Total HTTP requests")`},
 			isErrorExpected: true,
 		},
