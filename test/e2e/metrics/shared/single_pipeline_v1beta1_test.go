@@ -46,9 +46,7 @@ func TestSinglePipelineV1Beta1(t *testing.T) {
 		{
 			label: suite.LabelMetricGatewaySetC,
 			input: telemetryv1beta1.MetricPipelineInput{
-				OTLP: &telemetryv1beta1.OTLPInput{
-					Disabled: false,
-				},
+				OTLP: &telemetryv1beta1.OTLPInput{},
 			},
 			generatorBuilder: func(ns string) []client.Object {
 				return []client.Object{

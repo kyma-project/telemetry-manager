@@ -1255,15 +1255,16 @@ spec:
                     description: OTLP input configures the push endpoint to receive
                       logs from a OTLP source.
                     properties:
-                      disabled:
-                        description: Disabled specifies if the 'otlp' input is deactivated.
-                          If disabled, then no push-based OTLP signals are collected.
-                          The default is `false`.
+                      enabled:
+                        description: Enabled specifies if the 'otlp' input is enabled.
+                          If enabled, then push-based OTLP signals are collected.
+                          The default is `true`.
                         type: boolean
                       namespaces:
-                        description: Namespaces describes whether push-based OTLP
-                          signals from specific namespaces are selected. System namespaces
-                          are enabled by default.
+                        description: Namespaces describe whether push-based OTLP signals
+                          from specific namespaces are selected. By default, all namespaces
+                          excluding system namespaces are enabled. To enable all namespaces
+                          including system namespaces, use an empty struct notation.
                         properties:
                           exclude:
                             description: 'Exclude telemetry data from the specified
@@ -1344,45 +1345,36 @@ spec:
                       namespaces:
                         description: Namespaces describes whether application logs
                           from specific namespaces are selected. The options are mutually
-                          exclusive. System namespaces are excluded by default. Use
-                          the `system` attribute with value `true` to enable them.
+                          exclusive. By default, all namespaces except the system
+                          namespaces are enabled. To enable all namespaces including
+                          system namespaces, use an empty struct notation.
                         properties:
                           exclude:
-                            description: Exclude specifies the list of namespace names
-                              to exclude when collecting container logs. By default,
-                              logs from all namespaces are collected, except system
-                              namespaces. You cannot specify an exclude list together
-                              with an include list.
+                            description: 'Exclude telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are collected.
+                              You cannot specify an exclude list together with an
+                              include list.'
                             items:
                               maxLength: 63
                               pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
                           include:
-                            description: Include specifies the list of namespace names
-                              to include when collecting container logs. By default,
-                              logs from all namespaces are collected, except system
-                              namespaces. You cannot specify an include list together
-                              with an exclude list.
+                            description: 'Include telemetry data from the specified
+                              namespace names only. By default, all namespaces (depending
+                              on input type: except system namespaces) are included.
+                              You cannot specify an include list together with an
+                              exclude list.'
                             items:
                               maxLength: 63
                               pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                             type: array
-                          system:
-                            description: System specifies whether to collect logs
-                              from system namespaces. If set to `true`, you collect
-                              logs from all namespaces including system namespaces,
-                              such as like kube-system, istio-system, and kyma-system.
-                              The default is `false`.
-                            type: boolean
                         type: object
                         x-kubernetes-validations:
-                        - message: Only one of 'include', 'exclude' or 'system' can
-                            be defined
-                          rule: '(has(self.include) == true ? 1 : 0) + (has(self.exclude)
-                            == true ? 1 : 0) + (has(self.system) == true ? 1 : 0)
-                            <= 1'
+                        - message: Only one of 'include' or 'exclude' can be defined
+                          rule: '!(has(self.include) && has(self.exclude))'
                     type: object
                 type: object
               output:
@@ -1599,9 +1591,13 @@ spec:
                             - message: Exactly one of 'value' or 'valueFrom' must
                                 be set
                               rule: has(self.value) != has(self.valueFrom)
-                          disabled:
-                            description: Disabled specifies if TLS is disabled or
-                              enabled. Default is `false`.
+                          insecure:
+                            description: Insecure defines whether to send requests
+                              using plaintext instead of TLS.
+                            type: boolean
+                          insecureSkipVerify:
+                            description: InsecureSkipVerify defines whether to skip
+                              server certificate verification when using TLS.
                             type: boolean
                           key:
                             description: Defines the client key to use when using
@@ -1648,10 +1644,6 @@ spec:
                             - message: Exactly one of 'value' or 'valueFrom' must
                                 be set
                               rule: has(self.value) != has(self.valueFrom)
-                          skipCertificateValidation:
-                            description: If `true`, the validation of certificates
-                              is skipped. Default is `false`.
-                            type: boolean
                         type: object
                         x-kubernetes-validations:
                         - message: Can define either both 'cert' and 'key', or neither
@@ -2023,9 +2015,13 @@ spec:
                             - message: Exactly one of 'value' or 'valueFrom' must
                                 be set
                               rule: has(self.value) != has(self.valueFrom)
-                          disabled:
-                            description: Disabled specifies if TLS is disabled or
-                              enabled. Default is `false`.
+                          insecure:
+                            description: Insecure defines whether to send requests
+                              using plaintext instead of TLS.
+                            type: boolean
+                          insecureSkipVerify:
+                            description: InsecureSkipVerify defines whether to skip
+                              server certificate verification when using TLS.
                             type: boolean
                           key:
                             description: Defines the client key to use when using
@@ -2072,10 +2068,6 @@ spec:
                             - message: Exactly one of 'value' or 'valueFrom' must
                                 be set
                               rule: has(self.value) != has(self.valueFrom)
-                          skipCertificateValidation:
-                            description: If `true`, the validation of certificates
-                              is skipped. Default is `false`.
-                            type: boolean
                         type: object
                         x-kubernetes-validations:
                         - message: Can define either both 'cert' and 'key', or neither
