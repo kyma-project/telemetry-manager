@@ -1261,9 +1261,10 @@ spec:
                           The default is `true`.
                         type: boolean
                       namespaces:
-                        description: Namespaces describes whether push-based OTLP
-                          signals from specific namespaces are selected. System namespaces
-                          are enabled by default.
+                        description: Namespaces describe whether push-based OTLP signals
+                          from specific namespaces are selected. By default, all namespaces
+                          excluding system namespaces are enabled. To enable all namespaces
+                          including system namespaces, use an empty struct notation.
                         properties:
                           exclude:
                             description: 'Exclude telemetry data from the specified

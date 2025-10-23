@@ -159,7 +159,7 @@ type MetricPipelineIstioInput struct {
 	// Enabled specifies if the 'istio' input is enabled. If enabled, istio-proxy metrics are scraped from Pods that have the istio-proxy sidecar injected. The default is `false`.
 	// +kubebuilder:validation:Optional
 	Enabled *bool `json:"enabled,omitempty"`
-	// Namespaces configures the namespaces for which the collection should be activated. By default, all namespaces including system namespaces are enabled.
+	// Namespaces configures the namespaces for which the collection should be activated. By default, all namespaces excluding system namespaces are enabled. To enable all namespaces including system namespaces, use an empty struct notation.
 	// +kubebuilder:validation:Optional
 	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
 	// DiagnosticMetrics configures collection of additional diagnostic metrics. The default is `false`.
