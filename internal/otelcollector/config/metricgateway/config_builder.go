@@ -54,7 +54,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 		// Kyma attributes are dropped before user-defined transform and filter processors
 		// to prevent user access to internal attributes.
 		b.addDropKymaAttributesProcessor(),
-		b.addInputRoutingExporter(),
+		b.addInputForwardExporter(),
 	); err != nil {
 		return nil, nil, fmt.Errorf("failed to add input service pipeline: %w", err)
 	}
@@ -64,7 +64,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 		if err := b.AddServicePipeline(ctx, &pipeline, outputPipelineID,
 			b.addOutputForwardReceiver(),
 			// Input source filters if otlp is disabled
-			b.addDropIfOTLPInputDisabledProcessor(),
+			b.addDropOTLPIfInputDisabledProcessor(),
 			// Namespace filters
 			b.addOTLPNamespaceFilterProcessor(),
 			// User defined Transform and Filter
@@ -136,24 +136,6 @@ func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
 	)
 }
 
-func (b *Builder) addInputRoutingExporter() buildComponentFunc {
-	return b.AddExporter(
-		b.StaticComponentID(common.ComponentIDForwardConnector),
-		func(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline) (any, common.EnvVars, error) {
-			return &common.ForwardConnector{}, nil, nil
-		},
-	)
-}
-
-func (b *Builder) addOutputForwardReceiver() buildComponentFunc {
-	return b.AddReceiver(
-		b.StaticComponentID(common.ComponentIDForwardConnector),
-		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			return &common.ForwardConnector{}
-		},
-	)
-}
-
 func (b *Builder) addSetInstrumentationScopeToKymaProcessor(opts BuildOptions) buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDSetInstrumentationScopeKymaProcessor),
@@ -163,41 +145,20 @@ func (b *Builder) addSetInstrumentationScopeToKymaProcessor(opts BuildOptions) b
 	)
 }
 
-// ======================================================
-// Output pipeline components
-// ======================================================
-
-// Input source filter processors
-
-func (b *Builder) addDropIfOTLPInputDisabledProcessor() buildComponentFunc {
+func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFunc {
 	return b.AddProcessor(
-		b.StaticComponentID(common.ComponentIDDropIfInputSourceOTLPProcessor),
+		b.StaticComponentID(common.ComponentIDK8sAttributesProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			if metricpipelineutils.IsOTLPInputEnabled(mp.Spec.Input) {
-				return nil
-			}
-
-			return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
-				Metric: []string{fmt.Sprintf("not(%s)", common.ScopeNameEquals(common.InstrumentationScopeKyma))},
-			})
+			return common.K8sAttributesProcessorConfig(opts.Enrichments)
 		},
 	)
 }
 
-// Namespace filter processors
-
-func (b *Builder) addOTLPNamespaceFilterProcessor() buildComponentFunc {
+func (b *Builder) addServiceEnrichmentProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		func(mp *telemetryv1alpha1.MetricPipeline) string {
-			return formatNamespaceFilterID(mp.Name, common.InputSourceOTLP)
-		},
+		b.StaticComponentID(common.ComponentIDServiceEnrichmentProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			input := mp.Spec.Input
-			if !metricpipelineutils.IsOTLPInputEnabled(input) || input.OTLP == nil || !shouldFilterByNamespace(input.OTLP.Namespaces) {
-				return nil
-			}
-
-			return filterByNamespaceProcessorConfig(input.OTLP.Namespaces, fmt.Sprintf("not(%s)", common.ScopeNameEquals(common.InstrumentationScopeKyma)))
+			return common.ResolveServiceNameConfig()
 		},
 	)
 }
@@ -209,6 +170,64 @@ func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildCo
 		b.StaticComponentID(common.ComponentIDInsertClusterAttributesProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return common.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.ClusterUID, opts.CloudProvider)
+		},
+	)
+}
+
+func (b *Builder) addInputForwardExporter() buildComponentFunc {
+	return b.AddExporter(
+		b.StaticComponentID(common.ComponentIDForwardConnector),
+		func(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline) (any, common.EnvVars, error) {
+			return &common.ForwardConnector{}, nil, nil
+		},
+	)
+}
+
+// ======================================================
+// Output pipeline components
+// ======================================================
+
+func (b *Builder) addOutputForwardReceiver() buildComponentFunc {
+	return b.AddReceiver(
+		b.StaticComponentID(common.ComponentIDForwardConnector),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			return &common.ForwardConnector{}
+		},
+	)
+}
+
+// Input source filter processors
+
+// if OTLP input is disabled filter drops all metrics where instrumentation scope is not 'kyma'
+func (b *Builder) addDropOTLPIfInputDisabledProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDDropIfInputSourceOTLPProcessor),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			if metricpipelineutils.IsOTLPInputEnabled(mp.Spec.Input) {
+				return nil
+			}
+
+			return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
+				Metric: []string{common.Not(common.ScopeNameEquals(common.InstrumentationScopeKyma))},
+			})
+		},
+	)
+}
+
+// Namespace filter processors
+
+func (b *Builder) addOTLPNamespaceFilterProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		func(mp *telemetryv1alpha1.MetricPipeline) string {
+			return formatOTLPNamespaceFilterID(mp.Name)
+		},
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			input := mp.Spec.Input
+			if !metricpipelineutils.IsOTLPInputEnabled(input) || input.OTLP == nil || !shouldFilterByNamespace(input.OTLP.Namespaces) {
+				return nil
+			}
+
+			return filterByNamespaceProcessorConfig(input.OTLP.Namespaces)
 		},
 	)
 }
@@ -290,19 +309,21 @@ func shouldFilterByNamespace(namespaceSelector *telemetryv1alpha1.NamespaceSelec
 	return namespaceSelector != nil && (len(namespaceSelector.Include) > 0 || len(namespaceSelector.Exclude) > 0)
 }
 
-func filterByNamespaceProcessorConfig(namespaceSelector *telemetryv1alpha1.NamespaceSelector, inputSourceCondition string) *common.FilterProcessor {
+func filterByNamespaceProcessorConfig(namespaceSelector *telemetryv1alpha1.NamespaceSelector) *common.FilterProcessor {
 	var filterExpressions []string
+
+	notFromKymaStatsReceiver := common.Not(common.ScopeNameEquals(common.InstrumentationScopeKyma))
 
 	if len(namespaceSelector.Exclude) > 0 {
 		namespacesConditions := namespacesConditionsBuilder(namespaceSelector.Exclude)
-		excludeNamespacesExpr := common.JoinWithAnd(inputSourceCondition, common.JoinWithOr(namespacesConditions...))
+		excludeNamespacesExpr := common.JoinWithAnd(notFromKymaStatsReceiver, common.JoinWithOr(namespacesConditions...))
 		filterExpressions = append(filterExpressions, excludeNamespacesExpr)
 	}
 
 	if len(namespaceSelector.Include) > 0 {
 		namespacesConditions := namespacesConditionsBuilder(namespaceSelector.Include)
 		includeNamespacesExpr := common.JoinWithAnd(
-			inputSourceCondition,
+			notFromKymaStatsReceiver,
 			common.ResourceAttributeIsNotNil(common.K8sNamespaceName),
 			common.Not(common.JoinWithOr(namespacesConditions...)),
 		)
@@ -323,8 +344,8 @@ func namespacesConditionsBuilder(namespaces []string) []string {
 	return conditions
 }
 
-func formatNamespaceFilterID(pipelineName string, inputSourceType common.InputSourceType) string {
-	return fmt.Sprintf(common.ComponentIDNamespacePerInputFilterProcessor, pipelineName, inputSourceType)
+func formatOTLPNamespaceFilterID(pipelineName string) string {
+	return fmt.Sprintf(common.ComponentIDNamespacePerInputFilterProcessor, pipelineName, common.InputSourceOTLP)
 }
 
 func formatOTLPExporterID(pipeline *telemetryv1alpha1.MetricPipeline) string {
