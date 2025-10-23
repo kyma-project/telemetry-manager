@@ -155,11 +155,11 @@ processors:
   filter/sample-2-filter-by-namespace:
     metrics:
       metric:
-        - resource.attributes["kyma.input.name"] == "prometheus" and not(resource.attributes["k8s.namespace.name"] == "kyma-system" or resource.attributes["k8s.namespace.name"] == "kube-system" or resource.attributes["k8s.namespace.name"] == "istio-system" or resource.attributes["k8s.namespace.name"] == "compass-system")
+        - resource.attributes["kyma.input.name"] == "prometheus" and not(resource.attributes["k8s.namespace.name"] == "kyma-system" or resource.attributes["k8s.namespace.name"] == "kube-system" or resource.attributes["k8s.namespace.name"] == "istio-system")
   filter/sample-1-filter-by-namespace:
     metrics:
       metric:
-        - resource.attributes["kyma.input.name"] == "prometheus" and not(resource.attributes["k8s.namespace.name"] == "kyma-system" or resource.attributes["k8s.namespace.name"] == "kube-system" or resource.attributes["k8s.namespace.name"] == "istio-system" or resource.attributes["k8s.namespace.name"] == "compass-system")
+        - resource.attributes["kyma.input.name"] == "prometheus" and not(resource.attributes["k8s.namespace.name"] == "kyma-system" or resource.attributes["k8s.namespace.name"] == "kube-system" or resource.attributes["k8s.namespace.name"] == "istio-system")
 exporters:
   otlp/sample-1:
     endpoint: ${OTLP_ENDPOINT_SAMPLE}

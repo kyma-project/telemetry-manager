@@ -63,7 +63,6 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 				"/var/log/containers/*_kyma-system_*-*.log",
 				"/var/log/containers/*_kube-system_*-*.log",
 				"/var/log/containers/*_istio-system_*-*.log",
-				"/var/log/containers/*_compass-system_*-*.log",
 			},
 		},
 		{
@@ -82,7 +81,6 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 				"/var/log/containers/*_kyma-system_*-*.log",
 				"/var/log/containers/*_kube-system_*-*.log",
 				"/var/log/containers/*_istio-system_*-*.log",
-				"/var/log/containers/*_compass-system_*-*.log",
 			},
 		},
 		{
@@ -162,7 +160,6 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 				"/var/log/containers/*_kyma-system_*-*.log",
 				"/var/log/containers/*_kube-system_*-*.log",
 				"/var/log/containers/*_istio-system_*-*.log",
-				"/var/log/containers/*_compass-system_*-*.log",
 			},
 		},
 		{
@@ -314,7 +311,6 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 				"/var/log/containers/*_kyma-system_*-*.log",
 				"/var/log/containers/*_kube-system_*-*.log",
 				"/var/log/containers/*_istio-system_*-*.log",
-				"/var/log/containers/*_compass-system_*-*.log",
 				"/var/log/containers/*_*_foo-*.log",
 			},
 		},
@@ -362,7 +358,6 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 									"kyma-system",
 									"kube-system",
 									"istio-system",
-									"compass-system",
 									"foo",
 								},
 							},
@@ -375,7 +370,6 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 				"/var/log/containers/*_kyma-system_*-*.log",
 				"/var/log/containers/*_kube-system_*-*.log",
 				"/var/log/containers/*_istio-system_*-*.log",
-				"/var/log/containers/*_compass-system_*-*.log",
 				"/var/log/containers/*_foo_*-*.log",
 			},
 			[]string{
