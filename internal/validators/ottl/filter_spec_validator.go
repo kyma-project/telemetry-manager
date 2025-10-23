@@ -11,6 +11,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlscope"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlspan"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/ottlfuncs"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
@@ -52,14 +53,14 @@ func newFilterParserCollectionOpts(signalType SignalType) []genericParserCollect
 			// we set the context to span as the minimum required context.
 			// Span event context is not supported.
 			withSpanParser(
-				ottlfuncs.StandardConverters[ottlspan.TransformContext](),
+				ottl.CreateFactoryMap(filterprocessor.DefaultSpanFunctions()...),
 				ottl.WithConditionConverter(nopConditionConverter[ottlspan.TransformContext]),
 			),
 		)
 	case SignalTypeLog:
 		opts = append(opts,
 			withLogParser(
-				ottlfuncs.StandardConverters[ottllog.TransformContext](),
+				ottl.CreateFactoryMap(filterprocessor.DefaultLogFunctions()...),
 				ottl.WithConditionConverter(nopConditionConverter[ottllog.TransformContext]),
 			),
 		)
@@ -74,7 +75,7 @@ func newFilterParserCollectionOpts(signalType SignalType) []genericParserCollect
 				ottl.WithConditionConverter(nopConditionConverter[ottlmetric.TransformContext]),
 			),
 			withDataPointParser(
-				ottlfuncs.StandardConverters[ottldatapoint.TransformContext](),
+				ottl.CreateFactoryMap(filterprocessor.DefaultDataPointFunctions()...),
 				ottl.WithConditionConverter(nopConditionConverter[ottldatapoint.TransformContext]),
 			),
 		)

@@ -174,6 +174,10 @@ func filterSpanContextTestCases() []filterTestCase {
 			conditions:      []string{`span.invalid == "value"`},
 			isErrorExpected: true,
 		},
+		{
+			name:       "uses IsRootSpan() function",
+			conditions: []string{`span.name == "HTTP GET" and IsRootSpan() == true`},
+		},
 	}
 }
 
