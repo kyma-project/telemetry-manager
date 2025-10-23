@@ -167,7 +167,7 @@ var v1beta1LogPipeline = &telemetryv1beta1.LogPipeline{
 					Include: []string{"default", "kube-system"},
 					Exclude: []string{"kube-public"},
 				},
-				Containers: telemetryv1beta1.LogPipelineContainerSelector{
+				Containers: &telemetryv1beta1.LogPipelineContainerSelector{
 					Include: []string{"nginx", "app"},
 					Exclude: []string{"sidecar"},
 				},

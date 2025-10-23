@@ -97,6 +97,13 @@ func convertApplicationToBeta(application *LogPipelineApplicationInput) *telemet
 		return nil
 	}
 
+	runtime := &telemetryv1beta1.LogPipelineRuntimeInput{
+		Enabled:          application.Enabled,
+		KeepAnnotations:  application.KeepAnnotations,
+		DropLabels:       application.DropLabels,
+		KeepOriginalBody: application.KeepOriginalBody,
+	}
+
 	var excludes []string
 	if len(application.Namespaces.Include) == 0 && len(application.Namespaces.Exclude) == 0 && !application.Namespaces.System {
 		excludes = namespaces.System()
@@ -104,19 +111,17 @@ func convertApplicationToBeta(application *LogPipelineApplicationInput) *telemet
 		excludes = application.Namespaces.Exclude
 	}
 
-	runtime := &telemetryv1beta1.LogPipelineRuntimeInput{
-		Enabled: application.Enabled,
-		Namespaces: &telemetryv1beta1.NamespaceSelector{
-			Include: sanitizeNamespaceNames(application.Namespaces.Include),
-			Exclude: sanitizeNamespaceNames(excludes),
-		},
-		Containers: telemetryv1beta1.LogPipelineContainerSelector{
-			Include: append([]string{}, application.Containers.Include...),
-			Exclude: append([]string{}, application.Containers.Exclude...),
-		},
-		KeepAnnotations:  application.KeepAnnotations,
-		DropLabels:       application.DropLabels,
-		KeepOriginalBody: application.KeepOriginalBody,
+	runtime.Namespaces = &telemetryv1beta1.NamespaceSelector{
+		Include: sanitizeNamespaceNames(application.Namespaces.Include),
+		Exclude: sanitizeNamespaceNames(excludes),
+	}
+
+	if len(application.Containers.Include) > 0 || len(application.Containers.Exclude) > 0 {
+		runtime.Containers =
+			&telemetryv1beta1.LogPipelineContainerSelector{
+				Include: append([]string{}, application.Containers.Include...),
+				Exclude: append([]string{}, application.Containers.Exclude...),
+			}
 	}
 
 	return runtime
@@ -220,11 +225,7 @@ func convertRuntimeToAlpha(runtime *telemetryv1beta1.LogPipelineRuntimeInput) *L
 	}
 
 	application := &LogPipelineApplicationInput{
-		Enabled: runtime.Enabled,
-		Containers: LogPipelineContainerSelector{
-			Include: append([]string{}, runtime.Containers.Include...),
-			Exclude: append([]string{}, runtime.Containers.Exclude...),
-		},
+		Enabled:          runtime.Enabled,
 		KeepAnnotations:  runtime.KeepAnnotations,
 		DropLabels:       runtime.DropLabels,
 		KeepOriginalBody: runtime.KeepOriginalBody,
@@ -235,6 +236,13 @@ func convertRuntimeToAlpha(runtime *telemetryv1beta1.LogPipelineRuntimeInput) *L
 			Include: append([]string{}, runtime.Namespaces.Include...),
 			Exclude: append([]string{}, runtime.Namespaces.Exclude...),
 			System:  false,
+		}
+	}
+
+	if runtime.Containers != nil {
+		application.Containers = LogPipelineContainerSelector{
+			Include: append([]string{}, runtime.Containers.Include...),
+			Exclude: append([]string{}, runtime.Containers.Exclude...),
 		}
 	}
 

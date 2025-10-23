@@ -322,7 +322,11 @@ func (in *LogPipelineRuntimeInput) DeepCopyInto(out *LogPipelineRuntimeInput) {
 		*out = new(NamespaceSelector)
 		(*in).DeepCopyInto(*out)
 	}
-	in.Containers.DeepCopyInto(&out.Containers)
+	if in.Containers != nil {
+		in, out := &in.Containers, &out.Containers
+		*out = new(LogPipelineContainerSelector)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.KeepAnnotations != nil {
 		in, out := &in.KeepAnnotations, &out.KeepAnnotations
 		*out = new(bool)

@@ -118,7 +118,7 @@ type LogPipelineRuntimeInput struct {
 	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
 	// Containers describes whether application logs from specific containers are selected. The options are mutually exclusive.
 	// +kubebuilder:validation:Optional
-	Containers LogPipelineContainerSelector `json:"containers,omitempty"`
+	Containers *LogPipelineContainerSelector `json:"containers,omitempty"`
 	// KeepAnnotations defines whether to keep all Kubernetes annotations. The default is `false`.  Only available when using an output of type `http` and `custom`.
 	// +kubebuilder:validation:Optional
 	KeepAnnotations *bool `json:"keepAnnotations,omitempty"`
