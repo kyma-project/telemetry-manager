@@ -4,6 +4,7 @@ const (
 	EnvVarCurrentPodIP    = "MY_POD_IP"
 	EnvVarCurrentNodeName = "MY_NODE_NAME"
 	EnvVarGoMemLimit      = "GOMEMLIMIT"
+	EnvVarGoDebug         = "GODEBUG"
 )
 
 const (
@@ -148,7 +149,7 @@ const (
 	// CONNECTORS
 	// ================================================================================
 
-	ComponentIDForwardConnector                = "forward/%s" // dynamically filled with pipeline name
+	ComponentIDForwardConnector                = "forward"
 	ComponentIDRoutingConnector                = "routing/%s" // dynamically filled with pipeline name
 	ComponentIDEnrichmentRoutingConnector      = "routing/enrichment"
 	ComponentIDRuntimeInputRoutingConnector    = "routing/runtime-input"

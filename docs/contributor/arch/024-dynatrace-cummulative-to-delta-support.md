@@ -8,7 +8,7 @@ date: 2025-07-18
 
 ## Context
 
-The Telemetry module supports exporting metrics to Dynatrace. However, Dynatrace has [limited support](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/getting-started/metrics/limitations#aggregation-temporality) for cumulative metrics and primarily accepts delta metrics. To ensure compatibility, the telemetry metric pipeline should allow converting cumulative metrics to delta format prior to export.
+The Telemetry module supports exporting metrics to Dynatrace. However, Dynatrace has [limited support](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/otlp-api/ingest-otlp-metrics/about-metrics-ingest#aggregation-temporality) for cumulative metrics and primarily accepts delta metrics. To ensure compatibility, the telemetry metric pipeline should allow converting cumulative metrics to delta format prior to export.
 
 ## Proposal
 

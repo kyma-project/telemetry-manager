@@ -79,18 +79,18 @@ var (
 	setupLog           = ctrl.Log.WithName("setup")
 	telemetryNamespace string
 
-	// Operator flags
-	certDir                   string
-	enableV1Beta1LogPipelines bool
-
-	highPriorityClassName   string
-	normalPriorityClassName string
-
 	fluentBitExporterImage string
 	fluentBitImage         string
 	otelCollectorImage     string
 	selfMonitorImage       string
 	alpineImage            string
+
+	// Operator flags
+	certDir                   string
+	enableV1Beta1LogPipelines bool
+	highPriorityClassName     string
+	normalPriorityClassName   string
+	enableFIPSMode            bool
 )
 
 const (
@@ -271,17 +271,17 @@ func logBuildAndProcessInfo() {
 		Subsystem:   "",
 		Name:        "build_info",
 		Help:        "Build information of the Telemetry Manager",
-		ConstLabels: build.AsLabels(),
+		ConstLabels: build.InfoMap(),
 	})
 	buildInfoGauge.Set(1)
+
+	setupLog.Info("Starting Telemetry Manager", "Build info:", build.InfoMap())
 
 	featureFlagsGaugeVec := promauto.With(metrics.Registry).NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "telemetry",
 		Name:      "feature_flags_info",
 		Help:      "Enabled feature flags in the Telemetry Manager",
 	}, []string{"flag"})
-
-	setupLog.Info("Starting Telemetry Manager", "GitCommit", build.GitCommit(), "GitTag", build.GitTag(), "GitTreeState", build.GitTreeState(), "GoVersion", build.GoVersion())
 
 	for _, flg := range featureflags.EnabledFlags() {
 		featureFlagsGaugeVec.WithLabelValues(flg.String()).Set(1)
@@ -296,6 +296,7 @@ func initializeFeatureFlags() {
 func parseFlags() {
 	flag.BoolVar(&enableV1Beta1LogPipelines, "enable-v1beta1-log-pipelines", false, "Enable v1beta1 log pipelines CRD")
 	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
+	flag.BoolVar(&enableFIPSMode, "enable-fips-mode", false, "Enable FIPS mode for the OTel collctors")
 
 	flag.StringVar(&highPriorityClassName, "high-priority-class-name", "", "High priority class name used by managed DaemonSets")
 	flag.StringVar(&normalPriorityClassName, "normal-priority-class-name", "", "Normal priority class name used by managed Deployments")
@@ -441,6 +442,7 @@ func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan
 			SelfMonitorName:             selfMonitorName,
 			TelemetryNamespace:          telemetryNamespace,
 			ModuleVersion:               build.GitTag(),
+			EnableFIPSMode:              enableFIPSMode,
 		},
 	)
 	if err != nil {
@@ -479,6 +481,7 @@ func setupTracePipelineController(mgr manager.Manager, reconcileTriggerChan <-ch
 			SelfMonitorName:               selfMonitorName,
 			TelemetryNamespace:            telemetryNamespace,
 			TraceGatewayPriorityClassName: normalPriorityClassName,
+			EnableFIPSMode:                enableFIPSMode,
 		},
 	)
 	if err != nil {
@@ -506,6 +509,7 @@ func setupMetricPipelineController(mgr manager.Manager, reconcileTriggerChan <-c
 			RestConfig:                     mgr.GetConfig(),
 			SelfMonitorName:                selfMonitorName,
 			TelemetryNamespace:             telemetryNamespace,
+			EnableFIPSMode:                 enableFIPSMode,
 		},
 	)
 	if err != nil {

@@ -32,36 +32,51 @@ func TestGateway_ApplyResources(t *testing.T) {
 	}{
 		{
 			name:           "metric gateway",
-			sut:            NewMetricGatewayApplierDeleter(image, namespace, priorityClassName),
+			sut:            NewMetricGatewayApplierDeleter(image, namespace, priorityClassName, false),
 			goldenFilePath: "testdata/metric-gateway.yaml",
 		},
 		{
 			name:           "metric gateway with istio",
-			sut:            NewMetricGatewayApplierDeleter(image, namespace, priorityClassName),
+			sut:            NewMetricGatewayApplierDeleter(image, namespace, priorityClassName, false),
 			istioEnabled:   true,
 			goldenFilePath: "testdata/metric-gateway-istio.yaml",
 		},
 		{
+			name:           "metric gateway with FIPS mode enabled",
+			sut:            NewMetricGatewayApplierDeleter(image, namespace, priorityClassName, true),
+			goldenFilePath: "testdata/metric-gateway-fips-enabled.yaml",
+		},
+		{
 			name:           "trace gateway",
-			sut:            NewTraceGatewayApplierDeleter(image, namespace, priorityClassName),
+			sut:            NewTraceGatewayApplierDeleter(image, namespace, priorityClassName, false),
 			goldenFilePath: "testdata/trace-gateway.yaml",
 		},
 		{
 			name:           "trace gateway with istio",
-			sut:            NewTraceGatewayApplierDeleter(image, namespace, priorityClassName),
+			sut:            NewTraceGatewayApplierDeleter(image, namespace, priorityClassName, false),
 			istioEnabled:   true,
 			goldenFilePath: "testdata/trace-gateway-istio.yaml",
 		},
 		{
+			name:           "trace gateway with FIPS mode enabled",
+			sut:            NewTraceGatewayApplierDeleter(image, namespace, priorityClassName, true),
+			goldenFilePath: "testdata/trace-gateway-fips-enabled.yaml",
+		},
+		{
 			name:           "log gateway",
-			sut:            NewLogGatewayApplierDeleter(image, namespace, priorityClassName),
+			sut:            NewLogGatewayApplierDeleter(image, namespace, priorityClassName, false),
 			goldenFilePath: "testdata/log-gateway.yaml",
 		},
 		{
 			name:           "log gateway with istio",
-			sut:            NewLogGatewayApplierDeleter(image, namespace, priorityClassName),
+			sut:            NewLogGatewayApplierDeleter(image, namespace, priorityClassName, false),
 			istioEnabled:   true,
 			goldenFilePath: "testdata/log-gateway-istio.yaml",
+		},
+		{
+			name:           "log gateway with FIPS mode enabled",
+			sut:            NewLogGatewayApplierDeleter(image, namespace, priorityClassName, true),
+			goldenFilePath: "testdata/log-gateway-fips-enabled.yaml",
 		},
 	}
 
@@ -118,29 +133,29 @@ func TestGateway_DeleteResources(t *testing.T) {
 	}{
 		{
 			name: "metric gateway",
-			sut:  NewMetricGatewayApplierDeleter(image, namespace, priorityClassName),
+			sut:  NewMetricGatewayApplierDeleter(image, namespace, priorityClassName, false),
 		},
 		{
 			name:         "metric gateway with istio",
-			sut:          NewMetricGatewayApplierDeleter(image, namespace, priorityClassName),
+			sut:          NewMetricGatewayApplierDeleter(image, namespace, priorityClassName, false),
 			istioEnabled: true,
 		},
 		{
 			name: "trace gateway",
-			sut:  NewTraceGatewayApplierDeleter(image, namespace, priorityClassName),
+			sut:  NewTraceGatewayApplierDeleter(image, namespace, priorityClassName, false),
 		},
 		{
 			name:         "trace gateway with istio",
-			sut:          NewTraceGatewayApplierDeleter(image, namespace, priorityClassName),
+			sut:          NewTraceGatewayApplierDeleter(image, namespace, priorityClassName, false),
 			istioEnabled: true,
 		},
 		{
 			name: "log gateway",
-			sut:  NewLogGatewayApplierDeleter(image, namespace, priorityClassName),
+			sut:  NewLogGatewayApplierDeleter(image, namespace, priorityClassName, false),
 		},
 		{
 			name:         "log gateway with istio",
-			sut:          NewLogGatewayApplierDeleter(image, namespace, priorityClassName),
+			sut:          NewLogGatewayApplierDeleter(image, namespace, priorityClassName, false),
 			istioEnabled: true,
 		},
 	}
