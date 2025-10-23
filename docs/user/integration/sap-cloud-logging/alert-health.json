@@ -22,7 +22,6 @@
     "triggers": [
        {
           "query_level_trigger": {
-             "id": "Ek8rl4cBIncOvUuuWmSC",
              "name": "Cloud Logging health is red",
              "severity": "1",
              "condition": {
@@ -33,9 +32,8 @@
              },
              "actions": [
                 {
-                   "id": "E08rl4cBIncOvUuuWmSC",
                    "name": "Notify",
-                   "destination_id": "<destination>",
+                   "destination_id": "",
                    "message_template": {
                       "source": "Monitor {{ctx.monitor.name}} just entered alert status. For more details query the API as described in https://opensearch.org/docs/1.3/api-reference/cluster-api/cluster-health/\n  - Trigger: {{ctx.trigger.name}}\n  - Severity: {{ctx.trigger.severity}}\n  - Period start: {{ctx.periodStart}}\n  - Period end: {{ctx.periodEnd}}\n  - <link to your instance>/app/alerting",
                       "lang": "mustache"
@@ -53,47 +51,6 @@
              ]
           }
        }
-    ],
-    "ui_metadata": {
-       "schedule": {
-          "timezone": null,
-          "frequency": "interval",
-          "period": {
-             "unit": "MINUTES",
-             "interval": 1
-          },
-          "daily": 0,
-          "weekly": {
-             "tue": false,
-             "wed": false,
-             "thur": false,
-             "sat": false,
-             "fri": false,
-             "mon": false,
-             "sun": false
-          },
-          "monthly": {
-             "type": "day",
-             "day": 1
-          },
-          "cronExpression": "0 */1 * * *"
-       },
-       "search": {
-          "searchType": "clusterMetrics",
-          "timeField": "",
-          "aggregations": [],
-          "groupBy": [],
-          "bucketValue": 1,
-          "bucketUnitOfTime": "h",
-          "where": {
-             "fieldName": [],
-             "fieldRangeEnd": 0,
-             "fieldRangeStart": 0,
-             "fieldValue": "",
-             "operator": "is"
-          }
-       },
-       "monitor_type": "cluster_metrics_monitor"
-    }
+    ]
  }
  

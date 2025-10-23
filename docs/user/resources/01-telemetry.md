@@ -45,6 +45,9 @@ Status:
     metrics:
       grpc: http://telemetry-otlp-metrics.kyma-system:4317
       http: http://telemetry-otlp-metrics.kyma-system:4318
+    logs:
+      grpc: http://telemetry-otlp-logs.kyma-system:4317
+      http: http://telemetry-otlp-logs.kyma-system:4318
   conditions:
     - lastTransitionTime: "2023-09-01T15:28:28Z"
       message: All log components are running
@@ -133,7 +136,7 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 
 <!-- TABLE-END -->
 
-The `state` attribute of the Telemetry CR is derived from the combined state of all the subcomponents, namely, from the condition types `LogComponentsHealthy`, `TraceComponentsHealthy` and `MetricComponentsHealthy`.
+The **state** attribute of the Telemetry CR is derived from the combined state of all the subcomponents, namely, from the condition types `LogComponentsHealthy`, `TraceComponentsHealthy` and `MetricComponentsHealthy`.
 
 ### Log Components State
 
