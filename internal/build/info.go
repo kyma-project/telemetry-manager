@@ -1,6 +1,10 @@
 package build
 
-import "runtime/debug"
+import (
+	"crypto/fips140"
+	"runtime/debug"
+	"strconv"
+)
 
 var (
 	// GitTag is the gitTag of the telemetry manager.
@@ -11,18 +15,13 @@ var (
 	gitTreeState = "unknown"
 )
 
-func VersionInfo() string {
-	return "GitTag: " + gitTag +
-		", GitCommit: " + gitCommit +
-		", GitTreeState: " + gitTreeState
-}
-
-func AsLabels() map[string]string {
+func InfoMap() map[string]string {
 	return map[string]string{
-		"git_tag":        gitTag,
-		"git_commit":     GitCommit(),
-		"go_version":     GoVersion(),
-		"git_tree_state": gitTreeState,
+		"git_tag":           gitTag,
+		"git_commit":        shortenedGitCommit(),
+		"go_version":        goVersion(),
+		"git_tree_state":    gitTreeState,
+		"fips_mode_enabled": strconv.FormatBool(fips140.Enabled()),
 	}
 }
 
@@ -30,7 +29,7 @@ func GitTag() string {
 	return gitTag
 }
 
-func GitCommit() string {
+func shortenedGitCommit() string {
 	if gitCommit == "" {
 		return "unknown"
 	}
@@ -45,15 +44,11 @@ func GitCommit() string {
 
 var readBuildInfo = debug.ReadBuildInfo
 
-func GoVersion() string {
+func goVersion() string {
 	buildInfo, ok := readBuildInfo()
 	if !ok {
 		return "unknown"
 	}
 
 	return buildInfo.GoVersion
-}
-
-func GitTreeState() string {
-	return gitTreeState
 }

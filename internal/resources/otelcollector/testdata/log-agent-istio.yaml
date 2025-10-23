@@ -105,6 +105,8 @@ spec:
               fieldPath: status.podIP
         - name: GOMEMLIMIT
           value: "1006632960"
+        - name: GODEBUG
+          value: fips140=off
         envFrom:
         - secretRef:
             name: telemetry-log-agent
