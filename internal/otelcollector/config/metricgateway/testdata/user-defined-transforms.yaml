@@ -10,7 +10,7 @@ service:
     pipelines:
         metrics/cls-output:
             receivers:
-                - forward/output
+                - forward
             processors:
                 - transform/user-defined-cls
                 - batch
@@ -18,7 +18,7 @@ service:
                 - otlp/cls
         metrics/dynatrace-output:
             receivers:
-                - forward/output
+                - forward
             processors:
                 - transform/user-defined-dynatrace
                 - batch
@@ -36,7 +36,7 @@ service:
                 - resource/insert-cluster-attributes
                 - resource/drop-kyma-attributes
             exporters:
-                - forward/output
+                - forward
     telemetry:
         metrics:
             readers:
@@ -188,4 +188,4 @@ exporters:
             max_interval: 30s
             max_elapsed_time: 300s
 connectors:
-    forward/output: {}
+    forward: {}

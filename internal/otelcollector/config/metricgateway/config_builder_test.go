@@ -149,7 +149,7 @@ func TestMakeConfig(t *testing.T) {
 		},
 		{
 			name:           "two pipelines with user-defined Filter",
-			goldenFileName: "two-pipelines-with-filter.yaml",
+			goldenFileName: "user-defined-filters.yaml",
 			pipelines: []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("cls").
@@ -169,7 +169,7 @@ func TestMakeConfig(t *testing.T) {
 		},
 		{
 			name:           "pipeline with user-defined Transform Filter",
-			goldenFileName: "pipeline-with-transform-filter.yaml",
+			goldenFileName: "user-defined-transform-filter.yaml",
 			pipelines: []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("cls").

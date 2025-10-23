@@ -20,10 +20,10 @@ service:
                 - resource/insert-cluster-attributes
                 - resource/drop-kyma-attributes
             exporters:
-                - forward/output
+                - forward
         metrics/test-output:
             receivers:
-                - forward/output
+                - forward
             processors:
                 - batch
             exporters:
@@ -153,4 +153,4 @@ exporters:
             max_interval: 30s
             max_elapsed_time: 300s
 connectors:
-    forward/output: {}
+    forward: {}
