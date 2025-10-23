@@ -21,6 +21,10 @@ type FilterSpecValidator struct {
 }
 
 func NewFilterSpecValidator(signalType SignalType) (*FilterSpecValidator, error) {
+	if err := signalType.Validate(); err != nil {
+		return nil, err
+	}
+
 	opts := newFilterParserCollectionOpts(signalType)
 
 	parserCollection, err := newGenericParserCollection(opts...)

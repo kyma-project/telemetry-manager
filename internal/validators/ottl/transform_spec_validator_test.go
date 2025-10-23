@@ -29,6 +29,11 @@ func TestTransformValidator(t *testing.T) {
 	runTransformValidatorTestCases(t, "metric", SignalTypeMetric, transformMetricContextTestCases())
 	runTransformValidatorTestCases(t, "datapoint", SignalTypeMetric, transformDataPointContextTestCases())
 	runTransformValidatorTestCases(t, "mixed", SignalTypeMetric, transformMixedMetricContextTestCases())
+
+	t.Run("invalid signal type", func(t *testing.T) {
+		_, err := NewTransformSpecValidator("invalid_signal")
+		require.Error(t, err)
+	})
 }
 
 func runTransformValidatorTestCases(t *testing.T, context string, signalType SignalType, tests []transformTestCase) {

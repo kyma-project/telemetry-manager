@@ -22,6 +22,10 @@ type TransformSpecValidator struct {
 }
 
 func NewTransformSpecValidator(signalType SignalType) (*TransformSpecValidator, error) {
+	if err := signalType.Validate(); err != nil {
+		return nil, err
+	}
+
 	opts := newTransformParserCollectionOpts(signalType)
 
 	parserCollection, err := newGenericParserCollection(opts...)

@@ -28,6 +28,11 @@ func TestFilterValidator(t *testing.T) {
 	runFilterValidatorTestCases(t, "metric", SignalTypeMetric, filterMetricContextTestCases())
 	runFilterValidatorTestCases(t, "datapoint", SignalTypeMetric, filterDataPointContextTestCases())
 	runFilterValidatorTestCases(t, "mixed", SignalTypeMetric, filterMixedMetricContextTestCases())
+
+	t.Run("invalid signal type", func(t *testing.T) {
+		_, err := NewFilterSpecValidator("invalid_signal")
+		require.Error(t, err)
+	})
 }
 
 func runFilterValidatorTestCases(t *testing.T, context string, signalType SignalType, tests []filterTestCase) {

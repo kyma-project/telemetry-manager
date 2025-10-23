@@ -2,6 +2,7 @@ package ottl
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottldatapoint"
@@ -36,6 +37,15 @@ const (
 	SignalTypeMetric SignalType = "metric"
 	SignalTypeTrace  SignalType = "trace"
 )
+
+func (s SignalType) Validate() error {
+	switch s {
+	case SignalTypeLog, SignalTypeMetric, SignalTypeTrace:
+		return nil
+	default:
+		return fmt.Errorf("invalid SignalType: %s", s)
+	}
+}
 
 // NOTE: The following statements apply to OTel Collector Contrib v0.136.0 and may change in future versions.
 // The transform processor uses ottl.ParserCollection[T], which supports both hard-coded context and context inference.
