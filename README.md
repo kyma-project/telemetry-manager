@@ -12,7 +12,7 @@
 
 ### Logs
 
-The logging controllers generate a [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) DaemonSet And Deployment and configuration from one or more LogPipeline custom resources. The controllers ensure that all OTel Collector Pods run the current configuration by restarting Pods after the configuration has changed. See all [CRD attributes](apis/telemetry/v1alpha1/logpipeline_types.go) and some [examples](./samples).
+The logging controllers generate a [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) DaemonSet And Deployment and configuration from one or more `LogPipeline` custom resources. The controllers ensure that all OTel Collector Pods run the current configuration by restarting Pods after the configuration has changed. See all [CRD attributes](apis/telemetry/v1alpha1/logpipeline_types.go) and some [examples](./samples).
 
 For more information, see [Logs](./docs/user/collecting-logs/README.md).
 
