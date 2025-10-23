@@ -38,7 +38,7 @@ func TestFilterValidator(t *testing.T) {
 func runFilterValidatorTestCases(t *testing.T, context string, signalType SignalType, tests []filterTestCase) {
 	t.Helper()
 
-	t.Run(fmt.Sprintf("%s_%s", signalType, context), func(t *testing.T) {
+	t.Run(fmt.Sprintf("%s/%s context", signalType, context), func(t *testing.T) {
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
 				validator, err := NewFilterSpecValidator(signalType)
