@@ -107,7 +107,7 @@ func TestBuildConfig(t *testing.T) {
 					}).
 					Build(),
 			},
-			goldenFileName: "two-pipelines-with-transforms.yaml",
+			goldenFileName: "user-defined-transforms.yaml",
 		},
 		{
 			name: "two pipelines with user-defined filter",
@@ -127,7 +127,7 @@ func TestBuildConfig(t *testing.T) {
 					}).
 					Build(),
 			},
-			goldenFileName: "two-pipelines-with-filter.yaml",
+			goldenFileName: "user-defined-filters.yaml",
 		},
 		{
 			name: "pipeline with user-defined transform and filter",
@@ -143,7 +143,7 @@ func TestBuildConfig(t *testing.T) {
 						Conditions: []string{"IsMatch(log.attributes[\"foo\"], \".*bar.*\")"},
 					}).Build(),
 			},
-			goldenFileName: "pipeline-with-transform-filter.yaml",
+			goldenFileName: "user-defined-transform-filter.yaml",
 		},
 	}
 

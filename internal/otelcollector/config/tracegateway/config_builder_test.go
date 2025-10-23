@@ -75,7 +75,7 @@ func TestBuildConfig(t *testing.T) {
 						},
 					}).Build(),
 			},
-			goldenFileName: "two-pipelines-with-transforms.yaml",
+			goldenFileName: "user-defined-transforms.yaml",
 		},
 		{
 			name: "pipeline with user-defined filters",
@@ -91,7 +91,7 @@ func TestBuildConfig(t *testing.T) {
 						Conditions: []string{"IsMatch(spanevent.attributes[\"foo\"], \".*bar.*\")"},
 					}).Build(),
 			},
-			goldenFileName: "two-pipelines-with-filter.yaml",
+			goldenFileName: "user-defined-filters.yaml",
 		},
 		{
 			name: "pipeline with user-defined transform and filters",
@@ -109,7 +109,7 @@ func TestBuildConfig(t *testing.T) {
 						},
 					}).Build(),
 			},
-			goldenFileName: "pipeline-with-transform-filter.yaml",
+			goldenFileName: "user-defined-transform-filter.yaml",
 		},
 	}
 
