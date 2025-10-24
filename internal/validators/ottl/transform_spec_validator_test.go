@@ -260,7 +260,7 @@ func transformLogContextTestCases() []transformTestCase {
 		},
 		{
 			name:            "invalid function in condition",
-			conditions:      []string{`llog.severity_text == "ERROR"`},
+			conditions:      []string{`len(log.severity_text) > 0`}, // should be Len, not len
 			statements:      []string{`set(log.attributes["processed"], "true")`},
 			isErrorExpected: true,
 		},
