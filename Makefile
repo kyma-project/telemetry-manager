@@ -275,20 +275,45 @@ uninstall: manifests $(HELM) ## Uninstall CRDs from the K8s cluster specified in
 
 .PHONY: deploy
 deploy: manifests $(HELM) ## Deploy resources based on the release (default) variant to the K8s cluster specified in ~/.kube/config.
-	$(HELM) template telemetry helm --set experimental.enabled=false --set default.enabled=true --set nameOverride=telemetry --set manager.container.image.repository=${MANAGER_IMAGE} --set manager.container.image.pullPolicy="Always" --namespace kyma-system | kubectl apply -f -
+	$(HELM) template telemetry helm \
+    	--set experimental.enabled=false \
+    	--set default.enabled=true \
+		--set nameOverride=telemetry \
+    	--set manager.container.image.repository=${MANAGER_IMAGE} \
+    	--set manager.container.image.pullPolicy="Always" \
+    	--set 'manager.container.args={--cert-dir=/tmp,--high-priority-class-name=telemetry-priority-class-high,--normal-priority-class-name=telemetry-priority-class,--enable-fips-mode=true}' \
+    	--namespace kyma-system \
+    | kubectl apply -f -
 
 .PHONY: undeploy
 undeploy: $(HELM) ## Undeploy resources based on the release (default) variant from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
-	$(HELM) template telemetry helm --set experimental.enabled=false --set default.enabled=true --set nameOverride=telemetry --set manager.container.image.repository=${MANAGER_IMAGE} --set manager.container.image.pullPolicy="Always" --namespace kyma-system | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+	$(HELM) template telemetry helm \
+    	--set experimental.enabled=false \
+    	--set default.enabled=true \
+		--set nameOverride=telemetry \
+		--namespace kyma-system \
+	| kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy-experimental
 deploy-experimental: manifests-experimental $(HELM) ## Deploy resources based on the development variant to the K8s cluster specified in ~/.kube/config.
-	$(HELM) template telemetry helm --set experimental.enabled=true --set default.enabled=false --set nameOverride=telemetry --set manager.container.image.repository=${MANAGER_IMAGE} --set manager.container.image.pullPolicy="Always" --namespace kyma-system | kubectl apply -f -
+	$(HELM) template telemetry helm \
+	    --set experimental.enabled=true \
+		--set default.enabled=false \
+		--set nameOverride=telemetry \
+		--set manager.container.image.repository=${MANAGER_IMAGE} \
+		--set manager.container.image.pullPolicy="Always" \
+	    --set 'manager.container.args={--cert-dir=/tmp,--high-priority-class-name=telemetry-priority-class-high,--normal-priority-class-name=telemetry-priority-class,--enable-fips-mode=true}' \
+		--namespace kyma-system \
+	| kubectl apply -f -
 
 .PHONY: undeploy-experimental
 undeploy-experimental: $(HELM) ## Undeploy resources based on the development variant from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
-	$(HELM) template telemetry helm --set experimental.enabled=true --set default.enabled=false --set nameOverride=telemetry --set manager.container.image.repository=${MANAGER_IMAGE} --set manager.container.image.pullPolicy="Always" --namespace kyma-system | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
-
+	$(HELM) template telemetry helm \
+	    --set experimental.enabled=true \
+		--set default.enabled=false \
+		--set nameOverride=telemetry \
+		--namespace kyma-system \
+	| kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 .PHONY: update-metrics-docs
  update-metrics-docs: $(PROMLINTER) $(GOMPLATE) # Update metrics documentation
 	@metrics=$$(mktemp).json; echo $${metrics}; $(PROMLINTER) list -ojson . > $${metrics}; $(GOMPLATE) -d telemetry=$${metrics} -f hack/telemetry-internal-metrics.md.tpl > docs/contributor/telemetry-internal-metrics.md
