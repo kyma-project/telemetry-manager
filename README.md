@@ -24,7 +24,7 @@ For more information, see [Traces](./docs/user/collecting-traces/README.md).
 
 ### Metrics
 
-The metric controller creates an [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) DaemonSet And Deployment and related Kubernetes objects from a `MetricPipeline` CR. The collector is deployed as a [Gateway](https://opentelemetry.io/docs/collector/deployment/#gateway). The controller is configured to receive metrics in the OTLP protocol and forward them to a configurable OTLP backend.
+The metric controller creates an [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) DaemonSet and Deployment and related Kubernetes objects from a `MetricPipeline` CR. The collector is deployed as a [Gateway](https://opentelemetry.io/docs/collector/deployment/#gateway). The controller is configured to receive metrics in the OTLP protocol and forward them to a configurable OTLP backend.
 
 For more information, see [Metrics](./docs/user/collecting-metrics/README.md).
 
