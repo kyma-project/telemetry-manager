@@ -55,7 +55,7 @@ Supported integration scenarios are neutral to the vendor of the target system.
 
 ## Architecture
 
-The Telemetry module is built around a central controller, the Telemetry Manager, which dynamically configures and deploys data collection components based on your pipeline resources.
+The Telemetry module is built around a central controller, Telemetry Manager, which dynamically configures and deploys data collection components based on your pipeline resources.
 
 To understand how the core components interact, see [Architecture](architecture/README.md).
 
@@ -67,7 +67,7 @@ To learn how this model applies to each signal type, see:
 
 ## API/Custom Resource Definitions
 
-You configure the Telemetry module and its pipelines by creating and applying Kubernetes Custom Resource Definitions (CRD), which extend the Kubernetes API with custom additions.
+You configure the Telemetry module and its pipelines by creating and applying Kubernetes Custom Resource Definitions (CRDs), which extend the Kubernetes API with custom additions.
 
 To understand and configure the module's global settings, refer to the [Telemetry CRD](./resources/01-telemetry.md).
 
