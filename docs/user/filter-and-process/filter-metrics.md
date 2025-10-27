@@ -4,8 +4,8 @@ Filter metrics from the OTLP, Istio, Prometheus, and runtime input to control wh
 
 ## Overview
 
-| Source      | Granularity                               | If you omit the namespaces block... | To collect from **all** namespaces... | To collect from specific namespaces... |
-| :---------- | :---------------------------------------- | :---------------------------------- | :------------------------------------ | :------------------------------------- |
+| Source      | Granularity                                       | Behavior without 'namespaces' Block | Collect from All Namespaces | Collect from Specific Namespaces |
+| :---------- | :------------------------------------------------ | :---------------------------------- | :------------------------------------ | :------------------------------------- |
 | OTLP (default) | Namespace                                 | includes system namespaces          | This is the default, no action needed. | Use the `include` or `exclude` filter |
 | Istio       | Namespace                                 | excludes system namespaces          | Add `namespaces: {}` to the input's configuration | Use the `include` or `exclude` filter |
 | Prometheus  | Namespace                                 | excludes system namespaces          | Add `namespaces: {}` to the input's configuration | Use the `include` or `exclude` filter |

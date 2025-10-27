@@ -4,7 +4,7 @@ Filter logs from the OTLP, application, and Istio input to control which data yo
 
 ## Overview
 
-| Source      | Granularity                                       | If you omit the namespaces block... | To collect from **all** namespaces... | To collect from specific namespaces... |
+| Source      | Granularity                                       | Behavior without 'namespaces' Block | Collect from All Namespaces | Collect from Specific Namespaces |
 | :---------- | :------------------------------------------------ | :---------------------------------- | :------------------------------------ | :------------------------------------- |
 | OTLP (default) | Namespace                                         | **includes** system namespaces      | This is the default, no action needed. | Use the `include` or `exclude` filter |
 | Application | Namespace, Container\*                            | **excludes** system namespaces      | Set the **system** attribute to `true`  | Use the `include` or `exclude` filter |
