@@ -15,7 +15,7 @@ The Istio module provides a preconfigured [extension provider](https://istio.io/
 
 Istio plays a key role in distributed tracing. Its [Ingress Gateway](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/) is typically where external requests enter your cluster. If a request doesn't have a trace context, Istio adds it. Furthermore, every component within the Istio service mesh runs an Istio proxy, which propagates the trace context and creates span data. When you enable Istio tracing, and it manages trace propagation in your application, you get a complete picture of a trace, because every component automatically contributes span data. Also, Istio tracing is preconfigured to use the vendor-neutral [W3C Trace Context](https://www.w3.org/TR/trace-context/) protocol.
 
-> **Caution**
+> [!WARNING]
 > Enabling Istio traces can significantly increase data volume and might quickly consume your trace storage. Start with a low sampling rate in production environments.
 
 ## Enable Istio Tracing for the Entire Mesh
