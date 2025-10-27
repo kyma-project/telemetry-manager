@@ -78,6 +78,7 @@ type LogPipelineControllerConfig struct {
 	SelfMonitorName             string
 	TelemetryNamespace          string
 	ModuleVersion               string
+	EnableFIPSMode              bool
 }
 
 func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config LogPipelineControllerConfig) (*LogPipelineController, error) {
@@ -238,12 +239,18 @@ func configureOtelReconciler(client client.Client, config LogPipelineControllerC
 		return nil, err
 	}
 
+	filterSpecValidator, err := ottl.NewFilterSpecValidator(ottl.SignalTypeLog)
+	if err != nil {
+		return nil, err
+	}
+
 	pipelineValidator := &logpipelineotel.Validator{
 		PipelineLock:           pipelineLock,
 		EndpointValidator:      &endpoint.Validator{Client: client},
 		TLSCertValidator:       tlscert.New(client),
 		SecretRefValidator:     &secretref.Validator{Client: client},
 		TransformSpecValidator: transformSpecValidator,
+		FilterSpecValidator:    filterSpecValidator,
 	}
 
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)
@@ -262,9 +269,19 @@ func configureOtelReconciler(client client.Client, config LogPipelineControllerC
 		gatewayFlowHealthProber,
 		agentFlowHealthProber,
 		agentConfigBuilder,
-		otelcollector.NewLogAgentApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.LogAgentPriorityClassName),
+		otelcollector.NewLogAgentApplierDeleter(
+			config.OTelCollectorImage,
+			config.TelemetryNamespace,
+			config.LogAgentPriorityClassName,
+			config.EnableFIPSMode,
+		),
 		&workloadstatus.DaemonSetProber{Client: client},
-		otelcollector.NewLogGatewayApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.LogGatewayPriorityClassName),
+		otelcollector.NewLogGatewayApplierDeleter(
+			config.OTelCollectorImage,
+			config.TelemetryNamespace,
+			config.LogGatewayPriorityClassName,
+			config.EnableFIPSMode,
+		),
 		&loggateway.Builder{Reader: client},
 		&workloadstatus.DeploymentProber{Client: client},
 		istiostatus.NewChecker(discoveryClient),

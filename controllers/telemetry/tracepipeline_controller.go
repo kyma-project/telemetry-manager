@@ -68,6 +68,7 @@ type TracePipelineControllerConfig struct {
 	TelemetryNamespace            string
 	OTelCollectorImage            string
 	TraceGatewayPriorityClassName string
+	EnableFIPSMode                bool
 }
 
 func NewTracePipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config TracePipelineControllerConfig) (*TracePipelineController, error) {
@@ -98,12 +99,18 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 		return nil, err
 	}
 
+	filterSpecValidator, err := ottl.NewFilterSpecValidator(ottl.SignalTypeTrace)
+	if err != nil {
+		return nil, err
+	}
+
 	pipelineValidator := &tracepipeline.Validator{
 		EndpointValidator:      &endpoint.Validator{Client: client},
 		TLSCertValidator:       tlscert.New(client),
 		SecretRefValidator:     &secretref.Validator{Client: client},
 		PipelineLock:           pipelineLock,
 		TransformSpecValidator: transformSpecValidator,
+		FilterSpecValidator:    filterSpecValidator,
 	}
 
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)
@@ -115,7 +122,12 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 		client,
 		config.TelemetryNamespace,
 		flowHealthProber,
-		otelcollector.NewTraceGatewayApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.TraceGatewayPriorityClassName),
+		otelcollector.NewTraceGatewayApplierDeleter(
+			config.OTelCollectorImage,
+			config.TelemetryNamespace,
+			config.TraceGatewayPriorityClassName,
+			config.EnableFIPSMode,
+		),
 		&tracegateway.Builder{Reader: client},
 		&workloadstatus.DeploymentProber{Client: client},
 		istiostatus.NewChecker(discoveryClient),

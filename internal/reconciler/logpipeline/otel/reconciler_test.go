@@ -76,6 +76,7 @@ func TestReconcile(t *testing.T) {
 			TLSCertValidator:       stubs.NewTLSCertValidator(nil),
 			SecretRefValidator:     stubs.NewSecretRefValidator(nil),
 			TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
+			FilterSpecValidator:    stubs.NewFilterSpecValidator(nil),
 		}
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
@@ -150,6 +151,7 @@ func TestReconcile(t *testing.T) {
 			TLSCertValidator:       stubs.NewTLSCertValidator(nil),
 			SecretRefValidator:     stubs.NewSecretRefValidator(nil),
 			TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
+			FilterSpecValidator:    stubs.NewFilterSpecValidator(nil),
 		}
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
@@ -218,6 +220,7 @@ func TestReconcile(t *testing.T) {
 			TLSCertValidator:       stubs.NewTLSCertValidator(nil),
 			SecretRefValidator:     stubs.NewSecretRefValidator(nil),
 			TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
+			FilterSpecValidator:    stubs.NewFilterSpecValidator(nil),
 		}
 
 		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
@@ -291,6 +294,7 @@ func TestReconcile(t *testing.T) {
 			TLSCertValidator:       stubs.NewTLSCertValidator(nil),
 			SecretRefValidator:     stubs.NewSecretRefValidator(nil),
 			TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
+			FilterSpecValidator:    stubs.NewFilterSpecValidator(nil),
 		}
 
 		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
@@ -364,6 +368,7 @@ func TestReconcile(t *testing.T) {
 			TLSCertValidator:       stubs.NewTLSCertValidator(nil),
 			SecretRefValidator:     stubs.NewSecretRefValidator(nil),
 			TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
+			FilterSpecValidator:    stubs.NewFilterSpecValidator(nil),
 		}
 
 		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
@@ -518,6 +523,7 @@ func TestReconcile(t *testing.T) {
 					TLSCertValidator:       stubs.NewTLSCertValidator(nil),
 					SecretRefValidator:     stubs.NewSecretRefValidator(nil),
 					TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
+					FilterSpecValidator:    stubs.NewFilterSpecValidator(nil),
 				}
 
 				errToMsg := &conditions.ErrorToMessageConverter{}
@@ -647,6 +653,7 @@ func TestReconcile(t *testing.T) {
 					TLSCertValidator:       stubs.NewTLSCertValidator(nil),
 					SecretRefValidator:     stubs.NewSecretRefValidator(nil),
 					TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
+					FilterSpecValidator:    stubs.NewFilterSpecValidator(nil),
 				}
 
 				errToMsg := &conditions.ErrorToMessageConverter{}
@@ -724,8 +731,90 @@ func TestReconcile(t *testing.T) {
 			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
 			TransformSpecValidator: stubs.NewTransformSpecValidator(
-				&ottl.InvalidTransformSpecError{
+				&ottl.InvalidOTTLSpecError{
 					Err: fmt.Errorf("invalid TransformSpec: error while parsing statements"),
+				},
+			),
+			FilterSpecValidator: stubs.NewFilterSpecValidator(nil),
+		}
+
+		errToMsg := &conditions.ErrorToMessageConverter{}
+		sut := New(
+			fakeClient,
+			telemetryNamespace,
+			moduleVersion,
+			gatewayFlowHeathProber,
+			agentFlowHealthProber,
+			agentConfigBuilderMock,
+			agentApplierDeleterMock,
+			agentProberStub,
+			gatewayApplierDeleterMock,
+			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			istioStatusCheckerStub,
+			pipelineLock,
+			pipelineValidatorWithStubs,
+			errToMsg)
+		err := sut.Reconcile(t.Context(), &pipeline)
+		require.NoError(t, err)
+
+		var updatedPipeline telemetryv1alpha1.LogPipeline
+
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeConfigurationGenerated,
+			metav1.ConditionFalse,
+			conditions.ReasonOTTLSpecInvalid,
+			"Invalid TransformSpec: error while parsing statements",
+		)
+
+		agentConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything, mock.Anything)
+		gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything, mock.Anything)
+	})
+
+	t.Run("invalid filter spec", func(t *testing.T) {
+		pipeline := testutils.NewLogPipelineBuilder().Build()
+		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil)
+
+		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
+		agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil)
+
+		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+		gatewayApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil)
+
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
+
+		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
+		gatewayFlowHeathProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+
+		agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
+		agentFlowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
+
+		pipelineLock := &mocks.PipelineLock{}
+		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
+		pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
+
+		pipelineValidatorWithStubs := &Validator{
+			PipelineLock:           pipelineLock,
+			EndpointValidator:      stubs.NewEndpointValidator(nil),
+			TLSCertValidator:       stubs.NewTLSCertValidator(nil),
+			SecretRefValidator:     stubs.NewSecretRefValidator(nil),
+			TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
+			FilterSpecValidator: stubs.NewFilterSpecValidator(
+				&ottl.InvalidOTTLSpecError{
+					Err: fmt.Errorf("invalid FilterSpec: error while parsing conditions"),
 				},
 			),
 		}
@@ -757,8 +846,8 @@ func TestReconcile(t *testing.T) {
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeConfigurationGenerated,
 			metav1.ConditionFalse,
-			conditions.ReasonTransformSpecInvalid,
-			"Invalid TransformSpec: error while parsing statements",
+			conditions.ReasonOTTLSpecInvalid,
+			"Invalid FilterSpec: error while parsing conditions",
 		)
 
 		agentConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything, mock.Anything)
@@ -798,6 +887,7 @@ func TestReconcile(t *testing.T) {
 			TLSCertValidator:       stubs.NewTLSCertValidator(nil),
 			SecretRefValidator:     stubs.NewSecretRefValidator(nil),
 			TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
+			FilterSpecValidator:    stubs.NewFilterSpecValidator(nil),
 		}
 
 		sut := New(
@@ -870,6 +960,7 @@ func TestReconcile(t *testing.T) {
 			TLSCertValidator:       stubs.NewTLSCertValidator(nil),
 			SecretRefValidator:     stubs.NewSecretRefValidator(nil),
 			TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
+			FilterSpecValidator:    stubs.NewFilterSpecValidator(nil),
 		}
 
 		sut := New(
@@ -943,6 +1034,7 @@ func TestReconcile(t *testing.T) {
 			TLSCertValidator:       stubs.NewTLSCertValidator(nil),
 			SecretRefValidator:     stubs.NewSecretRefValidator(nil),
 			TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
+			FilterSpecValidator:    stubs.NewFilterSpecValidator(nil),
 		}
 
 		sut := New(

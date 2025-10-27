@@ -71,6 +71,7 @@ type MetricPipelineControllerConfig struct {
 	RestConfig                     *rest.Config
 	SelfMonitorName                string
 	TelemetryNamespace             string
+	EnableFIPSMode                 bool
 }
 
 func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config MetricPipelineControllerConfig) (*MetricPipelineController, error) {
@@ -106,12 +107,18 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 		return nil, err
 	}
 
+	filterSpecValidator, err := ottl.NewFilterSpecValidator(ottl.SignalTypeMetric)
+	if err != nil {
+		return nil, err
+	}
+
 	pipelineValidator := &metricpipeline.Validator{
 		EndpointValidator:      &endpoint.Validator{Client: client},
 		TLSCertValidator:       tlscert.New(client),
 		SecretRefValidator:     &secretref.Validator{Client: client},
 		PipelineLock:           pipelineLock,
 		TransformSpecValidator: transformSpecValidator,
+		FilterSpecValidator:    filterSpecValidator,
 	}
 
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)
@@ -126,12 +133,22 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 		client,
 		config.TelemetryNamespace,
 		config.ModuleVersion,
-		otelcollector.NewMetricAgentApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.MetricAgentPriorityClassName),
+		otelcollector.NewMetricAgentApplierDeleter(
+			config.OTelCollectorImage,
+			config.TelemetryNamespace,
+			config.MetricAgentPriorityClassName,
+			config.EnableFIPSMode,
+		),
 		agentConfigBuilder,
 		&workloadstatus.DaemonSetProber{Client: client},
 		gatewayFlowHealthProber,
 		agentFlowHealthProber,
-		otelcollector.NewMetricGatewayApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.MetricGatewayPriorityClassName),
+		otelcollector.NewMetricGatewayApplierDeleter(
+			config.OTelCollectorImage,
+			config.TelemetryNamespace,
+			config.MetricGatewayPriorityClassName,
+			config.EnableFIPSMode,
+		),
 		gatewayConfigBuilder,
 		&workloadstatus.DeploymentProber{Client: client},
 		istiostatus.NewChecker(discoveryClient),
