@@ -18,13 +18,13 @@ For more information, see [Logs](./docs/user/collecting-logs/README.md).
 
 ### Traces
 
-The trace controller creates an [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) Deployment and related Kubernetes objects from a `TracePipeline` custom resource. The collector is configured to receive traces using the [OpenTelemetry Protocol (OTLP)](https://opentelemetry.io/docs/specs/otel/protocol/), and forwards the received traces to a configurable OTLP backend.
+The trace controller creates an [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) Deployment and related Kubernetes objects from a `TracePipeline` CR. The collector is configured to receive traces using the [OpenTelemetry Protocol (OTLP)](https://opentelemetry.io/docs/specs/otel/protocol/), and forwards the received traces to a configurable OTLP backend.
 
 For more information, see [Traces](./docs/user/collecting-traces/README.md).
 
 ### Metrics
 
-The metric controller creates an [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) DaemonSet And Deployment and related Kubernetes objects from a `MetricPipeline` custom resource. The collector is deployed as a [Gateway](https://opentelemetry.io/docs/collector/deployment/#gateway). The controller is configured to receive metrics in the OTLP protocol and forward them to a configurable OTLP backend.
+The metric controller creates an [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) DaemonSet And Deployment and related Kubernetes objects from a `MetricPipeline` CR. The collector is deployed as a [Gateway](https://opentelemetry.io/docs/collector/deployment/#gateway). The controller is configured to receive metrics in the OTLP protocol and forward them to a configurable OTLP backend.
 
 For more information, see [Metrics](./docs/user/collecting-metrics/README.md).
 
