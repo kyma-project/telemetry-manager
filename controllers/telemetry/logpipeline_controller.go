@@ -239,12 +239,18 @@ func configureOtelReconciler(client client.Client, config LogPipelineControllerC
 		return nil, err
 	}
 
+	filterSpecValidator, err := ottl.NewFilterSpecValidator(ottl.SignalTypeLog)
+	if err != nil {
+		return nil, err
+	}
+
 	pipelineValidator := &logpipelineotel.Validator{
 		PipelineLock:           pipelineLock,
 		EndpointValidator:      &endpoint.Validator{Client: client},
 		TLSCertValidator:       tlscert.New(client),
 		SecretRefValidator:     &secretref.Validator{Client: client},
 		TransformSpecValidator: transformSpecValidator,
+		FilterSpecValidator:    filterSpecValidator,
 	}
 
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)
