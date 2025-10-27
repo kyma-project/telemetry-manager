@@ -147,6 +147,13 @@ func TestDefault(t *testing.T) {
 			expected: &telemetryv1beta1.LogPipeline{
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Input: telemetryv1beta1.LogPipelineInput{
+						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
+							Enabled:          ptr.To(true),
+							KeepOriginalBody: ptr.To(true),
+							Namespaces: &telemetryv1beta1.NamespaceSelector{
+								Exclude: namespaces.System(),
+							},
+						},
 						OTLP: &telemetryv1beta1.OTLPInput{
 							Enabled: ptr.To(true),
 							Namespaces: &telemetryv1beta1.NamespaceSelector{
@@ -167,6 +174,9 @@ func TestDefault(t *testing.T) {
 			input: &telemetryv1beta1.LogPipeline{
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Input: telemetryv1beta1.LogPipelineInput{
+						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
+							Enabled: ptr.To(false),
+						},
 						OTLP: &telemetryv1beta1.OTLPInput{
 							Namespaces: &telemetryv1beta1.NamespaceSelector{
 								Exclude: []string{"custom-namespace"},
@@ -186,6 +196,9 @@ func TestDefault(t *testing.T) {
 			expected: &telemetryv1beta1.LogPipeline{
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Input: telemetryv1beta1.LogPipelineInput{
+						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
+							Enabled: ptr.To(false),
+						},
 						OTLP: &telemetryv1beta1.OTLPInput{
 							Enabled: ptr.To(true),
 							Namespaces: &telemetryv1beta1.NamespaceSelector{
@@ -205,7 +218,7 @@ func TestDefault(t *testing.T) {
 			},
 		},
 		{
-			name: "should not activate otlp input by default for non-OTLP output pipelines",
+			name: "should not activate otlp input by default for non-OTLP output pipelines, but runtime input",
 			input: &telemetryv1beta1.LogPipeline{
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Output: telemetryv1beta1.LogPipelineOutput{
@@ -219,7 +232,15 @@ func TestDefault(t *testing.T) {
 			},
 			expected: &telemetryv1beta1.LogPipeline{
 				Spec: telemetryv1beta1.LogPipelineSpec{
-					Input: telemetryv1beta1.LogPipelineInput{},
+					Input: telemetryv1beta1.LogPipelineInput{
+						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
+							Enabled:          ptr.To(true),
+							KeepOriginalBody: ptr.To(true),
+							Namespaces: &telemetryv1beta1.NamespaceSelector{
+								Exclude: namespaces.System(),
+							},
+						},
+					},
 					Output: telemetryv1beta1.LogPipelineOutput{
 						HTTP: &telemetryv1beta1.LogPipelineHTTPOutput{
 							Host: telemetryv1beta1.ValueType{

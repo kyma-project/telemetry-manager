@@ -46,7 +46,7 @@ func (ld defaulter) applyDefaults(pipeline *telemetryv1alpha1.LogPipeline) {
 		pipeline.Spec.Input.Application.KeepOriginalBody = &ld.ApplicationInputKeepOriginalBody
 	}
 
-	if isOTLPPipelineAlpha(pipeline) {
+	if isOTLPPipeline(pipeline) {
 		if pipeline.Spec.Input.OTLP == nil {
 			pipeline.Spec.Input.OTLP = &telemetryv1alpha1.OTLPInput{}
 		}
@@ -61,6 +61,6 @@ func (ld defaulter) applyDefaults(pipeline *telemetryv1alpha1.LogPipeline) {
 	}
 }
 
-func isOTLPPipelineAlpha(pipeline *telemetryv1alpha1.LogPipeline) bool {
+func isOTLPPipeline(pipeline *telemetryv1alpha1.LogPipeline) bool {
 	return pipeline.Spec.Output.OTLP != nil
 }

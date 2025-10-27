@@ -34,19 +34,24 @@ func (ld defaulter) Default(ctx context.Context, obj runtime.Object) error {
 }
 
 func (ld defaulter) applyDefaults(pipeline *telemetryv1beta1.LogPipeline) {
-	if pipeline.Spec.Input.Runtime != nil {
-		if pipeline.Spec.Input.Runtime.Enabled == nil {
-			pipeline.Spec.Input.Runtime.Enabled = &ld.RuntimeInputEnabled
+	if pipeline.Spec.Input.Runtime == nil {
+		pipeline.Spec.Input.Runtime = &telemetryv1beta1.LogPipelineRuntimeInput{
+			Enabled:          &ld.RuntimeInputEnabled,
+			KeepOriginalBody: &ld.RuntimeInputKeepOriginalBody,
 		}
+	}
 
-		if *pipeline.Spec.Input.Runtime.Enabled && pipeline.Spec.Input.Runtime.KeepOriginalBody == nil {
-			pipeline.Spec.Input.Runtime.KeepOriginalBody = &ld.RuntimeInputKeepOriginalBody
-		}
+	if pipeline.Spec.Input.Runtime.Enabled == nil {
+		pipeline.Spec.Input.Runtime.Enabled = &ld.RuntimeInputEnabled
+	}
 
-		if *pipeline.Spec.Input.Runtime.Enabled && pipeline.Spec.Input.Runtime.Namespaces == nil {
-			pipeline.Spec.Input.Runtime.Namespaces = &telemetryv1beta1.NamespaceSelector{
-				Exclude: ld.ExcludeNamespaces,
-			}
+	if *pipeline.Spec.Input.Runtime.Enabled && pipeline.Spec.Input.Runtime.KeepOriginalBody == nil {
+		pipeline.Spec.Input.Runtime.KeepOriginalBody = &ld.RuntimeInputKeepOriginalBody
+	}
+
+	if *pipeline.Spec.Input.Runtime.Enabled && pipeline.Spec.Input.Runtime.Namespaces == nil {
+		pipeline.Spec.Input.Runtime.Namespaces = &telemetryv1beta1.NamespaceSelector{
+			Exclude: ld.ExcludeNamespaces,
 		}
 	}
 
@@ -54,7 +59,7 @@ func (ld defaulter) applyDefaults(pipeline *telemetryv1beta1.LogPipeline) {
 		pipeline.Spec.Output.OTLP.Protocol = ld.DefaultOTLPOutputProtocol
 	}
 
-	if isOTLPPipelineBeta(pipeline) {
+	if isOTLPPipeline(pipeline) {
 		if pipeline.Spec.Input.OTLP == nil {
 			pipeline.Spec.Input.OTLP = &telemetryv1beta1.OTLPInput{}
 		}
@@ -71,6 +76,6 @@ func (ld defaulter) applyDefaults(pipeline *telemetryv1beta1.LogPipeline) {
 	}
 }
 
-func isOTLPPipelineBeta(pipeline *telemetryv1beta1.LogPipeline) bool {
+func isOTLPPipeline(pipeline *telemetryv1beta1.LogPipeline) bool {
 	return pipeline.Spec.Output.OTLP != nil
 }
