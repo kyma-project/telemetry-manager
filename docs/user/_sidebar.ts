@@ -8,12 +8,6 @@ export default [
     ]
   },
   {
-    text: 'Collecting Logs', link: '/telemetry-manager/user/collecting-logs/README.md', collapsed: true, items: [
-      { text: 'Configure Application Logs', link: '/telemetry-manager/user/collecting-logs/application-input.md' },
-      { text: 'Configure Istio Access Logs', link: '/telemetry-manager/user/collecting-logs/istio-support.md' },
-    ]
-  },
-  {
     text: 'Collecting Traces', link: '/telemetry-manager/user/collecting-traces/README.md', collapsed: true, items: [
       { text: 'Configure Istio Tracing', link: '/telemetry-manager/user/collecting-traces/istio-support.md' },
     ]
