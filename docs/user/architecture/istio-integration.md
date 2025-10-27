@@ -9,7 +9,7 @@ The Telemetry gateways are automatically configured to accept OTLP data from app
 - Applications within the mesh automatically send data to the gateways using mTLS for a secure, encrypted connection.
 - Applications outside the mesh can send data to the gateway using a standard plain text connection.
 
-> **TIP**
+> [!TIP]
 > Learn more about Istio-specific input configuration for logs, traces, and metrics:
 >
 > - Configure Istio Access Logs
