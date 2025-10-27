@@ -17,7 +17,8 @@ By default, the **prometheus** input is disabled. If your applications emit Prom
       enabled: true
 ```
 
-> **Tip:** To validate or debug your configuration, use diagnostic metrics (see [Collect Diagnostic Metrics](#collect-diagnostic-metrics)).
+> [!TIP]
+> To validate or debug your configuration, use diagnostic metrics (see [Collect Diagnostic Metrics](#collect-diagnostic-metrics)).
 > To select metrics from specific namespaces or to include system namespaces, see [Filter Metrics](../filter-and-process/filter-metrics.md).
 
 ## Enable Metrics Collection With Annotations
@@ -26,7 +27,8 @@ The metric agent automatically discovers Prometheus endpoints in your cluster by
 
 To enable automatic metrics collection, apply the following annotations. If your Pod has an Istio sidecar, annotate the Service. Otherwise, annotate the Pod directly.
 
-> **Note:** If your service mesh enforces `STRICT` mTLS, the agent scrapes the endpoint over HTTPS automatically. If you don't use `STRICT` mTLS, add the annotation `prometheus.io/scheme: http` to force scraping over plain HTTP.
+> [!NOTE]
+> If your service mesh enforces `STRICT` mTLS, the agent scrapes the endpoint over HTTPS automatically. If you don't use `STRICT` mTLS, add the annotation `prometheus.io/scheme: http` to force scraping over plain HTTP.
 
 | Annotation Key                   | Values                                                           | Description                                                                                                                        |
 |----------------------------------|------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
@@ -72,7 +74,8 @@ If your application is part of an Istio service mesh, you must consider service 
 <!-- identical section for Prometheus and Istio docs -->
 To validate or debug your scraping configuration for the **prometheus** and **istio** input, you can use diagnostic metrics. By default, they are disabled.
 
-> **Note:** Unlike the **prometheus** and **istio** inputs, the **runtime**  input gathers data directly from Kubernetes APIs instead of using a scraping process, so it does not generate scrape-specific diagnostic metrics.
+> [!NOTE]
+> Unlike the **prometheus** and **istio** inputs, the **runtime**  input gathers data directly from Kubernetes APIs instead of using a scraping process, so it does not generate scrape-specific diagnostic metrics.
 
 To use diagnostic metrics, enable the **diagnosticMetrics** for the input in your MetricPipeline:
 

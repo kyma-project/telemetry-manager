@@ -13,14 +13,14 @@ Istio access logs help you monitor the "four golden signals" (latency, traffic, 
 
 By default, these logs are disabled because they can generate a high volume of data. To collect them, you apply an [Istio](https://istio.io/latest/docs/reference/config/telemetry/) `Telemetry` resource to a specific namespace, for the Istio Ingress Gateway, or for the entire mesh.
 
-> **Caution:**
+> [!WARNING] 
 > Enabling access logs, especially for the entire mesh, can significantly increase log volume and may lead to higher storage costs. Enable this feature only for the resources or components that you want to monitor.
 
 After enabling Istio access logs, reduce data volume and costs by filtering them (see [Filter Logs](../filter-and-process/filter-logs.md)).
 
 The Istio module provides a preconfigured [extension provider](https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig-ExtensionProvider) called `kyma-logs`, which tells Istio to send access logs to the Telemetry module's OTLP endpoint. If your LogPipeline uses the legacy **http** output, you must use the `stdout-json` provider instead.
 
-> **Note:**
+> [!NOTE]
 > You can only have one mesh-wide Istio `Telemetry` resource. If you also plan to enable Istio tracing (see [Configure Istio Tracing](./../collecting-traces/istio-support.md)), configure both access logging and tracing in this single resource.
 
 ## Enable Istio Logs for a Namespace

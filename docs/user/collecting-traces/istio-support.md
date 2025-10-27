@@ -41,7 +41,8 @@ The following example enables tracing with a default sampling rate of 1%:
    ```
 
 
-> **TIP:** After setting a mesh-wide default in the `istio-system` namespace, you can apply more specific tracing configurations for an entire namespace or for individual workloads within a namespace. This is useful for debugging a particular service by increasing its sampling rate without affecting the entire mesh. For details, see [Filter Traces](../filter-and-process/filter-traces.md).
+> [!TIP]
+> After setting a mesh-wide default in the `istio-system` namespace, you can apply more specific tracing configurations for an entire namespace or for individual workloads within a namespace. This is useful for debugging a particular service by increasing its sampling rate without affecting the entire mesh. For details, see [Filter Traces](../filter-and-process/filter-traces.md).
 
 ## Configure the Sampling Rate
 
@@ -69,7 +70,8 @@ In some cases, you may want Istio to propagate the W3C Trace Context for context
 
 To achieve this, set **randomSamplingPercentage** to `0.00` in your mesh-wide configuration.
 
-> **TIP:** For guidance on Istio access logs, see [Configure Istio Access Logs](../collecting-logs/istio-support.md).
+> [!TIP] 
+> For guidance on Istio access logs, see [Configure Istio Access Logs](../collecting-logs/istio-support.md).
 
 
 ```yaml

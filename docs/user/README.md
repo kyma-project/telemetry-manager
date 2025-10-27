@@ -23,7 +23,7 @@ Telemetry signals flow through the following stages:
 
 The Telemetry module focuses on the collection, processing, and shipment stages of the observability workflow. It offers a vendor-neutral approach based on [OpenTelemetry](https://opentelemetry.io/) and doesn't force you into a specific backend. This means you can integrate with your existing observability platforms or choose from a wide range of available backends that best suit your operational needs.
 
-> **Tip:**
+> [!TIP]
 > Build your first telemetry pipeline with the hands-on lesson [Collecting Application Logs and Shipping them to SAP Cloud Logging](https://learning.sap.com/learning-journeys/developing-applications-in-sap-btp-kyma-runtime/collecting-application-logs-and-shipping-to-sap-cloud-logging).
 
 ## Features
@@ -34,7 +34,7 @@ To support telemetry for your applications, the Telemetry module provides the fo
 
 - **Flexible Backend Integration**: The Telemetry module is optimized for integration with SAP BTP observability services, such as SAP Cloud Logging. You can also send data to any backend that supports the [OpenTelemetry protocol (OTLP)](https://opentelemetry.io/docs/specs/otel/protocol/), giving you the freedom to choose your preferred solution (see [Integrate With Your OTLP Backend](./integrate-otlp-backend/)).
 
-  > **Recommendation:**
+  > [!TIP]
   > For production deployments, we recommend using a central telemetry solution located outside your cluster. For an example with SAP Cloud Logging, see [Integrate With SAP Cloud Logging](./integration/sap-cloud-logging/README.md).
   >
   > For testing or development, in-cluster solutions may be suitable. For examples such as Dynatrace (or to learn how to collect data from applications based on the OpenTelemetry Demo App), see [Integration Guides](https://kyma-project.io/#/telemetry-manager/user/integration/README).

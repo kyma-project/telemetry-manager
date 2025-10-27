@@ -84,7 +84,8 @@ You can't modify an existing LogPipeline to change its output type. You must cre
 
    In contrast to a Fluent Bit LogPipeline, the `otlp` output doesn't automatically add all Pod labels. To continue enriching logs with specific labels, you must explicitly enable it in the spec.enrichments.extractPodLabels field.
 
-   > **Note:** Enrichment with Pod annotations is no longer supported.
+   > [!NOTE]
+   > Enrichment with Pod annotations is no longer supported.
 
 4. Deploy the new LogPipeline:
 
