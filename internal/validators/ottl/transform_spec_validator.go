@@ -1,46 +1,32 @@
 package ottl
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottldatapoint"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottllog"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlmetric"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlresource"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlscope"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlspan"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlspanevent"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/ottlfuncs"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
-type InvalidTransformSpecError struct {
-	Err error
-}
-
-func (e *InvalidTransformSpecError) Error() string {
-	return e.Err.Error()
-}
-
-func IsInvalidTransformSpecError(err error) bool {
-	var errInvalidTransformSpec *InvalidTransformSpecError
-	return errors.As(err, &errInvalidTransformSpec)
-}
-
-type SignalType string
-
-const (
-	SignalTypeLog    SignalType = "log"
-	SignalTypeMetric SignalType = "metric"
-	SignalTypeTrace  SignalType = "trace"
-)
-
 type TransformSpecValidator struct {
-	// The parserCollection is intentionally not exported, because it should be initialized internally only by the constructor
 	parserCollection *genericParserCollection
 }
 
 func NewTransformSpecValidator(signalType SignalType) (*TransformSpecValidator, error) {
-	opts, err := newTransformParserCollectionOpts(signalType)
-	if err != nil {
+	if err := signalType.Validate(); err != nil {
 		return nil, err
 	}
+
+	opts := newTransformParserCollectionOpts(signalType)
 
 	parserCollection, err := newGenericParserCollection(opts...)
 	if err != nil {
@@ -55,18 +41,18 @@ func (v *TransformSpecValidator) Validate(transforms []telemetryv1alpha1.Transfo
 
 	for _, ts := range transforms {
 		if err := v.parserCollection.parseStatementsWithConditions(ts.Statements, ts.Conditions); err != nil {
-			return &InvalidTransformSpecError{Err: fmt.Errorf("%s: %w", errorMessage, err)}
+			return &InvalidOTTLSpecError{Err: fmt.Errorf("%s: %w", errorMessage, err)}
 		}
 
 		if err := v.parserCollection.parseConditions(ts.Conditions); err != nil {
-			return &InvalidTransformSpecError{Err: fmt.Errorf("%s: %w", errorMessage, err)}
+			return &InvalidOTTLSpecError{Err: fmt.Errorf("%s: %w", errorMessage, err)}
 		}
 	}
 
 	return nil
 }
 
-func newTransformParserCollectionOpts(signalType SignalType) ([]genericParserCollectionOption, error) {
+func newTransformParserCollectionOpts(signalType SignalType) []genericParserCollectionOption {
 	var opts []genericParserCollectionOption
 
 	switch signalType {
@@ -74,42 +60,53 @@ func newTransformParserCollectionOpts(signalType SignalType) ([]genericParserCol
 		opts = []genericParserCollectionOption{
 			withLogParser(
 				ottl.CreateFactoryMap(transformprocessor.DefaultLogFunctions()...),
-				ottl.WithStatementConverter(convertLogStatements),
-				ottl.WithConditionConverter(convertLogConditions),
+				ottl.WithStatementConverter(nopStatementConverter[ottllog.TransformContext]),
+				ottl.WithConditionConverter(nopConditionConverter[ottllog.TransformContext]),
 			),
 		}
 	case SignalTypeMetric:
 		opts = []genericParserCollectionOption{
 			withMetricParser(
 				ottl.CreateFactoryMap(transformprocessor.DefaultMetricFunctions()...),
-				ottl.WithStatementConverter(convertMetricStatements),
-				ottl.WithConditionConverter(convertMetricConditions),
+				ottl.WithStatementConverter(nopStatementConverter[ottlmetric.TransformContext]),
+				ottl.WithConditionConverter(nopConditionConverter[ottlmetric.TransformContext]),
 			),
 			withDataPointParser(
 				ottl.CreateFactoryMap(transformprocessor.DefaultDataPointFunctions()...),
-				ottl.WithStatementConverter(convertDataPointStatements),
-				ottl.WithConditionConverter(convertDataPointConditions),
+				ottl.WithStatementConverter(nopStatementConverter[ottldatapoint.TransformContext]),
+				ottl.WithConditionConverter(nopConditionConverter[ottldatapoint.TransformContext]),
 			),
 		}
 	case SignalTypeTrace:
 		opts = []genericParserCollectionOption{
 			withSpanParser(
 				ottl.CreateFactoryMap(transformprocessor.DefaultSpanFunctions()...),
-				ottl.WithStatementConverter(convertSpanStatements),
-				ottl.WithConditionConverter(convertSpanConditions),
+				ottl.WithStatementConverter(nopStatementConverter[ottlspan.TransformContext]),
+				ottl.WithConditionConverter(nopConditionConverter[ottlspan.TransformContext]),
 			),
 			withSpanEventParser(
 				ottl.CreateFactoryMap(transformprocessor.DefaultSpanEventFunctions()...),
-				ottl.WithStatementConverter(convertSpanEventStatements),
-				ottl.WithConditionConverter(convertSpanEventConditions),
+				ottl.WithStatementConverter(nopStatementConverter[ottlspanevent.TransformContext]),
+				ottl.WithConditionConverter(nopConditionConverter[ottlspanevent.TransformContext]),
 			),
 		}
-	default:
-		return nil, fmt.Errorf("unexpected signal type: %s", signalType)
 	}
 
-	// Always include common context parsers
-	opts = append(opts, withCommonContextsParsers()...)
+	// Always include common context parsers, no matter the signal type
+	opts = append(opts,
+		withResourceParser(
+			// Include all standard OTTL functions (editors and converters) for resource context
+			ottlfuncs.StandardFuncs[ottlresource.TransformContext](),
+			ottl.WithStatementConverter(nopStatementConverter[ottlresource.TransformContext]),
+			ottl.WithConditionConverter(nopConditionConverter[ottlresource.TransformContext]),
+		),
+		withScopeParser(
+			// Include all standard OTTL functions (editors and converters) for scope context
+			ottlfuncs.StandardFuncs[ottlscope.TransformContext](),
+			ottl.WithStatementConverter(nopStatementConverter[ottlscope.TransformContext]),
+			ottl.WithConditionConverter(nopConditionConverter[ottlscope.TransformContext]),
+		),
+	)
 
-	return opts, nil
+	return opts
 }

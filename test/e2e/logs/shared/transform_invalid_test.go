@@ -40,7 +40,7 @@ func TestTransformInvalid(t *testing.T) {
 	assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
-		Reason: conditions.ReasonTransformSpecInvalid,
+		Reason: conditions.ReasonOTTLSpecInvalid,
 	})
 
 	assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
@@ -53,6 +53,6 @@ func TestTransformInvalid(t *testing.T) {
 	assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
 		Type:   conditions.TypeLogComponentsHealthy,
 		Status: metav1.ConditionFalse,
-		Reason: conditions.ReasonTransformSpecInvalid,
+		Reason: conditions.ReasonOTTLSpecInvalid,
 	})
 }

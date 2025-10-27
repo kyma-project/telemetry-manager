@@ -1,4 +1,4 @@
-package traces
+package shared
 
 import (
 	"testing"
@@ -16,7 +16,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestTransformInvalid(t *testing.T) {
+func TestFilterInvalid(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelExperimental)
 
 	var (
@@ -24,10 +24,13 @@ func TestTransformInvalid(t *testing.T) {
 		pipelineName = uniquePrefix()
 	)
 
-	pipeline := testutils.NewTracePipelineBuilder().
+	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
-		WithTransform(telemetryv1alpha1.TransformSpec{
-			Statements: []string{"sset(span.attributes[\"test\"], \"foo\")"},
+		WithFilter(telemetryv1alpha1.FilterSpec{
+			Conditions: []string{
+				`Len(resource.attributes["k8s.namespace.name"]) > 0`, // perfectly valid condition with context prefix
+				`attributes["foo"] == "bar"`,                         // invalid condition (missing context prefix)
+			},
 		}).
 		WithOTLPOutput(testutils.OTLPEndpoint("https://backend.example.com:4317")).
 		Build()
@@ -37,13 +40,13 @@ func TestTransformInvalid(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t, &pipeline)).To(Succeed())
 
-	assert.TracePipelineHasCondition(t, pipelineName, metav1.Condition{
+	assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonOTTLSpecInvalid,
 	})
 
-	assert.TracePipelineHasCondition(t, pipelineName, metav1.Condition{
+	assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
 		Type:   conditions.TypeFlowHealthy,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonSelfMonConfigNotGenerated,
@@ -51,7 +54,7 @@ func TestTransformInvalid(t *testing.T) {
 
 	assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
 	assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
-		Type:   conditions.TypeTraceComponentsHealthy,
+		Type:   conditions.TypeLogComponentsHealthy,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonOTTLSpecInvalid,
 	})
