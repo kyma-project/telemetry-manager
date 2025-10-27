@@ -45,7 +45,7 @@ The following example enables tracing with a default sampling rate of 1%:
 
 ## Configure the Sampling Rate
 
-By default, Istio samples 1% of traces to reduce data volume. To change it, set the `randomSamplingPercentage`. The sampling decision is propagated within the [trace context](https://www.w3.org/TR/trace-context/#sampled-flag) to ensure that either all or no spans for a given trace are reported.
+By default, Istio samples 1% of traces to reduce data volume. To change it, set the `randomSamplingPercentage` value. The sampling decision is propagated within the [trace context](https://www.w3.org/TR/trace-context/#sampled-flag) to ensure that either all or no spans for a given trace are reported.
 
 > [!NOTE]
 > For production environments, a low sampling rate (1–5%) is recommended to manage costs and performance. For development or debugging, you can set it to 100.00 to capture every trace.

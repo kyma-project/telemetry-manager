@@ -4,7 +4,7 @@ To collect and export telemetry data from your Kyma cluster, you define one or m
 
 ## Pipeline Structure
 
-You define Telemetry pipelines using three dedicated Kubernetes Custom Resource Definitions (CRDs) that extend the Kubernetes API: LogPipeline, TracePipeline, and MetricPipeline.
+You define Telemetry pipelines using three dedicated Kubernetes CRDs that extend the Kubernetes API: LogPipeline, TracePipeline, and MetricPipeline.
 
 A pipeline defines how the data flows from the original data sources through the respective inputs and a series of processing steps to the backend you defined as output.
 

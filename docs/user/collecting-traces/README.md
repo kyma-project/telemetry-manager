@@ -18,7 +18,7 @@ For the recording of a distributed trace, every involved component must propagat
 - Your application also must propagate the W3C Trace Context for any user-related activity. This can be achieved easily using the [Open Telemetry SDKs](https://opentelemetry.io/docs/instrumentation/) available for all common programming languages. If your application propagates the W3C Trace Context and is part of the Istio service mesh, Istio automatically generates its own spans for the traffic entering and leaving your application.
 - Furthermore, your application must enrich a trace with additional span data and send this data to the cluster-central telemetry services. You can achieve this with [Open Telemetry SDKs](https://opentelemetry.io/docs/instrumentation/).
 
-With the default configuration, the trace gateway collects push-based OTLP traces of any container running in the Kyma runtime, and the data is shipped to your backend.
+With the default configuration, the trace gateway collects push-based OTLP traces of any container running in Kyma runtime, and the data is shipped to your backend.
 
 ## Minimal TracePipeline
 
@@ -35,7 +35,7 @@ output:
         value: http://myEndpoint:4317
 ```
 
-By default, this minimal pipeline collects push-based OTLP traces of any container running in the Kyma runtime.
+By default, this minimal pipeline collects push-based OTLP traces of any container running in Kyma runtime.
 
 It activates cluster-internal endpoints to receive traces in the OTLP format. Applications can push traces directly to these URLs:
 

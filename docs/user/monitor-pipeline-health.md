@@ -38,7 +38,8 @@ To understand the meaning of each status condition, see the detailed reference f
 
 For production environments, set up continuous monitoring by exporting the health metrics to your observability backend, where you can create dashboards and configure alerts using alert rules. For an example, see [Integrate With SAP Cloud Logging](./integration/sap-cloud-logging/README.md)
 
-> **Caution:** Don't access the metrics endpoint of the used OTel Collector instances directly, because the exposed metrics are no official API of the Telemetry module. Breaking changes can happen if the underlying OTel Collector version introduces such. Instead, use the respective status conditions for each pipeline.
+> **Caution:** 
+> Do not scrape the metrics endpoint of the OpenTelemetry Collector instances. These metrics are an internal implementation detail and are subject to breaking changes when the underlying Collector is updated. For stable health monitoring, rely on the status conditions of your LogPipeline, MetricPipeline, or TracePipeline custom resources.
 
 To collect these health metrics, you must have at least one active MetricPipeline in your cluster. This pipeline automatically collects and exports health data for all of your pipelines, including LogPipeline and TracePipeline resources.
 

@@ -17,7 +17,7 @@ The following example shows a container `myContainer` in Pod `myPod`, running in
 
 ## Log Tailing
 
-The log agent reads the log message from a log file managed by the container runtime. The file name contains namespace, Pod, and Container information that becomes available later as log attributes. The raw log record looks like the following example:
+The log agent reads the log message from a log file managed by the container runtime. The file name contains namespace, Pod, and container information that becomes available later as log attributes. The raw log record looks like the following example:
 
 ```json
 {
@@ -48,7 +48,7 @@ After the tailing, the created OTLP record looks like the following example:
 }
 ```
 
-The agent enriches all information identifying the log source (such as Container, Pod, and namespace name) as resource attributes, following [Kubernetes conventions](https://opentelemetry.io/docs/specs/semconv/resource/k8s/). It enriches further metadata, like the original file name and channel, as log attributes, following [log attribute conventions](https://opentelemetry.io/docs/specs/semconv/general/logs/). The agent uses the `time` value from the container runtime's log entry as the **time** attribute in the new OTel record, as it closely matches the actual log event time. Additionally, the agent sets `observedTime` with the time it actually reads the log record, as the OTel log specification recommends. The agent moves the log payload to the OTLP `body` field.
+The agent enriches all information identifying the log source (such as container, Pod, and namespace name) as resource attributes, following [Kubernetes conventions](https://opentelemetry.io/docs/specs/semconv/resource/k8s/). It enriches further metadata, like the original file name and channel, as log attributes, following [log attribute conventions](https://opentelemetry.io/docs/specs/semconv/general/logs/). The agent uses the `time` value from the container runtime's log entry as the **time** attribute in the new OTel record, as it closely matches the actual log event time. Additionally, the agent sets `observedTime` with the time it actually reads the log record, as the OTel log specification recommends. The agent moves the log payload to the OTLP `body` field.
 
 ## JSON Parsing
 
