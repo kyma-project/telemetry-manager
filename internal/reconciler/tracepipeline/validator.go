@@ -23,12 +23,17 @@ type TransformSpecValidator interface {
 	Validate(transforms []telemetryv1alpha1.TransformSpec) error
 }
 
+type FilterSpecValidator interface {
+	Validate(filters []telemetryv1alpha1.FilterSpec) error
+}
+
 type Validator struct {
 	EndpointValidator      EndpointValidator
 	TLSCertValidator       TLSCertValidator
 	SecretRefValidator     SecretRefValidator
 	PipelineLock           PipelineLock
 	TransformSpecValidator TransformSpecValidator
+	FilterSpecValidator    FilterSpecValidator
 }
 
 func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) error {
@@ -59,6 +64,10 @@ func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.Tr
 	}
 
 	if err := v.TransformSpecValidator.Validate(pipeline.Spec.Transforms); err != nil {
+		return err
+	}
+
+	if err := v.FilterSpecValidator.Validate(pipeline.Spec.Filters); err != nil {
 		return err
 	}
 
