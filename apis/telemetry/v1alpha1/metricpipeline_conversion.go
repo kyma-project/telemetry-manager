@@ -8,6 +8,10 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
+// Converts between v1alpha1 and v1beta1 MetricPipeline CRDs
+// There are no major changes to the MetricPipeline API between v1alpha1 and v1beta1.
+// However, some changes were done in shared types which are documented in the related file and require to convert MetricPipelines.
+
 var errSrcTypeUnsupportedMetricPipeline = errors.New("source type is not MetricPipeline v1alpha1")
 var errDstTypeUnsupportedMetricPipeline = errors.New("destination type is not MetricPipeline v1beta1")
 

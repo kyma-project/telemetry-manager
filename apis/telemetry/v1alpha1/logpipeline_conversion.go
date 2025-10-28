@@ -9,6 +9,14 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/namespaces"
 )
 
+// Converts between v1alpha1 and v1beta1 LogPipeline CRDs
+// Major API changes which require specific conversion logic are:
+// - input.application (v1alpha1) is renamed to input.runtime (v1beta1).
+// - NamespaceSelector in input.runtime (v1beta1) is using the shared selector of input.otlp which lead to not having a 'System' boolean field anymore.
+// - output.http in v1beta1 is using the shared TLS section of the output.otlp, leading to a rename of 'Disabled' field to 'Insecure' and 'SkipCertificateValidation' to 'InsecureSkipVerify'.
+// - input.runtime namespaces and containers are now pointers in v1beta1, requiring nil checks during conversion.
+// Additionally, changes were done in shared types which are documented in the related file.
+
 var errSrcTypeUnsupportedLogPipeline = errors.New("source type is not LogPipeline v1alpha1")
 var errDstTypeUnsupportedLogPipeline = errors.New("destination type is not LogPipeline v1beta1")
 

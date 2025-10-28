@@ -8,6 +8,12 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
+// Converts shared structs between v1alpha1 and v1beta1 CRDs.
+// Major API changes which require specific conversion logic are:
+// - input.otlp.Disabled (v1alpha1) is renamed to input.otlp.Enabled (v1beta1) and its logic is inverted.
+// - output.otlp.protocol is now of type enum in v1beta1 instead of string in v1alpha1.
+// - output.otlp.TLS struct got renamed
+
 // Remove invalid namespace names from NamespaceSelector slices (include/exclude)
 func sanitizeNamespaceNames(names []string) []string {
 	var valid []string

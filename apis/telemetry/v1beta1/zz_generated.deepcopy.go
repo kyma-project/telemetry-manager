@@ -1020,8 +1020,8 @@ func (in *TracePipelineSpec) DeepCopyInto(out *TracePipelineSpec) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-	if in.Filter != nil {
-		in, out := &in.Filter, &out.Filter
+	if in.Filters != nil {
+		in, out := &in.Filters, &out.Filters
 		*out = make([]FilterSpec, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])

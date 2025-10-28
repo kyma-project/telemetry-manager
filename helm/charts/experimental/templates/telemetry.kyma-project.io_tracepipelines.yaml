@@ -62,7 +62,7 @@ spec:
             description: Spec defines the desired state of TracePipeline
             properties:
               filter:
-                description: Filters specifies a list of filters to apply to telemetry
+                description: Filter specifies a list of filters to apply to telemetry
                   data.
                 items:
                   description: FilterSpec defines a filter to apply to telemetry data.
