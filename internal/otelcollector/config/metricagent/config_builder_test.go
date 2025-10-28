@@ -63,8 +63,8 @@ func TestBuildConfig(t *testing.T) {
 			},
 		},
 		{
-			name:           "istio input disabled",
-			goldenFileName: "istio-ops-disabled.yaml",
+			name:           "istio installed on cluster and istio input disabled",
+			goldenFileName: "istio-installed-and-disabled.yaml",
 			pipelines: []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
@@ -74,10 +74,11 @@ func TestBuildConfig(t *testing.T) {
 					WithIstioInputEnvoyMetrics(false).
 					Build(),
 			},
+			istioEnabled: true,
 		},
 		{
-			name:           "istio input enabled",
-			goldenFileName: "istio-ops-enabled.yaml",
+			name:           "istio installed on cluster and istio input enabled",
+			goldenFileName: "istio-installed-and-enabled.yaml",
 			pipelines: []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
@@ -88,6 +89,34 @@ func TestBuildConfig(t *testing.T) {
 					Build(),
 			},
 			istioEnabled: true,
+		},
+		{
+			name:           "istio not installed on cluster and istio input disabled",
+			goldenFileName: "istio-not-installed-and-disabled.yaml",
+			pipelines: []telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("test").
+					WithRuntimeInput(true).
+					WithPrometheusInput(true).
+					WithIstioInput(false).
+					WithIstioInputEnvoyMetrics(false).
+					Build(),
+			},
+			istioEnabled: false,
+		},
+		{
+			name:           "istio not installed on cluster and istio input enabled",
+			goldenFileName: "istio-not-installed-and-enabled.yaml",
+			pipelines: []telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("test").
+					WithRuntimeInput(true).
+					WithPrometheusInput(true).
+					WithIstioInput(true).
+					WithIstioInputEnvoyMetrics(true).
+					Build(),
+			},
+			istioEnabled: false,
 		},
 		{
 			name:           "pipeline with istio envoy metrics enabled",
