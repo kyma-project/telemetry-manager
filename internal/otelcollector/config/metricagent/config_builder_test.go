@@ -63,7 +63,7 @@ func TestBuildConfig(t *testing.T) {
 			},
 		},
 		{
-			name:           "istio module is not installed",
+			name:           "istio input disabled",
 			goldenFileName: "istio-ops-disabled.yaml",
 			pipelines: []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
@@ -76,7 +76,7 @@ func TestBuildConfig(t *testing.T) {
 			},
 		},
 		{
-			name:           "istio module is installed",
+			name:           "istio input enabled",
 			goldenFileName: "istio-ops-enabled.yaml",
 			pipelines: []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
@@ -360,13 +360,13 @@ func TestBuildConfig(t *testing.T) {
 		},
 	}
 
-	buildOptions := BuildOptions{
-		IstioCertPath:               "/etc/istio-output-certs",
-		InstrumentationScopeVersion: "main",
-	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			buildOptions := BuildOptions{
+				IstioCertPath:               "/etc/istio-output-certs",
+				InstrumentationScopeVersion: "main",
+				IstioEnabled:                tt.istioEnabled,
+			}
 			config, _, err := sut.Build(t.Context(), tt.pipelines, buildOptions)
 			require.NoError(t, err)
 
