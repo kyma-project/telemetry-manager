@@ -281,7 +281,7 @@ deploy: manifests $(HELM) ## Deploy resources based on the release (default) var
 		--set nameOverride=telemetry \
     	--set manager.container.image.repository=${MANAGER_IMAGE} \
     	--set manager.container.image.pullPolicy="Always" \
-    	--set 'manager.container.args={--cert-dir=/tmp,--high-priority-class-name=telemetry-priority-class-high,--normal-priority-class-name=telemetry-priority-class,--enable-fips-mode=true}' \
+    	--set manager.container.args.enable-fips-mode=true \
     	--namespace kyma-system \
     | kubectl apply -f -
 
@@ -302,7 +302,7 @@ deploy-experimental: manifests-experimental $(HELM) ## Deploy resources based on
 		--set nameOverride=telemetry \
 		--set manager.container.image.repository=${MANAGER_IMAGE} \
 		--set manager.container.image.pullPolicy="Always" \
-	    --set 'manager.container.args={--cert-dir=/tmp,--high-priority-class-name=telemetry-priority-class-high,--normal-priority-class-name=telemetry-priority-class,--enable-fips-mode=true}' \
+	    --set manager.container.args.enable-fips-mode=true \
 		--namespace kyma-system \
 	| kubectl apply -f -
 
