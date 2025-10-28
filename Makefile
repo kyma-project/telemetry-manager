@@ -64,6 +64,7 @@ K3D              := $(TOOLS_BIN_DIR)/k3d
 PROMLINTER       := $(TOOLS_BIN_DIR)/promlinter
 GOMPLATE         := $(TOOLS_BIN_DIR)/gomplate
 HELM             := $(TOOLS_BIN_DIR)/helm
+GITLEAKS         := $(TOOLS_BIN_DIR)/gitleaks
 
 POPULATE_IMAGES  := $(TOOLS_BIN_DIR)/populate-images
 
@@ -220,6 +221,10 @@ test: manifests generate fmt vet tidy ## Run tests.
 check-coverage: $(GO_TEST_COVERAGE) ## Check tests coverage.
 	go test $$(go list ./... | grep -v /test/) -short -coverprofile=cover.out -covermode=atomic -coverpkg=./...
 	$(GO_TEST_COVERAGE) --config=./.testcoverage.yml
+
+.PHONY: check-gitleaks
+check-gitleaks: $(GITLEAKS)
+	$(GITLEAKS) detect --source=. --no-git --verbose --redact
 
 
 ##@ Build
