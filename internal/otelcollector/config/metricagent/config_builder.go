@@ -27,7 +27,7 @@ type Builder struct {
 }
 
 type BuildOptions struct {
-	IstioEnabled                bool
+	IstioActive                 bool
 	IstioCertPath               string
 	InstrumentationScopeVersion string
 	AgentNamespace              string

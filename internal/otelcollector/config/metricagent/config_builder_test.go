@@ -22,9 +22,11 @@ func TestBuildConfig(t *testing.T) {
 	tests := []struct {
 		name                string
 		goldenFileName      string
-		pipelines           []telemetryv1alpha1.MetricPipeline
-		istioEnabled        bool
 		overwriteGoldenFile bool
+		pipelines           []telemetryv1alpha1.MetricPipeline
+
+		// istioActive indicates if the "cluster" has an active istio installation or not. Not to be confused with the IstioInput in a pipeline
+		istioActive bool
 	}{
 		{
 			name:           "pipeline with istio input only",
@@ -74,7 +76,7 @@ func TestBuildConfig(t *testing.T) {
 					WithIstioInputEnvoyMetrics(false).
 					Build(),
 			},
-			istioEnabled: true,
+			istioActive: true,
 		},
 		{
 			name:           "istio installed on cluster and istio input enabled",
@@ -88,7 +90,7 @@ func TestBuildConfig(t *testing.T) {
 					WithIstioInputEnvoyMetrics(true).
 					Build(),
 			},
-			istioEnabled: true,
+			istioActive: true,
 		},
 		{
 			name:           "istio not installed on cluster and istio input disabled",
@@ -102,7 +104,7 @@ func TestBuildConfig(t *testing.T) {
 					WithIstioInputEnvoyMetrics(false).
 					Build(),
 			},
-			istioEnabled: false,
+			istioActive: false,
 		},
 		{
 			name:           "istio not installed on cluster and istio input enabled",
@@ -116,7 +118,7 @@ func TestBuildConfig(t *testing.T) {
 					WithIstioInputEnvoyMetrics(true).
 					Build(),
 			},
-			istioEnabled: false,
+			istioActive: false,
 		},
 		{
 			name:           "pipeline with istio envoy metrics enabled",
@@ -394,7 +396,7 @@ func TestBuildConfig(t *testing.T) {
 			buildOptions := BuildOptions{
 				IstioCertPath:               "/etc/istio-output-certs",
 				InstrumentationScopeVersion: "main",
-				IstioEnabled:                tt.istioEnabled,
+				IstioActive:                 tt.istioActive,
 			}
 			config, _, err := sut.Build(t.Context(), tt.pipelines, buildOptions)
 			require.NoError(t, err)

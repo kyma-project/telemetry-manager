@@ -68,7 +68,7 @@ func prometheusServicesReceiverConfig(opts BuildOptions) *PrometheusReceiver {
 	config.Config.ScrapeConfigs = append(config.Config.ScrapeConfigs, httpScrapeConfig)
 
 	// If Istio is enabled, generate an additional scrape config for scraping annotated Services over HTTPS
-	if opts.IstioEnabled {
+	if opts.IstioActive {
 		httpsScrapeConfig := baseScrapeConfig
 		httpsScrapeConfig.JobName = appServicesSecureJobName
 		httpsScrapeConfig.RelabelConfigs = prometheusEndpointsRelabelConfigs(true)
