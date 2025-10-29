@@ -140,7 +140,7 @@ metadata:
 ---
 apiVersion: v1
 data:
-  env-config-secret1: ZHVtbXktdmFsdWU=
+  env-config-secret1: ZHVtbXktdmFsdWU= # gitleaks:allow
 kind: Secret
 metadata:
   labels:
@@ -155,7 +155,7 @@ metadata:
 ---
 apiVersion: v1
 data:
-  tls-config-secret1: ZHVtbXktdmFsdWU=
+  tls-config-secret1: ZHVtbXktdmFsdWU= # gitleaks:allow
 kind: Secret
 metadata:
   labels:
