@@ -808,7 +808,6 @@ OoMLUU2Vjqaue2KTBw00LeNT/Cj3AiEAnnsJqLLhYpje+sk/5G/hCEbYcJnkotLO
 k5fBmk2DBx8=
 -----END CERTIFICATE-----`)
 
-	// gitleaks:allow test key
 	keyData := []byte(`-----BEGIN EC PRIVATE KEY-----
 MHcCAQEEIL9ckfwWzOlyNQg1VfKrnD62tNj+R0zjMqszlgKpv4ncoAoGCCqGSM49
 AwEHoUQDQgAE+B224FGFaVlXmgFGmHY2VgcwZsDrMZ5PHDEbk/qotP7gXvnERLYk
