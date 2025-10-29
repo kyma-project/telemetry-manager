@@ -4,7 +4,7 @@ With the Telemetry module, you can collect metrics from your workloads and Kuber
 
 ## Overview
 
-A MetricPipeline is a Kubernetes Custom Resource (CR) that configures metric collection for your cluster. When you create a MetricPipeline, it automatically provisions the necessary components (for details, see [Metrics Architecture](../architecture/metrics-architecture.md)):
+A MetricPipeline is a Kubernetes custom resource (CR) that configures metric collection for your cluster. When you create a MetricPipeline, it automatically provisions the necessary components (for details, see [Metrics Architecture](../architecture/metrics-architecture.md)):
 
 - A metric gateway that provides a central OTLP endpoint for receiving metrics pushed from applications.
 - A metric agent that runs on each cluster node to pull (scrape) metrics from applications and Kubernetes resources.

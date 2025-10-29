@@ -67,7 +67,7 @@ To learn how this model applies to each signal type, see:
 
 ## API/Custom Resource Definitions
 
-You configure the Telemetry module and its pipelines by creating and applying Kubernetes Custom Resource Definitions (CRDs), which extend the Kubernetes API with custom additions.
+You configure the Telemetry module and its pipelines by creating and applying Kubernetes CustomResourceDefinitions (CRDs), which extend the Kubernetes API with custom additions.
 
 To understand and configure the module's global settings, refer to the [Telemetry CRD](./resources/01-telemetry.md).
 
