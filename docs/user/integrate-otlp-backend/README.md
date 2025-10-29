@@ -8,7 +8,7 @@ In every pipeline, you must configure an `output` section, which defines the des
 
 ![OTLP-Output](./../assets/otlp-output.drawio.svg)
 
-> **Note**
+> [!NOTE]
 > Each pipeline resource supports exactly one backend. However, you can send specific inputs to different backends by setting up designated pipelines. For details, see [Route Specific Inputs to Different Backends](../otlp-input.md#route-specific-inputs-to-different-backends).
 
 ## Specify the OTLP Endpoint
@@ -44,7 +44,7 @@ For each pipeline, add authentication details (like user names, passwords, certi
 
 While you can choose to add your authentication details from plain text, it’s recommended to store these sensitive details in a Kubernetes `Secret` and reference the Secret's keys in your pipeline configuration. When you rotate the `Secret` and update its values, Telemetry Manager detects the changes and applies the new `Secret` to your setup.
 
-> **Tip**
+> [!TIP]
 > If you use a Secret owned by the [SAP BTP Service Operator](https://github.com/SAP/sap-btp-service-operator), you can configure an automated rotation policy with a specific rotation frequency and don’t have to intervene manually.
 
 - To use client certificates for mTLS, configure the `tls` section with your public certificate and private key.
@@ -135,5 +135,5 @@ While you can choose to add your authentication details from plain text, it’s 
                 ...
     ```
 
-> **Note**
+> [!NOTE]
 > If your backend is running inside the cluster and is part of the Istio service mesh, the gateways automatically secure the connection and you don't have to configure the `authentication` block. For details, see [Sending Data to In-Cluster Backends](../architecture/istio-integration.md#sending-data-to-in-cluster-backends).
