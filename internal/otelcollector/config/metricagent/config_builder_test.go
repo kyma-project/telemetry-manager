@@ -1,6 +1,7 @@
 package metricagent
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -18,6 +19,9 @@ func TestBuildConfig(t *testing.T) {
 	sut := Builder{
 		Reader: fakeClient,
 	}
+
+	// store the testresult next to the golden file. testresults are ignored by git, so its fine to keep them.
+	keepResults := true
 
 	tests := []struct {
 		name                string
@@ -379,6 +383,12 @@ func TestBuildConfig(t *testing.T) {
 				require.NoError(t, err, "failed to overwrite golden file")
 
 				t.Fatalf("Golden file %s has been saved, please verify it and set the overwriteGoldenFile flag to false", tt.goldenFileName)
+			}
+
+			if keepResults {
+				result := fmt.Sprintf("%s.testresult", goldenFilePath)
+				err = os.WriteFile(result, configYAML, 0600)
+				require.NoError(t, err, "failed to write result file")
 			}
 
 			goldenFile, err := os.ReadFile(goldenFilePath)

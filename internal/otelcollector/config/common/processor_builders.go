@@ -292,16 +292,21 @@ func InstrumentationScopeProcessorConfig(instrumentationScopeVersion string, inp
 
 	for _, i := range inputSource {
 		statements = append(statements, instrumentationStatement(i, instrumentationScopeVersion)...)
-
-		if i == InputSourcePrometheus {
-			transformProcessorStatements = append(transformProcessorStatements, TransformProcessorStatements{
-				Statements: []string{fmt.Sprintf("set(resource.attributes[\"%s\"], \"%s\")", KymaInputNameAttribute, KymaInputPrometheus)},
-			})
-		}
 	}
 
 	transformProcessorStatements = append(transformProcessorStatements, TransformProcessorStatements{
 		Statements: statements,
+	})
+
+	return MetricTransformProcessorConfig(transformProcessorStatements)
+}
+
+// KymaInputNameProcessorConfig creates a transform processor that sets the custom `kyma.input.name` attribute
+// the attribute is mainly used for routing purpose in the metric agent configuration
+func KymaInputNameProcessorConfig(inputSource InputSourceType) *TransformProcessor {
+	transformProcessorStatements := []TransformProcessorStatements{}
+	transformProcessorStatements = append(transformProcessorStatements, TransformProcessorStatements{
+		Statements: []string{fmt.Sprintf("set(resource.attributes[\"%s\"], \"%s\")", KymaInputNameAttribute, inputSource)},
 	})
 
 	return MetricTransformProcessorConfig(transformProcessorStatements)
