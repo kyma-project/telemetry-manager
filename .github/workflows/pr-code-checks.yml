@@ -69,17 +69,6 @@ jobs:
       - name: Verify all code and manifests were generated and committed
         run: make check-clean
 
-  gitleaks:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-        with:
-          fetch-depth: 0
-      - name: Run gitleaks
-        # run gitleaks against all files in the current working tree
-        # we do not want to use the git mechanism, as we do squashed commits anyway, so if you have a good final state of the PR then everything should be clean
-        run: make check-gitleaks
-
   test-renovate:
     runs-on: ubuntu-latest
     steps:

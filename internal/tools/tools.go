@@ -23,5 +23,4 @@ import (
 	_ "gotest.tools/gotestsum"
 	_ "helm.sh/helm/v3/cmd/helm"
 	_ "sigs.k8s.io/controller-tools/cmd/controller-gen"
-	_ "github.com/zricethezav/gitleaks/v8"
 )
