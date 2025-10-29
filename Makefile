@@ -73,6 +73,7 @@ $(POPULATE_IMAGES):
 
 # Sub-makefile
 include hack/make/provision.mk
+include hack/make/e2e.mk
 
 .PHONY: all
 all: build
