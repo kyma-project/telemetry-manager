@@ -4,3 +4,7 @@ internal/validators/tlscert/tls_cert_validator_test.go:private-key:490
 internal/validators/tlscert/tls_cert_validator_test.go:private-key:506
 internal/validators/tlscert/tls_cert_validator_test.go:private-key:746
 internal/validators/tlscert/tls_cert_validator_test.go:private-key:812
+internal/resources/fluentbit/testdata/fluentbit.yaml:kubernetes-secret-yaml:142
+internal/resources/fluentbit/testdata/fluentbit.yaml:kubernetes-secret-yaml:157
+internal/resources/fluentbit/testdata/fluentbit.yaml:generic-api-key:143
+internal/resources/fluentbit/testdata/fluentbit.yaml:generic-api-key:158
