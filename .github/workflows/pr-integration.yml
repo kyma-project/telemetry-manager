@@ -36,6 +36,7 @@ on:
       - ".github/template/**"
       - ".env"
       - ".k3d-kyma.yaml"
+      - "Makefile"
 
   workflow_dispatch:
 
