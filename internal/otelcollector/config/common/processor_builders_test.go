@@ -13,17 +13,17 @@ func TestInsertClusterNameProcessorConfig(t *testing.T) {
 
 	expectedAttributeActions := []AttributeAction{
 		{
-			Action: "insert",
+			Action: AttributeActionInsert,
 			Key:    "k8s.cluster.name",
 			Value:  "test-cluster",
 		},
 		{
-			Action: "insert",
+			Action: AttributeActionInsert,
 			Key:    "k8s.cluster.uid",
 			Value:  "test-cluster-uid",
 		},
 		{
-			Action: "insert",
+			Action: AttributeActionInsert,
 			Key:    "cloud.provider",
 			Value:  "test-cloud-provider",
 		},
@@ -39,7 +39,7 @@ func TestDropKymaAttributesProcessorConfig(t *testing.T) {
 
 	expectedAttributeActions := []AttributeAction{
 		{
-			Action:       "delete",
+			Action:       AttributeActionDelete,
 			RegexPattern: "kyma.*",
 		},
 	}

@@ -405,7 +405,7 @@ func (b *Builder) addDropSkipEnrichmentAttributeProcessor() buildComponentFunc {
 			return &common.ResourceProcessor{
 				Attributes: []common.AttributeAction{
 					{
-						Action: "delete",
+						Action: common.AttributeActionDelete,
 						Key:    common.SkipEnrichmentAttribute,
 					},
 				},
