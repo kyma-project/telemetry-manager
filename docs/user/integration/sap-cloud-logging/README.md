@@ -66,7 +66,7 @@ Choose one of the following methods to configure shipping for application and ac
     <div tabs name="logs">
       <details><summary>Script: Application Logs</summary>
 
-      ```bash
+      <!-- gitleaks:allow -->```bash
       kubectl apply -f - <<EOF
       apiVersion: telemetry.kyma-project.io/v1alpha1
       kind: LogPipeline
