@@ -10,42 +10,51 @@ setup-e2e-istio: provision-k3d-istio deploy setup-k8s-prerequisites
 setup-e2e: provision-k3d deploy setup-k8s-prerequisites
 
 
+# Internal target for common e2e test execution logic
+# Usage: $(call run-e2e-common,JUNIT_FLAGS)
+define run-e2e-common
+	echo "Running e2e tests with TEST_ID='$(TEST_ID)', TEST_PATH='$(TEST_PATH)', TEST_LABELS='$(TEST_LABELS)', ADDITIONAL LABELS='$(LABELS)'"
+	@if [ -z "$(TEST_PATH)" ]; then \
+		echo "Error: TEST_PATH environment variable is required"; \
+		exit 1; \
+	fi
+	@if [ -z "$(TEST_LABELS)" ]; then \
+		echo "Error: TEST_LABELS environment variable is required"; \
+		exit 1; \
+	fi
+	@ALL_LABELS="$(TEST_LABELS)"; \
+	if [ -n "$(LABELS)" ]; then \
+		ADDITIONAL_LABELS=""; \
+		for label in $(LABELS); do \
+			if [ -z "$$ADDITIONAL_LABELS" ]; then \
+				ADDITIONAL_LABELS="$$label"; \
+			else \
+				ADDITIONAL_LABELS="$$ADDITIONAL_LABELS,$$label"; \
+			fi; \
+		done; \
+		ALL_LABELS="$$ALL_LABELS,$$ADDITIONAL_LABELS"; \
+	fi; \
+	echo "Using combined labels: $$ALL_LABELS"; \
+	echo "Executing: $(GOTESTSUM) --format pkgname --hide-summary=skipped $(1) -- -timeout=20m $(TEST_PATH) -- -labels=\"$$ALL_LABELS\""; \
+	$(GOTESTSUM) \
+	--format pkgname \
+	--hide-summary=skipped \
+	$(1) \
+	-- -timeout=20m $(TEST_PATH) \
+	-- -labels="$$ALL_LABELS"
+endef
+
 .PHONY: run-e2e
 run-e2e: $(GOTESTSUM)
 	@if [ -z "$(TEST_ID)" ]; then \
 		echo "Error: TEST_ID environment variable is required"; \
 		exit 1; \
 	fi
-	@if [ -z "$(TEST_PATH)" ]; then \
-		echo "Error: TEST_PATH environment variable is required"; \
-		exit 1; \
-	fi
-	@if [ -z "$(TEST_LABELS)" ]; then \
-		echo "Error: TEST_LABELS environment variable is required"; \
-		exit 1; \
-	fi
-	$(GOTESTSUM) \
-	--format pkgname \
-	--hide-summary=skipped \
-	--junitfile junit-report-$(TEST_ID).xml \
-	-- -timeout=20m $(TEST_PATH) \
-	-- -labels="$(TEST_LABELS)" -labels=gardener
+	$(call run-e2e-common,--junitfile junit-report-$(TEST_ID).xml)
 
 .PHONY: run-e2e-no-junit
 run-e2e-no-junit: $(GOTESTSUM)
-	@if [ -z "$(TEST_PATH)" ]; then \
-		echo "Error: TEST_PATH environment variable is required"; \
-		exit 1; \
-	fi
-	@if [ -z "$(TEST_LABELS)" ]; then \
-		echo "Error: TEST_LABELS environment variable is required"; \
-		exit 1; \
-	fi
-	$(GOTESTSUM) \
-	--format pkgname \
-	--hide-summary=skipped \
-	-- -timeout=20m $(TEST_PATH) \
-	-- -labels="$(TEST_LABELS)"
+	$(call run-e2e-common,)
 
 # Convenience targets for selfmonitor tests (matrix combinations)
 .PHONY: run-e2e-selfmon-logs-fluentbit-healthy run-e2e-selfmon-logs-fluentbit-backpressure run-e2e-selfmon-logs-fluentbit-outage
