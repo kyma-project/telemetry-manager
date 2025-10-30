@@ -121,7 +121,7 @@ func (sb *SectionBuilder) createOutputSection() *SectionBuilder {
 func parseMultiline(section string) config.ParameterList {
 	var result config.ParameterList
 
-	for _, line := range strings.Split(section, "\n") {
+	for line := range strings.SplitSeq(section, "\n") {
 		line = strings.TrimSpace(line)
 		if len(line) == 0 || strings.HasPrefix(line, "#") {
 			continue

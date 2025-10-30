@@ -30,9 +30,7 @@ func (p *Pod) WithLabel(key, value string) *Pod {
 }
 
 func (p *Pod) WithLabels(labels map[string]string) *Pod {
-	for k, v := range labels {
-		p.labels[k] = v
-	}
+	maps.Copy(p.labels, labels)
 
 	return p
 }
