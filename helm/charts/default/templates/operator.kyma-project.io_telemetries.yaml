@@ -303,8 +303,6 @@ spec:
             required:
             - state
             type: object
-        required:
-        - metadata
         type: object
     served: true
     storage: true

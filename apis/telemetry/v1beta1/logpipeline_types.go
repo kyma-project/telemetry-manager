@@ -54,7 +54,8 @@ type LogPipelineList struct {
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:storageversion
 type LogPipeline struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta `json:",inline"`
+	// +kubebuilder:validation:Optional
 	metav1.ObjectMeta `json:"metadata"`
 
 	// Defines the desired state of LogPipeline

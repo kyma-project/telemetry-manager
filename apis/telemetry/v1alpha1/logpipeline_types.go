@@ -46,7 +46,8 @@ type LogPipelineList struct {
 // +kubebuilder:printcolumn:name="Unsupported Mode",type=boolean,JSONPath=`.status.unsupportedMode`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 type LogPipeline struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta `json:",inline"`
+	// +kubebuilder:validation:Optional
 	metav1.ObjectMeta `json:"metadata"`
 
 	// Defines the desired state of LogPipeline

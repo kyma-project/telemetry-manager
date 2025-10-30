@@ -43,12 +43,15 @@ type LogParserList struct {
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:deprecatedversion:warning="The LogParser API is deprecated. Instead, log in JSON format and use the JSON parsing feature of the LogPipeline"
 type LogParser struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta `json:",inline"`
+	// +kubebuilder:validation:Optional
 	metav1.ObjectMeta `json:"metadata"`
 
 	// Defines the desired state of LogParser.
+	// +kubebuilder:validation:Optional
 	Spec LogParserSpec `json:"spec"`
 	// Shows the observed state of the LogParser.
+	// +kubebuilder:validation:Optional
 	Status LogParserStatus `json:"status"`
 }
 

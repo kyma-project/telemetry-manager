@@ -842,8 +842,6 @@ spec:
                   type: object
                 type: array
             type: object
-        required:
-        - metadata
         type: object
     served: true
     storage: false
@@ -1667,8 +1665,6 @@ spec:
                   type: object
                 type: array
             type: object
-        required:
-        - metadata
         type: object
     served: true
     storage: true

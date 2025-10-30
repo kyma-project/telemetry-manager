@@ -44,7 +44,8 @@ type TracePipelineList struct {
 // +kubebuilder:printcolumn:name="Flow Healthy",type=string,JSONPath=`.status.conditions[?(@.type=="TelemetryFlowHealthy")].status`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 type TracePipeline struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta `json:",inline"`
+	// +kubebuilder:validation:Optional
 	metav1.ObjectMeta `json:"metadata"`
 
 	// Spec defines the desired state of TracePipeline

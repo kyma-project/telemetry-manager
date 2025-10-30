@@ -46,7 +46,8 @@ type MetricPipelineList struct {
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:storageversion
 type MetricPipeline struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta `json:",inline"`
+	// +kubebuilder:validation:Optional
 	metav1.ObjectMeta `json:"metadata"`
 
 	// Spec defines the desired characteristics of MetricPipeline.
