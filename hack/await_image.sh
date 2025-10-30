@@ -18,9 +18,9 @@ TIMEOUT=900
 START_TIME=$SECONDS
 
 echo "Waiting for binary image: ${IMAGE_REPO}:${IMAGE_TAG}"
-until $(skopeo list-tags ${PROTOCOL}${IMAGE_REPO} | jq '.Tags|any(. == env.TRIGGER)'); do
-  if (( SECONDS - START_TIME > TIMEOUT )); then
-    echo "Timeout reached: ${IMAGE_REPO}:${IMAGE_TAG} not found within $(( TIMEOUT/60 )) minutes"
+until $(skopeo list-tags ${PROTOCOL}${IMAGE_REPO} | jq '.Tags|any(. == env.IMAGE_TAG)'); do
+  if ((SECONDS - START_TIME > TIMEOUT)); then
+    echo "Timeout reached: ${IMAGE_REPO}:${IMAGE_TAG} not found within $((TIMEOUT / 60)) minutes"
     exit 1
   fi
   sleep "$QUERY_INTERVAL"

@@ -24,4 +24,4 @@ runs:
     - name: Install Tools
       shell: bash
       if: steps.go-cache.outputs.cache-hit != 'true'
-      run: make --debug install-tools
+      run: make install-tools
