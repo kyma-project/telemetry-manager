@@ -8,7 +8,7 @@ import (
 func ParseCustomSection(section string) (ParameterList, error) {
 	var params ParameterList
 
-	for _, line := range strings.Split(section, "\n") {
+	for line := range strings.SplitSeq(section, "\n") {
 		line = strings.TrimSpace(line)
 		if len(line) == 0 || strings.HasPrefix(line, "#") {
 			continue
