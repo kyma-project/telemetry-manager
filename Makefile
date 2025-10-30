@@ -64,6 +64,7 @@ K3D              := $(TOOLS_BIN_DIR)/k3d
 PROMLINTER       := $(TOOLS_BIN_DIR)/promlinter
 GOMPLATE         := $(TOOLS_BIN_DIR)/gomplate
 HELM             := $(TOOLS_BIN_DIR)/helm
+KUBECTL          := kubectl
 
 POPULATE_IMAGES  := $(TOOLS_BIN_DIR)/populate-images
 

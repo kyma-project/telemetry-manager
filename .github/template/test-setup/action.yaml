@@ -20,17 +20,6 @@ runs:
     - name: Setup Golang
       uses: "./.github/template/setup-golang"
 
-    # wait for the build to complete so that the manager image is available
-    - name: Wait for the Build Image workflow to complete
-      shell: bash
-      run: "./hack/await_image.sh"
-      env:
-        GITHUB_TOKEN: "${{ inputs.github-token }}"
-        # sets trigger depending on event being either pull_request or merge_group
-        TRIGGER: "${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}"
-        QUERY_INTERVAL: 30
-        IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
-
     - name: Provision K3D${{ inputs.experimental == 'true' && 'in Experimental Mode' || '' }} ${{inputs.install-istio == 'true' && ' with Istio' || '' }}
       shell: bash
       run: |
@@ -42,6 +31,11 @@ runs:
           mode="$mode-istio"
         fi
         make setup-e2e$mode
+      env:
+        # sets trigger depending on event being either pull_request or merge_group
+        IMAGE_TAG: "${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}"
+        QUERY_INTERVAL: 30
+        IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
 
     - name: Wait for manager deployment rollout
       shell: bash

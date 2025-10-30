@@ -5,11 +5,23 @@ deploy-test-prerequisites: $(KUBECTL)
 	$(KUBECTL) apply -f test/fixtures/shoot_info_cm.yaml
 
 
-.PHONY: setup-e2e-istio setup-e2e setup-e2e-experimental deploy-test-prerequisites
-setup-e2e-istio: provision-k3d-istio deploy deploy-test-prerequisites
-setup-e2e: provision-k3d deploy deploy-test-prerequisites
-setup-e2e-experimental-istio: provision-k3d-istio deploy-experimental deploy-test-prerequisites
-setup-e2e-experimental: provision-k3d deploy-experimental deploy-test-prerequisites
+.PHONY: setup-e2e-istio setup-e2e setup-e2e-experimental deploy-test-prerequisites wait-for-image
+setup-e2e-istio: provision-k3d-istio wait-for-image deploy deploy-test-prerequisites
+setup-e2e: provision-k3d wait-for-image deploy deploy-test-prerequisites
+setup-e2e-experimental-istio: provision-k3d-istio wait-for-image deploy-experimental deploy-test-prerequisites
+setup-e2e-experimental: provision-k3d wait-for-image deploy-experimental deploy-test-prerequisites
+
+# default values for waiting for image
+TIMEOUT ?= 600
+QUERY_INTERVAL ?= 10
+IMAGE_REPO ?= europe-docker.pkg.dev/kyma-project/dev/telemetry-manager
+
+wait-for-image:
+	retry -i "$QUERY_INTERVAL" \
+          -t "$TIMEOUT" \
+          -v \
+          bash -c ' skopeo list-tags "docker://${IMAGE_REPO}" | jq -e ".Tags|any(. == env.IMAGE_TAG)" '
+
 
 
 # Internal target for common e2e test execution logic
