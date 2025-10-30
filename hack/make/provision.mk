@@ -3,10 +3,9 @@
 provision-k3d: $(K3D)
 	$(K3D) cluster create --config .k3d-kyma.yaml
 	kubectl create ns kyma-system
-
+	
 .PHONY: provision-k3d-istio
-provision-k3d-istio: provision-k3d
-	hack/build-image.sh
+provision-k3d-istio: $(K3D) provision-k3d
 	hack/deploy-istio.sh
 
 .PHONY: cleanup-k3d

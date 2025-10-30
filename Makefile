@@ -73,6 +73,7 @@ $(POPULATE_IMAGES):
 
 # Sub-makefile
 include hack/make/provision.mk
+include hack/make/e2e.mk
 
 .PHONY: all
 all: build
@@ -227,9 +228,9 @@ check-coverage: $(GO_TEST_COVERAGE) ## Check tests coverage.
 build: generate fmt vet tidy ## Build manager binary.
 	go build -o bin/manager main.go
 
-check-clean: generate manifests manifests-experimental crd-docs-gen ## Check if repo is clean up-to-date. Used after code generation
+check-clean: generate manifests manifests-experimental crd-docs-gen generate-e2e-targets## Check if repo is clean up-to-date. Used after code generation
 	@echo "Checking if all generated files are up-to-date"
-	@git diff --name-only --exit-code || (echo "Generated files are not up-to-date. Please run 'make generate manifests manifests-experimental crd-docs-gen' to update them." && exit 1)
+	@git diff --name-only --exit-code || (echo "Generated files are not up-to-date. Please run 'make generate manifests manifests-experimental crd-docs-gen generate-e2e-targets' to update them." && exit 1)
 
 
 tls.key:
