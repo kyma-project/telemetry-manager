@@ -38,7 +38,6 @@ func TestFilter(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, suite.LabelExperimental)
 
 			var (
 				uniquePrefix = unique.Prefix(tc.label)

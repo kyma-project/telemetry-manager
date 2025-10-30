@@ -1,4 +1,4 @@
-package shared
+package misc
 
 import (
 	"testing"
@@ -17,7 +17,7 @@ import (
 )
 
 func TestFilterInvalid(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelExperimental)
+	suite.RegisterTestCase(t, suite.LabelLogsMisc)
 
 	var (
 		uniquePrefix = unique.Prefix()

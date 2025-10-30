@@ -555,7 +555,6 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				Build(),
 			errorMsg: "transform is only supported with otlp output",
 			field:    "spec",
-			label:    suite.LabelExperimental,
 		},
 		{
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -568,12 +567,11 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				Build(),
 			errorMsg: "filter is only supported with otlp output",
 			field:    "spec",
-			label:    suite.LabelExperimental,
 		},
 	}
 	for _, tc := range tests {
 		if tc.label == "" {
-			tc.label = suite.LabelMisc
+			tc.label = suite.LabelLogsMisc
 		}
 
 		t.Run(tc.label, func(t *testing.T) {
