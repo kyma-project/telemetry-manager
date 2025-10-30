@@ -316,6 +316,7 @@ func TestKymaInputNameProcessorConfig(t *testing.T) {
 	type args struct {
 		inputSource InputSourceType
 	}
+
 	tests := []struct {
 		name string
 		args args
