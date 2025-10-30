@@ -26,9 +26,8 @@ jobs:
       - name: Wait for the image to be available in the registry
         run: "./hack/await_image.sh"
         env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/prod/telemetry-manager"
-          TRIGGER: "${{ github.ref_name }}"
+          IMAGE_TAG: "${{ github.ref_name }}"
           QUERY_INTERVAL: 30
 
       - name: Install tools
