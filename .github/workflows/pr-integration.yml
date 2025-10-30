@@ -76,14 +76,7 @@ jobs:
         uses: "./.github/template/test-setup"
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      # we need Istio for fault injection to simulate backpressure and outages
-      - name: Deploy Istio module
-        if: ${{ matrix.scenario != 'healthy' }}
-        run: hack/deploy-istio.sh
-
-      - name: Deploy test K8S prerequisites
-        uses: "./.github/template/deploy-test-k8s-prerequisites"
+          install-istio: ${{ matrix.scenario != 'healthy' }}
 
       - name: Execute tests
         uses: "./.github/template/test-execute"
