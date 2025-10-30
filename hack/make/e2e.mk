@@ -56,8 +56,7 @@ run-e2e: $(GOTESTSUM)
 run-e2e-no-junit: $(GOTESTSUM)
 	$(call run-e2e-common,)
 
-.PHONY: generate-convenience
-generate-convenience:
+generate-e2e-targets: .github/workflows/pr-integration.yml
 	@cat .github/workflows/pr-integration.yml| yq '.jobs.e2e.strategy.matrix.labels[]|".PHONY: run-\(.type)-\(.name)\nrun-\(.type)-\(.name):\n  $$(MAKE) run-e2e TEST_ID=\(.type)-\(.name) TEST_PATH=\"./test/\(.type)/...\" TEST_LABELS=\"\(.name)\"\n"' > hack/make/e2e-convenience.mk
 
 	@printf ".PHONY: run-all-e2e-logs\nrun-all-e2e-logs: $$(cat hack/make/e2e-convenience.mk | egrep '^run-e2e-(log|fluent)' | tr -d ':' | xargs)\n" >> hack/make/e2e-convenience.mk
