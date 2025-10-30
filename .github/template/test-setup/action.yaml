@@ -8,6 +8,10 @@ inputs:
   github-token:
     description: Github token to use for github access
     required: true
+  install-istio:
+    description: Whether to install the Istio module
+    required: true
+    default: 'false'
 
 runs:
   using: "composite"
@@ -15,10 +19,6 @@ runs:
   steps:
     - name: Setup Golang
       uses: "./.github/template/setup-golang"
-
-    - name: Provision K3D
-      shell: bash
-      run: make provision-k3d
 
     # wait for the build to complete so that the manager image is available
     - name: Wait for the Build Image workflow to complete
@@ -31,15 +31,17 @@ runs:
         QUERY_INTERVAL: 30
         IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
 
-    - name: Deploy module release
-      if: ${{ !inputs.experimental || inputs.experimental == 'false'}}
+    - name: Provision K3D${{ inputs.experimental == 'true' && 'in Experimental Mode' || '' }} ${{inputs.install-istio == 'true' && ' with Istio' || '' }}
       shell: bash
-      run: make --debug deploy
-
-    - name: Deploy module experimental
-      if: ${{ inputs.experimental == 'true' }}
-      shell: bash
-      run: make --debug deploy-experimental
+      run: |
+        mode=""
+        if [[ "${{ inputs.experimental }}" == "true" ]]; then
+          mode="$mode-experimental"
+        fi
+        if [[ "${{ inputs.install-istio }}" == "true" ]]; then
+          mode="$mode-istio"
+        fi
+        make setup-e2e$mode
 
     - name: Wait for manager deployment rollout
       shell: bash

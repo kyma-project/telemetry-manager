@@ -1,13 +1,15 @@
 .PHONY: setup-k8s-prerequisites
-setup-k8s-prerequisites:
-	kubectl apply -f samples/operator_v1alpha1_telemetry.yaml -n kyma-system; \
-  kubectl apply -f samples/networkpolicy-deny-all.yaml -n kyma-system; \
-  kubectl apply -f samples/shoot_info_cm.yaml
+deploy-test-prerequisites: $(KUBECTL)
+	$(KUBECTL) apply -f test/fixtures/operator_v1alpha1_telemetry.yaml -n kyma-system; \
+	$(KUBECTL) apply -f test/fixtures/networkpolicy-deny-all.yaml -n kyma-system; \
+	$(KUBECTL) apply -f test/fixtures/shoot_info_cm.yaml
 
 
-.PHONY: setup-e2e-istio setup-e2e
+.PHONY: setup-e2e-istio setup-e2e setup-e2e-experimental setup-e2e-experimental-istio
 setup-e2e-istio: provision-k3d-istio deploy setup-k8s-prerequisites
 setup-e2e: provision-k3d deploy setup-k8s-prerequisites
+setup-e2e-experimental-istio: provision-k3d-istio deploy-experimental setup-k8s-prerequisites
+setup-e2e-experimental: provision-k3d deploy-experimental setup-k8s-prerequisites
 
 
 # Internal target for common e2e test execution logic
