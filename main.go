@@ -409,20 +409,6 @@ func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan
 			Complete(); err != nil {
 			return fmt.Errorf("failed to create v1beta1 conversion webhook: %w", err)
 		}
-
-		setupLog.Info("Registering conversion webhooks for MetricPipelines")
-
-		if err := ctrl.NewWebhookManagedBy(mgr).
-			For(&telemetryv1alpha1.MetricPipeline{}).
-			Complete(); err != nil {
-			return fmt.Errorf("failed to create v1alpha1 conversion webhook: %w", err)
-		}
-
-		if err := ctrl.NewWebhookManagedBy(mgr).
-			For(&telemetryv1beta1.MetricPipeline{}).
-			Complete(); err != nil {
-			return fmt.Errorf("failed to create v1beta1 conversion webhook: %w", err)
-		}
 	}
 
 	setupLog.Info("Setting up logpipeline controller")
@@ -518,6 +504,20 @@ func setupMetricPipelineController(mgr manager.Manager, reconcileTriggerChan <-c
 
 	if err := metricPipelineController.SetupWithManager(mgr); err != nil {
 		return fmt.Errorf("failed to setup metricpipeline controller: %w", err)
+	}
+
+	setupLog.Info("Registering conversion webhooks for MetricPipelines")
+
+	if err := ctrl.NewWebhookManagedBy(mgr).
+		For(&telemetryv1alpha1.MetricPipeline{}).
+		Complete(); err != nil {
+		return fmt.Errorf("failed to create v1alpha1 conversion webhook: %w", err)
+	}
+
+	if err := ctrl.NewWebhookManagedBy(mgr).
+		For(&telemetryv1beta1.MetricPipeline{}).
+		Complete(); err != nil {
+		return fmt.Errorf("failed to create v1beta1 conversion webhook: %w", err)
 	}
 
 	return nil
