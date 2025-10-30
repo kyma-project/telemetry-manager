@@ -59,14 +59,14 @@ jobs:
           - logs-fluentbit
           - logs-otel-agent
           - logs-otel-gateway
-          - metrics
+          - metrics-gateway
           - metrics-agent
           - traces
         scenario:
           - healthy
           - backpressure
           - outage
-    name: "selfmon: ${{ matrix.kind }}-${{ matrix.scenario }}"
+    name: "selfmon: ${{ matrix.scenario }}-${{ matrix.kind }}"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -88,15 +88,15 @@ jobs:
       - name: Execute tests
         uses: "./.github/template/test-execute"
         with:
-          id: ${{ matrix.kind }}-${{ matrix.scenario }}
+          id: ${{ matrix.scenario }}-${{ matrix.kind }}
           path: ./test/selfmonitor/...
-          labels: "selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}"
+          labels: "selfmonitor-${{ matrix.scenario }}-${{ matrix.kind }}"
 
       - name: Clean-up test environment
         uses: "./.github/template/test-cleanup"
         if: ${{ !cancelled()  }}
         with:
-          id: selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}
+          id: selfmonitor-${{ matrix.scenario }}-${{ matrix.kind }}
           failure: failure()
 
   e2e:
