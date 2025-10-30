@@ -32,6 +32,7 @@ runs:
         fi
         make setup-e2e$mode
       env:
+        GITHUB_TOKEN: "${{ inputs.github-token }}"
         # sets trigger depending on event being either pull_request or merge_group
         IMAGE_TAG: "${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}"
         QUERY_INTERVAL: 30
