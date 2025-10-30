@@ -571,7 +571,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 	}
 	for _, tc := range tests {
 		if tc.label == "" {
-			tc.label = suite.LabelMisc
+			tc.label = suite.LabelLogsMisc
 		}
 
 		t.Run(tc.label, func(t *testing.T) {

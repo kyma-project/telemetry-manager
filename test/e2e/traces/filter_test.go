@@ -19,8 +19,6 @@ import (
 )
 
 func TestFilter(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelExperimental)
-
 	var (
 		uniquePrefix = unique.Prefix(suite.LabelTraces)
 		pipelineName = uniquePrefix()

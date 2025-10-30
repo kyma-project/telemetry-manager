@@ -74,6 +74,7 @@ func sanitizeSpecID(filePath string) string {
 const (
 	// Logs labels
 
+	LabelLogsMisc             = "logs-misc"
 	LabelLogAgent             = "log-agent"
 	LabelLogGateway           = "log-gateway"
 	LabelFluentBit            = "fluent-bit"
