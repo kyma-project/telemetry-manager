@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -12,6 +11,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -22,7 +22,7 @@ func TestHealthy(t *testing.T) {
 	tests := []struct {
 		kind      string
 		pipeline  func(includeNs string, backend *kitbackend.Backend) client.Object
-		generator func(ns string) *appsv1.Deployment
+		generator func(ns string) []client.Object
 		assert    func(t *testing.T, ns string, backend *kitbackend.Backend)
 	}{
 		{
@@ -36,8 +36,10 @@ func TestHealthy(t *testing.T) {
 
 				return &p
 			},
-			generator: func(ns string) *appsv1.Deployment {
-				return stdoutloggen.NewDeployment(ns).K8sObject()
+			generator: func(ns string) []client.Object {
+				return []client.Object{
+					stdoutloggen.NewDeployment(ns).K8sObject(),
+				}
 			},
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend) {
 				assert.DeploymentReady(t, kitkyma.LogGatewayName)
@@ -58,8 +60,10 @@ func TestHealthy(t *testing.T) {
 
 				return &p
 			},
-			generator: func(ns string) *appsv1.Deployment {
-				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
+			generator: func(ns string) []client.Object {
+				return []client.Object{
+					telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject(),
+				}
 			},
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend) {
 				assert.DeploymentReady(t, kitkyma.LogGatewayName)
@@ -79,8 +83,10 @@ func TestHealthy(t *testing.T) {
 
 				return &p
 			},
-			generator: func(ns string) *appsv1.Deployment {
-				return stdoutloggen.NewDeployment(ns).K8sObject()
+			generator: func(ns string) []client.Object {
+				return []client.Object{
+					stdoutloggen.NewDeployment(ns).K8sObject(),
+				}
 			},
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend) {
 				assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
@@ -99,14 +105,43 @@ func TestHealthy(t *testing.T) {
 
 				return &p
 			},
-			generator: func(ns string) *appsv1.Deployment {
-				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeMetrics).K8sObject()
+			generator: func(ns string) []client.Object {
+				return []client.Object{
+					telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeMetrics).K8sObject(),
+				}
 			},
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend) {
 				assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 				assert.MetricPipelineHealthy(t, kindMetricsGateway)
 				assert.MetricsFromNamespaceDelivered(t, backend, ns, telemetrygen.MetricNames)
 				assert.MetricPipelineSelfMonitorIsHealthy(t, suite.K8sClient, kindMetricsGateway)
+			},
+		},
+		{
+			kind: kindMetricsAgent,
+			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
+				p := testutils.NewMetricPipelineBuilder().
+					WithName(kindMetricsAgent).
+					WithPrometheusInput(true, testutils.IncludeNamespaces(includeNs)).
+					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+					Build()
+
+				return &p
+			},
+			generator: func(ns string) []client.Object {
+				metricProducer := prommetricgen.New(ns)
+
+				return []client.Object{
+					metricProducer.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
+					metricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
+				}
+			},
+			assert: func(t *testing.T, ns string, backend *kitbackend.Backend) {
+				assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+				assert.DaemonSetReady(t, kitkyma.MetricAgentName)
+				assert.MetricPipelineHealthy(t, kindMetricsAgent)
+				assert.MetricsFromNamespaceDelivered(t, backend, ns, prommetricgen.CustomMetricNames())
+				assert.MetricPipelineSelfMonitorIsHealthy(t, suite.K8sClient, kindMetricsAgent)
 			},
 		},
 		{
@@ -119,8 +154,10 @@ func TestHealthy(t *testing.T) {
 
 				return &p
 			},
-			generator: func(ns string) *appsv1.Deployment {
-				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeTraces).K8sObject()
+			generator: func(ns string) []client.Object {
+				return []client.Object{
+					telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeTraces).K8sObject(),
+				}
 			},
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend) {
 				assert.DeploymentReady(t, kitkyma.TraceGatewayName)
@@ -149,8 +186,8 @@ func TestHealthy(t *testing.T) {
 				kitk8s.NewNamespace(backendNs).K8sObject(),
 				kitk8s.NewNamespace(genNs).K8sObject(),
 				pipeline,
-				generator,
 			}
+			resources = append(resources, generator...)
 			resources = append(resources, backend.K8sObjects()...)
 
 			t.Cleanup(func() {
