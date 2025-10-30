@@ -57,11 +57,11 @@ run-e2e-no-junit: $(GOTESTSUM)
 	$(call run-e2e-common,)
 
 generate-e2e-targets: .github/workflows/pr-integration.yml
-	@cat .github/workflows/pr-integration.yml| yq '.jobs.e2e.strategy.matrix.labels[]|".PHONY: run-\(.type)-\(.name)\nrun-\(.type)-\(.name):\n  $$(MAKE) run-e2e TEST_ID=\(.type)-\(.name) TEST_PATH=\"./test/\(.type)/...\" TEST_LABELS=\"\(.name)\"\n"' > hack/make/e2e-convenience.mk
+	@cat .github/workflows/pr-integration.yml| yq -p yaml -o json | jq -r '.jobs.e2e.strategy.matrix.labels[]| ".PHONY: run-\(.type)-\(.name)\nrun-\(.type)-\(.name):\n\t$$(MAKE) run-e2e TEST_ID=\(.type)-\(.name) TEST_PATH=\"./test/\(.type)/...\" TEST_LABELS=\"\(.name)\"\n"' > hack/make/e2e-convenience.mk
 
-	@printf ".PHONY: run-all-e2e-logs\nrun-all-e2e-logs: $$(cat hack/make/e2e-convenience.mk | egrep '^run-e2e-(log|fluent)' | tr -d ':' | xargs)\n" >> hack/make/e2e-convenience.mk
-	@printf ".PHONY: run-all-e2e-metrics\nrun-all-e2e-metrics: $$(cat hack/make/e2e-convenience.mk | egrep '^run-e2e-(metrics)' | tr -d ':' | xargs)\n" >> hack/make/e2e-convenience.mk
-	@printf ".PHONY: run-all-e2e-traces\nrun-all-e2e-traces: $$(cat hack/make/e2e-convenience.mk | egrep '^run-e2e-(traces)' | tr -d ':' | xargs)\n" >> hack/make/e2e-convenience.mk
+	@printf ".PHONY: run-all-e2e-logs\nrun-all-e2e-logs:\t$$(cat hack/make/e2e-convenience.mk | egrep '^run-e2e-(log|fluent)' | tr -d ':' | xargs)\n" >> hack/make/e2e-convenience.mk
+	@printf ".PHONY: run-all-e2e-metrics\nrun-all-e2e-metrics:\t$$(cat hack/make/e2e-convenience.mk | egrep '^run-e2e-(metrics)' | tr -d ':' | xargs)\n" >> hack/make/e2e-convenience.mk
+	@printf ".PHONY: run-all-e2e-traces\nrun-all-e2e-traces:\t$$(cat hack/make/e2e-convenience.mk | egrep '^run-e2e-(traces)' | tr -d ':' | xargs)\n" >> hack/make/e2e-convenience.mk
 
 
 -include hack/make/e2e-convenience.mk
