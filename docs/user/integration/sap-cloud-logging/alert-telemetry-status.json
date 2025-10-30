@@ -66,7 +66,6 @@
    "triggers": [
       {
          "query_level_trigger": {
-            "id": "r88m6pABs6tXO7H26USv",
             "name": "Inform about module problem",
             "severity": "1",
             "condition": {
@@ -77,7 +76,6 @@
             },
             "actions": [
                {
-                  "id": "sM8m6pABs6tXO7H26USv",
                   "name": "Inform about module problem",
                   "destination_id": "",
                   "message_template": {
@@ -97,56 +95,5 @@
             ]
          }
       }
-   ],
-   "ui_metadata": {
-      "schedule": {
-         "timezone": null,
-         "frequency": "interval",
-         "period": {
-            "unit": "MINUTES",
-            "interval": 1
-         },
-         "daily": 0,
-         "weekly": {
-            "tue": false,
-            "wed": false,
-            "thur": false,
-            "sat": false,
-            "fri": false,
-            "mon": false,
-            "sun": false
-         },
-         "monthly": {
-            "type": "day",
-            "day": 1
-         },
-         "cronExpression": "0 */1 * * *"
-      },
-      "search": {
-         "searchType": "query",
-         "timeField": "@timestamp",
-         "aggregations": [
-            {
-               "aggregationType": "max",
-               "fieldName": "audit_compliance_doc_version"
-            }
-         ],
-         "groupBy": [],
-         "bucketValue": 1,
-         "bucketUnitOfTime": "h",
-         "where": {
-            "fieldName": [
-               {
-                  "label": "audit_format_version",
-                  "type": "number"
-               }
-            ],
-            "fieldRangeEnd": 0,
-            "fieldRangeStart": 0,
-            "fieldValue": 4,
-            "operator": "is"
-         }
-      },
-      "monitor_type": "query_level_monitor"
-   }
+   ]
 }

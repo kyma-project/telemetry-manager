@@ -8,58 +8,74 @@ kubectl get crd logpipeline.telemetry.kyma-project.io -o yaml
 
 ## Sample Custom Resource
 
-The following LogPipeline object defines a pipeline integrating with the HTTP/JSON-based output. It uses basic authentication and excludes application logs emitted by `istio-proxy` containers.
+The following LogPipeline object defines a pipeline integrating with the otlp output. It uses mTLS taking connection details from a Secret, excludes OTLP logs from "namespaceA" and includes application logs emitted in "namespaceB".
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: LogPipeline
 metadata:
-  name: custom-fluentd
-  generation: 2
+  name: backend
 spec:
+  otlp:
+    namespaces:
+      exclude:
+      - namespaceA
   input:
     application:
-      containers:
-        exclude:
-        - istio-proxy
-      namespaces: {}
+      namespaces:
+        include:
+        - namespaceB
+      enabled: true
+      keepOriginalBody: true
   output:
-    http:
-      dedot: true
-      host:
+    otlp:
+      protocol: grpc
+      endpoint:
         valueFrom:
           secretKeyRef:
-            key: Fluentd-endpoint
-            name: custom-fluentd
+            key: ingest-otlp-endpoint
+            name: mySecret
             namespace: default
-      password:
-        valueFrom:
-          secretKeyRef:
-            key: Fluentd-password
-            name: custom-fluentd
-            namespace: default
-      tls: {}
-      uri: /customindex/kyma
-      user:
-        valueFrom:
-          secretKeyRef:
-            key: Fluentd-username
-            name: custom-fluentd
-            namespace: default
+      tls:
+        cert:
+          valueFrom:
+            secretKeyRef:
+              key: ingest-otlp-cert
+              name: mySecret
+              namespace: default
+        key:
+          valueFrom:
+            secretKeyRef:
+              key: ingest-otlp-key
+              name: mySecret
+              namespace: default
 status:
   conditions:
-  - lastTransitionTime: "2024-02-28T22:48:24Z"
-    message: Fluent Bit DaemonSet is ready
-    observedGeneration: 2
+  - lastTransitionTime: "2025-06-13T08:58:38Z"
+    message: Log gateway Deployment is ready
+    observedGeneration: 4
+    reason: GatewayReady
+    status: "True"
+    type: GatewayHealthy
+  - lastTransitionTime: "2025-03-30T20:32:39Z"
+    message: LogPipeline specification is successfully applied to the configuration
+      of Log gateway
+    observedGeneration: 4
+    reason: GatewayConfigured
+    status: "True"
+    type: ConfigurationGenerated
+  - lastTransitionTime: "2025-03-30T20:32:39Z"
+    message: Log agent DaemonSet is ready
+    observedGeneration: 4
     reason: AgentReady
     status: "True"
     type: AgentHealthy
-  - lastTransitionTime: "2024-02-28T22:48:11Z"
-    message: ""
-    observedGeneration: 2
-    reason: ConfigurationGenerated
+  - lastTransitionTime: "2025-07-07T05:23:03Z"
+    message: No problems detected in the telemetry flow
+    observedGeneration: 4
+    reason: FlowHealthy
     status: "True"
-    type: ConfigurationGenerated
+    type: TelemetryFlowHealthy
 ```
 
 For further examples, see the [samples](https://github.com/kyma-project/telemetry-manager/tree/main/samples) directory.
