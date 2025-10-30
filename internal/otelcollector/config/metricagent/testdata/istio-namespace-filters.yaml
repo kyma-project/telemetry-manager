@@ -24,6 +24,7 @@ service:
                 - resource/drop-service-name
                 - istio_noise_filter
                 - transform/set-instrumentation-scope-istio
+                - resource/set-kyma-input-name-istio
             exporters:
                 - routing/istio-input
         metrics/output-test:
@@ -170,6 +171,11 @@ processors:
               key: k8s.cluster.name
             - action: insert
               key: k8s.cluster.uid
+    resource/set-kyma-input-name-istio:
+        attributes:
+            - action: insert
+              key: kyma.input.name
+              value: istio
     service_enrichment:
         resource_attributes:
             - kyma.kubernetes_io_app_name
@@ -196,7 +202,7 @@ connectors:
         default_pipelines: []
         error_mode: ignore
         table:
-            - statement: route() where instrumentation_scope.name == "io.kyma-project.telemetry/istio"
+            - statement: route() where resource.attributes["kyma.input.name"] == "istio"
               pipelines:
                 - metrics/output-test
               context: metric

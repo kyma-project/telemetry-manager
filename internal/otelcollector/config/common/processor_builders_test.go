@@ -1,6 +1,7 @@
 package common
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -73,9 +74,6 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 			want: &TransformProcessor{
 				ErrorMode: "ignore",
 				MetricStatements: []TransformProcessorStatements{
-					{
-						Statements: []string{"set(resource.attributes[\"kyma.input.name\"], \"prometheus\")"},
-					},
 					{
 						Statements: []string{
 							"set(scope.version, \"main\") where scope.name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver\"",
@@ -310,6 +308,103 @@ func TestBuildPodLabelEnrichments(t *testing.T) {
 			require := require.New(t)
 			result := extractPodLabels(tt.presets)
 			require.ElementsMatch(tt.expected, result)
+		})
+	}
+}
+
+func TestKymaInputNameProcessorConfig(t *testing.T) {
+	type args struct {
+		inputSource InputSourceType
+	}
+	tests := []struct {
+		name string
+		args args
+		want *ResourceProcessor
+	}{
+		{
+			name: "InputSourceRuntime",
+			args: args{inputSource: InputSourceRuntime},
+			want: &ResourceProcessor{
+				Attributes: []AttributeAction{
+					{
+						Action: AttributeActionInsert,
+						Key:    KymaInputNameAttribute,
+						Value:  string(InputSourceRuntime),
+					},
+				},
+			},
+		},
+		{
+			name: "InputSourcePrometheus",
+			args: args{inputSource: InputSourcePrometheus},
+			want: &ResourceProcessor{
+				Attributes: []AttributeAction{
+					{
+						Action: AttributeActionInsert,
+						Key:    KymaInputNameAttribute,
+						Value:  string(InputSourcePrometheus),
+					},
+				},
+			},
+		},
+		{
+			name: "InputSourceIstio",
+			args: args{inputSource: InputSourceIstio},
+			want: &ResourceProcessor{
+				Attributes: []AttributeAction{
+					{
+						Action: AttributeActionInsert,
+						Key:    KymaInputNameAttribute,
+						Value:  string(InputSourceIstio),
+					},
+				},
+			},
+		},
+		{
+			name: "InputSourceOTLP",
+			args: args{inputSource: InputSourceOTLP},
+			want: &ResourceProcessor{
+				Attributes: []AttributeAction{
+					{
+						Action: AttributeActionInsert,
+						Key:    KymaInputNameAttribute,
+						Value:  string(InputSourceOTLP),
+					},
+				},
+			},
+		},
+		{
+			name: "InputSourceKyma",
+			args: args{inputSource: InputSourceKyma},
+			want: &ResourceProcessor{
+				Attributes: []AttributeAction{
+					{
+						Action: AttributeActionInsert,
+						Key:    KymaInputNameAttribute,
+						Value:  string(InputSourceKyma),
+					},
+				},
+			},
+		},
+		{
+			name: "InputSourceK8sCluster",
+			args: args{inputSource: InputSourceK8sCluster},
+			want: &ResourceProcessor{
+				Attributes: []AttributeAction{
+					{
+						Action: AttributeActionInsert,
+						Key:    KymaInputNameAttribute,
+						Value:  string(InputSourceK8sCluster),
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := KymaInputNameProcessorConfig(tt.args.inputSource); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("KymaInputNameProcessorConfig() = %v, want %v", got, tt.want)
+			}
 		})
 	}
 }

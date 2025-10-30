@@ -21,7 +21,7 @@ func TestBuildConfig(t *testing.T) {
 	}
 
 	// store the testresult next to the golden file. testresults are ignored by git, so its fine to keep them.
-	keepResults := true
+	keepResults := false
 
 	tests := []struct {
 		name                string
