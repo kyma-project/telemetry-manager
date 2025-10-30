@@ -1,8 +1,8 @@
 .PHONY: deploy-test-prerequisites
-deploy-test-prerequisites: $(KUBECTL)
-	$(KUBECTL) apply -f test/fixtures/operator_v1alpha1_telemetry.yaml -n kyma-system; \
-	$(KUBECTL) apply -f test/fixtures/networkpolicy-deny-all.yaml -n kyma-system; \
-	$(KUBECTL) apply -f test/fixtures/shoot_info_cm.yaml
+deploy-test-prerequisites:
+	kubectl apply -f test/fixtures/operator_v1alpha1_telemetry.yaml -n kyma-system; \
+	kubectl apply -f test/fixtures/networkpolicy-deny-all.yaml -n kyma-system; \
+	kubectl apply -f test/fixtures/shoot_info_cm.yaml
 
 
 .PHONY: setup-e2e-istio setup-e2e setup-e2e-experimental deploy-test-prerequisites wait-for-image
