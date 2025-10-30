@@ -4,7 +4,7 @@ go 1.25.3
 
 require (
 	github.com/bombsimon/wsl/v5 v5.3.0
-	github.com/golangci/golangci-lint/v2 v2.5.0
+	github.com/golangci/golangci-lint/v2 v2.6.0
 	github.com/google/yamlfmt v0.20.0
 	github.com/hairyhenderson/gomplate/v4 v4.3.3
 	github.com/itchyny/gojq v0.12.17
