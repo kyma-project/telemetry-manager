@@ -90,7 +90,7 @@ kubectl -n ${K8S_NAMESPACE} get pod -l app.kubernetes.io/name=loki
 
 ### Create a LogPipeline Resource
 
-To ingest the application logs from within your cluster to Loki, use Kyma's LogPipeline feature based on OTLP. It enables the `application` input to automatically tail application logs from `stdout/stderr`. If you want to push logs natively, additionally use the [log gateway endpoint](https://kyma-project.io/#/telemetry-manager/user/logs?id=_1-create-a-logpipeline).
+To ingest the application logs from within your cluster to Loki, use Kyma's [LogPipeline](./../../collecting-logs/README.md) feature based on OTLP. It enables the `application` input to automatically tail application logs from `stdout/stderr`. If you want to push logs natively, additionally use the [Set Up the OTLP Input](./../../otlp-input.md).
 
 Apply the LogPipeline:
 
