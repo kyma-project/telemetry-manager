@@ -12,16 +12,13 @@ setup-e2e-experimental-istio: provision-k3d-istio wait-for-image deploy-experime
 setup-e2e-experimental: provision-k3d wait-for-image deploy-experimental deploy-test-prerequisites
 
 # default values for waiting for image
-TIMEOUT ?= 600
+TIMEOUT ?= 900
 QUERY_INTERVAL ?= 10
 IMAGE_REPO ?= europe-docker.pkg.dev/kyma-project/dev/telemetry-manager
 
+.ONESHELL:
 wait-for-image:
-	retry -i "$QUERY_INTERVAL" \
-          -t "$TIMEOUT" \
-          -v \
-          bash -c ' skopeo list-tags "docker://${IMAGE_REPO}" | jq -e ".Tags|any(. == env.IMAGE_TAG)" '
-
+	@hack/await_image.sh
 
 
 # Internal target for common e2e test execution logic

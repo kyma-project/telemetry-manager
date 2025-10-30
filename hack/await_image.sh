@@ -18,13 +18,12 @@ PROTOCOL=docker://
 TIMEOUT=900
 START_TIME=$SECONDS
 
+echo "Waiting for binary image: ${IMAGE_REPO}:${TRIGGER}"
 until $(skopeo list-tags ${PROTOCOL}${IMAGE_REPO} | jq '.Tags|any(. == env.TRIGGER)'); do
   if (( SECONDS - START_TIME > TIMEOUT )); then
     echo "Timeout reached: ${IMAGE_REPO}:${TRIGGER} not found within $(( TIMEOUT/60 )) minutes"
     exit 1
   fi
-  echo "Waiting for binary image: ${IMAGE_REPO}:${TRIGGER}"
-  echo "Trigger: $TRIGGER"
   sleep "$QUERY_INTERVAL"
 done
 
