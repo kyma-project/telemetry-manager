@@ -46,7 +46,9 @@ type Telemetry struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata"`
 
-	Spec   TelemetrySpec   `json:"spec"`
+	// +kubebuilder:validation:Optional
+	Spec TelemetrySpec `json:"spec"`
+	// +kubebuilder:validation:Optional
 	Status TelemetryStatus `json:"status"`
 }
 
