@@ -191,7 +191,7 @@ An "End of File" (EOF) error indicates that the connection to your OTLP backend 
 3. **Check for Network Policies**: Look for `NetworkPolicy` resources in the `kyma-system` namespace that could be blocking egress traffic from the gateway pods. You may need to create a policy to explicitly allow this traffic.
 4. **Check Backend Health**: Ensure the OTLP backend service is running and accessible from within the cluster. You can test connectivity from the gateway pod using tools like `curl` (for HTTP) or `grpcurl` (for gRPC).
 
-## Transformation or Filter Rule Has No Effect
+## Transform or Filter Rules Not Working
 
 ### Symptom
 
@@ -206,9 +206,9 @@ This usually happens for one of the following reasons:
 
 ### Solution
 
-1. **Check the Gateway Logs**: Look for errors in the relevant gateway pod (`telemetry-metric-gateway`, `telemetry-trace-gateway`, etc.). Search for log entries containing `OTTL expression error`. These messages will point you to the exact syntax error in your statement. Execute: `kubectl logs -n kyma-system telemetry-metric-gateway-0 | grep "OTTL expression error"`.
-1. **Verify the Execution Order**: Review your rules. If you have a transform that renames resource.attributes["foo"] to resource.attributes["bar"], your filter rule must check for bar, not foo.
-2. **Verify Context Paths in Filters**: Ensure your filter conditions use the full, explicit path to the attribute.
+1. **Check the Gateway Logs**: Look for errors in the relevant gateway pod (`telemetry-metric-gateway`, `telemetry-trace-gateway`, etc.). Search for log entries containing `OTTL expression error`. These messages will point you to the exact syntax error in your statement. Execute: `kubectl logs -n kyma-system telemetry-metric-gateway | grep "OTTL expression error"`.
+2. **Verify the Execution Order**: Review your rules. If you have a transform that renames resource.attributes["foo"] to resource.attributes["bar"], your filter rule must check for bar, not foo.
+3. **Verify Context Paths in Filters**: Ensure your filter conditions use the full, explicit path to the attribute.
    * **Incorrect**: `attributes["k8s.namespace.name"] == "default"`
    * **Correct**: `resource.attributes["k8s.namespace.name"] == "default"`
-3. **Simplify and Test**: Temporarily remove all but one simple rule to confirm it works as expected. Then, incrementally add your other rules back to isolate the one that is causing the issue.
+4. **Simplify and Test**: Temporarily remove all but one simple rule to confirm it works as expected. Then, incrementally add your other rules back to isolate the one that is causing the issue.

@@ -2,9 +2,9 @@
 
 > **Note**: This feature is only available with Telemetry Manager v1.52.0 and later.
 
-After your telemetry data has been collected, you can use the [OpenTelemetry Transformation Language (OTTL)](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/pkg/ottl) to perform powerful modifications and filtering within your pipelines. This allows you to enrich, sanitize, and reduce your data before it is exported to a backend.
+After your telemetry data has been collected, you can use the custom transform and filter feature with the [OpenTelemetry Transformation Language (OTTL)](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/pkg/ottl) to apply advanced, fine-grained processing to your telemetry data, enriching, modifying, and filtering it before it is exported to a backend.
 
-You can define OTTL rules in the `spec` of your LogPipeline, MetricPipeline, and TracePipeline resources. When you define rules, the Telemetry module configures processors in the underlying OpenTelemetry Collector to execute your statements.
+You can define `transform` and `filter` OTTL rules in the `spec` of your LogPipeline, MetricPipeline, and TracePipeline resources. When you define rules, the Telemetry module configures processors in the underlying OpenTelemetry Collector to execute your statements.
 
 ## Processing Order
 
@@ -33,7 +33,7 @@ When writing OTTL expressions, you must include the appropriate context path to 
 - **Access higher contexts**: `resource.attributes["key"]`, `scope.name`, `metric.name` (from datapoint context)
 - **Access related contexts**: `span.attributes["key"]` (from spanevent context, when available)
 
-> **Note**: By default, if an OTTL statement encounters an error, the processor logs the error and continues to process the next piece of data. This ignore mode prevents a single malformed data point from halting the entire pipeline.
+> **Note**: By default, if an OTTL statement encounters an error, the processor logs the error and continues to process the next piece of data. This `ignore` mode prevents a single malformed data point from halting the entire pipeline.
 
 ## Transforming Telemetry Data
 
