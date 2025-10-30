@@ -16,7 +16,6 @@ TIMEOUT ?= 900
 QUERY_INTERVAL ?= 10
 IMAGE_REPO ?= europe-docker.pkg.dev/kyma-project/dev/telemetry-manager
 
-.ONESHELL:
 wait-for-image:
 	@hack/await_image.sh
 
