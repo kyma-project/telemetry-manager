@@ -69,7 +69,7 @@ type LogPipeline struct {
 type LogPipelineSpec struct {
 	// Input configures additional inputs for log collection.
 	// +kubebuilder:validation:Optional
-	Input LogPipelineInput `json:"input,omitempty"`
+	Input LogPipelineInput `json:"input"`
 	// FluentBitFilters configures custom Fluent Bit `filters` to transform logs. Only available when using an output of type `http` and `custom`.
 	// +kubebuilder:validation:Optional
 	FluentBitFilters []LogPipelineFilter `json:"filters,omitempty"`
@@ -199,7 +199,7 @@ type LogPipelineHTTPOutput struct {
 	Format string `json:"format,omitempty"`
 	// TLS configures TLS for the HTTP backend.
 	// +kubebuilder:validation:Optional
-	TLS LogPipelineOutputTLS `json:"tls,omitempty"`
+	TLS LogPipelineOutputTLS `json:"tls"`
 	// Dedot enables de-dotting of Kubernetes labels and annotations. For compatibility with OpenSearch-based backends, dots (.) are replaced by underscores (_). Default is `false`.
 	// +kubebuilder:validation:Optional
 	Dedot bool `json:"dedot,omitempty"`

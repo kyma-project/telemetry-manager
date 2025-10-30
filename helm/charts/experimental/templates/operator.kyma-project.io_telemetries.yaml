@@ -256,7 +256,6 @@ spec:
                 type: array
               endpoints:
                 description: Endpoints for log, trace, and metric gateway.
-                nullable: true
                 properties:
                   logs:
                     description: Logs contains the endpoints for log gateway supporting
@@ -546,7 +545,6 @@ spec:
                 type: array
               endpoints:
                 description: Endpoints for log, trace, and metric gateway.
-                nullable: true
                 properties:
                   logs:
                     description: Logs contains the endpoints for log gateway supporting

@@ -62,7 +62,7 @@ type MetricPipeline struct {
 type MetricPipelineSpec struct {
 	// Input configures additional inputs for metric collection.
 	// +kubebuilder:validation:Optional
-	Input MetricPipelineInput `json:"input,omitempty"`
+	Input MetricPipelineInput `json:"input"`
 
 	// Output configures the backend to which metrics are sent. You must specify exactly one output per pipeline.
 	// +kubebuilder:validation:Required
