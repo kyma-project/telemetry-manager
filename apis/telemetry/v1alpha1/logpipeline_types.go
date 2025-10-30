@@ -29,7 +29,7 @@ func init() {
 // +kubebuilder:object:root=true
 type LogPipelineList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata"`
 
 	Items []LogPipeline `json:"items"`
 }
@@ -47,14 +47,14 @@ type LogPipelineList struct {
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 type LogPipeline struct {
 	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.ObjectMeta `json:"metadata"`
 
 	// Defines the desired state of LogPipeline
 	// +kubebuilder:validation:Optional
-	Spec LogPipelineSpec `json:"spec,omitempty"`
+	Spec LogPipelineSpec `json:"spec"`
 	// Shows the observed state of the LogPipeline
 	// +kubebuilder:validation:Optional
-	Status LogPipelineStatus `json:"status,omitempty"`
+	Status LogPipelineStatus `json:"status"`
 }
 
 // LogPipelineSpec defines the desired state of LogPipeline

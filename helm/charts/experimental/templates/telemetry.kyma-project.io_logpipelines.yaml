@@ -1139,6 +1139,8 @@ spec:
                   or filter; see [unsupported mode](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/02-logs.md#unsupported-mode).
                 type: boolean
             type: object
+        required:
+        - metadata
         type: object
     served: true
     storage: false
@@ -2257,6 +2259,8 @@ spec:
                   or filter; see [unsupported mode](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/02-logs.md#unsupported-mode).
                 type: boolean
             type: object
+        required:
+        - metadata
         type: object
     served: true
     storage: true

@@ -29,7 +29,7 @@ func init() {
 // +kubebuilder:object:root=true
 type TelemetryList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata"`
 
 	Items []Telemetry `json:"items"`
 }
@@ -44,10 +44,10 @@ type TelemetryList struct {
 // +kubebuilder:storageversion
 type Telemetry struct {
 	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.ObjectMeta `json:"metadata"`
 
-	Spec   TelemetrySpec   `json:"spec,omitempty"`
-	Status TelemetryStatus `json:"status,omitempty"`
+	Spec   TelemetrySpec   `json:"spec"`
+	Status TelemetryStatus `json:"status"`
 }
 
 // TelemetrySpec defines the desired state of Telemetry
