@@ -441,6 +441,26 @@ form: |
             defaultExpanded: true
             children:
               - path: '[]'
+  - path: spec.filter
+    name: OTTL Filter
+    widget: GenericList
+    children:
+      - path: '[].conditions'
+        widget: SimpleList
+        children:
+          - path: '[]'
+  - path: spec.transform
+    name: OTTL Transform
+    widget: GenericList
+    children:
+      - path: '[].conditions'
+        widget: SimpleList
+        children:
+          - path: '[]'
+      - path: '[].statements'
+        widget: SimpleList
+        children:
+          - path: '[]'
   - path: spec.output
     widget: FormGroup
     defaultExpanded: true
