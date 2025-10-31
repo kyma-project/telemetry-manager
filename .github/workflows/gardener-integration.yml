@@ -45,11 +45,10 @@ jobs:
       - name: Wait for the image to be available in the registry
         run: "./hack/await_image.sh"
         env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/prod/telemetry-manager"
           # sets trigger to SHA if used in merge_group, but to env.TAG if used in push
           # even if env.TAG is available in merge_group event, it will be neglected
-          TRIGGER: "${{ github.event.merge_group.head_sha || env.TAG }}"
+          IMAGE_TAG: "${{ github.event.merge_group.head_sha || env.TAG }}"
           QUERY_INTERVAL: 30
 
       # save gardener kubeconfig to a temp file in order to pass it to the command
@@ -91,12 +90,12 @@ jobs:
 
       - name: Create Telemetry CR
         shell: bash
-        run: kubectl apply -f samples/operator_v1alpha1_telemetry.yaml -n kyma-system
+        run: kubectl apply -f test/fixtures/operator_v1alpha1_telemetry.yaml -n kyma-system
 
       # Deploying  a deny-all Network Policy to simulate a typical setup on a Kyma cluster
       - name: Create Network Policy
         shell: bash
-        run: kubectl apply -f samples/networkpolicy-deny-all.yaml -n kyma-system
+        run: kubectl apply -f test/fixtures/networkpolicy-deny-all.yaml -n kyma-system
 
       - name: Execute istio tests subset
         uses: "./.github/template/test-execute"

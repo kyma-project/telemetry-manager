@@ -19,10 +19,8 @@ runs:
   steps:
     - name: Run tests with gotestsum
       shell: bash
-      run: |
-        bin/gotestsum \
-          --format pkgname \
-          --hide-summary=skipped \
-          --junitfile junit-report-${{ inputs.id }}.xml \
-          -- -timeout=20m ${{ inputs.path }} \
-          -- -labels="${{ inputs.labels }}"
+      run: make run-e2e
+      env:
+        TEST_ID: ${{ inputs.id }}
+        TEST_PATH: ${{ inputs.path }}
+        TEST_LABELS: ${{ inputs.labels }}
