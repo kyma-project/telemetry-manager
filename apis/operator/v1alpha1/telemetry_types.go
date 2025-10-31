@@ -29,7 +29,7 @@ func init() {
 // +kubebuilder:object:root=true
 type TelemetryList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata"`
 
 	Items []Telemetry `json:"items"`
 }
@@ -42,11 +42,14 @@ type TelemetryList struct {
 // +kubebuilder:printcolumn:name="state",type="string",JSONPath=".status.state"
 // +kubebuilder:printcolumn:name="age",type="date",JSONPath=".metadata.creationTimestamp"
 type Telemetry struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta `json:",inline"`
+	// +kubebuilder:validation:Optional
+	metav1.ObjectMeta `json:"metadata"`
 
-	Spec   TelemetrySpec   `json:"spec,omitempty"`
-	Status TelemetryStatus `json:"status,omitempty"`
+	// +kubebuilder:validation:Optional
+	Spec TelemetrySpec `json:"spec"`
+	// +kubebuilder:validation:Optional
+	Status TelemetryStatus `json:"status"`
 }
 
 // TelemetrySpec defines the desired state of Telemetry
@@ -72,28 +75,28 @@ type TelemetrySpec struct {
 type MetricSpec struct {
 	// Gateway configures the metric gateway.
 	// +kubebuilder:validation:Optional
-	Gateway GatewaySpec `json:"gateway,omitempty"`
+	Gateway GatewaySpec `json:"gateway"`
 }
 
 // TraceSpec configures module settings specific to the trace features.
 type TraceSpec struct {
 	// Gateway configures the trace gateway.
 	// +kubebuilder:validation:Optional
-	Gateway GatewaySpec `json:"gateway,omitempty"`
+	Gateway GatewaySpec `json:"gateway"`
 }
 
 // LogSpec configures module settings specific to the log features.
 type LogSpec struct {
 	// Gateway configures the log gateway.
 	// +kubebuilder:validation:Optional
-	Gateway GatewaySpec `json:"gateway,omitempty"`
+	Gateway GatewaySpec `json:"gateway"`
 }
 
 // GatewaySpec defines settings of a gateway.
 type GatewaySpec struct {
 	// Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
 	// +kubebuilder:validation:Optional
-	Scaling Scaling `json:"scaling,omitempty"`
+	Scaling Scaling `json:"scaling"`
 }
 
 // Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
@@ -169,10 +172,8 @@ type TelemetryStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
 	// Endpoints for log, trace, and metric gateway.
-	// +nullable
-	Endpoints GatewayEndpoints `json:"endpoints,omitempty"`
 	// +kubebuilder:validation:Optional
-	// add other fields to status subresource here
+	Endpoints GatewayEndpoints `json:"endpoints"`
 }
 
 type State string

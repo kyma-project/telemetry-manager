@@ -29,7 +29,7 @@ func init() {
 // +kubebuilder:object:root=true
 type TracePipelineList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata"`
 
 	Items []TracePipeline `json:"items"`
 }
@@ -44,15 +44,16 @@ type TracePipelineList struct {
 // +kubebuilder:printcolumn:name="Flow Healthy",type=string,JSONPath=`.status.conditions[?(@.type=="TelemetryFlowHealthy")].status`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 type TracePipeline struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta `json:",inline"`
+	// +kubebuilder:validation:Optional
+	metav1.ObjectMeta `json:"metadata"`
 
 	// Spec defines the desired state of TracePipeline
 	// +kubebuilder:validation:Optional
-	Spec TracePipelineSpec `json:"spec,omitempty"`
+	Spec TracePipelineSpec `json:"spec"`
 	// Status shows the observed state of the TracePipeline
 	// +kubebuilder:validation:Optional
-	Status TracePipelineStatus `json:"status,omitempty"`
+	Status TracePipelineStatus `json:"status"`
 }
 
 // TracePipelineSpec defines the desired state of TracePipeline
