@@ -90,12 +90,12 @@ jobs:
 
       - name: Create Telemetry CR
         shell: bash
-        run: kubectl apply -f samples/operator_v1alpha1_telemetry.yaml -n kyma-system
+        run: kubectl apply -f test/fixtures/operator_v1alpha1_telemetry.yaml -n kyma-system
 
       # Deploying  a deny-all Network Policy to simulate a typical setup on a Kyma cluster
       - name: Create Network Policy
         shell: bash
-        run: kubectl apply -f samples/networkpolicy-deny-all.yaml -n kyma-system
+        run: kubectl apply -f test/fixtures/networkpolicy-deny-all.yaml -n kyma-system
 
       - name: Execute istio tests subset
         uses: "./.github/template/test-execute"
