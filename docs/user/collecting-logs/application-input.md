@@ -1,6 +1,6 @@
 # Configure Application Logs
 
-To collect logs that your applications write to `stdout` and `stderr`, create a LogPipeline. The **application** input is enabled by default and uses an agent on each node to tail container log files. You can control which namespaces and containers to include or exclude.
+To collect logs that your applications write to `stdout` and `stderr`, create a LogPipeline. The **application** input is enabled by default and uses an agent on each Node to tail container log files. You can control which namespaces and containers to include or exclude.
 
 ## Prerequisites
 
