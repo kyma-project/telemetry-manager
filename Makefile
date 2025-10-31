@@ -1,12 +1,11 @@
 include .env
--include .env.overrides
 
 # Environment Variables
 MANAGER_IMAGE ?= $(ENV_MANAGER_IMAGE)
-FLUENT_BIT_EXPORTER_IMAGE?= $(ENV_FLUENTBIT_EXPORTER_IMAGE)
+FLUENT_BIT_EXPORTER_IMAGE ?= $(ENV_FLUENTBIT_EXPORTER_IMAGE)
 FLUENT_BIT_IMAGE ?= $(ENV_FLUENTBIT_IMAGE)
 OTEL_COLLECTOR_IMAGE ?= $(ENV_OTEL_COLLECTOR_IMAGE)
-SELF_MONITOR_IMAGE?= $(ENV_SELFMONITOR_IMAGE)
+SELF_MONITOR_IMAGE ?= $(ENV_SELFMONITOR_IMAGE)
 K3S_IMAGE ?= $(ENV_K3S_IMAGE)
 ALPINE_IMAGE ?= $(ENV_ALPINE_IMAGE)
 HELM_RELEASE_VERSION ?= $(ENV_HELM_RELEASE_VERSION)
@@ -52,7 +51,7 @@ $(TOOLS_BIN_NAMES): $(TOOLS_BIN_DIR) $(TOOLS_MOD_DIR)/go.mod
 CONTROLLER_GEN   := $(TOOLS_BIN_DIR)/controller-gen
 GOLANGCI_LINT    := $(TOOLS_BIN_DIR)/golangci-lint
 GO_TEST_COVERAGE := $(TOOLS_BIN_DIR)/go-test-coverage
-GOTESTSUM		 := $(TOOLS_BIN_DIR)/gotestsum
+GOTESTSUM        := $(TOOLS_BIN_DIR)/gotestsum
 MOCKERY          := $(TOOLS_BIN_DIR)/mockery
 TABLE_GEN        := $(TOOLS_BIN_DIR)/table-gen
 YQ               := $(TOOLS_BIN_DIR)/yq
@@ -64,6 +63,7 @@ K3D              := $(TOOLS_BIN_DIR)/k3d
 PROMLINTER       := $(TOOLS_BIN_DIR)/promlinter
 GOMPLATE         := $(TOOLS_BIN_DIR)/gomplate
 HELM             := $(TOOLS_BIN_DIR)/helm
+KUBECTL          := kubectl
 
 POPULATE_IMAGES  := $(TOOLS_BIN_DIR)/populate-images
 
@@ -75,26 +75,20 @@ $(POPULATE_IMAGES):
 include hack/make/provision.mk
 include hack/make/e2e.mk
 
-.PHONY: all
-all: build
-
 ##@ General
-# The help target prints out all targets with their descriptions organized
-# beneath their categories. The categories are represented by '##@' and the
-# target descriptions by '##'. The awk commands is responsible for reading the
-# entire set of makefiles included in this invocation, looking for lines of the
-# file as xyz: ## something, and then pretty-format the target and help. Then,
-# if there's a line with ##@ something, that gets pretty-printed as a category.
-# More info on the usage of ANSI control characters for terminal formatting:
-# https://en.wikipedia.org/wiki/ANSI_escape_code#SGR_parameters
-# More info on the awk command:
-# http://linuxcommand.org/lc3_adv_awk.php
+
+.PHONY: all
+all: build ## Build the manager binary (default target)
 
 .PHONY: help
-help: ## Display this help.
-	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+help: ## Display this help message
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*##/ { printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 
+##@ Tools
+
+.PHONY: install-tools
+install-tools: $(TOOLS_BIN_NAMES) $(POPULATE_IMAGES) $(PROMLINTER) ## Install all required development tools
 
 # Find dependency folders that contain go.mod
 GO_MODULE_DIRS := $(shell find $(DEPENDENCIES_DIR) -mindepth 1 -maxdepth 1 -type d -exec test -f "{}/go.mod" \; -print)
@@ -104,7 +98,21 @@ MODULE_NAMES := $(notdir $(GO_MODULE_DIRS))
 LINT_TARGETS := $(addprefix lint-,$(MODULE_NAMES))
 LINT_FIX_TARGETS := $(addprefix lint-fix-,$(MODULE_NAMES))
 
-# Declare phony targets for shell completion
+##@ Code Quality
+
+.PHONY: fmt
+fmt: ## Run go fmt against code
+	go fmt ./...
+
+.PHONY: vet
+vet: ## Run go vet against code
+	go vet --tags e2e,istio ./...
+
+.PHONY: tidy
+tidy: ## Check if there are any dirty changes for go mod tidy
+	go mod tidy
+	git diff --exit-code go.mod
+	git diff --exit-code go.sum
 
 # Lint the root module
 lint-manager: $(GOLANGCI_LINT)
@@ -128,55 +136,20 @@ $(LINT_FIX_TARGETS): $(GOLANGCI_LINT)
 	echo "Linting $$modname (with fix)..."; \
 	cd $(DEPENDENCIES_DIR)/$$modname && $(GOLANGCI_LINT) run --config $(SRC_ROOT)/.golangci.yaml --fix
 
-# Lint everything
-lint: lint-manager $(LINT_TARGETS)
+.PHONY: lint
+lint: lint-manager $(LINT_TARGETS) ## Run linting checks on all modules
 	@echo "All lint checks completed."
 
-# Lint everything with fix
-lint-fix: lint-fix-manager $(LINT_FIX_TARGETS)
+.PHONY: lint-fix
+lint-fix: lint-fix-manager $(LINT_FIX_TARGETS) ## Run linting checks with automatic fixes on all modules
 	@echo "All lint fix checks completed."
 
-.PHONY: lint-manager lint-fix-manager lint lint-fix $(LINT_TARGETS) $(LINT_FIX_TARGETS)
+.PHONY: lint-manager lint-fix-manager $(LINT_TARGETS) $(LINT_FIX_TARGETS)
 
-.PHONY: crd-docs-gen
-crd-docs-gen: $(TABLE_GEN) manifests## Generates CRD spec into docs folder
-	$(TABLE_GEN) --crd-filename ./helm/charts/default/templates/operator.kyma-project.io_telemetries.yaml --md-filename ./docs/user/resources/01-telemetry.md
-	$(TABLE_GEN) --crd-filename ./helm/charts/default/templates/telemetry.kyma-project.io_logpipelines.yaml --md-filename ./docs/user/resources/02-logpipeline.md
-	$(TABLE_GEN) --crd-filename ./helm/charts/default/templates/telemetry.kyma-project.io_logparsers.yaml --md-filename ./docs/user/resources/03-logparser.md
-	$(TABLE_GEN) --crd-filename ./helm/charts/default/templates/telemetry.kyma-project.io_tracepipelines.yaml --md-filename ./docs/user/resources/04-tracepipeline.md
-	$(TABLE_GEN) --crd-filename ./helm/charts/default/templates/telemetry.kyma-project.io_metricpipelines.yaml --md-filename ./docs/user/resources/05-metricpipeline.md
-
-.PHONY: manifests
-manifests: $(CONTROLLER_GEN) $(YQ) $(YAMLFMT) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition for v1alpha1.
-	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook paths="./..."
-	$(CONTROLLER_GEN) crd paths="./apis/operator/v1alpha1" output:crd:artifacts:config=helm/charts/default/templates
-	$(CONTROLLER_GEN) crd paths="./apis/telemetry/v1alpha1" output:crd:artifacts:config=helm/charts/default/templates
-# Strip off transform field from the CRDs until the feature is fully implemented
-	$(YQ) eval 'del(.. | select(has("transform")).transform)' -i ./helm/charts/default/templates/telemetry.kyma-project.io_logpipelines.yaml
-	$(YQ) eval 'del(.. | select(has("transform")).transform)' -i ./helm/charts/default/templates/telemetry.kyma-project.io_tracepipelines.yaml
-	$(YQ) eval 'del(.. | select(has("transform")).transform)' -i ./helm/charts/default/templates/telemetry.kyma-project.io_metricpipelines.yaml
-	$(YQ) eval 'del(.. | select(has("x-kubernetes-validations"))."x-kubernetes-validations"[] | select(.rule|contains("transform")) )' -i ./helm/charts/default/templates/telemetry.kyma-project.io_logpipelines.yaml
-	$(YQ) eval 'del(.. | select(has("x-kubernetes-validations"))."x-kubernetes-validations"[] | select(.rule|contains("transform")) )' -i ./helm/charts/default/templates/telemetry.kyma-project.io_metricpipelines.yaml
-	$(YQ) eval 'del(.. | select(has("x-kubernetes-validations"))."x-kubernetes-validations"[] | select(.rule|contains("transform")) )' -i ./helm/charts/default/templates/telemetry.kyma-project.io_tracepipelines.yaml
-	$(YAMLFMT)
-
-# Strip off filter field from CRDs until the feature is fully implemented
-	$(YQ) eval 'del(.. | select(has("filter")).filter)' -i ./helm/charts/default/templates/telemetry.kyma-project.io_logpipelines.yaml
-	$(YQ) eval 'del(.. | select(has("filter")).filter)' -i ./helm/charts/default/templates/telemetry.kyma-project.io_tracepipelines.yaml
-	$(YQ) eval 'del(.. | select(has("filter")).filter)' -i ./helm/charts/default/templates/telemetry.kyma-project.io_metricpipelines.yaml
-	$(YQ) eval 'del(.. | select(has("x-kubernetes-validations"))."x-kubernetes-validations"[] | select((.rule | type == "!!str") and (.rule | test("filter")) and (.rule | test("filters") | not)))' -i ./helm/charts/default/templates/telemetry.kyma-project.io_logpipelines.yaml
-	$(YQ) eval 'del(.. | select(has("x-kubernetes-validations"))."x-kubernetes-validations"[] | select(.rule|contains("filter")) )' -i ./helm/charts/default/templates/telemetry.kyma-project.io_metricpipelines.yaml
-	$(YQ) eval 'del(.. | select(has("x-kubernetes-validations"))."x-kubernetes-validations"[] | select(.rule|contains("filter")) )' -i ./helm/charts/default/templates/telemetry.kyma-project.io_tracepipelines.yaml
-	$(YAMLFMT)
-
-.PHONY: manifests-experimental
-manifests-experimental: $(CONTROLLER_GEN) $(YAMLFMT) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition for v1alpha1 and v1beta1.
-	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook crd paths="./..." output:crd:artifacts:config=helm/charts/experimental/templates
-	$(YAMLFMT)
-
+##@ Code Generation
 
 .PHONY: generate
-generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) $(YQ) $(YAMLFMT) $(POPULATE_IMAGES) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) $(YQ) $(YAMLFMT) $(POPULATE_IMAGES) ## Generate code including DeepCopy, DeepCopyInto, DeepCopyObject methods and update helm values
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 	$(MOCKERY)
 	$(STRINGER) --type Mode internal/utils/logpipeline/logpipeline.go
@@ -194,45 +167,81 @@ generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) $(YQ) $(YAMLFMT) $(POPULATE_I
 	$(YQ) eval '.version = "${HELM_RELEASE_VERSION}"' -i helm/charts/default/Chart.yaml
 	$(YAMLFMT)
 	$(POPULATE_IMAGES)
-.PHONY: fmt
-fmt: ## Run go fmt against code.
-	go fmt ./...
 
-.PHONY: vet
-vet: ## Run go vet against code.
-	go vet --tags e2e,istio ./...
+.PHONY: manifests
+manifests: $(CONTROLLER_GEN) $(YQ) $(YAMLFMT) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition for v1alpha1
+	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook paths="./..."
+	$(CONTROLLER_GEN) crd paths="./apis/operator/v1alpha1" output:crd:artifacts:config=helm/charts/default/templates
+	$(CONTROLLER_GEN) crd paths="./apis/telemetry/v1alpha1" output:crd:artifacts:config=helm/charts/default/templates
+# Strip off transform field from the CRDs until the feature is fully implemented
+	$(YQ) eval 'del(.. | select(has("transform")).transform)' -i ./helm/charts/default/templates/telemetry.kyma-project.io_logpipelines.yaml
+	$(YQ) eval 'del(.. | select(has("transform")).transform)' -i ./helm/charts/default/templates/telemetry.kyma-project.io_tracepipelines.yaml
+	$(YQ) eval 'del(.. | select(has("transform")).transform)' -i ./helm/charts/default/templates/telemetry.kyma-project.io_metricpipelines.yaml
+	$(YQ) eval 'del(.. | select(has("x-kubernetes-validations"))."x-kubernetes-validations"[] | select(.rule|contains("transform")) )' -i ./helm/charts/default/templates/telemetry.kyma-project.io_logpipelines.yaml
+	$(YQ) eval 'del(.. | select(has("x-kubernetes-validations"))."x-kubernetes-validations"[] | select(.rule|contains("transform")) )' -i ./helm/charts/default/templates/telemetry.kyma-project.io_metricpipelines.yaml
+	$(YQ) eval 'del(.. | select(has("x-kubernetes-validations"))."x-kubernetes-validations"[] | select(.rule|contains("transform")) )' -i ./helm/charts/default/templates/telemetry.kyma-project.io_tracepipelines.yaml
+	$(YAMLFMT)
+# Strip off filter field from CRDs until the feature is fully implemented
+	$(YQ) eval 'del(.. | select(has("filter")).filter)' -i ./helm/charts/default/templates/telemetry.kyma-project.io_logpipelines.yaml
+	$(YQ) eval 'del(.. | select(has("filter")).filter)' -i ./helm/charts/default/templates/telemetry.kyma-project.io_tracepipelines.yaml
+	$(YQ) eval 'del(.. | select(has("filter")).filter)' -i ./helm/charts/default/templates/telemetry.kyma-project.io_metricpipelines.yaml
+	$(YQ) eval 'del(.. | select(has("x-kubernetes-validations"))."x-kubernetes-validations"[] | select((.rule | type == "!!str") and (.rule | test("filter")) and (.rule | test("filters") | not)))' -i ./helm/charts/default/templates/telemetry.kyma-project.io_logpipelines.yaml
+	$(YQ) eval 'del(.. | select(has("x-kubernetes-validations"))."x-kubernetes-validations"[] | select(.rule|contains("filter")) )' -i ./helm/charts/default/templates/telemetry.kyma-project.io_metricpipelines.yaml
+	$(YQ) eval 'del(.. | select(has("x-kubernetes-validations"))."x-kubernetes-validations"[] | select(.rule|contains("filter")) )' -i ./helm/charts/default/templates/telemetry.kyma-project.io_tracepipelines.yaml
+	$(YAMLFMT)
 
-.PHONY: tidy
-tidy: ## Check if there any dirty change for go mod tidy.
-	go mod tidy
-	git diff --exit-code go.mod
-	git diff --exit-code go.sum
+.PHONY: manifests-experimental
+manifests-experimental: $(CONTROLLER_GEN) $(YAMLFMT) ## Generate manifests for experimental features (v1alpha1 and v1beta1)
+	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook crd paths="./..." output:crd:artifacts:config=helm/charts/experimental/templates
+	$(YAMLFMT)
 
+.PHONY: crd-docs-gen
+crd-docs-gen: $(TABLE_GEN) manifests ## Generate CRD documentation in markdown format
+	$(TABLE_GEN) --crd-filename ./helm/charts/default/templates/operator.kyma-project.io_telemetries.yaml --md-filename ./docs/user/resources/01-telemetry.md
+	$(TABLE_GEN) --crd-filename ./helm/charts/default/templates/telemetry.kyma-project.io_logpipelines.yaml --md-filename ./docs/user/resources/02-logpipeline.md
+	$(TABLE_GEN) --crd-filename ./helm/charts/default/templates/telemetry.kyma-project.io_logparsers.yaml --md-filename ./docs/user/resources/03-logparser.md
+	$(TABLE_GEN) --crd-filename ./helm/charts/default/templates/telemetry.kyma-project.io_tracepipelines.yaml --md-filename ./docs/user/resources/04-tracepipeline.md
+	$(TABLE_GEN) --crd-filename ./helm/charts/default/templates/telemetry.kyma-project.io_metricpipelines.yaml --md-filename ./docs/user/resources/05-metricpipeline.md
+
+.PHONY: check-clean
+check-clean: generate manifests manifests-experimental crd-docs-gen generate-e2e-targets ## Check if repo is clean and up-to-date after code generation
+	@echo "Checking if all generated files are up-to-date"
+	@git diff --name-only --exit-code || (echo "Generated files are not up-to-date. Please run 'make generate manifests manifests-experimental crd-docs-gen generate-e2e-targets' to update them." && exit 1)
 
 ##@ Testing
 .PHONY: test
-test: manifests generate fmt vet tidy ## Run tests.
+test: manifests generate fmt vet tidy ## Run all unit tests
 	go test ./test/testkit/matchers/...
 	go test $$(go list ./... | grep -v /test/) -coverprofile cover.out
 	cd ${PROJECT_DIR}/dependencies/directory-size-exporter && go test ./...
 	cd ${PROJECT_DIR}/dependencies/sample-app && go test ./...
 
 .PHONY: check-coverage
-check-coverage: $(GO_TEST_COVERAGE) ## Check tests coverage.
+check-coverage: $(GO_TEST_COVERAGE) ## Check test coverage against thresholds
 	go test $$(go list ./... | grep -v /test/) -short -coverprofile=cover.out -covermode=atomic -coverpkg=./...
 	$(GO_TEST_COVERAGE) --config=./.testcoverage.yml
 
-
 ##@ Build
+
 .PHONY: build
-build: generate fmt vet tidy ## Build manager binary.
+build: generate fmt vet tidy ## Build manager binary
 	go build -o bin/manager main.go
 
-check-clean: generate manifests manifests-experimental crd-docs-gen generate-e2e-targets## Check if repo is clean up-to-date. Used after code generation
-	@echo "Checking if all generated files are up-to-date"
-	@git diff --name-only --exit-code || (echo "Generated files are not up-to-date. Please run 'make generate manifests manifests-experimental crd-docs-gen generate-e2e-targets' to update them." && exit 1)
+.PHONY: docker-build
+docker-build: ## Build docker image with the manager
+	docker build -t ${MANAGER_IMAGE} .
 
+.PHONY: docker-push
+docker-push: ## Push docker image with the manager
+	docker push ${MANAGER_IMAGE}
 
+##@ Development
+
+.PHONY: run
+run: gen-webhook-cert manifests generate fmt vet tidy ## Run controller from your host (requires webhook certificates)
+	GODEBUG=fips140=only,tlsmlkem=0 go run ./main.go
+
+# TLS certificate generation for local development
 tls.key:
 	@openssl genrsa -out tls.key 4096
 
@@ -241,20 +250,8 @@ tls.crt: tls.key
 	@openssl x509 -req -sha256 -days 3650 -in tls.csr -signkey tls.key -out tls.crt
 	@rm tls.csr
 
-gen-webhook-cert: tls.key tls.crt
-
-.PHONY: run
-run: gen-webhook-cert manifests generate fmt vet tidy ## Run a controller from your host.
-	GODEBUG=fips140=only,tlsmlkem=0 go run ./main.go
-
-.PHONY: docker-build
-docker-build: ## Build docker image with the manager.
-	docker build -t ${MANAGER_IMAGE} .
-
-.PHONY: docker-push
-docker-push: ## Push docker image with the manager.
-	docker push ${MANAGER_IMAGE}
-
+.PHONY: gen-webhook-cert
+gen-webhook-cert: tls.key tls.crt ## Generate TLS certificates for webhook development
 
 ##@ Deployment
 ifndef ignore-not-found
@@ -262,41 +259,41 @@ ifndef ignore-not-found
 endif
 
 .PHONY: install
-install: manifests $(HELM) ## Install CRDs into the K8s cluster specified in ~/.kube/config.
+install: manifests $(HELM) ## Install CRDs into the K8s cluster
 	$(HELM) template helm/charts/default | kubectl apply -f -
 
 .PHONY: install-with-telemetry
-install-with-telemetry: install
+install-with-telemetry: install ## Install CRDs and create sample telemetry resource
 	kubectl get ns kyma-system || kubectl create ns kyma-system
 	kubectl apply -f samples/operator_v1alpha1_telemetry.yaml -n kyma-system
 
 .PHONY: uninstall
-uninstall: manifests $(HELM) ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+uninstall: manifests $(HELM) ## Uninstall CRDs from the K8s cluster (use ignore-not-found=true to ignore missing resources)
 	$(HELM) template helm/charts/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy
-deploy: manifests $(HELM) ## Deploy resources based on the release (default) variant to the K8s cluster specified in ~/.kube/config.
+deploy: manifests $(HELM) ## Deploy telemetry manager with default/release configuration
 	$(HELM) template telemetry helm \
-    	--set experimental.enabled=false \
-    	--set default.enabled=true \
+	    --set experimental.enabled=false \
+	    --set default.enabled=true \
 		--set nameOverride=telemetry \
-    	--set manager.container.image.repository=${MANAGER_IMAGE} \
-    	--set manager.container.image.pullPolicy="Always" \
-    	--set manager.container.args.enable-fips-mode=true \
-    	--namespace kyma-system \
-    | kubectl apply -f -
+	    --set manager.container.image.repository=${MANAGER_IMAGE} \
+	    --set manager.container.image.pullPolicy="Always" \
+	    --set manager.container.args.enable-fips-mode=true \
+	    --namespace kyma-system \
+	| kubectl apply -f -
 
 .PHONY: undeploy
-undeploy: $(HELM) ## Undeploy resources based on the release (default) variant from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+undeploy: $(HELM) ## Undeploy telemetry manager with default/release configuration
 	$(HELM) template telemetry helm \
-    	--set experimental.enabled=false \
-    	--set default.enabled=true \
+	    --set experimental.enabled=false \
+	    --set default.enabled=true \
 		--set nameOverride=telemetry \
 		--namespace kyma-system \
 	| kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy-experimental
-deploy-experimental: manifests-experimental $(HELM) ## Deploy resources based on the development variant to the K8s cluster specified in ~/.kube/config.
+deploy-experimental: manifests-experimental $(HELM) ## Deploy telemetry manager with experimental features enabled
 	$(HELM) template telemetry helm \
 	    --set experimental.enabled=true \
 		--set default.enabled=false \
@@ -308,13 +305,16 @@ deploy-experimental: manifests-experimental $(HELM) ## Deploy resources based on
 	| kubectl apply -f -
 
 .PHONY: undeploy-experimental
-undeploy-experimental: $(HELM) ## Undeploy resources based on the development variant from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+undeploy-experimental: $(HELM) ## Undeploy telemetry manager with experimental features
 	$(HELM) template telemetry helm \
 	    --set experimental.enabled=true \
 		--set default.enabled=false \
 		--set nameOverride=telemetry \
 		--namespace kyma-system \
 	| kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+
+##@ Documentation
+
 .PHONY: update-metrics-docs
- update-metrics-docs: $(PROMLINTER) $(GOMPLATE) # Update metrics documentation
+update-metrics-docs: $(PROMLINTER) $(GOMPLATE) ## Update internal metrics documentation
 	@metrics=$$(mktemp).json; echo $${metrics}; $(PROMLINTER) list -ojson . > $${metrics}; $(GOMPLATE) -d telemetry=$${metrics} -f hack/telemetry-internal-metrics.md.tpl > docs/contributor/telemetry-internal-metrics.md

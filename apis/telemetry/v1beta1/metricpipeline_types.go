@@ -29,7 +29,7 @@ func init() {
 // +kubebuilder:object:root=true
 type MetricPipelineList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata"`
 
 	Items []MetricPipeline `json:"items"`
 }
@@ -46,23 +46,24 @@ type MetricPipelineList struct {
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:storageversion
 type MetricPipeline struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta `json:",inline"`
+	// +kubebuilder:validation:Optional
+	metav1.ObjectMeta `json:"metadata"`
 
 	// Spec defines the desired characteristics of MetricPipeline.
 	// +kubebuilder:validation:Optional
-	Spec MetricPipelineSpec `json:"spec,omitempty"`
+	Spec MetricPipelineSpec `json:"spec"`
 
 	// Status represents the current information/status of MetricPipeline.
 	// +kubebuilder:validation:Optional
-	Status MetricPipelineStatus `json:"status,omitempty"`
+	Status MetricPipelineStatus `json:"status"`
 }
 
 // MetricPipelineSpec defines the desired state of MetricPipeline.
 type MetricPipelineSpec struct {
 	// Input configures additional inputs for metric collection.
 	// +kubebuilder:validation:Optional
-	Input MetricPipelineInput `json:"input,omitempty"`
+	Input MetricPipelineInput `json:"input"`
 
 	// Output configures the backend to which metrics are sent. You must specify exactly one output per pipeline.
 	// +kubebuilder:validation:Required

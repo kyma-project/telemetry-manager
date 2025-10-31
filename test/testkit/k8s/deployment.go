@@ -1,6 +1,8 @@
 package k8s
 
 import (
+	"maps"
+
 	"github.com/google/uuid"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -43,9 +45,7 @@ func (d *Deployment) WithLabel(key, value string) *Deployment {
 }
 
 func (d *Deployment) WithLabels(labels map[string]string) *Deployment {
-	for key, value := range labels {
-		d.labels[key] = value
-	}
+	maps.Copy(d.labels, labels)
 
 	return d
 }
