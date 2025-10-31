@@ -13,7 +13,7 @@ func init() {
 // +kubebuilder:object:root=true
 type LogPipelineList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata"`
 
 	Items []LogPipeline `json:"items"`
 }
@@ -30,15 +30,16 @@ type LogPipelineList struct {
 // +kubebuilder:printcolumn:name="Unsupported Mode",type=boolean,JSONPath=`.status.unsupportedMode`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 type LogPipeline struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta `json:",inline"`
+	// +kubebuilder:validation:Optional
+	metav1.ObjectMeta `json:"metadata"`
 
 	// Defines the desired state of LogPipeline
 	// +kubebuilder:validation:Optional
-	Spec LogPipelineSpec `json:"spec,omitempty"`
+	Spec LogPipelineSpec `json:"spec"`
 	// Shows the observed state of the LogPipeline
 	// +kubebuilder:validation:Optional
-	Status LogPipelineStatus `json:"status,omitempty"`
+	Status LogPipelineStatus `json:"status"`
 }
 
 // LogPipelineSpec defines the desired state of LogPipeline
@@ -53,7 +54,7 @@ type LogPipeline struct {
 type LogPipelineSpec struct {
 	// Input configures additional inputs for log collection.
 	// +kubebuilder:validation:Optional
-	Input LogPipelineInput `json:"input,omitempty"`
+	Input LogPipelineInput `json:"input"`
 	// FluentBitFilters configures custom Fluent Bit `filters` to transform logs. Only available when using an output of type `http` and `custom`.
 	// +kubebuilder:validation:Optional
 	FluentBitFilters []LogPipelineFilter `json:"filters,omitempty"`
@@ -91,10 +92,10 @@ type LogPipelineApplicationInput struct {
 	Enabled *bool `json:"enabled,omitempty"`
 	// Namespaces describes whether application logs from specific namespaces are selected. The options are mutually exclusive. System namespaces are excluded by default. Use the `system` attribute with value `true` to enable them.
 	// +kubebuilder:validation:Optional
-	Namespaces LogPipelineNamespaceSelector `json:"namespaces,omitempty"`
+	Namespaces LogPipelineNamespaceSelector `json:"namespaces"`
 	// Containers describes whether application logs from specific containers are selected. The options are mutually exclusive.
 	// +kubebuilder:validation:Optional
-	Containers LogPipelineContainerSelector `json:"containers,omitempty"`
+	Containers LogPipelineContainerSelector `json:"containers"`
 	// KeepAnnotations defines whether to keep all Kubernetes annotations. The default is `false`.  Only available when using an output of type `http` and `custom`.
 	// +kubebuilder:validation:Optional
 	KeepAnnotations *bool `json:"keepAnnotations,omitempty"`
@@ -183,7 +184,7 @@ type LogPipelineHTTPOutput struct {
 	Format string `json:"format,omitempty"`
 	// TLS configures TLS for the HTTP backend.
 	// +kubebuilder:validation:Optional
-	TLS LogPipelineOutputTLS `json:"tls,omitempty"`
+	TLS LogPipelineOutputTLS `json:"tls"`
 	// Dedot enables de-dotting of Kubernetes labels and annotations. For compatibility with OpenSearch-based backends, dots (.) are replaced by underscores (_). Default is `false`.
 	// +kubebuilder:validation:Optional
 	Dedot bool `json:"dedot,omitempty"`

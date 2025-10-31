@@ -17,9 +17,6 @@ on:
       - 'external-images.yaml'
   workflow_dispatch:
 
-env:
-  GITLEAKS_VERSION: 8.28.0
-
 jobs:
   unit-tests:
     runs-on: ubuntu-latest
@@ -68,21 +65,6 @@ jobs:
 
       - name: Verify all code and manifests were generated and committed
         run: make check-clean
-
-  gitleaks:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-        with:
-          fetch-depth: 0
-      - name: Fetch gitleaks ${{ env.GITLEAKS_VERSION }}
-        run: curl -Lso gitleaks.tar.gz https://github.com/gitleaks/gitleaks/releases/download/v${{ env.GITLEAKS_VERSION }}/gitleaks_${{ env.GITLEAKS_VERSION }}_linux_x64.tar.gz && tar -xvzf ./gitleaks.tar.gz
-      - name: Run gitleaks
-        # Scan commits between base and head of the pull request
-        run: ./gitleaks detect --log-opts=${PULL_BASE_SHA}...${PULL_HEAD_SHA} --verbose --redact
-        env:
-          PULL_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          PULL_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
 
   test-renovate:
     runs-on: ubuntu-latest

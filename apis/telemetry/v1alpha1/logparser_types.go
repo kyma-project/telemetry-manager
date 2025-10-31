@@ -13,7 +13,7 @@ func init() {
 // +kubebuilder:object:root=true
 type LogParserList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata"`
 
 	Items []LogParser `json:"items"`
 }
@@ -27,13 +27,16 @@ type LogParserList struct {
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:deprecatedversion:warning="The LogParser API is deprecated. Instead, log in JSON format and use the JSON parsing feature of the LogPipeline"
 type LogParser struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta `json:",inline"`
+	// +kubebuilder:validation:Optional
+	metav1.ObjectMeta `json:"metadata"`
 
 	// Defines the desired state of LogParser.
-	Spec LogParserSpec `json:"spec,omitempty"`
+	// +kubebuilder:validation:Optional
+	Spec LogParserSpec `json:"spec"`
 	// Shows the observed state of the LogParser.
-	Status LogParserStatus `json:"status,omitempty"`
+	// +kubebuilder:validation:Optional
+	Status LogParserStatus `json:"status"`
 }
 
 // LogParserSpec defines the desired state of LogParser.

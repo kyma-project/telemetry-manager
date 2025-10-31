@@ -5,10 +5,10 @@ default:
 manager:
   container:
     args:
-      - --cert-dir=/tmp
-      - --high-priority-class-name=telemetry-priority-class-high
-      - --normal-priority-class-name=telemetry-priority-class
-      - --enable-fips-mode=false
+      cert-dir: "/tmp"
+      high-priority-class-name: "telemetry-priority-class-high"
+      normal-priority-class-name: "telemetry-priority-class"
+      enable-fips-mode: false
     env:
       alpineImage: europe-docker.pkg.dev/kyma-project/prod/external/library/alpine:3.22.1
       appLogLevel: info
@@ -16,7 +16,7 @@ manager:
       fluentBitImage: europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:4.1.1
       gomemlimit: 300MiB
       otelCollectorImage: europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.136.0-main
-      selfMonitorImage: europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:3.7.1-a38d6f7
+      selfMonitorImage: europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:3.7.2-d25aebc
     image:
       repository: europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:main
       pullPolicy: "IfNotPresent"

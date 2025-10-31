@@ -129,7 +129,7 @@ Next, you set up the ingestion of custom spans and metrics, as well as Istio spa
 To ingest custom spans, first deploy a TracePipeline. You can then optionally enable the Istio tracing feature to ingest Istio spans.
 We recommend direct integration with the Dynatrace server. This approach reduces the number of components processing your trace data, improving resource efficiency and data shipment resiliency. Alternatively, you can integrate using the Dynatrace OpenTelemetry (OTel) Collector. Apply the same output configuration as described in [Ingest Metrics](#ingest-metrics).
 
-1. Deploy the TracePipeline:
+1. Deploy the [TracePipeline](./../../collecting-traces/README.md):
 
     ```bash
     cat <<EOF | kubectl apply -f -
@@ -159,7 +159,7 @@ We recommend direct integration with the Dynatrace server. This approach reduces
     EOF
     ```
 
-1. Deploy the Istio Telemetry resource, (see also [Traces Istio Support](./../../03-traces.md#istio)):
+1. Deploy the Istio Telemetry resource, (see also [Traces Istio Support](./../../collecting-traces/istio-support.md)):
 
     ```bash
     kubectl apply -n istio-system -f - <<EOF
@@ -195,7 +195,7 @@ Depending on your metrics source and temporality, choose one of the following me
 
 - Ingest cumulative metrics using the Dynatrace OTel Collector for transformation. This solution is recommended as it often cumulative metrics cannot be avoided and it will provide the most flexibility. However, it will increase the number of additional components processing the data in the cluster (OTel Collector, ActiveGate) leading to increased resource consumption and increased chance of lossing data.
 
-  1. Deploy the MetricPipeline that ships to the Dynatrace OTel Collector:
+  1. Deploy the [MetricPipeline](./../../collecting-metrics/README.md) that ships to the Dynatrace OTel Collector:
 
         ```bash
         cat <<EOF | kubectl apply -f -
@@ -220,7 +220,7 @@ Depending on your metrics source and temporality, choose one of the following me
 
   To use this setup, you must explicitly enable the "delta" aggregation temporality as preferred temporality in your applications. You cannot enable additional inputs for the MetricPipeline because these produce metrics with "cumulative" temporality.
 
-  1. Deploy the MetricPipeline:
+  1. Deploy the [MetricPipeline](./../../collecting-metrics/README.md):
 
         ```bash
         cat <<EOF | kubectl apply -f -

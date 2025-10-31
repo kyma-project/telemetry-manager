@@ -30,7 +30,10 @@ spec:
         sidecar.istio.io/inject: "false"
     spec:
       containers:
-      - args: {{- toYaml .Values.manager.container.args | nindent 8 }}
+      - args:
+        {{- range $key, $value := .Values.manager.container.args }}
+        - --{{ $key }}={{ $value }}
+        {{- end }}
         {{- if .Values.experimental.enabled }}
         - --enable-v1beta1-log-pipelines=true
         {{- end }}
