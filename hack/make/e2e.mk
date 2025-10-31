@@ -1,22 +1,31 @@
+##@ E2E Testing
+
+# E2E test environment setup targets
+.PHONY: setup-e2e
+setup-e2e: provision-k3d wait-for-image deploy deploy-test-prerequisites ## Set up complete E2E test environment with k3d
+
+.PHONY: setup-e2e-istio
+setup-e2e-istio: provision-k3d-istio wait-for-image deploy deploy-test-prerequisites ## Set up E2E test environment with k3d and Istio
+
+.PHONY: setup-e2e-experimental
+setup-e2e-experimental: provision-k3d wait-for-image deploy-experimental deploy-test-prerequisites ## Set up E2E test environment with experimental features
+
+.PHONY: setup-e2e-experimental-istio
+setup-e2e-experimental-istio: provision-k3d-istio wait-for-image deploy-experimental deploy-test-prerequisites ## Set up E2E test environment with experimental features and Istio
+
 .PHONY: deploy-test-prerequisites
-deploy-test-prerequisites:
+deploy-test-prerequisites: ## Deploy common test prerequisites (telemetry config, network policy, shoot info)
 	kubectl apply -f test/fixtures/operator_v1alpha1_telemetry.yaml -n kyma-system; \
 	kubectl apply -f test/fixtures/networkpolicy-deny-all.yaml -n kyma-system; \
 	kubectl apply -f test/fixtures/shoot_info_cm.yaml
 
-
-.PHONY: setup-e2e-istio setup-e2e setup-e2e-experimental deploy-test-prerequisites wait-for-image
-setup-e2e-istio: provision-k3d-istio wait-for-image deploy deploy-test-prerequisites
-setup-e2e: provision-k3d wait-for-image deploy deploy-test-prerequisites
-setup-e2e-experimental-istio: provision-k3d-istio wait-for-image deploy-experimental deploy-test-prerequisites
-setup-e2e-experimental: provision-k3d wait-for-image deploy-experimental deploy-test-prerequisites
-
-# default values for waiting for image
+# Default values for waiting for image
 TIMEOUT ?= 900
 QUERY_INTERVAL ?= 10
 IMAGE_REPO ?= europe-docker.pkg.dev/kyma-project/dev/telemetry-manager
 
-wait-for-image:
+.PHONY: wait-for-image
+wait-for-image: ## Wait for the manager image to be available in the registry
 	@hack/await_image.sh
 
 
@@ -55,7 +64,7 @@ define run-e2e-common
 endef
 
 .PHONY: run-e2e
-run-e2e: $(GOTESTSUM)
+run-e2e: $(GOTESTSUM) ## Run E2E tests (requires TEST_ID, TEST_PATH, and TEST_LABELS env vars)
 	@if [ -z "$(TEST_ID)" ]; then \
 		echo "Error: TEST_ID environment variable is required"; \
 		exit 1; \
@@ -63,15 +72,26 @@ run-e2e: $(GOTESTSUM)
 	$(call run-e2e-common,--junitfile junit-report-$(TEST_ID).xml)
 
 .PHONY: run-e2e-no-junit
-run-e2e-no-junit: $(GOTESTSUM)
+run-e2e-no-junit: $(GOTESTSUM) ## Run E2E tests without JUnit output
 	$(call run-e2e-common,)
 
-generate-e2e-targets: .github/workflows/pr-integration.yml
-	@cat .github/workflows/pr-integration.yml| yq -p yaml -o json | jq -r '.jobs.e2e.strategy.matrix.labels[]| ".PHONY: run-\(.type)-\(.name)\nrun-\(.type)-\(.name):\n\t$$(MAKE) run-e2e TEST_ID=\(.type)-\(.name) TEST_PATH=\"./test/\(.type)/...\" TEST_LABELS=\"\(.name)\"\n"' > hack/make/e2e-convenience.mk
+.PHONY: generate-e2e-targets
+generate-e2e-targets: .github/workflows/pr-integration.yml ## Generate convenience targets for E2E tests from GitHub workflow matrix
+	@echo '##@ E2E Test Suites' > hack/make/e2e-convenience.mk
+	@echo '' >> hack/make/e2e-convenience.mk
+	@cat .github/workflows/pr-integration.yml| yq -p yaml -o json | jq -r '.jobs.e2e.strategy.matrix.labels[]| ".PHONY: run-\(.type)-\(.name)\nrun-\(.type)-\(.name): ## Run \(.name) \(.type) tests\n\t$$(MAKE) run-e2e TEST_ID=\(.type)-\(.name) TEST_PATH=\"./test/\(.type)/...\" TEST_LABELS=\"\(.name)\"\n"' >> hack/make/e2e-convenience.mk
 
-	@printf ".PHONY: run-all-e2e-logs\nrun-all-e2e-logs:\t$$(cat hack/make/e2e-convenience.mk | egrep '^run-e2e-(log|fluent)' | tr -d ':' | xargs)\n" >> hack/make/e2e-convenience.mk
-	@printf ".PHONY: run-all-e2e-metrics\nrun-all-e2e-metrics:\t$$(cat hack/make/e2e-convenience.mk | egrep '^run-e2e-(metrics)' | tr -d ':' | xargs)\n" >> hack/make/e2e-convenience.mk
-	@printf ".PHONY: run-all-e2e-traces\nrun-all-e2e-traces:\t$$(cat hack/make/e2e-convenience.mk | egrep '^run-e2e-(traces)' | tr -d ':' | xargs)\n" >> hack/make/e2e-convenience.mk
+	@printf "\n.PHONY: run-all-e2e-logs\nrun-all-e2e-logs:" >> hack/make/e2e-convenience.mk
+	@cat hack/make/e2e-convenience.mk | egrep '^run-e2e-(log|fluent)' | tr -d ':' | xargs | sed 's/^/ /' >> hack/make/e2e-convenience.mk
+	@printf " ## Run all log-related E2E tests\n" >> hack/make/e2e-convenience.mk
+
+	@printf ".PHONY: run-all-e2e-metrics\nrun-all-e2e-metrics:" >> hack/make/e2e-convenience.mk
+	@cat hack/make/e2e-convenience.mk | egrep '^run-e2e-(metrics)' | tr -d ':' | xargs | sed 's/^/ /' >> hack/make/e2e-convenience.mk
+	@printf " ## Run all metrics-related E2E tests\n" >> hack/make/e2e-convenience.mk
+
+	@printf ".PHONY: run-all-e2e-traces\nrun-all-e2e-traces:" >> hack/make/e2e-convenience.mk
+	@cat hack/make/e2e-convenience.mk | egrep '^run-e2e-(traces)' | tr -d ':' | xargs | sed 's/^/ /' >> hack/make/e2e-convenience.mk
+	@printf " ## Run all trace-related E2E tests\n" >> hack/make/e2e-convenience.mk
 
 
 -include hack/make/e2e-convenience.mk
