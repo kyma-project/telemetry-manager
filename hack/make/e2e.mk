@@ -82,16 +82,17 @@ generate-e2e-targets: .github/workflows/pr-integration.yml ## Generate convenien
 	@cat .github/workflows/pr-integration.yml| yq -p yaml -o json | jq -r '.jobs.e2e.strategy.matrix.labels[]| ".PHONY: run-\(.type)-\(.name)\nrun-\(.type)-\(.name): ## Run \(.name) \(.type) tests\n\t$$(MAKE) run-e2e TEST_ID=\(.type)-\(.name) TEST_PATH=\"./test/\(.type)/...\" TEST_LABELS=\"\(.name)\"\n"' >> hack/make/e2e-convenience.mk
 
 	@printf "\n.PHONY: run-all-e2e-logs\nrun-all-e2e-logs:" >> hack/make/e2e-convenience.mk
-	@cat hack/make/e2e-convenience.mk | egrep '^run-e2e-(log|fluent)' | tr -d ':' | xargs | sed 's/^/ /' >> hack/make/e2e-convenience.mk
-	@printf " ## Run all log-related E2E tests\n" >> hack/make/e2e-convenience.mk
+	@cat <(cat hack/make/e2e-convenience.mk | egrep '^run-e2e-(log|fluent)' | sed 's/:.*//') <(echo "## Run all log-related E2E tests") | xargs | sed 's/^/ /' >> hack/make/e2e-convenience.mk
+	@echo >> hack/make/e2e-convenience.mk
 
 	@printf ".PHONY: run-all-e2e-metrics\nrun-all-e2e-metrics:" >> hack/make/e2e-convenience.mk
-	@cat hack/make/e2e-convenience.mk | egrep '^run-e2e-(metrics)' | tr -d ':' | xargs | sed 's/^/ /' >> hack/make/e2e-convenience.mk
-	@printf " ## Run all metrics-related E2E tests\n" >> hack/make/e2e-convenience.mk
+	@cat <(cat hack/make/e2e-convenience.mk | egrep '^run-e2e-(metrics)' | sed 's/:.*//') <(echo "## Run all metrics-related E2E tests")| xargs | sed 's/^/ /' >> hack/make/e2e-convenience.mk
+	@echo >> hack/make/e2e-convenience.mk
 
 	@printf ".PHONY: run-all-e2e-traces\nrun-all-e2e-traces:" >> hack/make/e2e-convenience.mk
-	@cat hack/make/e2e-convenience.mk | egrep '^run-e2e-(traces)' | tr -d ':' | xargs | sed 's/^/ /' >> hack/make/e2e-convenience.mk
-	@printf " ## Run all trace-related E2E tests\n" >> hack/make/e2e-convenience.mk
+	@cat <(cat hack/make/e2e-convenience.mk | egrep '^run-e2e-(traces)' | sed 's/:.*//') <(echo "## Run all trace-related E2E tests") | xargs | sed 's/^/ /' >> hack/make/e2e-convenience.mk
+	@echo >> hack/make/e2e-convenience.mk
+
 
 
 -include hack/make/e2e-convenience.mk

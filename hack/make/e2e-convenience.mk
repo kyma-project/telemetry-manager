@@ -80,11 +80,13 @@ run-e2e-experimental: ## Run experimental e2e tests
 run-integration-istio: ## Run istio integration tests
 	$(MAKE) run-e2e TEST_ID=integration-istio TEST_PATH="./test/integration/..." TEST_LABELS="istio"
 
+
 .PHONY: run-all-e2e-logs
-run-all-e2e-logs: run-e2e-fluent-bit run-e2e-log-agent run-e2e-log-gateway run-e2e-logs-max-pipeline run-e2e-fluent-bit-max-pipeline run-e2e-otel-max-pipeline ## Run all log-related E2E tests
+run-all-e2e-logs: run-e2e-fluent-bit run-e2e-log-agent run-e2e-log-gateway run-e2e-logs-max-pipeline run-e2e-fluent-bit-max-pipeline ## Run all log-related E2E tests
 
 .PHONY: run-all-e2e-metrics
-run-all-e2e-metrics: run-e2e-metric-agent-a run-e2e-metric-agent-b run-e2e-metric-agent-c run-e2e-metric-gateway-a run-e2e-metric-gateway-b run-e2e-metric-gateway-c run-e2e-metrics-misc run-e2e-metrics-max-pipeline ## Run all metrics-related E2E tests
+run-all-e2e-metrics: run-e2e-metrics-misc run-e2e-metrics-max-pipeline ## Run all metrics-related E2E tests
 
 .PHONY: run-all-e2e-traces
 run-all-e2e-traces: run-e2e-traces run-e2e-traces-max-pipeline ## Run all trace-related E2E tests
+
