@@ -1,16 +1,16 @@
 ##@ k3d
+
 .PHONY: provision-k3d
-provision-k3d: $(K3D)
+provision-k3d: $(K3D) ## Create k3d cluster with Kyma configuration
 	$(K3D) cluster create --config .k3d-kyma.yaml
 	kubectl create ns kyma-system
 
 .PHONY: provision-k3d-istio
-provision-k3d-istio: provision-k3d
-	hack/build-image.sh
+provision-k3d-istio: $(K3D) provision-k3d ## Create k3d cluster with Kyma configuration and deploy Istio
 	hack/deploy-istio.sh
 
 .PHONY: cleanup-k3d
-cleanup-k3d:
+cleanup-k3d: ## Delete k3d cluster
 	$(K3D) cluster delete --config .k3d-kyma.yaml
 
 ##@ Gardener
@@ -61,6 +61,6 @@ provision-gardener: $(JQ) ## Provision gardener cluster with latest k8s version
 	kubectl create namespace kyma-system --dry-run=client -o yaml | kubectl apply -f -
 
 .PHONY: deprovision-gardener
-deprovision-gardener:## Deprovision gardener cluster
+deprovision-gardener: ## Deprovision gardener cluster
 	kubectl --kubeconfig=${GARDENER_SA_PATH} annotate shoot ${GARDENER_CLUSTER_NAME} confirmation.gardener.cloud/deletion=true
 	kubectl --kubeconfig=${GARDENER_SA_PATH} delete shoot ${GARDENER_CLUSTER_NAME} --wait=false
