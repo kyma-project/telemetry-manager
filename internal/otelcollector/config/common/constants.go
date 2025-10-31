@@ -13,6 +13,11 @@ const (
 	SignalTypeLog    = "log"
 )
 
+const (
+	AttributeActionInsert = "insert"
+	AttributeActionDelete = "delete"
+)
+
 type InputSourceType string
 
 const (
@@ -37,6 +42,14 @@ var InstrumentationScope = map[InputSourceType]string{
 	InputSourceIstio:      InstrumentationScopeIstio,
 	InputSourceKyma:       InstrumentationScopeKyma,
 	InputSourceK8sCluster: InstrumentationScopeRuntime,
+}
+
+var InputName = map[InputSourceType]ComponentID{
+	InputSourceRuntime:    ComponentIDSetKymaInputNameRuntimeProcessor,
+	InputSourcePrometheus: ComponentIDSetKymaInputNamePrometheusProcessor,
+	InputSourceIstio:      ComponentIDSetKymaInputNameIstioProcessor,
+	InputSourceKyma:       ComponentIDSetKymaInputNameKymaProcessor,
+	InputSourceK8sCluster: ComponentIDSetKymaInputNameK8sClusterProcessor,
 }
 
 var upstreamInstrumentationScopeName = map[InputSourceType]string{
@@ -73,6 +86,8 @@ const (
 // Component IDs
 // ================================================================================
 
+type ComponentID = string
+
 const (
 	// ================================================================================
 	// RECEIVERS
@@ -104,6 +119,12 @@ const (
 	ComponentIDUserDefinedTransformProcessor           = "transform/user-defined-%s" // dynamically filled with pipeline name
 	ComponentIDInsertClusterAttributesProcessor        = "resource/insert-cluster-attributes"
 	ComponentIDDropKymaAttributesProcessor             = "resource/drop-kyma-attributes"
+
+	ComponentIDSetKymaInputNameRuntimeProcessor    ComponentID = "resource/set-kyma-input-name-runtime"
+	ComponentIDSetKymaInputNameIstioProcessor      ComponentID = "resource/set-kyma-input-name-istio"
+	ComponentIDSetKymaInputNamePrometheusProcessor ComponentID = "resource/set-kyma-input-name-prometheus"
+	ComponentIDSetKymaInputNameKymaProcessor       ComponentID = "resource/set-kyma-input-name-kyma"
+	ComponentIDSetKymaInputNameK8sClusterProcessor ComponentID = "resource/set-kyma-input-name-k8s-cluster"
 
 	// Log-Specific Processors
 

@@ -114,17 +114,17 @@ func InsertClusterAttributesProcessorConfig(clusterName, clusterUID, cloudProvid
 		return &ResourceProcessor{
 			Attributes: []AttributeAction{
 				{
-					Action: "insert",
+					Action: AttributeActionInsert,
 					Key:    "k8s.cluster.name",
 					Value:  clusterName,
 				},
 				{
-					Action: "insert",
+					Action: AttributeActionInsert,
 					Key:    "k8s.cluster.uid",
 					Value:  clusterUID,
 				},
 				{
-					Action: "insert",
+					Action: AttributeActionInsert,
 					Key:    "cloud.provider",
 					Value:  cloudProvider,
 				},
@@ -135,12 +135,12 @@ func InsertClusterAttributesProcessorConfig(clusterName, clusterUID, cloudProvid
 	return &ResourceProcessor{
 		Attributes: []AttributeAction{
 			{
-				Action: "insert",
+				Action: AttributeActionInsert,
 				Key:    "k8s.cluster.name",
 				Value:  clusterName,
 			},
 			{
-				Action: "insert",
+				Action: AttributeActionInsert,
 				Key:    "k8s.cluster.uid",
 				Value:  clusterUID,
 			},
@@ -153,7 +153,7 @@ func DropKymaAttributesProcessorConfig() *ResourceProcessor {
 	return &ResourceProcessor{
 		Attributes: []AttributeAction{
 			{
-				Action:       "delete",
+				Action:       AttributeActionDelete,
 				RegexPattern: "kyma.*",
 			},
 		},
@@ -292,12 +292,6 @@ func InstrumentationScopeProcessorConfig(instrumentationScopeVersion string, inp
 
 	for _, i := range inputSource {
 		statements = append(statements, instrumentationStatement(i, instrumentationScopeVersion)...)
-
-		if i == InputSourcePrometheus {
-			transformProcessorStatements = append(transformProcessorStatements, TransformProcessorStatements{
-				Statements: []string{fmt.Sprintf("set(resource.attributes[\"%s\"], \"%s\")", KymaInputNameAttribute, KymaInputPrometheus)},
-			})
-		}
 	}
 
 	transformProcessorStatements = append(transformProcessorStatements, TransformProcessorStatements{
@@ -305,6 +299,22 @@ func InstrumentationScopeProcessorConfig(instrumentationScopeVersion string, inp
 	})
 
 	return MetricTransformProcessorConfig(transformProcessorStatements)
+}
+
+// KymaInputNameProcessorConfig creates a transform processor that sets the custom `kyma.input.name` attribute
+// the attribute is mainly used for routing purpose in the metric agent configuration
+func KymaInputNameProcessorConfig(inputSource InputSourceType) *ResourceProcessor {
+	resourceProcessor := ResourceProcessor{
+		Attributes: []AttributeAction{
+			{
+				Action: AttributeActionInsert,
+				Key:    KymaInputNameAttribute,
+				Value:  string(inputSource),
+			},
+		},
+	}
+
+	return &resourceProcessor
 }
 
 func instrumentationStatement(inputSource InputSourceType, instrumentationScopeVersion string) []string {

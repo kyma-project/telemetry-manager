@@ -108,6 +108,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addDropServiceNameProcessor(),
 			b.addInsertSkipEnrichmentAttributeProcessor(),
 			b.addSetInstrumentationScopeToRuntimeProcessor(opts),
+			b.addSetKymaInputNameProcessor(common.InputSourceRuntime),
 			// Metrics with the skip enrichment attribute are routed directly to output pipelines,
 			// while all other metrics are sent to the enrichment pipeline before output.
 			b.addInputRoutingExporter(common.ComponentIDRuntimeInputRoutingConnector, pipelinesWithRuntimeInput),
@@ -123,6 +124,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addMemoryLimiterProcessor(),
 			b.addDropServiceNameProcessor(),
 			b.addSetInstrumentationScopeToPrometheusProcessor(opts),
+			b.addSetKymaInputNameProcessor(common.InputSourcePrometheus),
 			// Metrics with the skip enrichment attribute are routed directly to output pipelines,
 			// while all other metrics are sent to the enrichment pipeline before output.
 			b.addInputRoutingExporter(common.ComponentIDPrometheusInputRoutingConnector, pipelinesWithPrometheusInput),
@@ -138,6 +140,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addDropServiceNameProcessor(),
 			b.addIstioNoiseFilterProcessor(),
 			b.addSetInstrumentationScopeToIstioProcessor(opts),
+			b.addSetKymaInputNameProcessor(common.InputSourceIstio),
 			// Metrics with the skip enrichment attribute are routed directly to output pipelines,
 			// while all other metrics are sent to the enrichment pipeline before output.
 			b.addInputRoutingExporter(common.ComponentIDIstioInputRoutingConnector, pipelinesWithIstioInput),
@@ -336,6 +339,15 @@ func (b *Builder) addSetInstrumentationScopeToIstioProcessor(opts BuildOptions) 
 	)
 }
 
+func (b *Builder) addSetKymaInputNameProcessor(inputSource common.InputSourceType) buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.InputName[inputSource]),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			return common.KymaInputNameProcessorConfig(inputSource)
+		},
+	)
+}
+
 func (b *Builder) addInsertSkipEnrichmentAttributeProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDInsertSkipEnrichmentAttributeProcessor),
@@ -394,7 +406,7 @@ func (b *Builder) addDropSkipEnrichmentAttributeProcessor() buildComponentFunc {
 			return &common.ResourceProcessor{
 				Attributes: []common.AttributeAction{
 					{
-						Action: "delete",
+						Action: common.AttributeActionDelete,
 						Key:    common.SkipEnrichmentAttribute,
 					},
 				},
@@ -824,15 +836,15 @@ func enrichmentRoutingConnectorConfig(runtimePipelines, prometheusPipelines, ist
 	tableEntries := []common.RoutingConnectorTableEntry{}
 
 	if len(runtimePipelines) > 0 {
-		tableEntries = append(tableEntries, enrichmentRoutingConnectorTableEntry(runtimePipelines, inputSourceEquals(common.InputSourceRuntime)))
+		tableEntries = append(tableEntries, enrichmentRoutingConnectorTableEntry(runtimePipelines, kymaInputNameEquals(common.InputSourceRuntime)))
 	}
 
 	if len(prometheusPipelines) > 0 {
-		tableEntries = append(tableEntries, enrichmentRoutingConnectorTableEntry(prometheusPipelines, common.ResourceAttributeEquals(common.KymaInputNameAttribute, common.KymaInputPrometheus)))
+		tableEntries = append(tableEntries, enrichmentRoutingConnectorTableEntry(prometheusPipelines, kymaInputNameEquals(common.InputSourcePrometheus)))
 	}
 
 	if len(istioPipelines) > 0 {
-		tableEntries = append(tableEntries, enrichmentRoutingConnectorTableEntry(istioPipelines, common.ScopeNameEquals(common.InstrumentationScopeIstio)))
+		tableEntries = append(tableEntries, enrichmentRoutingConnectorTableEntry(istioPipelines, kymaInputNameEquals(common.InputSourceIstio)))
 	}
 
 	return common.RoutingConnector{
@@ -928,6 +940,10 @@ func getPipelinesWithIstioInput(pipelines []telemetryv1alpha1.MetricPipeline) []
 
 func inputSourceEquals(inputSourceType common.InputSourceType) string {
 	return common.ScopeNameEquals(common.InstrumentationScope[inputSourceType])
+}
+
+func kymaInputNameEquals(inputSourceType common.InputSourceType) string {
+	return common.ResourceAttributeEquals(common.KymaInputNameAttribute, string(inputSourceType))
 }
 
 // Helper functions for determining what should be enabled
