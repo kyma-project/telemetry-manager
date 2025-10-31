@@ -201,12 +201,12 @@ func setupControllersAndWebhooks(mgr manager.Manager) error {
 		return fmt.Errorf("failed to enable webhook server: %w", err)
 	}
 
-	if err := setupAdmissionsWebhooks(mgr); err != nil {
-		return fmt.Errorf("failed to setup admission webhooks: %w", err)
-	}
-
 	if err := setupConversionWebhooks(mgr); err != nil {
 		return fmt.Errorf("failed to setup conversion webhooks: %w", err)
+	}
+
+	if err := setupAdmissionsWebhooks(mgr); err != nil {
+		return fmt.Errorf("failed to setup admission webhooks: %w", err)
 	}
 
 	mgr.GetWebhookServer().Register("/api/v2/alerts", selfmonitorwebhook.NewHandler(
