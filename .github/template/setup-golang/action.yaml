@@ -11,7 +11,10 @@ runs:
       uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
       with:
         go-version-file: "go.mod"
-        cache: true
+        cache-dependency-path: |
+          go.sum
+          internal/tools/go.sum
+#        cache: true
 
     - name: Install Dependencies
       shell: bash
@@ -21,4 +24,4 @@ runs:
     - name: Install Tools
       shell: bash
       if: steps.go-cache.outputs.cache-hit != 'true'
-      run: make --debug install-tools
+      run: make install-tools
