@@ -52,7 +52,7 @@ func TestPrometheusReceiver(t *testing.T) {
 				collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build(),
 				}, BuildOptions{
-					IstioEnabled: tt.istioEnabled,
+					IstioActive: tt.istioEnabled,
 				})
 				require.NoError(t, err)
 
@@ -82,7 +82,7 @@ func TestPrometheusReceiver(t *testing.T) {
 		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithIstioInput(true).Build(),
 		}, BuildOptions{
-			IstioEnabled: true,
+			IstioActive: true,
 		})
 		require.NoError(t, err)
 
@@ -98,7 +98,7 @@ func TestPrometheusReceiver(t *testing.T) {
 		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithIstioInput(true).WithIstioInputEnvoyMetrics(true).Build(),
 		}, BuildOptions{
-			IstioEnabled: true,
+			IstioActive: true,
 		})
 		require.NoError(t, err)
 

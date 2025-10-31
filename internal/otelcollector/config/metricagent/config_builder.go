@@ -27,7 +27,8 @@ type Builder struct {
 }
 
 type BuildOptions struct {
-	IstioEnabled                bool
+	// IstioActive indicates whether Istio is installed in the cluster.
+	IstioActive                 bool
 	IstioCertPath               string
 	InstrumentationScopeVersion string
 	AgentNamespace              string
