@@ -26,6 +26,11 @@ func TestDefault(t *testing.T) {
 			input: &telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Input: telemetryv1alpha1.LogPipelineInput{},
+					Output: telemetryv1alpha1.LogPipelineOutput{
+						HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
+							Host: telemetryv1alpha1.ValueType{Value: "example.com"},
+						},
+					},
 				},
 			},
 			expected: &telemetryv1alpha1.LogPipeline{
@@ -34,6 +39,11 @@ func TestDefault(t *testing.T) {
 						Application: &telemetryv1alpha1.LogPipelineApplicationInput{
 							Enabled:          ptr.To(true),
 							KeepOriginalBody: ptr.To(true),
+						},
+					},
+					Output: telemetryv1alpha1.LogPipelineOutput{
+						HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
+							Host: telemetryv1alpha1.ValueType{Value: "example.com"},
 						},
 					},
 				},
@@ -84,6 +94,79 @@ func TestDefault(t *testing.T) {
 			},
 		},
 		{
+			name: "should set empty namespaces for OTLP input if not set",
+			input: &telemetryv1alpha1.LogPipeline{
+				Spec: telemetryv1alpha1.LogPipelineSpec{
+					Input: telemetryv1alpha1.LogPipelineInput{},
+					Output: telemetryv1alpha1.LogPipelineOutput{
+						OTLP: &telemetryv1alpha1.OTLPOutput{
+							Endpoint: telemetryv1alpha1.ValueType{Value: "otlp.example.com:4317"},
+						},
+					},
+				},
+			},
+			expected: &telemetryv1alpha1.LogPipeline{
+				Spec: telemetryv1alpha1.LogPipelineSpec{
+					Input: telemetryv1alpha1.LogPipelineInput{
+						Application: &telemetryv1alpha1.LogPipelineApplicationInput{
+							Enabled:          ptr.To(true),
+							KeepOriginalBody: ptr.To(true),
+						},
+						OTLP: &telemetryv1alpha1.OTLPInput{
+							Disabled:   false,
+							Namespaces: &telemetryv1alpha1.NamespaceSelector{},
+						},
+					},
+					Output: telemetryv1alpha1.LogPipelineOutput{
+						OTLP: &telemetryv1alpha1.OTLPOutput{
+							Endpoint: telemetryv1alpha1.ValueType{Value: "otlp.example.com:4317"},
+							Protocol: "grpc",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "should not set empty namespaces for OTLP input if set",
+			input: &telemetryv1alpha1.LogPipeline{
+				Spec: telemetryv1alpha1.LogPipelineSpec{
+					Input: telemetryv1alpha1.LogPipelineInput{
+						OTLP: &telemetryv1alpha1.OTLPInput{
+							Namespaces: &telemetryv1alpha1.NamespaceSelector{
+								Include: []string{"custom-namespace"},
+							},
+						},
+					},
+					Output: telemetryv1alpha1.LogPipelineOutput{
+						OTLP: &telemetryv1alpha1.OTLPOutput{
+							Endpoint: telemetryv1alpha1.ValueType{Value: "otlp.example.com:4317"},
+						},
+					},
+				},
+			},
+			expected: &telemetryv1alpha1.LogPipeline{
+				Spec: telemetryv1alpha1.LogPipelineSpec{
+					Input: telemetryv1alpha1.LogPipelineInput{
+						Application: &telemetryv1alpha1.LogPipelineApplicationInput{
+							Enabled:          ptr.To(true),
+							KeepOriginalBody: ptr.To(true),
+						},
+						OTLP: &telemetryv1alpha1.OTLPInput{
+							Namespaces: &telemetryv1alpha1.NamespaceSelector{
+								Include: []string{"custom-namespace"},
+							},
+						},
+					},
+					Output: telemetryv1alpha1.LogPipelineOutput{
+						OTLP: &telemetryv1alpha1.OTLPOutput{
+							Endpoint: telemetryv1alpha1.ValueType{Value: "otlp.example.com:4317"},
+							Protocol: "grpc",
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "should set default OTLP protocol if not set",
 			input: &telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
@@ -98,6 +181,9 @@ func TestDefault(t *testing.T) {
 						Application: &telemetryv1alpha1.LogPipelineApplicationInput{
 							Enabled:          ptr.To(true),
 							KeepOriginalBody: ptr.To(true),
+						},
+						OTLP: &telemetryv1alpha1.OTLPInput{
+							Namespaces: &telemetryv1alpha1.NamespaceSelector{},
 						},
 					},
 					Output: telemetryv1alpha1.LogPipelineOutput{

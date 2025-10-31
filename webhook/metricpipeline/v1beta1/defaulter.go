@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
@@ -15,6 +16,7 @@ var _ webhook.CustomDefaulter = &defaulter{}
 
 type defaulter struct {
 	ExcludeNamespaces         []string
+	OTLPInputEnabled          bool
 	RuntimeInputResources     runtimeInputResourceDefaults
 	DefaultOTLPOutputProtocol telemetryv1beta1.OTLPProtocol
 	DiagnosticMetricsEnabled  bool
@@ -44,48 +46,66 @@ func (md defaulter) Default(ctx context.Context, obj runtime.Object) error {
 }
 
 func (md defaulter) applyDefaults(pipeline *telemetryv1beta1.MetricPipeline) {
-	if prometheusInputEnabled(pipeline) && pipeline.Spec.Input.Prometheus.Namespaces == nil {
-		pipeline.Spec.Input.Prometheus.Namespaces = &telemetryv1beta1.NamespaceSelector{
-			Exclude: md.ExcludeNamespaces,
+	if prometheusInputEnabled(pipeline) {
+		if pipeline.Spec.Input.Prometheus.Namespaces == nil {
+			pipeline.Spec.Input.Prometheus.Namespaces = &telemetryv1beta1.NamespaceSelector{
+				Exclude: md.ExcludeNamespaces,
+			}
+		}
+
+		if pipeline.Spec.Input.Prometheus.DiagnosticMetrics == nil {
+			pipeline.Spec.Input.Prometheus.DiagnosticMetrics = &telemetryv1beta1.MetricPipelineIstioInputDiagnosticMetrics{
+				Enabled: &md.DiagnosticMetricsEnabled,
+			}
 		}
 	}
 
-	if istioInputEnabled(pipeline) && pipeline.Spec.Input.Istio.Namespaces == nil {
-		pipeline.Spec.Input.Istio.Namespaces = &telemetryv1beta1.NamespaceSelector{
-			Exclude: md.ExcludeNamespaces,
+	if istioInputEnabled(pipeline) {
+		if pipeline.Spec.Input.Istio.Namespaces == nil {
+			pipeline.Spec.Input.Istio.Namespaces = &telemetryv1beta1.NamespaceSelector{
+				Exclude: md.ExcludeNamespaces,
+			}
 		}
-	}
 
-	if runtimeInputEnabled(pipeline) && pipeline.Spec.Input.Runtime.Namespaces == nil {
-		pipeline.Spec.Input.Runtime.Namespaces = &telemetryv1beta1.NamespaceSelector{
-			Exclude: md.ExcludeNamespaces,
+		if pipeline.Spec.Input.Istio.EnvoyMetrics == nil {
+			pipeline.Spec.Input.Istio.EnvoyMetrics = &telemetryv1beta1.EnvoyMetrics{
+				Enabled: &md.EnvoyMetricsEnabled,
+			}
+		}
+
+		if pipeline.Spec.Input.Istio.DiagnosticMetrics == nil {
+			pipeline.Spec.Input.Istio.DiagnosticMetrics = &telemetryv1beta1.MetricPipelineIstioInputDiagnosticMetrics{
+				Enabled: &md.DiagnosticMetricsEnabled,
+			}
 		}
 	}
 
 	if runtimeInputEnabled(pipeline) {
 		md.applyRuntimeInputResourceDefaults(pipeline)
+
+		if pipeline.Spec.Input.Runtime.Namespaces == nil {
+			pipeline.Spec.Input.Runtime.Namespaces = &telemetryv1beta1.NamespaceSelector{
+				Exclude: md.ExcludeNamespaces,
+			}
+		}
+	}
+
+	if pipeline.Spec.Input.OTLP == nil {
+		pipeline.Spec.Input.OTLP = &telemetryv1beta1.OTLPInput{}
+	}
+
+	if pipeline.Spec.Input.OTLP.Enabled == nil {
+		pipeline.Spec.Input.OTLP.Enabled = &md.OTLPInputEnabled
+	}
+
+	if ptr.Deref(pipeline.Spec.Input.OTLP.Enabled, false) && pipeline.Spec.Input.OTLP.Namespaces == nil {
+		pipeline.Spec.Input.OTLP.Namespaces = &telemetryv1beta1.NamespaceSelector{
+			Exclude: md.ExcludeNamespaces,
+		}
 	}
 
 	if pipeline.Spec.Output.OTLP != nil && pipeline.Spec.Output.OTLP.Protocol == "" {
 		pipeline.Spec.Output.OTLP.Protocol = md.DefaultOTLPOutputProtocol
-	}
-
-	if istioInputEnabled(pipeline) && pipeline.Spec.Input.Istio.EnvoyMetrics == nil {
-		pipeline.Spec.Input.Istio.EnvoyMetrics = &telemetryv1beta1.EnvoyMetrics{
-			Enabled: &md.EnvoyMetricsEnabled,
-		}
-	}
-
-	if istioInputEnabled(pipeline) && pipeline.Spec.Input.Istio.DiagnosticMetrics == nil {
-		pipeline.Spec.Input.Istio.DiagnosticMetrics = &telemetryv1beta1.MetricPipelineIstioInputDiagnosticMetrics{
-			Enabled: &md.DiagnosticMetricsEnabled,
-		}
-	}
-
-	if prometheusInputEnabled(pipeline) && pipeline.Spec.Input.Prometheus.DiagnosticMetrics == nil {
-		pipeline.Spec.Input.Prometheus.DiagnosticMetrics = &telemetryv1beta1.MetricPipelineIstioInputDiagnosticMetrics{
-			Enabled: &md.DiagnosticMetricsEnabled,
-		}
 	}
 }
 

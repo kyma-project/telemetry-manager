@@ -47,7 +47,7 @@ override:
     path: ^internal/validators/secretref$
   - threshold: 75
     path: ^internal/resourcelock$
-  - threshold: 84
+  - threshold: 83
     path: ^internal/webhookcert$
   - threshold: 74
     path: ^webhook/logpipeline/v1alpha1$

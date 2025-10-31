@@ -17,8 +17,9 @@ const (
 
 // applyWebhookConfigResources applies the following webhook configurations:
 // 1- Updates validating webhook configuration with the provided CA bundle.
-// 2- Updates LogPipeline CRD with conversion webhook configuration.
-// 3- Updates mutating webhook configuration with the provided CA bundle.
+// 2- Updates mutating webhook configuration with the provided CA bundle.
+// 3- Updates LogPipeline CRD with conversion webhook configuration.
+// 4- Updates MetricPipeline CRD with conversion webhook configuration.
 func applyWebhookConfigResources(ctx context.Context, c client.Client, caBundle []byte, config Config) error {
 	if err := updateValidatingWebhookConfig(ctx, c, caBundle, config); err != nil {
 		return fmt.Errorf("failed to update validating webhook with CA bundle: %w", err)
@@ -29,8 +30,12 @@ func applyWebhookConfigResources(ctx context.Context, c client.Client, caBundle 
 	}
 
 	conversionWebhookConfig := makeConversionWebhookConfig(caBundle, config)
-	if err := updateLogPipelineCRDWithConversionWebhookConfig(ctx, c, conversionWebhookConfig); err != nil {
+	if err := updatePipelineCRDWithConversionWebhookConfig(ctx, c, types.NamespacedName{Name: "logpipelines.telemetry.kyma-project.io"}, conversionWebhookConfig); err != nil {
 		return fmt.Errorf("failed to update LogPipeline CRD with conversion webhook configuration: %w", err)
+	}
+
+	if err := updatePipelineCRDWithConversionWebhookConfig(ctx, c, types.NamespacedName{Name: "metricpipelines.telemetry.kyma-project.io"}, conversionWebhookConfig); err != nil {
+		return fmt.Errorf("failed to update MetricPipeline CRD with conversion webhook configuration: %w", err)
 	}
 
 	return nil
@@ -67,15 +72,15 @@ func makeConversionWebhookConfig(caBundle []byte, config Config) apiextensionsv1
 	}
 }
 
-func updateLogPipelineCRDWithConversionWebhookConfig(ctx context.Context, c client.Client, conversion apiextensionsv1.CustomResourceConversion) error {
-	var logPipelineCRD apiextensionsv1.CustomResourceDefinition
-	if err := c.Get(ctx, types.NamespacedName{Name: "logpipelines.telemetry.kyma-project.io"}, &logPipelineCRD); err != nil {
-		return fmt.Errorf("failed to get logpipelines CRD: %w", err)
+func updatePipelineCRDWithConversionWebhookConfig(ctx context.Context, c client.Client, pipelineType types.NamespacedName, conversion apiextensionsv1.CustomResourceConversion) error {
+	var crd apiextensionsv1.CustomResourceDefinition
+	if err := c.Get(ctx, pipelineType, &crd); err != nil {
+		return fmt.Errorf("failed to get CRD %s: %w", pipelineType, err)
 	}
 
-	logPipelineCRD.Spec.Conversion = &conversion
+	crd.Spec.Conversion = &conversion
 
-	return c.Update(ctx, &logPipelineCRD)
+	return c.Update(ctx, &crd)
 }
 
 func updateMutatingWebhookConfig(ctx context.Context, c client.Client, caBundle []byte, config Config) error {
