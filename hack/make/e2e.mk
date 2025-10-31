@@ -2,16 +2,16 @@
 
 # E2E test environment setup targets
 .PHONY: setup-e2e
-setup-e2e: provision-k3d wait-for-image deploy deploy-test-prerequisites ## Set up complete E2E test environment with k3d
+setup-e2e: provision-k3d deploy deploy-test-prerequisites ## Set up complete E2E test environment with k3d
 
 .PHONY: setup-e2e-istio
-setup-e2e-istio: provision-k3d-istio wait-for-image deploy deploy-test-prerequisites ## Set up E2E test environment with k3d and Istio
+setup-e2e-istio: provision-k3d-istio deploy deploy-test-prerequisites ## Set up E2E test environment with k3d and Istio
 
 .PHONY: setup-e2e-experimental
-setup-e2e-experimental: provision-k3d wait-for-image deploy-experimental deploy-test-prerequisites ## Set up E2E test environment with experimental features
+setup-e2e-experimental: provision-k3d deploy-experimental deploy-test-prerequisites ## Set up E2E test environment with experimental features
 
 .PHONY: setup-e2e-experimental-istio
-setup-e2e-experimental-istio: provision-k3d-istio wait-for-image deploy-experimental deploy-test-prerequisites ## Set up E2E test environment with experimental features and Istio
+setup-e2e-experimental-istio: provision-k3d-istio deploy-experimental deploy-test-prerequisites ## Set up E2E test environment with experimental features and Istio
 
 .PHONY: deploy-test-prerequisites
 deploy-test-prerequisites: ## Deploy common test prerequisites (telemetry config, network policy, shoot info)

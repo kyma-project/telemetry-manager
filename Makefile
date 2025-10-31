@@ -1,5 +1,4 @@
 include .env
--include .env.overrides
 
 # Environment Variables
 MANAGER_IMAGE ?= $(ENV_MANAGER_IMAGE)
