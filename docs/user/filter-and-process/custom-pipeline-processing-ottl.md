@@ -46,7 +46,7 @@ Each transformation rule consists of:
 - **statements**: A list of OTTL functions to execute
 - **conditions** (optional): A list of OTTL conditions. If you provide conditions, the statements only run if at least one of the conditions is true
 
-### Example: Add a Resource Attribute
+### Example: General Resource Attribute Enrichment
 
 This example adds a `deployment.environment` attribute with the value `production` to all metrics in the pipeline. Since there are no conditions, the rule applies to all data.
 
@@ -64,7 +64,7 @@ spec:
         - 'set(resource.attributes["deployment.environment"], "production")'
 ```
 
-### Example: Conditionally Modify a Span
+### Example: Conditional Resource Attribute Enrichment
 
 This example sets the status code of a trace span to `1` (Error) if its pod name matches `my-pod-name.*` and its `http.path` attribute is `/health`.
 
@@ -89,22 +89,22 @@ You configure filters in the `filter` section of a pipeline's spec. The filter p
 
 Each filter block consists of a list of conditions. If multiple conditions are provided within a filter block, they are combined with a logical `OR` (any matching condition drops the data).
 
-### Example: Drop Metrics by Name and Value
+### Example: Drop Debug Logs
 
-This example drops any metric named `k8s.pod.phase` that has an integer value of `4`.
+This example drops any log record that has a severity level below warning (e.g., debug and info logs).
 
 ```yaml
-# In your MetricPipeline spec
+# In your LogPipeline spec
 spec:
   input:
-    runtime:
+    application:
       enabled: true
   output:
     otlp:
-      endpoint: http://metrics.example.com:4317
+      endpoint: http://logs.example.com:4317
   filter:
     - conditions:
-        - 'metric.name == "k8s.pod.phase" and datapoint.value_int == 4'
+        - 'severity_number < SEVERITY_NUMBER_WARN'
 ```
 
 ### Filter envoy metrics by outlier_detection only
