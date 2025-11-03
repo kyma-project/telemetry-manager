@@ -73,7 +73,6 @@ func sanitizeSpecID(filePath string) string {
 
 const (
 	// Logs labels
-
 	LabelLogAgent             = "log-agent"
 	LabelLogGateway           = "log-gateway"
 	LabelFluentBit            = "fluent-bit"
@@ -82,7 +81,6 @@ const (
 	LabelLogsMaxPipeline      = "logs-max-pipeline"
 
 	// Metrics labels
-
 	LabelMetricsMisc        = "metrics-misc"
 	LabelMetricsMaxPipeline = "metrics-max-pipeline"
 	LabelMetricAgentSetA    = "metric-agent-a"
@@ -93,24 +91,28 @@ const (
 	LabelMetricGatewaySetC  = "metric-gateway-c"
 
 	// Traces labels
-
 	LabelTraces            = "traces"
 	LabelTracesMaxPipeline = "traces-max-pipeline"
 
 	// Telemetry labels
-
 	LabelTelemetry = "telemetry"
 
 	// Test "sub-suites" labels
-
 	LabelExperimental = "experimental"
 	LabelSkip         = "skip"
 
 	// Selfmonitor test labels
-
-	LabelSelfMonitorHealthy      = "selfmonitor-healthy"
-	LabelSelfMonitorBackpressure = "selfmonitor-backpressure"
-	LabelSelfMonitorOutage       = "selfmonitor-outage"
+	// Prefixes for self-monitor test labels
+	LabelSelfMonitorLogAgentPrefix      = "selfmonitor-log-agent"
+	LabelSelfMonitorLogGatewayPrefix    = "selfmonitor-log-gateway"
+	LabelSelfMonitorFluentBitPrefix     = "selfmonitor-fluent-bit"
+	LabelSelfMonitorMetricAgentPrefix   = "selfmonitor-metric-agent"
+	LabelSelfMonitorMetricGatewayPrefix = "selfmonitor-metric-gateway"
+	LabelSelfMonitorTracesPrefix        = "selfmonitor-traces"
+	// Suffixes (representing different scenarios) for self-monitor test labels
+	LabelSelfMonitorHealthySuffix      = "healthy"
+	LabelSelfMonitorBackpressureSuffix = "backpressure"
+	LabelSelfMonitorOutageSuffix       = "outage"
 
 	// LabelMisc defines the label for miscellaneous tests (for edge-cases and unrelated tests)
 	// [please avoid adding tests to this category if it already fits in a more specific one]
