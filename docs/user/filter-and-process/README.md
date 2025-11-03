@@ -16,4 +16,4 @@ Application logs from containers are automatically transformed into structured O
 
 All pipelines automatically enrich telemetry data with Kubernetes resource attributes, such as Pod name, namespace, and labels. With this context information, you can easily identify the source of telemetry data in your backend.
 
-If additional custom transformations are desired (such as conditionally adding or modifying attributes), you can use the OpenTelemetry Processor feature to define custom processing logic within a pipeline's `transform` section.
+If additional custom transformations are desired (such as conditionally adding or modifying attributes), you can use the OTTL Custom Processing feature to define custom processing logic within a pipeline's `transform` section.
