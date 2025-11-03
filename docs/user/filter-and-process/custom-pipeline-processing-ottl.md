@@ -91,14 +91,10 @@ Each filter block consists of a list of conditions. If multiple conditions are p
 
 ### Example: Drop Metrics by Name and Value
 
-This example drops any metric named `k8s.pod.phase` that has an integer value of `4` (which corresponds to the "Succeeded" phase).
+This example drops any metric named `k8s.pod.phase` that has an integer value of `4`.
 
 ```yaml
 # In your MetricPipeline spec
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: MetricPipeline
-metadata:
-  name: filter-succeeded-pods
 spec:
   input:
     runtime:
@@ -111,26 +107,24 @@ spec:
         - 'metric.name == "k8s.pod.phase" and datapoint.value_int == 4'
 ```
 
-### Example: Drop Low-Severity Logs
+### Filter envoy metrics by outlier_detection only
 
-This example drops log records with severity levels below INFO.
+This example keeps only Envoy outlier detection metrics, which are essential for monitoring circuit breaker behavior and host ejections in your service mesh. All other metrics are dropped to reduce noise.
 
 ```yaml
-# In your LogPipeline spec
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: LogPipeline
-metadata:
-  name: filter-debug-logs
+# In your MetricPipeline spec
 spec:
   input:
-    application:
+    istio:
       enabled: true
+      envoyMetrics:
+        enabled: true
   output:
     otlp:
-      endpoint: http://logs.example.com:4318
+      endpoint: http://metrics.example.com:4317
   filter:
     - conditions:
-        - 'log.severity_number < SEVERITY_NUMBER_INFO'
+        - 'IsMatch(metric.name, ".*outlier_detection.*") == false'
 ```
 
 ## Limitations
@@ -165,124 +159,3 @@ Functions that are specific to the metric context, such as `HasAttrKeyOnDatapoin
 - **Performance impact**: Complex OTTL expressions may impact pipeline performance; test thoroughly in non-production environments first
 
 For the most up-to-date information on supported functions and syntax, refer to the [OpenTelemetry Transformation Language documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/pkg/ottl).
-
-## Advanced Use Cases
-
-### General resource attribute enrichment for whole cluster
-<!-- TODO: Check correctness -->
-
-Enrich all telemetry data with cluster-wide information such as environment, region, or cluster identifier:
-
-```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: MetricPipeline
-metadata:
-  name: cluster-enrichment
-spec:
-  input:
-    prometheus:
-      enabled: true
-    runtime:
-      enabled: true
-  output:
-    otlp:
-      endpoint: http://metrics.example.com:4317
-  transform:
-    - statements:
-        # Add global cluster information
-        - 'set(resource.attributes["cluster.name"], "production-eu-west-1")'
-        - 'set(resource.attributes["cluster.environment"], "production")'
-        - 'set(resource.attributes["cluster.region"], "eu-west-1")'
-        - 'set(resource.attributes["cluster.provider"], "aws")'
-        # Normalize existing region attribute if present
-        - 'set(resource.attributes["cluster.region"], resource.attributes["k8s.node.region"]) where resource.attributes["k8s.node.region"] != nil'
-        # Add telemetry collection timestamp
-        - 'set(resource.attributes["telemetry.collected_at"], Now())'
-```
-
-### Conditional resource attribute enrichment for some workloads/namespaces
-<!-- TODO: Check correctness -->
-
-Apply different enrichment rules based on namespace or workload characteristics:
-
-```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: TracePipeline
-metadata:
-  name: conditional-enrichment
-spec:
-  output:
-    otlp:
-      endpoint: http://traces.example.com:4317
-  transform:
-    # Production workloads enrichment
-    - conditions:
-        - 'resource.attributes["k8s.namespace.name"] matches "prod-.*"'
-      statements:
-        - 'set(resource.attributes["environment"], "production")'
-        - 'set(resource.attributes["cost.center"], "engineering")'
-        - 'set(resource.attributes["compliance.level"], "high")'
-    
-    # Development workloads enrichment
-    - conditions:
-        - 'resource.attributes["k8s.namespace.name"] matches "(dev|test|staging)-.*"'
-      statements:
-        - 'set(resource.attributes["environment"], "development")'
-        - 'set(resource.attributes["cost.center"], "r-and-d")'
-        - 'set(resource.attributes["compliance.level"], "standard")'
-    
-    # Critical service identification
-    - conditions:
-        - 'resource.attributes["k8s.deployment.name"] in ["payment-service", "user-auth", "order-processor"]'
-      statements:
-        - 'set(resource.attributes["service.criticality"], "high")'
-        - 'set(resource.attributes["monitoring.alerting"], "pagerduty")'
-    
-    # Cleanup internal attributes
-    - statements:
-        - 'delete_matching_keys(span.attributes, "internal\\..*")'
-        - 'delete_matching_keys(resource.attributes, "k8s\\.pod\\.uid")'
-```
-
-### Filter envoy metrics by outlier_detection only
-<!-- TODO: Check correctness -->
-
-Filter Istio/Envoy metrics to keep only outlier detection related metrics, reducing noise and focusing on circuit breaker behavior:
-
-```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: MetricPipeline
-metadata:
-  name: envoy-outlier-detection
-spec:
-  input:
-    istio:
-      enabled: true
-  output:
-    otlp:
-      endpoint: http://metrics.example.com:4317
-  transform:
-    # Enrich outlier detection metrics with additional context
-    - conditions:
-        - 'metric.name matches ".*outlier.*"'
-      statements:
-        - 'set(resource.attributes["circuit_breaker.monitoring"], "enabled")'
-        - 'set(metric.description, Concat([metric.description, " [Circuit Breaker Monitoring]"], ""))'
-  filter:
-    # Keep only outlier detection related metrics
-    - conditions:
-        - 'metric.name matches ".*outlier.*" == false'
-    
-    # Drop metrics from specific non-production namespaces
-    - conditions:
-        - 'resource.attributes["k8s.namespace.name"] in ["kube-system", "istio-system", "monitoring"]'
-    
-    # Drop low-value metrics to reduce cardinality
-    - conditions:
-        - 'metric.name in ["envoy_cluster_manager_cds_version", "envoy_server_uptime", "envoy_server_live"]'
-    
-    # Drop test traffic metrics
-    - conditions:
-        - 'datapoint.attributes["user_agent"] == "synthetic-test"'
-        - 'datapoint.attributes["request_header_x_test"] == "true"'
-```
