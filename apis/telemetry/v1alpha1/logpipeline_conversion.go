@@ -239,7 +239,7 @@ func convertRuntimeToAlpha(runtime *telemetryv1beta1.LogPipelineRuntimeInput) *L
 		KeepOriginalBody: runtime.KeepOriginalBody,
 	}
 
-	if runtime.Namespaces != nil {
+	if runtime.Namespaces != nil && (len(runtime.Namespaces.Include) > 0 || len(runtime.Namespaces.Exclude) > 0) {
 		application.Namespaces = LogPipelineNamespaceSelector{
 			Include: append([]string{}, runtime.Namespaces.Include...),
 			Exclude: append([]string{}, runtime.Namespaces.Exclude...),
@@ -247,7 +247,7 @@ func convertRuntimeToAlpha(runtime *telemetryv1beta1.LogPipelineRuntimeInput) *L
 		}
 	}
 
-	if runtime.Containers != nil {
+	if runtime.Containers != nil && (len(runtime.Containers.Include) > 0 || len(runtime.Containers.Exclude) > 0) {
 		application.Containers = LogPipelineContainerSelector{
 			Include: append([]string{}, runtime.Containers.Include...),
 			Exclude: append([]string{}, runtime.Containers.Exclude...),
