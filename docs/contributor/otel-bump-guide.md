@@ -6,9 +6,10 @@ Guide for maintainers and contributors when bumping `opentelemetry-collector` an
 
 ## Pre-bump Checklist
 
-### 1. Review Changelog
+### Review Changelog
 
 Focus on these areas:
+
 - Breaking changes, bug fixes, and enhancements for:
   - `kubeletstatsreceiver`
   - `k8sclusterreceiver`
@@ -24,7 +25,7 @@ Focus on these areas:
 - **Internal metrics** modifications
 - **Deprecation notices**
 
-### 2. OTTL Changes
+### OTTL Changes
 
 Check for:
 
@@ -36,22 +37,23 @@ Check for:
 > [!IMPORTANT]
 > Processors may define additional OTTL functions which are restricted to specific contexts. The `filterprocessor` introduces [metrics only functions](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/filterprocessor#ottl-functions). If new metric context-specific functions exist, disable them in filter processor and add a unit test, since we pin context to `datapoint` in MetricPipeline, metrics only functions will not be available for users.
 
-### 3. Processor Updates
+### Processor Updates
 
 #### Filter Processor
-
 - Monitor the availability of context inference in `filterprocessor` in this [issue](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/37904)
 
 #### Transform Processor
 - Verify any changes related to context inference
 
-### 5. Internal Metrics
+### Internal Metrics
 
-Metrics can often change without notice, see
+Metrics can often change without notice. See examples below:
 
 Common issues:
 - [Prometheus metric name changes](https://github.com/open-telemetry/opentelemetry-collector/issues/13544)
 - [Attribute additions/removals](https://github.com/open-telemetry/opentelemetry-collector/issues/9943)
+
+---
 
 ## Post-Bump Verification
 
