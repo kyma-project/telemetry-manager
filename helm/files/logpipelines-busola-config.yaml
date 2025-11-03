@@ -430,11 +430,19 @@ form: |
             inputInfo: Include container logs from selected namespaces
             children:
               - path: '[]'
+                widget: Resource
+                resource:
+                  kind: Namespace
+                  version: v1
           - name: Exclude Namespaces
             widget: SimpleList
             path: namespaces.exclude
             children:
               - path: '[]'
+                widget: Resource
+                resource:
+                  kind: Namespace
+                  version: v1
           - name: Include System Namespaces
             path: namespaces.system
           - name: Include Containers
@@ -455,6 +463,7 @@ form: |
         type: string
         simple: true
         defaultValue: "Enabled"
+        visibility: '$outputType = "OTLP"'
         name: OTLP Input
         enum: ["Disabled", "Enabled"]
         trigger: [otlpChange]
@@ -491,7 +500,7 @@ form: |
       - widget: CodeEditor
         path: '[].custom'
   - path: spec.filter
-    name: Filter
+    name: Filters
     widget: GenericList
     visibility: '$outputType = "OTLP"'
     children:
