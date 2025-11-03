@@ -9,12 +9,12 @@ Guide for maintainers and contributors when bumping `opentelemetry-collector` an
 ### 1. Review Changelog
 
 Focus on these areas:
-- Component changes for:
+- Breaking changes, bug fixes, and enhancements for:
   - `kubeletstatsreceiver`
   - `k8sclusterreceiver`
+  - `prometheusreceiver`
   - `otlpreceiver`
   - `otlpexporter`
-  - `prometheusreceiver`
   - `memorylimiter`
   - `k8sattributeprocessor`
   - `filterprocessor`
@@ -34,7 +34,6 @@ Check for:
 - Function deprecations
 
 > [!IMPORTANT]
-
 > Processors may define additional OTTL functions which are restricted to specific contexts. The `filterprocessor` introduces [metrics only functions](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/filterprocessor#ottl-functions). If new metric context-specific functions exist, disable them in filter processor and add a unit test, since we pin context to `datapoint` in MetricPipeline, metrics only functions will not be available for users.
 
 ### 3. Processor Updates
