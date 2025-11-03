@@ -19,6 +19,7 @@ Focus on these areas:
   - `k8sattributeprocessor`
   - `filterprocessor`
   - `transformprocessor`
+  - `resourceprocessor`
 - **OTTL** (OpenTelemetry Transformation Language) updates
 - **Internal metrics** modifications
 - **Deprecation notices**
