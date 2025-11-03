@@ -31,7 +31,7 @@ func createParserConfig(name, content string) string {
 	sb.WriteString("[PARSER]\n")
 	sb.WriteString("    " + fmt.Sprintf("Name %s\n", name))
 
-	for _, line := range strings.Split(content, "\n") {
+	for line := range strings.SplitSeq(content, "\n") {
 		if len(strings.TrimSpace(line)) > 0 { // Skip empty lines to do not break rendering in yaml output
 			sb.WriteString("    " + strings.TrimSpace(line) + "\n") // 4 indentations
 		}
