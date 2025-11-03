@@ -9,7 +9,7 @@ import (
 func SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).For(&telemetryv1alpha1.MetricPipeline{}).
 		WithDefaulter(&defaulter{
-			ExcludeNamespaces: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
+			ExcludeNamespaces: []string{"kyma-system", "kube-system", "istio-system"},
 			RuntimeInputResources: runtimeInputResourceDefaults{
 				Pod:         true,
 				Container:   true,

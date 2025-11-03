@@ -145,7 +145,7 @@ func makeTLSEnvVar(ctx context.Context, c client.Reader, secretData map[string][
 
 func prefixHeaderValue(header telemetryv1alpha1.Header, value []byte) []byte {
 	if len(strings.TrimSpace(header.Prefix)) > 0 {
-		return []byte(fmt.Sprintf("%s %s", strings.TrimSpace(header.Prefix), string(value)))
+		return fmt.Appendf(nil, "%s %s", strings.TrimSpace(header.Prefix), string(value))
 	}
 
 	return value
