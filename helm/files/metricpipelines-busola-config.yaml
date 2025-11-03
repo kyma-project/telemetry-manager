@@ -394,12 +394,20 @@ form: |
             defaultExpanded: true
             children:
               - path: '[]'
+                widget: Resource
+                resource:
+                  kind: Namespace
+                  version: v1
           - name: Exclude Namespaces
             widget: SimpleList
             path: namespaces.exclude
             defaultExpanded: true
             children:
               - path: '[]'
+                widget: Resource
+                resource:
+                  kind: Namespace
+                  version: v1
           - name: Enable Diagnostic Metrics
             path: diagnosticMetrics.enabled
             simple: true
@@ -420,12 +428,20 @@ form: |
             defaultExpanded: true
             children:
               - path: '[]'
+                widget: Resource
+                resource:
+                  kind: Namespace
+                  version: v1
           - name: Exclude Namespaces
             widget: SimpleList
             path: namespaces.exclude
             defaultExpanded: true
             children:
               - path: '[]'
+                widget: Resource
+                resource:
+                  kind: Namespace
+                  version: v1
           - name: Resources
             path: resources
             widget: FormGroup
@@ -469,12 +485,20 @@ form: |
             defaultExpanded: true
             children:
               - path: '[]'
+                widget: Resource
+                resource:
+                  kind: Namespace
+                  version: v1
           - name: Exclude Namespaces
             widget: SimpleList
             path: namespaces.exclude
             defaultExpanded: true
             children:
               - path: '[]'
+                widget: Resource
+                resource:
+                  kind: Namespace
+                  version: v1
   - path: spec.filter
     name: Filter
     widget: GenericList
