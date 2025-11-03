@@ -9,8 +9,16 @@ Guide for maintainers and contributors when bumping `opentelemetry-collector` an
 ### 1. Review Changelog
 
 Focus on these areas:
-- **Filter Processor** changes
-- **Transform Processor** changes
+- Component changes for:
+  - `kubeletstatsreceiver`
+  - `k8sclusterreceiver`
+  - `otlpreceiver`
+  - `otlpexporter`
+  - `prometheusreceiver`
+  - `memorylimiter`
+  - `k8sattributeprocessor`
+  - `filterprocessor`
+  - `transformprocessor`
 - **OTTL** (OpenTelemetry Transformation Language) updates
 - **Internal metrics** modifications
 - **Deprecation notices**
@@ -19,33 +27,31 @@ Focus on these areas:
 
 Check for:
 
-#### New Functions
-- Are there functions defined in the `filterprocessor` which are context specific, such as the [metric only functions](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/filterprocessor#ottl-functions)?
-- **Action:** If new metric context-specific functions exist, disable them in filter processor and add a unit test for it, since we pin context to `datapoint` in MetricPipeline, metrics only functions will not be available for users.
-
 #### Function Modifications
 - Name changes
 - Signature changes
 - Function deprecations
 
+> [!IMPORTANT]
+
+> Processors may define additional OTTL functions which are restricted to specific contexts. The `filterprocessor` introduces [metrics only functions](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/filterprocessor#ottl-functions). If new metric context-specific functions exist, disable them in filter processor and add a unit test, since we pin context to `datapoint` in MetricPipeline, metrics only functions will not be available for users.
+
 ### 3. Processor Updates
 
 #### Filter Processor
-- Review for context-specific function support requirements
-- Check if any new functions need to be restricted (metric only functions)
+
+- Monitor the availability of context inference in `filterprocessor` in this [issue](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/37904)
 
 #### Transform Processor
-- Verify compatibility with existing transformations
-- Test context switching behavior
+- Verify any changes related to context inference
 
-### 4. Internal Metrics
+### 5. Internal Metrics
 
 Metrics can often change without notice, see
 
 Common issues:
-- Metric name changes
-- Attribute additions/removals
-- Metric type changes
+- [Prometheus metric name changes](https://github.com/open-telemetry/opentelemetry-collector/issues/13544)
+- [Attribute additions/removals](https://github.com/open-telemetry/opentelemetry-collector/issues/9943)
 
 ## Post-Bump Verification
 
