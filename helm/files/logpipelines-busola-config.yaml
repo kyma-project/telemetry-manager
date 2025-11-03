@@ -128,7 +128,7 @@ details: |-
                   source: spec.input.otlp.namespaces.exclude
                   separator: ', '
     - widget: Panel
-      name: OTTL Filter
+      name: Filter
       children:
         - source: spec.filter
           widget: Panel
@@ -139,7 +139,7 @@ details: |-
               widget: JoinedArray
               separator: break
     - widget: Panel
-      name: OTTL Transform
+      name: Transform
       children:
         - source: spec.transform
           widget: Panel
@@ -393,6 +393,12 @@ details: |-
     dataSources:
       - source: relatedSecrets
 form: |
+  - var: outputType
+    type: string
+    simple: true
+    defaultValue: "OTLP"
+    name: Pipeline Output Type
+    enum: [HTTP, OTLP, Custom]
   - path: spec.input
     widget: FormGroup
     defaultExpanded: true
@@ -438,8 +444,10 @@ form: |
             widget: SimpleList
             path: containers.exclude
           - name: Keep Annotations
+            visibility: '$outputType = "HTTP" or $outputType = "Custom"'
             path: keepAnnotations
           - name: Drop Labels
+            visibility: '$outputType = "HTTP" or $outputType = "Custom"'
             path: dropLabels
           - name: Keep Original Log Body
             path: keepOriginalBody
@@ -452,7 +460,7 @@ form: |
         trigger: [otlpChange]
       - name: OTLP
         path: otlp
-        visibility: '$otlpInput = "Enabled"'
+        visibility: '$otlpInput = "Enabled" and $outputType = "OTLP"'
         overwrite: false
         defaultExpanded: true
         widget: FormGroup
@@ -476,25 +484,25 @@ form: |
             children:
               - path: '[]'
   - name: Filters
-    widget: SimpleList
-    path: spec.filters
-    children:
-      - widget: FormGroup
-        path: '[]'
-        children:
-          - widget: CodeEditor
-            path: custom
-  - path: spec.filter
-    name: OTTL Filter
     widget: GenericList
+    path: spec.filters
+    visibility: '$outputType = "HTTP" or $outputType = "Custom"'
+    children:
+      - widget: CodeEditor
+        path: '[].custom'
+  - path: spec.filter
+    name: Filter
+    widget: GenericList
+    visibility: '$outputType = "OTLP"'
     children:
       - path: '[].conditions'
         widget: SimpleList
         children:
           - path: '[]'
   - path: spec.transform
-    name: OTTL Transform
+    name: Transform
     widget: GenericList
+    visibility: '$outputType = "OTLP"'
     children:
       - path: '[].conditions'
         widget: SimpleList
@@ -508,16 +516,10 @@ form: |
     widget: FormGroup
     defaultExpanded: true
     children:
-      - var: outputType
-        type: string
-        simple: true
-        defaultValue: "OTLP"
-        name: Output Type
-        enum: [HTTP, OTLP]
       - name: Custom
         path: custom
         widget: CodeEditor
-        visibility: '$outputType = "HTTP"'
+        visibility: '$outputType = "Custom"'
         advanced: true
         inputInfo: >-
           Note: If you use a custom output, you put the LogPipeline in unsupported

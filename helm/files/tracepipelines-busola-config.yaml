@@ -62,7 +62,7 @@ details: |-
             type: TelemetryFlowHealthy
   body:
     - widget: Panel
-      name: OTTL Filter
+      name: Filter
       children:
         - source: spec.filter
           widget: Panel
@@ -73,7 +73,7 @@ details: |-
               widget: JoinedArray
               separator: break
     - widget: Panel
-      name: OTTL Transform
+      name: Transform
       children:
         - source: spec.transform
           widget: Panel
@@ -222,7 +222,7 @@ details: |-
       - source: relatedSecrets
 form: |
   - path: spec.filter
-    name: OTTL Filter
+    name: Filter
     widget: GenericList
     children:
       - path: '[].conditions'
@@ -230,7 +230,7 @@ form: |
         children:
           - path: '[]'
   - path: spec.transform
-    name: OTTL Transform
+    name: Transform
     widget: GenericList
     children:
       - path: '[].conditions'

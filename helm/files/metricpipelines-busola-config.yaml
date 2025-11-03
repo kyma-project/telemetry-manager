@@ -185,7 +185,7 @@ details: |-
               source: spec.input.otlp.namespaces.exclude
               separator: ', '
     - widget: Panel
-      name: OTTL Filter
+      name: Filter
       children:
         - source: spec.filter
           widget: Panel
@@ -196,7 +196,7 @@ details: |-
               widget: JoinedArray
               separator: break
     - widget: Panel
-      name: OTTL Transform
+      name: Transform
       children:
         - source: spec.transform
           widget: Panel
@@ -468,7 +468,7 @@ form: |
             children:
               - path: '[]'
   - path: spec.filter
-    name: OTTL Filter
+    name: Filter
     widget: GenericList
     children:
       - path: '[].conditions'
@@ -476,7 +476,7 @@ form: |
         children:
           - path: '[]'
   - path: spec.transform
-    name: OTTL Transform
+    name: Transform
     widget: GenericList
     children:
       - path: '[].conditions'
