@@ -11,16 +11,23 @@ Guide for maintainers and contributors when bumping `opentelemetry-collector` an
 Focus on these areas:
 
 - Breaking changes, bug fixes, and enhancements for:
-  - `kubeletstatsreceiver`
-  - `k8sclusterreceiver`
-  - `prometheusreceiver`
-  - `otlpreceiver`
-  - `otlpexporter`
-  - `memorylimiter`
-  - `k8sattributeprocessor`
-  - `filterprocessor`
-  - `transformprocessor`
-  - `resourceprocessor`
+  - Receivers:
+    - `kubeletstatsreceiver`
+    - `k8sclusterreceiver`
+    - `prometheusreceiver`
+    - `otlpreceiver`
+  - Processors
+    - `memorylimiterprocessor`
+    - `k8sattributeprocessor`
+    - `filterprocessor`
+    - `transformprocessor`
+    - `resourceprocessor`
+  - Exporters
+    - `otlpexporter`
+    - `otlphttpexporter`
+  - Extensions
+    - `healthcheckextension`
+    - `k8sleaderelector`
 - **OTTL** (OpenTelemetry Transformation Language) updates
 - **Internal metrics** modifications
 - **Deprecation notices**
