@@ -17,12 +17,7 @@ For details, see [Filter Logs](filter-logs.md), [Filter Metrics](filter-metrics.
 
 ## Pipeline Processing with OTTL
 
-After data is collected into a pipeline, you can perform advanced transformations and filtering using the OpenTelemetry Transformation Language (OTTL). This gives you fine-grained control to modify attributes, redact sensitive information, or drop data based on complex conditions.
-
-You can add processors to a pipeline's `transform` and `filter` sections to:
-- Transform data by adding, modifying, or removing attributes
-- Filter data based on complex conditions and attribute values
-- Apply conditional logic to process different data types differently
+After data is collected into a pipeline, you can perform custom transformations and filtering using the OpenTelemetry Transformation Language (OTTL). This gives you fine-grained control to modify attributes, redact sensitive information, or drop data based on complex conditions.
 
 For details, see [Custom Pipeline Processing with OTTL](custom-pipeline-processing-ottl.md).
 
@@ -30,7 +25,7 @@ For details, see [Custom Pipeline Processing with OTTL](custom-pipeline-processi
 
 In addition to these user-configurable methods, the Telemetry module also performs several automatic processing steps to ensure your data is structured and useful:
 
-- **Data transformation**: Application logs from containers are automatically transformed into structured OpenTelemetry (OTLP) log records
-- **Data enrichment**: All pipelines automatically enrich telemetry data with Kubernetes resource attributes, such as Pod name, namespace, and labels, so you can easily identify the source of telemetry data in your backend
+- **Data transformation**: Application logs from containers are automatically transformed into structured OpenTelemetry (OTLP) log records.
+- **Data enrichment**: All pipelines automatically enrich telemetry data with Kubernetes resource attributes, such as Pod name, namespace, and labels, so you can easily identify the source of telemetry data in your backend.
 
 For details, see [Transformation to OTLP Logs](transformation-to-otlp-logs.md) and [Automatic Data Enrichment](automatic-data-enrichment.md).
