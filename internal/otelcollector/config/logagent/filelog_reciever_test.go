@@ -449,7 +449,6 @@ func getExcludePaths(system bool, paths ...string) []string {
 		"/var/log/pods/kyma-system_*/*/*.log",
 		"/var/log/pods/kube-system_*/*/*.log",
 		"/var/log/pods/istio-system_*/*/*.log",
-		"/var/log/pods/compass-system_*/*/*.log",
 	}
 
 	excludePaths := []string{}
