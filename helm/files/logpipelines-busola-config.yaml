@@ -399,6 +399,7 @@ form: |
     defaultValue: "OTLP"
     name: Pipeline Output Type
     enum: [HTTP, OTLP, Custom]
+    description: PipelineOutputType determines the backend to which logs are sent. HTTP and Custom Output uses FluentBit, while OTLP uses OpenTelemetry Collector
   - path: spec.input
     widget: FormGroup
     defaultExpanded: true
