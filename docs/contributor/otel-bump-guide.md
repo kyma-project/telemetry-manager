@@ -12,24 +12,29 @@ Focus on these areas:
 
 - Breaking changes, bug fixes, and enhancements for:
   - Receivers:
-    - `kubeletstatsreceiver`
-    - `k8sclusterreceiver`
-    - `prometheusreceiver`
+    - `filelogreceiver` (contrib)
+    - `kubeletstatsreceiver` (contrib)
+    - `k8sclusterreceiver` (contrib)
     - `otlpreceiver`
-    - `filelogreceiver`
+    - `prometheusreceiver` (contrib)
   - Processors
-    - `memorylimiterprocessor`
-    - `k8sattributeprocessor`
-    - `filterprocessor`
-    - `transformprocessor`
-    - `resourceprocessor`
     - `batchprocessor`
+    - `filterprocessor` (contrib)
+    - `k8sattributesprocessor` (contrib)
+    - `memorylimiterprocessor`
+    - `resourceprocessor` (contrib)
+    - `transformprocessor` (contrib)
   - Exporters
     - `otlpexporter`
     - `otlphttpexporter`
   - Extensions
-    - `healthcheckextension`
-    - `k8sleaderelector`
+    - `filestorage` (contrib)
+    - `healthcheckextension` (contrib)
+    - `k8sleaderelector` (contrib)
+    - `pprofextension` (contrib)
+  - Connectors
+    - `forwardconnector`
+    - `routingconnector` (contrib)
 - **OTTL** (OpenTelemetry Transformation Language) updates
 - **Internal metrics** modifications
 - **Deprecation notices**
