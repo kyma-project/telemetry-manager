@@ -67,8 +67,6 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 		b.addK8sAttributesProcessor(opts),
 		b.addServiceEnrichmentProcessor(),
 		b.addInsertClusterAttributesProcessor(opts),
-		// Kyma attributes are dropped before user-defined transform and filter processors
-		// to prevent user access to internal attributes.
 		b.addInputForwardExporter(),
 	); err != nil {
 		return nil, nil, fmt.Errorf("failed to add input service pipeline: %w", err)
@@ -82,11 +80,12 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			b.addDropOTLPIfInputDisabledProcessor(),
 			// Namespace filters
 			b.addOTLPNamespaceFilterProcessor(),
+			// Kyma attributes are dropped before user-defined transform and filter processors
+			// to prevent user access to internal attributes.
+			b.addDropKymaAttributesProcessor(),
 			// User defined Transform and Filter
 			b.addUserDefinedTransformProcessor(),
 			b.addUserDefinedFilterProcessor(),
-			// Drop all kyma.* attributes
-			b.addDropKymaAttributesProcessor(),
 			// Batch processor (always last)
 			b.addBatchProcessor(),
 			// OTLP exporter
