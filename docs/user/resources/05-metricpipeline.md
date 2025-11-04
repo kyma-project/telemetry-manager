@@ -67,7 +67,7 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 
 | Parameter | Type | Description |
 | ---- | ----------- | ---- |
-| **filter**  | \[\]object | Filters specifies a list of filters to apply to telemetry data. |
+| **filter**  | \[\]object | Filter specifies a list of filters to apply to telemetry data. |
 | **filter.&#x200b;conditions**  | \[\]string | Conditions specify a list of multiple where clauses, which will be processed as global conditions for the accompanying set of statements. The conditions are ORed together, which means only one condition needs to evaluate to true in order for the statements (including their individual where clauses) to be executed. |
 | **input**  | object | Input configures additional inputs for metric collection. |
 | **input.&#x200b;istio**  | object | Istio input configures collection of Istio metrics from applications running in the Istio service mesh. |

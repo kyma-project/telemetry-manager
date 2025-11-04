@@ -54,7 +54,7 @@ For details, see the [TracePipeline specification file](https://github.com/kyma-
 
 | Parameter | Type | Description |
 | ---- | ----------- | ---- |
-| **filter**  | \[\]object | Filters specifies a list of filters to apply to telemetry data. |
+| **filter**  | \[\]object | Filter specifies a list of filters to apply to telemetry data. |
 | **filter.&#x200b;conditions**  | \[\]string | Conditions specify a list of multiple where clauses, which will be processed as global conditions for the accompanying set of statements. The conditions are ORed together, which means only one condition needs to evaluate to true in order for the statements (including their individual where clauses) to be executed. |
 | **output** (required) | object | Output configures the backend to which traces are sent. You must specify exactly one output per pipeline. |
 | **output.&#x200b;otlp** (required) | object | OTLP output defines an output using the OpenTelemetry protocol. |
