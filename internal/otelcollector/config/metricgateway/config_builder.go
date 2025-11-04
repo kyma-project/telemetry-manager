@@ -51,6 +51,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 	); err != nil {
 		return nil, nil, fmt.Errorf("failed to add input service pipeline: %w", err)
 	}
+
 	if err := b.AddServicePipeline(ctx, nil, "metrics/input-kyma-stats",
 		b.addKymaStatsReceiver(),
 		b.addSetKymaInputNameProcessor(common.InputSourceKyma),
