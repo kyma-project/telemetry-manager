@@ -77,7 +77,7 @@ processors:
         error_mode: ignore
         metrics:
             metric:
-                - not(instrumentation_scope.name == "io.kyma-project.telemetry/kyma")
+                - not(resource.attributes["kyma.input.name"] == "kyma")
     k8sattributes:
         auth_type: serviceAccount
         passthrough: false

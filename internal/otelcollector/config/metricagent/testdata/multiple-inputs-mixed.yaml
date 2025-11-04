@@ -314,17 +314,17 @@ processors:
         error_mode: ignore
         metrics:
             metric:
-                - instrumentation_scope.name == "io.kyma-project.telemetry/istio" and (name == "up" or name == "scrape_duration_seconds" or name == "scrape_samples_scraped" or name == "scrape_samples_post_metric_relabeling" or name == "scrape_series_added")
+                - resource.attributes["kyma.input.name"] == "istio" and (name == "up" or name == "scrape_duration_seconds" or name == "scrape_samples_scraped" or name == "scrape_samples_post_metric_relabeling" or name == "scrape_series_added")
     filter/drop-diagnostic-metrics-if-input-source-prometheus:
         error_mode: ignore
         metrics:
             metric:
-                - instrumentation_scope.name == "io.kyma-project.telemetry/prometheus" and (name == "up" or name == "scrape_duration_seconds" or name == "scrape_samples_scraped" or name == "scrape_samples_post_metric_relabeling" or name == "scrape_series_added")
+                - resource.attributes["kyma.input.name"] == "prometheus" and (name == "up" or name == "scrape_duration_seconds" or name == "scrape_samples_scraped" or name == "scrape_samples_post_metric_relabeling" or name == "scrape_series_added")
     filter/drop-envoy-metrics-if-disabled:
         error_mode: ignore
         metrics:
             metric:
-                - IsMatch(name, "^envoy_.*") and instrumentation_scope.name == "io.kyma-project.telemetry/istio"
+                - IsMatch(name, "^envoy_.*") and resource.attributes["kyma.input.name"] == "istio"
     filter/drop-non-pvc-volumes-metrics:
         error_mode: ignore
         metrics:
@@ -344,7 +344,7 @@ processors:
         error_mode: ignore
         metrics:
             metric:
-                - instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "default")
+                - resource.attributes["kyma.input.name"] == "runtime" and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "default")
     istio_noise_filter: {}
     k8sattributes:
         auth_type: serviceAccount

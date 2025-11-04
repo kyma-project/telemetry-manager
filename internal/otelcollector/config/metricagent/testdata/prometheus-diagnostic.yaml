@@ -162,7 +162,7 @@ processors:
         error_mode: ignore
         metrics:
             metric:
-                - IsMatch(name, "^envoy_.*") and instrumentation_scope.name == "io.kyma-project.telemetry/istio"
+                - IsMatch(name, "^envoy_.*") and resource.attributes["kyma.input.name"] == "istio"
     k8sattributes:
         auth_type: serviceAccount
         passthrough: false
