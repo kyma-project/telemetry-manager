@@ -16,12 +16,14 @@ Focus on these areas:
     - `k8sclusterreceiver`
     - `prometheusreceiver`
     - `otlpreceiver`
+    - `filelogreceiver`
   - Processors
     - `memorylimiterprocessor`
     - `k8sattributeprocessor`
     - `filterprocessor`
     - `transformprocessor`
     - `resourceprocessor`
+    - `batchprocessor`
   - Exporters
     - `otlpexporter`
     - `otlphttpexporter`
@@ -43,7 +45,7 @@ Check for:
 - Function deprecations
 
 > [!IMPORTANT]
-> Processors may define additional OTTL functions which are restricted to specific contexts. The `filterprocessor` introduces [metrics only functions](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/filterprocessor#ottl-functions). If new metric context-specific functions exist, disable them in filter processor and add a unit test, since we pin context to `datapoint` in MetricPipeline, metrics only functions will not be available for users.
+> Processors may define additional OTTL functions which are restricted to specific contexts. The `filterprocessor` introduces [metrics only functions](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/filterprocessor#ottl-functions). If new metric context-specific functions exist, add these to the documentation of functions that can't be used, since we pin context to `datapoint` in MetricPipeline, metrics only functions will not be available for users.
 
 ### Processor Updates
 
@@ -60,6 +62,14 @@ Metrics can often change without notice. See examples below:
 Common issues:
 - [Prometheus metric name changes](https://github.com/open-telemetry/opentelemetry-collector/issues/13544)
 - [Attribute additions/removals](https://github.com/open-telemetry/opentelemetry-collector/issues/9943)
+
+### Breaking Changes and Feature Gates
+
+Breaking changes are typically introduced behind feature gates. It is important to:
+
+- Monitor feature gate lifecycles - Track when feature gates are scheduled for removal
+- Assess impact - Evaluate whether the breaking change requires modifications to your implementation
+- Plan accordingly - Make necessary adjustments before the feature gate is removed
 
 ---
 
