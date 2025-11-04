@@ -200,15 +200,17 @@ You have configured a `transform` or `filter` section in your pipeline, but the 
 ### Cause
 
 This usually happens for one of the following reasons:
-* **Incorrect Execution Order**: You are trying to filter data based on an attribute's original value, but a transformation rule has already modified it. Remember: transformations always run before filters.
-* **Incorrect Context Path**: Your OTTL expression is using the wrong path to an attribute. This is a common issue with filters, which require explicit context paths.
-* **Syntax Error**: Your OTTL expression has a syntax error. Because the default error mode is `ignore`, the processor logs the error and drops the invalid statement, so the pipeline continues to function without applying your rule.
+* **Incorrect Execution Order**: You're filtering based on an attribute's original value, but a transformation has already changed it. Transform rules always run before filter rules.
+* **Incorrect Context Path**: Your expression references an attribute without the required explicit context path (for example, using `attributes[...]` instead of `resource.attributes[...]`).
+* **Logic Mismatch**: The condition is syntactically valid, but never evaluates to true (for transforms with conditions) or false (for filters that should drop data) due to value mismatch or regex that doesn't match.
+
+> **Note**: If the OTTL syntax is invalid, the pipeline configuration is not generated. The corresponding error message appears in the pipeline status under the `ConfigurationGenerated` condition with reason `OTTLSpecInvalid`.
 
 ### Solution
 
-1. **Check the Gateway Logs**: Look for errors in the relevant gateway pod (`telemetry-metric-gateway`, `telemetry-trace-gateway`, etc.). Search for log entries containing `OTTL expression error`. These messages will point you to the exact syntax error in your statement. Execute: `kubectl logs -n kyma-system telemetry-metric-gateway | grep "OTTL expression error"`.
-2. **Verify the Execution Order**: Review your rules. If you have a transform that renames resource.attributes["foo"] to resource.attributes["bar"], your filter rule must check for bar, not foo.
-3. **Verify Context Paths in Filters**: Ensure your filter conditions use the full, explicit path to the attribute.
-   * **Incorrect**: `attributes["k8s.namespace.name"] == "default"`
-   * **Correct**: `resource.attributes["k8s.namespace.name"] == "default"`
-4. **Simplify and Test**: Temporarily remove all but one simple rule to confirm it works as expected. Then, incrementally add your other rules back to isolate the one that is causing the issue.
+1. **Verify the Execution Order**: If a transform renames `resource.attributes["foo"]` to `resource.attributes["bar"]`, subsequent filter rules must reference `bar`.
+2. **Check Context Paths**: Ensure every attribute reference includes its full path.
+  * **Incorrect**: `attributes["k8s.namespace.name"] == "default"`
+  * **Correct**: `resource.attributes["k8s.namespace.name"] == "default"`
+3. **Inspect Logic / Regex**: Test your regex separately. Simplify complex conditions to a single comparison and re-apply.
+4. **Isolate a Single Rule**: Temporarily remove all but one rule to confirm expected behavior, then add rules back incrementally.
