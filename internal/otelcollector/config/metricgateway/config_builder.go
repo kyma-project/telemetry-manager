@@ -77,7 +77,6 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 		outputPipelineID := formatOutputServicePipelineID(&pipeline)
 		if err := b.AddServicePipeline(ctx, &pipeline, outputPipelineID,
 			b.addOutputForwardReceiver(),
-			b.addDropKymaAttributesProcessor(),
 			// Input source filters if otlp is disabled
 			b.addDropOTLPIfInputDisabledProcessor(),
 			// Namespace filters
@@ -85,6 +84,8 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			// User defined Transform and Filter
 			b.addUserDefinedTransformProcessor(),
 			b.addUserDefinedFilterProcessor(),
+			// Drop all kyma.* attributes
+			b.addDropKymaAttributesProcessor(),
 			// Batch processor (always last)
 			b.addBatchProcessor(),
 			// OTLP exporter
