@@ -122,10 +122,7 @@ spec:
                               type: boolean
                           type: object
                         namespaces:
-                          description:
-                            Namespaces configures the namespaces for which
-                            the collection should be activated. By default, all namespaces
-                            including system namespaces are enabled.
+                          description: Namespaces configures the namespaces for which the collection should be activated. By default, all namespaces excluding system namespaces are enabled. To enable all namespaces including system namespaces, use an empty struct notation.
                           properties:
                             exclude:
                               description:

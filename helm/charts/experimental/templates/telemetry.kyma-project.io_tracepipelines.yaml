@@ -62,7 +62,7 @@ spec:
             description: Spec defines the desired state of TracePipeline
             properties:
               filter:
-                description: Filters specifies a list of filters to apply to telemetry
+                description: Filter specifies a list of filters to apply to telemetry
                   data.
                 items:
                   description: FilterSpec defines a filter to apply to telemetry data.
@@ -939,9 +939,13 @@ spec:
                             - message: Exactly one of 'value' or 'valueFrom' must
                                 be set
                               rule: has(self.value) != has(self.valueFrom)
-                          disabled:
-                            description: Disabled specifies if TLS is disabled or
-                              enabled. Default is `false`.
+                          insecure:
+                            description: Insecure defines whether to send requests
+                              using plaintext instead of TLS.
+                            type: boolean
+                          insecureSkipVerify:
+                            description: InsecureSkipVerify defines whether to skip
+                              server certificate verification when using TLS.
                             type: boolean
                           key:
                             description: Defines the client key to use when using
@@ -988,10 +992,6 @@ spec:
                             - message: Exactly one of 'value' or 'valueFrom' must
                                 be set
                               rule: has(self.value) != has(self.valueFrom)
-                          skipCertificateValidation:
-                            description: If `true`, the validation of certificates
-                              is skipped. Default is `false`.
-                            type: boolean
                         type: object
                         x-kubernetes-validations:
                         - message: Can define either both 'cert' and 'key', or neither

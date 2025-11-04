@@ -46,7 +46,21 @@ func (ld defaulter) applyDefaults(pipeline *telemetryv1alpha1.LogPipeline) {
 		pipeline.Spec.Input.Application.KeepOriginalBody = &ld.ApplicationInputKeepOriginalBody
 	}
 
+	if isOTLPPipeline(pipeline) {
+		if pipeline.Spec.Input.OTLP == nil {
+			pipeline.Spec.Input.OTLP = &telemetryv1alpha1.OTLPInput{}
+		}
+
+		if pipeline.Spec.Input.OTLP.Namespaces == nil {
+			pipeline.Spec.Input.OTLP.Namespaces = &telemetryv1alpha1.NamespaceSelector{}
+		}
+	}
+
 	if pipeline.Spec.Output.OTLP != nil && pipeline.Spec.Output.OTLP.Protocol == "" {
 		pipeline.Spec.Output.OTLP.Protocol = ld.DefaultOTLPProtocol
 	}
+}
+
+func isOTLPPipeline(pipeline *telemetryv1alpha1.LogPipeline) bool {
+	return pipeline.Spec.Output.OTLP != nil
 }
