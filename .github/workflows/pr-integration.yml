@@ -59,7 +59,6 @@ jobs:
           QUERY_INTERVAL: 30
           IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
 
-
   e2e-selfmonitor:
     needs: setup
     strategy:
@@ -125,6 +124,9 @@ jobs:
             mode: release
             type: e2e
           - name: otel-max-pipeline
+            mode: release
+            type: e2e
+          - name: logs-misc
             mode: release
             type: e2e
           # METRICS
