@@ -49,7 +49,6 @@ var InputName = map[InputSourceType]ComponentID{
 	InputSourcePrometheus: ComponentIDSetKymaInputNamePrometheusProcessor,
 	InputSourceIstio:      ComponentIDSetKymaInputNameIstioProcessor,
 	InputSourceKyma:       ComponentIDSetKymaInputNameKymaProcessor,
-	InputSourceK8sCluster: ComponentIDSetKymaInputNameK8sClusterProcessor,
 }
 
 var upstreamInstrumentationScopeName = map[InputSourceType]string{
@@ -124,7 +123,6 @@ const (
 	ComponentIDSetKymaInputNameIstioProcessor      ComponentID = "resource/set-kyma-input-name-istio"
 	ComponentIDSetKymaInputNamePrometheusProcessor ComponentID = "resource/set-kyma-input-name-prometheus"
 	ComponentIDSetKymaInputNameKymaProcessor       ComponentID = "resource/set-kyma-input-name-kyma"
-	ComponentIDSetKymaInputNameK8sClusterProcessor ComponentID = "resource/set-kyma-input-name-k8s-cluster"
 
 	// Log-Specific Processors
 

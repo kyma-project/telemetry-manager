@@ -208,7 +208,7 @@ func (b *Builder) addDropOTLPIfInputDisabledProcessor() buildComponentFunc {
 			}
 
 			return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
-				Metric: []string{common.Not(common.ScopeNameEquals(common.InstrumentationScopeKyma))},
+				Metric: []string{common.Not(common.KymaInputNameEquals(common.InputSourceKyma))},
 			})
 		},
 	)
@@ -312,7 +312,7 @@ func shouldFilterByNamespace(namespaceSelector *telemetryv1alpha1.NamespaceSelec
 func filterByNamespaceProcessorConfig(namespaceSelector *telemetryv1alpha1.NamespaceSelector) *common.FilterProcessor {
 	var filterExpressions []string
 
-	notFromKymaStatsReceiver := common.Not(common.ScopeNameEquals(common.InstrumentationScopeKyma))
+	notFromKymaStatsReceiver := common.Not(common.KymaInputNameEquals(common.InputSourceKyma))
 
 	if len(namespaceSelector.Exclude) > 0 {
 		namespacesConditions := namespacesConditionsBuilder(namespaceSelector.Exclude)

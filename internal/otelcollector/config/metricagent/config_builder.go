@@ -745,7 +745,7 @@ func (b *Builder) addDropEnvoyMetricsIfDisabledProcessor() buildComponentFunc {
 			return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
 				Metric: []string{common.JoinWithAnd(
 					common.IsMatch("name", "^envoy_.*"),
-					common.ScopeNameEquals(common.InstrumentationScopeIstio),
+					common.KymaInputNameEquals(common.InputSourceIstio),
 				)},
 			})
 		},
@@ -939,7 +939,7 @@ func getPipelinesWithIstioInput(pipelines []telemetryv1alpha1.MetricPipeline) []
 }
 
 func inputSourceEquals(inputSourceType common.InputSourceType) string {
-	return common.ScopeNameEquals(common.InstrumentationScope[inputSourceType])
+	return common.KymaInputNameEquals(inputSourceType)
 }
 
 func kymaInputNameEquals(inputSourceType common.InputSourceType) string {
