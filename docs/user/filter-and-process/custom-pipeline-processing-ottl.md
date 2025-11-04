@@ -15,25 +15,24 @@ Processing rules are always applied in a specific order. This is critical to und
 
 This sequence ensures that you filter on the final, transformed state of your data. For example, if you rename an attribute in a transform rule, your filter rule must use the new name, not the original one.
 
-## OTTL Context and Data Processing
+## Context Model
 
-Transform and filter operations work at different context levels depending on the telemetry data type. Currently, custom context configuration is not supported, and all operations use the lowest-level context by default:
+All transformation and filtering statements operate on an inferred element context — you do not configure the context separately:
 
-| Pipeline Type  | Default Context | Description                                       | Requirements              |
-| :------------- | :-------------- | :------------------------------------------------ | :------------------------ |
-| LogPipeline    | `log`           | Operations apply to individual log records        | OTLP output only          |
-| MetricPipeline | `datapoint`     | Operations apply to individual metric data points | Available for all outputs |
-| TracePipeline  | `span`          | Operations apply to individual trace spans        | Available for all outputs |
+- LogPipeline rules act on individual log records (context: `log`)
+- MetricPipeline rules act on individual metric data points (context: `datapoint`)
+- TracePipeline rules act on individual spans (context: `span`)
 
-> **Note**: For TracePipeline, the `span` context is used instead of `spanevent` because traces can contain spans without span events. This means you cannot currently filter or transform data within the `spanevent` context for traces.
+> **Note**: Span events (`spanevent`) are not supported: you cannot transform or filter fields inside individual span events.
 
-When writing OTTL expressions, you must include the appropriate context path to access data at different levels:
+Always reference attributes with their full context path. Examples:
 
-- **Access current context**: `log.attributes["key"]`, `datapoint.value`, `span.name`
-- **Access higher contexts**: `resource.attributes["key"]`, `scope.name`, `metric.name` (from datapoint context)
-- **Access related contexts**: `span.attributes["key"]` (from spanevent context, when available)
+- Current element: `log.attributes["level"]`, `datapoint.value`, `span.name`
+- Resource / higher scope: `resource.attributes["k8s.namespace.name"]`, `metric.name` (from a datapoint), `scope.name`
 
-> **Note**: By default, if an OTTL statement encounters an error, the processor logs the error and continues to process the next piece of data. This `ignore` mode prevents a single malformed data point from halting the entire pipeline.
+Error handling: If a statement fails (for example, referencing a missing attribute), the processor logs the error and continues (ignore mode). One bad record does not stop the pipeline.
+
+These rules ensure predictable behavior without additional context configuration.
 
 ## Transforming Telemetry Data
 
@@ -48,7 +47,7 @@ Each transformation rule consists of:
 
 ### Example: General Resource Attribute Enrichment
 
-This example adds a `deployment.environment` attribute with the value `production` to all metrics in the pipeline. Since there are no conditions, the rule applies to all data.
+This example adds a `deployment.environment.name` attribute with the value `production` to all metrics in the pipeline. Since there are no conditions, the rule applies to all data.
 
 ```yaml
 # In your MetricPipeline spec
@@ -58,10 +57,11 @@ spec:
       enabled: true
   output:
     otlp:
-      endpoint: http://metrics.example.com:4317
+      endpoint:
+        value: http://metrics.example.com:4317
   transform:
     - statements:
-        - 'set(resource.attributes["deployment.environment"], "production")'
+        - 'set(resource.attributes["deployment.environment.name"], "production")'
 ```
 
 ### Example: Conditional Resource Attribute Enrichment
@@ -73,7 +73,8 @@ This example sets the status code of a trace span to `1` (Error) if its pod name
 spec:
   output:
     otlp:
-      endpoint: http://traces.example.com:4317
+      endpoint:
+        value: http://traces.example.com:4317
   transform:
     - conditions:
         - 'IsMatch(resource.attributes["k8s.pod.name"], "my-pod-name.*")'
@@ -101,15 +102,16 @@ spec:
       enabled: true
   output:
     otlp:
-      endpoint: http://logs.example.com:4317
+      endpoint:
+        value: http://logs.example.com:4317
   filter:
     - conditions:
         - 'severity_number < SEVERITY_NUMBER_WARN'
 ```
 
-### Filter envoy metrics by outlier_detection only
+### Filter Envoy metrics to outlier_detection only
 
-This example keeps only Envoy outlier detection metrics, which are essential for monitoring circuit breaker behavior and host ejections in your service mesh. All other metrics are dropped to reduce noise.
+This example keeps all regular Istio metrics but filters Envoy metrics (those prefixed with `envoy_`) to only include outlier detection metrics, which are essential for monitoring circuit breaker behavior and host ejections in your service mesh.
 
 ```yaml
 # In your MetricPipeline spec
@@ -121,10 +123,11 @@ spec:
         enabled: true
   output:
     otlp:
-      endpoint: http://metrics.example.com:4317
+      endpoint:
+        value: http://metrics.example.com:4317
   filter:
     - conditions:
-        - 'IsMatch(metric.name, ".*outlier_detection.*") == false'
+        - 'IsMatch(metric.name, "^envoy_") == true and IsMatch(metric.name, ".*outlier_detection.*") == false'
 ```
 
 ## Limitations
@@ -133,11 +136,7 @@ Review the following limitations when constructing your processing rules.
 
 ### Explicit Context Path Required
 
-You must specify the full context path for attributes. The system uses the lowest-level context by default:
-
-- **LogPipeline**: Uses `log` context
-- **MetricPipeline**: Uses `datapoint` context  
-- **TracePipeline**: Uses `span` context
+You must specify the full context path for every attribute reference. Omitting the context (for example, writing `attributes["key"]`) is not supported.
 
 **Correct**: `'resource.attributes["k8s.namespace.name"] == "default"'`
 **Incorrect**: `'attributes["k8s.namespace.name"] == "default"'`
