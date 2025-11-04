@@ -80,7 +80,7 @@ func BuildLogPipelineV1Beta1RuntimeInput() telemetryv1beta1.LogPipelineInput {
 	input := telemetryv1beta1.LogPipelineInput{
 		Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
 			Enabled:    ptr.To(true),
-			Namespaces: telemetryv1beta1.LogPipelineNamespaceSelector{},
+			Namespaces: &telemetryv1beta1.NamespaceSelector{},
 		},
 	}
 
@@ -93,7 +93,7 @@ func BuildLogPipelineV1Beta1OTLPInput() telemetryv1beta1.LogPipelineInput {
 			Enabled: ptr.To(false),
 		},
 		OTLP: &telemetryv1beta1.OTLPInput{
-			Disabled:   false,
+			Enabled:    ptr.To(true),
 			Namespaces: &telemetryv1beta1.NamespaceSelector{},
 		},
 	}
