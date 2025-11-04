@@ -45,48 +45,60 @@ func (md defaulter) Default(ctx context.Context, obj runtime.Object) error {
 }
 
 func (md defaulter) applyDefaults(pipeline *telemetryv1alpha1.MetricPipeline) {
-	if metricpipelineutils.IsPrometheusInputEnabled(pipeline.Spec.Input) && pipeline.Spec.Input.Prometheus.Namespaces == nil {
-		pipeline.Spec.Input.Prometheus.Namespaces = &telemetryv1alpha1.NamespaceSelector{
-			Exclude: md.ExcludeNamespaces,
+	if metricpipelineutils.IsPrometheusInputEnabled(pipeline.Spec.Input) {
+		if pipeline.Spec.Input.Prometheus.Namespaces == nil {
+			pipeline.Spec.Input.Prometheus.Namespaces = &telemetryv1alpha1.NamespaceSelector{
+				Exclude: md.ExcludeNamespaces,
+			}
+		}
+
+		if pipeline.Spec.Input.Prometheus.DiagnosticMetrics == nil {
+			pipeline.Spec.Input.Prometheus.DiagnosticMetrics = &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{
+				Enabled: &md.DiagnosticMetricsEnabled,
+			}
 		}
 	}
 
-	if metricpipelineutils.IsIstioInputEnabled(pipeline.Spec.Input) && pipeline.Spec.Input.Istio.Namespaces == nil {
-		pipeline.Spec.Input.Istio.Namespaces = &telemetryv1alpha1.NamespaceSelector{
-			Exclude: md.ExcludeNamespaces,
+	if metricpipelineutils.IsIstioInputEnabled(pipeline.Spec.Input) {
+		if pipeline.Spec.Input.Istio.Namespaces == nil {
+			pipeline.Spec.Input.Istio.Namespaces = &telemetryv1alpha1.NamespaceSelector{
+				Exclude: md.ExcludeNamespaces,
+			}
 		}
-	}
 
-	if metricpipelineutils.IsRuntimeInputEnabled(pipeline.Spec.Input) && pipeline.Spec.Input.Runtime.Namespaces == nil {
-		pipeline.Spec.Input.Runtime.Namespaces = &telemetryv1alpha1.NamespaceSelector{
-			Exclude: md.ExcludeNamespaces,
+		if pipeline.Spec.Input.Istio.DiagnosticMetrics == nil {
+			pipeline.Spec.Input.Istio.DiagnosticMetrics = &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{
+				Enabled: &md.DiagnosticMetricsEnabled,
+			}
+		}
+
+		if pipeline.Spec.Input.Istio.EnvoyMetrics == nil {
+			pipeline.Spec.Input.Istio.EnvoyMetrics = &telemetryv1alpha1.EnvoyMetrics{
+				Enabled: &md.EnvoyMetricsEnabled,
+			}
 		}
 	}
 
 	if metricpipelineutils.IsRuntimeInputEnabled(pipeline.Spec.Input) {
 		md.applyRuntimeInputResourceDefaults(pipeline)
+
+		if pipeline.Spec.Input.Runtime.Namespaces == nil {
+			pipeline.Spec.Input.Runtime.Namespaces = &telemetryv1alpha1.NamespaceSelector{
+				Exclude: md.ExcludeNamespaces,
+			}
+		}
+	}
+
+	if pipeline.Spec.Input.OTLP == nil {
+		pipeline.Spec.Input.OTLP = &telemetryv1alpha1.OTLPInput{}
+	}
+
+	if pipeline.Spec.Input.OTLP.Namespaces == nil {
+		pipeline.Spec.Input.OTLP.Namespaces = &telemetryv1alpha1.NamespaceSelector{}
 	}
 
 	if pipeline.Spec.Output.OTLP != nil && pipeline.Spec.Output.OTLP.Protocol == "" {
 		pipeline.Spec.Output.OTLP.Protocol = md.DefaultOTLPOutputProtocol
-	}
-
-	if metricpipelineutils.IsIstioInputEnabled(pipeline.Spec.Input) && pipeline.Spec.Input.Istio.DiagnosticMetrics == nil {
-		pipeline.Spec.Input.Istio.DiagnosticMetrics = &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{
-			Enabled: &md.DiagnosticMetricsEnabled,
-		}
-	}
-
-	if metricpipelineutils.IsIstioInputEnabled(pipeline.Spec.Input) && pipeline.Spec.Input.Istio.EnvoyMetrics == nil {
-		pipeline.Spec.Input.Istio.EnvoyMetrics = &telemetryv1alpha1.EnvoyMetrics{
-			Enabled: &md.EnvoyMetricsEnabled,
-		}
-	}
-
-	if metricpipelineutils.IsPrometheusInputEnabled(pipeline.Spec.Input) && pipeline.Spec.Input.Prometheus.DiagnosticMetrics == nil {
-		pipeline.Spec.Input.Prometheus.DiagnosticMetrics = &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{
-			Enabled: &md.DiagnosticMetricsEnabled,
-		}
 	}
 }
 
