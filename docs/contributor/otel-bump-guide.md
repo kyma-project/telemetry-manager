@@ -37,6 +37,7 @@ Focus on these areas:
 Check for:
 
 #### Function Modifications
+- New Functions
 - Name changes
 - Signature changes
 - Function deprecations
