@@ -68,7 +68,6 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 		b.addInsertClusterAttributesProcessor(opts),
 		// Kyma attributes are dropped before user-defined transform and filter processors
 		// to prevent user access to internal attributes.
-		b.addDropKymaAttributesProcessor(),
 		b.addInputForwardExporter(),
 	); err != nil {
 		return nil, nil, fmt.Errorf("failed to add input service pipeline: %w", err)
@@ -78,6 +77,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 		outputPipelineID := formatOutputServicePipelineID(&pipeline)
 		if err := b.AddServicePipeline(ctx, &pipeline, outputPipelineID,
 			b.addOutputForwardReceiver(),
+			b.addDropKymaAttributesProcessor(),
 			// Input source filters if otlp is disabled
 			b.addDropOTLPIfInputDisabledProcessor(),
 			// Namespace filters

@@ -466,7 +466,7 @@ func (b *Builder) addRuntimeNamespaceFilterProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return filterByNamespaceProcessorConfig(input.Runtime.Namespaces, inputSourceEquals(common.InputSourceRuntime))
+			return filterByNamespaceProcessorConfig(input.Runtime.Namespaces, common.KymaInputNameEquals(common.InputSourceRuntime))
 		},
 	)
 }
@@ -498,7 +498,7 @@ func (b *Builder) addIstioNamespaceFilterProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return filterByNamespaceProcessorConfig(input.Istio.Namespaces, inputSourceEquals(common.InputSourceIstio))
+			return filterByNamespaceProcessorConfig(input.Istio.Namespaces, common.KymaInputNameEquals(common.InputSourceIstio))
 		},
 	)
 }
@@ -548,7 +548,7 @@ func (b *Builder) addDropRuntimePodMetricsProcessor() buildComponentFunc {
 
 			return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
 				Metric: []string{common.JoinWithAnd(
-					inputSourceEquals(common.InputSourceRuntime),
+					common.KymaInputNameEquals(common.InputSourceRuntime),
 					common.IsMatch("name", "^k8s.pod.*"),
 				)},
 			})
@@ -566,7 +566,7 @@ func (b *Builder) addDropRuntimeContainerMetricsProcessor() buildComponentFunc {
 
 			return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
 				Metric: []string{common.JoinWithAnd(
-					inputSourceEquals(common.InputSourceRuntime),
+					common.KymaInputNameEquals(common.InputSourceRuntime),
 					common.IsMatch("name", "(^k8s.container.*)|(^container.*)"),
 				)},
 			})
@@ -584,7 +584,7 @@ func (b *Builder) addDropRuntimeNodeMetricsProcessor() buildComponentFunc {
 
 			return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
 				Metric: []string{common.JoinWithAnd(
-					inputSourceEquals(common.InputSourceRuntime),
+					common.KymaInputNameEquals(common.InputSourceRuntime),
 					common.IsMatch("name", "^k8s.node.*"),
 				)},
 			})
@@ -602,7 +602,7 @@ func (b *Builder) addDropRuntimeVolumeMetricsProcessor() buildComponentFunc {
 
 			return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
 				Metric: []string{common.JoinWithAnd(
-					inputSourceEquals(common.InputSourceRuntime),
+					common.KymaInputNameEquals(common.InputSourceRuntime),
 					common.IsMatch("name", "^k8s.volume.*"),
 				)},
 			})
@@ -620,7 +620,7 @@ func (b *Builder) addDropRuntimeDeploymentMetricsProcessor() buildComponentFunc 
 
 			return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
 				Metric: []string{common.JoinWithAnd(
-					inputSourceEquals(common.InputSourceRuntime),
+					common.KymaInputNameEquals(common.InputSourceRuntime),
 					common.IsMatch("name", "^k8s.deployment.*"),
 				)},
 			})
@@ -638,7 +638,7 @@ func (b *Builder) addDropRuntimeDaemonSetMetricsProcessor() buildComponentFunc {
 
 			return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
 				Metric: []string{common.JoinWithAnd(
-					inputSourceEquals(common.InputSourceRuntime),
+					common.KymaInputNameEquals(common.InputSourceRuntime),
 					common.IsMatch("name", "^k8s.daemonset.*"),
 				)},
 			})
@@ -656,7 +656,7 @@ func (b *Builder) addDropRuntimeStatefulSetMetricsProcessor() buildComponentFunc
 
 			return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
 				Metric: []string{common.JoinWithAnd(
-					inputSourceEquals(common.InputSourceRuntime),
+					common.KymaInputNameEquals(common.InputSourceRuntime),
 					common.IsMatch("name", "^k8s.statefulset.*"),
 				)},
 			})
@@ -674,7 +674,7 @@ func (b *Builder) addDropRuntimeJobMetricsProcessor() buildComponentFunc {
 
 			return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
 				Metric: []string{common.JoinWithAnd(
-					inputSourceEquals(common.InputSourceRuntime),
+					common.KymaInputNameEquals(common.InputSourceRuntime),
 					common.IsMatch("name", "^k8s.job.*"),
 				)},
 			})
@@ -713,7 +713,7 @@ func (b *Builder) addDropIstioDiagnosticMetricsProcessor() buildComponentFunc {
 func dropDiagnosticMetricsFilterProcessorConfig(inputSource common.InputSourceType) *common.FilterProcessor {
 	var filterExpressions []string
 
-	inputSourceCondition := inputSourceEquals(inputSource)
+	inputSourceCondition := common.KymaInputNameEquals(inputSource)
 	metricNameConditions := nameConditions(diagnosticMetricNames)
 	excludeScrapeMetricsExpr := common.JoinWithAnd(inputSourceCondition, common.JoinWithOr(metricNameConditions...))
 	filterExpressions = append(filterExpressions, excludeScrapeMetricsExpr)
@@ -836,15 +836,15 @@ func enrichmentRoutingConnectorConfig(runtimePipelines, prometheusPipelines, ist
 	tableEntries := []common.RoutingConnectorTableEntry{}
 
 	if len(runtimePipelines) > 0 {
-		tableEntries = append(tableEntries, enrichmentRoutingConnectorTableEntry(runtimePipelines, kymaInputNameEquals(common.InputSourceRuntime)))
+		tableEntries = append(tableEntries, enrichmentRoutingConnectorTableEntry(runtimePipelines, common.KymaInputNameEquals(common.InputSourceRuntime)))
 	}
 
 	if len(prometheusPipelines) > 0 {
-		tableEntries = append(tableEntries, enrichmentRoutingConnectorTableEntry(prometheusPipelines, kymaInputNameEquals(common.InputSourcePrometheus)))
+		tableEntries = append(tableEntries, enrichmentRoutingConnectorTableEntry(prometheusPipelines, common.KymaInputNameEquals(common.InputSourcePrometheus)))
 	}
 
 	if len(istioPipelines) > 0 {
-		tableEntries = append(tableEntries, enrichmentRoutingConnectorTableEntry(istioPipelines, kymaInputNameEquals(common.InputSourceIstio)))
+		tableEntries = append(tableEntries, enrichmentRoutingConnectorTableEntry(istioPipelines, common.KymaInputNameEquals(common.InputSourceIstio)))
 	}
 
 	return common.RoutingConnector{
@@ -936,14 +936,6 @@ func getPipelinesWithIstioInput(pipelines []telemetryv1alpha1.MetricPipeline) []
 	}
 
 	return result
-}
-
-func inputSourceEquals(inputSourceType common.InputSourceType) string {
-	return common.KymaInputNameEquals(inputSourceType)
-}
-
-func kymaInputNameEquals(inputSourceType common.InputSourceType) string {
-	return common.ResourceAttributeEquals(common.KymaInputNameAttribute, string(inputSourceType))
 }
 
 // Helper functions for determining what should be enabled

@@ -129,9 +129,9 @@ func TestNamespaceSelector(t *testing.T) {
 			resources = append(resources, backend1.K8sObjects()...)
 			resources = append(resources, backend2.K8sObjects()...)
 
-			t.Cleanup(func() {
-				Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-			})
+			// t.Cleanup(func() {
+			// 	Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
+			// })
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.BackendReachable(t, backend1)
@@ -140,9 +140,6 @@ func TestNamespaceSelector(t *testing.T) {
 
 			if suite.ExpectAgent(tc.label) {
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)
-			}
-
-			if suite.ExpectAgent(tc.label) {
 				assert.MetricsFromNamespaceDelivered(t, backend1, gen1Ns, runtime.DefaultMetricsNames)
 				assert.MetricsFromNamespaceDelivered(t, backend1, gen1Ns, prommetricgen.CustomMetricNames())
 				assert.MetricsFromNamespaceDelivered(t, backend2, gen2Ns, runtime.DefaultMetricsNames)
