@@ -17,7 +17,6 @@ import (
 )
 
 func TestEndpointInvalid(t *testing.T) {
-
 	suite.RegisterTestCase(t, suite.LabelMetricsMisc)
 
 	const (

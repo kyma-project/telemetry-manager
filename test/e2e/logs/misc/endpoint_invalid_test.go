@@ -18,6 +18,7 @@ import (
 
 func TestEndpointInvalid_OTel(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelLogsMisc)
+
 	const (
 		endpointKey     = "endpoint"
 		invalidEndpoint = "'http://example.com'"

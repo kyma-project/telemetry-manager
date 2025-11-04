@@ -18,7 +18,6 @@ import (
 )
 
 func TestMTLSInvalidCA_OTel(t *testing.T) {
-
 	suite.RegisterTestCase(t, suite.LabelLogsMisc)
 
 	var (

@@ -134,7 +134,6 @@ func TestTransform_OTel(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.label, func(t *testing.T) {
-
 			var (
 				uniquePrefix      = unique.Prefix("logs", tc.name)
 				pipelineNameValue = uniquePrefix("value")
