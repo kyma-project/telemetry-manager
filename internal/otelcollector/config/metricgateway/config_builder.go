@@ -43,9 +43,24 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 
 	queueSize := common.BatchingMaxQueueSize / len(pipelines)
 
-	if err := b.AddServicePipeline(ctx, nil, "metrics/input",
+	// split the service pipeline into two input pipelines and one actual service pipeline
+	if err := b.AddServicePipeline(ctx, nil, "metrics/input-otlp",
 		b.addOTLPReceiver(),
+		b.addSetKymaInputNameProcessor(common.InputSourceOTLP),
+		b.addInputReceiverExporter(),
+	); err != nil {
+		return nil, nil, fmt.Errorf("failed to add input service pipeline: %w", err)
+	}
+	if err := b.AddServicePipeline(ctx, nil, "metrics/input-kyma-stats",
 		b.addKymaStatsReceiver(),
+		b.addSetKymaInputNameProcessor(common.InputSourceKyma),
+		b.addInputReceiverExporter(),
+	); err != nil {
+		return nil, nil, fmt.Errorf("failed to add input service pipeline: %w", err)
+	}
+
+	if err := b.AddServicePipeline(ctx, nil, "metrics/input",
+		b.addOutputReceiverReceiver(),
 		b.addMemoryLimiterProcessor(),
 		b.addSetInstrumentationScopeToKymaProcessor(opts),
 		b.addK8sAttributesProcessor(opts),
@@ -122,6 +137,15 @@ func (b *Builder) addKymaStatsReceiver() buildComponentFunc {
 	)
 }
 
+func (b *Builder) addSetKymaInputNameProcessor(inputSource common.InputSourceType) buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.InputName[inputSource]),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			return common.KymaInputNameProcessorConfig(inputSource)
+		},
+	)
+}
+
 //nolint:mnd // hardcoded values
 func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
 	return b.AddProcessor(
@@ -183,6 +207,15 @@ func (b *Builder) addInputForwardExporter() buildComponentFunc {
 	)
 }
 
+func (b *Builder) addInputReceiverExporter() buildComponentFunc {
+	return b.AddExporter(
+		b.StaticComponentID(common.ComponentIDInputConnector),
+		func(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline) (any, common.EnvVars, error) {
+			return &common.ForwardConnector{}, nil, nil
+		},
+	)
+}
+
 // ======================================================
 // Output pipeline components
 // ======================================================
@@ -190,6 +223,15 @@ func (b *Builder) addInputForwardExporter() buildComponentFunc {
 func (b *Builder) addOutputForwardReceiver() buildComponentFunc {
 	return b.AddReceiver(
 		b.StaticComponentID(common.ComponentIDForwardConnector),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			return &common.ForwardConnector{}
+		},
+	)
+}
+
+func (b *Builder) addOutputReceiverReceiver() buildComponentFunc {
+	return b.AddReceiver(
+		b.StaticComponentID(common.ComponentIDInputConnector),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return &common.ForwardConnector{}
 		},
@@ -208,7 +250,7 @@ func (b *Builder) addDropOTLPIfInputDisabledProcessor() buildComponentFunc {
 			}
 
 			return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
-				Metric: []string{common.Not(common.KymaInputNameEquals(common.InputSourceKyma))},
+				Metric: []string{common.KymaInputNameEquals(common.InputSourceOTLP)},
 			})
 		},
 	)
@@ -312,18 +354,18 @@ func shouldFilterByNamespace(namespaceSelector *telemetryv1alpha1.NamespaceSelec
 func filterByNamespaceProcessorConfig(namespaceSelector *telemetryv1alpha1.NamespaceSelector) *common.FilterProcessor {
 	var filterExpressions []string
 
-	notFromKymaStatsReceiver := common.Not(common.KymaInputNameEquals(common.InputSourceKyma))
+	onlyFromOTLPReceiver := common.KymaInputNameEquals(common.InputSourceOTLP)
 
 	if len(namespaceSelector.Exclude) > 0 {
 		namespacesConditions := namespacesConditionsBuilder(namespaceSelector.Exclude)
-		excludeNamespacesExpr := common.JoinWithAnd(notFromKymaStatsReceiver, common.JoinWithOr(namespacesConditions...))
+		excludeNamespacesExpr := common.JoinWithAnd(onlyFromOTLPReceiver, common.JoinWithOr(namespacesConditions...))
 		filterExpressions = append(filterExpressions, excludeNamespacesExpr)
 	}
 
 	if len(namespaceSelector.Include) > 0 {
 		namespacesConditions := namespacesConditionsBuilder(namespaceSelector.Include)
 		includeNamespacesExpr := common.JoinWithAnd(
-			notFromKymaStatsReceiver,
+			onlyFromOTLPReceiver,
 			common.ResourceAttributeIsNotNil(common.K8sNamespaceName),
 			common.Not(common.JoinWithOr(namespacesConditions...)),
 		)

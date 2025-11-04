@@ -49,6 +49,7 @@ var InputName = map[InputSourceType]ComponentID{
 	InputSourcePrometheus: ComponentIDSetKymaInputNamePrometheusProcessor,
 	InputSourceIstio:      ComponentIDSetKymaInputNameIstioProcessor,
 	InputSourceKyma:       ComponentIDSetKymaInputNameKymaProcessor,
+	InputSourceOTLP:       ComponentIDSetKymaInputNameOTLPProcessor,
 }
 
 var upstreamInstrumentationScopeName = map[InputSourceType]string{
@@ -112,7 +113,7 @@ const (
 	ComponentIDK8sAttributesProcessor                  = "k8sattributes"
 	ComponentIDServiceEnrichmentProcessor              = "service_enrichment"
 	ComponentIDIstioNoiseFilterProcessor               = "istio_noise_filter"
-	ComponentIDUserDefinedFilterProcessor              = "filter/user-defined-%s" // dynamically filled with pipeline name
+	ComponentIDUserDefinedFilterProcessor              = "filter/user-defined-%s"    // dynamically filled with pipeline name
 	ComponentIDSetInstrumentationScopeKymaProcessor    = "transform/set-instrumentation-scope-kyma"
 	ComponentIDSetInstrumentationScopeRuntimeProcessor = "transform/set-instrumentation-scope-runtime"
 	ComponentIDUserDefinedTransformProcessor           = "transform/user-defined-%s" // dynamically filled with pipeline name
@@ -123,6 +124,7 @@ const (
 	ComponentIDSetKymaInputNameIstioProcessor      ComponentID = "resource/set-kyma-input-name-istio"
 	ComponentIDSetKymaInputNamePrometheusProcessor ComponentID = "resource/set-kyma-input-name-prometheus"
 	ComponentIDSetKymaInputNameKymaProcessor       ComponentID = "resource/set-kyma-input-name-kyma"
+	ComponentIDSetKymaInputNameOTLPProcessor       ComponentID = "resource/set-kyma-input-name-otlp"
 
 	// Log-Specific Processors
 
@@ -168,7 +170,8 @@ const (
 	// CONNECTORS
 	// ================================================================================
 
-	ComponentIDForwardConnector                = "forward"
+	ComponentIDForwardConnector                = "forward/output"
+	ComponentIDInputConnector                  = "forward/input"
 	ComponentIDRoutingConnector                = "routing/%s" // dynamically filled with pipeline name
 	ComponentIDEnrichmentRoutingConnector      = "routing/enrichment"
 	ComponentIDRuntimeInputRoutingConnector    = "routing/runtime-input"

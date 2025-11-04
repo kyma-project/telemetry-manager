@@ -208,6 +208,7 @@ func TestMakeConfig(t *testing.T) {
 
 				t.Fatalf("Golden file %s has been saved, please verify it and set the overwriteGoldenFile flag to false", tt.goldenFileName)
 			}
+			err = os.WriteFile(goldenFilePath+".testresult", configYAML, 0600)
 
 			goldenFile, err := os.ReadFile(goldenFilePath)
 			require.NoError(t, err, "failed to load golden file")
