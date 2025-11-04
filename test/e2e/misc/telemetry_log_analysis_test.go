@@ -10,6 +10,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
@@ -137,4 +138,10 @@ func TestTelemetryLogs(t *testing.T) {
 		)),
 	)))),
 		assert.WithOptionalDescription("log backend should not contain telemetry pod logs with levels ERROR, WARNING or WARN"))
+
+	assert.BackendDataConsistentlyMatches(t, logBackend, HaveFlatLogs(Not(ContainElement(SatisfyAll(
+		HaveSeverityText(MatchRegexp("info|INFO|warning|WARNING")),
+		HaveLogBody(ContainSubstring("Deprecated component. Will be removed in future releases.")),
+	)))),
+		assert.WithOptionalDescription("log backend should not contain telemetry pod logs with deprecation info logs"))
 }
