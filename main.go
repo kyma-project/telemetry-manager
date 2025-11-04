@@ -138,10 +138,6 @@ func run() error {
 	parseFlags()
 	initializeFeatureFlags()
 
-	// if err := getImagesFromEnv(); err != nil {
-	// 	return err
-	// }
-
 	var cfg envConfig
 	if err := env.ParseWithOptions(&cfg, env.Options{Prefix: "", RequiredIfNoDef: true}); err != nil {
 		return fmt.Errorf("failed to parse environment variables: %w", err)
