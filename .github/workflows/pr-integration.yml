@@ -66,11 +66,11 @@ jobs:
       fail-fast: false
       matrix:
         kind:
-          - logs-fluentbit
-          - logs-otel-agent
-          - logs-otel-gateway
-          - metrics
-          - metrics-agent
+          - fluent-bit
+          - log-agent
+          - log-gateway
+          - metric-gateway
+          - metric-agent
           - traces
         scenario:
           - healthy
