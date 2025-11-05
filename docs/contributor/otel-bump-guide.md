@@ -6,12 +6,17 @@ Guide for maintainers and contributors when bumping `opentelemetry-collector` an
 
 ## Pre-bump Checklist
 
-### Review Changelog
+### Review Changelogs
+
+Review the changelogs for both repositories to identify relevant changes:
+
+- [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector/releases)
+- [OpenTelemetry Collector Contrib](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases)
 
 Focus on these areas:
 
 - Breaking changes, bug fixes, and enhancements for:
-  - Receivers:
+  - Receivers
     - `filelogreceiver` (contrib)
     - `kubeletstatsreceiver` (contrib)
     - `k8sclusterreceiver` (contrib)
