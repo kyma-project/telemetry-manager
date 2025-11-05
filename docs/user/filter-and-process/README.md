@@ -15,7 +15,7 @@ The Telemetry module supports the following input-level filtering mechanisms:
 
 ## Pipeline Processing with OTTL
 
-After data is collected into a pipeline, you can perform custom transformations and filtering using the OpenTelemetry Transformation Language (OTTL). This gives you fine-grained control to modify attributes, redact sensitive information, or drop data based on complex conditions. See [Custom Pipeline Processing with OTTL](custom-pipeline-processing-ottl.md).
+After data is collected into a pipeline, you can perform custom transformations and filtering using the OpenTelemetry Transformation Language (OTTL). This gives you fine-grained control to modify attributes, redact sensitive information, or drop data based on complex conditions. For details, see [Custom Pipeline Processing with OTTL](custom-pipeline-processing-ottl.md).
 
 ## Automatic Processing
 
