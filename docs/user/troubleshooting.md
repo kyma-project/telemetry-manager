@@ -185,7 +185,7 @@ An "End of File" (EOF) error indicates that the connection to your OTLP backend 
 
 1. Check the `endpoint` value in your pipeline's `output.otlp` section and ensure the host and port are correct.
 2. Verify the TLS configuration:
-   * If your backend requires TLS, ensure `insecure` is not set to `true`.
+   * If your backend needs TLS, ensure **insecure** is not set to `true`.
    * If your backend uses a custom Certificate Authority (CA), ensure the `ca` reference in your `tls` configuration is correct.
    * If your backend requires mutual TLS (mTLS), verify that your `cert` and `key` references are correct and the secrets exist.
 3. **Check for Network Policies**: Look for `NetworkPolicy` resources in the `kyma-system` namespace that could be blocking egress traffic from the gateway pods. You may need to create a policy to explicitly allow this traffic.
