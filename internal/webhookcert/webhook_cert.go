@@ -55,7 +55,8 @@ func EnsureCertificate(ctx context.Context, client client.Client, config Config)
 		return fmt.Errorf("failed to provide server cert/key: %w", err)
 	}
 
-	return applyWebhookConfigResources(ctx, client, caCertPEM, config)
+	// return applyWebhookConfigResources(ctx, client, caCertPEM, config)
+	return nil
 }
 
 func dnsNames(webhookService types.NamespacedName) (host string, alternativeDNSNames []string) {

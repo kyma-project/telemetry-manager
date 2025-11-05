@@ -198,9 +198,9 @@ func setupControllersAndWebhooks(mgr manager.Manager) error {
 		return fmt.Errorf("failed to add ready check: %w", err)
 	}
 
-	// if err := ensureWebhookCert(mgr, webhookConfig); err != nil {
-	// 	return fmt.Errorf("failed to enable webhook server: %w", err)
-	// }
+	if err := ensureWebhookCert(mgr, webhookConfig); err != nil {
+		return fmt.Errorf("failed to enable webhook server: %w", err)
+	}
 
 	// if err := setupConversionWebhooks(mgr); err != nil {
 	// 	return fmt.Errorf("failed to setup conversion webhooks: %w", err)
