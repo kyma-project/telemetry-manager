@@ -209,7 +209,7 @@ This usually happens for one of the following reasons:
 ### Solution
 
 1. **Verify the Execution Order**: If a transform renames `resource.attributes["foo"]` to `resource.attributes["bar"]`, subsequent filter rules must reference `bar`.
-2. **Check Context Paths**: Ensure every attribute reference includes its full path.
+2. Ensure your filter conditions use the full, explicit context path to the attribute.
   * **Incorrect**: `attributes["k8s.namespace.name"] == "default"`
   * **Correct**: `resource.attributes["k8s.namespace.name"] == "default"`
 3. **Inspect Logic / Regex**: Test your regex separately. Simplify complex conditions to a single comparison and re-apply.
