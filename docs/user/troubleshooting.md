@@ -183,7 +183,7 @@ An "End of File" (EOF) error indicates that the connection to your OTLP backend 
 
 ### Solution
 
-1. **Verify the Endpoint**: Double-check the `endpoint` value in your pipeline's `output.otlp` section. Ensure the host and port are correct.
+1. Check the `endpoint` value in your pipeline's `output.otlp` section and ensure the host and port are correct.
 2. **Verify TLS Configuration**:
    * If your backend requires TLS, ensure `insecure` is not set to `true`.
    * If your backend uses a custom Certificate Authority (CA), ensure the `ca` reference in your `tls` configuration is correct.
