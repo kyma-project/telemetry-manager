@@ -15,6 +15,7 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
@@ -24,45 +25,70 @@ func TestKymaInput(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelMetricGatewaySetA)
 
 	var (
-		uniquePrefix = unique.Prefix()
-		pipelineName = uniquePrefix()
-		backendNs    = uniquePrefix("backend")
+		uniquePrefix            = unique.Prefix()
+		pipelineNameKymaOnly    = uniquePrefix("kyma-only")
+		pipelineNameKymaAndOtlp = uniquePrefix("kyma-and-otlp")
+		backendNs               = uniquePrefix("backend")
+		generatorNs             = uniquePrefix("generator")
 	)
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)
-	pipeline := testutils.NewMetricPipelineBuilder().
-		WithName(pipelineName).
-		WithOTLPInput(true, testutils.IncludeNamespaces(kitkyma.SystemNamespaceName)).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+	backendKymaOnly := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithName(pipelineNameKymaOnly))
+	backendKymaAndOtlp := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithName(pipelineNameKymaAndOtlp))
+
+	// one pipeline with only Kyma input. Here we do not expect metrics from generatorNs
+	pipelineWithKymaOnly := testutils.NewMetricPipelineBuilder().
+		WithName(pipelineNameKymaOnly).
+		WithOTLPInput(false).
+		WithOTLPOutput(testutils.OTLPEndpoint(backendKymaOnly.Endpoint())).
+		Build()
+
+	// one pipeline with Kyma input and additional namespace included. Here we expect metrics from generatorNs
+	pipelineWithKymaAndOtlp := testutils.NewMetricPipelineBuilder().
+		WithName(pipelineNameKymaAndOtlp).
+		WithOTLPInput(true, testutils.IncludeNamespaces(generatorNs)).
+		WithOTLPOutput(testutils.OTLPEndpoint(backendKymaAndOtlp.Endpoint())).
 		Build()
 
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
-		&pipeline,
+		kitk8s.NewNamespace(generatorNs).K8sObject(),
+		&pipelineWithKymaOnly,
+		&pipelineWithKymaAndOtlp,
+		telemetrygen.NewPod(generatorNs, telemetrygen.SignalTypeMetrics).K8sObject(),
 	}
-	resources = append(resources, backend.K8sObjects()...)
+	resources = append(resources, backendKymaOnly.K8sObjects()...)
+	resources = append(resources, backendKymaAndOtlp.K8sObjects()...)
 
 	t.Cleanup(func() {
 		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-	assert.BackendReachable(t, backend)
+	assert.BackendReachable(t, backendKymaOnly)
+	assert.BackendReachable(t, backendKymaAndOtlp)
 	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 
 	if suite.DebugObjectsEnabled() {
 		objects := []client.Object{
-			&pipeline,
+			&pipelineWithKymaOnly,
 			kitk8s.NewConfigMap(kitkyma.MetricGatewayBaseName, kitkyma.SystemNamespaceName).K8sObject(),
 		}
 		Expect(kitk8s.ObjectsToFile(t, objects...)).To(Succeed())
 	}
 
-	assert.MetricPipelineHealthy(t, pipelineName)
-	assert.MetricsFromNamespaceDelivered(t, backend, kitkyma.SystemNamespaceName, []string{"kyma.resource.status.state"})
+	assert.MetricPipelineHealthy(t, pipelineNameKymaOnly)
+	assert.MetricPipelineHealthy(t, pipelineNameKymaAndOtlp)
+
+	// Verify that metrics are delivered to both backends
+	assert.MetricsFromNamespaceDelivered(t, backendKymaAndOtlp, kitkyma.SystemNamespaceName, []string{"kyma.resource.status.state"})
+	assert.MetricsFromNamespaceDelivered(t, backendKymaOnly, kitkyma.SystemNamespaceName, []string{"kyma.resource.status.state"})
+
+	// Verify that namespace specific metrics are only delivered to the kyma-and-otlp backend
+	assert.MetricsFromNamespaceDelivered(t, backendKymaAndOtlp, generatorNs, telemetrygen.MetricNames)
+	assert.MetricsFromNamespaceNotDelivered(t, backendKymaOnly, generatorNs)
 
 	Eventually(func(g Gomega) {
-		backendURL := backend.ExportURL(suite.ProxyClient)
+		backendURL := backendKymaOnly.ExportURL(suite.ProxyClient)
 		resp, err := suite.ProxyClient.Get(backendURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
@@ -87,7 +113,7 @@ func TestKymaInput(t *testing.T) {
 		"Missing telemetry module status metrics").To(Succeed())
 
 	Eventually(func(g Gomega) {
-		backendURL := backend.ExportURL(suite.ProxyClient)
+		backendURL := backendKymaOnly.ExportURL(suite.ProxyClient)
 		resp, err := suite.ProxyClient.Get(backendURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
@@ -98,13 +124,13 @@ func TestKymaInput(t *testing.T) {
 		g.Expect(err).NotTo(HaveOccurred())
 
 		// Check the "kyma.resource.status.conditions" type ConfigurationGenerated for  metricpipeline with annotation
-		checkMetricPipelineMetricsConditions(t, g, bodyContent, "ConfigurationGenerated", pipelineName)
+		checkMetricPipelineMetricsConditions(t, g, bodyContent, "ConfigurationGenerated", pipelineNameKymaOnly)
 
 		// Check the "kyma.resource.status.conditions" type AgentHealthy for metricpipeline with annotation
-		checkMetricPipelineMetricsConditions(t, g, bodyContent, "AgentHealthy", pipelineName)
+		checkMetricPipelineMetricsConditions(t, g, bodyContent, "AgentHealthy", pipelineNameKymaOnly)
 
 		// Check the "kyma.resource.status.conditions" type GatewayHealthy for metricpipeline with annotation
-		checkMetricPipelineMetricsConditions(t, g, bodyContent, "GatewayHealthy", pipelineName)
+		checkMetricPipelineMetricsConditions(t, g, bodyContent, "GatewayHealthy", pipelineNameKymaOnly)
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval,
 		"Missing condition metrics").To(Succeed())
 }
