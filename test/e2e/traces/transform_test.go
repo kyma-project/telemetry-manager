@@ -15,10 +15,13 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
 func TestTransform(t *testing.T) {
+	suite.RegisterTestCase(t, suite.LabelTraces)
+
 	tests := []struct {
 		name          string
 		transformSpec telemetryv1alpha1.TransformSpec

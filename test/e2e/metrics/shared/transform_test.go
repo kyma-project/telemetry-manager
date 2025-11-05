@@ -160,6 +160,8 @@ func TestTransform(t *testing.T) {
 	}
 
 	for _, tc := range tests {
+		suite.RegisterTestCase(t, tc.label)
+
 		t.Run(tc.label, func(t *testing.T) {
 			var (
 				uniquePrefix = unique.Prefix("metrics", tc.name)
