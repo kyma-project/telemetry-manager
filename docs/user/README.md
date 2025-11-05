@@ -47,6 +47,8 @@ To support telemetry for your applications, the Telemetry module provides the fo
 
 - **Custom Tooling Support**: For advanced scenarios, you can opt out of the module's default collection and shipment mechanisms for individual data types. This enables you to use custom tooling to collect and ship the telemetry data.
 
+- **Custom Filtering and Transformation using OTTL**: The Telemetry module allows you to perform custom transformations and filtering on collected data, using the [OpenTelemetry Transformation Language (OTTL)](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/pkg/ottl). This gives you fine-grained control to modify attributes or drop data based on complex conditions. For details, see [Custom Pipeline Processing with OTTL](./filter-and-process/custom-pipeline-processing-ottl.md).
+
 ## Scope
 
 The Telemetry module focuses only on the signals of application logs, distributed traces, and metrics. Other kinds of signals are not considered. Also, audit logs are not in scope.
