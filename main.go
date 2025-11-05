@@ -58,7 +58,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
-	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
 	loggerutils "github.com/kyma-project/telemetry-manager/internal/utils/logger"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 	logparserwebhookv1alpha1 "github.com/kyma-project/telemetry-manager/webhook/logparser/v1alpha1"
@@ -197,33 +196,34 @@ func setupControllersAndWebhooks(mgr manager.Manager) error {
 		return fmt.Errorf("failed to add ready check: %w", err)
 	}
 
-	if err := ensureWebhookCert(mgr, webhookConfig); err != nil {
-		return fmt.Errorf("failed to enable webhook server: %w", err)
-	}
+	// if err := ensureWebhookCert(mgr, webhookConfig); err != nil {
+	// 	return fmt.Errorf("failed to enable webhook server: %w", err)
+	// }
 
-	if err := setupConversionWebhooks(mgr); err != nil {
-		return fmt.Errorf("failed to setup conversion webhooks: %w", err)
-	}
+	// if err := setupConversionWebhooks(mgr); err != nil {
+	// 	return fmt.Errorf("failed to setup conversion webhooks: %w", err)
+	// }
 
-	if err := setupAdmissionsWebhooks(mgr); err != nil {
-		return fmt.Errorf("failed to setup admission webhooks: %w", err)
-	}
+	// if err := setupAdmissionsWebhooks(mgr); err != nil {
+	// 	return fmt.Errorf("failed to setup admission webhooks: %w", err)
+	// }
 
-	mgr.GetWebhookServer().Register("/api/v2/alerts", selfmonitorwebhook.NewHandler(
-		mgr.GetClient(),
-		selfmonitorwebhook.WithTracePipelineSubscriber(TracePipelineReconcile),
-		selfmonitorwebhook.WithMetricPipelineSubscriber(MetricPipelineReconcile),
-		selfmonitorwebhook.WithLogPipelineSubscriber(LogPipelineReconcile),
-		selfmonitorwebhook.WithLogger(ctrl.Log.WithName("self-monitor-webhook"))))
+	// mgr.GetWebhookServer().Register("/api/v2/alerts", selfmonitorwebhook.NewHandler(
+	// 	mgr.GetClient(),
+	// 	selfmonitorwebhook.WithTracePipelineSubscriber(TracePipelineReconcile),
+	// 	selfmonitorwebhook.WithMetricPipelineSubscriber(MetricPipelineReconcile),
+	// 	selfmonitorwebhook.WithLogPipelineSubscriber(LogPipelineReconcile),
+	// 	selfmonitorwebhook.WithLogger(ctrl.Log.WithName("self-monitor-webhook"))))
 
 	return nil
 }
 
 func setupManager() (manager.Manager, error) {
-	telemetryNamespace = os.Getenv(telemetryNamespaceEnvVar)
-	if telemetryNamespace == "" {
-		telemetryNamespace = telemetryNamespaceDefault
-	}
+	telemetryNamespace = "default"
+	// telemetryNamespace = os.Getenv(telemetryNamespaceEnvVar)
+	// if telemetryNamespace == "" {
+	// 	telemetryNamespace = telemetryNamespaceDefault
+	// }
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                  scheme,
