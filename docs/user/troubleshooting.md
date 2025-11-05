@@ -213,4 +213,4 @@ This usually happens for one of the following reasons:
   * Incorrect: `attributes["k8s.namespace.name"] == "default"`
   * **Correct**: `resource.attributes["k8s.namespace.name"] == "default"`
 3. **Inspect Logic / Regex**: Test your regex separately. Simplify complex conditions to a single comparison and re-apply.
-4. **Isolate a Single Rule**: Temporarily remove all but one rule to confirm expected behavior, then add rules back incrementally.
+4. To test your rules, temporarily remove all but one rule to confirm it works as expected. Then, add your other rules incrementally and isolate the rule that is causing the issue.
