@@ -30,7 +30,7 @@ var (
 func BeforeSuiteFunc() error {
 	Ctx = context.Background() //nolint:fatcontext // context is used in tests
 
-	//TODO: set up stdout and stderr loggers
+	// TODO: set up stdout and stderr loggers
 	logf.SetLogger(logr.FromContextOrDiscard(Ctx))
 
 	restConfig, err := config.GetConfig()
@@ -131,6 +131,11 @@ func ExpectAgent(label string) bool { // TODO(TeodorSAP): Use this for log e2e t
 		label == LabelMetricAgentSetB ||
 		label == LabelMetricAgentSetC ||
 		label == LabelLogAgent
+}
+
+func DebugObjectsEnabled() bool {
+	debugEnv := os.Getenv("DEBUG_TEST_OBJECTS")
+	return debugEnv == "1" || strings.ToLower(debugEnv) == "true"
 }
 
 func RegisterTestCase(t *testing.T, labels ...string) {

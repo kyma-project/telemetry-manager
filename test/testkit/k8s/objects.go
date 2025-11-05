@@ -1,9 +1,15 @@
 package k8s
 
 import (
+	"bytes"
 	"context"
+	"os"
 	"reflect"
+	"strings"
+	"testing"
 
+	"gopkg.in/yaml.v3"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -74,6 +80,35 @@ func UpdateObjects(t testkit.T, resources ...client.Object) error {
 	}
 
 	return nil
+}
+
+// ObjectsToFile retrieves k8s objects, cleans them up and writes them to a YAML file.
+func ObjectsToFile(t *testing.T, resources ...client.Object) error {
+	t.Helper()
+	var buf bytes.Buffer
+	enc := yaml.NewEncoder(&buf)
+	enc.SetIndent(2)
+	for _, resource := range resources {
+		err := suite.K8sClient.Get(t.Context(), types.NamespacedName{Name: resource.GetName(), Namespace: resource.GetNamespace()}, resource)
+		if err != nil {
+			return err
+		}
+		resource.SetManagedFields(nil)
+		resource.SetOwnerReferences(nil)
+		resource.SetCreationTimestamp(metav1.Time{})
+		resource.SetUID(``)
+		resource.SetDeletionTimestamp(nil)
+		resource.SetDeletionGracePeriodSeconds(nil)
+		resource.SetResourceVersion("")
+
+		if err = enc.Encode(resource); err != nil {
+			return err
+		}
+	}
+	if err := enc.Close(); err != nil {
+		return err
+	}
+	return os.WriteFile(strings.ReplaceAll(t.Name(), "/", "_")+".yaml", buf.Bytes(), 0600)
 }
 
 func labelMatches(labels Labels, label, value string) bool {

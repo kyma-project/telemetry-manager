@@ -49,6 +49,15 @@ func TestKymaInput(t *testing.T) {
 
 	assert.BackendReachable(t, backend)
 	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+
+	if suite.DebugObjectsEnabled() {
+		objects := []client.Object{
+			&pipeline,
+			kitk8s.NewConfigMap(kitkyma.MetricGatewayBaseName, kitkyma.SystemNamespaceName).K8sObject(),
+		}
+		Expect(kitk8s.ObjectsToFile(t, objects...)).To(Succeed())
+	}
+
 	assert.MetricPipelineHealthy(t, pipelineName)
 	assert.MetricsFromNamespaceDelivered(t, backend, kitkyma.SystemNamespaceName, []string{"kyma.resource.status.state"})
 
