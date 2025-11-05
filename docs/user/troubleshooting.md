@@ -208,7 +208,7 @@ This usually happens for one of the following reasons:
 
 ### Solution
 
-1. **Verify the Execution Order**: If a transform renames `resource.attributes["foo"]` to `resource.attributes["bar"]`, subsequent filter rules must reference `bar`.
+1. Review your rules and verify the execution order. For example, if you have a transform rule that renames `resource.attributes["foo"]` to `resource.attributes["bar"]`, your filter rule must check for “bar”, not “foo”.
 2. Ensure your filter conditions use the full, explicit context path to the attribute.
   * Incorrect: `attributes["k8s.namespace.name"] == "default"`
   * Correct: `resource.attributes["k8s.namespace.name"] == "default"`
