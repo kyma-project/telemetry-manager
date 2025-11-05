@@ -103,12 +103,12 @@ processors:
         error_mode: ignore
         metrics:
             metric:
-                - resource.attributes["kyma.input.name"] == "otlp" and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "apps-cls")
+                - resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "apps-cls")
     filter/dynatrace-filter-by-namespace-otlp-input:
         error_mode: ignore
         metrics:
             metric:
-                - resource.attributes["kyma.input.name"] == "otlp" and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "apps-dynatrace")
+                - resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "apps-dynatrace")
     filter/user-defined-cls:
         error_mode: ignore
         metrics:
