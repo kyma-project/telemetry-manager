@@ -30,6 +30,8 @@ Always reference attributes with their full context path. Examples:
 - Current element: `log.attributes["level"]`, `datapoint.value`, `span.name`
 - Resource / higher scope: `resource.attributes["k8s.namespace.name"]`, `metric.name` (from a datapoint), `scope.name`
 
+> For more details on the underlying implementation details of context inference, see [OTel Transform Processor Context Inference](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/transformprocessor#context-inference).
+
 Error handling: If a statement fails (for example, referencing a missing attribute), the processor logs the error and continues (ignore mode). One bad record does not stop the pipeline.
 
 These rules ensure predictable behavior without additional context configuration.
