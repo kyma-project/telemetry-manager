@@ -6,7 +6,7 @@
 | Backend type | custom local                            |
 | OTLP-native  | yes                                     |
 
-Learn how to configure the Telemetry module to ingest metrics in a custom [Prometheus](https://prometheus.io/) instance deployed with the [`kube-prometheus-stack`](https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack).
+Learn how to configure the Telemetry module to ingest metrics in a custom [Prometheus](https://prometheus.io/) instance deployed with the [`kube-prometheus-stack`](https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack). Additionally install Grafana and Kiali for visualizations.
 
 ## Table of Content
 
@@ -26,7 +26,7 @@ Learn how to configure the Telemetry module to ingest metrics in a custom [Prome
 
 - Kyma as the target deployment environment.
 - The [Telemetry module](../../README.md) is added. For details, see [Quick Install](https://kyma-project.io/#/02-get-started/01-quick-install). <!-- This link differs for OS and SKR -->
-- If you want to use Istio access logs, make sure that the [Istio module](https://kyma-project.io/#/istio/user/README) is added.
+- If you want to use Istio metrics, make sure that the [Istio module](https://kyma-project.io/#/istio/user/README) is added. This is mandatory for the use with Kiali.
 <!-- markdown-link-check-disable -->
 - Kubernetes CLI (kubectl) (see [Install the Kubernetes Command Line Tool](https://developers.sap.com/tutorials/cp-kyma-download-cli.html)).
 <!-- markdown-link-check-enable -->
@@ -40,9 +40,9 @@ Learn how to configure the Telemetry module to ingest metrics in a custom [Prome
 
 The Telemetry module supports shipping metrics from applications and the Istio service mesh to Prometheus using the OpenTelemetry protocol (OTLP). Prometheus is a widely used backend for collection and storage of metrics. To provide an instant and comprehensive monitoring experience, the `kube-prometheus-stack` Helm chart bundles Prometheus together with Grafana and the Alertmanager. Furthermore, it brings community-driven best practices on Kubernetes monitoring, including the components `node-exporter` and `kube-state-metrics`.
 
-Because the OpenTelemetry community is not that advanced yet in providing a full-blown Kubernetes monitoring solution, this guide shows how to combine the two worlds by integrating application and Istio metrics with the Telemetry module, and the Kubernetes monitoring with the features of the bundle:
+Because the OpenTelemetry community is not that advanced yet in providing a full-blown Kubernetes monitoring solution (without `node-exporter` as additional tools), this guide shows how to combine the two worlds by integrating application and Istio metrics based on the Telemetry module, and the Kubernetes monitoring based on the features of the bundle.
 
-First, you first deploy the `kube-prometheus-stack`. Then, you configure the Telemetry module to start metric ingestion. Finally, you deploy the sample application to illustrate custom metric consumption.
+First, you deploy the `kube-prometheus-stack`. Then, you configure the Telemetry module to start metric ingestion and you deploy the sample application to illustrate custom metric consumption. Finally, you install Kiali to illustrate Istio metrics.
 
 ![setup](./../assets/prometheus.drawio.svg)
 
@@ -74,6 +74,7 @@ First, you first deploy the `kube-prometheus-stack`. Then, you configure the Tel
 
     ```bash
     helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+    helm repo add kiali https://kiali.org/helm-charts
     helm repo update
     ```
 
