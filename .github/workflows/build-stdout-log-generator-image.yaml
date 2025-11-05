@@ -52,7 +52,7 @@ jobs:
   notify-on-failure:
     needs: build-image
     runs-on: ubuntu-latest
-    if: ${{ always() && (needs.build-image.result == 'failure') }}
+    if: ${{ always() && (needs.build-image.result == 'failure') && github.event_name == 'push' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
