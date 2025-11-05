@@ -12,9 +12,9 @@ service:
             receivers:
                 - forward/output
             processors:
+                - resource/drop-kyma-attributes
                 - transform/user-defined-cls
                 - filter/user-defined-cls
-                - resource/drop-kyma-attributes
                 - batch
             exporters:
                 - otlp/cls

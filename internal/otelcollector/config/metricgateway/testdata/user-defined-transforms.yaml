@@ -12,8 +12,8 @@ service:
             receivers:
                 - forward/output
             processors:
-                - transform/user-defined-cls
                 - resource/drop-kyma-attributes
+                - transform/user-defined-cls
                 - batch
             exporters:
                 - otlp/cls
@@ -21,8 +21,8 @@ service:
             receivers:
                 - forward/output
             processors:
-                - transform/user-defined-dynatrace
                 - resource/drop-kyma-attributes
+                - transform/user-defined-dynatrace
                 - batch
             exporters:
                 - otlp/dynatrace

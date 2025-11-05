@@ -13,9 +13,9 @@ service:
                 - forward/output
             processors:
                 - filter/cls-filter-by-namespace-otlp-input
+                - resource/drop-kyma-attributes
                 - transform/user-defined-cls
                 - filter/user-defined-cls
-                - resource/drop-kyma-attributes
                 - batch
             exporters:
                 - otlp/cls
@@ -24,9 +24,9 @@ service:
                 - forward/output
             processors:
                 - filter/dynatrace-filter-by-namespace-otlp-input
+                - resource/drop-kyma-attributes
                 - transform/user-defined-dynatrace
                 - filter/user-defined-dynatrace
-                - resource/drop-kyma-attributes
                 - batch
             exporters:
                 - otlp/dynatrace
