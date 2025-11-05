@@ -1,21 +1,24 @@
 # OpenTelemetry Dependency Bump Guide
 
-Guide for maintainers and contributors when bumping `opentelemetry-collector` and `opentelemetry-collector-contrib` dependencies.
+As a maintainer or contributor, follow these steps to update the `opentelemetry-collector` and `opentelemetry-collector-contrib` dependencies safely. Afterwards, verify the changes. 
 
 ---
 
-## Pre-bump Checklist
+## Preparation
 
-### Review Changelogs
-
-Review the changelogs for both repositories to identify relevant changes:
+Before you update the dependencies, review the changelog in the following repositories:
 
 - [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector/releases)
 - [OpenTelemetry Collector Contrib](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases)
 
-Focus on these areas:
+ Focus on the following areas:
 
-- Breaking changes, bug fixes, and enhancements for:
+### 1. Review Changed Components
+
+
+
+
+Identify breaking changes, bug fixes, and enhancements for the following components:
   - Receivers
     - `filelogreceiver` (contrib)
     - `kubeletstatsreceiver` (contrib)
@@ -40,24 +43,22 @@ Focus on these areas:
   - Connectors
     - `forwardconnector`
     - `routingconnector` (contrib)
-- **OTTL** (OpenTelemetry Transformation Language) updates
-- **Internal metrics** modifications
 - **Deprecation notices**
 
-### OTTL Changes
+### 2. Detect OTTL Changes
 
-Check for:
+1. Check whether any functions changed.
 
-#### Function Modifications
 - New Functions
 - Name changes
 - Signature changes
 - Function deprecations
 
-> [!IMPORTANT]
-> Processors may define additional OTTL functions which are restricted to specific contexts. The `filterprocessor` introduces [metrics only functions](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/filterprocessor#ottl-functions). If new metric context-specific functions exist, add these to the documentation of functions that can't be used, since we pin context to `datapoint` in MetricPipeline, metrics only functions will not be available for users.
+2. Check for incompatible OTTL function contexts.
+   The `filterprocessor` may introduce functions that operate on entire metrics (using the `metric` context. However, our MetricPipeline operates on individual data points (a `datapoint` context) and cannot use such [metrics only functions](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/filterprocessor#ottl-functions).
+   If you find new functions using the `metric` context, add them to the user documentation of functions that aren't supported by the filterprocessor.
 
-### Processor Updates
+### Review Processor Updates
 
 #### Filter Processor
 - Monitor the availability of context inference in `filterprocessor` in this [issue](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/37904)
@@ -65,21 +66,20 @@ Check for:
 #### Transform Processor
 - Verify any changes related to context inference
 
-### Internal Metrics
+### Check Internal Metrics
 
-Metrics can often change without notice. See examples below:
+Metrics can often change without notice. See the following examples:
 
-Common issues:
 - [Prometheus metric name changes](https://github.com/open-telemetry/opentelemetry-collector/issues/13544)
 - [Attribute additions/removals](https://github.com/open-telemetry/opentelemetry-collector/issues/9943)
 
-### Breaking Changes and Feature Gates
+### Identify and Plan for Breaking Changes
 
-Breaking changes are typically introduced behind feature gates. It is important to:
+Breaking changes are typically introduced behind feature gates, so you must check them:
 
-- Monitor feature gate lifecycles - Track when feature gates are scheduled for removal
-- Assess impact - Evaluate whether the breaking change requires modifications to your implementation
-- Plan accordingly - Make necessary adjustments before the feature gate is removed
+1. Monitor feature gate lifecycles and track when feature gates are scheduled for removal.
+2. Evaluate the impact of the change on our implementation.
+3. If our code needs changes, plan to implement them before the feature gate is removed. 
 
 ---
 
