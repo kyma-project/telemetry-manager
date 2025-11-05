@@ -41,7 +41,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
@@ -91,7 +90,6 @@ var (
 	highPriorityClassName     string
 	normalPriorityClassName   string
 	enableFIPSMode            bool
-	kubeconfigPath            string
 )
 
 const (
@@ -227,12 +225,7 @@ func setupManager() (manager.Manager, error) {
 	// 	telemetryNamespace = telemetryNamespaceDefault
 	// }
 
-	cfg, err := config.GetConfigWithContext(kubeconfigPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get kubeconfig: %w", err)
-	}
-
-	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                  scheme,
 		Metrics:                 metricsserver.Options{BindAddress: fmt.Sprintf(":%d", metricsPort)},
 		HealthProbeBindAddress:  fmt.Sprintf(":%d", healthProbePort),
@@ -308,7 +301,6 @@ func parseFlags() {
 	flag.BoolVar(&enableV1Beta1LogPipelines, "enable-v1beta1-log-pipelines", false, "Enable v1beta1 log pipelines CRD")
 	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
 	flag.BoolVar(&enableFIPSMode, "enable-fips-mode", false, "Enable FIPS mode for the OTel collctors")
-	flag.StringVar(&kubeconfigPath, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
 
 	flag.StringVar(&highPriorityClassName, "high-priority-class-name", "", "High priority class name used by managed DaemonSets")
 	flag.StringVar(&normalPriorityClassName, "normal-priority-class-name", "", "Normal priority class name used by managed Deployments")
