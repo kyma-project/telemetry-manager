@@ -82,6 +82,11 @@ Breaking changes are typically introduced behind feature gates, so you must chec
 3. If our code needs changes, plan to implement them before the feature gate is removed. 
 
 ---
+## Implementation
+
+After you checked if any of these updates need changes to our code, update the dependencies.
+
+---
 
 ## Post-Bump Verification
 
