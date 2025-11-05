@@ -10,7 +10,7 @@ You can select or reject data at the source, before it enters a pipeline. This i
 
 The Telemetry module supports the following input-level filtering mechanisms:
 
-- **Pipeline input filtering** (LogPipeline, MetricPipeline): Configure the `input` section of a pipeline to select or reject data before it is processed by the agent. This is the most common method for filtering application logs, runtime metrics, and Prometheus metrics. See [Filter Logs](filter-logs.md), [Filter Metrics](filter-metrics.md), and [Filter Traces](filter-traces.md) for details.
+- **Pipeline input filtering** (LogPipeline, MetricPipeline): Configure the `input` section of a pipeline to select or reject data before it is processed by the agent. This is the most common method for filtering application logs, runtime metrics, and Prometheus metrics. For details, see [Filter Logs](filter-logs.md), [Filter Metrics](filter-metrics.md), and [Filter Traces](filter-traces.md).
 - **Source-level filtering** (Istio `Telemetry` CRD): For Istio-generated data (access logs and traces), configure the Istio `Telemetry` resource itself to control which workloads generate data and at what volume (sampling rate). See [Filter Logs](filter-logs.md) and [Filter Traces](filter-traces.md) for details.
 
 ## Pipeline Processing with OTTL
