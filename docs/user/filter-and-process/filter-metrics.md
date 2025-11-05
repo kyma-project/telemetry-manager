@@ -18,6 +18,8 @@ Filter metrics from the OTLP, Istio, Prometheus, and runtime input to control wh
 
 For the all inputs (`otlp`, `prometheus`, `istio`, and `runtime`), you can filter incoming metrics by namespace. The `include` and `exclude` filters are mutually exclusive.
 
+>* Note: Metrics that do not have an associated namespace are not affected by these filters and are always collected.
+
 - To collect metrics from specific namespaces, use the `include` filter:
 
   ```yaml
