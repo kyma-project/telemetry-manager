@@ -8,7 +8,7 @@ kubectl get crd logpipeline.telemetry.kyma-project.io -o yaml
 
 ## Sample Custom Resource
 
-The following LogPipeline object defines a pipeline integrating with the otlp output. It uses mTLS taking connection details from a Secret, excludes OTLP logs from "namespaceA" and includes application logs emitted in "namespaceB".
+The following LogPipeline object defines a pipeline integrating with the otlp output. It uses mTLS taking connection details from a Secret, excludes OTLP logs from "namespaceA" and includes application logs emitted in "namespaceB". Additionally, it filters WARN-and-lower logs out and adds an `alert` attribute for the higher than WARN severity logs coming from the `prod` environment.
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -49,6 +49,14 @@ spec:
               key: ingest-otlp-key
               name: mySecret
               namespace: default
+  filter:
+    - conditions:
+        - 'severity_number < SEVERITY_NUMBER_WARN'
+  transform:
+    - conditions:
+      - 'severity_number > SEVERITY_NUMBER_WARN and log.attributes["environment"] == "prod"'
+      statements:
+      - 'set(log.attributes["alert"], true)'
 status:
   conditions:
   - lastTransitionTime: "2025-06-13T08:58:38Z"
@@ -79,6 +87,15 @@ status:
 ```
 
 For further examples, see the [samples](https://github.com/kyma-project/telemetry-manager/tree/main/samples) directory.
+
+### About the filter and transform example
+
+The sample above shows a filter (`spec.filter`) and a single transform (`spec.transform`).
+
+* `filter`: Keeps only logs whose numeric severity is WARN or higher.
+* `transform`: Adds an `alert` attribute set to `true` on logs that satisfy both: severity WARN or higher AND `log.attributes["environment"] == "prod"`. The combined condition is expressed directly in the transform's `conditions` list.
+
+You can tailor conditions to resource attributes (for example `resource.attributes["k8s.namespace.name"]`), log attributes (`log.attributes[...]`), or the log body (`log.body`).
 
 ## Custom Resource Parameters
 

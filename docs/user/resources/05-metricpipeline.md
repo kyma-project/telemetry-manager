@@ -8,7 +8,7 @@ kubectl get crd metricpipeline.telemetry.kyma-project.io -o yaml
 
 ## Sample Custom Resource
 
-The following MetricPipeline object defines a pipeline that integrates into an OTLP backend:
+The following MetricPipeline object defines a pipeline that integrates into an OTLP backend. Additionally, it filters out metrics with low sample rates and adds a `datacenter` attribute to CPU usage metrics:
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -24,6 +24,14 @@ spec:
       enabled: false
     runtime:
       enabled: false
+  filter:
+    - conditions:
+        - 'resource.attributes["sample_rate"] != nil and resource.attributes["sample_rate"] < 0.1'
+  transform:
+    - conditions:
+        - 'metric.name == "container_cpu_usage_seconds_total"'
+      statements:
+        - 'set(resource.attributes["datacenter"], "us-west-2")'
   output:
     otlp:
       endpoint:

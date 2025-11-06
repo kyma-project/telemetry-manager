@@ -8,7 +8,7 @@ kubectl get crd tracepipeline.telemetry.kyma-project.io -o yaml
 
 ## Sample Custom Resource
 
-The following TracePipeline object defines a pipeline that integrates into the local Jaeger instance:
+The following TracePipeline object defines a pipeline that integrates into the local Jaeger instance. Additionally, it filters out successful spans and adds a `region` attribute to spans from the `frontend` service:
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -21,6 +21,14 @@ spec:
     otlp:
       endpoint:
         value: http://jaeger-collector.jaeger.svc.cluster.local:4317
+  filter:
+    - conditions:
+        - 'span.status.code == STATUS_CODE_OK'
+  transform:
+    - conditions:
+        - 'resource.attributes["service.name"] == "frontend"'
+      statements:
+        - 'set(span.attributes["region"], "us-east-1")'
 status:
   conditions:
   - lastTransitionTime: "2024-02-29T01:18:28Z"
