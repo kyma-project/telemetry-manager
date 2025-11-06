@@ -37,10 +37,8 @@ For each signal type, your OTTL statements automatically operate on a predefined
 - **TracePipeline**: Rules act on individual spans (context: `span`).
 - **MetricPipeline**: Rules act on individual metric data points (context: `datapoint`).
 
-## Syntax and Behavior
-
-<!-- FIXME: New version is to succinct and does not include the correct examples -->
-### Always Use the Full Context Path
+<!-- TODO: Sync with Mostafa if we keep all 3 "limitations together" or we put them here like this: -->
+<!-- If moved to limitations, add headline: ### Always Use the Full Context Path -->
 You must specify the full path for every attribute, starting from the top-level context (resource, span, log, and so on). Short-hand references are not supported.
 
 - Current element: `log.attributes["level"]`, `datapoint.value`, `span.name`
@@ -49,9 +47,7 @@ You must specify the full path for every attribute, starting from the top-level 
 > [!TIP]
 > For more details on the underlying implementation details of context inference, see [OTel Transform Processor Context Inference](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/transformprocessor/README.md#context-inference).
 
-Error handling: If a statement fails (for example, referencing a missing attribute), the processor logs the error and continues (ignore mode). One bad record does not stop the pipeline.
-
-These rules ensure predictable behavior without additional context configuration.
+## Limitations
 
 ### Trace Filtering Applies to Entire Spans
 
@@ -65,11 +61,3 @@ The filter processor doesn't support metric-specific functions, but you can achi
 
 - To replace `HasAttrKeyOnDatapoint("my.key")`, use: `ContainsValue(Keys(datapoint.attributes), "my.key")`
 - To replace `HasAttrOnDatapoint("my.key", "my.value")`, use: `datapoint.attributes["my.key"] == "my.value"`
-
-<!-- FIXME: Why removed? -->
-### Stability Considerations
-
-- **Beta feature**: The underlying OTTL language is in beta state, which means syntax and function signatures may change
-- **Performance impact**: Complex OTTL expressions may impact pipeline performance; test thoroughly in non-production environments first
-
-For the most up-to-date information on supported functions and syntax, refer to the [OpenTelemetry Transformation Language documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/README.md).

@@ -47,9 +47,6 @@ To support telemetry for your applications, the Telemetry module provides the fo
 
 - **Instrumentation Guidance**: To generate telemetry data, you must instrument your code. Based on [Open Telemetry](https://opentelemetry.io/) (OTel), you get community samples on how to instrument your code using the [Open Telemetry SDKs](https://opentelemetry.io/docs/languages/) in most programming languages.
 
-<!-- FIXME: Should I remove this? -->
-- **Custom Tooling Support**: For advanced scenarios, you can opt out of the module's default collection and shipment mechanisms for individual data types. This enables you to use custom tooling to collect and ship the telemetry data.
-
 ## Scope
 
 The Telemetry module focuses only on the signals of application logs, distributed traces, and metrics. Other kinds of signals are not considered. Also, audit logs are not in scope.

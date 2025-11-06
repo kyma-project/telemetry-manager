@@ -19,5 +19,5 @@ Next, you can use the OpenTelemetry Transformation Language (OTTL) for content-b
 
 By default, Telemetry pipelines perform some automatic processing to standardize your data and make it easier to analyze:
 
-- **Data transformation**: Application logs from containers are automatically transformed into structured OpenTelemetry (OTLP) log records.
-- **Data enrichment**: All pipelines automatically enrich telemetry data with Kubernetes resource attributes, such as Pod name, namespace, and labels. With this context information, you can easily identify the source of telemetry data in your backend.
+- Application logs from containers are automatically transformed into structured OpenTelemetry (OTLP) log records.
+- All pipelines automatically enrich telemetry data with Kubernetes resource attributes, such as Pod name, namespace, and labels. With this context information, you can easily identify the source of telemetry data in your backend.
