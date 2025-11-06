@@ -29,7 +29,7 @@ spec:
         value: http://logs.example.com:4317
   filter:
     - conditions:
-        - 'severity_number < SEVERITY_NUMBER_WARN'
+        - 'log.severity_number < SEVERITY_NUMBER_WARN'
 ```
 
 ## Example: Keep Only Specific Envoy Metrics

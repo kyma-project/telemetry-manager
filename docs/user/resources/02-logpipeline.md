@@ -51,10 +51,10 @@ spec:
               namespace: default
   filter:
     - conditions:
-        - 'severity_number < SEVERITY_NUMBER_WARN'
+        - 'log.severity_number < SEVERITY_NUMBER_WARN'
   transform:
     - conditions:
-      - 'severity_number > SEVERITY_NUMBER_WARN and log.attributes["environment"] == "prod"'
+      - 'log.severity_number > SEVERITY_NUMBER_WARN and log.attributes["environment"] == "prod"'
       statements:
       - 'set(log.attributes["alert"], true)'
 status:

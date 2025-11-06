@@ -29,25 +29,24 @@ This sequence means that your OTTL rules only operate on data that has already p
 
 By default, if an OTTL statement encounters an error, the processor logs the error and continues to process the next piece of data. This ignore mode prevents a single malformed data point from stopping the entire pipeline.
 
-## Contexts and Attributes
+## Predefined Contexts
 
-For each signal type, your OTTL statements automatically operate on a predefined data context:
+For each signal type, your OTTL statements and conditions automatically operate on a predefined data context:
 
-- **LogPipeline**: Rules act on individual log records (context: `log`).
-- **TracePipeline**: Rules act on individual spans (context: `span`).
-- **MetricPipeline**: Rules act on individual metric data points (context: `datapoint`).
+- **LogPipeline**: Rules act on individual log records (context: `log`). For the list of supported field paths in this context, see [OTel Log Context](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/contexts/ottllog/README.md).
+- **TracePipeline**: Rules act on individual spans (context: `span`). For the list of supported field paths in this context, see [OTel Span Context](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/contexts/ottlspan/README.md).
+- **MetricPipeline**: Rules act on individual metric data points (context: `datapoint`). For the list of supported field paths in this context, see [OTel DataPoint Context](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/contexts/ottldatapoint/README.md).
 
-<!-- TODO: Sync with Mostafa if we keep all 3 "limitations together" or we put them here like this: -->
-<!-- If moved to limitations, add headline: ### Always Use the Full Context Path -->
+## Limitations
+
+### Always Use the Full Context Path
 You must specify the full path for every attribute, starting from the top-level context (resource, span, log, and so on). Short-hand references are not supported.
 
-- Current element: `log.attributes["level"]`, `datapoint.value`, `span.name`
-- Resource / higher scope: `resource.attributes["k8s.namespace.name"]`, `metric.name` (from a datapoint), `scope.name`
+- Correct: 'resource.attributes["k8s.namespace.name"] == "default"'
+- Incorrect: 'attributes["k8s.namespace.name"] == "default"'
 
 > [!TIP]
 > For more details on the underlying implementation details of context inference, see [OTel Transform Processor Context Inference](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/transformprocessor/README.md#context-inference).
-
-## Limitations
 
 ### Trace Filtering Applies to Entire Spans
 
