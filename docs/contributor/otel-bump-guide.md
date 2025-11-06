@@ -9,8 +9,6 @@ As a maintainer or contributor, follow these steps to update the `opentelemetry-
     - [Review Changed Components](#1-review-changed-components)
     - [Detect OTTL Changes](#2-detect-ottl-changes)
     - [Review Processor Updates](#3-review-processor-updates)
-      - [Filter Processor](#filter-processor)
-      - [Transform Processor](#transform-processor)
     - [Check Internal Metrics](#4-check-internal-metrics)
     - [Identify and Plan for Breaking Changes](#5-identify-and-plan-for-breaking-changes)
   - [Implementation](#implementation)
@@ -69,11 +67,9 @@ Identify breaking changes, bug fixes, and enhancements for the following compone
 
 ### 3. Review Processor Updates
 
-#### Filter Processor
-- Monitor the availability of context inference in `filterprocessor` in this [issue](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/37904)
+- Filter Processor: Monitor the availability of context inference in `filterprocessor` in this [issue](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/37904)
 
-#### Transform Processor
-- Verify any changes related to context inference
+- Transform Processor: Verify any changes related to context inference
 
 ### 4. Check Internal Metrics
 
