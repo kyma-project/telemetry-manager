@@ -4,7 +4,6 @@ As a maintainer or contributor, follow these steps to update the `opentelemetry-
 
 ## Table of Content
 
-- [OpenTelemetry Dependency Bump Guide](#opentelemetry-dependency-bump-guide)
   - [Preparation](#preparation)
     - [Review Changed Components](#1-review-changed-components)
     - [Detect OTTL Changes](#2-detect-ottl-changes)
