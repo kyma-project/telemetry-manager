@@ -59,13 +59,7 @@ func (s *VirtualService) K8sObject() *istionetworkingclientv1.VirtualService {
 				{
 					Match: []*istionetworkingv1.HTTPMatchRequest{
 						{
-							SourceLabels: func() map[string]string {
-								if s.sourceLabel != nil {
-									return map[string]string{}
-								}
-
-								return map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"}
-							}(),
+							SourceLabels: s.sourceLabel,
 						},
 					},
 					Route: []*istionetworkingv1.HTTPRouteDestination{
