@@ -1,5 +1,8 @@
 # Transform and Filter Telemetry Data with OTTL
 
+<!-- TODO: Discuss with team if we should reference the official OTel documentation for the transform and filter processors -->
+<!-- (-) Some examples might not work -->
+<!-- (+) But that's fine since we already have the Limitations section -->
 To apply custom transformations and filters to your telemetry data, use the OpenTelemetry Transformation Language (OTTL). You can modify, enrich, and filter logs, metrics, and traces before they're sent to your backend.
 
 ## Overview
@@ -28,14 +31,6 @@ The Telemetry module processes data in a fixed sequence. Understanding this orde
 This sequence means that your OTTL rules only operate on data that has already passed the initial input filters. Furthermore, your OTTL filter conditions must use the final, transformed state of your data, not its original state. For example, if you rename an attribute in a transformation rule, your OTTL filter must use the new name.
 
 By default, if an OTTL statement encounters an error, the processor logs the error and continues to process the next piece of data. This ignore mode prevents a single malformed data point from stopping the entire pipeline.
-
-## Predefined Contexts
-
-For each signal type, your OTTL statements and conditions automatically operate on a predefined data context:
-
-- **LogPipeline**: Rules act on individual log records (context: `log`). For the list of supported field paths in this context, see [OTel Log Context](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/contexts/ottllog/README.md).
-- **TracePipeline**: Rules act on individual spans (context: `span`). For the list of supported field paths in this context, see [OTel Span Context](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/contexts/ottlspan/README.md).
-- **MetricPipeline**: Rules act on individual metric data points (context: `datapoint`). For the list of supported field paths in this context, see [OTel DataPoint Context](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/contexts/ottldatapoint/README.md).
 
 ## Limitations
 
