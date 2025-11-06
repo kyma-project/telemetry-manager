@@ -60,7 +60,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 		return nil, nil, fmt.Errorf("failed to add input service pipeline: %w", err)
 	}
 
-	if err := b.AddServicePipeline(ctx, nil, "metrics/input",
+	if err := b.AddServicePipeline(ctx, nil, "metrics/enrichment",
 		b.addOutputReceiverReceiver(),
 		b.addMemoryLimiterProcessor(),
 		b.addSetInstrumentationScopeToKymaProcessor(opts),

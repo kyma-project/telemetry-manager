@@ -16,7 +16,7 @@ service:
                 - batch
             exporters:
                 - otlp/cls
-        metrics/input:
+        metrics/enrichment:
             receivers:
                 - forward/input
             processors:

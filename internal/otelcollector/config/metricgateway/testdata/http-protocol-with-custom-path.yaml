@@ -8,7 +8,7 @@ extensions:
         endpoint: 127.0.0.1:1777
 service:
     pipelines:
-        metrics/input:
+        metrics/enrichment:
             receivers:
                 - forward/input
             processors:

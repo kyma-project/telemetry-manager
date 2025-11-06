@@ -30,7 +30,7 @@ service:
                 - batch
             exporters:
                 - otlp/dynatrace
-        metrics/input:
+        metrics/enrichment:
             receivers:
                 - forward/input
             processors:
