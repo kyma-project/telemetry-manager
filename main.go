@@ -219,20 +219,20 @@ func setupControllersAndWebhooks(mgr manager.Manager) error {
 }
 
 func setupManager() (manager.Manager, error) {
-	telemetryNamespace = "default"
+	telemetryNamespace = "kube-system"
 	// telemetryNamespace = os.Getenv(telemetryNamespaceEnvVar)
 	// if telemetryNamespace == "" {
 	// 	telemetryNamespace = telemetryNamespaceDefault
 	// }
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                  scheme,
-		Metrics:                 metricsserver.Options{BindAddress: fmt.Sprintf(":%d", metricsPort)},
-		HealthProbeBindAddress:  fmt.Sprintf(":%d", healthProbePort),
-		PprofBindAddress:        fmt.Sprintf(":%d", pprofPort),
-		LeaderElection:          true,
-		LeaderElectionNamespace: telemetryNamespace,
-		LeaderElectionID:        "cdd7ef0b.kyma-project.io",
+		Scheme:                 scheme,
+		Metrics:                metricsserver.Options{BindAddress: fmt.Sprintf(":%d", metricsPort)},
+		HealthProbeBindAddress: fmt.Sprintf(":%d", healthProbePort),
+		PprofBindAddress:       fmt.Sprintf(":%d", pprofPort),
+		// LeaderElection:          true,
+		// LeaderElectionNamespace: telemetryNamespace,
+		// LeaderElectionID:        "cdd7ef0b.kyma-project.io",
 		WebhookServer: webhook.NewServer(webhook.Options{
 			Port:    webhookPort,
 			CertDir: certDir,
