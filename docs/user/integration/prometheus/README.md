@@ -19,7 +19,9 @@ Learn how to configure the Telemetry module to ingest metrics in a custom [Prome
     - [Verify the kube-prometheus-stack](#verify-the-kube-prometheus-stack)
     - [Activate a MetricPipeline](#activate-a-metricpipeline)
     - [Deploy the Sample Application](#deploy-the-sample-application)
-    - [Verify the Setup](#verify-the-setup)
+    - [Verify the Setup in Grafana](#verify-the-setup-in-grafana)
+    - [Install Kiali](#install-kiali)
+    - [Verify the Setup in Kiali](#verify-the-setup-in-kiali)
     - [Cleanup](#cleanup)
 
 ## Prerequisites
@@ -84,8 +86,10 @@ First, you deploy the `kube-prometheus-stack`. Then, you configure the Telemetry
     helm upgrade --install -n ${K8S_PROM_NAMESPACE} ${HELM_PROM_RELEASE} prometheus-community/kube-prometheus-stack -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/prometheus/prometheus-values.yaml --set grafana.adminPassword=myPwd
     ```
 
+<!-- markdown-link-check-enable -->
 1. You can use the [values.yaml](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/prometheus/prometheus-values.yaml) provided with this guide, which contains customized settings deviating from the default settings, or create your own one.
 The provided `values.yaml` covers the following adjustments:
+<!-- markdown-link-check-disable -->
 
 - Basic Istio setup to secure communication between Prometheus, Grafana, and Alertmanager
 - Native OTLP receiver enabled for Prometheus
@@ -177,8 +181,10 @@ Kiali is best installed by the Kiali-Operator using Helm:
     helm upgrade --install -n ${K8S_PROM_NAMESPACE} ${HELM_PROM_RELEASE} kiali/kiali-operator -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/prometheus/kiali-values.yaml
     ```
 
+<!-- markdown-link-check-enable -->
 1. You can use the [values.yaml](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/prometheus/kiali-values.yaml) provided with this guide, which contains customized settings deviating from the default settings, or create your own one.
 The provided `values.yaml` covers the following adjustments:
+<!-- markdown-link-check-disable -->
 
 - Creates a default Kiali resource for the Kiali Operator
 - Enables anonymous access (do not use for productive setups!)
