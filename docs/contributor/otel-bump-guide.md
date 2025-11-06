@@ -97,6 +97,4 @@ After you updated the dependencies, perform the following verification checks:
 
 - [ ] All tests pass
 - [ ] Run load test and document performance in [benchmark documentation](./benchmarks/results)
-- [ ] Ensure running OTel components with FIPS mode enabled doesn't fail
-- [ ] No new deprecation warnings (unless expected)
 - [ ] Filter processor restrictions working correctly
