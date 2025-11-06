@@ -6,7 +6,7 @@
 | Backend type | custom local                            |
 | OTLP-native  | yes                                     |
 
-Learn how to configure the Telemetry module to ingest metrics in a custom [Prometheus](https://prometheus.io/) instance deployed with the [`kube-prometheus-stack`](https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack). Additionally install Grafana and Kiali for visualizations.
+Learn how to configure the Telemetry module to ingest metrics in a custom [Prometheus](https://prometheus.io/) instance deployed with the [`kube-prometheus-stack`](https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack). Additionally, install Grafana and Kiali for visualizations.
 
 ## Table of Content
 
@@ -27,7 +27,7 @@ Learn how to configure the Telemetry module to ingest metrics in a custom [Prome
 
 - Kyma as the target deployment environment.
 - The [Telemetry module](../../README.md) is added. For details, see [Quick Install](https://kyma-project.io/#/02-get-started/01-quick-install). <!-- This link differs for OS and SKR -->
-- If you want to use Istio metrics, make sure that the [Istio module](https://kyma-project.io/#/istio/user/README) is added. This is mandatory for the use with Kiali.
+- If you want to use Istio metrics or Kiali, you must have the [Istio module](https://kyma-project.io/#/istio/user/README) in your cluster.
 <!-- markdown-link-check-disable -->
 - Kubernetes CLI (kubectl) (see [Install the Kubernetes Command Line Tool](https://developers.sap.com/tutorials/cp-kyma-download-cli.html)).
 <!-- markdown-link-check-enable -->
@@ -41,7 +41,7 @@ Learn how to configure the Telemetry module to ingest metrics in a custom [Prome
 
 The Telemetry module supports shipping metrics from applications and the Istio service mesh to Prometheus using the OpenTelemetry protocol (OTLP). Prometheus is a widely used backend for collection and storage of metrics. To provide an instant and comprehensive monitoring experience, the `kube-prometheus-stack` Helm chart bundles Prometheus together with Grafana and the Alertmanager. Furthermore, it brings community-driven best practices on Kubernetes monitoring, including the components `node-exporter` and `kube-state-metrics`.
 
-Because the OpenTelemetry community is not that advanced yet in providing a full-blown Kubernetes monitoring solution (without `node-exporter` as additional tools), this guide shows how to combine the two worlds by integrating application and Istio metrics based on the Telemetry module, and the Kubernetes monitoring based on the features of the bundle.
+Because the OpenTelemetry community doesn't provide a full-blown Kubernetes monitoring solution yet (without `node-exporter` as additional tools), this guide shows how to combine the two worlds by integrating application and Istio metrics based on the Telemetry module, and the Kubernetes monitoring based on the features of the bundle.
 
 First, you deploy the `kube-prometheus-stack`. Then, you configure the Telemetry module to start metric ingestion and you deploy the sample application to illustrate custom metric consumption. Finally, you install Kiali to illustrate Istio metrics.
 
@@ -86,8 +86,7 @@ First, you deploy the `kube-prometheus-stack`. Then, you configure the Telemetry
     ```
 
 <!-- markdown-link-check-enable -->
-1. You can use the [values.yaml](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/prometheus/prometheus-values.yaml) provided with this guide, which contains customized settings deviating from the default settings, or create your own one.
-The provided `values.yaml` covers the following adjustments:
+1. If you don't want to create your own `values.yaml`, use the [values.yaml](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/prometheus/prometheus-values.yaml) provided with this guide. It contains customized settings deviating from the default settings, such as the following:
 <!-- markdown-link-check-disable -->
 
 - Basic Istio setup to secure communication between Prometheus, Grafana, and Alertmanager
@@ -170,9 +169,9 @@ The provided `values.yaml` covers the following adjustments:
 
 ### Install Kiali
 
-Kiali is a visualization tool for the Istio ServiceMesh and relies on the data of the Kubernetes APIServer as well as the Istio metrics stored in a Prometheus instance. It as well can integrate dashboards served by a Grafana instance.
+Kiali is a visualization tool for the Istio service mesh. It relies on data from the Kubernetes APIServer as well as the Istio metrics stored in a Prometheus instance. Additionally, it can integrate dashboards served by a Grafana instance.
 
-Kiali is best installed by the Kiali-Operator using Helm:
+To install Kiali, use the the Kiali Operator with Helm:
 
 1. Run the Helm upgrade command, which installs the chart if it's not present yet.
 
@@ -181,11 +180,10 @@ Kiali is best installed by the Kiali-Operator using Helm:
     ```
 
 <!-- markdown-link-check-enable -->
-1. You can use the [values.yaml](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/prometheus/kiali-values.yaml) provided with this guide, which contains customized settings deviating from the default settings, or create your own one.
-The provided `values.yaml` covers the following adjustments:
+1. If you don't want to create your own `values.yaml`, use the [values.yaml](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/prometheus/kiali-values.yaml) provided with this guide. It contains customized settings deviating from the default settings, such as the following:
 <!-- markdown-link-check-disable -->
 
-- Creates a default Kiali resource for the Kiali Operator
+   - Creates a default Kiali resource for the Kiali Operator
 - Enables anonymous access (do not use for productive setups!)
 - Configures Grafana integration
 - Configures Prometheus integration
