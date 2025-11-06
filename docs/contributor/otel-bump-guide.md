@@ -13,6 +13,7 @@ As a maintainer or contributor, follow these steps to update the `opentelemetry-
       - [Transform Processor](#transform-processor)
     - [Check Internal Metrics](#4-check-internal-metrics)
     - [Identify and Plan for Breaking Changes](#5-identify-and-plan-for-breaking-changes)
+  - [Implementation](#implementation)
   - [Post Bump Verification](#post-bump-verification)
 
 ## Preparation
