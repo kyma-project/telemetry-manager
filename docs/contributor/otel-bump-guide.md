@@ -1,8 +1,19 @@
 # OpenTelemetry Dependency Bump Guide
 
-As a maintainer or contributor, follow these steps to update the `opentelemetry-collector` and `opentelemetry-collector-contrib` dependencies safely. Afterwards, verify the changes. 
+As a maintainer or contributor, follow these steps to update the `opentelemetry-collector` and `opentelemetry-collector-contrib` dependencies safely. Afterwards, verify the changes.
 
----
+## Table of Content
+
+- [OpenTelemetry Dependency Bump Guide](#opentelemetry-dependency-bump-guide)
+  - [Preparation](#preparation)
+    - [Review Changed Components](#1-review-changed-components)
+    - [Detect OTTL Changes](#2-detect-ottl-changes)
+    - [Review Processor Updates](#3-review-processor-updates)
+      - [Filter Processor](#filter-processor)
+      - [Transform Processor](#transform-processor)
+    - [Check Internal Metrics](#4-check-internal-metrics)
+    - [Identify and Plan for Breaking Changes](#5-identify-and-plan-for-breaking-changes)
+  - [Post Bump Verification](#post-bump-verification)
 
 ## Preparation
 
@@ -14,9 +25,6 @@ Before you update the dependencies, review the changelog in the following reposi
  Focus on the following areas:
 
 ### 1. Review Changed Components
-
-
-
 
 Identify breaking changes, bug fixes, and enhancements for the following components:
   - Receivers
@@ -79,14 +87,12 @@ Breaking changes are typically introduced behind feature gates, so you must chec
 
 1. Monitor feature gate lifecycles and track when feature gates are scheduled for removal.
 2. Evaluate the impact of the change on our implementation.
-3. If our code needs changes, plan to implement them before the feature gate is removed. 
+3. If our code needs changes, plan to implement them before the feature gate is removed.
 
----
+
 ## Implementation
 
 After you complete your review and create a plan to address any required changes, update the dependency versions.
-
----
 
 ## Post-Bump Verification
 
