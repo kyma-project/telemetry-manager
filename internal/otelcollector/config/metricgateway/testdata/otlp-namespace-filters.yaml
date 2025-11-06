@@ -90,8 +90,8 @@ processors:
         error_mode: ignore
         metrics:
             metric:
-                - (resource.attributes["k8s.namespace.name"] == "kube-system" or resource.attributes["k8s.namespace.name"] == "istio-system")
-                - resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "monitoring" or resource.attributes["k8s.namespace.name"] == "observability")
+                - not(resource.attributes["kyma.input.name"] == "kyma") and (resource.attributes["k8s.namespace.name"] == "kube-system" or resource.attributes["k8s.namespace.name"] == "istio-system")
+                - not(resource.attributes["kyma.input.name"] == "kyma") and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "monitoring" or resource.attributes["k8s.namespace.name"] == "observability")
     k8sattributes:
         auth_type: serviceAccount
         passthrough: false

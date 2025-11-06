@@ -355,15 +355,18 @@ func shouldFilterByNamespace(namespaceSelector *telemetryv1alpha1.NamespaceSelec
 func filterByNamespaceProcessorConfig(namespaceSelector *telemetryv1alpha1.NamespaceSelector) *common.FilterProcessor {
 	var filterExpressions []string
 
+	notFromKymaStatsReceiver := common.Not(common.KymaInputNameEquals(common.InputSourceKyma))
+
 	if len(namespaceSelector.Exclude) > 0 {
 		namespacesConditions := namespacesConditionsBuilder(namespaceSelector.Exclude)
-		excludeNamespacesExpr := common.JoinWithOr(namespacesConditions...)
+		excludeNamespacesExpr := common.JoinWithAnd(notFromKymaStatsReceiver, common.JoinWithOr(namespacesConditions...))
 		filterExpressions = append(filterExpressions, excludeNamespacesExpr)
 	}
 
 	if len(namespaceSelector.Include) > 0 {
 		namespacesConditions := namespacesConditionsBuilder(namespaceSelector.Include)
 		includeNamespacesExpr := common.JoinWithAnd(
+			notFromKymaStatsReceiver,
 			common.ResourceAttributeIsNotNil(common.K8sNamespaceName),
 			common.Not(common.JoinWithOr(namespacesConditions...)),
 		)
