@@ -1,6 +1,7 @@
 package assert
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -80,6 +81,7 @@ func BackendReachable(t testkit.T, backend *kitbackend.Backend) {
 
 func BackendDataEventuallyMatches(t testkit.T, backend *kitbackend.Backend, httpBodyMatcher types.GomegaMatcher, assertionOptions ...BackendAssertionOption) {
 	t.Helper()
+	assertionOptions = append(assertionOptions, WithOptionalDescription(fmt.Sprintf("Backend data did not match the expected condition. Backend: %s/%s", backend.Namespace(), backend.Name())))
 
 	queryURL := suite.ProxyClient.ProxyURLForService(backend.Namespace(), backend.Name(), kitbackend.QueryPath, kitbackend.QueryPort)
 	HTTPResponseEventuallyMatches(t, queryURL, httpBodyMatcher, assertionOptions...)
@@ -87,6 +89,7 @@ func BackendDataEventuallyMatches(t testkit.T, backend *kitbackend.Backend, http
 
 func BackendDataConsistentlyMatches(t testkit.T, backend *kitbackend.Backend, httpBodyMatcher types.GomegaMatcher, assertionOptions ...BackendAssertionOption) {
 	t.Helper()
+	assertionOptions = append(assertionOptions, WithOptionalDescription(fmt.Sprintf("Backend data did not match the expected condition. Backend: %s/%s", backend.Namespace(), backend.Name())))
 
 	queryURL := suite.ProxyClient.ProxyURLForService(backend.Namespace(), backend.Name(), kitbackend.QueryPath, kitbackend.QueryPort)
 	HTTPResponseConsistentlyMatches(t, queryURL, httpBodyMatcher, assertionOptions...)
