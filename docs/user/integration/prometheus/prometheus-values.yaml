@@ -1,3 +1,4 @@
+# The values.yaml is documented here: https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack/values.yaml
 
 ####### This block configures resource limits for the tooling and disables scaping of them using annotations
 
