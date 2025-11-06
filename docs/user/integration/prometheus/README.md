@@ -10,19 +10,18 @@ Learn how to configure the Telemetry module to ingest metrics in a custom [Prome
 
 ## Table of Content
 
-- [Integrate with Prometheus and Visualize with Grafana and Kiali](#integrate-with-prometheus-and-visualize-with-grafana-and-kiali)
-  - [Table of Content](#table-of-content)
-  - [Prerequisites](#prerequisites)
-  - [Context](#context)
+- [Table of Content](#table-of-content)
+- [Prerequisites](#prerequisites)
+- [Context](#context)
   - [Procedure](#procedure)
-    - [Install the kube-prometheus-stack](#install-the-kube-prometheus-stack)
-    - [Verify the kube-prometheus-stack](#verify-the-kube-prometheus-stack)
-    - [Activate a MetricPipeline](#activate-a-metricpipeline)
-    - [Deploy the Sample Application](#deploy-the-sample-application)
-    - [Verify the Setup in Grafana](#verify-the-setup-in-grafana)
-    - [Install Kiali](#install-kiali)
-    - [Verify the Setup in Kiali](#verify-the-setup-in-kiali)
-    - [Cleanup](#cleanup)
+  - [Install the kube-prometheus-stack](#install-the-kube-prometheus-stack)
+  - [Verify the kube-prometheus-stack](#verify-the-kube-prometheus-stack)
+  - [Activate a MetricPipeline](#activate-a-metricpipeline)
+  - [Deploy the Sample Application](#deploy-the-sample-application)
+  - [Verify the Setup in Grafana](#verify-the-setup-in-grafana)
+  - [Install Kiali](#install-kiali)
+  - [Verify the Setup in Kiali](#verify-the-setup-in-kiali)
+  - [Cleanup](#cleanup)
 
 ## Prerequisites
 
