@@ -2,13 +2,20 @@
 
 Use filters to drop unwanted telemetry data from a pipeline. Filtering helps you reduce noise, lower storage and processing costs, and focus on the data that matters most.
 
-You configure filters in the `filter` section of a pipeline's spec. The filter processor drops any data point, span, or log record that matches one of your conditions.
+## Overview
 
-Each filter block consists of a list of conditions. If multiple conditions are provided within a filter block, they are combined with a logical `OR` (any matching condition drops the data).
+You define these rules in the `filter` section of your Telemetry pipeline's `spec`.
 
-## Example: Drop Debug Logs
+Each rule in the `filter` list contains one or more `conditions`.
 
-This example drops any log record that has a severity level below warning (e.g., debug and info logs).
+The pipeline drops any log, metric, or trace that matches **at least one** of the conditions you define. This means that multiple conditions are always combined with a logical OR. If any single condition evaluates to true, the data is dropped.
+
+> [!TIP] Remember
+> The pipeline applies all transformation rules **before** it evaluates any filter rules. Any changes you make here affects the data that your filters see.
+
+## Example: Drop Low-Severity Logs
+
+You can filter out `DEBUG` and `INFO` logs to reduce noise and storage costs:
 
 ```yaml
 # In your LogPipeline spec
@@ -25,9 +32,12 @@ spec:
         - 'severity_number < SEVERITY_NUMBER_WARN'
 ```
 
-## Example: Filter Envoy metrics to outlier_detection only
+## Example: Keep Only Specific Envoy Metrics
 
-This example keeps all regular Istio metrics but filters Envoy metrics (those prefixed with `envoy_`) to only include outlier detection metrics, which are essential for monitoring circuit breaker behavior and host ejections in your service mesh.
+> [!TIP]
+> To start collecting envoy metrics, see [Collect Envoy Metrics](../../collecting-metrics/istio-input.md#collect-envoy-metrics).
+
+You can keep all standard Istio metrics but filter the verbose Envoy metrics (those prefixed with `envoy_`) to retain only those related to outlier detection (circuit breaking) and host ejections in your service mesh.
 
 ```yaml
 # In your MetricPipeline spec

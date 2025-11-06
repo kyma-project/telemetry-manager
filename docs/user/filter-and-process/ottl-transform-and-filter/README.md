@@ -1,63 +1,72 @@
 # Transform and Filter Telemetry Data with OTTL
 
-> **Note**: This feature is only available with Telemetry Manager v1.52.0 and later.
+To apply custom transformations and filters to your telemetry data, use the OpenTelemetry Transformation Language (OTTL). You can modify, enrich, and filter logs, metrics, and traces before they're sent to your backend.
 
-After your telemetry data has been collected, you can use the custom transform and filter feature with the [OpenTelemetry Transformation Language (OTTL)](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/README.md) to apply advanced, fine-grained processing to your telemetry data, enriching, modifying, and filtering it before it is exported to a backend.
+## Overview
 
-You can define `transform` and `filter` OTTL rules in the `spec` of your LogPipeline, MetricPipeline, and TracePipeline resources. When you define rules, the Telemetry module configures processors in the underlying OpenTelemetry Collector to execute your statements.
+You define OTTL rules in the spec of your LogPipeline, MetricPipeline, and TracePipeline resources.
+
+With the transform section, you can standardize and enrich your data: Add, rename, or modify attributes to conform to a standard schema, add valuable context, or redact sensitive information. For details, see [Transform with OTTL](ottl-transform.md).
+
+With the filter section, you can reduce data volume and cost: Drop unwanted logs, metrics, or traces to lower your ingestion costs and reduce noise in your observability backend. For details, see [Filter with OTTL](ottl-filter.md).
+
+When you define rules, the Telemetry module configures processors in the underlying OpenTelemetry Collector to run your statements.
+
+> [!NOTE]
+> - The underlying [OpenTelemetry Transformation Language (OTTL)](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/README.md) is a beta feature. Its syntax and function signatures may change in future releases. Always test complex expressions in a non-production environment first.
+> - Each processing rule consumes CPU and memory. Complex rules can significantly impact the pipeline performance.
+> - This feature requires Telemetry module v1.52.0 or later.
 
 ## Processing Order
 
-Processing rules are always applied in a specific order. This is critical to understand when designing your rules:
+The Telemetry module processes data in a fixed sequence. Understanding this order is critical for designing efficient and correct pipelines:
 
-1. **Transformations (transform)**: Data is first modified according to the rules in the `transform` section
-2. **Filters (filter)**: The transformed data is then evaluated against the rules in the `filter` section. Any data matching a filter condition is dropped
+1. **Input Filtering**: First, the pipeline applies any basic filters defined in the spec.input section of your pipeline. These filters operate on the source of the data, such as its namespace or container. This is the most efficient way to drop large, unwanted blocks of telemetry data before any complex processing occurs. For details, see [Filter Logs](../filter-logs.md), [Filter Traces](../filter-traces.md), and [Filter Metrics](../filter-metrics.md).
+2. **OTTL Transformation**: Next, the pipeline applies the transformation rules from the transform section. These rules modify the data that passed the input filters. You can add, rename, or delete attributes.
+3. **OTTL Filtering**: Finally, the pipeline evaluates the transformed data against the filter rules from the filter section. Any data matching a filter condition is dropped.
 
-This sequence ensures that you filter on the final, transformed state of your data. For example, if you rename an attribute in a transform rule, your filter rule must use the new name, not the original one.
+This sequence means that your OTTL rules only operate on data that has already passed the initial input filters. Furthermore, your OTTL filter conditions must use the final, transformed state of your data, not its original state. For example, if you rename an attribute in a transformation rule, your OTTL filter must use the new name.
 
-## Context Model
+By default, if an OTTL statement encounters an error, the processor logs the error and continues to process the next piece of data. This ignore mode prevents a single malformed data point from stopping the entire pipeline.
 
-All transformation and filtering statements operate on an inferred element context — you do not configure the context separately:
+## Contexts and Attributes
 
-- LogPipeline rules act on individual log records (context: `log`)
-- MetricPipeline rules act on individual metric data points (context: `datapoint`)
-- TracePipeline rules act on individual spans (context: `span`)
+For each signal type, your OTTL statements automatically operate on a predefined data context:
 
-> **Note**: Span events (`spanevent`) are not supported: you cannot transform or filter fields inside individual span events.
+- **LogPipeline**: Rules act on individual log records (context: `log`).
+- **TracePipeline**: Rules act on individual spans (context: `span`).
+- **MetricPipeline**: Rules act on individual metric data points (context: `datapoint`).
 
-Always reference attributes with their full context path. Examples:
+## Syntax and Behavior
+
+<!-- FIXME: New version is to succinct and does not include the correct examples -->
+### Always Use the Full Context Path
+You must specify the full path for every attribute, starting from the top-level context (resource, span, log, and so on). Short-hand references are not supported.
 
 - Current element: `log.attributes["level"]`, `datapoint.value`, `span.name`
 - Resource / higher scope: `resource.attributes["k8s.namespace.name"]`, `metric.name` (from a datapoint), `scope.name`
 
+> [!TIP]
 > For more details on the underlying implementation details of context inference, see [OTel Transform Processor Context Inference](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/transformprocessor/README.md#context-inference).
 
 Error handling: If a statement fails (for example, referencing a missing attribute), the processor logs the error and continues (ignore mode). One bad record does not stop the pipeline.
 
 These rules ensure predictable behavior without additional context configuration.
 
-## Limitations
+### Trace Filtering Applies to Entire Spans
 
-Review the following limitations when constructing your processing rules.
+When you write a filter for a trace pipeline, the condition applies to the parent span. If the condition matches, the entire span is dropped, including all of its events.
 
-### Explicit Context Path Required
+You cannot use filters to remove individual events within a span (the `spanevent` context).
 
-You must specify the full context path for every attribute reference. Omitting the context (for example, writing `attributes["key"]`) is not supported.
+### Unsupported Metric Functions
 
-**Correct**: `'resource.attributes["k8s.namespace.name"] == "default"'`
-**Incorrect**: `'attributes["k8s.namespace.name"] == "default"'`
-
-### No Filtering on Span Events
-
-You cannot filter individual events within a trace span (the `spanevent` context). Filter conditions for traces apply only to the parent span itself. Data is dropped at the span level.
-
-### Metric-Specific Functions Not Supported
-
-Functions that are specific to the metric context, such as `HasAttrKeyOnDatapoint` and `HasAttrOnDatapoint`, are not available in the filter processor. Use general-purpose OTTL functions as an alternative:
+The filter processor doesn't support metric-specific functions, but you can achieve the same results by using general-purpose OTTL functions:
 
 - To replace `HasAttrKeyOnDatapoint("my.key")`, use: `ContainsValue(Keys(datapoint.attributes), "my.key")`
 - To replace `HasAttrOnDatapoint("my.key", "my.value")`, use: `datapoint.attributes["my.key"] == "my.value"`
 
+<!-- FIXME: Why removed? -->
 ### Stability Considerations
 
 - **Beta feature**: The underlying OTTL language is in beta state, which means syntax and function signatures may change

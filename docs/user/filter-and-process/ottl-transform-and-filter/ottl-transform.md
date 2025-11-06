@@ -2,16 +2,22 @@
 
 Use transformations to modify telemetry data as it flows through a pipeline. You can add, update, or delete attributes, change metric types, or modify span details to enrich data or conform to a specific schema.
 
-You configure transformations in the `transform` section of a pipeline's spec.
+## Overview
 
-Each transformation rule consists of:
+You define these rules in the `transform` section of your Telemetry pipeline's `spec`.
 
-- **statements**: A list of OTTL functions to execute
-- **conditions** (optional): A list of OTTL conditions. If you provide conditions, the statements only run if at least one of the conditions is true
+Each rule in the `transform` list contains:
+- `statements`: One or more OTTL functions that modify the data. These are the actions that you want to perform.
+- `conditions` (optional): One or more OTTL conditions that must be met. If you provide conditions, the statements only run on data that matches at least one of the conditions.
 
-## Example: General Resource Attribute Enrichment
+If you don't provide any conditions, the statements apply to all telemetry data passing through the pipeline.
 
-This example adds a `deployment.environment.name` attribute with the value `production` to all metrics in the pipeline. Since there are no conditions, the rule applies to all data.
+> [!TIP] Remember
+> Filters run **after** all transformations. Your filter conditions must operate on the final, modified state of your data, not its original state.
+
+## Example: Add a Global Attribute to All Metrics
+
+You can add a `deployment.environment.name` attribute with the value production to all metrics. This is useful for tagging all data from a specific cluster.
 
 ```yaml
 # In your MetricPipeline spec
@@ -28,9 +34,9 @@ spec:
         - 'set(resource.attributes["deployment.environment.name"], "production")'
 ```
 
-## Example: Conditional Resource Attribute Enrichment
+## Example: Conditionally Set a Span's Status
 
-This example sets the status code of a trace span to `1` (Error) if its pod name matches `my-pod-name.*` and its `http.path` attribute is `/health`.
+You can mark a trace span as an error if it comes from a specific pod and represents a failing health check:
 
 ```yaml
 # In your TracePipeline spec
