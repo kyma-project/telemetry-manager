@@ -13,7 +13,7 @@ The Telemetry module supports the following input-level filtering mechanisms:
 
 ## Advanced Processing with OTTL
 
-Next, you can use the OpenTelemetry Transformation Language (OTTL) for content-based control over your telemetry data. OTTL rules are applied after basic input filtering. You can modify attributes, redact sensitive information, or drop data based on complex conditions.
+Next, you can use the OpenTelemetry Transformation Language (OTTL) for content-based control over your telemetry data. OTTL rules are applied after basic input filtering. You can modify fields, redact sensitive information, or drop data based on complex conditions.
 
 ## Automatic Processing
 

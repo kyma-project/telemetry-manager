@@ -200,8 +200,8 @@ You have configured a `transform` or `filter` section in your pipeline, but the 
 ### Cause
 
 This usually happens for one of the following reasons:
-* **Incorrect Execution Order**: You're filtering based on an attribute's original value, but a transformation has already changed it. Transform rules always run before filter rules.
-* **Incorrect Context Path**: Your OTTL expression references an attribute without the required explicit context path (for example, using `attributes[...]` instead of `resource.attributes[...]`).
+* **Incorrect Execution Order**: You're filtering based on an field's original value, but a transformation has already changed it. Transform rules always run before filter rules.
+* **Incorrect Context Path**: Your OTTL expression references a field without the required explicit context path (for example, using `attributes[...]` instead of `resource.attributes[...]`).
 * **Condition Never Met**: The condition in your rule is valid but never finds a match in the data. This is often due to a case-sensitive value mismatch or a flawed regular expression.
 
 > [!NOTE]
@@ -210,7 +210,7 @@ This usually happens for one of the following reasons:
 ### Solution
 
 1. Review your rules and verify the execution order. For example, if you have a transform rule that renames `resource.attributes["foo"]` to `resource.attributes["bar"]`, your filter rule must check for “bar”, not “foo”.
-2. Ensure your filter conditions use the full, explicit context path to the attribute.
+2. Ensure your filter conditions use the full, explicit context path to the field.
   * Incorrect: `attributes["k8s.namespace.name"] == "default"`
   * Correct: `resource.attributes["k8s.namespace.name"] == "default"`
 3. **Inspect Logic / Regex**: Test your regex separately. Simplify complex conditions to a single comparison and re-apply.
