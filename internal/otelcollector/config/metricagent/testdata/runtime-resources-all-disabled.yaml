@@ -26,6 +26,7 @@ service:
                 - resource/drop-service-name
                 - transform/insert-skip-enrichment-attribute
                 - transform/set-instrumentation-scope-runtime
+                - resource/set-kyma-input-name-runtime
             exporters:
                 - routing/runtime-input
         metrics/output-test:
@@ -178,47 +179,47 @@ processors:
         error_mode: ignore
         metrics:
             metric:
-                - IsMatch(name, "^envoy_.*") and instrumentation_scope.name == "io.kyma-project.telemetry/istio"
+                - IsMatch(name, "^envoy_.*") and resource.attributes["kyma.input.name"] == "istio"
     filter/drop-runtime-container-metrics:
         error_mode: ignore
         metrics:
             metric:
-                - instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "(^k8s.container.*)|(^container.*)")
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "(^k8s.container.*)|(^container.*)")
     filter/drop-runtime-daemonset-metrics:
         error_mode: ignore
         metrics:
             metric:
-                - instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s.daemonset.*")
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "^k8s.daemonset.*")
     filter/drop-runtime-deployment-metrics:
         error_mode: ignore
         metrics:
             metric:
-                - instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s.deployment.*")
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "^k8s.deployment.*")
     filter/drop-runtime-job-metrics:
         error_mode: ignore
         metrics:
             metric:
-                - instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s.job.*")
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "^k8s.job.*")
     filter/drop-runtime-node-metrics:
         error_mode: ignore
         metrics:
             metric:
-                - instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s.node.*")
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "^k8s.node.*")
     filter/drop-runtime-pod-metrics:
         error_mode: ignore
         metrics:
             metric:
-                - instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s.pod.*")
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "^k8s.pod.*")
     filter/drop-runtime-statefulset-metrics:
         error_mode: ignore
         metrics:
             metric:
-                - instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s.statefulset.*")
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "^k8s.statefulset.*")
     filter/drop-runtime-volume-metrics:
         error_mode: ignore
         metrics:
             metric:
-                - instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s.volume.*")
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "^k8s.volume.*")
     filter/drop-virtual-network-interfaces:
         error_mode: ignore
         metrics:
@@ -287,6 +288,11 @@ processors:
               key: k8s.cluster.name
             - action: insert
               key: k8s.cluster.uid
+    resource/set-kyma-input-name-runtime:
+        attributes:
+            - action: insert
+              key: kyma.input.name
+              value: runtime
     service_enrichment:
         resource_attributes:
             - kyma.kubernetes_io_app_name
@@ -326,7 +332,7 @@ connectors:
         default_pipelines: []
         error_mode: ignore
         table:
-            - statement: route() where instrumentation_scope.name == "io.kyma-project.telemetry/runtime"
+            - statement: route() where resource.attributes["kyma.input.name"] == "runtime"
               pipelines:
                 - metrics/output-test
               context: metric

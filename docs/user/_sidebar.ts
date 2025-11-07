@@ -57,7 +57,7 @@ export default [
     items: [
       { text: 'SAP Cloud Logging', link: '/telemetry-manager/user/integration/sap-cloud-logging/README.md' },
       { text: 'Dynatrace', link: '/telemetry-manager/user/integration/dynatrace/README.md' },
-      { text: 'Prometheus', link: '/telemetry-manager/user/integration/prometheus/README.md' },
+      { text: 'Prometheus, Grafana and Kiali', link: '/telemetry-manager/user/integration/prometheus/README.md' },
       { text: 'Loki', link: '/telemetry-manager/user/integration/loki/README.md' },
       { text: 'Jaeger', link: '/telemetry-manager/user/integration/jaeger/README.md' },
       { text: 'Amazon CloudWatch', link: '/telemetry-manager/user/integration/aws-cloudwatch/README.md' },

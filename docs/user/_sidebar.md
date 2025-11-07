@@ -33,7 +33,7 @@
 - [Integration Guides](/telemetry-manager/user/integration/README.md)
   - [SAP Cloud Logging](/telemetry-manager/user/integration/sap-cloud-logging/README.md)
   - [Dynatrace](/telemetry-manager/user/integration/dynatrace/README.md)
-  - [Prometheus](/telemetry-manager/user/integration/prometheus/README.md)
+  - [Prometheus, Grafana and Kiali](/telemetry-manager/user/integration/prometheus/README.md)
   - [Loki](/telemetry-manager/user/integration/loki/README.md)
   - [Jaeger](/telemetry-manager/user/integration/jaeger/README.md)
   - [Amazon CloudWatch](/telemetry-manager/user/integration/aws-cloudwatch/README.md)

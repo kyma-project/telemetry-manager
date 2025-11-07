@@ -43,18 +43,31 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 
 	queueSize := common.BatchingMaxQueueSize / len(pipelines)
 
-	if err := b.AddServicePipeline(ctx, nil, "metrics/input",
+	// split the service pipeline into two input pipelines and one actual service pipeline
+	if err := b.AddServicePipeline(ctx, nil, "metrics/input-otlp",
 		b.addOTLPReceiver(),
+		b.addSetKymaInputNameProcessor(common.InputSourceOTLP),
+		b.addExporterForInputForwarder(),
+	); err != nil {
+		return nil, nil, fmt.Errorf("failed to add input service pipeline: %w", err)
+	}
+
+	if err := b.AddServicePipeline(ctx, nil, "metrics/input-kyma-stats",
 		b.addKymaStatsReceiver(),
+		b.addSetKymaInputNameProcessor(common.InputSourceKyma),
+		b.addExporterForInputForwarder(),
+	); err != nil {
+		return nil, nil, fmt.Errorf("failed to add input service pipeline: %w", err)
+	}
+
+	if err := b.AddServicePipeline(ctx, nil, "metrics/enrichment",
+		b.addReceiverForInputForwarder(),
 		b.addMemoryLimiterProcessor(),
 		b.addSetInstrumentationScopeToKymaProcessor(opts),
 		b.addK8sAttributesProcessor(opts),
 		b.addServiceEnrichmentProcessor(),
 		b.addInsertClusterAttributesProcessor(opts),
-		// Kyma attributes are dropped before user-defined transform and filter processors
-		// to prevent user access to internal attributes.
-		b.addDropKymaAttributesProcessor(),
-		b.addInputForwardExporter(),
+		b.addExporterForEnrichmentForwarder(),
 	); err != nil {
 		return nil, nil, fmt.Errorf("failed to add input service pipeline: %w", err)
 	}
@@ -62,11 +75,14 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 	for _, pipeline := range pipelines {
 		outputPipelineID := formatOutputServicePipelineID(&pipeline)
 		if err := b.AddServicePipeline(ctx, &pipeline, outputPipelineID,
-			b.addOutputForwardReceiver(),
+			b.addReceiverForEnrichmentForwarder(),
 			// Input source filters if otlp is disabled
 			b.addDropOTLPIfInputDisabledProcessor(),
 			// Namespace filters
 			b.addOTLPNamespaceFilterProcessor(),
+			// Kyma attributes are dropped before user-defined transform and filter processors
+			// to prevent user access to internal attributes.
+			b.addDropKymaAttributesProcessor(),
 			// User defined Transform and Filter
 			b.addUserDefinedTransformProcessor(),
 			b.addUserDefinedFilterProcessor(),
@@ -118,6 +134,15 @@ func (b *Builder) addKymaStatsReceiver() buildComponentFunc {
 					{Group: "telemetry.kyma-project.io", Version: "v1alpha1", Resource: "metricpipelines"},
 				},
 			}
+		},
+	)
+}
+
+func (b *Builder) addSetKymaInputNameProcessor(inputSource common.InputSourceType) buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.InputName[inputSource]),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			return common.KymaInputNameProcessorConfig(inputSource)
 		},
 	)
 }
@@ -174,9 +199,18 @@ func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildCo
 	)
 }
 
-func (b *Builder) addInputForwardExporter() buildComponentFunc {
+func (b *Builder) addExporterForEnrichmentForwarder() buildComponentFunc {
 	return b.AddExporter(
-		b.StaticComponentID(common.ComponentIDForwardConnector),
+		b.StaticComponentID(common.ComponentIDEnrichmentConnector),
+		func(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline) (any, common.EnvVars, error) {
+			return &common.ForwardConnector{}, nil, nil
+		},
+	)
+}
+
+func (b *Builder) addExporterForInputForwarder() buildComponentFunc {
+	return b.AddExporter(
+		b.StaticComponentID(common.ComponentIDInputConnector),
 		func(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline) (any, common.EnvVars, error) {
 			return &common.ForwardConnector{}, nil, nil
 		},
@@ -187,9 +221,18 @@ func (b *Builder) addInputForwardExporter() buildComponentFunc {
 // Output pipeline components
 // ======================================================
 
-func (b *Builder) addOutputForwardReceiver() buildComponentFunc {
+func (b *Builder) addReceiverForEnrichmentForwarder() buildComponentFunc {
 	return b.AddReceiver(
-		b.StaticComponentID(common.ComponentIDForwardConnector),
+		b.StaticComponentID(common.ComponentIDEnrichmentConnector),
+		func(mp *telemetryv1alpha1.MetricPipeline) any {
+			return &common.ForwardConnector{}
+		},
+	)
+}
+
+func (b *Builder) addReceiverForInputForwarder() buildComponentFunc {
+	return b.AddReceiver(
+		b.StaticComponentID(common.ComponentIDInputConnector),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return &common.ForwardConnector{}
 		},
@@ -208,7 +251,7 @@ func (b *Builder) addDropOTLPIfInputDisabledProcessor() buildComponentFunc {
 			}
 
 			return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
-				Metric: []string{common.Not(common.ScopeNameEquals(common.InstrumentationScopeKyma))},
+				Metric: []string{common.KymaInputNameEquals(common.InputSourceOTLP)},
 			})
 		},
 	)
@@ -312,7 +355,7 @@ func shouldFilterByNamespace(namespaceSelector *telemetryv1alpha1.NamespaceSelec
 func filterByNamespaceProcessorConfig(namespaceSelector *telemetryv1alpha1.NamespaceSelector) *common.FilterProcessor {
 	var filterExpressions []string
 
-	notFromKymaStatsReceiver := common.Not(common.ScopeNameEquals(common.InstrumentationScopeKyma))
+	notFromKymaStatsReceiver := common.Not(common.KymaInputNameEquals(common.InputSourceKyma))
 
 	if len(namespaceSelector.Exclude) > 0 {
 		namespacesConditions := namespacesConditionsBuilder(namespaceSelector.Exclude)

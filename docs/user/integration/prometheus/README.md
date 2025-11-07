@@ -1,4 +1,4 @@
-# Integrate with Prometheus
+# Integrate with Prometheus and Visualize with Grafana and Kiali
 
 | Category     |                                         |
 | ------------ | --------------------------------------- |
@@ -6,27 +6,28 @@
 | Backend type | custom local                            |
 | OTLP-native  | yes                                     |
 
-Learn how to configure the Telemetry module to ingest metrics in a custom [Prometheus](https://prometheus.io/) instance deployed with the [`kube-prometheus-stack`](https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack).
+Learn how to configure the Telemetry module to ingest metrics in a custom [Prometheus](https://prometheus.io/) instance deployed with the [`kube-prometheus-stack`](https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack). Additionally install Grafana and Kiali for visualizations.
 
 ## Table of Content
 
-- [Integrate with Prometheus](#integrate-with-prometheus)
-  - [Table of Content](#table-of-content)
-  - [Prerequisites](#prerequisites)
-  - [Context](#context)
+- [Table of Content](#table-of-content)
+- [Prerequisites](#prerequisites)
+- [Context](#context)
   - [Procedure](#procedure)
-    - [Install the kube-prometheus-stack](#install-the-kube-prometheus-stack)
-    - [Verify the kube-prometheus-stack](#verify-the-kube-prometheus-stack)
-    - [Activate a MetricPipeline](#activate-a-metricpipeline)
-    - [Deploy the Sample Application](#deploy-the-sample-application)
-    - [Verify the Setup](#verify-the-setup)
-    - [Cleanup](#cleanup)
+  - [Install the kube-prometheus-stack](#install-the-kube-prometheus-stack)
+  - [Verify the kube-prometheus-stack](#verify-the-kube-prometheus-stack)
+  - [Activate a MetricPipeline](#activate-a-metricpipeline)
+  - [Deploy the Sample Application](#deploy-the-sample-application)
+  - [Verify the Setup in Grafana](#verify-the-setup-in-grafana)
+  - [Install Kiali](#install-kiali)
+  - [Verify the Setup in Kiali](#verify-the-setup-in-kiali)
+  - [Cleanup](#cleanup)
 
 ## Prerequisites
 
 - Kyma as the target deployment environment.
 - The [Telemetry module](../../README.md) is added. For details, see [Quick Install](https://kyma-project.io/#/02-get-started/01-quick-install). <!-- This link differs for OS and SKR -->
-- If you want to use Istio access logs, make sure that the [Istio module](https://kyma-project.io/#/istio/user/README) is added.
+- If you want to use Istio metrics, make sure that the [Istio module](https://kyma-project.io/#/istio/user/README) is added. This is mandatory for the use with Kiali.
 <!-- markdown-link-check-disable -->
 - Kubernetes CLI (kubectl) (see [Install the Kubernetes Command Line Tool](https://developers.sap.com/tutorials/cp-kyma-download-cli.html)).
 <!-- markdown-link-check-enable -->
@@ -40,9 +41,9 @@ Learn how to configure the Telemetry module to ingest metrics in a custom [Prome
 
 The Telemetry module supports shipping metrics from applications and the Istio service mesh to Prometheus using the OpenTelemetry protocol (OTLP). Prometheus is a widely used backend for collection and storage of metrics. To provide an instant and comprehensive monitoring experience, the `kube-prometheus-stack` Helm chart bundles Prometheus together with Grafana and the Alertmanager. Furthermore, it brings community-driven best practices on Kubernetes monitoring, including the components `node-exporter` and `kube-state-metrics`.
 
-Because the OpenTelemetry community is not that advanced yet in providing a full-blown Kubernetes monitoring solution, this guide shows how to combine the two worlds by integrating application and Istio metrics with the Telemetry module, and the Kubernetes monitoring with the features of the bundle:
+Because the OpenTelemetry community is not that advanced yet in providing a full-blown Kubernetes monitoring solution (without `node-exporter` as additional tools), this guide shows how to combine the two worlds by integrating application and Istio metrics based on the Telemetry module, and the Kubernetes monitoring based on the features of the bundle.
 
-First, you first deploy the `kube-prometheus-stack`. Then, you configure the Telemetry module to start metric ingestion. Finally, you deploy the sample application to illustrate custom metric consumption.
+First, you deploy the `kube-prometheus-stack`. Then, you configure the Telemetry module to start metric ingestion and you deploy the sample application to illustrate custom metric consumption. Finally, you install Kiali to illustrate Istio metrics.
 
 ![setup](./../assets/prometheus.drawio.svg)
 
@@ -74,33 +75,36 @@ First, you first deploy the `kube-prometheus-stack`. Then, you configure the Tel
 
     ```bash
     helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+    helm repo add kiali https://kiali.org/helm-charts
     helm repo update
     ```
 
 1. Run the Helm upgrade command, which installs the chart if it's not present yet. At the end of the command, change the Grafana admin password to some value of your choice.
 
     ```bash
-    helm upgrade --install -n ${K8S_PROM_NAMESPACE} ${HELM_PROM_RELEASE} prometheus-community/kube-prometheus-stack -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/prometheus/values.yaml --set grafana.adminPassword=myPwd
+    helm upgrade --install -n ${K8S_PROM_NAMESPACE} ${HELM_PROM_RELEASE} prometheus-community/kube-prometheus-stack -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/prometheus/prometheus-values.yaml --set grafana.adminPassword=myPwd
     ```
 
-1. You can use the [values.yaml](./values.yaml) provided with this guide, which contains customized settings deviating from the default settings, or create your own one.
+<!-- markdown-link-check-disable -->
+1. You can use the [values.yaml](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/prometheus/prometheus-values.yaml) provided with this guide, which contains customized settings deviating from the default settings, or create your own one.
 The provided `values.yaml` covers the following adjustments:
 
-- Basic Istio setup to secure communication between Prometheus, Grafana, and Alertmanager
-- Native OTLP receiver enabled for Prometheus
-- Basic configuration of data persistence with retention
-- Basic resource limits for involved components
+   - Basic Istio setup to secure communication between Prometheus, Grafana, and Alertmanager
+   - Native OTLP receiver enabled for Prometheus
+   - Basic configuration of data persistence with retention
+   - Basic resource limits for involved components
+<!-- markdown-link-check-enable -->
 
 ### Verify the kube-prometheus-stack
 
 1. If the stack was provided successfully, you see several Pods coming up in the Namespace, especially Prometheus, Grafana, and Alertmanager. Assure that all Pods have the "Running" state.
-2. Browse the Prometheus dashboard and verify that all "Status->Targets" are healthy. To see the dashboard on `http://localhost:9090`, run:
+1. Browse the Prometheus dashboard and verify that all "Status->Targets" are healthy. To see the dashboard on `http://localhost:9090`, run:
 
    ```bash
    kubectl -n ${K8S_PROM_NAMESPACE} port-forward $(kubectl -n ${K8S_PROM_NAMESPACE} get service -l app=kube-prometheus-stack-prometheus -oname) 9090
    ```
 
-3. Browse the Grafana dashboard and verify that the dashboards are showing data. The user `admin` is preconfigured in the Helm chart; the password was provided in your `helm install` command. To see the dashboard on `http://localhost:3000`, run:
+1. Browse the Grafana dashboard and verify that the dashboards are showing data. The user `admin` is preconfigured in the Helm chart; the password was provided in your `helm install` command. To see the dashboard on `http://localhost:3000`, run:
 
    ```bash
    kubectl -n ${K8S_PROM_NAMESPACE} port-forward svc/${HELM_PROM_RELEASE}-grafana 3000:80
@@ -154,7 +158,7 @@ The provided `values.yaml` covers the following adjustments:
     kubectl rollout status deployment sample-app
     ```
 
-### Verify the Setup
+### Verify the Setup In Grafana
 
 1. Port forward to Grafana once more.
 
@@ -163,6 +167,35 @@ The provided `values.yaml` covers the following adjustments:
 1. Optionally, import the Istio Grafana dashboards (see [Istio: Import from grafana.com into an existing deployment](https://istio.io/latest/docs/ops/integrations/grafana/#option-2-import-from-grafanacom-into-an-existing-deployment)) and verify that the dashboards are showing data.
 
 1. In the **Explore** view, search for the metric `cpu_temperature_celsius`, which is pushed by the sample app to the gateway managed by the MetricPipeline.
+
+### Install Kiali
+
+Kiali is a visualization tool for the Istio ServiceMesh and relies on the data of the Kubernetes APIServer as well as the Istio metrics stored in a Prometheus instance. It as well can integrate dashboards served by a Grafana instance.
+
+Kiali is best installed by the Kiali-Operator using Helm:
+
+1. Run the Helm upgrade command, which installs the chart if it's not present yet.
+
+    ```bash
+    helm upgrade --install -n ${K8S_PROM_NAMESPACE} ${HELM_PROM_RELEASE} kiali/kiali-operator -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/prometheus/kiali-values.yaml
+    ```
+
+<!-- markdown-link-check-disable -->
+1. You can use the [values.yaml](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/prometheus/kiali-values.yaml) provided with this guide, which contains customized settings deviating from the default settings, or create your own one.
+The provided `values.yaml` covers the following adjustments:
+   - Creates a default Kiali resource for the Kiali Operator
+   - Enables anonymous access (do not use for productive setups!)
+   - Configures Grafana integration
+   - Configures Prometheus integration
+<!-- markdown-link-check-enable -->
+
+### Verify the Setup in Kiali
+
+1. Browse the Kiali dashboard and verify that the dashboards are showing data. To see the dashboard on `http://localhost:20001`, run:
+
+   ```bash
+   kubectl -n ${K8S_PROM_NAMESPACE} port-forward svc/kiali 20001:20001
+   ```
 
 ### Cleanup
 

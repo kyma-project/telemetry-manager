@@ -74,8 +74,8 @@ func HasAttrOnDatapoint(key, value string) string {
 	return fmt.Sprintf("HasAttrOnDatapoint(\"%s\", \"%s\")", key, value)
 }
 
-func ScopeNameEquals(name string) string {
-	return fmt.Sprintf("instrumentation_scope.name == \"%s\"", name)
+func KymaInputNameEquals(sourceType InputSourceType) string {
+	return ResourceAttributeEquals(KymaInputNameAttribute, string(sourceType))
 }
 
 func Not(expression string) string {
