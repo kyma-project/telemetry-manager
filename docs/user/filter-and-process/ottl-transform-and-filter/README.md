@@ -10,7 +10,7 @@ With the transform section, you can standardize and enrich your data: Add, renam
 
 With the filter section, you can reduce data volume and cost: Drop unwanted logs, metrics, or traces to lower your ingestion costs and reduce noise in your observability backend. For details, see [Filter with OTTL](ottl-filter.md).
 
-When you define rules, the Telemetry module configures processors in the underlying OpenTelemetry Collector to run your statements.
+When you define rules, the Telemetry module configures processors in the underlying OpenTelemetry Collector to apply your rules.
 
 > [!NOTE]
 > - The underlying [OpenTelemetry Transformation Language (OTTL)](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/README.md) is a beta feature. Its syntax and function signatures may change in future releases. Always test complex expressions in a non-production environment first.
