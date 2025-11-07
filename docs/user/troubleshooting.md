@@ -177,14 +177,10 @@ You have configured a `transform` or `filter` section in your pipeline, but the 
 
 This usually happens for one of the following reasons:
 * **Incorrect Execution Order**: You're filtering data based on a field's original value, but a transformation rule has already changed it. Transformation rules always run before filter rules.
-* **Incorrect Context Path**: Your OTTL expression references a field without the required explicit context path (for example, using `attributes[...]` instead of `resource.attributes[...]`).
 * **Condition Never Met**: The condition in your rule is valid (otherwise, the pipeline condition `ConfigurationGenerated` would have a `False` status with the reason `OTTLSpecInvalid`), but never finds a match in the data. This is often due to a case-sensitive value mismatch or a flawed regular expression.
 
 ### Solution
 
-1. Review your rules and verify the execution order. For example, if you have a transform rule that renames `resource.attributes["foo"]` to `resource.attributes["bar"]`, your filter rule must check for “bar”, not “foo”.
-2. Ensure your filter conditions use the full, explicit context path to the field.
-  * Incorrect: `attributes["k8s.namespace.name"] == "default"`
-  * Correct: `resource.attributes["k8s.namespace.name"] == "default"`
-3. **Inspect Logic / Regex**: Test your regex separately. Simplify complex conditions to a single comparison and re-apply.
-4. To test your rules, temporarily remove all but one rule to confirm it works as expected. Then, add your other rules incrementally and isolate the rule that is causing the issue.
+1. Review your rules and verify the execution order. For example, if you have a transform rule that renames `resource.attributes["foo"]` to `resource.attributes["bar"]`, your filter rule must check for `bar`, not `foo`.
+2. **Inspect Logic / Regex**: Test your regex separately. Simplify complex conditions to a single comparison and re-apply.
+3. To test your rules, temporarily remove all but one rule to confirm it works as expected. Then, add your other rules incrementally and isolate the rule that is causing the issue.

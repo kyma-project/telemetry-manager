@@ -88,15 +88,6 @@ status:
 
 For further examples, see the [samples](https://github.com/kyma-project/telemetry-manager/tree/main/samples) directory.
 
-### About the filter and transform example
-
-The sample above shows a filter (`spec.filter`) and a single transform (`spec.transform`).
-
-* `filter`: Keeps only logs whose numeric severity is WARN or higher.
-* `transform`: Adds an `alert` attribute set to `true` on logs that satisfy both: severity WARN or higher AND `log.attributes["environment"] == "prod"`. The combined condition is expressed directly in the transform's `conditions` list.
-
-You can tailor conditions to resource attributes (for example `resource.attributes["k8s.namespace.name"]`), log attributes (`log.attributes[...]`), or the log body (`log.body`).
-
 ## Custom Resource Parameters
 
 For details, see the [LogPipeline specification file](https://github.com/kyma-project/telemetry-manager/blob/main/apis/telemetry/v1alpha1/logpipeline_types.go).
@@ -292,10 +283,12 @@ The status of the LogPipeline is determined by the condition types `AgentHealthy
 | ConfigurationGenerated | False            | TLSCertificateExpired        | TLS (CA) certificate expired on YYYY-MM-DD                                                                                                                                                                                         |
 | ConfigurationGenerated | False            | TLSConfigurationInvalid      | TLS configuration invalid                                                                                                                                                                                                          |
 | ConfigurationGenerated | False            | ValidationFailed             | Pipeline validation failed due to an error from the Kubernetes API server                                                                                                                                                          |
+| ConfigurationGenerated | False            | OTTLSpecInvalid              | Invalid FilterSpec: `reason`                                                                                                                                                                                                       |
+| ConfigurationGenerated | False            | OTTLSpecInvalid              | Invalid TransformSpec: `reason`                                                                                                                                                                                                    |
 | TelemetryFlowHealthy   | True             | FlowHealthy                  | No problems detected in the telemetry flow                                                                                                                                                                                         |
 | TelemetryFlowHealthy   | False            | AgentAllTelemetryDataDropped | Backend is not reachable or rejecting logs. All logs are dropped. See troubleshooting: [No Logs Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend)                  |
 | TelemetryFlowHealthy   | False            | AgentBufferFillingUp         | Buffer nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: [Agent Buffer Filling Up](https://kyma-project.io/#/telemetry-manager/user/02-logs?id=agent-buffer-filling-up)                                |
 | TelemetryFlowHealthy   | False            | AgentNoLogsDelivered         | Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: [No Logs Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend) |
 | TelemetryFlowHealthy   | False            | AgentSomeDataDropped         | Backend is reachable, but rejecting logs. Some logs are dropped. See troubleshooting: [Not All Logs Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/02-logs?id=not-all-logs-arrive-at-the-backend)         |
 | TelemetryFlowHealthy   | False            | ConfigurationNotGenerated    | No logs delivered to backend because LogPipeline specification is not applied to the configuration of Fluent Bit agent. Check the 'ConfigurationGenerated' condition for more details                                              |
-| TelemetryFlowHealthy   | Unknown          | AgentProbingFailed               | Could not determine the health of the telemetry flow because the self monitor probing failed                                                                                                                                       |
+| TelemetryFlowHealthy   | Unknown          | AgentProbingFailed           | Could not determine the health of the telemetry flow because the self monitor probing failed                                                                                                                                       |
