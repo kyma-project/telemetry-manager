@@ -85,7 +85,7 @@ First, you deploy the `kube-prometheus-stack`. Then, you configure the Telemetry
     helm upgrade --install -n ${K8S_PROM_NAMESPACE} ${HELM_PROM_RELEASE} prometheus-community/kube-prometheus-stack -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/prometheus/prometheus-values.yaml --set grafana.adminPassword=myPwd
     ```
 
-<!-- markdown-link-check-enable -->
+<!-- markdown-link-check-disable -->
 1. You can use the [values.yaml](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/prometheus/prometheus-values.yaml) provided with this guide, which contains customized settings deviating from the default settings, or create your own one.
 The provided `values.yaml` covers the following adjustments:
 
@@ -93,7 +93,7 @@ The provided `values.yaml` covers the following adjustments:
    - Native OTLP receiver enabled for Prometheus
    - Basic configuration of data persistence with retention
    - Basic resource limits for involved components
-<!-- markdown-link-check-disable -->
+<!-- markdown-link-check-enable -->
 
 ### Verify the kube-prometheus-stack
 
@@ -180,14 +180,14 @@ Kiali is best installed by the Kiali-Operator using Helm:
     helm upgrade --install -n ${K8S_PROM_NAMESPACE} ${HELM_PROM_RELEASE} kiali/kiali-operator -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/prometheus/kiali-values.yaml
     ```
 
-<!-- markdown-link-check-enable -->
+<!-- markdown-link-check-disable -->
 1. You can use the [values.yaml](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/prometheus/kiali-values.yaml) provided with this guide, which contains customized settings deviating from the default settings, or create your own one.
 The provided `values.yaml` covers the following adjustments:
    - Creates a default Kiali resource for the Kiali Operator
    - Enables anonymous access (do not use for productive setups!)
    - Configures Grafana integration
    - Configures Prometheus integration
-<!-- markdown-link-check-disable -->
+<!-- markdown-link-check-enable -->
 
 ### Verify the Setup in Kiali
 
