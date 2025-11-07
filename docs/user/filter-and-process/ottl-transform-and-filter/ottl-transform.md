@@ -1,6 +1,6 @@
 # Transform with OTTL
 
-Use transformations to modify telemetry data as it flows through a pipeline. You can add, update, or delete attributes, change metric types, or modify span details to enrich data or conform to a specific schema.
+Use transformations to modify telemetry data as it flows through a pipeline. You can add, update, or delete fields to enrich data or conform to a specific schema.
 
 ## Overview
 
@@ -15,8 +15,8 @@ Each rule in the `transform` list contains:
 
 If you don't provide any conditions, the statements apply to all telemetry data passing through the pipeline.
 
-> [!TIP] Remember
-> Filters run **after** all transformations. Your filter conditions must operate on the final, modified state of your data, not its original state.
+> [!TIP]
+> **Remember**: Filters run **after** all transformations. Your filter conditions must operate on the final, modified state of your data, not its original state.
 
 ## Example: Add a Global Attribute to All Metrics
 
@@ -39,7 +39,7 @@ spec:
 
 ## Example: Conditionally Set a Span's Status
 
-You can mark a trace span as an error if it comes from a specific pod and represents a failing health check:
+You can mark all spans from workloads in system namespaces by adding a `system` attribute with the value `true`. This is useful for identifying system-related spans in your tracing backend.
 
 ```yaml
 # In your TracePipeline spec
@@ -50,7 +50,7 @@ spec:
         value: http://traces.example.com:4317
   transform:
     - conditions:
-        - 'IsMatch(resource.attributes["k8s.pod.name"], "my-pod-name.*")'
+        - 'IsMatch(resource.attributes["k8s.namespace.name"], ".*-system")'
       statements:
-        - 'set(span.status.code, 1) where span.attributes["http.path"] == "/health"'
+        - 'set(span.attributes["system"], "true")'
 ```
