@@ -10,15 +10,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-const (
-	kindLogsOTelAgent   string = "logs-otel-agent"
-	kindLogsOTelGateway string = "logs-otel-gateway"
-	kindLogsFluentbit   string = "logs-fluentbit"
-	kindMetricsGateway  string = "metrics-gateway"
-	kindMetricsAgent    string = "metrics-agent"
-	kindTraces          string = "traces"
-)
-
 func TestMain(m *testing.M) {
 	const errorCode = 1
 
@@ -30,19 +21,19 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
-func label(selfmonitorLabel, testKind string) string {
-	return fmt.Sprintf("%s-%s", selfmonitorLabel, testKind)
+func label(selfMonitorLabelPrefix, selfMonitorLabelSuffix string) string {
+	return fmt.Sprintf("%s-%s", selfMonitorLabelPrefix, selfMonitorLabelSuffix)
 }
 
-func signalType(testKind string) kitbackend.SignalType {
-	switch testKind {
-	case kindLogsOTelAgent, kindLogsOTelGateway:
+func signalType(labelPrefix string) kitbackend.SignalType {
+	switch labelPrefix {
+	case suite.LabelSelfMonitorLogAgentPrefix, suite.LabelSelfMonitorLogGatewayPrefix:
 		return kitbackend.SignalTypeLogsOTel
-	case kindLogsFluentbit:
+	case suite.LabelSelfMonitorFluentBitPrefix:
 		return kitbackend.SignalTypeLogsFluentBit
-	case kindMetricsGateway, kindMetricsAgent:
+	case suite.LabelSelfMonitorMetricGatewayPrefix, suite.LabelSelfMonitorMetricAgentPrefix:
 		return kitbackend.SignalTypeMetrics
-	case kindTraces:
+	case suite.LabelSelfMonitorTracesPrefix:
 		return kitbackend.SignalTypeTraces
 	default:
 		return ""

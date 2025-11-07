@@ -1,19 +1,3 @@
-/*
-Copyright 2021.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package v1beta1
 
 import (
@@ -114,12 +98,12 @@ type LogPipelineRuntimeInput struct {
 	// Enabled specifies if the 'runtime' input is enabled. If enabled, application logs are collected from application containers stdout/stderr. The default is `true`.
 	// +kubebuilder:validation:Optional
 	Enabled *bool `json:"enabled,omitempty"`
-	// Namespaces describes whether application logs from specific namespaces are selected. The options are mutually exclusive. System namespaces are excluded by default. Use the `system` attribute with value `true` to enable them.
+	// Namespaces describes whether application logs from specific namespaces are selected. The options are mutually exclusive. By default, all namespaces except the system namespaces are enabled. To enable all namespaces including system namespaces, use an empty struct notation.
 	// +kubebuilder:validation:Optional
-	Namespaces LogPipelineNamespaceSelector `json:"namespaces"`
+	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
 	// Containers describes whether application logs from specific containers are selected. The options are mutually exclusive.
 	// +kubebuilder:validation:Optional
-	Containers LogPipelineContainerSelector `json:"containers"`
+	Containers *LogPipelineContainerSelector `json:"containers,omitempty"`
 	// KeepAnnotations defines whether to keep all Kubernetes annotations. The default is `false`.  Only available when using an output of type `http` and `custom`.
 	// +kubebuilder:validation:Optional
 	KeepAnnotations *bool `json:"keepAnnotations,omitempty"`
@@ -129,24 +113,6 @@ type LogPipelineRuntimeInput struct {
 	// KeepOriginalBody retains the original log data if the log data is in JSON and it is successfully parsed. If set to `false`, the original log data is removed from the log record. The default is `true`.
 	// +kubebuilder:validation:Optional
 	KeepOriginalBody *bool `json:"keepOriginalBody,omitempty"`
-}
-
-// LogPipelineNamespaceSelector describes whether application logs from specific Namespaces are selected. The options are mutually exclusive. System Namespaces are excluded by default. Use the `system` attribute with value `true` to enable them.
-// +kubebuilder:validation:XValidation:rule="(has(self.include) == true ? 1 : 0) + (has(self.exclude) == true ? 1 : 0) + (has(self.system) == true ? 1 : 0) <= 1",message="Only one of 'include', 'exclude' or 'system' can be defined"
-type LogPipelineNamespaceSelector struct {
-	// Include specifies the list of namespace names to include when collecting container logs. By default, logs from all namespaces are collected, except system namespaces. You cannot specify an include list together with an exclude list.
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:items:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
-	// +kubebuilder:validation:items:MaxLength=63
-	Include []string `json:"include,omitempty"`
-	// Exclude specifies the list of namespace names to exclude when collecting container logs. By default, logs from all namespaces are collected, except system namespaces. You cannot specify an exclude list together with an include list.
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:items:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
-	// +kubebuilder:validation:items:MaxLength=63
-	Exclude []string `json:"exclude,omitempty"`
-	// System specifies whether to collect logs from system namespaces. If set to `true`, you collect logs from all namespaces including system namespaces, such as like kube-system, istio-system, and kyma-system. The default is `false`.
-	// +kubebuilder:validation:Optional
-	System bool `json:"system,omitempty"`
 }
 
 // LogPipelineContainerSelector describes whether application logs from specific containers are selected. The options are mutually exclusive.
