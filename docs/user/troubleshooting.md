@@ -185,7 +185,7 @@ This usually happens for one of the following reasons:
 2. **Inspect Logic / Regex**: Test your regex separately. Simplify complex conditions to a single comparison and re-apply.
 3. To test your rules, temporarily remove all but one rule to confirm it works as expected. Then, add your other rules incrementally and isolate the rule that is causing the issue.
 
-## EOF Error When Using OTTL Transform or Filter
+## Vague EOF Error Message When Using OTTL Transform or Filter
 
 ### Symptom
 
