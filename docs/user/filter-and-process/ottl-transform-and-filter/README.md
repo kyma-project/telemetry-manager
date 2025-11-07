@@ -34,7 +34,7 @@ By default, if an OTTL statement encounters an error, the processor logs the err
 ### Always Use the Full Context Path
 You must specify the full path for every field. Short-hand references are not supported.
 
-- Correct: 'resource.attributes["k8s.namespace.name"] == "default"', `log.attributes["level"]`, `datapoint.value`, `span.name`
+- Correct: `resource.attributes["k8s.namespace.name"] == "default"`, `log.attributes["level"]`, `datapoint.value`, `span.name`
 - Incorrect: 'attributes["k8s.namespace.name"] == "default"', `attributes["level"]`, `value`, `name`
 
 > [!TIP]
