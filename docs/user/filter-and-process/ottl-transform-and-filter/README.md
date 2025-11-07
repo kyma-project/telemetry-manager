@@ -1,4 +1,4 @@
-# Transform and Filter Telemetry Data with OTTL
+# Transform and Filter with OTTL
 
 To apply custom transformations and filters to your telemetry data, use the OpenTelemetry Transformation Language (OTTL). You can modify, enrich, and filter logs, metrics, and traces before they're sent to your backend.
 
@@ -38,7 +38,7 @@ You must specify the full path for every field, starting from the top-level cont
 - Incorrect: 'attributes["k8s.namespace.name"] == "default"', `attributes["level"]`, `value`, `name`
 
 > [!TIP]
-> For more details on the underlying implementation details of context inference, see [OTel Transform Processor Context Inference](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/transformprocessor/README.md#context-inference).
+> For details on the underlying implementation details of context inference, see [OTel Transform Processor Context Inference](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/transformprocessor/README.md#context-inference).
 
 ### Trace Filtering Applies to Entire Spans
 

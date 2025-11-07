@@ -202,10 +202,7 @@ You have configured a `transform` or `filter` section in your pipeline, but the 
 This usually happens for one of the following reasons:
 * **Incorrect Execution Order**: You're filtering data based on an field's original value, but a transformation rule has already changed it. Transformation rules always run before filter rules.
 * **Incorrect Context Path**: Your OTTL expression references a field without the required explicit context path (for example, using `attributes[...]` instead of `resource.attributes[...]`).
-* **Condition Never Met**: The condition in your rule is valid but never finds a match in the data. This is often due to a case-sensitive value mismatch or a flawed regular expression.
-
-> [!NOTE]
-> If the OTTL syntax is invalid, the pipeline configuration is not generated. The corresponding error message appears in the pipeline status under the `ConfigurationGenerated` condition with reason `OTTLSpecInvalid`.
+* **Condition Never Met**: The condition in your rule is valid (otherwise, you'd see pipeline status: `OTTLSpecInvalid`) but never finds a match in the data. This is often due to a case-sensitive value mismatch or a flawed regular expression.
 
 ### Solution
 
