@@ -9,6 +9,7 @@ package tools
 // This ensures that all systems use the same version of tools in addition to regular dependencies.
 import (
 	_ "github.com/bombsimon/wsl/v5/cmd/wsl"
+	_ "github.com/g4s8/envdoc"
 	_ "github.com/golangci/golangci-lint/v2/cmd/golangci-lint"
 	_ "github.com/google/yamlfmt/cmd/yamlfmt"
 	_ "github.com/hairyhenderson/gomplate/v4/cmd/gomplate"
