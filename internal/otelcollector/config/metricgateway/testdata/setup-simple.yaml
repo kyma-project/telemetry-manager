@@ -18,7 +18,7 @@ service:
                 - service_enrichment
                 - resource/insert-cluster-attributes
             exporters:
-                - forward/output
+                - forward/enrichment
         metrics/input-kyma-stats:
             receivers:
                 - kymastats
@@ -35,7 +35,7 @@ service:
                 - forward/input
         metrics/test-output:
             receivers:
-                - forward/output
+                - forward/enrichment
             processors:
                 - resource/drop-kyma-attributes
                 - batch
@@ -176,5 +176,5 @@ exporters:
             max_interval: 30s
             max_elapsed_time: 300s
 connectors:
+    forward/enrichment: {}
     forward/input: {}
-    forward/output: {}

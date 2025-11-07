@@ -10,7 +10,7 @@ service:
     pipelines:
         metrics/cls-output:
             receivers:
-                - forward/output
+                - forward/enrichment
             processors:
                 - filter/cls-filter-by-namespace-otlp-input
                 - resource/drop-kyma-attributes
@@ -21,7 +21,7 @@ service:
                 - otlp/cls
         metrics/dynatrace-output:
             receivers:
-                - forward/output
+                - forward/enrichment
             processors:
                 - filter/dynatrace-filter-by-namespace-otlp-input
                 - resource/drop-kyma-attributes
@@ -40,7 +40,7 @@ service:
                 - service_enrichment
                 - resource/insert-cluster-attributes
             exporters:
-                - forward/output
+                - forward/enrichment
         metrics/input-kyma-stats:
             receivers:
                 - kymastats
@@ -234,5 +234,5 @@ exporters:
             max_interval: 30s
             max_elapsed_time: 300s
 connectors:
+    forward/enrichment: {}
     forward/input: {}
-    forward/output: {}

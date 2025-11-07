@@ -47,7 +47,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 	if err := b.AddServicePipeline(ctx, nil, "metrics/input-otlp",
 		b.addOTLPReceiver(),
 		b.addSetKymaInputNameProcessor(common.InputSourceOTLP),
-		b.addInputReceiverExporter(),
+		b.addExporterForInputForwarder(),
 	); err != nil {
 		return nil, nil, fmt.Errorf("failed to add input service pipeline: %w", err)
 	}
@@ -55,19 +55,19 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 	if err := b.AddServicePipeline(ctx, nil, "metrics/input-kyma-stats",
 		b.addKymaStatsReceiver(),
 		b.addSetKymaInputNameProcessor(common.InputSourceKyma),
-		b.addInputReceiverExporter(),
+		b.addExporterForInputForwarder(),
 	); err != nil {
 		return nil, nil, fmt.Errorf("failed to add input service pipeline: %w", err)
 	}
 
 	if err := b.AddServicePipeline(ctx, nil, "metrics/enrichment",
-		b.addOutputReceiverReceiver(),
+		b.addReceiverForInputForwarder(),
 		b.addMemoryLimiterProcessor(),
 		b.addSetInstrumentationScopeToKymaProcessor(opts),
 		b.addK8sAttributesProcessor(opts),
 		b.addServiceEnrichmentProcessor(),
 		b.addInsertClusterAttributesProcessor(opts),
-		b.addInputForwardExporter(),
+		b.addExporterForEnrichmentForwarder(),
 	); err != nil {
 		return nil, nil, fmt.Errorf("failed to add input service pipeline: %w", err)
 	}
@@ -75,7 +75,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 	for _, pipeline := range pipelines {
 		outputPipelineID := formatOutputServicePipelineID(&pipeline)
 		if err := b.AddServicePipeline(ctx, &pipeline, outputPipelineID,
-			b.addOutputForwardReceiver(),
+			b.addReceiverForEnrichmentForwarder(),
 			// Input source filters if otlp is disabled
 			b.addDropOTLPIfInputDisabledProcessor(),
 			// Namespace filters
@@ -199,16 +199,16 @@ func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildCo
 	)
 }
 
-func (b *Builder) addInputForwardExporter() buildComponentFunc {
+func (b *Builder) addExporterForEnrichmentForwarder() buildComponentFunc {
 	return b.AddExporter(
-		b.StaticComponentID(common.ComponentIDForwardConnector),
+		b.StaticComponentID(common.ComponentIDEnrichmentConnector),
 		func(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline) (any, common.EnvVars, error) {
 			return &common.ForwardConnector{}, nil, nil
 		},
 	)
 }
 
-func (b *Builder) addInputReceiverExporter() buildComponentFunc {
+func (b *Builder) addExporterForInputForwarder() buildComponentFunc {
 	return b.AddExporter(
 		b.StaticComponentID(common.ComponentIDInputConnector),
 		func(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline) (any, common.EnvVars, error) {
@@ -221,16 +221,16 @@ func (b *Builder) addInputReceiverExporter() buildComponentFunc {
 // Output pipeline components
 // ======================================================
 
-func (b *Builder) addOutputForwardReceiver() buildComponentFunc {
+func (b *Builder) addReceiverForEnrichmentForwarder() buildComponentFunc {
 	return b.AddReceiver(
-		b.StaticComponentID(common.ComponentIDForwardConnector),
+		b.StaticComponentID(common.ComponentIDEnrichmentConnector),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return &common.ForwardConnector{}
 		},
 	)
 }
 
-func (b *Builder) addOutputReceiverReceiver() buildComponentFunc {
+func (b *Builder) addReceiverForInputForwarder() buildComponentFunc {
 	return b.AddReceiver(
 		b.StaticComponentID(common.ComponentIDInputConnector),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
