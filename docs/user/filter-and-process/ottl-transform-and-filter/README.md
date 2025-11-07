@@ -1,8 +1,5 @@
 # Transform and Filter Telemetry Data with OTTL
 
-<!-- TODO: Discuss with team if we should reference the official OTel documentation for the transform and filter processors -->
-<!-- (-) Some examples might not work -->
-<!-- (+) But that's fine since we already have the Limitations section -->
 To apply custom transformations and filters to your telemetry data, use the OpenTelemetry Transformation Language (OTTL). You can modify, enrich, and filter logs, metrics, and traces before they're sent to your backend.
 
 ## Overview

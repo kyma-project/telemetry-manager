@@ -1,8 +1,11 @@
-# Transforming with OTTL
+# Transform with OTTL
 
 Use transformations to modify telemetry data as it flows through a pipeline. You can add, update, or delete attributes, change metric types, or modify span details to enrich data or conform to a specific schema.
 
 ## Overview
+
+> [!NOTE]
+> This feature is based on the underlying OpenTelemetry Transform Processor. For more implementation details, syntax, and examples, see the [OTel Transform Processor Documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/transformprocessor/README.md). However, bear in mind that some limitations and differences exist, as outlined in the [Limitations](./README.md#limitations) section.
 
 You define these rules in the `transform` section of your Telemetry pipeline's `spec`.
 
