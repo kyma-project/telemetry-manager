@@ -200,7 +200,7 @@ You have configured a `transform` or `filter` section in your pipeline, but the 
 ### Cause
 
 This usually happens for one of the following reasons:
-* **Incorrect Execution Order**: You're filtering based on an field's original value, but a transformation has already changed it. Transform rules always run before filter rules.
+* **Incorrect Execution Order**: You're filtering data based on an field's original value, but a transformation rule has already changed it. Transformation rules always run before filter rules.
 * **Incorrect Context Path**: Your OTTL expression references a field without the required explicit context path (for example, using `attributes[...]` instead of `resource.attributes[...]`).
 * **Condition Never Met**: The condition in your rule is valid but never finds a match in the data. This is often due to a case-sensitive value mismatch or a flawed regular expression.
 
