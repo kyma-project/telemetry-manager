@@ -3,9 +3,6 @@ package misc
 import (
 	"testing"
 
-	. "github.com/onsi/gomega"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -16,6 +13,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
+	. "github.com/onsi/gomega"
+	. "go.opentelemetry.io/collector/component"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestTelemetryLogs(t *testing.T) {
@@ -141,7 +141,7 @@ func TestTelemetryLogs(t *testing.T) {
 
 	assert.BackendDataConsistentlyMatches(t, logBackend, HaveFlatLogs(Not(ContainElement(SatisfyAll(
 		HaveSeverityText(MatchRegexp("info|INFO|warning|WARNING")),
-		HaveLogBody(ContainSubstring("Deprecated component. Will be removed in future releases.")),
+		HaveLogBody(ContainSubstring(StabilityLevelDeprecated.LogMessage())),
 	)))),
 		assert.WithOptionalDescription("log backend should not contain telemetry pod logs with deprecation info logs"))
 }
