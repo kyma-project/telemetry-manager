@@ -138,8 +138,8 @@ type NamespaceSelector struct {
 
 // TransformSpec defines a transformation to apply to telemetry data.
 type TransformSpec struct {
-	// Conditions specify a list of multiple conditions which are ORed together, which means only one condition needs to evaluate to true in order for the telemetry to be dropped.
 	// +kubebuilder:validation:Optional
+	// Conditions specify a list of multiple where clauses, which will be processed as global conditions for the accompanying set of statements. The conditions are ORed together, which means only one condition needs to evaluate to true in order for the statements (including their individual where clauses) to be executed.
 	Conditions []string `json:"conditions,omitempty"`
 	// Statements specify a list of OTTL statements to perform the transformation.
 	// +kubebuilder:validation:Optional
@@ -148,7 +148,7 @@ type TransformSpec struct {
 
 // FilterSpec defines a filter to apply to telemetry data.
 type FilterSpec struct {
-	// Conditions specify a list of multiple where clauses, which will be processed as global conditions for the accompanying set of statements. The conditions are ORed together, which means only one condition needs to evaluate to true in order for the statements (including their individual where clauses) to be executed.
+	// Conditions specify a list of multiple conditions which are ORed together, which means only one condition needs to evaluate to true in order for the telemetry to be dropped.
 	// +kubebuilder:validation:Optional
 	Conditions []string `json:"conditions,omitempty"`
 }

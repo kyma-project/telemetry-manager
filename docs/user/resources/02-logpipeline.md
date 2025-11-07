@@ -99,7 +99,7 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 | **files.&#x200b;content** (required) | string | Content of the file to be mounted in the Fluent Bit configuration. |
 | **files.&#x200b;name** (required) | string | Name of the file under which the content is mounted in the Fluent Bit configuration. |
 | **filter**  | \[\]object | Filters specifies a list of filters to apply to telemetry data. |
-| **filter.&#x200b;conditions**  | \[\]string | Conditions specify a list of multiple where clauses, which will be processed as global conditions for the accompanying set of statements. The conditions are ORed together, which means only one condition needs to evaluate to true in order for the statements (including their individual where clauses) to be executed. |
+| **filter.&#x200b;conditions**  | \[\]string | Conditions specify a list of multiple conditions which are ORed together, which means only one condition needs to evaluate to true in order for the telemetry to be dropped. |
 | **filters**  | \[\]object | FluentBitFilters configures custom Fluent Bit `filters` to transform logs. Only available when using an output of type `http` and `custom`. |
 | **filters.&#x200b;custom**  | string | Custom defines a custom filter in the [Fluent Bit syntax](https://docs.fluentbit.io/manual/pipeline/outputs). If you use a `custom` filter, you put the LogPipeline in unsupported mode. Only available when using an output of type `http` and `custom`. |
 | **input**  | object | Input configures additional inputs for log collection. |
@@ -233,7 +233,7 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;key.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name** (required) | string | Name of the Secret containing the referenced value. |
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;key.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace** (required) | string | Namespace containing the Secret with the referenced value. |
 | **transform**  | \[\]object | Transforms specify a list of transformations to apply to telemetry data. |
-| **transform.&#x200b;conditions**  | \[\]string | Conditions specify a list of multiple conditions which are ORed together, which means only one condition needs to evaluate to true in order for the telemetry to be dropped. |
+| **transform.&#x200b;conditions**  | \[\]string | Conditions specify a list of multiple where clauses, which will be processed as global conditions for the accompanying set of statements. The conditions are ORed together, which means only one condition needs to evaluate to true in order for the statements (including their individual where clauses) to be executed. |
 | **transform.&#x200b;statements**  | \[\]string | Statements specify a list of OTTL statements to perform the transformation. |
 | **variables**  | \[\]object | Variables is a list of mappings from Kubernetes Secret keys to environment variables. Mapped keys are mounted as environment variables, so that they are available as [Variables](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/variables) in the `custom` filters and a `custom` output. Only available when using an output of type `http` and `custom`. |
 | **variables.&#x200b;name** (required) | string | Name of the variable to map. |
