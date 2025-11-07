@@ -46,7 +46,7 @@ You cannot use filters to remove individual events within a span (the [spanevent
 
 ### Unsupported Metric Functions
 
-The filter processor doesn't support metric-specific functions, but you can achieve the same results by using general-purpose OTTL functions:
+The metric-specific functions in the filter processor ([HasAttrKeyOnDatapoint](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/filterprocessor#hasattrkeyondatapoint) and [HasAttrOnDatapoint](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/filterprocessor#hasattrondatapoint)) are currently not supported, but you can achieve the same results by using general-purpose OTTL functions:
 
 - To replace `HasAttrKeyOnDatapoint("my.key")`, use: `ContainsValue(Keys(datapoint.attributes), "my.key")`
 - To replace `HasAttrOnDatapoint("my.key", "my.value")`, use: `datapoint.attributes["my.key"] == "my.value"`
