@@ -35,7 +35,7 @@ By default, if an OTTL statement encounters an error, the processor logs the err
 You must specify the full path for every field. Short-hand references are not supported.
 
 - Correct: `resource.attributes["k8s.namespace.name"] == "default"`, `log.attributes["level"]`, `datapoint.value`, `span.name`
-- Incorrect: 'attributes["k8s.namespace.name"] == "default"', `attributes["level"]`, `value`, `name`
+- Incorrect: `attributes["k8s.namespace.name"] == "default"`, `attributes["level"]`, `value`, `name`
 
 > [!TIP]
 > For details on the underlying implementation details of context inference, see [OTel Transform Processor Context Inference](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/transformprocessor/README.md#context-inference).
