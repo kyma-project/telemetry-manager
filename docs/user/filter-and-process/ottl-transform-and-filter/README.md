@@ -42,7 +42,7 @@ You must specify the full path for every field. Short-hand references are not su
 
 ### Trace Filtering Applies to Entire Spans
 
-When you write a filter for a trace pipeline, the condition applies to the parent span. If the condition matches, the entire span is dropped, including all of its events.
+When you write a filter for a TracePipeline, the condition applies to the parent span. If the condition matches, the entire span is dropped, including all of its events.
 
 You cannot use filters to remove individual events within a span (the `spanevent` context).
 
