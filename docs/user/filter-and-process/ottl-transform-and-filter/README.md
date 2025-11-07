@@ -27,8 +27,6 @@ The Telemetry module processes data in a fixed sequence. Understanding this orde
 
 This sequence means that your OTTL rules only operate on data that has already passed the initial input filters. Furthermore, your OTTL filter conditions must use the final, transformed state of your data, not its original state. For example, if you rename a field in a transformation rule, your OTTL filter must use the new name.
 
-By default, if an OTTL statement encounters an error, the processor logs the error and continues to process the next piece of data. This ignore mode prevents a single malformed data point from stopping the entire pipeline.
-
 ## Limitations
 
 ### Always Use the Full Context Path
