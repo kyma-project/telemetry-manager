@@ -184,3 +184,24 @@ This usually happens for one of the following reasons:
 1. Review your rules and verify the execution order. For example, if you have a transform rule that renames `resource.attributes["foo"]` to `resource.attributes["bar"]`, your filter rule must check for `bar`, not `foo`.
 2. **Inspect Logic / Regex**: Test your regex separately. Simplify complex conditions to a single comparison and re-apply.
 3. To test your rules, temporarily remove all but one rule to confirm it works as expected. Then, add your other rules incrementally and isolate the rule that is causing the issue.
+
+## EOF Error When Using OTTL Transform or Filter
+
+### Symptom
+
+Pipeline configuration fails with vague error messages mentioning "unexpected token `<EOF>`" or EOF (End of File) parsing errors, and the pipeline status shows `ConfigurationGenerated` condition with status `False` and reason `OTTLSpecInvalid`.
+
+### Cause
+
+This error occurs due to inadequately processed syntax errors in your OTTL (OpenTelemetry Transformation Language) transform and/or filter rules. Under normal circumstances, syntax validation would provide a descriptive error message explicitly identifying the issue in your configuration. However, this represents an edge case where the validation process fails to generate meaningful diagnostic information, resulting in the generic "unexpected token `<EOF>`" message. Common underlying causes include:
+
+- **Missing closing parentheses** or **brackets** in function calls or conditions
+- **Incorrect function names** or **typos** in OTTL function syntax
+- **Malformed string literals** or **regex patterns**
+- **Invalid operator usage** or **missing operators** in conditional expressions
+
+### Solution
+
+1. **Double-check the syntax** of your transform and filter rules: Verify all parentheses and brackets are properly closed, ensure function names are spelled correctly (for example, `IsMatch()` not `sIsMatch()`), and validate that you're using the correct OTTL function syntax as documented in the [OTTL function reference](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/ottlfuncs/README.md).
+
+2. **Isolate and test incrementally**: If you have complex rules, start with a single, simple rule to verify basic functionality, then add complexity incrementally to identify the problematic part until you fix the problem or get a more suitable error message.
