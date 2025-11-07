@@ -23,6 +23,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/caarlos0/env/v11"
 	"github.com/go-logr/zapr"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -75,15 +76,8 @@ import (
 )
 
 var (
-	scheme             = runtime.NewScheme()
-	setupLog           = ctrl.Log.WithName("setup")
-	telemetryNamespace string
-
-	fluentBitExporterImage string
-	fluentBitImage         string
-	otelCollectorImage     string
-	selfMonitorImage       string
-	alpineImage            string
+	scheme   = runtime.NewScheme()
+	setupLog = ctrl.Log.WithName("setup")
 
 	// Operator flags
 	certDir                   string
@@ -94,17 +88,33 @@ var (
 )
 
 const (
-	cacheSyncPeriod           = 1 * time.Minute
-	telemetryNamespaceEnvVar  = "MANAGER_NAMESPACE"
-	telemetryNamespaceDefault = "default"
-	selfMonitorName           = "telemetry-self-monitor"
-	webhookServiceName        = "telemetry-manager-webhook"
+	cacheSyncPeriod    = 1 * time.Minute
+	selfMonitorName    = "telemetry-self-monitor"
+	webhookServiceName = "telemetry-manager-webhook"
 
 	healthProbePort = 8081
 	metricsPort     = 8080
 	pprofPort       = 6060
 	webhookPort     = 9443
 )
+
+//go:generate bin/envdoc -output docs/config.md -dir . -types=envConfig -files=*.go
+type envConfig struct {
+	// FluentBitExporterImage is the image used for the Fluent Bit exporter.
+	FluentBitExporterImage string `env:"FLUENT_BIT_EXPORTER_IMAGE"`
+	// FluentBitImage is the image used for the Fluent Bit log agent.
+	FluentBitImage string `env:"FLUENT_BIT_IMAGE"`
+	// OtelCollectorImage is the image used all OpenTelemetry Collector based components (metric agent, log agent, metric gateway, log gateway, trace gateway).
+	OtelCollectorImage string `env:"OTEL_COLLECTOR_IMAGE"`
+	//  SelfMonitorImage is the image used for the self-monitoring deployment. This is a customized Prometheus image.
+	SelfMonitorImage string `env:"SELF_MONITOR_IMAGE"`
+	// AlpineImage is the image used for the chown init containers.
+	AlpineImage string `env:"ALPINE_IMAGE"`
+	// ImagePullSecret is the name of the image pull secret to use for pulling images of all created workloads (agents, gateways, self-monitor).
+	ImagePullSecret string `env:"SKR_IMG_PULL_SECRET" envDefault:""`
+	//  TelemetryNamespace is the namespace where the Telemetry operator and all common components are installed.
+	TelemetryNamespace string `env:"MANAGER_NAMESPACE" envDefault:"default"`
+}
 
 //nolint:gochecknoinits // Runtime's scheme addition is required.
 func init() {
@@ -128,8 +138,9 @@ func run() error {
 	parseFlags()
 	initializeFeatureFlags()
 
-	if err := getImagesFromEnv(); err != nil {
-		return err
+	var cfg envConfig
+	if err := env.ParseWithOptions(&cfg, env.Options{Prefix: "", RequiredIfNoDef: true}); err != nil {
+		return fmt.Errorf("failed to parse environment variables: %w", err)
 	}
 
 	overrides.AtomicLevel().SetLevel(zapcore.InfoLevel)
@@ -144,12 +155,12 @@ func run() error {
 
 	logBuildAndProcessInfo()
 
-	mgr, err := setupManager()
+	mgr, err := setupManager(cfg)
 	if err != nil {
 		return err
 	}
 
-	err = setupControllersAndWebhooks(mgr)
+	err = setupControllersAndWebhooks(mgr, cfg)
 	if err != nil {
 		return err
 	}
@@ -163,29 +174,29 @@ func run() error {
 	return nil
 }
 
-func setupControllersAndWebhooks(mgr manager.Manager) error {
+func setupControllersAndWebhooks(mgr manager.Manager, cfg envConfig) error {
 	var (
 		TracePipelineReconcile  = make(chan event.GenericEvent)
 		MetricPipelineReconcile = make(chan event.GenericEvent)
 		LogPipelineReconcile    = make(chan event.GenericEvent)
 	)
 
-	if err := setupTracePipelineController(mgr, TracePipelineReconcile); err != nil {
+	if err := setupTracePipelineController(mgr, cfg, TracePipelineReconcile); err != nil {
 		return fmt.Errorf("failed to enable trace pipeline controller: %w", err)
 	}
 
-	if err := setupMetricPipelineController(mgr, MetricPipelineReconcile); err != nil {
+	if err := setupMetricPipelineController(mgr, cfg, MetricPipelineReconcile); err != nil {
 		return fmt.Errorf("failed to enable metric pipeline controller: %w", err)
 	}
 
-	if err := setupLogPipelineController(mgr, LogPipelineReconcile); err != nil {
+	if err := setupLogPipelineController(mgr, cfg, LogPipelineReconcile); err != nil {
 		return fmt.Errorf("failed to enable log pipeline controller: %w", err)
 	}
 
-	webhookConfig := createWebhookConfig()
-	selfMonitorConfig := createSelfMonitoringConfig()
+	webhookConfig := createWebhookConfig(cfg)
+	selfMonitorConfig := createSelfMonitoringConfig(cfg)
 
-	if err := enableTelemetryModuleController(mgr, webhookConfig, selfMonitorConfig); err != nil {
+	if err := enableTelemetryModuleController(mgr, cfg, webhookConfig, selfMonitorConfig); err != nil {
 		return fmt.Errorf("failed to enable telemetry module controller: %w", err)
 	}
 
@@ -219,19 +230,14 @@ func setupControllersAndWebhooks(mgr manager.Manager) error {
 	return nil
 }
 
-func setupManager() (manager.Manager, error) {
-	telemetryNamespace = os.Getenv(telemetryNamespaceEnvVar)
-	if telemetryNamespace == "" {
-		telemetryNamespace = telemetryNamespaceDefault
-	}
-
+func setupManager(cfg envConfig) (manager.Manager, error) {
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                  scheme,
 		Metrics:                 metricsserver.Options{BindAddress: fmt.Sprintf(":%d", metricsPort)},
 		HealthProbeBindAddress:  fmt.Sprintf(":%d", healthProbePort),
 		PprofBindAddress:        fmt.Sprintf(":%d", pprofPort),
 		LeaderElection:          true,
-		LeaderElectionNamespace: telemetryNamespace,
+		LeaderElectionNamespace: cfg.TelemetryNamespace,
 		LeaderElectionID:        "cdd7ef0b.kyma-project.io",
 		WebhookServer: webhook.NewServer(webhook.Options{
 			Port:    webhookPort,
@@ -243,15 +249,15 @@ func setupManager() (manager.Manager, error) {
 			// The operator handles various resource that are namespace-scoped, and additionally some resources that are cluster-scoped (clusterroles, clusterrolebindings, etc.).
 			// For namespace-scoped resources we want to restrict the operator permissions to only fetch resources from a given namespace.
 			ByObject: map[client.Object]cache.ByObject{
-				&appsv1.Deployment{}:          {Field: setNamespaceFieldSelector()},
-				&appsv1.ReplicaSet{}:          {Field: setNamespaceFieldSelector()},
-				&appsv1.DaemonSet{}:           {Field: setNamespaceFieldSelector()},
-				&corev1.ConfigMap{}:           {Namespaces: setConfigMapNamespaceFieldSelector()},
-				&corev1.ServiceAccount{}:      {Field: setNamespaceFieldSelector()},
-				&corev1.Service{}:             {Field: setNamespaceFieldSelector()},
-				&networkingv1.NetworkPolicy{}: {Field: setNamespaceFieldSelector()},
-				&corev1.Secret{}:              {Field: setNamespaceFieldSelector()},
-				&operatorv1alpha1.Telemetry{}: {Field: setNamespaceFieldSelector()},
+				&appsv1.Deployment{}:          {Field: setNamespaceFieldSelector(cfg)},
+				&appsv1.ReplicaSet{}:          {Field: setNamespaceFieldSelector(cfg)},
+				&appsv1.DaemonSet{}:           {Field: setNamespaceFieldSelector(cfg)},
+				&corev1.ConfigMap{}:           {Namespaces: setConfigMapNamespaceFieldSelector(cfg)},
+				&corev1.ServiceAccount{}:      {Field: setNamespaceFieldSelector(cfg)},
+				&corev1.Service{}:             {Field: setNamespaceFieldSelector(cfg)},
+				&networkingv1.NetworkPolicy{}: {Field: setNamespaceFieldSelector(cfg)},
+				&corev1.Secret{}:              {Field: setNamespaceFieldSelector(cfg)},
+				&operatorv1alpha1.Telemetry{}: {Field: setNamespaceFieldSelector(cfg)},
 			},
 		},
 		Client: client.Options{
@@ -344,7 +350,7 @@ func setupAdmissionsWebhooks(mgr manager.Manager) error {
 	return nil
 }
 
-func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetry.WebhookConfig, selfMonitorConfig telemetry.SelfMonitorConfig) error {
+func enableTelemetryModuleController(mgr manager.Manager, cfg envConfig, webhookConfig telemetry.WebhookConfig, selfMonitorConfig telemetry.SelfMonitorConfig) error {
 	setupLog.Info("Setting up telemetry controller")
 
 	telemetryController := operator.NewTelemetryController(
@@ -353,19 +359,19 @@ func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetr
 		operator.TelemetryControllerConfig{
 			Config: telemetry.Config{
 				Logs: telemetry.LogsConfig{
-					Namespace: telemetryNamespace,
+					Namespace: cfg.TelemetryNamespace,
 				},
 				Traces: telemetry.TracesConfig{
-					Namespace: telemetryNamespace,
+					Namespace: cfg.TelemetryNamespace,
 				},
 				Metrics: telemetry.MetricsConfig{
-					Namespace: telemetryNamespace,
+					Namespace: cfg.TelemetryNamespace,
 				},
 				Webhook:     webhookConfig,
 				SelfMonitor: selfMonitorConfig,
 			},
 			SelfMonitorName:    selfMonitorName,
-			TelemetryNamespace: telemetryNamespace,
+			TelemetryNamespace: cfg.TelemetryNamespace,
 		},
 	)
 
@@ -376,44 +382,23 @@ func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetr
 	return nil
 }
 
-func getImagesFromEnv() error {
-	requiredEnvVars := map[string]*string{
-		"FLUENT_BIT_IMAGE":          &fluentBitImage,
-		"FLUENT_BIT_EXPORTER_IMAGE": &fluentBitExporterImage,
-		"OTEL_COLLECTOR_IMAGE":      &otelCollectorImage,
-		"SELF_MONITOR_IMAGE":        &selfMonitorImage,
-		"ALPINE_IMAGE":              &alpineImage,
-	}
-
-	for k, v := range requiredEnvVars {
-		val := os.Getenv(k)
-		if val == "" {
-			return fmt.Errorf("required environment variable %s not set", k)
-		}
-
-		*v = val
-	}
-
-	return nil
-}
-
-func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
+func setupLogPipelineController(mgr manager.Manager, cfg envConfig, reconcileTriggerChan <-chan event.GenericEvent) error {
 	setupLog.Info("Setting up logpipeline controller")
 
 	logPipelineController, err := telemetrycontrollers.NewLogPipelineController(
 		mgr.GetClient(),
 		reconcileTriggerChan,
 		telemetrycontrollers.LogPipelineControllerConfig{
-			ExporterImage:               fluentBitExporterImage,
-			FluentBitImage:              fluentBitImage,
-			ChownInitContainerImage:     alpineImage,
-			OTelCollectorImage:          otelCollectorImage,
+			ExporterImage:               cfg.FluentBitExporterImage,
+			FluentBitImage:              cfg.FluentBitImage,
+			ChownInitContainerImage:     cfg.AlpineImage,
+			OTelCollectorImage:          cfg.OtelCollectorImage,
 			FluentBitPriorityClassName:  highPriorityClassName,
 			LogGatewayPriorityClassName: normalPriorityClassName,
 			LogAgentPriorityClassName:   highPriorityClassName,
 			RestConfig:                  mgr.GetConfig(),
 			SelfMonitorName:             selfMonitorName,
-			TelemetryNamespace:          telemetryNamespace,
+			TelemetryNamespace:          cfg.TelemetryNamespace,
 			ModuleVersion:               build.GitTag(),
 			EnableFIPSMode:              enableFIPSMode,
 		},
@@ -431,7 +416,7 @@ func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan
 	logParserController := telemetrycontrollers.NewLogParserController(
 		mgr.GetClient(),
 		telemetrycontrollers.LogParserControllerConfig{
-			TelemetryNamespace: telemetryNamespace,
+			TelemetryNamespace: cfg.TelemetryNamespace,
 		},
 	)
 
@@ -442,7 +427,7 @@ func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan
 	return nil
 }
 
-func setupTracePipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
+func setupTracePipelineController(mgr manager.Manager, cfg envConfig, reconcileTriggerChan <-chan event.GenericEvent) error {
 	setupLog.Info("Setting up tracepipeline controller")
 
 	tracePipelineController, err := telemetrycontrollers.NewTracePipelineController(
@@ -450,9 +435,9 @@ func setupTracePipelineController(mgr manager.Manager, reconcileTriggerChan <-ch
 		reconcileTriggerChan,
 		telemetrycontrollers.TracePipelineControllerConfig{
 			RestConfig:                    mgr.GetConfig(),
-			OTelCollectorImage:            otelCollectorImage,
+			OTelCollectorImage:            cfg.OtelCollectorImage,
 			SelfMonitorName:               selfMonitorName,
-			TelemetryNamespace:            telemetryNamespace,
+			TelemetryNamespace:            cfg.TelemetryNamespace,
 			TraceGatewayPriorityClassName: normalPriorityClassName,
 			EnableFIPSMode:                enableFIPSMode,
 		},
@@ -468,7 +453,7 @@ func setupTracePipelineController(mgr manager.Manager, reconcileTriggerChan <-ch
 	return nil
 }
 
-func setupMetricPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
+func setupMetricPipelineController(mgr manager.Manager, cfg envConfig, reconcileTriggerChan <-chan event.GenericEvent) error {
 	setupLog.Info("Setting up metricpipeline controller")
 
 	metricPipelineController, err := telemetrycontrollers.NewMetricPipelineController(
@@ -478,10 +463,10 @@ func setupMetricPipelineController(mgr manager.Manager, reconcileTriggerChan <-c
 			MetricAgentPriorityClassName:   highPriorityClassName,
 			MetricGatewayPriorityClassName: normalPriorityClassName,
 			ModuleVersion:                  build.GitTag(),
-			OTelCollectorImage:             otelCollectorImage,
+			OTelCollectorImage:             cfg.OtelCollectorImage,
 			RestConfig:                     mgr.GetConfig(),
 			SelfMonitorName:                selfMonitorName,
-			TelemetryNamespace:             telemetryNamespace,
+			TelemetryNamespace:             cfg.TelemetryNamespace,
 			EnableFIPSMode:                 enableFIPSMode,
 		},
 	)
@@ -551,47 +536,47 @@ func ensureWebhookCert(mgr manager.Manager, webhookConfig telemetry.WebhookConfi
 	return nil
 }
 
-func setNamespaceFieldSelector() fields.Selector {
-	return fields.SelectorFromSet(fields.Set{"metadata.namespace": telemetryNamespace})
+func setNamespaceFieldSelector(cfg envConfig) fields.Selector {
+	return fields.SelectorFromSet(fields.Set{"metadata.namespace": cfg.TelemetryNamespace})
 }
 
-func setConfigMapNamespaceFieldSelector() map[string]cache.Config {
+func setConfigMapNamespaceFieldSelector(cfg envConfig) map[string]cache.Config {
 	return map[string]cache.Config{
 		"kube-system": {
 			FieldSelector: fields.SelectorFromSet(fields.Set{"metadata.name": "shoot-info"}),
 		},
-		telemetryNamespace: {},
+		cfg.TelemetryNamespace: {},
 	}
 }
 
-func createSelfMonitoringConfig() telemetry.SelfMonitorConfig {
+func createSelfMonitoringConfig(cfg envConfig) telemetry.SelfMonitorConfig {
 	return telemetry.SelfMonitorConfig{
 		Config: selfmonitor.Config{
 			BaseName:      selfMonitorName,
-			Namespace:     telemetryNamespace,
+			Namespace:     cfg.TelemetryNamespace,
 			ComponentType: commonresources.LabelValueK8sComponentMonitor,
 			Deployment: selfmonitor.DeploymentConfig{
-				Image:             selfMonitorImage,
+				Image:             cfg.SelfMonitorImage,
 				PriorityClassName: normalPriorityClassName,
 			},
 		},
 		WebhookScheme: "https",
-		WebhookURL:    fmt.Sprintf("%s.%s.svc", webhookServiceName, telemetryNamespace),
+		WebhookURL:    fmt.Sprintf("%s.%s.svc", webhookServiceName, cfg.TelemetryNamespace),
 	}
 }
 
-func createWebhookConfig() telemetry.WebhookConfig {
+func createWebhookConfig(cfg envConfig) telemetry.WebhookConfig {
 	return telemetry.WebhookConfig{
 		CertConfig: webhookcert.NewWebhookCertConfig(
 			webhookcert.ConfigOptions{
 				CertDir: certDir,
 				ServiceName: types.NamespacedName{
 					Name:      webhookServiceName,
-					Namespace: telemetryNamespace,
+					Namespace: cfg.TelemetryNamespace,
 				},
 				CASecretName: types.NamespacedName{
 					Name:      "telemetry-webhook-cert",
-					Namespace: telemetryNamespace,
+					Namespace: cfg.TelemetryNamespace,
 				},
 				ValidatingWebhookName: types.NamespacedName{
 					Name: "telemetry-validating-webhook.kyma-project.io",
