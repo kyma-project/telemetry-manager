@@ -10,25 +10,38 @@ service:
     pipelines:
         metrics/cls-output:
             receivers:
-                - forward
+                - forward/enrichment
             processors:
                 - filter/cls-filter-by-namespace-otlp-input
+                - resource/drop-kyma-attributes
                 - batch
             exporters:
                 - otlp/cls
-        metrics/input:
+        metrics/enrichment:
             receivers:
-                - otlp
-                - kymastats
+                - forward/input
             processors:
                 - memory_limiter
                 - transform/set-instrumentation-scope-kyma
                 - k8sattributes
                 - service_enrichment
                 - resource/insert-cluster-attributes
-                - resource/drop-kyma-attributes
             exporters:
-                - forward
+                - forward/enrichment
+        metrics/input-kyma-stats:
+            receivers:
+                - kymastats
+            processors:
+                - resource/set-kyma-input-name-kyma
+            exporters:
+                - forward/input
+        metrics/input-otlp:
+            receivers:
+                - otlp
+            processors:
+                - resource/set-kyma-input-name-otlp
+            exporters:
+                - forward/input
     telemetry:
         metrics:
             readers:
@@ -77,8 +90,8 @@ processors:
         error_mode: ignore
         metrics:
             metric:
-                - not(instrumentation_scope.name == "io.kyma-project.telemetry/kyma") and (resource.attributes["k8s.namespace.name"] == "kube-system" or resource.attributes["k8s.namespace.name"] == "istio-system")
-                - not(instrumentation_scope.name == "io.kyma-project.telemetry/kyma") and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "monitoring" or resource.attributes["k8s.namespace.name"] == "observability")
+                - not(resource.attributes["kyma.input.name"] == "kyma") and (resource.attributes["k8s.namespace.name"] == "kube-system" or resource.attributes["k8s.namespace.name"] == "istio-system")
+                - not(resource.attributes["kyma.input.name"] == "kyma") and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "monitoring" or resource.attributes["k8s.namespace.name"] == "observability")
     k8sattributes:
         auth_type: serviceAccount
         passthrough: false
@@ -138,6 +151,16 @@ processors:
             - action: insert
               key: cloud.provider
               value: test-cloud-provider
+    resource/set-kyma-input-name-kyma:
+        attributes:
+            - action: insert
+              key: kyma.input.name
+              value: kyma
+    resource/set-kyma-input-name-otlp:
+        attributes:
+            - action: insert
+              key: kyma.input.name
+              value: otlp
     service_enrichment:
         resource_attributes:
             - kyma.kubernetes_io_app_name
@@ -160,4 +183,5 @@ exporters:
             max_interval: 30s
             max_elapsed_time: 300s
 connectors:
-    forward: {}
+    forward/enrichment: {}
+    forward/input: {}
