@@ -44,7 +44,7 @@ You must specify the full path for every field. Short-hand references are not su
 
 When you write a filter for a TracePipeline, the condition applies to the parent span. If the condition matches, the entire span is dropped, including all of its events.
 
-You cannot use filters to remove individual events within a span (the `spanevent` context).
+You cannot use filters to remove individual events within a span (the [spanevent context](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/contexts/ottlspanevent/README.md)).
 
 ### Unsupported Metric Functions
 
