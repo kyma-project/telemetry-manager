@@ -27,6 +27,7 @@ service:
                 - resource/drop-service-name
                 - transform/insert-skip-enrichment-attribute
                 - transform/set-instrumentation-scope-runtime
+                - resource/set-kyma-input-name-runtime
             exporters:
                 - routing/runtime-input
         metrics/output-test1:
@@ -147,7 +148,7 @@ processors:
         error_mode: ignore
         metrics:
             metric:
-                - IsMatch(name, "^envoy_.*") and instrumentation_scope.name == "io.kyma-project.telemetry/istio"
+                - IsMatch(name, "^envoy_.*") and resource.attributes["kyma.input.name"] == "istio"
     filter/drop-non-pvc-volumes-metrics:
         error_mode: ignore
         metrics:
@@ -221,6 +222,11 @@ processors:
               key: k8s.cluster.name
             - action: insert
               key: k8s.cluster.uid
+    resource/set-kyma-input-name-runtime:
+        attributes:
+            - action: insert
+              key: kyma.input.name
+              value: runtime
     service_enrichment:
         resource_attributes:
             - kyma.kubernetes_io_app_name
@@ -286,7 +292,7 @@ connectors:
         default_pipelines: []
         error_mode: ignore
         table:
-            - statement: route() where instrumentation_scope.name == "io.kyma-project.telemetry/runtime"
+            - statement: route() where resource.attributes["kyma.input.name"] == "runtime"
               pipelines:
                 - metrics/output-test1
                 - metrics/output-test2

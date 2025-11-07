@@ -63,9 +63,9 @@ func TestOttlExprFunctions(t *testing.T) {
 			expected: `HasAttrOnDatapoint("key", "value")`,
 		},
 		{
-			name:     "ScopeNameEquals",
-			actual:   ScopeNameEquals("my-scope"),
-			expected: `instrumentation_scope.name == "my-scope"`,
+			name:     "KymaInputNameEquals",
+			actual:   KymaInputNameEquals("my-name"),
+			expected: `resource.attributes["kyma.input.name"] == "my-name"`,
 		},
 		{
 			name:     "Not",

@@ -4,6 +4,6 @@
 package testkit
 
 const (
-	DefaultTelemetryGenImage  = "ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.138.0"
-	DefaultOTelCollectorImage = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.138.0-main"
+	DefaultTelemetryGenImage  = "ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.139.0"
+	DefaultOTelCollectorImage = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.139.0-main"
 )
