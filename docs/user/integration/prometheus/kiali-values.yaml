@@ -1,0 +1,28 @@
+# The Kiali CR is documented here: https://kiali.io/docs/installation/installation-guide/creating-updating-kiali-cr/
+# The values.yaml is documented here: https://github.com/kiali/helm-charts/blob/master/kiali-operator/values.yaml
+
+cr:
+  create: true
+  spec:
+    auth:
+      strategy: anonymous
+    external_services:
+      grafana:
+        auth:
+          type: "password"
+          username: secret:prometheus-grafana:admin-user
+          password: secret:prometheus-grafana:admin-password
+        enabled: true
+        external_url: ""
+        internal_url: "http://prometheus-grafana.prometheus:80"
+        is_core: true
+      istio:
+        istio_api_enabled: true
+      prometheus:
+        auth:
+          type: "none"
+        is_core: true
+        url: "http://prometheus-kube-prometheus-prometheus.prometheus:9090"
+    deployment:
+      pod_labels:
+        sidecar.istio.io/inject: "true"
