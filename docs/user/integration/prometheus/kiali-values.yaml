@@ -9,7 +9,7 @@ cr:
     external_services:
       grafana:
         auth:
-          type: "password"
+          type: "basic"
           username: secret:prometheus-grafana:admin-user
           password: secret:prometheus-grafana:admin-password
         enabled: true
