@@ -189,7 +189,8 @@ This usually happens for one of the following reasons:
 
 ### Symptom
 
-Pipeline configuration fails with vague error messages mentioning "unexpected token `<EOF>`" or EOF (End of File) parsing errors, and the pipeline status shows `ConfigurationGenerated` condition with status `False` and reason `OTTLSpecInvalid`.
+- The pipeline configuration fails with vague error messages mentioning "unexpected token `<EOF>`" or EOF (End of File) parsing errors.
+- In the pipeline status, you see the condition `ConfigurationGenerated` with status `False` and reason `OTTLSpecInvalid`.
 
 ### Cause
 
