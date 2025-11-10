@@ -118,33 +118,6 @@ var (
 					},
 				},
 			},
-			{
-				AdmissionReviewVersions: []string{"v1beta1", "v1"},
-				ClientConfig: admissionregistrationv1.WebhookClientConfig{
-					Service: &admissionregistrationv1.ServiceReference{
-						Name:      webhookService.Name,
-						Namespace: webhookService.Namespace,
-						Port:      &servicePort,
-						Path:      ptr.To("/validate-logparser"),
-					},
-				},
-				FailurePolicy:  &failurePolicy,
-				MatchPolicy:    &matchPolicy,
-				Name:           "validating-logparsers.kyma-project.io",
-				SideEffects:    &sideEffects,
-				TimeoutSeconds: &timeout,
-				Rules: []admissionregistrationv1.RuleWithOperations{
-					{
-						Operations: operations,
-						Rule: admissionregistrationv1.Rule{
-							APIGroups:   apiGroups,
-							APIVersions: apiVersions,
-							Scope:       &scope,
-							Resources:   []string{"logparsers"},
-						},
-					},
-				},
-			},
 		},
 	}
 

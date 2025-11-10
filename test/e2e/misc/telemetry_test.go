@@ -181,17 +181,6 @@ func assertValidatingWebhookConfiguration() {
 		g.Expect(logPipelineWebhook.Rules[0].Operations).Should(ContainElement(admissionregistrationv1.Create))
 		g.Expect(logPipelineWebhook.Rules[0].Operations).Should(ContainElement(admissionregistrationv1.Update))
 
-		logParserWebhook := validatingWebhookConfiguration.Webhooks[1]
-		g.Expect(logParserWebhook.Name).Should(Equal("validating-logparsers.kyma-project.io"))
-		g.Expect(logParserWebhook.ClientConfig.CABundle).ShouldNot(BeEmpty())
-		g.Expect(logParserWebhook.ClientConfig.Service.Name).Should(Equal("telemetry-manager-webhook"))
-		g.Expect(logParserWebhook.ClientConfig.Service.Namespace).Should(Equal(kitkyma.SystemNamespaceName))
-		g.Expect(*logParserWebhook.ClientConfig.Service.Port).Should(Equal(int32(443)))
-		g.Expect(*logParserWebhook.ClientConfig.Service.Path).Should(Equal("/validate-logparser"))
-		g.Expect(logParserWebhook.Rules).Should(HaveLen(1))
-		g.Expect(logParserWebhook.Rules[0].Resources).Should(ContainElement("logparsers"))
-		g.Expect(logParserWebhook.Rules[0].Operations).Should(ContainElement(admissionregistrationv1.Create))
-		g.Expect(logParserWebhook.Rules[0].Operations).Should(ContainElement(admissionregistrationv1.Update))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 

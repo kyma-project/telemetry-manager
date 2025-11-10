@@ -82,8 +82,6 @@ linters:
           alias: kitk8s
         - pkg: github.com/kyma-project/telemetry-manager/test/testkit/kyma
           alias: kitkyma
-        - pkg: github.com/kyma-project/telemetry-manager/webhook/logparser/v1alpha1
-          alias: logparserwebhookv1alpha1
         - pkg: github.com/kyma-project/telemetry-manager/webhook/logpipeline/v1alpha1
           alias: logpipelinewebhookv1alpha1
         - pkg: github.com/kyma-project/telemetry-manager/webhook/logpipeline/v1beta1
@@ -236,7 +234,7 @@ linters:
         text: 'shadow: declaration of "err" shadows declaration at line ([\d]+)'
       - linters:
           - dupl
-        path: controllers/telemetry/(logparser|logpipeline|metricpipeline|tracepipeline)_controller.go
+        path: controllers/telemetry/(logpipeline|metricpipeline|tracepipeline)_controller.go
       - linters:
           - dupl
         path: internal/utils/k8s/utils.go
