@@ -5,7 +5,7 @@ Use filters to drop unwanted telemetry data from a pipeline. Filtering helps you
 ## Overview
 
 > [!NOTE]
-> This feature is based on the underlying OpenTelemetry Filter Processor. For more implementation details, syntax, and examples, see the [OTel Filter Processor Documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/filterprocessor/README.md). However, bear in mind that some limitations and differences exist, as outlined in the [Limitations](./README.md#limitations) and the [Predefined Contexts](#predefined-contexts) sections.
+> This feature is based on the [OpenTelemetry Filter Processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/filterprocessor/README.md), with some limitations and differences (see [Limitations](./README.md#limitations) and [Predefined Contexts](#predefined-contexts)).
 
 You define these rules in the `filter` section of your Telemetry pipeline's `spec`.
 
