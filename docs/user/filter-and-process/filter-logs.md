@@ -20,9 +20,6 @@ You can filter incoming OTLP logs by namespace. By default, all system namespace
 These filters only apply to logs that have an associated namespace. The pipeline always collects any logs that do not have a namespace.
 
 The `include` and `exclude` filters are mutually exclusive.
-`exclude` filters are mutually exclusive.
-
-> * Note: Logs that do not have an associated namespace are not affected by these filters and are always collected.
 
 - To collect logs from specific namespaces, use the `include` filter:
 
