@@ -11,7 +11,7 @@ Each rule in the `filter` list contains one or more `conditions`.
 The pipeline drops any log, metric, or trace that matches **at least one** of the conditions you define. This means that multiple conditions are always combined with a logical OR. If any single condition evaluates to true, the data is dropped.
 
 > [!TIP]
-> - The pipeline applies all transformation rules **before** it evaluates any filter rules. Any changes you make during the transformation affects the data that your filters see.
+> - Filters run **after** all transformations. Your filter conditions must operate on the final, modified state of your data, not its original state.
 > - This feature is based on the [OpenTelemetry Filter Processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/filterprocessor/README.md), with some limitations and differences (see [Limitations](./README.md#limitations) and [Predefined Contexts](#predefined-contexts)).
 
 ## Predefined Contexts

@@ -13,7 +13,7 @@ Each rule in the `transform` list contains:
 If you don't provide any conditions, the statements apply to all telemetry data passing through the pipeline.
 
 > [!TIP]
-> - Filters run **after** all transformations. Your filter conditions must operate on the final, modified state of your data, not its original state.
+> - The pipeline applies all transformation rules **before** it evaluates any filter rules. Any changes you make during the transformation affects the data that your filters see.
 > - This feature is based on the [OpenTelemetry Transform Processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/transformprocessor/README.md), with some limitations (see [Limitations](./README.md#limitations)).
 
 ## Example: Add a Global Attribute to All Metrics
