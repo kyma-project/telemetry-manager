@@ -62,6 +62,10 @@ There are different ways to deploy Dynatrace on Kubernetes. All [deployment opti
 1. In the DynaKube resource, exclude Kyma system namespaces by adding the following snippet:
 
     ```yaml
+    apiVersion: dynatrace.com/v1beta5
+    kind: DynaKube
+    metadata:
+      name: e2e-cluster
     spec:
       metadataEnrichment:
         enabled: true
@@ -80,6 +84,8 @@ There are different ways to deploy Dynatrace on Kubernetes. All [deployment opti
               values:
                 - kyma
     ```
+
+    If you are using the `oneAgent.applicationMonitoring` mode instead, please configure the `namespaceSelector` on that instead.
 
 1. In the DynaKube resource, enable OTLP ingestion using the OTel Collector (see [Enable Dynatrace telemetry ingest endpoints](https://docs.dynatrace.com/managed/ingest-from/setup-on-k8s/extend-observability-k8s/telemetry-ingest)):
 
