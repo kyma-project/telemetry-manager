@@ -194,12 +194,20 @@ This usually happens for one of the following reasons:
 
 ### Cause
 
-This error occurs due to inadequately processed syntax errors in your OTTL (OpenTelemetry Transformation Language) transform and/or filter rules. Under normal circumstances, syntax validation would provide a descriptive error message explicitly identifying the issue in your configuration. However, this represents an edge case where the validation process fails to generate meaningful diagnostic information, resulting in the generic "unexpected token `<EOF>`" message. Common underlying causes include:
+This error occurs due to inadequately processed syntax errors in your OTTL (OpenTelemetry Transformation Language) transform and/or filter rules. Under normal circumstances, syntax validation would provide a descriptive error message explicitly identifying the issue in your configuration. However, this represents an edge case where the validation process fails to generate meaningful diagnostic information, resulting in the generic "unexpected token `<EOF>`" message. Common underlying cause is most probably an **incorrect function name** or **typos** in your OTTL function syntax.
 
-- **Missing closing parentheses** or **brackets** in function calls or conditions
-- **Incorrect function names** or **typos** in OTTL function syntax
-- **Malformed string literals** or **regex patterns**
-- **Invalid operator usage** or **missing operators** in conditional expressions
+**Example:**
+```yaml
+# ...
+filter:
+    - conditions:
+        - 'isMatch(resource.attributes["k8s.namespace.name"], ".*-system")'
+```
+This malformed OTTL function call (`isMatch` should start with a capital letter), leads to the following error:
+```
+'Invalid FilterSpec: condition has invalid syntax: 1:64: unexpected token                      
+      "<EOF>" (expected <opcomparison> Value)'
+```
 
 ### Solution
 
