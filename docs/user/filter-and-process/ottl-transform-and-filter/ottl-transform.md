@@ -5,7 +5,7 @@ Use transformations to modify telemetry data as it flows through a pipeline. You
 ## Overview
 
 > [!NOTE]
-> This feature is based on the underlying OpenTelemetry Transform Processor. For more implementation details, syntax, and examples, see the [OTel Transform Processor Documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/transformprocessor/README.md). However, bear in mind that some limitations and differences exist, as outlined in the [Limitations](./README.md#limitations) section.
+> This feature is based on the [OpenTelemetry Filter Processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/filterprocessor/README.md), with some limitations (see [Limitations](./README.md#limitations)).
 
 You define these rules in the `transform` section of your Telemetry pipeline's `spec`.
 
