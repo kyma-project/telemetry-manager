@@ -26,6 +26,7 @@ service:
                 - resource/drop-service-name
                 - istio_noise_filter
                 - transform/set-instrumentation-scope-istio
+                - resource/set-kyma-input-name-istio
             exporters:
                 - routing/istio-input
         metrics/input-prometheus:
@@ -36,6 +37,7 @@ service:
                 - memory_limiter
                 - resource/drop-service-name
                 - transform/set-instrumentation-scope-prometheus
+                - resource/set-kyma-input-name-prometheus
             exporters:
                 - routing/prometheus-input
         metrics/input-runtime:
@@ -49,6 +51,7 @@ service:
                 - resource/drop-service-name
                 - transform/insert-skip-enrichment-attribute
                 - transform/set-instrumentation-scope-runtime
+                - resource/set-kyma-input-name-runtime
             exporters:
                 - routing/runtime-input
         metrics/output-test:
@@ -287,7 +290,7 @@ processors:
         error_mode: ignore
         metrics:
             metric:
-                - instrumentation_scope.name == "io.kyma-project.telemetry/istio" and (name == "up" or name == "scrape_duration_seconds" or name == "scrape_samples_scraped" or name == "scrape_samples_post_metric_relabeling" or name == "scrape_series_added")
+                - resource.attributes["kyma.input.name"] == "istio" and (name == "up" or name == "scrape_duration_seconds" or name == "scrape_samples_scraped" or name == "scrape_samples_post_metric_relabeling" or name == "scrape_series_added")
     filter/drop-non-pvc-volumes-metrics:
         error_mode: ignore
         metrics:
@@ -307,7 +310,7 @@ processors:
         error_mode: ignore
         metrics:
             metric:
-                - instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "production" or resource.attributes["k8s.namespace.name"] == "staging")
+                - resource.attributes["kyma.input.name"] == "runtime" and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "production" or resource.attributes["k8s.namespace.name"] == "staging")
     istio_noise_filter: {}
     k8sattributes:
         auth_type: serviceAccount
@@ -372,6 +375,21 @@ processors:
               key: k8s.cluster.name
             - action: insert
               key: k8s.cluster.uid
+    resource/set-kyma-input-name-istio:
+        attributes:
+            - action: insert
+              key: kyma.input.name
+              value: istio
+    resource/set-kyma-input-name-prometheus:
+        attributes:
+            - action: insert
+              key: kyma.input.name
+              value: prometheus
+    resource/set-kyma-input-name-runtime:
+        attributes:
+            - action: insert
+              key: kyma.input.name
+              value: runtime
     service_enrichment:
         resource_attributes:
             - kyma.kubernetes_io_app_name
@@ -396,8 +414,6 @@ processors:
     transform/set-instrumentation-scope-prometheus:
         error_mode: ignore
         metric_statements:
-            - statements:
-                - set(resource.attributes["kyma.input.name"], "prometheus")
             - statements:
                 - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
                 - set(scope.name, "io.kyma-project.telemetry/prometheus") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
@@ -432,7 +448,7 @@ connectors:
         default_pipelines: []
         error_mode: ignore
         table:
-            - statement: route() where instrumentation_scope.name == "io.kyma-project.telemetry/runtime"
+            - statement: route() where resource.attributes["kyma.input.name"] == "runtime"
               pipelines:
                 - metrics/output-test
               context: metric
@@ -440,7 +456,7 @@ connectors:
               pipelines:
                 - metrics/output-test
               context: metric
-            - statement: route() where instrumentation_scope.name == "io.kyma-project.telemetry/istio"
+            - statement: route() where resource.attributes["kyma.input.name"] == "istio"
               pipelines:
                 - metrics/output-test
               context: metric

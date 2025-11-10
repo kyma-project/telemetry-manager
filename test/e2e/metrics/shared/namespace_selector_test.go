@@ -138,11 +138,18 @@ func TestNamespaceSelector(t *testing.T) {
 			assert.BackendReachable(t, backend2)
 			assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 
-			if suite.ExpectAgent(tc.label) {
-				assert.DaemonSetReady(t, kitkyma.MetricAgentName)
+			// get the content of the configmap used for the metric gateway
+			if suite.DebugObjectsEnabled() {
+				objects := []client.Object{
+					&includePipeline,
+					&excludePipeline,
+					kitk8s.NewConfigMap(kitkyma.MetricGatewayBaseName, kitkyma.SystemNamespaceName).K8sObject(),
+				}
+				Expect(kitk8s.ObjectsToFile(t, objects...)).To(Succeed())
 			}
 
 			if suite.ExpectAgent(tc.label) {
+				assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 				assert.MetricsFromNamespaceDelivered(t, backend1, gen1Ns, runtime.DefaultMetricsNames)
 				assert.MetricsFromNamespaceDelivered(t, backend1, gen1Ns, prommetricgen.CustomMetricNames())
 				assert.MetricsFromNamespaceDelivered(t, backend2, gen2Ns, runtime.DefaultMetricsNames)
