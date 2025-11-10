@@ -1,6 +1,6 @@
 # Transform with OTTL
 
-Use transformations to modify telemetry data as it flows through a pipeline. You can add, update, or delete fields to enrich data or conform to a specific schema.
+Use transformations to modify telemetry data as it flows through a pipeline. You can modify telemetry fields to enrich data or conform to a specific schema.
 
 ## Overview
 
