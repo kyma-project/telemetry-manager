@@ -85,7 +85,7 @@ There are different ways to deploy Dynatrace on Kubernetes. All [deployment opti
                 - kyma
     ```
 
-    If you are using the `oneAgent.applicationMonitoring` mode instead, please configure the `namespaceSelector` on that instead.
+    If you are using the `oneAgent.applicationMonitoring` mode instead, configure the `namespaceSelector` on that.
 
 1. In the DynaKube resource, enable OTLP ingestion using the OTel Collector (see [Enable Dynatrace telemetry ingest endpoints](https://docs.dynatrace.com/managed/ingest-from/setup-on-k8s/extend-observability-k8s/telemetry-ingest)):
 
