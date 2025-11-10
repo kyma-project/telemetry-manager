@@ -39,7 +39,7 @@ spec:
 
 ## Example: Conditionally Set a Span's Status
 
-You can mark all spans from workloads in system namespaces by adding a `system` attribute with the value `true`. This is useful for identifying system-related spans in your tracing backend.
+If you want to identify system-related spans in your observability backend,  mark all spans from workloads in system namespaces by adding a **system** attribute with the value `true`.
 
 ```yaml
 # In your TracePipeline spec
