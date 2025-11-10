@@ -62,6 +62,32 @@ details: |-
             type: TelemetryFlowHealthy
   body:
     - widget: Panel
+      name: Filter
+      children:
+        - source: spec.filter
+          widget: Panel
+          name: Filters
+          children:
+            - name: Conditions
+              source: conditions
+              widget: JoinedArray
+              separator: break
+    - widget: Panel
+      name: Transform
+      children:
+        - source: spec.transform
+          widget: Panel
+          name: Transforms
+          children:
+            - name: Conditions
+              source: conditions
+              widget: JoinedArray
+              separator: break
+            - name: Statements
+              source: statements
+              widget: JoinedArray
+              separator: break
+    - widget: Panel
       name: Output
       children:
         - name: OTLP
@@ -195,6 +221,26 @@ details: |-
     dataSources:
       - source: relatedSecrets
 form: |
+  - path: spec.filter
+    name: Filter
+    widget: GenericList
+    children:
+      - path: '[].conditions'
+        widget: SimpleList
+        children:
+          - path: '[]'
+  - path: spec.transform
+    name: Transform
+    widget: GenericList
+    children:
+      - path: '[].conditions'
+        widget: SimpleList
+        children:
+          - path: '[]'
+      - path: '[].statements'
+        widget: SimpleList
+        children:
+          - path: '[]'
   - path: spec.output
     widget: FormGroup
     defaultExpanded: true

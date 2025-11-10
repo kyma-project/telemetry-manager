@@ -1,4 +1,4 @@
-package shared
+package misc
 
 import (
 	"testing"
@@ -17,17 +17,17 @@ import (
 )
 
 func TestTransformInvalid(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelExperimental)
+	suite.RegisterTestCase(t, suite.LabelMetricsMisc)
 
 	var (
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
 	)
 
-	pipeline := testutils.NewLogPipelineBuilder().
+	pipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineName).
 		WithTransform(telemetryv1alpha1.TransformSpec{
-			Statements: []string{"sset(log.attributes[\"test\"], \"foo\")"},
+			Statements: []string{"sset(datapoint.attributes[\"test\"], \"foo\")"},
 		}).
 		WithOTLPOutput(testutils.OTLPEndpoint("https://backend.example.com:4317")).
 		Build()
@@ -37,13 +37,13 @@ func TestTransformInvalid(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t, &pipeline)).To(Succeed())
 
-	assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
+	assert.MetricPipelineHasCondition(t, pipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonOTTLSpecInvalid,
 	})
 
-	assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
+	assert.MetricPipelineHasCondition(t, pipelineName, metav1.Condition{
 		Type:   conditions.TypeFlowHealthy,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonSelfMonConfigNotGenerated,
@@ -51,7 +51,7 @@ func TestTransformInvalid(t *testing.T) {
 
 	assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
 	assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
-		Type:   conditions.TypeLogComponentsHealthy,
+		Type:   conditions.TypeMetricComponentsHealthy,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonOTTLSpecInvalid,
 	})

@@ -1,4 +1,4 @@
-package shared
+package misc
 
 import (
 	"testing"
@@ -8,7 +8,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -19,79 +18,61 @@ import (
 )
 
 func TestMTLSCertKeyDontMatch_OTel(t *testing.T) {
-	tests := []struct {
-		label string
-		input telemetryv1alpha1.LogPipelineInput
-	}{
-		{
-			label: suite.LabelLogAgent,
-			input: testutils.BuildLogPipelineApplicationInput(),
-		},
-		{
-			label: suite.LabelLogGateway,
-			input: testutils.BuildLogPipelineOTLPInput(),
-		},
+	suite.RegisterTestCase(t, suite.LabelLogsMisc)
+
+	var (
+		uniquePrefix = unique.Prefix()
+		pipelineName = uniquePrefix()
+		backendNs    = uniquePrefix("backend")
+	)
+
+	serverCertsDefault, clientCertsDefault, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
+	Expect(err).ToNot(HaveOccurred())
+
+	_, clientCertsCreatedAgain, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
+	Expect(err).ToNot(HaveOccurred())
+
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithTLS(*serverCertsDefault))
+
+	pipeline := testutils.NewLogPipelineBuilder().
+		WithName(pipelineName).
+		WithOTLPOutput(
+			testutils.OTLPEndpoint(backend.Endpoint()),
+			testutils.OTLPClientTLSFromString(
+				clientCertsDefault.CaCertPem.String(),
+				clientCertsDefault.ClientCertPem.String(),
+				clientCertsCreatedAgain.ClientKeyPem.String(), // Use different key
+			)).
+		Build()
+
+	resources := []client.Object{
+		kitk8s.NewNamespace(backendNs).K8sObject(),
+		&pipeline,
 	}
-	for _, tc := range tests {
-		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label)
 
-			var (
-				uniquePrefix = unique.Prefix(tc.label)
-				pipelineName = uniquePrefix()
-				backendNs    = uniquePrefix("backend")
-			)
+	t.Cleanup(func() {
+		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
+	})
+	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-			serverCertsDefault, clientCertsDefault, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
-			Expect(err).ToNot(HaveOccurred())
+	assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
+		Type:   conditions.TypeConfigurationGenerated,
+		Status: metav1.ConditionFalse,
+		Reason: conditions.ReasonTLSConfigurationInvalid,
+	})
 
-			_, clientCertsCreatedAgain, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
-			Expect(err).ToNot(HaveOccurred())
+	assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
+		Type:   conditions.TypeFlowHealthy,
+		Status: metav1.ConditionFalse,
+		Reason: conditions.ReasonSelfMonConfigNotGenerated,
+	})
 
-			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithTLS(*serverCertsDefault))
-
-			pipeline := testutils.NewLogPipelineBuilder().
-				WithName(pipelineName).
-				WithInput(tc.input).
-				WithOTLPOutput(
-					testutils.OTLPEndpoint(backend.Endpoint()),
-					testutils.OTLPClientTLSFromString(
-						clientCertsDefault.CaCertPem.String(),
-						clientCertsDefault.ClientCertPem.String(),
-						clientCertsCreatedAgain.ClientKeyPem.String(), // Use different key
-					)).
-				Build()
-
-			resources := []client.Object{
-				kitk8s.NewNamespace(backendNs).K8sObject(),
-				&pipeline,
-			}
-
-			t.Cleanup(func() {
-				Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-			})
-			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
-
-			assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
-				Type:   conditions.TypeConfigurationGenerated,
-				Status: metav1.ConditionFalse,
-				Reason: conditions.ReasonTLSConfigurationInvalid,
-			})
-
-			assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
-				Type:   conditions.TypeFlowHealthy,
-				Status: metav1.ConditionFalse,
-				Reason: conditions.ReasonSelfMonConfigNotGenerated,
-			})
-
-			assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
-			assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
-				Type:   conditions.TypeLogComponentsHealthy,
-				Status: metav1.ConditionFalse,
-				Reason: conditions.ReasonTLSConfigurationInvalid,
-			})
-		})
-	}
+	assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+	assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
+		Type:   conditions.TypeLogComponentsHealthy,
+		Status: metav1.ConditionFalse,
+		Reason: conditions.ReasonTLSConfigurationInvalid,
+	})
 }
 
 func TestMTLSCertKeyDontMatch_FluentBit(t *testing.T) {
