@@ -202,6 +202,6 @@ This error occurs due to inadequately processed syntax errors in your OTTL (Open
 
 ### Solution
 
-1. **Double-check the syntax** of your transform and filter rules: Verify all parentheses and brackets are properly closed, ensure function names are spelled correctly (for example, `IsMatch()` not `sIsMatch()`), and validate that you're using the correct OTTL function syntax as documented in the [OTTL function reference](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/ottlfuncs/README.md).
+1. Review the syntax of your transform and filter rules: Verify all parentheses and brackets are closed, ensure function names are spelled correctly (for example, `IsMatch()` not `sIsMatch()`), and validate that you're using the correct OTTL function syntax (see [OTTL Functions](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/ottlfuncs/README.md)).
 
 2. **Isolate and test incrementally**: If you have complex rules, start with a single, simple rule to verify basic functionality, then add complexity incrementally to identify the problematic part until you fix the problem or get a more suitable error message.
