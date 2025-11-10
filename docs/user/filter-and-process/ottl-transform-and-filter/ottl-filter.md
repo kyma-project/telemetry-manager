@@ -4,9 +4,6 @@ Use filters to drop unwanted telemetry data from a pipeline. Filtering helps you
 
 ## Overview
 
-> [!NOTE]
-> This feature is based on the [OpenTelemetry Filter Processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/filterprocessor/README.md), with some limitations and differences (see [Limitations](./README.md#limitations) and [Predefined Contexts](#predefined-contexts)).
-
 You define these rules in the `filter` section of your Telemetry pipeline's `spec`.
 
 Each rule in the `filter` list contains one or more `conditions`.
@@ -14,7 +11,8 @@ Each rule in the `filter` list contains one or more `conditions`.
 The pipeline drops any log, metric, or trace that matches **at least one** of the conditions you define. This means that multiple conditions are always combined with a logical OR. If any single condition evaluates to true, the data is dropped.
 
 > [!TIP]
-> The pipeline applies all transformation rules **before** it evaluates any filter rules. Any changes you make here affects the data that your filters see.
+> - The pipeline applies all transformation rules **before** it evaluates any filter rules. Any changes you make here affects the data that your filters see.
+> - This feature is based on the [OpenTelemetry Filter Processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/filterprocessor/README.md), with some limitations and differences (see [Limitations](./README.md#limitations) and [Predefined Contexts](#predefined-contexts)).
 
 ## Predefined Contexts
 

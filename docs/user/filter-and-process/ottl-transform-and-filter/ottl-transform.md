@@ -4,9 +4,6 @@ Use transformations to modify telemetry data as it flows through a pipeline. You
 
 ## Overview
 
-> [!NOTE]
-> This feature is based on the [OpenTelemetry Filter Processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/filterprocessor/README.md), with some limitations (see [Limitations](./README.md#limitations)).
-
 You define these rules in the `transform` section of your Telemetry pipeline's `spec`.
 
 Each rule in the `transform` list contains:
@@ -17,7 +14,7 @@ If you don't provide any conditions, the statements apply to all telemetry data 
 
 > [!TIP]
 > - Filters run **after** all transformations. Your filter conditions must operate on the final, modified state of your data, not its original state.
-> - This feature is based on the [OpenTelemetry Filter Processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/filterprocessor/README.md), with some limitations (see [Limitations](./README.md#limitations)).
+> - This feature is based on the [OpenTelemetry Transform Processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/transformprocessor/README.md), with some limitations (see [Limitations](./README.md#limitations)).
 
 ## Example: Add a Global Attribute to All Metrics
 
