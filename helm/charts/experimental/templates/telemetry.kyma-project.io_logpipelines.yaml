@@ -98,12 +98,9 @@ spec:
                   description: FilterSpec defines a filter to apply to telemetry data.
                   properties:
                     conditions:
-                      description: Conditions specify a list of multiple where clauses,
-                        which will be processed as global conditions for the accompanying
-                        set of statements. The conditions are ORed together, which
-                        means only one condition needs to evaluate to true in order
-                        for the statements (including their individual where clauses)
-                        to be executed.
+                      description: Conditions specify a list of multiple conditions
+                        which are ORed together, which means only one condition needs
+                        to evaluate to true in order for the telemetry to be dropped.
                       items:
                         type: string
                       type: array
@@ -1219,12 +1216,9 @@ spec:
                   description: FilterSpec defines a filter to apply to telemetry data.
                   properties:
                     conditions:
-                      description: Conditions specify a list of multiple where clauses,
-                        which will be processed as global conditions for the accompanying
-                        set of statements. The conditions are ORed together, which
-                        means only one condition needs to evaluate to true in order
-                        for the statements (including their individual where clauses)
-                        to be executed.
+                      description: Conditions specify a list of multiple conditions
+                        which are ORed together, which means only one condition needs
+                        to evaluate to true in order for the telemetry to be dropped.
                       items:
                         type: string
                       type: array

@@ -1,4 +1,4 @@
-package shared
+package misc
 
 import (
 	"testing"
@@ -7,7 +7,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -18,74 +17,54 @@ import (
 )
 
 func TestEndpointInvalid_OTel(t *testing.T) {
-	tests := []struct {
-		label string
-		input telemetryv1alpha1.LogPipelineInput
-	}{
-		{
-			label: suite.LabelLogAgent,
-			input: testutils.BuildLogPipelineApplicationInput(),
-		},
-		{
-			label: suite.LabelLogGateway,
-			input: testutils.BuildLogPipelineOTLPInput(),
-		},
+	suite.RegisterTestCase(t, suite.LabelLogsMisc)
+
+	const (
+		endpointKey     = "endpoint"
+		invalidEndpoint = "'http://example.com'"
+	)
+
+	var (
+		uniquePrefix                = unique.Prefix()
+		pipelineNameValue           = uniquePrefix("value")
+		pipelineNameValueFromSecret = uniquePrefix("value-from-secret")
+		secretName                  = uniquePrefix()
+	)
+
+	pipelineInvalidEndpointValue := testutils.NewLogPipelineBuilder().
+		WithName(pipelineNameValue).
+		WithOTLPOutput(testutils.OTLPEndpoint(invalidEndpoint)).
+		Build()
+
+	secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, invalidEndpoint))
+	pipelineInvalidEndpointValueFrom := testutils.NewLogPipelineBuilder().
+		WithName(pipelineNameValueFromSecret).
+		WithOTLPOutput(testutils.OTLPEndpointFromSecret(secret.Name(), secret.Namespace(), endpointKey)).
+		Build()
+
+	resourcesToSucceedCreation := []client.Object{
+		secret.K8sObject(),
+		&pipelineInvalidEndpointValueFrom,
+		&pipelineInvalidEndpointValue,
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label)
+	t.Cleanup(func() {
+		Expect(kitk8s.DeleteObjects(resourcesToSucceedCreation...)).To(Succeed())
+	})
 
-			const (
-				endpointKey     = "endpoint"
-				invalidEndpoint = "'http://example.com'"
-			)
+	Expect(kitk8s.CreateObjects(t, resourcesToSucceedCreation...)).To(Succeed())
 
-			var (
-				uniquePrefix                = unique.Prefix(tc.label)
-				pipelineNameValue           = uniquePrefix("value")
-				pipelineNameValueFromSecret = uniquePrefix("value-from-secret")
-				secretName                  = uniquePrefix()
-			)
+	assert.LogPipelineHasCondition(t, pipelineNameValueFromSecret, metav1.Condition{
+		Type:   conditions.TypeConfigurationGenerated,
+		Status: metav1.ConditionFalse,
+		Reason: conditions.ReasonEndpointInvalid,
+	})
 
-			pipelineInvalidEndpointValue := testutils.NewLogPipelineBuilder().
-				WithName(pipelineNameValue).
-				WithInput(tc.input).
-				WithOTLPOutput(testutils.OTLPEndpoint(invalidEndpoint)).
-				Build()
-
-			secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, invalidEndpoint))
-			pipelineInvalidEndpointValueFrom := testutils.NewLogPipelineBuilder().
-				WithName(pipelineNameValueFromSecret).
-				WithInput(tc.input).
-				WithOTLPOutput(testutils.OTLPEndpointFromSecret(secret.Name(), secret.Namespace(), endpointKey)).
-				Build()
-
-			resourcesToSucceedCreation := []client.Object{
-				secret.K8sObject(),
-				&pipelineInvalidEndpointValueFrom,
-				&pipelineInvalidEndpointValue,
-			}
-
-			t.Cleanup(func() {
-				Expect(kitk8s.DeleteObjects(resourcesToSucceedCreation...)).To(Succeed())
-			})
-
-			Expect(kitk8s.CreateObjects(t, resourcesToSucceedCreation...)).To(Succeed())
-
-			assert.LogPipelineHasCondition(t, pipelineNameValueFromSecret, metav1.Condition{
-				Type:   conditions.TypeConfigurationGenerated,
-				Status: metav1.ConditionFalse,
-				Reason: conditions.ReasonEndpointInvalid,
-			})
-
-			assert.LogPipelineHasCondition(t, pipelineNameValue, metav1.Condition{
-				Type:   conditions.TypeConfigurationGenerated,
-				Status: metav1.ConditionFalse,
-				Reason: conditions.ReasonEndpointInvalid,
-			})
-		})
-	}
+	assert.LogPipelineHasCondition(t, pipelineNameValue, metav1.Condition{
+		Type:   conditions.TypeConfigurationGenerated,
+		Status: metav1.ConditionFalse,
+		Reason: conditions.ReasonEndpointInvalid,
+	})
 }
 
 func TestEndpointInvalid_FluentBit(t *testing.T) {

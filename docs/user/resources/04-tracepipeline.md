@@ -62,6 +62,8 @@ For details, see the [TracePipeline specification file](https://github.com/kyma-
 
 | Parameter | Type | Description |
 | ---- | ----------- | ---- |
+| **filter**  | \[\]object | Filter specifies a list of filters to apply to telemetry data. |
+| **filter.&#x200b;conditions**  | \[\]string | Conditions specify a list of multiple conditions which are ORed together, which means only one condition needs to evaluate to true in order for the telemetry to be dropped. |
 | **output** (required) | object | Output configures the backend to which traces are sent. You must specify exactly one output per pipeline. |
 | **output.&#x200b;otlp** (required) | object | OTLP output defines an output using the OpenTelemetry protocol. |
 | **output.&#x200b;otlp.&#x200b;authentication**  | object | Authentication defines authentication options for the OTLP output |
@@ -122,6 +124,9 @@ For details, see the [TracePipeline specification file](https://github.com/kyma-
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;key.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key** (required) | string | Key defines the name of the attribute of the Secret holding the referenced value. |
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;key.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name** (required) | string | Name of the Secret containing the referenced value. |
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;key.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace** (required) | string | Namespace containing the Secret with the referenced value. |
+| **transform**  | \[\]object | Transforms specify a list of transformations to apply to telemetry data. |
+| **transform.&#x200b;conditions**  | \[\]string | Conditions specify a list of multiple where clauses, which will be processed as global conditions for the accompanying set of statements. The conditions are ORed together, which means only one condition needs to evaluate to true in order for the statements (including their individual where clauses) to be executed. |
+| **transform.&#x200b;statements**  | \[\]string | Statements specify a list of OTTL statements to perform the transformation. |
 
 **Status:**
 
