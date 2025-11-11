@@ -125,6 +125,12 @@ func WithTolerations(tolerations []corev1.Toleration) PodSpecOption {
 	}
 }
 
+func WithImagePullSecrets(secrets []corev1.LocalObjectReference) PodSpecOption {
+	return func(pod *corev1.PodSpec) {
+		pod.ImagePullSecrets = append(pod.ImagePullSecrets, secrets...)
+	}
+}
+
 func WithArgs(args []string) ContainerOption {
 	return func(c *corev1.Container) {
 		c.Args = args
