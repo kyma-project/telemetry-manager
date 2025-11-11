@@ -100,7 +100,7 @@ func NewLogGatewayApplierDeleter(image, namespace, priorityClassName string, ena
 		commonresources.LabelKeyIstioInject:        "true", // inject istio sidecar
 	}
 
-	return &GatewayApplierDeleter{
+	applierDeleter := &GatewayApplierDeleter{
 		baseName:             LogGatewayName,
 		extraPodLabels:       extraLabels,
 		image:                image,
@@ -123,6 +123,16 @@ func NewLogGatewayApplierDeleter(image, namespace, priorityClassName string, ena
 			commonresources.WithGoDebugEnvVar(enableFIPSMode),
 		},
 	}
+
+	if pullSecret, ok := os.LookupEnv(commonresources.ImagePullSecretName); ok {
+		applierDeleter.podOpts = append(applierDeleter.podOpts, commonresources.WithImagePullSecrets(
+			[]corev1.LocalObjectReference{
+				corev1.LocalObjectReference{Name: pullSecret},
+			}),
+		)
+	}
+
+	return applierDeleter
 }
 
 //nolint:dupl // repeating the code as we have three different signals
