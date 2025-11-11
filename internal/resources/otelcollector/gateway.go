@@ -127,7 +127,7 @@ func NewLogGatewayApplierDeleter(image, namespace, priorityClassName string, ena
 	if pullSecret, ok := os.LookupEnv(commonresources.ImagePullSecretName); ok {
 		applierDeleter.podOpts = append(applierDeleter.podOpts, commonresources.WithImagePullSecrets(
 			[]corev1.LocalObjectReference{
-				corev1.LocalObjectReference{Name: pullSecret},
+				{Name: pullSecret},
 			}),
 		)
 	}
