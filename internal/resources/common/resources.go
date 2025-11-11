@@ -12,6 +12,7 @@ import (
 const (
 	SystemLogCollectorName = "system-logs-collector"
 	SystemLogAgentName     = "system-logs-agent"
+	ImagePullSecretName    = "SKR_IMG_PULL_SECRET" //nolint:gosec // not sensitive information
 )
 
 func MakeServiceAccount(name types.NamespacedName) *corev1.ServiceAccount {

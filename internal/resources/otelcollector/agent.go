@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"os"
 	"slices"
 	"strconv"
 	"strings"
@@ -89,7 +90,7 @@ func NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName stri
 		logAgentCPURequest,
 	)
 
-	return &AgentApplierDeleter{
+	applierDeleter := &AgentApplierDeleter{
 		baseName:            LogAgentName,
 		extraPodLabel:       extraLabels,
 		makeAnnotationsFunc: makeLogAgentAnnotations,
@@ -110,6 +111,16 @@ func NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName stri
 			commonresources.WithRunAsUser(commonresources.UserDefault),
 		},
 	}
+
+	if pullSecret, ok := os.LookupEnv(commonresources.ImagePullSecretName); ok {
+		applierDeleter.podOpts = append(applierDeleter.podOpts, commonresources.WithImagePullSecrets(
+			[]corev1.LocalObjectReference{
+				{Name: pullSecret},
+			}),
+		)
+	}
+
+	return applierDeleter
 }
 
 func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string, enableFIPSMode bool) *AgentApplierDeleter {
@@ -119,7 +130,7 @@ func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string, en
 		commonresources.LabelKeyIstioInject:           "true", // inject Istio sidecar
 	}
 
-	return &AgentApplierDeleter{
+	applierDeleter := &AgentApplierDeleter{
 		baseName:            MetricAgentName,
 		extraPodLabel:       extraLabels,
 		makeAnnotationsFunc: makeMetricAgentAnnotations,
@@ -143,6 +154,16 @@ func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string, en
 			commonresources.WithVolumeMounts([]corev1.VolumeMount{makeIstioCertVolumeMount()}),
 		},
 	}
+
+	if pullSecret, ok := os.LookupEnv(commonresources.ImagePullSecretName); ok {
+		applierDeleter.podOpts = append(applierDeleter.podOpts, commonresources.WithImagePullSecrets(
+			[]corev1.LocalObjectReference{
+				{Name: pullSecret},
+			}),
+		)
+	}
+
+	return applierDeleter
 }
 
 func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {

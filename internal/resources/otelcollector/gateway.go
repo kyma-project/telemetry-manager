@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"os"
 	"slices"
 
 	istiosecurityv1 "istio.io/api/security/v1"
@@ -132,7 +133,7 @@ func NewMetricGatewayApplierDeleter(image, namespace, priorityClassName string, 
 		commonresources.LabelKeyIstioInject:           "true", // inject istio sidecar
 	}
 
-	return &GatewayApplierDeleter{
+	applierDeleter := &GatewayApplierDeleter{
 		baseName:             MetricGatewayName,
 		extraPodLabels:       extraLabels,
 		image:                image,
@@ -155,6 +156,16 @@ func NewMetricGatewayApplierDeleter(image, namespace, priorityClassName string, 
 			commonresources.WithGoDebugEnvVar(enableFIPSMode),
 		},
 	}
+
+	if pullSecret, ok := os.LookupEnv(commonresources.ImagePullSecretName); ok {
+		applierDeleter.podOpts = append(applierDeleter.podOpts, commonresources.WithImagePullSecrets(
+			[]corev1.LocalObjectReference{
+				{Name: pullSecret},
+			}),
+		)
+	}
+
+	return applierDeleter
 }
 
 //nolint:dupl // repeating the code as we have three different signals
@@ -165,7 +176,7 @@ func NewTraceGatewayApplierDeleter(image, namespace, priorityClassName string, e
 		commonresources.LabelKeyIstioInject:          "true", // inject istio sidecar
 	}
 
-	return &GatewayApplierDeleter{
+	applierDeleter := &GatewayApplierDeleter{
 		baseName:             TraceGatewayName,
 		extraPodLabels:       extraLabels,
 		image:                image,
@@ -188,6 +199,16 @@ func NewTraceGatewayApplierDeleter(image, namespace, priorityClassName string, e
 			commonresources.WithGoDebugEnvVar(enableFIPSMode),
 		},
 	}
+
+	if pullSecret, ok := os.LookupEnv(commonresources.ImagePullSecretName); ok {
+		applierDeleter.podOpts = append(applierDeleter.podOpts, commonresources.WithImagePullSecrets(
+			[]corev1.LocalObjectReference{
+				{Name: pullSecret},
+			}),
+		)
+	}
+
+	return applierDeleter
 }
 
 func (gad *GatewayApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts GatewayApplyOptions) error {
