@@ -436,10 +436,10 @@ func TestReuseExistingCertificate(t *testing.T) {
 	err = client.Get(t.Context(), config.ValidatingWebhookName, &updatedValidatingWebhookConfiguration)
 	require.NoError(t, err)
 
+	require.Len(t, updatedValidatingWebhookConfiguration.Webhooks, 1)
+
 	require.Equal(t, newValidatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle,
 		updatedValidatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
-	require.Equal(t, newValidatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle,
-		updatedValidatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
 
 	var updatedMutatingWebhookConfiguration admissionregistrationv1.MutatingWebhookConfiguration
 
