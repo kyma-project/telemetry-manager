@@ -203,7 +203,7 @@ filter:
     - conditions:
         - 'isMatch(resource.attributes["k8s.namespace.name"], ".*-system")'
 ```
-This malformed OTTL function call (`isMatch` should start with a capital letter), leads to the following error:
+This mistake produces a generic error message because the parser is case-sensitive and does not recognize the function:
 ```
 'Invalid FilterSpec: condition has invalid syntax: 1:64: unexpected token                      
       "<EOF>" (expected <opcomparison> Value)'
