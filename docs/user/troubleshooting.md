@@ -182,7 +182,7 @@ This usually happens for one of the following reasons:
 ### Solution
 
 1. Review your rules and verify the execution order. For example, if you have a transform rule that renames `resource.attributes["foo"]` to `resource.attributes["bar"]`, your filter rule must check for `bar`, not `foo`.
-2. **Inspect Logic / Regex**: Test your regex separately. Simplify complex conditions to a single comparison and re-apply.
+2. Test your regex separately. Simplify complex conditions to a single comparison and re-apply.
 3. To test your rules, temporarily remove all but one rule to confirm it works as expected. Then, add your other rules incrementally and isolate the rule that is causing the issue.
 
 ## Generic EOF Error Message When Using OTTL Transform or Filter
