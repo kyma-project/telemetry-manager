@@ -53,51 +53,154 @@ Combined with the Kyma Telemetry module, you can collect custom spans and metric
 
 ## Dynatrace Setup
 
+
 There are different ways to deploy Dynatrace on Kubernetes. All [deployment options](https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/deployment) are based on the [Dynatrace Operator](https://github.com/Dynatrace/dynatrace-operator).
 
-1. Install Dynatrace with the namespace you prepared earlier.
+### 1. Install Dynatrace Operator
+Install Dynatrace with the namespace you prepared earlier.
 
-1. In the DynaKube resource, configure the correct `apiurl` of your environment.
+### 2. Configure the DynaKube resource
+Set the correct `apiUrl` of your environment.
 
-1. In the DynaKube resource, exclude Kyma system namespaces by adding the following snippet:
+### 3. Exclude Kyma system namespaces (Kyma exclusion)
 
-    ```yaml
-    spec:
-      metadataEnrichment:
-        enabled: true
-        namespaceSelector:
-          matchExpressions:
-          - key: operator.kyma-project.io/managed-by
-            operator: NotIn
-            values:
-              - kyma
-      oneAgent:
-        cloudNativeFullStack:
-          namespaceSelector:
-            matchExpressions:
-            - key: operator.kyma-project.io/managed-by
-              operator: NotIn
-              values:
-                - kyma
-    ```
+To avoid sidecar injection into Kyma system namespaces, you must configure `namespaceSelector` for both `metadataEnrichment` and the OneAgent mode you use (`cloudNativeFullStack` or `applicationMonitoring`).
 
-1. In the DynaKube resource, enable OTLP ingestion using the OTel Collector (see [Enable Dynatrace telemetry ingest endpoints](https://docs.dynatrace.com/managed/ingest-from/setup-on-k8s/extend-observability-k8s/telemetry-ingest)):
+**The configuration differs by DynaKube API version:**
 
-    ```yaml
-    spec:
-      telemetryIngest:
-        protocols:
-        - otlp
-      templates:
-        otelCollector:
-          imageRef:
-            repository: public.ecr.aws/dynatrace/dynatrace-otel-collector
-            tag: latest
-    ```
+#### v1beta5, v1beta4, v1beta3
+For these versions, both `cloudNativeFullStack` and `applicationMonitoring` support `namespaceSelector`. Choose the mode you use and set the exclusion accordingly. Example for `cloudNativeFullStack`:
 
-1. In the environment, go to **Settings > Cloud and virtualization > Kubernetes** and enable relevant Kubernetes features.
+```yaml
+spec:
+  metadataEnrichment:
+    enabled: true
+    namespaceSelector:
+      matchExpressions:
+      - key: operator.kyma-project.io/managed-by
+        operator: NotIn
+        values:
+          - kyma
+  oneAgent:
+    cloudNativeFullStack:
+      namespaceSelector:
+        matchExpressions:
+        - key: operator.kyma-project.io/managed-by
+          operator: NotIn
+          values:
+            - kyma
+```
 
-1. In the Dynatrace Hub, enable the **Istio Service Mesh** extension and annotate your services as outlined in the description.
+Or, if you use `applicationMonitoring`:
+
+```yaml
+spec:
+  metadataEnrichment:
+    enabled: true
+    namespaceSelector:
+      matchExpressions:
+      - key: operator.kyma-project.io/managed-by
+        operator: NotIn
+        values:
+          - kyma
+  oneAgent:
+    applicationMonitoring:
+      namespaceSelector:
+        matchExpressions:
+        - key: operator.kyma-project.io/managed-by
+          operator: NotIn
+          values:
+            - kyma
+```
+
+#### v1beta2
+In v1beta2, `namespaceSelector` is also available for both `cloudNativeFullStack` and `applicationMonitoring`. The syntax is the same as above. **However, `metadataEnrichment.enabled` defaults to `true` in v1beta2.**
+
+Example for `cloudNativeFullStack`:
+
+```yaml
+spec:
+  metadataEnrichment:
+    # enabled: true  # true by default in v1beta2
+    namespaceSelector:
+      matchExpressions:
+      - key: operator.kyma-project.io/managed-by
+        operator: NotIn
+        values:
+          - kyma
+  oneAgent:
+    cloudNativeFullStack:
+      namespaceSelector:
+        matchExpressions:
+        - key: operator.kyma-project.io/managed-by
+          operator: NotIn
+          values:
+            - kyma
+```
+
+#### v1beta1
+
+In v1beta1, `metadataEnrichment` is not available. The `namespaceSelector` can be configured either at the top-level `.spec` (applies to both OneAgent modes) **or** under the OneAgent mode you use.
+
+Example (top-level, applies to all modes):
+
+```yaml
+spec:
+  namespaceSelector:
+    matchExpressions:
+    - key: operator.kyma-project.io/managed-by
+      operator: NotIn
+      values:
+        - kyma
+  oneAgent:
+    cloudNativeFullStack: {}
+    # or
+    # applicationMonitoring: {}
+```
+
+Example (under the OneAgent mode, applies only to that mode):
+
+```yaml
+spec:
+  oneAgent:
+    cloudNativeFullStack:
+      namespaceSelector:
+        matchExpressions:
+        - key: operator.kyma-project.io/managed-by
+          operator: NotIn
+          values:
+            - kyma
+    # or
+    # applicationMonitoring:
+    #   namespaceSelector:
+    #     matchExpressions:
+    #     - key: operator.kyma-project.io/managed-by
+    #       operator: NotIn
+    #       values:
+    #         - kyma
+```
+
+> **Tip:**
+> Always check the [DynaKube CRD documentation](https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters) for your Operator version to confirm available fields and defaults.
+
+### 4. Enable OTLP ingestion (optional)
+To enable OTLP ingestion using the OTel Collector (see [Enable Dynatrace telemetry ingest endpoints](https://docs.dynatrace.com/managed/ingest-from/setup-on-k8s/extend-observability-k8s/telemetry-ingest)):
+
+```yaml
+spec:
+  telemetryIngest:
+    protocols:
+    - otlp
+  templates:
+    otelCollector:
+      imageRef:
+        repository: public.ecr.aws/dynatrace/dynatrace-otel-collector
+        tag: latest
+```
+
+### 5. Finalize Dynatrace configuration
+- In the environment, go to **Settings > Cloud and virtualization > Kubernetes** and enable relevant Kubernetes features.
+- In the Dynatrace Hub, enable the **Istio Service Mesh** extension and annotate your services as outlined in the description.
 
 As a result, you see data arriving in your environment and Kubernetes monitoring is possible.
 
