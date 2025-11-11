@@ -203,10 +203,17 @@ filter:
     - conditions:
         - 'isMatch(resource.attributes["k8s.namespace.name"], ".*-system")'
 ```
-This mistake produces a generic error message because the parser is case-sensitive and does not recognize the function:
-```
-'Invalid FilterSpec: condition has invalid syntax: 1:64: unexpected token                      
+This mistake produces a generic error message in the `ConfigurationGenerated` status condition of the pipeline, because the parser is case-sensitive and does not recognize the function:
+```yaml
+status:
+  conditions:
+  - lastTransitionTime: "2025-11-11T14:18:19Z"
+    message: 'Invalid FilterSpec: condition has invalid syntax: 1:64: unexpected token
       "<EOF>" (expected <opcomparison> Value)'
+    observedGeneration: 1
+    reason: OTTLSpecInvalid
+    status: "False"
+    type: ConfigurationGenerated
 ```
 
 ### Solution
