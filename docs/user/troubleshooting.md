@@ -211,4 +211,4 @@ This mistake produces a generic error message because the parser is case-sensiti
 
 ### Solution
 
-1. Review the syntax of your transform and filter rules: Verify all parentheses and brackets are closed, ensure function names are spelled correctly (for example, `IsMatch()` not `sIsMatch()`), and validate that you're using the correct OTTL function syntax (see [OTTL Functions](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/ottlfuncs/README.md)).
+Review the syntax of your transform and filter rules: Ensure names of [OTTL functions](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/ottlfuncs/README.md) are spelled correctly (for example, `IsMatch()` instead of `isMatch()`).
