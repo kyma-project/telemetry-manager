@@ -180,7 +180,6 @@ func assertValidatingWebhookConfiguration() {
 		g.Expect(logPipelineWebhook.Rules[0].Resources).Should(ContainElement("logpipelines"))
 		g.Expect(logPipelineWebhook.Rules[0].Operations).Should(ContainElement(admissionregistrationv1.Create))
 		g.Expect(logPipelineWebhook.Rules[0].Operations).Should(ContainElement(admissionregistrationv1.Update))
-
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
