@@ -15,6 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -24,59 +25,87 @@ func TestGateway_ApplyResources(t *testing.T) {
 	priorityClassName := "normal"
 
 	tests := []struct {
-		name           string
-		sut            *GatewayApplierDeleter
-		istioEnabled   bool
-		goldenFilePath string
-		saveGoldenFile bool
+		name            string
+		createSut       func() *GatewayApplierDeleter
+		istioEnabled    bool
+		goldenFilePath  string
+		saveGoldenFile  bool
+		imagePullSecret bool
 	}{
 		{
-			name:           "metric gateway",
-			sut:            NewMetricGatewayApplierDeleter(image, namespace, priorityClassName, false),
+			name: "metric gateway",
+			createSut: func() *GatewayApplierDeleter {
+				return NewMetricGatewayApplierDeleter(image, namespace, priorityClassName, false)
+			},
 			goldenFilePath: "testdata/metric-gateway.yaml",
 		},
 		{
-			name:           "metric gateway with istio",
-			sut:            NewMetricGatewayApplierDeleter(image, namespace, priorityClassName, false),
+			name: "metric gateway with istio",
+			createSut: func() *GatewayApplierDeleter {
+				return NewMetricGatewayApplierDeleter(image, namespace, priorityClassName, false)
+			},
 			istioEnabled:   true,
 			goldenFilePath: "testdata/metric-gateway-istio.yaml",
 		},
 		{
-			name:           "metric gateway with FIPS mode enabled",
-			sut:            NewMetricGatewayApplierDeleter(image, namespace, priorityClassName, true),
+			name: "metric gateway with FIPS mode enabled",
+			createSut: func() *GatewayApplierDeleter {
+				return NewMetricGatewayApplierDeleter(image, namespace, priorityClassName, true)
+			},
 			goldenFilePath: "testdata/metric-gateway-fips-enabled.yaml",
 		},
 		{
-			name:           "trace gateway",
-			sut:            NewTraceGatewayApplierDeleter(image, namespace, priorityClassName, false),
+			name: "trace gateway",
+			createSut: func() *GatewayApplierDeleter {
+				return NewTraceGatewayApplierDeleter(image, namespace, priorityClassName, false)
+			},
 			goldenFilePath: "testdata/trace-gateway.yaml",
 		},
 		{
-			name:           "trace gateway with istio",
-			sut:            NewTraceGatewayApplierDeleter(image, namespace, priorityClassName, false),
+			name: "trace gateway with istio",
+			createSut: func() *GatewayApplierDeleter {
+				return NewTraceGatewayApplierDeleter(image, namespace, priorityClassName, false)
+			},
 			istioEnabled:   true,
 			goldenFilePath: "testdata/trace-gateway-istio.yaml",
 		},
 		{
-			name:           "trace gateway with FIPS mode enabled",
-			sut:            NewTraceGatewayApplierDeleter(image, namespace, priorityClassName, true),
+			name: "trace gateway with FIPS mode enabled",
+			createSut: func() *GatewayApplierDeleter {
+				return NewTraceGatewayApplierDeleter(image, namespace, priorityClassName, true)
+			},
 			goldenFilePath: "testdata/trace-gateway-fips-enabled.yaml",
 		},
 		{
-			name:           "log gateway",
-			sut:            NewLogGatewayApplierDeleter(image, namespace, priorityClassName, false),
+			name: "log gateway",
+			createSut: func() *GatewayApplierDeleter {
+				return NewLogGatewayApplierDeleter(image, namespace, priorityClassName, false)
+			},
 			goldenFilePath: "testdata/log-gateway.yaml",
 		},
 		{
-			name:           "log gateway with istio",
-			sut:            NewLogGatewayApplierDeleter(image, namespace, priorityClassName, false),
+			name: "log gateway with istio",
+			createSut: func() *GatewayApplierDeleter {
+				return NewLogGatewayApplierDeleter(image, namespace, priorityClassName, false)
+			},
 			istioEnabled:   true,
 			goldenFilePath: "testdata/log-gateway-istio.yaml",
 		},
 		{
-			name:           "log gateway with FIPS mode enabled",
-			sut:            NewLogGatewayApplierDeleter(image, namespace, priorityClassName, true),
+			name: "log gateway with FIPS mode enabled",
+			createSut: func() *GatewayApplierDeleter {
+				return NewLogGatewayApplierDeleter(image, namespace, priorityClassName, true)
+			},
 			goldenFilePath: "testdata/log-gateway-fips-enabled.yaml",
+		},
+		{
+			name: "metric gateway with image pull secret",
+			createSut: func() *GatewayApplierDeleter {
+				return NewMetricGatewayApplierDeleter(image, namespace, priorityClassName, false)
+			},
+			istioEnabled:    true,
+			goldenFilePath:  "testdata/metric-gateway-img-pull-secret.yaml",
+			imagePullSecret: true,
 		},
 	}
 
@@ -88,6 +117,10 @@ func TestGateway_ApplyResources(t *testing.T) {
 			utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 			utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
 
+			if tt.imagePullSecret {
+				t.Setenv(commonresources.ImagePullSecretName, "foo-secret")
+			}
+
 			client := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
 				Create: func(_ context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
 					objects = append(objects, obj)
@@ -96,7 +129,9 @@ func TestGateway_ApplyResources(t *testing.T) {
 				},
 			}).Build()
 
-			err := tt.sut.ApplyResources(t.Context(), client, GatewayApplyOptions{
+			sut := tt.createSut()
+
+			err := sut.ApplyResources(t.Context(), client, GatewayApplyOptions{
 				CollectorConfigYAML: "dummy",
 				CollectorEnvVars: map[string][]byte{
 					"DUMMY_ENV_VAR": []byte("foo"),

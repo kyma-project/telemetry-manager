@@ -15,6 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -25,33 +26,42 @@ func TestAgent_ApplyResources(t *testing.T) {
 
 	tests := []struct {
 		name             string
-		sut              *AgentApplierDeleter
+		createSut        func() *AgentApplierDeleter
 		collectorEnvVars map[string][]byte
 		istioEnabled     bool
 		backendPorts     []string
 		goldenFilePath   string
 		saveGoldenFile   bool
+		imagePullSecret  bool
 	}{
 		{
-			name:           "metric agent",
-			sut:            NewMetricAgentApplierDeleter(collectorImage, namespace, priorityClassName, false),
+			name: "metric agent",
+			createSut: func() *AgentApplierDeleter {
+				return NewMetricAgentApplierDeleter(collectorImage, namespace, priorityClassName, false)
+			},
 			goldenFilePath: "testdata/metric-agent.yaml",
 		},
 		{
-			name:           "metric agent with istio",
-			sut:            NewMetricAgentApplierDeleter(collectorImage, namespace, priorityClassName, false),
+			name: "metric agent with istio",
+			createSut: func() *AgentApplierDeleter {
+				return NewMetricAgentApplierDeleter(collectorImage, namespace, priorityClassName, false)
+			},
 			istioEnabled:   true,
 			backendPorts:   []string{"4317", "9090"},
 			goldenFilePath: "testdata/metric-agent-istio.yaml",
 		},
 		{
-			name:           "metric agent with FIPS mode enabled",
-			sut:            NewMetricAgentApplierDeleter(collectorImage, namespace, priorityClassName, true),
+			name: "metric agent with FIPS mode enabled",
+			createSut: func() *AgentApplierDeleter {
+				return NewMetricAgentApplierDeleter(collectorImage, namespace, priorityClassName, true)
+			},
 			goldenFilePath: "testdata/metric-agent-fips-enabled.yaml",
 		},
 		{
 			name: "log agent",
-			sut:  NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName, false),
+			createSut: func() *AgentApplierDeleter {
+				return NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName, false)
+			},
 			collectorEnvVars: map[string][]byte{
 				"DUMMY_ENV_VAR": []byte("foo"),
 			},
@@ -59,7 +69,9 @@ func TestAgent_ApplyResources(t *testing.T) {
 		},
 		{
 			name: "log agent with istio",
-			sut:  NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName, false),
+			createSut: func() *AgentApplierDeleter {
+				return NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName, false)
+			},
 			collectorEnvVars: map[string][]byte{
 				"DUMMY_ENV_VAR": []byte("foo"),
 			},
@@ -68,11 +80,25 @@ func TestAgent_ApplyResources(t *testing.T) {
 		},
 		{
 			name: "log agent with FIPS mode enabled",
-			sut:  NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName, true),
+			createSut: func() *AgentApplierDeleter {
+				return NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName, true)
+			},
 			collectorEnvVars: map[string][]byte{
 				"DUMMY_ENV_VAR": []byte("foo"),
 			},
 			goldenFilePath: "testdata/log-agent-fips-enabled.yaml",
+		},
+		{
+			name: "log agent with image pull secret",
+			createSut: func() *AgentApplierDeleter {
+				return NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName, false)
+			},
+			collectorEnvVars: map[string][]byte{
+				"DUMMY_ENV_VAR": []byte("foo"),
+			},
+			istioEnabled:    true,
+			goldenFilePath:  "testdata/log-agent-img-pull-secret.yaml",
+			imagePullSecret: true,
 		},
 	}
 
@@ -83,6 +109,10 @@ func TestAgent_ApplyResources(t *testing.T) {
 		utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 		utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
 
+		if tt.imagePullSecret {
+			t.Setenv(commonresources.ImagePullSecretName, "foo-secret")
+		}
+
 		fakeClient := fake.NewClientBuilder().WithInterceptorFuncs(interceptor.Funcs{
 			Create: func(_ context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
 				objects = append(objects, obj)
@@ -92,7 +122,8 @@ func TestAgent_ApplyResources(t *testing.T) {
 		}).Build()
 
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.sut.ApplyResources(t.Context(), fakeClient, AgentApplyOptions{
+			sut := tt.createSut()
+			err := sut.ApplyResources(t.Context(), fakeClient, AgentApplyOptions{
 				IstioEnabled:        tt.istioEnabled,
 				CollectorConfigYAML: "dummy",
 				CollectorEnvVars:    tt.collectorEnvVars,
@@ -130,25 +161,30 @@ func TestAgent_DeleteResources(t *testing.T) {
 	}).Build()
 
 	tests := []struct {
-		name string
-		sut  *AgentApplierDeleter
+		name      string
+		createSut func() *AgentApplierDeleter
 	}{
 		{
 			name: "metric agent",
-			sut:  NewMetricAgentApplierDeleter(image, namespace, priorityClassName, false),
+			createSut: func() *AgentApplierDeleter {
+				return NewMetricAgentApplierDeleter(image, namespace, priorityClassName, false)
+			},
 		},
 		{
 			name: "log agent",
-			sut:  NewLogAgentApplierDeleter(image, namespace, priorityClassName, false),
+			createSut: func() *AgentApplierDeleter {
+				return NewLogAgentApplierDeleter(image, namespace, priorityClassName, false)
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.sut.ApplyResources(t.Context(), fakeClient, AgentApplyOptions{})
+			sut := tt.createSut()
+			err := sut.ApplyResources(t.Context(), fakeClient, AgentApplyOptions{})
 			require.NoError(t, err)
 
-			err = tt.sut.DeleteResources(t.Context(), fakeClient)
+			err = sut.DeleteResources(t.Context(), fakeClient)
 			require.NoError(t, err)
 
 			for i := range created {
