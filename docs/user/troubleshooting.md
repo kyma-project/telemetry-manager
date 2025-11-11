@@ -196,7 +196,7 @@ This usually happens for one of the following reasons:
 
 This error occurs when there is a syntax error in the used OTTL functions in your transformation or filter rules. If syntax validation cannot diagnose the error precisely, you get a generic EOF error instead of a specific error message.
 
-**Example:**
+The following example uses the incorrect function name `isMatch` (it should be `IsMatch`):
 ```yaml
 # ...
 filter:
