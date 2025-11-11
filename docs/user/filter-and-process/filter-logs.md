@@ -4,8 +4,11 @@ Filter logs from the OTLP, application, and Istio input to control which data yo
 
 ## Overview
 
+> [!TIP]
+> The following settings filter data by source. For advanced, content-based filtering and transformation, use the OpenTelemetry Transformation Language (OTTL). For details, see [Transform and Filter with OTTL](./ottl-transform-and-filter/README.md).
+
 | Source         | Granularity                                                         | Behavior without 'namespaces' Block | Collect from All Namespaces                    | Collect from Specific Namespaces                            |
-|:---------------|:--------------------------------------------------------------------|:------------------------------------|:-----------------------------------------------|:------------------------------------------------------------|
+| :------------- | :------------------------------------------------------------------ | :---------------------------------- | :--------------------------------------------- | :---------------------------------------------------------- |
 | OTLP (default) | Namespace                                                           | **includes** system namespaces      | This is the default, no action needed.         | Use the `include` or `exclude` filter                       |
 | Application    | Namespace, Container\*                                              | **excludes** system namespaces      | Set the **system** attribute to `true`         | Use the `include` or `exclude` filter                       |
 | Istio          | Namespace, Workload (`selector`), Log content (`filter.expression`) | n/a                                 | Apply the Istio `Telemetry` resource mesh-wide | Apply the Istio `Telemetry` resource to specific namespaces |
