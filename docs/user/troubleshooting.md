@@ -194,7 +194,7 @@ This usually happens for one of the following reasons:
 
 ### Cause
 
-This error occurs due to inadequately processed syntax errors in your OTTL (OpenTelemetry Transformation Language) transform and/or filter rules. Under normal circumstances, syntax validation would provide a descriptive error message explicitly identifying the issue in your configuration. However, this represents an edge case where the validation process fails to generate meaningful diagnostic information, resulting in the generic "unexpected token `<EOF>`" message. Common underlying cause is most probably an **incorrect function name** or **typos** in your OTTL function syntax.
+This error occurs when there is a syntax error in the used OTTL functions in your transformation or filter rules. If syntax validation cannot diagnose the error precisely, you get a generic EOF error instead of a specific error message.
 
 **Example:**
 ```yaml
