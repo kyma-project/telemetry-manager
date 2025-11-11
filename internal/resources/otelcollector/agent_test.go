@@ -93,10 +93,6 @@ func TestAgent_ApplyResources(t *testing.T) {
 			createSut: func() *AgentApplierDeleter {
 				return NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName, false)
 			},
-			collectorEnvVars: map[string][]byte{
-				"DUMMY_ENV_VAR": []byte("foo"),
-			},
-			istioEnabled:    true,
 			goldenFilePath:  "testdata/log-agent-img-pull-secret.yaml",
 			imagePullSecret: true,
 		},

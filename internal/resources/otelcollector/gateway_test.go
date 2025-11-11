@@ -103,7 +103,6 @@ func TestGateway_ApplyResources(t *testing.T) {
 			createSut: func() *GatewayApplierDeleter {
 				return NewMetricGatewayApplierDeleter(image, namespace, priorityClassName, false)
 			},
-			istioEnabled:    true,
 			goldenFilePath:  "testdata/metric-gateway-img-pull-secret.yaml",
 			imagePullSecret: true,
 		},
