@@ -37,7 +37,8 @@ type TelemetryList struct {
 // Telemetry is the Schema for the telemetries API
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Namespaced,categories={kyma-modules,kyma-telemetry}
-// +kubebuilder:metadata:labels={app.kubernetes.io/component=controller,app.kubernetes.io/managed-by=kyma,app.kubernetes.io/name=telemetry-manager,app.kubernetes.io/part-of=telemetry,kyma-project.io/module=telemetry}
+// +kubebuilder:metadata:labels={app.kubernetes.io/component=controller,app.kubernetes.io/managed-by=Helm,app.kubernetes.io/name=telemetry-manager,app.kubernetes.io/part-of=telemetry,kyma-project.io/module=telemetry}
+// +kubebuilder:metadata:annotations={meta.helm.sh/release-name=telemetry,meta.helm.sh/release-namespace=kyma-system}
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="state",type="string",JSONPath=".status.state"
 // +kubebuilder:printcolumn:name="age",type="date",JSONPath=".metadata.creationTimestamp"

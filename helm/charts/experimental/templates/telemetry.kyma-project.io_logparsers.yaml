@@ -4,9 +4,11 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.19.0
+    meta.helm.sh/release-name: telemetry
+    meta.helm.sh/release-namespace: kyma-system
   labels:
     app.kubernetes.io/component: controller
-    app.kubernetes.io/managed-by: kyma
+    app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: telemetry-manager
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
