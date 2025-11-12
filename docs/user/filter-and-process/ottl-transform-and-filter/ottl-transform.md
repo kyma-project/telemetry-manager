@@ -59,6 +59,7 @@ spec:
 You are using a LogPipeline with the `application` input and your application logs in a custom format to stdout. Then you might want to parse the payload and enrich core attributes.
 
 ```yaml
+# In your LogPipeline spec
 spec:
   input:
     application:
@@ -68,23 +69,36 @@ spec:
       endpoint:
         value: http://traces.example.com:4317
   transform:
-    # Try to parse the body as custom parser (python)
-    - conditions:
-        - log.attributes["parsed"] == nil
-      statements:
-        - merge_maps(log.attributes, ExtractPatterns(log.body, "File\\s+\"(?P<filepath>[^\"]+)\""), "upsert")
+  transform:
+    # Try to parse the body as custom parser (default spring boot logback)
+    # 2025-11-12T14:40:36.828Z  INFO 1 --- [demo] [           main] c.e.restservice.RestServiceApplication   : Started RestServiceApplication in 23.789 seconds (process running for 30.194)
+    - statements:
+        - merge_maps(log.attributes, ExtractPatterns(log.body,"^(?P<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d+Z)\\s+(?P<level>[A-Z]+)\\s+(?P<pid>\\d+)\\s+---\\s+\\[(?P<mdc>[^\\]]+)\\]\\s+\\[\\s*(?P<thread>[^\\]]+)\\s*\\]\\s+(?P<logger>[^\\s:]+)\\s*:\\s*(?P<msg>.*)$"), "upsert")
         - merge_maps(log.attributes, log.cache, "upsert") where Len(log.cache) > 0
         - set(log.attributes["parsed"], true) where Len(log.cache) > 0
 
     # Try to enrich core attributes if custom parsing was successful
     - conditions:
-        - log.attributes["parsed"] != nil
+        - log.attributes["parsed"] == true
       statements:
-        - set(log.body, log.attributes["message"]) where log.attributes["message"] != nil
-        - set(log.severity_number, SEVERITY_NUMBER_DEBUG) where IsMatch(log.attributes["level"], "(?i)debug")
-        - set(log.severity_number, SEVERITY_NUMBER_INFO) where IsMatch(log.attributes["level"], "(?i)info")
-        - set(log.severity_number, SEVERITY_NUMBER_WARN) where IsMatch(log.attributes["level"], "(?i)warn")
-        - set(log.severity_number, SEVERITY_NUMBER_ERROR) where IsMatch(log.attributes["level"], "(?i)err")
-        - set(log.severity_text, ToUpperCase(log.attributes["level"])) where log.severity_number > 0
-        - delete_matching_keys(log.attributes, "^(level|message|parsed|)$")
+        - set(log.body, log.attributes["msg"])
+        - set(log.severity_text, ToUpperCase(log.attributes["level"]))
+        - delete_matching_keys(log.attributes, "^(level|msg|parsed|)$")
+```
+
+## Example: Masking Sensitive Data
+
+You can redact data using typical patterns so that potential sensitive data is masked.
+
+```yaml
+# In your TracePipeline spec
+spec:
+  output:
+    otlp:
+      endpoint:
+        value: http://traces.example.com:4317
+  transform:
+      - statements:
+          - replace_pattern(span.attributes["http.url"], "client_id=[^&]+", "client_id=[REDACTED]")
+          - replace_pattern(span.attributes["http.url"], "client_secret=[^&]+", "client_secret=[REDACTED]")
 ```
