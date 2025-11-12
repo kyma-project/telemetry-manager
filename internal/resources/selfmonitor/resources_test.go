@@ -33,13 +33,17 @@ func TestApplySelfMonitorResources(t *testing.T) {
 	tests := []struct {
 		name            string
 		imagePullSecret bool
+		saveGoldenFile  bool
+		goldenFilePath  string
 	}{
 		{
-			name: "self monitor",
+			name:           "self monitor",
+			goldenFilePath: "testdata/self-monitor.yaml",
 		},
 		{
 			name:            "self monitor with image pull secret",
 			imagePullSecret: true,
+			goldenFilePath:  "testdata/self-monitor-img-pull-secret.yaml",
 		},
 	}
 
@@ -81,13 +85,14 @@ func TestApplySelfMonitorResources(t *testing.T) {
 			err := sut.ApplyResources(ctx, client, opts)
 			require.NoError(t, err)
 
-			// uncomment to re-generate golden file
-			// testutils.SaveAsYAML(t, scheme, objects, "testdata/self-monitor.yaml")
+			if tt.saveGoldenFile {
+				testutils.SaveAsYAML(t, scheme, objects, tt.goldenFilePath)
+			}
 
 			bytes, err := testutils.MarshalYAML(scheme, objects)
 			require.NoError(t, err)
 
-			goldenFileBytes, err := os.ReadFile("testdata/self-monitor.yaml")
+			goldenFileBytes, err := os.ReadFile(tt.goldenFilePath)
 			require.NoError(t, err)
 
 			require.Equal(t, string(goldenFileBytes), string(bytes))
