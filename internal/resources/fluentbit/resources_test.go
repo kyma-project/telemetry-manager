@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/stretchr/testify/require"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -28,15 +29,22 @@ func TestAgent_ApplyResources(t *testing.T) {
 	namespace := "kyma-system"
 
 	tests := []struct {
-		name           string
-		sut            *AgentApplierDeleter
-		goldenFilePath string
-		saveGoldenFile bool
+		name            string
+		sut             *AgentApplierDeleter
+		goldenFilePath  string
+		saveGoldenFile  bool
+		imagePullSecret bool
 	}{
 		{
 			name:           "fluentbit",
 			sut:            NewFluentBitApplierDeleter(namespace, image, exporterImage, initContainerImage, priorityClassName),
 			goldenFilePath: "testdata/fluentbit.yaml",
+		},
+		{
+			name:            "fluentbit with image pull secret",
+			sut:             NewFluentBitApplierDeleter(namespace, image, exporterImage, initContainerImage, priorityClassName),
+			goldenFilePath:  "testdata/fluentbit-img-pull-secret.yaml",
+			imagePullSecret: true,
 		},
 	}
 
@@ -55,6 +63,10 @@ func TestAgent_ApplyResources(t *testing.T) {
 				return nil
 			},
 		}).Build()
+
+		if tt.imagePullSecret {
+			t.Setenv(commonresources.ImagePullSecretName, "foo-secret")
+		}
 
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.sut.ApplyResources(t.Context(), fakeClient, AgentApplyOptions{

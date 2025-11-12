@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"os"
 	"strconv"
 	"strings"
 
@@ -360,6 +361,10 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 				),
 			},
 		},
+	}
+
+	if pullSecret, ok := os.LookupEnv(commonresources.ImagePullSecretName); ok {
+		ds.Spec.Template.Spec.ImagePullSecrets = append(ds.Spec.Template.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: pullSecret})
 	}
 
 	return ds
