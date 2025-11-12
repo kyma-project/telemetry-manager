@@ -59,8 +59,8 @@ jobs:
           echo "Deploying Manager using image europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA}"
           MANAGER_IMAGE=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA} make deploy-experimental
 
-      - name: Deploy test K8S prerequisites
-        uses: "./.github/template/deploy-test-k8s-prerequisites"
+      - name: Setup test
+        uses: "./.github/template/test-setup"
 
       - name: Wait for manager readiness
         shell: bash
