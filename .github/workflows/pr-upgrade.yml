@@ -43,7 +43,7 @@ jobs:
       - name: Setup Golang
         uses: "./.github/template/setup-golang"
 
-      - name: Fetch latest tag
+      - name: Check out latest tag
         id: latest-tag
         shell: bash
         run: |
