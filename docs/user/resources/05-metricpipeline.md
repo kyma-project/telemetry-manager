@@ -8,7 +8,7 @@ kubectl get crd metricpipeline.telemetry.kyma-project.io -o yaml
 
 ## Sample Custom Resource
 
-The following MetricPipeline object defines a pipeline that integrates into an OTLP backend:
+The following MetricPipeline object defines a pipeline that integrates into an OTLP backend. Additionally, it filters out metrics with type histogram and adds a `system` attribute to all metrics originating from system namespaces:
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -24,6 +24,14 @@ spec:
       enabled: false
     runtime:
       enabled: false
+  filter:
+    - conditions:
+        - 'metric.type == METRIC_DATA_TYPE_HISTOGRAM'
+  transform:
+    - conditions:
+        - 'IsMatch(resource.attributes["k8s.namespace.name"], ".*-system")'
+      statements:
+        - 'set(datapoint.attributes["system"], "true")'
   output:
     otlp:
       endpoint:
@@ -225,6 +233,7 @@ The status of the MetricPipeline is determined by the condition types `GatewayHe
 | ConfigurationGenerated | False            | TLSCertificateExpired           | TLS (CA) certificate expired on YYYY-MM-DD                                                                                                                                                                                                |
 | ConfigurationGenerated | False            | TLSConfigurationInvalid         | TLS configuration invalid                                                                                                                                                                                                                 |
 | ConfigurationGenerated | False            | ValidationFailed                | Pipeline validation failed due to an error from the Kubernetes API server                                                                                                                                                                 |
+| ConfigurationGenerated | False            | OTTLSpecInvalid                 | Invalid <FilterSpec/TransformSpec>: `reason`                                                                                                                                                                                              |
 | TelemetryFlowHealthy   | True             | FlowHealthy                     | No problems detected in the telemetry flow                                                                                                                                                                                                |
 | TelemetryFlowHealthy   | False            | GatewayAllTelemetryDataDropped  | Backend is not reachable or rejecting metrics. All metrics are dropped. See troubleshooting: [No Metrics Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=no-metrics-arrive-at-the-backend)          |
 | TelemetryFlowHealthy   | False            | GatewayThrottling               | Metric gateway is unable to receive metrics at current rate. See troubleshooting: [Gateway Throttling](https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-throttling)                                                 |
