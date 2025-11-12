@@ -26,6 +26,10 @@ export default [
       { text: 'Filter Metrics', link: '/telemetry-manager/user/filter-and-process/filter-metrics.md' },
       { text: 'Transformation to OTLP Logs', link: '/telemetry-manager/user/filter-and-process/transformation-to-otlp-logs.md' },
       { text: 'Automatic Data Enrichment', link: '/telemetry-manager/user/filter-and-process/automatic-data-enrichment.md' },
+      { text: 'Transform and Filter Telemetry Data with OTTL', link: '/telemetry-manager/user/filter-and-process/ottl-transform-and-filter/README.md', collapsed: true, items: [
+        { text: 'Transform with OTTL', link: '/telemetry-manager/user/filter-and-process/ottl-transform-and-filter/ottl-transform.md' },
+        { text: 'Filter with OTTL', link: '/telemetry-manager/user/filter-and-process/ottl-transform-and-filter/ottl-filter.md' },
+      ]},
     ]
   },
   {

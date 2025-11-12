@@ -2,6 +2,9 @@
 
 TracePipeline resources have no `input` specification. You can configure Istio trace collection by applying the Istio `Telemetry` resource to specific namespaces.
 
+> [!TIP]
+> The following settings filter data before it reaches the TracePipeline. For advanced, content-based filtering and transformation, use the OpenTelemetry Transformation Language (OTTL). For details, see [Transform and Filter with OTTL](./ottl-transform-and-filter/README.md).
+
 ## Override Tracing for a Namespace or Workload
 
 After setting a mesh-wide default, apply more specific tracing configurations for an entire namespace or for individual workloads within a namespace. 
