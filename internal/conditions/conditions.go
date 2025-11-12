@@ -72,6 +72,7 @@ var commonMessages = map[string]string{
 	ReasonSelfMonAgentProbingFailed:   "Could not determine the health of the telemetry flow because the self monitor probing of agent failed",
 	ReasonTLSConfigurationInvalid:     "TLS configuration invalid: %s",
 	ReasonValidationFailed:            "Pipeline validation failed due to an error from the Kubernetes API server",
+	ReasonOTTLSpecInvalid:             "OTTL specification is invalid, %s. Fix the syntax error indicated by the message or see troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=generic_eof_error_message_when_using_ottl_transform_or_filter",
 }
 
 var commonLogPipelineMessages = map[string]string{
