@@ -53,7 +53,9 @@ Additionally, you can apply specific **input** configurations for each signal ty
 
 ## Filtering and Processing
 
-You can control the volume and focus of your telemetry data by filtering it based on Kubernetes resources like namespaces, containers, and workloads. For details, see [Filtering and Processing Data](./filter-and-process/README.md).
+You can control the volume and focus of your incoming telemetry data by filtering it based on Kubernetes resources like namespaces, containers, and workloads. For details, see [Filter Logs](./filter-and-process/filter-logs.md), [Filter Traces](./filter-and-process/filter-traces.md), and [Filter Metrics](./filter-and-process/filter-metrics.md).
+
+Furthermore, you can transform and filter the received data by defining custom rules with the OpenTelemetry Transformation Language (OTTL). For details, see [Transform and Filter with OTTL](./filter-and-process//ottl-transform-and-filter/README.md).
 
 All pipelines automatically enrich telemetry data with Kubernetes resource attributes, such as Pod name, namespace, and labels. With this context information, you can easily identify the source of telemetry data in your backend. For details, see [Automatic Data Enrichment](./filter-and-process/automatic-data-enrichment.md).
 

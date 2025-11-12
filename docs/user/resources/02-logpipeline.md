@@ -8,7 +8,7 @@ kubectl get crd logpipeline.telemetry.kyma-project.io -o yaml
 
 ## Sample Custom Resource
 
-The following LogPipeline object defines a pipeline integrating with the otlp output. It uses mTLS taking connection details from a Secret, excludes OTLP logs from "namespaceA" and includes application logs emitted in "namespaceB".
+The following LogPipeline object defines a pipeline integrating with the otlp output. It uses mTLS taking connection details from a Secret, excludes OTLP logs from "namespaceA" and includes application logs emitted in "namespaceB". Additionally, it filters out logs with severity level lower than the WARN level and adds an `alert` attribute for logs with severity level higher than WARN level and coming from the `prod` environment.
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -49,6 +49,14 @@ spec:
               key: ingest-otlp-key
               name: mySecret
               namespace: default
+  filter:
+    - conditions:
+        - 'log.severity_number < SEVERITY_NUMBER_WARN'
+  transform:
+    - conditions:
+      - 'log.severity_number > SEVERITY_NUMBER_WARN and log.attributes["environment"] == "prod"'
+      statements:
+      - 'set(log.attributes["alert"], true)'
 status:
   conditions:
   - lastTransitionTime: "2025-06-13T08:58:38Z"
@@ -280,10 +288,11 @@ The status of the LogPipeline is determined by the condition types `AgentHealthy
 | ConfigurationGenerated | False            | TLSCertificateExpired        | TLS (CA) certificate expired on YYYY-MM-DD                                                                                                                                                                                         |
 | ConfigurationGenerated | False            | TLSConfigurationInvalid      | TLS configuration invalid                                                                                                                                                                                                          |
 | ConfigurationGenerated | False            | ValidationFailed             | Pipeline validation failed due to an error from the Kubernetes API server                                                                                                                                                          |
+| ConfigurationGenerated | False            | OTTLSpecInvalid              | Invalid <FilterSpec/TransformSpec>: `reason`                                                                                                                                                                                       |
 | TelemetryFlowHealthy   | True             | FlowHealthy                  | No problems detected in the telemetry flow                                                                                                                                                                                         |
 | TelemetryFlowHealthy   | False            | AgentAllTelemetryDataDropped | Backend is not reachable or rejecting logs. All logs are dropped. See troubleshooting: [No Logs Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend)                  |
 | TelemetryFlowHealthy   | False            | AgentBufferFillingUp         | Buffer nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: [Agent Buffer Filling Up](https://kyma-project.io/#/telemetry-manager/user/02-logs?id=agent-buffer-filling-up)                                |
 | TelemetryFlowHealthy   | False            | AgentNoLogsDelivered         | Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: [No Logs Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend) |
 | TelemetryFlowHealthy   | False            | AgentSomeDataDropped         | Backend is reachable, but rejecting logs. Some logs are dropped. See troubleshooting: [Not All Logs Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/02-logs?id=not-all-logs-arrive-at-the-backend)         |
 | TelemetryFlowHealthy   | False            | ConfigurationNotGenerated    | No logs delivered to backend because LogPipeline specification is not applied to the configuration of Fluent Bit agent. Check the 'ConfigurationGenerated' condition for more details                                              |
-| TelemetryFlowHealthy   | Unknown          | AgentProbingFailed               | Could not determine the health of the telemetry flow because the self monitor probing failed                                                                                                                                       |
+| TelemetryFlowHealthy   | Unknown          | AgentProbingFailed           | Could not determine the health of the telemetry flow because the self monitor probing failed                                                                                                                                       |
