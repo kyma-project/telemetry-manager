@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"maps"
+	"os"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -258,7 +259,7 @@ func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile 
 	annotations := map[string]string{commonresources.AnnotationKeyChecksumConfig: configChecksum}
 	podSpec := ad.makePodSpec(ad.Config.BaseName, ad.Config.Deployment.Image, configPath, configFile)
 
-	return &appsv1.Deployment{
+	deploy := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ad.Config.BaseName,
 			Namespace: ad.Config.Namespace,
@@ -278,6 +279,12 @@ func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile 
 			},
 		},
 	}
+
+	if pullSecret, ok := os.LookupEnv(commonresources.ImagePullSecretName); ok {
+		deploy.Spec.Template.Spec.ImagePullSecrets = append(deploy.Spec.Template.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: pullSecret})
+	}
+
+	return deploy
 }
 
 func (ad *ApplierDeleter) makePodSpec(baseName, image, configPath, configFile string) corev1.PodSpec {

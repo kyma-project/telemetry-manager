@@ -5,7 +5,6 @@ import (
 	"os"
 	"testing"
 
-	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/stretchr/testify/require"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -18,6 +17,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 

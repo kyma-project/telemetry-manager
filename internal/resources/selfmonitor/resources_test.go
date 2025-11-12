@@ -14,6 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -29,47 +30,69 @@ const (
 )
 
 func TestApplySelfMonitorResources(t *testing.T) {
-	var objects []client.Object
-
-	ctx := t.Context()
-	scheme := runtime.NewScheme()
-	client := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
-		Create: func(_ context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
-			objects = append(objects, obj)
-			// Nothing has to be created, just add created object to the list
-			return nil
+	tests := []struct {
+		name            string
+		imagePullSecret bool
+	}{
+		{
+			name: "self monitor",
 		},
-	}).Build()
-	sut := ApplierDeleter{
-		Config: Config{
-			BaseName:      name,
-			Namespace:     namespace,
-			ComponentType: componentType,
+		{
+			name:            "self monitor with image pull secret",
+			imagePullSecret: true,
 		},
 	}
 
-	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var objects []client.Object
 
-	opts := ApplyOptions{
-		AlertRulesFileName:       alertRulesFileName,
-		AlertRulesYAML:           alertRulesYAML,
-		PrometheusConfigFileName: configFileName,
-		PrometheusConfigPath:     configPath,
-		PrometheusConfigYAML:     prometheusConfigYAML,
+			ctx := t.Context()
+			scheme := runtime.NewScheme()
+
+			if tt.imagePullSecret {
+				t.Setenv(commonresources.ImagePullSecretName, "foo-secret")
+			}
+
+			client := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
+				Create: func(_ context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
+					objects = append(objects, obj)
+					// Nothing has to be created, just add created object to the list
+					return nil
+				},
+			}).Build()
+			sut := ApplierDeleter{
+				Config: Config{
+					BaseName:      name,
+					Namespace:     namespace,
+					ComponentType: componentType,
+				},
+			}
+
+			utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+
+			opts := ApplyOptions{
+				AlertRulesFileName:       alertRulesFileName,
+				AlertRulesYAML:           alertRulesYAML,
+				PrometheusConfigFileName: configFileName,
+				PrometheusConfigPath:     configPath,
+				PrometheusConfigYAML:     prometheusConfigYAML,
+			}
+			err := sut.ApplyResources(ctx, client, opts)
+			require.NoError(t, err)
+
+			// uncomment to re-generate golden file
+			// testutils.SaveAsYAML(t, scheme, objects, "testdata/self-monitor.yaml")
+
+			bytes, err := testutils.MarshalYAML(scheme, objects)
+			require.NoError(t, err)
+
+			goldenFileBytes, err := os.ReadFile("testdata/self-monitor.yaml")
+			require.NoError(t, err)
+
+			require.Equal(t, string(goldenFileBytes), string(bytes))
+		})
 	}
-	err := sut.ApplyResources(ctx, client, opts)
-	require.NoError(t, err)
-
-	// uncomment to re-generate golden file
-	// testutils.SaveAsYAML(t, scheme, objects, "testdata/self-monitor.yaml")
-
-	bytes, err := testutils.MarshalYAML(scheme, objects)
-	require.NoError(t, err)
-
-	goldenFileBytes, err := os.ReadFile("testdata/self-monitor.yaml")
-	require.NoError(t, err)
-
-	require.Equal(t, string(goldenFileBytes), string(bytes))
 }
 
 func TestDeleteSelfMonitorResources(t *testing.T) {
