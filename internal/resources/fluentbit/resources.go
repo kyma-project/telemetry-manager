@@ -564,7 +564,6 @@ func makeExporterMetricsService(name types.NamespacedName) *corev1.Service {
 }
 
 func makeConfigMap(name types.NamespacedName) *corev1.ConfigMap {
-
 	fluentBitConfig := `
 [SERVICE]
     Daemon Off
