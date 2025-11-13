@@ -29,8 +29,8 @@ var (
 )
 
 type Handler struct {
-	client       client.Reader
 	globals      config.Global
+	client       client.Reader
 	atomicLevel  zap.AtomicLevel
 	defaultLevel zapcore.Level
 }
@@ -56,8 +56,8 @@ func AtomicLevel() zap.AtomicLevel {
 
 func New(globals config.Global, client client.Reader, opts ...Option) *Handler {
 	h := &Handler{
-		client:  client,
 		globals: globals,
+		client:  client,
 	}
 
 	WithAtomicLevel(AtomicLevel())(h)
