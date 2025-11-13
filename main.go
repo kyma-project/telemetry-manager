@@ -354,11 +354,11 @@ func setupTelemetryController(globals config.Global, cfg envConfig, webhookCertC
 
 	telemetryController := operator.NewTelemetryController(
 		operator.TelemetryControllerConfig{
-			Global:                       globals,
-			Config:                       webhookCertConfig,
-			SelfMonitorImage:             cfg.SelfMonitorImage,
-			SelfMonitorPriorityClassName: normalPriorityClassName,
-			AlertmanagerWebhookURL:       fmt.Sprintf("%s.%s.svc", webhookServiceName, globals.ManagerNamespace()),
+			Global:                            globals,
+			SelfMonitorAlertmanagerWebhookURL: fmt.Sprintf("%s.%s.svc", webhookServiceName, globals.ManagerNamespace()),
+			SelfMonitorImage:                  cfg.SelfMonitorImage,
+			SelfMonitorPriorityClassName:      normalPriorityClassName,
+			WebhookCert:                       webhookCertConfig,
 		},
 		mgr.GetClient(),
 		mgr.GetScheme(),

@@ -48,19 +48,19 @@ type TelemetryController struct {
 
 type TelemetryControllerConfig struct {
 	config.Global
-	webhookcert.Config
 
-	SelfMonitorImage             string
-	SelfMonitorPriorityClassName string
-	AlertmanagerWebhookURL       string
+	SelfMonitorAlertmanagerWebhookURL string
+	SelfMonitorImage                  string
+	SelfMonitorPriorityClassName      string
+	WebhookCert                       webhookcert.Config
 }
 
 func NewTelemetryController(config TelemetryControllerConfig, client client.Client, scheme *runtime.Scheme) *TelemetryController {
 	reconciler := telemetry.New(
 		telemetry.Config{
-			Global:                 config.Global,
-			WebhookCertConfig:      config.Config,
-			AlertmanagerWebhookURL: config.AlertmanagerWebhookURL,
+			Global:                            config.Global,
+			SelfMonitorAlertmanagerWebhookURL: config.SelfMonitorAlertmanagerWebhookURL,
+			WebhookCert:                       config.WebhookCert,
 		},
 		scheme,
 		client,

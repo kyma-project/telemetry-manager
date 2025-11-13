@@ -33,8 +33,8 @@ const (
 type Config struct {
 	config.Global
 
-	WebhookCertConfig      webhookcert.Config
-	AlertmanagerWebhookURL string
+	WebhookCert                       webhookcert.Config
+	SelfMonitorAlertmanagerWebhookURL string
 }
 
 type healthCheckers struct {
@@ -147,7 +147,7 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operat
 
 	prometheusConfig := selfmonitorconfig.MakeConfig(selfmonitorconfig.BuilderConfig{
 		ScrapeNamespace:        r.config.TargetNamespace(),
-		AlertmanagerWebhookURL: r.config.AlertmanagerWebhookURL,
+		AlertmanagerWebhookURL: r.config.SelfMonitorAlertmanagerWebhookURL,
 		ConfigPath:             selfMonitorConfigPath,
 		AlertRuleFileName:      selfMonitorAlertRuleFileName,
 	})
@@ -248,12 +248,12 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 		return nil
 	}
 
-	if err := webhookcert.EnsureCertificate(ctx, r.Client, r.config.WebhookCertConfig); err != nil {
+	if err := webhookcert.EnsureCertificate(ctx, r.Client, r.config.WebhookCert); err != nil {
 		return fmt.Errorf("failed to reconcile webhook: %w", err)
 	}
 
 	var secret corev1.Secret
-	if err := r.Get(ctx, r.config.WebhookCertConfig.CASecretName, &secret); err != nil {
+	if err := r.Get(ctx, r.config.WebhookCert.CASecretName, &secret); err != nil {
 		return fmt.Errorf("failed to get secret: %w", err)
 	}
 
@@ -266,7 +266,7 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 	}
 
 	var webhook admissionregistrationv1.ValidatingWebhookConfiguration
-	if err := r.Get(ctx, r.config.WebhookCertConfig.ValidatingWebhookName, &webhook); err != nil {
+	if err := r.Get(ctx, r.config.WebhookCert.ValidatingWebhookName, &webhook); err != nil {
 		return fmt.Errorf("failed to get webhook: %w", err)
 	}
 
