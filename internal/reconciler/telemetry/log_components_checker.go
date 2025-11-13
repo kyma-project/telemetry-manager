@@ -25,14 +25,7 @@ func (l *logComponentsChecker) Check(ctx context.Context, telemetryInDeletion bo
 		return &metav1.Condition{}, fmt.Errorf("failed to get list of LogPipelines: %w", err)
 	}
 
-	var logParsers telemetryv1alpha1.LogParserList
-
-	err = l.client.List(ctx, &logParsers)
-	if err != nil {
-		return &metav1.Condition{}, fmt.Errorf("failed to get list of LogParsers: %w", err)
-	}
-
-	if result := l.checkForResourceBlocksDeletionCondition(logPipelines.Items, logParsers.Items, telemetryInDeletion); result != nil {
+	if result := l.checkForResourceBlocksDeletionCondition(logPipelines.Items, telemetryInDeletion); result != nil {
 		return result, nil
 	}
 
@@ -111,8 +104,8 @@ func (l *logComponentsChecker) checkForNoPipelineDeployedCondition(pipelines []t
 	return nil
 }
 
-func (l *logComponentsChecker) checkForResourceBlocksDeletionCondition(pipelines []telemetryv1alpha1.LogPipeline, parsers []telemetryv1alpha1.LogParser, telemetryInDeletion bool) *metav1.Condition {
-	if telemetryInDeletion && (len(pipelines) != 0 || len(parsers) != 0) {
+func (l *logComponentsChecker) checkForResourceBlocksDeletionCondition(pipelines []telemetryv1alpha1.LogPipeline, telemetryInDeletion bool) *metav1.Condition {
+	if telemetryInDeletion && (len(pipelines) != 0) {
 		return &metav1.Condition{
 			Type:   conditions.TypeLogComponentsHealthy,
 			Status: metav1.ConditionFalse,
@@ -120,11 +113,6 @@ func (l *logComponentsChecker) checkForResourceBlocksDeletionCondition(pipelines
 			Message: generateDeletionBlockedMessage(blockingResources{
 				resourceType: "LogPipelines",
 				resourceNames: slicesutils.TransformFunc(pipelines, func(p telemetryv1alpha1.LogPipeline) string {
-					return p.Name
-				}),
-			}, blockingResources{
-				resourceType: "LogParsers",
-				resourceNames: slicesutils.TransformFunc(parsers, func(p telemetryv1alpha1.LogParser) string {
 					return p.Name
 				}),
 			}),

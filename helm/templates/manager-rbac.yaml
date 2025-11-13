@@ -101,7 +101,6 @@ rules:
   - apiGroups:
       - telemetry.kyma-project.io
     resources:
-      - logparsers
       - logpipelines
       - metricpipelines
       - tracepipelines
@@ -116,7 +115,6 @@ rules:
   - apiGroups:
       - telemetry.kyma-project.io
     resources:
-      - logparsers/finalizers
       - logpipelines/finalizers
       - metricpipelines/finalizers
     verbs:
@@ -124,7 +122,6 @@ rules:
   - apiGroups:
       - telemetry.kyma-project.io
     resources:
-      - logparsers/status
       - logpipelines/status
       - metricpipelines/status
       - tracepipelines/status

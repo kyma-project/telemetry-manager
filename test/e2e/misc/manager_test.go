@@ -32,7 +32,6 @@ func TestManager(t *testing.T) {
 		assert.NewResource(&corev1.Service{}, kitkyma.TelemetryManagerWebhookServiceName),
 		assert.NewResource(&corev1.Service{}, kitkyma.TelemetryManagerMetricsServiceName),
 		assert.NewResource(&apiextensionsv1.CustomResourceDefinition{}, types.NamespacedName{Name: "logpipelines.telemetry.kyma-project.io"}),
-		assert.NewResource(&apiextensionsv1.CustomResourceDefinition{}, types.NamespacedName{Name: "logparsers.telemetry.kyma-project.io"}),
 		assert.NewResource(&apiextensionsv1.CustomResourceDefinition{}, types.NamespacedName{Name: "tracepipelines.telemetry.kyma-project.io"}),
 		assert.NewResource(&apiextensionsv1.CustomResourceDefinition{}, types.NamespacedName{Name: "metricpipelines.telemetry.kyma-project.io"}),
 		assert.NewResource(&apiextensionsv1.CustomResourceDefinition{}, types.NamespacedName{Name: "telemetries.operator.kyma-project.io"}),
