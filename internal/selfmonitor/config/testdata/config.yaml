@@ -3,7 +3,8 @@ global:
     evaluation_interval: 30s
 alerting:
     alertmanagers:
-        - static_configs:
+        - scheme: https
+          static_configs:
             - targets:
                 - http://webhook:9090
           tls_config:
