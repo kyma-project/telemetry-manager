@@ -69,21 +69,27 @@ spec:
       endpoint:
         value: http://traces.example.com:4317
   transform:
-  transform:
     # Try to parse the body as custom parser (default spring boot logback)
-    # 2025-11-12T14:40:36.828Z  INFO 1 --- [demo] [           main] c.e.restservice.RestServiceApplication   : Started RestServiceApplication in 23.789 seconds (process running for 30.194)
+    # 2025-11-12T14:40:36.828Z  INFO 1 --- [demo] [           main] c.e.restservice.RestServiceApplication   : Started Application
     - statements:
         - merge_maps(log.attributes, ExtractPatterns(log.body,"^(?P<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d+Z)\\s+(?P<level>[A-Z]+)\\s+(?P<pid>\\d+)\\s+---\\s+\\[(?P<mdc>[^\\]]+)\\]\\s+\\[\\s*(?P<thread>[^\\]]+)\\s*\\]\\s+(?P<logger>[^\\s:]+)\\s*:\\s*(?P<msg>.*)$"), "upsert")
-        - merge_maps(log.attributes, log.cache, "upsert") where Len(log.cache) > 0
-        - set(log.attributes["parsed"], true) where Len(log.cache) > 0
 
     # Try to enrich core attributes if custom parsing was successful
     - conditions:
-        - log.attributes["parsed"] == true
+        - log.attributes["msg"] != nil
       statements:
         - set(log.body, log.attributes["msg"])
+        - delete_key(log.attributes, "msg")
+    - conditions:
+        - log.attributes["timestamp"] != nil
+      statements:
+        - set(log.time, Time(log.attributes["timestamp"], "2006-01-02T15:04:05.000Z"))
+        - delete_key(log.attributes, "timestamp")
+    - conditions:
+        - log.attributes["level"] != nil
+      statements:
         - set(log.severity_text, ToUpperCase(log.attributes["level"]))
-        - delete_matching_keys(log.attributes, "^(level|msg|parsed|)$")
+        - delete_key(log.attributes, "level")
 ```
 
 ## Example: Masking Sensitive Data
