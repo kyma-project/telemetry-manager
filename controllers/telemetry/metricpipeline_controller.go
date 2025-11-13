@@ -75,12 +75,12 @@ type MetricPipelineControllerConfig struct {
 }
 
 func NewMetricPipelineController(config MetricPipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent) (*MetricPipelineController, error) {
-	gatewayFlowHealthProber, err := prober.NewOTelMetricGatewayProber(types.NamespacedName{Name: selfmonitor.SelfMonitorName, Namespace: config.TargetNamespace()})
+	gatewayFlowHealthProber, err := prober.NewOTelMetricGatewayProber(types.NamespacedName{Name: selfmonitor.ServiceName, Namespace: config.TargetNamespace()})
 	if err != nil {
 		return nil, err
 	}
 
-	agentFlowHealthProber, err := prober.NewOTelMetricAgentProber(types.NamespacedName{Name: selfmonitor.SelfMonitorName, Namespace: config.TargetNamespace()})
+	agentFlowHealthProber, err := prober.NewOTelMetricAgentProber(types.NamespacedName{Name: selfmonitor.ServiceName, Namespace: config.TargetNamespace()})
 	if err != nil {
 		return nil, err
 	}

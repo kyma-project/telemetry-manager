@@ -73,7 +73,7 @@ type TracePipelineControllerConfig struct {
 }
 
 func NewTracePipelineController(config TracePipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent) (*TracePipelineController, error) {
-	flowHealthProber, err := prober.NewOTelTraceGatewayProber(types.NamespacedName{Name: selfmonitor.SelfMonitorName, Namespace: config.TargetNamespace()})
+	flowHealthProber, err := prober.NewOTelTraceGatewayProber(types.NamespacedName{Name: selfmonitor.ServiceName, Namespace: config.TargetNamespace()})
 	if err != nil {
 		return nil, err
 	}

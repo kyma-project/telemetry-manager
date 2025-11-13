@@ -99,17 +99,17 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 		},
 	)
 
-	fluentBitFlowHealthProber, err := prober.NewFluentBitProber(types.NamespacedName{Name: selfmonitor.SelfMonitorName, Namespace: config.TargetNamespace()})
+	fluentBitFlowHealthProber, err := prober.NewFluentBitProber(types.NamespacedName{Name: selfmonitor.ServiceName, Namespace: config.TargetNamespace()})
 	if err != nil {
 		return nil, err
 	}
 
-	otelGatewayFlowHealthProber, err := prober.NewOTelLogGatewayProber(types.NamespacedName{Name: selfmonitor.SelfMonitorName, Namespace: config.TargetNamespace()})
+	otelGatewayFlowHealthProber, err := prober.NewOTelLogGatewayProber(types.NamespacedName{Name: selfmonitor.ServiceName, Namespace: config.TargetNamespace()})
 	if err != nil {
 		return nil, err
 	}
 
-	otelAgentFlowHealthProber, err := prober.NewOTelLogAgentProber(types.NamespacedName{Name: selfmonitor.SelfMonitorName, Namespace: config.TargetNamespace()})
+	otelAgentFlowHealthProber, err := prober.NewOTelLogAgentProber(types.NamespacedName{Name: selfmonitor.ServiceName, Namespace: config.TargetNamespace()})
 	if err != nil {
 		return nil, err
 	}

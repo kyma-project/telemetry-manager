@@ -22,14 +22,17 @@ import (
 )
 
 const (
-	SelfMonitorName = "telemetry-self-monitor"
-
+	baseName            = "telemetry-self-monitor"
 	retentionTime       = "2h"
 	retentionSize       = "50MB"
 	logFormat           = "json"
 	configFileMountName = "prometheus-config-volume"
 	storageMountName    = "prometheus-storage-volume"
 	storagePath         = "/prometheus/"
+
+	// ServiceName is the name of the self-monitoring service.
+	// It is exported for use by probers that query the self-monitoring Prometheus instance.
+	ServiceName = baseName
 )
 
 var (
@@ -53,7 +56,7 @@ type ApplyOptions struct {
 
 func (ad *ApplierDeleter) DeleteResources(ctx context.Context, c client.Client) error {
 	objectMeta := metav1.ObjectMeta{
-		Name:      SelfMonitorName,
+		Name:      baseName,
 		Namespace: ad.Config.TargetNamespace(),
 	}
 
@@ -126,9 +129,9 @@ func (ad *ApplierDeleter) ApplyResources(ctx context.Context, c client.Client, o
 func (ad *ApplierDeleter) makeServiceAccount() *corev1.ServiceAccount {
 	serviceAccount := corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      SelfMonitorName,
+			Name:      baseName,
 			Namespace: ad.Config.TargetNamespace(),
-			Labels:    commonresources.MakeDefaultLabels(SelfMonitorName, commonresources.LabelValueK8sComponentMonitor),
+			Labels:    commonresources.MakeDefaultLabels(baseName, commonresources.LabelValueK8sComponentMonitor),
 		},
 	}
 
@@ -138,9 +141,9 @@ func (ad *ApplierDeleter) makeServiceAccount() *corev1.ServiceAccount {
 func (ad *ApplierDeleter) makeRole() *rbacv1.Role {
 	role := rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      SelfMonitorName,
+			Name:      baseName,
 			Namespace: ad.Config.TargetNamespace(),
-			Labels:    commonresources.MakeDefaultLabels(SelfMonitorName, commonresources.LabelValueK8sComponentMonitor),
+			Labels:    commonresources.MakeDefaultLabels(baseName, commonresources.LabelValueK8sComponentMonitor),
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -157,15 +160,15 @@ func (ad *ApplierDeleter) makeRole() *rbacv1.Role {
 func (ad *ApplierDeleter) makeRoleBinding() *rbacv1.RoleBinding {
 	roleBinding := rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      SelfMonitorName,
+			Name:      baseName,
 			Namespace: ad.Config.TargetNamespace(),
-			Labels:    commonresources.MakeDefaultLabels(SelfMonitorName, commonresources.LabelValueK8sComponentMonitor),
+			Labels:    commonresources.MakeDefaultLabels(baseName, commonresources.LabelValueK8sComponentMonitor),
 		},
-		Subjects: []rbacv1.Subject{{Name: SelfMonitorName, Namespace: ad.Config.TargetNamespace(), Kind: rbacv1.ServiceAccountKind}},
+		Subjects: []rbacv1.Subject{{Name: baseName, Namespace: ad.Config.TargetNamespace(), Kind: rbacv1.ServiceAccountKind}},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "Role",
-			Name:     SelfMonitorName,
+			Name:     baseName,
 		},
 	}
 
@@ -177,13 +180,13 @@ func (ad *ApplierDeleter) makeNetworkPolicy() *networkingv1.NetworkPolicy {
 
 	return &networkingv1.NetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      SelfMonitorName,
+			Name:      baseName,
 			Namespace: ad.Config.TargetNamespace(),
-			Labels:    commonresources.MakeDefaultLabels(SelfMonitorName, commonresources.LabelValueK8sComponentMonitor),
+			Labels:    commonresources.MakeDefaultLabels(baseName, commonresources.LabelValueK8sComponentMonitor),
 		},
 		Spec: networkingv1.NetworkPolicySpec{
 			PodSelector: metav1.LabelSelector{
-				MatchLabels: commonresources.MakeDefaultSelectorLabels(SelfMonitorName),
+				MatchLabels: commonresources.MakeDefaultSelectorLabels(baseName),
 			},
 			PolicyTypes: []networkingv1.PolicyType{
 				networkingv1.PolicyTypeIngress,
@@ -237,9 +240,9 @@ func (ad *ApplierDeleter) makeNetworkPolicyPorts(ports []int32) []networkingv1.N
 func (ad *ApplierDeleter) makeConfigMap(prometheusConfigFileName, prometheusConfigYAML, alertRulesFileName, alertRulesYAML string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      SelfMonitorName,
+			Name:      baseName,
 			Namespace: ad.Config.TargetNamespace(),
-			Labels:    commonresources.MakeDefaultLabels(SelfMonitorName, commonresources.LabelValueK8sComponentMonitor),
+			Labels:    commonresources.MakeDefaultLabels(baseName, commonresources.LabelValueK8sComponentMonitor),
 		},
 		Data: map[string]string{
 			prometheusConfigFileName: prometheusConfigYAML,
@@ -251,18 +254,18 @@ func (ad *ApplierDeleter) makeConfigMap(prometheusConfigFileName, prometheusConf
 func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile string) *appsv1.Deployment {
 	var replicas int32 = 1
 
-	labels := commonresources.MakeDefaultLabels(SelfMonitorName, commonresources.LabelValueK8sComponentMonitor)
-	selectorLabels := commonresources.MakeDefaultSelectorLabels(SelfMonitorName)
+	labels := commonresources.MakeDefaultLabels(baseName, commonresources.LabelValueK8sComponentMonitor)
+	selectorLabels := commonresources.MakeDefaultSelectorLabels(baseName)
 	podLabels := make(map[string]string)
 	maps.Copy(podLabels, labels)
 	podLabels[commonresources.LabelKeyIstioInject] = "false"
 
 	annotations := map[string]string{commonresources.AnnotationKeyChecksumConfig: configChecksum}
-	podSpec := ad.makePodSpec(SelfMonitorName, ad.Config.Image, configPath, configFile)
+	podSpec := ad.makePodSpec(baseName, ad.Config.Image, configPath, configFile)
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      SelfMonitorName,
+			Name:      baseName,
 			Namespace: ad.Config.TargetNamespace(),
 			Labels:    labels,
 		},
@@ -375,9 +378,9 @@ func (ad *ApplierDeleter) makePodSpec(baseName, image, configPath, configFile st
 func (ad *ApplierDeleter) makeService(port int32) *corev1.Service {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      SelfMonitorName,
+			Name:      baseName,
 			Namespace: ad.Config.TargetNamespace(),
-			Labels:    commonresources.MakeDefaultLabels(SelfMonitorName, commonresources.LabelValueK8sComponentMonitor),
+			Labels:    commonresources.MakeDefaultLabels(baseName, commonresources.LabelValueK8sComponentMonitor),
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
@@ -388,7 +391,7 @@ func (ad *ApplierDeleter) makeService(port int32) *corev1.Service {
 					TargetPort: intstr.FromInt32(port),
 				},
 			},
-			Selector: commonresources.MakeDefaultSelectorLabels(SelfMonitorName),
+			Selector: commonresources.MakeDefaultSelectorLabels(baseName),
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
