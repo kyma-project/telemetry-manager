@@ -7,7 +7,7 @@ With the Telemetry module, you can observe and debug your applications by collec
 A LogPipeline is a Kubernetes custom resource (CR) that configures log collection for your cluster. When you create a LogPipeline, the Telemetry Manager automatically deploys the necessary components (for details, see [Logs Architecture](./../architecture/README.md)):
 
 - A **log gateway** that provides a central OTLP endpoint for receiving logs pushed from your applications.
-- A **log agent** that runs on each cluster Node to collect logs written to `stdout` and `stderr` by your application containers.
+- A **log agent** that runs on each cluster node to collect logs written to `stdout` and `stderr` by your application containers.
 
 The pipeline enriches all collected logs with Kubernetes metadata and transforms them into the OTLP format before sending them to your chosen backend.
 
@@ -57,7 +57,7 @@ You can customize your LogPipeline using the available parameters and attributes
 - **Throughput**:
   - When pushing OTLP logs of an average size of 2KB to the log gateway, using its default configuration (two instances), the Telemetry module can process approximately 12,000 logs per second (LPS). To ensure availability, the log gateway runs with multiple instances. For higher throughput, manually scale out the gateway by increasing the number of replicas (see [Module Configuration and Status](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration)). Ensure that the chosen scaling factor does not exceed the maximum throughput of the backend, as it may refuse logs if the rate is too high.
   - For example, to scale out the gateway for scenarios like a `Large` instance of SAP Cloud Logging (up to 30,000 LPS), you can raise the throughput to about 20,000 LPS by increasing the number of replicas to 4 instances.
-  - The log agent, running one instance per Node, handles tailing logs from stdout using the **runtime** input. When writing logs of an average size of 2KB to stdout, a single log agent instance can process approximately 9,000 LPS.
+  - The log agent, running one instance per node, handles tailing logs from stdout using the **runtime** input. When writing logs of an average size of 2KB to stdout, a single log agent instance can process approximately 9,000 LPS.
 - **Load Balancing With Istio**: By design, the connections to the gateway are long-living connections (because OTLP is based on gRPC and HTTP/2). For optimal scaling of the gateway, the clients or applications must balance the connections across the available instances, which is automatically achieved if you use an Istio sidecar. If your application has no Istio sidecar, the data is always sent to one instance of the gateway.
 - **Unavailability of Output**: For up to 5 minutes, a retry for data is attempted when the destination is unavailable. After that, data is dropped.
 - **No Guaranteed Delivery**: The used buffers are volatile. If the gateway or agent instances crash, logs data can be lost.
