@@ -16,17 +16,14 @@ Because CloudWatch doesn't support native OTLP ingestion for metrics, and OTLP s
 
 ## Table of Content
 
-- [Integrate Kyma with Amazon CloudWatch](#integrate-kyma-with-amazon-cloudwatch)
-  - [Overview](#overview)
-  - [Table of Content](#table-of-content)
-  - [Prerequisites](#prerequisites)
-  - [Prepare the Namespace](#prepare-the-namespace)
-  - [Set Up AWS Credentials](#set-up-aws-credentials)
-    - [Create AWS IAM User](#create-aws-iam-user)
-    - [Create a Secret with AWS Credentials](#create-a-secret-with-aws-credentials)
-  - [Deploy the Custom Collector](#deploy-the-custom-collector)
-  - [Set Up Kyma Pipelines](#set-up-kyma-pipelines)
-  - [Verify the Results](#verify-the-results)
+- [Prerequisites](#prerequisites)
+- [Prepare the Namespace](#prepare-the-namespace)
+- [Set Up AWS Credentials](#set-up-aws-credentials)
+  - [Create AWS IAM User](#create-aws-iam-user)
+  - [Create a Secret with AWS Credentials](#create-a-secret-with-aws-credentials)
+- [Deploy the Custom Collector](#deploy-the-custom-collector)
+- [Set Up Kyma Pipelines](#set-up-kyma-pipelines)
+- [Verify the Results](#verify-the-results)
 
 ## Prerequisites
 
