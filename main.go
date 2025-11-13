@@ -158,7 +158,7 @@ func run() error {
 
 	globals := config.NewGlobal(
 		config.WithNamespace(envCfg.TelemetryNamespace),
-		config.WithEnableFIPSMode(enableFIPSMode),
+		config.WithOperateInFIPSMode(enableFIPSMode),
 		config.WithVersion(build.GitTag()),
 	)
 

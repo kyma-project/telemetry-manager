@@ -23,7 +23,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 	globals := config.NewGlobal(config.WithNamespace("kyma-system"))
 	globalsWithFIPS := config.NewGlobal(
 		config.WithNamespace("kyma-system"),
-		config.WithEnableFIPSMode(true),
+		config.WithOperateInFIPSMode(true),
 	)
 	collectorImage := "opentelemetry/collector:dummy"
 	priorityClassName := "normal"

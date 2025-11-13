@@ -121,7 +121,7 @@ func NewLogGatewayApplierDeleter(globals config.Global, image, priorityClassName
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
-			commonresources.WithFIPSGoDebugEnvVar(globals.EnableFIPSMode()),
+			commonresources.WithFIPSGoDebugEnvVar(globals.OperateInFIPSMode()),
 		},
 	}
 }
@@ -154,7 +154,7 @@ func NewMetricGatewayApplierDeleter(globals config.Global, image, priorityClassN
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
-			commonresources.WithFIPSGoDebugEnvVar(globals.EnableFIPSMode()),
+			commonresources.WithFIPSGoDebugEnvVar(globals.OperateInFIPSMode()),
 		},
 	}
 }
@@ -187,7 +187,7 @@ func NewTraceGatewayApplierDeleter(globals config.Global, image, priorityClassNa
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
-			commonresources.WithFIPSGoDebugEnvVar(globals.EnableFIPSMode()),
+			commonresources.WithFIPSGoDebugEnvVar(globals.OperateInFIPSMode()),
 		},
 	}
 }
