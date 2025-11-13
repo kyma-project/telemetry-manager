@@ -27,9 +27,9 @@ func WithVersion(version string) Option {
 }
 
 func NewGlobal(opts ...Option) Global {
-	g := &Global{}
+	g := Global{}
 	for _, opt := range opts {
-		opt(g)
+		opt(&g)
 	}
 
 	return g

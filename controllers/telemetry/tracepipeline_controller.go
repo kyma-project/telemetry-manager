@@ -46,6 +46,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
@@ -67,13 +68,12 @@ type TracePipelineControllerConfig struct {
 	config.Global
 
 	RestConfig                    *rest.Config
-	SelfMonitorName               string
 	OTelCollectorImage            string
 	TraceGatewayPriorityClassName string
 }
 
-func NewTracePipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config TracePipelineControllerConfig) (*TracePipelineController, error) {
-	flowHealthProber, err := prober.NewOTelTraceGatewayProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TargetNamespace()})
+func NewTracePipelineController(config TracePipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent) (*TracePipelineController, error) {
+	flowHealthProber, err := prober.NewOTelTraceGatewayProber(types.NamespacedName{Name: selfmonitor.SelfMonitorName, Namespace: config.TargetNamespace()})
 	if err != nil {
 		return nil, err
 	}
@@ -123,15 +123,11 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 		client,
 		config.Global,
 		flowHealthProber,
-		otelcollector.NewTraceGatewayApplierDeleter(
-			config.Global,
-			config.OTelCollectorImage,
-			config.TraceGatewayPriorityClassName,
-		),
+		otelcollector.NewTraceGatewayApplierDeleter(config.Global, config.OTelCollectorImage, config.TraceGatewayPriorityClassName),
 		&tracegateway.Builder{Reader: client},
 		&workloadstatus.DeploymentProber{Client: client},
 		istiostatus.NewChecker(discoveryClient),
-		overrides.New(client, overrides.HandlerConfig{Global: config.Global}),
+		overrides.New(config.Global, client),
 		pipelineLock,
 		pipelineSync,
 		pipelineValidator,

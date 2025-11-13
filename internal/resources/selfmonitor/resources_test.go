@@ -14,13 +14,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
+	"github.com/kyma-project/telemetry-manager/internal/config"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
 const (
 	namespace            = "my-namespace"
-	name                 = "my-self-monitor"
-	componentType        = "my-monitor"
 	prometheusConfigYAML = "dummy prometheus Config"
 	alertRulesYAML       = "dummy alert rules"
 	configPath           = "/dummy/"
@@ -42,9 +41,7 @@ func TestApplySelfMonitorResources(t *testing.T) {
 	}).Build()
 	sut := ApplierDeleter{
 		Config: Config{
-			BaseName:      name,
-			Namespace:     namespace,
-			ComponentType: componentType,
+			Global: config.NewGlobal(config.WithNamespace(namespace)),
 		},
 	}
 
@@ -84,8 +81,7 @@ func TestDeleteSelfMonitorResources(t *testing.T) {
 
 	sut := ApplierDeleter{
 		Config: Config{
-			BaseName:  name,
-			Namespace: namespace,
+			Global: config.NewGlobal(config.WithNamespace(namespace)),
 		},
 	}
 

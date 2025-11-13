@@ -19,6 +19,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
@@ -40,7 +41,8 @@ func TestReconcile(t *testing.T) {
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 
-	telemetryNamespace := "kyma-system"
+	globals := config.NewGlobal(config.WithNamespace("default"))
+
 	overridesHandlerStub := &logpipelinemocks.OverridesHandler{}
 	overridesHandlerStub.On("LoadOverrides", t.Context()).Return(&overrides.Config{}, nil)
 
@@ -76,8 +78,8 @@ func TestReconcile(t *testing.T) {
 		errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
 			agentConfigBuilder,
 			agentApplierDeleterMock,
 			proberStub,
@@ -143,8 +145,8 @@ func TestReconcile(t *testing.T) {
 		errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
 			agentConfigBuilder,
 			agentApplierDeleterMock,
 			proberStub,
@@ -198,8 +200,8 @@ func TestReconcile(t *testing.T) {
 		errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
 			agentConfigBuilder,
 			agentApplierDeleterMock,
 			proberStub,
@@ -253,8 +255,8 @@ func TestReconcile(t *testing.T) {
 		errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
 			agentConfigBuilder,
 			agentApplierDeleterMock,
 			proberStub,
@@ -303,8 +305,8 @@ func TestReconcile(t *testing.T) {
 		errToMsgStub.On("Convert", mock.Anything).Return("DaemonSet is not yet created")
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
 			agentConfigBuilder,
 			agentApplierDeleterMock,
 			proberStub,
@@ -363,8 +365,8 @@ func TestReconcile(t *testing.T) {
 		errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
 			agentConfigBuilder,
 			agentApplierDeleterMock,
 			proberStub,
@@ -423,8 +425,8 @@ func TestReconcile(t *testing.T) {
 		errToMsgStub := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
 			agentConfigBuilder,
 			agentApplierDeleterMock,
 			proberStub,
@@ -486,8 +488,8 @@ func TestReconcile(t *testing.T) {
 		errToMsgStub.On("Convert", mock.Anything).Return("")
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
 			agentConfigBuilder,
 			agentApplierDeleterMock,
 			proberStub,
@@ -565,8 +567,8 @@ func TestReconcile(t *testing.T) {
 		errToMsgStub.On("Convert", mock.Anything).Return("")
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
 			agentConfigBuilder,
 			agentApplierDeleterMock,
 			proberStub,
@@ -722,8 +724,8 @@ func TestReconcile(t *testing.T) {
 				errToMsgStub.On("Convert", mock.Anything).Return("")
 
 				sut := New(
+					globals,
 					fakeClient,
-					telemetryNamespace,
 					agentConfigBuilder,
 					agentApplierDeleterMock,
 					proberStub,
@@ -857,8 +859,8 @@ func TestReconcile(t *testing.T) {
 				errToMsgStub.On("Convert", mock.Anything).Return("")
 
 				sut := New(
+					globals,
 					fakeClient,
-					telemetryNamespace,
 					agentConfigBuilder,
 					agentApplierDeleterMock,
 					proberStub,
@@ -966,8 +968,8 @@ func TestReconcile(t *testing.T) {
 				errToMsgStub := &conditions.ErrorToMessageConverter{}
 
 				sut := New(
+					globals,
 					fakeClient,
-					telemetryNamespace,
 					agentConfigBuilder,
 					agentApplierDeleterMock,
 					proberStub,
@@ -1030,8 +1032,8 @@ func TestReconcile(t *testing.T) {
 		errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
 			agentConfigBuilder,
 			agentApplierDeleterMock,
 			proberStub,

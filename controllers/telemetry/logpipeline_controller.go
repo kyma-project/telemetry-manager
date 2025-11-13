@@ -38,6 +38,7 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/logagent"
@@ -49,6 +50,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
@@ -67,6 +69,8 @@ type LogPipelineController struct {
 }
 
 type LogPipelineControllerConfig struct {
+	config.Global
+
 	ExporterImage               string
 	FluentBitImage              string
 	OTelCollectorImage          string
@@ -75,18 +79,14 @@ type LogPipelineControllerConfig struct {
 	LogGatewayPriorityClassName string
 	LogAgentPriorityClassName   string
 	RestConfig                  *rest.Config
-	SelfMonitorName             string
-	TelemetryNamespace          string
-	ModuleVersion               string
-	EnableFIPSMode              bool
 }
 
-func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config LogPipelineControllerConfig) (*LogPipelineController, error) {
+func NewLogPipelineController(config LogPipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent) (*LogPipelineController, error) {
 	pipelineLock := resourcelock.NewLocker(
 		client,
 		types.NamespacedName{
 			Name:      "telemetry-logpipeline-lock",
-			Namespace: config.TelemetryNamespace,
+			Namespace: config.TargetNamespace(),
 		},
 		MaxPipelineCount,
 	)
@@ -95,38 +95,38 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 		client,
 		types.NamespacedName{
 			Name:      "telemetry-logpipeline-sync",
-			Namespace: config.TelemetryNamespace,
+			Namespace: config.TargetNamespace(),
 		},
 	)
 
-	fluentBitFlowHealthProber, err := prober.NewFluentBitProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
+	fluentBitFlowHealthProber, err := prober.NewFluentBitProber(types.NamespacedName{Name: selfmonitor.SelfMonitorName, Namespace: config.TargetNamespace()})
 	if err != nil {
 		return nil, err
 	}
 
-	otelGatewayFlowHealthProber, err := prober.NewOTelLogGatewayProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
+	otelGatewayFlowHealthProber, err := prober.NewOTelLogGatewayProber(types.NamespacedName{Name: selfmonitor.SelfMonitorName, Namespace: config.TargetNamespace()})
 	if err != nil {
 		return nil, err
 	}
 
-	otelAgentFlowHealthProber, err := prober.NewOTelLogAgentProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
+	otelAgentFlowHealthProber, err := prober.NewOTelLogAgentProber(types.NamespacedName{Name: selfmonitor.SelfMonitorName, Namespace: config.TargetNamespace()})
 	if err != nil {
 		return nil, err
 	}
 
-	fluentBitReconciler, err := configureFluentBitReconciler(client, config, fluentBitFlowHealthProber, pipelineLock)
+	fluentBitReconciler, err := configureFluentBitReconciler(config, client, fluentBitFlowHealthProber, pipelineLock)
 	if err != nil {
 		return nil, err
 	}
 
-	otelReconciler, err := configureOtelReconciler(client, config, pipelineLock, otelGatewayFlowHealthProber, otelAgentFlowHealthProber)
+	otelReconciler, err := configureOTelReconciler(config, client, pipelineLock, otelGatewayFlowHealthProber, otelAgentFlowHealthProber)
 	if err != nil {
 		return nil, err
 	}
 
 	reconciler := logpipeline.New(
 		client,
-		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
+		overrides.New(config.Global, client),
 		pipelineSyncer,
 		fluentBitReconciler,
 		otelReconciler,
@@ -194,7 +194,7 @@ func (r *LogPipelineController) mapTelemetryChanges(ctx context.Context, object 
 	return requests
 }
 
-func configureFluentBitReconciler(client client.Client, config LogPipelineControllerConfig, flowHealthProber *prober.FluentBitProber, pipelineLock logpipelinefluentbit.PipelineLock) (*logpipelinefluentbit.Reconciler, error) {
+func configureFluentBitReconciler(config LogPipelineControllerConfig, client client.Client, flowHealthProber *prober.FluentBitProber, pipelineLock logpipelinefluentbit.PipelineLock) (*logpipelinefluentbit.Reconciler, error) {
 	pipelineValidator := &logpipelinefluentbit.Validator{
 		EndpointValidator:  &endpoint.Validator{Client: client},
 		TLSCertValidator:   tlscert.New(client),
@@ -203,7 +203,7 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 	}
 
 	fluentBitApplierDeleter := fluentbit.NewFluentBitApplierDeleter(
-		config.TelemetryNamespace,
+		config.TargetNamespace(),
 		config.FluentBitImage,
 		config.ExporterImage,
 		config.ChownInitContainerImage,
@@ -218,8 +218,8 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 	}
 
 	fbReconciler := logpipelinefluentbit.New(
+		config.Global,
 		client,
-		config.TelemetryNamespace,
 		fluentBitConfigBuilder,
 		fluentBitApplierDeleter,
 		&workloadstatus.DaemonSetProber{Client: client},
@@ -233,7 +233,7 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 }
 
 //nolint:unparam // error is always nil: An error could be returned after implementing the IstioStatusChecker (TODO)
-func configureOtelReconciler(client client.Client, config LogPipelineControllerConfig, pipelineLock logpipelineotel.PipelineLock, gatewayFlowHealthProber *prober.OTelGatewayProber, agentFlowHealthProber *prober.OTelAgentProber) (*logpipelineotel.Reconciler, error) {
+func configureOTelReconciler(config LogPipelineControllerConfig, client client.Client, pipelineLock logpipelineotel.PipelineLock, gatewayFlowHealthProber *prober.OTelGatewayProber, agentFlowHealthProber *prober.OTelAgentProber) (*logpipelineotel.Reconciler, error) {
 	transformSpecValidator, err := ottl.NewTransformSpecValidator(ottl.SignalTypeLog)
 	if err != nil {
 		return nil, err
@@ -263,25 +263,14 @@ func configureOtelReconciler(client client.Client, config LogPipelineControllerC
 	}
 
 	otelReconciler := logpipelineotel.New(
+		config.Global,
 		client,
-		config.TelemetryNamespace,
-		config.ModuleVersion,
 		gatewayFlowHealthProber,
 		agentFlowHealthProber,
 		agentConfigBuilder,
-		otelcollector.NewLogAgentApplierDeleter(
-			config.OTelCollectorImage,
-			config.TelemetryNamespace,
-			config.LogAgentPriorityClassName,
-			config.EnableFIPSMode,
-		),
+		otelcollector.NewLogAgentApplierDeleter(config.Global, config.OTelCollectorImage, config.LogAgentPriorityClassName),
 		&workloadstatus.DaemonSetProber{Client: client},
-		otelcollector.NewLogGatewayApplierDeleter(
-			config.OTelCollectorImage,
-			config.TelemetryNamespace,
-			config.LogGatewayPriorityClassName,
-			config.EnableFIPSMode,
-		),
+		otelcollector.NewLogGatewayApplierDeleter(config.Global, config.OTelCollectorImage, config.LogGatewayPriorityClassName),
 		&loggateway.Builder{Reader: client},
 		&workloadstatus.DeploymentProber{Client: client},
 		istiostatus.NewChecker(discoveryClient),

@@ -11,10 +11,10 @@ import (
 
 func TestMakeConfigMarshalling(t *testing.T) {
 	config := MakeConfig(BuilderConfig{
-		ScrapeNamespace:   "kyma-system",
-		WebhookURL:        "http://webhook:9090",
-		ConfigPath:        "/dummy-configpath/",
-		AlertRuleFileName: "dymma-alerts.yml",
+		ScrapeNamespace:        "kyma-system",
+		AlertmanagerWebhookURL: "http://webhook:9090",
+		ConfigPath:             "/dummy-configpath/",
+		AlertRuleFileName:      "dymma-alerts.yml",
 	})
 	configYaml, err := yaml.Marshal(config)
 	require.NoError(t, err)

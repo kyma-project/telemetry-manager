@@ -57,9 +57,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/featureflags"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
-	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
-	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
 	loggerutils "github.com/kyma-project/telemetry-manager/internal/utils/logger"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
@@ -89,7 +86,6 @@ var (
 
 const (
 	cacheSyncPeriod    = 1 * time.Minute
-	selfMonitorName    = "telemetry-self-monitor"
 	webhookServiceName = "telemetry-manager-webhook"
 
 	healthProbePort = 8081
@@ -160,13 +156,13 @@ func run() error {
 		return err
 	}
 
-	globalCfg := config.NewGlobal(
+	globals := config.NewGlobal(
 		config.WithNamespace(envCfg.TelemetryNamespace),
 		config.WithEnableFIPSMode(enableFIPSMode),
 		config.WithVersion(build.GitTag()),
 	)
 
-	err = setupControllersAndWebhooks(mgr, globalCfg, envCfg)
+	err = setupControllersAndWebhooks(mgr, globals, envCfg)
 	if err != nil {
 		return err
 	}
@@ -180,29 +176,28 @@ func run() error {
 	return nil
 }
 
-func setupControllersAndWebhooks(mgr manager.Manager, globalCfg config.Global, envCfg envConfig) error {
+func setupControllersAndWebhooks(mgr manager.Manager, globals config.Global, envCfg envConfig) error {
 	var (
-		TracePipelineReconcile  = make(chan event.GenericEvent)
-		MetricPipelineReconcile = make(chan event.GenericEvent)
-		LogPipelineReconcile    = make(chan event.GenericEvent)
+		tracePipelineReconcileChan  = make(chan event.GenericEvent)
+		metricPipelineReconcileChan = make(chan event.GenericEvent)
+		logPipelineReconcileChan    = make(chan event.GenericEvent)
 	)
 
-	if err := setupTracePipelineController(mgr, globalCfg, envCfg, TracePipelineReconcile); err != nil {
+	if err := setupTracePipelineController(globals, envCfg, mgr, tracePipelineReconcileChan); err != nil {
 		return fmt.Errorf("failed to enable trace pipeline controller: %w", err)
 	}
 
-	if err := setupMetricPipelineController(mgr, envCfg, MetricPipelineReconcile); err != nil {
+	if err := setupMetricPipelineController(globals, envCfg, mgr, metricPipelineReconcileChan); err != nil {
 		return fmt.Errorf("failed to enable metric pipeline controller: %w", err)
 	}
 
-	if err := setupLogPipelineController(mgr, envCfg, LogPipelineReconcile); err != nil {
+	if err := setupLogPipelineController(globals, envCfg, mgr, logPipelineReconcileChan); err != nil {
 		return fmt.Errorf("failed to enable log pipeline controller: %w", err)
 	}
 
-	webhookConfig := createWebhookConfig(envCfg)
-	selfMonitorConfig := createSelfMonitoringConfig(envCfg)
+	webhookCertConfig := createWebhookConfig(globals)
 
-	if err := enableTelemetryModuleController(mgr, envCfg, webhookConfig, selfMonitorConfig); err != nil {
+	if err := setupTelemetryController(globals, envCfg, webhookCertConfig, mgr); err != nil {
 		return fmt.Errorf("failed to enable telemetry module controller: %w", err)
 	}
 
@@ -214,7 +209,7 @@ func setupControllersAndWebhooks(mgr manager.Manager, globalCfg config.Global, e
 		return fmt.Errorf("failed to add ready check: %w", err)
 	}
 
-	if err := ensureWebhookCert(mgr, webhookConfig); err != nil {
+	if err := ensureWebhookCert(webhookCertConfig, mgr); err != nil {
 		return fmt.Errorf("failed to enable webhook server: %w", err)
 	}
 
@@ -228,9 +223,9 @@ func setupControllersAndWebhooks(mgr manager.Manager, globalCfg config.Global, e
 
 	mgr.GetWebhookServer().Register("/api/v2/alerts", selfmonitorwebhook.NewHandler(
 		mgr.GetClient(),
-		selfmonitorwebhook.WithTracePipelineSubscriber(TracePipelineReconcile),
-		selfmonitorwebhook.WithMetricPipelineSubscriber(MetricPipelineReconcile),
-		selfmonitorwebhook.WithLogPipelineSubscriber(LogPipelineReconcile),
+		selfmonitorwebhook.WithTracePipelineSubscriber(tracePipelineReconcileChan),
+		selfmonitorwebhook.WithMetricPipelineSubscriber(metricPipelineReconcileChan),
+		selfmonitorwebhook.WithLogPipelineSubscriber(logPipelineReconcileChan),
 		selfmonitorwebhook.WithLogger(ctrl.Log.WithName("self-monitor-webhook"))))
 
 	return nil
@@ -354,29 +349,18 @@ func setupAdmissionsWebhooks(mgr manager.Manager) error {
 	return nil
 }
 
-func enableTelemetryModuleController(mgr manager.Manager, cfg envConfig, webhookConfig telemetry.WebhookConfig, selfMonitorConfig telemetry.SelfMonitorConfig) error {
+func setupTelemetryController(globals config.Global, cfg envConfig, webhookCertConfig webhookcert.Config, mgr manager.Manager) error {
 	setupLog.Info("Setting up telemetry controller")
 
 	telemetryController := operator.NewTelemetryController(
+		operator.TelemetryControllerConfig{
+			Global:                       globals,
+			SelfMonitorImage:             cfg.SelfMonitorImage,
+			SelfMonitorPriorityClassName: normalPriorityClassName,
+			AlertmanagerWebhookURL:       fmt.Sprintf("%s.%s.svc", webhookServiceName, globals.ManagerNamespace()),
+		},
 		mgr.GetClient(),
 		mgr.GetScheme(),
-		operator.TelemetryControllerConfig{
-			Config: telemetry.Config{
-				Logs: telemetry.LogsConfig{
-					Namespace: cfg.TelemetryNamespace,
-				},
-				Traces: telemetry.TracesConfig{
-					Namespace: cfg.TelemetryNamespace,
-				},
-				Metrics: telemetry.MetricsConfig{
-					Namespace: cfg.TelemetryNamespace,
-				},
-				Webhook:     webhookConfig,
-				SelfMonitor: selfMonitorConfig,
-			},
-			SelfMonitorName:    selfMonitorName,
-			TelemetryNamespace: cfg.TelemetryNamespace,
-		},
 	)
 
 	if err := telemetryController.SetupWithManager(mgr); err != nil {
@@ -386,13 +370,12 @@ func enableTelemetryModuleController(mgr manager.Manager, cfg envConfig, webhook
 	return nil
 }
 
-func setupLogPipelineController(mgr manager.Manager, cfg envConfig, reconcileTriggerChan <-chan event.GenericEvent) error {
+func setupLogPipelineController(globals config.Global, cfg envConfig, mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
 	setupLog.Info("Setting up logpipeline controller")
 
 	logPipelineController, err := telemetrycontrollers.NewLogPipelineController(
-		mgr.GetClient(),
-		reconcileTriggerChan,
 		telemetrycontrollers.LogPipelineControllerConfig{
+			Global:                      globals,
 			ExporterImage:               cfg.FluentBitExporterImage,
 			FluentBitImage:              cfg.FluentBitImage,
 			ChownInitContainerImage:     cfg.AlpineImage,
@@ -401,11 +384,9 @@ func setupLogPipelineController(mgr manager.Manager, cfg envConfig, reconcileTri
 			LogGatewayPriorityClassName: normalPriorityClassName,
 			LogAgentPriorityClassName:   highPriorityClassName,
 			RestConfig:                  mgr.GetConfig(),
-			SelfMonitorName:             selfMonitorName,
-			TelemetryNamespace:          cfg.TelemetryNamespace,
-			ModuleVersion:               build.GitTag(),
-			EnableFIPSMode:              enableFIPSMode,
 		},
+		mgr.GetClient(),
+		reconcileTriggerChan,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create logpipeline controller: %w", err)
@@ -418,19 +399,18 @@ func setupLogPipelineController(mgr manager.Manager, cfg envConfig, reconcileTri
 	return nil
 }
 
-func setupTracePipelineController(mgr manager.Manager, globalCfg config.Global, envCfg envConfig, reconcileTriggerChan <-chan event.GenericEvent) error {
+func setupTracePipelineController(globals config.Global, envCfg envConfig, mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
 	setupLog.Info("Setting up tracepipeline controller")
 
 	tracePipelineController, err := telemetrycontrollers.NewTracePipelineController(
-		mgr.GetClient(),
-		reconcileTriggerChan,
 		telemetrycontrollers.TracePipelineControllerConfig{
-			Global:                        globalCfg,
+			Global:                        globals,
 			RestConfig:                    mgr.GetConfig(),
 			OTelCollectorImage:            envCfg.OTelCollectorImage,
-			SelfMonitorName:               selfMonitorName,
 			TraceGatewayPriorityClassName: normalPriorityClassName,
 		},
+		mgr.GetClient(),
+		reconcileTriggerChan,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create tracepipeline controller: %w", err)
@@ -443,22 +423,18 @@ func setupTracePipelineController(mgr manager.Manager, globalCfg config.Global, 
 	return nil
 }
 
-func setupMetricPipelineController(mgr manager.Manager, cfg envConfig, reconcileTriggerChan <-chan event.GenericEvent) error {
+func setupMetricPipelineController(globals config.Global, cfg envConfig, mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
 	setupLog.Info("Setting up metricpipeline controller")
 
 	metricPipelineController, err := telemetrycontrollers.NewMetricPipelineController(
-		mgr.GetClient(),
-		reconcileTriggerChan,
 		telemetrycontrollers.MetricPipelineControllerConfig{
 			MetricAgentPriorityClassName:   highPriorityClassName,
 			MetricGatewayPriorityClassName: normalPriorityClassName,
-			ModuleVersion:                  build.GitTag(),
 			OTelCollectorImage:             cfg.OTelCollectorImage,
 			RestConfig:                     mgr.GetConfig(),
-			SelfMonitorName:                selfMonitorName,
-			TelemetryNamespace:             cfg.TelemetryNamespace,
-			EnableFIPSMode:                 enableFIPSMode,
 		},
+		mgr.GetClient(),
+		reconcileTriggerChan,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create metricpipeline controller: %w", err)
@@ -506,7 +482,7 @@ func setupConversionWebhooks(mgr manager.Manager) error {
 	return nil
 }
 
-func ensureWebhookCert(mgr manager.Manager, webhookConfig telemetry.WebhookConfig) error {
+func ensureWebhookCert(webhookCertConfig webhookcert.Config, mgr manager.Manager) error {
 	// Create own client since manager might not be started while using
 	clientOptions := client.Options{
 		Scheme: scheme,
@@ -517,7 +493,7 @@ func ensureWebhookCert(mgr manager.Manager, webhookConfig telemetry.WebhookConfi
 		return fmt.Errorf("failed to create webhook client: %w", err)
 	}
 
-	if err = webhookcert.EnsureCertificate(context.Background(), k8sClient, webhookConfig.CertConfig); err != nil {
+	if err = webhookcert.EnsureCertificate(context.Background(), k8sClient, webhookCertConfig); err != nil {
 		return fmt.Errorf("failed to ensure webhook cert: %w", err)
 	}
 
@@ -539,42 +515,24 @@ func setConfigMapNamespaceFieldSelector(cfg envConfig) map[string]cache.Config {
 	}
 }
 
-func createSelfMonitoringConfig(cfg envConfig) telemetry.SelfMonitorConfig {
-	return telemetry.SelfMonitorConfig{
-		Config: selfmonitor.Config{
-			BaseName:      selfMonitorName,
-			Namespace:     cfg.TelemetryNamespace,
-			ComponentType: commonresources.LabelValueK8sComponentMonitor,
-			Deployment: selfmonitor.DeploymentConfig{
-				Image:             cfg.SelfMonitorImage,
-				PriorityClassName: normalPriorityClassName,
+func createWebhookConfig(globals config.Global) webhookcert.Config {
+	return webhookcert.NewWebhookCertConfig(
+		webhookcert.ConfigOptions{
+			CertDir: certDir,
+			ServiceName: types.NamespacedName{
+				Name:      webhookServiceName,
+				Namespace: globals.ManagerNamespace(),
+			},
+			CASecretName: types.NamespacedName{
+				Name:      "telemetry-webhook-cert",
+				Namespace: globals.TargetNamespace(),
+			},
+			ValidatingWebhookName: types.NamespacedName{
+				Name: "telemetry-validating-webhook.kyma-project.io",
+			},
+			MutatingWebhookName: types.NamespacedName{
+				Name: "telemetry-mutating-webhook.kyma-project.io",
 			},
 		},
-		WebhookScheme: "https",
-		WebhookURL:    fmt.Sprintf("%s.%s.svc", webhookServiceName, cfg.TelemetryNamespace),
-	}
-}
-
-func createWebhookConfig(cfg envConfig) telemetry.WebhookConfig {
-	return telemetry.WebhookConfig{
-		CertConfig: webhookcert.NewWebhookCertConfig(
-			webhookcert.ConfigOptions{
-				CertDir: certDir,
-				ServiceName: types.NamespacedName{
-					Name:      webhookServiceName,
-					Namespace: cfg.TelemetryNamespace,
-				},
-				CASecretName: types.NamespacedName{
-					Name:      "telemetry-webhook-cert",
-					Namespace: cfg.TelemetryNamespace,
-				},
-				ValidatingWebhookName: types.NamespacedName{
-					Name: "telemetry-validating-webhook.kyma-project.io",
-				},
-				MutatingWebhookName: types.NamespacedName{
-					Name: "telemetry-mutating-webhook.kyma-project.io",
-				},
-			},
-		),
-	}
+	)
 }
