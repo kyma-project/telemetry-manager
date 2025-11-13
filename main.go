@@ -63,7 +63,6 @@ import (
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
 	loggerutils "github.com/kyma-project/telemetry-manager/internal/utils/logger"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
-	logparserwebhookv1alpha1 "github.com/kyma-project/telemetry-manager/webhook/logparser/v1alpha1"
 	logpipelinewebhookv1alpha1 "github.com/kyma-project/telemetry-manager/webhook/logpipeline/v1alpha1"
 	logpipelinewebhookv1beta1 "github.com/kyma-project/telemetry-manager/webhook/logpipeline/v1beta1"
 	metricpipelinewebhookv1alpha1 "github.com/kyma-project/telemetry-manager/webhook/metricpipeline/v1alpha1"
@@ -352,8 +351,6 @@ func setupAdmissionsWebhooks(mgr manager.Manager) error {
 		}
 	}
 
-	logparserwebhookv1alpha1.SetupWithManager(mgr)
-
 	return nil
 }
 
@@ -416,19 +413,6 @@ func setupLogPipelineController(mgr manager.Manager, cfg envConfig, reconcileTri
 
 	if err := logPipelineController.SetupWithManager(mgr); err != nil {
 		return fmt.Errorf("failed to setup logpipeline controller: %w", err)
-	}
-
-	setupLog.Info("Setting up logparser controller")
-
-	logParserController := telemetrycontrollers.NewLogParserController(
-		mgr.GetClient(),
-		telemetrycontrollers.LogParserControllerConfig{
-			TelemetryNamespace: cfg.TelemetryNamespace,
-		},
-	)
-
-	if err := logParserController.SetupWithManager(mgr); err != nil {
-		return fmt.Errorf("failed to setup logparser controller: %w", err)
 	}
 
 	return nil

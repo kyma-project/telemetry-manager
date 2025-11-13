@@ -155,11 +155,6 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 		return fmt.Errorf("failed to reconcile fluent bit lua configmap: %w", err)
 	}
 
-	parsersCm := makeParserConfigmap(aad.parsersConfigMapName)
-	if err := k8sutils.CreateIfNotExistsConfigMap(ctx, c, parsersCm); err != nil {
-		return fmt.Errorf("failed to reconcile fluent bit parsers configmap: %w", err)
-	}
-
 	sectionsCm := makeSectionsConfigMap(aad.sectionsConfigMapName, opts.FluentBitConfig.SectionsConfig)
 	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, sectionsCm); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit sections configmap: %w", err)
@@ -180,7 +175,7 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 		return fmt.Errorf("failed to reconcile fluent bit tls config secret: %w", err)
 	}
 
-	checksum := configchecksum.Calculate([]corev1.ConfigMap{*cm, *luaCm, *sectionsCm, *filesCm, *parsersCm}, []corev1.Secret{*envConfigSecret, *tlsFileConfigSecret})
+	checksum := configchecksum.Calculate([]corev1.ConfigMap{*cm, *luaCm, *sectionsCm, *filesCm}, []corev1.Secret{*envConfigSecret, *tlsFileConfigSecret})
 
 	daemonSet := aad.makeDaemonSet(aad.daemonSetName.Namespace, checksum)
 	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, daemonSet); err != nil {
@@ -190,6 +185,15 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 	networkPolicy := commonresources.MakeNetworkPolicy(aad.daemonSetName, opts.AllowedPorts, Labels(), selectorLabels())
 	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, networkPolicy); err != nil {
 		return fmt.Errorf("failed to create fluent bit network policy: %w", err)
+	}
+
+	//TODO: remove parser configmap creation after logparser removal is rolled out
+	parserCm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
+		Name:      fbParsersConfigMapName,
+		Namespace: aad.namespace,
+	}}
+	if err := k8sutils.DeleteObject(ctx, c, &parserCm); err != nil {
+		return fmt.Errorf("failed to delete parser configmap: %w", err)
 	}
 
 	return nil
@@ -240,14 +244,6 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 	}}
 	if err := k8sutils.DeleteObject(ctx, c, &luaCm); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete lua configmap: %w", err))
-	}
-
-	parserCm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
-		Name:      fbParsersConfigMapName,
-		Namespace: aad.namespace,
-	}}
-	if err := k8sutils.DeleteObject(ctx, c, &parserCm); err != nil {
-		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete parseopts.Config.ap: %w", err))
 	}
 
 	sectionCm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
@@ -568,22 +564,11 @@ func makeExporterMetricsService(name types.NamespacedName) *corev1.Service {
 }
 
 func makeConfigMap(name types.NamespacedName) *corev1.ConfigMap {
-	parserConfig := `
-[PARSER]
-    Name docker_no_time
-    Format json
-    Time_Keep Off
-    Time_Key time
-    Time_Format %Y-%m-%dT%H:%M:%S.%L
-`
-
 	fluentBitConfig := `
 [SERVICE]
     Daemon Off
     Flush 1
     Log_Level warn
-    Parsers_File custom_parsers.conf
-    Parsers_File dynamic-parsers/parsers.conf
     HTTP_Server On
     HTTP_Listen 0.0.0.0
     HTTP_Port {{ HTTP_PORT }}
@@ -601,8 +586,7 @@ func makeConfigMap(name types.NamespacedName) *corev1.ConfigMap {
 			Labels:    Labels(),
 		},
 		Data: map[string]string{
-			"custom_parsers.conf": parserConfig,
-			"fluent-bit.conf":     fluentBitConfig,
+			"fluent-bit.conf": fluentBitConfig,
 		},
 	}
 }
@@ -626,17 +610,6 @@ func makeFilesConfigMap(name types.NamespacedName, filesConfig map[string]string
 			Labels:    Labels(),
 		},
 		Data: filesConfig,
-	}
-}
-
-func makeParserConfigmap(name types.NamespacedName) *corev1.ConfigMap {
-	return &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-			Labels:    Labels(),
-		},
-		Data: map[string]string{"parsers.conf": ""},
 	}
 }
 

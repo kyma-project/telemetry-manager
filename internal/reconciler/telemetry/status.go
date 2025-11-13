@@ -63,7 +63,7 @@ func (r *Reconciler) updateComponentCondition(ctx context.Context, checker Compo
 
 func (r *Reconciler) updateOverallState(ctx context.Context, telemetry *operatorv1alpha1.Telemetry, telemetryInDeletion bool) {
 	if telemetryInDeletion {
-		// If the provided Telemetry CR is being deleted and dependent Telemetry CRs (LogPipeline, LogParser, MetricPipeline, TracePipeline) are found, the state is set to "Warning" until they are removed from the cluster.
+		// If the provided Telemetry CR is being deleted and dependent Telemetry CRs (LogPipeline, MetricPipeline, TracePipeline) are found, the state is set to "Warning" until they are removed from the cluster.
 		// If dependent CRs are not found, the state is set to "Deleting"
 		if r.dependentCRsFound(ctx) {
 			telemetry.Status.State = operatorv1alpha1.StateWarning
@@ -191,8 +191,7 @@ func makeOTLPEndpoints(serviceName, namespace string) *operatorv1alpha1.OTLPEndp
 }
 
 func (r *Reconciler) dependentCRsFound(ctx context.Context) bool {
-	return r.resourcesExist(ctx, &telemetryv1alpha1.LogParserList{}) ||
-		r.resourcesExist(ctx, &telemetryv1alpha1.LogPipelineList{}) ||
+	return r.resourcesExist(ctx, &telemetryv1alpha1.LogPipelineList{}) ||
 		r.resourcesExist(ctx, &telemetryv1alpha1.MetricPipelineList{}) ||
 		r.resourcesExist(ctx, &telemetryv1alpha1.TracePipelineList{})
 }

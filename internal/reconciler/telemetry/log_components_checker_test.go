@@ -21,7 +21,6 @@ func TestLogComponentsCheck(t *testing.T) {
 	tests := []struct {
 		name                     string
 		pipelines                []telemetryv1alpha1.LogPipeline
-		parsers                  []telemetryv1alpha1.LogParser
 		tracePipelines           []telemetryv1alpha1.TracePipeline
 		metricPipelines          []telemetryv1alpha1.MetricPipeline
 		telemetryInDeletion      bool
@@ -178,34 +177,17 @@ func TestLogComponentsCheck(t *testing.T) {
 			},
 		},
 		{
-			name: "should block deletion if there are existing parsers",
-			parsers: []telemetryv1alpha1.LogParser{
-				testutils.NewLogParsersBuilder().WithName("foo").Build(),
-				testutils.NewLogParsersBuilder().WithName("bar").Build(),
-			},
-			telemetryInDeletion: true,
-			expectedCondition: &metav1.Condition{
-				Type:    conditions.TypeLogComponentsHealthy,
-				Status:  "False",
-				Reason:  "ResourceBlocksDeletion",
-				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogParsers (bar,foo)",
-			},
-		},
-		{
-			name: "should block deletion if there are existing pipelines and parsers",
+			name: "should block deletion if there are existing pipelines",
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				testutils.NewLogPipelineBuilder().WithName("foo").Build(),
 				testutils.NewLogPipelineBuilder().WithName("baz").Build(),
 			},
-			parsers: []telemetryv1alpha1.LogParser{
-				testutils.NewLogParsersBuilder().WithName("bar").Build(),
-			},
 			telemetryInDeletion: true,
 			expectedCondition: &metav1.Condition{
 				Type:    conditions.TypeLogComponentsHealthy,
 				Status:  "False",
 				Reason:  "ResourceBlocksDeletion",
-				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogPipelines (baz,foo), LogParsers (bar)",
+				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogPipelines (baz,foo)",
 			},
 		},
 		{
@@ -340,10 +322,6 @@ func TestLogComponentsCheck(t *testing.T) {
 			b := fake.NewClientBuilder().WithScheme(scheme)
 			for i := range test.pipelines {
 				b.WithObjects(&test.pipelines[i])
-			}
-
-			for i := range test.parsers {
-				b.WithObjects(&test.parsers[i])
 			}
 
 			fakeClient := b.Build()
