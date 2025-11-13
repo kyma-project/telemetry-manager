@@ -108,8 +108,8 @@ type envConfig struct {
 	AlpineImage string `env:"ALPINE_IMAGE"`
 	// ImagePullSecret is the name of the image pull secret to use for pulling images of all created workloads (agents, gateways, self-monitor).
 	ImagePullSecret string `env:"SKR_IMG_PULL_SECRET" envDefault:""`
-	//  TelemetryNamespace is the namespace where the Telemetry operator and all common components are installed.
-	TelemetryNamespace string `env:"MANAGER_NAMESPACE" envDefault:"default"`
+	//  ManagerNamespace is the namespace where the Telemetry operator and all common components are installed.
+	ManagerNamespace string `env:"MANAGER_NAMESPACE" envDefault:"default"`
 }
 
 //nolint:gochecknoinits // Runtime's scheme addition is required.
@@ -151,16 +151,16 @@ func run() error {
 
 	logBuildAndProcessInfo()
 
-	mgr, err := setupManager(envCfg)
-	if err != nil {
-		return err
-	}
-
 	globals := config.NewGlobal(
-		config.WithNamespace(envCfg.TelemetryNamespace),
+		config.WithNamespace(envCfg.ManagerNamespace),
 		config.WithOperateInFIPSMode(enableFIPSMode),
 		config.WithVersion(build.GitTag()),
 	)
+
+	mgr, err := setupManager(globals)
+	if err != nil {
+		return err
+	}
 
 	err = setupControllersAndWebhooks(mgr, globals, envCfg)
 	if err != nil {
@@ -231,14 +231,14 @@ func setupControllersAndWebhooks(mgr manager.Manager, globals config.Global, env
 	return nil
 }
 
-func setupManager(cfg envConfig) (manager.Manager, error) {
+func setupManager(globals config.Global) (manager.Manager, error) {
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                  scheme,
 		Metrics:                 metricsserver.Options{BindAddress: fmt.Sprintf(":%d", metricsPort)},
 		HealthProbeBindAddress:  fmt.Sprintf(":%d", healthProbePort),
 		PprofBindAddress:        fmt.Sprintf(":%d", pprofPort),
 		LeaderElection:          true,
-		LeaderElectionNamespace: cfg.TelemetryNamespace,
+		LeaderElectionNamespace: globals.TargetNamespace(),
 		LeaderElectionID:        "cdd7ef0b.kyma-project.io",
 		WebhookServer: webhook.NewServer(webhook.Options{
 			Port:    webhookPort,
@@ -250,15 +250,15 @@ func setupManager(cfg envConfig) (manager.Manager, error) {
 			// The operator handles various resource that are namespace-scoped, and additionally some resources that are cluster-scoped (clusterroles, clusterrolebindings, etc.).
 			// For namespace-scoped resources we want to restrict the operator permissions to only fetch resources from a given namespace.
 			ByObject: map[client.Object]cache.ByObject{
-				&appsv1.Deployment{}:          {Field: setNamespaceFieldSelector(cfg)},
-				&appsv1.ReplicaSet{}:          {Field: setNamespaceFieldSelector(cfg)},
-				&appsv1.DaemonSet{}:           {Field: setNamespaceFieldSelector(cfg)},
-				&corev1.ConfigMap{}:           {Namespaces: setConfigMapNamespaceFieldSelector(cfg)},
-				&corev1.ServiceAccount{}:      {Field: setNamespaceFieldSelector(cfg)},
-				&corev1.Service{}:             {Field: setNamespaceFieldSelector(cfg)},
-				&networkingv1.NetworkPolicy{}: {Field: setNamespaceFieldSelector(cfg)},
-				&corev1.Secret{}:              {Field: setNamespaceFieldSelector(cfg)},
-				&operatorv1alpha1.Telemetry{}: {Field: setNamespaceFieldSelector(cfg)},
+				&appsv1.Deployment{}:          {Field: setNamespaceFieldSelector(globals)},
+				&appsv1.ReplicaSet{}:          {Field: setNamespaceFieldSelector(globals)},
+				&appsv1.DaemonSet{}:           {Field: setNamespaceFieldSelector(globals)},
+				&corev1.ConfigMap{}:           {Namespaces: setConfigMapNamespaceFieldSelector(globals)},
+				&corev1.ServiceAccount{}:      {Field: setNamespaceFieldSelector(globals)},
+				&corev1.Service{}:             {Field: setNamespaceFieldSelector(globals)},
+				&networkingv1.NetworkPolicy{}: {Field: setNamespaceFieldSelector(globals)},
+				&corev1.Secret{}:              {Field: setNamespaceFieldSelector(globals)},
+				&operatorv1alpha1.Telemetry{}: {Field: setNamespaceFieldSelector(globals)},
 			},
 		},
 		Client: client.Options{
@@ -504,16 +504,16 @@ func ensureWebhookCert(webhookCertConfig webhookcert.Config, mgr manager.Manager
 	return nil
 }
 
-func setNamespaceFieldSelector(cfg envConfig) fields.Selector {
-	return fields.SelectorFromSet(fields.Set{"metadata.namespace": cfg.TelemetryNamespace})
+func setNamespaceFieldSelector(globals config.Global) fields.Selector {
+	return fields.SelectorFromSet(fields.Set{"metadata.namespace": globals.TargetNamespace()})
 }
 
-func setConfigMapNamespaceFieldSelector(cfg envConfig) map[string]cache.Config {
+func setConfigMapNamespaceFieldSelector(globals config.Global) map[string]cache.Config {
 	return map[string]cache.Config{
 		"kube-system": {
 			FieldSelector: fields.SelectorFromSet(fields.Set{"metadata.name": "shoot-info"}),
 		},
-		cfg.TelemetryNamespace: {},
+		globals.TargetNamespace(): {},
 	}
 }
 
