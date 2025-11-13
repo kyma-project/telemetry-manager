@@ -355,6 +355,7 @@ func setupTelemetryController(globals config.Global, cfg envConfig, webhookCertC
 	telemetryController := operator.NewTelemetryController(
 		operator.TelemetryControllerConfig{
 			Global:                       globals,
+			Config:                       webhookCertConfig,
 			SelfMonitorImage:             cfg.SelfMonitorImage,
 			SelfMonitorPriorityClassName: normalPriorityClassName,
 			AlertmanagerWebhookURL:       fmt.Sprintf("%s.%s.svc", webhookServiceName, globals.ManagerNamespace()),
@@ -428,6 +429,7 @@ func setupMetricPipelineController(globals config.Global, cfg envConfig, mgr man
 
 	metricPipelineController, err := telemetrycontrollers.NewMetricPipelineController(
 		telemetrycontrollers.MetricPipelineControllerConfig{
+			Global:                         globals,
 			MetricAgentPriorityClassName:   highPriorityClassName,
 			MetricGatewayPriorityClassName: normalPriorityClassName,
 			OTelCollectorImage:             cfg.OTelCollectorImage,
