@@ -30,11 +30,11 @@ Gateways and agents handle the incoming telemetry data. The Telemetry Manager de
 
 The gateways are based on an [OTel Collector](https://opentelemetry.io/docs/collector/) [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) and act as central endpoints in the cluster to which your applications push data in the OTLP format. From here, the data is enriched and filtered, and then dispatched configured in your pipeline resources.
 
-Agents run as [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) and pull data from the respective Node.
+Agents run as [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) and pull data from the respective node.
 
 - Log Gateway and Agent
 
-  The log gateway provides a central OTLP endpoint for logs. You can also enable the log agent, which collects logs from the stdout/stderr output of all containers on a Node. For details, see [Logs Architecture](./logs-architecture.md).
+  The log gateway provides a central OTLP endpoint for logs. You can also enable the log agent, which collects logs from the stdout/stderr output of all containers on a node. For details, see [Logs Architecture](./logs-architecture.md).
 
   As an alternative to the OTLP-based log feature, you can choose using a log agent based on a [Fluent Bit](https://fluentbit.io/) installation running as a DaemonSet. It reads all containers’ logs in the runtime and ships them according to your LogPipeline configuration. For details, see [Application Logs (Fluent Bit)](./../02-logs.md).
 
@@ -44,7 +44,7 @@ The trace gateway provides a central [OTLP](https://opentelemetry.io/docs/specs/
 
 - Metric Gateway and Agent
 
-  The metric gateway provides a central OTLP endpoint for metrics. You can also enable the metric agent, which scrapes Prometheus-annotated workloads on each Node. For details, see [Metrics Architecture](./metrics-architecture.md).
+  The metric gateway provides a central OTLP endpoint for metrics. You can also enable the metric agent, which scrapes Prometheus-annotated workloads on each node. For details, see [Metrics Architecture](./metrics-architecture.md).
 
 ## Self Monitor
 
