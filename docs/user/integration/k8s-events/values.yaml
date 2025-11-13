@@ -1,0 +1,57 @@
+# All settings are documented here: https://github.com/open-telemetry/opentelemetry-helm-charts/blob/main/charts/opentelemetry-collector/values.yaml
+
+# Uses the deployment mode
+mode: "deployment"
+
+# Use the contrib image containing the required receiver
+image:
+  repository: "otel/opentelemetry-collector-contrib"
+
+config:
+  exporters:
+    # Configures the exporter to push to Kymas log gateway
+    otlp:
+      endpoint: telemetry-otlp-logs.kyma-system.svc.cluster.local:4317
+      tls:
+        # Istio will care about mTLS
+        insecure: true
+
+  # Configure the actual events receiver
+  receivers:
+    k8s_events: {}
+
+  service:
+    # Print in json for easy log collection
+    telemetry:
+      logs:
+        level: "info" # debug|info|warn
+        encoding: json
+
+    # Disable trace and metric pipelines as we only want to handle logs
+    # Overwrite receivers for the log pipeline to use the k8s_events receiver
+    pipelines:
+      logs:
+        receivers:
+          - k8s_events
+      traces: null
+      metrics: null
+
+# The collector needs access to the APIServer to watch for events
+clusterRole:
+  rules:
+    - apiGroups:
+        - ""
+      resources:
+        - events
+      verbs:
+        - get
+        - list
+        - watch
+
+# Defines resourceLimits, just as a good practice
+resources:
+  requests:
+    cpu: 10m
+    memory: 50Mi
+  limits:
+    memory: 512Mi
