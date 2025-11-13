@@ -38,6 +38,7 @@ config:
 
 # The collector needs access to the APIServer to watch for events
 clusterRole:
+  create: true
   rules:
     - apiGroups:
         - ""
