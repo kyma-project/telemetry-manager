@@ -2,6 +2,9 @@
 
 The Telemetry gateways automatically enrich your data with OTel resource attributes, so you can easily identify the source of the data in your backend.
 
+> [!TIP]
+> For custom enrichment, such as adding your own business-specific attributes, see [Transform and Filter with OTTL](./ottl-transform-and-filter/README.md).
+
 ## Service Name
 
 The service name is the logical name of the service that emits the telemetry data. The gateway ensures that this attribute always has a valid value.

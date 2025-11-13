@@ -160,9 +160,9 @@ func TestTransform(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, suite.LabelExperimental)
+		suite.RegisterTestCase(t, tc.label)
 
+		t.Run(tc.label, func(t *testing.T) {
 			var (
 				uniquePrefix = unique.Prefix("metrics", tc.name)
 				pipelineName = uniquePrefix()

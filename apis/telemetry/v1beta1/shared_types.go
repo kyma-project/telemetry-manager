@@ -96,12 +96,12 @@ type Header struct {
 // OutputTLS defines TLS options for an output.
 // +kubebuilder:validation:XValidation:rule="has(self.cert) == has(self.key)", message="Can define either both 'cert' and 'key', or neither"
 type OutputTLS struct {
-	// Disabled specifies if TLS is disabled or enabled. Default is `false`.
+	// Insecure defines whether to send requests using plaintext instead of TLS.
 	// +kubebuilder:validation:Optional
-	Disabled bool `json:"disabled,omitempty"`
-	// If `true`, the validation of certificates is skipped. Default is `false`.
+	Insecure bool `json:"insecure,omitempty"`
+	// InsecureSkipVerify defines whether to skip server certificate verification when using TLS.
 	// +kubebuilder:validation:Optional
-	SkipCertificateValidation bool `json:"skipCertificateValidation,omitempty"`
+	InsecureSkipVerify bool `json:"insecureSkipVerify,omitempty"`
 	// Defines an optional CA certificate for server certificate verification when using TLS. The certificate must be provided in PEM format.
 	// +kubebuilder:validation:Optional
 	CA *ValueType `json:"ca,omitempty"`
@@ -115,10 +115,10 @@ type OutputTLS struct {
 
 // OTLPInput defines the collection of push-based metrics that use the OpenTelemetry protocol.
 type OTLPInput struct {
-	// Disabled specifies if the 'otlp' input is deactivated. If disabled, then no push-based OTLP signals are collected. The default is `false`.
+	// Enabled specifies if the 'otlp' input is enabled. If enabled, then push-based OTLP signals are collected. The default is `true`.
 	// +kubebuilder:validation:Optional
-	Disabled bool `json:"disabled,omitempty"`
-	// Namespaces describes whether push-based OTLP signals from specific namespaces are selected. System namespaces are enabled by default.
+	Enabled *bool `json:"enabled,omitempty"`
+	// Namespaces describe whether push-based OTLP signals from specific namespaces are selected. By default, all namespaces excluding system namespaces are enabled. To enable all namespaces including system namespaces, use an empty struct notation.
 	// +kubebuilder:validation:Optional
 	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
 }
@@ -150,7 +150,7 @@ type TransformSpec struct {
 
 // FilterSpec defines a filter to apply to telemetry data.
 type FilterSpec struct {
-	// Conditions specify a list of multiple where clauses, which will be processed as global conditions for the accompanying set of statements. The conditions are ORed together, which means only one condition needs to evaluate to true in order for the statements (including their individual where clauses) to be executed.
+	// Conditions specify a list of multiple conditions which are ORed together, which means only one condition needs to evaluate to true in order for the telemetry to be dropped.
 	// +kubebuilder:validation:Optional
 	Conditions []string `json:"conditions,omitempty"`
 }

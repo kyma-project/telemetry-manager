@@ -71,8 +71,8 @@ func TestSinglePipelineV1Beta1_OTel(t *testing.T) {
 							},
 							Protocol: telemetryv1beta1.OTLPProtocolGRPC,
 							TLS: &telemetryv1beta1.OutputTLS{
-								Disabled:                  true,
-								SkipCertificateValidation: true,
+								Insecure:           true,
+								InsecureSkipVerify: true,
 							},
 						},
 					},
@@ -92,6 +92,7 @@ func TestSinglePipelineV1Beta1_OTel(t *testing.T) {
 			})
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
+			assert.OTelLogPipelineHealthy(t, pipelineName)
 			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.LogGatewayName)
 
@@ -99,7 +100,6 @@ func TestSinglePipelineV1Beta1_OTel(t *testing.T) {
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
 			}
 
-			assert.OTelLogPipelineHealthy(t, pipelineName)
 			assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
 		})
 	}
@@ -130,8 +130,8 @@ func TestSinglePipelineV1Beta1_FluentBit(t *testing.T) {
 					Port: strconv.Itoa(int(backend.Port())),
 					URI:  "/",
 					TLSConfig: telemetryv1beta1.OutputTLS{
-						Disabled:                  true,
-						SkipCertificateValidation: true,
+						Insecure:           true,
+						InsecureSkipVerify: true,
 					},
 				},
 			},

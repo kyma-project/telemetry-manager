@@ -8,7 +8,7 @@ kubectl get crd metricpipeline.telemetry.kyma-project.io -o yaml
 
 ## Sample Custom Resource
 
-The following MetricPipeline object defines a pipeline that integrates into an OTLP backend:
+The following MetricPipeline object defines a pipeline that integrates into an OTLP backend. Additionally, it filters out metrics with type histogram and adds a `system` attribute to all metrics originating from system namespaces:
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -24,6 +24,14 @@ spec:
       enabled: false
     runtime:
       enabled: false
+  filter:
+    - conditions:
+        - 'metric.type == METRIC_DATA_TYPE_HISTOGRAM'
+  transform:
+    - conditions:
+        - 'IsMatch(resource.attributes["k8s.namespace.name"], ".*-system")'
+      statements:
+        - 'set(datapoint.attributes["system"], "true")'
   output:
     otlp:
       endpoint:
@@ -67,6 +75,8 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 
 | Parameter | Type | Description |
 | ---- | ----------- | ---- |
+| **filter**  | \[\]object | Filter specifies a list of filters to apply to telemetry data. |
+| **filter.&#x200b;conditions**  | \[\]string | Conditions specify a list of multiple conditions which are ORed together, which means only one condition needs to evaluate to true in order for the telemetry to be dropped. |
 | **input**  | object | Input configures additional inputs for metric collection. |
 | **input.&#x200b;istio**  | object | Istio input configures collection of Istio metrics from applications running in the Istio service mesh. |
 | **input.&#x200b;istio.&#x200b;diagnosticMetrics**  | object | DiagnosticMetrics configures collection of additional diagnostic metrics. The default is `false`. |
@@ -74,7 +84,7 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 | **input.&#x200b;istio.&#x200b;enabled**  | boolean | Enabled specifies if the 'istio' input is enabled. If enabled, istio-proxy metrics are scraped from Pods that have the istio-proxy sidecar injected. The default is `false`. |
 | **input.&#x200b;istio.&#x200b;envoyMetrics**  | object | EnvoyMetrics enables the collection of additional Envoy metrics with prefix `envoy_`. The default is `false`. |
 | **input.&#x200b;istio.&#x200b;envoyMetrics.&#x200b;enabled**  | boolean | Enabled specifies that Envoy metrics with prefix `envoy_` are scraped additionally. The default is `false`. |
-| **input.&#x200b;istio.&#x200b;namespaces**  | object | Namespaces configures the namespaces for which the collection should be activated. By default, all namespaces including system namespaces are enabled. |
+| **input.&#x200b;istio.&#x200b;namespaces**  | object | Namespaces configures the namespaces for which the collection should be activated. By default, all namespaces excluding system namespaces are enabled. To enable all namespaces including system namespaces, use an empty struct notation. |
 | **input.&#x200b;istio.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude telemetry data from the specified namespace names only. By default, all namespaces (depending on input type: except system namespaces) are collected. You cannot specify an exclude list together with an include list. |
 | **input.&#x200b;istio.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include telemetry data from the specified namespace names only. By default, all namespaces (depending on input type: except system namespaces) are included. You cannot specify an include list together with an exclude list. |
 | **input.&#x200b;otlp**  | object | OTLP input configures the push endpoint to receive metrics from an OTLP source. |
@@ -171,6 +181,9 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;key.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key** (required) | string | Key defines the name of the attribute of the Secret holding the referenced value. |
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;key.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name** (required) | string | Name of the Secret containing the referenced value. |
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;key.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace** (required) | string | Namespace containing the Secret with the referenced value. |
+| **transform**  | \[\]object | Transforms specify a list of transformations to apply to telemetry data. |
+| **transform.&#x200b;conditions**  | \[\]string | Conditions specify a list of multiple where clauses, which will be processed as global conditions for the accompanying set of statements. The conditions are ORed together, which means only one condition needs to evaluate to true in order for the statements (including their individual where clauses) to be executed. |
+| **transform.&#x200b;statements**  | \[\]string | Statements specify a list of OTTL statements to perform the transformation. |
 
 **Status:**
 
@@ -220,6 +233,7 @@ The status of the MetricPipeline is determined by the condition types `GatewayHe
 | ConfigurationGenerated | False            | TLSCertificateExpired           | TLS (CA) certificate expired on YYYY-MM-DD                                                                                                                                                                                                |
 | ConfigurationGenerated | False            | TLSConfigurationInvalid         | TLS configuration invalid                                                                                                                                                                                                                 |
 | ConfigurationGenerated | False            | ValidationFailed                | Pipeline validation failed due to an error from the Kubernetes API server                                                                                                                                                                 |
+| ConfigurationGenerated | False            | OTTLSpecInvalid                 | Invalid <FilterSpec/TransformSpec>: `reason`                                                                                                                                                                                              |
 | TelemetryFlowHealthy   | True             | FlowHealthy                     | No problems detected in the telemetry flow                                                                                                                                                                                                |
 | TelemetryFlowHealthy   | False            | GatewayAllTelemetryDataDropped  | Backend is not reachable or rejecting metrics. All metrics are dropped. See troubleshooting: [No Metrics Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=no-metrics-arrive-at-the-backend)          |
 | TelemetryFlowHealthy   | False            | GatewayThrottling               | Metric gateway is unable to receive metrics at current rate. See troubleshooting: [Gateway Throttling](https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-throttling)                                                 |

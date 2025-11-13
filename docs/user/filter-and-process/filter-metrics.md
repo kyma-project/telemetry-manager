@@ -4,6 +4,9 @@ Filter metrics from the OTLP, Istio, Prometheus, and runtime input to control wh
 
 ## Overview
 
+> [!TIP]
+> The following settings filter data by source. For advanced, content-based filtering and transformation, use the OpenTelemetry Transformation Language (OTTL). For details, see [Transform and Filter with OTTL](./ottl-transform-and-filter/README.md).
+
 | Source      | Granularity                                       | Behavior without 'namespaces' Block | Collect from All Namespaces | Collect from Specific Namespaces |
 | :---------- | :------------------------------------------------ | :---------------------------------- | :------------------------------------ | :------------------------------------- |
 | OTLP (default) | Namespace                                 | includes system namespaces          | This is the default, no action needed. | Use the `include` or `exclude` filter |
@@ -16,7 +19,12 @@ Filter metrics from the OTLP, Istio, Prometheus, and runtime input to control wh
 
 ## Filter Metrics by Namespace
 
-For the all inputs (`otlp`, `prometheus`, `istio`, and `runtime`), you can filter incoming metrics by namespace. The `include` and `exclude` filters are mutually exclusive.
+For the all inputs (`otlp`, `prometheus`, `istio`, and `runtime`), you can filter incoming metrics by namespace. 
+
+These filters only apply to metrics that have an associated namespace. The pipeline always collects any metrics that do not have a namespace.
+
+The `include` and `exclude` filters are mutually exclusive.
+
 
 - To collect metrics from specific namespaces, use the `include` filter:
 

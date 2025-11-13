@@ -30,7 +30,7 @@ var (
 func BeforeSuiteFunc() error {
 	Ctx = context.Background() //nolint:fatcontext // context is used in tests
 
-	//TODO: set up stdout and stderr loggers
+	// TODO: set up stdout and stderr loggers
 	logf.SetLogger(logr.FromContextOrDiscard(Ctx))
 
 	restConfig, err := config.GetConfig()
@@ -74,6 +74,7 @@ func sanitizeSpecID(filePath string) string {
 const (
 	// Logs labels
 
+	LabelLogsMisc             = "logs-misc"
 	LabelLogAgent             = "log-agent"
 	LabelLogGateway           = "log-gateway"
 	LabelFluentBit            = "fluent-bit"
@@ -108,9 +109,20 @@ const (
 
 	// Selfmonitor test labels
 
-	LabelSelfMonitorHealthy      = "selfmonitor-healthy"
-	LabelSelfMonitorBackpressure = "selfmonitor-backpressure"
-	LabelSelfMonitorOutage       = "selfmonitor-outage"
+	// Prefixes for self-monitor test labels
+
+	LabelSelfMonitorLogAgentPrefix      = "selfmonitor-log-agent"
+	LabelSelfMonitorLogGatewayPrefix    = "selfmonitor-log-gateway"
+	LabelSelfMonitorFluentBitPrefix     = "selfmonitor-fluent-bit"
+	LabelSelfMonitorMetricAgentPrefix   = "selfmonitor-metric-agent"
+	LabelSelfMonitorMetricGatewayPrefix = "selfmonitor-metric-gateway"
+	LabelSelfMonitorTracesPrefix        = "selfmonitor-traces"
+
+	// Suffixes (representing different scenarios) for self-monitor test labels
+
+	LabelSelfMonitorHealthySuffix      = "healthy"
+	LabelSelfMonitorBackpressureSuffix = "backpressure"
+	LabelSelfMonitorOutageSuffix       = "outage"
 
 	// LabelMisc defines the label for miscellaneous tests (for edge-cases and unrelated tests)
 	// [please avoid adding tests to this category if it already fits in a more specific one]
@@ -131,6 +143,11 @@ func ExpectAgent(label string) bool { // TODO(TeodorSAP): Use this for log e2e t
 		label == LabelMetricAgentSetB ||
 		label == LabelMetricAgentSetC ||
 		label == LabelLogAgent
+}
+
+func DebugObjectsEnabled() bool {
+	debugEnv := os.Getenv("DEBUG_TEST_OBJECTS")
+	return debugEnv == "1" || strings.ToLower(debugEnv) == "true"
 }
 
 func RegisterTestCase(t *testing.T, labels ...string) {

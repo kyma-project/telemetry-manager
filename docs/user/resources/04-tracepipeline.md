@@ -8,7 +8,7 @@ kubectl get crd tracepipeline.telemetry.kyma-project.io -o yaml
 
 ## Sample Custom Resource
 
-The following TracePipeline object defines a pipeline that integrates into the local Jaeger instance:
+The following TracePipeline object defines a pipeline that integrates into the local Jaeger instance. Additionally, it filters out successful spans and adds a `region` attribute to spans from the `frontend` service:
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -21,6 +21,14 @@ spec:
     otlp:
       endpoint:
         value: http://jaeger-collector.jaeger.svc.cluster.local:4317
+  filter:
+    - conditions:
+        - 'span.status.code == STATUS_CODE_OK'
+  transform:
+    - conditions:
+        - 'resource.attributes["service.name"] == "frontend"'
+      statements:
+        - 'set(span.attributes["region"], "us-east-1")'
 status:
   conditions:
   - lastTransitionTime: "2024-02-29T01:18:28Z"
@@ -54,6 +62,8 @@ For details, see the [TracePipeline specification file](https://github.com/kyma-
 
 | Parameter | Type | Description |
 | ---- | ----------- | ---- |
+| **filter**  | \[\]object | Filter specifies a list of filters to apply to telemetry data. |
+| **filter.&#x200b;conditions**  | \[\]string | Conditions specify a list of multiple conditions which are ORed together, which means only one condition needs to evaluate to true in order for the telemetry to be dropped. |
 | **output** (required) | object | Output configures the backend to which traces are sent. You must specify exactly one output per pipeline. |
 | **output.&#x200b;otlp** (required) | object | OTLP output defines an output using the OpenTelemetry protocol. |
 | **output.&#x200b;otlp.&#x200b;authentication**  | object | Authentication defines authentication options for the OTLP output |
@@ -114,6 +124,9 @@ For details, see the [TracePipeline specification file](https://github.com/kyma-
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;key.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key** (required) | string | Key defines the name of the attribute of the Secret holding the referenced value. |
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;key.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name** (required) | string | Name of the Secret containing the referenced value. |
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;key.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace** (required) | string | Namespace containing the Secret with the referenced value. |
+| **transform**  | \[\]object | Transforms specify a list of transformations to apply to telemetry data. |
+| **transform.&#x200b;conditions**  | \[\]string | Conditions specify a list of multiple where clauses, which will be processed as global conditions for the accompanying set of statements. The conditions are ORed together, which means only one condition needs to evaluate to true in order for the statements (including their individual where clauses) to be executed. |
+| **transform.&#x200b;statements**  | \[\]string | Statements specify a list of OTTL statements to perform the transformation. |
 
 **Status:**
 
@@ -156,9 +169,10 @@ The status of the TracePipeline is determined by the condition types `GatewayHea
 | ConfigurationGenerated | False            | TLSCertificateExpired           | TLS (CA) certificate expired on YYYY-MM-DD                                                                                                                                                                              |
 | ConfigurationGenerated | False            | TLSConfigurationInvalid         | TLS configuration invalid                                                                                                                                                                                               |
 | ConfigurationGenerated | False            | ValidationFailed                | Pipeline validation failed due to an error from the Kubernetes API server                                                                                                                                               |
+| ConfigurationGenerated | False            | OTTLSpecInvalid                 | Invalid <FilterSpec/TransformSpec>: `reason`                                                                                                                                                                            |
 | TelemetryFlowHealthy   | True             | FlowHealthy                     | No problems detected in the telemetry flow                                                                                                                                                                              |
 | TelemetryFlowHealthy   | False            | GatewayAllTelemetryDataDropped  | Backend is not reachable or rejecting spans. All spans are dropped. See troubleshooting: [No Spans Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/03-traces?id=no-spans-arrive-at-the-backend) |
 | TelemetryFlowHealthy   | False            | GatewayThrottling               | Trace gateway is unable to receive spans at current rate. See troubleshooting: [Gateway Throttling](https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-throttling)                                   |
 | TelemetryFlowHealthy   | False            | GatewaySomeTelemetryDataDropped | Backend is reachable, but rejecting spans. Some spans are dropped. [Not All Spans Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/03-traces?id=not-all-spans-arrive-at-the-backend)             |
 | TelemetryFlowHealthy   | False            | ConfigurationNotGenerated       | No spans delivered to backend because TracePipeline specification is not applied to the configuration of Trace gateway. Check the 'ConfigurationGenerated' condition for more details                                   |
-| TelemetryFlowHealthy   | Unknown          | GatewayProbingFailed                | Could not determine the health of the telemetry flow because the self monitor probing failed                                                                                                                            |
+| TelemetryFlowHealthy   | Unknown          | GatewayProbingFailed            | Could not determine the health of the telemetry flow because the self monitor probing failed                                                                                                                            |

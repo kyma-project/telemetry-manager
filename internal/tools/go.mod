@@ -4,6 +4,7 @@ go 1.25.3
 
 require (
 	github.com/bombsimon/wsl/v5 v5.3.0
+	github.com/g4s8/envdoc v1.7.0
 	github.com/golangci/golangci-lint/v2 v2.6.0
 	github.com/google/yamlfmt v0.20.0
 	github.com/hairyhenderson/gomplate/v4 v4.3.3
@@ -135,7 +136,7 @@ require (
 	github.com/cloudflare/circl v1.6.1 // indirect
 	github.com/cncf/xds/go v0.0.0-20250501225837-2ac532fd4443 // indirect
 	github.com/cockroachdb/apd/v3 v3.2.1 // indirect
-	github.com/containerd/containerd v1.7.28 // indirect
+	github.com/containerd/containerd v1.7.29 // indirect
 	github.com/containerd/errdefs v0.3.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v0.2.1 // indirect

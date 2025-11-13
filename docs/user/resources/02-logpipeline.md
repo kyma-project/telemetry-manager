@@ -8,7 +8,7 @@ kubectl get crd logpipeline.telemetry.kyma-project.io -o yaml
 
 ## Sample Custom Resource
 
-The following LogPipeline object defines a pipeline integrating with the otlp output. It uses mTLS taking connection details from a Secret, excludes OTLP logs from "namespaceA" and includes application logs emitted in "namespaceB".
+The following LogPipeline object defines a pipeline integrating with the otlp output. It uses mTLS taking connection details from a Secret, excludes OTLP logs from "namespaceA" and includes application logs emitted in "namespaceB". Additionally, it filters out logs with severity level lower than the WARN level and adds an `alert` attribute for logs with severity level higher than WARN level and coming from the `prod` environment.
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -49,6 +49,14 @@ spec:
               key: ingest-otlp-key
               name: mySecret
               namespace: default
+  filter:
+    - conditions:
+        - 'log.severity_number < SEVERITY_NUMBER_WARN'
+  transform:
+    - conditions:
+      - 'log.severity_number > SEVERITY_NUMBER_WARN and log.attributes["environment"] == "prod"'
+      statements:
+      - 'set(log.attributes["alert"], true)'
 status:
   conditions:
   - lastTransitionTime: "2025-06-13T08:58:38Z"
@@ -98,6 +106,8 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 | **files**  | \[\]object | Files is a list of content snippets that are mounted as files in the Fluent Bit configuration, which can be linked in the `custom` filters and a `custom` output. Only available when using an output of type `http` and `custom`. |
 | **files.&#x200b;content** (required) | string | Content of the file to be mounted in the Fluent Bit configuration. |
 | **files.&#x200b;name** (required) | string | Name of the file under which the content is mounted in the Fluent Bit configuration. |
+| **filter**  | \[\]object | Filters specifies a list of filters to apply to telemetry data. |
+| **filter.&#x200b;conditions**  | \[\]string | Conditions specify a list of multiple conditions which are ORed together, which means only one condition needs to evaluate to true in order for the telemetry to be dropped. |
 | **filters**  | \[\]object | FluentBitFilters configures custom Fluent Bit `filters` to transform logs. Only available when using an output of type `http` and `custom`. |
 | **filters.&#x200b;custom**  | string | Custom defines a custom filter in the [Fluent Bit syntax](https://docs.fluentbit.io/manual/pipeline/outputs). If you use a `custom` filter, you put the LogPipeline in unsupported mode. Only available when using an output of type `http` and `custom`. |
 | **input**  | object | Input configures additional inputs for log collection. |
@@ -230,6 +240,9 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;key.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key** (required) | string | Key defines the name of the attribute of the Secret holding the referenced value. |
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;key.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name** (required) | string | Name of the Secret containing the referenced value. |
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;key.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace** (required) | string | Namespace containing the Secret with the referenced value. |
+| **transform**  | \[\]object | Transforms specify a list of transformations to apply to telemetry data. |
+| **transform.&#x200b;conditions**  | \[\]string | Conditions specify a list of multiple where clauses, which will be processed as global conditions for the accompanying set of statements. The conditions are ORed together, which means only one condition needs to evaluate to true in order for the statements (including their individual where clauses) to be executed. |
+| **transform.&#x200b;statements**  | \[\]string | Statements specify a list of OTTL statements to perform the transformation. |
 | **variables**  | \[\]object | Variables is a list of mappings from Kubernetes Secret keys to environment variables. Mapped keys are mounted as environment variables, so that they are available as [Variables](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/variables) in the `custom` filters and a `custom` output. Only available when using an output of type `http` and `custom`. |
 | **variables.&#x200b;name** (required) | string | Name of the variable to map. |
 | **variables.&#x200b;valueFrom** (required) | object | ValueFrom specifies the secret and key to select the value to map. |
@@ -275,10 +288,11 @@ The status of the LogPipeline is determined by the condition types `AgentHealthy
 | ConfigurationGenerated | False            | TLSCertificateExpired        | TLS (CA) certificate expired on YYYY-MM-DD                                                                                                                                                                                         |
 | ConfigurationGenerated | False            | TLSConfigurationInvalid      | TLS configuration invalid                                                                                                                                                                                                          |
 | ConfigurationGenerated | False            | ValidationFailed             | Pipeline validation failed due to an error from the Kubernetes API server                                                                                                                                                          |
+| ConfigurationGenerated | False            | OTTLSpecInvalid              | Invalid <FilterSpec/TransformSpec>: `reason`                                                                                                                                                                                       |
 | TelemetryFlowHealthy   | True             | FlowHealthy                  | No problems detected in the telemetry flow                                                                                                                                                                                         |
 | TelemetryFlowHealthy   | False            | AgentAllTelemetryDataDropped | Backend is not reachable or rejecting logs. All logs are dropped. See troubleshooting: [No Logs Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend)                  |
 | TelemetryFlowHealthy   | False            | AgentBufferFillingUp         | Buffer nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: [Agent Buffer Filling Up](https://kyma-project.io/#/telemetry-manager/user/02-logs?id=agent-buffer-filling-up)                                |
 | TelemetryFlowHealthy   | False            | AgentNoLogsDelivered         | Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: [No Logs Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend) |
 | TelemetryFlowHealthy   | False            | AgentSomeDataDropped         | Backend is reachable, but rejecting logs. Some logs are dropped. See troubleshooting: [Not All Logs Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/02-logs?id=not-all-logs-arrive-at-the-backend)         |
 | TelemetryFlowHealthy   | False            | ConfigurationNotGenerated    | No logs delivered to backend because LogPipeline specification is not applied to the configuration of Fluent Bit agent. Check the 'ConfigurationGenerated' condition for more details                                              |
-| TelemetryFlowHealthy   | Unknown          | AgentProbingFailed               | Could not determine the health of the telemetry flow because the self monitor probing failed                                                                                                                                       |
+| TelemetryFlowHealthy   | Unknown          | AgentProbingFailed           | Could not determine the health of the telemetry flow because the self monitor probing failed                                                                                                                                       |
