@@ -1,6 +1,6 @@
 export default [
   { text: 'Telemetry Pipeline API', link: './pipelines.md' },
-  { text: 'Set Up the OTLP Input', link: './collecting-logs/README.md' },
+  { text: 'Set Up the OTLP Input', link: './otlp-input.md' },
   {
     text: 'Collecting Logs', link: './collecting-logs/README.md', collapsed: true, items: [
       { text: 'Configure Application Logs', link: './collecting-logs/application-input.md' },
