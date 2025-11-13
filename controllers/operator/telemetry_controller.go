@@ -119,7 +119,7 @@ func (r *TelemetryController) mapWebhook(ctx context.Context, object client.Obje
 		return nil
 	}
 
-	if webhook.Name != r.config.ValidatingWebhookName.Name {
+	if webhook.Name != r.config.WebhookCert.ValidatingWebhookName.Name {
 		return nil
 	}
 
