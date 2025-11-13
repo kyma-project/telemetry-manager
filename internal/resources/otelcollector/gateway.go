@@ -19,6 +19,7 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
@@ -61,10 +62,11 @@ var (
 )
 
 type GatewayApplierDeleter struct {
+	globalCfg config.Global
+
 	baseName        string
 	extraPodLabels  map[string]string
 	image           string
-	namespace       string
 	otlpServiceName string
 	rbac            rbac
 
@@ -92,7 +94,7 @@ type GatewayApplyOptions struct {
 }
 
 //nolint:dupl // repeating the code as we have three different signals
-func NewLogGatewayApplierDeleter(image, namespace, priorityClassName string, enableFIPSMode bool) *GatewayApplierDeleter {
+func NewLogGatewayApplierDeleter(globalCfg config.Global, image, priorityClassName string) *GatewayApplierDeleter {
 	extraLabels := map[string]string{
 		commonresources.LabelKeyTelemetryLogIngest: "true",
 		commonresources.LabelKeyTelemetryLogExport: "true",
@@ -100,12 +102,12 @@ func NewLogGatewayApplierDeleter(image, namespace, priorityClassName string, ena
 	}
 
 	return &GatewayApplierDeleter{
+		globalCfg:            globalCfg,
 		baseName:             LogGatewayName,
 		extraPodLabels:       extraLabels,
 		image:                image,
-		namespace:            namespace,
 		otlpServiceName:      LogOTLPServiceName,
-		rbac:                 makeLogGatewayRBAC(namespace),
+		rbac:                 makeLogGatewayRBAC(globalCfg.TargetNamespace()),
 		baseMemoryLimit:      logGatewayBaseMemoryLimit,
 		dynamicMemoryLimit:   logGatewayDynamicMemoryLimit,
 		baseCPURequest:       logGatewayBaseCPURequest,
@@ -119,13 +121,13 @@ func NewLogGatewayApplierDeleter(image, namespace, priorityClassName string, ena
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
-			commonresources.WithGoDebugEnvVar(enableFIPSMode),
+			commonresources.WithFIPSGoDebugEnvVar(globalCfg.EnableFIPSMode()),
 		},
 	}
 }
 
 //nolint:dupl // repeating the code as we have three different signals
-func NewMetricGatewayApplierDeleter(image, namespace, priorityClassName string, enableFIPSMode bool) *GatewayApplierDeleter {
+func NewMetricGatewayApplierDeleter(globalCfg config.Global, image, priorityClassName string) *GatewayApplierDeleter {
 	extraLabels := map[string]string{
 		commonresources.LabelKeyTelemetryMetricIngest: "true",
 		commonresources.LabelKeyTelemetryMetricExport: "true",
@@ -133,12 +135,12 @@ func NewMetricGatewayApplierDeleter(image, namespace, priorityClassName string, 
 	}
 
 	return &GatewayApplierDeleter{
+		globalCfg:            globalCfg,
 		baseName:             MetricGatewayName,
 		extraPodLabels:       extraLabels,
 		image:                image,
-		namespace:            namespace,
 		otlpServiceName:      MetricOTLPServiceName,
-		rbac:                 makeMetricGatewayRBAC(namespace),
+		rbac:                 makeMetricGatewayRBAC(globalCfg.TargetNamespace()),
 		baseMemoryLimit:      metricGatewayBaseMemoryLimit,
 		dynamicMemoryLimit:   metricGatewayDynamicMemoryLimit,
 		baseCPURequest:       metricGatewayBaseCPURequest,
@@ -152,13 +154,13 @@ func NewMetricGatewayApplierDeleter(image, namespace, priorityClassName string, 
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
-			commonresources.WithGoDebugEnvVar(enableFIPSMode),
+			commonresources.WithFIPSGoDebugEnvVar(globalCfg.EnableFIPSMode()),
 		},
 	}
 }
 
 //nolint:dupl // repeating the code as we have three different signals
-func NewTraceGatewayApplierDeleter(image, namespace, priorityClassName string, enableFIPSMode bool) *GatewayApplierDeleter {
+func NewTraceGatewayApplierDeleter(globalCfg config.Global, image, priorityClassName string) *GatewayApplierDeleter {
 	extraLabels := map[string]string{
 		commonresources.LabelKeyTelemetryTraceIngest: "true",
 		commonresources.LabelKeyTelemetryTraceExport: "true",
@@ -166,12 +168,12 @@ func NewTraceGatewayApplierDeleter(image, namespace, priorityClassName string, e
 	}
 
 	return &GatewayApplierDeleter{
+		globalCfg:            globalCfg,
 		baseName:             TraceGatewayName,
 		extraPodLabels:       extraLabels,
 		image:                image,
-		namespace:            namespace,
 		otlpServiceName:      TraceOTLPServiceName,
-		rbac:                 makeTraceGatewayRBAC(namespace),
+		rbac:                 makeTraceGatewayRBAC(globalCfg.TargetNamespace()),
 		baseMemoryLimit:      traceGatewayBaseMemoryLimit,
 		dynamicMemoryLimit:   traceGatewayDynamicMemoryLimit,
 		baseCPURequest:       traceGatewayBaseCPURequest,
@@ -185,13 +187,13 @@ func NewTraceGatewayApplierDeleter(image, namespace, priorityClassName string, e
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
-			commonresources.WithGoDebugEnvVar(enableFIPSMode),
+			commonresources.WithFIPSGoDebugEnvVar(globalCfg.EnableFIPSMode()),
 		},
 	}
 }
 
 func (gad *GatewayApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts GatewayApplyOptions) error {
-	name := types.NamespacedName{Namespace: gad.namespace, Name: gad.baseName}
+	name := types.NamespacedName{Namespace: gad.globalCfg.TargetNamespace(), Name: gad.baseName}
 
 	ingressAllowedPorts := gatewayIngressAllowedPorts()
 	if opts.IstioEnabled {
@@ -234,14 +236,14 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 	// Attempt to clean up as many resources as possible and avoid early return when one of the deletions fails
 	var allErrors error = nil
 
-	name := types.NamespacedName{Name: gad.baseName, Namespace: gad.namespace}
+	name := types.NamespacedName{Name: gad.baseName, Namespace: gad.globalCfg.TargetNamespace()}
 	if err := deleteCommonResources(ctx, c, name); err != nil {
 		allErrors = errors.Join(allErrors, err)
 	}
 
 	objectMeta := metav1.ObjectMeta{
 		Name:      gad.baseName,
-		Namespace: gad.namespace,
+		Namespace: gad.globalCfg.TargetNamespace(),
 	}
 
 	secret := corev1.Secret{ObjectMeta: objectMeta}
@@ -259,7 +261,7 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete deployment: %w", err))
 	}
 
-	OTLPService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: gad.otlpServiceName, Namespace: gad.namespace}}
+	OTLPService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: gad.otlpServiceName, Namespace: gad.globalCfg.TargetNamespace()}}
 	if err := k8sutils.DeleteObject(ctx, c, &OTLPService); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete otlp service: %w", err))
 	}
@@ -301,7 +303,7 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, o
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gad.baseName,
-			Namespace: gad.namespace,
+			Namespace: gad.globalCfg.TargetNamespace(),
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -378,7 +380,7 @@ func (gad *GatewayApplierDeleter) makeOTLPService() *corev1.Service {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gad.otlpServiceName,
-			Namespace: gad.namespace,
+			Namespace: gad.globalCfg.TargetNamespace(),
 			Labels:    commonLabels,
 		},
 		Spec: corev1.ServiceSpec{
@@ -409,7 +411,7 @@ func (gad *GatewayApplierDeleter) makePeerAuthentication() *istiosecurityclientv
 	return &istiosecurityclientv1.PeerAuthentication{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gad.baseName,
-			Namespace: gad.namespace,
+			Namespace: gad.globalCfg.TargetNamespace(),
 			Labels:    commonLabels,
 		},
 		Spec: istiosecurityv1.PeerAuthentication{

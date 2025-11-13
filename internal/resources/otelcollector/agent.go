@@ -104,7 +104,7 @@ func NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName stri
 			commonresources.WithResources(collectorResources),
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
 			commonresources.WithGoMemLimitEnvVar(logAgentMemoryLimit),
-			commonresources.WithGoDebugEnvVar(enableFIPSMode),
+			commonresources.WithFIPSGoDebugEnvVar(enableFIPSMode),
 			commonresources.WithVolumeMounts(collectorVolumeMounts),
 			commonresources.WithRunAsGroup(commonresources.GroupRoot),
 			commonresources.WithRunAsUser(commonresources.UserDefault),
@@ -134,7 +134,7 @@ func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string, en
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
 			commonresources.WithGoMemLimitEnvVar(metricAgentMemoryLimit),
-			commonresources.WithGoDebugEnvVar(enableFIPSMode),
+			commonresources.WithFIPSGoDebugEnvVar(enableFIPSMode),
 			commonresources.WithResources(commonresources.MakeResourceRequirements(
 				metricAgentMemoryLimit,
 				metricAgentMemoryRequest,

@@ -54,6 +54,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/controllers/operator"
 	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/build"
+	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/featureflags"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
@@ -104,8 +105,8 @@ type envConfig struct {
 	FluentBitExporterImage string `env:"FLUENT_BIT_EXPORTER_IMAGE"`
 	// FluentBitImage is the image used for the Fluent Bit log agent.
 	FluentBitImage string `env:"FLUENT_BIT_IMAGE"`
-	// OtelCollectorImage is the image used all OpenTelemetry Collector based components (metric agent, log agent, metric gateway, log gateway, trace gateway).
-	OtelCollectorImage string `env:"OTEL_COLLECTOR_IMAGE"`
+	// OTelCollectorImage is the image used all OpenTelemetry Collector based components (metric agent, log agent, metric gateway, log gateway, trace gateway).
+	OTelCollectorImage string `env:"OTEL_COLLECTOR_IMAGE"`
 	//  SelfMonitorImage is the image used for the self-monitoring deployment. This is a customized Prometheus image.
 	SelfMonitorImage string `env:"SELF_MONITOR_IMAGE"`
 	// AlpineImage is the image used for the chown init containers.
@@ -138,8 +139,8 @@ func run() error {
 	parseFlags()
 	initializeFeatureFlags()
 
-	var cfg envConfig
-	if err := env.ParseWithOptions(&cfg, env.Options{Prefix: "", RequiredIfNoDef: true}); err != nil {
+	var envCfg envConfig
+	if err := env.ParseWithOptions(&envCfg, env.Options{Prefix: "", RequiredIfNoDef: true}); err != nil {
 		return fmt.Errorf("failed to parse environment variables: %w", err)
 	}
 
@@ -155,12 +156,18 @@ func run() error {
 
 	logBuildAndProcessInfo()
 
-	mgr, err := setupManager(cfg)
+	mgr, err := setupManager(envCfg)
 	if err != nil {
 		return err
 	}
 
-	err = setupControllersAndWebhooks(mgr, cfg)
+	globalCfg := config.NewGlobal(
+		config.WithNamespace(envCfg.TelemetryNamespace),
+		config.WithEnableFIPSMode(enableFIPSMode),
+		config.WithVersion(build.GitTag()),
+	)
+
+	err = setupControllersAndWebhooks(mgr, globalCfg, envCfg)
 	if err != nil {
 		return err
 	}
@@ -174,29 +181,29 @@ func run() error {
 	return nil
 }
 
-func setupControllersAndWebhooks(mgr manager.Manager, cfg envConfig) error {
+func setupControllersAndWebhooks(mgr manager.Manager, globalCfg config.Global, envCfg envConfig) error {
 	var (
 		TracePipelineReconcile  = make(chan event.GenericEvent)
 		MetricPipelineReconcile = make(chan event.GenericEvent)
 		LogPipelineReconcile    = make(chan event.GenericEvent)
 	)
 
-	if err := setupTracePipelineController(mgr, cfg, TracePipelineReconcile); err != nil {
+	if err := setupTracePipelineController(mgr, globalCfg, envCfg, TracePipelineReconcile); err != nil {
 		return fmt.Errorf("failed to enable trace pipeline controller: %w", err)
 	}
 
-	if err := setupMetricPipelineController(mgr, cfg, MetricPipelineReconcile); err != nil {
+	if err := setupMetricPipelineController(mgr, envCfg, MetricPipelineReconcile); err != nil {
 		return fmt.Errorf("failed to enable metric pipeline controller: %w", err)
 	}
 
-	if err := setupLogPipelineController(mgr, cfg, LogPipelineReconcile); err != nil {
+	if err := setupLogPipelineController(mgr, envCfg, LogPipelineReconcile); err != nil {
 		return fmt.Errorf("failed to enable log pipeline controller: %w", err)
 	}
 
-	webhookConfig := createWebhookConfig(cfg)
-	selfMonitorConfig := createSelfMonitoringConfig(cfg)
+	webhookConfig := createWebhookConfig(envCfg)
+	selfMonitorConfig := createSelfMonitoringConfig(envCfg)
 
-	if err := enableTelemetryModuleController(mgr, cfg, webhookConfig, selfMonitorConfig); err != nil {
+	if err := enableTelemetryModuleController(mgr, envCfg, webhookConfig, selfMonitorConfig); err != nil {
 		return fmt.Errorf("failed to enable telemetry module controller: %w", err)
 	}
 
@@ -392,7 +399,7 @@ func setupLogPipelineController(mgr manager.Manager, cfg envConfig, reconcileTri
 			ExporterImage:               cfg.FluentBitExporterImage,
 			FluentBitImage:              cfg.FluentBitImage,
 			ChownInitContainerImage:     cfg.AlpineImage,
-			OTelCollectorImage:          cfg.OtelCollectorImage,
+			OTelCollectorImage:          cfg.OTelCollectorImage,
 			FluentBitPriorityClassName:  highPriorityClassName,
 			LogGatewayPriorityClassName: normalPriorityClassName,
 			LogAgentPriorityClassName:   highPriorityClassName,
@@ -427,19 +434,18 @@ func setupLogPipelineController(mgr manager.Manager, cfg envConfig, reconcileTri
 	return nil
 }
 
-func setupTracePipelineController(mgr manager.Manager, cfg envConfig, reconcileTriggerChan <-chan event.GenericEvent) error {
+func setupTracePipelineController(mgr manager.Manager, globalCfg config.Global, envCfg envConfig, reconcileTriggerChan <-chan event.GenericEvent) error {
 	setupLog.Info("Setting up tracepipeline controller")
 
 	tracePipelineController, err := telemetrycontrollers.NewTracePipelineController(
 		mgr.GetClient(),
 		reconcileTriggerChan,
 		telemetrycontrollers.TracePipelineControllerConfig{
+			Global:                        globalCfg,
 			RestConfig:                    mgr.GetConfig(),
-			OTelCollectorImage:            cfg.OtelCollectorImage,
+			OTelCollectorImage:            envCfg.OTelCollectorImage,
 			SelfMonitorName:               selfMonitorName,
-			TelemetryNamespace:            cfg.TelemetryNamespace,
 			TraceGatewayPriorityClassName: normalPriorityClassName,
-			EnableFIPSMode:                enableFIPSMode,
 		},
 	)
 	if err != nil {
@@ -463,7 +469,7 @@ func setupMetricPipelineController(mgr manager.Manager, cfg envConfig, reconcile
 			MetricAgentPriorityClassName:   highPriorityClassName,
 			MetricGatewayPriorityClassName: normalPriorityClassName,
 			ModuleVersion:                  build.GitTag(),
-			OTelCollectorImage:             cfg.OtelCollectorImage,
+			OTelCollectorImage:             cfg.OTelCollectorImage,
 			RestConfig:                     mgr.GetConfig(),
 			SelfMonitorName:                selfMonitorName,
 			TelemetryNamespace:             cfg.TelemetryNamespace,

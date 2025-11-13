@@ -26,7 +26,7 @@ func WithVersion(version string) Option {
 	}
 }
 
-func NewGlobal(opts ...Option) *Global {
+func NewGlobal(opts ...Option) Global {
 	g := &Global{}
 	for _, opt := range opts {
 		opt(g)
@@ -35,7 +35,15 @@ func NewGlobal(opts ...Option) *Global {
 	return g
 }
 
-func (g *Global) Namespace() string {
+func (g *Global) TargetNamespace() string {
+	return g.namespace
+}
+
+func (g *Global) ManagerNamespace() string {
+	return g.namespace
+}
+
+func (g *Global) DefaultTelemetryNamespace() string {
 	return g.namespace
 }
 
