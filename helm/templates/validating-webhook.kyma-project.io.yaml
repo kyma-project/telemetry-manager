@@ -37,4 +37,80 @@ webhooks:
     scope: '*'
   sideEffects: None
   timeoutSeconds: 15
-
+- admissionReviewVersions:
+  - v1beta1
+  - v1
+  clientConfig:
+    service:
+      name: '{{ include "telemetry-manager.fullname" . }}-manager-webhook'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-logparser
+      port: 443
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validating-logparsers.kyma-project.io
+  namespaceSelector: {}
+  objectSelector: {}
+  rules:
+  - apiGroups:
+    - telemetry.kyma-project.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - logparsers
+    scope: '*'
+  sideEffects: None
+  timeoutSeconds: 15
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: '{{ include "telemetry-manager.fullname" . }}-manager-webhook'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-metricpipeline
+      port: 443
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validating-metricpipelines.kyma-project.io
+  rules:
+  - apiGroups:
+    - telemetry.kyma-project.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - metricpipelines
+    scope: '*'
+  sideEffects: None
+  timeoutSeconds: 15
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: '{{ include "telemetry-manager.fullname" . }}-manager-webhook'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-tracepipeline
+      port: 443
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validating-tracepipelines.kyma-project.io
+  rules:
+  - apiGroups:
+    - telemetry.kyma-project.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - tracepipelines
+    scope: '*'
+  sideEffects: None
+  timeoutSeconds: 15
