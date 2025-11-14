@@ -72,7 +72,9 @@ Run the Helm upgrade command, which installs the chart if not present yet.
 helm upgrade --install --create-namespace -n $K8S_NAMESPACE $HELM_RELEASE open-telemetry/opentelemetry-collector -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/k8s-events/values.yaml
 ```
 
+<!-- markdown-link-check-disable -->
 The previous command uses the [values.yaml](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/k8s-events/values.yaml), which contains customized settings deviating from the default settings. The customizations in the provided `values.yaml` cover the following areas:
+<!-- markdown-link-check-enable -->
 
 - Configures the deployment mode and the image to use
 - Configure the log pipeline with the k8s-events receiver and an OTLP exporter shipping to the Kyma specific endpoint
