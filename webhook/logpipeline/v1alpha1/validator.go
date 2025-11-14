@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
+	webhookutils "github.com/kyma-project/telemetry-manager/webhook/utils"
+	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 type LogPipelineValidator struct {
@@ -26,7 +26,7 @@ func (v *LogPipelineValidator) ValidateCreate(_ context.Context, obj runtime.Obj
 		return nil, fmt.Errorf("expected a LogPipeline but got %T", obj)
 	}
 
-	if err := validateFilterTransform(ottl.SignalTypeLog, logPipeline.Spec.Filters, logPipeline.Spec.Transforms); err != nil {
+	if err := webhookutils.ValidateFilterTransform(ottl.SignalTypeLog, logPipeline.Spec.Filters, logPipeline.Spec.Transforms); err != nil {
 		return nil, err
 	}
 
@@ -48,7 +48,7 @@ func (v *LogPipelineValidator) ValidateUpdate(_ context.Context, oldObj, newObj 
 		return nil, fmt.Errorf("expected a LogPipeline but got %T", newObj)
 	}
 
-	if err := validateFilterTransform(ottl.SignalTypeLog, logPipeline.Spec.Filters, logPipeline.Spec.Transforms); err != nil {
+	if err := webhookutils.ValidateFilterTransform(ottl.SignalTypeLog, logPipeline.Spec.Filters, logPipeline.Spec.Transforms); err != nil {
 		return nil, err
 	}
 
@@ -64,28 +64,4 @@ func (v *LogPipelineValidator) ValidateUpdate(_ context.Context, oldObj, newObj 
 
 func (v *LogPipelineValidator) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
 	return nil, nil
-}
-
-func validateFilterTransform(signalType ottl.SignalType, filterSpec []telemetryv1alpha1.FilterSpec, transformSpec []telemetryv1alpha1.TransformSpec) error {
-	filterValidator, err := ottl.NewFilterSpecValidator(signalType)
-	if err != nil {
-		return fmt.Errorf("failed to instantiate FilterSpecValidator %w", err)
-	}
-
-	err = filterValidator.Validate(filterSpec)
-	if err != nil {
-		return err
-	}
-
-	transformValidator, err := ottl.NewTransformSpecValidator(signalType)
-	if err != nil {
-		return fmt.Errorf("failed to instantiate TransformSpecValidator %w", err)
-	}
-
-	err = transformValidator.Validate(transformSpec)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
