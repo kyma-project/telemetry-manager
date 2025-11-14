@@ -33,6 +33,8 @@ config:
       logs:
         receivers:
           - k8s_events
+        exporters:
+          - otlp
       traces: null
       metrics: null
 
