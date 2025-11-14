@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
-	webhookutils "github.com/kyma-project/telemetry-manager/webhook/utils"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
+	"github.com/kyma-project/telemetry-manager/webhook/utils"
 )
 
 // +kubebuilder:webhook:path=/validate-metricpipeline,mutating=false,failurePolicy=fail,sideEffects=None,groups=telemetry.kyma-project.io,resources=metricpipelines,verbs=create;update,versions=v1alpha1,name=validating-metricpipelines.kyma-project.io,admissionReviewVersions=v1;v1beta1
@@ -26,7 +27,7 @@ func (v *MetricPipelineValidator) ValidateCreate(_ context.Context, obj runtime.
 		return nil, fmt.Errorf("expected a MetricPipeline but got %T", obj)
 	}
 
-	return nil, webhookutils.ValidateFilterTransform(ottl.SignalTypeMetric, metricPipeline.Spec.Filters, metricPipeline.Spec.Transforms)
+	return nil, utils.ValidateFilterTransform(ottl.SignalTypeMetric, metricPipeline.Spec.Filters, metricPipeline.Spec.Transforms)
 }
 
 func (v *MetricPipelineValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
@@ -35,7 +36,8 @@ func (v *MetricPipelineValidator) ValidateUpdate(_ context.Context, oldObj, newO
 	if !ok {
 		return nil, fmt.Errorf("expected a MetricPipeline but got %T", newObj)
 	}
-	return nil, webhookutils.ValidateFilterTransform(ottl.SignalTypeMetric, metricPipeline.Spec.Filters, metricPipeline.Spec.Transforms)
+
+	return nil, utils.ValidateFilterTransform(ottl.SignalTypeMetric, metricPipeline.Spec.Filters, metricPipeline.Spec.Transforms)
 }
 
 func (v *MetricPipelineValidator) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {

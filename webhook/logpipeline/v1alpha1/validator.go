@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
-	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
-	webhookutils "github.com/kyma-project/telemetry-manager/webhook/utils"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
+	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
+	"github.com/kyma-project/telemetry-manager/webhook/utils"
 )
 
 type LogPipelineValidator struct {
@@ -20,13 +21,14 @@ var _ webhook.CustomValidator = &LogPipelineValidator{}
 
 func (v *LogPipelineValidator) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
 	logPipeline, ok := obj.(*telemetryv1alpha1.LogPipeline)
+
 	var warnings admission.Warnings
 
 	if !ok {
 		return nil, fmt.Errorf("expected a LogPipeline but got %T", obj)
 	}
 
-	if err := webhookutils.ValidateFilterTransform(ottl.SignalTypeLog, logPipeline.Spec.Filters, logPipeline.Spec.Transforms); err != nil {
+	if err := utils.ValidateFilterTransform(ottl.SignalTypeLog, logPipeline.Spec.Filters, logPipeline.Spec.Transforms); err != nil {
 		return nil, err
 	}
 
@@ -37,18 +39,20 @@ func (v *LogPipelineValidator) ValidateCreate(_ context.Context, obj runtime.Obj
 
 		return warnings, nil
 	}
+
 	return nil, nil
 }
 
 func (v *LogPipelineValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	logPipeline, ok := newObj.(*telemetryv1alpha1.LogPipeline)
+
 	var warnings admission.Warnings
 
 	if !ok {
 		return nil, fmt.Errorf("expected a LogPipeline but got %T", newObj)
 	}
 
-	if err := webhookutils.ValidateFilterTransform(ottl.SignalTypeLog, logPipeline.Spec.Filters, logPipeline.Spec.Transforms); err != nil {
+	if err := utils.ValidateFilterTransform(ottl.SignalTypeLog, logPipeline.Spec.Filters, logPipeline.Spec.Transforms); err != nil {
 		return nil, err
 	}
 
@@ -59,6 +63,7 @@ func (v *LogPipelineValidator) ValidateUpdate(_ context.Context, oldObj, newObj 
 
 		return warnings, nil
 	}
+
 	return nil, nil
 }
 
