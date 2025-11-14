@@ -1,5 +1,33 @@
 package config
 
+import (
+	"errors"
+	"fmt"
+	"strings"
+
+	"github.com/kyma-project/telemetry-manager/internal/namespaces"
+)
+
+// ValidationError represents a validation error for a specific field
+type ValidationError struct {
+	Field   string
+	Value   string
+	Message string
+}
+
+func (e *ValidationError) Error() string {
+	return fmt.Sprintf("validation failed for field '%s' with value '%s': %s", e.Field, e.Value, e.Message)
+}
+
+// IsValidationError checks if an error is a validation error
+func IsValidationError(err error) bool {
+	if err == nil {
+		return false
+	}
+	var validationErr *ValidationError
+	return errors.As(err, &validationErr)
+}
+
 type Global struct {
 	namespace         string
 	operateInFIPSMode bool
@@ -35,6 +63,26 @@ func NewGlobal(opts ...Option) Global {
 	}
 
 	return g
+}
+
+func (g *Global) Validate() error {
+	if !namespaces.ValidNameRegexp.MatchString(g.namespace) {
+		return &ValidationError{
+			Field:   "namespace",
+			Value:   g.namespace,
+			Message: "must be a valid Kubernetes namespace name",
+		}
+	}
+
+	if strings.Trim(g.version, " ") == "" {
+		return &ValidationError{
+			Field:   "version",
+			Value:   g.version,
+			Message: "cannot be empty or whitespace only",
+		}
+	}
+
+	return nil
 }
 
 // TargetNamespace returns the namespace where telemetry components should be deployed by Telemetry Manager.
