@@ -28,12 +28,53 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit/mocks"
 	logpipelinemocks "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/stubs"
+	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
+
+func TestMaxPipelines(t *testing.T) {
+	// Setup
+	scheme := runtime.NewScheme()
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = telemetryv1alpha1.AddToScheme(scheme)
+
+	pipeline := testutils.NewLogPipelineBuilder().
+		WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
+		WithCustomFilter("Name grep").
+		Build()
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+	// Create reconciler that simulates max pipelines exceeded
+	reconciler := createMaxPipelinesTestReconciler(fakeClient, pipeline)
+
+	// Execute
+	var pl telemetryv1alpha1.LogPipeline
+	require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl))
+	err := reconciler.Reconcile(t.Context(), &pl)
+	require.NoError(t, err)
+
+	// Verify
+	var updatedPipeline telemetryv1alpha1.LogPipeline
+	_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+	requireHasStatusCondition(t, updatedPipeline,
+		conditions.TypeConfigurationGenerated,
+		metav1.ConditionFalse,
+		conditions.ReasonMaxPipelinesExceeded,
+		"Maximum pipeline count limit exceeded",
+	)
+
+	requireHasStatusCondition(t, updatedPipeline,
+		conditions.TypeFlowHealthy,
+		metav1.ConditionFalse,
+		conditions.ReasonSelfMonConfigNotGenerated,
+		"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details",
+	)
+}
 
 func TestTLSConditions(t *testing.T) {
 	tests := []struct {
@@ -860,6 +901,48 @@ func createTLSTestReconciler(fakeClient client.Client, pipeline telemetryv1alpha
 
 	errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
 	errToMsgStub.On("Convert", mock.Anything).Return("")
+
+	return New(
+		globals,
+		fakeClient,
+		agentConfigBuilder,
+		agentApplierDeleter,
+		proberStub,
+		flowHealthProber,
+		&stubs.IstioStatusChecker{IsActive: false},
+		pipelineLock,
+		validator,
+		errToMsgStub,
+	)
+}
+
+func createMaxPipelinesTestReconciler(fakeClient client.Client, pipeline telemetryv1alpha1.LogPipeline) *Reconciler {
+	globals := config.NewGlobal(config.WithNamespace("default"))
+
+	agentConfigBuilder := &mocks.AgentConfigBuilder{}
+	agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil)
+
+	agentApplierDeleter := &mocks.AgentApplierDeleter{}
+	agentApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	agentApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	proberStub := commonStatusStubs.NewDaemonSetProber(nil)
+
+	flowHealthProber := &logpipelinemocks.FlowHealthProber{}
+	flowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
+
+	pipelineLock := &mocks.PipelineLock{}
+	pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
+	pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
+
+	validator := &Validator{
+		EndpointValidator:  stubs.NewEndpointValidator(nil),
+		TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+		SecretRefValidator: stubs.NewSecretRefValidator(nil),
+		PipelineLock:       pipelineLock,
+	}
+
+	errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
 
 	return New(
 		globals,
