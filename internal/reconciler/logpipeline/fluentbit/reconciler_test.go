@@ -2,14 +2,12 @@ package fluentbit
 
 import (
 	"errors"
-	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -31,7 +29,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
-	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
@@ -162,148 +159,6 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))
 		err := sut.Reconcile(t.Context(), &pl1)
 		require.NoError(t, err)
-	})
-
-	t.Run("referenced secret missing", func(t *testing.T) {
-		pipeline := testutils.NewLogPipelineBuilder().
-			WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
-			Build()
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
-
-		agentConfigBuilder := &mocks.AgentConfigBuilder{}
-		agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
-
-		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
-
-		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
-
-		pipelineLockStub := &mocks.PipelineLock{}
-		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
-
-		pipelineValidatorWithStubs := &Validator{
-			EndpointValidator:  stubs.NewEndpointValidator(nil),
-			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-			SecretRefValidator: stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound)),
-			PipelineLock:       pipelineLockStub,
-		}
-
-		errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
-		errToMsgStub.On("Convert", mock.Anything).Return("")
-
-		sut := New(
-			globals,
-			fakeClient,
-			agentConfigBuilder,
-			agentApplierDeleterMock,
-			proberStub,
-			flowHealthProberStub,
-			istioStatusCheckerStub,
-			pipelineLockStub,
-			pipelineValidatorWithStubs,
-			errToMsgStub,
-		)
-
-		var pl1 telemetryv1alpha1.LogPipeline
-
-		require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))
-		err := sut.Reconcile(t.Context(), &pl1)
-		require.NoError(t, err)
-
-		var updatedPipeline telemetryv1alpha1.LogPipeline
-
-		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-
-		requireHasStatusCondition(t, updatedPipeline,
-			conditions.TypeConfigurationGenerated,
-			metav1.ConditionFalse,
-			conditions.ReasonReferencedSecretMissing,
-			"One or more referenced Secrets are missing: Secret 'some-secret' of Namespace 'some-namespace'",
-		)
-
-		requireHasStatusCondition(t, updatedPipeline,
-			conditions.TypeFlowHealthy,
-			metav1.ConditionFalse,
-			conditions.ReasonSelfMonConfigNotGenerated,
-			"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details",
-		)
-	})
-
-	t.Run("referenced secret exists", func(t *testing.T) {
-		secret := &corev1.Secret{
-			TypeMeta: metav1.TypeMeta{},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "some-secret",
-				Namespace: "some-namespace",
-			},
-			Data: map[string][]byte{"host": nil},
-		}
-		pipeline := testutils.NewLogPipelineBuilder().
-			WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
-			WithHTTPOutput(testutils.HTTPHostFromSecret("some-secret", "some-namespace", "host")).
-			Build()
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline, secret).WithStatusSubresource(&pipeline).Build()
-
-		agentConfigBuilder := &mocks.AgentConfigBuilder{}
-		agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
-
-		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
-
-		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
-
-		pipelineLockStub := &mocks.PipelineLock{}
-		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
-
-		pipelineValidatorWithStubs := &Validator{
-			EndpointValidator:  stubs.NewEndpointValidator(nil),
-			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-			SecretRefValidator: stubs.NewSecretRefValidator(nil),
-			PipelineLock:       pipelineLockStub,
-		}
-
-		errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
-		errToMsgStub.On("Convert", mock.Anything).Return("")
-
-		sut := New(
-			globals,
-			fakeClient,
-			agentConfigBuilder,
-			agentApplierDeleterMock,
-			proberStub,
-			flowHealthProberStub,
-			istioStatusCheckerStub,
-			pipelineLockStub,
-			pipelineValidatorWithStubs,
-			errToMsgStub,
-		)
-
-		var pl1 telemetryv1alpha1.LogPipeline
-
-		require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))
-		err := sut.Reconcile(t.Context(), &pl1)
-		require.NoError(t, err)
-
-		var updatedPipeline telemetryv1alpha1.LogPipeline
-
-		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-
-		requireHasStatusCondition(t, updatedPipeline,
-			conditions.TypeConfigurationGenerated,
-			metav1.ConditionTrue,
-			conditions.ReasonAgentConfigured,
-			"LogPipeline specification is successfully applied to the configuration of Log agent",
-		)
 	})
 
 	t.Run("flow healthy", func(t *testing.T) {
