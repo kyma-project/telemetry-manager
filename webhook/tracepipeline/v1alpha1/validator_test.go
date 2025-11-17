@@ -3,8 +3,9 @@ package v1alpha1
 import (
 	"testing"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/stretchr/testify/require"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
 func TestTracePipelineValidator_ValidateCreate(t *testing.T) {
@@ -123,7 +124,6 @@ func TestTracePipelineValidator_ValidateUpdate(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 			}
-
 		})
 	}
 }

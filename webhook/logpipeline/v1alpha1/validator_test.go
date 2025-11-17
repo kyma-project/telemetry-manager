@@ -3,9 +3,10 @@ package v1alpha1
 import (
 	"testing"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
 func TestLogPipelineValidator_ValidateCreate(t *testing.T) {
@@ -84,6 +85,7 @@ func TestLogPipelineValidator_ValidateCreate(t *testing.T) {
 
 			if tt.expectWarnings > 0 {
 				require.Len(t, warnings, tt.expectWarnings)
+
 				if tt.expectWarningsMsg != "" {
 					require.Contains(t, warnings, tt.expectWarningsMsg)
 				}
@@ -153,6 +155,7 @@ func TestLogPipelineValidator_ValidateUpdate(t *testing.T) {
 
 			if tt.expectWarnings > 0 {
 				require.Len(t, warnings, tt.expectWarnings)
+
 				if tt.expectWarningsMsg != "" {
 					require.Contains(t, warnings, tt.expectWarningsMsg)
 				}
