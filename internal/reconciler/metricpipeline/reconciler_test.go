@@ -49,7 +49,7 @@ func TestReconcile(t *testing.T) {
 	moduleVersion := "1.0.0"
 
 	globals := config.NewGlobal(
-		config.WithNamespace(telemetryNamespace),
+		config.WithTargetNamespace(telemetryNamespace),
 		config.WithVersion(moduleVersion),
 	)
 
