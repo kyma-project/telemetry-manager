@@ -36,6 +36,25 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
+func TestAppInput(t *testing.T) {
+	// Setup
+	scheme := runtime.NewScheme()
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = telemetryv1alpha1.AddToScheme(scheme)
+
+	pipeline := testutils.NewLogPipelineBuilder().WithApplicationInput(false).Build()
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+	// Create reconciler for testing app input disabled scenario
+	reconciler := createAppInputTestReconciler(fakeClient, pipeline)
+
+	// Execute
+	var pl telemetryv1alpha1.LogPipeline
+	require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl))
+	err := reconciler.Reconcile(t.Context(), &pl)
+	require.NoError(t, err)
+}
+
 func TestMaxPipelines(t *testing.T) {
 	// Setup
 	scheme := runtime.NewScheme()
@@ -934,6 +953,48 @@ func createMaxPipelinesTestReconciler(fakeClient client.Client, pipeline telemet
 	pipelineLock := &mocks.PipelineLock{}
 	pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
 	pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
+
+	validator := &Validator{
+		EndpointValidator:  stubs.NewEndpointValidator(nil),
+		TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+		SecretRefValidator: stubs.NewSecretRefValidator(nil),
+		PipelineLock:       pipelineLock,
+	}
+
+	errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
+
+	return New(
+		globals,
+		fakeClient,
+		agentConfigBuilder,
+		agentApplierDeleter,
+		proberStub,
+		flowHealthProber,
+		&stubs.IstioStatusChecker{IsActive: false},
+		pipelineLock,
+		validator,
+		errToMsgStub,
+	)
+}
+
+func createAppInputTestReconciler(fakeClient client.Client, pipeline telemetryv1alpha1.LogPipeline) *Reconciler {
+	globals := config.NewGlobal(config.WithNamespace("default"))
+
+	agentConfigBuilder := &mocks.AgentConfigBuilder{}
+	agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil)
+
+	agentApplierDeleter := &mocks.AgentApplierDeleter{}
+	agentApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	agentApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	proberStub := commonStatusStubs.NewDaemonSetProber(nil)
+
+	flowHealthProber := &logpipelinemocks.FlowHealthProber{}
+	flowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
+
+	pipelineLock := &mocks.PipelineLock{}
+	pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+	pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 	validator := &Validator{
 		EndpointValidator:  stubs.NewEndpointValidator(nil),
