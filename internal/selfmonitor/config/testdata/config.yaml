@@ -6,7 +6,7 @@ alerting:
         - scheme: https
           static_configs:
             - targets:
-                - http://webhook:9090
+                - webhook.svc.local:9090
           tls_config:
             insecure_skip_verify: true
 rule_files:
