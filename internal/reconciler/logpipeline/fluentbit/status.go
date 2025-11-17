@@ -90,6 +90,9 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 }
 
 func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (status metav1.ConditionStatus, reason string, message string) {
+	if r.globals.OperateInFIPSMode() {
+		return metav1.ConditionFalse, conditions.NoFluentbitInFipsMode, conditions.MessageForFluentBitLogPipeline(conditions.NoFluentbitInFipsMode)
+	}
 	err := r.pipelineValidator.Validate(ctx, pipeline)
 	if err == nil {
 		return metav1.ConditionTrue, conditions.ReasonAgentConfigured, conditions.MessageForFluentBitLogPipeline(conditions.ReasonAgentConfigured)
