@@ -19,6 +19,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
@@ -44,7 +45,7 @@ func TestReconcile(t *testing.T) {
 
 	istioStatusCheckerStub := &stubs.IstioStatusChecker{IsActive: false}
 
-	telemetryNamespace := "default"
+	cfg := config.NewGlobal(config.WithNamespace("default"))
 
 	t.Run("trace gateway probing failed", func(t *testing.T) {
 		pipeline := testutils.NewTracePipelineBuilder().WithName("pipeline").Build()
@@ -81,7 +82,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			telemetryNamespace,
+			cfg,
 			flowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
@@ -145,7 +146,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			telemetryNamespace,
+			cfg,
 			flowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
@@ -209,7 +210,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			telemetryNamespace,
+			cfg,
 			flowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
@@ -272,7 +273,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			telemetryNamespace,
+			cfg,
 			flowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
@@ -353,7 +354,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			telemetryNamespace,
+			cfg,
 			flowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
@@ -413,7 +414,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			telemetryNamespace,
+			cfg,
 			flowHealthProberStub,
 			&mocks.GatewayApplierDeleter{},
 			gatewayConfigBuilderMock,
@@ -558,7 +559,7 @@ func TestReconcile(t *testing.T) {
 
 				sut := New(
 					fakeClient,
-					telemetryNamespace,
+					cfg,
 					flowHealthProberStub,
 					gatewayApplierDeleterMock,
 					gatewayConfigBuilderMock,
@@ -693,7 +694,7 @@ func TestReconcile(t *testing.T) {
 
 				sut := New(
 					fakeClient,
-					telemetryNamespace,
+					cfg,
 					flowHealthProberStub,
 					gatewayApplierDeleterMock,
 					gatewayConfigBuilderMock,
@@ -776,7 +777,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			telemetryNamespace,
+			cfg,
 			flowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
@@ -851,7 +852,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			telemetryNamespace,
+			cfg,
 			flowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
@@ -933,7 +934,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			telemetryNamespace,
+			cfg,
 			flowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
@@ -1005,7 +1006,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			telemetryNamespace,
+			cfg,
 			flowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
@@ -1075,7 +1076,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			telemetryNamespace,
+			cfg,
 			flowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
@@ -1172,7 +1173,7 @@ func TestReconcile(t *testing.T) {
 
 				sut := New(
 					fakeClient,
-					telemetryNamespace,
+					cfg,
 					flowHealthProberStub,
 					gatewayApplierDeleterMock,
 					gatewayConfigBuilderMock,

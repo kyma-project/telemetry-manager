@@ -10,6 +10,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	"github.com/kyma-project/telemetry-manager/internal/config"
 )
 
 func TestLoadOverrides(t *testing.T) {
@@ -96,7 +98,7 @@ tracing:
 			}
 
 			atomicLevel := zap.NewAtomicLevelAt(tt.defaultLevel)
-			handler := New(fakeClient, HandlerConfig{SystemNamespace: "test-namespace"}, WithAtomicLevel(atomicLevel))
+			handler := New(config.NewGlobal(config.WithNamespace("test-namespace")), fakeClient, WithAtomicLevel(atomicLevel))
 			overrides, err := handler.LoadOverrides(t.Context())
 
 			if tt.expectError {
@@ -129,7 +131,7 @@ tracing:
 	require.NoError(t, err)
 
 	atomicLevel := zap.NewAtomicLevelAt(zapcore.InfoLevel)
-	handler := New(fakeClient, HandlerConfig{SystemNamespace: "test-namespace"}, WithAtomicLevel(atomicLevel))
+	handler := New(config.NewGlobal(config.WithNamespace("test-namespace")), fakeClient, WithAtomicLevel(atomicLevel))
 
 	require.Equal(t, atomicLevel.Level(), zapcore.InfoLevel)
 

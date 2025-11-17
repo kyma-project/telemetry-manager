@@ -31,10 +31,12 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
+	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 )
 
 type TelemetryController struct {
@@ -45,19 +47,31 @@ type TelemetryController struct {
 }
 
 type TelemetryControllerConfig struct {
-	telemetry.Config
+	config.Global
 
-	SelfMonitorName    string
-	TelemetryNamespace string
+	SelfMonitorAlertmanagerWebhookURL string
+	SelfMonitorImage                  string
+	SelfMonitorPriorityClassName      string
+	WebhookCert                       webhookcert.Config
 }
 
-func NewTelemetryController(client client.Client, scheme *runtime.Scheme, config TelemetryControllerConfig) *TelemetryController {
+func NewTelemetryController(config TelemetryControllerConfig, client client.Client, scheme *runtime.Scheme) *TelemetryController {
 	reconciler := telemetry.New(
-		client,
+		telemetry.Config{
+			Global:                            config.Global,
+			SelfMonitorAlertmanagerWebhookURL: config.SelfMonitorAlertmanagerWebhookURL,
+			WebhookCert:                       config.WebhookCert,
+		},
 		scheme,
-		config.Config,
-		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
-		&selfmonitor.ApplierDeleter{Config: config.SelfMonitor.Config},
+		client,
+		overrides.New(config.Global, client),
+		&selfmonitor.ApplierDeleter{
+			Config: selfmonitor.Config{
+				Global:            config.Global,
+				Image:             config.SelfMonitorImage,
+				PriorityClassName: config.SelfMonitorPriorityClassName,
+			},
+		},
 	)
 
 	return &TelemetryController{
@@ -105,7 +119,7 @@ func (r *TelemetryController) mapWebhook(ctx context.Context, object client.Obje
 		return nil
 	}
 
-	if webhook.Name != r.config.Webhook.CertConfig.ValidatingWebhookName.Name {
+	if webhook.Name != r.config.WebhookCert.ValidatingWebhookName.Name {
 		return nil
 	}
 

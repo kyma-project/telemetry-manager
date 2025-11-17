@@ -15,6 +15,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
@@ -37,8 +38,7 @@ func TestReconcile(t *testing.T) {
 
 	istioStatusCheckerStub := &stubs.IstioStatusChecker{IsActive: false}
 
-	telemetryNamespace := "default"
-	moduleVersion := "1.0.0"
+	globals := config.NewGlobal(config.WithNamespace("default"), config.WithVersion("1.0.0"))
 
 	t.Run("log gateway probing failed", func(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().Build()
@@ -82,9 +82,8 @@ func TestReconcile(t *testing.T) {
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
 			gatewayFlowHeathProber,
 			agentFlowHealthProber,
 			agentConfigBuilderMock,
@@ -157,9 +156,8 @@ func TestReconcile(t *testing.T) {
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
 			gatewayFlowHeathProber,
 			agentFlowHealthProber,
 			agentConfigBuilderMock,
@@ -232,9 +230,8 @@ func TestReconcile(t *testing.T) {
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
 			gatewayFlowHeathProber,
 			agentFlowHealthProber,
 			agentConfigBuilderMock,
@@ -306,9 +303,8 @@ func TestReconcile(t *testing.T) {
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
 			gatewayFlowHeathProber,
 			agentFlowHealthProber,
 			agentConfigBuilderMock,
@@ -380,9 +376,8 @@ func TestReconcile(t *testing.T) {
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
 			gatewayFlowHeathProber,
 			agentFlowHealthProber,
 			agentConfigBuilderMock,
@@ -528,9 +523,8 @@ func TestReconcile(t *testing.T) {
 
 				errToMsg := &conditions.ErrorToMessageConverter{}
 				sut := New(
+					globals,
 					fakeClient,
-					telemetryNamespace,
-					moduleVersion,
 					gatewayFlowHeathProber,
 					agentFlowHealthProber,
 					agentConfigBuilderMock,
@@ -658,9 +652,8 @@ func TestReconcile(t *testing.T) {
 
 				errToMsg := &conditions.ErrorToMessageConverter{}
 				sut := New(
+					globals,
 					fakeClient,
-					telemetryNamespace,
-					moduleVersion,
 					gatewayFlowHeathProber,
 					agentFlowHealthProber,
 					agentConfigBuilderMock,
@@ -740,9 +733,8 @@ func TestReconcile(t *testing.T) {
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
 			gatewayFlowHeathProber,
 			agentFlowHealthProber,
 			agentConfigBuilderMock,
@@ -821,9 +813,8 @@ func TestReconcile(t *testing.T) {
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
 			gatewayFlowHeathProber,
 			agentFlowHealthProber,
 			agentConfigBuilderMock,
@@ -891,9 +882,8 @@ func TestReconcile(t *testing.T) {
 		}
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
 			gatewayFlowHeathProber,
 			agentFlowHealthProber,
 			&mocks.AgentConfigBuilder{},
@@ -964,9 +954,8 @@ func TestReconcile(t *testing.T) {
 		}
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
 			gatewayFlowHeathProber,
 			agentFlowHealthProber,
 			agentConfigBuilder,
@@ -1038,9 +1027,8 @@ func TestReconcile(t *testing.T) {
 		}
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
 			gatewayFlowHeathProber,
 			agentFlowHealthProber,
 			&mocks.AgentConfigBuilder{},

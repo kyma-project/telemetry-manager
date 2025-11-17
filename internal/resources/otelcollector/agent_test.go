@@ -15,12 +15,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
+	"github.com/kyma-project/telemetry-manager/internal/config"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
 func TestAgent_ApplyResources(t *testing.T) {
+	globals := config.NewGlobal(config.WithNamespace("kyma-system"))
+	globalsWithFIPS := config.NewGlobal(
+		config.WithNamespace("kyma-system"),
+		config.WithOperateInFIPSMode(true),
+	)
 	collectorImage := "opentelemetry/collector:dummy"
-	namespace := "kyma-system"
 	priorityClassName := "normal"
 
 	tests := []struct {
@@ -34,24 +39,24 @@ func TestAgent_ApplyResources(t *testing.T) {
 	}{
 		{
 			name:           "metric agent",
-			sut:            NewMetricAgentApplierDeleter(collectorImage, namespace, priorityClassName, false),
+			sut:            NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName),
 			goldenFilePath: "testdata/metric-agent.yaml",
 		},
 		{
 			name:           "metric agent with istio",
-			sut:            NewMetricAgentApplierDeleter(collectorImage, namespace, priorityClassName, false),
+			sut:            NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName),
 			istioEnabled:   true,
 			backendPorts:   []string{"4317", "9090"},
 			goldenFilePath: "testdata/metric-agent-istio.yaml",
 		},
 		{
 			name:           "metric agent with FIPS mode enabled",
-			sut:            NewMetricAgentApplierDeleter(collectorImage, namespace, priorityClassName, true),
+			sut:            NewMetricAgentApplierDeleter(globalsWithFIPS, collectorImage, priorityClassName),
 			goldenFilePath: "testdata/metric-agent-fips-enabled.yaml",
 		},
 		{
 			name: "log agent",
-			sut:  NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName, false),
+			sut:  NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName),
 			collectorEnvVars: map[string][]byte{
 				"DUMMY_ENV_VAR": []byte("foo"),
 			},
@@ -59,7 +64,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 		},
 		{
 			name: "log agent with istio",
-			sut:  NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName, false),
+			sut:  NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName),
 			collectorEnvVars: map[string][]byte{
 				"DUMMY_ENV_VAR": []byte("foo"),
 			},
@@ -68,7 +73,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 		},
 		{
 			name: "log agent with FIPS mode enabled",
-			sut:  NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName, true),
+			sut:  NewLogAgentApplierDeleter(globalsWithFIPS, collectorImage, priorityClassName),
 			collectorEnvVars: map[string][]byte{
 				"DUMMY_ENV_VAR": []byte("foo"),
 			},
@@ -116,8 +121,8 @@ func TestAgent_ApplyResources(t *testing.T) {
 }
 
 func TestAgent_DeleteResources(t *testing.T) {
+	globals := config.NewGlobal(config.WithNamespace("kyma-system"))
 	image := "opentelemetry/collector:dummy"
-	namespace := "kyma-system"
 	priorityClassName := "normal"
 
 	var created []client.Object
@@ -135,11 +140,11 @@ func TestAgent_DeleteResources(t *testing.T) {
 	}{
 		{
 			name: "metric agent",
-			sut:  NewMetricAgentApplierDeleter(image, namespace, priorityClassName, false),
+			sut:  NewMetricAgentApplierDeleter(globals, image, priorityClassName),
 		},
 		{
 			name: "log agent",
-			sut:  NewLogAgentApplierDeleter(image, namespace, priorityClassName, false),
+			sut:  NewLogAgentApplierDeleter(globals, image, priorityClassName),
 		},
 	}
 

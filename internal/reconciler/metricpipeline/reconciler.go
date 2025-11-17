@@ -15,6 +15,7 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricagent"
@@ -78,9 +79,7 @@ type IstioStatusChecker interface {
 type Reconciler struct {
 	client.Client
 
-	telemetryNamespace string
-	// TODO(skhalash): introduce an embed pkg exposing the module version set by go build
-	moduleVersion string
+	globals config.Global
 
 	agentApplierDeleter     AgentApplierDeleter
 	agentConfigBuilder      AgentConfigBuilder
@@ -99,9 +98,8 @@ type Reconciler struct {
 }
 
 func New(
+	globals config.Global,
 	client client.Client,
-	telemetryNamespace string,
-	moduleVersion string,
 	agentApplierDeleter AgentApplierDeleter,
 	agentConfigBuilder AgentConfigBuilder,
 	agentProber commonstatus.Prober,
@@ -118,9 +116,8 @@ func New(
 	errToMsgConverter commonstatus.ErrorToMessageConverter,
 ) *Reconciler {
 	return &Reconciler{
+		globals:                 globals,
 		Client:                  client,
-		telemetryNamespace:      telemetryNamespace,
-		moduleVersion:           moduleVersion,
 		agentApplierDeleter:     agentApplierDeleter,
 		agentConfigBuilder:      agentConfigBuilder,
 		agentProber:             agentProber,
@@ -299,14 +296,14 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 
 	var enrichments *operatorv1alpha1.EnrichmentSpec
 
-	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.telemetryNamespace)
+	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 	if err == nil {
 		enrichments = t.Spec.Enrichments
 	}
 
 	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, metricgateway.BuildOptions{
-		GatewayNamespace:            r.telemetryNamespace,
-		InstrumentationScopeVersion: r.moduleVersion,
+		GatewayNamespace:            r.globals.TargetNamespace(),
+		InstrumentationScopeVersion: r.globals.Version(),
 		ClusterName:                 clusterName,
 		ClusterUID:                  clusterUID,
 		CloudProvider:               shootInfo.CloudProvider,
@@ -354,7 +351,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 
 	var enrichments *operatorv1alpha1.EnrichmentSpec
 
-	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.telemetryNamespace)
+	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 	if err == nil {
 		enrichments = t.Spec.Enrichments
 	}
@@ -362,8 +359,8 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 	agentConfig, collectorEnvVars, err := r.agentConfigBuilder.Build(ctx, allPipelines, metricagent.BuildOptions{
 		IstioActive:                 isIstioActive,
 		IstioCertPath:               otelcollector.IstioCertPath,
-		InstrumentationScopeVersion: r.moduleVersion,
-		AgentNamespace:              r.telemetryNamespace,
+		InstrumentationScopeVersion: r.globals.Version(),
+		AgentNamespace:              r.globals.TargetNamespace(),
 		ClusterName:                 clusterName,
 		ClusterUID:                  clusterUID,
 		CloudProvider:               shootInfo.CloudProvider,
@@ -400,7 +397,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 }
 
 func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
-	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.telemetryNamespace)
+	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 	if err != nil {
 		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: using default scaling")
 		return defaultReplicaCount
@@ -417,7 +414,7 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 }
 
 func (r *Reconciler) getClusterNameFromTelemetry(ctx context.Context, defaultName string) string {
-	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.telemetryNamespace)
+	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 	if err != nil {
 		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: using default shoot name as cluster name")
 		return defaultName
