@@ -617,176 +617,168 @@ func TestFIPSModeWithComplexPipelines(t *testing.T) {
 }
 
 func TestFIPSModeTransition(t *testing.T) {
-	t.Run("FIPS mode transition from disabled to enabled cleans up resources", func(t *testing.T) {
-		// Setup: Create a pipeline
-		pipeline := testutils.NewLogPipelineBuilder().
-			WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
-			WithHTTPOutput().
-			Build()
+	// Setup: Create a pipeline
+	pipeline := testutils.NewLogPipelineBuilder().
+		WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
+		WithHTTPOutput().
+		Build()
 
-		testClient := newTestClient(t, &pipeline)
+	testClient := newTestClient(t, &pipeline)
 
-		// Phase 1: FIPS mode disabled - reconcile normally
-		reconcilerDisabled := newFIPSReconciler(testClient, false)
+	// Phase 1: FIPS mode disabled - reconcile normally
+	reconcilerDisabled := newFIPSReconciler(testClient, false)
 
-		// Verify reconcilable when FIPS disabled
-		reconcilable, err := reconcilerDisabled.IsReconcilable(context.Background(), &pipeline)
-		require.NoError(t, err)
-		require.True(t, reconcilable, "Pipeline should be reconcilable when FIPS is disabled")
+	// Verify reconcilable when FIPS disabled
+	reconcilable, err := reconcilerDisabled.IsReconcilable(context.Background(), &pipeline)
+	require.NoError(t, err)
+	require.True(t, reconcilable, "Pipeline should be reconcilable when FIPS is disabled")
 
-		// Reconcile with FIPS disabled - should succeed and create resources
-		result1 := reconcileAndGet(t, testClient, reconcilerDisabled, pipeline.Name)
-		require.NoError(t, result1.err)
+	// Reconcile with FIPS disabled - should succeed and create resources
+	result1 := reconcileAndGet(t, testClient, reconcilerDisabled, pipeline.Name)
+	require.NoError(t, result1.err)
 
-		// Verify configuration was generated successfully
-		assertCondition(t, result1.pipeline,
-			conditions.TypeConfigurationGenerated,
-			metav1.ConditionTrue,
-			conditions.ReasonAgentConfigured,
-			"LogPipeline specification is successfully applied to the configuration of Log agent")
+	// Verify configuration was generated successfully
+	assertCondition(t, result1.pipeline,
+		conditions.TypeConfigurationGenerated,
+		metav1.ConditionTrue,
+		conditions.ReasonAgentConfigured,
+		"LogPipeline specification is successfully applied to the configuration of Log agent")
 
-		// Verify resources were created (AgentApplierDeleter.ApplyResources should have been called)
-		// We can check this indirectly through the mock verifications
+	// Verify resources were created (AgentApplierDeleter.ApplyResources should have been called)
+	// We can check this indirectly through the mock verifications
 
-		// Phase 2: FIPS mode enabled - should clean up resources
-		reconcilerEnabled := newFIPSTransitionReconciler(testClient, true)
+	// Phase 2: FIPS mode enabled - should clean up resources
+	reconcilerEnabled := newFIPSTransitionReconciler(testClient, true)
 
-		// Verify not reconcilable when FIPS enabled
-		reconcilable, err = reconcilerEnabled.IsReconcilable(context.Background(), &pipeline)
-		require.NoError(t, err)
-		require.False(t, reconcilable, "Pipeline should not be reconcilable when FIPS is enabled")
+	// Verify not reconcilable when FIPS enabled
+	reconcilable, err = reconcilerEnabled.IsReconcilable(context.Background(), &pipeline)
+	require.NoError(t, err)
+	require.False(t, reconcilable, "Pipeline should not be reconcilable when FIPS is enabled")
 
-		// Reconcile with FIPS enabled - should clean up and set FIPS error
-		result2 := reconcileAndGet(t, testClient, reconcilerEnabled, pipeline.Name)
-		require.NoError(t, result2.err)
+	// Reconcile with FIPS enabled - should clean up and set FIPS error
+	result2 := reconcileAndGet(t, testClient, reconcilerEnabled, pipeline.Name)
+	require.NoError(t, result2.err)
 
-		// Verify FIPS mode error condition is set
-		assertCondition(t, result2.pipeline,
-			conditions.TypeConfigurationGenerated,
-			metav1.ConditionFalse,
-			conditions.NoFluentbitInFipsMode,
-			"FluentBit output is not available in FIPS mode")
+	// Verify FIPS mode error condition is set
+	assertCondition(t, result2.pipeline,
+		conditions.TypeConfigurationGenerated,
+		metav1.ConditionFalse,
+		conditions.NoFluentbitInFipsMode,
+		"FluentBit output is not available in FIPS mode")
 
-		// Verify flow health condition reflects the configuration issue
-		assertCondition(t, result2.pipeline,
-			conditions.TypeFlowHealthy,
-			metav1.ConditionFalse,
-			conditions.ReasonSelfMonConfigNotGenerated,
-			"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details")
+	// Verify flow health condition reflects the configuration issue
+	assertCondition(t, result2.pipeline,
+		conditions.TypeFlowHealthy,
+		metav1.ConditionFalse,
+		conditions.ReasonSelfMonConfigNotGenerated,
+		"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details")
 
-		// Verify resources were deleted (AgentApplierDeleter.DeleteResources should have been called)
-		// This is verified through the mock expectations in newFIPSTransitionReconciler
-	})
+	// Verify resources were deleted (AgentApplierDeleter.DeleteResources should have been called)
+	// This is verified through the mock expectations in newFIPSTransitionReconciler
 }
 
 func TestComplexFIPSTransitionWithMockVerification(t *testing.T) {
-	t.Run("FIPS transition with resource management verification", func(t *testing.T) {
-		// Setup: Create a simple pipeline (avoiding validation conflicts)
-		pipeline := testutils.NewLogPipelineBuilder().
-			WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
-			WithHTTPOutput().
-			Build()
+	// Setup: Create a simple pipeline (avoiding validation conflicts)
+	pipeline := testutils.NewLogPipelineBuilder().
+		WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
+		WithHTTPOutput().
+		Build()
 
-		testClient := newTestClient(t, &pipeline)
+	testClient := newTestClient(t, &pipeline)
 
-		// Create channels to track apply/delete calls
-		applyCalledChan := make(chan struct{}, 1)
-		deleteCalledChan := make(chan struct{}, 1)
+	// Create channels to track apply/delete calls
+	applyCalledChan := make(chan struct{}, 1)
+	deleteCalledChan := make(chan struct{}, 1)
 
-		// Phase 1: FIPS disabled - verify ApplyResources is called
-		reconcilerDisabled := newReconcilerWithOverrides(testClient, func(m *reconcilerMocks) {
-			agentApplierDeleter := &logpipelinefluentbitmocks.AgentApplierDeleter{}
-			agentApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Run(func(args mock.Arguments) {
-				select {
-				case applyCalledChan <- struct{}{}:
-				default:
-				}
-			})
-			agentApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-			m.agentApplierDeleter = agentApplierDeleter
-		}, func(globals *config.Global) {
-			*globals = config.NewGlobal(
-				config.WithNamespace("default"),
-				config.WithOperateInFIPSMode(false),
-			)
+	// Phase 1: FIPS disabled - verify ApplyResources is called
+	reconcilerDisabled := newReconcilerWithOverrides(testClient, func(m *reconcilerMocks) {
+		agentApplierDeleter := &logpipelinefluentbitmocks.AgentApplierDeleter{}
+		agentApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+			select {
+			case applyCalledChan <- struct{}{}:
+			default:
+			}
 		})
-
-		// Test Phase 1: FIPS disabled should be reconcilable
-		reconcilable, err := reconcilerDisabled.IsReconcilable(context.Background(), &pipeline)
-		require.NoError(t, err)
-		require.True(t, reconcilable, "Pipeline should be reconcilable when FIPS is disabled")
-
-		// Reconcile with FIPS disabled - should apply resources
-		result1 := reconcileAndGet(t, testClient, reconcilerDisabled, pipeline.Name)
-		require.NoError(t, result1.err)
-
-		// Verify ApplyResources was called
-		select {
-		case <-applyCalledChan:
-			t.Log("✓ ApplyResources was called as expected during FIPS disabled phase")
-		case <-time.After(100 * time.Millisecond):
-			t.Error("ApplyResources was not called during FIPS disabled phase")
-		}
-
-		// Verify configuration was generated successfully
-		assertCondition(t, result1.pipeline,
-			conditions.TypeConfigurationGenerated,
-			metav1.ConditionTrue,
-			conditions.ReasonAgentConfigured,
-			"LogPipeline specification is successfully applied to the configuration of Log agent")
-
-		// Phase 2: FIPS enabled - verify DeleteResources is called
-		reconcilerEnabled := newReconcilerWithOverrides(testClient, func(m *reconcilerMocks) {
-			agentApplierDeleter := &logpipelinefluentbitmocks.AgentApplierDeleter{}
-			agentApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-			agentApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Run(func(args mock.Arguments) {
-				select {
-				case deleteCalledChan <- struct{}{}:
-				default:
-				}
-			})
-			m.agentApplierDeleter = agentApplierDeleter
-		}, func(globals *config.Global) {
-			*globals = config.NewGlobal(
-				config.WithNamespace("default"),
-				config.WithOperateInFIPSMode(true),
-			)
-		})
-
-		// Test Phase 2: FIPS enabled should not be reconcilable
-		reconcilable, err = reconcilerEnabled.IsReconcilable(context.Background(), &pipeline)
-		require.NoError(t, err)
-		require.False(t, reconcilable, "Pipeline should not be reconcilable when FIPS is enabled")
-
-		// Reconcile with FIPS enabled - should delete resources and set error conditions
-		result2 := reconcileAndGet(t, testClient, reconcilerEnabled, pipeline.Name)
-		require.NoError(t, result2.err)
-
-		// Verify DeleteResources was called
-		select {
-		case <-deleteCalledChan:
-			t.Log("✓ DeleteResources was called as expected during FIPS enabled phase")
-		case <-time.After(100 * time.Millisecond):
-			t.Error("DeleteResources was not called during FIPS enabled phase")
-		}
-
-		// Verify FIPS mode error condition is set
-		assertCondition(t, result2.pipeline,
-			conditions.TypeConfigurationGenerated,
-			metav1.ConditionFalse,
-			conditions.NoFluentbitInFipsMode,
-			"FluentBit output is not available in FIPS mode")
-
-		// Verify flow health condition reflects the configuration issue
-		assertCondition(t, result2.pipeline,
-			conditions.TypeFlowHealthy,
-			metav1.ConditionFalse,
-			conditions.ReasonSelfMonConfigNotGenerated,
-			"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details")
-
-		t.Log("✓ FIPS mode transition test completed successfully")
-		t.Log("✓ Verified that resources are properly cleaned up during FIPS mode transition")
+		agentApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+		m.agentApplierDeleter = agentApplierDeleter
+	}, func(globals *config.Global) {
+		*globals = config.NewGlobal(
+			config.WithNamespace("default"),
+			config.WithOperateInFIPSMode(false),
+		)
 	})
+
+	// Test Phase 1: FIPS disabled should be reconcilable
+	reconcilable, err := reconcilerDisabled.IsReconcilable(context.Background(), &pipeline)
+	require.NoError(t, err)
+	require.True(t, reconcilable, "Pipeline should be reconcilable when FIPS is disabled")
+
+	// Reconcile with FIPS disabled - should apply resources
+	result1 := reconcileAndGet(t, testClient, reconcilerDisabled, pipeline.Name)
+	require.NoError(t, result1.err)
+
+	// Verify ApplyResources was called
+	select {
+	case <-applyCalledChan:
+		t.Log("✓ ApplyResources was called as expected during FIPS disabled phase")
+	case <-time.After(100 * time.Millisecond):
+		t.Error("ApplyResources was not called during FIPS disabled phase")
+	}
+
+	// Verify configuration was generated successfully
+	assertCondition(t, result1.pipeline,
+		conditions.TypeConfigurationGenerated,
+		metav1.ConditionTrue,
+		conditions.ReasonAgentConfigured,
+		"LogPipeline specification is successfully applied to the configuration of Log agent")
+
+	// Phase 2: FIPS enabled - verify DeleteResources is called
+	reconcilerEnabled := newReconcilerWithOverrides(testClient, func(m *reconcilerMocks) {
+		agentApplierDeleter := &logpipelinefluentbitmocks.AgentApplierDeleter{}
+		agentApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+		agentApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+			select {
+			case deleteCalledChan <- struct{}{}:
+			default:
+			}
+		})
+		m.agentApplierDeleter = agentApplierDeleter
+	}, func(globals *config.Global) {
+		*globals = config.NewGlobal(
+			config.WithNamespace("default"),
+			config.WithOperateInFIPSMode(true),
+		)
+	})
+
+	// Test Phase 2: FIPS enabled should not be reconcilable
+	reconcilable, err = reconcilerEnabled.IsReconcilable(context.Background(), &pipeline)
+	require.NoError(t, err)
+	require.False(t, reconcilable, "Pipeline should not be reconcilable when FIPS is enabled")
+
+	// Reconcile with FIPS enabled - should delete resources and set error conditions
+	result2 := reconcileAndGet(t, testClient, reconcilerEnabled, pipeline.Name)
+	require.NoError(t, result2.err)
+
+	// Verify DeleteResources was called
+	select {
+	case <-deleteCalledChan:
+	case <-time.After(100 * time.Millisecond):
+		t.Error("DeleteResources was not called during FIPS enabled phase")
+	}
+
+	// Verify FIPS mode error condition is set
+	assertCondition(t, result2.pipeline,
+		conditions.TypeConfigurationGenerated,
+		metav1.ConditionFalse,
+		conditions.NoFluentbitInFipsMode,
+		"FluentBit output is not available in FIPS mode")
+
+	// Verify flow health condition reflects the configuration issue
+	assertCondition(t, result2.pipeline,
+		conditions.TypeFlowHealthy,
+		metav1.ConditionFalse,
+		conditions.ReasonSelfMonConfigNotGenerated,
+		"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details")
 }
 
 func TestFIPSModeWorking(t *testing.T) {
