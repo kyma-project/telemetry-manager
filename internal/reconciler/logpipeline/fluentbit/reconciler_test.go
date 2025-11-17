@@ -25,7 +25,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonStatusMocks "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/mocks"
 	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit/mocks"
+	logpipelinefluentbitmocks "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit/mocks"
 	logpipelinemocks "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
@@ -52,10 +52,10 @@ func TestReconcile(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").WithCustomFilter("Name grep").Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
-		agentConfigBuilder := &mocks.AgentConfigBuilder{}
+		agentConfigBuilder := &logpipelinefluentbitmocks.AgentConfigBuilder{}
 		agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
 
-		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock := &logpipelinefluentbitmocks.AgentApplierDeleter{}
 		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -64,7 +64,7 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
-		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub := &logpipelinefluentbitmocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
 
@@ -119,10 +119,10 @@ func TestReconcile(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").WithCustomFilter("Name grep").Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
-		agentConfigBuilder := &mocks.AgentConfigBuilder{}
+		agentConfigBuilder := &logpipelinefluentbitmocks.AgentConfigBuilder{}
 		agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
 
-		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock := &logpipelinefluentbitmocks.AgentApplierDeleter{}
 		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -131,7 +131,7 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
-		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub := &logpipelinefluentbitmocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
@@ -174,10 +174,10 @@ func TestReconcile(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
-		agentConfigBuilder := &mocks.AgentConfigBuilder{}
+		agentConfigBuilder := &logpipelinefluentbitmocks.AgentConfigBuilder{}
 		agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
 
-		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock := &logpipelinefluentbitmocks.AgentApplierDeleter{}
 		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -186,7 +186,7 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
-		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub := &logpipelinefluentbitmocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
@@ -229,10 +229,10 @@ func TestReconcile(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithApplicationInput(false).Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
-		agentConfigBuilder := &mocks.AgentConfigBuilder{}
+		agentConfigBuilder := &logpipelinefluentbitmocks.AgentConfigBuilder{}
 		agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
 
-		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock := &logpipelinefluentbitmocks.AgentApplierDeleter{}
 		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -241,7 +241,7 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
-		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub := &logpipelinefluentbitmocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
@@ -278,10 +278,10 @@ func TestReconcile(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
-		agentConfigBuilder := &mocks.AgentConfigBuilder{}
+		agentConfigBuilder := &logpipelinefluentbitmocks.AgentConfigBuilder{}
 		agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
 
-		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock := &logpipelinefluentbitmocks.AgentApplierDeleter{}
 		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -290,7 +290,7 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
-		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub := &logpipelinefluentbitmocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
@@ -339,10 +339,10 @@ func TestReconcile(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
-		agentConfigBuilder := &mocks.AgentConfigBuilder{}
+		agentConfigBuilder := &logpipelinefluentbitmocks.AgentConfigBuilder{}
 		agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
 
-		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock := &logpipelinefluentbitmocks.AgentApplierDeleter{}
 		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -351,7 +351,7 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
-		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub := &logpipelinefluentbitmocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
@@ -399,10 +399,10 @@ func TestReconcile(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
-		agentConfigBuilder := &mocks.AgentConfigBuilder{}
+		agentConfigBuilder := &logpipelinefluentbitmocks.AgentConfigBuilder{}
 		agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
 
-		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock := &logpipelinefluentbitmocks.AgentApplierDeleter{}
 		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -411,7 +411,7 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
-		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub := &logpipelinefluentbitmocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
@@ -461,10 +461,10 @@ func TestReconcile(t *testing.T) {
 			Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
-		agentConfigBuilder := &mocks.AgentConfigBuilder{}
+		agentConfigBuilder := &logpipelinefluentbitmocks.AgentConfigBuilder{}
 		agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
 
-		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock := &logpipelinefluentbitmocks.AgentApplierDeleter{}
 		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -473,7 +473,7 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
-		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub := &logpipelinefluentbitmocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
@@ -540,10 +540,10 @@ func TestReconcile(t *testing.T) {
 			Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline, secret).WithStatusSubresource(&pipeline).Build()
 
-		agentConfigBuilder := &mocks.AgentConfigBuilder{}
+		agentConfigBuilder := &logpipelinefluentbitmocks.AgentConfigBuilder{}
 		agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
 
-		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock := &logpipelinefluentbitmocks.AgentApplierDeleter{}
 		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -552,7 +552,7 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
-		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub := &logpipelinefluentbitmocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
@@ -697,10 +697,10 @@ func TestReconcile(t *testing.T) {
 				pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
-				agentConfigBuilder := &mocks.AgentConfigBuilder{}
+				agentConfigBuilder := &logpipelinefluentbitmocks.AgentConfigBuilder{}
 				agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
 
-				agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+				agentApplierDeleterMock := &logpipelinefluentbitmocks.AgentApplierDeleter{}
 				agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -709,7 +709,7 @@ func TestReconcile(t *testing.T) {
 				flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
 
-				pipelineLockStub := &mocks.PipelineLock{}
+				pipelineLockStub := &logpipelinefluentbitmocks.PipelineLock{}
 				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
@@ -832,10 +832,10 @@ func TestReconcile(t *testing.T) {
 					Build()
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
-				agentConfigBuilder := &mocks.AgentConfigBuilder{}
+				agentConfigBuilder := &logpipelinefluentbitmocks.AgentConfigBuilder{}
 				agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
 
-				agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+				agentApplierDeleterMock := &logpipelinefluentbitmocks.AgentApplierDeleter{}
 				agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -844,7 +844,7 @@ func TestReconcile(t *testing.T) {
 				flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
-				pipelineLockStub := &mocks.PipelineLock{}
+				pipelineLockStub := &logpipelinefluentbitmocks.PipelineLock{}
 				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
@@ -942,10 +942,10 @@ func TestReconcile(t *testing.T) {
 				pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
-				agentConfigBuilder := &mocks.AgentConfigBuilder{}
+				agentConfigBuilder := &logpipelinefluentbitmocks.AgentConfigBuilder{}
 				agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
 
-				agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+				agentApplierDeleterMock := &logpipelinefluentbitmocks.AgentApplierDeleter{}
 				agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -954,7 +954,7 @@ func TestReconcile(t *testing.T) {
 				flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
 
-				pipelineLockStub := &mocks.PipelineLock{}
+				pipelineLockStub := &logpipelinefluentbitmocks.PipelineLock{}
 				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
@@ -1004,10 +1004,10 @@ func TestReconcile(t *testing.T) {
 			Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
-		agentConfigBuilder := &mocks.AgentConfigBuilder{}
+		agentConfigBuilder := &logpipelinefluentbitmocks.AgentConfigBuilder{}
 		agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
 
-		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock := &logpipelinefluentbitmocks.AgentApplierDeleter{}
 		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -1018,7 +1018,7 @@ func TestReconcile(t *testing.T) {
 
 		serverErr := errors.New("failed to get secret: server error")
 
-		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub := &logpipelinefluentbitmocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 

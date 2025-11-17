@@ -93,6 +93,7 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 	if r.globals.OperateInFIPSMode() {
 		return metav1.ConditionFalse, conditions.NoFluentbitInFipsMode, conditions.MessageForFluentBitLogPipeline(conditions.NoFluentbitInFipsMode)
 	}
+
 	err := r.pipelineValidator.Validate(ctx, pipeline)
 	if err == nil {
 		return metav1.ConditionTrue, conditions.ReasonAgentConfigured, conditions.MessageForFluentBitLogPipeline(conditions.ReasonAgentConfigured)

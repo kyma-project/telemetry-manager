@@ -109,6 +109,7 @@ func (r *Reconciler) IsReconcilable(ctx context.Context, pipeline *telemetryv1al
 		logf.FromContext(ctx).V(1).Info("Pipeline is not reconcilable: Fluent Bit is not supported in FIPS mode")
 		return false, nil
 	}
+
 	if !pipeline.GetDeletionTimestamp().IsZero() {
 		return false, nil
 	}
