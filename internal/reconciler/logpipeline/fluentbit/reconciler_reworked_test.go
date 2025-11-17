@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -31,6 +32,74 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
+
+func TestPodErrorConditions(t *testing.T) {
+	tests := []struct {
+		name            string
+		probeErr        error
+		expectedStatus  metav1.ConditionStatus
+		expectedReason  string
+		expectedMessage string
+	}{
+		{
+			name:            "pod is OOM",
+			probeErr:        &workloadstatus.PodIsPendingError{ContainerName: "foo", Reason: "OOMKilled", Message: ""},
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  conditions.ReasonAgentNotReady,
+			expectedMessage: "Pod is in the pending state because container: foo is not running due to: OOMKilled. Please check the container: foo logs.",
+		},
+		{
+			name:            "pod is CrashLoop",
+			probeErr:        &workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"},
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  conditions.ReasonAgentNotReady,
+			expectedMessage: "Pod is in the pending state because container: foo is not running due to: Error. Please check the container: foo logs.",
+		},
+		{
+			name:            "no Pods deployed",
+			probeErr:        workloadstatus.ErrNoPodsDeployed,
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  conditions.ReasonAgentNotReady,
+			expectedMessage: "No Pods deployed",
+		},
+		{
+			name:            "fluent bit rollout in progress",
+			probeErr:        &workloadstatus.RolloutInProgressError{},
+			expectedStatus:  metav1.ConditionTrue,
+			expectedReason:  conditions.ReasonRolloutInProgress,
+			expectedMessage: "Pods are being started/updated",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Setup
+			scheme := runtime.NewScheme()
+			_ = clientgoscheme.AddToScheme(scheme)
+			_ = telemetryv1alpha1.AddToScheme(scheme)
+
+			pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+			// Create reconciler with specific prober error
+			reconciler := createPodErrorTestReconciler(fakeClient, pipeline, tt.probeErr)
+
+			// Execute
+			var pl telemetryv1alpha1.LogPipeline
+			require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl))
+			err := reconciler.Reconcile(t.Context(), &pl)
+			require.NoError(t, err)
+
+			// Verify
+			var updatedPipeline telemetryv1alpha1.LogPipeline
+			_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+			cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeAgentHealthy)
+			require.Equal(t, tt.expectedStatus, cond.Status)
+			require.Equal(t, tt.expectedReason, cond.Reason)
+			require.Equal(t, tt.expectedMessage, cond.Message)
+		})
+	}
+}
 
 func TestUnsupportedMode(t *testing.T) {
 	tests := []struct {
@@ -590,6 +659,48 @@ func createFlowHealthTestReconciler(fakeClient client.Client, pipeline telemetry
 
 	errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
 	errToMsgStub.On("Convert", mock.Anything).Return("")
+
+	return New(
+		globals,
+		fakeClient,
+		agentConfigBuilder,
+		agentApplierDeleter,
+		proberStub,
+		flowHealthProber,
+		&stubs.IstioStatusChecker{IsActive: false},
+		pipelineLock,
+		validator,
+		errToMsgStub,
+	)
+}
+
+func createPodErrorTestReconciler(fakeClient client.Client, pipeline telemetryv1alpha1.LogPipeline, probeErr error) *Reconciler {
+	globals := config.NewGlobal(config.WithNamespace("default"))
+
+	agentConfigBuilder := &mocks.AgentConfigBuilder{}
+	agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil)
+
+	agentApplierDeleter := &mocks.AgentApplierDeleter{}
+	agentApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	agentApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	proberStub := commonStatusStubs.NewDaemonSetProber(probeErr)
+
+	flowHealthProber := &logpipelinemocks.FlowHealthProber{}
+	flowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
+
+	pipelineLock := &mocks.PipelineLock{}
+	pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+	pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
+
+	validator := &Validator{
+		EndpointValidator:  stubs.NewEndpointValidator(nil),
+		TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+		SecretRefValidator: stubs.NewSecretRefValidator(nil),
+		PipelineLock:       pipelineLock,
+	}
+
+	errToMsgStub := &conditions.ErrorToMessageConverter{}
 
 	return New(
 		globals,

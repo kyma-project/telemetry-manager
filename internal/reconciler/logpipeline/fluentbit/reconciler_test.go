@@ -27,7 +27,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
-	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
 func TestReconcile(t *testing.T) {
@@ -298,104 +297,6 @@ func TestReconcile(t *testing.T) {
 						"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details",
 					)
 				}
-			})
-		}
-	})
-
-	t.Run("Check different Pod Error Conditions", func(t *testing.T) {
-		tests := []struct {
-			name            string
-			probeErr        error
-			expectedStatus  metav1.ConditionStatus
-			expectedReason  string
-			expectedMessage string
-		}{
-			{
-				name:            "pod is OOM",
-				probeErr:        &workloadstatus.PodIsPendingError{ContainerName: "foo", Reason: "OOMKilled", Message: ""},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonAgentNotReady,
-				expectedMessage: "Pod is in the pending state because container: foo is not running due to: OOMKilled. Please check the container: foo logs.",
-			},
-			{
-				name:            "pod is CrashLoop",
-				probeErr:        &workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonAgentNotReady,
-				expectedMessage: "Pod is in the pending state because container: foo is not running due to: Error. Please check the container: foo logs.",
-			},
-			{
-				name:            "no Pods deployed",
-				probeErr:        workloadstatus.ErrNoPodsDeployed,
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonAgentNotReady,
-				expectedMessage: "No Pods deployed",
-			},
-			{
-				name:            "fluent bit rollout in progress",
-				probeErr:        &workloadstatus.RolloutInProgressError{},
-				expectedStatus:  metav1.ConditionTrue,
-				expectedReason:  conditions.ReasonRolloutInProgress,
-				expectedMessage: "Pods are being started/updated",
-			},
-		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
-				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
-
-				agentConfigBuilder := &mocks.AgentConfigBuilder{}
-				agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
-
-				agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-				agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-				agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-				proberStub := commonStatusStubs.NewDaemonSetProber(tt.probeErr)
-
-				flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
-
-				pipelineLockStub := &mocks.PipelineLock{}
-				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
-
-				pipelineValidatorWithStubs := &Validator{
-					EndpointValidator:  stubs.NewEndpointValidator(nil),
-					TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-					SecretRefValidator: stubs.NewSecretRefValidator(nil),
-					PipelineLock:       pipelineLockStub,
-				}
-
-				errToMsgStub := &conditions.ErrorToMessageConverter{}
-
-				sut := New(
-					globals,
-					fakeClient,
-					agentConfigBuilder,
-					agentApplierDeleterMock,
-					proberStub,
-					flowHealthProberStub,
-					istioStatusCheckerStub,
-					pipelineLockStub,
-					pipelineValidatorWithStubs,
-					errToMsgStub,
-				)
-
-				var pl1 telemetryv1alpha1.LogPipeline
-
-				require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))
-				err := sut.Reconcile(t.Context(), &pl1)
-				require.NoError(t, err)
-
-				var updatedPipeline telemetryv1alpha1.LogPipeline
-
-				_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-				cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeAgentHealthy)
-				require.Equal(t, tt.expectedStatus, cond.Status)
-				require.Equal(t, tt.expectedReason, cond.Reason)
-
-				require.Equal(t, tt.expectedMessage, cond.Message)
 			})
 		}
 	})
