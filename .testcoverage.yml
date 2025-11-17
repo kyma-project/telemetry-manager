@@ -61,6 +61,8 @@ override:
     path: ^webhook/tracepipeline/v1beta1$
   - threshold: 88
     path: ^internal/validators/ottl$
+  - threshold: 84
+    path: ^webhook/utils$
 
 # Holds regexp rules which will exclude matched files or packages from coverage statistics
 exclude:
