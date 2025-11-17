@@ -1,11 +1,9 @@
 package fluentbit
 
 import (
-	"errors"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -18,7 +16,6 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/config"
-	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonStatusMocks "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/mocks"
@@ -159,165 +156,6 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))
 		err := sut.Reconcile(t.Context(), &pl1)
 		require.NoError(t, err)
-	})
-
-	t.Run("flow healthy", func(t *testing.T) {
-		tests := []struct {
-			name            string
-			probe           prober.FluentBitProbeResult
-			probeErr        error
-			expectedStatus  metav1.ConditionStatus
-			expectedReason  string
-			expectedMessage string
-		}{
-			{
-				name:            "prober fails",
-				probeErr:        assert.AnError,
-				expectedStatus:  metav1.ConditionUnknown,
-				expectedReason:  conditions.ReasonSelfMonAgentProbingFailed,
-				expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing of agent failed",
-			},
-			{
-				name: "healthy",
-				probe: prober.FluentBitProbeResult{
-					PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
-				},
-				expectedStatus:  metav1.ConditionTrue,
-				expectedReason:  conditions.ReasonSelfMonFlowHealthy,
-				expectedMessage: "No problems detected in the telemetry flow",
-			},
-			{
-				name: "buffer filling up",
-				probe: prober.FluentBitProbeResult{
-					BufferFillingUp: true,
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonAgentBufferFillingUp,
-				expectedMessage: "Buffer nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=agent-buffer-filling-up",
-			},
-			{
-				name: "no logs delivered",
-				probe: prober.FluentBitProbeResult{
-					NoLogsDelivered: true,
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonAgentNoLogsDelivered,
-				expectedMessage: "Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
-			},
-			{
-				name: "no logs delivered shadows other problems",
-				probe: prober.FluentBitProbeResult{
-					NoLogsDelivered: true,
-					BufferFillingUp: true,
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonAgentNoLogsDelivered,
-				expectedMessage: "Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
-			},
-			{
-				name: "some data dropped",
-				probe: prober.FluentBitProbeResult{
-					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonAgentSomeDataDropped,
-				expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=not-all-logs-arrive-at-the-backend",
-			},
-			{
-				name: "some data dropped shadows other problems",
-				probe: prober.FluentBitProbeResult{
-					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
-					BufferFillingUp:     true,
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonAgentSomeDataDropped,
-				expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=not-all-logs-arrive-at-the-backend",
-			},
-			{
-				name: "all data dropped",
-				probe: prober.FluentBitProbeResult{
-					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonAgentAllDataDropped,
-				expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
-			},
-			{
-				name: "all data dropped shadows other problems",
-				probe: prober.FluentBitProbeResult{
-					PipelineProbeResult: prober.PipelineProbeResult{
-						AllDataDropped:  true,
-						SomeDataDropped: true,
-					},
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonAgentAllDataDropped,
-				expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
-			},
-		}
-
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
-				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
-
-				agentConfigBuilder := &mocks.AgentConfigBuilder{}
-				agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
-
-				agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-				agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-				agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-				proberStub := commonStatusStubs.NewDaemonSetProber(nil)
-
-				flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
-
-				pipelineLockStub := &mocks.PipelineLock{}
-				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
-
-				pipelineValidatorWithStubs := &Validator{
-					EndpointValidator:  stubs.NewEndpointValidator(nil),
-					TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-					SecretRefValidator: stubs.NewSecretRefValidator(nil),
-					PipelineLock:       pipelineLockStub,
-				}
-
-				errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
-				errToMsgStub.On("Convert", mock.Anything).Return("")
-
-				sut := New(
-					globals,
-					fakeClient,
-					agentConfigBuilder,
-					agentApplierDeleterMock,
-					proberStub,
-					flowHealthProberStub,
-					istioStatusCheckerStub,
-					pipelineLockStub,
-					pipelineValidatorWithStubs,
-					errToMsgStub,
-				)
-
-				var pl1 telemetryv1alpha1.LogPipeline
-
-				require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))
-				err := sut.Reconcile(t.Context(), &pl1)
-				require.NoError(t, err)
-
-				var updatedPipeline telemetryv1alpha1.LogPipeline
-
-				_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-
-				requireHasStatusCondition(t, updatedPipeline,
-					conditions.TypeFlowHealthy,
-					tt.expectedStatus,
-					tt.expectedReason,
-					tt.expectedMessage,
-				)
-			})
-		}
 	})
 
 	t.Run("tls conditions", func(t *testing.T) {
@@ -562,76 +400,6 @@ func TestReconcile(t *testing.T) {
 		}
 	})
 
-	t.Run("a request to the Kubernetes API server has failed when validating the secret references", func(t *testing.T) {
-		pipeline := testutils.NewLogPipelineBuilder().
-			WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
-			Build()
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
-
-		agentConfigBuilder := &mocks.AgentConfigBuilder{}
-		agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
-
-		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
-
-		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
-
-		serverErr := errors.New("failed to get secret: server error")
-
-		pipelineLockStub := &mocks.PipelineLock{}
-		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
-
-		pipelineValidatorWithStubs := &Validator{
-			EndpointValidator:  stubs.NewEndpointValidator(nil),
-			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-			SecretRefValidator: stubs.NewSecretRefValidator(&errortypes.APIRequestFailedError{Err: serverErr}),
-			PipelineLock:       pipelineLockStub,
-		}
-
-		errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
-
-		sut := New(
-			globals,
-			fakeClient,
-			agentConfigBuilder,
-			agentApplierDeleterMock,
-			proberStub,
-			flowHealthProberStub,
-			istioStatusCheckerStub,
-			pipelineLockStub,
-			pipelineValidatorWithStubs,
-			errToMsgStub,
-		)
-
-		var pl1 telemetryv1alpha1.LogPipeline
-
-		require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))
-		err := sut.Reconcile(t.Context(), &pl1)
-		require.True(t, errors.Is(err, serverErr))
-
-		var updatedPipeline telemetryv1alpha1.LogPipeline
-
-		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-
-		requireHasStatusCondition(t, updatedPipeline,
-			conditions.TypeConfigurationGenerated,
-			metav1.ConditionFalse,
-			conditions.ReasonValidationFailed,
-			"Pipeline validation failed due to an error from the Kubernetes API server",
-		)
-
-		requireHasStatusCondition(t, updatedPipeline,
-			conditions.TypeFlowHealthy,
-			metav1.ConditionFalse,
-			conditions.ReasonSelfMonConfigNotGenerated,
-			"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details",
-		)
-	})
 }
 
 func requireHasStatusCondition(t *testing.T, pipeline telemetryv1alpha1.LogPipeline, condType string, status metav1.ConditionStatus, reason, message string) {
