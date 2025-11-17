@@ -507,6 +507,115 @@ func TestSimplifiedFlowHealthy(t *testing.T) {
 	}
 }
 
+func TestSimplifiedFIPSMode(t *testing.T) {
+	tests := []struct {
+		name         string
+		fipsEnabled  bool
+		reconcilable bool
+		conditions   []conditionCheck
+	}{
+		{
+			name:         "FIPS mode enabled",
+			fipsEnabled:  true,
+			reconcilable: false,
+			conditions: []conditionCheck{
+				{conditions.TypeConfigurationGenerated, metav1.ConditionFalse, conditions.NoFluentbitInFipsMode, "FluentBit output is not available in FIPS mode"},
+				{conditions.TypeFlowHealthy, metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated, "No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details"},
+			},
+		},
+		{
+			name:         "FIPS mode disabled",
+			fipsEnabled:  false,
+			reconcilable: true,
+			conditions: []conditionCheck{
+				{conditions.TypeConfigurationGenerated, metav1.ConditionTrue, conditions.ReasonAgentConfigured, "LogPipeline specification is successfully applied to the configuration of Log agent"},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
+			testClient := newTestClient(t, &pipeline)
+			reconciler := newFIPSReconciler(testClient, tt.fipsEnabled)
+
+			// Test reconcilability
+			reconcilable, err := reconciler.IsReconcilable(context.Background(), &pipeline)
+			require.NoError(t, err)
+			require.Equal(t, tt.reconcilable, reconcilable)
+
+			// Test reconcile behavior
+			result := reconcileAndGet(t, testClient, reconciler, pipeline.Name)
+			require.NoError(t, result.err)
+
+			for _, check := range tt.conditions {
+				assertCondition(t, result.pipeline, check.condType, check.status, check.reason, check.message)
+			}
+		})
+	}
+}
+
+func TestSimplifiedFIPSModeWithComplexPipelines(t *testing.T) {
+	tests := []struct {
+		name               string
+		setupPipeline      func() telemetryv1alpha1.LogPipeline
+		expectReconcilable bool
+	}{
+		{
+			name: "FIPS mode ignores pipeline with TLS errors",
+			setupPipeline: func() telemetryv1alpha1.LogPipeline {
+				return testutils.NewLogPipelineBuilder().
+					WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
+					WithHTTPOutput(testutils.HTTPClientTLSFromString("ca", "invalidCert", "invalidKey")).
+					Build()
+			},
+			expectReconcilable: false,
+		},
+		{
+			name: "FIPS mode ignores pipeline with custom filters",
+			setupPipeline: func() telemetryv1alpha1.LogPipeline {
+				return testutils.NewLogPipelineBuilder().
+					WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
+					WithCustomFilter("Name grep").
+					Build()
+			},
+			expectReconcilable: false,
+		},
+		{
+			name: "FIPS mode ignores pipeline with secret references",
+			setupPipeline: func() telemetryv1alpha1.LogPipeline {
+				return testutils.NewLogPipelineBuilder().
+					WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
+					WithHTTPOutput(testutils.HTTPHostFromSecret("some-secret", "some-namespace", "host")).
+					Build()
+			},
+			expectReconcilable: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pipeline := tt.setupPipeline()
+			testClient := newTestClient(t, &pipeline)
+			reconciler := newFIPSReconciler(testClient, true) // Always FIPS enabled
+
+			reconcilable, err := reconciler.IsReconcilable(context.Background(), &pipeline)
+			require.NoError(t, err)
+			require.Equal(t, tt.expectReconcilable, reconcilable)
+
+			// In FIPS mode, all pipelines should get the same FIPS error condition regardless of other issues
+			result := reconcileAndGet(t, testClient, reconciler, pipeline.Name)
+			require.NoError(t, result.err)
+
+			assertCondition(t, result.pipeline,
+				conditions.TypeConfigurationGenerated,
+				metav1.ConditionFalse,
+				conditions.NoFluentbitInFipsMode,
+				"FluentBit output is not available in FIPS mode")
+		})
+	}
+}
+
 // Helper types and functions
 type reconcileResult struct {
 	pipeline telemetryv1alpha1.LogPipeline
@@ -602,6 +711,7 @@ func newLogAgentReconciler(client client.Client, proberError error, errorConvert
 			} else if errors.Is(proberError, workloadstatus.ErrDaemonSetNotFound) {
 				v.On("Convert", mock.Anything).Return("DaemonSet is not yet created")
 			}
+
 			m.errorConverter = v
 		case *conditions.ErrorToMessageConverter:
 			m.errorConverter = v
@@ -617,6 +727,17 @@ func newFlowHealthReconciler(client client.Client, pipeline telemetryv1alpha1.Lo
 	defaultMocks.flowHealthProber = flowHealthProber
 
 	return newReconcilerWithMocks(client, defaultMocks)
+}
+
+func newFIPSReconciler(client client.Client, fipsEnabled bool) *Reconciler {
+	return newReconcilerWithOverrides(client, func(m *reconcilerMocks) {
+		// No specific overrides needed - just pass FIPS config through globals
+	}, func(globals *config.Global) {
+		*globals = config.NewGlobal(
+			config.WithNamespace("default"),
+			config.WithOperateInFIPSMode(fipsEnabled),
+		)
+	})
 }
 
 type reconcilerMocks struct {
@@ -667,7 +788,10 @@ func defaultMocks() reconcilerMocks {
 
 func newReconcilerWithMocks(client client.Client, mocks reconcilerMocks) *Reconciler {
 	globals := config.NewGlobal(config.WithNamespace("default"))
+	return newReconcilerWithGlobalConfig(client, mocks, globals)
+}
 
+func newReconcilerWithGlobalConfig(client client.Client, mocks reconcilerMocks, globals config.Global) *Reconciler {
 	return New(
 		globals,
 		client,
@@ -682,10 +806,16 @@ func newReconcilerWithMocks(client client.Client, mocks reconcilerMocks) *Reconc
 	)
 }
 
-func newReconcilerWithOverrides(client client.Client, overrideFn func(*reconcilerMocks)) *Reconciler {
+func newReconcilerWithOverrides(client client.Client, overrideFn func(*reconcilerMocks), configOverrides ...func(*config.Global)) *Reconciler {
 	mocks := defaultMocks()
 	overrideFn(&mocks)
-	return newReconcilerWithMocks(client, mocks)
+
+	globals := config.NewGlobal(config.WithNamespace("default"))
+	for _, override := range configOverrides {
+		override(&globals)
+	}
+
+	return newReconcilerWithGlobalConfig(client, mocks, globals)
 }
 
 func containsPipelines(pp []telemetryv1alpha1.LogPipeline) any {
