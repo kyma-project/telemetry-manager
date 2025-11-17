@@ -8,6 +8,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/namespaces"
 )
 
+const (
+	errMsgInvalidNamespace  = "must be a valid Kubernetes namespace name"
+	errMsgEmptyOrWhitespace = "cannot be empty or whitespace only"
+)
+
 // ValidationError represents a validation error for a specific field
 type ValidationError struct {
 	Field   string
@@ -31,18 +36,23 @@ func IsValidationError(err error) bool {
 }
 
 type Global struct {
-	namespace         string
+	managerNamespace  string
+	targetNamespace   string
 	operateInFIPSMode bool
 	version           string
 }
 
 type Option func(*Global)
 
-// WithNamespace sets both TargetNamespace, DefaultTelemetryNamespace and ManagerNamespace to the given value.
-// TODO: Split into separate options.
-func WithNamespace(namespace string) Option {
+func WithManagerNamespace(namespace string) Option {
 	return func(g *Global) {
-		g.namespace = namespace
+		g.managerNamespace = namespace
+	}
+}
+
+func WithTargetNamespace(namespace string) Option {
+	return func(g *Global) {
+		g.targetNamespace = namespace
 	}
 }
 
@@ -68,20 +78,16 @@ func NewGlobal(opts ...Option) Global {
 }
 
 func (g *Global) Validate() error {
-	if !namespaces.ValidNameRegexp.MatchString(g.namespace) {
-		return &ValidationError{
-			Field:   "namespace",
-			Value:   g.namespace,
-			Message: "must be a valid Kubernetes namespace name",
-		}
+	if !namespaces.ValidNameRegexp.MatchString(g.targetNamespace) {
+		return &ValidationError{Field: "target_namespace", Value: g.targetNamespace, Message: errMsgInvalidNamespace}
+	}
+
+	if !namespaces.ValidNameRegexp.MatchString(g.managerNamespace) {
+		return &ValidationError{Field: "manager_namespace", Value: g.managerNamespace, Message: errMsgInvalidNamespace}
 	}
 
 	if strings.Trim(g.version, " ") == "" {
-		return &ValidationError{
-			Field:   "version",
-			Value:   g.version,
-			Message: "cannot be empty or whitespace only",
-		}
+		return &ValidationError{Field: "version", Value: g.version, Message: errMsgEmptyOrWhitespace}
 	}
 
 	return nil
@@ -89,19 +95,19 @@ func (g *Global) Validate() error {
 
 // TargetNamespace returns the namespace where telemetry components should be deployed by Telemetry Manager.
 func (g *Global) TargetNamespace() string {
-	return g.namespace
+	return g.targetNamespace
 }
 
 // ManagerNamespace returns the namespace where Telemetry Manager is deployed.
 // In a Kyma setup, this is the same as TargetNamespace.
 func (g *Global) ManagerNamespace() string {
-	return g.namespace
+	return g.managerNamespace
 }
 
 // DefaultTelemetryNamespace returns the namespace where default Telemetry CR (containing module config) is located.
 // In a Kyma setup, this is the same as TargetNamespace.
 func (g *Global) DefaultTelemetryNamespace() string {
-	return g.namespace
+	return g.targetNamespace
 }
 
 // OperateInFIPSMode indicates whether telemetry components should operate in FIPS mode.

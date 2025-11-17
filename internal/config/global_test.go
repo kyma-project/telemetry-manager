@@ -7,11 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	errMsgInvalidNamespace  = "must be a valid Kubernetes namespace name"
-	errMsgEmptyOrWhitespace = "cannot be empty or whitespace only"
-)
-
 func TestDefaults(t *testing.T) {
 	g := NewGlobal()
 
@@ -22,12 +17,15 @@ func TestDefaults(t *testing.T) {
 	require.Empty(t, g.Version())
 }
 
-func TestWithNamespace(t *testing.T) {
-	g := NewGlobal(WithNamespace("test-namespace"))
+func TestWithNamespaces(t *testing.T) {
+	g := NewGlobal(
+		WithTargetNamespace("kyma-system"),
+		WithManagerNamespace("kube-system"),
+	)
 
-	require.Equal(t, "test-namespace", g.TargetNamespace())
-	require.Equal(t, "test-namespace", g.ManagerNamespace())
-	require.Equal(t, "test-namespace", g.DefaultTelemetryNamespace())
+	require.Equal(t, "kyma-system", g.TargetNamespace())
+	require.Equal(t, "kube-system", g.ManagerNamespace())
+	require.Equal(t, "kyma-system", g.DefaultTelemetryNamespace())
 }
 
 func TestWithOperateInFIPSMode(t *testing.T) {
@@ -44,7 +42,7 @@ func TestWithVersion(t *testing.T) {
 
 func TestMultipleOptions(t *testing.T) {
 	g := NewGlobal(
-		WithNamespace("kyma-system"),
+		WithTargetNamespace("kyma-system"),
 		WithOperateInFIPSMode(true),
 		WithVersion("2.0.0"),
 	)
@@ -149,7 +147,7 @@ func TestValidateNamespace(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			g := NewGlobal(WithNamespace(tt.namespace), WithVersion("v1.0.0"))
+			g := NewGlobal(WithTargetNamespace(tt.namespace), WithVersion("v1.0.0"))
 			err := g.Validate()
 
 			if tt.shouldError {
@@ -203,7 +201,7 @@ func TestValidateVersion(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			g := NewGlobal(WithNamespace("test"), WithVersion(tt.version))
+			g := NewGlobal(WithTargetNamespace("test"), WithVersion(tt.version))
 			err := g.Validate()
 
 			if tt.shouldError {
@@ -222,7 +220,7 @@ func TestValidateVersion(t *testing.T) {
 
 func TestValidateMultipleErrors(t *testing.T) {
 	// Test that validation returns the first error encountered
-	g := NewGlobal(WithNamespace("Invalid@Namespace"), WithVersion(""))
+	g := NewGlobal(WithTargetNamespace("Invalid@Namespace"), WithVersion(""))
 	err := g.Validate()
 
 	require.Error(t, err)
@@ -238,7 +236,7 @@ func TestValidateMultipleErrors(t *testing.T) {
 
 func TestValidateSuccess(t *testing.T) {
 	g := NewGlobal(
-		WithNamespace("kyma-system"),
+		WithTargetNamespace("kyma-system"),
 		WithVersion("v1.2.3"),
 		WithOperateInFIPSMode(true),
 	)

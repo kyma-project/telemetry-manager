@@ -20,9 +20,9 @@ import (
 )
 
 func TestAgent_ApplyResources(t *testing.T) {
-	globals := config.NewGlobal(config.WithNamespace("kyma-system"))
+	globals := config.NewGlobal(config.WithTargetNamespace("kyma-system"))
 	globalsWithFIPS := config.NewGlobal(
-		config.WithNamespace("kyma-system"),
+		config.WithTargetNamespace("kyma-system"),
 		config.WithOperateInFIPSMode(true),
 	)
 	collectorImage := "opentelemetry/collector:dummy"
@@ -121,7 +121,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 }
 
 func TestAgent_DeleteResources(t *testing.T) {
-	globals := config.NewGlobal(config.WithNamespace("kyma-system"))
+	globals := config.NewGlobal(config.WithTargetNamespace("kyma-system"))
 	image := "opentelemetry/collector:dummy"
 	priorityClassName := "normal"
 

@@ -45,7 +45,7 @@ func TestReconcile(t *testing.T) {
 
 	istioStatusCheckerStub := &stubs.IstioStatusChecker{IsActive: false}
 
-	cfg := config.NewGlobal(config.WithNamespace("default"))
+	cfg := config.NewGlobal(config.WithTargetNamespace("default"))
 
 	t.Run("trace gateway probing failed", func(t *testing.T) {
 		pipeline := testutils.NewTracePipelineBuilder().WithName("pipeline").Build()

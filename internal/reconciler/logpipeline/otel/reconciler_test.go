@@ -38,7 +38,7 @@ func TestReconcile(t *testing.T) {
 
 	istioStatusCheckerStub := &stubs.IstioStatusChecker{IsActive: false}
 
-	globals := config.NewGlobal(config.WithNamespace("default"), config.WithVersion("1.0.0"))
+	globals := config.NewGlobal(config.WithTargetNamespace("default"), config.WithVersion("1.0.0"))
 
 	t.Run("log gateway probing failed", func(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().Build()

@@ -41,7 +41,7 @@ func TestApplySelfMonitorResources(t *testing.T) {
 	}).Build()
 	sut := ApplierDeleter{
 		Config: Config{
-			Global: config.NewGlobal(config.WithNamespace(namespace)),
+			Global: config.NewGlobal(config.WithTargetNamespace(namespace)),
 		},
 	}
 
@@ -81,7 +81,7 @@ func TestDeleteSelfMonitorResources(t *testing.T) {
 
 	sut := ApplierDeleter{
 		Config: Config{
-			Global: config.NewGlobal(config.WithNamespace(namespace)),
+			Global: config.NewGlobal(config.WithTargetNamespace(namespace)),
 		},
 	}
 

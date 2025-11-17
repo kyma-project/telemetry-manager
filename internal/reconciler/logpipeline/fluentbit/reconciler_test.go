@@ -41,7 +41,7 @@ func TestReconcile(t *testing.T) {
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 
-	globals := config.NewGlobal(config.WithNamespace("default"))
+	globals := config.NewGlobal(config.WithTargetNamespace("default"))
 
 	overridesHandlerStub := &logpipelinemocks.OverridesHandler{}
 	overridesHandlerStub.On("LoadOverrides", t.Context()).Return(&overrides.Config{}, nil)
