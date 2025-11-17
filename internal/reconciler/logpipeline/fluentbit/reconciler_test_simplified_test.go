@@ -817,24 +817,3 @@ func newReconcilerWithOverrides(client client.Client, overrideFn func(*reconcile
 
 	return newReconcilerWithGlobalConfig(client, mocks, globals)
 }
-
-func containsPipelines(pp []telemetryv1alpha1.LogPipeline) any {
-	return mock.MatchedBy(func(pipelines []telemetryv1alpha1.LogPipeline) bool {
-		if len(pipelines) != len(pp) {
-			return false
-		}
-
-		pipelineMap := make(map[string]bool)
-		for _, p := range pipelines {
-			pipelineMap[p.Name] = true
-		}
-
-		for _, p := range pp {
-			if !pipelineMap[p.Name] {
-				return false
-			}
-		}
-
-		return true
-	})
-}
