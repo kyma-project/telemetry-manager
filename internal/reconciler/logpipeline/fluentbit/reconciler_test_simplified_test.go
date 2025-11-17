@@ -37,7 +37,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
-func TestSimplifiedAppInput(t *testing.T) {
+func TestAppInput(t *testing.T) {
 	pipeline := testutils.NewLogPipelineBuilder().WithApplicationInput(false).Build()
 	testClient := newTestClient(t, &pipeline)
 	reconciler := newTestReconciler(testClient)
@@ -46,7 +46,7 @@ func TestSimplifiedAppInput(t *testing.T) {
 	require.NoError(t, result.err)
 }
 
-func TestSimplifiedMaxPipelines(t *testing.T) {
+func TestMaxPipelines(t *testing.T) {
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
 		WithCustomFilter("Name grep").
@@ -70,7 +70,7 @@ func TestSimplifiedMaxPipelines(t *testing.T) {
 		"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details")
 }
 
-func TestSimplifiedTLSConditions(t *testing.T) {
+func TestTLSConditions(t *testing.T) {
 	tests := []struct {
 		name                  string
 		tlsCertErr            error
@@ -169,7 +169,7 @@ func TestSimplifiedTLSConditions(t *testing.T) {
 	}
 }
 
-func TestSimplifiedPodErrorConditions(t *testing.T) {
+func TestPodErrorConditions(t *testing.T) {
 	tests := []struct {
 		name           string
 		probeErr       error
@@ -224,7 +224,7 @@ func TestSimplifiedPodErrorConditions(t *testing.T) {
 	}
 }
 
-func TestSimplifiedUnsupportedMode(t *testing.T) {
+func TestUnsupportedMode(t *testing.T) {
 	tests := []struct {
 		name         string
 		hasCustom    bool
@@ -261,7 +261,7 @@ func TestSimplifiedUnsupportedMode(t *testing.T) {
 	}
 }
 
-func TestSimplifiedReferencedSecret(t *testing.T) {
+func TestReferencedSecret(t *testing.T) {
 	tests := []struct {
 		name       string
 		setupObjs  func() (telemetryv1alpha1.LogPipeline, []client.Object)
@@ -339,7 +339,7 @@ func TestSimplifiedReferencedSecret(t *testing.T) {
 	}
 }
 
-func TestSimplifiedLogAgent(t *testing.T) {
+func TestLogAgent(t *testing.T) {
 	tests := []struct {
 		name            string
 		proberError     error
@@ -392,7 +392,7 @@ func TestSimplifiedLogAgent(t *testing.T) {
 	}
 }
 
-func TestSimplifiedFlowHealthy(t *testing.T) {
+func TestFlowHealthy(t *testing.T) {
 	tests := []struct {
 		name           string
 		probe          prober.FluentBitProbeResult
@@ -507,7 +507,7 @@ func TestSimplifiedFlowHealthy(t *testing.T) {
 	}
 }
 
-func TestSimplifiedFIPSMode(t *testing.T) {
+func TestFIPSMode(t *testing.T) {
 	tests := []struct {
 		name         string
 		fipsEnabled  bool
@@ -555,7 +555,7 @@ func TestSimplifiedFIPSMode(t *testing.T) {
 	}
 }
 
-func TestSimplifiedFIPSModeWithComplexPipelines(t *testing.T) {
+func TestFIPSModeWithComplexPipelines(t *testing.T) {
 	tests := []struct {
 		name               string
 		setupPipeline      func() telemetryv1alpha1.LogPipeline
