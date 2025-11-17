@@ -106,78 +106,78 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        labels:
+        testcase:
           # LOGS
-          - name: fluent-bit
+          - label: fluent-bit
             mode: release
             type: e2e
-          - name: log-agent
+          - label: log-agent
             mode: release
             type: e2e
-          - name: log-gateway
+          - label: log-gateway
             mode: release
             type: e2e
-          - name: logs-max-pipeline
+          - label: logs-max-pipeline
             mode: release
             type: e2e
-          - name: fluent-bit-max-pipeline
+          - label: fluent-bit-max-pipeline
             mode: release
             type: e2e
-          - name: otel-max-pipeline
+          - label: otel-max-pipeline
             mode: release
             type: e2e
-          - name: logs-misc
+          - label: logs-misc
             mode: release
             type: e2e
           # METRICS
-          - name: metric-agent-a
+          - label: metric-agent-a
             mode: release
             type: e2e
-          - name: metric-agent-b
+          - label: metric-agent-b
             mode: release
             type: e2e
-          - name: metric-agent-c
+          - label: metric-agent-c
             mode: release
             type: e2e
-          - name: metric-gateway-a
+          - label: metric-gateway-a
             mode: release
             type: e2e
-          - name: metric-gateway-b
+          - label: metric-gateway-b
             mode: release
             type: e2e
-          - name: metric-gateway-c
+          - label: metric-gateway-c
             mode: release
             type: e2e
-          - name: metrics-misc
+          - label: metrics-misc
             mode: release
             type: e2e
-          - name: metrics-max-pipeline
+          - label: metrics-max-pipeline
             mode: release
             type: e2e
           # TRACES
-          - name: traces
+          - label: traces
             mode: release
             type: e2e
-          - name: traces-max-pipeline
+          - label: traces-max-pipeline
             mode: release
             type: e2e
           # TELEMETRY
-          - name: telemetry
+          - label: telemetry
             mode: release
             type: e2e
           # MISC
-          - name: misc
+          - label: misc
             mode: release
             type: e2e
           # OTHER
-          - name: experimental
+          - label: experimental
             mode: experimental
             type: e2e
           # INTEGRATION
-          - name: istio
+          - label: istio
             mode: release
             type: integration
-    name: "e2e: ${{ matrix.labels.name }}"
+    name: "e2e: ${{ matrix.testcase.label }}"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -186,22 +186,23 @@ jobs:
       - name: Setup test environment
         uses: "./.github/template/test-setup"
         with:
-          experimental: ${{ matrix.labels.mode == 'experimental' }}
+          experimental: ${{ matrix.testcase.mode == 'experimental' }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          install-istio: ${{ matrix.labels.name == 'istio' && matrix.labels.type == 'integration' }}
+          install-istio: ${{ matrix.testcase.label == 'istio' && matrix.testcase.type == 'integration' }}
+          operate-in-fips-mode: ${{ matrix.testcase.label != 'fluent-bit' }}
 
       - name: Execute tests
         uses: "./.github/template/test-execute"
         with:
-          id: ${{ matrix.labels.type }}-${{ matrix.labels.name }}
-          path: ./test/${{ matrix.labels.type }}/...
-          labels: ${{ matrix.labels.name }}
+          id: ${{ matrix.testcase.type }}-${{ matrix.testcase.label }}
+          path: ./test/${{ matrix.testcase.type }}/...
+          label: ${{ matrix.testcase.label }}
 
       - name: Clean-up test environment
         uses: "./.github/template/test-cleanup"
         if: ${{ !cancelled()  }}
         with:
-          id: ${{ matrix.labels.type }}-${{ matrix.labels.name }}
+          id: ${{ matrix.testcase.type }}-${{ matrix.testcase.label }}
           failure: failure()
 
       - name: Print logs from all pods in kyma-system namespace

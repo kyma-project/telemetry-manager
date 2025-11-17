@@ -81,7 +81,7 @@ var (
 	enableV1Beta1LogPipelines bool
 	highPriorityClassName     string
 	normalPriorityClassName   string
-	enableFIPSMode            bool
+	operateInFipsMode         bool
 )
 
 const (
@@ -153,7 +153,7 @@ func run() error {
 
 	globals := config.NewGlobal(
 		config.WithNamespace(envCfg.ManagerNamespace),
-		config.WithOperateInFIPSMode(enableFIPSMode),
+		config.WithOperateInFIPSMode(operateInFipsMode),
 		config.WithVersion(build.GitTag()),
 	)
 
@@ -318,7 +318,7 @@ func initializeFeatureFlags() {
 func parseFlags() {
 	flag.BoolVar(&enableV1Beta1LogPipelines, "enable-v1beta1-log-pipelines", false, "Enable v1beta1 log pipelines CRD")
 	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
-	flag.BoolVar(&enableFIPSMode, "enable-fips-mode", false, "Enable FIPS mode for the OTel collctors")
+	flag.BoolVar(&operateInFipsMode, "operate-in-fips-mode", false, "Deploy components in a FIPS 140-2 compliant way. Not compatible with Fluent Bit.")
 
 	flag.StringVar(&highPriorityClassName, "high-priority-class-name", "", "High priority class name used by managed DaemonSets")
 	flag.StringVar(&normalPriorityClassName, "normal-priority-class-name", "", "Normal priority class name used by managed Deployments")

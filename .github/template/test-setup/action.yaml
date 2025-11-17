@@ -12,6 +12,10 @@ inputs:
     description: Whether to install the Istio module
     required: true
     default: 'false'
+  operate-in-fips-mode:
+    description: Whether to operate the manager in FIPS mode
+    required: false
+    default: 'false'
 
 runs:
   using: "composite"
@@ -29,6 +33,10 @@ runs:
         fi
         if [[ "${{ inputs.install-istio }}" == "true" ]]; then
           mode="$mode-istio"
+        fi
+        
+        if [[ "${{ inputs.operate-in-fips-mode }}" == "false" ]]; then
+          mode="$mode-no-fips"
         fi
         
         echo "::notice title=Manager Image::Mananger Image to be used: $MANAGER_IMAGE"

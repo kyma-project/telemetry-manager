@@ -8,8 +8,8 @@ inputs:
   path:
     description: The path to the tests
     required: true
-  labels:
-    description: Labels to use for the tests
+  label:
+    description: Label to use for the tests
     required: false
     default: ""
 
@@ -23,4 +23,4 @@ runs:
       env:
         TEST_ID: ${{ inputs.id }}
         TEST_PATH: ${{ inputs.path }}
-        TEST_LABELS: ${{ inputs.labels }}
+        TEST_LABEL: ${{ inputs.label }}

@@ -256,47 +256,70 @@ uninstall: manifests $(HELM) ## Uninstall CRDs from the K8s cluster (use ignore-
 	$(HELM) template helm/charts/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy
-deploy: manifests $(HELM) ## Deploy telemetry manager with default/release configuration
-	$(HELM) template telemetry helm \
-	    --set experimental.enabled=false \
-	    --set default.enabled=true \
-		--set nameOverride=telemetry \
-	    --set manager.container.image.repository=${MANAGER_IMAGE} \
-	    --set manager.container.image.pullPolicy="Always" \
-	    --set manager.container.args.enable-fips-mode=true \
-	    --namespace kyma-system \
-	| kubectl apply -f -
+	deploy: manifests $(HELM) ## Deploy telemetry manager with default/release configuration
+		$(HELM) template telemetry helm \
+		    --set experimental.enabled=false \
+		    --set default.enabled=true \
+			--set nameOverride=telemetry \
+		    --set manager.container.image.repository=${MANAGER_IMAGE} \
+		    --set manager.container.image.pullPolicy="Always" \
+		    --set manager.container.args.operate-in-fips-mode=true \
+		    --namespace kyma-system \
+		| kubectl apply -f -
 
-.PHONY: undeploy
-undeploy: $(HELM) ## Undeploy telemetry manager with default/release configuration
-	$(HELM) template telemetry helm \
-	    --set experimental.enabled=false \
-	    --set default.enabled=true \
-		--set nameOverride=telemetry \
-		--namespace kyma-system \
-	| kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+	.PHONY: deploy-no-fips
+	deploy-no-fips: manifests $(HELM) ## Deploy telemetry manager with FIPS mode disabled
+		$(HELM) template telemetry helm \
+		    --set experimental.enabled=false \
+		    --set default.enabled=true \
+			--set nameOverride=telemetry \
+		    --set manager.container.image.repository=${MANAGER_IMAGE} \
+		    --set manager.container.image.pullPolicy="Always" \
+		    --set manager.container.args.operate-in-fips-mode=false \
+		    --namespace kyma-system \
+		| kubectl apply -f -
 
-.PHONY: deploy-experimental
-deploy-experimental: manifests-experimental $(HELM) ## Deploy telemetry manager with experimental features enabled
-	$(HELM) template telemetry helm \
-	    --set experimental.enabled=true \
-		--set default.enabled=false \
-		--set nameOverride=telemetry \
-		--set manager.container.image.repository=${MANAGER_IMAGE} \
-		--set manager.container.image.pullPolicy="Always" \
-	    --set manager.container.args.enable-fips-mode=true \
-		--namespace kyma-system \
-	| kubectl apply -f -
+	.PHONY: undeploy
+	undeploy: $(HELM) ## Undeploy telemetry manager with default/release configuration
+		$(HELM) template telemetry helm \
+		    --set experimental.enabled=false \
+		    --set default.enabled=true \
+			--set nameOverride=telemetry \
+			--namespace kyma-system \
+		| kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
-.PHONY: undeploy-experimental
-undeploy-experimental: $(HELM) ## Undeploy telemetry manager with experimental features
-	$(HELM) template telemetry helm \
-	    --set experimental.enabled=true \
-		--set default.enabled=false \
-		--set nameOverride=telemetry \
-		--namespace kyma-system \
-	| kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+	.PHONY: deploy-experimental
+	deploy-experimental: manifests-experimental $(HELM) ## Deploy telemetry manager with experimental features enabled
+		$(HELM) template telemetry helm \
+		    --set experimental.enabled=true \
+			--set default.enabled=false \
+			--set nameOverride=telemetry \
+			--set manager.container.image.repository=${MANAGER_IMAGE} \
+			--set manager.container.image.pullPolicy="Always" \
+		    --set manager.container.args.operate-in-fips-mode=true \
+			--namespace kyma-system \
+		| kubectl apply -f -
 
+	.PHONY: deploy-experimental-no-fips
+	deploy-experimental-no-fips: manifests-experimental $(HELM) ## Deploy telemetry manager with experimental features and FIPS mode disabled
+		$(HELM) template telemetry helm \
+		    --set experimental.enabled=true \
+			--set default.enabled=false \
+			--set nameOverride=telemetry \
+			--set manager.container.image.repository=${MANAGER_IMAGE} \
+			--set manager.container.image.pullPolicy="Always" \
+		    --set manager.container.args.operate-in-fips-mode=false \
+			--namespace kyma-system \
+		| kubectl apply -f -
+
+	.PHONY: undeploy-experimental
+	undeploy-experimental: $(HELM) ## Undeploy telemetry manager with experimental features
+		$(HELM) template telemetry helm \
+		    --set experimental.enabled=true \
+			--set default.enabled=false \
+			--set nameOverride=telemetry \
+			--namespace kyma-system \
+		| kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 ##@ Documentation
 
 .PHONY: update-metrics-docs
