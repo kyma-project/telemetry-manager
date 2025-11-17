@@ -57,6 +57,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/featureflags"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
 	loggerutils "github.com/kyma-project/telemetry-manager/internal/utils/logger"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
@@ -155,6 +158,17 @@ func run() error {
 		config.WithNamespace(envCfg.ManagerNamespace),
 		config.WithOperateInFIPSMode(enableFIPSMode),
 		config.WithVersion(build.GitTag()),
+	)
+
+	if err = globals.Validate(); err != nil {
+		return fmt.Errorf("global configuration validation failed: %w", err)
+	}
+
+	setupLog.Info("Global configuration",
+		"target_namespace", globals.TargetNamespace(),
+		"manager namespace", globals.ManagerNamespace(),
+		"version", globals.Version(),
+		"fips", globals.OperateInFIPSMode(),
 	)
 
 	mgr, err := setupManager(globals)
