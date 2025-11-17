@@ -186,7 +186,6 @@ func assertValidatingWebhookConfiguration() {
 			"validating-tracepipelines.kyma-project.io",
 			"/validate-tracepipeline",
 			"tracepipelines")
-
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
@@ -258,6 +257,7 @@ func findWebhook(webhooks []admissionregistrationv1.ValidatingWebhook, name stri
 			return &webhooks[i]
 		}
 	}
+
 	return nil
 }
 
