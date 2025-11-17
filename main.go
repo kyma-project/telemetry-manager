@@ -102,14 +102,16 @@ type envConfig struct {
 	FluentBitImage string `env:"FLUENT_BIT_IMAGE"`
 	// OTelCollectorImage is the image used all OpenTelemetry Collector based components (metric agent, log agent, metric gateway, log gateway, trace gateway).
 	OTelCollectorImage string `env:"OTEL_COLLECTOR_IMAGE"`
-	//  SelfMonitorImage is the image used for the self-monitoring deployment. This is a customized Prometheus image.
+	// SelfMonitorImage is the image used for the self-monitoring deployment. This is a customized Prometheus image.
 	SelfMonitorImage string `env:"SELF_MONITOR_IMAGE"`
 	// AlpineImage is the image used for the chown init containers.
 	AlpineImage string `env:"ALPINE_IMAGE"`
 	// ImagePullSecret is the name of the image pull secret to use for pulling images of all created workloads (agents, gateways, self-monitor).
 	ImagePullSecret string `env:"SKR_IMG_PULL_SECRET" envDefault:""`
-	//  ManagerNamespace is the namespace where the Telemetry operator and all common components are installed.
+	// ManagerNamespace returns the namespace where Telemetry Manager is deployed. In a Kyma setup, this is the same as TargetNamespace.
 	ManagerNamespace string `env:"MANAGER_NAMESPACE" envDefault:"default"`
+	// TargetNamespace is the namespace where telemetry components should be deployed by Telemetry Manager.
+	TargetNamespace string `env:"TARGET_NAMESPACE" envDefault:"default"`
 }
 
 //nolint:gochecknoinits // Runtime's scheme addition is required.
@@ -152,7 +154,8 @@ func run() error {
 	logBuildAndProcessInfo()
 
 	globals := config.NewGlobal(
-		config.WithNamespace(envCfg.ManagerNamespace),
+		config.WithManagerNamespace(envCfg.ManagerNamespace),
+		config.WithTargetNamespace(envCfg.TargetNamespace),
 		config.WithOperateInFIPSMode(operateInFipsMode),
 		config.WithVersion(build.GitTag()),
 	)

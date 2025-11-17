@@ -671,7 +671,7 @@ func TestFIPSModeTransition(t *testing.T) {
 				m.agentApplierDeleter = agentApplierDeleter
 			}, func(globals *config.Global) {
 				*globals = config.NewGlobal(
-					config.WithNamespace("default"),
+					config.WithTargetNamespace("default"),
 					config.WithOperateInFIPSMode(tt.fipsEnabled),
 				)
 			})
@@ -814,7 +814,7 @@ func newFIPSReconciler(client client.Client, fipsEnabled bool) *Reconciler {
 		// No specific overrides needed - just pass FIPS config through globals
 	}, func(globals *config.Global) {
 		*globals = config.NewGlobal(
-			config.WithNamespace("default"),
+			config.WithTargetNamespace("default"),
 			config.WithOperateInFIPSMode(fipsEnabled),
 		)
 	})
@@ -867,7 +867,7 @@ func defaultMocks() reconcilerMocks {
 }
 
 func newReconcilerWithMocks(client client.Client, mocks reconcilerMocks) *Reconciler {
-	globals := config.NewGlobal(config.WithNamespace("default"))
+	globals := config.NewGlobal(config.WithTargetNamespace("default"))
 	return newReconcilerWithGlobalConfig(client, mocks, globals)
 }
 
@@ -890,7 +890,7 @@ func newReconcilerWithOverrides(client client.Client, overrideFn func(*reconcile
 	mocks := defaultMocks()
 	overrideFn(&mocks)
 
-	globals := config.NewGlobal(config.WithNamespace("default"))
+	globals := config.NewGlobal(config.WithTargetNamespace("default"))
 	for _, override := range configOverrides {
 		override(&globals)
 	}

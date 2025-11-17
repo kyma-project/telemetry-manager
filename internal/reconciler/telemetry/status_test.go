@@ -41,7 +41,7 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			name: "all components are healthy",
 			config: &Config{
-				Global: config.NewGlobal(config.WithNamespace("telemetry-system")),
+				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
 			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
@@ -76,7 +76,7 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			name: "log components are unhealthy",
 			config: &Config{
-				Global: config.NewGlobal(config.WithNamespace("telemetry-system")),
+				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
 			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonAgentNotReady},
@@ -111,7 +111,7 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			name: "trace components are unhealthy",
 			config: &Config{
-				Global: config.NewGlobal(config.WithNamespace("telemetry-system")),
+				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
 			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
@@ -146,7 +146,7 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			name: "metric components are unhealthy",
 			config: &Config{
-				Global: config.NewGlobal(config.WithNamespace("telemetry-system")),
+				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
 			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
@@ -212,7 +212,7 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			name: "deleting with no dependent resources",
 			config: &Config{
-				Global: config.NewGlobal(config.WithNamespace("telemetry-system")),
+				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
 			telemetry: &operatorv1alpha1.Telemetry{
 				ObjectMeta: metav1.ObjectMeta{
@@ -253,7 +253,7 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			name: "deleting with dependent resources",
 			config: &Config{
-				Global: config.NewGlobal(config.WithNamespace("telemetry-system")),
+				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
 			telemetry: &operatorv1alpha1.Telemetry{
 				ObjectMeta: metav1.ObjectMeta{
@@ -285,7 +285,7 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			name: "metric agent is unhealthy",
 			config: &Config{
-				Global: config.NewGlobal(config.WithNamespace("telemetry-system")),
+				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
 			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
@@ -320,7 +320,7 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			name: "only log metric pipeline is defined",
 			config: &Config{
-				Global: config.NewGlobal(config.WithNamespace("telemetry-system")),
+				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
 			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},

@@ -98,7 +98,7 @@ tracing:
 			}
 
 			atomicLevel := zap.NewAtomicLevelAt(tt.defaultLevel)
-			handler := New(config.NewGlobal(config.WithNamespace("test-namespace")), fakeClient, WithAtomicLevel(atomicLevel))
+			handler := New(config.NewGlobal(config.WithTargetNamespace("test-namespace")), fakeClient, WithAtomicLevel(atomicLevel))
 			overrides, err := handler.LoadOverrides(t.Context())
 
 			if tt.expectError {
@@ -131,7 +131,7 @@ tracing:
 	require.NoError(t, err)
 
 	atomicLevel := zap.NewAtomicLevelAt(zapcore.InfoLevel)
-	handler := New(config.NewGlobal(config.WithNamespace("test-namespace")), fakeClient, WithAtomicLevel(atomicLevel))
+	handler := New(config.NewGlobal(config.WithTargetNamespace("test-namespace")), fakeClient, WithAtomicLevel(atomicLevel))
 
 	require.Equal(t, atomicLevel.Level(), zapcore.InfoLevel)
 
