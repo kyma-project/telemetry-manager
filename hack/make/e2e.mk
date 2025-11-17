@@ -49,11 +49,11 @@ define run-e2e-common
 		echo "Error: TEST_PATH environment variable is required"; \
 		exit 1; \
 	fi
-	@if [ -z "$(TEST_LABELS)" ]; then \
+	@if [ -z "$(TEST_LABEL)" ]; then \
 		echo "Error: TEST_LABELS environment variable is required"; \
 		exit 1; \
 	fi
-	@ALL_LABELS="$(TEST_LABELS)"; \
+	@ALL_LABELS="$(TEST_LABEL)"; \
 	if [ -n "$(LABELS)" ]; then \
 		ADDITIONAL_LABELS=""; \
 		for label in $(LABELS); do \
@@ -91,7 +91,7 @@ run-e2e-no-junit: $(GOTESTSUM) ## Run E2E tests without JUnit output
 generate-e2e-targets: .github/workflows/pr-integration.yml ## Generate convenience targets for E2E tests from GitHub workflow matrix
 	@echo '##@ E2E Test Suites' > hack/make/e2e-convenience.mk
 	@echo '' >> hack/make/e2e-convenience.mk
-	@cat .github/workflows/pr-integration.yml| yq -p yaml -o json | jq -r '.jobs.e2e.strategy.matrix.labels[]| ".PHONY: run-\(.type)-\(.name)\nrun-\(.type)-\(.name): ## Run \(.name) \(.type) tests\n\t$$(MAKE) run-e2e TEST_ID=\(.type)-\(.name) TEST_PATH=\"./test/\(.type)/...\" TEST_LABELS=\"\(.name)\"\n"' >> hack/make/e2e-convenience.mk
+	@cat .github/workflows/pr-integration.yml| yq -p yaml -o json | jq -r '.jobs.e2e.strategy.matrix.testcase[]| ".PHONY: run-\(.type)-\(.label)\nrun-\(.type)-\(.label): ## Run \(.label) \(.type) tests\n\t$$(MAKE) run-e2e TEST_ID=\(.type)-\(.label) TEST_PATH=\"./test/\(.type)/...\" TEST_LABELS=\"\(.label)\"\n"' >> hack/make/e2e-convenience.mk
 
 	@printf "\n.PHONY: run-all-e2e-logs\nrun-all-e2e-logs:" >> hack/make/e2e-convenience.mk
 	@cat <(cat hack/make/e2e-convenience.mk | egrep '^run-e2e-(log|fluent)' | sed 's/:.*//') <(echo "## Run all log-related E2E tests") | xargs | sed 's/^/ /' >> hack/make/e2e-convenience.mk
