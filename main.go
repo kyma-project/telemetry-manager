@@ -157,6 +157,17 @@ func run() error {
 		config.WithVersion(build.GitTag()),
 	)
 
+	if err = globals.Validate(); err != nil {
+		return fmt.Errorf("global configuration validation failed: %w", err)
+	}
+
+	setupLog.Info("Global configuration",
+		"target_namespace", globals.TargetNamespace(),
+		"manager namespace", globals.ManagerNamespace(),
+		"version", globals.Version(),
+		"fips", globals.OperateInFIPSMode(),
+	)
+
 	mgr, err := setupManager(globals)
 	if err != nil {
 		return err
