@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -30,8 +31,123 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
+
+func TestTLSConditions(t *testing.T) {
+	tests := []struct {
+		name                  string
+		tlsCertErr            error
+		expectedStatus        metav1.ConditionStatus
+		expectedReason        string
+		expectedMessage       string
+		expectAgentConfigured bool
+	}{
+		{
+			name:            "cert expired",
+			tlsCertErr:      &tlscert.CertExpiredError{Expiry: time.Date(2020, time.November, 1, 0, 0, 0, 0, time.UTC)},
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  conditions.ReasonTLSCertificateExpired,
+			expectedMessage: "TLS certificate expired on 2020-11-01",
+		},
+		{
+			name:                  "cert about to expire",
+			tlsCertErr:            &tlscert.CertAboutToExpireError{Expiry: time.Date(2024, time.November, 1, 0, 0, 0, 0, time.UTC)},
+			expectedStatus:        metav1.ConditionTrue,
+			expectedReason:        conditions.ReasonTLSCertificateAboutToExpire,
+			expectedMessage:       "TLS certificate is about to expire, configured certificate is valid until 2024-11-01",
+			expectAgentConfigured: true,
+		},
+		{
+			name:            "ca expired",
+			tlsCertErr:      &tlscert.CertExpiredError{Expiry: time.Date(2020, time.November, 1, 0, 0, 0, 0, time.UTC), IsCa: true},
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  conditions.ReasonTLSCertificateExpired,
+			expectedMessage: "TLS CA certificate expired on 2020-11-01",
+		},
+		{
+			name:                  "ca about to expire",
+			tlsCertErr:            &tlscert.CertAboutToExpireError{Expiry: time.Date(2024, time.November, 1, 0, 0, 0, 0, time.UTC), IsCa: true},
+			expectedStatus:        metav1.ConditionTrue,
+			expectedReason:        conditions.ReasonTLSCertificateAboutToExpire,
+			expectedMessage:       "TLS CA certificate is about to expire, configured certificate is valid until 2024-11-01",
+			expectAgentConfigured: true,
+		},
+		{
+			name:            "cert decode failed",
+			tlsCertErr:      tlscert.ErrCertDecodeFailed,
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  conditions.ReasonTLSConfigurationInvalid,
+			expectedMessage: "TLS configuration invalid: failed to decode PEM block containing certificate",
+		},
+		{
+			name:            "key decode failed",
+			tlsCertErr:      tlscert.ErrKeyDecodeFailed,
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  conditions.ReasonTLSConfigurationInvalid,
+			expectedMessage: "TLS configuration invalid: failed to decode PEM block containing private key",
+		},
+		{
+			name:            "cert parse failed",
+			tlsCertErr:      tlscert.ErrCertParseFailed,
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  conditions.ReasonTLSConfigurationInvalid,
+			expectedMessage: "TLS configuration invalid: failed to parse certificate",
+		},
+		{
+			name:            "cert and key mismatch",
+			tlsCertErr:      tlscert.ErrInvalidCertificateKeyPair,
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  conditions.ReasonTLSConfigurationInvalid,
+			expectedMessage: "TLS configuration invalid: certificate and private key do not match",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Setup
+			scheme := runtime.NewScheme()
+			_ = clientgoscheme.AddToScheme(scheme)
+			_ = telemetryv1alpha1.AddToScheme(scheme)
+
+			pipeline := testutils.NewLogPipelineBuilder().
+				WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
+				WithHTTPOutput(testutils.HTTPClientTLSFromString("ca", "fooCert", "fooKey")).
+				Build()
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+			// Create reconciler with specific TLS cert validation error
+			reconciler := createTLSTestReconciler(fakeClient, pipeline, tt.tlsCertErr)
+
+			// Execute
+			var pl telemetryv1alpha1.LogPipeline
+			require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl))
+			err := reconciler.Reconcile(t.Context(), &pl)
+			require.NoError(t, err)
+
+			// Verify
+			var updatedPipeline telemetryv1alpha1.LogPipeline
+			_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+			requireHasStatusCondition(t, updatedPipeline,
+				conditions.TypeConfigurationGenerated,
+				tt.expectedStatus,
+				tt.expectedReason,
+				tt.expectedMessage,
+			)
+
+			if tt.expectedStatus == metav1.ConditionFalse {
+				requireHasStatusCondition(t, updatedPipeline,
+					conditions.TypeFlowHealthy,
+					metav1.ConditionFalse,
+					conditions.ReasonSelfMonConfigNotGenerated,
+					"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details",
+				)
+			}
+		})
+	}
+}
 
 func TestPodErrorConditions(t *testing.T) {
 	tests := []struct {
@@ -701,6 +817,49 @@ func createPodErrorTestReconciler(fakeClient client.Client, pipeline telemetryv1
 	}
 
 	errToMsgStub := &conditions.ErrorToMessageConverter{}
+
+	return New(
+		globals,
+		fakeClient,
+		agentConfigBuilder,
+		agentApplierDeleter,
+		proberStub,
+		flowHealthProber,
+		&stubs.IstioStatusChecker{IsActive: false},
+		pipelineLock,
+		validator,
+		errToMsgStub,
+	)
+}
+
+func createTLSTestReconciler(fakeClient client.Client, pipeline telemetryv1alpha1.LogPipeline, tlsCertErr error) *Reconciler {
+	globals := config.NewGlobal(config.WithNamespace("default"))
+
+	agentConfigBuilder := &mocks.AgentConfigBuilder{}
+	agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil)
+
+	agentApplierDeleter := &mocks.AgentApplierDeleter{}
+	agentApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	agentApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	proberStub := commonStatusStubs.NewDaemonSetProber(nil)
+
+	flowHealthProber := &logpipelinemocks.FlowHealthProber{}
+	flowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.FluentBitProbeResult{}, nil)
+
+	pipelineLock := &mocks.PipelineLock{}
+	pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+	pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
+
+	validator := &Validator{
+		EndpointValidator:  stubs.NewEndpointValidator(nil),
+		TLSCertValidator:   stubs.NewTLSCertValidator(tlsCertErr),
+		SecretRefValidator: stubs.NewSecretRefValidator(nil),
+		PipelineLock:       pipelineLock,
+	}
+
+	errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
+	errToMsgStub.On("Convert", mock.Anything).Return("")
 
 	return New(
 		globals,
