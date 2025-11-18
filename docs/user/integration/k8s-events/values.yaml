@@ -13,7 +13,7 @@ config:
     otlp:
       endpoint: telemetry-otlp-logs.kyma-system.svc.cluster.local:4317
       tls:
-        # Istio will care about mTLS
+        # mTLS will be handled by istio
         insecure: true
 
   # Configure the actual events receiver
@@ -21,7 +21,7 @@ config:
     k8s_events: {}
 
   service:
-    # Print in json for easy log collection
+    # Print in json-format for easy log collection
     telemetry:
       logs:
         level: "info" # debug|info|warn
@@ -38,7 +38,7 @@ config:
       traces: null
       metrics: null
 
-# The collector needs access to the APIServer to watch for events
+# The collector needs to be able to read, list and watch events using the k8s APIserver
 clusterRole:
   create: true
   rules:

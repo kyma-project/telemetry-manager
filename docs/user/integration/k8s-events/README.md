@@ -45,7 +45,7 @@ Learn how to integrate a custom OTel Collector to add Kubernetes events watched 
     kubectl create namespace $K8S_NAMESPACE
     ```
 
-1. To enable Istio injection in your Namespace, set the following label:
+1. Set the following label to enable Istio injection in your Namespace:
 
     ```bash
     kubectl label namespace $K8S_NAMESPACE istio-injection=enabled
@@ -66,7 +66,7 @@ Learn how to integrate a custom OTel Collector to add Kubernetes events watched 
 
 ### Install the Collector
 
-Run the Helm upgrade command, which installs the chart if not present yet.
+Run the Helm upgrade command. It installs the chart only if it is not present yet.
 
 ```bash
 helm upgrade --install --create-namespace -n $K8S_NAMESPACE $HELM_RELEASE open-telemetry/opentelemetry-collector -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/k8s-events/values.yaml
@@ -89,14 +89,14 @@ To verify that the collector is running properly, set up port forwarding and cal
 1. Verify the collector starts up:
 
    ```bash
-   kubectl -n $K8S_NAMESPACE get po
+   kubectl -n $K8S_NAMESPACE get pods
    ```
 
-1. Verify that logs are arriving at the backend. The logs will have the `instrumentationScope.name: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8seventsreceiver`.
+1. Verify that logs arrive at the backend. The logs will have the `instrumentationScope.name: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8seventsreceiver`.
 
 ### SAP Cloud Logging Integration
 
-In case the LogPipeline of the telemetry module is configured with a SAP Cloud Logging instance as described in the [SAP CLoud Logging guide](./../sap-cloud-logging/), you can install a custom Search and Dashbaord called `K8S Events` to explore the data.
+If the LogPipeline of the telemetry module is configured with a SAP Cloud Logging instance as described in the [SAP CLoud Logging guide](./../sap-cloud-logging/), you can install a custom Search and Dashboard called `K8S Events` to explore the data.
 For that, import the file [cloud-logging-dashboard.ndjson](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/dashboard-runtime.ndjson).
 
 ## Clean Up
