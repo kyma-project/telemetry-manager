@@ -54,9 +54,9 @@ spec:
         - 'set(span.attributes["system"], "true")'
 ```
 
-## Example: Custom Log Parsing
+## Example: Parse Custom Log Formats
 
-You are using a LogPipeline with the `application` input and your application logs in a custom format to stdout. Then you might want to parse the payload and enrich core attributes.
+If your application writes logs to stdout in a custom format, you can use a series of OTTL statements to parse these logs into structured data, so you can easily query and analyze them in your observability backend. The following example parses the payload and enriches core attributes:
 
 ```yaml
 # In your LogPipeline spec
@@ -92,9 +92,9 @@ spec:
         - delete_key(log.attributes, "level")
 ```
 
-## Example: Masking Sensitive Data
+## Example: Redact Sensitive Data in Spans
 
-You can redact data using typical patterns so that potential sensitive data is masked.
+To improve security and meet compliance requirements, you can redact sensitive information from your telemetry data before it leaves the cluster. 
 
 ```yaml
 # In your TracePipeline spec
