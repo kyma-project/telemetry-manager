@@ -196,28 +196,48 @@ jobs:
             use-fips: true
             install-istio: false
           # TELEMETRY
-          - label: telemetry
+          - label: telemetry and not nofips
             mode: release
             type: e2e
             use-fips: true
+            install-istio: false
+          - label: telemetry and nofips
+            mode: release
+            type: e2e
+            use-fips: false
             install-istio: false
           # MISC
-          - label: misc
+          - label: misc and not nofips
             mode: release
             type: e2e
             use-fips: true
             install-istio: false
+          - label: misc and nofips
+            mode: release
+            type: e2e
+            use-fips: false
+            install-istio: false
           # OTHER
-          - label: experimental
+          - label: experimental and not nofips
             mode: experimental
             type: e2e
             use-fips: true
             install-istio: false
+          - label: experimental and nofips
+            mode: experimental
+            type: e2e
+            use-fips: false
+            install-istio: false
           # INTEGRATION
-          - label: istio
+          - label: istio and not nofips
             mode: release
             type: integration
             use-fips: true
+            install-istio: true
+          - label: istio and nofips
+            mode: release
+            type: integration
+            use-fips: false
             install-istio: true
     name: "e2e: ${{ matrix.testcase.label }}"
     runs-on: ubuntu-latest
