@@ -13,7 +13,7 @@ import (
 )
 
 func TestFilterV1Beta1Invalid(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelLogsMisc)
+	suite.RegisterTestCase(t, suite.LabelExperimental)
 
 	var (
 		uniquePrefix = unique.Prefix()
