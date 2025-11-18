@@ -20,7 +20,7 @@ import (
 )
 
 func TestTelemetryLogs(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelMisc, suite.LabelNoFips)
+	suite.RegisterTestCase(t, suite.LabelMisc)
 
 	var (
 		uniquePrefix             = unique.Prefix()
