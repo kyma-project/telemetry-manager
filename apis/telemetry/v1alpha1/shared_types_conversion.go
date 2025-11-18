@@ -174,6 +174,7 @@ func convertAuthenticationToBeta(a *AuthenticationOptions) *telemetryv1beta1.Aut
 
 	return &telemetryv1beta1.AuthenticationOptions{
 		Basic: convertBasicAuthToBeta(a.Basic),
+		OAuth2: convertOAuth2ToBeta(a.OAuth2),
 	}
 }
 
@@ -184,6 +185,7 @@ func convertAuthenticationToAlpha(a *telemetryv1beta1.AuthenticationOptions) *Au
 
 	return &AuthenticationOptions{
 		Basic: convertBasicAuthToAlpha(a.Basic),
+		OAuth2: convertOAuth2ToAlpha(a.OAuth2),
 	}
 }
 
@@ -206,6 +208,34 @@ func convertBasicAuthToAlpha(b *telemetryv1beta1.BasicAuthOptions) *BasicAuthOpt
 	return &BasicAuthOptions{
 		User:     convertValueTypeToAlpha(b.User),
 		Password: convertValueTypeToAlpha(b.Password),
+	}
+}
+
+func convertOAuth2ToBeta(o *OAuth2Options) *telemetryv1beta1.OAuth2Options {
+	if o == nil {
+		return nil
+	}
+
+	return &telemetryv1beta1.OAuth2Options{
+		TokenURL:     convertValueTypeToBeta(o.TokenURL),
+		ClientID:     convertValueTypeToBeta(o.ClientID),
+		ClientSecret: convertValueTypeToBeta(o.ClientSecret),
+		Scopes:       append([]string{}, o.Scopes...),
+		Params:       make(map[string]string),
+	}
+}
+
+func convertOAuth2ToAlpha(o *telemetryv1beta1.OAuth2Options) *OAuth2Options {
+	if o == nil {
+		return nil
+	}
+
+	return &OAuth2Options{
+		TokenURL:     convertValueTypeToAlpha(o.TokenURL),
+		ClientID:     convertValueTypeToAlpha(o.ClientID),
+		ClientSecret: convertValueTypeToAlpha(o.ClientSecret),
+		Scopes:       append([]string{}, o.Scopes...),
+		Params:       make(map[string]string),
 	}
 }
 
