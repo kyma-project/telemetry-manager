@@ -233,11 +233,14 @@ jobs:
           install-istio: ${{ matrix.testcase.install-istio }}
           operate-in-fips-mode: ${{ matrix.testcase.use-fips }}
 
+      - name: cleanup id
+        run: CLEAN_ID=$(echo "${{ matrix.testcase.type }}-${{ matrix.testcase.label }}" | tr ' ' '_') && echo "CLEAN_ID=$CLEAN_ID" >> $GITHUB_ENV
+
       - name: Execute tests
         uses: "./.github/template/test-execute"
         with:
-          # we have to cleanup ids to act as valid filenames
-          id: ${{ replace(format('{0}-{1}', matrix.testcase.type, matrix.testcase.label), ' ', '_') }}
+          # use CLEAN_ID to avoid issues with spaces in label
+          id: ${{ env.CLEAN_ID }}
           path: ./test/${{ matrix.testcase.type }}/...
           label: ${{ matrix.testcase.label }}
 
@@ -245,7 +248,7 @@ jobs:
         uses: "./.github/template/test-cleanup"
         if: ${{ !cancelled()  }}
         with:
-          id: ${{ replace(format('{0}-{1}', matrix.testcase.type, matrix.testcase.label), ' ', '_') }}
+          id: ${{ env.CLEAN_ID }}
           failure: failure()
 
       - name: Print logs from all pods in kyma-system namespace
