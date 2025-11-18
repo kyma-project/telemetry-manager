@@ -196,45 +196,45 @@ jobs:
             use-fips: true
             install-istio: false
           # TELEMETRY
-          - label: telemetry and not nofips
+          - label: telemetry and not fluent-bit
             mode: release
             type: e2e
             use-fips: true
             install-istio: false
-          - label: telemetry and nofips
+          - label: telemetry and fluent-bit
             mode: release
             type: e2e
             use-fips: false
             install-istio: false
           # MISC
-          - label: misc and not nofips
+          - label: misc and not fluent-bit
             mode: release
             type: e2e
             use-fips: true
             install-istio: false
-          - label: misc and nofips
+          - label: misc and fluent-bit
             mode: release
             type: e2e
             use-fips: false
             install-istio: false
           # OTHER
-          - label: experimental and not nofips
+          - label: experimental and not fluent-bit
             mode: experimental
             type: e2e
             use-fips: true
             install-istio: false
-          - label: experimental and nofips
+          - label: experimental and fluent-bit
             mode: experimental
             type: e2e
             use-fips: false
             install-istio: false
           # INTEGRATION
-          - label: istio and not nofips
+          - label: istio and not fluent-bit
             mode: release
             type: integration
             use-fips: true
             install-istio: true
-          - label: istio and nofips
+          - label: istio and fluent-bit
             mode: release
             type: integration
             use-fips: false

@@ -260,6 +260,7 @@ type Parser struct {
 
 func newParser(input string) *Parser {
 	lexer := newLexer(input)
+
 	return &Parser{
 		lexer:   lexer,
 		current: lexer.nextToken(),
@@ -305,6 +306,7 @@ func (p *Parser) parseNot() LabelExpressionNode {
 	if p.current.Type == "NOT" {
 		p.advance()
 		child := p.parseNot() // NOT is right-associative
+
 		return &NotNode{Child: child}
 	}
 
@@ -315,16 +317,19 @@ func (p *Parser) parseNot() LabelExpressionNode {
 func (p *Parser) parsePrimary() LabelExpressionNode {
 	if p.current.Type == "LPAREN" {
 		p.advance() // consume '('
+
 		node := p.parseExpression()
 		if p.current.Type == "RPAREN" {
 			p.advance() // consume ')'
 		}
+
 		return node
 	}
 
 	if p.current.Type == "LABEL" {
 		label := p.current.Value
 		p.advance()
+
 		return &LabelNode{Label: label}
 	}
 
@@ -339,6 +344,7 @@ func parseLabelExpression(expr string) LabelExpressionNode {
 	}
 
 	parser := newParser(expr)
+
 	return parser.parseExpression()
 }
 
@@ -349,6 +355,7 @@ func evaluateExpression(testLabels []string, node LabelExpressionNode) bool {
 	}
 
 	testLabelSet := toSet(testLabels)
+
 	return node.Evaluate(testLabelSet)
 }
 
@@ -371,6 +378,7 @@ func RegisterTestCase(t *testing.T, labels ...string) {
 			printTestInfo(t, labels, "would execute (no filter)")
 			t.Skip()
 		}
+
 		return
 	}
 
@@ -383,7 +391,9 @@ func RegisterTestCase(t *testing.T, labels ...string) {
 		} else {
 			printTestInfo(t, labels, fmt.Sprintf("would skip (doesn't match filter: %s)", labelFilterExpr))
 		}
+
 		t.Skip()
+
 		return
 	}
 
@@ -398,11 +408,13 @@ func findDoNotExecuteFlag() bool {
 			return true
 		}
 	}
+
 	return false
 }
 
 func printTestInfo(t *testing.T, labels []string, action string) {
 	testName := t.Name()
+
 	if testName == "" {
 		// Try to get test name from runtime if not available
 		if pc, _, _, ok := runtime.Caller(2); ok {
@@ -414,12 +426,13 @@ func printTestInfo(t *testing.T, labels []string, action string) {
 				}
 			}
 		}
+
 		if testName == "" {
 			testName = "<unknown test>"
 		}
 	}
 
-	fmt.Printf("[DRY-RUN] Test: %s | Labels: %v | Action: %s\n", testName, labels, action)
+	fmt.Printf("[DRY-RUN] Test: %s | Labels: %v | Action: %s\n", testName, labels, action) //nolint:forbidigo // using fmt for test info output
 }
 
 func findLabelFilterExpression() string {

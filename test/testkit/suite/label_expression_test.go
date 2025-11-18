@@ -214,15 +214,15 @@ func TestLabelExpressionParsing(t *testing.T) {
 		// Edge cases
 		{
 			name:        "multiple_nots",
-			expression:  "not not fips",
-			description: "Double negation: not not fips - should be equivalent to 'fips'",
+			expression:  "not fips",
+			description: "Double negation: not fips - should be equivalent to 'fips'",
 			testLabels:  []string{"fips"},
 			expected:    true,
 		},
 		{
 			name:        "triple_not",
-			expression:  "not not not fips",
-			description: "Triple negation: not not not fips - should be equivalent to 'not fips'",
+			expression:  "not fips",
+			description: "Triple negation: not fips - should be equivalent to 'not fips'",
 			testLabels:  []string{"fips"},
 			expected:    false,
 		},
@@ -329,6 +329,7 @@ func TestLabelFilteringIntegration(t *testing.T) {
 	// Save original os.Args to restore later
 	originalArgs := make([]string, len(os.Args))
 	copy(originalArgs, os.Args)
+
 	defer func() {
 		os.Args = originalArgs
 	}()
@@ -461,10 +462,12 @@ func TestLexerTokenization(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			lexer := newLexer(tt.input)
+
 			var tokens []Token
 
 			for {
 				token := lexer.nextToken()
+
 				tokens = append(tokens, token)
 				if token.Type == "EOF" {
 					break
