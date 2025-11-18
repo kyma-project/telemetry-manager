@@ -352,6 +352,9 @@ spec:
                             - tokenURL
                             type: object
                         type: object
+                        x-kubernetes-validations:
+                        - message: Can't specify multiple authentication methods
+                          rule: '!(has(self.basic) && has(self.oauth2))'
                       endpoint:
                         description: Endpoint defines the host and port (`<host>:<port>`)
                           of an OTLP endpoint.
