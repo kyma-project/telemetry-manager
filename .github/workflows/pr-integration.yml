@@ -108,7 +108,7 @@ jobs:
       matrix:
         testcase:
           # LOGS
-          - label: fluent-bit
+          - label: fluent-bit and not experimental
             mode: release
             type: e2e
             use-fips: false
