@@ -68,21 +68,37 @@ run-e2e-traces: ## Run traces e2e tests
 run-e2e-traces-max-pipeline: ## Run traces-max-pipeline e2e tests
 	$(MAKE) run-e2e TEST_ID=e2e-traces-max-pipeline TEST_PATH="./test/e2e/..." TEST_LABEL="traces-max-pipeline"
 
-.PHONY: run-e2e-telemetry
-run-e2e-telemetry: ## Run telemetry e2e tests
-	$(MAKE) run-e2e TEST_ID=e2e-telemetry TEST_PATH="./test/e2e/..." TEST_LABEL="telemetry"
+.PHONY: run-e2e-telemetry_and_not_fluent-bit
+run-e2e-telemetry_and_not_fluent-bit: ## Run telemetry and not fluent-bit e2e tests
+	$(MAKE) run-e2e TEST_ID=e2e-telemetry_and_not_fluent-bit TEST_PATH="./test/e2e/..." TEST_LABEL="telemetry and not fluent-bit"
 
-.PHONY: run-e2e-misc
-run-e2e-misc: ## Run misc e2e tests
-	$(MAKE) run-e2e TEST_ID=e2e-misc TEST_PATH="./test/e2e/..." TEST_LABEL="misc"
+.PHONY: run-e2e-telemetry_and_fluent-bit
+run-e2e-telemetry_and_fluent-bit: ## Run telemetry and fluent-bit e2e tests
+	$(MAKE) run-e2e TEST_ID=e2e-telemetry_and_fluent-bit TEST_PATH="./test/e2e/..." TEST_LABEL="telemetry and fluent-bit"
 
-.PHONY: run-e2e-experimental
-run-e2e-experimental: ## Run experimental e2e tests
-	$(MAKE) run-e2e TEST_ID=e2e-experimental TEST_PATH="./test/e2e/..." TEST_LABEL="experimental"
+.PHONY: run-e2e-misc_and_not_fluent-bit
+run-e2e-misc_and_not_fluent-bit: ## Run misc and not fluent-bit e2e tests
+	$(MAKE) run-e2e TEST_ID=e2e-misc_and_not_fluent-bit TEST_PATH="./test/e2e/..." TEST_LABEL="misc and not fluent-bit"
 
-.PHONY: run-integration-istio
-run-integration-istio: ## Run istio integration tests
-	$(MAKE) run-e2e TEST_ID=integration-istio TEST_PATH="./test/integration/..." TEST_LABEL="istio"
+.PHONY: run-e2e-misc_and_fluent-bit
+run-e2e-misc_and_fluent-bit: ## Run misc and fluent-bit e2e tests
+	$(MAKE) run-e2e TEST_ID=e2e-misc_and_fluent-bit TEST_PATH="./test/e2e/..." TEST_LABEL="misc and fluent-bit"
+
+.PHONY: run-e2e-experimental_and_not_fluent-bit
+run-e2e-experimental_and_not_fluent-bit: ## Run experimental and not fluent-bit e2e tests
+	$(MAKE) run-e2e TEST_ID=e2e-experimental_and_not_fluent-bit TEST_PATH="./test/e2e/..." TEST_LABEL="experimental and not fluent-bit"
+
+.PHONY: run-e2e-experimental_and_fluent-bit
+run-e2e-experimental_and_fluent-bit: ## Run experimental and fluent-bit e2e tests
+	$(MAKE) run-e2e TEST_ID=e2e-experimental_and_fluent-bit TEST_PATH="./test/e2e/..." TEST_LABEL="experimental and fluent-bit"
+
+.PHONY: run-integration-istio_and_not_fluent-bit
+run-integration-istio_and_not_fluent-bit: ## Run istio and not fluent-bit integration tests
+	$(MAKE) run-e2e TEST_ID=integration-istio_and_not_fluent-bit TEST_PATH="./test/integration/..." TEST_LABEL="istio and not fluent-bit"
+
+.PHONY: run-integration-istio_and_fluent-bit
+run-integration-istio_and_fluent-bit: ## Run istio and fluent-bit integration tests
+	$(MAKE) run-e2e TEST_ID=integration-istio_and_fluent-bit TEST_PATH="./test/integration/..." TEST_LABEL="istio and fluent-bit"
 
 
 .PHONY: run-all-e2e-logs

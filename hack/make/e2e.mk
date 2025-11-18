@@ -80,7 +80,7 @@ run-e2e-no-junit: $(GOTESTSUM) ## Run E2E tests without JUnit output
 generate-e2e-targets: .github/workflows/pr-integration.yml ## Generate convenience targets for E2E tests from GitHub workflow matrix
 	@echo '##@ E2E Test Suites' > hack/make/e2e-convenience.mk
 	@echo '' >> hack/make/e2e-convenience.mk
-	@cat .github/workflows/pr-integration.yml| yq -p yaml -o json | jq -r '.jobs.e2e.strategy.matrix.testcase[]| ".PHONY: run-\(.type)-\(.label)\nrun-\(.type)-\(.label): ## Run \(.label) \(.type) tests\n\t$$(MAKE) run-e2e TEST_ID=\(.type)-\(.label) TEST_PATH=\"./test/\(.type)/...\" TEST_LABEL=\"\(.label)\"\n"' >> hack/make/e2e-convenience.mk
+	@cat .github/workflows/pr-integration.yml| yq -p yaml -o json | jq -r '.jobs.e2e.strategy.matrix.testcase[]| ".PHONY: run-\(.type)-\(.label | gsub(" "; "_"))\nrun-\(.type)-\(.label | gsub(" "; "_")): ## Run \(.label) \(.type) tests\n\t$$(MAKE) run-e2e TEST_ID=\(.type)-\(.label | gsub(" "; "_")) TEST_PATH=\"./test/\(.type)/...\" TEST_LABEL=\"\(.label)\"\n"' >> hack/make/e2e-convenience.mk
 
 	@printf "\n.PHONY: run-all-e2e-logs\nrun-all-e2e-logs:" >> hack/make/e2e-convenience.mk
 	@cat <(cat hack/make/e2e-convenience.mk | egrep '^run-e2e-(log|fluent)' | sed 's/:.*//') <(echo "## Run all log-related E2E tests") | xargs | sed 's/^/ /' >> hack/make/e2e-convenience.mk
@@ -93,6 +93,7 @@ generate-e2e-targets: .github/workflows/pr-integration.yml ## Generate convenien
 	@printf ".PHONY: run-all-e2e-traces\nrun-all-e2e-traces:" >> hack/make/e2e-convenience.mk
 	@cat <(cat hack/make/e2e-convenience.mk | egrep '^run-e2e-(traces)' | sed 's/:.*//') <(echo "## Run all trace-related E2E tests") | xargs | sed 's/^/ /' >> hack/make/e2e-convenience.mk
 	@echo >> hack/make/e2e-convenience.mk
+
 
 
 
