@@ -24,7 +24,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
-	commonStatusMocks "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/mocks"
 	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit/mocks"
 	logpipelinemocks "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
@@ -640,8 +639,7 @@ func defaultMocks() reconcilerMocks {
 		PipelineLock:       pipelineLock,
 	}
 
-	errorConverter := &commonStatusMocks.ErrorToMessageConverter{}
-	errorConverter.On("Convert", mock.Anything).Return("")
+	errorConverter := &conditions.ErrorToMessageConverter{}
 
 	return reconcilerMocks{
 		agentConfigBuilder:  agentConfigBuilder,
