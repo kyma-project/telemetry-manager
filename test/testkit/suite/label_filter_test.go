@@ -434,22 +434,22 @@ func TestSyntaxConversion(t *testing.T) {
 		{
 			name:     "simple_not",
 			input:    "not fips",
-			expected: "!fips",
+			expected: "! fips",
 		},
 		{
 			name:     "complex_expression",
 			input:    "(fips or logs) and not slow",
-			expected: "(fips || logs) && !slow",
+			expected: "(fips || logs) && ! slow",
 		},
 		{
 			name:     "uppercase_operators",
 			input:    "FIPS AND LOGS OR NOT SLOW",
-			expected: "fips && logs || !slow",
+			expected: "fips && logs || ! slow",
 		},
 		{
 			name:     "mixed_case",
 			input:    "Fips And Logs Or Not Slow",
-			expected: "fips && logs || !slow",
+			expected: "fips && logs || ! slow",
 		},
 	}
 

@@ -20,8 +20,7 @@ func convertLabelExpressionSyntax(legacyExpr string) string {
 	// Use word boundaries to avoid replacing parts of label names
 	converted = replaceWord(converted, "and", "&&")
 	converted = replaceWord(converted, "or", "||")
-	// For NOT, we need special handling to avoid adding extra space
-	converted = replaceWordCompact(converted, "not", "!")
+	converted = replaceWord(converted, "not", "!")
 
 	return converted
 }
@@ -42,36 +41,6 @@ func replaceWord(s, old, new string) string {
 			if beforeOK && afterOK {
 				result.WriteString(new)
 				i += oldLen
-				continue
-			}
-		}
-		result.WriteByte(s[i])
-		i++
-	}
-
-	return result.String()
-}
-
-// replaceWordCompact replaces a word and removes the trailing space if present
-func replaceWordCompact(s, old, new string) string {
-	var result strings.Builder
-	i := 0
-	oldLen := len(old)
-
-	for i < len(s) {
-		// Check if we found the word at current position
-		if i+oldLen <= len(s) && s[i:i+oldLen] == old {
-			// Check if it's a complete word (not part of another word)
-			beforeOK := i == 0 || !isAlphaNumeric(s[i-1])
-			afterOK := i+oldLen == len(s) || !isAlphaNumeric(s[i+oldLen])
-
-			if beforeOK && afterOK {
-				result.WriteString(new)
-				i += oldLen
-				// Skip one trailing space if present
-				if i < len(s) && s[i] == ' ' {
-					i++
-				}
 				continue
 			}
 		}
