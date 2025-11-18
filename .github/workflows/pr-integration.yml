@@ -92,7 +92,7 @@ jobs:
         with:
           id: ${{ matrix.kind }}-${{ matrix.scenario }}
           path: ./test/selfmonitor/...
-          labels: "selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}"
+          label: "selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}"
 
       - name: Clean-up test environment
         uses: "./.github/template/test-cleanup"
