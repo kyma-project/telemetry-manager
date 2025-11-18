@@ -343,7 +343,7 @@ func TestLogAgent(t *testing.T) {
 	tests := []struct {
 		name            string
 		proberError     error
-		errorConverter  any
+		errorConverter  ErrorToMessageConverter
 		expectedStatus  metav1.ConditionStatus
 		expectedReason  string
 		expectedMessage string
@@ -351,7 +351,7 @@ func TestLogAgent(t *testing.T) {
 		{
 			name:            "log agent is not ready",
 			proberError:     workloadstatus.ErrDaemonSetNotFound,
-			errorConverter:  &commonStatusMocks.ErrorToMessageConverter{},
+			errorConverter:  &conditions.ErrorToMessageConverter{},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonAgentNotReady,
 			expectedMessage: "DaemonSet is not yet created",
@@ -359,7 +359,7 @@ func TestLogAgent(t *testing.T) {
 		{
 			name:            "log agent is ready",
 			proberError:     nil,
-			errorConverter:  &commonStatusMocks.ErrorToMessageConverter{},
+			errorConverter:  &conditions.ErrorToMessageConverter{},
 			expectedStatus:  metav1.ConditionTrue,
 			expectedReason:  conditions.ReasonAgentReady,
 			expectedMessage: "Log agent DaemonSet is ready",
@@ -591,22 +591,10 @@ func newSecretRefReconciler(client client.Client, secretErr error) *Reconciler {
 	})
 }
 
-func newLogAgentReconciler(client client.Client, proberError error, errorConverter any) *Reconciler {
+func newLogAgentReconciler(client client.Client, proberError error, errorConverter ErrorToMessageConverter) *Reconciler {
 	return newReconcilerWithOverrides(client, func(m *reconcilerMocks) {
 		m.daemonSetProber = commonStatusStubs.NewDaemonSetProber(proberError)
-
-		switch v := errorConverter.(type) {
-		case *commonStatusMocks.ErrorToMessageConverter:
-			if proberError == nil {
-				v.On("Convert", mock.Anything).Return("Log agent DaemonSet is ready")
-			} else if errors.Is(proberError, workloadstatus.ErrDaemonSetNotFound) {
-				v.On("Convert", mock.Anything).Return("DaemonSet is not yet created")
-			}
-
-			m.errorConverter = v
-		case *conditions.ErrorToMessageConverter:
-			m.errorConverter = v
-		}
+		m.errorConverter = errorConverter
 	})
 }
 
