@@ -107,6 +107,9 @@ const (
 	LabelExperimental = "experimental"
 	LabelSkip         = "skip"
 
+	// Requirement labels
+	LabelNoFips = "nofips"
+
 	// Selfmonitor test labels
 
 	// Prefixes for self-monitor test labels
@@ -150,30 +153,279 @@ func DebugObjectsEnabled() bool {
 	return debugEnv == "1" || strings.ToLower(debugEnv) == "true"
 }
 
+// LabelExpressionNode represents a node in the parsed expression tree
+type LabelExpressionNode interface {
+	Evaluate(testLabels map[string]struct{}) bool
+}
+
+// LabelNode represents a simple label match
+type LabelNode struct {
+	Label string
+}
+
+func (n *LabelNode) Evaluate(testLabels map[string]struct{}) bool {
+	_, exists := testLabels[n.Label]
+	return exists
+}
+
+// AndNode represents an AND operation
+type AndNode struct {
+	Left, Right LabelExpressionNode
+}
+
+func (n *AndNode) Evaluate(testLabels map[string]struct{}) bool {
+	return n.Left.Evaluate(testLabels) && n.Right.Evaluate(testLabels)
+}
+
+// OrNode represents an OR operation
+type OrNode struct {
+	Left, Right LabelExpressionNode
+}
+
+func (n *OrNode) Evaluate(testLabels map[string]struct{}) bool {
+	return n.Left.Evaluate(testLabels) || n.Right.Evaluate(testLabels)
+}
+
+// NotNode represents a NOT operation
+type NotNode struct {
+	Child LabelExpressionNode
+}
+
+func (n *NotNode) Evaluate(testLabels map[string]struct{}) bool {
+	return !n.Child.Evaluate(testLabels)
+}
+
+// Token represents a token in the expression
+type Token struct {
+	Type  string // "LABEL", "AND", "OR", "NOT", "LPAREN", "RPAREN", "EOF"
+	Value string
+}
+
+// Lexer tokenizes the input expression
+type Lexer struct {
+	input string
+	pos   int
+}
+
+func newLexer(input string) *Lexer {
+	return &Lexer{input: strings.ToLower(strings.TrimSpace(input)), pos: 0}
+}
+
+func (l *Lexer) nextToken() Token {
+	l.skipWhitespace()
+
+	if l.pos >= len(l.input) {
+		return Token{Type: "EOF", Value: ""}
+	}
+
+	switch l.input[l.pos] {
+	case '(':
+		l.pos++
+		return Token{Type: "LPAREN", Value: "("}
+	case ')':
+		l.pos++
+		return Token{Type: "RPAREN", Value: ")"}
+	default:
+		return l.readWord()
+	}
+}
+
+func (l *Lexer) skipWhitespace() {
+	for l.pos < len(l.input) && l.input[l.pos] == ' ' {
+		l.pos++
+	}
+}
+
+func (l *Lexer) readWord() Token {
+	start := l.pos
+	for l.pos < len(l.input) && l.input[l.pos] != ' ' && l.input[l.pos] != '(' && l.input[l.pos] != ')' {
+		l.pos++
+	}
+
+	word := l.input[start:l.pos]
+	switch word {
+	case "and":
+		return Token{Type: "AND", Value: word}
+	case "or":
+		return Token{Type: "OR", Value: word}
+	case "not":
+		return Token{Type: "NOT", Value: word}
+	default:
+		return Token{Type: "LABEL", Value: word}
+	}
+}
+
+// Parser parses the tokenized expression into an AST
+type Parser struct {
+	lexer   *Lexer
+	current Token
+}
+
+func newParser(input string) *Parser {
+	lexer := newLexer(input)
+	return &Parser{
+		lexer:   lexer,
+		current: lexer.nextToken(),
+	}
+}
+
+func (p *Parser) advance() {
+	p.current = p.lexer.nextToken()
+}
+
+func (p *Parser) parseExpression() LabelExpressionNode {
+	return p.parseOr()
+}
+
+// parseOr handles OR operations (lowest precedence)
+func (p *Parser) parseOr() LabelExpressionNode {
+	left := p.parseAnd()
+
+	for p.current.Type == "OR" {
+		p.advance()
+		right := p.parseAnd()
+		left = &OrNode{Left: left, Right: right}
+	}
+
+	return left
+}
+
+// parseAnd handles AND operations (higher precedence than OR)
+func (p *Parser) parseAnd() LabelExpressionNode {
+	left := p.parseNot()
+
+	for p.current.Type == "AND" {
+		p.advance()
+		right := p.parseNot()
+		left = &AndNode{Left: left, Right: right}
+	}
+
+	return left
+}
+
+// parseNot handles NOT operations (highest precedence)
+func (p *Parser) parseNot() LabelExpressionNode {
+	if p.current.Type == "NOT" {
+		p.advance()
+		child := p.parseNot() // NOT is right-associative
+		return &NotNode{Child: child}
+	}
+
+	return p.parsePrimary()
+}
+
+// parsePrimary handles parentheses and labels
+func (p *Parser) parsePrimary() LabelExpressionNode {
+	if p.current.Type == "LPAREN" {
+		p.advance() // consume '('
+		node := p.parseExpression()
+		if p.current.Type == "RPAREN" {
+			p.advance() // consume ')'
+		}
+		return node
+	}
+
+	if p.current.Type == "LABEL" {
+		label := p.current.Value
+		p.advance()
+		return &LabelNode{Label: label}
+	}
+
+	// If we get here, there's a syntax error. Return a label node that always returns false
+	return &LabelNode{Label: ""}
+}
+
+// parseLabelExpression parses label filter strings into an AST
+func parseLabelExpression(expr string) LabelExpressionNode {
+	if strings.TrimSpace(expr) == "" {
+		return nil
+	}
+
+	parser := newParser(expr)
+	return parser.parseExpression()
+}
+
+// evaluateExpression checks if test labels match the filter expression
+func evaluateExpression(testLabels []string, node LabelExpressionNode) bool {
+	if node == nil {
+		return true // No filter means run all tests
+	}
+
+	testLabelSet := toSet(testLabels)
+	return node.Evaluate(testLabelSet)
+}
+
 func RegisterTestCase(t *testing.T, labels ...string) {
 	RegisterTestingT(t)
 
 	labelSet := toSet(labels)
-
-	requiredLabels := findRequiredLabels()
-	if len(requiredLabels) == 0 {
-		return
-	}
 
 	// Skip test if it contains "skipped" label
 	if _, exists := labelSet[LabelSkip]; exists {
 		t.Skip()
 	}
 
-	// Skip test if it doesn't contain at least one required label
-	for _, requiredLabel := range requiredLabels {
-		if _, exists := labelSet[requiredLabel]; !exists {
+	labelFilterExpr := findLabelFilterExpression()
+	doNotExecute := findDoNotExecuteFlag()
+
+	// If no filter is specified, run all tests (unless do-not-execute is set)
+	if labelFilterExpr == "" {
+		if doNotExecute {
+			printTestInfo(t, labels, "would execute (no filter)")
 			t.Skip()
 		}
+		return
+	}
+
+	node := parseLabelExpression(labelFilterExpr)
+	shouldRun := evaluateExpression(labels, node)
+
+	if doNotExecute {
+		if shouldRun {
+			printTestInfo(t, labels, fmt.Sprintf("would execute (matches filter: %s)", labelFilterExpr))
+		} else {
+			printTestInfo(t, labels, fmt.Sprintf("would skip (doesn't match filter: %s)", labelFilterExpr))
+		}
+		t.Skip()
+		return
+	}
+
+	if !shouldRun {
+		t.Skipf("Test skipped: label filter '%s' not satisfied", labelFilterExpr)
 	}
 }
 
-func findRequiredLabels() []string {
+func findDoNotExecuteFlag() bool {
+	for _, arg := range os.Args {
+		if arg == "-do-not-execute" || arg == "--do-not-execute" {
+			return true
+		}
+	}
+	return false
+}
+
+func printTestInfo(t *testing.T, labels []string, action string) {
+	testName := t.Name()
+	if testName == "" {
+		// Try to get test name from runtime if not available
+		if pc, _, _, ok := runtime.Caller(2); ok {
+			if fn := runtime.FuncForPC(pc); fn != nil {
+				testName = fn.Name()
+				// Extract just the test function name
+				if parts := strings.Split(testName, "."); len(parts) > 0 {
+					testName = parts[len(parts)-1]
+				}
+			}
+		}
+		if testName == "" {
+			testName = "<unknown test>"
+		}
+	}
+
+	fmt.Printf("[DRY-RUN] Test: %s | Labels: %v | Action: %s\n", testName, labels, action)
+}
+
+func findLabelFilterExpression() string {
 	const prefix = "-labels="
 
 	var labelsArg string
@@ -185,15 +437,15 @@ func findRequiredLabels() []string {
 	}
 
 	if labelsArg == "" {
-		return nil
+		return ""
 	}
 
 	labelsKV := strings.SplitN(labelsArg, "=", 2)
 	if len(labelsKV) != 2 {
-		return nil
+		return ""
 	}
 
-	return strings.Split(labelsKV[1], ",")
+	return labelsKV[1]
 }
 
 func toSet(labels []string) map[string]struct{} {

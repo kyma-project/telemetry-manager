@@ -20,7 +20,7 @@ import (
 )
 
 func TestCustomFilterDenied(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit)
+	suite.RegisterTestCase(t, suite.LabelFluentBit, suite.LabelNoFips)
 
 	var (
 		uniquePrefix = unique.Prefix()

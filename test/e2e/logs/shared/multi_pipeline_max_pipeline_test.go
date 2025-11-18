@@ -25,7 +25,7 @@ import (
 const maxNumberOfLogPipelines = telemetrycontrollers.MaxPipelineCount
 
 func TestMultiPipelineMaxPipeline(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelLogsMaxPipeline)
+	suite.RegisterTestCase(t, suite.LabelLogsMaxPipeline, suite.LabelNoFips)
 
 	var (
 		uniquePrefix = unique.Prefix("logs")
@@ -225,7 +225,7 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 }
 
 func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBitMaxPipeline)
+	suite.RegisterTestCase(t, suite.LabelFluentBitMaxPipeline, suite.LabelNoFips)
 
 	var (
 		uniquePrefix = unique.Prefix()
