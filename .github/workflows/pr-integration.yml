@@ -126,12 +126,12 @@ jobs:
           - label: logs-max-pipeline
             mode: release
             type: e2e
-            use-fips: true
+            use-fips: false
             install-istio: false
           - label: fluent-bit-max-pipeline
             mode: release
             type: e2e
-            use-fips: true
+            use-fips: false
             install-istio: false
           - label: otel-max-pipeline
             mode: release
