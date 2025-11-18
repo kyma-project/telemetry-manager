@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/expr-lang/expr"
 	"github.com/go-logr/logr"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -150,213 +151,149 @@ func DebugObjectsEnabled() bool {
 	return debugEnv == "1" || strings.ToLower(debugEnv) == "true"
 }
 
-// LabelExpressionNode represents a node in the parsed expression tree
-type LabelExpressionNode interface {
-	Evaluate(testLabels map[string]struct{}) bool
-}
-
-// LabelNode represents a simple label match
-type LabelNode struct {
-	Label string
-}
-
-func (n *LabelNode) Evaluate(testLabels map[string]struct{}) bool {
-	_, exists := testLabels[n.Label]
-	return exists
-}
-
-// AndNode represents an AND operation
-type AndNode struct {
-	Left, Right LabelExpressionNode
-}
-
-func (n *AndNode) Evaluate(testLabels map[string]struct{}) bool {
-	return n.Left.Evaluate(testLabels) && n.Right.Evaluate(testLabels)
-}
-
-// OrNode represents an OR operation
-type OrNode struct {
-	Left, Right LabelExpressionNode
-}
-
-func (n *OrNode) Evaluate(testLabels map[string]struct{}) bool {
-	return n.Left.Evaluate(testLabels) || n.Right.Evaluate(testLabels)
-}
-
-// NotNode represents a NOT operation
-type NotNode struct {
-	Child LabelExpressionNode
-}
-
-func (n *NotNode) Evaluate(testLabels map[string]struct{}) bool {
-	return !n.Child.Evaluate(testLabels)
-}
-
-// Token represents a token in the expression
-type Token struct {
-	Type  string // "LABEL", "AND", "OR", "NOT", "LPAREN", "RPAREN", "EOF"
-	Value string
-}
-
-// Lexer tokenizes the input expression
-type Lexer struct {
-	input string
-	pos   int
-}
-
-func newLexer(input string) *Lexer {
-	return &Lexer{input: strings.ToLower(strings.TrimSpace(input)), pos: 0}
-}
-
-func (l *Lexer) nextToken() Token {
-	l.skipWhitespace()
-
-	if l.pos >= len(l.input) {
-		return Token{Type: "EOF", Value: ""}
+// expr-lang/expr uses different syntax for logical operators. for our purpose AND OR NOT make more sense.
+func convertLabelExpressionSyntax(legacyExpr string) string {
+	if strings.TrimSpace(legacyExpr) == "" {
+		return ""
 	}
 
-	switch l.input[l.pos] {
-	case '(':
-		l.pos++
-		return Token{Type: "LPAREN", Value: "("}
-	case ')':
-		l.pos++
-		return Token{Type: "RPAREN", Value: ")"}
-	default:
-		return l.readWord()
-	}
+	converted := strings.ToLower(legacyExpr)
+
+	// Replace operators with expr-lang syntax
+	// Use word boundaries to avoid replacing parts of label names
+	converted = replaceWord(converted, "and", "&&")
+	converted = replaceWord(converted, "or", "||")
+	// For NOT, we need special handling to avoid adding extra space
+	converted = replaceWordCompact(converted, "not", "!")
+
+	return converted
 }
 
-func (l *Lexer) skipWhitespace() {
-	for l.pos < len(l.input) && l.input[l.pos] == ' ' {
-		l.pos++
-	}
-}
+// replaceWordCompact replaces a word and removes the trailing space if present
+func replaceWordCompact(s, old, new string) string {
+	var result strings.Builder
+	i := 0
+	oldLen := len(old)
 
-func (l *Lexer) readWord() Token {
-	start := l.pos
-	for l.pos < len(l.input) && l.input[l.pos] != ' ' && l.input[l.pos] != '(' && l.input[l.pos] != ')' {
-		l.pos++
-	}
+	for i < len(s) {
+		// Check if we found the word at current position
+		if i+oldLen <= len(s) && s[i:i+oldLen] == old {
+			// Check if it's a complete word (not part of another word)
+			beforeOK := i == 0 || !isAlphaNumeric(s[i-1])
+			afterOK := i+oldLen == len(s) || !isAlphaNumeric(s[i+oldLen])
 
-	word := l.input[start:l.pos]
-	switch word {
-	case "and":
-		return Token{Type: "AND", Value: word}
-	case "or":
-		return Token{Type: "OR", Value: word}
-	case "not":
-		return Token{Type: "NOT", Value: word}
-	default:
-		return Token{Type: "LABEL", Value: word}
-	}
-}
-
-// Parser parses the tokenized expression into an AST
-type Parser struct {
-	lexer   *Lexer
-	current Token
-}
-
-func newParser(input string) *Parser {
-	lexer := newLexer(input)
-
-	return &Parser{
-		lexer:   lexer,
-		current: lexer.nextToken(),
-	}
-}
-
-func (p *Parser) advance() {
-	p.current = p.lexer.nextToken()
-}
-
-func (p *Parser) parseExpression() LabelExpressionNode {
-	return p.parseOr()
-}
-
-// parseOr handles OR operations (lowest precedence)
-func (p *Parser) parseOr() LabelExpressionNode {
-	left := p.parseAnd()
-
-	for p.current.Type == "OR" {
-		p.advance()
-		right := p.parseAnd()
-		left = &OrNode{Left: left, Right: right}
+			if beforeOK && afterOK {
+				result.WriteString(new)
+				i += oldLen
+				// Skip one trailing space if present
+				if i < len(s) && s[i] == ' ' {
+					i++
+				}
+				continue
+			}
+		}
+		result.WriteByte(s[i])
+		i++
 	}
 
-	return left
+	return result.String()
 }
 
-// parseAnd handles AND operations (higher precedence than OR)
-func (p *Parser) parseAnd() LabelExpressionNode {
-	left := p.parseNot()
+// replaceWord replaces whole words only, not substrings within words
+func replaceWord(s, old, new string) string {
+	var result strings.Builder
+	i := 0
+	oldLen := len(old)
 
-	for p.current.Type == "AND" {
-		p.advance()
-		right := p.parseNot()
-		left = &AndNode{Left: left, Right: right}
+	for i < len(s) {
+		// Check if we found the word at current position
+		if i+oldLen <= len(s) && s[i:i+oldLen] == old {
+			// Check if it's a complete word (not part of another word)
+			beforeOK := i == 0 || !isAlphaNumeric(s[i-1])
+			afterOK := i+oldLen == len(s) || !isAlphaNumeric(s[i+oldLen])
+
+			if beforeOK && afterOK {
+				result.WriteString(new)
+				i += oldLen
+				continue
+			}
+		}
+		result.WriteByte(s[i])
+		i++
 	}
 
-	return left
+	return result.String()
 }
 
-// parseNot handles NOT operations (highest precedence)
-func (p *Parser) parseNot() LabelExpressionNode {
-	if p.current.Type == "NOT" {
-		p.advance()
-		child := p.parseNot() // NOT is right-associative
+func isAlphaNumeric(c byte) bool {
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '-'
+}
 
-		return &NotNode{Child: child}
+// evaluateLabelExpression evaluates a label filter expression against test labels using expr-lang/expr
+func evaluateLabelExpression(testLabels []string, filterExpr string) (bool, error) {
+	if strings.TrimSpace(filterExpr) == "" {
+		return true, nil // No filter means run all tests
 	}
 
-	return p.parsePrimary()
+	// Convert legacy syntax to expr syntax
+	exprSyntax := convertLabelExpressionSyntax(filterExpr)
+
+	// Build environment - create a map that returns false for missing keys
+	// This is done by using a custom type that implements map-like access
+	labelSet := make(map[string]bool)
+	for _, label := range testLabels {
+		labelSet[strings.ToLower(label)] = true
+	}
+
+	// Create environment accessor that returns false for undefined labels
+	env := map[string]interface{}{
+		"hasLabel": func(label string) bool {
+			return labelSet[strings.ToLower(label)]
+		},
+	}
+
+	// Transform the expression to use hasLabel() function calls
+	transformedExpr := transformExpressionToFunctionCalls(exprSyntax)
+
+	// Compile and run the expression
+	program, err := expr.Compile(transformedExpr, expr.Env(env), expr.AsBool())
+	if err != nil {
+		return false, fmt.Errorf("invalid label filter expression '%s': %w", filterExpr, err)
+	}
+
+	result, err := expr.Run(program, env)
+	if err != nil {
+		return false, fmt.Errorf("failed to evaluate label filter '%s': %w", filterExpr, err)
+	}
+
+	return result.(bool), nil
 }
 
-// parsePrimary handles parentheses and labels
-func (p *Parser) parsePrimary() LabelExpressionNode {
-	if p.current.Type == "LPAREN" {
-		p.advance() // consume '('
+// transformExpressionToFunctionCalls converts label identifiers to hasLabel() function calls
+func transformExpressionToFunctionCalls(exprStr string) string {
+	var result strings.Builder
+	i := 0
 
-		node := p.parseExpression()
-		if p.current.Type == "RPAREN" {
-			p.advance() // consume ')'
+	for i < len(exprStr) {
+		// Skip operators and special characters
+		if exprStr[i] == '&' || exprStr[i] == '|' || exprStr[i] == '!' ||
+			exprStr[i] == '(' || exprStr[i] == ')' || exprStr[i] == ' ' {
+			result.WriteByte(exprStr[i])
+			i++
+			continue
 		}
 
-		return node
+		// We found the start of an identifier
+		start := i
+		for i < len(exprStr) && isAlphaNumeric(exprStr[i]) {
+			i++
+		}
+
+		label := exprStr[start:i]
+		result.WriteString(fmt.Sprintf("hasLabel(\"%s\")", label))
 	}
 
-	if p.current.Type == "LABEL" {
-		label := p.current.Value
-		p.advance()
-
-		return &LabelNode{Label: label}
-	}
-
-	// If we get here, there's a syntax error. Return a label node that always returns false
-	return &LabelNode{Label: ""}
-}
-
-// parseLabelExpression parses label filter strings into an AST
-func parseLabelExpression(expr string) LabelExpressionNode {
-	if strings.TrimSpace(expr) == "" {
-		return nil
-	}
-
-	parser := newParser(expr)
-
-	return parser.parseExpression()
-}
-
-// evaluateExpression checks if test labels match the filter expression
-func evaluateExpression(testLabels []string, node LabelExpressionNode) bool {
-	if node == nil {
-		return true // No filter means run all tests
-	}
-
-	testLabelSet := toSet(testLabels)
-
-	return node.Evaluate(testLabelSet)
+	return result.String()
 }
 
 func RegisterTestCase(t *testing.T, labels ...string) {
@@ -382,8 +319,10 @@ func RegisterTestCase(t *testing.T, labels ...string) {
 		return
 	}
 
-	node := parseLabelExpression(labelFilterExpr)
-	shouldRun := evaluateExpression(labels, node)
+	shouldRun, err := evaluateLabelExpression(labels, labelFilterExpr)
+	if err != nil {
+		t.Fatalf("Invalid label filter: %v", err)
+	}
 
 	if doNotExecute {
 		if shouldRun {

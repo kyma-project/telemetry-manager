@@ -214,15 +214,15 @@ func TestLabelExpressionParsing(t *testing.T) {
 		// Edge cases
 		{
 			name:        "multiple_nots",
-			expression:  "not fips",
-			description: "Double negation: not fips - should be equivalent to 'fips'",
+			expression:  "not not fips",
+			description: "Double negation: not not fips - should be equivalent to 'fips'",
 			testLabels:  []string{"fips"},
 			expected:    true,
 		},
 		{
 			name:        "triple_not",
-			expression:  "not fips",
-			description: "Triple negation: not fips - should be equivalent to 'not fips'",
+			expression:  "not not not fips",
+			description: "Triple negation: not not not fips - should be equivalent to 'not fips'",
 			testLabels:  []string{"fips"},
 			expected:    false,
 		},
@@ -268,8 +268,8 @@ func TestLabelExpressionParsing(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Test the complete parsing and evaluation pipeline
-			node := parseLabelExpression(tt.expression)
-			result := evaluateExpression(tt.testLabels, node)
+			result, err := evaluateLabelExpression(tt.testLabels, tt.expression)
+			require.NoError(t, err, "Failed to evaluate expression: %s", tt.expression)
 
 			assert.Equal(t, tt.expected, result,
 				"Expression: '%s'\nDescription: %s\nTest labels: %v\nExpected: %v, Got: %v",
@@ -313,8 +313,8 @@ func TestOperatorPrecedence(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			node := parseLabelExpression(tt.expression)
-			result := evaluateExpression(tt.testLabels, node)
+			result, err := evaluateLabelExpression(tt.testLabels, tt.expression)
+			require.NoError(t, err, "Failed to evaluate expression: %s", tt.expression)
 
 			assert.Equal(t, tt.expected, result,
 				"Expression: '%s'\nPrecedence note: %s\nTest labels: %v",
@@ -376,6 +376,13 @@ func TestLabelFilteringIntegration(t *testing.T) {
 			shouldSkip:  true,
 			description: "Test not matching complex expression should be skipped",
 		},
+		{
+			name:        "label_with_dash",
+			labelFilter: "not fluent-bit",
+			testLabels:  []string{"fluent-bit"},
+			shouldSkip:  true,
+			description: "Test with label containing dash should be handled correctly",
+		},
 	}
 
 	for _, tt := range tests {
@@ -395,8 +402,8 @@ func TestLabelFilteringIntegration(t *testing.T) {
 			}
 
 			if labelFilterExpr != "" {
-				node := parseLabelExpression(labelFilterExpr)
-				shouldRun := evaluateExpression(tt.testLabels, node)
+				shouldRun, err := evaluateLabelExpression(tt.testLabels, labelFilterExpr)
+				require.NoError(t, err, "Failed to evaluate expression: %s", labelFilterExpr)
 				actualShouldSkip := !shouldRun
 
 				assert.Equal(t, tt.shouldSkip, actualShouldSkip,
@@ -407,75 +414,50 @@ func TestLabelFilteringIntegration(t *testing.T) {
 	}
 }
 
-// TestLexerTokenization tests the lexer component specifically
-func TestLexerTokenization(t *testing.T) {
+// TestSyntaxConversion tests the conversion from legacy syntax to expr-lang syntax
+func TestSyntaxConversion(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    string
-		expected []Token
+		expected string
 	}{
 		{
-			name:  "simple_label",
-			input: "fips",
-			expected: []Token{
-				{Type: "LABEL", Value: "fips"},
-				{Type: "EOF", Value: ""},
-			},
+			name:     "simple_and",
+			input:    "fips and logs",
+			expected: "fips && logs",
 		},
 		{
-			name:  "and_expression",
-			input: "fips and logs",
-			expected: []Token{
-				{Type: "LABEL", Value: "fips"},
-				{Type: "AND", Value: "and"},
-				{Type: "LABEL", Value: "logs"},
-				{Type: "EOF", Value: ""},
-			},
+			name:     "simple_or",
+			input:    "fips or logs",
+			expected: "fips || logs",
 		},
 		{
-			name:  "parentheses",
-			input: "(fips or logs)",
-			expected: []Token{
-				{Type: "LPAREN", Value: "("},
-				{Type: "LABEL", Value: "fips"},
-				{Type: "OR", Value: "or"},
-				{Type: "LABEL", Value: "logs"},
-				{Type: "RPAREN", Value: ")"},
-				{Type: "EOF", Value: ""},
-			},
+			name:     "simple_not",
+			input:    "not fips",
+			expected: "!fips",
 		},
 		{
-			name:  "complex_expression",
-			input: "not (slow and experimental)",
-			expected: []Token{
-				{Type: "NOT", Value: "not"},
-				{Type: "LPAREN", Value: "("},
-				{Type: "LABEL", Value: "slow"},
-				{Type: "AND", Value: "and"},
-				{Type: "LABEL", Value: "experimental"},
-				{Type: "RPAREN", Value: ")"},
-				{Type: "EOF", Value: ""},
-			},
+			name:     "complex_expression",
+			input:    "(fips or logs) and not slow",
+			expected: "(fips || logs) && !slow",
+		},
+		{
+			name:     "uppercase_operators",
+			input:    "FIPS AND LOGS OR NOT SLOW",
+			expected: "fips && logs || !slow",
+		},
+		{
+			name:     "mixed_case",
+			input:    "Fips And Logs Or Not Slow",
+			expected: "fips && logs || !slow",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			lexer := newLexer(tt.input)
-
-			var tokens []Token
-
-			for {
-				token := lexer.nextToken()
-
-				tokens = append(tokens, token)
-				if token.Type == "EOF" {
-					break
-				}
-			}
-
-			assert.Equal(t, tt.expected, tokens,
-				"Tokenization of: '%s'", tt.input)
+			result := convertLabelExpressionSyntax(tt.input)
+			assert.Equal(t, tt.expected, result,
+				"Conversion of: '%s'", tt.input)
 		})
 	}
 }
