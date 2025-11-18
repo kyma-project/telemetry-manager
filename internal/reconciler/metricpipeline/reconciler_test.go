@@ -19,6 +19,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
@@ -46,6 +47,11 @@ func TestReconcile(t *testing.T) {
 
 	telemetryNamespace := "default"
 	moduleVersion := "1.0.0"
+
+	globals := config.NewGlobal(
+		config.WithTargetNamespace(telemetryNamespace),
+		config.WithVersion(moduleVersion),
+	)
 
 	t.Run("metric gateway deployment is not ready", func(t *testing.T) {
 		pipeline := testutils.NewMetricPipelineBuilder().Build()
@@ -88,9 +94,8 @@ func TestReconcile(t *testing.T) {
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
 			agentApplierDeleterMock,
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
@@ -163,9 +168,8 @@ func TestReconcile(t *testing.T) {
 		}
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
 			agentApplierDeleterMock,
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
@@ -238,9 +242,8 @@ func TestReconcile(t *testing.T) {
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
 			agentApplierDeleterMock,
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
@@ -316,9 +319,8 @@ func TestReconcile(t *testing.T) {
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
 			agentApplierDeleterMock,
 			agentConfigBuilderMock,
 			agentProberStub,
@@ -396,9 +398,8 @@ func TestReconcile(t *testing.T) {
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
 			agentApplierDeleterMock,
 			agentConfigBuilderMock,
 			agentProberStub,
@@ -476,9 +477,8 @@ func TestReconcile(t *testing.T) {
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
 			agentApplierDeleterMock,
 			agentConfigBuilderMock,
 			agentProberStub,
@@ -560,9 +560,8 @@ func TestReconcile(t *testing.T) {
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
 			agentApplierDeleterMock,
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
@@ -635,9 +634,8 @@ func TestReconcile(t *testing.T) {
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
 			agentApplierDeleterMock,
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
@@ -714,9 +712,8 @@ func TestReconcile(t *testing.T) {
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
 			agentApplierDeleterMock,
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
@@ -872,9 +869,8 @@ func TestReconcile(t *testing.T) {
 
 				errToMsg := &conditions.ErrorToMessageConverter{}
 				sut := New(
+					globals,
 					fakeClient,
-					telemetryNamespace,
-					moduleVersion,
 					agentApplierDeleterMock,
 					&mocks.AgentConfigBuilder{},
 					agentProberStub,
@@ -1008,9 +1004,8 @@ func TestReconcile(t *testing.T) {
 
 				errToMsg := &conditions.ErrorToMessageConverter{}
 				sut := New(
+					globals,
 					fakeClient,
-					telemetryNamespace,
-					moduleVersion,
 					agentApplierDeleterMock,
 					agentConfigBuilderMock,
 					agentProberStub,
@@ -1157,9 +1152,8 @@ func TestReconcile(t *testing.T) {
 				errToMsg := &conditions.ErrorToMessageConverter{}
 
 				sut := New(
+					globals,
 					fakeClient,
-					telemetryNamespace,
-					moduleVersion,
 					agentApplierDeleterMock,
 					&mocks.AgentConfigBuilder{},
 					agentProberStub,
@@ -1254,9 +1248,8 @@ func TestReconcile(t *testing.T) {
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
 			agentApplierDeleterMock,
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
@@ -1343,9 +1336,8 @@ func TestReconcile(t *testing.T) {
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
 			agentApplierDeleterMock,
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
@@ -1435,9 +1427,8 @@ func TestReconcile(t *testing.T) {
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
 			agentApplierDeleterMock,
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
@@ -1520,9 +1511,8 @@ func TestReconcile(t *testing.T) {
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
 			agentApplierDeleterMock,
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
@@ -1606,9 +1596,8 @@ func TestReconcile(t *testing.T) {
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
 			agentApplierDeleterMock,
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
@@ -1676,9 +1665,8 @@ func TestReconcile(t *testing.T) {
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
 			agentApplierDeleterMock,
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
@@ -1770,9 +1758,8 @@ func TestReconcile(t *testing.T) {
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
 			agentApplierDeleterMock,
 			agentConfigBuilderMock,
 			agentProberStub,
@@ -1865,9 +1852,8 @@ func TestReconcile(t *testing.T) {
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
+			globals,
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
 			agentApplierDeleterMock,
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
@@ -2021,25 +2007,24 @@ func TestReconcile(t *testing.T) {
 
 				errToMsg := &conditions.ErrorToMessageConverter{}
 
-				sut := Reconciler{
-					Client:                  fakeClient,
-					telemetryNamespace:      telemetryNamespace,
-					moduleVersion:           moduleVersion,
-					agentConfigBuilder:      agentConfigBuilderMock,
-					gatewayConfigBuilder:    gatewayConfigBuilderMock,
-					agentApplierDeleter:     agentApplierDeleterMock,
-					gatewayApplierDeleter:   gatewayApplierDeleterMock,
-					pipelineLock:            pipelineLockStub,
-					pipelineSync:            pipelineSync,
-					gatewayProber:           gatewayProberStub,
-					agentProber:             agentProberMock,
-					gatewayFlowHealthProber: gatewayFlowHealthProberStub,
-					agentFlowHealthProber:   agentFlowHealthProberStub,
-					overridesHandler:        overridesHandlerStub,
-					istioStatusChecker:      istioStatusCheckerStub,
-					pipelineValidator:       pipelineValidatorWithStubs,
-					errToMsgConverter:       errToMsg,
-				}
+				sut := New(
+					globals,
+					fakeClient,
+					agentApplierDeleterMock,
+					agentConfigBuilderMock,
+					agentProberMock,
+					gatewayFlowHealthProberStub,
+					agentFlowHealthProberStub,
+					gatewayApplierDeleterMock,
+					gatewayConfigBuilderMock,
+					gatewayProberStub,
+					istioStatusCheckerStub,
+					overridesHandlerStub,
+					pipelineLockStub,
+					pipelineSync,
+					pipelineValidatorWithStubs,
+					errToMsg,
+				)
 				_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)
 

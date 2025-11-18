@@ -114,7 +114,7 @@ func (r *Reconciler) updateGatewayEndpoints(ctx context.Context, telemetry *oper
 func (r *Reconciler) logEndpoints(ctx context.Context, config Config) (*operatorv1alpha1.OTLPEndpoints, error) {
 	pushEndpoint := types.NamespacedName{
 		Name:      otelcollector.LogOTLPServiceName,
-		Namespace: config.Logs.Namespace,
+		Namespace: config.TargetNamespace(),
 	}
 
 	svcExists, err := r.checkServiceExists(ctx, pushEndpoint)
@@ -133,7 +133,7 @@ func (r *Reconciler) logEndpoints(ctx context.Context, config Config) (*operator
 func (r *Reconciler) traceEndpoints(ctx context.Context, config Config) (*operatorv1alpha1.OTLPEndpoints, error) {
 	pushEndpoint := types.NamespacedName{
 		Name:      otelcollector.TraceOTLPServiceName,
-		Namespace: config.Traces.Namespace,
+		Namespace: config.TargetNamespace(),
 	}
 
 	svcExists, err := r.checkServiceExists(ctx, pushEndpoint)
@@ -152,7 +152,8 @@ func (r *Reconciler) traceEndpoints(ctx context.Context, config Config) (*operat
 func (r *Reconciler) metricEndpoints(ctx context.Context, config Config) (*operatorv1alpha1.OTLPEndpoints, error) {
 	pushEndpoint := types.NamespacedName{
 		Name:      otelcollector.MetricOTLPServiceName,
-		Namespace: config.Metrics.Namespace}
+		Namespace: config.TargetNamespace(),
+	}
 
 	svcExists, err := r.checkServiceExists(ctx, pushEndpoint)
 	if err != nil {
