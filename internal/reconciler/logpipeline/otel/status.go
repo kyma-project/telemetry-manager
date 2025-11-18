@@ -126,7 +126,7 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 	if isLogAgentRequired(pipeline) {
 		condition = commonstatus.GetAgentHealthyCondition(ctx,
 			r.agentProber,
-			types.NamespacedName{Name: otelcollector.LogAgentName, Namespace: r.telemetryNamespace},
+			types.NamespacedName{Name: otelcollector.LogAgentName, Namespace: r.globals.TargetNamespace()},
 			r.errToMessageConverter,
 			commonstatus.SignalTypeOtelLogs)
 	}
@@ -137,7 +137,7 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 
 func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
 	condition := commonstatus.GetGatewayHealthyCondition(ctx,
-		r.gatewayProber, types.NamespacedName{Name: otelcollector.LogGatewayName, Namespace: r.telemetryNamespace},
+		r.gatewayProber, types.NamespacedName{Name: otelcollector.LogGatewayName, Namespace: r.globals.TargetNamespace()},
 		r.errToMessageConverter,
 		commonstatus.SignalTypeOtelLogs)
 	condition.ObservedGeneration = pipeline.Generation

@@ -1,11 +1,10 @@
 package v1alpha1
 
 import (
-	"regexp"
-
 	"k8s.io/utils/ptr"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/namespaces"
 )
 
 // Converts shared structs between v1alpha1 and v1beta1 CRDs.
@@ -18,9 +17,8 @@ import (
 func sanitizeNamespaceNames(names []string) []string {
 	var valid []string
 	// Kubernetes namespace regex
-	var nsRegex = regexp.MustCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`)
 	for _, n := range names {
-		if len(n) <= 63 && nsRegex.MatchString(n) {
+		if len(n) <= 63 && namespaces.ValidNameRegexp.MatchString(n) {
 			valid = append(valid, n)
 		}
 	}

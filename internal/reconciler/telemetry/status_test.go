@@ -15,6 +15,7 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -40,9 +41,7 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			name: "all components are healthy",
 			config: &Config{
-				Logs:    LogsConfig{Namespace: "telemetry-system"},
-				Traces:  TracesConfig{Namespace: "telemetry-system"},
-				Metrics: MetricsConfig{Namespace: "telemetry-system"},
+				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
 			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
@@ -77,9 +76,7 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			name: "log components are unhealthy",
 			config: &Config{
-				Logs:    LogsConfig{Namespace: "telemetry-system"},
-				Traces:  TracesConfig{Namespace: "telemetry-system"},
-				Metrics: MetricsConfig{Namespace: "telemetry-system"},
+				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
 			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonAgentNotReady},
@@ -114,9 +111,7 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			name: "trace components are unhealthy",
 			config: &Config{
-				Logs:    LogsConfig{Namespace: "telemetry-system"},
-				Traces:  TracesConfig{Namespace: "telemetry-system"},
-				Metrics: MetricsConfig{Namespace: "telemetry-system"},
+				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
 			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
@@ -151,9 +146,7 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			name: "metric components are unhealthy",
 			config: &Config{
-				Logs:    LogsConfig{Namespace: "telemetry-system"},
-				Traces:  TracesConfig{Namespace: "telemetry-system"},
-				Metrics: MetricsConfig{Namespace: "telemetry-system"},
+				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
 			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
@@ -219,9 +212,7 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			name: "deleting with no dependent resources",
 			config: &Config{
-				Logs:    LogsConfig{Namespace: "telemetry-system"},
-				Traces:  TracesConfig{Namespace: "telemetry-system"},
-				Metrics: MetricsConfig{Namespace: "telemetry-system"},
+				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
 			telemetry: &operatorv1alpha1.Telemetry{
 				ObjectMeta: metav1.ObjectMeta{
@@ -262,9 +253,7 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			name: "deleting with dependent resources",
 			config: &Config{
-				Logs:    LogsConfig{Namespace: "telemetry-system"},
-				Traces:  TracesConfig{Namespace: "telemetry-system"},
-				Metrics: MetricsConfig{Namespace: "telemetry-system"},
+				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
 			telemetry: &operatorv1alpha1.Telemetry{
 				ObjectMeta: metav1.ObjectMeta{
@@ -296,9 +285,7 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			name: "metric agent is unhealthy",
 			config: &Config{
-				Logs:    LogsConfig{Namespace: "telemetry-system"},
-				Traces:  TracesConfig{Namespace: "telemetry-system"},
-				Metrics: MetricsConfig{Namespace: "telemetry-system"},
+				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
 			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
@@ -333,9 +320,7 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			name: "only log metric pipeline is defined",
 			config: &Config{
-				Logs:    LogsConfig{Namespace: "telemetry-system"},
-				Traces:  TracesConfig{Namespace: "telemetry-system"},
-				Metrics: MetricsConfig{Namespace: "telemetry-system"},
+				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
 			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},

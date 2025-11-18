@@ -39,6 +39,7 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricagent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricgateway"
@@ -46,6 +47,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
@@ -64,23 +66,21 @@ type MetricPipelineController struct {
 }
 
 type MetricPipelineControllerConfig struct {
+	config.Global
+
 	MetricAgentPriorityClassName   string
 	MetricGatewayPriorityClassName string
-	ModuleVersion                  string
 	OTelCollectorImage             string
 	RestConfig                     *rest.Config
-	SelfMonitorName                string
-	TelemetryNamespace             string
-	EnableFIPSMode                 bool
 }
 
-func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config MetricPipelineControllerConfig) (*MetricPipelineController, error) {
-	gatewayFlowHealthProber, err := prober.NewOTelMetricGatewayProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
+func NewMetricPipelineController(config MetricPipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent) (*MetricPipelineController, error) {
+	gatewayFlowHealthProber, err := prober.NewOTelMetricGatewayProber(types.NamespacedName{Name: selfmonitor.ServiceName, Namespace: config.TargetNamespace()})
 	if err != nil {
 		return nil, err
 	}
 
-	agentFlowHealthProber, err := prober.NewOTelMetricAgentProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
+	agentFlowHealthProber, err := prober.NewOTelMetricAgentProber(types.NamespacedName{Name: selfmonitor.ServiceName, Namespace: config.TargetNamespace()})
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +89,7 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 		client,
 		types.NamespacedName{
 			Name:      "telemetry-metricpipeline-lock",
-			Namespace: config.TelemetryNamespace,
+			Namespace: config.TargetNamespace(),
 		},
 		MaxPipelineCount,
 	)
@@ -98,7 +98,7 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 		client,
 		types.NamespacedName{
 			Name:      "telemetry-metricpipeline-sync",
-			Namespace: config.TelemetryNamespace,
+			Namespace: config.TargetNamespace(),
 		},
 	)
 
@@ -130,29 +130,18 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 	gatewayConfigBuilder := &metricgateway.Builder{Reader: client}
 
 	reconciler := metricpipeline.New(
+		config.Global,
 		client,
-		config.TelemetryNamespace,
-		config.ModuleVersion,
-		otelcollector.NewMetricAgentApplierDeleter(
-			config.OTelCollectorImage,
-			config.TelemetryNamespace,
-			config.MetricAgentPriorityClassName,
-			config.EnableFIPSMode,
-		),
+		otelcollector.NewMetricAgentApplierDeleter(config.Global, config.OTelCollectorImage, config.MetricAgentPriorityClassName),
 		agentConfigBuilder,
 		&workloadstatus.DaemonSetProber{Client: client},
 		gatewayFlowHealthProber,
 		agentFlowHealthProber,
-		otelcollector.NewMetricGatewayApplierDeleter(
-			config.OTelCollectorImage,
-			config.TelemetryNamespace,
-			config.MetricGatewayPriorityClassName,
-			config.EnableFIPSMode,
-		),
+		otelcollector.NewMetricGatewayApplierDeleter(config.Global, config.OTelCollectorImage, config.MetricGatewayPriorityClassName),
 		gatewayConfigBuilder,
 		&workloadstatus.DeploymentProber{Client: client},
 		istiostatus.NewChecker(discoveryClient),
-		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
+		overrides.New(config.Global, client),
 		pipelineLock,
 		pipelineSync,
 		pipelineValidator,
