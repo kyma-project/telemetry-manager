@@ -44,7 +44,7 @@ wait-for-image: ## Wait for the manager image to be available in the registry
 # Internal target for common e2e test execution logic
 # Usage: $(call run-e2e-common,JUNIT_FLAGS)
 define run-e2e-common
-	echo "Running e2e tests with TEST_ID='$(TEST_ID)', TEST_PATH='$(TEST_PATH)', TEST_LABEL='$(TEST_LABEL)', ADDITIONAL LABELS='$(LABELS)'"
+	echo "Running e2e tests with TEST_ID='$(TEST_ID)', TEST_PATH='$(TEST_PATH)', TEST_LABEL='$(TEST_LABEL)'"
 	@if [ -z "$(TEST_PATH)" ]; then \
 		echo "Error: TEST_PATH environment variable is required"; \
 		exit 1; \
@@ -54,17 +54,6 @@ define run-e2e-common
 		exit 1; \
 	fi
 	@ALL_LABELS="$(TEST_LABEL)"; \
-	if [ -n "$(LABELS)" ]; then \
-		ADDITIONAL_LABELS=""; \
-		for label in $(LABELS); do \
-			if [ -z "$$ADDITIONAL_LABELS" ]; then \
-				ADDITIONAL_LABELS="$$label"; \
-			else \
-				ADDITIONAL_LABELS="$$ADDITIONAL_LABELS,$$label"; \
-			fi; \
-		done; \
-		ALL_LABELS="$$ALL_LABELS,$$ADDITIONAL_LABELS"; \
-	fi; \
 	echo "Using combined labels: $$ALL_LABELS"; \
 	echo "Executing: $(GOTESTSUM) --format pkgname --hide-summary=skipped $(1) -- -timeout=20m $(TEST_PATH) -- -labels=\"$$ALL_LABELS\""; \
 	$(GOTESTSUM) \

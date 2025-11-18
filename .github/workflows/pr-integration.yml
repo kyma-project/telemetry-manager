@@ -111,72 +111,114 @@ jobs:
           - label: fluent-bit
             mode: release
             type: e2e
+            use-fips: false
+            install-istio: false
           - label: log-agent
             mode: release
             type: e2e
+            use-fips: true
+            install-istio: false
           - label: log-gateway
             mode: release
             type: e2e
+            use-fips: true
+            install-istio: false
           - label: logs-max-pipeline
             mode: release
             type: e2e
+            use-fips: true
+            install-istio: false
           - label: fluent-bit-max-pipeline
             mode: release
             type: e2e
+            use-fips: true
+            install-istio: false
           - label: otel-max-pipeline
             mode: release
             type: e2e
+            use-fips: true
+            install-istio: false
           - label: logs-misc
             mode: release
             type: e2e
+            use-fips: true
+            install-istio: false
           # METRICS
           - label: metric-agent-a
             mode: release
             type: e2e
+            use-fips: true
+            install-istio: false
           - label: metric-agent-b
             mode: release
             type: e2e
+            use-fips: true
+            install-istio: false
           - label: metric-agent-c
             mode: release
             type: e2e
+            use-fips: true
+            install-istio: false
           - label: metric-gateway-a
             mode: release
             type: e2e
+            use-fips: true
+            install-istio: false
           - label: metric-gateway-b
             mode: release
             type: e2e
+            use-fips: true
+            install-istio: false
           - label: metric-gateway-c
             mode: release
             type: e2e
+            use-fips: true
+            install-istio: false
           - label: metrics-misc
             mode: release
             type: e2e
+            use-fips: true
+            install-istio: false
           - label: metrics-max-pipeline
             mode: release
             type: e2e
+            use-fips: true
+            install-istio: false
           # TRACES
           - label: traces
             mode: release
             type: e2e
+            use-fips: true
+            install-istio: false
           - label: traces-max-pipeline
             mode: release
             type: e2e
+            use-fips: true
+            install-istio: false
           # TELEMETRY
           - label: telemetry
             mode: release
             type: e2e
+            use-fips: true
+            install-istio: false
           # MISC
           - label: misc
             mode: release
             type: e2e
+            use-fips: true
+            install-istio: false
           # OTHER
           - label: experimental
             mode: experimental
             type: e2e
+            use-fips: true
+            install-istio: false
           # INTEGRATION
           - label: istio
             mode: release
             type: integration
+            use-fips: true
+            install-istio: true
     name: "e2e: ${{ matrix.testcase.label }}"
     runs-on: ubuntu-latest
     steps:
@@ -188,13 +230,14 @@ jobs:
         with:
           experimental: ${{ matrix.testcase.mode == 'experimental' }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          install-istio: ${{ matrix.testcase.label == 'istio' && matrix.testcase.type == 'integration' }}
-          operate-in-fips-mode: ${{ matrix.testcase.label != 'fluent-bit' }}
+          install-istio: ${{ matrix.testcase.install-istio }}
+          operate-in-fips-mode: ${{ matrix.testcase.use-fips }}
 
       - name: Execute tests
         uses: "./.github/template/test-execute"
         with:
-          id: ${{ matrix.testcase.type }}-${{ matrix.testcase.label }}
+          # we have to cleanup ids to act as valid filenames
+          id: ${{ replace(format('{0}-{1}', matrix.testcase.type, matrix.testcase.label), ' ', '_') }}
           path: ./test/${{ matrix.testcase.type }}/...
           label: ${{ matrix.testcase.label }}
 
@@ -202,7 +245,7 @@ jobs:
         uses: "./.github/template/test-cleanup"
         if: ${{ !cancelled()  }}
         with:
-          id: ${{ matrix.testcase.type }}-${{ matrix.testcase.label }}
+          id: ${{ replace(format('{0}-{1}', matrix.testcase.type, matrix.testcase.label), ' ', '_') }}
           failure: failure()
 
       - name: Print logs from all pods in kyma-system namespace

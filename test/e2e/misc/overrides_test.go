@@ -24,7 +24,7 @@ import (
 )
 
 func TestOverrides(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelTelemetry, suite.LabelNoFips)
+	suite.RegisterTestCase(t, suite.LabelTelemetry)
 
 	const (
 		appNameLabelKey = "app.kubernetes.io/name"

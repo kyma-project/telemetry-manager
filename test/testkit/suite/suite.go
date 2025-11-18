@@ -107,9 +107,6 @@ const (
 	LabelExperimental = "experimental"
 	LabelSkip         = "skip"
 
-	// Requirement labels
-	LabelNoFips = "nofips"
-
 	// Selfmonitor test labels
 
 	// Prefixes for self-monitor test labels

@@ -23,7 +23,7 @@ import (
 )
 
 func TestAccessLogsFluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelGardener, suite.LabelIstio, suite.LabelNoFips)
+	suite.RegisterTestCase(t, suite.LabelGardener, suite.LabelIstio)
 
 	var (
 		uniquePrefix = unique.Prefix()
