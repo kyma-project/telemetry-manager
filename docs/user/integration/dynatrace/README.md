@@ -16,19 +16,16 @@ Combined with the Kyma Telemetry module, you can collect custom spans and metric
 
 ## Table of Content
 
-- [Integrate With Dynatrace](#integrate-with-dynatrace)
-  - [Overview](#overview)
-  - [Table of Content](#table-of-content)
-  - [Prerequisites](#prerequisites)
-  - [Prepare the Namespace](#prepare-the-namespace)
-  - [Dynatrace Setup](#dynatrace-setup)
-  - [Telemetry Module Setup](#telemetry-module-setup)
-    - [Create Secret](#create-secret)
-    - [Ingest Traces](#ingest-traces)
-    - [Ingest Metrics](#ingest-metrics)
-  - [Set Up Kyma Dashboard Integration](#set-up-kyma-dashboard-integration)
-  - [Use Dynatrace Dashboards](#use-dynatrace-dashboards)
-  - [Use Dynatrace Alerts](#use-dynatrace-alerts)
+- [Prerequisites](#prerequisites)
+- [Prepare the Namespace](#prepare-the-namespace)
+- [Dynatrace Setup](#dynatrace-setup)
+- [Telemetry Module Setup](#telemetry-module-setup)
+  - [Create Secret](#create-secret)
+  - [Ingest Traces](#ingest-traces)
+  - [Ingest Metrics](#ingest-metrics)
+- [Set Up Kyma Dashboard Integration](#set-up-kyma-dashboard-integration)
+- [Use Dynatrace Dashboards](#use-dynatrace-dashboards)
+- [Use Dynatrace Alerts](#use-dynatrace-alerts)
 
 ## Prerequisites
 
