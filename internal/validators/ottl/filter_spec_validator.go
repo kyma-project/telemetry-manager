@@ -39,11 +39,21 @@ func (v *FilterSpecValidator) Validate(filters []telemetryv1alpha1.FilterSpec) e
 	const errorMessage = "invalid FilterSpec"
 
 	for _, fs := range filters {
-		if err := v.parserCollection.parseConditions(fs.Conditions); err != nil {
-			return &InvalidOTTLSpecError{Err: fmt.Errorf("%s: %w", errorMessage, err)}
+		if err := v.ValidateConditions(fs.Conditions); err != nil {
+			return err
 		}
 	}
 
+	return nil
+}
+
+// ValidateConditions validates raw OTTL conditions
+func (v *FilterSpecValidator) ValidateConditions(conditions []string) error {
+	const errorMessage = "invalid FilterSpec"
+
+	if err := v.parserCollection.parseConditions(conditions); err != nil {
+		return &InvalidOTTLSpecError{Err: fmt.Errorf("%s: %w", errorMessage, err)}
+	}
 	return nil
 }
 
