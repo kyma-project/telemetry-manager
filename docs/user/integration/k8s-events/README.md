@@ -18,7 +18,10 @@ Learn how to collect Kubernetes cluster events and forward them as OTLP  logs to
 ## Table of Content
 
 - [Prerequisites](#prerequisites)
-- [Installation](#installation)
+- [Prepare the Environment](#prepare-the-environment)
+- [Install the Collector](#install-the-collector)
+- [Verify the Installation](#verify-the-installation)
+- [Integrate with SAP Cloud Logging (Optional)](#integrate-with-sap-cloud-logging-optional)
 - [Clean Up](#clean-up)
 
 ## Prerequisites
@@ -30,8 +33,6 @@ Learn how to collect Kubernetes cluster events and forward them as OTLP  logs to
 - Helm 3.x
 
 ## Prepare the Environment
-
-### Preparation
 
 1. Export your namespace as a variable with the following command:
 
