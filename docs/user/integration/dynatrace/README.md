@@ -57,7 +57,7 @@ To integrate Dynatrace, you first install the [Dynatrace Operator](https://githu
 
 1. Install the Dynatrace operator with the namespace you prepared.
 
-1. Create a [DynaKube](https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters) CR with the `apiurl` of your Dynatrace environment, and configure the `namespaceSelector` for both `metadataEnrichment` and for your desired observability mode:
+1. Create a [DynaKube](https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters) CR with the `apiUrl` of your Dynatrace environment, and configure the `namespaceSelector` for both `metadataEnrichment` and for your desired observability mode:
 
    - Example for full-stack visibility:
 
