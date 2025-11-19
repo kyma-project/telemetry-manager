@@ -24,7 +24,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
-	commonStatusMocks "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/mocks"
 	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	logpipelinefluentbitmocks "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit/mocks"
 	logpipelinemocks "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
@@ -343,7 +342,7 @@ func TestLogAgent(t *testing.T) {
 	tests := []struct {
 		name            string
 		proberError     error
-		errorConverter  any
+		errorConverter  ErrorToMessageConverter
 		expectedStatus  metav1.ConditionStatus
 		expectedReason  string
 		expectedMessage string
@@ -351,7 +350,7 @@ func TestLogAgent(t *testing.T) {
 		{
 			name:            "log agent is not ready",
 			proberError:     workloadstatus.ErrDaemonSetNotFound,
-			errorConverter:  &commonStatusMocks.ErrorToMessageConverter{},
+			errorConverter:  &conditions.ErrorToMessageConverter{},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonAgentNotReady,
 			expectedMessage: "DaemonSet is not yet created",
@@ -359,7 +358,7 @@ func TestLogAgent(t *testing.T) {
 		{
 			name:            "log agent is ready",
 			proberError:     nil,
-			errorConverter:  &commonStatusMocks.ErrorToMessageConverter{},
+			errorConverter:  &conditions.ErrorToMessageConverter{},
 			expectedStatus:  metav1.ConditionTrue,
 			expectedReason:  conditions.ReasonAgentReady,
 			expectedMessage: "Log agent DaemonSet is ready",
@@ -772,22 +771,10 @@ func newSecretRefReconciler(client client.Client, secretErr error) *Reconciler {
 	})
 }
 
-func newLogAgentReconciler(client client.Client, proberError error, errorConverter any) *Reconciler {
+func newLogAgentReconciler(client client.Client, proberError error, errorConverter ErrorToMessageConverter) *Reconciler {
 	return newReconcilerWithOverrides(client, func(m *reconcilerMocks) {
 		m.daemonSetProber = commonStatusStubs.NewDaemonSetProber(proberError)
-
-		switch v := errorConverter.(type) {
-		case *commonStatusMocks.ErrorToMessageConverter:
-			if proberError == nil {
-				v.On("Convert", mock.Anything).Return("Log agent DaemonSet is ready")
-			} else if errors.Is(proberError, workloadstatus.ErrDaemonSetNotFound) {
-				v.On("Convert", mock.Anything).Return("DaemonSet is not yet created")
-			}
-
-			m.errorConverter = v
-		case *conditions.ErrorToMessageConverter:
-			m.errorConverter = v
-		}
+		m.errorConverter = errorConverter
 	})
 }
 
@@ -844,8 +831,7 @@ func defaultMocks() reconcilerMocks {
 		PipelineLock:       pipelineLock,
 	}
 
-	errorConverter := &commonStatusMocks.ErrorToMessageConverter{}
-	errorConverter.On("Convert", mock.Anything).Return("")
+	errorConverter := &conditions.ErrorToMessageConverter{}
 
 	return reconcilerMocks{
 		agentConfigBuilder:  agentConfigBuilder,
