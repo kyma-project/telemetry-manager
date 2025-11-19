@@ -36,7 +36,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
-func TestAppInput(t *testing.T) {
+func TestAppInputDisabled(t *testing.T) {
 	pipeline := testutils.NewLogPipelineBuilder().WithApplicationInput(false).Build()
 	testClient := newTestClient(t, &pipeline)
 	reconciler := newTestReconciler(testClient)
@@ -537,12 +537,12 @@ func newTestClientWithObjs(t *testing.T, objs ...client.Object) client.Client {
 
 func reconcileAndGet(t *testing.T, client client.Client, reconciler *Reconciler, pipelineName string) reconcileResult {
 	var pl telemetryv1alpha1.LogPipeline
-	require.NoError(t, client.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &pl))
+	require.NoError(t, client.Get(t.Context(), types.NamespacedName{Name: pipelineName}, &pl))
 
-	err := reconciler.Reconcile(context.Background(), &pl)
+	err := reconciler.Reconcile(t.Context(), &pl)
 
 	var updatedPipeline telemetryv1alpha1.LogPipeline
-	require.NoError(t, client.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline))
+	require.NoError(t, client.Get(t.Context(), types.NamespacedName{Name: pipelineName}, &updatedPipeline))
 
 	return reconcileResult{pipeline: updatedPipeline, err: err}
 }
