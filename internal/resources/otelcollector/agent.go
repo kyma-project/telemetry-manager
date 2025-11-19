@@ -17,6 +17,7 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
@@ -48,11 +49,12 @@ var (
 )
 
 type AgentApplierDeleter struct {
+	globals config.Global
+
 	baseName            string
 	extraPodLabel       map[string]string
 	makeAnnotationsFunc func(configChecksum string, opts AgentApplyOptions) map[string]string
 	image               string
-	namespace           string
 	rbac                rbac
 
 	podOpts       []commonresources.PodSpecOption
@@ -67,7 +69,7 @@ type AgentApplyOptions struct {
 	BackendPorts []string
 }
 
-func NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName string, enableFIPSMode bool) *AgentApplierDeleter {
+func NewLogAgentApplierDeleter(globals config.Global, collectorImage, priorityClassName string) *AgentApplierDeleter {
 	extraLabels := map[string]string{
 		commonresources.LabelKeyIstioInject: "true", // inject Istio sidecar
 	}
@@ -90,12 +92,12 @@ func NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName stri
 	)
 
 	return &AgentApplierDeleter{
+		globals:             globals,
 		baseName:            LogAgentName,
 		extraPodLabel:       extraLabels,
 		makeAnnotationsFunc: makeLogAgentAnnotations,
 		image:               collectorImage,
-		namespace:           namespace,
-		rbac:                makeLogAgentRBAC(namespace),
+		rbac:                makeLogAgentRBAC(globals.TargetNamespace()),
 		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
 			commonresources.WithVolumes(volumes),
@@ -104,7 +106,7 @@ func NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName stri
 			commonresources.WithResources(collectorResources),
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
 			commonresources.WithGoMemLimitEnvVar(logAgentMemoryLimit),
-			commonresources.WithGoDebugEnvVar(enableFIPSMode),
+			commonresources.WithFIPSGoDebugEnvVar(globals.OperateInFIPSMode()),
 			commonresources.WithVolumeMounts(collectorVolumeMounts),
 			commonresources.WithRunAsGroup(commonresources.GroupRoot),
 			commonresources.WithRunAsUser(commonresources.UserDefault),
@@ -112,7 +114,7 @@ func NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName stri
 	}
 }
 
-func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string, enableFIPSMode bool) *AgentApplierDeleter {
+func NewMetricAgentApplierDeleter(globals config.Global, image, priorityClassName string) *AgentApplierDeleter {
 	extraLabels := map[string]string{
 		commonresources.LabelKeyTelemetryMetricScrape: "true",
 		commonresources.LabelKeyTelemetryMetricExport: "true",
@@ -120,12 +122,12 @@ func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string, en
 	}
 
 	return &AgentApplierDeleter{
+		globals:             globals,
 		baseName:            MetricAgentName,
 		extraPodLabel:       extraLabels,
 		makeAnnotationsFunc: makeMetricAgentAnnotations,
 		image:               image,
-		namespace:           namespace,
-		rbac:                makeMetricAgentRBAC(namespace),
+		rbac:                makeMetricAgentRBAC(globals.TargetNamespace()),
 		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
 			commonresources.WithVolumes([]corev1.Volume{makeIstioCertVolume()}),
@@ -134,7 +136,7 @@ func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string, en
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
 			commonresources.WithGoMemLimitEnvVar(metricAgentMemoryLimit),
-			commonresources.WithGoDebugEnvVar(enableFIPSMode),
+			commonresources.WithFIPSGoDebugEnvVar(globals.OperateInFIPSMode()),
 			commonresources.WithResources(commonresources.MakeResourceRequirements(
 				metricAgentMemoryLimit,
 				metricAgentMemoryRequest,
@@ -146,7 +148,7 @@ func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string, en
 }
 
 func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
-	name := types.NamespacedName{Namespace: aad.namespace, Name: aad.baseName}
+	name := types.NamespacedName{Namespace: aad.globals.TargetNamespace(), Name: aad.baseName}
 
 	ingressAllowedPorts := agentIngressAllowedPorts()
 	if opts.IstioEnabled {
@@ -185,14 +187,14 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 	// Attempt to clean up as many resources as possible and avoid early return when one of the deletions fails
 	var allErrors error = nil
 
-	name := types.NamespacedName{Name: aad.baseName, Namespace: aad.namespace}
+	name := types.NamespacedName{Name: aad.baseName, Namespace: aad.globals.TargetNamespace()}
 	if err := deleteCommonResources(ctx, c, name); err != nil {
 		allErrors = errors.Join(allErrors, err)
 	}
 
 	objectMeta := metav1.ObjectMeta{
 		Name:      aad.baseName,
-		Namespace: aad.namespace,
+		Namespace: aad.globals.TargetNamespace(),
 	}
 
 	configMap := corev1.ConfigMap{ObjectMeta: objectMeta}
@@ -226,7 +228,7 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string, opts A
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      aad.baseName,
-			Namespace: aad.namespace,
+			Namespace: aad.globals.TargetNamespace(),
 			Labels:    labels,
 		},
 		Spec: appsv1.DaemonSetSpec{

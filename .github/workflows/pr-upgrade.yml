@@ -68,7 +68,7 @@ jobs:
       - name: Run tests on latest tag
         shell: bash
         run: |
-          go test -v -timeout=10m -run="^(TestLogsFluentBitUpgrade|TestLogsUpgrade|TestMetricsUpgrade|TestTracesUpgrade)/before_upgrade$" ./test/e2e/upgrade/...
+          go test -v -count=1 -timeout=10m -run="^(TestLogsFluentBitUpgrade|TestLogsUpgrade|TestMetricsUpgrade|TestTracesUpgrade)/before_upgrade$" ./test/e2e/upgrade/...
 
       - name: Switch back to current revision
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -96,7 +96,7 @@ jobs:
       - name: Run tests on current revision
         shell: bash
         run: |
-          go test -v -timeout=10m -run="^(TestLogsFluentBitUpgrade|TestLogsUpgrade|TestMetricsUpgrade|TestTracesUpgrade)/after_upgrade$" ./test/e2e/upgrade/...
+          go test -v -count=1 -timeout=10m -run="^(TestLogsFluentBitUpgrade|TestLogsUpgrade|TestMetricsUpgrade|TestTracesUpgrade)/after_upgrade$" ./test/e2e/upgrade/...
 
       - name: Clean-up test environment
         uses: "./.github/template/test-cleanup"

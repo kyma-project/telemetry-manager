@@ -7,7 +7,7 @@ import (
 	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
+	selfmonitorconfig "github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
 )
 
 type FluentBitProber struct {
@@ -39,10 +39,10 @@ func (p *FluentBitProber) Probe(ctx context.Context, pipelineName string) (Fluen
 		return FluentBitProbeResult{}, fmt.Errorf("failed to retrieve alerts: %w", err)
 	}
 
-	allDropped := p.isFiring(alerts, config.RuleNameLogFluentBitAllDataDropped, pipelineName)
-	someDropped := p.isFiring(alerts, config.RuleNameLogFluentBitSomeDataDropped, pipelineName)
-	bufferFillingUp := p.isFiring(alerts, config.RuleNameLogFluentBitBufferInUse, pipelineName)
-	noLogs := p.isFiring(alerts, config.RuleNameLogFluentBitNoLogsDelivered, pipelineName)
+	allDropped := p.isFiring(alerts, selfmonitorconfig.RuleNameLogFluentBitAllDataDropped, pipelineName)
+	someDropped := p.isFiring(alerts, selfmonitorconfig.RuleNameLogFluentBitSomeDataDropped, pipelineName)
+	bufferFillingUp := p.isFiring(alerts, selfmonitorconfig.RuleNameLogFluentBitBufferInUse, pipelineName)
+	noLogs := p.isFiring(alerts, selfmonitorconfig.RuleNameLogFluentBitNoLogsDelivered, pipelineName)
 	healthy := !allDropped && !someDropped && !bufferFillingUp && !noLogs
 
 	return FluentBitProbeResult{
@@ -57,5 +57,5 @@ func (p *FluentBitProber) Probe(ctx context.Context, pipelineName string) (Fluen
 }
 
 func (p *FluentBitProber) isFiring(alerts []promv1.Alert, ruleName, pipelineName string) bool {
-	return isFiringWithMatcher(alerts, ruleName, pipelineName, config.MatchesLogPipelineRule)
+	return isFiringWithMatcher(alerts, ruleName, pipelineName, selfmonitorconfig.MatchesLogPipelineRule)
 }

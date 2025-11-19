@@ -15,12 +15,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
+	"github.com/kyma-project/telemetry-manager/internal/config"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
 func TestGateway_ApplyResources(t *testing.T) {
+	globals := config.NewGlobal(config.WithTargetNamespace("kyma-system"))
+	globalsWithFIPS := config.NewGlobal(
+		config.WithTargetNamespace("kyma-system"),
+		config.WithOperateInFIPSMode(true),
+	)
 	image := "opentelemetry/collector:dummy"
-	namespace := "kyma-system"
 	priorityClassName := "normal"
 
 	tests := []struct {
@@ -32,50 +37,50 @@ func TestGateway_ApplyResources(t *testing.T) {
 	}{
 		{
 			name:           "metric gateway",
-			sut:            NewMetricGatewayApplierDeleter(image, namespace, priorityClassName, false),
+			sut:            NewMetricGatewayApplierDeleter(globals, image, priorityClassName),
 			goldenFilePath: "testdata/metric-gateway.yaml",
 		},
 		{
 			name:           "metric gateway with istio",
-			sut:            NewMetricGatewayApplierDeleter(image, namespace, priorityClassName, false),
+			sut:            NewMetricGatewayApplierDeleter(globals, image, priorityClassName),
 			istioEnabled:   true,
 			goldenFilePath: "testdata/metric-gateway-istio.yaml",
 		},
 		{
 			name:           "metric gateway with FIPS mode enabled",
-			sut:            NewMetricGatewayApplierDeleter(image, namespace, priorityClassName, true),
+			sut:            NewMetricGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName),
 			goldenFilePath: "testdata/metric-gateway-fips-enabled.yaml",
 		},
 		{
 			name:           "trace gateway",
-			sut:            NewTraceGatewayApplierDeleter(image, namespace, priorityClassName, false),
+			sut:            NewTraceGatewayApplierDeleter(globals, image, priorityClassName),
 			goldenFilePath: "testdata/trace-gateway.yaml",
 		},
 		{
 			name:           "trace gateway with istio",
-			sut:            NewTraceGatewayApplierDeleter(image, namespace, priorityClassName, false),
+			sut:            NewTraceGatewayApplierDeleter(globals, image, priorityClassName),
 			istioEnabled:   true,
 			goldenFilePath: "testdata/trace-gateway-istio.yaml",
 		},
 		{
 			name:           "trace gateway with FIPS mode enabled",
-			sut:            NewTraceGatewayApplierDeleter(image, namespace, priorityClassName, true),
+			sut:            NewTraceGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName),
 			goldenFilePath: "testdata/trace-gateway-fips-enabled.yaml",
 		},
 		{
 			name:           "log gateway",
-			sut:            NewLogGatewayApplierDeleter(image, namespace, priorityClassName, false),
+			sut:            NewLogGatewayApplierDeleter(globals, image, priorityClassName),
 			goldenFilePath: "testdata/log-gateway.yaml",
 		},
 		{
 			name:           "log gateway with istio",
-			sut:            NewLogGatewayApplierDeleter(image, namespace, priorityClassName, false),
+			sut:            NewLogGatewayApplierDeleter(globals, image, priorityClassName),
 			istioEnabled:   true,
 			goldenFilePath: "testdata/log-gateway-istio.yaml",
 		},
 		{
 			name:           "log gateway with FIPS mode enabled",
-			sut:            NewLogGatewayApplierDeleter(image, namespace, priorityClassName, true),
+			sut:            NewLogGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName),
 			goldenFilePath: "testdata/log-gateway-fips-enabled.yaml",
 		},
 	}
@@ -122,8 +127,8 @@ func TestGateway_ApplyResources(t *testing.T) {
 }
 
 func TestGateway_DeleteResources(t *testing.T) {
+	globals := config.NewGlobal(config.WithTargetNamespace("kyma-system"))
 	image := "opentelemetry/collector:dummy"
-	namespace := "kyma-system"
 	priorityClassName := "normal"
 
 	tests := []struct {
@@ -133,29 +138,29 @@ func TestGateway_DeleteResources(t *testing.T) {
 	}{
 		{
 			name: "metric gateway",
-			sut:  NewMetricGatewayApplierDeleter(image, namespace, priorityClassName, false),
+			sut:  NewMetricGatewayApplierDeleter(globals, image, priorityClassName),
 		},
 		{
 			name:         "metric gateway with istio",
-			sut:          NewMetricGatewayApplierDeleter(image, namespace, priorityClassName, false),
+			sut:          NewMetricGatewayApplierDeleter(globals, image, priorityClassName),
 			istioEnabled: true,
 		},
 		{
 			name: "trace gateway",
-			sut:  NewTraceGatewayApplierDeleter(image, namespace, priorityClassName, false),
+			sut:  NewTraceGatewayApplierDeleter(globals, image, priorityClassName),
 		},
 		{
 			name:         "trace gateway with istio",
-			sut:          NewTraceGatewayApplierDeleter(image, namespace, priorityClassName, false),
+			sut:          NewTraceGatewayApplierDeleter(globals, image, priorityClassName),
 			istioEnabled: true,
 		},
 		{
 			name: "log gateway",
-			sut:  NewLogGatewayApplierDeleter(image, namespace, priorityClassName, false),
+			sut:  NewLogGatewayApplierDeleter(globals, image, priorityClassName),
 		},
 		{
 			name:         "log gateway with istio",
-			sut:          NewLogGatewayApplierDeleter(image, namespace, priorityClassName, false),
+			sut:          NewLogGatewayApplierDeleter(globals, image, priorityClassName),
 			istioEnabled: true,
 		},
 	}
