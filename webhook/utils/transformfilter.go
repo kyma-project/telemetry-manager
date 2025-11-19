@@ -3,12 +3,11 @@ package utils
 import (
 	"fmt"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	telemetryv1beta1 "github.com/k yma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 )
 
-func ValidateFilterTransform(signalType ottl.SignalType, filterSpec []telemetryv1alpha1.FilterSpec, transformSpec []telemetryv1alpha1.TransformSpec) error {
+func ValidateFilterTransform(signalType ottl.SignalType, filterSpec []telemetryv1beta1.FilterSpec, transformSpec []telemetryv1beta1.TransformSpec) error {
 	filterValidator, err := ottl.NewFilterSpecValidator(signalType)
 	if err != nil {
 		return fmt.Errorf("failed to instantiate FilterSpecValidator %w", err)
