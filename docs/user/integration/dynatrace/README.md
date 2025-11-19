@@ -50,16 +50,26 @@ Combined with the Kyma Telemetry module, you can collect custom spans and metric
 
 ## Dynatrace Setup
 
-There are different ways to deploy Dynatrace on Kubernetes. All [deployment options](https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/deployment) are based on the [Dynatrace Operator](https://github.com/Dynatrace/dynatrace-operator).
+The [Dynatrace Operator](https://github.com/Dynatrace/dynatrace-operator) offers several [observability options](https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/deployment#observability-options), two of which are relevant for application telemetry: `cloudNativeFullStack` and `applicationMonitoring`. Choose the deployment mode that fits your needs and apply the Kyma-specific configurations.
 
-1. Install Dynatrace with the namespace you prepared earlier.
+1. Install Dynatrace with the namespace you prepared.
 
-1. In the DynaKube resource, configure the correct `apiurl` of your environment.
+1. Create a [DynaKube](https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters) CR that configures the Dynatrace operator. 
+   
+   The following examples use API version `dynatrace.com/v1beta5`. If you are migrating from an older version, see [Migration guides for DynaKube apiVersions](https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/guides/migration/dynakube).
 
-1. In the DynaKube resource, exclude Kyma system namespaces by adding the following snippet:
+1. In your DynaKube CR, set the `apiurl` of your Dynatrace environment and exclude Kyma system namespaces from sidecar injection. 
+   To do this, configure the `namespaceSelector` for both `metadataEnrichment` and the OneAgent mode you use (`cloudNativeFullStack` or `applicationMonitoring`):
+
+   - Example for full-stack visibility:
 
     ```yaml
+    apiVersion: dynatrace.com/v1beta5
+    kind: DynaKube
+    metadata:
+      name: e2e-cluster
     spec:
+      apiUrl: https://{YOUR_ENVIRONMENT_ID}.live.dynatrace.com/api
       metadataEnrichment:
         enabled: true
         namespaceSelector:
@@ -78,7 +88,34 @@ There are different ways to deploy Dynatrace on Kubernetes. All [deployment opti
                 - kyma
     ```
 
-1. In the DynaKube resource, enable OTLP ingestion using the OTel Collector (see [Enable Dynatrace telemetry ingest endpoints](https://docs.dynatrace.com/managed/ingest-from/setup-on-k8s/extend-observability-k8s/telemetry-ingest)):
+   - Example for application-level observability:
+
+    ```yaml
+    apiVersion: dynatrace.com/v1beta5
+    kind: DynaKube
+    metadata:
+      name: e2e-cluster
+    spec:
+      apiUrl: https://{YOUR_ENVIRONMENT_ID}.live.dynatrace.com/api
+      metadataEnrichment:
+        enabled: true
+        namespaceSelector:
+          matchExpressions:
+          - key: operator.kyma-project.io/managed-by
+            operator: NotIn
+            values:
+              - kyma
+      oneAgent:
+        applicationMonitoring:
+          namespaceSelector:
+            matchExpressions:
+            - key: operator.kyma-project.io/managed-by
+              operator: NotIn
+              values:
+                - kyma
+    ```
+
+1. Optionally, modify your DynaKube CR to enable OTLP ingestion using the OTel Collector (see [Enable Dynatrace telemetry ingest endpoints](https://docs.dynatrace.com/managed/ingest-from/setup-on-k8s/extend-observability-k8s/telemetry-ingest)):
 
     ```yaml
     spec:
@@ -92,7 +129,7 @@ There are different ways to deploy Dynatrace on Kubernetes. All [deployment opti
             tag: latest
     ```
 
-1. In the environment, go to **Settings > Cloud and virtualization > Kubernetes** and enable relevant Kubernetes features.
+1. In the Dynatrace environment, enable relevant Kubernetes features (see [Dynatrace: Global default monitoring settings for Kubernetes/OpenShift](https://docs.dynatrace.com/docs/observe/infrastructure-monitoring/container-platform-monitoring/kubernetes-monitoring/default-monitoring-settings#configure-environment-level-settings)).
 
 1. In the Dynatrace Hub, enable the **Istio Service Mesh** extension and annotate your services as outlined in the description.
 
