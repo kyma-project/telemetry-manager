@@ -50,12 +50,10 @@ Combined with the Kyma Telemetry module, you can collect custom spans and metric
 
 ## Dynatrace Setup
 
-To integrate Dynatrace, you first install the [Dynatrace Operator](https://github.com/Dynatrace/dynatrace-operator) and then create a `DynaKube` custom resource (CR). This CR configures the operator to roll out the OneAgent, which handles data collection.
-
-The Dynatrace OneAgent offers several [observability modes](https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/deployment#observability-options), two of which are relevant for application telemetry: `cloudNativeFullStack` and `applicationMonitoring`. Choose the deployment mode that fits your needs and apply the Kyma-specific configurations.
+To integrate Dynatrace, you first install the [Dynatrace Operator](https://github.com/Dynatrace/dynatrace-operator) and then create a `DynaKube` custom resource (CR). This CR configures the operator to roll out the OneAgent, which handles data collection. The Dynatrace OneAgent offers several [observability modes](https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/deployment#observability-options), two of which are relevant for application telemetry: `cloudNativeFullStack` and `applicationMonitoring`. Choose the deployment mode that fits your needs and apply the Kyma-specific configurations.
 
 > [!NOTE]
-> The following examples use the `dynatrace.com/v1beta5` API version, which is also compatible with `v1beta4` and `v1beta3`. If you use an older version of the Dynatrace Operator, follow the [Migration guides for DynaKube apiVersions](https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/guides/migration/dynakube).
+> The following examples use API version `dynatrace.com/v1beta5`, which is also compatible with `v1beta4` and `v1beta3`. If you use an older version of the Dynatrace Operator, follow the [Migration guides for DynaKube apiVersions](https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/guides/migration/dynakube).
 
 1. Install the Dynatrace operator with the namespace you prepared.
 
