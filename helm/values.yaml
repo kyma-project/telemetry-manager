@@ -8,7 +8,6 @@ manager:
       cert-dir: "/tmp"
       high-priority-class-name: "telemetry-priority-class-high"
       normal-priority-class-name: "telemetry-priority-class"
-      operate-in-fips-mode: false
     env:
       alpineImage: europe-docker.pkg.dev/kyma-project/prod/external/library/alpine:3.22.1
       appLogLevel: info
@@ -17,6 +16,7 @@ manager:
       gomemlimit: 300MiB
       otelCollectorImage: europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.139.0-main
       selfMonitorImage: europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:3.7.3-f4e3fab
+      operateInFipsMode: false
     image:
       repository: europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:main
       pullPolicy: "IfNotPresent"

@@ -81,7 +81,6 @@ var (
 	enableV1Beta1LogPipelines bool
 	highPriorityClassName     string
 	normalPriorityClassName   string
-	operateInFipsMode         bool
 )
 
 const (
@@ -112,6 +111,8 @@ type envConfig struct {
 	ManagerNamespace string `env:"MANAGER_NAMESPACE" envDefault:"default"`
 	// TargetNamespace is the namespace where telemetry components should be deployed by Telemetry Manager.
 	TargetNamespace string `env:"TARGET_NAMESPACE" envDefault:"default"`
+	// OperateInFIPSMode defines whether components should be deployed in FIPS 140-2 compliant way.
+	OperateInFIPSMode bool `env:"KYMA_FIPS_MODE_ENABLED" envDefault:"false"`
 }
 
 //nolint:gochecknoinits // Runtime's scheme addition is required.
@@ -156,7 +157,7 @@ func run() error {
 	globals := config.NewGlobal(
 		config.WithManagerNamespace(envCfg.ManagerNamespace),
 		config.WithTargetNamespace(envCfg.TargetNamespace),
-		config.WithOperateInFIPSMode(operateInFipsMode),
+		config.WithOperateInFIPSMode(envCfg.OperateInFIPSMode),
 		config.WithVersion(build.GitTag()),
 	)
 
@@ -321,7 +322,6 @@ func initializeFeatureFlags() {
 func parseFlags() {
 	flag.BoolVar(&enableV1Beta1LogPipelines, "enable-v1beta1-log-pipelines", false, "Enable v1beta1 log pipelines CRD")
 	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
-	flag.BoolVar(&operateInFipsMode, "operate-in-fips-mode", false, "Deploy components in a FIPS 140-2 compliant way. Not compatible with Fluent Bit.")
 
 	flag.StringVar(&highPriorityClassName, "high-priority-class-name", "", "High priority class name used by managed DaemonSets")
 	flag.StringVar(&normalPriorityClassName, "normal-priority-class-name", "", "Normal priority class name used by managed Deployments")

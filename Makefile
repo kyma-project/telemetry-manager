@@ -263,7 +263,7 @@ deploy: manifests $(HELM) ## Deploy telemetry manager with default/release confi
 		--set nameOverride=telemetry \
 		--set manager.container.image.repository=${MANAGER_IMAGE} \
 		--set manager.container.image.pullPolicy="Always" \
-		--set manager.container.args.operate-in-fips-mode=true \
+		--set manager.container.env.operateInFipsMode=true \
 		--namespace kyma-system \
 	| kubectl apply -f -
 
@@ -275,7 +275,7 @@ deploy-no-fips: manifests $(HELM) ## Deploy telemetry manager with FIPS mode dis
 		--set nameOverride=telemetry \
 		--set manager.container.image.repository=${MANAGER_IMAGE} \
 		--set manager.container.image.pullPolicy="Always" \
-		--set manager.container.args.operate-in-fips-mode=false \
+		--set manager.container.env.operateInFipsMode=false \
 		--namespace kyma-system \
 	| kubectl apply -f -
 
@@ -296,7 +296,7 @@ deploy-experimental: manifests-experimental $(HELM) ## Deploy telemetry manager 
 		--set nameOverride=telemetry \
 		--set manager.container.image.repository=${MANAGER_IMAGE} \
 		--set manager.container.image.pullPolicy="Always" \
-		--set manager.container.args.operate-in-fips-mode=true \
+		--set manager.container.env.operateInFipsMode=true \
 		--namespace kyma-system \
 	| kubectl apply -f -
 
@@ -308,7 +308,7 @@ deploy-experimental-no-fips: manifests-experimental $(HELM) ## Deploy telemetry 
 		--set nameOverride=telemetry \
 		--set manager.container.image.repository=${MANAGER_IMAGE} \
 		--set manager.container.image.pullPolicy="Always" \
-		--set manager.container.args.operate-in-fips-mode=false \
+		--set manager.container.env.operateInFipsMode=false \
 		--namespace kyma-system \
 	| kubectl apply -f -
 
