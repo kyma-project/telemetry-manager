@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
-	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
-	webhookutils "github.com/kyma-project/telemetry-manager/webhook/utils"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
+	webhookutils "github.com/kyma-project/telemetry-manager/webhook/utils"
 )
 
 // PipelineValidator is a generic validator for telemetry pipelines
@@ -112,8 +113,10 @@ func (v *PipelineValidator[T]) ValidateDelete(_ context.Context, obj runtime.Obj
 }
 
 func (v *PipelineValidator[T]) validateFilterTransform(obj T) error {
-	var filters []telemetryv1beta1.FilterSpec
-	var transforms []telemetryv1beta1.TransformSpec
+	var (
+		filters    []telemetryv1beta1.FilterSpec
+		transforms []telemetryv1beta1.TransformSpec
+	)
 
 	if v.extractFilters != nil {
 		filters = v.extractFilters(obj)

@@ -33,8 +33,10 @@ func NewLogPipelineValidator() *LogPipelineValidator {
 			if logpipelineutils.ContainsCustomPlugin(pipeline) {
 				helpText := "https://kyma-project.io/#/telemetry-manager/user/02-logs"
 				msg := fmt.Sprintf("Logpipeline '%s' uses unsupported custom filters or outputs. We recommend changing the pipeline to use supported filters or output. See the documentation: %s", pipeline.Name, helpText)
+
 				return admission.Warnings{msg}, true
 			}
+
 			return nil, false
 		}).
 		Build()
