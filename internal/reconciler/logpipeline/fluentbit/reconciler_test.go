@@ -1,7 +1,6 @@
 package fluentbit
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"testing"
@@ -538,7 +537,7 @@ func TestFIPSMode(t *testing.T) {
 			testClient := newTestClient(t, &pipeline)
 			reconciler := newFIPSReconciler(testClient, tt.fipsEnabled)
 
-			reconcilable, err := reconciler.IsReconcilable(context.Background(), &pipeline)
+			reconcilable, err := reconciler.IsReconcilable(t.Context(), &pipeline)
 			require.NoError(t, err)
 			require.Equal(t, tt.reconcilable, reconcilable)
 
@@ -596,7 +595,7 @@ func TestFIPSModeWithComplexPipelines(t *testing.T) {
 			testClient := newTestClient(t, &pipeline)
 			reconciler := newFIPSReconciler(testClient, true) // Always FIPS enabled
 
-			reconcilable, err := reconciler.IsReconcilable(context.Background(), &pipeline)
+			reconcilable, err := reconciler.IsReconcilable(t.Context(), &pipeline)
 			require.NoError(t, err)
 			require.Equal(t, tt.expectReconcilable, reconcilable)
 
@@ -718,12 +717,12 @@ func newTestClientWithObjs(t *testing.T, objs ...client.Object) client.Client {
 
 func reconcileAndGet(t *testing.T, client client.Client, reconciler *Reconciler, pipelineName string) reconcileResult {
 	var pl telemetryv1alpha1.LogPipeline
-	require.NoError(t, client.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &pl))
+	require.NoError(t, client.Get(t.Context(), types.NamespacedName{Name: pipelineName}, &pl))
 
-	err := reconciler.Reconcile(context.Background(), &pl)
+	err := reconciler.Reconcile(t.Context(), &pl)
 
 	var updatedPipeline telemetryv1alpha1.LogPipeline
-	require.NoError(t, client.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline))
+	require.NoError(t, client.Get(t.Context(), types.NamespacedName{Name: pipelineName}, &updatedPipeline))
 
 	return reconcileResult{pipeline: updatedPipeline, err: err}
 }
