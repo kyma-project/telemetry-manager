@@ -656,18 +656,15 @@ func TestFIPSModeTransition(t *testing.T) {
 				WithHTTPOutput().
 				Build()
 			testClient := newTestClient(t, &pipeline)
-
-			// Track mock calls
-			var applyCalled, deleteCalled bool
+			agentApplierDeleter := &logpipelinefluentbitmocks.AgentApplierDeleter{}
 
 			reconciler := newReconcilerWithOverrides(testClient, func(m *reconcilerMocks) {
-				agentApplierDeleter := &logpipelinefluentbitmocks.AgentApplierDeleter{}
-				agentApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Run(func(args mock.Arguments) {
-					applyCalled = true
-				})
-				agentApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Run(func(args mock.Arguments) {
-					deleteCalled = true
-				})
+				if tt.shouldApply {
+					agentApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+				}
+				if tt.shouldDelete {
+					agentApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+				}
 				m.agentApplierDeleter = agentApplierDeleter
 			}, func(globals *config.Global) {
 				*globals = config.NewGlobal(
@@ -676,20 +673,15 @@ func TestFIPSModeTransition(t *testing.T) {
 				)
 			})
 
-			// Test reconcilability
-			reconcilable, err := reconciler.IsReconcilable(context.Background(), &pipeline)
+			reconcilable, err := reconciler.IsReconcilable(t.Context(), &pipeline)
 			require.NoError(t, err)
 			require.Equal(t, tt.reconcilable, reconcilable)
 
-			// Test reconcile behavior
 			result := reconcileAndGet(t, testClient, reconciler, pipeline.Name)
 			require.NoError(t, result.err)
 
-			// Verify mock calls
-			require.Equal(t, tt.shouldApply, applyCalled, "ApplyResources call mismatch")
-			require.Equal(t, tt.shouldDelete, deleteCalled, "DeleteResources call mismatch")
+			agentApplierDeleter.AssertExpectations(t)
 
-			// Verify condition
 			assertCondition(t, result.pipeline, conditions.TypeConfigurationGenerated,
 				tt.condStatus, tt.condReason, tt.condMessage)
 		})
