@@ -104,6 +104,22 @@ func TestLogPipelineValidator_ValidateUpdate(t *testing.T) {
 		expectWarningsMsg string
 	}{
 		{
+			name:        "custom output",
+			oldPipeline: &telemetryv1alpha1.LogPipeline{},
+			newPipeline: &telemetryv1alpha1.LogPipeline{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "custom-output",
+				},
+				Spec: telemetryv1alpha1.LogPipelineSpec{
+					Output: telemetryv1alpha1.LogPipelineOutput{
+						Custom: "custom-fluentbit-output",
+					},
+				},
+			},
+			expectWarnings:    1,
+			expectWarningsMsg: "Logpipeline 'custom-output' uses unsupported custom filters or outputs. We recommend changing the pipeline to use supported filters or output. See the documentation: https://kyma-project.io/#/telemetry-manager/user/02-logs",
+		},
+		{
 			name: "valid update",
 			oldPipeline: &telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
