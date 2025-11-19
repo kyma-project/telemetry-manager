@@ -25,8 +25,7 @@ func TestInvalidSignalType(t *testing.T) {
 		[]telemetryv1beta1.FilterSpec{},
 		[]telemetryv1beta1.TransformSpec{},
 	)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to instantiate")
+	assert.ErrorContains(t, err, "failed to instantiate")
 }
 
 func TestWithValidFilterTransform(t *testing.T) {
