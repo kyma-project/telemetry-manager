@@ -12,6 +12,8 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/kyma-project/telemetry-manager/internal/config"
 )
 
 const (
@@ -27,14 +29,10 @@ var (
 )
 
 type Handler struct {
+	globals      config.Global
 	client       client.Reader
-	config       HandlerConfig
 	atomicLevel  zap.AtomicLevel
 	defaultLevel zapcore.Level
-}
-
-type HandlerConfig struct {
-	SystemNamespace string
 }
 
 type Option = func(*Handler)
@@ -56,10 +54,10 @@ func AtomicLevel() zap.AtomicLevel {
 	return atomicLevel
 }
 
-func New(client client.Reader, config HandlerConfig, opts ...Option) *Handler {
+func New(globals config.Global, client client.Reader, opts ...Option) *Handler {
 	h := &Handler{
-		client: client,
-		config: config,
+		globals: globals,
+		client:  client,
 	}
 
 	WithAtomicLevel(AtomicLevel())(h)
@@ -109,7 +107,7 @@ func (h *Handler) readConfigMapOrEmpty(ctx context.Context) (string, error) {
 
 	cmName := types.NamespacedName{
 		Name:      configMapName,
-		Namespace: h.config.SystemNamespace,
+		Namespace: h.globals.TargetNamespace(),
 	}
 	if err := h.client.Get(ctx, cmName, &cm); err != nil {
 		if apierrors.IsNotFound(err) {

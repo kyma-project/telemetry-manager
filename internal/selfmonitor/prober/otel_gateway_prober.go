@@ -7,7 +7,7 @@ import (
 	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
+	selfmonitorconfig "github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
 )
 
 // OTelGatewayProber is a prober for OTel Gateway
@@ -23,19 +23,19 @@ type OTelGatewayProbeResult struct {
 }
 
 func NewOTelMetricGatewayProber(selfMonitorName types.NamespacedName) (*OTelGatewayProber, error) {
-	return newOTelGatewayProber(selfMonitorName, config.MatchesMetricPipelineRule)
+	return newOTelGatewayProber(selfMonitorName, selfmonitorconfig.MatchesMetricPipelineRule)
 }
 
 func NewOTelMetricAgentProber(selfMonitorName types.NamespacedName) (*OTelAgentProber, error) {
-	return newOTelAgentProber(selfMonitorName, config.MatchesMetricPipelineRule)
+	return newOTelAgentProber(selfMonitorName, selfmonitorconfig.MatchesMetricPipelineRule)
 }
 
 func NewOTelTraceGatewayProber(selfMonitorName types.NamespacedName) (*OTelGatewayProber, error) {
-	return newOTelGatewayProber(selfMonitorName, config.MatchesTracePipelineRule)
+	return newOTelGatewayProber(selfMonitorName, selfmonitorconfig.MatchesTracePipelineRule)
 }
 
 func NewOTelLogGatewayProber(selfMonitorName types.NamespacedName) (*OTelGatewayProber, error) {
-	return newOTelGatewayProber(selfMonitorName, config.MatchesLogPipelineRule)
+	return newOTelGatewayProber(selfMonitorName, selfmonitorconfig.MatchesLogPipelineRule)
 }
 
 func newOTelGatewayProber(selfMonitorName types.NamespacedName, matcher matcherFunc) (*OTelGatewayProber, error) {
@@ -57,9 +57,9 @@ func (p *OTelGatewayProber) Probe(ctx context.Context, pipelineName string) (OTe
 		return OTelGatewayProbeResult{}, fmt.Errorf("failed to retrieve alerts: %w", err)
 	}
 
-	allDropped := p.isFiring(alerts, config.RuleNameGatewayAllDataDropped, pipelineName)
-	someDropped := p.isFiring(alerts, config.RuleNameGatewaySomeDataDropped, pipelineName)
-	throttling := p.isFiring(alerts, config.RuleNameGatewayThrottling, pipelineName)
+	allDropped := p.isFiring(alerts, selfmonitorconfig.RuleNameGatewayAllDataDropped, pipelineName)
+	someDropped := p.isFiring(alerts, selfmonitorconfig.RuleNameGatewaySomeDataDropped, pipelineName)
+	throttling := p.isFiring(alerts, selfmonitorconfig.RuleNameGatewayThrottling, pipelineName)
 	healthy := !allDropped && !someDropped && !throttling
 
 	return OTelGatewayProbeResult{

@@ -5,24 +5,24 @@ data:
 kind: ConfigMap
 metadata:
   labels:
-    app.kubernetes.io/component: my-monitor
+    app.kubernetes.io/component: monitor
     app.kubernetes.io/managed-by: telemetry-manager
-    app.kubernetes.io/name: my-self-monitor
+    app.kubernetes.io/name: telemetry-self-monitor
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: my-self-monitor
+  name: telemetry-self-monitor
   namespace: my-namespace
 ---
 apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app.kubernetes.io/component: my-monitor
+    app.kubernetes.io/component: monitor
     app.kubernetes.io/managed-by: telemetry-manager
-    app.kubernetes.io/name: my-self-monitor
+    app.kubernetes.io/name: telemetry-self-monitor
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: my-self-monitor
+  name: telemetry-self-monitor
   namespace: my-namespace
 spec:
   ports:
@@ -31,7 +31,7 @@ spec:
     protocol: TCP
     targetPort: 9090
   selector:
-    app.kubernetes.io/name: my-self-monitor
+    app.kubernetes.io/name: telemetry-self-monitor
   type: ClusterIP
 status:
   loadBalancer: {}
@@ -40,39 +40,39 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
-    app.kubernetes.io/component: my-monitor
+    app.kubernetes.io/component: monitor
     app.kubernetes.io/managed-by: telemetry-manager
-    app.kubernetes.io/name: my-self-monitor
+    app.kubernetes.io/name: telemetry-self-monitor
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: my-self-monitor
+  name: telemetry-self-monitor
   namespace: my-namespace
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app.kubernetes.io/component: my-monitor
+    app.kubernetes.io/component: monitor
     app.kubernetes.io/managed-by: telemetry-manager
-    app.kubernetes.io/name: my-self-monitor
+    app.kubernetes.io/name: telemetry-self-monitor
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: my-self-monitor
+  name: telemetry-self-monitor
   namespace: my-namespace
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: my-self-monitor
+      app.kubernetes.io/name: telemetry-self-monitor
   strategy: {}
   template:
     metadata:
       annotations:
         checksum/config: 8cdf17444d9a798679152bba8d099a9609ab7bd266ddfbdcc70a091204ff1dd7
       labels:
-        app.kubernetes.io/component: my-monitor
+        app.kubernetes.io/component: monitor
         app.kubernetes.io/managed-by: telemetry-manager
-        app.kubernetes.io/name: my-self-monitor
+        app.kubernetes.io/name: telemetry-self-monitor
         app.kubernetes.io/part-of: telemetry
         kyma-project.io/module: telemetry
         sidecar.istio.io/inject: "false"
@@ -134,12 +134,12 @@ spec:
         runAsUser: 10001
         seccompProfile:
           type: RuntimeDefault
-      serviceAccountName: my-self-monitor
+      serviceAccountName: telemetry-self-monitor
       terminationGracePeriodSeconds: 300
       volumes:
       - configMap:
           defaultMode: 420
-          name: my-self-monitor
+          name: telemetry-self-monitor
         name: prometheus-config-volume
       - emptyDir:
           sizeLimit: 1000Mi
@@ -150,12 +150,12 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   labels:
-    app.kubernetes.io/component: my-monitor
+    app.kubernetes.io/component: monitor
     app.kubernetes.io/managed-by: telemetry-manager
-    app.kubernetes.io/name: my-self-monitor
+    app.kubernetes.io/name: telemetry-self-monitor
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: my-self-monitor
+  name: telemetry-self-monitor
   namespace: my-namespace
 spec:
   egress:
@@ -175,7 +175,7 @@ spec:
       protocol: TCP
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: my-self-monitor
+      app.kubernetes.io/name: telemetry-self-monitor
   policyTypes:
   - Ingress
   - Egress
@@ -184,12 +184,12 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   labels:
-    app.kubernetes.io/component: my-monitor
+    app.kubernetes.io/component: monitor
     app.kubernetes.io/managed-by: telemetry-manager
-    app.kubernetes.io/name: my-self-monitor
+    app.kubernetes.io/name: telemetry-self-monitor
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: my-self-monitor
+  name: telemetry-self-monitor
   namespace: my-namespace
 rules:
 - apiGroups:
@@ -207,19 +207,19 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   labels:
-    app.kubernetes.io/component: my-monitor
+    app.kubernetes.io/component: monitor
     app.kubernetes.io/managed-by: telemetry-manager
-    app.kubernetes.io/name: my-self-monitor
+    app.kubernetes.io/name: telemetry-self-monitor
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: my-self-monitor
+  name: telemetry-self-monitor
   namespace: my-namespace
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: my-self-monitor
+  name: telemetry-self-monitor
 subjects:
 - kind: ServiceAccount
-  name: my-self-monitor
+  name: telemetry-self-monitor
   namespace: my-namespace
 ---
