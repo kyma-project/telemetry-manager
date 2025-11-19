@@ -29,7 +29,7 @@ Learn how to collect Kubernetes cluster events and forward them as OTLP  logs to
 - [Kubectl version that is within one minor version (older or newer) of `kube-apiserver`](https://kubernetes.io/releases/version-skew-policy/#kubectl)
 - Helm 3.x
 
-## Installation
+## Prepare the Environment
 
 ### Preparation
 
