@@ -34,7 +34,7 @@ Learn how to collect Kubernetes cluster events and forward them as OTLP  logs to
 
 ## Prepare the Environment
 
-1. Export your namespace as a variable with the following command:
+1. Export your namespace as a variable:
 
     ```bash
     export K8S_NAMESPACE="k8s-events"
@@ -97,7 +97,7 @@ To verify that the collector is running properly, set up port forwarding and cal
 
 ## Integrate with SAP Cloud Logging (Optional)
 
-If the LogPipeline of the Telemetry module is configured with a SAP Cloud Logging instance (see [Integrate with SAP Cloud Logging](./../sap-cloud-logging/), you can install a custom Search and Dashboard called `K8S Events` to explore the data.
+If your LogPipeline is configured with a SAP Cloud Logging instance (see [Integrate with SAP Cloud Logging](./../sap-cloud-logging/), you can install a custom Search and Dashboard called `K8S Events` to explore the data.
 For that, import the file [cloud-logging-dashboard.ndjson](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/dashboard-runtime.ndjson).
 
 ## Clean Up
