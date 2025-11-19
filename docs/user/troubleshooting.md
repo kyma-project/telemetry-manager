@@ -197,7 +197,7 @@ This usually happens for one of the following reasons:
 
 ### Cause
 
-If you get a generic EOF error instead of a specific error message, this usually indicates a syntax error in the OTTL functions used in your transformation or filter rules. This is caused when the syntax validation cannot diagnose the error precisely.
+If you get a generic EOF error instead of a specific error message, there's usually a syntax error in your OTTL transformation or filter rules. It occurs when the parser cannot diagnose the error precisely.
 
 The following example uses the incorrect function name `isMatch` (it should be `IsMatch`):
 ```yaml
