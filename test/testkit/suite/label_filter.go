@@ -27,24 +27,28 @@ func convertLabelExpressionSyntax(legacyExpr string) string {
 }
 
 // replaceWord replaces whole words only, not substrings within words
-func replaceWord(s, old, new string) string {
+func replaceWord(s, original, replacement string) string {
 	var result strings.Builder
+
 	i := 0
-	oldLen := len(old)
+	oldLen := len(original)
 
 	for i < len(s) {
 		// Check if we found the word at current position
-		if i+oldLen <= len(s) && s[i:i+oldLen] == old {
+		if i+oldLen <= len(s) && s[i:i+oldLen] == original {
 			// Check if it's a complete word (not part of another word)
 			beforeOK := i == 0 || !isAlphaNumeric(s[i-1])
 			afterOK := i+oldLen == len(s) || !isAlphaNumeric(s[i+oldLen])
 
 			if beforeOK && afterOK {
-				result.WriteString(new)
+				result.WriteString(replacement)
+
 				i += oldLen
+
 				continue
 			}
 		}
+
 		result.WriteByte(s[i])
 		i++
 	}
@@ -74,7 +78,7 @@ func evaluateLabelExpression(testLabels []string, filterExpr string) (bool, erro
 	// this is some hack. we replace all labels with hasLabel("label") function calls.
 	// the haslabel function checks if the label is present in the label set
 	// the function is dynamically defined in the env
-	env := map[string]interface{}{
+	env := map[string]any{
 		"hasLabel": func(label string) bool {
 			return labelSet[strings.ToLower(label)]
 		},
@@ -92,12 +96,18 @@ func evaluateLabelExpression(testLabels []string, filterExpr string) (bool, erro
 		return false, fmt.Errorf("failed to evaluate label filter '%s': %w", filterExpr, err)
 	}
 
-	return result.(bool), nil
+	switch r := result.(type) {
+	case bool:
+		return r, nil
+	default:
+		return false, fmt.Errorf("label filter expression '%s' did not evaluate to a boolean", filterExpr)
+	}
 }
 
 // transformExpressionToFunctionCalls converts label identifiers to hasLabel() function calls
 func transformExpressionToFunctionCalls(exprStr string) string {
 	var result strings.Builder
+
 	i := 0
 
 	for i < len(exprStr) {
@@ -105,6 +115,7 @@ func transformExpressionToFunctionCalls(exprStr string) string {
 			exprStr[i] == '(' || exprStr[i] == ')' || exprStr[i] == ' ' {
 			result.WriteByte(exprStr[i])
 			i++
+
 			continue
 		}
 

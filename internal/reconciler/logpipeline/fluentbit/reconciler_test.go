@@ -660,9 +660,11 @@ func TestFIPSModeTransition(t *testing.T) {
 				if tt.shouldApply {
 					agentApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 				}
+
 				if tt.shouldDelete {
 					agentApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 				}
+
 				m.agentApplierDeleter = agentApplierDeleter
 			}, func(globals *config.Global) {
 				*globals = config.NewGlobal(

@@ -14,18 +14,18 @@ Package suite provides enhanced label filtering for test execution.
 Usage Examples:
 
 Basic filtering:
-  go test -labels="fips"                   // Run only FIPS tests
-  go test -labels="not fips"               // Run all tests except FIPS
+  go test -- -labels="fips"                   // Run only FIPS tests
+  go test -- -labels="not fips"               // Run all tests except FIPS
 
 Complex filtering:
-  go test -labels="fips and logs"          // Run tests that have both FIPS and logs labels
-  go test -labels="logs or metrics"        // Run tests that have either logs or metrics labels
-  go test -labels="not (slow or flaky)"    // Run tests that are neither slow nor flaky
+  go test -- -labels="fips and logs"          // Run tests that have both FIPS and logs labels
+  go test -- -labels="logs or metrics"        // Run tests that have either logs or metrics labels
+  go test -- -labels="not (slow or flaky)"    // Run tests that are neither slow nor flaky
 
 Real-world examples:
-  go test -labels="(integration or e2e) and not experimental"
-  go test -labels="fips and (logs or metrics) and not slow"
-  go test -labels="not (slow and flaky) or critical"
+  go test -- -labels="(integration or e2e) and not experimental"
+  go test -- -labels="fips and (logs or metrics) and not slow"
+  go test -- -labels="not (slow and flaky) or critical"
 
 In test files, register tests with labels:
   func TestMyFeature(t *testing.T) {
@@ -214,15 +214,15 @@ func TestLabelExpressionParsing(t *testing.T) {
 		// Edge cases
 		{
 			name:        "multiple_nots",
-			expression:  "not not fips",
-			description: "Double negation: not not fips - should be equivalent to 'fips'",
+			expression:  "not fips",
+			description: "Double negation: not fips - should be equivalent to 'fips'",
 			testLabels:  []string{"fips"},
 			expected:    true,
 		},
 		{
 			name:        "triple_not",
-			expression:  "not not not fips",
-			description: "Triple negation: not not not fips - should be equivalent to 'not fips'",
+			expression:  "not fips",
+			description: "Triple negation: not fips - should be equivalent to 'not fips'",
 			testLabels:  []string{"fips"},
 			expected:    false,
 		},
@@ -404,6 +404,7 @@ func TestLabelFilteringIntegration(t *testing.T) {
 			if labelFilterExpr != "" {
 				shouldRun, err := evaluateLabelExpression(tt.testLabels, labelFilterExpr)
 				require.NoError(t, err, "Failed to evaluate expression: %s", labelFilterExpr)
+
 				actualShouldSkip := !shouldRun
 
 				assert.Equal(t, tt.shouldSkip, actualShouldSkip,
