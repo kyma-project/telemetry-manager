@@ -4,4 +4,6 @@ Kyma's Telemetry module makes it easy for you to integrate the telemetry service
 
 If you'd like instructions how to integrate with several backends, check out the guides for [SAP Cloud Logging](./sap-cloud-logging/README.md), a [custom Prometheus, Grafana, Kiali stack](./prometheus/README.md), a [custom Loki stack](./loki/README.md), a [custom Jaeger stack](./jaeger/README.md), and [Amazon CloudWatch](./aws-cloudwatch/README.md)
 
-Learn about OpenTelemetry and the OpenTelemetry SDK in a near real-world environment using the [OpenTelemetry Demo App](./opentelemetry-demo/README.md), or with a simple scenario using a [sample app](./sample-app/) in the Go language.
+Learn about OpenTelemetry and the OpenTelemetry SDK in a near real-world environment using the [OpenTelemetry Demo App](./opentelemetry-demo/README.md), or with a simple scenario using a [sample app](./sample-app/README.md) in the Go language.
+
+Collect Kubernetes events and forward them as OTLP logs following [Integrate Kubernetes Events as OTLP Logs](./k8s-events/README.md) guide.
