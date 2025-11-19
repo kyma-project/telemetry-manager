@@ -6,4 +6,4 @@ If you'd like instructions how to integrate with several backends, check out the
 
 Learn about OpenTelemetry and the OpenTelemetry SDK in a near real-world environment using the [OpenTelemetry Demo App](./opentelemetry-demo/README.md), or with a simple scenario using a [sample app](./sample-app/README.md) in the Go language.
 
-Integrate Kubernetes events following the [k8s-events](./k8s-events/README.md) guide.
+Collect Kubernetes events and forward them as OTLP logs following [Integrate Kubernetes Events as OTLP Logs](./k8s-events/README.md) guide.
