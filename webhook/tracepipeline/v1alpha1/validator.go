@@ -13,8 +13,6 @@ import (
 	webhookutils "github.com/kyma-project/telemetry-manager/webhook/utils"
 )
 
-// +kubebuilder:webhook:path=/validate-tracepipeline,mutating=false,failurePolicy=fail,sideEffects=None,groups=telemetry.kyma-project.io,resources=tracepipelines,verbs=create;update,versions=v1alpha1,name=validating-tracepipelines.kyma-project.io,admissionReviewVersions=v1;v1beta1
-
 type TracePipelineValidator struct {
 }
 
