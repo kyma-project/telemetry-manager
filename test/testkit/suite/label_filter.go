@@ -5,8 +5,6 @@ import (
 	"strings"
 
 	"github.com/expr-lang/expr"
-
-	"github.com/kyma-project/telemetry-manager/internal/utils/slices"
 )
 
 // all we do here is to convert our syntax to expr syntax and evaluate it
@@ -21,8 +19,6 @@ func convertLabelExpressionSyntax(legacyExpr string) string {
 
 	converted := strings.ToLower(legacyExpr)
 
-	// Replace operators with expr-lang syntax
-	// Use word boundaries to avoid replacing parts of label names
 	converted = replaceWord(converted, "and", "&&")
 	converted = replaceWord(converted, "or", "||")
 	converted = replaceWord(converted, "not", "!")
@@ -67,28 +63,25 @@ func evaluateLabelExpression(testLabels []string, filterExpr string) (bool, erro
 		return true, nil // No filter means run all tests
 	}
 
-	// Convert our syntax to expr syntax
+	// convert our syntax to expr syntax
 	exprSyntax := convertLabelExpressionSyntax(filterExpr)
 
-	slices.TransformFunc()
-
-	// Build environment - create a map that returns false for missing keys
 	labelSet := make(map[string]bool)
 	for _, label := range testLabels {
 		labelSet[strings.ToLower(label)] = true
 	}
 
-	// Create environment accessor that returns false for undefined labels
+	// this is some hack. we replace all labels with hasLabel("label") function calls.
+	// the haslabel function checks if the label is present in the label set
+	// the function is dynamically defined in the env
 	env := map[string]interface{}{
 		"hasLabel": func(label string) bool {
 			return labelSet[strings.ToLower(label)]
 		},
 	}
 
-	// Transform the expression to use hasLabel() function calls
 	transformedExpr := transformExpressionToFunctionCalls(exprSyntax)
 
-	// Compile and run the expression
 	program, err := expr.Compile(transformedExpr, expr.Env(env), expr.AsBool())
 	if err != nil {
 		return false, fmt.Errorf("invalid label filter expression '%s': %w", filterExpr, err)

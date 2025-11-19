@@ -539,12 +539,10 @@ func TestFIPSMode(t *testing.T) {
 			testClient := newTestClient(t, &pipeline)
 			reconciler := newFIPSReconciler(testClient, tt.fipsEnabled)
 
-			// Test reconcilability
 			reconcilable, err := reconciler.IsReconcilable(context.Background(), &pipeline)
 			require.NoError(t, err)
 			require.Equal(t, tt.reconcilable, reconcilable)
 
-			// Test reconcile behavior
 			result := reconcileAndGet(t, testClient, reconciler, pipeline.Name)
 			require.NoError(t, result.err)
 
