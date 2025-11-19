@@ -5,9 +5,14 @@ import (
 	"strings"
 
 	"github.com/expr-lang/expr"
+
+	"github.com/kyma-project/telemetry-manager/internal/utils/slices"
 )
 
-// convertLabelExpressionSyntax converts the legacy syntax (AND, OR, NOT) to expr syntax (&&, ||, !)
+// all we do here is to convert our syntax to expr syntax and evaluate it
+// our syntax uses AND, OR, NOT for better readability
+
+// convertLabelExpressionSyntax converts our syntax (AND, OR, NOT) to expr syntax (&&, ||, !)
 // expr-lang/expr uses different syntax for logical operators. For our purpose AND OR NOT make more sense.
 func convertLabelExpressionSyntax(legacyExpr string) string {
 	if strings.TrimSpace(legacyExpr) == "" {
@@ -62,8 +67,10 @@ func evaluateLabelExpression(testLabels []string, filterExpr string) (bool, erro
 		return true, nil // No filter means run all tests
 	}
 
-	// Convert legacy syntax to expr syntax
+	// Convert our syntax to expr syntax
 	exprSyntax := convertLabelExpressionSyntax(filterExpr)
+
+	slices.TransformFunc()
 
 	// Build environment - create a map that returns false for missing keys
 	labelSet := make(map[string]bool)
@@ -101,7 +108,6 @@ func transformExpressionToFunctionCalls(exprStr string) string {
 	i := 0
 
 	for i < len(exprStr) {
-		// Skip operators and special characters
 		if exprStr[i] == '&' || exprStr[i] == '|' || exprStr[i] == '!' ||
 			exprStr[i] == '(' || exprStr[i] == ')' || exprStr[i] == ' ' {
 			result.WriteByte(exprStr[i])
@@ -109,7 +115,8 @@ func transformExpressionToFunctionCalls(exprStr string) string {
 			continue
 		}
 
-		// We found the start of an identifier
+		// we try to find a `word` (label)
+		// a word is defined as a sequence of alphanumeric characters, underscores, or hyphens
 		start := i
 		for i < len(exprStr) && isAlphaNumeric(exprStr[i]) {
 			i++

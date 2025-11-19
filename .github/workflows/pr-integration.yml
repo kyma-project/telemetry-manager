@@ -92,7 +92,7 @@ jobs:
         with:
           id: ${{ matrix.kind }}-${{ matrix.scenario }}
           path: ./test/selfmonitor/...
-          label: "selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}"
+          labels: "selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}"
 
       - name: Clean-up test environment
         uses: "./.github/template/test-cleanup"
@@ -108,138 +108,163 @@ jobs:
       matrix:
         testcase:
           # LOGS
-          - label: fluent-bit and not experimental
+          - name: e2e-fluent-bit
+            labels: fluent-bit and not experimental
             mode: release
             type: e2e
             use-fips: false
             install-istio: false
-          - label: log-agent
+          - name: e2e-log-agent
+            labels: log-agent
             mode: release
             type: e2e
             use-fips: true
             install-istio: false
-          - label: log-gateway
+          - name: e2e-log-gateway
+            labels: log-gateway
             mode: release
             type: e2e
             use-fips: true
             install-istio: false
-          - label: logs-max-pipeline
+          - name: e2e-logs-max-pipeline
+            labels: logs-max-pipeline
             mode: release
             type: e2e
             use-fips: false
             install-istio: false
-          - label: fluent-bit-max-pipeline
+          - name: e2e-fluent-bit-max-pipeline
+            labels: fluent-bit-max-pipeline
             mode: release
             type: e2e
             use-fips: false
             install-istio: false
-          - label: otel-max-pipeline
+          - name: e2e-otel-max-pipeline
+            labels: otel-max-pipeline
             mode: release
             type: e2e
             use-fips: true
             install-istio: false
-          - label: logs-misc
+          - name: e2e-logs-misc
+            labels: logs-misc
             mode: release
             type: e2e
             use-fips: true
             install-istio: false
           # METRICS
-          - label: metric-agent-a
+          - name: e2e-metric-agent-a
+            labels: metric-agent-a
             mode: release
             type: e2e
             use-fips: true
             install-istio: false
-          - label: metric-agent-b
+          - name: e2e-metric-agent-b
+            labels: metric-agent-b
             mode: release
             type: e2e
             use-fips: true
             install-istio: false
-          - label: metric-agent-c
+          - name: e2e-metric-agent-c
+            labels: metric-agent-c
             mode: release
             type: e2e
             use-fips: true
             install-istio: false
-          - label: metric-gateway-a
+          - name: e2e-metric-gateway-a
+            labels: metric-gateway-a
             mode: release
             type: e2e
             use-fips: true
             install-istio: false
-          - label: metric-gateway-b
+          - name: e2e-metric-gateway-b
+            labels: metric-gateway-b
             mode: release
             type: e2e
             use-fips: true
             install-istio: false
-          - label: metric-gateway-c
+          - name: e2e-metric-gateway-c
+            labels: metric-gateway-c
             mode: release
             type: e2e
             use-fips: true
             install-istio: false
-          - label: metrics-misc
+          - name: e2e-metrics-misc
+            labels: metrics-misc
             mode: release
             type: e2e
             use-fips: true
             install-istio: false
-          - label: metrics-max-pipeline
+          - name: e2e-metrics-max-pipeline
+            labels: metrics-max-pipeline
             mode: release
             type: e2e
             use-fips: true
             install-istio: false
           # TRACES
-          - label: traces
+          - name: e2e-traces
+            labels: traces
             mode: release
             type: e2e
             use-fips: true
             install-istio: false
-          - label: traces-max-pipeline
+          - name: e2e-traces-max-pipeline
+            labels: traces-max-pipeline
             mode: release
             type: e2e
             use-fips: true
             install-istio: false
           # TELEMETRY
-          - label: telemetry and not fluent-bit
+          - name: e2e-telemetry-otel
+            labels: telemetry and not fluent-bit
             mode: release
             type: e2e
             use-fips: true
             install-istio: false
-          - label: telemetry and fluent-bit
+          - name: e2e-telemetry-fluent-bit
+            labels: telemetry and fluent-bit
             mode: release
             type: e2e
             use-fips: false
             install-istio: false
           # MISC
-          - label: misc and not fluent-bit
+          - name: e2e-misc-otel
+            labels: misc and not fluent-bit
             mode: release
             type: e2e
             use-fips: true
             install-istio: false
-          - label: misc and fluent-bit
+          - name: e2e-misc-fluent-bit
+            labels: misc and fluent-bit
             mode: release
             type: e2e
             use-fips: false
             install-istio: false
           # OTHER
-          - label: experimental and not fluent-bit
+          - name: e2e-experimental-otel
+            labels: experimental and not fluent-bit
             mode: experimental
             type: e2e
             use-fips: true
             install-istio: false
-          - label: experimental and fluent-bit
+          - name: e2e-experimental-fluent-bit
+            labels: experimental and fluent-bit
             mode: experimental
             type: e2e
             use-fips: false
             install-istio: false
           # INTEGRATION
-          - label: istio and not fluent-bit
+          - name: integration-istio-otel
+            labels: istio and not fluent-bit
             mode: release
             type: integration
             use-fips: true
             install-istio: true
-          - label: istio and fluent-bit
+          - name: integration-istio-fluent-bit
+            labels: istio and fluent-bit
             mode: release
             type: integration
             use-fips: false
             install-istio: true
-    name: "e2e: ${{ matrix.testcase.label }}"
+    name: "${{ matrix.testcase.name }}"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -253,22 +278,18 @@ jobs:
           install-istio: ${{ matrix.testcase.install-istio }}
           operate-in-fips-mode: ${{ matrix.testcase.use-fips }}
 
-      - name: cleanup id
-        run: CLEAN_ID=$(echo "${{ matrix.testcase.type }}-${{ matrix.testcase.label }}" | tr ' ' '_') && echo "CLEAN_ID=$CLEAN_ID" >> $GITHUB_ENV
-
       - name: Execute tests
         uses: "./.github/template/test-execute"
         with:
-          # use CLEAN_ID to avoid issues with spaces in label
-          id: ${{ env.CLEAN_ID }}
+          id: ${{ matrix.testcase.name }}
           path: ./test/${{ matrix.testcase.type }}/...
-          label: ${{ matrix.testcase.label }}
+          labels: ${{ matrix.testcase.labels }}
 
       - name: Clean-up test environment
         uses: "./.github/template/test-cleanup"
         if: ${{ !cancelled()  }}
         with:
-          id: ${{ env.CLEAN_ID }}
+          id: ${{ matrix.testcase.name }}
           failure: failure()
 
       - name: Print logs from all pods in kyma-system namespace
