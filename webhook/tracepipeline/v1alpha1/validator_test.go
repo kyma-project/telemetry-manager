@@ -3,6 +3,7 @@ package v1alpha1
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -55,7 +56,7 @@ func TestTracePipelineValidator_ValidateCreate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			validator := &TracePipelineValidator{}
+			validator := NewTracePipelineValidator()
 
 			_, err := validator.ValidateCreate(t.Context(), tt.pipeline)
 
@@ -115,7 +116,7 @@ func TestTracePipelineValidator_ValidateUpdate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			validator := &TracePipelineValidator{}
+			validator := NewTracePipelineValidator()
 
 			_, err := validator.ValidateUpdate(t.Context(), tt.oldPipeline, tt.newPipeline)
 
@@ -129,7 +130,7 @@ func TestTracePipelineValidator_ValidateUpdate(t *testing.T) {
 }
 
 func TestTracePipelineValidator_ValidateDelete(t *testing.T) {
-	validator := &TracePipelineValidator{}
+	validator := NewTracePipelineValidator()
 
 	pipeline := &telemetryv1alpha1.LogPipeline{}
 
@@ -140,14 +141,13 @@ func TestTracePipelineValidator_ValidateDelete(t *testing.T) {
 }
 
 func TestTracePipelineValidator_WrongType(t *testing.T) {
-	validator := &TracePipelineValidator{}
+	validator := NewTracePipelineValidator()
 
 	// Pass wrong type
 	wrongObject := &telemetryv1alpha1.LogPipeline{}
 
 	warnings, err := validator.ValidateCreate(t.Context(), wrongObject)
 
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "expected a TracePipeline but got")
-	require.Empty(t, warnings)
+	assert.ErrorContains(t, err, "expected a *v1alpha1.TracePipeline but got")
+	assert.Empty(t, warnings)
 }

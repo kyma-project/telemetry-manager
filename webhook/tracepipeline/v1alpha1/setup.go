@@ -11,7 +11,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		WithDefaulter(&defaulter{
 			DefaultOTLPOutputProtocol: telemetryv1alpha1.OTLPProtocolGRPC,
 		}).
-		WithValidator(&TracePipelineValidator{}).
+		WithValidator(NewTracePipelineValidator()).
 		WithValidatorCustomPath("/validate-tracepipeline").
 		Complete()
 }

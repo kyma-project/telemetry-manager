@@ -3,6 +3,7 @@ package v1alpha1
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -73,7 +74,7 @@ func TestLogPipelineValidator_ValidateCreate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			validator := &LogPipelineValidator{}
+			validator := NewLogPipelineValidator()
 
 			warnings, err := validator.ValidateCreate(t.Context(), tt.pipeline)
 
@@ -159,7 +160,7 @@ func TestLogPipelineValidator_ValidateUpdate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			validator := &LogPipelineValidator{}
+			validator := NewLogPipelineValidator()
 
 			warnings, err := validator.ValidateUpdate(t.Context(), tt.oldPipeline, tt.newPipeline)
 
@@ -181,7 +182,7 @@ func TestLogPipelineValidator_ValidateUpdate(t *testing.T) {
 }
 
 func TestLogPipelineValidator_ValidateDelete(t *testing.T) {
-	validator := &LogPipelineValidator{}
+	validator := NewLogPipelineValidator()
 
 	pipeline := &telemetryv1alpha1.LogPipeline{}
 
@@ -192,14 +193,13 @@ func TestLogPipelineValidator_ValidateDelete(t *testing.T) {
 }
 
 func TestLogPipelineValidator_WrongType(t *testing.T) {
-	validator := &LogPipelineValidator{}
+	validator := NewLogPipelineValidator()
 
 	// Pass wrong type
 	wrongObject := &telemetryv1alpha1.MetricPipeline{}
 
 	warnings, err := validator.ValidateCreate(t.Context(), wrongObject)
 
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "expected a LogPipeline but got")
-	require.Empty(t, warnings)
+	assert.ErrorContains(t, err, "expected a *v1alpha1.LogPipeline but got")
+	assert.Empty(t, warnings)
 }
