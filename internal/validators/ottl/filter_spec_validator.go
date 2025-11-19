@@ -36,8 +36,6 @@ func NewFilterSpecValidator(signalType SignalType) (*FilterSpecValidator, error)
 }
 
 func (v *FilterSpecValidator) Validate(filters []telemetryv1alpha1.FilterSpec) error {
-	const errorMessage = "invalid FilterSpec"
-
 	for _, fs := range filters {
 		if err := v.ValidateConditions(fs.Conditions); err != nil {
 			return err
@@ -54,6 +52,7 @@ func (v *FilterSpecValidator) ValidateConditions(conditions []string) error {
 	if err := v.parserCollection.parseConditions(conditions); err != nil {
 		return &InvalidOTTLSpecError{Err: fmt.Errorf("%s: %w", errorMessage, err)}
 	}
+
 	return nil
 }
 
