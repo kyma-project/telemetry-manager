@@ -63,7 +63,7 @@ type OTLPOutput struct {
 	TLS *OTLPTLS `json:"tls,omitempty"`
 }
 
-// +kubebuilder:validation:XValidation:rule="!(has(self.basic) && has(self.oauth2))",message="Can't specify multiple authentication methods"
+// +kubebuilder:validation:XValidation:rule="!(has(self.basic) && has(self.oauth2))",message="Only one authentication method can be specified"
 type AuthenticationOptions struct {
 	// Basic activates `Basic` authentication for the destination providing relevant Secrets.
 	// +kubebuilder:validation:Optional

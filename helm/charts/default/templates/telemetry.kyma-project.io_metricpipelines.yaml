@@ -639,7 +639,7 @@ spec:
                             type: object
                         type: object
                         x-kubernetes-validations:
-                        - message: Can't specify multiple authentication methods
+                        - message: Only one authentication method can be specified
                           rule: '!(has(self.basic) && has(self.oauth2))'
                       endpoint:
                         description: Endpoint defines the host and port (`<host>:<port>`)
