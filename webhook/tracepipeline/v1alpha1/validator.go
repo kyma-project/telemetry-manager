@@ -27,7 +27,9 @@ func (v *TracePipelineValidator) ValidateCreate(_ context.Context, obj runtime.O
 		return nil, fmt.Errorf("expected a TracePipeline but got %T", obj)
 	}
 
-	return nil, webhookutils.ValidateFilterTransform(ottl.SignalTypeTrace, tracePipeline.Spec.Filters, tracePipeline.Spec.Transforms)
+	filterSpec, transformSpec := webhookutils.ConvertFilterTransformToBeta(tracePipeline.Spec.Filters, tracePipeline.Spec.Transforms)
+
+	return nil, webhookutils.ValidateFilterTransform(ottl.SignalTypeTrace, filterSpec, transformSpec)
 }
 
 func (v *TracePipelineValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
@@ -37,7 +39,9 @@ func (v *TracePipelineValidator) ValidateUpdate(_ context.Context, oldObj, newOb
 		return nil, fmt.Errorf("expected a TracePipeline but got %T", newObj)
 	}
 
-	return nil, webhookutils.ValidateFilterTransform(ottl.SignalTypeTrace, tracePipeline.Spec.Filters, tracePipeline.Spec.Transforms)
+	filterSpec, transformSpec := webhookutils.ConvertFilterTransformToBeta(tracePipeline.Spec.Filters, tracePipeline.Spec.Transforms)
+
+	return nil, webhookutils.ValidateFilterTransform(ottl.SignalTypeTrace, filterSpec, transformSpec)
 }
 
 func (v *TracePipelineValidator) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {

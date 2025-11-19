@@ -17,6 +17,6 @@ func SetupWithManager(mgr ctrl.Manager) error {
 			OTLPInputEnabled:             true,
 		}).
 		WithValidator(&LogPipelineValidator{}).
-		WithValidatorCustomPath("/validate-logpipeline").
+		WithValidatorCustomPath("/validate-logpipeline-v1beta1").
 		Complete()
 }
