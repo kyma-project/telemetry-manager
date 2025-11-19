@@ -56,7 +56,7 @@ The [Dynatrace Operator](https://github.com/Dynatrace/dynatrace-operator) offers
 
 1. Create a [DynaKube](https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters) CR that configures the Dynatrace operator. 
    
-   The following examples use API version `dynatrace.com/v1beta5`. If you are migrating from an older version, see [Migration guides for DynaKube apiVersions](https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/guides/migration/dynakube).
+   The following examples use API version `dynatrace.com/v1beta5` and are valid for `v1beta4` and `v1beta3` as well. If you are using an older version, follow [Migration guides for DynaKube apiVersions](https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/guides/migration/dynakube).
 
 1. In your DynaKube CR, set the `apiurl` of your Dynatrace environment and exclude Kyma system namespaces from sidecar injection. 
    To do this, configure the `namespaceSelector` for both `metadataEnrichment` and the OneAgent mode you use (`cloudNativeFullStack` or `applicationMonitoring`):
