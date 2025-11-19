@@ -1,7 +1,6 @@
 package fluentbit
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"testing"
