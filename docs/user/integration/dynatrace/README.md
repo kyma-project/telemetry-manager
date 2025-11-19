@@ -59,7 +59,7 @@ The Dynatrace OneAgent offers several [observability modes](https://docs.dynatra
 
 1. Install the Dynatrace operator with the namespace you prepared.
 
-1. Create a [DynaKube](https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters) CR with the `apiurl` of your Dynatrace environment, and configure the `namespaceSelector` for both `metadataEnrichment` and for your desired OneAgent mode:
+1. Create a [DynaKube](https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters) CR with the `apiurl` of your Dynatrace environment, and configure the `namespaceSelector` for both `metadataEnrichment` and for your desired observability mode:
 
    - Example for full-stack visibility:
 
