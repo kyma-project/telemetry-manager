@@ -3,7 +3,7 @@
 Troubleshoot problems related to the Telemetry module and its pipelines.
 
 > [!NOTE]
-> If you can't find a solution, don't hesitate to create a [GitHub issue](https://TODO).
+> If you can't find a solution, don't hesitate to create a [GitHub issue](https://github.com/kyma-project/telemetry-manager/issues/new/choose).
 
 ## No Data Arrive at the Backend
 
