@@ -72,8 +72,10 @@ func TestWithInvalidTransform(t *testing.T) {
 }
 
 func TestConvertFilterTransformToBeta(t *testing.T) {
-	var filterSpec []telemetryv1alpha1.FilterSpec
-	var transformSpec []telemetryv1alpha1.TransformSpec
+	var (
+		filterSpec    []telemetryv1alpha1.FilterSpec
+		transformSpec []telemetryv1alpha1.TransformSpec
+	)
 
 	filterSpecBeta, transformSpecBeta := ConvertFilterTransformToBeta(filterSpec, transformSpec)
 
