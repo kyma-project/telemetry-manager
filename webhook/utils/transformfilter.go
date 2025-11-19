@@ -5,7 +5,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
-	"github.com/kyma-project/telemetry-manager/internal/utils/slices"
+	slicesutils "github.com/kyma-project/telemetry-manager/internal/utils/slices"
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 )
 
@@ -38,5 +38,5 @@ func ValidateFilterTransform(signalType ottl.SignalType, filterSpec []telemetryv
 }
 
 func ConvertFilterTransformToBeta(filters []telemetryv1alpha1.FilterSpec, transforms []telemetryv1alpha1.TransformSpec) ([]telemetryv1beta1.FilterSpec, []telemetryv1beta1.TransformSpec) {
-	return slices.TransformFunc(filters, telemetryv1alpha1.ConvertFilterSpecToBeta), slices.TransformFunc(transforms, telemetryv1alpha1.ConvertTransformSpecToBeta)
+	return slicesutils.TransformFunc(filters, telemetryv1alpha1.ConvertFilterSpecToBeta), slicesutils.TransformFunc(transforms, telemetryv1alpha1.ConvertTransformSpecToBeta)
 }
