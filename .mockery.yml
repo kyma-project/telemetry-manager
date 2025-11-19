@@ -11,9 +11,6 @@ packages:
       dir: './internal/utils/k8s/mocks/'
     interfaces:
       Client:
-  github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus:
-    interfaces:
-      ErrorToMessageConverter:
   github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline:
     interfaces:
       FlowHealthProber:
