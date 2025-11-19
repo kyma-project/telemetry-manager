@@ -96,8 +96,55 @@ jobs:
     - Use `uses` to reference marketplace or custom actions, always specifying a secure version (tag or SHA).
     - Use `name` for each step for readability in logs and easier debugging.
     - Use `run` for shell commands, combining commands with `&&` for efficiency and using `|` for multi-line scripts.
+    - **For scripts longer than 5-10 lines, extract them into dedicated script files** in a `scripts/` or `hack/` directory and invoke them via `run: ./scripts/script-name.sh`. This improves:
+        - **Readability**: Workflow files remain clean and focused
+        - **Testability**: Scripts can be tested independently outside of GitHub Actions
+        - **Reusability**: Scripts can be used in multiple workflows or locally
+        - **Version Control**: Easier to review script changes in PRs
+        - **IDE Support**: Better syntax highlighting, linting, and debugging in dedicated files
+    - When extracting scripts, ensure they are executable (`chmod +x`) and include appropriate shebang lines (`#!/bin/bash`, `#!/usr/bin/env python3`).
     - Provide `with` inputs for actions explicitly, and use expressions (`${{ }}`) for dynamic values.
 - **Security Note:** Audit marketplace actions before use. Prefer actions from trusted sources (e.g., `actions/` organization) and review their source code if possible. Use `dependabot` for action version updates.
+- **Script Organization Best Practice:**
+```yaml
+# ❌ Bad: Long inline script in workflow
+- name: Complex deployment logic
+  run: |
+    echo "Starting deployment..."
+    if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+      export ENV="production"
+      kubectl config use-context prod-cluster
+    else
+      export ENV="staging"
+      kubectl config use-context staging-cluster
+    fi
+    # ... 50+ more lines of complex logic ...
+
+# ✅ Good: Extract to dedicated script (real examples from this project)
+- name: Wait for image to be available in the registry
+  run: "./hack/await_image.sh"
+  env:
+    IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/prod/telemetry-manager"
+    IMAGE_TAG: "${{ github.event.merge_group.head_sha || env.TAG }}"
+    QUERY_INTERVAL: 30
+
+- name: Deploy Istio
+  shell: bash
+  run: hack/deploy-istio.sh
+
+# ✅ Also Good: Use Makefile targets for complex operations
+- name: Provision Gardener
+  run: make provision-gardener
+  env:
+    GARDENER_SECRET_NAME: ${{ secrets.GARDENER_SECRET_NAME }}
+    GARDENER_PROJECT: ${{ secrets.GARDENER_PROJECT }}
+    GARDENER_SA_PATH: /tmp/gardener-sa.yaml
+```
+- **Pro Tip:** For very complex workflows with multiple scripts, consider organizing them in a dedicated directory structure:
+    - `hack/` - Infrastructure and deployment scripts
+    - `scripts/ci/` - CI-specific scripts
+    - `scripts/test/` - Test setup and execution scripts
+    - Use Makefile targets as a clean interface for common operations
 
 ## Security Best Practices in GitHub Actions
 
