@@ -7,8 +7,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
@@ -22,438 +23,426 @@ import (
 )
 
 func TestReconcile_GatewayHealthConditions(t *testing.T) {
-	t.Run("log gateway probing failed", func(t *testing.T) {
-		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().Build()
-		fakeClient := newTestClient(t, &pipeline)
+	tests := []struct {
+		name              string
+		gatewayProberStub *commonStatusStubs.DeploymentSetProber
+		expectedCondition metav1.Condition
+	}{
+		{
+			name: "log gateway probing failed",
+			gatewayProberStub: commonStatusStubs.NewDeploymentSetProber(
+				workloadstatus.ErrDeploymentFetching,
+			),
+			expectedCondition: metav1.Condition{
+				Type:    conditions.TypeGatewayHealthy,
+				Status:  metav1.ConditionFalse,
+				Reason:  conditions.ReasonGatewayNotReady,
+				Message: "Failed to get Deployment",
+			},
+		},
+		{
+			name: "log gateway deployment is not ready",
+			gatewayProberStub: commonStatusStubs.NewDeploymentSetProber(
+				&workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"},
+			),
+			expectedCondition: metav1.Condition{
+				Type:    conditions.TypeGatewayHealthy,
+				Status:  metav1.ConditionFalse,
+				Reason:  conditions.ReasonGatewayNotReady,
+				Message: "Pod is in the pending state because container: foo is not running due to: Error. Please check the container: foo logs.",
+			},
+		},
+		{
+			name:              "log gateway deployment is ready",
+			gatewayProberStub: commonStatusStubs.NewDeploymentSetProber(nil),
+			expectedCondition: metav1.Condition{
+				Type:    conditions.TypeGatewayHealthy,
+				Status:  metav1.ConditionTrue,
+				Reason:  conditions.ReasonGatewayReady,
+				Message: "Log gateway Deployment is ready",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().Build()
+			fakeClient := newTestClient(t, &pipeline)
 
-		// Only override the gateway prober to simulate deployment fetching failure
-		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(workloadstatus.ErrDeploymentFetching)
+			sut := newTestReconciler(fakeClient,
+				WithGatewayProber(tt.gatewayProberStub))
+			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
+			require.NoError(t, result.err)
+			requireHasStatusConditionObject(t, result.pipeline, tt.expectedCondition)
 
-		sut := newTestReconciler(fakeClient,
-			WithGatewayProber(gatewayProberStub))
-		err := sut.Reconcile(t.Context(), &pipeline)
-		require.NoError(t, err)
-
-		var updatedPipeline telemetryv1alpha1.LogPipeline
-
-		err = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-		require.NoError(t, err)
-
-		requireHasStatusCondition(t, updatedPipeline,
-			conditions.TypeGatewayHealthy,
-			metav1.ConditionFalse,
-			conditions.ReasonGatewayNotReady,
-			"Failed to get Deployment",
-		)
-	})
-	t.Run("log gateway deployment is not ready", func(t *testing.T) {
-		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().Build()
-		fakeClient := newTestClient(t, &pipeline)
-
-		// Only override the gateway prober to simulate pod pending error
-		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(&workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"})
-
-		sut := newTestReconciler(fakeClient,
-			WithGatewayProber(gatewayProberStub))
-		err := sut.Reconcile(t.Context(), &pipeline)
-		require.NoError(t, err)
-
-		var updatedPipeline telemetryv1alpha1.LogPipeline
-
-		err = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-		require.NoError(t, err)
-
-		requireHasStatusCondition(t, updatedPipeline,
-			conditions.TypeGatewayHealthy,
-			metav1.ConditionFalse,
-			conditions.ReasonGatewayNotReady,
-			"Pod is in the pending state because container: foo is not running due to: Error. Please check the container: foo logs.",
-		)
-	})
-	t.Run("log gateway deployment is ready", func(t *testing.T) {
-		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().Build()
-		fakeClient := newTestClient(t, &pipeline)
-
-		// Use all defaults - gateway is ready
-		sut := newTestReconciler(fakeClient)
-		err := sut.Reconcile(t.Context(), &pipeline)
-		require.NoError(t, err)
-
-		var updatedPipeline telemetryv1alpha1.LogPipeline
-
-		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-
-		requireHasStatusCondition(t, updatedPipeline,
-			conditions.TypeGatewayHealthy,
-			metav1.ConditionTrue,
-			conditions.ReasonGatewayReady,
-			"Log gateway Deployment is ready",
-		)
-	})
+		})
+	}
 }
+
 func TestReconcile_AgentHealthConditions(t *testing.T) {
-	t.Run("log agent daemonset is not ready", func(t *testing.T) {
-		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).WithApplicationInput(true).Build()
-		fakeClient := newTestClient(t, &pipeline)
+	tests := []struct {
+		name              string
+		agentProberStub   *commonStatusStubs.DaemonSetProber
+		expectedCondition metav1.Condition
+	}{
+		{
+			name:            "log agent daomonset is not ready",
+			agentProberStub: commonStatusStubs.NewDaemonSetProber(&workloadstatus.PodIsPendingError{Message: "Error"}),
+			expectedCondition: metav1.Condition{
+				Type:    conditions.TypeAgentHealthy,
+				Status:  metav1.ConditionFalse,
+				Reason:  conditions.ReasonAgentNotReady,
+				Message: "Pod is in the pending state because container:  is not running due to: Error. Please check the container:  logs.",
+			},
+		},
+		{
+			name:            "log agent daemonset is ready",
+			agentProberStub: commonStatusStubs.NewDaemonSetProber(nil),
+			expectedCondition: metav1.Condition{
+				Type:    conditions.TypeAgentHealthy,
+				Status:  metav1.ConditionTrue,
+				Reason:  conditions.ReasonAgentReady,
+				Message: "Log agent DaemonSet is ready",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).WithApplicationInput(true).Build()
+			fakeClient := newTestClient(t, &pipeline)
 
-		// Only override the agent prober to simulate agent not ready
-		agentProberStub := commonStatusStubs.NewDaemonSetProber(&workloadstatus.PodIsPendingError{Message: "Error"})
+			sut := newTestReconciler(fakeClient,
+				WithAgentProber(tt.agentProberStub))
+			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
+			require.NoError(t, result.err)
 
-		sut := newTestReconciler(fakeClient,
-			WithAgentProber(agentProberStub))
-		err := sut.Reconcile(t.Context(), &pipeline)
-		require.NoError(t, err)
-
-		var updatedPipeline telemetryv1alpha1.LogPipeline
-
-		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-
-		requireHasStatusCondition(t, updatedPipeline,
-			conditions.TypeAgentHealthy,
-			metav1.ConditionFalse,
-			conditions.ReasonAgentNotReady,
-			"Pod is in the pending state because container:  is not running due to: Error. Please check the container:  logs.")
-	})
-
-	t.Run("log agent daemonset is ready", func(t *testing.T) {
-		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).WithApplicationInput(true).Build()
-		fakeClient := newTestClient(t, &pipeline)
-
-		// Use all defaults - agent is ready
-		sut := newTestReconciler(fakeClient)
-		err := sut.Reconcile(t.Context(), &pipeline)
-		require.NoError(t, err)
-
-		var updatedPipeline telemetryv1alpha1.LogPipeline
-
-		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-
-		requireHasStatusCondition(t, updatedPipeline,
-			conditions.TypeAgentHealthy,
-			metav1.ConditionTrue,
-			conditions.ReasonAgentReady,
-			"Log agent DaemonSet is ready")
-	})
+			requireHasStatusConditionObject(t, result.pipeline, tt.expectedCondition)
+		})
+	}
 }
 func TestReconcile_GatewayFlowHealthy(t *testing.T) {
-	t.Run("log gateway flow healthy", func(t *testing.T) {
-		tests := []struct {
-			name            string
-			probe           prober.OTelGatewayProbeResult
-			probeErr        error
-			expectedStatus  metav1.ConditionStatus
-			expectedReason  string
-			expectedMessage string
-		}{
-			{
-				name:            "prober fails",
-				probeErr:        assert.AnError,
-				expectedStatus:  metav1.ConditionUnknown,
-				expectedReason:  conditions.ReasonSelfMonGatewayProbingFailed,
-				expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing of gateway failed",
+	tests := []struct {
+		name            string
+		probe           prober.OTelGatewayProbeResult
+		probeErr        error
+		expectedStatus  metav1.ConditionStatus
+		expectedReason  string
+		expectedMessage string
+	}{
+		{
+			name:            "prober fails",
+			probeErr:        assert.AnError,
+			expectedStatus:  metav1.ConditionUnknown,
+			expectedReason:  conditions.ReasonSelfMonGatewayProbingFailed,
+			expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing of gateway failed",
+		},
+		{
+			name: "healthy",
+			probe: prober.OTelGatewayProbeResult{
+				PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
 			},
-			{
-				name: "healthy",
-				probe: prober.OTelGatewayProbeResult{
-					PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
-				},
-				expectedStatus:  metav1.ConditionTrue,
-				expectedReason:  conditions.ReasonSelfMonFlowHealthy,
-				expectedMessage: "No problems detected in the telemetry flow",
+			expectedStatus:  metav1.ConditionTrue,
+			expectedReason:  conditions.ReasonSelfMonFlowHealthy,
+			expectedMessage: "No problems detected in the telemetry flow",
+		},
+		{
+			name: "throttling",
+			probe: prober.OTelGatewayProbeResult{
+				Throttling: true,
 			},
-			{
-				name: "throttling",
-				probe: prober.OTelGatewayProbeResult{
-					Throttling: true,
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonGatewayThrottling,
-				expectedMessage: "Log gateway is unable to receive logs at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=gateway-throttling",
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  conditions.ReasonSelfMonGatewayThrottling,
+			expectedMessage: "Log gateway is unable to receive logs at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=gateway-throttling",
+		},
+		{
+			name: "some data dropped",
+			probe: prober.OTelGatewayProbeResult{
+				PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
 			},
-			{
-				name: "some data dropped",
-				probe: prober.OTelGatewayProbeResult{
-					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
-				expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in Log gateway. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=not-all-logs-arrive-at-the-backend",
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
+			expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in Log gateway. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=not-all-logs-arrive-at-the-backend",
+		},
+		{
+			name: "some data dropped shadows other problems",
+			probe: prober.OTelGatewayProbeResult{
+				PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
+				Throttling:          true,
 			},
-			{
-				name: "some data dropped shadows other problems",
-				probe: prober.OTelGatewayProbeResult{
-					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
-					Throttling:          true,
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
-				expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in Log gateway. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=not-all-logs-arrive-at-the-backend",
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
+			expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in Log gateway. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=not-all-logs-arrive-at-the-backend",
+		},
+		{
+			name: "all data dropped",
+			probe: prober.OTelGatewayProbeResult{
+				PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
 			},
-			{
-				name: "all data dropped",
-				probe: prober.OTelGatewayProbeResult{
-					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
-				expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log gateway. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=no-logs-arrive-at-the-backend",
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
+			expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log gateway. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=no-logs-arrive-at-the-backend",
+		},
+		{
+			name: "all data dropped shadows other problems",
+			probe: prober.OTelGatewayProbeResult{
+				PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
+				Throttling:          true,
 			},
-			{
-				name: "all data dropped shadows other problems",
-				probe: prober.OTelGatewayProbeResult{
-					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
-					Throttling:          true,
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
-				expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log gateway. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=no-logs-arrive-at-the-backend",
-			},
-		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).WithApplicationInput(true).Build()
-				fakeClient := newTestClient(t, &pipeline)
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
+			expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log gateway. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=no-logs-arrive-at-the-backend",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).WithApplicationInput(true).Build()
+			fakeClient := newTestClient(t, &pipeline)
 
-				// Only override the gateway flow health prober to inject test scenario
-				gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
-				gatewayFlowHeathProber.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
+			// Only override the gateway flow health prober to inject test scenario
+			gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
+			gatewayFlowHeathProber.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
 
-				sut := newTestReconciler(fakeClient,
-					WithGatewayFlowHealthProber(gatewayFlowHeathProber))
-				err := sut.Reconcile(t.Context(), &pipeline)
-				require.NoError(t, err)
+			sut := newTestReconciler(fakeClient,
+				WithGatewayFlowHealthProber(gatewayFlowHeathProber))
+			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
+			require.NoError(t, result.err)
 
-				var updatedPipeline telemetryv1alpha1.LogPipeline
-
-				_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-
-				requireHasStatusCondition(t, updatedPipeline,
-					conditions.TypeFlowHealthy,
-					tt.expectedStatus,
-					tt.expectedReason,
-					tt.expectedMessage,
-				)
-			})
-		}
-	})
+			requireHasStatusCondition(t, result.pipeline,
+				conditions.TypeFlowHealthy,
+				tt.expectedStatus,
+				tt.expectedReason,
+				tt.expectedMessage,
+			)
+		})
+	}
 }
 func TestReconcile_AgentFlowHealthy(t *testing.T) {
-	t.Run("log agent flow healthy", func(t *testing.T) {
-		tests := []struct {
-			name            string
-			probe           prober.OTelAgentProbeResult
-			probeErr        error
-			expectedStatus  metav1.ConditionStatus
-			expectedReason  string
-			expectedMessage string
-		}{
-			{
-				name:            "prober fails",
-				probeErr:        assert.AnError,
-				expectedStatus:  metav1.ConditionUnknown,
-				expectedReason:  conditions.ReasonSelfMonAgentProbingFailed,
-				expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing of agent failed",
+	tests := []struct {
+		name            string
+		probe           prober.OTelAgentProbeResult
+		probeErr        error
+		expectedStatus  metav1.ConditionStatus
+		expectedReason  string
+		expectedMessage string
+	}{
+		{
+			name:            "prober fails",
+			probeErr:        assert.AnError,
+			expectedStatus:  metav1.ConditionUnknown,
+			expectedReason:  conditions.ReasonSelfMonAgentProbingFailed,
+			expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing of agent failed",
+		},
+		{
+			name: "healthy",
+			probe: prober.OTelAgentProbeResult{
+				PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
 			},
-			{
-				name: "healthy",
-				probe: prober.OTelAgentProbeResult{
-					PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
-				},
-				expectedStatus:  metav1.ConditionTrue,
-				expectedReason:  conditions.ReasonSelfMonFlowHealthy,
-				expectedMessage: "No problems detected in the telemetry flow",
+			expectedStatus:  metav1.ConditionTrue,
+			expectedReason:  conditions.ReasonSelfMonFlowHealthy,
+			expectedMessage: "No problems detected in the telemetry flow",
+		},
+		{
+			name: "some data dropped",
+			probe: prober.OTelAgentProbeResult{
+				PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
 			},
-			{
-				name: "some data dropped",
-				probe: prober.OTelAgentProbeResult{
-					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonAgentSomeDataDropped,
-				expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in Log agent. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=not-all-logs-arrive-at-the-backend",
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  conditions.ReasonSelfMonAgentSomeDataDropped,
+			expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in Log agent. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=not-all-logs-arrive-at-the-backend",
+		},
+		{
+			name: "all data dropped",
+			probe: prober.OTelAgentProbeResult{
+				PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
 			},
-			{
-				name: "all data dropped",
-				probe: prober.OTelAgentProbeResult{
-					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonAgentAllDataDropped,
-				expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log agent. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=no-logs-arrive-at-the-backend",
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  conditions.ReasonSelfMonAgentAllDataDropped,
+			expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log agent. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=no-logs-arrive-at-the-backend",
+		},
+		{
+			name: "all data dropped shadows other problems",
+			probe: prober.OTelAgentProbeResult{
+				PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true, SomeDataDropped: true},
 			},
-			{
-				name: "all data dropped shadows other problems",
-				probe: prober.OTelAgentProbeResult{
-					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true, SomeDataDropped: true},
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonAgentAllDataDropped,
-				expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log agent. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=no-logs-arrive-at-the-backend",
-			},
-		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).WithApplicationInput(true).Build()
-				fakeClient := newTestClient(t, &pipeline)
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  conditions.ReasonSelfMonAgentAllDataDropped,
+			expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log agent. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=no-logs-arrive-at-the-backend",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).WithApplicationInput(true).Build()
+			fakeClient := newTestClient(t, &pipeline)
 
-				// Only override the agent flow health prober to inject test scenario
-				agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
-				agentFlowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
+			// Only override the agent flow health prober to inject test scenario
+			agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
+			agentFlowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
 
-				sut := newTestReconciler(fakeClient,
-					WithAgentFlowHealthProber(agentFlowHealthProber))
-				err := sut.Reconcile(t.Context(), &pipeline)
-				require.NoError(t, err)
+			sut := newTestReconciler(fakeClient,
+				WithAgentFlowHealthProber(agentFlowHealthProber))
+			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
+			require.NoError(t, result.err)
 
-				var updatedPipeline telemetryv1alpha1.LogPipeline
-
-				_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-
-				requireHasStatusCondition(t, updatedPipeline,
-					conditions.TypeFlowHealthy,
-					tt.expectedStatus,
-					tt.expectedReason,
-					tt.expectedMessage,
-				)
-			})
-		}
-	})
+			requireHasStatusCondition(t, result.pipeline,
+				conditions.TypeFlowHealthy,
+				tt.expectedStatus,
+				tt.expectedReason,
+				tt.expectedMessage,
+			)
+		})
+	}
 }
 func TestReconcile_InvalidOTTLSpecs(t *testing.T) {
-	t.Run("invalid transform spec", func(t *testing.T) {
-		pipeline := testutils.NewLogPipelineBuilder().Build()
-		fakeClient := newTestClient(t, &pipeline)
+	tests := []struct {
+		name        string
+		validator   *Validator
+		condStatus  metav1.ConditionStatus
+		condReason  string
+		condMessage string
+	}{
+		{
+			name: "invalid transform spec",
+			validator: newTestValidator(
+				withTransformSpecValidator(stubs.NewTransformSpecValidator(
+					&ottl.InvalidOTTLSpecError{
+						Err: fmt.Errorf("invalid TransformSpec: error while parsing statements"),
+					},
+				))),
+			condStatus:  metav1.ConditionFalse,
+			condReason:  conditions.ReasonOTTLSpecInvalid,
+			condMessage: "Invalid TransformSpec: error while parsing statements",
+		},
+		{
+			name: "invalid filter spec",
+			validator: newTestValidator(
+				withFilterSpecValidator(stubs.NewFilterSpecValidator(
+					&ottl.InvalidOTTLSpecError{
+						Err: fmt.Errorf("invalid FilterSpec: error while parsing conditions"),
+					},
+				))),
+			condStatus:  metav1.ConditionFalse,
+			condReason:  conditions.ReasonOTTLSpecInvalid,
+			condMessage: "Invalid FilterSpec: error while parsing conditions",
+		},
+	}
 
-		// Override the transform spec validator to inject error
-		pipelineValidator := newTestValidator(
-			withTransformSpecValidator(stubs.NewTransformSpecValidator(
-				&ottl.InvalidOTTLSpecError{
-					Err: fmt.Errorf("invalid TransformSpec: error while parsing statements"),
-				},
-			)))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pipeline := testutils.NewLogPipelineBuilder().Build()
+			fakeClient := newTestClient(t, &pipeline)
 
-		sut := newTestReconciler(fakeClient,
-			WithPipelineValidator(pipelineValidator))
-		err := sut.Reconcile(t.Context(), &pipeline)
-		require.NoError(t, err)
+			sut := newTestReconciler(fakeClient,
+				WithPipelineValidator(tt.validator))
+			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
+			require.NoError(t, result.err)
 
-		var updatedPipeline telemetryv1alpha1.LogPipeline
-
-		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-
-		requireHasStatusCondition(t, updatedPipeline,
-			conditions.TypeConfigurationGenerated,
-			metav1.ConditionFalse,
-			conditions.ReasonOTTLSpecInvalid,
-			"Invalid TransformSpec: error while parsing statements",
-		)
-	})
-
-	t.Run("invalid filter spec", func(t *testing.T) {
-		pipeline := testutils.NewLogPipelineBuilder().Build()
-		fakeClient := newTestClient(t, &pipeline)
-
-		// Override the filter spec validator to inject error
-		pipelineValidator := newTestValidator(
-			withFilterSpecValidator(stubs.NewFilterSpecValidator(
-				&ottl.InvalidOTTLSpecError{
-					Err: fmt.Errorf("invalid FilterSpec: error while parsing conditions"),
-				},
-			)))
-
-		sut := newTestReconciler(fakeClient,
-			WithPipelineValidator(pipelineValidator))
-		err := sut.Reconcile(t.Context(), &pipeline)
-		require.NoError(t, err)
-
-		var updatedPipeline telemetryv1alpha1.LogPipeline
-
-		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-
-		requireHasStatusCondition(t, updatedPipeline,
-			conditions.TypeConfigurationGenerated,
-			metav1.ConditionFalse,
-			conditions.ReasonOTTLSpecInvalid,
-			"Invalid FilterSpec: error while parsing conditions",
-		)
-	})
+			cond := meta.FindStatusCondition(result.pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
+			require.Equal(t, tt.condStatus, cond.Status)
+			require.Equal(t, tt.condReason, cond.Reason)
+			require.Equal(t, tt.condMessage, cond.Message)
+		})
+	}
 }
+
 func TestReconcile_AgentRequiredScenarios(t *testing.T) {
-	t.Run("one log pipeline does not require an agent", func(t *testing.T) {
-		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().WithApplicationInput(false).Build()
-		fakeClient := newTestClient(t, &pipeline)
+	tests := []struct {
+		name                         string
+		pipelineConfigs              []pipelineConfig
+		pipelinesToCheck             []string
+		expectedConditionPerPipeline map[string]metav1.Condition
+	}{
+		{
+			name: "one log pipeline does not require an agent",
+			pipelineConfigs: []pipelineConfig{
+				{name: "pipeline", applicationInput: false},
+			},
+			pipelinesToCheck: []string{"pipeline"},
+			expectedConditionPerPipeline: map[string]metav1.Condition{
+				"pipeline": {
+					Type:   conditions.TypeAgentHealthy,
+					Status: metav1.ConditionTrue,
+					Reason: conditions.ReasonLogAgentNotRequired,
+				},
+			},
+		},
+		{
+			name: "some log pipelines do not require an agent",
+			pipelineConfigs: []pipelineConfig{
+				{name: "pipeline1", applicationInput: false},
+				{name: "pipeline2", applicationInput: true},
+			},
+			pipelinesToCheck: []string{"pipeline1"},
+			expectedConditionPerPipeline: map[string]metav1.Condition{
+				"pipeline1": {
+					Type:   conditions.TypeAgentHealthy,
+					Status: metav1.ConditionTrue,
+					Reason: conditions.ReasonLogAgentNotRequired,
+				},
+				"pipeline2": {
+					Type:   conditions.TypeAgentHealthy,
+					Status: metav1.ConditionTrue,
+					Reason: conditions.ReasonAgentReady,
+				},
+			},
+		},
+		{
+			name: "all log pipelines do not require an agent",
+			pipelineConfigs: []pipelineConfig{
+				{name: "pipeline1", applicationInput: false},
+				{name: "pipeline2", applicationInput: false},
+			},
+			pipelinesToCheck: []string{"pipeline1", "pipeline2"},
+			expectedConditionPerPipeline: map[string]metav1.Condition{
+				"pipeline1": {
+					Type:   conditions.TypeAgentHealthy,
+					Status: metav1.ConditionTrue,
+					Reason: conditions.ReasonLogAgentNotRequired,
+				},
+				"pipeline2": {
+					Type:   conditions.TypeAgentHealthy,
+					Status: metav1.ConditionTrue,
+					Reason: conditions.ReasonLogAgentNotRequired,
+				},
+			},
+		},
+	}
 
-		// Use all defaults - agent is not required, should be deleted
-		sut := newTestReconciler(fakeClient)
-		err := sut.Reconcile(t.Context(), &pipeline)
-		require.NoError(t, err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Build pipelines from configs
+			var pipelines []client.Object
+			for _, cfg := range tt.pipelineConfigs {
+				pipeline := testutils.NewLogPipelineBuilder().
+					WithName(cfg.name).
+					WithOTLPOutput().
+					WithApplicationInput(cfg.applicationInput).
+					Build()
+				pipelines = append(pipelines, &pipeline)
+			}
 
-		var updatedPipeline telemetryv1alpha1.LogPipeline
+			fakeClient := newTestClient(t, pipelines...)
+			sut := newTestReconciler(fakeClient)
 
-		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+			// Reconcile all pipelines
+			for _, cfg := range tt.pipelineConfigs {
+				result := reconcileAndGet(t, fakeClient, sut, cfg.name)
+				require.NoError(t, result.err)
+			}
 
-		requireHasStatusCondition(t, updatedPipeline,
-			conditions.TypeAgentHealthy,
-			metav1.ConditionTrue,
-			conditions.ReasonLogAgentNotRequired,
-			"")
-	})
+			// Check conditions for pipelines that need verification
+			for _, pipelineName := range tt.pipelinesToCheck {
+				result := reconcileAndGet(t, fakeClient, sut, pipelineName)
+				require.NoError(t, result.err)
 
-	t.Run("some log pipelines do not require an agent", func(t *testing.T) {
-		pipeline1 := testutils.NewLogPipelineBuilder().WithName("pipeline1").WithOTLPOutput().WithApplicationInput(false).Build()
-		pipeline2 := testutils.NewLogPipelineBuilder().WithName("pipeline2").WithOTLPOutput().WithApplicationInput(true).Build()
-		fakeClient := newTestClient(t, &pipeline1, &pipeline2)
+				expectedCond := tt.expectedConditionPerPipeline[pipelineName]
+				requireHasStatusConditionObject(t, result.pipeline, expectedCond)
+			}
+		})
+	}
+}
 
-		// Use all defaults - handles mixed scenario
-		sut := newTestReconciler(fakeClient)
-		err1 := sut.Reconcile(t.Context(), &pipeline1)
-		err2 := sut.Reconcile(t.Context(), &pipeline2)
-
-		require.NoError(t, err1)
-		require.NoError(t, err2)
-
-		var updatedPipeline1 telemetryv1alpha1.LogPipeline
-
-		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline1.Name}, &updatedPipeline1)
-
-		requireHasStatusCondition(t, updatedPipeline1,
-			conditions.TypeAgentHealthy,
-			metav1.ConditionTrue,
-			conditions.ReasonLogAgentNotRequired,
-			"")
-	})
-	t.Run("all log pipelines do not require an agent", func(t *testing.T) {
-		pipeline1 := testutils.NewLogPipelineBuilder().WithName("pipeline1").WithOTLPOutput().WithApplicationInput(false).Build()
-		pipeline2 := testutils.NewLogPipelineBuilder().WithName("pipeline2").WithOTLPOutput().WithApplicationInput(false).Build()
-		fakeClient := newTestClient(t, &pipeline1, &pipeline2)
-
-		// Use all defaults - no agent required for any pipeline
-		sut := newTestReconciler(fakeClient)
-		err1 := sut.Reconcile(t.Context(), &pipeline1)
-		err2 := sut.Reconcile(t.Context(), &pipeline2)
-
-		require.NoError(t, err1)
-		require.NoError(t, err2)
-
-		var (
-			updatedPipeline1 telemetryv1alpha1.LogPipeline
-			updatedPipeline2 telemetryv1alpha1.LogPipeline
-		)
-
-		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline1.Name}, &updatedPipeline1)
-		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline2.Name}, &updatedPipeline2)
-
-		requireHasStatusCondition(t, updatedPipeline1,
-			conditions.TypeAgentHealthy,
-			metav1.ConditionTrue,
-			conditions.ReasonLogAgentNotRequired,
-			"")
-		requireHasStatusCondition(t, updatedPipeline2,
-			conditions.TypeAgentHealthy,
-			metav1.ConditionTrue,
-			conditions.ReasonLogAgentNotRequired,
-			"")
-	})
+type pipelineConfig struct {
+	name             string
+	applicationInput bool
 }
 
 func TestGetPipelinesRequiringAgents(t *testing.T) {

@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -59,6 +60,32 @@ func requireHasStatusCondition(t *testing.T, pipeline telemetryv1alpha1.LogPipel
 	require.Equal(t, message, cond.Message)
 	require.Equal(t, pipeline.Generation, cond.ObservedGeneration)
 	require.NotEmpty(t, cond.LastTransitionTime)
+}
+
+func requireHasStatusConditionObject(t *testing.T, pipeline telemetryv1alpha1.LogPipeline, expectedCond metav1.Condition) {
+	t.Helper()
+
+	requireHasStatusCondition(t, pipeline, expectedCond.Type, expectedCond.Status, expectedCond.Reason, expectedCond.Message)
+}
+
+// reconcileResult holds the result of a reconciliation operation for test assertions.
+type reconcileResult struct {
+	pipeline telemetryv1alpha1.LogPipeline
+	err      error
+}
+
+// reconcileAndGet performs a reconciliation and returns the updated pipeline and any error.
+// It's a helper to reduce boilerplate in tests.
+func reconcileAndGet(t *testing.T, client client.Client, reconciler *Reconciler, pipelineName string) reconcileResult {
+	var pl telemetryv1alpha1.LogPipeline
+	require.NoError(t, client.Get(t.Context(), types.NamespacedName{Name: pipelineName}, &pl))
+
+	err := reconciler.Reconcile(t.Context(), &pl)
+
+	var updatedPipeline telemetryv1alpha1.LogPipeline
+	require.NoError(t, client.Get(t.Context(), types.NamespacedName{Name: pipelineName}, &updatedPipeline))
+
+	return reconcileResult{pipeline: updatedPipeline, err: err}
 }
 
 // containsPipeline returns a mock matcher that checks if a slice contains exactly one pipeline with the given name.
