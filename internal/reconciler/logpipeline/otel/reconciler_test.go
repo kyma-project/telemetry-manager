@@ -28,7 +28,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
-func TestReconcile(t *testing.T) {
+func TestGateway(t *testing.T) {
 	scheme := runtime.NewScheme()
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = telemetryv1alpha1.AddToScheme(scheme)
@@ -113,7 +113,6 @@ func TestReconcile(t *testing.T) {
 
 		gatewayConfigBuilderMock.AssertExpectations(t)
 	})
-
 	t.Run("log gateway deployment is not ready", func(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().Build()
 		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
@@ -187,7 +186,6 @@ func TestReconcile(t *testing.T) {
 
 		gatewayConfigBuilderMock.AssertExpectations(t)
 	})
-
 	t.Run("log gateway deployment is ready", func(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().Build()
 		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
@@ -260,6 +258,18 @@ func TestReconcile(t *testing.T) {
 
 		gatewayConfigBuilderMock.AssertExpectations(t)
 	})
+}
+func TestDaemonset(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = telemetryv1alpha1.AddToScheme(scheme)
+
+	overridesHandlerStub := &logpipelinemocks.OverridesHandler{}
+	overridesHandlerStub.On("LoadOverrides", t.Context()).Return(&overrides.Config{}, nil)
+
+	istioStatusCheckerStub := &stubs.IstioStatusChecker{IsActive: false}
+
+	globals := config.NewGlobal(config.WithTargetNamespace("default"), config.WithVersion("1.0.0"))
 
 	t.Run("log agent daemonset is not ready", func(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).WithApplicationInput(true).Build()
@@ -406,6 +416,18 @@ func TestReconcile(t *testing.T) {
 		agentConfigBuilderMock.AssertExpectations(t)
 		gatewayConfigBuilderMock.AssertExpectations(t)
 	})
+}
+func TestGatewayFLow(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = telemetryv1alpha1.AddToScheme(scheme)
+
+	overridesHandlerStub := &logpipelinemocks.OverridesHandler{}
+	overridesHandlerStub.On("LoadOverrides", t.Context()).Return(&overrides.Config{}, nil)
+
+	istioStatusCheckerStub := &stubs.IstioStatusChecker{IsActive: false}
+
+	globals := config.NewGlobal(config.WithTargetNamespace("default"), config.WithVersion("1.0.0"))
 
 	t.Run("log gateway flow healthy", func(t *testing.T) {
 		tests := []struct {
@@ -555,6 +577,18 @@ func TestReconcile(t *testing.T) {
 			})
 		}
 	})
+}
+func TestAgentFlow(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = telemetryv1alpha1.AddToScheme(scheme)
+
+	overridesHandlerStub := &logpipelinemocks.OverridesHandler{}
+	overridesHandlerStub.On("LoadOverrides", t.Context()).Return(&overrides.Config{}, nil)
+
+	istioStatusCheckerStub := &stubs.IstioStatusChecker{IsActive: false}
+
+	globals := config.NewGlobal(config.WithTargetNamespace("default"), config.WithVersion("1.0.0"))
 
 	t.Run("log agent flow healthy", func(t *testing.T) {
 		tests := []struct {
@@ -684,6 +718,18 @@ func TestReconcile(t *testing.T) {
 			})
 		}
 	})
+}
+func TestSpecs(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = telemetryv1alpha1.AddToScheme(scheme)
+
+	overridesHandlerStub := &logpipelinemocks.OverridesHandler{}
+	overridesHandlerStub.On("LoadOverrides", t.Context()).Return(&overrides.Config{}, nil)
+
+	istioStatusCheckerStub := &stubs.IstioStatusChecker{IsActive: false}
+
+	globals := config.NewGlobal(config.WithTargetNamespace("default"), config.WithVersion("1.0.0"))
 
 	t.Run("invalid transform spec", func(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().Build()
@@ -844,6 +890,18 @@ func TestReconcile(t *testing.T) {
 		agentConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything, mock.Anything)
 		gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything, mock.Anything)
 	})
+}
+func TestAgentRequired(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = telemetryv1alpha1.AddToScheme(scheme)
+
+	overridesHandlerStub := &logpipelinemocks.OverridesHandler{}
+	overridesHandlerStub.On("LoadOverrides", t.Context()).Return(&overrides.Config{}, nil)
+
+	istioStatusCheckerStub := &stubs.IstioStatusChecker{IsActive: false}
+
+	globals := config.NewGlobal(config.WithTargetNamespace("default"), config.WithVersion("1.0.0"))
 
 	t.Run("one log pipeline does not require an agent", func(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().WithApplicationInput(false).Build()
@@ -988,7 +1046,6 @@ func TestReconcile(t *testing.T) {
 		agentApplierDeleterMock.AssertExpectations(t)
 		gatewayConfigBuilderMock.AssertExpectations(t)
 	})
-
 	t.Run("all log pipelines do not require an agent", func(t *testing.T) {
 		pipeline1 := testutils.NewLogPipelineBuilder().WithName("pipeline1").WithOTLPOutput().WithApplicationInput(false).Build()
 		pipeline2 := testutils.NewLogPipelineBuilder().WithName("pipeline2").WithOTLPOutput().WithApplicationInput(false).Build()
