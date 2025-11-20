@@ -219,6 +219,18 @@ docker-build: ## Build docker image with the manager
 docker-push: ## Push docker image with the manager
 	docker push ${MANAGER_IMAGE}
 
+.PHONY: docker-build-selfmonitor
+docker-build-selfmonitor: ## Build docker image for telemetry self-monitor
+	@set -a && . dependencies/telemetry-self-monitor/envs && set +a && \
+	docker build -t ${SELF_MONITOR_IMAGE} \
+		--build-arg ALPINE_VERSION=$${ALPINE_VERSION} \
+		--build-arg PROMETHEUS_VERSION=$${PROMETHEUS_VERSION} \
+		dependencies/telemetry-self-monitor
+
+.PHONY: docker-push-selfmonitor
+docker-push-selfmonitor: ## Push docker image for telemetry self-monitor
+	docker push ${SELF_MONITOR_IMAGE}
+
 ##@ Development
 
 .PHONY: run
