@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -24,13 +25,25 @@ import (
 
 // newTestClient creates a fake Kubernetes client with the telemetry scheme for testing.
 func newTestClient(t *testing.T, objs ...client.Object) client.Client {
+	t.Helper()
+
 	scheme := runtime.NewScheme()
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))
 	require.NoError(t, telemetryv1alpha1.AddToScheme(scheme))
 
+	// Create kube-system namespace required by reconciler for cluster UID
+	kubeSystemNs := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "kube-system",
+			UID:  "test-cluster-uid",
+		},
+	}
+
+	allObjs := append([]client.Object{kubeSystemNs}, objs...)
+
 	return fake.NewClientBuilder().
 		WithScheme(scheme).
-		WithObjects(objs...).
+		WithObjects(allObjs...).
 		WithStatusSubresource(objs...).
 		Build()
 }
@@ -49,6 +62,9 @@ func requireHasStatusCondition(t *testing.T, pipeline telemetryv1alpha1.LogPipel
 }
 
 // containsPipeline returns a mock matcher that checks if a slice contains exactly one pipeline with the given name.
+// Kept for future tests that need to verify single pipeline scenarios.
+//
+//nolint:unused
 func containsPipeline(p telemetryv1alpha1.LogPipeline) any {
 	return mock.MatchedBy(func(pipelines []telemetryv1alpha1.LogPipeline) bool {
 		return len(pipelines) == 1 && pipelines[0].Name == p.Name
@@ -56,6 +72,9 @@ func containsPipeline(p telemetryv1alpha1.LogPipeline) any {
 }
 
 // containsPipelines returns a mock matcher that checks if a slice contains all the given pipelines.
+// Kept for future tests that need to verify multiple pipeline scenarios.
+//
+//nolint:unused
 func containsPipelines(pp []telemetryv1alpha1.LogPipeline) any {
 	return mock.MatchedBy(func(pipelines []telemetryv1alpha1.LogPipeline) bool {
 		if len(pipelines) != len(pp) {
@@ -89,6 +108,9 @@ func withPipelineLock(lock PipelineLock) validatorOption {
 }
 
 // withEndpointValidator sets the endpoint validator.
+// Kept for future tests that need to override endpoint validation.
+//
+//nolint:unused
 func withEndpointValidator(validator EndpointValidator) validatorOption {
 	return func(v *Validator) {
 		v.EndpointValidator = validator
@@ -96,6 +118,9 @@ func withEndpointValidator(validator EndpointValidator) validatorOption {
 }
 
 // withTLSCertValidator sets the TLS certificate validator.
+// Kept for future tests that need to override TLS validation.
+//
+//nolint:unused
 func withTLSCertValidator(validator TLSCertValidator) validatorOption {
 	return func(v *Validator) {
 		v.TLSCertValidator = validator
@@ -103,6 +128,9 @@ func withTLSCertValidator(validator TLSCertValidator) validatorOption {
 }
 
 // withSecretRefValidator sets the secret reference validator.
+// Kept for future tests that need to override secret validation.
+//
+//nolint:unused
 func withSecretRefValidator(validator SecretRefValidator) validatorOption {
 	return func(v *Validator) {
 		v.SecretRefValidator = validator
