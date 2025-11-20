@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -1154,42 +1153,5 @@ func TestGetPipelinesRequiringAgents(t *testing.T) {
 		pipeline2 := testutils.NewLogPipelineBuilder().WithOTLPOutput().WithApplicationInput(true).Build()
 		pipelines := []telemetryv1alpha1.LogPipeline{pipeline1, pipeline2}
 		require.ElementsMatch(t, []telemetryv1alpha1.LogPipeline{pipeline1, pipeline2}, r.getPipelinesRequiringAgents(pipelines))
-	})
-}
-
-func requireHasStatusCondition(t *testing.T, pipeline telemetryv1alpha1.LogPipeline, condType string, status metav1.ConditionStatus, reason, message string) {
-	cond := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
-	require.NotNil(t, cond, "could not find condition of type %s", condType)
-	require.Equal(t, status, cond.Status)
-	require.Equal(t, reason, cond.Reason)
-	require.Equal(t, message, cond.Message)
-	require.Equal(t, pipeline.Generation, cond.ObservedGeneration)
-	require.NotEmpty(t, cond.LastTransitionTime)
-}
-
-func containsPipeline(p telemetryv1alpha1.LogPipeline) any {
-	return mock.MatchedBy(func(pipelines []telemetryv1alpha1.LogPipeline) bool {
-		return len(pipelines) == 1 && pipelines[0].Name == p.Name
-	})
-}
-
-func containsPipelines(pp []telemetryv1alpha1.LogPipeline) any {
-	return mock.MatchedBy(func(pipelines []telemetryv1alpha1.LogPipeline) bool {
-		if len(pipelines) != len(pp) {
-			return false
-		}
-
-		pipelineMap := make(map[string]bool)
-		for _, p := range pipelines {
-			pipelineMap[p.Name] = true
-		}
-
-		for _, p := range pp {
-			if !pipelineMap[p.Name] {
-				return false
-			}
-		}
-
-		return true
 	})
 }

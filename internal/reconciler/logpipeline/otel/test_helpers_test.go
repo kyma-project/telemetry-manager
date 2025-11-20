@@ -1,0 +1,218 @@
+package otel
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel/mocks"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/stubs"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
+)
+
+// newTestClient creates a fake Kubernetes client with the telemetry scheme for testing.
+func newTestClient(t *testing.T, objs ...client.Object) client.Client {
+	scheme := runtime.NewScheme()
+	require.NoError(t, clientgoscheme.AddToScheme(scheme))
+	require.NoError(t, telemetryv1alpha1.AddToScheme(scheme))
+
+	return fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(objs...).
+		WithStatusSubresource(objs...).
+		Build()
+}
+
+// requireHasStatusCondition asserts that a LogPipeline has a specific status condition.
+func requireHasStatusCondition(t *testing.T, pipeline telemetryv1alpha1.LogPipeline, condType string, status metav1.ConditionStatus, reason, message string) {
+	t.Helper()
+
+	cond := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
+	require.NotNil(t, cond, "could not find condition of type %s", condType)
+	require.Equal(t, status, cond.Status)
+	require.Equal(t, reason, cond.Reason)
+	require.Equal(t, message, cond.Message)
+	require.Equal(t, pipeline.Generation, cond.ObservedGeneration)
+	require.NotEmpty(t, cond.LastTransitionTime)
+}
+
+// containsPipeline returns a mock matcher that checks if a slice contains exactly one pipeline with the given name.
+func containsPipeline(p telemetryv1alpha1.LogPipeline) any {
+	return mock.MatchedBy(func(pipelines []telemetryv1alpha1.LogPipeline) bool {
+		return len(pipelines) == 1 && pipelines[0].Name == p.Name
+	})
+}
+
+// containsPipelines returns a mock matcher that checks if a slice contains all the given pipelines.
+func containsPipelines(pp []telemetryv1alpha1.LogPipeline) any {
+	return mock.MatchedBy(func(pipelines []telemetryv1alpha1.LogPipeline) bool {
+		if len(pipelines) != len(pp) {
+			return false
+		}
+
+		pipelineMap := make(map[string]bool)
+		for _, p := range pipelines {
+			pipelineMap[p.Name] = true
+		}
+
+		for _, p := range pp {
+			if !pipelineMap[p.Name] {
+				return false
+			}
+		}
+
+		return true
+	})
+}
+
+// validatorOption is a functional option for configuring a Validator in tests.
+// Uses lowercase naming convention to indicate test-only usage.
+type validatorOption func(*Validator)
+
+// withPipelineLock sets the pipeline lock for the validator.
+func withPipelineLock(lock PipelineLock) validatorOption {
+	return func(v *Validator) {
+		v.PipelineLock = lock
+	}
+}
+
+// withEndpointValidator sets the endpoint validator.
+func withEndpointValidator(validator EndpointValidator) validatorOption {
+	return func(v *Validator) {
+		v.EndpointValidator = validator
+	}
+}
+
+// withTLSCertValidator sets the TLS certificate validator.
+func withTLSCertValidator(validator TLSCertValidator) validatorOption {
+	return func(v *Validator) {
+		v.TLSCertValidator = validator
+	}
+}
+
+// withSecretRefValidator sets the secret reference validator.
+func withSecretRefValidator(validator SecretRefValidator) validatorOption {
+	return func(v *Validator) {
+		v.SecretRefValidator = validator
+	}
+}
+
+// withTransformSpecValidator sets the transform spec validator.
+func withTransformSpecValidator(validator TransformSpecValidator) validatorOption {
+	return func(v *Validator) {
+		v.TransformSpecValidator = validator
+	}
+}
+
+// withFilterSpecValidator sets the filter spec validator.
+func withFilterSpecValidator(validator FilterSpecValidator) validatorOption {
+	return func(v *Validator) {
+		v.FilterSpecValidator = validator
+	}
+}
+
+// newTestValidator creates a Validator with all dependencies mocked by default.
+// Dependencies return no errors (happy path) unless overridden via options.
+func newTestValidator(opts ...validatorOption) *Validator {
+	// Create mock pipeline lock that allows all operations by default
+	pipelineLock := &mocks.PipelineLock{}
+	pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+	pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
+	pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
+
+	// Create validator with all validations passing by default
+	v := &Validator{
+		PipelineLock:           pipelineLock,
+		EndpointValidator:      stubs.NewEndpointValidator(nil),
+		TLSCertValidator:       stubs.NewTLSCertValidator(nil),
+		SecretRefValidator:     stubs.NewSecretRefValidator(nil),
+		TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
+		FilterSpecValidator:    stubs.NewFilterSpecValidator(nil),
+	}
+
+	// Apply custom options to override defaults
+	for _, opt := range opts {
+		opt(v)
+	}
+
+	return v
+}
+
+// newTestReconciler creates a Reconciler with default mocked dependencies for testing.
+// Uses production Option type (capitalized With* functions) to configure dependencies.
+// Provided options override the defaults.
+func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
+	// Set up default mocked dependencies - all operations succeed by default
+	gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+	gatewayConfigBuilderMock.On("Build", mock.Anything, mock.Anything, mock.Anything).
+		Return(&common.Config{}, common.EnvVars{}, nil)
+
+	agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
+	agentConfigBuilderMock.On("Build", mock.Anything, mock.Anything, mock.Anything).
+		Return(&common.Config{}, common.EnvVars{}, nil)
+
+	gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+	gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	gatewayApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+	agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil)
+
+	gatewayFlowHealthProberMock := &mocks.GatewayFlowHealthProber{}
+	gatewayFlowHealthProberMock.On("Probe", mock.Anything, mock.Anything).
+		Return(prober.OTelGatewayProbeResult{}, nil)
+
+	agentFlowHealthProberMock := &mocks.AgentFlowHealthProber{}
+	agentFlowHealthProberMock.On("Probe", mock.Anything, mock.Anything).
+		Return(prober.OTelAgentProbeResult{}, nil)
+
+	gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+	agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
+
+	istioStatusCheckerStub := &stubs.IstioStatusChecker{IsActive: false}
+
+	pipelineLock := &mocks.PipelineLock{}
+	pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+	pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
+	pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
+
+	// Create validator with passing validations by default
+	pipelineValidator := newTestValidator(withPipelineLock(pipelineLock))
+
+	errToMsg := &conditions.ErrorToMessageConverter{}
+
+	// Build default options with all mocked dependencies
+	defaultOpts := []Option{
+		WithGlobals(config.NewGlobal(config.WithTargetNamespace("default"), config.WithVersion("1.0.0"))),
+		WithGatewayFlowHealthProber(gatewayFlowHealthProberMock),
+		WithAgentFlowHealthProber(agentFlowHealthProberMock),
+		WithAgentConfigBuilder(agentConfigBuilderMock),
+		WithAgentApplierDeleter(agentApplierDeleterMock),
+		WithAgentProber(agentProberStub),
+		WithGatewayApplierDeleter(gatewayApplierDeleterMock),
+		WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+		WithGatewayProber(gatewayProberStub),
+		WithIstioStatusChecker(istioStatusCheckerStub),
+		WithPipelineLock(pipelineLock),
+		WithPipelineValidator(pipelineValidator),
+		WithErrorToMessageConverter(errToMsg),
+	}
+
+	// Merge default options with provided options (provided options override defaults)
+	allOpts := append(defaultOpts, opts...)
+
+	return New(client, allOpts...)
+}
