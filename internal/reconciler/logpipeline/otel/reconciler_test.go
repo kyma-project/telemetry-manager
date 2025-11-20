@@ -28,7 +28,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
-func TestGateway(t *testing.T) {
+func TestReconcile_GatewayHealthConditions(t *testing.T) {
 	scheme := runtime.NewScheme()
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = telemetryv1alpha1.AddToScheme(scheme)
@@ -259,7 +259,7 @@ func TestGateway(t *testing.T) {
 		gatewayConfigBuilderMock.AssertExpectations(t)
 	})
 }
-func TestDaemonset(t *testing.T) {
+func TestReconcile_AgentHealthConditions(t *testing.T) {
 	scheme := runtime.NewScheme()
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = telemetryv1alpha1.AddToScheme(scheme)
@@ -417,7 +417,7 @@ func TestDaemonset(t *testing.T) {
 		gatewayConfigBuilderMock.AssertExpectations(t)
 	})
 }
-func TestGatewayFLow(t *testing.T) {
+func TestReconcile_GatewayFlowHealthy(t *testing.T) {
 	scheme := runtime.NewScheme()
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = telemetryv1alpha1.AddToScheme(scheme)
@@ -578,7 +578,7 @@ func TestGatewayFLow(t *testing.T) {
 		}
 	})
 }
-func TestAgentFlow(t *testing.T) {
+func TestReconcile_AgentFlowHealthy(t *testing.T) {
 	scheme := runtime.NewScheme()
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = telemetryv1alpha1.AddToScheme(scheme)
@@ -719,7 +719,7 @@ func TestAgentFlow(t *testing.T) {
 		}
 	})
 }
-func TestSpecs(t *testing.T) {
+func TestReconcile_InvalidOTTLSpecs(t *testing.T) {
 	scheme := runtime.NewScheme()
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = telemetryv1alpha1.AddToScheme(scheme)
@@ -891,7 +891,7 @@ func TestSpecs(t *testing.T) {
 		gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything, mock.Anything)
 	})
 }
-func TestAgentRequired(t *testing.T) {
+func TestReconcile_AgentRequiredScenarios(t *testing.T) {
 	scheme := runtime.NewScheme()
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = telemetryv1alpha1.AddToScheme(scheme)
