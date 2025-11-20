@@ -50,7 +50,14 @@ func TestMaxPipelines(t *testing.T) {
 		WithCustomFilter("Name grep").
 		Build()
 	testClient := newTestClient(t, &pipeline)
-	reconciler := newMaxPipelinesReconciler(testClient)
+
+	pipelineLock := &mocks.PipelineLock{}
+	pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
+	pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
+
+	reconciler := newTestReconciler(testClient,
+		withPipelineValidator(newTestValidator(withPipelineLock(pipelineLock))),
+	)
 
 	result := reconcileAndGet(t, testClient, reconciler, pipeline.Name)
 	require.NoError(t, result.err)
@@ -144,7 +151,10 @@ func TestTLSConditions(t *testing.T) {
 				WithHTTPOutput(testutils.HTTPClientTLSFromString("ca", "fooCert", "fooKey")).
 				Build()
 			testClient := newTestClient(t, &pipeline)
-			reconciler := newTLSReconciler(testClient, tt.tlsCertErr)
+
+			reconciler := newTestReconciler(testClient,
+				withPipelineValidator(newTestValidator(withTLSCertValidator(stubs.NewTLSCertValidator(tt.tlsCertErr)))),
+			)
 
 			result := reconcileAndGet(t, testClient, reconciler, pipeline.Name)
 			require.NoError(t, result.err)
@@ -209,7 +219,10 @@ func TestPodErrorConditions(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
 			testClient := newTestClient(t, &pipeline)
-			reconciler := newPodErrorReconciler(testClient, tt.probeErr)
+
+			reconciler := newTestReconciler(testClient,
+				withAgentProber(commonStatusStubs.NewDaemonSetProber(tt.probeErr)),
+			)
 
 			result := reconcileAndGet(t, testClient, reconciler, pipeline.Name)
 			require.NoError(t, result.err)
@@ -320,7 +333,10 @@ func TestReferencedSecret(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			pipeline, objs := tt.setupObjs()
 			testClient := newTestClientWithObjs(t, objs...)
-			reconciler := newSecretRefReconciler(testClient, tt.secretErr)
+
+			reconciler := newTestReconciler(testClient,
+				withPipelineValidator(newTestValidator(withSecretRefValidator(stubs.NewSecretRefValidator(tt.secretErr)))),
+			)
 
 			result := reconcileAndGet(t, testClient, reconciler, pipeline.Name)
 
@@ -341,7 +357,6 @@ func TestLogAgent(t *testing.T) {
 	tests := []struct {
 		name            string
 		proberError     error
-		errorConverter  ErrorToMessageConverter
 		expectedStatus  metav1.ConditionStatus
 		expectedReason  string
 		expectedMessage string
@@ -349,7 +364,6 @@ func TestLogAgent(t *testing.T) {
 		{
 			name:            "log agent is not ready",
 			proberError:     workloadstatus.ErrDaemonSetNotFound,
-			errorConverter:  &conditions.ErrorToMessageConverter{},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonAgentNotReady,
 			expectedMessage: "DaemonSet is not yet created",
@@ -357,7 +371,6 @@ func TestLogAgent(t *testing.T) {
 		{
 			name:            "log agent is ready",
 			proberError:     nil,
-			errorConverter:  &conditions.ErrorToMessageConverter{},
 			expectedStatus:  metav1.ConditionTrue,
 			expectedReason:  conditions.ReasonAgentReady,
 			expectedMessage: "Log agent DaemonSet is ready",
@@ -365,7 +378,6 @@ func TestLogAgent(t *testing.T) {
 		{
 			name:            "log agent prober fails",
 			proberError:     workloadstatus.ErrDaemonSetFetching,
-			errorConverter:  &conditions.ErrorToMessageConverter{},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonAgentNotReady,
 			expectedMessage: "Failed to get DaemonSet",
@@ -376,7 +388,10 @@ func TestLogAgent(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
 			testClient := newTestClient(t, &pipeline)
-			reconciler := newLogAgentReconciler(testClient, tt.proberError, tt.errorConverter)
+
+			reconciler := newTestReconciler(testClient,
+				withAgentProber(commonStatusStubs.NewDaemonSetProber(tt.proberError)),
+			)
 
 			result := reconcileAndGet(t, testClient, reconciler, pipeline.Name)
 			require.NoError(t, result.err)
@@ -489,7 +504,11 @@ func TestFlowHealthy(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
 			testClient := newTestClient(t, &pipeline)
-			reconciler := newFlowHealthReconciler(testClient, pipeline, tt.probe, tt.probeErr)
+
+			flowHealthProber := &logpipelinemocks.FlowHealthProber{}
+			flowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
+
+			reconciler := newTestReconciler(testClient, withFlowHealthProber(flowHealthProber))
 
 			result := reconcileAndGet(t, testClient, reconciler, pipeline.Name)
 			require.NoError(t, result.err)
@@ -554,79 +573,36 @@ func assertCondition(t *testing.T, pipeline telemetryv1alpha1.LogPipeline, condT
 	require.Equal(t, message, cond.Message)
 }
 
-func newTestReconciler(client client.Client) *Reconciler {
-	return newReconcilerWithMocks(client, defaultMocks())
+// Validator option functions
+type validatorOption func(*Validator)
+
+func withEndpointValidator(validator EndpointValidator) validatorOption {
+	return func(v *Validator) {
+		v.EndpointValidator = validator
+	}
 }
 
-func newMaxPipelinesReconciler(client client.Client) *Reconciler {
-	defaultMocks := defaultMocks()
-	// Create a new pipeline lock with different behavior
-	pipelineLock := &mocks.PipelineLock{}
-	pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
-	pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
-	defaultMocks.pipelineLock = pipelineLock
-	defaultMocks.validator.PipelineLock = pipelineLock
-
-	return newReconcilerWithMocks(client, defaultMocks)
+func withTLSCertValidator(validator TLSCertValidator) validatorOption {
+	return func(v *Validator) {
+		v.TLSCertValidator = validator
+	}
 }
 
-func newTLSReconciler(client client.Client, tlsErr error) *Reconciler {
-	return newReconcilerWithOverrides(client, func(m *reconcilerMocks) {
-		m.validator.TLSCertValidator = stubs.NewTLSCertValidator(tlsErr)
-	})
+func withSecretRefValidator(validator SecretRefValidator) validatorOption {
+	return func(v *Validator) {
+		v.SecretRefValidator = validator
+	}
 }
 
-func newPodErrorReconciler(client client.Client, probeErr error) *Reconciler {
-	return newReconcilerWithOverrides(client, func(m *reconcilerMocks) {
-		m.daemonSetProber = commonStatusStubs.NewDaemonSetProber(probeErr)
-		m.errorConverter = &conditions.ErrorToMessageConverter{}
-	})
+func withPipelineLock(lock PipelineLock) validatorOption {
+	return func(v *Validator) {
+		v.PipelineLock = lock
+	}
 }
 
-func newSecretRefReconciler(client client.Client, secretErr error) *Reconciler {
-	return newReconcilerWithOverrides(client, func(m *reconcilerMocks) {
-		m.validator.SecretRefValidator = stubs.NewSecretRefValidator(secretErr)
-	})
-}
-
-func newLogAgentReconciler(client client.Client, proberError error, errorConverter ErrorToMessageConverter) *Reconciler {
-	return newReconcilerWithOverrides(client, func(m *reconcilerMocks) {
-		m.daemonSetProber = commonStatusStubs.NewDaemonSetProber(proberError)
-		m.errorConverter = errorConverter
-	})
-}
-
-func newFlowHealthReconciler(client client.Client, pipeline telemetryv1alpha1.LogPipeline, probe prober.FluentBitProbeResult, probeErr error) *Reconciler {
-	defaultMocks := defaultMocks()
-	// Override the flow health prober with specific behavior
-	flowHealthProber := &logpipelinemocks.FlowHealthProber{}
-	flowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(probe, probeErr)
-	defaultMocks.flowHealthProber = flowHealthProber
-
-	return newReconcilerWithMocks(client, defaultMocks)
-}
-
-type reconcilerMocks struct {
-	agentConfigBuilder  *mocks.AgentConfigBuilder
-	agentApplierDeleter *mocks.AgentApplierDeleter
-	daemonSetProber     AgentProber
-	flowHealthProber    *logpipelinemocks.FlowHealthProber
-	pipelineLock        *mocks.PipelineLock
-	validator           *Validator
-	errorConverter      ErrorToMessageConverter
-}
-
-func defaultMocks() reconcilerMocks {
-	agentConfigBuilder := &mocks.AgentConfigBuilder{}
-	agentConfigBuilder.On("Build", mock.Anything, mock.Anything, mock.Anything).Return(&builder.FluentBitConfig{}, nil)
-
-	agentApplierDeleter := &mocks.AgentApplierDeleter{}
-	agentApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	agentApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-	flowHealthProber := &logpipelinemocks.FlowHealthProber{}
-	flowHealthProber.On("Probe", mock.Anything, mock.Anything).Return(prober.FluentBitProbeResult{}, nil)
-
+// newTestValidator creates a validator with all dependencies mocked by default.
+// Use functional options to override specific dependencies.
+func newTestValidator(opts ...validatorOption) *Validator {
 	pipelineLock := &mocks.PipelineLock{}
 	pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 	pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
@@ -638,44 +614,115 @@ func defaultMocks() reconcilerMocks {
 		PipelineLock:       pipelineLock,
 	}
 
-	errorConverter := &conditions.ErrorToMessageConverter{}
+	// Apply functional options to override defaults
+	for _, opt := range opts {
+		opt(validator)
+	}
 
-	return reconcilerMocks{
-		agentConfigBuilder:  agentConfigBuilder,
-		agentApplierDeleter: agentApplierDeleter,
-		daemonSetProber:     commonStatusStubs.NewDaemonSetProber(nil),
-		flowHealthProber:    flowHealthProber,
-		pipelineLock:        pipelineLock,
-		validator:           validator,
-		errorConverter:      errorConverter,
+	return validator
+}
+
+// Test reconciler option functions
+type testReconcilerOption func(*testReconcilerConfig)
+
+type testReconcilerConfig struct {
+	globals             config.Global
+	agentConfigBuilder  AgentConfigBuilder
+	agentApplierDeleter AgentApplierDeleter
+	agentProber         AgentProber
+	flowHealthProber    FlowHealthProber
+	istioStatusChecker  IstioStatusChecker
+	pipelineValidator   PipelineValidator
+	errToMsgConverter   ErrorToMessageConverter
+}
+
+func withGlobals(globals config.Global) testReconcilerOption {
+	return func(cfg *testReconcilerConfig) {
+		cfg.globals = globals
 	}
 }
 
-func newReconcilerWithMocks(client client.Client, mocks reconcilerMocks) *Reconciler {
-	globals := config.NewGlobal(config.WithTargetNamespace("default"))
-	return newReconcilerWithGlobalConfig(client, mocks, globals)
+func withAgentConfigBuilder(builder AgentConfigBuilder) testReconcilerOption {
+	return func(cfg *testReconcilerConfig) {
+		cfg.agentConfigBuilder = builder
+	}
 }
 
-func newReconcilerWithGlobalConfig(client client.Client, mocks reconcilerMocks, globals config.Global) *Reconciler {
+func withAgentApplierDeleter(applierDeleter AgentApplierDeleter) testReconcilerOption {
+	return func(cfg *testReconcilerConfig) {
+		cfg.agentApplierDeleter = applierDeleter
+	}
+}
+
+func withAgentProber(prober AgentProber) testReconcilerOption {
+	return func(cfg *testReconcilerConfig) {
+		cfg.agentProber = prober
+	}
+}
+
+func withFlowHealthProber(prober FlowHealthProber) testReconcilerOption {
+	return func(cfg *testReconcilerConfig) {
+		cfg.flowHealthProber = prober
+	}
+}
+
+func withIstioStatusChecker(checker IstioStatusChecker) testReconcilerOption {
+	return func(cfg *testReconcilerConfig) {
+		cfg.istioStatusChecker = checker
+	}
+}
+
+func withPipelineValidator(validator PipelineValidator) testReconcilerOption {
+	return func(cfg *testReconcilerConfig) {
+		cfg.pipelineValidator = validator
+	}
+}
+
+func withErrorToMessageConverter(converter ErrorToMessageConverter) testReconcilerOption {
+	return func(cfg *testReconcilerConfig) {
+		cfg.errToMsgConverter = converter
+	}
+}
+
+// newTestReconciler creates a reconciler with all dependencies mocked by default.
+// Use functional options to override specific dependencies.
+func newTestReconciler(client client.Client, opts ...testReconcilerOption) *Reconciler {
+	// Set up default mocks
+	agentConfigBuilder := &mocks.AgentConfigBuilder{}
+	agentConfigBuilder.On("Build", mock.Anything, mock.Anything, mock.Anything).Return(&builder.FluentBitConfig{}, nil)
+
+	agentApplierDeleter := &mocks.AgentApplierDeleter{}
+	agentApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	agentApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	flowHealthProber := &logpipelinemocks.FlowHealthProber{}
+	flowHealthProber.On("Probe", mock.Anything, mock.Anything).Return(prober.FluentBitProbeResult{}, nil)
+
+	cfg := &testReconcilerConfig{
+		globals:             config.NewGlobal(config.WithTargetNamespace("default")),
+		agentConfigBuilder:  agentConfigBuilder,
+		agentApplierDeleter: agentApplierDeleter,
+		agentProber:         commonStatusStubs.NewDaemonSetProber(nil),
+		flowHealthProber:    flowHealthProber,
+		istioStatusChecker:  &stubs.IstioStatusChecker{IsActive: false},
+		pipelineValidator:   newTestValidator(),
+		errToMsgConverter:   &conditions.ErrorToMessageConverter{},
+	}
+
+	// Apply functional options to override defaults
+	for _, opt := range opts {
+		opt(cfg)
+	}
+
 	return New(
-		globals,
+		cfg.globals,
 		client,
-		mocks.agentConfigBuilder,
-		mocks.agentApplierDeleter,
-		mocks.daemonSetProber,
-		mocks.flowHealthProber,
-		&stubs.IstioStatusChecker{IsActive: false},
-		mocks.pipelineLock,
-		mocks.validator,
-		mocks.errorConverter,
+		cfg.agentConfigBuilder,
+		cfg.agentApplierDeleter,
+		cfg.agentProber,
+		cfg.flowHealthProber,
+		cfg.istioStatusChecker,
+		cfg.pipelineValidator,
+		cfg.errToMsgConverter,
 	)
-}
-
-func newReconcilerWithOverrides(client client.Client, overrideFn func(*reconcilerMocks)) *Reconciler {
-	mocks := defaultMocks()
-	overrideFn(&mocks)
-
-	globals := config.NewGlobal(config.WithTargetNamespace("default"))
-
-	return newReconcilerWithGlobalConfig(client, mocks, globals)
 }

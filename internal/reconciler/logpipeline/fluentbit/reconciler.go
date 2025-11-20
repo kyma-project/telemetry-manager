@@ -14,7 +14,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	fbports "github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
-	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
@@ -49,7 +48,6 @@ type Reconciler struct {
 	agentProber         AgentProber
 	flowHealthProber    FlowHealthProber
 	istioStatusChecker  IstioStatusChecker
-	pipelineLock        PipelineLock
 	pipelineValidator   PipelineValidator
 	errToMsgConverter   ErrorToMessageConverter
 }
@@ -74,7 +72,7 @@ type AgentProber interface {
 	IsReady(ctx context.Context, name types.NamespacedName) error
 }
 
-func New(globals config.Global, client client.Client, agentConfigBuilder AgentConfigBuilder, agentApplierDeleter AgentApplierDeleter, agentProber AgentProber, healthProber FlowHealthProber, checker IstioStatusChecker, pipelineLock PipelineLock, validator PipelineValidator, converter ErrorToMessageConverter) *Reconciler {
+func New(globals config.Global, client client.Client, agentConfigBuilder AgentConfigBuilder, agentApplierDeleter AgentApplierDeleter, agentProber AgentProber, healthProber FlowHealthProber, checker IstioStatusChecker, validator PipelineValidator, converter ErrorToMessageConverter) *Reconciler {
 	return &Reconciler{
 		globals:             globals,
 		Client:              client,
@@ -83,7 +81,6 @@ func New(globals config.Global, client client.Client, agentConfigBuilder AgentCo
 		agentProber:         agentProber,
 		flowHealthProber:    healthProber,
 		istioStatusChecker:  checker,
-		pipelineLock:        pipelineLock,
 		pipelineValidator:   validator,
 		errToMsgConverter:   converter,
 	}
@@ -138,15 +135,6 @@ func (r *Reconciler) IsReconcilable(ctx context.Context, pipeline *telemetryv1al
 }
 
 func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
-	if err := r.pipelineLock.TryAcquireLock(ctx, pipeline); err != nil {
-		if errors.Is(err, resourcelock.ErrMaxPipelinesExceeded) {
-			logf.FromContext(ctx).V(1).Info("Skipping reconciliation: maximum pipeline count limit exceeded")
-			return nil
-		}
-
-		return fmt.Errorf("failed to acquire lock: %w", err)
-	}
-
 	allPipelines, err := logpipelineutils.GetPipelinesForType(ctx, r.Client, r.SupportedOutput())
 	if err != nil {
 		return err

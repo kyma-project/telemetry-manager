@@ -225,7 +225,6 @@ func configureFluentBitReconciler(config LogPipelineControllerConfig, client cli
 		&workloadstatus.DaemonSetProber{Client: client},
 		flowHealthProber,
 		istiostatus.NewChecker(discoveryClient),
-		pipelineLock,
 		pipelineValidator,
 		&conditions.ErrorToMessageConverter{})
 
