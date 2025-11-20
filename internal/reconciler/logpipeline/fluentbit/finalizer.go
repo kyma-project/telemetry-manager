@@ -15,7 +15,6 @@ const (
 )
 
 func ensureFinalizers(ctx context.Context, client client.Client, pipeline *telemetryv1alpha1.LogPipeline) error {
-
 	if !pipeline.DeletionTimestamp.IsZero() {
 		return nil
 	}

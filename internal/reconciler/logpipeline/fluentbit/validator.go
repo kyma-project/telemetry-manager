@@ -42,7 +42,6 @@ type Validator struct {
 }
 
 func (v *Validator) Validate(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
-
 	if err := v.PipelineLock.TryAcquireLock(ctx, pipeline); err != nil {
 		return err
 	}

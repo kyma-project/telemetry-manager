@@ -82,20 +82,20 @@ func TestReconcile_GatewayHealthConditions(t *testing.T) {
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
-			globals,
 			fakeClient,
-			gatewayFlowHeathProber,
-			agentFlowHealthProber,
-			agentConfigBuilderMock,
-			agentApplierDeleterMock,
-			agentProberStub,
-			gatewayApplierDeleterMock,
-			gatewayConfigBuilderMock,
-			gatewayProberStub,
-			istioStatusCheckerStub,
-			pipelineLock,
-			pipelineValidatorWithStubs,
-			errToMsg)
+			WithGlobals(globals),
+			WithGatewayFlowHealthProber(gatewayFlowHeathProber),
+			WithAgentFlowHealthProber(agentFlowHealthProber),
+			WithAgentConfigBuilder(agentConfigBuilderMock),
+			WithAgentApplierDeleter(agentApplierDeleterMock),
+			WithAgentProber(agentProberStub),
+			WithGatewayApplierDeleter(gatewayApplierDeleterMock),
+			WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+			WithGatewayProber(gatewayProberStub),
+			WithIstioStatusChecker(istioStatusCheckerStub),
+			WithPipelineLock(pipelineLock),
+			WithPipelineValidator(pipelineValidatorWithStubs),
+			WithErrorToMessageConverter(errToMsg))
 		err := sut.Reconcile(t.Context(), &pipeline)
 		require.NoError(t, err)
 
@@ -155,20 +155,20 @@ func TestReconcile_GatewayHealthConditions(t *testing.T) {
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
-			globals,
 			fakeClient,
-			gatewayFlowHeathProber,
-			agentFlowHealthProber,
-			agentConfigBuilderMock,
-			agentApplierDeleterMock,
-			agentProberStub,
-			gatewayApplierDeleterMock,
-			gatewayConfigBuilderMock,
-			gatewayProberStub,
-			istioStatusCheckerStub,
-			pipelineLock,
-			pipelineValidatorWithStubs,
-			errToMsg)
+			WithGlobals(globals),
+			WithGatewayFlowHealthProber(gatewayFlowHeathProber),
+			WithAgentFlowHealthProber(agentFlowHealthProber),
+			WithAgentConfigBuilder(agentConfigBuilderMock),
+			WithAgentApplierDeleter(agentApplierDeleterMock),
+			WithAgentProber(agentProberStub),
+			WithGatewayApplierDeleter(gatewayApplierDeleterMock),
+			WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+			WithGatewayProber(gatewayProberStub),
+			WithIstioStatusChecker(istioStatusCheckerStub),
+			WithPipelineLock(pipelineLock),
+			WithPipelineValidator(pipelineValidatorWithStubs),
+			WithErrorToMessageConverter(errToMsg))
 		err := sut.Reconcile(t.Context(), &pipeline)
 		require.NoError(t, err)
 
@@ -228,20 +228,20 @@ func TestReconcile_GatewayHealthConditions(t *testing.T) {
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
-			globals,
 			fakeClient,
-			gatewayFlowHeathProber,
-			agentFlowHealthProber,
-			agentConfigBuilderMock,
-			agentApplierDeleterMock,
-			agentProberStub,
-			gatewayApplierDeleterMock,
-			gatewayConfigBuilderMock,
-			gatewayProberStub,
-			istioStatusCheckerStub,
-			pipelineLock,
-			pipelineValidatorWithStubs,
-			errToMsg)
+			WithGlobals(globals),
+			WithGatewayFlowHealthProber(gatewayFlowHeathProber),
+			WithAgentFlowHealthProber(agentFlowHealthProber),
+			WithAgentConfigBuilder(agentConfigBuilderMock),
+			WithAgentApplierDeleter(agentApplierDeleterMock),
+			WithAgentProber(agentProberStub),
+			WithGatewayApplierDeleter(gatewayApplierDeleterMock),
+			WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+			WithGatewayProber(gatewayProberStub),
+			WithIstioStatusChecker(istioStatusCheckerStub),
+			WithPipelineLock(pipelineLock),
+			WithPipelineValidator(pipelineValidatorWithStubs),
+			WithErrorToMessageConverter(errToMsg))
 		err := sut.Reconcile(t.Context(), &pipeline)
 		require.NoError(t, err)
 
@@ -313,20 +313,20 @@ func TestReconcile_AgentHealthConditions(t *testing.T) {
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
-			globals,
 			fakeClient,
-			gatewayFlowHeathProber,
-			agentFlowHealthProber,
-			agentConfigBuilderMock,
-			agentApplierDeleterMock,
-			agentProberStub,
-			gatewayApplierDeleterMock,
-			gatewayConfigBuilderMock,
-			gatewayProberStub,
-			istioStatusCheckerStub,
-			pipelineLock,
-			pipelineValidatorWithStubs,
-			errToMsg)
+			WithGlobals(globals),
+			WithGatewayFlowHealthProber(gatewayFlowHeathProber),
+			WithAgentFlowHealthProber(agentFlowHealthProber),
+			WithAgentConfigBuilder(agentConfigBuilderMock),
+			WithAgentApplierDeleter(agentApplierDeleterMock),
+			WithAgentProber(agentProberStub),
+			WithGatewayApplierDeleter(gatewayApplierDeleterMock),
+			WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+			WithGatewayProber(gatewayProberStub),
+			WithIstioStatusChecker(istioStatusCheckerStub),
+			WithPipelineLock(pipelineLock),
+			WithPipelineValidator(pipelineValidatorWithStubs),
+			WithErrorToMessageConverter(errToMsg))
 		err := sut.Reconcile(t.Context(), &pipeline)
 		require.NoError(t, err)
 
@@ -386,20 +386,20 @@ func TestReconcile_AgentHealthConditions(t *testing.T) {
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
-			globals,
 			fakeClient,
-			gatewayFlowHeathProber,
-			agentFlowHealthProber,
-			agentConfigBuilderMock,
-			agentApplierDeleterMock,
-			agentProberStub,
-			gatewayApplierDeleterMock,
-			gatewayConfigBuilderMock,
-			gatewayProberStub,
-			istioStatusCheckerStub,
-			pipelineLock,
-			pipelineValidatorWithStubs,
-			errToMsg)
+			WithGlobals(globals),
+			WithGatewayFlowHealthProber(gatewayFlowHeathProber),
+			WithAgentFlowHealthProber(agentFlowHealthProber),
+			WithAgentConfigBuilder(agentConfigBuilderMock),
+			WithAgentApplierDeleter(agentApplierDeleterMock),
+			WithAgentProber(agentProberStub),
+			WithGatewayApplierDeleter(gatewayApplierDeleterMock),
+			WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+			WithGatewayProber(gatewayProberStub),
+			WithIstioStatusChecker(istioStatusCheckerStub),
+			WithPipelineLock(pipelineLock),
+			WithPipelineValidator(pipelineValidatorWithStubs),
+			WithErrorToMessageConverter(errToMsg))
 		err := sut.Reconcile(t.Context(), &pipeline)
 		require.NoError(t, err)
 
@@ -545,20 +545,20 @@ func TestReconcile_GatewayFlowHealthy(t *testing.T) {
 
 				errToMsg := &conditions.ErrorToMessageConverter{}
 				sut := New(
-					globals,
 					fakeClient,
-					gatewayFlowHeathProber,
-					agentFlowHealthProber,
-					agentConfigBuilderMock,
-					agentApplierDeleterMock,
-					agentProberStub,
-					gatewayApplierDeleterMock,
-					gatewayConfigBuilderMock,
-					gatewayProberStub,
-					istioStatusCheckerStub,
-					pipelineLock,
-					pipelineValidatorWithStubs,
-					errToMsg)
+					WithGlobals(globals),
+					WithGatewayFlowHealthProber(gatewayFlowHeathProber),
+					WithAgentFlowHealthProber(agentFlowHealthProber),
+					WithAgentConfigBuilder(agentConfigBuilderMock),
+					WithAgentApplierDeleter(agentApplierDeleterMock),
+					WithAgentProber(agentProberStub),
+					WithGatewayApplierDeleter(gatewayApplierDeleterMock),
+					WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+					WithGatewayProber(gatewayProberStub),
+					WithIstioStatusChecker(istioStatusCheckerStub),
+					WithPipelineLock(pipelineLock),
+					WithPipelineValidator(pipelineValidatorWithStubs),
+					WithErrorToMessageConverter(errToMsg))
 				err := sut.Reconcile(t.Context(), &pipeline)
 				require.NoError(t, err)
 
@@ -686,20 +686,20 @@ func TestReconcile_AgentFlowHealthy(t *testing.T) {
 
 				errToMsg := &conditions.ErrorToMessageConverter{}
 				sut := New(
-					globals,
 					fakeClient,
-					gatewayFlowHeathProber,
-					agentFlowHealthProber,
-					agentConfigBuilderMock,
-					agentApplierDeleterMock,
-					agentProberStub,
-					gatewayApplierDeleterMock,
-					gatewayConfigBuilderMock,
-					gatewayProberStub,
-					istioStatusCheckerStub,
-					pipelineLock,
-					pipelineValidatorWithStubs,
-					errToMsg)
+					WithGlobals(globals),
+					WithGatewayFlowHealthProber(gatewayFlowHeathProber),
+					WithAgentFlowHealthProber(agentFlowHealthProber),
+					WithAgentConfigBuilder(agentConfigBuilderMock),
+					WithAgentApplierDeleter(agentApplierDeleterMock),
+					WithAgentProber(agentProberStub),
+					WithGatewayApplierDeleter(gatewayApplierDeleterMock),
+					WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+					WithGatewayProber(gatewayProberStub),
+					WithIstioStatusChecker(istioStatusCheckerStub),
+					WithPipelineLock(pipelineLock),
+					WithPipelineValidator(pipelineValidatorWithStubs),
+					WithErrorToMessageConverter(errToMsg))
 				err := sut.Reconcile(t.Context(), &pipeline)
 				require.NoError(t, err)
 
@@ -779,20 +779,20 @@ func TestReconcile_InvalidOTTLSpecs(t *testing.T) {
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
 		sut := New(
-			globals,
 			fakeClient,
-			gatewayFlowHeathProber,
-			agentFlowHealthProber,
-			agentConfigBuilderMock,
-			agentApplierDeleterMock,
-			agentProberStub,
-			gatewayApplierDeleterMock,
-			gatewayConfigBuilderMock,
-			gatewayProberStub,
-			istioStatusCheckerStub,
-			pipelineLock,
-			pipelineValidatorWithStubs,
-			errToMsg)
+			WithGlobals(globals),
+			WithGatewayFlowHealthProber(gatewayFlowHeathProber),
+			WithAgentFlowHealthProber(agentFlowHealthProber),
+			WithAgentConfigBuilder(agentConfigBuilderMock),
+			WithAgentApplierDeleter(agentApplierDeleterMock),
+			WithAgentProber(agentProberStub),
+			WithGatewayApplierDeleter(gatewayApplierDeleterMock),
+			WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+			WithGatewayProber(gatewayProberStub),
+			WithIstioStatusChecker(istioStatusCheckerStub),
+			WithPipelineLock(pipelineLock),
+			WithPipelineValidator(pipelineValidatorWithStubs),
+			WithErrorToMessageConverter(errToMsg))
 		err := sut.Reconcile(t.Context(), &pipeline)
 		require.NoError(t, err)
 
@@ -859,20 +859,20 @@ func TestReconcile_InvalidOTTLSpecs(t *testing.T) {
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
 		sut := New(
-			globals,
 			fakeClient,
-			gatewayFlowHeathProber,
-			agentFlowHealthProber,
-			agentConfigBuilderMock,
-			agentApplierDeleterMock,
-			agentProberStub,
-			gatewayApplierDeleterMock,
-			gatewayConfigBuilderMock,
-			gatewayProberStub,
-			istioStatusCheckerStub,
-			pipelineLock,
-			pipelineValidatorWithStubs,
-			errToMsg)
+			WithGlobals(globals),
+			WithGatewayFlowHealthProber(gatewayFlowHeathProber),
+			WithAgentFlowHealthProber(agentFlowHealthProber),
+			WithAgentConfigBuilder(agentConfigBuilderMock),
+			WithAgentApplierDeleter(agentApplierDeleterMock),
+			WithAgentProber(agentProberStub),
+			WithGatewayApplierDeleter(gatewayApplierDeleterMock),
+			WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+			WithGatewayProber(gatewayProberStub),
+			WithIstioStatusChecker(istioStatusCheckerStub),
+			WithPipelineLock(pipelineLock),
+			WithPipelineValidator(pipelineValidatorWithStubs),
+			WithErrorToMessageConverter(errToMsg))
 		err := sut.Reconcile(t.Context(), &pipeline)
 		require.NoError(t, err)
 
@@ -940,20 +940,20 @@ func TestReconcile_AgentRequiredScenarios(t *testing.T) {
 		}
 
 		sut := New(
-			globals,
 			fakeClient,
-			gatewayFlowHeathProber,
-			agentFlowHealthProber,
-			&mocks.AgentConfigBuilder{},
-			agentApplierDeleterMock,
-			agentProberStub,
-			gatewayApplierDeleterMock,
-			gatewayConfigBuilderMock,
-			gatewayProberStub,
-			istioStatusCheckerStub,
-			pipelineLock,
-			pipelineValidatorWithStubs,
-			&conditions.ErrorToMessageConverter{})
+			WithGlobals(globals),
+			WithGatewayFlowHealthProber(gatewayFlowHeathProber),
+			WithAgentFlowHealthProber(agentFlowHealthProber),
+			WithAgentConfigBuilder(&mocks.AgentConfigBuilder{}),
+			WithAgentApplierDeleter(agentApplierDeleterMock),
+			WithAgentProber(agentProberStub),
+			WithGatewayApplierDeleter(gatewayApplierDeleterMock),
+			WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+			WithGatewayProber(gatewayProberStub),
+			WithIstioStatusChecker(istioStatusCheckerStub),
+			WithPipelineLock(pipelineLock),
+			WithPipelineValidator(pipelineValidatorWithStubs),
+			WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}))
 		err := sut.Reconcile(t.Context(), &pipeline)
 		require.NoError(t, err)
 
@@ -1012,20 +1012,20 @@ func TestReconcile_AgentRequiredScenarios(t *testing.T) {
 		}
 
 		sut := New(
-			globals,
 			fakeClient,
-			gatewayFlowHeathProber,
-			agentFlowHealthProber,
-			agentConfigBuilder,
-			agentApplierDeleterMock,
-			agentProberStub,
-			gatewayApplierDeleterMock,
-			gatewayConfigBuilderMock,
-			gatewayProberStub,
-			istioStatusCheckerStub,
-			pipelineLock,
-			pipelineValidatorWithStubs,
-			&conditions.ErrorToMessageConverter{})
+			WithGlobals(globals),
+			WithGatewayFlowHealthProber(gatewayFlowHeathProber),
+			WithAgentFlowHealthProber(agentFlowHealthProber),
+			WithAgentConfigBuilder(agentConfigBuilder),
+			WithAgentApplierDeleter(agentApplierDeleterMock),
+			WithAgentProber(agentProberStub),
+			WithGatewayApplierDeleter(gatewayApplierDeleterMock),
+			WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+			WithGatewayProber(gatewayProberStub),
+			WithIstioStatusChecker(istioStatusCheckerStub),
+			WithPipelineLock(pipelineLock),
+			WithPipelineValidator(pipelineValidatorWithStubs),
+			WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}))
 		err1 := sut.Reconcile(t.Context(), &pipeline1)
 		err2 := sut.Reconcile(t.Context(), &pipeline2)
 
@@ -1084,20 +1084,20 @@ func TestReconcile_AgentRequiredScenarios(t *testing.T) {
 		}
 
 		sut := New(
-			globals,
 			fakeClient,
-			gatewayFlowHeathProber,
-			agentFlowHealthProber,
-			&mocks.AgentConfigBuilder{},
-			agentApplierDeleterMock,
-			agentProberStub,
-			gatewayApplierDeleterMock,
-			gatewayConfigBuilderMock,
-			gatewayProberStub,
-			istioStatusCheckerStub,
-			pipelineLock,
-			pipelineValidatorWithStubs,
-			&conditions.ErrorToMessageConverter{})
+			WithGlobals(globals),
+			WithGatewayFlowHealthProber(gatewayFlowHeathProber),
+			WithAgentFlowHealthProber(agentFlowHealthProber),
+			WithAgentConfigBuilder(&mocks.AgentConfigBuilder{}),
+			WithAgentApplierDeleter(agentApplierDeleterMock),
+			WithAgentProber(agentProberStub),
+			WithGatewayApplierDeleter(gatewayApplierDeleterMock),
+			WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+			WithGatewayProber(gatewayProberStub),
+			WithIstioStatusChecker(istioStatusCheckerStub),
+			WithPipelineLock(pipelineLock),
+			WithPipelineValidator(pipelineValidatorWithStubs),
+			WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}))
 		err1 := sut.Reconcile(t.Context(), &pipeline1)
 		err2 := sut.Reconcile(t.Context(), &pipeline2)
 
