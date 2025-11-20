@@ -8,10 +8,26 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 	webhookutils "github.com/kyma-project/telemetry-manager/webhook/utils"
 )
+
+// getSignalType returns the appropriate signal type for a pipeline type
+func getSignalType[T runtime.Object]() ottl.SignalType {
+	var zero T
+	switch any(zero).(type) {
+	case *telemetryv1beta1.MetricPipeline, *telemetryv1alpha1.MetricPipeline:
+		return ottl.SignalTypeMetric
+	case *telemetryv1beta1.LogPipeline, *telemetryv1alpha1.LogPipeline:
+		return ottl.SignalTypeLog
+	case *telemetryv1beta1.TracePipeline, *telemetryv1alpha1.TracePipeline:
+		return ottl.SignalTypeTrace
+	default:
+		panic(fmt.Sprintf("unsupported pipeline type for validator: %T", zero))
+	}
+}
 
 // PipelineValidator is a generic validator for telemetry pipelines
 type PipelineValidator[T runtime.Object] struct {
@@ -28,17 +44,14 @@ type ValidatorBuilder[T runtime.Object] struct {
 	validator *PipelineValidator[T]
 }
 
-// NewValidatingWebhook creates a new validator builder
-func NewValidatingWebhook[T runtime.Object]() *ValidatorBuilder[T] {
+// NewPipelineValidator creates a new validator builder.
+// The signal type is automatically determined from the pipeline type
+func NewPipelineValidator[T runtime.Object]() *ValidatorBuilder[T] {
 	return &ValidatorBuilder[T]{
-		validator: &PipelineValidator[T]{},
+		validator: &PipelineValidator[T]{
+			signalType: getSignalType[T](),
+		},
 	}
-}
-
-// WithSignalType sets the OTTL signal type for validation
-func (b *ValidatorBuilder[T]) WithSignalType(signalType ottl.SignalType) *ValidatorBuilder[T] {
-	b.validator.signalType = signalType
-	return b
 }
 
 // WithFilterExtractor sets the function to extract filters from the pipeline

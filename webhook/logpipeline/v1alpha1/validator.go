@@ -9,7 +9,6 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
-	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 	"github.com/kyma-project/telemetry-manager/webhook/common"
 	webhookutils "github.com/kyma-project/telemetry-manager/webhook/utils"
 )
@@ -19,8 +18,7 @@ type LogPipelineValidator = common.PipelineValidator[*telemetryv1alpha1.LogPipel
 var _ webhook.CustomValidator = &LogPipelineValidator{}
 
 func NewLogPipelineValidator() *LogPipelineValidator {
-	return common.NewValidatingWebhook[*telemetryv1alpha1.LogPipeline]().
-		WithSignalType(ottl.SignalTypeLog).
+	return common.NewPipelineValidator[*telemetryv1alpha1.LogPipeline]().
 		WithFilterExtractor(func(pipeline *telemetryv1alpha1.LogPipeline) []telemetryv1beta1.FilterSpec {
 			filterSpec, _ := webhookutils.ConvertFilterTransformToBeta(pipeline.Spec.Filters, nil)
 			return filterSpec

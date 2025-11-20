@@ -5,7 +5,6 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
-	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 	"github.com/kyma-project/telemetry-manager/webhook/common"
 	webhookutils "github.com/kyma-project/telemetry-manager/webhook/utils"
 )
@@ -15,8 +14,7 @@ type TracePipelineValidator = common.PipelineValidator[*telemetryv1alpha1.TraceP
 var _ webhook.CustomValidator = &TracePipelineValidator{}
 
 func NewTracePipelineValidator() *TracePipelineValidator {
-	return common.NewValidatingWebhook[*telemetryv1alpha1.TracePipeline]().
-		WithSignalType(ottl.SignalTypeTrace).
+	return common.NewPipelineValidator[*telemetryv1alpha1.TracePipeline]().
 		WithFilterExtractor(func(pipeline *telemetryv1alpha1.TracePipeline) []telemetryv1beta1.FilterSpec {
 			filterSpec, _ := webhookutils.ConvertFilterTransformToBeta(pipeline.Spec.Filters, nil)
 			return filterSpec
