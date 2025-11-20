@@ -5,35 +5,19 @@ import (
 	"errors"
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
-	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	fbports "github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
-
-type AgentConfigBuilder interface {
-	Build(ctx context.Context, reconcilablePipelines []telemetryv1alpha1.LogPipeline, clusterName string) (*builder.FluentBitConfig, error)
-}
-
-type AgentApplierDeleter interface {
-	ApplyResources(ctx context.Context, c client.Client, opts fluentbit.AgentApplyOptions) error
-	DeleteResources(ctx context.Context, c client.Client) error
-}
-
-type IstioStatusChecker interface {
-	IsIstioActive(ctx context.Context) bool
-}
 
 // var _ logpipeline.LogPipelineReconciler = &Reconciler{}
 
@@ -54,22 +38,6 @@ type Reconciler struct {
 
 func (r *Reconciler) SupportedOutput() logpipelineutils.Mode {
 	return logpipelineutils.FluentBit
-}
-
-type PipelineValidator interface {
-	Validate(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error
-}
-
-type ErrorToMessageConverter interface {
-	Convert(err error) string
-}
-
-type FlowHealthProber interface {
-	Probe(ctx context.Context, pipelineName string) (prober.FluentBitProbeResult, error)
-}
-
-type AgentProber interface {
-	IsReady(ctx context.Context, name types.NamespacedName) error
 }
 
 func New(globals config.Global, client client.Client, agentConfigBuilder AgentConfigBuilder, agentApplierDeleter AgentApplierDeleter, agentProber AgentProber, healthProber FlowHealthProber, checker IstioStatusChecker, validator PipelineValidator, converter ErrorToMessageConverter) *Reconciler {
