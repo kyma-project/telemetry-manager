@@ -133,81 +133,10 @@ func newTestValidator(opts ...validatorOption) *Validator {
 	return validator
 }
 
-// Reconciler test constructor and options
-
-// testReconcilerOption is a functional option for configuring a test Reconciler.
-type testReconcilerOption func(*testReconcilerConfig)
-
-// testReconcilerConfig holds all dependencies for creating a test reconciler.
-type testReconcilerConfig struct {
-	globals             config.Global
-	agentConfigBuilder  AgentConfigBuilder
-	agentApplierDeleter AgentApplierDeleter
-	agentProber         AgentProber
-	flowHealthProber    FlowHealthProber
-	istioStatusChecker  IstioStatusChecker
-	pipelineValidator   PipelineValidator
-	errToMsgConverter   ErrorToMessageConverter
-}
-
-// withGlobals overrides the default global configuration.
-func withGlobals(globals config.Global) testReconcilerOption {
-	return func(cfg *testReconcilerConfig) {
-		cfg.globals = globals
-	}
-}
-
-// withAgentConfigBuilder overrides the default agent config builder.
-func withAgentConfigBuilder(builder AgentConfigBuilder) testReconcilerOption {
-	return func(cfg *testReconcilerConfig) {
-		cfg.agentConfigBuilder = builder
-	}
-}
-
-// withAgentApplierDeleter overrides the default agent applier/deleter.
-func withAgentApplierDeleter(applierDeleter AgentApplierDeleter) testReconcilerOption {
-	return func(cfg *testReconcilerConfig) {
-		cfg.agentApplierDeleter = applierDeleter
-	}
-}
-
-// withAgentProber overrides the default agent prober.
-func withAgentProber(prober AgentProber) testReconcilerOption {
-	return func(cfg *testReconcilerConfig) {
-		cfg.agentProber = prober
-	}
-}
-
-// withFlowHealthProber overrides the default flow health prober.
-func withFlowHealthProber(prober FlowHealthProber) testReconcilerOption {
-	return func(cfg *testReconcilerConfig) {
-		cfg.flowHealthProber = prober
-	}
-}
-
-// withIstioStatusChecker overrides the default Istio status checker.
-func withIstioStatusChecker(checker IstioStatusChecker) testReconcilerOption {
-	return func(cfg *testReconcilerConfig) {
-		cfg.istioStatusChecker = checker
-	}
-}
-
-// withPipelineValidator overrides the default pipeline validator.
-func withPipelineValidator(validator PipelineValidator) testReconcilerOption {
-	return func(cfg *testReconcilerConfig) {
-		cfg.pipelineValidator = validator
-	}
-}
-
-// withErrorToMessageConverter overrides the default error to message converter.
-func withErrorToMessageConverter(converter ErrorToMessageConverter) testReconcilerOption {
-	return func(cfg *testReconcilerConfig) {
-		cfg.errToMsgConverter = converter
-	}
-}
+// Reconciler test constructor
 
 // newTestReconciler creates a Reconciler with all dependencies mocked by default.
-// Use functional options to override specific dependencies.
+// Use the production Option functions to override specific dependencies.
 //
 // Default behavior:
 //   - AgentConfigBuilder: Returns empty config, no errors
@@ -217,7 +146,7 @@ func withErrorToMessageConverter(converter ErrorToMessageConverter) testReconcil
 //   - IstioStatusChecker: Istio is not active
 //   - PipelineValidator: All validations pass
 //   - ErrorToMessageConverter: Standard converter
-func newTestReconciler(client client.Client, opts ...testReconcilerOption) *Reconciler {
+func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
 	// Set up default mocks
 	agentConfigBuilder := &mocks.AgentConfigBuilder{}
 	agentConfigBuilder.On("Build", mock.Anything, mock.Anything, mock.Anything).Return(&builder.FluentBitConfig{}, nil)
@@ -229,31 +158,20 @@ func newTestReconciler(client client.Client, opts ...testReconcilerOption) *Reco
 	flowHealthProber := &logpipelinemocks.FlowHealthProber{}
 	flowHealthProber.On("Probe", mock.Anything, mock.Anything).Return(prober.FluentBitProbeResult{}, nil)
 
-	cfg := &testReconcilerConfig{
-		globals:             config.NewGlobal(config.WithTargetNamespace("default")),
-		agentConfigBuilder:  agentConfigBuilder,
-		agentApplierDeleter: agentApplierDeleter,
-		agentProber:         commonStatusStubs.NewDaemonSetProber(nil),
-		flowHealthProber:    flowHealthProber,
-		istioStatusChecker:  &stubs.IstioStatusChecker{IsActive: false},
-		pipelineValidator:   newTestValidator(),
-		errToMsgConverter:   &conditions.ErrorToMessageConverter{},
+	// Build default options with mocked dependencies
+	defaultOpts := []Option{
+		WithGlobals(config.NewGlobal(config.WithTargetNamespace("default"))),
+		WithAgentConfigBuilder(agentConfigBuilder),
+		WithAgentApplierDeleter(agentApplierDeleter),
+		WithAgentProber(commonStatusStubs.NewDaemonSetProber(nil)),
+		WithFlowHealthProber(flowHealthProber),
+		WithIstioStatusChecker(&stubs.IstioStatusChecker{IsActive: false}),
+		WithPipelineValidator(newTestValidator()),
+		WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
 	}
 
-	// Apply functional options to override defaults
-	for _, opt := range opts {
-		opt(cfg)
-	}
+	// Merge default options with provided options (provided options will override defaults)
+	allOpts := append(defaultOpts, opts...)
 
-	return New(
-		cfg.globals,
-		client,
-		cfg.agentConfigBuilder,
-		cfg.agentApplierDeleter,
-		cfg.agentProber,
-		cfg.flowHealthProber,
-		cfg.istioStatusChecker,
-		cfg.pipelineValidator,
-		cfg.errToMsgConverter,
-	)
+	return New(client, allOpts...)
 }

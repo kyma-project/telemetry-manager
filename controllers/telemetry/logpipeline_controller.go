@@ -218,15 +218,15 @@ func configureFluentBitReconciler(config LogPipelineControllerConfig, client cli
 	}
 
 	fbReconciler := logpipelinefluentbit.New(
-		config.Global,
 		client,
-		fluentBitConfigBuilder,
-		fluentBitApplierDeleter,
-		&workloadstatus.DaemonSetProber{Client: client},
-		flowHealthProber,
-		istiostatus.NewChecker(discoveryClient),
-		pipelineValidator,
-		&conditions.ErrorToMessageConverter{})
+		logpipelinefluentbit.WithGlobals(config.Global),
+		logpipelinefluentbit.WithAgentConfigBuilder(fluentBitConfigBuilder),
+		logpipelinefluentbit.WithAgentApplierDeleter(fluentBitApplierDeleter),
+		logpipelinefluentbit.WithAgentProber(&workloadstatus.DaemonSetProber{Client: client}),
+		logpipelinefluentbit.WithFlowHealthProber(flowHealthProber),
+		logpipelinefluentbit.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
+		logpipelinefluentbit.WithPipelineValidator(pipelineValidator),
+		logpipelinefluentbit.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}))
 
 	return fbReconciler, nil
 }

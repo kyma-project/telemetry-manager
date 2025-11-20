@@ -40,18 +40,77 @@ func (r *Reconciler) SupportedOutput() logpipelineutils.Mode {
 	return logpipelineutils.FluentBit
 }
 
-func New(globals config.Global, client client.Client, agentConfigBuilder AgentConfigBuilder, agentApplierDeleter AgentApplierDeleter, agentProber AgentProber, healthProber FlowHealthProber, checker IstioStatusChecker, validator PipelineValidator, converter ErrorToMessageConverter) *Reconciler {
-	return &Reconciler{
-		globals:             globals,
-		Client:              client,
-		agentConfigBuilder:  agentConfigBuilder,
-		agentApplierDeleter: agentApplierDeleter,
-		agentProber:         agentProber,
-		flowHealthProber:    healthProber,
-		istioStatusChecker:  checker,
-		pipelineValidator:   validator,
-		errToMsgConverter:   converter,
+// Option is a functional option for configuring a Reconciler.
+type Option func(*Reconciler)
+
+// WithGlobals sets the global configuration.
+func WithGlobals(globals config.Global) Option {
+	return func(r *Reconciler) {
+		r.globals = globals
 	}
+}
+
+// WithAgentConfigBuilder sets the agent config builder.
+func WithAgentConfigBuilder(builder AgentConfigBuilder) Option {
+	return func(r *Reconciler) {
+		r.agentConfigBuilder = builder
+	}
+}
+
+// WithAgentApplierDeleter sets the agent applier/deleter.
+func WithAgentApplierDeleter(applierDeleter AgentApplierDeleter) Option {
+	return func(r *Reconciler) {
+		r.agentApplierDeleter = applierDeleter
+	}
+}
+
+// WithAgentProber sets the agent prober.
+func WithAgentProber(prober AgentProber) Option {
+	return func(r *Reconciler) {
+		r.agentProber = prober
+	}
+}
+
+// WithFlowHealthProber sets the flow health prober.
+func WithFlowHealthProber(prober FlowHealthProber) Option {
+	return func(r *Reconciler) {
+		r.flowHealthProber = prober
+	}
+}
+
+// WithIstioStatusChecker sets the Istio status checker.
+func WithIstioStatusChecker(checker IstioStatusChecker) Option {
+	return func(r *Reconciler) {
+		r.istioStatusChecker = checker
+	}
+}
+
+// WithPipelineValidator sets the pipeline validator.
+func WithPipelineValidator(validator PipelineValidator) Option {
+	return func(r *Reconciler) {
+		r.pipelineValidator = validator
+	}
+}
+
+// WithErrorToMessageConverter sets the error to message converter.
+func WithErrorToMessageConverter(converter ErrorToMessageConverter) Option {
+	return func(r *Reconciler) {
+		r.errToMsgConverter = converter
+	}
+}
+
+// New creates a new Reconciler with the provided client and functional options.
+// All dependencies must be provided via functional options.
+func New(client client.Client, opts ...Option) *Reconciler {
+	r := &Reconciler{
+		Client: client,
+	}
+
+	for _, opt := range opts {
+		opt(r)
+	}
+
+	return r
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {

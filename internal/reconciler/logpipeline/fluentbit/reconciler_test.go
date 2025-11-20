@@ -50,7 +50,7 @@ func TestMaxPipelines(t *testing.T) {
 	pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
 
 	reconciler := newTestReconciler(testClient,
-		withPipelineValidator(newTestValidator(withPipelineLock(pipelineLock))),
+		WithPipelineValidator(newTestValidator(withPipelineLock(pipelineLock))),
 	)
 
 	result := reconcileAndGet(t, testClient, reconciler, pipeline.Name)
@@ -147,7 +147,7 @@ func TestTLSConditions(t *testing.T) {
 			testClient := newTestClient(t, &pipeline)
 
 			reconciler := newTestReconciler(testClient,
-				withPipelineValidator(newTestValidator(withTLSCertValidator(stubs.NewTLSCertValidator(tt.tlsCertErr)))),
+				WithPipelineValidator(newTestValidator(withTLSCertValidator(stubs.NewTLSCertValidator(tt.tlsCertErr)))),
 			)
 
 			result := reconcileAndGet(t, testClient, reconciler, pipeline.Name)
@@ -215,7 +215,7 @@ func TestPodErrorConditions(t *testing.T) {
 			testClient := newTestClient(t, &pipeline)
 
 			reconciler := newTestReconciler(testClient,
-				withAgentProber(commonStatusStubs.NewDaemonSetProber(tt.probeErr)),
+				WithAgentProber(commonStatusStubs.NewDaemonSetProber(tt.probeErr)),
 			)
 
 			result := reconcileAndGet(t, testClient, reconciler, pipeline.Name)
@@ -329,7 +329,7 @@ func TestReferencedSecret(t *testing.T) {
 			testClient := newTestClientWithObjs(t, objs...)
 
 			reconciler := newTestReconciler(testClient,
-				withPipelineValidator(newTestValidator(withSecretRefValidator(stubs.NewSecretRefValidator(tt.secretErr)))),
+				WithPipelineValidator(newTestValidator(withSecretRefValidator(stubs.NewSecretRefValidator(tt.secretErr)))),
 			)
 
 			result := reconcileAndGet(t, testClient, reconciler, pipeline.Name)
@@ -384,7 +384,7 @@ func TestLogAgent(t *testing.T) {
 			testClient := newTestClient(t, &pipeline)
 
 			reconciler := newTestReconciler(testClient,
-				withAgentProber(commonStatusStubs.NewDaemonSetProber(tt.proberError)),
+				WithAgentProber(commonStatusStubs.NewDaemonSetProber(tt.proberError)),
 			)
 
 			result := reconcileAndGet(t, testClient, reconciler, pipeline.Name)
@@ -502,7 +502,7 @@ func TestFlowHealthy(t *testing.T) {
 			flowHealthProber := &logpipelinemocks.FlowHealthProber{}
 			flowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
 
-			reconciler := newTestReconciler(testClient, withFlowHealthProber(flowHealthProber))
+			reconciler := newTestReconciler(testClient, WithFlowHealthProber(flowHealthProber))
 
 			result := reconcileAndGet(t, testClient, reconciler, pipeline.Name)
 			require.NoError(t, result.err)
