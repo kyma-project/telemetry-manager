@@ -13,8 +13,6 @@ import (
 	webhookutils "github.com/kyma-project/telemetry-manager/webhook/utils"
 )
 
-
-
 type MetricPipelineValidator struct {
 }
 
