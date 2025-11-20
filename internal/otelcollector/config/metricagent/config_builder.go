@@ -67,11 +67,12 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 
 	b.Config = common.NewConfig()
 	b.AddExtension(common.ComponentIDK8sLeaderElectorExtension,
-		common.K8sLeaderElector{
+		common.K8sLeaderElectorExtension{
 			AuthType:       "serviceAccount",
 			LeaseName:      common.K8sLeaderElectorK8sCluster,
 			LeaseNamespace: opts.AgentNamespace,
 		},
+		nil,
 	)
 	b.EnvVars = make(common.EnvVars)
 

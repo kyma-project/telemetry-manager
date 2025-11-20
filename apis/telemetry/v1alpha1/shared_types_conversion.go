@@ -173,7 +173,7 @@ func convertAuthenticationToBeta(a *AuthenticationOptions) *telemetryv1beta1.Aut
 	}
 
 	return &telemetryv1beta1.AuthenticationOptions{
-		Basic: convertBasicAuthToBeta(a.Basic),
+		Basic:  convertBasicAuthToBeta(a.Basic),
 		OAuth2: convertOAuth2ToBeta(a.OAuth2),
 	}
 }
@@ -184,7 +184,7 @@ func convertAuthenticationToAlpha(a *telemetryv1beta1.AuthenticationOptions) *Au
 	}
 
 	return &AuthenticationOptions{
-		Basic: convertBasicAuthToAlpha(a.Basic),
+		Basic:  convertBasicAuthToAlpha(a.Basic),
 		OAuth2: convertOAuth2ToAlpha(a.OAuth2),
 	}
 }

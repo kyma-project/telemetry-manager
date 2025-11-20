@@ -194,9 +194,13 @@ func (cb *ComponentBuilder[T]) AddExporter(componentIDFunc ComponentIDFunc[T], c
 	}
 }
 
-func (cb *ComponentBuilder[T]) AddExtension(componentID string, extensionConfig any) {
+func (cb *ComponentBuilder[T]) AddExtension(componentID string, extensionConfig any, extensionEnvVars EnvVars) {
 	if _, found := cb.Config.Extensions[componentID]; !found {
 		cb.Config.Extensions[componentID] = extensionConfig
+	}
+
+	if extensionEnvVars != nil {
+		maps.Copy(cb.EnvVars, extensionEnvVars)
 	}
 
 	// Ensure the extension is added to the service only once

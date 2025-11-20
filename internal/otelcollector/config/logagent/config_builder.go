@@ -35,10 +35,10 @@ type BuildOptions struct {
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPipeline, opts BuildOptions) (*common.Config, common.EnvVars, error) {
 	b.Config = common.NewConfig()
-	b.AddExtension(common.ComponentIDFileStorageExtension, &common.FileStorage{
+	b.AddExtension(common.ComponentIDFileStorageExtension, &common.FileStorageExtension{
 		CreateDirectory: true,
 		Directory:       filepath.Join(otelcollector.CheckpointVolumePath, checkpointVolumePathSubdir),
-	})
+	}, nil)
 	b.EnvVars = make(common.EnvVars)
 
 	for _, pipeline := range pipelines {

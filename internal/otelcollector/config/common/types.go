@@ -19,15 +19,23 @@ type Config struct {
 // EXTENSION TYPES
 // =============================================================================
 
-type K8sLeaderElector struct {
+type K8sLeaderElectorExtension struct {
 	AuthType       string `yaml:"auth_type,omitempty"`
 	LeaseName      string `yaml:"lease_name,omitempty"`
 	LeaseNamespace string `yaml:"lease_namespace,omitempty"`
 }
 
-type FileStorage struct {
+type FileStorageExtension struct {
 	CreateDirectory bool   `yaml:"create_directory,omitempty"`
 	Directory       string `yaml:"directory,omitempty"`
+}
+
+type OAuth2Extension struct {
+	TokenURL     string            `yaml:"token_url"`
+	ClientID     string            `yaml:"client_id"`
+	ClientSecret string            `yaml:"client_secret"`
+	Scopes       []string          `yaml:"scopes,omitempty"`
+	Params       map[string]string `yaml:"endpoint_params,omitempty"`
 }
 
 // =============================================================================
