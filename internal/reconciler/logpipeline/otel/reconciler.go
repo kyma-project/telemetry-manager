@@ -15,12 +15,10 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/logagent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/loggateway"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
@@ -28,46 +26,6 @@ import (
 )
 
 const defaultReplicaCount int32 = 2
-
-type GatewayConfigBuilder interface {
-	Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPipeline, opts loggateway.BuildOptions) (*common.Config, common.EnvVars, error)
-}
-
-type GatewayApplierDeleter interface {
-	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.GatewayApplyOptions) error
-	DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error
-}
-
-type GatewayFlowHealthProber interface {
-	Probe(ctx context.Context, pipelineName string) (prober.OTelGatewayProbeResult, error)
-}
-
-type AgentFlowHealthProber interface {
-	Probe(ctx context.Context, pipelineName string) (prober.OTelAgentProbeResult, error)
-}
-
-type IstioStatusChecker interface {
-	IsIstioActive(ctx context.Context) bool
-}
-
-type AgentConfigBuilder interface {
-	Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPipeline, options logagent.BuildOptions) (*common.Config, common.EnvVars, error)
-}
-
-type AgentApplierDeleter interface {
-	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.AgentApplyOptions) error
-	DeleteResources(ctx context.Context, c client.Client) error
-}
-
-// var _ logpipeline.LogPipelineReconciler = &Reconciler{}
-
-type Prober interface {
-	IsReady(ctx context.Context, name types.NamespacedName) error
-}
-
-type ErrorToMessageConverter interface {
-	Convert(err error) string
-}
 
 type Reconciler struct {
 	client.Client
