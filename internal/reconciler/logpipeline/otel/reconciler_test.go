@@ -766,7 +766,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeConfigurationGenerated,
 			metav1.ConditionFalse,
 			conditions.ReasonOTTLSpecInvalid,
-			"Invalid TransformSpec: error while parsing statements",
+			"OTTL specification is invalid, invalid TransformSpec: error while parsing statements. Fix the syntax error indicated by the message or see troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=ottl_spec_invalid_with_unspecific_error_message",
 		)
 
 		agentConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything, mock.Anything)
@@ -814,7 +814,7 @@ func TestReconcile(t *testing.T) {
 			TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
 			FilterSpecValidator: stubs.NewFilterSpecValidator(
 				&ottl.InvalidOTTLSpecError{
-					Err: fmt.Errorf("invalid FilterSpec: error while parsing conditions"),
+					Err: fmt.Errorf("invalid FilterSpec: error while parsing statements"),
 				},
 			),
 		}
@@ -847,7 +847,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeConfigurationGenerated,
 			metav1.ConditionFalse,
 			conditions.ReasonOTTLSpecInvalid,
-			"Invalid FilterSpec: error while parsing conditions",
+			"OTTL specification is invalid, invalid FilterSpec: error while parsing statements. Fix the syntax error indicated by the message or see troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=ottl_spec_invalid_with_unspecific_error_message",
 		)
 
 		agentConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything, mock.Anything)

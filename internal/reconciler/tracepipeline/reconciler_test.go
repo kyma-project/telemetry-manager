@@ -798,7 +798,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeConfigurationGenerated,
 			metav1.ConditionFalse,
 			conditions.ReasonOTTLSpecInvalid,
-			"Invalid TransformSpec: error while parsing statements",
+			"OTTL specification is invalid, invalid TransformSpec: error while parsing statements. Fix the syntax error indicated by the message or see troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=ottl_spec_invalid_with_unspecific_error_message",
 		)
 
 		requireHasStatusCondition(t, updatedPipeline,
@@ -811,7 +811,7 @@ func TestReconcile(t *testing.T) {
 		gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything, mock.Anything)
 	})
 
-	t.Run("invalid transform spec", func(t *testing.T) {
+	t.Run("invalid filter spec", func(t *testing.T) {
 		pipeline := testutils.NewTracePipelineBuilder().Build()
 		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
@@ -873,7 +873,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeConfigurationGenerated,
 			metav1.ConditionFalse,
 			conditions.ReasonOTTLSpecInvalid,
-			"Invalid FilterSpec: error while parsing statements",
+			"OTTL specification is invalid, invalid FilterSpec: error while parsing statements. Fix the syntax error indicated by the message or see troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=ottl_spec_invalid_with_unspecific_error_message",
 		)
 
 		requireHasStatusCondition(t, updatedPipeline,
