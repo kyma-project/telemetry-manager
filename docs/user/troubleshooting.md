@@ -2,6 +2,9 @@
 
 Troubleshoot problems related to the Telemetry module and its pipelines.
 
+> [!NOTE]
+> If you can't find a solution, don't hesitate to create a [GitHub issue](https://github.com/kyma-project/telemetry-manager/issues/new/choose).
+
 ## No Data Arrive at the Backend
 
 ### Symptom
@@ -146,7 +149,6 @@ There's a configuration or network issue between the metric agent and your appli
             telemetry.kyma-project.io/metric-scrape: "true"
     policyTypes:
     - Ingress
-
   ```
 
 ## LogPipeline: Log Buffer Filling Up
@@ -185,16 +187,16 @@ This usually happens for one of the following reasons:
 2. Test your regex separately. Simplify complex conditions to a single comparison and re-apply.
 3. To test your rules, temporarily remove all but one rule to confirm it works as expected. Then, add your other rules incrementally and isolate the rule that is causing the issue.
 
-## Generic EOF Error Message When Using OTTL Transform or Filter
+## OTTL Spec Invalid with Unspecific Error Message
 
 ### Symptom
 
-- The pipeline configuration fails with vague error messages mentioning "unexpected token `<EOF>`" or EOF (End of File) parsing errors.
 - In the pipeline status, you see the condition `ConfigurationGenerated` with status `False` and reason `OTTLSpecInvalid`.
+- The pipeline configuration fails with vague error messages, for example, mentioning "unexpected token `<EOF>`" or EOF (End of File) parsing errors.
 
 ### Cause
 
-This error occurs when there is a syntax error in the used OTTL functions in your transformation or filter rules. If syntax validation cannot diagnose the error precisely, you get a generic EOF error instead of a specific error message.
+If you get a generic EOF error instead of a specific error message, there's usually a syntax error in your OTTL transformation or filter rules. It occurs when the parser cannot diagnose the error precisely.
 
 The following example uses the incorrect function name `isMatch` (it should be `IsMatch`):
 ```yaml
