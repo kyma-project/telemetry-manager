@@ -79,7 +79,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/stubs"
@@ -97,19 +96,11 @@ type reconcileAndGetResult struct {
 type mockRegistry struct {
 	// Mocks with explicit expectations (Times(), Once(), etc.) that should be asserted
 	mocksWithExpectations []interface{ AssertExpectations(t mock.TestingT) bool }
-	// Mocks without expectations that should be checked for no calls
-	mocksWithoutExpectations []mockWithMethods
-}
-
-type mockWithMethods struct {
-	mock    interface{ AssertExpectations(t mock.TestingT) bool }
-	methods []string
 }
 
 func newMockRegistry() *mockRegistry {
 	return &mockRegistry{
-		mocksWithExpectations:    make([]interface{ AssertExpectations(t mock.TestingT) bool }, 0),
-		mocksWithoutExpectations: make([]mockWithMethods, 0),
+		mocksWithExpectations: make([]interface{ AssertExpectations(t mock.TestingT) bool }, 0),
 	}
 }
 
@@ -118,38 +109,17 @@ func (r *mockRegistry) registerWithExpectations(m interface{ AssertExpectations(
 	r.mocksWithExpectations = append(r.mocksWithExpectations, m)
 }
 
-// registerWithoutExpectations registers a mock that should be checked for no calls
-func (r *mockRegistry) registerWithoutExpectations(m interface{ AssertExpectations(t mock.TestingT) bool }, methods []string) {
-	r.mocksWithoutExpectations = append(r.mocksWithoutExpectations, mockWithMethods{
-		mock:    m,
-		methods: methods,
-	})
-}
-
 func (r *mockRegistry) assertAll(t *testing.T) {
 	// Assert mocks with explicit expectations
 	for _, m := range r.mocksWithExpectations {
 		m.AssertExpectations(t)
-	}
-
-	// Assert mocks without expectations were not called
-	for _, mwm := range r.mocksWithoutExpectations {
-		// Use type assertion to interface that has AssertNotCalled method
-		type mockWithAssertNotCalled interface {
-			AssertNotCalled(t mock.TestingT, methodName string, arguments ...interface{}) bool
-		}
-
-		if mockObj, ok := mwm.mock.(mockWithAssertNotCalled); ok {
-			for _, method := range mwm.methods {
-				mockObj.AssertNotCalled(t, method)
-			}
-		}
 	}
 }
 
 // testReconciler wraps the production Reconciler to add test-specific functionality
 type testReconciler struct {
 	*Reconciler
+
 	mockRegistry *mockRegistry
 	assertMocks  func(*testing.T)
 }
@@ -271,7 +241,7 @@ func newTestValidator(opts ...validatorOption) *Validator {
 
 // testOption is a test-specific option that can access the mock registry
 type testOption interface {
-	apply(*testReconciler)
+	apply(testReconciler *testReconciler)
 }
 
 // testOptionFunc wraps a function to implement testOption
@@ -305,7 +275,7 @@ func (f testOptionFunc) apply(tr *testReconciler) {
 //   - PipelineSyncer: Sync operations succeed
 //   - PipelineValidator: All validations pass
 //   - ErrorToMessageConverter: Standard converter
-func newTestReconciler(client client.Client, opts ...interface{}) (*testReconciler, func(*testing.T)) {
+func newTestReconciler(client client.Client, opts ...any) (*testReconciler, func(*testing.T)) {
 	registry := newMockRegistry()
 
 	tr := &testReconciler{
@@ -351,6 +321,7 @@ func newTestReconciler(client client.Client, opts ...interface{}) (*testReconcil
 
 	// Process provided options - collect production Options and test options separately
 	var testOpts []testOption
+
 	for _, opt := range opts {
 		switch v := opt.(type) {
 		case Option:
@@ -371,103 +342,26 @@ func newTestReconciler(client client.Client, opts ...interface{}) (*testReconcil
 	return tr, tr.assertMocks
 }
 
-// WithGatewayConfigBuilderAssert registers a GatewayConfigBuilder mock for auto-assertion.
-//
-// Behavior:
-//   - If mock has .Times(), .Once(), etc. → calls AssertExpectations
-//   - If mock has no expectations → calls AssertNotCalled for "Build"
-//
-// Example with expectations:
-//
-//	gatewayConfigMock := &mocks.GatewayConfigBuilder{}
-//	gatewayConfigMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).
-//	    Return(&common.Config{}, nil, nil).Once()
-//	sut, assertMocks := newTestReconciler(fakeClient, WithGatewayConfigBuilderAssert(gatewayConfigMock))
-//	result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
-//	assertMocks(t) // Calls gatewayConfigMock.AssertExpectations(t)
-//
-// Example without expectations (should not be called):
-//
-//	gatewayConfigMock := &mocks.GatewayConfigBuilder{}
-//	// No On() setup means it should not be called
-//	sut, assertMocks := newTestReconciler(fakeClient, WithGatewayConfigBuilderAssert(gatewayConfigMock))
-//	result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
-//	assertMocks(t) // Calls gatewayConfigMock.AssertNotCalled(t, "Build")
-//
-// WithGatewayConfigBuilderAssert registers a GatewayConfigBuilder mock for auto-assertion using AssertExpectations.
+// withGatewayConfigBuilderAssert registers a GatewayConfigBuilder mock for auto-assertion using AssertExpectations.
 // Use this when you set up expectations with On().Times(), On().Once(), etc.
 // If you don't set up any On() calls, AssertExpectations will fail (which is correct - you should set expectations).
-func WithGatewayConfigBuilderAssert(mockBuilder *mocks.GatewayConfigBuilder) testOption {
+func withGatewayConfigBuilderAssert(mockBuilder *mocks.GatewayConfigBuilder) testOption {
 	return testOptionFunc(func(tr *testReconciler) {
-		tr.Reconciler.gatewayConfigBuilder = mockBuilder
-		registerMockForAssertion(tr.mockRegistry, mockBuilder, []string{"Build"})
+		tr.gatewayConfigBuilder = mockBuilder
+		registerMockForAssertion(tr.mockRegistry, mockBuilder)
 	})
 }
 
-// WithGatewayConfigBuilderAssertNotCalled registers a GatewayConfigBuilder mock that should NOT be called.
-// Use this when you want to explicitly verify that a method is never called.
-func WithGatewayConfigBuilderAssertNotCalled(mockBuilder *mocks.GatewayConfigBuilder) testOption {
+// withFlowHealthProberAssert registers a FlowHealthProber mock for auto-assertion.
+func withFlowHealthProberAssert(mockProber *mocks.FlowHealthProber) testOption {
 	return testOptionFunc(func(tr *testReconciler) {
-		tr.Reconciler.gatewayConfigBuilder = mockBuilder
-		tr.mockRegistry.registerWithoutExpectations(mockBuilder, []string{"Build"})
-	})
-}
-
-// WithGatewayApplierDeleterAssert registers a GatewayApplierDeleter mock for auto-assertion.
-// Checks both ApplyResources and DeleteResources methods.
-func WithGatewayApplierDeleterAssert(mockApplierDeleter *mocks.GatewayApplierDeleter) testOption {
-	return testOptionFunc(func(tr *testReconciler) {
-		tr.Reconciler.gatewayApplierDeleter = mockApplierDeleter
-		registerMockForAssertion(tr.mockRegistry, mockApplierDeleter, []string{"ApplyResources", "DeleteResources"})
-	})
-}
-
-// WithFlowHealthProberAssert registers a FlowHealthProber mock for auto-assertion.
-func WithFlowHealthProberAssert(mockProber *mocks.FlowHealthProber) testOption {
-	return testOptionFunc(func(tr *testReconciler) {
-		tr.Reconciler.flowHealthProber = mockProber
-		registerMockForAssertion(tr.mockRegistry, mockProber, []string{"Probe"})
-	})
-}
-
-// WithGatewayProberAssert registers a gateway Prober mock for auto-assertion.
-// Note: This works with commonstatus.Prober interface implementations.
-func WithGatewayProberAssert(mockProber interface {
-	commonstatus.Prober
-	AssertExpectations(t mock.TestingT) bool
-}) testOption {
-	return testOptionFunc(func(tr *testReconciler) {
-		tr.Reconciler.gatewayProber = mockProber
-		registerMockForAssertion(tr.mockRegistry, mockProber, []string{"Probe"})
-	})
-}
-
-// WithOverridesHandlerAssert registers an OverridesHandler mock for auto-assertion.
-func WithOverridesHandlerAssert(mockHandler *mocks.OverridesHandler) testOption {
-	return testOptionFunc(func(tr *testReconciler) {
-		tr.Reconciler.overridesHandler = mockHandler
-		registerMockForAssertion(tr.mockRegistry, mockHandler, []string{"LoadOverrides"})
-	})
-}
-
-// WithPipelineLockAssert registers a PipelineLock mock for auto-assertion.
-func WithPipelineLockAssert(mockLock *mocks.PipelineLock) testOption {
-	return testOptionFunc(func(tr *testReconciler) {
-		tr.Reconciler.pipelineLock = mockLock
-		registerMockForAssertion(tr.mockRegistry, mockLock, []string{"TryAcquireLock", "IsLockHolder"})
-	})
-}
-
-// WithPipelineSyncerAssert registers a PipelineSyncer mock for auto-assertion.
-func WithPipelineSyncerAssert(mockSyncer *mocks.PipelineSyncer) testOption {
-	return testOptionFunc(func(tr *testReconciler) {
-		tr.Reconciler.pipelineSync = mockSyncer
-		registerMockForAssertion(tr.mockRegistry, mockSyncer, []string{"Sync"})
+		tr.flowHealthProber = mockProber
+		registerMockForAssertion(tr.mockRegistry, mockProber)
 	})
 }
 
 // registerMockForAssertion is a helper that checks if a mock has expectations and registers it appropriately.
-func registerMockForAssertion(registry *mockRegistry, mockObj interface{ AssertExpectations(t mock.TestingT) bool }, methods []string) {
+func registerMockForAssertion(registry *mockRegistry, mockObj interface{ AssertExpectations(t mock.TestingT) bool }) {
 	// IMPORTANT: The strategy here is to ALWAYS use AssertExpectations for any mock
 	// passed through WithXxxAssert helpers. This works because:
 	//
@@ -480,6 +374,5 @@ func registerMockForAssertion(registry *mockRegistry, mockObj interface{ AssertE
 	// - Or you forgot to set up expectations (bad - should fail)
 	//
 	// For mocks where you DON'T care, use the standard WithXxx (not WithXxxAssert)
-
 	registry.registerWithExpectations(mockObj)
 }

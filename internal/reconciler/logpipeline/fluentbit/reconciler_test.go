@@ -41,7 +41,6 @@ func TestAppInputDisabled(t *testing.T) {
 
 func TestMaxPipelineLimit(t *testing.T) {
 	pipeline := testutils.NewLogPipelineBuilder().
-		WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
 		WithCustomFilter("Name grep").
 		Build()
 	testClient := newTestClient(t, &pipeline)
@@ -51,6 +50,7 @@ func TestMaxPipelineLimit(t *testing.T) {
 	pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
 
 	reconciler := newTestReconciler(testClient,
+		WithPipelineLock(pipelineLock),
 		WithPipelineValidator(newTestValidator(withPipelineLock(pipelineLock))),
 	)
 

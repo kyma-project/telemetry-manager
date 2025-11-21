@@ -69,8 +69,8 @@ func TestGatewayHealthCondition(t *testing.T) {
 			gatewayConfigBuilder := &mocks.GatewayConfigBuilder{}
 			gatewayConfigBuilder.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Once()
 
-			opts := []interface{}{
-				WithGatewayConfigBuilderAssert(gatewayConfigBuilder),
+			opts := []any{
+				withGatewayConfigBuilderAssert(gatewayConfigBuilder),
 			}
 			if tt.proberError != nil {
 				opts = append(opts, WithGatewayProber(commonStatusStubs.NewDeploymentSetProber(tt.proberError)))
@@ -159,7 +159,7 @@ func TestSecretReferenceValidation(t *testing.T) {
 
 			fakeClient := newTestClient(t, clientObjs...)
 
-			opts := []interface{}{}
+			opts := []any{}
 
 			if tt.secretValidatorError != nil {
 				validator := newTestValidator(withSecretRefValidator(stubs.NewSecretRefValidator(tt.secretValidatorError)))
@@ -170,11 +170,12 @@ func TestSecretReferenceValidation(t *testing.T) {
 				gatewayConfigBuilder := &mocks.GatewayConfigBuilder{}
 				gatewayConfigBuilder.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Once()
 
-				opts = append(opts, WithGatewayConfigBuilderAssert(gatewayConfigBuilder))
+				opts = append(opts, withGatewayConfigBuilderAssert(gatewayConfigBuilder))
 			}
 
 			sut, assertMocks := newTestReconciler(fakeClient, opts...)
 			defer assertMocks(t)
+
 			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
 			require.NoError(t, result.err)
 
@@ -191,7 +192,6 @@ func TestSecretReferenceValidation(t *testing.T) {
 					conditions.ReasonSelfMonConfigNotGenerated,
 					"No spans delivered to backend because TracePipeline specification is not applied to the configuration of Trace gateway. Check the 'ConfigurationGenerated' condition for more details")
 			}
-
 		})
 	}
 }
@@ -212,7 +212,7 @@ func TestMaxPipelineLimit(t *testing.T) {
 	sut, assertMocks := newTestReconciler(fakeClient,
 		WithPipelineLock(pipelineLockStub),
 		WithPipelineValidator(validator),
-		WithGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
+		withGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
 	)
 	defer assertMocks(t)
 
@@ -232,7 +232,6 @@ func TestMaxPipelineLimit(t *testing.T) {
 		conditions.ReasonSelfMonConfigNotGenerated,
 		"No spans delivered to backend because TracePipeline specification is not applied to the configuration of Trace gateway. Check the 'ConfigurationGenerated' condition for more details",
 	)
-
 }
 
 func TestGatewayFlowHealthCondition(t *testing.T) {
@@ -325,10 +324,11 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 			sut, assertMocks := newTestReconciler(
 				fakeClient,
 				WithFlowHealthProber(flowHealthProberStub),
-				WithGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
+				withGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
 				WithErrorToMessageConverter(errToMsg),
 			)
 			defer assertMocks(t)
+
 			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
 			require.NoError(t, result.err)
 
@@ -338,7 +338,6 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 				tt.expectedReason,
 				tt.expectedMessage,
 			)
-
 		})
 	}
 }
@@ -429,9 +428,10 @@ func TestTLSCertificateValidation(t *testing.T) {
 			sut, assertMocks := newTestReconciler(
 				fakeClient,
 				WithPipelineValidator(pipelineValidatorWithStubs),
-				WithGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
+				withGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
 			)
 			defer assertMocks(t)
+
 			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
 			require.NoError(t, result.err)
 
@@ -450,7 +450,6 @@ func TestTLSCertificateValidation(t *testing.T) {
 					"No spans delivered to backend because TracePipeline specification is not applied to the configuration of Trace gateway. Check the 'ConfigurationGenerated' condition for more details",
 				)
 			}
-
 		})
 	}
 }
@@ -493,7 +492,7 @@ func TestOTTLSpecValidation(t *testing.T) {
 
 			sut, assertMocks := newTestReconciler(
 				fakeClient,
-				WithGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
+				withGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
 				WithPipelineValidator(validator),
 			)
 			defer assertMocks(t)
@@ -514,7 +513,6 @@ func TestOTTLSpecValidation(t *testing.T) {
 				conditions.ReasonSelfMonConfigNotGenerated,
 				"No spans delivered to backend because TracePipeline specification is not applied to the configuration of Trace gateway. Check the 'ConfigurationGenerated' condition for more details",
 			)
-
 		})
 	}
 }
@@ -555,7 +553,7 @@ func TestAPIServerFailureHandling(t *testing.T) {
 
 				return newTestReconciler(
 					fakeClient,
-					WithGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
+					withGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
 					WithPipelineValidator(validator),
 					WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
 				)
@@ -578,7 +576,7 @@ func TestAPIServerFailureHandling(t *testing.T) {
 
 				return newTestReconciler(
 					fakeClient,
-					WithGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
+					withGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
 					WithPipelineLock(pipelineLockStub),
 					WithPipelineValidator(validator),
 					WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
@@ -710,8 +708,8 @@ func TestPodErrorConditionReporting(t *testing.T) {
 
 			sut, assertMocks := newTestReconciler(
 				fakeClient,
-				WithFlowHealthProberAssert(flowHealthProberStub),
-				WithGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
+				withFlowHealthProberAssert(flowHealthProberStub),
+				withGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
 				WithGatewayProber(gatewayProberStub),
 				WithPipelineValidator(pipelineValidatorWithStubs),
 				WithErrorToMessageConverter(errToMsg),

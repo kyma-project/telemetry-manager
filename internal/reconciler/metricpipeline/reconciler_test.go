@@ -71,9 +71,9 @@ func TestGatewayHealthCondition(t *testing.T) {
 			agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 			agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Once()
 
-			reconcilerOpts := []interface{}{
-				WithAgentApplierDeleterAssert(agentApplierDeleterMock),
-				WithGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
+			reconcilerOpts := []any{
+				withAgentApplierDeleterAssert(agentApplierDeleterMock),
+				withGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
 			}
 
 			if tt.proberError != nil {
@@ -137,9 +137,9 @@ func TestAgentHealthCondition(t *testing.T) {
 			gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 			gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Once()
 
-			reconcilerOpts := []interface{}{
-				WithAgentConfigBuilderAssert(agentConfigBuilderMock),
-				WithGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
+			reconcilerOpts := []any{
+				withAgentConfigBuilderAssert(agentConfigBuilderMock),
+				withGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
 			}
 
 			if tt.proberError != nil {
@@ -182,8 +182,8 @@ func TestSecretReferenceValidation(t *testing.T) {
 
 		sut, assertAll := newTestReconciler(
 			fakeClient,
-			WithAgentApplierDeleterAssert(agentApplierDeleterMock),
-			WithGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
+			withAgentApplierDeleterAssert(agentApplierDeleterMock),
+			withGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
 		)
 		result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
 		require.NoError(t, result.err)
@@ -245,7 +245,7 @@ func TestMaxPipelineLimit(t *testing.T) {
 
 	sut, assertAll := newTestReconciler(
 		fakeClient,
-		WithAgentApplierDeleterAssert(agentApplierDeleterMock),
+		withAgentApplierDeleterAssert(agentApplierDeleterMock),
 		WithPipelineValidator(customValidator),
 	)
 
@@ -360,8 +360,8 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 
 			sut, assertAll := newTestReconciler(
 				fakeClient,
-				WithAgentApplierDeleterAssert(agentApplierDeleterMock),
-				WithGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
+				withAgentApplierDeleterAssert(agentApplierDeleterMock),
+				withGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
 				WithGatewayFlowHealthProber(gatewayFlowHealthProberStub),
 				WithGatewayApplierDeleter(gatewayApplierDeleterMock),
 			)
@@ -449,9 +449,9 @@ func TestAgentFlowHealthCondition(t *testing.T) {
 
 			sut, assertAll := newTestReconciler(
 				fakeClient,
-				WithAgentConfigBuilderAssert(agentConfigBuilderMock),
+				withAgentConfigBuilderAssert(agentConfigBuilderMock),
 				WithAgentFlowHealthProber(agentFlowHealthProberStub),
-				WithGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
+				withGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
 			)
 			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
 			require.NoError(t, result.err)
@@ -561,7 +561,7 @@ func TestTLSCertificateValidation(t *testing.T) {
 				fakeClient,
 				WithAgentApplierDeleter(agentApplierDeleterMock),
 				WithGatewayApplierDeleter(gatewayApplierDeleterMock),
-				WithGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
+				withGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
 				WithPipelineValidator(customValidator),
 			)
 			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
@@ -682,8 +682,8 @@ func TestAPIServerFailureHandling(t *testing.T) {
 			// TODO[k15r]: in the original code this mock is set up with an expectation, but it is never called.
 			// agentMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Once()
 
-			opts := []interface{}{
-				WithAgentApplierDeleterAssert(agentMock),
+			opts := []any{
+				withAgentApplierDeleterAssert(agentMock),
 				WithPipelineValidator(tt.setupValidator(serverErr)),
 			}
 
@@ -733,8 +733,8 @@ func TestNonReconcilablePipelines(t *testing.T) {
 
 	sut, assertAll := newTestReconciler(
 		fakeClient,
-		WithAgentApplierDeleterAssert(agentApplierDeleterMock),
-		WithGatewayApplierDeleterAssert(gatewayApplierDeleterMock),
+		withAgentApplierDeleterAssert(agentApplierDeleterMock),
+		withGatewayApplierDeleterAssert(gatewayApplierDeleterMock),
 		WithPipelineValidator(customValidator),
 	)
 	result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
@@ -819,7 +819,7 @@ func TestAgentRequirementDetermination(t *testing.T) { //nolint: gocognit // Com
 				gatewayMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Times(tt.expectedGatewayApplies)
 			}
 
-			opts := []interface{}{
+			opts := []any{
 				WithAgentApplierDeleter(agentMock),
 				WithGatewayApplierDeleter(gatewayMock),
 			}
@@ -935,7 +935,7 @@ func TestPodErrorConditionReporting(t *testing.T) {
 
 			sut, assertAll := newTestReconciler(
 				fakeClient,
-				WithAgentConfigBuilderAssert(agentConfigBuilderMock),
+				withAgentConfigBuilderAssert(agentConfigBuilderMock),
 				WithAgentProber(commonStatusStubs.NewDaemonSetProber(tt.probeAgentErr)),
 				WithGatewayProber(commonStatusStubs.NewDeploymentSetProber(tt.probeGatewayErr)),
 			)
