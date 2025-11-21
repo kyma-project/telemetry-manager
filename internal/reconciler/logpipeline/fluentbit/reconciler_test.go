@@ -16,6 +16,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit/mocks"
@@ -351,6 +352,7 @@ func TestLogAgent(t *testing.T) {
 	tests := []struct {
 		name            string
 		proberError     error
+		errorConverter  ErrorToMessageConverter
 		expectedStatus  metav1.ConditionStatus
 		expectedReason  string
 		expectedMessage string
@@ -358,6 +360,7 @@ func TestLogAgent(t *testing.T) {
 		{
 			name:            "log agent is not ready",
 			proberError:     workloadstatus.ErrDaemonSetNotFound,
+			errorConverter:  &conditions.ErrorToMessageConverter{},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonAgentNotReady,
 			expectedMessage: "DaemonSet is not yet created",
@@ -365,6 +368,7 @@ func TestLogAgent(t *testing.T) {
 		{
 			name:            "log agent is ready",
 			proberError:     nil,
+			errorConverter:  &conditions.ErrorToMessageConverter{},
 			expectedStatus:  metav1.ConditionTrue,
 			expectedReason:  conditions.ReasonAgentReady,
 			expectedMessage: "Log agent DaemonSet is ready",
@@ -372,6 +376,7 @@ func TestLogAgent(t *testing.T) {
 		{
 			name:            "log agent prober fails",
 			proberError:     workloadstatus.ErrDaemonSetFetching,
+			errorConverter:  &conditions.ErrorToMessageConverter{},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonAgentNotReady,
 			expectedMessage: "Failed to get DaemonSet",
@@ -513,6 +518,129 @@ func TestFlowHealthy(t *testing.T) {
 
 			if tt.expectedMsg != "" {
 				require.Equal(t, tt.expectedMsg, cond.Message)
+			}
+		})
+	}
+}
+
+func TestFIPSMode(t *testing.T) {
+	tests := []struct {
+		name               string
+		fipsEnabled        bool
+		pipeline           telemetryv1alpha1.LogPipeline
+		expectReconcilable bool
+		verifyResources    bool
+		conditions         []conditionCheck
+	}{
+		{
+			name:               "FIPS disabled - basic pipeline applies resources",
+			fipsEnabled:        false,
+			pipeline:           testutils.NewLogPipelineBuilder().WithHTTPOutput().Build(),
+			expectReconcilable: true,
+			verifyResources:    true,
+			conditions: []conditionCheck{
+				{conditions.TypeConfigurationGenerated, metav1.ConditionTrue, conditions.ReasonAgentConfigured, "LogPipeline specification is successfully applied to the configuration of Log agent"},
+			},
+		},
+		{
+			name:               "FIPS disabled - HTTP output applies resources",
+			fipsEnabled:        false,
+			pipeline:           testutils.NewLogPipelineBuilder().WithHTTPOutput().Build(),
+			expectReconcilable: true,
+			verifyResources:    true,
+			conditions: []conditionCheck{
+				{conditions.TypeConfigurationGenerated, metav1.ConditionTrue, conditions.ReasonAgentConfigured, "LogPipeline specification is successfully applied to the configuration of Log agent"},
+			},
+		},
+		{
+			name:               "FIPS enabled - basic pipeline deletes resources",
+			fipsEnabled:        true,
+			pipeline:           testutils.NewLogPipelineBuilder().WithHTTPOutput().Build(),
+			expectReconcilable: false,
+			verifyResources:    true,
+			conditions: []conditionCheck{
+				{conditions.TypeConfigurationGenerated, metav1.ConditionFalse, conditions.ReasonNoFluentbitInFipsMode, "HTTP/custom output types are not supported when FIPS mode is enabled"},
+				{conditions.TypeFlowHealthy, metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated, "No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details"},
+			},
+		},
+		{
+			name:               "FIPS enabled - HTTP output deletes resources",
+			fipsEnabled:        true,
+			pipeline:           testutils.NewLogPipelineBuilder().WithHTTPOutput().Build(),
+			expectReconcilable: false,
+			verifyResources:    true,
+			conditions: []conditionCheck{
+				{conditions.TypeConfigurationGenerated, metav1.ConditionFalse, conditions.ReasonNoFluentbitInFipsMode, "HTTP/custom output types are not supported when FIPS mode is enabled"},
+				{conditions.TypeFlowHealthy, metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated, "No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details"},
+			},
+		},
+		{
+			name:               "FIPS enabled - pipeline with TLS errors",
+			fipsEnabled:        true,
+			pipeline:           testutils.NewLogPipelineBuilder().WithHTTPOutput(testutils.HTTPClientTLSFromString("ca", "invalidCert", "invalidKey")).Build(),
+			expectReconcilable: false,
+			verifyResources:    false,
+			conditions: []conditionCheck{
+				{conditions.TypeConfigurationGenerated, metav1.ConditionFalse, conditions.ReasonNoFluentbitInFipsMode, "HTTP/custom output types are not supported when FIPS mode is enabled"},
+			},
+		},
+		{
+			name:               "FIPS enabled - pipeline with custom filters",
+			fipsEnabled:        true,
+			pipeline:           testutils.NewLogPipelineBuilder().WithCustomFilter("Name grep").Build(),
+			expectReconcilable: false,
+			verifyResources:    false,
+			conditions: []conditionCheck{
+				{conditions.TypeConfigurationGenerated, metav1.ConditionFalse, conditions.ReasonNoFluentbitInFipsMode, "HTTP/custom output types are not supported when FIPS mode is enabled"},
+			},
+		},
+		{
+			name:               "FIPS enabled - pipeline with secret references",
+			fipsEnabled:        true,
+			pipeline:           testutils.NewLogPipelineBuilder().WithHTTPOutput(testutils.HTTPHostFromSecret("some-secret", "some-namespace", "host")).Build(),
+			expectReconcilable: false,
+			verifyResources:    false,
+			conditions: []conditionCheck{
+				{conditions.TypeConfigurationGenerated, metav1.ConditionFalse, conditions.ReasonNoFluentbitInFipsMode, "HTTP/custom output types are not supported when FIPS mode is enabled"},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testClient := newTestClient(t, &tt.pipeline)
+
+			reconcilerOpts := []Option{
+				WithGlobals(config.NewGlobal(
+					config.WithTargetNamespace("default"),
+					config.WithOperateInFIPSMode(tt.fipsEnabled),
+				)),
+			}
+
+			// Only set up resource verification when explicitly testing apply/delete behavior
+			if tt.verifyResources {
+				agentApplierDeleter := &mocks.AgentApplierDeleter{}
+				if tt.fipsEnabled {
+					agentApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+				} else {
+					agentApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+				}
+				reconcilerOpts = append(reconcilerOpts, WithAgentApplierDeleter(agentApplierDeleter))
+
+				defer agentApplierDeleter.AssertExpectations(t)
+			}
+
+			reconciler := newTestReconciler(testClient, reconcilerOpts...)
+
+			reconcilable, err := reconciler.IsReconcilable(t.Context(), &tt.pipeline)
+			require.NoError(t, err)
+			require.Equal(t, tt.expectReconcilable, reconcilable)
+
+			result := reconcileAndGet(t, testClient, reconciler, tt.pipeline.Name)
+			require.NoError(t, result.err)
+
+			for _, check := range tt.conditions {
+				assertCondition(t, result.pipeline, check.condType, check.status, check.reason, check.message)
 			}
 		})
 	}
