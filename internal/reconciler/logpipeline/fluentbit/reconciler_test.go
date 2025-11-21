@@ -517,7 +517,7 @@ func TestFIPSMode(t *testing.T) {
 			fipsEnabled:  true,
 			reconcilable: false,
 			conditions: []conditionCheck{
-				{conditions.TypeConfigurationGenerated, metav1.ConditionFalse, conditions.NoFluentbitInFipsMode, "FluentBit output is not available in FIPS mode"},
+				{conditions.TypeConfigurationGenerated, metav1.ConditionFalse, conditions.ReasonNoFluentbitInFipsMode, "FluentBit output is not available in FIPS mode"},
 				{conditions.TypeFlowHealthy, metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated, "No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details"},
 			},
 		},
@@ -606,7 +606,7 @@ func TestFIPSModeWithComplexPipelines(t *testing.T) {
 			assertCondition(t, result.pipeline,
 				conditions.TypeConfigurationGenerated,
 				metav1.ConditionFalse,
-				conditions.NoFluentbitInFipsMode,
+				conditions.ReasonNoFluentbitInFipsMode,
 				"FluentBit output is not available in FIPS mode")
 		})
 	}
@@ -640,7 +640,7 @@ func TestFIPSModeTransition(t *testing.T) {
 			shouldApply:  false,
 			shouldDelete: true,
 			condStatus:   metav1.ConditionFalse,
-			condReason:   conditions.NoFluentbitInFipsMode,
+			condReason:   conditions.ReasonNoFluentbitInFipsMode,
 			condMessage:  "FluentBit output is not available in FIPS mode",
 		},
 	}
