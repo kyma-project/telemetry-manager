@@ -86,6 +86,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           install-istio: ${{ matrix.scenario != 'healthy' }}
+          operate-in-fips-mode: ${{ matrix.kind != 'fluent-bit' && 'true' || 'false' }}
 
       - name: Execute tests
         uses: "./.github/template/test-execute"

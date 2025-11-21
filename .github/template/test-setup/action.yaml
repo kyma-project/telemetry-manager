@@ -13,7 +13,7 @@ inputs:
     required: true
     default: 'false'
   operate-in-fips-mode:
-    description: Whether to operate the manager in FIPS mode
+    description: Whether components should be deployed in FIPS 140-2 compliant way.
     required: true
     default: 'false'
 
