@@ -13,6 +13,18 @@ setup-e2e-experimental: provision-k3d deploy-experimental deploy-test-prerequisi
 .PHONY: setup-e2e-experimental-istio
 setup-e2e-experimental-istio: provision-k3d-istio deploy-experimental deploy-test-prerequisites ## Set up E2E test environment with experimental features and Istio
 
+.PHONY: setup-e2e-no-fips
+setup-e2e-no-fips: provision-k3d deploy-no-fips deploy-test-prerequisites ## Set up complete E2E test environment with k3d (no FIPS)
+
+.PHONY: setup-e2e-istio-no-fips
+setup-e2e-istio-no-fips: provision-k3d-istio deploy-no-fips deploy-test-prerequisites ## Set up E2E test environment with k3d and Istio (no FIPS)
+
+.PHONY: setup-e2e-experimental-no-fips
+setup-e2e-experimental-no-fips: provision-k3d deploy-experimental-no-fips deploy-test-prerequisites ## Set up E2E test environment with experimental features (no FIPS)
+
+.PHONY: setup-e2e-experimental-no-istio-fips
+setup-e2e-experimental-istio-no-fips: provision-k3d-istio deploy-experimental-no-fips deploy-test-prerequisites ## Set up E2E test environment with experimental features and Istio (no FIPS)
+
 .PHONY: deploy-test-prerequisites
 deploy-test-prerequisites: ## Deploy common test prerequisites (telemetry config, network policy, shoot info)
 	kubectl apply -f test/fixtures/operator_v1alpha1_telemetry.yaml -n kyma-system; \
@@ -32,7 +44,7 @@ wait-for-image: ## Wait for the manager image to be available in the registry
 # Internal target for common e2e test execution logic
 # Usage: $(call run-e2e-common,JUNIT_FLAGS)
 define run-e2e-common
-	echo "Running e2e tests with TEST_ID='$(TEST_ID)', TEST_PATH='$(TEST_PATH)', TEST_LABELS='$(TEST_LABELS)', ADDITIONAL LABELS='$(LABELS)'"
+	echo "Running e2e tests with TEST_ID='$(TEST_ID)', TEST_PATH='$(TEST_PATH)', TEST_LABELS='$(TEST_LABELS)'"
 	@if [ -z "$(TEST_PATH)" ]; then \
 		echo "Error: TEST_PATH environment variable is required"; \
 		exit 1; \
@@ -42,17 +54,6 @@ define run-e2e-common
 		exit 1; \
 	fi
 	@ALL_LABELS="$(TEST_LABELS)"; \
-	if [ -n "$(LABELS)" ]; then \
-		ADDITIONAL_LABELS=""; \
-		for label in $(LABELS); do \
-			if [ -z "$$ADDITIONAL_LABELS" ]; then \
-				ADDITIONAL_LABELS="$$label"; \
-			else \
-				ADDITIONAL_LABELS="$$ADDITIONAL_LABELS,$$label"; \
-			fi; \
-		done; \
-		ALL_LABELS="$$ALL_LABELS,$$ADDITIONAL_LABELS"; \
-	fi; \
 	echo "Using combined labels: $$ALL_LABELS"; \
 	echo "Executing: $(GOTESTSUM) --format pkgname --hide-summary=skipped $(1) -- -timeout=20m $(TEST_PATH) -- -labels=\"$$ALL_LABELS\""; \
 	$(GOTESTSUM) \
@@ -79,7 +80,7 @@ run-e2e-no-junit: $(GOTESTSUM) ## Run E2E tests without JUnit output
 generate-e2e-targets: .github/workflows/pr-integration.yml ## Generate convenience targets for E2E tests from GitHub workflow matrix
 	@echo '##@ E2E Test Suites' > hack/make/e2e-convenience.mk
 	@echo '' >> hack/make/e2e-convenience.mk
-	@cat .github/workflows/pr-integration.yml| yq -p yaml -o json | jq -r '.jobs.e2e.strategy.matrix.labels[]| ".PHONY: run-\(.type)-\(.name)\nrun-\(.type)-\(.name): ## Run \(.name) \(.type) tests\n\t$$(MAKE) run-e2e TEST_ID=\(.type)-\(.name) TEST_PATH=\"./test/\(.type)/...\" TEST_LABELS=\"\(.name)\"\n"' >> hack/make/e2e-convenience.mk
+	@cat .github/workflows/pr-integration.yml| yq -p yaml -o json | jq -r '.jobs.e2e.strategy.matrix.testcase[]| ".PHONY: run-\(.name)\nrun-\(.name): ## Run \(.labels) \(.type) tests\n\t$$(MAKE) run-e2e TEST_ID=\(.name) TEST_PATH=\"./test/\(.type)/...\" TEST_LABELS=\"\(.labels)\"\n"' >> hack/make/e2e-convenience.mk
 
 	@printf "\n.PHONY: run-all-e2e-logs\nrun-all-e2e-logs:" >> hack/make/e2e-convenience.mk
 	@cat <(cat hack/make/e2e-convenience.mk | egrep '^run-e2e-(log|fluent)' | sed 's/:.*//') <(echo "## Run all log-related E2E tests") | xargs | sed 's/^/ /' >> hack/make/e2e-convenience.mk
@@ -92,6 +93,7 @@ generate-e2e-targets: .github/workflows/pr-integration.yml ## Generate convenien
 	@printf ".PHONY: run-all-e2e-traces\nrun-all-e2e-traces:" >> hack/make/e2e-convenience.mk
 	@cat <(cat hack/make/e2e-convenience.mk | egrep '^run-e2e-(traces)' | sed 's/:.*//') <(echo "## Run all trace-related E2E tests") | xargs | sed 's/^/ /' >> hack/make/e2e-convenience.mk
 	@echo >> hack/make/e2e-convenience.mk
+
 
 
 
