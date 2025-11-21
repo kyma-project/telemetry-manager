@@ -17,6 +17,9 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/mocks"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/stubs"
+
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/config"
@@ -24,8 +27,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/mocks"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -49,7 +50,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("trace gateway probing failed", func(t *testing.T) {
 		pipeline := testutils.NewTracePipelineBuilder().WithName("pipeline").Build()
-		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+		fakeClient := newTestClient(t, &pipeline)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
@@ -82,17 +83,18 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			cfg,
-			flowHealthProberStub,
-			gatewayApplierDeleterMock,
-			gatewayConfigBuilderMock,
-			gatewayProberStub,
-			istioStatusCheckerStub,
-			overridesHandlerStub,
-			pipelineLockStub,
-			pipelineSyncStub,
-			pipelineValidatorWithStubs,
-			errToMsg)
+			WithGlobal(cfg),
+			WithFlowHealthProber(flowHealthProberStub),
+			WithGatewayApplierDeleter(gatewayApplierDeleterMock),
+			WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+			WithGatewayProber(gatewayProberStub),
+			WithIstioStatusChecker(istioStatusCheckerStub),
+			WithOverridesHandler(overridesHandlerStub),
+			WithPipelineLock(pipelineLockStub),
+			WithPipelineSyncer(pipelineSyncStub),
+			WithPipelineValidator(pipelineValidatorWithStubs),
+			WithErrorToMessageConverter(errToMsg),
+		)
 		_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -113,7 +115,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("trace gateway deployment is not ready", func(t *testing.T) {
 		pipeline := testutils.NewTracePipelineBuilder().WithName("pipeline").Build()
-		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+		fakeClient := newTestClient(t, &pipeline)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
@@ -146,17 +148,18 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			cfg,
-			flowHealthProberStub,
-			gatewayApplierDeleterMock,
-			gatewayConfigBuilderMock,
-			gatewayProberStub,
-			istioStatusCheckerStub,
-			overridesHandlerStub,
-			pipelineLockStub,
-			pipelineSyncStub,
-			pipelineValidatorWithStubs,
-			errToMsg)
+			WithGlobal(cfg),
+			WithFlowHealthProber(flowHealthProberStub),
+			WithGatewayApplierDeleter(gatewayApplierDeleterMock),
+			WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+			WithGatewayProber(gatewayProberStub),
+			WithIstioStatusChecker(istioStatusCheckerStub),
+			WithOverridesHandler(overridesHandlerStub),
+			WithPipelineLock(pipelineLockStub),
+			WithPipelineSyncer(pipelineSyncStub),
+			WithPipelineValidator(pipelineValidatorWithStubs),
+			WithErrorToMessageConverter(errToMsg),
+		)
 		_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -177,7 +180,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("trace gateway deployment is ready", func(t *testing.T) {
 		pipeline := testutils.NewTracePipelineBuilder().WithName("pipeline").Build()
-		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+		fakeClient := newTestClient(t, &pipeline)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
@@ -210,17 +213,18 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			cfg,
-			flowHealthProberStub,
-			gatewayApplierDeleterMock,
-			gatewayConfigBuilderMock,
-			gatewayProberStub,
-			istioStatusCheckerStub,
-			overridesHandlerStub,
-			pipelineLockStub,
-			pipelineSyncStub,
-			pipelineValidatorWithStubs,
-			errToMsg)
+			WithGlobal(cfg),
+			WithFlowHealthProber(flowHealthProberStub),
+			WithGatewayApplierDeleter(gatewayApplierDeleterMock),
+			WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+			WithGatewayProber(gatewayProberStub),
+			WithIstioStatusChecker(istioStatusCheckerStub),
+			WithOverridesHandler(overridesHandlerStub),
+			WithPipelineLock(pipelineLockStub),
+			WithPipelineSyncer(pipelineSyncStub),
+			WithPipelineValidator(pipelineValidatorWithStubs),
+			WithErrorToMessageConverter(errToMsg),
+		)
 		_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -240,7 +244,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("referenced secret missing", func(t *testing.T) {
 		pipeline := testutils.NewTracePipelineBuilder().WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("some-secret", "some-namespace", "user", "password")).Build()
-		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+		fakeClient := newTestClient(t, &pipeline)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, mock.Anything).Return(&common.Config{}, nil, nil)
@@ -273,17 +277,18 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			cfg,
-			flowHealthProberStub,
-			gatewayApplierDeleterMock,
-			gatewayConfigBuilderMock,
-			gatewayProberStub,
-			istioStatusCheckerStub,
-			overridesHandlerStub,
-			pipelineLockStub,
-			pipelineSyncStub,
-			pipelineValidatorWithStubs,
-			errToMsg)
+			WithGlobal(cfg),
+			WithFlowHealthProber(flowHealthProberStub),
+			WithGatewayApplierDeleter(gatewayApplierDeleterMock),
+			WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+			WithGatewayProber(gatewayProberStub),
+			WithIstioStatusChecker(istioStatusCheckerStub),
+			WithOverridesHandler(overridesHandlerStub),
+			WithPipelineLock(pipelineLockStub),
+			WithPipelineSyncer(pipelineSyncStub),
+			WithPipelineValidator(pipelineValidatorWithStubs),
+			WithErrorToMessageConverter(errToMsg),
+		)
 		_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -321,7 +326,7 @@ func TestReconcile(t *testing.T) {
 			},
 			Data: map[string][]byte{"endpoint": nil},
 		}
-		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline, secret).WithStatusSubresource(&pipeline).Build()
+		fakeClient := newTestClient(t, &pipeline, secret)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
@@ -354,17 +359,18 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			cfg,
-			flowHealthProberStub,
-			gatewayApplierDeleterMock,
-			gatewayConfigBuilderMock,
-			gatewayProberStub,
-			istioStatusCheckerStub,
-			overridesHandlerStub,
-			pipelineLockStub,
-			pipelineSyncStub,
-			pipelineValidatorWithStubs,
-			errToMsg)
+			WithGlobal(cfg),
+			WithFlowHealthProber(flowHealthProberStub),
+			WithGatewayApplierDeleter(gatewayApplierDeleterMock),
+			WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+			WithGatewayProber(gatewayProberStub),
+			WithIstioStatusChecker(istioStatusCheckerStub),
+			WithOverridesHandler(overridesHandlerStub),
+			WithPipelineLock(pipelineLockStub),
+			WithPipelineSyncer(pipelineSyncStub),
+			WithPipelineValidator(pipelineValidatorWithStubs),
+			WithErrorToMessageConverter(errToMsg),
+		)
 		_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -384,7 +390,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("max pipelines exceeded", func(t *testing.T) {
 		pipeline := testutils.NewTracePipelineBuilder().Build()
-		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+		fakeClient := newTestClient(t, &pipeline)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, mock.Anything).Return(&common.Config{}, nil, nil)
@@ -414,17 +420,18 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			cfg,
-			flowHealthProberStub,
-			&mocks.GatewayApplierDeleter{},
-			gatewayConfigBuilderMock,
-			gatewayProberStub,
-			istioStatusCheckerStub,
-			overridesHandlerStub,
-			pipelineLockStub,
-			pipelineSyncStub,
-			pipelineValidatorWithStubs,
-			errToMsg)
+			WithGlobal(cfg),
+			WithFlowHealthProber(flowHealthProberStub),
+			WithGatewayApplierDeleter(&mocks.GatewayApplierDeleter{}),
+			WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+			WithGatewayProber(gatewayProberStub),
+			WithIstioStatusChecker(istioStatusCheckerStub),
+			WithOverridesHandler(overridesHandlerStub),
+			WithPipelineLock(pipelineLockStub),
+			WithPipelineSyncer(pipelineSyncStub),
+			WithPipelineValidator(pipelineValidatorWithStubs),
+			WithErrorToMessageConverter(errToMsg),
+		)
 		_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -526,7 +533,7 @@ func TestReconcile(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				pipeline := testutils.NewTracePipelineBuilder().Build()
-				fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+				fakeClient := newTestClient(t, &pipeline)
 
 				gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 				gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
@@ -559,17 +566,18 @@ func TestReconcile(t *testing.T) {
 
 				sut := New(
 					fakeClient,
-					cfg,
-					flowHealthProberStub,
-					gatewayApplierDeleterMock,
-					gatewayConfigBuilderMock,
-					gatewayProberStub,
-					istioStatusCheckerStub,
-					overridesHandlerStub,
-					pipelineLockStub,
-					pipelineSyncStub,
-					pipelineValidatorWithStubs,
-					errToMsg)
+					WithGlobal(cfg),
+					WithFlowHealthProber(flowHealthProberStub),
+					WithGatewayApplierDeleter(gatewayApplierDeleterMock),
+					WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+					WithGatewayProber(gatewayProberStub),
+					WithIstioStatusChecker(istioStatusCheckerStub),
+					WithOverridesHandler(overridesHandlerStub),
+					WithPipelineLock(pipelineLockStub),
+					WithPipelineSyncer(pipelineSyncStub),
+					WithPipelineValidator(pipelineValidatorWithStubs),
+					WithErrorToMessageConverter(errToMsg),
+				)
 				_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)
 
@@ -660,7 +668,7 @@ func TestReconcile(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				pipeline := testutils.NewTracePipelineBuilder().WithOTLPOutput(testutils.OTLPClientTLSFromString("ca", "fooCert", "fooKey")).Build()
-				fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+				fakeClient := newTestClient(t, &pipeline)
 
 				gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 				gatewayConfigBuilderMock.On("Build", mock.Anything, mock.Anything, mock.Anything).Return(&common.Config{}, nil, nil)
@@ -694,17 +702,18 @@ func TestReconcile(t *testing.T) {
 
 				sut := New(
 					fakeClient,
-					cfg,
-					flowHealthProberStub,
-					gatewayApplierDeleterMock,
-					gatewayConfigBuilderMock,
-					gatewayProberStub,
-					istioStatusCheckerStub,
-					overridesHandlerStub,
-					pipelineLockStub,
-					pipelineSyncStub,
-					pipelineValidatorWithStubs,
-					errToMsg)
+					WithGlobal(cfg),
+					WithFlowHealthProber(flowHealthProberStub),
+					WithGatewayApplierDeleter(gatewayApplierDeleterMock),
+					WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+					WithGatewayProber(gatewayProberStub),
+					WithIstioStatusChecker(istioStatusCheckerStub),
+					WithOverridesHandler(overridesHandlerStub),
+					WithPipelineLock(pipelineLockStub),
+					WithPipelineSyncer(pipelineSyncStub),
+					WithPipelineValidator(pipelineValidatorWithStubs),
+					WithErrorToMessageConverter(errToMsg),
+				)
 				_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)
 
@@ -739,7 +748,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("invalid transform spec", func(t *testing.T) {
 		pipeline := testutils.NewTracePipelineBuilder().Build()
-		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+		fakeClient := newTestClient(t, &pipeline)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, mock.Anything, mock.Anything).Return(&common.Config{}, nil, nil)
@@ -777,17 +786,18 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			cfg,
-			flowHealthProberStub,
-			gatewayApplierDeleterMock,
-			gatewayConfigBuilderMock,
-			gatewayProberStub,
-			istioStatusCheckerStub,
-			overridesHandlerStub,
-			pipelineLockStub,
-			pipelineSyncStub,
-			pipelineValidatorWithStubs,
-			errToMsg)
+			WithGlobal(cfg),
+			WithFlowHealthProber(flowHealthProberStub),
+			WithGatewayApplierDeleter(gatewayApplierDeleterMock),
+			WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+			WithGatewayProber(gatewayProberStub),
+			WithIstioStatusChecker(istioStatusCheckerStub),
+			WithOverridesHandler(overridesHandlerStub),
+			WithPipelineLock(pipelineLockStub),
+			WithPipelineSyncer(pipelineSyncStub),
+			WithPipelineValidator(pipelineValidatorWithStubs),
+			WithErrorToMessageConverter(errToMsg),
+		)
 		_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -814,7 +824,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("invalid transform spec", func(t *testing.T) {
 		pipeline := testutils.NewTracePipelineBuilder().Build()
-		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+		fakeClient := newTestClient(t, &pipeline)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, mock.Anything, mock.Anything).Return(&common.Config{}, nil, nil)
@@ -852,17 +862,18 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			cfg,
-			flowHealthProberStub,
-			gatewayApplierDeleterMock,
-			gatewayConfigBuilderMock,
-			gatewayProberStub,
-			istioStatusCheckerStub,
-			overridesHandlerStub,
-			pipelineLockStub,
-			pipelineSyncStub,
-			pipelineValidatorWithStubs,
-			errToMsg)
+			WithGlobal(cfg),
+			WithFlowHealthProber(flowHealthProberStub),
+			WithGatewayApplierDeleter(gatewayApplierDeleterMock),
+			WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+			WithGatewayProber(gatewayProberStub),
+			WithIstioStatusChecker(istioStatusCheckerStub),
+			WithOverridesHandler(overridesHandlerStub),
+			WithPipelineLock(pipelineLockStub),
+			WithPipelineSyncer(pipelineSyncStub),
+			WithPipelineValidator(pipelineValidatorWithStubs),
+			WithErrorToMessageConverter(errToMsg),
+		)
 		_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -900,7 +911,7 @@ func TestReconcile(t *testing.T) {
 			},
 			Data: map[string][]byte{"endpoint": nil},
 		}
-		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline, secret).WithStatusSubresource(&pipeline).Build()
+		fakeClient := newTestClient(t, &pipeline, secret)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, mock.Anything).Return(&common.Config{}, nil, nil)
@@ -934,17 +945,18 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			cfg,
-			flowHealthProberStub,
-			gatewayApplierDeleterMock,
-			gatewayConfigBuilderMock,
-			gatewayProberStub,
-			istioStatusCheckerStub,
-			overridesHandlerStub,
-			pipelineLockStub,
-			pipelineSyncStub,
-			pipelineValidatorWithStubs,
-			errToMsg)
+			WithGlobal(cfg),
+			WithFlowHealthProber(flowHealthProberStub),
+			WithGatewayApplierDeleter(gatewayApplierDeleterMock),
+			WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+			WithGatewayProber(gatewayProberStub),
+			WithIstioStatusChecker(istioStatusCheckerStub),
+			WithOverridesHandler(overridesHandlerStub),
+			WithPipelineLock(pipelineLockStub),
+			WithPipelineSyncer(pipelineSyncStub),
+			WithPipelineValidator(pipelineValidatorWithStubs),
+			WithErrorToMessageConverter(errToMsg),
+		)
 		_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.True(t, errors.Is(err, serverErr))
 
@@ -971,7 +983,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("a request to the Kubernetes API server has failed when validating the max pipeline count limit", func(t *testing.T) {
 		pipeline := testutils.NewTracePipelineBuilder().WithName("pipeline").Build()
-		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+		fakeClient := newTestClient(t, &pipeline)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, mock.Anything).Return(&common.Config{}, nil, nil)
@@ -1006,17 +1018,18 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			cfg,
-			flowHealthProberStub,
-			gatewayApplierDeleterMock,
-			gatewayConfigBuilderMock,
-			gatewayProberStub,
-			istioStatusCheckerStub,
-			overridesHandlerStub,
-			pipelineLockStub,
-			pipelineSyncStub,
-			pipelineValidatorWithStubs,
-			errToMsg)
+			WithGlobal(cfg),
+			WithFlowHealthProber(flowHealthProberStub),
+			WithGatewayApplierDeleter(gatewayApplierDeleterMock),
+			WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+			WithGatewayProber(gatewayProberStub),
+			WithIstioStatusChecker(istioStatusCheckerStub),
+			WithOverridesHandler(overridesHandlerStub),
+			WithPipelineLock(pipelineLockStub),
+			WithPipelineSyncer(pipelineSyncStub),
+			WithPipelineValidator(pipelineValidatorWithStubs),
+			WithErrorToMessageConverter(errToMsg),
+		)
 		_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.True(t, errors.Is(err, serverErr))
 
@@ -1043,7 +1056,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("all trace pipelines are non-reconcilable", func(t *testing.T) {
 		pipeline := testutils.NewTracePipelineBuilder().WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("some-secret", "some-namespace", "user", "password")).Build()
-		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+		fakeClient := newTestClient(t, &pipeline)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, mock.Anything).Return(&common.Config{}, nil, nil)
@@ -1076,17 +1089,18 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			cfg,
-			flowHealthProberStub,
-			gatewayApplierDeleterMock,
-			gatewayConfigBuilderMock,
-			gatewayProberStub,
-			istioStatusCheckerStub,
-			overridesHandlerStub,
-			pipelineLockStub,
-			pipelineSyncStub,
-			pipelineValidatorWithStubs,
-			errToMsg)
+			WithGlobal(cfg),
+			WithFlowHealthProber(flowHealthProberStub),
+			WithGatewayApplierDeleter(gatewayApplierDeleterMock),
+			WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+			WithGatewayProber(gatewayProberStub),
+			WithIstioStatusChecker(istioStatusCheckerStub),
+			WithOverridesHandler(overridesHandlerStub),
+			WithPipelineLock(pipelineLockStub),
+			WithPipelineSyncer(pipelineSyncStub),
+			WithPipelineValidator(pipelineValidatorWithStubs),
+			WithErrorToMessageConverter(errToMsg),
+		)
 		_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -1140,7 +1154,7 @@ func TestReconcile(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				pipeline := testutils.NewTracePipelineBuilder().Build()
-				fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+				fakeClient := newTestClient(t, &pipeline)
 
 				gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 				gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&common.Config{}, nil, nil).Times(1)
@@ -1173,17 +1187,18 @@ func TestReconcile(t *testing.T) {
 
 				sut := New(
 					fakeClient,
-					cfg,
-					flowHealthProberStub,
-					gatewayApplierDeleterMock,
-					gatewayConfigBuilderMock,
-					gatewayProberStub,
-					istioStatusCheckerStub,
-					overridesHandlerStub,
-					pipelineLockStub,
-					pipelineSyncStub,
-					pipelineValidatorWithStubs,
-					errToMsg)
+					WithGlobal(cfg),
+					WithFlowHealthProber(flowHealthProberStub),
+					WithGatewayApplierDeleter(gatewayApplierDeleterMock),
+					WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+					WithGatewayProber(gatewayProberStub),
+					WithIstioStatusChecker(istioStatusCheckerStub),
+					WithOverridesHandler(overridesHandlerStub),
+					WithPipelineLock(pipelineLockStub),
+					WithPipelineSyncer(pipelineSyncStub),
+					WithPipelineValidator(pipelineValidatorWithStubs),
+					WithErrorToMessageConverter(errToMsg),
+				)
 
 				_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)
@@ -1198,21 +1213,5 @@ func TestReconcile(t *testing.T) {
 				require.Equal(t, tt.expectedMessage, cond.Message)
 			})
 		}
-	})
-}
-
-func requireHasStatusCondition(t *testing.T, pipeline telemetryv1alpha1.TracePipeline, condType string, status metav1.ConditionStatus, reason, message string) {
-	cond := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
-	require.NotNil(t, cond, "could not find condition of type %s", condType)
-	require.Equal(t, status, cond.Status)
-	require.Equal(t, reason, cond.Reason)
-	require.Equal(t, message, cond.Message)
-	require.Equal(t, pipeline.Generation, cond.ObservedGeneration)
-	require.NotEmpty(t, cond.LastTransitionTime)
-}
-
-func containsPipeline(p telemetryv1alpha1.TracePipeline) any {
-	return mock.MatchedBy(func(pipelines []telemetryv1alpha1.TracePipeline) bool {
-		return len(pipelines) == 1 && pipelines[0].Name == p.Name
 	})
 }
