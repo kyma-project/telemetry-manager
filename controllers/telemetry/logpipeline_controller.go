@@ -126,10 +126,9 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 
 	reconciler := logpipeline.New(
 		client,
-		overrides.New(config.Global, client),
-		pipelineSyncer,
-		fluentBitReconciler,
-		otelReconciler,
+		logpipeline.WithOverridesHandler(overrides.New(config.Global, client)),
+		logpipeline.WithPipelineSyncer(pipelineSyncer),
+		logpipeline.WithReconcilers(fluentBitReconciler, otelReconciler),
 	)
 
 	return &LogPipelineController{

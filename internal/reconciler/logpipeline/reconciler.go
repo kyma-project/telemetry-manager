@@ -27,24 +27,47 @@ type Reconciler struct {
 	pipelineSyncer PipelineSyncer
 }
 
-func New(
-	client client.Client,
+// Option is a functional option for configuring a Reconciler.
+type Option func(*Reconciler)
 
-	overridesHandler OverridesHandler,
-	pipelineSyncer PipelineSyncer,
-	reconcilers ...LogPipelineReconciler,
-) *Reconciler {
-	reconcilersMap := make(map[logpipelineutils.Mode]LogPipelineReconciler)
-	for _, r := range reconcilers {
-		reconcilersMap[r.SupportedOutput()] = r
+// WithOverridesHandler sets the overrides handler.
+func WithOverridesHandler(handler OverridesHandler) Option {
+	return func(r *Reconciler) {
+		r.overridesHandler = handler
+	}
+}
+
+// WithPipelineSyncer sets the pipeline syncer.
+func WithPipelineSyncer(syncer PipelineSyncer) Option {
+	return func(r *Reconciler) {
+		r.pipelineSyncer = syncer
+	}
+}
+
+// WithReconcilers sets the pipeline reconcilers.
+func WithReconcilers(reconcilers ...LogPipelineReconciler) Option {
+	return func(r *Reconciler) {
+		reconcilersMap := make(map[logpipelineutils.Mode]LogPipelineReconciler)
+		for _, rec := range reconcilers {
+			reconcilersMap[rec.SupportedOutput()] = rec
+		}
+		r.reconcilers = reconcilersMap
+	}
+}
+
+// New creates a new Reconciler with the provided client and functional options.
+// All dependencies must be provided via functional options.
+func New(client client.Client, opts ...Option) *Reconciler {
+	r := &Reconciler{
+		Client:      client,
+		reconcilers: make(map[logpipelineutils.Mode]LogPipelineReconciler),
 	}
 
-	return &Reconciler{
-		Client:           client,
-		overridesHandler: overridesHandler,
-		reconcilers:      reconcilersMap,
-		pipelineSyncer:   pipelineSyncer,
+	for _, opt := range opts {
+		opt(r)
 	}
+
+	return r
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
