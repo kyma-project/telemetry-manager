@@ -149,7 +149,6 @@ There's a configuration or network issue between the metric agent and your appli
             telemetry.kyma-project.io/metric-scrape: "true"
     policyTypes:
     - Ingress
-
   ```
 
 ## LogPipeline: Log Buffer Filling Up
