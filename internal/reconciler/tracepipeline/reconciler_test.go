@@ -69,14 +69,15 @@ func TestGatewayHealthCondition(t *testing.T) {
 			gatewayConfigBuilder := &mocks.GatewayConfigBuilder{}
 			gatewayConfigBuilder.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Once()
 
-			opts := []Option{
-				WithGatewayConfigBuilder(gatewayConfigBuilder),
+			opts := []interface{}{
+				WithGatewayConfigBuilderAssert(gatewayConfigBuilder),
 			}
 			if tt.proberError != nil {
 				opts = append(opts, WithGatewayProber(commonStatusStubs.NewDeploymentSetProber(tt.proberError)))
 			}
 
-			sut := newTestReconciler(fakeClient, opts...)
+			sut, assertMocks := newTestReconciler(fakeClient, opts...)
+
 			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
 			require.NoError(t, result.err)
 
@@ -86,7 +87,7 @@ func TestGatewayHealthCondition(t *testing.T) {
 				tt.expectedReason,
 				tt.expectedMsg)
 
-			gatewayConfigBuilder.AssertExpectations(t)
+			assertMocks(t)
 		})
 	}
 }
@@ -158,7 +159,7 @@ func TestSecretReferenceValidation(t *testing.T) {
 
 			fakeClient := newTestClient(t, clientObjs...)
 
-			opts := []Option{}
+			opts := []interface{}{}
 
 			if tt.secretValidatorError != nil {
 				validator := newTestValidator(withSecretRefValidator(stubs.NewSecretRefValidator(tt.secretValidatorError)))
@@ -169,11 +170,11 @@ func TestSecretReferenceValidation(t *testing.T) {
 				gatewayConfigBuilder := &mocks.GatewayConfigBuilder{}
 				gatewayConfigBuilder.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Once()
 
-				opts = append(opts, WithGatewayConfigBuilder(gatewayConfigBuilder))
-				defer gatewayConfigBuilder.AssertExpectations(t)
+				opts = append(opts, WithGatewayConfigBuilderAssert(gatewayConfigBuilder))
 			}
 
-			sut := newTestReconciler(fakeClient, opts...)
+			sut, assertMocks := newTestReconciler(fakeClient, opts...)
+			defer assertMocks(t)
 			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
 			require.NoError(t, result.err)
 
@@ -190,6 +191,7 @@ func TestSecretReferenceValidation(t *testing.T) {
 					conditions.ReasonSelfMonConfigNotGenerated,
 					"No spans delivered to backend because TracePipeline specification is not applied to the configuration of Trace gateway. Check the 'ConfigurationGenerated' condition for more details")
 			}
+
 		})
 	}
 }
@@ -203,14 +205,16 @@ func TestMaxPipelineLimit(t *testing.T) {
 	pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
 
 	gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+	// No On() setup - should not be called
 
 	validator := newTestValidator(withPipelineLock(pipelineLockStub))
 
-	sut := newTestReconciler(fakeClient,
+	sut, assertMocks := newTestReconciler(fakeClient,
 		WithPipelineLock(pipelineLockStub),
 		WithPipelineValidator(validator),
-		WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+		WithGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
 	)
+	defer assertMocks(t)
 
 	result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
 	require.NoError(t, result.err)
@@ -228,7 +232,7 @@ func TestMaxPipelineLimit(t *testing.T) {
 		conditions.ReasonSelfMonConfigNotGenerated,
 		"No spans delivered to backend because TracePipeline specification is not applied to the configuration of Trace gateway. Check the 'ConfigurationGenerated' condition for more details",
 	)
-	gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything)
+
 }
 
 func TestGatewayFlowHealthCondition(t *testing.T) {
@@ -318,12 +322,13 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 
 			errToMsg := &conditions.ErrorToMessageConverter{}
 
-			sut := newTestReconciler(
+			sut, assertMocks := newTestReconciler(
 				fakeClient,
 				WithFlowHealthProber(flowHealthProberStub),
-				WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+				WithGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
 				WithErrorToMessageConverter(errToMsg),
 			)
+			defer assertMocks(t)
 			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
 			require.NoError(t, result.err)
 
@@ -334,7 +339,6 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 				tt.expectedMessage,
 			)
 
-			gatewayConfigBuilderMock.AssertExpectations(t)
 		})
 	}
 }
@@ -413,17 +417,21 @@ func TestTLSCertificateValidation(t *testing.T) {
 			fakeClient := newTestClient(t, &pipeline)
 
 			gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-			gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil)
+			if tt.expectGatewayConfigured {
+				gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Once()
+			}
+			// If not expectGatewayConfigured, leave mock without expectations -> will assert not called
 
 			pipelineValidatorWithStubs := newTestValidator(
 				withSecretRefValidator(stubs.NewSecretRefValidator(tt.tlsCertErr)),
 			)
 
-			sut := newTestReconciler(
+			sut, assertMocks := newTestReconciler(
 				fakeClient,
 				WithPipelineValidator(pipelineValidatorWithStubs),
-				WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+				WithGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
 			)
+			defer assertMocks(t)
 			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
 			require.NoError(t, result.err)
 
@@ -443,11 +451,6 @@ func TestTLSCertificateValidation(t *testing.T) {
 				)
 			}
 
-			if !tt.expectGatewayConfigured {
-				gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything, mock.Anything)
-			} else {
-				gatewayConfigBuilderMock.AssertCalled(t, "Build", mock.Anything, containsPipeline(pipeline), mock.Anything)
-			}
 		})
 	}
 }
@@ -484,16 +487,16 @@ func TestOTTLSpecValidation(t *testing.T) {
 			fakeClient := newTestClient(t, &pipeline)
 
 			gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-			gatewayConfigBuilderMock.On("Build", mock.Anything, mock.Anything, mock.Anything).
-				Return(&common.Config{}, nil, nil)
+			// No On() setup - should not be called
 
 			validator := newTestValidator(tt.validatorOption())
 
-			sut := newTestReconciler(
+			sut, assertMocks := newTestReconciler(
 				fakeClient,
-				WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+				WithGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
 				WithPipelineValidator(validator),
 			)
+			defer assertMocks(t)
 
 			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
 			require.NoError(t, result.err)
@@ -512,7 +515,6 @@ func TestOTTLSpecValidation(t *testing.T) {
 				"No spans delivered to backend because TracePipeline specification is not applied to the configuration of Trace gateway. Check the 'ConfigurationGenerated' condition for more details",
 			)
 
-			gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything, mock.Anything)
 		})
 	}
 }
@@ -524,7 +526,7 @@ func TestAPIServerFailureHandling(t *testing.T) {
 		name            string
 		setupPipeline   func() telemetryv1alpha1.TracePipeline
 		setupClient     func(*testing.T, *telemetryv1alpha1.TracePipeline) client.Client
-		setupReconciler func(client.Client, *mocks.GatewayConfigBuilder) *Reconciler
+		setupReconciler func(client.Client, *mocks.GatewayConfigBuilder) (*testReconciler, func(*testing.T))
 	}{
 		{
 			name: "a request to the Kubernetes API server has failed when validating the secret references",
@@ -546,14 +548,14 @@ func TestAPIServerFailureHandling(t *testing.T) {
 
 				return newTestClient(t, pipeline, secret)
 			},
-			setupReconciler: func(fakeClient client.Client, gatewayConfigBuilderMock *mocks.GatewayConfigBuilder) *Reconciler {
+			setupReconciler: func(fakeClient client.Client, gatewayConfigBuilderMock *mocks.GatewayConfigBuilder) (*testReconciler, func(*testing.T)) {
 				validator := newTestValidator(
 					withSecretRefValidator(stubs.NewSecretRefValidator(&errortypes.APIRequestFailedError{Err: serverErr})),
 				)
 
 				return newTestReconciler(
 					fakeClient,
-					WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+					WithGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
 					WithPipelineValidator(validator),
 					WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
 				)
@@ -567,7 +569,7 @@ func TestAPIServerFailureHandling(t *testing.T) {
 			setupClient: func(t *testing.T, pipeline *telemetryv1alpha1.TracePipeline) client.Client {
 				return newTestClient(t, pipeline)
 			},
-			setupReconciler: func(fakeClient client.Client, gatewayConfigBuilderMock *mocks.GatewayConfigBuilder) *Reconciler {
+			setupReconciler: func(fakeClient client.Client, gatewayConfigBuilderMock *mocks.GatewayConfigBuilder) (*testReconciler, func(*testing.T)) {
 				pipelineLockStub := &mocks.PipelineLock{}
 				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(&errortypes.APIRequestFailedError{Err: serverErr})
@@ -576,7 +578,7 @@ func TestAPIServerFailureHandling(t *testing.T) {
 
 				return newTestReconciler(
 					fakeClient,
-					WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+					WithGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
 					WithPipelineLock(pipelineLockStub),
 					WithPipelineValidator(validator),
 					WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
@@ -591,9 +593,10 @@ func TestAPIServerFailureHandling(t *testing.T) {
 			fakeClient := tt.setupClient(t, &pipeline)
 
 			gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-			gatewayConfigBuilderMock.On("Build", mock.Anything, mock.Anything).Return(&common.Config{}, nil, nil)
+			// No On() setup - should not be called
 
-			sut := tt.setupReconciler(fakeClient, gatewayConfigBuilderMock)
+			sut, assertMocks := tt.setupReconciler(fakeClient, gatewayConfigBuilderMock)
+			defer assertMocks(t)
 
 			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
 			require.ErrorIs(t, result.err, serverErr)
@@ -611,8 +614,6 @@ func TestAPIServerFailureHandling(t *testing.T) {
 				conditions.ReasonSelfMonConfigNotGenerated,
 				"No spans delivered to backend because TracePipeline specification is not applied to the configuration of Trace gateway. Check the 'ConfigurationGenerated' condition for more details",
 			)
-
-			gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything)
 		})
 	}
 }
@@ -630,7 +631,7 @@ func TestNonReconcilablePipelines(t *testing.T) {
 
 	errToMsg := &conditions.ErrorToMessageConverter{}
 
-	sut := newTestReconciler(
+	sut, _ := newTestReconciler(
 		fakeClient,
 		WithGatewayApplierDeleter(gatewayApplierDeleterMock),
 		WithPipelineValidator(pipelineValidatorWithStubs),
@@ -639,6 +640,7 @@ func TestNonReconcilablePipelines(t *testing.T) {
 	result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
 	require.NoError(t, result.err)
 
+	// Manual assertion for this specific test
 	gatewayApplierDeleterMock.AssertExpectations(t)
 }
 
@@ -701,14 +703,14 @@ func TestPodErrorConditionReporting(t *testing.T) {
 			gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(tt.probeGatewayErr)
 
 			flowHealthProberStub := &mocks.FlowHealthProber{}
-			flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+			flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil).Maybe()
 
 			errToMsg := &conditions.ErrorToMessageConverter{}
 
-			sut := newTestReconciler(
+			sut, assertMocks := newTestReconciler(
 				fakeClient,
-				WithFlowHealthProber(flowHealthProberStub),
-				WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+				WithFlowHealthProberAssert(flowHealthProberStub),
+				WithGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
 				WithGatewayProber(gatewayProberStub),
 				WithPipelineValidator(pipelineValidatorWithStubs),
 				WithErrorToMessageConverter(errToMsg),
@@ -721,6 +723,8 @@ func TestPodErrorConditionReporting(t *testing.T) {
 			require.Equal(t, tt.expectedStatus, cond.Status)
 			require.Equal(t, tt.expectedReason, cond.Reason)
 			require.Equal(t, tt.expectedMessage, cond.Message)
+
+			assertMocks(t)
 		})
 	}
 }
