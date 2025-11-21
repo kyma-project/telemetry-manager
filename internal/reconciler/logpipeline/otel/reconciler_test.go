@@ -73,7 +73,6 @@ func TestGatewayHealthCondition(t *testing.T) {
 			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
 			require.NoError(t, result.err)
 			requireHasStatusConditionObject(t, result.pipeline, tt.expectedCondition)
-
 		})
 	}
 }
@@ -410,6 +409,7 @@ func TestAgentRequiredScenarios(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Build pipelines from configs
 			var pipelines []client.Object
+
 			for _, cfg := range tt.pipelineConfigs {
 				pipeline := testutils.NewLogPipelineBuilder().
 					WithName(cfg.name).

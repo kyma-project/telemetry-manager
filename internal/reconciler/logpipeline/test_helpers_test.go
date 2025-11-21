@@ -60,13 +60,13 @@ func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
 	pipelineSync.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 
 	// Build default options with mocked dependencies
-	defaultOpts := []Option{
+	allOpts := []Option{
 		WithOverridesHandler(overridesHandler),
 		WithPipelineSyncer(pipelineSync),
 	}
 
 	// Merge default options with provided options (provided options will override defaults)
-	allOpts := append(defaultOpts, opts...)
+	allOpts = append(allOpts, opts...)
 
 	return New(client, allOpts...)
 }

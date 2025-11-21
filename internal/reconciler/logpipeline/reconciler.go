@@ -51,6 +51,7 @@ func WithReconcilers(reconcilers ...LogPipelineReconciler) Option {
 		for _, rec := range reconcilers {
 			reconcilersMap[rec.SupportedOutput()] = rec
 		}
+
 		r.reconcilers = reconcilersMap
 	}
 }

@@ -88,41 +88,6 @@ func reconcileAndGet(t *testing.T, client client.Client, reconciler *Reconciler,
 	return reconcileResult{pipeline: updatedPipeline, err: err}
 }
 
-// containsPipeline returns a mock matcher that checks if a slice contains exactly one pipeline with the given name.
-// Kept for future tests that need to verify single pipeline scenarios.
-//
-//nolint:unused
-func containsPipeline(p telemetryv1alpha1.LogPipeline) any {
-	return mock.MatchedBy(func(pipelines []telemetryv1alpha1.LogPipeline) bool {
-		return len(pipelines) == 1 && pipelines[0].Name == p.Name
-	})
-}
-
-// containsPipelines returns a mock matcher that checks if a slice contains all the given pipelines.
-// Kept for future tests that need to verify multiple pipeline scenarios.
-//
-//nolint:unused
-func containsPipelines(pp []telemetryv1alpha1.LogPipeline) any {
-	return mock.MatchedBy(func(pipelines []telemetryv1alpha1.LogPipeline) bool {
-		if len(pipelines) != len(pp) {
-			return false
-		}
-
-		pipelineMap := make(map[string]bool)
-		for _, p := range pipelines {
-			pipelineMap[p.Name] = true
-		}
-
-		for _, p := range pp {
-			if !pipelineMap[p.Name] {
-				return false
-			}
-		}
-
-		return true
-	})
-}
-
 // validatorOption is a functional option for configuring a Validator in tests.
 // Uses lowercase naming convention to indicate test-only usage.
 type validatorOption func(*Validator)
@@ -131,36 +96,6 @@ type validatorOption func(*Validator)
 func withPipelineLock(lock PipelineLock) validatorOption {
 	return func(v *Validator) {
 		v.PipelineLock = lock
-	}
-}
-
-// withEndpointValidator sets the endpoint validator.
-// Kept for future tests that need to override endpoint validation.
-//
-//nolint:unused
-func withEndpointValidator(validator EndpointValidator) validatorOption {
-	return func(v *Validator) {
-		v.EndpointValidator = validator
-	}
-}
-
-// withTLSCertValidator sets the TLS certificate validator.
-// Kept for future tests that need to override TLS validation.
-//
-//nolint:unused
-func withTLSCertValidator(validator TLSCertValidator) validatorOption {
-	return func(v *Validator) {
-		v.TLSCertValidator = validator
-	}
-}
-
-// withSecretRefValidator sets the secret reference validator.
-// Kept for future tests that need to override secret validation.
-//
-//nolint:unused
-func withSecretRefValidator(validator SecretRefValidator) validatorOption {
-	return func(v *Validator) {
-		v.SecretRefValidator = validator
 	}
 }
 
@@ -250,7 +185,7 @@ func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
 	errToMsg := &conditions.ErrorToMessageConverter{}
 
 	// Build default options with all mocked dependencies
-	defaultOpts := []Option{
+	allOpts := []Option{
 		WithGlobals(config.NewGlobal(config.WithTargetNamespace("default"), config.WithVersion("1.0.0"))),
 		WithGatewayFlowHealthProber(gatewayFlowHealthProberMock),
 		WithAgentFlowHealthProber(agentFlowHealthProberMock),
@@ -267,7 +202,7 @@ func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
 	}
 
 	// Merge default options with provided options (provided options override defaults)
-	allOpts := append(defaultOpts, opts...)
+	allOpts = append(allOpts, opts...)
 
 	return New(client, allOpts...)
 }

@@ -46,6 +46,7 @@ func newTestClient(t *testing.T, objs ...client.Object) client.Client {
 	}
 
 	allObjs := append([]client.Object{kubeSystemNamespace}, objs...)
+
 	return fake.NewClientBuilder().WithScheme(scheme).WithObjects(allObjs...).WithStatusSubresource(objs...).Build()
 }
 

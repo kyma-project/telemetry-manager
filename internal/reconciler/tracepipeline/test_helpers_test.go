@@ -47,7 +47,7 @@
 //	    fakeClient := newTestClient(t, &pipeline)
 //
 //	    // Create validator with custom secret validator
-//	    validator := newTestValidator(
+//	    := newTestValidator(
 //	        withSecretRefValidator(stubs.NewSecretRefValidator(secretref.ErrSecretRefNotFound)),
 //	    )
 //	    reconciler := newTestReconciler(fakeClient,
@@ -86,9 +86,10 @@ import (
 )
 
 // reconcileResult holds the result of a reconciliation operation for test assertions.
-type reconcileResult struct {
-	result ctrl.Result
-	err    error
+type reconcileAndGetResult struct {
+	result   ctrl.Result
+	pipeline telemetryv1alpha1.TracePipeline
+	err      error
 }
 
 // newTestClient creates a fake Kubernetes client for testing with the given objects.
@@ -105,26 +106,24 @@ func newTestClient(t *testing.T, objs ...client.Object) client.Client {
 	}
 
 	allObjs := append([]client.Object{kubeSystemNamespace}, objs...)
+
 	return fake.NewClientBuilder().WithScheme(scheme).WithObjects(allObjs...).WithStatusSubresource(objs...).Build()
 }
 
 // reconcileAndGet performs a reconciliation and returns the result and any error.
 // It's a helper to reduce boilerplate in tests.
-func reconcileAndGet(t *testing.T, client client.Client, reconciler *Reconciler, pipelineName string) reconcileResult {
-	result, err := reconciler.Reconcile(t.Context(), ctrl.Request{
+func reconcileAndGet(t *testing.T, client client.Client, reconciler *Reconciler, pipelineName string) reconcileAndGetResult {
+	var pl telemetryv1alpha1.TracePipeline
+	require.NoError(t, client.Get(t.Context(), types.NamespacedName{Name: pipelineName}, &pl))
+
+	res, recErr := reconciler.Reconcile(t.Context(), ctrl.Request{
 		NamespacedName: types.NamespacedName{Name: pipelineName},
 	})
 
-	return reconcileResult{result: result, err: err}
-}
+	var updatedPipeline telemetryv1alpha1.TracePipeline
+	require.NoError(t, client.Get(t.Context(), types.NamespacedName{Name: pipelineName}, &updatedPipeline))
 
-// assertCondition verifies that a pipeline has a specific condition with expected values.
-func assertCondition(t *testing.T, pipeline telemetryv1alpha1.TracePipeline, condType string, status metav1.ConditionStatus, reason, message string) {
-	cond := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
-	require.NotNil(t, cond, "condition %s not found", condType)
-	require.Equal(t, status, cond.Status, "condition %s has wrong status", condType)
-	require.Equal(t, reason, cond.Reason, "condition %s has wrong reason", condType)
-	require.Equal(t, message, cond.Message, "condition %s has wrong message", condType)
+	return reconcileAndGetResult{result: res, err: recErr, pipeline: updatedPipeline}
 }
 
 func requireHasStatusCondition(t *testing.T, pipeline telemetryv1alpha1.TracePipeline, condType string, status metav1.ConditionStatus, reason, message string) {
@@ -147,20 +146,6 @@ func containsPipeline(p telemetryv1alpha1.TracePipeline) any {
 
 // validatorOption is a functional option for configuring a test Validator.
 type validatorOption func(*Validator)
-
-// withEndpointValidator overrides the default endpoint validator.
-func withEndpointValidator(validator EndpointValidator) validatorOption {
-	return func(v *Validator) {
-		v.EndpointValidator = validator
-	}
-}
-
-// withTLSCertValidator overrides the default TLS certificate validator.
-func withTLSCertValidator(validator TLSCertValidator) validatorOption {
-	return func(v *Validator) {
-		v.TLSCertValidator = validator
-	}
-}
 
 // withSecretRefValidator overrides the default secret reference validator.
 func withSecretRefValidator(validator SecretRefValidator) validatorOption {

@@ -18,7 +18,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit/mocks"
+	logpipelinefluentbitmocks "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit/mocks"
 	logpipelinemocks "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
@@ -114,7 +114,7 @@ func withPipelineLock(lock PipelineLock) validatorOption {
 // Use functional options to override specific dependencies.
 // All validators pass by default, and the pipeline lock succeeds by default.
 func newTestValidator(opts ...validatorOption) *Validator {
-	pipelineLock := &mocks.PipelineLock{}
+	pipelineLock := &logpipelinefluentbitmocks.PipelineLock{}
 	pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 	pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
@@ -148,10 +148,10 @@ func newTestValidator(opts ...validatorOption) *Validator {
 //   - ErrorToMessageConverter: Standard converter
 func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
 	// Set up default mocks
-	agentConfigBuilder := &mocks.AgentConfigBuilder{}
+	agentConfigBuilder := &logpipelinefluentbitmocks.AgentConfigBuilder{}
 	agentConfigBuilder.On("Build", mock.Anything, mock.Anything, mock.Anything).Return(&builder.FluentBitConfig{}, nil)
 
-	agentApplierDeleter := &mocks.AgentApplierDeleter{}
+	agentApplierDeleter := &logpipelinefluentbitmocks.AgentApplierDeleter{}
 	agentApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	agentApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -159,7 +159,7 @@ func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
 	flowHealthProber.On("Probe", mock.Anything, mock.Anything).Return(prober.FluentBitProbeResult{}, nil)
 
 	// Build default options with mocked dependencies
-	defaultOpts := []Option{
+	allOpts := []Option{
 		WithGlobals(config.NewGlobal(config.WithTargetNamespace("default"))),
 		WithAgentConfigBuilder(agentConfigBuilder),
 		WithAgentApplierDeleter(agentApplierDeleter),
@@ -171,7 +171,7 @@ func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
 	}
 
 	// Merge default options with provided options (provided options will override defaults)
-	allOpts := append(defaultOpts, opts...)
+	allOpts = append(allOpts, opts...)
 
 	return New(client, allOpts...)
 }

@@ -12,18 +12,15 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/mocks"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/stubs"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/mocks"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -80,13 +77,10 @@ func TestGatewayHealthCondition(t *testing.T) {
 			}
 
 			sut := newTestReconciler(fakeClient, opts...)
-			_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
-			require.NoError(t, err)
+			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
+			require.NoError(t, result.err)
 
-			var updatedPipeline telemetryv1alpha1.TracePipeline
-			require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline))
-
-			requireHasStatusCondition(t, updatedPipeline,
+			requireHasStatusCondition(t, result.pipeline,
 				conditions.TypeGatewayHealthy,
 				tt.expectedStatus,
 				tt.expectedReason,
@@ -154,14 +148,18 @@ func TestSecretReferenceValidation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			pipeline := tt.setupPipeline()
+
 			var clientObjs []client.Object
+
 			clientObjs = append(clientObjs, &pipeline)
 			if tt.includeSecret {
 				clientObjs = append(clientObjs, tt.setupSecret())
 			}
+
 			fakeClient := newTestClient(t, clientObjs...)
 
 			opts := []Option{}
+
 			if tt.secretValidatorError != nil {
 				validator := newTestValidator(withSecretRefValidator(stubs.NewSecretRefValidator(tt.secretValidatorError)))
 				opts = append(opts, WithPipelineValidator(validator))
@@ -170,25 +168,23 @@ func TestSecretReferenceValidation(t *testing.T) {
 			if tt.expectConfigGenerated {
 				gatewayConfigBuilder := &mocks.GatewayConfigBuilder{}
 				gatewayConfigBuilder.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Once()
+
 				opts = append(opts, WithGatewayConfigBuilder(gatewayConfigBuilder))
 				defer gatewayConfigBuilder.AssertExpectations(t)
 			}
 
 			sut := newTestReconciler(fakeClient, opts...)
-			_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
-			require.NoError(t, err)
+			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
+			require.NoError(t, result.err)
 
-			var updatedPipeline telemetryv1alpha1.TracePipeline
-			require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline))
-
-			requireHasStatusCondition(t, updatedPipeline,
+			requireHasStatusCondition(t, result.pipeline,
 				conditions.TypeConfigurationGenerated,
 				tt.expectedConfigStatus,
 				tt.expectedConfigReason,
 				tt.expectedConfigMessage)
 
 			if tt.expectFlowHealthCondition {
-				requireHasStatusCondition(t, updatedPipeline,
+				requireHasStatusCondition(t, result.pipeline,
 					conditions.TypeFlowHealthy,
 					metav1.ConditionFalse,
 					conditions.ReasonSelfMonConfigNotGenerated,
@@ -216,21 +212,17 @@ func TestMaxPipelineLimit(t *testing.T) {
 		WithGatewayConfigBuilder(gatewayConfigBuilderMock),
 	)
 
-	_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
-	require.NoError(t, err)
+	result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
+	require.NoError(t, result.err)
 
-	var updatedPipeline telemetryv1alpha1.TracePipeline
-
-	_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-
-	requireHasStatusCondition(t, updatedPipeline,
+	requireHasStatusCondition(t, result.pipeline,
 		conditions.TypeConfigurationGenerated,
 		metav1.ConditionFalse,
 		conditions.ReasonMaxPipelinesExceeded,
 		"Maximum pipeline count limit exceeded",
 	)
 
-	requireHasStatusCondition(t, updatedPipeline,
+	requireHasStatusCondition(t, result.pipeline,
 		conditions.TypeFlowHealthy,
 		metav1.ConditionFalse,
 		conditions.ReasonSelfMonConfigNotGenerated,
@@ -332,14 +324,10 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 				WithGatewayConfigBuilder(gatewayConfigBuilderMock),
 				WithErrorToMessageConverter(errToMsg),
 			)
-			_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
-			require.NoError(t, err)
+			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
+			require.NoError(t, result.err)
 
-			var updatedPipeline telemetryv1alpha1.TracePipeline
-
-			_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-
-			requireHasStatusCondition(t, updatedPipeline,
+			requireHasStatusCondition(t, result.pipeline,
 				conditions.TypeFlowHealthy,
 				tt.expectedStatus,
 				tt.expectedReason,
@@ -436,14 +424,10 @@ func TestTLSCertificateValidation(t *testing.T) {
 				WithPipelineValidator(pipelineValidatorWithStubs),
 				WithGatewayConfigBuilder(gatewayConfigBuilderMock),
 			)
-			_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
-			require.NoError(t, err)
+			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
+			require.NoError(t, result.err)
 
-			var updatedPipeline telemetryv1alpha1.TracePipeline
-
-			_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-
-			requireHasStatusCondition(t, updatedPipeline,
+			requireHasStatusCondition(t, result.pipeline,
 				conditions.TypeConfigurationGenerated,
 				tt.expectedStatus,
 				tt.expectedReason,
@@ -451,7 +435,7 @@ func TestTLSCertificateValidation(t *testing.T) {
 			)
 
 			if tt.expectedStatus == metav1.ConditionFalse {
-				requireHasStatusCondition(t, updatedPipeline,
+				requireHasStatusCondition(t, result.pipeline,
 					conditions.TypeFlowHealthy,
 					metav1.ConditionFalse,
 					conditions.ReasonSelfMonConfigNotGenerated,
@@ -511,22 +495,17 @@ func TestOTTLSpecValidation(t *testing.T) {
 				WithPipelineValidator(validator),
 			)
 
-			_, err := sut.Reconcile(t.Context(), ctrl.Request{
-				NamespacedName: types.NamespacedName{Name: pipeline.Name},
-			})
-			require.NoError(t, err)
+			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
+			require.NoError(t, result.err)
 
-			var updatedPipeline telemetryv1alpha1.TracePipeline
-			_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-
-			requireHasStatusCondition(t, updatedPipeline,
+			requireHasStatusCondition(t, result.pipeline,
 				conditions.TypeConfigurationGenerated,
 				metav1.ConditionFalse,
 				conditions.ReasonOTTLSpecInvalid,
 				tt.expectedErrorMsg,
 			)
 
-			requireHasStatusCondition(t, updatedPipeline,
+			requireHasStatusCondition(t, result.pipeline,
 				conditions.TypeFlowHealthy,
 				metav1.ConditionFalse,
 				conditions.ReasonSelfMonConfigNotGenerated,
@@ -613,22 +592,17 @@ func TestAPIServerFailureHandling(t *testing.T) {
 
 			sut := tt.setupReconciler(fakeClient, gatewayConfigBuilderMock)
 
-			_, err := sut.Reconcile(t.Context(), ctrl.Request{
-				NamespacedName: types.NamespacedName{Name: pipeline.Name},
-			})
-			require.True(t, errors.Is(err, serverErr))
+			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
+			require.ErrorIs(t, result.err, serverErr)
 
-			var updatedPipeline telemetryv1alpha1.TracePipeline
-			_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-
-			requireHasStatusCondition(t, updatedPipeline,
+			requireHasStatusCondition(t, result.pipeline,
 				conditions.TypeConfigurationGenerated,
 				metav1.ConditionFalse,
 				conditions.ReasonValidationFailed,
 				"Pipeline validation failed due to an error from the Kubernetes API server",
 			)
 
-			requireHasStatusCondition(t, updatedPipeline,
+			requireHasStatusCondition(t, result.pipeline,
 				conditions.TypeFlowHealthy,
 				metav1.ConditionFalse,
 				conditions.ReasonSelfMonConfigNotGenerated,
@@ -659,8 +633,8 @@ func TestNonReconcilablePipelines(t *testing.T) {
 		WithPipelineValidator(pipelineValidatorWithStubs),
 		WithErrorToMessageConverter(errToMsg),
 	)
-	_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
-	require.NoError(t, err)
+	result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
+	require.NoError(t, result.err)
 
 	gatewayApplierDeleterMock.AssertExpectations(t)
 }
@@ -737,14 +711,10 @@ func TestPodErrorConditionReporting(t *testing.T) {
 				WithErrorToMessageConverter(errToMsg),
 			)
 
-			_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
-			require.NoError(t, err)
+			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
+			require.NoError(t, result.err)
 
-			var updatedPipeline telemetryv1alpha1.TracePipeline
-
-			_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-
-			cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeGatewayHealthy)
+			cond := meta.FindStatusCondition(result.pipeline.Status.Conditions, conditions.TypeGatewayHealthy)
 			require.Equal(t, tt.expectedStatus, cond.Status)
 			require.Equal(t, tt.expectedReason, cond.Reason)
 			require.Equal(t, tt.expectedMessage, cond.Message)

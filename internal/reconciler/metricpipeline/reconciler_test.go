@@ -87,6 +87,7 @@ func TestGatewayHealthCondition(t *testing.T) {
 			require.NoError(t, result.err)
 
 			var updatedPipeline telemetryv1alpha1.MetricPipeline
+
 			_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 			requireHasStatusCondition(t, updatedPipeline,
@@ -100,7 +101,6 @@ func TestGatewayHealthCondition(t *testing.T) {
 	}
 }
 func TestAgentHealthCondition(t *testing.T) {
-
 	tests := []struct {
 		name           string
 		proberError    error
@@ -157,6 +157,7 @@ func TestAgentHealthCondition(t *testing.T) {
 			require.NoError(t, result.err)
 
 			var updatedPipeline telemetryv1alpha1.MetricPipeline
+
 			_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 			requireHasStatusCondition(t, updatedPipeline,
@@ -656,6 +657,7 @@ func TestOTTLSpecValidation(t *testing.T) {
 			require.NoError(t, result.err)
 
 			var updatedPipeline telemetryv1alpha1.MetricPipeline
+
 			_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 			requireHasStatusCondition(t, updatedPipeline,
@@ -700,6 +702,7 @@ func TestAPIServerFailureHandling(t *testing.T) {
 				pipelineLock := &mocks.PipelineLock{}
 				pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 				pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(&errortypes.APIRequestFailedError{Err: serverErr})
+
 				return newTestValidator(withPipelineLock(pipelineLock))
 			},
 			needsGatewayMock: true,
@@ -731,6 +734,7 @@ func TestAPIServerFailureHandling(t *testing.T) {
 			require.True(t, errors.Is(result.err, serverErr))
 
 			var updatedPipeline telemetryv1alpha1.MetricPipeline
+
 			_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: tt.pipeline.Name}, &updatedPipeline)
 
 			requireHasStatusCondition(t, updatedPipeline,
@@ -817,9 +821,11 @@ func TestAgentRequirementDetermination(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Build pipelines and collect client objects
-			var clientObjs []client.Object
-			var allPipelines []telemetryv1alpha1.MetricPipeline
-			var agentPipelines []telemetryv1alpha1.MetricPipeline
+			var (
+				clientObjs     []client.Object
+				allPipelines   []telemetryv1alpha1.MetricPipeline
+				agentPipelines []telemetryv1alpha1.MetricPipeline
+			)
 
 			for _, needsAgent := range tt.requireAgent {
 				pipeline := testutils.NewMetricPipelineBuilder().
@@ -828,6 +834,7 @@ func TestAgentRequirementDetermination(t *testing.T) {
 					WithPrometheusInput(needsAgent).
 					Build()
 				allPipelines = append(allPipelines, pipeline)
+
 				clientObjs = append(clientObjs, &allPipelines[len(allPipelines)-1])
 				if needsAgent {
 					agentPipelines = append(agentPipelines, pipeline)
@@ -841,6 +848,7 @@ func TestAgentRequirementDetermination(t *testing.T) {
 			if tt.expectedAgentDeletes > 0 {
 				agentMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Times(tt.expectedAgentDeletes)
 			}
+
 			if tt.expectedAgentApplies > 0 {
 				agentMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Times(tt.expectedAgentApplies)
 			}
@@ -877,6 +885,7 @@ func TestAgentRequirementDetermination(t *testing.T) {
 
 				if !tt.requireAgent[i] {
 					var updatedPipeline telemetryv1alpha1.MetricPipeline
+
 					_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 					requireHasStatusCondition(t, updatedPipeline,
 						conditions.TypeAgentHealthy,
@@ -978,6 +987,7 @@ func TestPodErrorConditionReporting(t *testing.T) {
 			require.NoError(t, result.err)
 
 			var updatedPipeline telemetryv1alpha1.MetricPipeline
+
 			_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 			requireHasStatusCondition(t, updatedPipeline, tt.conditionType, tt.expectedStatus, tt.expectedReason, tt.expectedMessage)

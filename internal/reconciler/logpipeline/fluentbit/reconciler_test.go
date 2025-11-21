@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit/mocks"
+	logpipelinefluentbitmocks "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit/mocks"
 	logpipelinemocks "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
@@ -46,7 +46,7 @@ func TestMaxPipelineLimit(t *testing.T) {
 		Build()
 	testClient := newTestClient(t, &pipeline)
 
-	pipelineLock := &mocks.PipelineLock{}
+	pipelineLock := &logpipelinefluentbitmocks.PipelineLock{}
 	pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
 	pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
 
@@ -619,12 +619,13 @@ func TestFIPSMode(t *testing.T) {
 
 			// Only set up resource verification when explicitly testing apply/delete behavior
 			if tt.verifyResources {
-				agentApplierDeleter := &mocks.AgentApplierDeleter{}
+				agentApplierDeleter := &logpipelinefluentbitmocks.AgentApplierDeleter{}
 				if tt.fipsEnabled {
 					agentApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 				} else {
 					agentApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 				}
+
 				reconcilerOpts = append(reconcilerOpts, WithAgentApplierDeleter(agentApplierDeleter))
 
 				defer agentApplierDeleter.AssertExpectations(t)
