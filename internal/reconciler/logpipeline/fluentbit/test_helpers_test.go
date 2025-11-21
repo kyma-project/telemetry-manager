@@ -82,13 +82,6 @@ func assertCondition(t *testing.T, pipeline telemetryv1alpha1.LogPipeline, condT
 // validatorOption is a functional option for configuring a test Validator.
 type validatorOption func(*Validator)
 
-// withEndpointValidator overrides the default endpoint validator.
-func withEndpointValidator(validator EndpointValidator) validatorOption {
-	return func(v *Validator) {
-		v.EndpointValidator = validator
-	}
-}
-
 // withTLSCertValidator overrides the default TLS certificate validator.
 func withTLSCertValidator(validator TLSCertValidator) validatorOption {
 	return func(v *Validator) {

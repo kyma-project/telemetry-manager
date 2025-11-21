@@ -85,7 +85,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 )
 
-// reconcileResult holds the result of a reconciliation operation for test assertions.
+// reconcileAndGetResult holds the result of a reconciliation operation for test assertions.
 type reconcileAndGetResult struct {
 	result   ctrl.Result
 	pipeline telemetryv1alpha1.TracePipeline
@@ -239,7 +239,7 @@ func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
 	pipelineSyncer.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 
 	// Build default options with mocked dependencies
-	defaultOpts := []Option{
+	allOpts := []Option{
 		WithGlobal(config.NewGlobal(config.WithTargetNamespace("default"))),
 		WithGatewayConfigBuilder(gatewayConfigBuilder),
 		WithGatewayApplierDeleter(gatewayApplierDeleter),
@@ -254,7 +254,7 @@ func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
 	}
 
 	// Merge default options with provided options (provided options will override defaults)
-	allOpts := append(defaultOpts, opts...)
+	allOpts = append(allOpts, opts...)
 
 	return New(client, allOpts...)
 }

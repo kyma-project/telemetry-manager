@@ -543,12 +543,14 @@ func TestAPIServerFailureHandling(t *testing.T) {
 					},
 					Data: map[string][]byte{"endpoint": nil},
 				}
+
 				return newTestClient(t, pipeline, secret)
 			},
 			setupReconciler: func(fakeClient client.Client, gatewayConfigBuilderMock *mocks.GatewayConfigBuilder) *Reconciler {
 				validator := newTestValidator(
 					withSecretRefValidator(stubs.NewSecretRefValidator(&errortypes.APIRequestFailedError{Err: serverErr})),
 				)
+
 				return newTestReconciler(
 					fakeClient,
 					WithGatewayConfigBuilder(gatewayConfigBuilderMock),
@@ -571,6 +573,7 @@ func TestAPIServerFailureHandling(t *testing.T) {
 				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(&errortypes.APIRequestFailedError{Err: serverErr})
 
 				validator := newTestValidator(withPipelineLock(pipelineLockStub))
+
 				return newTestReconciler(
 					fakeClient,
 					WithGatewayConfigBuilder(gatewayConfigBuilderMock),

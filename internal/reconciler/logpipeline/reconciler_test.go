@@ -78,11 +78,11 @@ func TestRegisterAndCallRegisteredReconciler(t *testing.T) {
 
 	rec := newTestReconciler(fakeClient, WithReconcilers(otelReconciler))
 
-	result := reconcileAndGet(t, rec, otelPipeline.Name)
+	result := reconcile(t, rec, otelPipeline.Name)
 	require.NoError(t, result.err)
 	require.NotNil(t, result.result)
 
-	result = reconcileAndGet(t, rec, unsupportedPipeline.Name)
+	result = reconcile(t, rec, unsupportedPipeline.Name)
 	require.ErrorIs(t, result.err, ErrUnsupportedOutputType)
 	require.NotNil(t, result.result)
 }
@@ -97,7 +97,7 @@ func TestReconcile_PausedOverride(t *testing.T) {
 
 	rec := newTestReconciler(fakeClient, WithOverridesHandler(overridesHandler))
 
-	result := reconcileAndGet(t, rec, "nonexistent-pipeline")
+	result := reconcile(t, rec, "nonexistent-pipeline")
 	require.NoError(t, result.err)
 	require.Equal(t, ctrl.Result{}, result.result)
 }
@@ -107,7 +107,7 @@ func TestReconcile_MissingLogPipeline(t *testing.T) {
 
 	rec := newTestReconciler(fakeClient)
 
-	result := reconcileAndGet(t, rec, "nonexistent-pipeline")
+	result := reconcile(t, rec, "nonexistent-pipeline")
 	require.NoError(t, result.err)
 	require.Equal(t, ctrl.Result{}, result.result)
 }
@@ -119,7 +119,7 @@ func TestReconcile_UnsupportedOutputType(t *testing.T) {
 
 	rec := newTestReconciler(fakeClient)
 
-	result := reconcileAndGet(t, rec, unsupportedPipeline.Name)
+	result := reconcile(t, rec, unsupportedPipeline.Name)
 	require.ErrorIs(t, result.err, ErrUnsupportedOutputType)
 	require.Equal(t, ctrl.Result{}, result.result)
 }
@@ -132,7 +132,7 @@ func TestReconcile_LoadingOverridesFails(t *testing.T) {
 
 	rec := newTestReconciler(fakeClient, WithOverridesHandler(overridesHandler))
 
-	result := reconcileAndGet(t, rec, "nonexistent-pipeline")
+	result := reconcile(t, rec, "nonexistent-pipeline")
 	require.Error(t, result.err)
 	require.Equal(t, ctrl.Result{}, result.result)
 }

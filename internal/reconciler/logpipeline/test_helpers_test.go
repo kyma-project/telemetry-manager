@@ -34,14 +34,14 @@ func newTestClient(t *testing.T, objs ...client.Object) client.Client {
 	return fake.NewClientBuilder().WithScheme(scheme).WithObjects(objs...).WithStatusSubresource(objs...).Build()
 }
 
-// reconcileAndGet performs a reconciliation and returns the result and any error.
+// reconcile performs a reconciliation and returns the result and any error.
 // It's a helper to reduce boilerplate in tests.
-func reconcileAndGet(t *testing.T, reconciler *Reconciler, pipelineName string) reconcileResult {
-	result, err := reconciler.Reconcile(t.Context(), ctrl.Request{
+func reconcile(t *testing.T, reconciler *Reconciler, pipelineName string) reconcileResult {
+	res, recErr := reconciler.Reconcile(t.Context(), ctrl.Request{
 		NamespacedName: types.NamespacedName{Name: pipelineName},
 	})
 
-	return reconcileResult{result: result, err: err}
+	return reconcileResult{result: res, err: recErr}
 }
 
 // newTestReconciler creates a Reconciler with all dependencies mocked by default.
