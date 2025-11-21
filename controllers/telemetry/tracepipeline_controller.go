@@ -121,17 +121,18 @@ func NewTracePipelineController(config TracePipelineControllerConfig, client cli
 
 	reconciler := tracepipeline.New(
 		client,
-		config.Global,
-		flowHealthProber,
-		otelcollector.NewTraceGatewayApplierDeleter(config.Global, config.OTelCollectorImage, config.TraceGatewayPriorityClassName),
-		&tracegateway.Builder{Reader: client},
-		&workloadstatus.DeploymentProber{Client: client},
-		istiostatus.NewChecker(discoveryClient),
-		overrides.New(config.Global, client),
-		pipelineLock,
-		pipelineSync,
-		pipelineValidator,
-		&conditions.ErrorToMessageConverter{})
+		tracepipeline.WithGlobal(config.Global),
+		tracepipeline.WithFlowHealthProber(flowHealthProber),
+		tracepipeline.WithGatewayApplierDeleter(otelcollector.NewTraceGatewayApplierDeleter(config.Global, config.OTelCollectorImage, config.TraceGatewayPriorityClassName)),
+		tracepipeline.WithGatewayConfigBuilder(&tracegateway.Builder{Reader: client}),
+		tracepipeline.WithGatewayProber(&workloadstatus.DeploymentProber{Client: client}),
+		tracepipeline.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
+		tracepipeline.WithOverridesHandler(overrides.New(config.Global, client)),
+		tracepipeline.WithPipelineLock(pipelineLock),
+		tracepipeline.WithPipelineSyncer(pipelineSync),
+		tracepipeline.WithPipelineValidator(pipelineValidator),
+		tracepipeline.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
+	)
 
 	return &TracePipelineController{
 		Client:               client,

@@ -23,7 +23,6 @@ import (
 
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,49 +32,16 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/tracegateway"
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
 const defaultReplicaCount int32 = 2
-
-type GatewayConfigBuilder interface {
-	Build(ctx context.Context, pipelines []telemetryv1alpha1.TracePipeline, opts tracegateway.BuildOptions) (*common.Config, common.EnvVars, error)
-}
-
-type GatewayApplierDeleter interface {
-	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.GatewayApplyOptions) error
-	DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error
-}
-
-type PipelineLock interface {
-	TryAcquireLock(ctx context.Context, owner metav1.Object) error
-	IsLockHolder(ctx context.Context, owner metav1.Object) error
-}
-
-type PipelineSyncer interface {
-	TryAcquireLock(ctx context.Context, owner metav1.Object) error
-}
-
-type FlowHealthProber interface {
-	Probe(ctx context.Context, pipelineName string) (prober.OTelGatewayProbeResult, error)
-}
-
-type OverridesHandler interface {
-	LoadOverrides(ctx context.Context) (*overrides.Config, error)
-}
-
-type IstioStatusChecker interface {
-	IsIstioActive(ctx context.Context) bool
-}
 
 type Reconciler struct {
 	client.Client
@@ -95,34 +61,84 @@ type Reconciler struct {
 	errToMsgConverter     commonstatus.ErrorToMessageConverter
 }
 
-func New(
-	client client.Client,
-	config config.Global,
-	flowHealthProber FlowHealthProber,
-	gatewayApplierDeleter GatewayApplierDeleter,
-	gatewayConfigBuilder GatewayConfigBuilder,
-	gatewayProber commonstatus.Prober,
-	istioStatusChecker IstioStatusChecker,
-	overridesHandler OverridesHandler,
-	pipelineLock PipelineLock,
-	pipelineSync PipelineSyncer,
-	pipelineValidator *Validator,
-	errToMsgConverter commonstatus.ErrorToMessageConverter,
-) *Reconciler {
-	return &Reconciler{
-		Client:                client,
-		config:                config,
-		flowHealthProber:      flowHealthProber,
-		gatewayApplierDeleter: gatewayApplierDeleter,
-		gatewayConfigBuilder:  gatewayConfigBuilder,
-		gatewayProber:         gatewayProber,
-		istioStatusChecker:    istioStatusChecker,
-		overridesHandler:      overridesHandler,
-		pipelineLock:          pipelineLock,
-		pipelineSync:          pipelineSync,
-		pipelineValidator:     pipelineValidator,
-		errToMsgConverter:     errToMsgConverter,
+type Option func(*Reconciler)
+
+func WithGlobal(cfg config.Global) Option {
+	return func(r *Reconciler) {
+		r.config = cfg
 	}
+}
+
+func WithFlowHealthProber(prober FlowHealthProber) Option {
+	return func(r *Reconciler) {
+		r.flowHealthProber = prober
+	}
+}
+
+func WithGatewayApplierDeleter(applierDeleter GatewayApplierDeleter) Option {
+	return func(r *Reconciler) {
+		r.gatewayApplierDeleter = applierDeleter
+	}
+}
+
+func WithGatewayConfigBuilder(builder GatewayConfigBuilder) Option {
+	return func(r *Reconciler) {
+		r.gatewayConfigBuilder = builder
+	}
+}
+
+func WithGatewayProber(prober commonstatus.Prober) Option {
+	return func(r *Reconciler) {
+		r.gatewayProber = prober
+	}
+}
+
+func WithIstioStatusChecker(checker IstioStatusChecker) Option {
+	return func(r *Reconciler) {
+		r.istioStatusChecker = checker
+	}
+}
+
+func WithOverridesHandler(handler OverridesHandler) Option {
+	return func(r *Reconciler) {
+		r.overridesHandler = handler
+	}
+}
+
+func WithPipelineLock(lock PipelineLock) Option {
+	return func(r *Reconciler) {
+		r.pipelineLock = lock
+	}
+}
+
+func WithPipelineSyncer(syncer PipelineSyncer) Option {
+	return func(r *Reconciler) {
+		r.pipelineSync = syncer
+	}
+}
+
+func WithPipelineValidator(validator *Validator) Option {
+	return func(r *Reconciler) {
+		r.pipelineValidator = validator
+	}
+}
+
+func WithErrorToMessageConverter(converter commonstatus.ErrorToMessageConverter) Option {
+	return func(r *Reconciler) {
+		r.errToMsgConverter = converter
+	}
+}
+
+func New(client client.Client, opts ...Option) *Reconciler {
+	r := &Reconciler{
+		Client: client,
+	}
+
+	for _, opt := range opts {
+		opt(r)
+	}
+
+	return r
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {

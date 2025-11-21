@@ -1,99 +1,58 @@
 package logpipeline
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
-	logpipelinemocks "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry/mocks"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
 func TestGetOutputType(t *testing.T) {
-	type args struct {
-		t *telemetryv1alpha1.LogPipeline
-	}
-
 	tests := []struct {
-		name string
-		args args
-		want logpipelineutils.Mode
+		name     string
+		pipeline telemetryv1alpha1.LogPipeline
+		want     logpipelineutils.Mode
 	}{
 		{
-			name: "OTel",
-			args: args{
-				&telemetryv1alpha1.LogPipeline{
-					Spec: telemetryv1alpha1.LogPipelineSpec{
-						Output: telemetryv1alpha1.LogPipelineOutput{
-							OTLP: &telemetryv1alpha1.OTLPOutput{},
-						},
-					},
-				},
-			},
-
-			want: logpipelineutils.OTel,
+			name:     "OTLP output returns OTel mode",
+			pipeline: testutils.NewLogPipelineBuilder().WithOTLPOutput().Build(),
+			want:     logpipelineutils.OTel,
 		},
 		{
-			name: "FluentBit",
-			args: args{
-				&telemetryv1alpha1.LogPipeline{
-					Spec: telemetryv1alpha1.LogPipelineSpec{
-						Output: telemetryv1alpha1.LogPipelineOutput{
-							HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{},
-						},
-					},
-				},
-			},
-
-			want: logpipelineutils.FluentBit,
+			name:     "HTTP output returns FluentBit mode",
+			pipeline: testutils.NewLogPipelineBuilder().WithHTTPOutput().Build(),
+			want:     logpipelineutils.FluentBit,
 		},
 		{
-			name: "OTel",
-			args: args{
-				&telemetryv1alpha1.LogPipeline{
-					Spec: telemetryv1alpha1.LogPipelineSpec{
-						Output: telemetryv1alpha1.LogPipelineOutput{
-							Custom: "custom",
-						},
-					},
-				},
-			},
-
-			want: logpipelineutils.FluentBit,
+			name:     "Custom output returns FluentBit mode",
+			pipeline: testutils.NewLogPipelineBuilder().WithCustomOutput("custom").Build(),
+			want:     logpipelineutils.FluentBit,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := logpipelineutils.GetOutputType(tt.args.t); got != tt.want {
-				t.Errorf("GetOutputType() = %v, want %v", got, tt.want)
-			}
+			got := logpipelineutils.GetOutputType(&tt.pipeline)
+			require.Equal(t, tt.want, got)
 		})
 	}
 }
 
 func TestGetPipelinesForType(t *testing.T) {
-	scheme := runtime.NewScheme()
-	_ = clientgoscheme.AddToScheme(scheme)
-	_ = telemetryv1alpha1.AddToScheme(scheme)
-
 	otelPipeline := testutils.NewLogPipelineBuilder().WithOTLPOutput().Build()
 	fluentbitPipeline1 := testutils.NewLogPipelineBuilder().WithHTTPOutput().Build()
 	fluentbitPipeline2 := testutils.NewLogPipelineBuilder().WithHTTPOutput().Build()
 
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&otelPipeline, &fluentbitPipeline1, &fluentbitPipeline2).WithStatusSubresource(&otelPipeline, &fluentbitPipeline1, &fluentbitPipeline2).Build()
+	fakeClient := newTestClient(t, &otelPipeline, &fluentbitPipeline1, &fluentbitPipeline2)
 
 	got, err := logpipelineutils.GetPipelinesForType(t.Context(), fakeClient, logpipelineutils.OTel)
 	require.NoError(t, err)
@@ -104,148 +63,76 @@ func TestGetPipelinesForType(t *testing.T) {
 	require.ElementsMatch(t, got, []telemetryv1alpha1.LogPipeline{fluentbitPipeline1, fluentbitPipeline2})
 }
 
-var _ LogPipelineReconciler = &ReconcilerStub{}
+var _ LogPipelineReconciler = &stubs.ReconcilerStub{}
 
 func TestRegisterAndCallRegisteredReconciler(t *testing.T) {
-	scheme := runtime.NewScheme()
-	_ = clientgoscheme.AddToScheme(scheme)
-	_ = telemetryv1alpha1.AddToScheme(scheme)
-
 	otelPipeline := testutils.NewLogPipelineBuilder().WithOTLPOutput().Build()
 	unsupportedPipeline := testutils.NewLogPipelineBuilder().WithHTTPOutput().Build()
 
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&otelPipeline, &unsupportedPipeline).WithStatusSubresource(&otelPipeline, &unsupportedPipeline).Build()
+	fakeClient := newTestClient(t, &otelPipeline, &unsupportedPipeline)
 
-	overridesHandler := &mocks.OverridesHandler{}
-	overridesHandler.On("LoadOverrides", t.Context()).Return(&overrides.Config{}, nil)
-
-	pipelineSync := &logpipelinemocks.PipelineSyncer{}
-	pipelineSync.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-
-	otelReconciler := ReconcilerStub{
+	otelReconciler := &stubs.ReconcilerStub{
 		OutputType: logpipelineutils.OTel,
 		Result:     nil,
 	}
 
-	rec := New(fakeClient, overridesHandler, pipelineSync, &otelReconciler)
+	rec := newTestReconciler(fakeClient, WithReconcilers(otelReconciler))
 
-	res, err := rec.Reconcile(t.Context(), ctrl.Request{
-		NamespacedName: types.NamespacedName{Name: otelPipeline.Name},
-	})
-	require.NoError(t, err)
-	require.NotNil(t, res)
+	result := reconcile(t, rec, otelPipeline.Name)
+	require.NoError(t, result.err)
+	require.NotNil(t, result.result)
 
-	res, err = rec.Reconcile(t.Context(), ctrl.Request{
-		NamespacedName: types.NamespacedName{Name: unsupportedPipeline.Name},
-	})
-	require.ErrorIs(t, err, ErrUnsupportedOutputType)
-	require.NotNil(t, res)
+	result = reconcile(t, rec, unsupportedPipeline.Name)
+	require.ErrorIs(t, result.err, ErrUnsupportedOutputType)
+	require.NotNil(t, result.result)
 }
 
 func TestReconcile_PausedOverride(t *testing.T) {
-	scheme := runtime.NewScheme()
-	_ = clientgoscheme.AddToScheme(scheme)
-	_ = telemetryv1alpha1.AddToScheme(scheme)
-
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
+	fakeClient := newTestClient(t)
 
 	overridesHandler := &mocks.OverridesHandler{}
 	overridesHandler.On("LoadOverrides", mock.Anything).Return(&overrides.Config{
 		Logging: overrides.LoggingConfig{Paused: true},
 	}, nil)
 
-	pipelineSync := &logpipelinemocks.PipelineSyncer{}
-	pipelineSync.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+	rec := newTestReconciler(fakeClient, WithOverridesHandler(overridesHandler))
 
-	rec := New(fakeClient, overridesHandler, pipelineSync)
-
-	res, err := rec.Reconcile(t.Context(), ctrl.Request{
-		NamespacedName: types.NamespacedName{Name: "nonexistent-pipeline"},
-	})
-	require.NoError(t, err)
-	require.Equal(t, ctrl.Result{}, res)
+	result := reconcile(t, rec, "nonexistent-pipeline")
+	require.NoError(t, result.err)
+	require.Equal(t, ctrl.Result{}, result.result)
 }
 
 func TestReconcile_MissingLogPipeline(t *testing.T) {
-	scheme := runtime.NewScheme()
-	_ = clientgoscheme.AddToScheme(scheme)
-	_ = telemetryv1alpha1.AddToScheme(scheme)
+	fakeClient := newTestClient(t)
 
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
+	rec := newTestReconciler(fakeClient)
 
-	overridesHandler := &mocks.OverridesHandler{}
-	overridesHandler.On("LoadOverrides", mock.Anything).Return(&overrides.Config{}, nil)
-
-	pipelineSync := &logpipelinemocks.PipelineSyncer{}
-	pipelineSync.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-
-	rec := New(fakeClient, overridesHandler, pipelineSync)
-
-	res, err := rec.Reconcile(t.Context(), ctrl.Request{
-		NamespacedName: types.NamespacedName{Name: "nonexistent-pipeline"},
-	})
-	require.NoError(t, err)
-	require.Equal(t, ctrl.Result{}, res)
+	result := reconcile(t, rec, "nonexistent-pipeline")
+	require.NoError(t, result.err)
+	require.Equal(t, ctrl.Result{}, result.result)
 }
 
 func TestReconcile_UnsupportedOutputType(t *testing.T) {
-	scheme := runtime.NewScheme()
-	_ = clientgoscheme.AddToScheme(scheme)
-	_ = telemetryv1alpha1.AddToScheme(scheme)
-
 	unsupportedPipeline := testutils.NewLogPipelineBuilder().WithCustomOutput("custom").Build()
 
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&unsupportedPipeline).Build()
+	fakeClient := newTestClient(t, &unsupportedPipeline)
 
-	overridesHandler := &mocks.OverridesHandler{}
-	overridesHandler.On("LoadOverrides", mock.Anything).Return(&overrides.Config{}, nil)
+	rec := newTestReconciler(fakeClient)
 
-	pipelineSync := &logpipelinemocks.PipelineSyncer{}
-	pipelineSync.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-
-	rec := New(fakeClient, overridesHandler, pipelineSync)
-
-	res, err := rec.Reconcile(t.Context(), ctrl.Request{
-		NamespacedName: types.NamespacedName{Name: unsupportedPipeline.Name},
-	})
-	require.ErrorIs(t, err, ErrUnsupportedOutputType)
-	require.Equal(t, ctrl.Result{}, res)
+	result := reconcile(t, rec, unsupportedPipeline.Name)
+	require.ErrorIs(t, result.err, ErrUnsupportedOutputType)
+	require.Equal(t, ctrl.Result{}, result.result)
 }
 
 func TestReconcile_LoadingOverridesFails(t *testing.T) {
-	scheme := runtime.NewScheme()
-	_ = clientgoscheme.AddToScheme(scheme)
-	_ = telemetryv1alpha1.AddToScheme(scheme)
-
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
+	fakeClient := newTestClient(t)
 
 	overridesHandler := &mocks.OverridesHandler{}
 	overridesHandler.On("LoadOverrides", mock.Anything).Return(nil, fmt.Errorf("error loading overrides"))
 
-	pipelineSync := &logpipelinemocks.PipelineSyncer{}
-	pipelineSync.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+	rec := newTestReconciler(fakeClient, WithOverridesHandler(overridesHandler))
 
-	rec := New(fakeClient, overridesHandler, pipelineSync)
-
-	res, err := rec.Reconcile(t.Context(), ctrl.Request{
-		NamespacedName: types.NamespacedName{Name: "nonexistent-pipeline"},
-	})
-	require.Error(t, err)
-	require.Equal(t, ctrl.Result{}, res)
-}
-
-// putting it here to avoid circular imports
-var _ LogPipelineReconciler = &ReconcilerStub{}
-
-type ReconcilerStub struct {
-	OutputType logpipelineutils.Mode
-	Result     error
-}
-
-func (r *ReconcilerStub) Reconcile(_ context.Context, _ *telemetryv1alpha1.LogPipeline) error {
-	return r.Result
-}
-
-func (r *ReconcilerStub) SupportedOutput() logpipelineutils.Mode {
-	return r.OutputType
+	result := reconcile(t, rec, "nonexistent-pipeline")
+	require.Error(t, result.err)
+	require.Equal(t, ctrl.Result{}, result.result)
 }

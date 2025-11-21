@@ -1,19 +1,3 @@
-/*
-Copyright 2021.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package logpipeline
 
 import (
@@ -21,38 +5,18 @@ import (
 	"errors"
 	"fmt"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 )
 
 var (
 	ErrUnsupportedOutputType = fmt.Errorf("unsupported output type")
 )
-
-type FlowHealthProber interface {
-	Probe(ctx context.Context, pipelineName string) (prober.FluentBitProbeResult, error)
-}
-
-type LogPipelineReconciler interface {
-	Reconcile(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error
-	SupportedOutput() logpipelineutils.Mode
-}
-
-type OverridesHandler interface {
-	LoadOverrides(ctx context.Context) (*overrides.Config, error)
-}
-
-type PipelineSyncer interface {
-	TryAcquireLock(ctx context.Context, owner metav1.Object) error
-}
 
 type Reconciler struct {
 	client.Client
@@ -63,24 +27,48 @@ type Reconciler struct {
 	pipelineSyncer PipelineSyncer
 }
 
-func New(
-	client client.Client,
+// Option is a functional option for configuring a Reconciler.
+type Option func(*Reconciler)
 
-	overridesHandler OverridesHandler,
-	pipelineSyncer PipelineSyncer,
-	reconcilers ...LogPipelineReconciler,
-) *Reconciler {
-	reconcilersMap := make(map[logpipelineutils.Mode]LogPipelineReconciler)
-	for _, r := range reconcilers {
-		reconcilersMap[r.SupportedOutput()] = r
+// WithOverridesHandler sets the overrides handler.
+func WithOverridesHandler(handler OverridesHandler) Option {
+	return func(r *Reconciler) {
+		r.overridesHandler = handler
+	}
+}
+
+// WithPipelineSyncer sets the pipeline syncer.
+func WithPipelineSyncer(syncer PipelineSyncer) Option {
+	return func(r *Reconciler) {
+		r.pipelineSyncer = syncer
+	}
+}
+
+// WithReconcilers sets the pipeline reconcilers.
+func WithReconcilers(reconcilers ...LogPipelineReconciler) Option {
+	return func(r *Reconciler) {
+		reconcilersMap := make(map[logpipelineutils.Mode]LogPipelineReconciler)
+		for _, rec := range reconcilers {
+			reconcilersMap[rec.SupportedOutput()] = rec
+		}
+
+		r.reconcilers = reconcilersMap
+	}
+}
+
+// New creates a new Reconciler with the provided client and functional options.
+// All dependencies must be provided via functional options.
+func New(client client.Client, opts ...Option) *Reconciler {
+	r := &Reconciler{
+		Client:      client,
+		reconcilers: make(map[logpipelineutils.Mode]LogPipelineReconciler),
 	}
 
-	return &Reconciler{
-		Client:           client,
-		overridesHandler: overridesHandler,
-		reconcilers:      reconcilersMap,
-		pipelineSyncer:   pipelineSyncer,
+	for _, opt := range opts {
+		opt(r)
 	}
+
+	return r
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
