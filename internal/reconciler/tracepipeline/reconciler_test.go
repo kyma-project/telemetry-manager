@@ -32,7 +32,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
-func TestReconcile(t *testing.T) {
+func TestGatewayHealthCondition(t *testing.T) {
 	t.Run("trace gateway probing failed", func(t *testing.T) {
 		pipeline := testutils.NewTracePipelineBuilder().WithName("pipeline").Build()
 		fakeClient := newTestClient(t, &pipeline)
@@ -124,7 +124,9 @@ func TestReconcile(t *testing.T) {
 
 		gatewayConfigBuilderMock.AssertExpectations(t)
 	})
+}
 
+func TestSecretReferenceValidation(t *testing.T) {
 	t.Run("referenced secret missing", func(t *testing.T) {
 		pipeline := testutils.NewTracePipelineBuilder().WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("some-secret", "some-namespace", "user", "password")).Build()
 		fakeClient := newTestClient(t, &pipeline)
@@ -204,7 +206,9 @@ func TestReconcile(t *testing.T) {
 
 		gatewayConfigBuilderMock.AssertExpectations(t)
 	})
+}
 
+func TestMaxPipelineLimit(t *testing.T) {
 	t.Run("max pipelines exceeded", func(t *testing.T) {
 		pipeline := testutils.NewTracePipelineBuilder().Build()
 		fakeClient := newTestClient(t, &pipeline)
@@ -245,7 +249,9 @@ func TestReconcile(t *testing.T) {
 		)
 		gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything)
 	})
+}
 
+func TestGatewayFlowHealthCondition(t *testing.T) {
 	t.Run("flow healthy", func(t *testing.T) {
 		tests := []struct {
 			name            string
@@ -357,7 +363,9 @@ func TestReconcile(t *testing.T) {
 			})
 		}
 	})
+}
 
+func TestTLSCertificateValidation(t *testing.T) {
 	t.Run("tls conditions", func(t *testing.T) {
 		tests := []struct {
 			name                    string
@@ -474,7 +482,9 @@ func TestReconcile(t *testing.T) {
 			})
 		}
 	})
+}
 
+func TestOTTLSpecValidation(t *testing.T) {
 	t.Run("invalid transform spec", func(t *testing.T) {
 		pipeline := testutils.NewTracePipelineBuilder().Build()
 		fakeClient := newTestClient(t, &pipeline)
@@ -554,7 +564,9 @@ func TestReconcile(t *testing.T) {
 
 		gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything, mock.Anything)
 	})
+}
 
+func TestAPIServerFailureHandling(t *testing.T) {
 	t.Run("a request to the Kubernetes API server has failed when validating the secret references", func(t *testing.T) {
 		pipeline := testutils.NewTracePipelineBuilder().WithOTLPOutput(testutils.OTLPEndpointFromSecret(
 			"existing",
@@ -655,7 +667,9 @@ func TestReconcile(t *testing.T) {
 
 		gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything)
 	})
+}
 
+func TestNonReconcilablePipelines(t *testing.T) {
 	t.Run("all trace pipelines are non-reconcilable", func(t *testing.T) {
 		pipeline := testutils.NewTracePipelineBuilder().WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("some-secret", "some-namespace", "user", "password")).Build()
 		fakeClient := newTestClient(t, &pipeline)
@@ -680,7 +694,9 @@ func TestReconcile(t *testing.T) {
 
 		gatewayApplierDeleterMock.AssertExpectations(t)
 	})
+}
 
+func TestPodErrorConditionReporting(t *testing.T) {
 	t.Run("Check different Pod Error Conditions", func(t *testing.T) {
 		tests := []struct {
 			name            string
