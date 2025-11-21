@@ -35,7 +35,7 @@ func makeOTLPExporterEnvVars(ctx context.Context, c client.Reader, output *telem
 
 	secretData := make(map[string][]byte)
 
-	err = makeAuthenticationEnvVar(ctx, c, secretData, output, pipelineName)
+	err = makeBasicAuthEnvVar(ctx, c, secretData, output, pipelineName)
 	if err != nil {
 		return nil, err
 	}
@@ -81,8 +81,8 @@ func makeOAuth2ExtensionEnvVars(ctx context.Context, c client.Reader, oauth2Opti
 	return secretData, nil
 }
 
-func makeAuthenticationEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1alpha1.OTLPOutput, pipelineName string) error {
-	if output.Authentication != nil && sharedtypesutils.IsValid(&output.Authentication.Basic.User) && sharedtypesutils.IsValid(&output.Authentication.Basic.Password) {
+func makeBasicAuthEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1alpha1.OTLPOutput, pipelineName string) error {
+	if output.Authentication != nil && output.Authentication.Basic != nil && sharedtypesutils.IsValid(&output.Authentication.Basic.User) && sharedtypesutils.IsValid(&output.Authentication.Basic.Password) {
 		username, err := sharedtypesutils.ResolveValue(ctx, c, output.Authentication.Basic.User)
 		if err != nil {
 			return err
