@@ -15,9 +15,10 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
+	selfmonitorconfig "github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 )
@@ -30,33 +31,10 @@ const (
 )
 
 type Config struct {
-	Logs        LogsConfig
-	Traces      TracesConfig
-	Metrics     MetricsConfig
-	Webhook     WebhookConfig
-	SelfMonitor SelfMonitorConfig
-}
+	config.Global
 
-type LogsConfig struct {
-	Namespace string
-}
-type TracesConfig struct {
-	Namespace string
-}
-
-type MetricsConfig struct {
-	Namespace string
-}
-
-type WebhookConfig struct {
-	CertConfig webhookcert.Config
-}
-
-type SelfMonitorConfig struct {
-	selfmonitor.Config
-
-	WebhookURL    string
-	WebhookScheme string
+	WebhookCert                       webhookcert.Config
+	SelfMonitorAlertmanagerWebhookURL string
 }
 
 type healthCheckers struct {
@@ -75,8 +53,8 @@ type SelfMonitorApplierDeleter interface {
 type Reconciler struct {
 	client.Client
 
-	scheme *runtime.Scheme
 	config Config
+	scheme *runtime.Scheme
 
 	healthCheckers            healthCheckers
 	overridesHandler          OverridesHandler
@@ -84,16 +62,16 @@ type Reconciler struct {
 }
 
 func New(
-	client client.Client,
-	scheme *runtime.Scheme,
 	config Config,
+	scheme *runtime.Scheme,
+	client client.Client,
 	overridesHandler OverridesHandler,
 	selfMonitorApplierDeleter SelfMonitorApplierDeleter,
 ) *Reconciler {
 	return &Reconciler{
-		Client: client,
-		scheme: scheme,
 		config: config,
+		scheme: scheme,
+		Client: client,
 		healthCheckers: healthCheckers{
 			logs:    &logComponentsChecker{client: client},
 			traces:  &traceComponentsChecker{client: client},
@@ -167,12 +145,11 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operat
 		return nil
 	}
 
-	prometheusConfig := config.MakeConfig(config.BuilderConfig{
-		ScrapeNamespace:   r.config.SelfMonitor.Namespace,
-		WebhookURL:        r.config.SelfMonitor.WebhookURL,
-		WebhookScheme:     r.config.SelfMonitor.WebhookScheme,
-		ConfigPath:        selfMonitorConfigPath,
-		AlertRuleFileName: selfMonitorAlertRuleFileName,
+	prometheusConfig := selfmonitorconfig.MakeConfig(selfmonitorconfig.BuilderConfig{
+		ScrapeNamespace:        r.config.TargetNamespace(),
+		AlertmanagerWebhookURL: r.config.SelfMonitorAlertmanagerWebhookURL,
+		ConfigPath:             selfMonitorConfigPath,
+		AlertRuleFileName:      selfMonitorAlertRuleFileName,
 	})
 
 	prometheusConfigYAML, err := yaml.Marshal(prometheusConfig)
@@ -180,7 +157,7 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operat
 		return fmt.Errorf("failed to marshal selfmonitor config: %w", err)
 	}
 
-	alertRules := config.MakeRules()
+	alertRules := selfmonitorconfig.MakeRules()
 
 	alertRulesYAML, err := yaml.Marshal(alertRules)
 	if err != nil {
@@ -251,7 +228,7 @@ func (r *Reconciler) handleFinalizer(ctx context.Context, telemetry *operatorv1a
 	if controllerutil.ContainsFinalizer(telemetry, finalizer) {
 		if r.dependentCRsFound(ctx) {
 			// Block deletion of the resource if there are still some dependent resources
-			logf.FromContext(ctx).Info("Telemetry CR deletion is blocked because one or more dependent CRs (LogPipeline, LogParser, MetricPipeline, TracePipeline) still exist")
+			logf.FromContext(ctx).Info("Telemetry CR deletion is blocked because one or more dependent CRs (LogPipeline, MetricPipeline, TracePipeline) still exist")
 			return nil
 		}
 
@@ -271,12 +248,12 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 		return nil
 	}
 
-	if err := webhookcert.EnsureCertificate(ctx, r.Client, r.config.Webhook.CertConfig); err != nil {
+	if err := webhookcert.EnsureCertificate(ctx, r.Client, r.config.WebhookCert); err != nil {
 		return fmt.Errorf("failed to reconcile webhook: %w", err)
 	}
 
 	var secret corev1.Secret
-	if err := r.Get(ctx, r.config.Webhook.CertConfig.CASecretName, &secret); err != nil {
+	if err := r.Get(ctx, r.config.WebhookCert.CASecretName, &secret); err != nil {
 		return fmt.Errorf("failed to get secret: %w", err)
 	}
 
@@ -289,7 +266,7 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 	}
 
 	var webhook admissionregistrationv1.ValidatingWebhookConfiguration
-	if err := r.Get(ctx, r.config.Webhook.CertConfig.ValidatingWebhookName, &webhook); err != nil {
+	if err := r.Get(ctx, r.config.WebhookCert.ValidatingWebhookName, &webhook); err != nil {
 		return fmt.Errorf("failed to get webhook: %w", err)
 	}
 

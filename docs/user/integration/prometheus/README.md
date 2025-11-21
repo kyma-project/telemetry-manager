@@ -10,10 +10,9 @@ Learn how to configure the Telemetry module to ingest metrics in a custom [Prome
 
 ## Table of Content
 
-- [Table of Content](#table-of-content)
 - [Prerequisites](#prerequisites)
 - [Context](#context)
-  - [Procedure](#procedure)
+- [Procedure](#procedure)
   - [Install the kube-prometheus-stack](#install-the-kube-prometheus-stack)
   - [Verify the kube-prometheus-stack](#verify-the-kube-prometheus-stack)
   - [Activate a MetricPipeline](#activate-a-metricpipeline)

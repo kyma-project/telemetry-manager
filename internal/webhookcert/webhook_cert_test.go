@@ -118,33 +118,6 @@ var (
 					},
 				},
 			},
-			{
-				AdmissionReviewVersions: []string{"v1beta1", "v1"},
-				ClientConfig: admissionregistrationv1.WebhookClientConfig{
-					Service: &admissionregistrationv1.ServiceReference{
-						Name:      webhookService.Name,
-						Namespace: webhookService.Namespace,
-						Port:      &servicePort,
-						Path:      ptr.To("/validate-logparser"),
-					},
-				},
-				FailurePolicy:  &failurePolicy,
-				MatchPolicy:    &matchPolicy,
-				Name:           "validating-logparsers.kyma-project.io",
-				SideEffects:    &sideEffects,
-				TimeoutSeconds: &timeout,
-				Rules: []admissionregistrationv1.RuleWithOperations{
-					{
-						Operations: operations,
-						Rule: admissionregistrationv1.Rule{
-							APIGroups:   apiGroups,
-							APIVersions: apiVersions,
-							Scope:       &scope,
-							Resources:   []string{"logparsers"},
-						},
-					},
-				},
-			},
 		},
 	}
 
@@ -339,11 +312,9 @@ func TestUpdateWebhookConfig(t *testing.T) {
 
 	var chainChecker certChainCheckerImpl
 
-	certValid, err := chainChecker.checkRoot(t.Context(), newServerCert, updatedValidatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
-	require.NoError(t, err)
-	require.True(t, certValid)
+	require.Len(t, updatedValidatingWebhookConfiguration.Webhooks, 1)
 
-	certValid, err = chainChecker.checkRoot(t.Context(), newServerCert, updatedValidatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
+	certValid, err := chainChecker.checkRoot(t.Context(), newServerCert, updatedValidatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
 	require.NoError(t, err)
 	require.True(t, certValid)
 
@@ -465,10 +436,10 @@ func TestReuseExistingCertificate(t *testing.T) {
 	err = client.Get(t.Context(), config.ValidatingWebhookName, &updatedValidatingWebhookConfiguration)
 	require.NoError(t, err)
 
+	require.Len(t, updatedValidatingWebhookConfiguration.Webhooks, 1)
+
 	require.Equal(t, newValidatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle,
 		updatedValidatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
-	require.Equal(t, newValidatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle,
-		updatedValidatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
 
 	var updatedMutatingWebhookConfiguration admissionregistrationv1.MutatingWebhookConfiguration
 

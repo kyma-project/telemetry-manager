@@ -184,7 +184,6 @@ manifests-experimental: $(CONTROLLER_GEN) $(YAMLFMT) ## Generate manifests for e
 crd-docs-gen: $(TABLE_GEN) manifests ## Generate CRD documentation in markdown format
 	$(TABLE_GEN) --crd-filename ./helm/charts/default/templates/operator.kyma-project.io_telemetries.yaml --md-filename ./docs/user/resources/01-telemetry.md
 	$(TABLE_GEN) --crd-filename ./helm/charts/default/templates/telemetry.kyma-project.io_logpipelines.yaml --md-filename ./docs/user/resources/02-logpipeline.md
-	$(TABLE_GEN) --crd-filename ./helm/charts/default/templates/telemetry.kyma-project.io_logparsers.yaml --md-filename ./docs/user/resources/03-logparser.md
 	$(TABLE_GEN) --crd-filename ./helm/charts/default/templates/telemetry.kyma-project.io_tracepipelines.yaml --md-filename ./docs/user/resources/04-tracepipeline.md
 	$(TABLE_GEN) --crd-filename ./helm/charts/default/templates/telemetry.kyma-project.io_metricpipelines.yaml --md-filename ./docs/user/resources/05-metricpipeline.md
 

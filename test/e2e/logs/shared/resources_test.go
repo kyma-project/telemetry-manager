@@ -109,13 +109,17 @@ func TestResources_FluentBit(t *testing.T) {
 			assert.NewResource(&networkingv1.NetworkPolicy{}, kitkyma.FluentBitNetworkPolicy),
 			assert.NewResource(&corev1.ConfigMap{}, kitkyma.FluentBitConfigMap),
 			assert.NewResource(&corev1.ConfigMap{}, kitkyma.FluentBitLuaConfigMap),
-			assert.NewResource(&corev1.ConfigMap{}, kitkyma.FluentBitParserConfigMap),
 			assert.NewResource(&corev1.ConfigMap{}, kitkyma.FluentBitSectionsConfigMap),
 			assert.NewResource(&corev1.ConfigMap{}, kitkyma.FluentBitFilesConfigMap),
 		}
 	)
 
 	secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(hostKey, "localhost"))
+	//TODO: remove parser configmap creation after logparser removal is rolled out
+	parserConfigMap := kitk8s.NewConfigMap(
+		kitkyma.FluentBitParserConfigMap.Name,
+		kitkyma.FluentBitParserConfigMap.Namespace,
+	)
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithHTTPOutput(testutils.HTTPHostFromSecret(
@@ -127,9 +131,10 @@ func TestResources_FluentBit(t *testing.T) {
 	t.Cleanup(func() {
 		Expect(kitk8s.DeleteObjects(&pipeline)).To(Succeed())
 	})
-	Expect(kitk8s.CreateObjects(t, &pipeline, secret.K8sObject())).To(Succeed())
+	Expect(kitk8s.CreateObjects(t, &pipeline, secret.K8sObject(), parserConfigMap.K8sObject())).To(Succeed())
 
 	assert.ResourcesExist(t, resources...)
+	assert.ResourcesNotExist(t, assert.NewResource(&corev1.ConfigMap{}, kitkyma.FluentBitParserConfigMap))
 
 	// When pipeline becomes non-reconcilable...
 	Expect(suite.K8sClient.Delete(t.Context(), secret.K8sObject())).To(Succeed())

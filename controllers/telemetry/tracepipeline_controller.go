@@ -39,12 +39,14 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/tracegateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
@@ -63,16 +65,15 @@ type TracePipelineController struct {
 }
 
 type TracePipelineControllerConfig struct {
+	config.Global
+
 	RestConfig                    *rest.Config
-	SelfMonitorName               string
-	TelemetryNamespace            string
 	OTelCollectorImage            string
 	TraceGatewayPriorityClassName string
-	EnableFIPSMode                bool
 }
 
-func NewTracePipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config TracePipelineControllerConfig) (*TracePipelineController, error) {
-	flowHealthProber, err := prober.NewOTelTraceGatewayProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
+func NewTracePipelineController(config TracePipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent) (*TracePipelineController, error) {
+	flowHealthProber, err := prober.NewOTelTraceGatewayProber(types.NamespacedName{Name: selfmonitor.ServiceName, Namespace: config.TargetNamespace()})
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +82,7 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 		client,
 		types.NamespacedName{
 			Name:      "telemetry-tracepipeline-lock",
-			Namespace: config.TelemetryNamespace,
+			Namespace: config.TargetNamespace(),
 		},
 		MaxPipelineCount,
 	)
@@ -90,7 +91,7 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 		client,
 		types.NamespacedName{
 			Name:      "telemetry-tracepipeline-sync",
-			Namespace: config.TelemetryNamespace,
+			Namespace: config.TargetNamespace(),
 		},
 	)
 
@@ -120,18 +121,13 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 
 	reconciler := tracepipeline.New(
 		client,
-		config.TelemetryNamespace,
+		config.Global,
 		flowHealthProber,
-		otelcollector.NewTraceGatewayApplierDeleter(
-			config.OTelCollectorImage,
-			config.TelemetryNamespace,
-			config.TraceGatewayPriorityClassName,
-			config.EnableFIPSMode,
-		),
+		otelcollector.NewTraceGatewayApplierDeleter(config.Global, config.OTelCollectorImage, config.TraceGatewayPriorityClassName),
 		&tracegateway.Builder{Reader: client},
 		&workloadstatus.DeploymentProber{Client: client},
 		istiostatus.NewChecker(discoveryClient),
-		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
+		overrides.New(config.Global, client),
 		pipelineLock,
 		pipelineSync,
 		pipelineValidator,

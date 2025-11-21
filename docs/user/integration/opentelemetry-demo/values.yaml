@@ -69,6 +69,9 @@ components:
     ports:
       - name: grpc
         value: 8080
+    resources:
+      limits:
+        memory: 200Mi
 
   checkout:
     enabled: true
@@ -88,7 +91,7 @@ components:
       requests:
         memory: 10Mi
       limits:
-        memory: 100Mi
+        memory: 200Mi
 
   currency:
     enabled: true
@@ -104,6 +107,9 @@ components:
     ports:
       - name: grpc
         value: 8080
+    resources:
+      limits:
+        memory: 200Mi
 
   email:
     enabled: true
@@ -232,7 +238,13 @@ components:
         value: 8080
     resources:
       limits:
-        memory: 250Mi
+        memory: 300Mi
+
+  postgresql:
+    enabled: true
+    resources:
+      limits:
+        memory: 200Mi
 
   product-catalog:
     enabled: true
@@ -252,7 +264,7 @@ components:
       requests:
         memory: 20Mi
       limits:
-        memory: 100Mi
+        memory: 200Mi
 
   quote:
     enabled: true
@@ -272,7 +284,7 @@ components:
       requests:
         memory: 50Mi
       limits:
-        memory: 80Mi
+        memory: 200Mi
 
   recommendation:
     enabled: true
@@ -303,6 +315,9 @@ components:
     ports:
       - name: grpc
         value: 8080
+    resources:
+      limits:
+        memory: 200Mi
 
   flagd:
     enabled: true
@@ -363,7 +378,10 @@ components:
         value: 'http://telemetry-otlp-logs.kyma-system:4317'
     resources:
       limits:
-        memory: 700Mi
+        memory: 800Mi
 
   valkey-cart:
     enabled: true
+    resources:
+      limits:
+        memory: 200Mi

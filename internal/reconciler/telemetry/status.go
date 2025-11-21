@@ -63,7 +63,7 @@ func (r *Reconciler) updateComponentCondition(ctx context.Context, checker Compo
 
 func (r *Reconciler) updateOverallState(ctx context.Context, telemetry *operatorv1alpha1.Telemetry, telemetryInDeletion bool) {
 	if telemetryInDeletion {
-		// If the provided Telemetry CR is being deleted and dependent Telemetry CRs (LogPipeline, LogParser, MetricPipeline, TracePipeline) are found, the state is set to "Warning" until they are removed from the cluster.
+		// If the provided Telemetry CR is being deleted and dependent Telemetry CRs (LogPipeline, MetricPipeline, TracePipeline) are found, the state is set to "Warning" until they are removed from the cluster.
 		// If dependent CRs are not found, the state is set to "Deleting"
 		if r.dependentCRsFound(ctx) {
 			telemetry.Status.State = operatorv1alpha1.StateWarning
@@ -114,7 +114,7 @@ func (r *Reconciler) updateGatewayEndpoints(ctx context.Context, telemetry *oper
 func (r *Reconciler) logEndpoints(ctx context.Context, config Config) (*operatorv1alpha1.OTLPEndpoints, error) {
 	pushEndpoint := types.NamespacedName{
 		Name:      otelcollector.LogOTLPServiceName,
-		Namespace: config.Logs.Namespace,
+		Namespace: config.TargetNamespace(),
 	}
 
 	svcExists, err := r.checkServiceExists(ctx, pushEndpoint)
@@ -133,7 +133,7 @@ func (r *Reconciler) logEndpoints(ctx context.Context, config Config) (*operator
 func (r *Reconciler) traceEndpoints(ctx context.Context, config Config) (*operatorv1alpha1.OTLPEndpoints, error) {
 	pushEndpoint := types.NamespacedName{
 		Name:      otelcollector.TraceOTLPServiceName,
-		Namespace: config.Traces.Namespace,
+		Namespace: config.TargetNamespace(),
 	}
 
 	svcExists, err := r.checkServiceExists(ctx, pushEndpoint)
@@ -152,7 +152,8 @@ func (r *Reconciler) traceEndpoints(ctx context.Context, config Config) (*operat
 func (r *Reconciler) metricEndpoints(ctx context.Context, config Config) (*operatorv1alpha1.OTLPEndpoints, error) {
 	pushEndpoint := types.NamespacedName{
 		Name:      otelcollector.MetricOTLPServiceName,
-		Namespace: config.Metrics.Namespace}
+		Namespace: config.TargetNamespace(),
+	}
 
 	svcExists, err := r.checkServiceExists(ctx, pushEndpoint)
 	if err != nil {
@@ -191,8 +192,7 @@ func makeOTLPEndpoints(serviceName, namespace string) *operatorv1alpha1.OTLPEndp
 }
 
 func (r *Reconciler) dependentCRsFound(ctx context.Context) bool {
-	return r.resourcesExist(ctx, &telemetryv1alpha1.LogParserList{}) ||
-		r.resourcesExist(ctx, &telemetryv1alpha1.LogPipelineList{}) ||
+	return r.resourcesExist(ctx, &telemetryv1alpha1.LogPipelineList{}) ||
 		r.resourcesExist(ctx, &telemetryv1alpha1.MetricPipelineList{}) ||
 		r.resourcesExist(ctx, &telemetryv1alpha1.TracePipelineList{})
 }

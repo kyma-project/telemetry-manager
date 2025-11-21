@@ -10,6 +10,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	fbports "github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
@@ -40,17 +41,17 @@ type IstioStatusChecker interface {
 type Reconciler struct {
 	client.Client
 
-	telemetryNamespace  string
-	agentConfigBuilder  AgentConfigBuilder
-	agentApplierDeleter AgentApplierDeleter
+	globals config.Global
 
 	// Dependencies
-	agentProber        AgentProber
-	flowHealthProber   FlowHealthProber
-	istioStatusChecker IstioStatusChecker
-	pipelineLock       PipelineLock
-	pipelineValidator  PipelineValidator
-	errToMsgConverter  ErrorToMessageConverter
+	agentConfigBuilder  AgentConfigBuilder
+	agentApplierDeleter AgentApplierDeleter
+	agentProber         AgentProber
+	flowHealthProber    FlowHealthProber
+	istioStatusChecker  IstioStatusChecker
+	pipelineLock        PipelineLock
+	pipelineValidator   PipelineValidator
+	errToMsgConverter   ErrorToMessageConverter
 }
 
 func (r *Reconciler) SupportedOutput() logpipelineutils.Mode {
@@ -73,10 +74,10 @@ type AgentProber interface {
 	IsReady(ctx context.Context, name types.NamespacedName) error
 }
 
-func New(client client.Client, telemetryNamespace string, agentConfigBuilder AgentConfigBuilder, agentApplierDeleter AgentApplierDeleter, agentProber AgentProber, healthProber FlowHealthProber, checker IstioStatusChecker, pipelineLock PipelineLock, validator PipelineValidator, converter ErrorToMessageConverter) *Reconciler {
+func New(globals config.Global, client client.Client, agentConfigBuilder AgentConfigBuilder, agentApplierDeleter AgentApplierDeleter, agentProber AgentProber, healthProber FlowHealthProber, checker IstioStatusChecker, pipelineLock PipelineLock, validator PipelineValidator, converter ErrorToMessageConverter) *Reconciler {
 	return &Reconciler{
+		globals:             globals,
 		Client:              client,
-		telemetryNamespace:  telemetryNamespace,
 		agentConfigBuilder:  agentConfigBuilder,
 		agentApplierDeleter: agentApplierDeleter,
 		agentProber:         agentProber,
@@ -207,7 +208,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 }
 
 func (r *Reconciler) getClusterNameFromTelemetry(ctx context.Context, defaultName string) string {
-	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.telemetryNamespace)
+	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 	if err != nil {
 		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: using default shoot name as cluster name")
 		return defaultName
