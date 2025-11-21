@@ -39,7 +39,7 @@ func TestAppInputDisabled(t *testing.T) {
 	require.NoError(t, result.err)
 }
 
-func TestMaxPipelines(t *testing.T) {
+func TestMaxPipelineLimit(t *testing.T) {
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
 		WithCustomFilter("Name grep").
@@ -70,7 +70,7 @@ func TestMaxPipelines(t *testing.T) {
 		"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details")
 }
 
-func TestTLSConditions(t *testing.T) {
+func TestTLSCertificateValidation(t *testing.T) {
 	tests := []struct {
 		name                  string
 		tlsCertErr            error
@@ -172,7 +172,7 @@ func TestTLSConditions(t *testing.T) {
 	}
 }
 
-func TestPodErrorConditions(t *testing.T) {
+func TestPodErrorConditionReporting(t *testing.T) {
 	tests := []struct {
 		name           string
 		probeErr       error
@@ -267,7 +267,7 @@ func TestUnsupportedMode(t *testing.T) {
 	}
 }
 
-func TestReferencedSecret(t *testing.T) {
+func TestSecretReferenceValidation(t *testing.T) {
 	tests := []struct {
 		name       string
 		setupObjs  func() (telemetryv1alpha1.LogPipeline, []client.Object)
@@ -348,7 +348,7 @@ func TestReferencedSecret(t *testing.T) {
 	}
 }
 
-func TestLogAgent(t *testing.T) {
+func TestAgentHealthCondition(t *testing.T) {
 	tests := []struct {
 		name            string
 		proberError     error
@@ -404,7 +404,7 @@ func TestLogAgent(t *testing.T) {
 	}
 }
 
-func TestFlowHealthy(t *testing.T) {
+func TestFlowHealthCondition(t *testing.T) {
 	tests := []struct {
 		name           string
 		probe          prober.FluentBitProbeResult

@@ -22,7 +22,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
-func TestReconcile_GatewayHealthConditions(t *testing.T) {
+func TestGatewayHealthCondition(t *testing.T) {
 	tests := []struct {
 		name              string
 		gatewayProberStub *commonStatusStubs.DeploymentSetProber
@@ -78,7 +78,7 @@ func TestReconcile_GatewayHealthConditions(t *testing.T) {
 	}
 }
 
-func TestReconcile_AgentHealthConditions(t *testing.T) {
+func TestAgentHealthCondition(t *testing.T) {
 	tests := []struct {
 		name              string
 		agentProberStub   *commonStatusStubs.DaemonSetProber
@@ -119,7 +119,7 @@ func TestReconcile_AgentHealthConditions(t *testing.T) {
 		})
 	}
 }
-func TestReconcile_GatewayFlowHealthy(t *testing.T) {
+func TestGatewayFlowHealthCondition(t *testing.T) {
 	tests := []struct {
 		name            string
 		probe           prober.OTelGatewayProbeResult
@@ -215,7 +215,7 @@ func TestReconcile_GatewayFlowHealthy(t *testing.T) {
 		})
 	}
 }
-func TestReconcile_AgentFlowHealthy(t *testing.T) {
+func TestAgentFlowHealthCondition(t *testing.T) {
 	tests := []struct {
 		name            string
 		probe           prober.OTelAgentProbeResult
@@ -291,7 +291,7 @@ func TestReconcile_AgentFlowHealthy(t *testing.T) {
 		})
 	}
 }
-func TestReconcile_InvalidOTTLSpecs(t *testing.T) {
+func TestOTTLSpecValidation(t *testing.T) {
 	tests := []struct {
 		name        string
 		validator   *Validator
@@ -343,7 +343,7 @@ func TestReconcile_InvalidOTTLSpecs(t *testing.T) {
 	}
 }
 
-func TestReconcile_AgentRequiredScenarios(t *testing.T) {
+func TestAgentRequiredScenarios(t *testing.T) {
 	tests := []struct {
 		name                         string
 		pipelineConfigs              []pipelineConfig
