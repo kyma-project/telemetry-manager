@@ -743,8 +743,7 @@ func TestNonReconcilablePipelines(t *testing.T) {
 }
 
 // TODO[k15r]: reduce complexity
-// nolint: gocognit // Complexity due to multiple test scenarios.
-func TestAgentRequirementDetermination(t *testing.T) {
+func TestAgentRequirementDetermination(t *testing.T) { //nolint: gocognit // Complexity due to multiple test scenarios.
 	tests := []struct {
 		name                   string
 		pipelineCount          int
