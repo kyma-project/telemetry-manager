@@ -389,6 +389,24 @@ func TestBuildConfig(t *testing.T) {
 				}).Build(),
 			},
 		},
+		{
+			name: "pipeline using OAuth2 authentication",
+			pipelines: []telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("test").
+					WithOTLPInput(true).
+					WithOTLPOutput(
+						testutils.OTLPProtocol("http"),
+					).
+					WithOAuth2(
+						testutils.OAuth2ClientID("client-id"),
+						testutils.OAuth2ClientSecret("client-secret"),
+						testutils.OAuth2TokenURL("https://auth.example.com/oauth2/token"),
+						testutils.OAuth2Scopes([]string{"metrics"}),
+					).Build(),
+			},
+			goldenFileName: "oauth2-authentication.yaml",
+		},
 	}
 
 	for _, tt := range tests {
