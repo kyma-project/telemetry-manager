@@ -82,7 +82,7 @@ func makeOAuth2ExtensionEnvVars(ctx context.Context, c client.Reader, oauth2Opti
 }
 
 func makeBasicAuthEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1alpha1.OTLPOutput, pipelineName string) error {
-	if output.Authentication != nil && output.Authentication.Basic != nil && sharedtypesutils.IsValid(&output.Authentication.Basic.User) && sharedtypesutils.IsValid(&output.Authentication.Basic.Password) {
+	if isBasicAuthEnabled(output.Authentication) {
 		username, err := sharedtypesutils.ResolveValue(ctx, c, output.Authentication.Basic.User)
 		if err != nil {
 			return err

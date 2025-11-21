@@ -115,6 +115,7 @@ type OTLPExporter struct {
 	TLS             TLS               `yaml:"tls,omitempty"`
 	SendingQueue    SendingQueue      `yaml:"sending_queue,omitempty"`
 	RetryOnFailure  RetryOnFailure    `yaml:"retry_on_failure,omitempty"`
+	Auth            Auth              `yaml:"auth,omitempty"`
 }
 
 type TLS struct {
@@ -135,6 +136,10 @@ type RetryOnFailure struct {
 	InitialInterval string `yaml:"initial_interval"`
 	MaxInterval     string `yaml:"max_interval"`
 	MaxElapsedTime  string `yaml:"max_elapsed_time"`
+}
+
+type Auth struct {
+	Authenticator string `yaml:"authenticator"`
 }
 
 // =============================================================================

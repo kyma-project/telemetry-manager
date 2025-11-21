@@ -88,6 +88,12 @@ func makeExportersConfig(otlpOutput *telemetryv1alpha1.OTLPOutput, pipelineName 
 		otlpExporterConfig.LogsEndpoint = fmt.Sprintf("${%s}", otlpEndpointVariable)
 	}
 
+	if otlpOutput.Authentication != nil && otlpOutput.Authentication.OAuth2 != nil {
+		otlpExporterConfig.Auth = Auth{
+			Authenticator: fmt.Sprintf(ComponentIDOAuth2Extension, pipelineName),
+		}
+	}
+
 	return &otlpExporterConfig
 }
 
@@ -131,7 +137,7 @@ func makeTLSConfig(output *telemetryv1alpha1.OTLPOutput, otlpEndpointValue, pipe
 func makeHeaders(output *telemetryv1alpha1.OTLPOutput, pipelineName string) map[string]string {
 	headers := make(map[string]string)
 
-	if output.Authentication != nil && sharedtypesutils.IsValid(&output.Authentication.Basic.User) && sharedtypesutils.IsValid(&output.Authentication.Basic.Password) {
+	if isBasicAuthEnabled(output.Authentication) {
 		basicAuthHeaderVariable := formatEnvVarKey(basicAuthHeaderVariablePrefix, pipelineName)
 		headers["Authorization"] = fmt.Sprintf("${%s}", basicAuthHeaderVariable)
 	}
@@ -145,4 +151,11 @@ func makeHeaders(output *telemetryv1alpha1.OTLPOutput, pipelineName string) map[
 
 func isInsecureOutput(endpoint string) bool {
 	return len(strings.TrimSpace(endpoint)) > 0 && strings.HasPrefix(endpoint, "http://")
+}
+
+func isBasicAuthEnabled(authOptions *telemetryv1alpha1.AuthenticationOptions) bool {
+	return authOptions != nil &&
+		authOptions.Basic != nil &&
+		sharedtypesutils.IsValid(&authOptions.Basic.User) &&
+		sharedtypesutils.IsValid(&authOptions.Basic.Password)
 }
