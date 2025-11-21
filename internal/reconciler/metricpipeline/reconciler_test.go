@@ -71,16 +71,16 @@ func TestGatewayHealthCondition(t *testing.T) {
 			agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 			agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Once()
 
-			reconcilerOpts := []Option{
-				WithAgentApplierDeleter(agentApplierDeleterMock),
-				WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+			reconcilerOpts := []interface{}{
+				WithAgentApplierDeleterAssert(agentApplierDeleterMock),
+				WithGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
 			}
 
 			if tt.proberError != nil {
 				reconcilerOpts = append(reconcilerOpts, WithGatewayProber(commonStatusStubs.NewDeploymentSetProber(tt.proberError)))
 			}
 
-			sut := newTestReconciler(fakeClient, reconcilerOpts...)
+			sut, assertAll := newTestReconciler(fakeClient, reconcilerOpts...)
 
 			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
 			require.NoError(t, result.err)
@@ -91,7 +91,7 @@ func TestGatewayHealthCondition(t *testing.T) {
 				tt.expectedReason,
 				tt.expectedMsg)
 
-			gatewayConfigBuilderMock.AssertExpectations(t)
+			assertAll(t)
 		})
 	}
 }
@@ -137,16 +137,16 @@ func TestAgentHealthCondition(t *testing.T) {
 			gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 			gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Once()
 
-			reconcilerOpts := []Option{
-				WithAgentConfigBuilder(agentConfigBuilderMock),
-				WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+			reconcilerOpts := []interface{}{
+				WithAgentConfigBuilderAssert(agentConfigBuilderMock),
+				WithGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
 			}
 
 			if tt.proberError != nil {
 				reconcilerOpts = append(reconcilerOpts, WithAgentProber(commonStatusStubs.NewDaemonSetProber(tt.proberError)))
 			}
 
-			sut := newTestReconciler(fakeClient, reconcilerOpts...)
+			sut, assertAll := newTestReconciler(fakeClient, reconcilerOpts...)
 
 			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
 			require.NoError(t, result.err)
@@ -157,8 +157,7 @@ func TestAgentHealthCondition(t *testing.T) {
 				tt.expectedReason,
 				tt.expectedMsg)
 
-			agentConfigBuilderMock.AssertExpectations(t)
-			gatewayConfigBuilderMock.AssertExpectations(t)
+			assertAll(t)
 		})
 	}
 }
@@ -176,15 +175,15 @@ func TestSecretReferenceValidation(t *testing.T) {
 		fakeClient := newTestClient(t, &pipeline)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
+		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Once()
 
 		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Times(1)
+		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Once()
 
-		sut := newTestReconciler(
+		sut, assertAll := newTestReconciler(
 			fakeClient,
-			WithAgentApplierDeleter(agentApplierDeleterMock),
-			WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+			WithAgentApplierDeleterAssert(agentApplierDeleterMock),
+			WithGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
 		)
 		result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
 		require.NoError(t, result.err)
@@ -195,7 +194,7 @@ func TestSecretReferenceValidation(t *testing.T) {
 			conditions.ReasonGatewayConfigured,
 			"MetricPipeline specification is successfully applied to the configuration of Metric gateway")
 
-		gatewayConfigBuilderMock.AssertExpectations(t)
+		assertAll(t)
 	})
 
 	t.Run("referenced secret missing", func(t *testing.T) {
@@ -206,7 +205,7 @@ func TestSecretReferenceValidation(t *testing.T) {
 			withSecretRefValidator(stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound))),
 		)
 
-		sut := newTestReconciler(
+		sut, assertAll := newTestReconciler(
 			fakeClient,
 			WithPipelineValidator(customValidator),
 		)
@@ -226,6 +225,7 @@ func TestSecretReferenceValidation(t *testing.T) {
 			conditions.ReasonSelfMonConfigNotGenerated,
 			"No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of Metric gateway. Check the 'ConfigurationGenerated' condition for more details",
 		)
+		assertAll(t)
 	})
 }
 func TestMaxPipelineLimit(t *testing.T) {
@@ -233,7 +233,7 @@ func TestMaxPipelineLimit(t *testing.T) {
 	fakeClient := newTestClient(t, &pipeline)
 
 	agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-	agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Times(1)
+	agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Once()
 
 	pipelineLockStub := &mocks.PipelineLock{}
 	pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
@@ -243,9 +243,9 @@ func TestMaxPipelineLimit(t *testing.T) {
 		withPipelineLock(pipelineLockStub),
 	)
 
-	sut := newTestReconciler(
+	sut, assertAll := newTestReconciler(
 		fakeClient,
-		WithAgentApplierDeleter(agentApplierDeleterMock),
+		WithAgentApplierDeleterAssert(agentApplierDeleterMock),
 		WithPipelineValidator(customValidator),
 	)
 
@@ -265,6 +265,7 @@ func TestMaxPipelineLimit(t *testing.T) {
 		conditions.ReasonSelfMonConfigNotGenerated,
 		"No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of Metric gateway. Check the 'ConfigurationGenerated' condition for more details",
 	)
+	assertAll(t)
 }
 func TestGatewayFlowHealthCondition(t *testing.T) {
 	tests := []struct {
@@ -346,10 +347,10 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 			fakeClient := newTestClient(t, &pipeline)
 
 			gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-			gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
+			gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Once()
 
 			agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-			agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Times(1)
+			agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Once()
 
 			gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
 			gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -357,12 +358,12 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 			gatewayFlowHealthProberStub := &mocks.GatewayFlowHealthProber{}
 			gatewayFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
 
-			sut := newTestReconciler(
+			sut, assertAll := newTestReconciler(
 				fakeClient,
-				WithAgentApplierDeleter(agentApplierDeleterMock),
+				WithAgentApplierDeleterAssert(agentApplierDeleterMock),
+				WithGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
 				WithGatewayFlowHealthProber(gatewayFlowHealthProberStub),
 				WithGatewayApplierDeleter(gatewayApplierDeleterMock),
-				WithGatewayConfigBuilder(gatewayConfigBuilderMock),
 			)
 			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
 			require.NoError(t, result.err)
@@ -374,7 +375,7 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 				tt.expectedMessage,
 			)
 
-			gatewayConfigBuilderMock.AssertExpectations(t)
+			assertAll(t)
 		})
 	}
 }
@@ -438,19 +439,19 @@ func TestAgentFlowHealthCondition(t *testing.T) {
 			fakeClient := newTestClient(t, &pipeline)
 
 			gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-			gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
+			gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Once()
 
 			agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-			agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
+			agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Once()
 
 			agentFlowHealthProberStub := &mocks.AgentFlowHealthProber{}
 			agentFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
 
-			sut := newTestReconciler(
+			sut, assertAll := newTestReconciler(
 				fakeClient,
-				WithAgentConfigBuilder(agentConfigBuilderMock),
+				WithAgentConfigBuilderAssert(agentConfigBuilderMock),
 				WithAgentFlowHealthProber(agentFlowHealthProberStub),
-				WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+				WithGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
 			)
 			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
 			require.NoError(t, result.err)
@@ -462,7 +463,7 @@ func TestAgentFlowHealthCondition(t *testing.T) {
 				tt.expectedMessage,
 			)
 
-			agentConfigBuilderMock.AssertExpectations(t)
+			assertAll(t)
 		})
 	}
 }
@@ -540,7 +541,9 @@ func TestTLSCertificateValidation(t *testing.T) {
 			fakeClient := newTestClient(t, &pipeline)
 
 			gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-			gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
+			if tt.expectGatewayConfigured {
+				gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Once()
+			}
 
 			agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 			agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -554,11 +557,11 @@ func TestTLSCertificateValidation(t *testing.T) {
 				withTLSCertValidator(stubs.NewTLSCertValidator(tt.tlsCertErr)),
 			)
 
-			sut := newTestReconciler(
+			sut, assertAll := newTestReconciler(
 				fakeClient,
 				WithAgentApplierDeleter(agentApplierDeleterMock),
 				WithGatewayApplierDeleter(gatewayApplierDeleterMock),
-				WithGatewayConfigBuilder(gatewayConfigBuilderMock),
+				WithGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
 				WithPipelineValidator(customValidator),
 			)
 			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
@@ -580,11 +583,7 @@ func TestTLSCertificateValidation(t *testing.T) {
 				)
 			}
 
-			if !tt.expectGatewayConfigured {
-				gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything)
-			} else {
-				gatewayConfigBuilderMock.AssertExpectations(t)
-			}
+			assertAll(t)
 		})
 	}
 }
@@ -615,7 +614,7 @@ func TestOTTLSpecValidation(t *testing.T) {
 			pipeline := testutils.NewMetricPipelineBuilder().Build()
 			fakeClient := newTestClient(t, &pipeline)
 
-			sut := newTestReconciler(
+			sut, assertAll := newTestReconciler(
 				fakeClient,
 				WithPipelineValidator(newTestValidator(tt.validatorOption)),
 			)
@@ -636,6 +635,7 @@ func TestOTTLSpecValidation(t *testing.T) {
 				conditions.ReasonSelfMonConfigNotGenerated,
 				"No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of Metric gateway. Check the 'ConfigurationGenerated' condition for more details",
 			)
+			assertAll(t)
 		})
 	}
 }
@@ -679,10 +679,11 @@ func TestAPIServerFailureHandling(t *testing.T) {
 			serverErr := errors.New("server error")
 
 			agentMock := &mocks.AgentApplierDeleter{}
-			agentMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Once()
+			// TODO[k15r]: in the original code this mock is set up with an expectation, but it is never called.
+			// agentMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Once()
 
-			opts := []Option{
-				WithAgentApplierDeleter(agentMock),
+			opts := []interface{}{
+				WithAgentApplierDeleterAssert(agentMock),
 				WithPipelineValidator(tt.setupValidator(serverErr)),
 			}
 
@@ -692,7 +693,7 @@ func TestAPIServerFailureHandling(t *testing.T) {
 				opts = append(opts, WithGatewayApplierDeleter(gatewayMock))
 			}
 
-			sut := newTestReconciler(fakeClient, opts...)
+			sut, assertAll := newTestReconciler(fakeClient, opts...)
 			result := reconcileAndGet(t, fakeClient, sut, tt.pipeline.Name)
 			require.ErrorIs(t, result.err, serverErr)
 
@@ -709,6 +710,7 @@ func TestAPIServerFailureHandling(t *testing.T) {
 				conditions.ReasonSelfMonConfigNotGenerated,
 				"No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of Metric gateway. Check the 'ConfigurationGenerated' condition for more details",
 			)
+			assertAll(t)
 		})
 	}
 }
@@ -729,17 +731,16 @@ func TestNonReconcilablePipelines(t *testing.T) {
 		withSecretRefValidator(stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound))),
 	)
 
-	sut := newTestReconciler(
+	sut, assertAll := newTestReconciler(
 		fakeClient,
-		WithAgentApplierDeleter(agentApplierDeleterMock),
-		WithGatewayApplierDeleter(gatewayApplierDeleterMock),
+		WithAgentApplierDeleterAssert(agentApplierDeleterMock),
+		WithGatewayApplierDeleterAssert(gatewayApplierDeleterMock),
 		WithPipelineValidator(customValidator),
 	)
 	result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
 	require.NoError(t, result.err)
 
-	agentApplierDeleterMock.AssertExpectations(t)
-	gatewayApplierDeleterMock.AssertExpectations(t)
+	assertAll(t)
 }
 
 // TODO[k15r]: reduce complexity
@@ -818,7 +819,7 @@ func TestAgentRequirementDetermination(t *testing.T) { //nolint: gocognit // Com
 				gatewayMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Times(tt.expectedGatewayApplies)
 			}
 
-			opts := []Option{
+			opts := []interface{}{
 				WithAgentApplierDeleter(agentMock),
 				WithGatewayApplierDeleter(gatewayMock),
 			}
@@ -836,7 +837,7 @@ func TestAgentRequirementDetermination(t *testing.T) { //nolint: gocognit // Com
 				}
 			}
 
-			sut := newTestReconciler(fakeClient, opts...)
+			sut, assertAll := newTestReconciler(fakeClient, opts...)
 
 			// Reconcile and verify
 			for i, pipeline := range allPipelines {
@@ -852,8 +853,7 @@ func TestAgentRequirementDetermination(t *testing.T) { //nolint: gocognit // Com
 				}
 			}
 
-			agentMock.AssertExpectations(t)
-			gatewayMock.AssertExpectations(t)
+			assertAll(t)
 		})
 	}
 }
@@ -933,9 +933,9 @@ func TestPodErrorConditionReporting(t *testing.T) {
 			agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
 			agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Once()
 
-			sut := newTestReconciler(
+			sut, assertAll := newTestReconciler(
 				fakeClient,
-				WithAgentConfigBuilder(agentConfigBuilderMock),
+				WithAgentConfigBuilderAssert(agentConfigBuilderMock),
 				WithAgentProber(commonStatusStubs.NewDaemonSetProber(tt.probeAgentErr)),
 				WithGatewayProber(commonStatusStubs.NewDeploymentSetProber(tt.probeGatewayErr)),
 			)
@@ -944,6 +944,7 @@ func TestPodErrorConditionReporting(t *testing.T) {
 			require.NoError(t, result.err)
 
 			requireHasStatusCondition(t, result.pipeline, tt.conditionType, tt.expectedStatus, tt.expectedReason, tt.expectedMessage)
+			assertAll(t)
 		})
 	}
 }

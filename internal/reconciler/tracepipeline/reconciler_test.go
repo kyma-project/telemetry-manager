@@ -694,7 +694,8 @@ func TestPodErrorConditionReporting(t *testing.T) {
 			fakeClient := newTestClient(t, &pipeline)
 
 			gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-			gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&common.Config{}, nil, nil).Times(1)
+			// TODO[k15r]: this mock was set up but never asserted
+			// gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&common.Config{}, nil, nil).Once()
 
 			pipelineValidatorWithStubs := newTestValidator(
 				withSecretRefValidator(stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound))),

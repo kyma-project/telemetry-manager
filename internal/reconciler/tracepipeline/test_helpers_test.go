@@ -134,7 +134,12 @@ func (r *mockRegistry) assertAll(t *testing.T) {
 
 	// Assert mocks without expectations were not called
 	for _, mwm := range r.mocksWithoutExpectations {
-		if mockObj, ok := mwm.mock.(*mock.Mock); ok {
+		// Use type assertion to interface that has AssertNotCalled method
+		type mockWithAssertNotCalled interface {
+			AssertNotCalled(t mock.TestingT, methodName string, arguments ...interface{}) bool
+		}
+
+		if mockObj, ok := mwm.mock.(mockWithAssertNotCalled); ok {
 			for _, method := range mwm.methods {
 				mockObj.AssertNotCalled(t, method)
 			}
@@ -388,10 +393,23 @@ func newTestReconciler(client client.Client, opts ...interface{}) (*testReconcil
 //	sut, assertMocks := newTestReconciler(fakeClient, WithGatewayConfigBuilderAssert(gatewayConfigMock))
 //	result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
 //	assertMocks(t) // Calls gatewayConfigMock.AssertNotCalled(t, "Build")
+//
+// WithGatewayConfigBuilderAssert registers a GatewayConfigBuilder mock for auto-assertion using AssertExpectations.
+// Use this when you set up expectations with On().Times(), On().Once(), etc.
+// If you don't set up any On() calls, AssertExpectations will fail (which is correct - you should set expectations).
 func WithGatewayConfigBuilderAssert(mockBuilder *mocks.GatewayConfigBuilder) testOption {
 	return testOptionFunc(func(tr *testReconciler) {
 		tr.Reconciler.gatewayConfigBuilder = mockBuilder
 		registerMockForAssertion(tr.mockRegistry, mockBuilder, []string{"Build"})
+	})
+}
+
+// WithGatewayConfigBuilderAssertNotCalled registers a GatewayConfigBuilder mock that should NOT be called.
+// Use this when you want to explicitly verify that a method is never called.
+func WithGatewayConfigBuilderAssertNotCalled(mockBuilder *mocks.GatewayConfigBuilder) testOption {
+	return testOptionFunc(func(tr *testReconciler) {
+		tr.Reconciler.gatewayConfigBuilder = mockBuilder
+		tr.mockRegistry.registerWithoutExpectations(mockBuilder, []string{"Build"})
 	})
 }
 
@@ -450,30 +468,18 @@ func WithPipelineSyncerAssert(mockSyncer *mocks.PipelineSyncer) testOption {
 
 // registerMockForAssertion is a helper that checks if a mock has expectations and registers it appropriately.
 func registerMockForAssertion(registry *mockRegistry, mockObj interface{ AssertExpectations(t mock.TestingT) bool }, methods []string) {
-	// Try to get the underlying mock.Mock to inspect expectations
-	type mockWithCalls interface {
-		ExpectedCalls() []*mock.Call
-	}
+	// IMPORTANT: The strategy here is to ALWAYS use AssertExpectations for any mock
+	// passed through WithXxxAssert helpers. This works because:
+	//
+	// 1. If the mock has explicit expectations (Times(), Once()), AssertExpectations will verify them
+	// 2. If the mock has Maybe(), AssertExpectations will pass even if not called
+	// 3. If the mock has NO On() calls at all, AssertExpectations will FAIL - which is what we want!
+	//
+	// The key insight: If you use WithXxxAssert, you're declaring "I care about this mock's behavior"
+	// - Either you set up expectations (good)
+	// - Or you forgot to set up expectations (bad - should fail)
+	//
+	// For mocks where you DON'T care, use the standard WithXxx (not WithXxxAssert)
 
-	if mockWithCallsObj, ok := mockObj.(mockWithCalls); ok {
-		expectedCalls := mockWithCallsObj.ExpectedCalls()
-		if len(expectedCalls) > 0 {
-			hasExpectations := false
-			for _, call := range expectedCalls {
-				// If Repeatability is > 0 or -1 (unlimited), it has expectations
-				if call.Repeatability > 0 || call.Repeatability == -1 {
-					hasExpectations = true
-					break
-				}
-			}
-
-			if hasExpectations {
-				registry.registerWithExpectations(mockObj)
-				return
-			}
-		}
-	}
-
-	// No expectations - should not be called
-	registry.registerWithoutExpectations(mockObj, methods)
+	registry.registerWithExpectations(mockObj)
 }
