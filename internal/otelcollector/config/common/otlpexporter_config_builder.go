@@ -41,12 +41,12 @@ func (cb *OTLPExporterConfigBuilder) OTLPExporterConfig(ctx context.Context) (*O
 		return nil, nil, fmt.Errorf("failed to make env vars: %w", err)
 	}
 
-	exportersConfig := makeExportersConfig(cb.otlpOutput, cb.pipelineName, envVars, cb.queueSize, cb.signalType)
+	exportersConfig := makeExporterConfig(cb.otlpOutput, cb.pipelineName, envVars, cb.queueSize, cb.signalType)
 
 	return exportersConfig, envVars, nil
 }
 
-func makeExportersConfig(otlpOutput *telemetryv1alpha1.OTLPOutput, pipelineName string, envVars map[string][]byte, queueSize int, signalType string) *OTLPExporter {
+func makeExporterConfig(otlpOutput *telemetryv1alpha1.OTLPOutput, pipelineName string, envVars map[string][]byte, queueSize int, signalType string) *OTLPExporter {
 	headers := makeHeaders(otlpOutput, pipelineName)
 	otlpEndpointVariable := formatEnvVarKey(otlpEndpointVariablePrefix, pipelineName)
 	otlpEndpointValue := string(envVars[otlpEndpointVariable])

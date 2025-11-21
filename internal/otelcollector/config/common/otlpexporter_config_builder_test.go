@@ -22,7 +22,7 @@ func TestExorterIDDefault(t *testing.T) {
 	require.Equal(t, "otlp/test", ExporterID("", "test"))
 }
 
-func TestMakeConfig(t *testing.T) {
+func TestMakeExporterConfig(t *testing.T) {
 	output := &telemetryv1alpha1.OTLPOutput{
 		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
 	}
@@ -45,7 +45,7 @@ func TestMakeConfig(t *testing.T) {
 	require.Equal(t, "300s", otlpExporterConfig.RetryOnFailure.MaxElapsedTime)
 }
 
-func TestMakeConfigTraceWithPath(t *testing.T) {
+func TestMakeExporterConfigTraceWithPath(t *testing.T) {
 	output := &telemetryv1alpha1.OTLPOutput{
 		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
 		Path:     "/v1/test",
@@ -64,7 +64,7 @@ func TestMakeConfigTraceWithPath(t *testing.T) {
 	require.Empty(t, otlpExporterConfig.Endpoint)
 }
 
-func TestMakeConfigMetricWithPath(t *testing.T) {
+func TestMakeExporterConfigMetricWithPath(t *testing.T) {
 	output := &telemetryv1alpha1.OTLPOutput{
 		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
 		Path:     "/v1/test",
@@ -83,7 +83,7 @@ func TestMakeConfigMetricWithPath(t *testing.T) {
 	require.Empty(t, otlpExporterConfig.Endpoint)
 }
 
-func TestMakeExporterWithBasicAuth(t *testing.T) {
+func TestMakeExporterConfigWithBasicAuth(t *testing.T) {
 	output := &telemetryv1alpha1.OTLPOutput{
 		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
 		Authentication: &telemetryv1alpha1.AuthenticationOptions{
@@ -106,6 +106,27 @@ func TestMakeExporterWithBasicAuth(t *testing.T) {
 
 	base64UserPass := base64.StdEncoding.EncodeToString([]byte("testuser:testpass"))
 	require.Equal(t, envVars["BASIC_AUTH_HEADER_TEST"], []byte("Basic "+base64UserPass))
+}
+
+func TestMakeExporterConfigWithOAuth2(t *testing.T) {
+	output := &telemetryv1alpha1.OTLPOutput{
+		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
+		Authentication: &telemetryv1alpha1.AuthenticationOptions{
+			OAuth2: &telemetryv1alpha1.OAuth2Options{
+				TokenURL:     telemetryv1alpha1.ValueType{Value: "token-url"},
+				ClientID:     telemetryv1alpha1.ValueType{Value: "client-id"},
+				ClientSecret: telemetryv1alpha1.ValueType{Value: "client-secret"},
+			},
+		},
+	}
+
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
+	otlpExporterConfig, envVars, err := cb.OTLPExporterConfig(t.Context())
+	require.NoError(t, err)
+	require.NotNil(t, envVars)
+
+	require.NotNil(t, otlpExporterConfig.Auth)
+	require.Equal(t, otlpExporterConfig.Auth.Authenticator, "oauth2client/test")
 }
 
 func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {

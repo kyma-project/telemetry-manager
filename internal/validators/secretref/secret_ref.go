@@ -148,17 +148,15 @@ func getSecretRefsInOTLPOutput(otlpOut *telemetryv1alpha1.OTLPOutput) []telemetr
 
 	refs = appendIfSecretRef(refs, &otlpOut.Endpoint)
 
-	if otlpOut.Authentication != nil {
-		if otlpOut.Authentication.Basic != nil {
-			refs = appendIfSecretRef(refs, &otlpOut.Authentication.Basic.User)
-			refs = appendIfSecretRef(refs, &otlpOut.Authentication.Basic.Password)
-		}
+	if otlpOut.Authentication != nil && otlpOut.Authentication.Basic != nil {
+		refs = appendIfSecretRef(refs, &otlpOut.Authentication.Basic.User)
+		refs = appendIfSecretRef(refs, &otlpOut.Authentication.Basic.Password)
+	}
 
-		if otlpOut.Authentication.OAuth2 != nil {
-			refs = appendIfSecretRef(refs, &otlpOut.Authentication.OAuth2.TokenURL)
-			refs = appendIfSecretRef(refs, &otlpOut.Authentication.OAuth2.ClientID)
-			refs = appendIfSecretRef(refs, &otlpOut.Authentication.OAuth2.ClientSecret)
-		}
+	if otlpOut.Authentication != nil && otlpOut.Authentication.OAuth2 != nil {
+		refs = appendIfSecretRef(refs, &otlpOut.Authentication.OAuth2.TokenURL)
+		refs = appendIfSecretRef(refs, &otlpOut.Authentication.OAuth2.ClientID)
+		refs = appendIfSecretRef(refs, &otlpOut.Authentication.OAuth2.ClientSecret)
 	}
 
 	for _, header := range otlpOut.Headers {
