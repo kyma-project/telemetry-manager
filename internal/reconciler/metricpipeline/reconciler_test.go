@@ -50,9 +50,6 @@ func TestReconcile(t *testing.T) {
 		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Times(1)
 
-		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
-		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(&workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"})
 
 		sut := newTestReconciler(
@@ -60,7 +57,6 @@ func TestReconcile(t *testing.T) {
 			WithGlobals(globals),
 			WithAgentApplierDeleter(agentApplierDeleterMock),
 			WithGatewayConfigBuilder(gatewayConfigBuilderMock),
-			WithGatewayApplierDeleter(gatewayApplierDeleterMock),
 			WithGatewayProber(gatewayProberStub),
 		)
 
@@ -90,9 +86,6 @@ func TestReconcile(t *testing.T) {
 		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Times(1)
 
-		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
-		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(workloadstatus.ErrDeploymentFetching)
 
 		sut := newTestReconciler(
@@ -100,7 +93,6 @@ func TestReconcile(t *testing.T) {
 			WithGlobals(globals),
 			WithAgentApplierDeleter(agentApplierDeleterMock),
 			WithGatewayConfigBuilder(gatewayConfigBuilderMock),
-			WithGatewayApplierDeleter(gatewayApplierDeleterMock),
 			WithGatewayProber(gatewayProberStub),
 		)
 
@@ -130,15 +122,11 @@ func TestReconcile(t *testing.T) {
 		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Times(1)
 
-		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
-		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
 		sut := newTestReconciler(
 			fakeClient,
 			WithGlobals(globals),
 			WithAgentApplierDeleter(agentApplierDeleterMock),
 			WithGatewayConfigBuilder(gatewayConfigBuilderMock),
-			WithGatewayApplierDeleter(gatewayApplierDeleterMock),
 		)
 
 		result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
@@ -167,22 +155,14 @@ func TestReconcile(t *testing.T) {
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
 
-		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
-		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(&workloadstatus.PodIsPendingError{Message: "Error"})
 
 		sut := newTestReconciler(
 			fakeClient,
 			WithGlobals(globals),
 			WithAgentConfigBuilder(agentConfigBuilderMock),
-			WithAgentApplierDeleter(agentApplierDeleterMock),
 			WithAgentProber(agentProberStub),
 			WithGatewayConfigBuilder(gatewayConfigBuilderMock),
-			WithGatewayApplierDeleter(gatewayApplierDeleterMock),
 		)
 
 		result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
@@ -212,22 +192,14 @@ func TestReconcile(t *testing.T) {
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
 
-		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
-		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(workloadstatus.ErrDaemonSetNotFound)
 
 		sut := newTestReconciler(
 			fakeClient,
 			WithGlobals(globals),
 			WithAgentConfigBuilder(agentConfigBuilderMock),
-			WithAgentApplierDeleter(agentApplierDeleterMock),
 			WithAgentProber(agentProberStub),
 			WithGatewayConfigBuilder(gatewayConfigBuilderMock),
-			WithGatewayApplierDeleter(gatewayApplierDeleterMock),
 		)
 
 		result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
@@ -299,14 +271,10 @@ func TestReconcile(t *testing.T) {
 		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Times(1)
 
-		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
-		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
 		sut := newTestReconciler(
 			fakeClient,
 			WithGlobals(globals),
 			WithAgentApplierDeleter(agentApplierDeleterMock),
-			WithGatewayApplierDeleter(gatewayApplierDeleterMock),
 			WithGatewayConfigBuilder(gatewayConfigBuilderMock),
 		)
 		result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
@@ -329,12 +297,6 @@ func TestReconcile(t *testing.T) {
 		pipeline := testutils.NewMetricPipelineBuilder().WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("some-secret", "some-namespace", "user", "password")).Build()
 		fakeClient := newTestClient(t, &pipeline)
 
-		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
-		gatewayApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil)
-
 		customValidator := newTestValidator(
 			withSecretRefValidator(stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound))),
 		)
@@ -342,8 +304,6 @@ func TestReconcile(t *testing.T) {
 		sut := newTestReconciler(
 			fakeClient,
 			WithGlobals(globals),
-			WithAgentApplierDeleter(agentApplierDeleterMock),
-			WithGatewayApplierDeleter(gatewayApplierDeleterMock),
 			WithPipelineValidator(customValidator),
 		)
 
@@ -595,22 +555,14 @@ func TestReconcile(t *testing.T) {
 				agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
 				agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
 
-				agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-				agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-				gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
-				gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
 				agentFlowHealthProberStub := &mocks.AgentFlowHealthProber{}
 				agentFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
 
 				sut := newTestReconciler(
 					fakeClient,
 					WithGlobals(globals),
-					WithAgentApplierDeleter(agentApplierDeleterMock),
 					WithAgentConfigBuilder(agentConfigBuilderMock),
 					WithAgentFlowHealthProber(agentFlowHealthProberStub),
-					WithGatewayApplierDeleter(gatewayApplierDeleterMock),
 					WithGatewayConfigBuilder(gatewayConfigBuilderMock),
 				)
 				result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
@@ -764,14 +716,6 @@ func TestReconcile(t *testing.T) {
 		pipeline := testutils.NewMetricPipelineBuilder().Build()
 		fakeClient := newTestClient(t, &pipeline)
 
-		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
-		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-		gatewayApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil)
-
 		customValidator := newTestValidator(
 			withTransformSpecValidator(stubs.NewTransformSpecValidator(
 				&ottl.InvalidOTTLSpecError{
@@ -783,8 +727,6 @@ func TestReconcile(t *testing.T) {
 		sut := newTestReconciler(
 			fakeClient,
 			WithGlobals(globals),
-			WithAgentApplierDeleter(agentApplierDeleterMock),
-			WithGatewayApplierDeleter(gatewayApplierDeleterMock),
 			WithPipelineValidator(customValidator),
 		)
 		result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
@@ -873,8 +815,8 @@ func TestReconcile(t *testing.T) {
 		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Times(1)
 
-		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
-		gatewayApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+		gatewayConfigBuilderMock.On("Build", mock.Anything, mock.Anything, mock.Anything).Return(&common.Config{}, nil, nil)
 
 		serverErr := errors.New("failed to get secret: server error")
 		customValidator := newTestValidator(
@@ -885,7 +827,6 @@ func TestReconcile(t *testing.T) {
 			fakeClient,
 			WithGlobals(globals),
 			WithAgentApplierDeleter(agentApplierDeleterMock),
-			WithGatewayApplierDeleter(gatewayApplierDeleterMock),
 			WithPipelineValidator(customValidator),
 		)
 		result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
@@ -927,9 +868,6 @@ func TestReconcile(t *testing.T) {
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-
-		pipelineSyncStub := &mocks.PipelineSyncer{}
-		pipelineSyncStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 
 		serverErr := errors.New("failed to get lock: server error")
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(&errortypes.APIRequestFailedError{Err: serverErr})
@@ -1008,9 +946,6 @@ func TestReconcile(t *testing.T) {
 			Build()
 		fakeClient := newTestClient(t, &pipeline)
 
-		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil)
-
 		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Times(1)
 
@@ -1022,7 +957,6 @@ func TestReconcile(t *testing.T) {
 			WithGlobals(globals),
 			WithAgentApplierDeleter(agentApplierDeleterMock),
 			WithGatewayApplierDeleter(gatewayApplierDeleterMock),
-			WithGatewayConfigBuilder(gatewayConfigBuilderMock),
 		)
 		result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
 		require.NoError(t, result.err)
@@ -1115,7 +1049,7 @@ func TestReconcile(t *testing.T) {
 		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Times(2)
 
 		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
-		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Times(0)
 
 		sut := newTestReconciler(
 			fakeClient,
@@ -1226,23 +1160,14 @@ func TestReconcile(t *testing.T) {
 				agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
 				agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
 
-				agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-				agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-				gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
-				gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
 				gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(tt.probeGatewayErr)
 				agentProberMock := commonStatusStubs.NewDaemonSetProber(tt.probeAgentErr)
 
 				sut := newTestReconciler(
 					fakeClient,
 					WithGlobals(globals),
-					WithAgentApplierDeleter(agentApplierDeleterMock),
 					WithAgentConfigBuilder(agentConfigBuilderMock),
 					WithAgentProber(agentProberMock),
-					WithGatewayApplierDeleter(gatewayApplierDeleterMock),
-					WithGatewayConfigBuilder(gatewayConfigBuilderMock),
 					WithGatewayProber(gatewayProberStub),
 				)
 				result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
