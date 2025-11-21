@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -206,4 +207,41 @@ func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
 	allOpts := append(defaultOpts, opts...)
 
 	return New(client, allOpts...)
+}
+
+func requireHasStatusCondition(t *testing.T, pipeline telemetryv1alpha1.MetricPipeline, condType string, status metav1.ConditionStatus, reason, message string) {
+	cond := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
+	require.NotNil(t, cond, "could not find condition of type %s", condType)
+	require.Equal(t, status, cond.Status)
+	require.Equal(t, reason, cond.Reason)
+	require.Equal(t, message, cond.Message)
+	require.Equal(t, pipeline.Generation, cond.ObservedGeneration)
+	require.NotEmpty(t, cond.LastTransitionTime)
+}
+
+func containsPipeline(p telemetryv1alpha1.MetricPipeline) any {
+	return mock.MatchedBy(func(pipelines []telemetryv1alpha1.MetricPipeline) bool {
+		return len(pipelines) == 1 && pipelines[0].Name == p.Name
+	})
+}
+
+func containsPipelines(pp []telemetryv1alpha1.MetricPipeline) any {
+	return mock.MatchedBy(func(pipelines []telemetryv1alpha1.MetricPipeline) bool {
+		if len(pipelines) != len(pp) {
+			return false
+		}
+
+		pipelineMap := make(map[string]bool)
+		for _, p := range pipelines {
+			pipelineMap[p.Name] = true
+		}
+
+		for _, p := range pp {
+			if !pipelineMap[p.Name] {
+				return false
+			}
+		}
+
+		return true
+	})
 }
