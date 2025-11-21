@@ -225,6 +225,7 @@ func configureFluentBitReconciler(config LogPipelineControllerConfig, client cli
 		logpipelinefluentbit.WithFlowHealthProber(flowHealthProber),
 		logpipelinefluentbit.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
 		logpipelinefluentbit.WithPipelineValidator(pipelineValidator),
+		logpipelinefluentbit.WithPipelineLock(pipelineLock),
 		logpipelinefluentbit.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}))
 
 	return fbReconciler, nil

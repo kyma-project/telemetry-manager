@@ -151,6 +151,10 @@ func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
 	flowHealthProber := &logpipelinemocks.FlowHealthProber{}
 	flowHealthProber.On("Probe", mock.Anything, mock.Anything).Return(prober.FluentBitProbeResult{}, nil)
 
+	pipelineLock := &logpipelinefluentbitmocks.PipelineLock{}
+	pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+	pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
+
 	// Build default options with mocked dependencies
 	allOpts := []Option{
 		WithGlobals(config.NewGlobal(config.WithTargetNamespace("default"))),
@@ -159,6 +163,7 @@ func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
 		WithAgentProber(commonStatusStubs.NewDaemonSetProber(nil)),
 		WithFlowHealthProber(flowHealthProber),
 		WithIstioStatusChecker(&stubs.IstioStatusChecker{IsActive: false}),
+		WithPipelineLock(pipelineLock),
 		WithPipelineValidator(newTestValidator()),
 		WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
 	}

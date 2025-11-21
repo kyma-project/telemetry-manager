@@ -12,6 +12,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	fbports "github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
+	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
@@ -32,6 +33,7 @@ type Reconciler struct {
 	agentProber         AgentProber
 	flowHealthProber    FlowHealthProber
 	istioStatusChecker  IstioStatusChecker
+	pipelineLock        PipelineLock
 	pipelineValidator   PipelineValidator
 	errToMsgConverter   ErrorToMessageConverter
 }
@@ -42,6 +44,13 @@ func (r *Reconciler) SupportedOutput() logpipelineutils.Mode {
 
 // Option is a functional option for configuring a Reconciler.
 type Option func(*Reconciler)
+
+// WithPipelineLock sets the pipeline lock.
+func WithPipelineLock(lock PipelineLock) Option {
+	return func(r *Reconciler) {
+		r.pipelineLock = lock
+	}
+}
 
 // WithGlobals sets the global configuration.
 func WithGlobals(globals config.Global) Option {
@@ -167,6 +176,15 @@ func (r *Reconciler) IsReconcilable(ctx context.Context, pipeline *telemetryv1al
 }
 
 func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
+	if err := r.pipelineLock.TryAcquireLock(ctx, pipeline); err != nil {
+		if errors.Is(err, resourcelock.ErrMaxPipelinesExceeded) {
+			logf.FromContext(ctx).V(1).Info("Skipping reconciliation: maximum pipeline count limit exceeded")
+			return nil
+		}
+
+		return fmt.Errorf("failed to acquire lock: %w", err)
+	}
+
 	allPipelines, err := logpipelineutils.GetPipelinesForType(ctx, r.Client, r.SupportedOutput())
 	if err != nil {
 		return err
