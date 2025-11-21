@@ -130,22 +130,22 @@ func NewMetricPipelineController(config MetricPipelineControllerConfig, client c
 	gatewayConfigBuilder := &metricgateway.Builder{Reader: client}
 
 	reconciler := metricpipeline.New(
-		config.Global,
 		client,
-		otelcollector.NewMetricAgentApplierDeleter(config.Global, config.OTelCollectorImage, config.MetricAgentPriorityClassName),
-		agentConfigBuilder,
-		&workloadstatus.DaemonSetProber{Client: client},
-		gatewayFlowHealthProber,
-		agentFlowHealthProber,
-		otelcollector.NewMetricGatewayApplierDeleter(config.Global, config.OTelCollectorImage, config.MetricGatewayPriorityClassName),
-		gatewayConfigBuilder,
-		&workloadstatus.DeploymentProber{Client: client},
-		istiostatus.NewChecker(discoveryClient),
-		overrides.New(config.Global, client),
-		pipelineLock,
-		pipelineSync,
-		pipelineValidator,
-		&conditions.ErrorToMessageConverter{},
+		metricpipeline.WithGlobals(config.Global),
+		metricpipeline.WithAgentApplierDeleter(otelcollector.NewMetricAgentApplierDeleter(config.Global, config.OTelCollectorImage, config.MetricAgentPriorityClassName)),
+		metricpipeline.WithAgentConfigBuilder(agentConfigBuilder),
+		metricpipeline.WithAgentProber(&workloadstatus.DaemonSetProber{Client: client}),
+		metricpipeline.WithGatewayFlowHealthProber(gatewayFlowHealthProber),
+		metricpipeline.WithAgentFlowHealthProber(agentFlowHealthProber),
+		metricpipeline.WithGatewayApplierDeleter(otelcollector.NewMetricGatewayApplierDeleter(config.Global, config.OTelCollectorImage, config.MetricGatewayPriorityClassName)),
+		metricpipeline.WithGatewayConfigBuilder(gatewayConfigBuilder),
+		metricpipeline.WithGatewayProber(&workloadstatus.DeploymentProber{Client: client}),
+		metricpipeline.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
+		metricpipeline.WithOverridesHandler(overrides.New(config.Global, client)),
+		metricpipeline.WithPipelineLock(pipelineLock),
+		metricpipeline.WithPipelineSyncer(pipelineSync),
+		metricpipeline.WithPipelineValidator(pipelineValidator),
+		metricpipeline.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
 	)
 
 	return &MetricPipelineController{
