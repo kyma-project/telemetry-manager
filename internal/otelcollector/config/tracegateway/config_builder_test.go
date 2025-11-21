@@ -111,6 +111,23 @@ func TestBuildConfig(t *testing.T) {
 			},
 			goldenFileName: "user-defined-transform-filter.yaml",
 		},
+		{
+			name: "pipeline using OAuth2 authentication",
+			pipelines: []telemetryv1alpha1.TracePipeline{
+				testutils.NewTracePipelineBuilder().
+					WithName("test").
+					WithOTLPOutput(
+						testutils.OTLPProtocol("http"),
+					).
+					WithOAuth2(
+						testutils.OAuth2ClientID("client-id"),
+						testutils.OAuth2ClientSecret("client-secret"),
+						testutils.OAuth2TokenURL("https://auth.example.com/oauth2/token"),
+						testutils.OAuth2Scopes([]string{"traces"}),
+					).Build(),
+			},
+			goldenFileName: "oauth2-authentication.yaml",
+		},
 	}
 
 	buildOptions := BuildOptions{

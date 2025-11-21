@@ -20,6 +20,7 @@ type TracePipelineBuilder struct {
 	filters          []telemetryv1alpha1.FilterSpec
 	statusConditions []metav1.Condition
 	outOTLP          *telemetryv1alpha1.OTLPOutput
+	oauth2           *telemetryv1alpha1.OAuth2Options
 }
 
 func NewTracePipelineBuilder() *TracePipelineBuilder {
@@ -55,6 +56,25 @@ func (b *TracePipelineBuilder) WithOTLPOutput(opts ...OTLPOutputOption) *TracePi
 	for _, opt := range opts {
 		opt(b.outOTLP)
 	}
+
+	return b
+}
+
+func (b *TracePipelineBuilder) WithOAuth2(opts ...OAuth2Option) *TracePipelineBuilder {
+	if b.oauth2 == nil {
+		b.oauth2 = &telemetryv1alpha1.OAuth2Options{}
+	}
+
+	for _, opt := range opts {
+		opt(b.oauth2)
+	}
+
+	// Set OAuth2 on the OTLP output authentication
+	if b.outOTLP.Authentication == nil {
+		b.outOTLP.Authentication = &telemetryv1alpha1.AuthenticationOptions{}
+	}
+
+	b.outOTLP.Authentication.OAuth2 = b.oauth2
 
 	return b
 }

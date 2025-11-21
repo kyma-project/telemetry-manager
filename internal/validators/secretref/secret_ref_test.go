@@ -288,6 +288,49 @@ func TestTracePipeline_GetSecretRefs(t *testing.T) {
 				{Name: "secret-3", Namespace: "default"},
 			},
 		},
+		{
+			name:         "oauth2",
+			pipelineName: "test-pipeline",
+			given: &telemetryv1alpha1.OTLPOutput{
+				Authentication: &telemetryv1alpha1.AuthenticationOptions{
+					OAuth2: &telemetryv1alpha1.OAuth2Options{
+						TokenURL: telemetryv1alpha1.ValueType{
+							Value: "",
+							ValueFrom: &telemetryv1alpha1.ValueFromSource{
+								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+									Name:      "secret-1",
+									Namespace: "default",
+									Key:       "token-url",
+								}},
+						},
+						ClientID: telemetryv1alpha1.ValueType{
+							Value: "",
+							ValueFrom: &telemetryv1alpha1.ValueFromSource{
+								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+									Name:      "secret-2",
+									Namespace: "default",
+									Key:       "client-id",
+								}},
+						},
+						ClientSecret: telemetryv1alpha1.ValueType{
+							Value: "",
+							ValueFrom: &telemetryv1alpha1.ValueFromSource{
+								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+									Name:      "secret-3",
+									Namespace: "default",
+									Key:       "client-secret",
+								}},
+						},
+					},
+				},
+			},
+
+			expected: []telemetryv1alpha1.SecretKeyRef{
+				{Name: "secret-1", Namespace: "default", Key: "token-url"},
+				{Name: "secret-2", Namespace: "default", Key: "client-id"},
+				{Name: "secret-3", Namespace: "default", Key: "client-secret"},
+			},
+		},
 	}
 
 	for _, test := range tests {

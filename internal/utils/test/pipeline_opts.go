@@ -106,6 +106,80 @@ func OTLPEndpointPath(path string) OTLPOutputOption {
 	}
 }
 
+type OAuth2Option func(oauth2 *telemetryv1alpha1.OAuth2Options)
+
+func OAuth2ClientID(clientID string) OAuth2Option {
+	return func(oauth2 *telemetryv1alpha1.OAuth2Options) {
+		oauth2.ClientID = telemetryv1alpha1.ValueType{Value: clientID}
+	}
+}
+
+func OAuth2ClientIDFromSecret(secretName, secretNamespace, key string) OAuth2Option {
+	return func(oauth2 *telemetryv1alpha1.OAuth2Options) {
+		oauth2.ClientID = telemetryv1alpha1.ValueType{
+			ValueFrom: &telemetryv1alpha1.ValueFromSource{
+				SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+					Name:      secretName,
+					Namespace: secretNamespace,
+					Key:       key,
+				},
+			},
+		}
+	}
+}
+
+func OAuth2ClientSecret(clientSecret string) OAuth2Option {
+	return func(oauth2 *telemetryv1alpha1.OAuth2Options) {
+		oauth2.ClientSecret = telemetryv1alpha1.ValueType{Value: clientSecret}
+	}
+}
+
+func OAuth2ClientSecretFromSecret(secretName, secretNamespace, key string) OAuth2Option {
+	return func(oauth2 *telemetryv1alpha1.OAuth2Options) {
+		oauth2.ClientSecret = telemetryv1alpha1.ValueType{
+			ValueFrom: &telemetryv1alpha1.ValueFromSource{
+				SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+					Name:      secretName,
+					Namespace: secretNamespace,
+					Key:       key,
+				},
+			},
+		}
+	}
+}
+
+func OAuth2TokenURL(tokenURL string) OAuth2Option {
+	return func(oauth2 *telemetryv1alpha1.OAuth2Options) {
+		oauth2.TokenURL = telemetryv1alpha1.ValueType{Value: tokenURL}
+	}
+}
+
+func OAuth2TokenURLFromSecret(secretName, secretNamespace, key string) OAuth2Option {
+	return func(oauth2 *telemetryv1alpha1.OAuth2Options) {
+		oauth2.TokenURL = telemetryv1alpha1.ValueType{
+			ValueFrom: &telemetryv1alpha1.ValueFromSource{
+				SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+					Name:      secretName,
+					Namespace: secretNamespace,
+					Key:       key,
+				},
+			},
+		}
+	}
+}
+
+func OAuth2Scopes(scopes []string) OAuth2Option {
+	return func(oauth2 *telemetryv1alpha1.OAuth2Options) {
+		oauth2.Scopes = scopes
+	}
+}
+
+func OAuth2Params(params map[string]string) OAuth2Option {
+	return func(oauth2 *telemetryv1alpha1.OAuth2Options) {
+		oauth2.Params = params
+	}
+}
+
 type HTTPOutputOption func(output *telemetryv1alpha1.LogPipelineHTTPOutput)
 
 func HTTPClientTLSFromString(ca, cert, key string) HTTPOutputOption {
