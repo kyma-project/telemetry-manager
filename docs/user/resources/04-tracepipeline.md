@@ -82,6 +82,30 @@ For details, see the [TracePipeline specification file](https://github.com/kyma-
 | **output.&#x200b;otlp.&#x200b;authentication.&#x200b;basic.&#x200b;user.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key** (required) | string | Key defines the name of the attribute of the Secret holding the referenced value. |
 | **output.&#x200b;otlp.&#x200b;authentication.&#x200b;basic.&#x200b;user.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name** (required) | string | Name of the Secret containing the referenced value. |
 | **output.&#x200b;otlp.&#x200b;authentication.&#x200b;basic.&#x200b;user.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace** (required) | string | Namespace containing the Secret with the referenced value. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2**  | object | OAuth2 activates `OAuth2` authentication for the destination providing relevant Secrets. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;clientID** (required) | object | ClientID contains the OAuth2 client ID or a Secret reference. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;clientID.&#x200b;value**  | string | Value as plain text. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;clientID.&#x200b;valueFrom**  | object | ValueFrom is the value as a reference to a resource. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;clientID.&#x200b;valueFrom.&#x200b;secretKeyRef** (required) | object | SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;clientID.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key** (required) | string | Key defines the name of the attribute of the Secret holding the referenced value. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;clientID.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name** (required) | string | Name of the Secret containing the referenced value. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;clientID.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace** (required) | string | Namespace containing the Secret with the referenced value. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;clientSecret** (required) | object | ClientSecret contains the OAuth2 client secret or a Secret reference. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;clientSecret.&#x200b;value**  | string | Value as plain text. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;clientSecret.&#x200b;valueFrom**  | object | ValueFrom is the value as a reference to a resource. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;clientSecret.&#x200b;valueFrom.&#x200b;secretKeyRef** (required) | object | SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;clientSecret.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key** (required) | string | Key defines the name of the attribute of the Secret holding the referenced value. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;clientSecret.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name** (required) | string | Name of the Secret containing the referenced value. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;clientSecret.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace** (required) | string | Namespace containing the Secret with the referenced value. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;params**  | map\[string\]string | Params contains optional additional OAuth2 parameters that are sent to the token endpoint. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;scopes**  | \[\]string | Scopes contains optional OAuth2 scopes. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;tokenURL** (required) | object | TokenURL contains the OAuth2 token endpoint URL or a Secret reference. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;tokenURL.&#x200b;value**  | string | Value as plain text. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;tokenURL.&#x200b;valueFrom**  | object | ValueFrom is the value as a reference to a resource. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;tokenURL.&#x200b;valueFrom.&#x200b;secretKeyRef** (required) | object | SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;tokenURL.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key** (required) | string | Key defines the name of the attribute of the Secret holding the referenced value. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;tokenURL.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name** (required) | string | Name of the Secret containing the referenced value. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;tokenURL.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace** (required) | string | Namespace containing the Secret with the referenced value. |
 | **output.&#x200b;otlp.&#x200b;endpoint** (required) | object | Endpoint defines the host and port (`<host>:<port>`) of an OTLP endpoint. |
 | **output.&#x200b;otlp.&#x200b;endpoint.&#x200b;value**  | string | Value as plain text. |
 | **output.&#x200b;otlp.&#x200b;endpoint.&#x200b;valueFrom**  | object | ValueFrom is the value as a reference to a resource. |
