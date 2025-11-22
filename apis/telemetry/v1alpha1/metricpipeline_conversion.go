@@ -61,13 +61,13 @@ func (src *MetricPipeline) ConvertTo(dstRaw conversion.Hub) error {
 	// Copy everything else
 	if src.Spec.Transforms != nil {
 		for _, t := range src.Spec.Transforms {
-			dst.Spec.Transforms = append(dst.Spec.Transforms, convertTransformSpecToBeta(t))
+			dst.Spec.Transforms = append(dst.Spec.Transforms, ConvertTransformSpecToBeta(t))
 		}
 	}
 
 	if src.Spec.Filters != nil {
 		for _, t := range src.Spec.Filters {
-			dst.Spec.Filters = append(dst.Spec.Filters, convertFilterSpecToBeta(t))
+			dst.Spec.Filters = append(dst.Spec.Filters, ConvertFilterSpecToBeta(t))
 		}
 	}
 

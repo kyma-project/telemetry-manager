@@ -37,16 +37,25 @@ func NewTransformSpecValidator(signalType SignalType) (*TransformSpecValidator, 
 }
 
 func (v *TransformSpecValidator) Validate(transforms []telemetryv1alpha1.TransformSpec) error {
+	for _, ts := range transforms {
+		if err := v.ValidateStatementsAndConditions(ts.Statements, ts.Conditions); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ValidateStatementsAndConditions validates raw OTTL statements and conditions
+func (v *TransformSpecValidator) ValidateStatementsAndConditions(statements, conditions []string) error {
 	const errorMessage = "invalid TransformSpec"
 
-	for _, ts := range transforms {
-		if err := v.parserCollection.parseStatementsWithConditions(ts.Statements, ts.Conditions); err != nil {
-			return &InvalidOTTLSpecError{Err: fmt.Errorf("%s: %w", errorMessage, err)}
-		}
+	if err := v.parserCollection.parseStatementsWithConditions(statements, conditions); err != nil {
+		return &InvalidOTTLSpecError{Err: fmt.Errorf("%s: %w", errorMessage, err)}
+	}
 
-		if err := v.parserCollection.parseConditions(ts.Conditions); err != nil {
-			return &InvalidOTTLSpecError{Err: fmt.Errorf("%s: %w", errorMessage, err)}
-		}
+	if err := v.parserCollection.parseConditions(conditions); err != nil {
+		return &InvalidOTTLSpecError{Err: fmt.Errorf("%s: %w", errorMessage, err)}
 	}
 
 	return nil

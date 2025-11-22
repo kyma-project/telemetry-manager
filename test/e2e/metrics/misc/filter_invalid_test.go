@@ -4,20 +4,16 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
-	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
 func TestFilterInvalid(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelMetricsMisc)
+	suite.RegisterTestCase(t, suite.LabelMetricsMisc, suite.LabelExperimental)
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -36,26 +32,7 @@ func TestFilterInvalid(t *testing.T) {
 		Build()
 
 	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(&pipeline)).To(Succeed())
+		Expect(kitk8s.DeleteObjects(&pipeline)).Should(MatchError(ContainSubstring("not found")))
 	})
-	Expect(kitk8s.CreateObjects(t, &pipeline)).To(Succeed())
-
-	assert.MetricPipelineHasCondition(t, pipelineName, metav1.Condition{
-		Type:   conditions.TypeConfigurationGenerated,
-		Status: metav1.ConditionFalse,
-		Reason: conditions.ReasonOTTLSpecInvalid,
-	})
-
-	assert.MetricPipelineHasCondition(t, pipelineName, metav1.Condition{
-		Type:   conditions.TypeFlowHealthy,
-		Status: metav1.ConditionFalse,
-		Reason: conditions.ReasonSelfMonConfigNotGenerated,
-	})
-
-	assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
-	assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
-		Type:   conditions.TypeMetricComponentsHealthy,
-		Status: metav1.ConditionFalse,
-		Reason: conditions.ReasonOTTLSpecInvalid,
-	})
+	Expect(kitk8s.CreateObjects(t, &pipeline)).ToNot(Succeed())
 }
