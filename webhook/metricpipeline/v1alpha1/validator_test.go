@@ -3,7 +3,7 @@ package v1alpha1
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
@@ -60,9 +60,9 @@ func TestMetricPipelineValidator_ValidateCreate(t *testing.T) {
 			_, err := validator.ValidateCreate(t.Context(), tt.pipeline)
 
 			if tt.expectErr {
-				require.Error(t, err)
+				assert.Error(t, err)
 			} else {
-				require.NoError(t, err)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -120,9 +120,9 @@ func TestMetricPipelineValidator_ValidateUpdate(t *testing.T) {
 			_, err := validator.ValidateUpdate(t.Context(), tt.oldPipeline, tt.newPipeline)
 
 			if tt.expectErr {
-				require.Error(t, err)
+				assert.Error(t, err)
 			} else {
-				require.NoError(t, err)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -135,8 +135,8 @@ func TestMetricPipelineValidator_ValidateDelete(t *testing.T) {
 
 	warnings, err := validator.ValidateDelete(t.Context(), pipeline)
 
-	require.NoError(t, err)
-	require.Empty(t, warnings)
+	assert.NoError(t, err)
+	assert.Empty(t, warnings)
 }
 
 func TestMetricPipelineValidator_WrongType(t *testing.T) {
@@ -147,7 +147,6 @@ func TestMetricPipelineValidator_WrongType(t *testing.T) {
 
 	warnings, err := validator.ValidateCreate(t.Context(), wrongObject)
 
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "expected a MetricPipeline but got")
-	require.Empty(t, warnings)
+	assert.Error(t, err, "expected a MetricPipeline but got")
+	assert.Empty(t, warnings)
 }

@@ -3,7 +3,7 @@ package v1alpha1
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -78,16 +78,16 @@ func TestLogPipelineValidator_ValidateCreate(t *testing.T) {
 			warnings, err := validator.ValidateCreate(t.Context(), tt.pipeline)
 
 			if tt.expectErr {
-				require.Error(t, err)
+				assert.Error(t, err)
 			} else {
-				require.NoError(t, err)
+				assert.NoError(t, err)
 			}
 
 			if tt.expectWarnings > 0 {
-				require.Len(t, warnings, tt.expectWarnings)
+				assert.Len(t, warnings, tt.expectWarnings)
 
 				if tt.expectWarningsMsg != "" {
-					require.Contains(t, warnings, tt.expectWarningsMsg)
+					assert.Contains(t, warnings, tt.expectWarningsMsg)
 				}
 			}
 		})
@@ -164,16 +164,16 @@ func TestLogPipelineValidator_ValidateUpdate(t *testing.T) {
 			warnings, err := validator.ValidateUpdate(t.Context(), tt.oldPipeline, tt.newPipeline)
 
 			if tt.expectErr {
-				require.Error(t, err)
+				assert.Error(t, err)
 			} else {
-				require.NoError(t, err)
+				assert.NoError(t, err)
 			}
 
 			if tt.expectWarnings > 0 {
-				require.Len(t, warnings, tt.expectWarnings)
+				assert.Len(t, warnings, tt.expectWarnings)
 
 				if tt.expectWarningsMsg != "" {
-					require.Contains(t, warnings, tt.expectWarningsMsg)
+					assert.Contains(t, warnings, tt.expectWarningsMsg)
 				}
 			}
 		})
@@ -187,8 +187,8 @@ func TestLogPipelineValidator_ValidateDelete(t *testing.T) {
 
 	warnings, err := validator.ValidateDelete(t.Context(), pipeline)
 
-	require.NoError(t, err)
-	require.Empty(t, warnings)
+	assert.NoError(t, err)
+	assert.Empty(t, warnings)
 }
 
 func TestLogPipelineValidator_WrongType(t *testing.T) {
@@ -199,7 +199,6 @@ func TestLogPipelineValidator_WrongType(t *testing.T) {
 
 	warnings, err := validator.ValidateCreate(t.Context(), wrongObject)
 
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "expected a LogPipeline but got")
-	require.Empty(t, warnings)
+	assert.ErrorContains(t, err, "expected a LogPipeline but got")
+	assert.Empty(t, warnings)
 }
