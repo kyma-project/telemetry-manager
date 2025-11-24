@@ -191,7 +191,11 @@ This usually happens for one of the following reasons:
 ### Symptom
 
 - In the pipeline status, you see the condition `ConfigurationGenerated` with status `False` and reason `OTTLSpecInvalid`.
-- The pipeline configuration fails with vague error messages, for example, mentioning "unexpected token `<EOF>`" or EOF (End of File) parsing errors.
+- The pipeline configuration fails with unclear error messages, for example, mentioning "unexpected token `<EOF>`" or EOF (End of File) parsing errors, such as the following example:
+
+```yaml
+'Invalid FilterSpec: condition has invalid syntax: 1:64: unexpected token
+      "<EOF>" (expected <opcomparison> Value)'
 
 ### Cause
 
