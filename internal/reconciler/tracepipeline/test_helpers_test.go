@@ -306,6 +306,7 @@ func newTestReconciler(client client.Client, opts ...any) (*testReconciler, func
 
 	// Build default options with mocked dependencies
 	reconcilerOpts := []Option{
+		WithClient(client),
 		WithGlobal(config.NewGlobal(config.WithTargetNamespace("default"))),
 		WithGatewayConfigBuilder(gatewayConfigBuilder),
 		WithGatewayApplierDeleter(gatewayApplierDeleter),
@@ -332,7 +333,7 @@ func newTestReconciler(client client.Client, opts ...any) (*testReconciler, func
 	}
 
 	// Create the reconciler first
-	tr.Reconciler = New(client, reconcilerOpts...)
+	tr.Reconciler = New(reconcilerOpts...)
 
 	// Now apply test options that need access to the initialized Reconciler
 	for _, testOpt := range testOpts {

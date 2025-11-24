@@ -157,6 +157,7 @@ func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
 
 	// Build default options with mocked dependencies
 	allOpts := []Option{
+		WithClient(client),
 		WithGlobals(config.NewGlobal(config.WithTargetNamespace("default"))),
 		WithAgentConfigBuilder(agentConfigBuilder),
 		WithAgentApplierDeleter(agentApplierDeleter),
@@ -171,5 +172,5 @@ func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
 	// Merge default options with provided options (provided options will override defaults)
 	allOpts = append(allOpts, opts...)
 
-	return New(client, allOpts...)
+	return New(allOpts...)
 }

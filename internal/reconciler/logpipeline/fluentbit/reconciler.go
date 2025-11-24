@@ -108,12 +108,17 @@ func WithErrorToMessageConverter(converter ErrorToMessageConverter) Option {
 	}
 }
 
+// WithClient sets the Kubernetes client.
+func WithClient(client client.Client) Option {
+	return func(r *Reconciler) {
+		r.Client = client
+	}
+}
+
 // New creates a new Reconciler with the provided client and functional options.
 // All dependencies must be provided via functional options.
-func New(client client.Client, opts ...Option) *Reconciler {
-	r := &Reconciler{
-		Client: client,
-	}
+func New(opts ...Option) *Reconciler {
+	r := &Reconciler{}
 
 	for _, opt := range opts {
 		opt(r)

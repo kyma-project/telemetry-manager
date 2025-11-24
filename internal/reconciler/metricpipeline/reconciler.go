@@ -7,7 +7,6 @@ import (
 
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -17,14 +16,11 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricagent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricgateway"
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
@@ -32,49 +28,6 @@ import (
 )
 
 const defaultReplicaCount int32 = 2
-
-type AgentConfigBuilder interface {
-	Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, options metricagent.BuildOptions) (*common.Config, common.EnvVars, error)
-}
-
-type GatewayConfigBuilder interface {
-	Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, options metricgateway.BuildOptions) (*common.Config, common.EnvVars, error)
-}
-
-type AgentApplierDeleter interface {
-	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.AgentApplyOptions) error
-	DeleteResources(ctx context.Context, c client.Client) error
-}
-
-type GatewayApplierDeleter interface {
-	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.GatewayApplyOptions) error
-	DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error
-}
-
-type PipelineLock interface {
-	TryAcquireLock(ctx context.Context, owner metav1.Object) error
-	IsLockHolder(ctx context.Context, owner metav1.Object) error
-}
-
-type PipelineSyncer interface {
-	TryAcquireLock(ctx context.Context, owner metav1.Object) error
-}
-
-type GatewayFlowHealthProber interface {
-	Probe(ctx context.Context, pipelineName string) (prober.OTelGatewayProbeResult, error)
-}
-
-type AgentFlowHealthProber interface {
-	Probe(ctx context.Context, pipelineName string) (prober.OTelAgentProbeResult, error)
-}
-
-type OverridesHandler interface {
-	LoadOverrides(ctx context.Context) (*overrides.Config, error)
-}
-
-type IstioStatusChecker interface {
-	IsIstioActive(ctx context.Context) bool
-}
 
 type Reconciler struct {
 	client.Client
@@ -205,12 +158,17 @@ func WithErrorToMessageConverter(converter commonstatus.ErrorToMessageConverter)
 	}
 }
 
+// WithClient sets the Kubernetes client.
+func WithClient(client client.Client) Option {
+	return func(r *Reconciler) {
+		r.Client = client
+	}
+}
+
 // New creates a new Reconciler with the provided client and functional options.
 // All dependencies must be provided via functional options.
-func New(client client.Client, opts ...Option) *Reconciler {
-	r := &Reconciler{
-		Client: client,
-	}
+func New(opts ...Option) *Reconciler {
+	r := &Reconciler{}
 
 	for _, opt := range opts {
 		opt(r)

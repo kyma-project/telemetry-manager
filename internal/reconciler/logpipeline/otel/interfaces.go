@@ -3,6 +3,7 @@ package otel
 import (
 	"context"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/loggateway"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
+	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
 // GatewayConfigBuilder builds the OTel Collector configuration for the log gateway.
@@ -87,4 +89,63 @@ type Prober interface {
 type ErrorToMessageConverter interface {
 	// Convert transforms an error into a descriptive message suitable for display in status conditions.
 	Convert(err error) string
+}
+
+// PipelineLock manages exclusive access to pipeline resources to enforce maximum pipeline limits.
+// It prevents exceeding the configured maximum number of active log pipelines in the cluster.
+type PipelineLock interface {
+	// TryAcquireLock attempts to acquire a lock for the given pipeline owner.
+	// Returns an error if the maximum pipeline count is exceeded or if the lock cannot be acquired.
+	// The lock ensures that only a limited number of pipelines can be active simultaneously.
+	TryAcquireLock(ctx context.Context, owner metav1.Object) error
+
+	// IsLockHolder checks if the given owner currently holds a lock.
+	// Returns nil if the owner holds a lock, or an error if it does not.
+	// This is used to determine if a pipeline is already registered and active.
+	IsLockHolder(ctx context.Context, owner metav1.Object) error
+}
+
+// EndpointValidator validates log pipeline endpoint configurations.
+// It checks if the endpoint is reachable, properly formatted, and compatible with the specified protocol.
+type EndpointValidator interface {
+	// Validate checks if the endpoint configuration is valid for the specified protocol.
+	// It verifies the endpoint format, DNS resolution, and protocol compatibility.
+	// Returns an error if the endpoint is invalid, unreachable, or incompatible with the protocol.
+	Validate(ctx context.Context, endpoint *telemetryv1alpha1.ValueType, protocol string) error
+}
+
+// TLSCertValidator validates TLS certificate configurations for secure connections.
+// It ensures certificates are valid, not expired, and properly formatted.
+type TLSCertValidator interface {
+	// Validate checks if the TLS certificate bundle is valid and not expired.
+	// It verifies the certificate chain, expiration dates, and proper encoding.
+	// Returns an error if the certificate is invalid, expired, or about to expire.
+	Validate(ctx context.Context, config tlscert.TLSBundle) error
+}
+
+// SecretRefValidator validates secret references in LogPipeline resources.
+// It ensures that all referenced Kubernetes secrets exist and are accessible.
+type SecretRefValidator interface {
+	// ValidateLogPipeline checks if all secret references in the pipeline exist and are accessible.
+	// It verifies that secrets are present in the correct namespace and contain required keys.
+	// Returns an error if any secret is missing, inaccessible, or malformed.
+	ValidateLogPipeline(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error
+}
+
+// TransformSpecValidator validates transform specifications in log pipeline configurations.
+// It ensures that log transformations are correctly defined and syntactically valid.
+type TransformSpecValidator interface {
+	// Validate checks if the transform specifications are valid.
+	// It verifies syntax, supported operations, and configuration completeness.
+	// Returns an error if any transform is invalid or unsupported.
+	Validate(transforms []telemetryv1alpha1.TransformSpec) error
+}
+
+// FilterSpecValidator validates filter specifications in log pipeline configurations.
+// It ensures that log filters are correctly defined and will work as expected.
+type FilterSpecValidator interface {
+	// Validate checks if the filter specifications are valid.
+	// It verifies filter syntax, supported operations, and configuration completeness.
+	// Returns an error if any filter is invalid or unsupported.
+	Validate(filters []telemetryv1alpha1.FilterSpec) error
 }
