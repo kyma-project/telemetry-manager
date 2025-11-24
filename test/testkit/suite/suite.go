@@ -155,25 +155,80 @@ func RegisterTestCase(t *testing.T, labels ...string) {
 
 	labelSet := toSet(labels)
 
-	requiredLabels := findRequiredLabels()
-	if len(requiredLabels) == 0 {
-		return
-	}
-
 	// Skip test if it contains "skipped" label
 	if _, exists := labelSet[LabelSkip]; exists {
 		t.Skip()
 	}
 
-	// Skip test if it doesn't contain at least one required label
-	for _, requiredLabel := range requiredLabels {
-		if _, exists := labelSet[requiredLabel]; !exists {
+	labelFilterExpr := findLabelFilterExpression()
+	doNotExecute := findDoNotExecuteFlag()
+
+	// If no filter is specified, run all tests (unless do-not-execute is set)
+	if labelFilterExpr == "" {
+		if doNotExecute {
+			printTestInfo(t, labels, "would execute (no filter)")
 			t.Skip()
 		}
+
+		return
+	}
+
+	shouldRun, err := evaluateLabelExpression(labels, labelFilterExpr)
+	if err != nil {
+		t.Fatalf("Invalid label filter: %v", err)
+	}
+
+	if doNotExecute {
+		if shouldRun {
+			printTestInfo(t, labels, fmt.Sprintf("would execute (matches filter: %s)", labelFilterExpr))
+		} else {
+			printTestInfo(t, labels, fmt.Sprintf("would skip (doesn't match filter: %s)", labelFilterExpr))
+		}
+
+		t.Skip()
+
+		return
+	}
+
+	if !shouldRun {
+		t.Skipf("Test skipped: label filter '%s' not satisfied", labelFilterExpr)
 	}
 }
 
-func findRequiredLabels() []string {
+func findDoNotExecuteFlag() bool {
+	for _, arg := range os.Args {
+		if arg == "-do-not-execute" || arg == "--do-not-execute" {
+			return true
+		}
+	}
+
+	return false
+}
+
+func printTestInfo(t *testing.T, labels []string, action string) {
+	testName := t.Name()
+
+	if testName == "" {
+		// Try to get test name from runtime if not available
+		if pc, _, _, ok := runtime.Caller(2); ok {
+			if fn := runtime.FuncForPC(pc); fn != nil {
+				testName = fn.Name()
+				// Extract just the test function name
+				if parts := strings.Split(testName, "."); len(parts) > 0 {
+					testName = parts[len(parts)-1]
+				}
+			}
+		}
+
+		if testName == "" {
+			testName = "<unknown test>"
+		}
+	}
+
+	fmt.Printf("[DRY-RUN] Test: %s | Labels: %v | Action: %s\n", testName, labels, action) //nolint:forbidigo // using fmt for test info output
+}
+
+func findLabelFilterExpression() string {
 	const prefix = "-labels="
 
 	var labelsArg string
@@ -185,15 +240,15 @@ func findRequiredLabels() []string {
 	}
 
 	if labelsArg == "" {
-		return nil
+		return ""
 	}
 
 	labelsKV := strings.SplitN(labelsArg, "=", 2)
 	if len(labelsKV) != 2 {
-		return nil
+		return ""
 	}
 
-	return strings.Split(labelsKV[1], ",")
+	return labelsKV[1]
 }
 
 func toSet(labels []string) map[string]struct{} {

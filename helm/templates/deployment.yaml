@@ -62,6 +62,10 @@ spec:
           value: {{ quote .Values.manager.container.env.selfMonitorImage }}
         - name: ALPINE_IMAGE
           value: {{ quote .Values.manager.container.env.alpineImage }}
+        {{- if .Values.manager.container.env.operateInFipsMode }}
+        - name: KYMA_FIPS_MODE_ENABLED
+          value: {{ quote .Values.manager.container.env.operateInFipsMode }}
+        {{- end }}
         image: {{ .Values.manager.container.image.repository }}
         imagePullPolicy: {{ .Values.manager.container.image.pullPolicy }}
         livenessProbe:
