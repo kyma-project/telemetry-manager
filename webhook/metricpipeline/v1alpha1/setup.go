@@ -26,6 +26,5 @@ func SetupWithManager(mgr ctrl.Manager) error {
 			EnvoyMetricsEnabled:       false,
 		}).
 		WithValidator(&MetricPipelineValidator{}).
-		WithValidatorCustomPath("/validate-metricpipeline").
 		Complete()
 }

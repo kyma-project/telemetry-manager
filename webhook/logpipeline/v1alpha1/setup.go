@@ -14,6 +14,5 @@ func SetupWithManager(mgr ctrl.Manager) error {
 			DefaultOTLPProtocol:              telemetryv1alpha1.OTLPProtocolGRPC,
 		}).
 		WithValidator(&LogPipelineValidator{}).
-		WithValidatorCustomPath("/validate-logpipeline").
 		Complete()
 }
