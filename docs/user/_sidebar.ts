@@ -24,7 +24,7 @@ export default [
       { text: 'Filter Logs', link: './filter-and-process/filter-logs' },
       { text: 'Filter Traces', link: './filter-and-process/filter-traces' },
       { text: 'Filter Metrics', link: './filter-and-process/filter-metrics' },
-      { text: 'Transform and Filter Telemetry Data with OTTL', link: './filter-and-process/ottl-transform-and-filter/README', collapsed: true, items: [
+      { text: 'Transform and Filter with OTTL', link: './filter-and-process/ottl-transform-and-filter/README', collapsed: true, items: [
         { text: 'Transform with OTTL', link: './filter-and-process/ottl-transform-and-filter/ottl-transform' },
         { text: 'Filter with OTTL', link: './filter-and-process/ottl-transform-and-filter/ottl-filter' },
       ]},
