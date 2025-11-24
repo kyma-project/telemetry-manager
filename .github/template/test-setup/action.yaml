@@ -12,6 +12,10 @@ inputs:
     description: Whether to install the Istio module
     required: true
     default: 'false'
+  operate-in-fips-mode:
+    description: Whether components should be deployed in FIPS 140-2 compliant way.
+    required: true
+    default: 'false'
 
 runs:
   using: "composite"
@@ -23,6 +27,8 @@ runs:
     - name: Provision K3D${{ inputs.experimental == 'true' && 'in Experimental Mode' || '' }} ${{inputs.install-istio == 'true' && ' with Istio' || '' }}
       shell: bash
       run: |
+        echo "::notice title=K3D Cluster::Provisioning K3D Cluster (Experimental: ${{ inputs.experimental }}, Install Istio: ${{ inputs.install-istio }}, FIPS Mode: ${{ inputs.operate-in-fips-mode }})"
+        
         mode=""
         if [[ "${{ inputs.experimental }}" == "true" ]]; then
           mode="$mode-experimental"
@@ -31,7 +37,12 @@ runs:
           mode="$mode-istio"
         fi
         
+        if [[ "${{ inputs.operate-in-fips-mode }}" == "false" ]]; then
+          mode="$mode-no-fips"
+        fi
+        
         echo "::notice title=Manager Image::Mananger Image to be used: $MANAGER_IMAGE"
+    
         make setup-e2e$mode
       env:
         # sets trigger depending on event being either pull_request or merge_group

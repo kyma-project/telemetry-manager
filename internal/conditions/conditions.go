@@ -48,6 +48,7 @@ const (
 
 	// LogPipeline reasons
 
+	ReasonNoFluentbitInFipsMode       = "FipsModeEnabled"
 	ReasonAgentConfigured             = "AgentConfigured"
 	ReasonSelfMonAgentNoLogsDelivered = "AgentNoLogsDelivered"
 	ReasonLogAgentNotRequired         = "AgentNotRequired"
@@ -75,10 +76,11 @@ var commonMessages = map[string]string{
 }
 
 var commonLogPipelineMessages = map[string]string{
-	ReasonAgentConfigured:   "LogPipeline specification is successfully applied to the configuration of Log agent",
-	ReasonAgentNotReady:     "Log agent DaemonSet is not ready",
-	ReasonAgentReady:        "Log agent DaemonSet is ready",
-	ReasonComponentsRunning: "All log components are running",
+	ReasonAgentConfigured:       "LogPipeline specification is successfully applied to the configuration of Log agent",
+	ReasonAgentNotReady:         "Log agent DaemonSet is not ready",
+	ReasonAgentReady:            "Log agent DaemonSet is ready",
+	ReasonComponentsRunning:     "All log components are running",
+	ReasonNoFluentbitInFipsMode: "HTTP/custom output types are not supported when FIPS mode is enabled",
 }
 
 var fluentBitLogPipelineMessages = map[string]string{
