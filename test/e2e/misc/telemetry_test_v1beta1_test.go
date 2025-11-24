@@ -89,37 +89,37 @@ func assertV1Beta1ValidatingWebhookConfiguration() {
 		assertWebhook(g,
 			findWebhook(validatingWebhookConfiguration.Webhooks, "validating-logpipelines.kyma-project.io"),
 			"validating-logpipelines.kyma-project.io",
-			"/validate-logpipeline",
+			"/validate-telemetry-kyma-project-io-v1alpha1-logpipeline",
 			"logpipelines")
 
 		assertWebhook(g,
 			findWebhook(validatingWebhookConfiguration.Webhooks, "validating-logpipelines-v1beta1.kyma-project.io"),
 			"validating-logpipelines-v1beta1.kyma-project.io",
-			"/validate-logpipeline-v1beta1",
+			"/validate-telemetry-kyma-project-io-v1beta1-logpipeline",
 			"logpipelines")
 
 		assertWebhook(g,
 			findWebhook(validatingWebhookConfiguration.Webhooks, "validating-metricpipelines.kyma-project.io"),
 			"validating-metricpipelines.kyma-project.io",
-			"/validate-metricpipeline",
+			"/validate-telemetry-kyma-project-io-v1alpha1-metricpipeline",
 			"metricpipelines")
 
 		assertWebhook(g,
 			findWebhook(validatingWebhookConfiguration.Webhooks, "validating-metricpipelines-v1beta1.kyma-project.io"),
 			"validating-metricpipelines-v1beta1.kyma-project.io",
-			"/validate-metricpipeline-v1beta1",
+			"/validate-telemetry-kyma-project-io-v1beta1-metricpipeline",
 			"metricpipelines")
 
 		assertWebhook(g,
 			findWebhook(validatingWebhookConfiguration.Webhooks, "validating-tracepipelines.kyma-project.io"),
 			"validating-tracepipelines.kyma-project.io",
-			"/validate-tracepipeline",
+			"/validate-telemetry-kyma-project-io-v1alpha1-tracepipeline",
 			"tracepipelines")
 
 		assertWebhook(g,
 			findWebhook(validatingWebhookConfiguration.Webhooks, "validating-tracepipelines-v1beta1.kyma-project.io"),
 			"validating-tracepipelines-v1beta1.kyma-project.io",
-			"/validate-tracepipeline-v1beta1",
+			"/validate-telemetry-kyma-project-io-v1beta1-tracepipeline",
 			"tracepipelines")
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }

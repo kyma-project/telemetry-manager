@@ -172,19 +172,19 @@ func assertValidatingWebhookConfiguration() {
 		assertWebhook(g,
 			findWebhook(validatingWebhookConfiguration.Webhooks, "validating-logpipelines.kyma-project.io"),
 			"validating-logpipelines.kyma-project.io",
-			"/validate-logpipeline",
+			"/validate-telemetry-kyma-project-io-v1alpha1-logpipeline",
 			"logpipelines")
 
 		assertWebhook(g,
 			findWebhook(validatingWebhookConfiguration.Webhooks, "validating-metricpipelines.kyma-project.io"),
 			"validating-metricpipelines.kyma-project.io",
-			"/validate-metricpipeline",
+			"/validate-telemetry-kyma-project-io-v1alpha1-metricpipeline",
 			"metricpipelines")
 
 		assertWebhook(g,
 			findWebhook(validatingWebhookConfiguration.Webhooks, "validating-tracepipelines.kyma-project.io"),
 			"validating-tracepipelines.kyma-project.io",
-			"/validate-tracepipeline",
+			"/validate-telemetry-kyma-project-io-v1alpha1-tracepipeline",
 			"tracepipelines")
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
