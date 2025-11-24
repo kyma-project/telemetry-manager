@@ -51,7 +51,7 @@ func TestMaxPipelineLimit(t *testing.T) {
 
 	reconciler := newTestReconciler(testClient,
 		WithPipelineLock(pipelineLock),
-		WithPipelineValidator(newTestValidator(withPipelineLock(pipelineLock))),
+		WithPipelineValidator(newTestValidator(WithValidatorPipelineLock(pipelineLock))),
 	)
 
 	result := reconcileAndGet(t, testClient, reconciler, pipeline.Name)
@@ -148,7 +148,7 @@ func TestTLSCertificateValidation(t *testing.T) {
 			testClient := newTestClient(t, &pipeline)
 
 			reconciler := newTestReconciler(testClient,
-				WithPipelineValidator(newTestValidator(withTLSCertValidator(stubs.NewTLSCertValidator(tt.tlsCertErr)))),
+				WithPipelineValidator(newTestValidator(WithTLSCertValidator(stubs.NewTLSCertValidator(tt.tlsCertErr)))),
 			)
 
 			result := reconcileAndGet(t, testClient, reconciler, pipeline.Name)
@@ -330,7 +330,7 @@ func TestSecretReferenceValidation(t *testing.T) {
 			testClient := newTestClientWithObjs(t, objs...)
 
 			reconciler := newTestReconciler(testClient,
-				WithPipelineValidator(newTestValidator(withSecretRefValidator(stubs.NewSecretRefValidator(tt.secretErr)))),
+				WithPipelineValidator(newTestValidator(WithSecretRefValidator(stubs.NewSecretRefValidator(tt.secretErr)))),
 			)
 
 			result := reconcileAndGet(t, testClient, reconciler, pipeline.Name)

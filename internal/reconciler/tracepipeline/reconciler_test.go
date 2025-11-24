@@ -162,7 +162,7 @@ func TestSecretReferenceValidation(t *testing.T) {
 			opts := []any{}
 
 			if tt.secretValidatorError != nil {
-				validator := newTestValidator(withSecretRefValidator(stubs.NewSecretRefValidator(tt.secretValidatorError)))
+				validator := newTestValidator(WithSecretRefValidator(stubs.NewSecretRefValidator(tt.secretValidatorError)))
 				opts = append(opts, WithPipelineValidator(validator))
 			}
 
@@ -207,7 +207,7 @@ func TestMaxPipelineLimit(t *testing.T) {
 	gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 	// No On() setup - should not be called
 
-	validator := newTestValidator(withPipelineLock(pipelineLockStub))
+	validator := newTestValidator(WithValidatorPipelineLock(pipelineLockStub))
 
 	sut, assertMocks := newTestReconciler(fakeClient,
 		WithPipelineLock(pipelineLockStub),
@@ -422,7 +422,7 @@ func TestTLSCertificateValidation(t *testing.T) {
 			// If not expectGatewayConfigured, leave mock without expectations -> will assert not called
 
 			pipelineValidatorWithStubs := newTestValidator(
-				withSecretRefValidator(stubs.NewSecretRefValidator(tt.tlsCertErr)),
+				WithSecretRefValidator(stubs.NewSecretRefValidator(tt.tlsCertErr)),
 			)
 
 			sut, assertMocks := newTestReconciler(
@@ -457,13 +457,13 @@ func TestTLSCertificateValidation(t *testing.T) {
 func TestOTTLSpecValidation(t *testing.T) {
 	tests := []struct {
 		name             string
-		validatorOption  func() validatorOption
+		validatorOption  func() ValidatorOption
 		expectedErrorMsg string
 	}{
 		{
 			name: "invalid transform spec",
-			validatorOption: func() validatorOption {
-				return withTransformSpecValidator(stubs.NewTransformSpecValidator(
+			validatorOption: func() ValidatorOption {
+				return WithTransformSpecValidator(stubs.NewTransformSpecValidator(
 					&ottl.InvalidOTTLSpecError{Err: fmt.Errorf("invalid TransformSpec: error while parsing statements")},
 				))
 			},
@@ -471,8 +471,8 @@ func TestOTTLSpecValidation(t *testing.T) {
 		},
 		{
 			name: "invalid filter spec",
-			validatorOption: func() validatorOption {
-				return withFilterSpecValidator(stubs.NewFilterSpecValidator(
+			validatorOption: func() ValidatorOption {
+				return WithFilterSpecValidator(stubs.NewFilterSpecValidator(
 					&ottl.InvalidOTTLSpecError{Err: fmt.Errorf("invalid FilterSpec: error while parsing statements")},
 				))
 			},
@@ -548,7 +548,7 @@ func TestAPIServerFailureHandling(t *testing.T) {
 			},
 			setupReconciler: func(fakeClient client.Client, gatewayConfigBuilderMock *mocks.GatewayConfigBuilder) (*testReconciler, func(*testing.T)) {
 				validator := newTestValidator(
-					withSecretRefValidator(stubs.NewSecretRefValidator(&errortypes.APIRequestFailedError{Err: serverErr})),
+					WithSecretRefValidator(stubs.NewSecretRefValidator(&errortypes.APIRequestFailedError{Err: serverErr})),
 				)
 
 				return newTestReconciler(
@@ -572,7 +572,7 @@ func TestAPIServerFailureHandling(t *testing.T) {
 				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(&errortypes.APIRequestFailedError{Err: serverErr})
 
-				validator := newTestValidator(withPipelineLock(pipelineLockStub))
+				validator := newTestValidator(WithValidatorPipelineLock(pipelineLockStub))
 
 				return newTestReconciler(
 					fakeClient,
@@ -624,7 +624,7 @@ func TestNonReconcilablePipelines(t *testing.T) {
 	gatewayApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Times(1)
 
 	pipelineValidatorWithStubs := newTestValidator(
-		withSecretRefValidator(stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound))),
+		WithSecretRefValidator(stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound))),
 	)
 
 	errToMsg := &conditions.ErrorToMessageConverter{}
@@ -696,7 +696,7 @@ func TestPodErrorConditionReporting(t *testing.T) {
 			// gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&common.Config{}, nil, nil).Once()
 
 			pipelineValidatorWithStubs := newTestValidator(
-				withSecretRefValidator(stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound))),
+				WithSecretRefValidator(stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound))),
 			)
 
 			gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(tt.probeGatewayErr)

@@ -202,7 +202,7 @@ func TestSecretReferenceValidation(t *testing.T) {
 		fakeClient := newTestClient(t, &pipeline)
 
 		customValidator := newTestValidator(
-			withSecretRefValidator(stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound))),
+			WithSecretRefValidator(stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound))),
 		)
 
 		sut, assertAll := newTestReconciler(
@@ -240,7 +240,7 @@ func TestMaxPipelineLimit(t *testing.T) {
 	pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
 
 	customValidator := newTestValidator(
-		withPipelineLock(pipelineLockStub),
+		WithValidatorPipelineLock(pipelineLockStub),
 	)
 
 	sut, assertAll := newTestReconciler(
@@ -554,7 +554,7 @@ func TestTLSCertificateValidation(t *testing.T) {
 			gatewayApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 			customValidator := newTestValidator(
-				withTLSCertValidator(stubs.NewTLSCertValidator(tt.tlsCertErr)),
+				WithTLSCertValidator(stubs.NewTLSCertValidator(tt.tlsCertErr)),
 			)
 
 			sut, assertAll := newTestReconciler(
@@ -590,19 +590,19 @@ func TestTLSCertificateValidation(t *testing.T) {
 func TestOTTLSpecValidation(t *testing.T) {
 	tests := []struct {
 		name            string
-		validatorOption validatorOption
+		validatorOption ValidatorOption
 		expectedMessage string
 	}{
 		{
 			name: "invalid transform spec",
-			validatorOption: withTransformSpecValidator(stubs.NewTransformSpecValidator(
+			validatorOption: WithTransformSpecValidator(stubs.NewTransformSpecValidator(
 				&ottl.InvalidOTTLSpecError{Err: fmt.Errorf("invalid TransformSpec: error while parsing statements")},
 			)),
 			expectedMessage: "Invalid TransformSpec: error while parsing statements",
 		},
 		{
 			name: "invalid filter spec",
-			validatorOption: withFilterSpecValidator(stubs.NewFilterSpecValidator(
+			validatorOption: WithFilterSpecValidator(stubs.NewFilterSpecValidator(
 				&ottl.InvalidOTTLSpecError{Err: fmt.Errorf("invalid FilterSpec: error while parsing statements")},
 			)),
 			expectedMessage: "Invalid FilterSpec: error while parsing statements",
@@ -653,7 +653,7 @@ func TestAPIServerFailureHandling(t *testing.T) {
 				Build(),
 			setupValidator: func(serverErr error) *Validator {
 				return newTestValidator(
-					withSecretRefValidator(stubs.NewSecretRefValidator(&errortypes.APIRequestFailedError{Err: serverErr})),
+					WithSecretRefValidator(stubs.NewSecretRefValidator(&errortypes.APIRequestFailedError{Err: serverErr})),
 				)
 			},
 			needsGatewayMock: false,
@@ -666,7 +666,7 @@ func TestAPIServerFailureHandling(t *testing.T) {
 				pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 				pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(&errortypes.APIRequestFailedError{Err: serverErr})
 
-				return newTestValidator(withPipelineLock(pipelineLock))
+				return newTestValidator(WithValidatorPipelineLock(pipelineLock))
 			},
 			needsGatewayMock: true,
 		},
@@ -728,7 +728,7 @@ func TestNonReconcilablePipelines(t *testing.T) {
 	gatewayApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 
 	customValidator := newTestValidator(
-		withSecretRefValidator(stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound))),
+		WithSecretRefValidator(stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound))),
 	)
 
 	sut, assertAll := newTestReconciler(

@@ -301,7 +301,7 @@ func TestOTTLSpecValidation(t *testing.T) {
 		{
 			name: "invalid transform spec",
 			validator: newTestValidator(
-				withTransformSpecValidator(stubs.NewTransformSpecValidator(
+				WithTransformSpecValidator(stubs.NewTransformSpecValidator(
 					&ottl.InvalidOTTLSpecError{
 						Err: fmt.Errorf("invalid TransformSpec: error while parsing statements"),
 					},
@@ -313,7 +313,7 @@ func TestOTTLSpecValidation(t *testing.T) {
 		{
 			name: "invalid filter spec",
 			validator: newTestValidator(
-				withFilterSpecValidator(stubs.NewFilterSpecValidator(
+				WithFilterSpecValidator(stubs.NewFilterSpecValidator(
 					&ottl.InvalidOTTLSpecError{
 						Err: fmt.Errorf("invalid FilterSpec: error while parsing conditions"),
 					},

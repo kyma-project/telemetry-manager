@@ -88,34 +88,9 @@ func reconcileAndGet(t *testing.T, client client.Client, reconciler *Reconciler,
 	return reconcileResult{pipeline: updatedPipeline, err: err}
 }
 
-// validatorOption is a functional option for configuring a Validator in tests.
-// Uses lowercase naming convention to indicate test-only usage.
-type validatorOption func(*Validator)
-
-// withPipelineLock sets the pipeline lock for the validator.
-func withPipelineLock(lock PipelineLock) validatorOption {
-	return func(v *Validator) {
-		v.PipelineLock = lock
-	}
-}
-
-// withTransformSpecValidator sets the transform spec validator.
-func withTransformSpecValidator(validator TransformSpecValidator) validatorOption {
-	return func(v *Validator) {
-		v.TransformSpecValidator = validator
-	}
-}
-
-// withFilterSpecValidator sets the filter spec validator.
-func withFilterSpecValidator(validator FilterSpecValidator) validatorOption {
-	return func(v *Validator) {
-		v.FilterSpecValidator = validator
-	}
-}
-
 // newTestValidator creates a Validator with all dependencies mocked by default.
 // Dependencies return no errors (happy path) unless overridden via options.
-func newTestValidator(opts ...validatorOption) *Validator {
+func newTestValidator(opts ...ValidatorOption) *Validator {
 	// Create mock pipeline lock that allows all operations by default
 	pipelineLock := &mocks.PipelineLock{}
 	pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -123,17 +98,20 @@ func newTestValidator(opts ...validatorOption) *Validator {
 	pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 	// Create validator with all validations passing by default
-	v := &Validator{
-		PipelineLock:           pipelineLock,
-		EndpointValidator:      stubs.NewEndpointValidator(nil),
-		TLSCertValidator:       stubs.NewTLSCertValidator(nil),
-		SecretRefValidator:     stubs.NewSecretRefValidator(nil),
-		TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
-		FilterSpecValidator:    stubs.NewFilterSpecValidator(nil),
+	allOpts := []ValidatorOption{
+		WithValidatorPipelineLock(pipelineLock),
+		WithEndpointValidator(stubs.NewEndpointValidator(nil)),
+		WithTLSCertValidator(stubs.NewTLSCertValidator(nil)),
+		WithSecretRefValidator(stubs.NewSecretRefValidator(nil)),
+		WithTransformSpecValidator(stubs.NewTransformSpecValidator(nil)),
+		WithFilterSpecValidator(stubs.NewFilterSpecValidator(nil)),
 	}
 
+	allOpts = append(allOpts, opts...)
+
+	v := &Validator{}
 	// Apply custom options to override defaults
-	for _, opt := range opts {
+	for _, opt := range allOpts {
 		opt(v)
 	}
 
@@ -180,7 +158,7 @@ func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
 	pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 	// Create validator with passing validations by default
-	pipelineValidator := newTestValidator(withPipelineLock(pipelineLock))
+	pipelineValidator := newTestValidator(WithValidatorPipelineLock(pipelineLock))
 
 	errToMsg := &conditions.ErrorToMessageConverter{}
 

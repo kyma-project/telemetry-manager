@@ -77,49 +77,26 @@ func assertCondition(t *testing.T, pipeline telemetryv1alpha1.LogPipeline, condT
 	require.Equal(t, message, cond.Message, "condition %s has wrong message", condType)
 }
 
-// Validator test constructor and options
-
-// validatorOption is a functional option for configuring a test Validator.
-type validatorOption func(*Validator)
-
-// withTLSCertValidator overrides the default TLS certificate validator.
-func withTLSCertValidator(validator TLSCertValidator) validatorOption {
-	return func(v *Validator) {
-		v.TLSCertValidator = validator
-	}
-}
-
-// withSecretRefValidator overrides the default secret reference validator.
-func withSecretRefValidator(validator SecretRefValidator) validatorOption {
-	return func(v *Validator) {
-		v.SecretRefValidator = validator
-	}
-}
-
-// withPipelineLock overrides the default pipeline lock.
-func withPipelineLock(lock PipelineLock) validatorOption {
-	return func(v *Validator) {
-		v.PipelineLock = lock
-	}
-}
-
 // newTestValidator creates a Validator with all dependencies mocked by default.
 // Use functional options to override specific dependencies.
 // All validators pass by default, and the pipeline lock succeeds by default.
-func newTestValidator(opts ...validatorOption) *Validator {
+func newTestValidator(opts ...ValidatorOption) *Validator {
 	pipelineLock := &logpipelinefluentbitmocks.PipelineLock{}
 	pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 	pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
-	validator := &Validator{
-		EndpointValidator:  stubs.NewEndpointValidator(nil),
-		TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-		SecretRefValidator: stubs.NewSecretRefValidator(nil),
-		PipelineLock:       pipelineLock,
+	allOpts := []ValidatorOption{
+		WithEndpointValidator(stubs.NewEndpointValidator(nil)),
+		WithTLSCertValidator(stubs.NewTLSCertValidator(nil)),
+		WithSecretRefValidator(stubs.NewSecretRefValidator(nil)),
+		WithValidatorPipelineLock(pipelineLock),
 	}
 
+	allOpts = append(allOpts, opts...)
+
+	validator := &Validator{}
 	// Apply functional options to override defaults
-	for _, opt := range opts {
+	for _, opt := range allOpts {
 		opt(validator)
 	}
 
