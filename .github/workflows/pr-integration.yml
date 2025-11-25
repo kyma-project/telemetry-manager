@@ -8,6 +8,9 @@ env:
   MANAGER_IMAGE: europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:${{ github.event_name == 'pull_request' && 'PR-' || '' }}${{ github.event.number || github.event.merge_group.head_sha }}
 
 on:
+  schedule:
+    # Run every hour on main branch
+    - cron: "0 * * * *"
   merge_group:
   pull_request:
     branches:
@@ -49,6 +52,20 @@ jobs:
 
       - name: Setup Golang
         uses: ./.github/template/setup-golang
+
+      - name: Prepare environment variables
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "MANAGER_IMAGE=europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:${{ github.event_name == 'pull_request' && 'PR-' || '' }}${{ github.event.number || github.event.merge_group.head_sha }} >> $GITHUB_ENV"
+          else
+            GIT_COMMIT_SHA=$(git rev-parse --short=8 HEAD)
+            GIT_COMMIT_DATE=$(git show -s --format=%cd --date=format:'v%Y%m%d' $(GIT_COMMIT_SHA))
+            TAG="$GIT_COMMIT_DATE-$GIT_COMMIT_SHA"
+            MANAGER_IMAGE="europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:$TAG"
+
+            echo "TAG=$TAG" >> $GITHUB_ENV
+            echo "MANAGER_IMAGE=$MANAGER_IMAGE" >> $GITHUB_ENV
+          fi
 
       - name: Wait for image to be built
         shell: bash
