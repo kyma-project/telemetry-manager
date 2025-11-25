@@ -105,14 +105,14 @@ func NewTracePipelineController(config TracePipelineControllerConfig, client cli
 		return nil, err
 	}
 
-	pipelineValidator := &tracepipeline.Validator{
-		EndpointValidator:      &endpoint.Validator{Client: client},
-		TLSCertValidator:       tlscert.New(client),
-		SecretRefValidator:     &secretref.Validator{Client: client},
-		PipelineLock:           pipelineLock,
-		TransformSpecValidator: transformSpecValidator,
-		FilterSpecValidator:    filterSpecValidator,
-	}
+	pipelineValidator := tracepipeline.NewValidator(
+		tracepipeline.WithEndpointValidator(&endpoint.Validator{Client: client}),
+		tracepipeline.WithTLSCertValidator(tlscert.New(client)),
+		tracepipeline.WithSecretRefValidator(&secretref.Validator{Client: client}),
+		tracepipeline.WithValidatorPipelineLock(pipelineLock),
+		tracepipeline.WithTransformSpecValidator(transformSpecValidator),
+		tracepipeline.WithFilterSpecValidator(filterSpecValidator),
+	)
 
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)
 	if err != nil {
@@ -120,18 +120,22 @@ func NewTracePipelineController(config TracePipelineControllerConfig, client cli
 	}
 
 	reconciler := tracepipeline.New(
-		client,
-		config.Global,
-		flowHealthProber,
-		otelcollector.NewTraceGatewayApplierDeleter(config.Global, config.OTelCollectorImage, config.TraceGatewayPriorityClassName),
-		&tracegateway.Builder{Reader: client},
-		&workloadstatus.DeploymentProber{Client: client},
-		istiostatus.NewChecker(discoveryClient),
-		overrides.New(config.Global, client),
-		pipelineLock,
-		pipelineSync,
-		pipelineValidator,
-		&conditions.ErrorToMessageConverter{})
+		tracepipeline.WithClient(client),
+		tracepipeline.WithGlobal(config.Global),
+
+		tracepipeline.WithGatewayApplierDeleter(otelcollector.NewTraceGatewayApplierDeleter(config.Global, config.OTelCollectorImage, config.TraceGatewayPriorityClassName)),
+		tracepipeline.WithGatewayConfigBuilder(&tracegateway.Builder{Reader: client}),
+		tracepipeline.WithGatewayProber(&workloadstatus.DeploymentProber{Client: client}),
+
+		tracepipeline.WithFlowHealthProber(flowHealthProber),
+		tracepipeline.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
+		tracepipeline.WithOverridesHandler(overrides.New(config.Global, client)),
+		tracepipeline.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
+
+		tracepipeline.WithPipelineLock(pipelineLock),
+		tracepipeline.WithPipelineSyncer(pipelineSync),
+		tracepipeline.WithPipelineValidator(pipelineValidator),
+	)
 
 	return &TracePipelineController{
 		Client:               client,

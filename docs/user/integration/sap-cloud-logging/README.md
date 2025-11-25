@@ -10,7 +10,6 @@ Configure the Telemetry module to send logs, metrics, and traces from your clust
 
 ## Table of Content
 
-- [Table of Content](#table-of-content)
 - [Prerequisites](#prerequisites)
 - [Context](#context)
 - [Ship Logs to SAP Cloud Logging](#ship-logs-to-sap-cloud-logging)

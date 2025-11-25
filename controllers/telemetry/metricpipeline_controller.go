@@ -112,14 +112,14 @@ func NewMetricPipelineController(config MetricPipelineControllerConfig, client c
 		return nil, err
 	}
 
-	pipelineValidator := &metricpipeline.Validator{
-		EndpointValidator:      &endpoint.Validator{Client: client},
-		TLSCertValidator:       tlscert.New(client),
-		SecretRefValidator:     &secretref.Validator{Client: client},
-		PipelineLock:           pipelineLock,
-		TransformSpecValidator: transformSpecValidator,
-		FilterSpecValidator:    filterSpecValidator,
-	}
+	pipelineValidator := metricpipeline.NewValidator(
+		metricpipeline.WithEndpointValidator(&endpoint.Validator{Client: client}),
+		metricpipeline.WithTLSCertValidator(tlscert.New(client)),
+		metricpipeline.WithSecretRefValidator(&secretref.Validator{Client: client}),
+		metricpipeline.WithValidatorPipelineLock(pipelineLock),
+		metricpipeline.WithTransformSpecValidator(transformSpecValidator),
+		metricpipeline.WithFilterSpecValidator(filterSpecValidator),
+	)
 
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)
 	if err != nil {
@@ -130,22 +130,26 @@ func NewMetricPipelineController(config MetricPipelineControllerConfig, client c
 	gatewayConfigBuilder := &metricgateway.Builder{Reader: client}
 
 	reconciler := metricpipeline.New(
-		config.Global,
-		client,
-		otelcollector.NewMetricAgentApplierDeleter(config.Global, config.OTelCollectorImage, config.MetricAgentPriorityClassName),
-		agentConfigBuilder,
-		&workloadstatus.DaemonSetProber{Client: client},
-		gatewayFlowHealthProber,
-		agentFlowHealthProber,
-		otelcollector.NewMetricGatewayApplierDeleter(config.Global, config.OTelCollectorImage, config.MetricGatewayPriorityClassName),
-		gatewayConfigBuilder,
-		&workloadstatus.DeploymentProber{Client: client},
-		istiostatus.NewChecker(discoveryClient),
-		overrides.New(config.Global, client),
-		pipelineLock,
-		pipelineSync,
-		pipelineValidator,
-		&conditions.ErrorToMessageConverter{},
+		metricpipeline.WithClient(client),
+		metricpipeline.WithGlobals(config.Global),
+
+		metricpipeline.WithAgentApplierDeleter(otelcollector.NewMetricAgentApplierDeleter(config.Global, config.OTelCollectorImage, config.MetricAgentPriorityClassName)),
+		metricpipeline.WithAgentConfigBuilder(agentConfigBuilder),
+		metricpipeline.WithAgentFlowHealthProber(agentFlowHealthProber),
+		metricpipeline.WithAgentProber(&workloadstatus.DaemonSetProber{Client: client}),
+
+		metricpipeline.WithGatewayApplierDeleter(otelcollector.NewMetricGatewayApplierDeleter(config.Global, config.OTelCollectorImage, config.MetricGatewayPriorityClassName)),
+		metricpipeline.WithGatewayConfigBuilder(gatewayConfigBuilder),
+		metricpipeline.WithGatewayFlowHealthProber(gatewayFlowHealthProber),
+		metricpipeline.WithGatewayProber(&workloadstatus.DeploymentProber{Client: client}),
+
+		metricpipeline.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
+		metricpipeline.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
+		metricpipeline.WithOverridesHandler(overrides.New(config.Global, client)),
+		metricpipeline.WithPipelineValidator(pipelineValidator),
+
+		metricpipeline.WithPipelineLock(pipelineLock),
+		metricpipeline.WithPipelineSyncer(pipelineSync),
 	)
 
 	return &MetricPipelineController{

@@ -30,6 +30,7 @@ This sequence means that your OTTL rules only operate on data that has already p
 ## Limitations
 
 ### Always Use the Full Context Path
+
 You must specify the full path for every field. Short-hand references are not supported.
 
 - Correct: `resource.attributes["k8s.namespace.name"] == "default"`, `log.attributes["level"]`, `datapoint.value_int`, `span.name`

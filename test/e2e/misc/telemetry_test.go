@@ -167,19 +167,25 @@ func assertValidatingWebhookConfiguration() {
 		var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
 		g.Expect(suite.K8sClient.Get(suite.Ctx, client.ObjectKey{Name: kitkyma.ValidatingWebhookName}, &validatingWebhookConfiguration)).Should(Succeed())
 
-		g.Expect(validatingWebhookConfiguration.Webhooks).Should(HaveLen(1))
+		g.Expect(validatingWebhookConfiguration.Webhooks).Should(HaveLen(3))
 
-		logPipelineWebhook := validatingWebhookConfiguration.Webhooks[0]
-		g.Expect(logPipelineWebhook.Name).Should(Equal("validating-logpipelines.kyma-project.io"))
-		g.Expect(logPipelineWebhook.ClientConfig.CABundle).ShouldNot(BeEmpty())
-		g.Expect(logPipelineWebhook.ClientConfig.Service.Name).Should(Equal("telemetry-manager-webhook"))
-		g.Expect(logPipelineWebhook.ClientConfig.Service.Namespace).Should(Equal(kitkyma.SystemNamespaceName))
-		g.Expect(*logPipelineWebhook.ClientConfig.Service.Port).Should(Equal(int32(443)))
-		g.Expect(*logPipelineWebhook.ClientConfig.Service.Path).Should(Equal("/validate-logpipeline"))
-		g.Expect(logPipelineWebhook.Rules).Should(HaveLen(1))
-		g.Expect(logPipelineWebhook.Rules[0].Resources).Should(ContainElement("logpipelines"))
-		g.Expect(logPipelineWebhook.Rules[0].Operations).Should(ContainElement(admissionregistrationv1.Create))
-		g.Expect(logPipelineWebhook.Rules[0].Operations).Should(ContainElement(admissionregistrationv1.Update))
+		assertWebhook(g,
+			findWebhook(validatingWebhookConfiguration.Webhooks, "validating-logpipelines.kyma-project.io"),
+			"validating-logpipelines.kyma-project.io",
+			"/validate-telemetry-kyma-project-io-v1alpha1-logpipeline",
+			"logpipelines")
+
+		assertWebhook(g,
+			findWebhook(validatingWebhookConfiguration.Webhooks, "validating-metricpipelines.kyma-project.io"),
+			"validating-metricpipelines.kyma-project.io",
+			"/validate-telemetry-kyma-project-io-v1alpha1-metricpipeline",
+			"metricpipelines")
+
+		assertWebhook(g,
+			findWebhook(validatingWebhookConfiguration.Webhooks, "validating-tracepipelines.kyma-project.io"),
+			"validating-tracepipelines.kyma-project.io",
+			"/validate-telemetry-kyma-project-io-v1alpha1-tracepipeline",
+			"tracepipelines")
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
@@ -243,4 +249,28 @@ func assertTelemetryCRDeletionIsBlocked(logPipelineName string) {
 			g.Expect(actualCond.LastTransitionTime).NotTo(BeZero())
 		}
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+}
+
+func findWebhook(webhooks []admissionregistrationv1.ValidatingWebhook, name string) *admissionregistrationv1.ValidatingWebhook {
+	for i := range webhooks {
+		if webhooks[i].Name == name {
+			return &webhooks[i]
+		}
+	}
+
+	return nil
+}
+
+func assertWebhook(g Gomega, webhook *admissionregistrationv1.ValidatingWebhook, webhookName, servicePath, ruleResource string) {
+	g.Expect(webhook).ShouldNot(BeNil(), "webhook %s not found", webhookName)
+	g.Expect(webhook.Name).Should(Equal(webhookName))
+	g.Expect(webhook.ClientConfig.CABundle).ShouldNot(BeEmpty())
+	g.Expect(webhook.ClientConfig.Service.Name).Should(Equal("telemetry-manager-webhook"))
+	g.Expect(webhook.ClientConfig.Service.Namespace).Should(Equal(kitkyma.SystemNamespaceName))
+	g.Expect(*webhook.ClientConfig.Service.Port).Should(Equal(int32(443)))
+	g.Expect(*webhook.ClientConfig.Service.Path).Should(Equal(servicePath))
+	g.Expect(webhook.Rules).Should(HaveLen(1))
+	g.Expect(webhook.Rules[0].Resources).Should(ContainElement(ruleResource))
+	g.Expect(webhook.Rules[0].Operations).Should(ContainElement(admissionregistrationv1.Create))
+	g.Expect(webhook.Rules[0].Operations).Should(ContainElement(admissionregistrationv1.Update))
 }
