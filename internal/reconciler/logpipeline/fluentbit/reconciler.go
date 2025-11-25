@@ -5,36 +5,20 @@ import (
 	"errors"
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
-	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	fbports "github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
-
-type AgentConfigBuilder interface {
-	Build(ctx context.Context, reconcilablePipelines []telemetryv1alpha1.LogPipeline, clusterName string) (*builder.FluentBitConfig, error)
-}
-
-type AgentApplierDeleter interface {
-	ApplyResources(ctx context.Context, c client.Client, opts fluentbit.AgentApplyOptions) error
-	DeleteResources(ctx context.Context, c client.Client) error
-}
-
-type IstioStatusChecker interface {
-	IsIstioActive(ctx context.Context) bool
-}
 
 // var _ logpipeline.LogPipelineReconciler = &Reconciler{}
 
@@ -58,35 +42,89 @@ func (r *Reconciler) SupportedOutput() logpipelineutils.Mode {
 	return logpipelineutils.FluentBit
 }
 
-type PipelineValidator interface {
-	Validate(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error
-}
+// Option is a functional option for configuring a Reconciler.
+type Option func(*Reconciler)
 
-type ErrorToMessageConverter interface {
-	Convert(err error) string
-}
-
-type FlowHealthProber interface {
-	Probe(ctx context.Context, pipelineName string) (prober.FluentBitProbeResult, error)
-}
-
-type AgentProber interface {
-	IsReady(ctx context.Context, name types.NamespacedName) error
-}
-
-func New(globals config.Global, client client.Client, agentConfigBuilder AgentConfigBuilder, agentApplierDeleter AgentApplierDeleter, agentProber AgentProber, healthProber FlowHealthProber, checker IstioStatusChecker, pipelineLock PipelineLock, validator PipelineValidator, converter ErrorToMessageConverter) *Reconciler {
-	return &Reconciler{
-		globals:             globals,
-		Client:              client,
-		agentConfigBuilder:  agentConfigBuilder,
-		agentApplierDeleter: agentApplierDeleter,
-		agentProber:         agentProber,
-		flowHealthProber:    healthProber,
-		istioStatusChecker:  checker,
-		pipelineLock:        pipelineLock,
-		pipelineValidator:   validator,
-		errToMsgConverter:   converter,
+// WithPipelineLock sets the pipeline lock.
+func WithPipelineLock(lock PipelineLock) Option {
+	return func(r *Reconciler) {
+		r.pipelineLock = lock
 	}
+}
+
+// WithGlobals sets the global configuration.
+func WithGlobals(globals config.Global) Option {
+	return func(r *Reconciler) {
+		r.globals = globals
+	}
+}
+
+// WithAgentConfigBuilder sets the agent config builder.
+func WithAgentConfigBuilder(builder AgentConfigBuilder) Option {
+	return func(r *Reconciler) {
+		r.agentConfigBuilder = builder
+	}
+}
+
+// WithAgentApplierDeleter sets the agent applier/deleter.
+func WithAgentApplierDeleter(applierDeleter AgentApplierDeleter) Option {
+	return func(r *Reconciler) {
+		r.agentApplierDeleter = applierDeleter
+	}
+}
+
+// WithAgentProber sets the agent prober.
+func WithAgentProber(prober AgentProber) Option {
+	return func(r *Reconciler) {
+		r.agentProber = prober
+	}
+}
+
+// WithFlowHealthProber sets the flow health prober.
+func WithFlowHealthProber(prober FlowHealthProber) Option {
+	return func(r *Reconciler) {
+		r.flowHealthProber = prober
+	}
+}
+
+// WithIstioStatusChecker sets the Istio status checker.
+func WithIstioStatusChecker(checker IstioStatusChecker) Option {
+	return func(r *Reconciler) {
+		r.istioStatusChecker = checker
+	}
+}
+
+// WithPipelineValidator sets the pipeline validator.
+func WithPipelineValidator(validator PipelineValidator) Option {
+	return func(r *Reconciler) {
+		r.pipelineValidator = validator
+	}
+}
+
+// WithErrorToMessageConverter sets the error to message converter.
+func WithErrorToMessageConverter(converter ErrorToMessageConverter) Option {
+	return func(r *Reconciler) {
+		r.errToMsgConverter = converter
+	}
+}
+
+// WithClient sets the Kubernetes client.
+func WithClient(client client.Client) Option {
+	return func(r *Reconciler) {
+		r.Client = client
+	}
+}
+
+// New creates a new Reconciler with the provided client and functional options.
+// All dependencies must be provided via functional options.
+func New(opts ...Option) *Reconciler {
+	r := &Reconciler{}
+
+	for _, opt := range opts {
+		opt(r)
+	}
+
+	return r
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
