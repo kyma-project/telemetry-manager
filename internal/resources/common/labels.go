@@ -21,15 +21,18 @@ const (
 
 	LabelKeyIstioInject = "sidecar.istio.io/inject"
 
-	LabelKeyTelemetryLogIngest     = "telemetry.kyma-project.io/log-ingest"
-	LabelKeyTelemetryLogExport     = "telemetry.kyma-project.io/log-export"
-	LabelKeyTelemetryTraceIngest   = "telemetry.kyma-project.io/trace-ingest"
-	LabelKeyTelemetryTraceExport   = "telemetry.kyma-project.io/trace-export"
-	LabelKeyTelemetryMetricIngest  = "telemetry.kyma-project.io/metric-ingest"
-	LabelKeyTelemetryMetricExport  = "telemetry.kyma-project.io/metric-export"
-	LabelKeyTelemetryMetricScrape  = "telemetry.kyma-project.io/metric-scrape"
-	LabelKeyTelemetrySelfMonitor   = "telemetry.kyma-project.io/self-monitor"
-	LabelValueTelemetrySelfMonitor = "enabled"
+	LabelKeyTelemetryLogIngest    = "telemetry.kyma-project.io/log-ingest"
+	LabelKeyTelemetryLogExport    = "telemetry.kyma-project.io/log-export"
+	LabelKeyTelemetryTraceIngest  = "telemetry.kyma-project.io/trace-ingest"
+	LabelKeyTelemetryTraceExport  = "telemetry.kyma-project.io/trace-export"
+	LabelKeyTelemetryMetricIngest = "telemetry.kyma-project.io/metric-ingest"
+	LabelKeyTelemetryMetricExport = "telemetry.kyma-project.io/metric-export"
+	LabelKeyTelemetryMetricScrape = "telemetry.kyma-project.io/metric-scrape"
+	// This label is required by a NetworkPolicy to allow the metric agent to scrape kyma module metrics
+	// Check https://github.com/kyma-project/kyma/issues/18818 for more details
+	LabelKeyTelemetryMetricsScraping = "networking.kyma-project.io/metrics-scraping"
+	LabelKeyTelemetrySelfMonitor     = "telemetry.kyma-project.io/self-monitor"
+	LabelValueTelemetrySelfMonitor   = "enabled"
 )
 
 func MakeDefaultLabels(baseName string, componentLabelValue string) map[string]string {
