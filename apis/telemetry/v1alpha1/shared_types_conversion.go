@@ -283,7 +283,7 @@ func convertValueTypeToAlphaPtr(v *telemetryv1beta1.ValueType) *ValueType {
 	return &vt
 }
 
-func convertTransformSpecToBeta(src TransformSpec) telemetryv1beta1.TransformSpec {
+func ConvertTransformSpecToBeta(src TransformSpec) telemetryv1beta1.TransformSpec {
 	var dst telemetryv1beta1.TransformSpec
 
 	dst.Conditions = append(dst.Conditions, src.Conditions...)
@@ -303,7 +303,7 @@ func convertTransformSpecToAlpha(src telemetryv1beta1.TransformSpec) TransformSp
 	return dst
 }
 
-func convertFilterSpecToBeta(src FilterSpec) telemetryv1beta1.FilterSpec {
+func ConvertFilterSpecToBeta(src FilterSpec) telemetryv1beta1.FilterSpec {
 	var dst telemetryv1beta1.FilterSpec
 
 	dst.Conditions = append(dst.Conditions, src.Conditions...)

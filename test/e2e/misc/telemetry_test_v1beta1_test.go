@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
@@ -73,7 +74,52 @@ func TestTelemetryV1Beta1(t *testing.T) {
 		g.Expect(telemetry.Status.Endpoints.Metrics.HTTP).Should(Equal(metricHTTPEndpoint))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 
-	assertValidatingWebhookConfiguration()
+	assertV1Beta1ValidatingWebhookConfiguration()
 	assertWebhookCA()
 	assertWebhookSecretReconcilation()
+}
+
+func assertV1Beta1ValidatingWebhookConfiguration() {
+	Eventually(func(g Gomega) {
+		var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
+		g.Expect(suite.K8sClient.Get(suite.Ctx, client.ObjectKey{Name: kitkyma.ValidatingWebhookName}, &validatingWebhookConfiguration)).Should(Succeed())
+
+		g.Expect(validatingWebhookConfiguration.Webhooks).Should(HaveLen(6))
+
+		assertWebhook(g,
+			findWebhook(validatingWebhookConfiguration.Webhooks, "validating-logpipelines.kyma-project.io"),
+			"validating-logpipelines.kyma-project.io",
+			"/validate-telemetry-kyma-project-io-v1alpha1-logpipeline",
+			"logpipelines")
+
+		assertWebhook(g,
+			findWebhook(validatingWebhookConfiguration.Webhooks, "validating-logpipelines-v1beta1.kyma-project.io"),
+			"validating-logpipelines-v1beta1.kyma-project.io",
+			"/validate-telemetry-kyma-project-io-v1beta1-logpipeline",
+			"logpipelines")
+
+		assertWebhook(g,
+			findWebhook(validatingWebhookConfiguration.Webhooks, "validating-metricpipelines.kyma-project.io"),
+			"validating-metricpipelines.kyma-project.io",
+			"/validate-telemetry-kyma-project-io-v1alpha1-metricpipeline",
+			"metricpipelines")
+
+		assertWebhook(g,
+			findWebhook(validatingWebhookConfiguration.Webhooks, "validating-metricpipelines-v1beta1.kyma-project.io"),
+			"validating-metricpipelines-v1beta1.kyma-project.io",
+			"/validate-telemetry-kyma-project-io-v1beta1-metricpipeline",
+			"metricpipelines")
+
+		assertWebhook(g,
+			findWebhook(validatingWebhookConfiguration.Webhooks, "validating-tracepipelines.kyma-project.io"),
+			"validating-tracepipelines.kyma-project.io",
+			"/validate-telemetry-kyma-project-io-v1alpha1-tracepipeline",
+			"tracepipelines")
+
+		assertWebhook(g,
+			findWebhook(validatingWebhookConfiguration.Webhooks, "validating-tracepipelines-v1beta1.kyma-project.io"),
+			"validating-tracepipelines-v1beta1.kyma-project.io",
+			"/validate-telemetry-kyma-project-io-v1beta1-tracepipeline",
+			"tracepipelines")
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
