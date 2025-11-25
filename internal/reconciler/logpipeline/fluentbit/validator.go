@@ -19,7 +19,6 @@ type Validator struct {
 	EndpointValidator  EndpointValidator
 	TLSCertValidator   TLSCertValidator
 	SecretRefValidator SecretRefValidator
-	PipelineLock       PipelineLock
 }
 
 // ValidatorOption configures the Validator during initialization.
@@ -46,13 +45,6 @@ func WithSecretRefValidator(validator SecretRefValidator) ValidatorOption {
 	}
 }
 
-// WithValidatorPipelineLock sets the pipeline lock for the Validator.
-func WithValidatorPipelineLock(lock PipelineLock) ValidatorOption {
-	return func(v *Validator) {
-		v.PipelineLock = lock
-	}
-}
-
 // NewValidator creates a new Validator with the provided options.
 func NewValidator(opts ...ValidatorOption) *Validator {
 	v := &Validator{}
@@ -65,10 +57,6 @@ func NewValidator(opts ...ValidatorOption) *Validator {
 }
 
 func (v *Validator) Validate(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
-	if err := v.PipelineLock.TryAcquireLock(ctx, pipeline); err != nil {
-		return err
-	}
-
 	if err := v.SecretRefValidator.ValidateLogPipeline(ctx, pipeline); err != nil {
 		return err
 	}

@@ -5,12 +5,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
@@ -150,14 +148,6 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 				EndpointValidator:  &endpoint.Validator{Client: fakeClient},
 				TLSCertValidator:   tlscert.New(fakeClient),
 				SecretRefValidator: &secretref.Validator{Client: fakeClient},
-				PipelineLock: resourcelock.NewLocker(
-					fakeClient,
-					types.NamespacedName{
-						Name:      "telemetry-logpipeline-lock",
-						Namespace: "test",
-					},
-					3,
-				),
 			}
 
 			err := pipelineValidator.Validate(t.Context(), tt.logPipeline)

@@ -114,4 +114,10 @@ type PipelineLock interface {
 	// Returns nil if the owner holds a lock, or an error if it does not.
 	// This is used to determine if a pipeline is already registered and active.
 	IsLockHolder(ctx context.Context, owner metav1.Object) error
+
+	// GetLockHolders retrieves the list of current lock holders and populates the provided list.
+	// The list is a Kubernetes ObjectList that will be filled with the owners holding locks.
+	// Returns an error if the lock holders cannot be retrieved.
+	GetLockHolders(ctx context.Context, list client.ObjectList) error
+	ReleaseLockIfHeld(ctx context.Context, owner metav1.Object) error
 }

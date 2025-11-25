@@ -47,11 +47,12 @@ func TestMaxPipelineLimit(t *testing.T) {
 
 	pipelineLock := &logpipelinefluentbitmocks.PipelineLock{}
 	pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
-	pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
+	// pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
+	pipelineLock.On("GetLockHolders", mock.Anything, mock.Anything).Return(nil)
+	// pipelineLock.On("ReleaseLockIfHeld", mock.Anything, mock.Anything).Return(nil)
 
 	reconciler := newTestReconciler(testClient,
 		WithPipelineLock(pipelineLock),
-		WithPipelineValidator(newTestValidator(WithValidatorPipelineLock(pipelineLock))),
 	)
 
 	result := reconcileAndGet(t, testClient, reconciler, pipeline.Name)
@@ -632,10 +633,6 @@ func TestFIPSMode(t *testing.T) {
 			}
 
 			reconciler := newTestReconciler(testClient, reconcilerOpts...)
-
-			reconcilable, err := reconciler.IsReconcilable(t.Context(), &tt.pipeline)
-			require.NoError(t, err)
-			require.Equal(t, tt.expectReconcilable, reconcilable)
 
 			result := reconcileAndGet(t, testClient, reconciler, tt.pipeline.Name)
 			require.NoError(t, result.err)
