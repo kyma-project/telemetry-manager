@@ -267,7 +267,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
 				Reason:  "GatewayThrottling",
-				Message: "Metric gateway is unable to receive metrics at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-throttling",
+				Message: "Metric gateway is unable to receive metrics at current rate. See troubleshooting: " + conditions.LinkGatewayThrottling,
 			},
 		},
 		{
@@ -288,7 +288,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
 				Reason:  "GatewayThrottling",
-				Message: "Metric gateway is unable to receive metrics at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-throttling",
+				Message: "Metric gateway is unable to receive metrics at current rate. See troubleshooting: " + conditions.LinkGatewayThrottling,
 			},
 		},
 		{
@@ -309,7 +309,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
 				Reason:  "AgentAllTelemetryDataDropped",
-				Message: "Backend is not reachable or rejecting metrics. All metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=no-metrics-arrive-at-the-backend",
+				Message: "Backend is not reachable or rejecting metrics. All metrics are dropped. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
 			},
 		},
 		{

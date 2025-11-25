@@ -150,7 +150,7 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonGatewayThrottling,
-			expectedMessage: "Log gateway is unable to receive logs at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=gateway-throttling",
+			expectedMessage: "Log gateway is unable to receive logs at current rate. See troubleshooting: " + conditions.LinkGatewayThrottling,
 		},
 		{
 			name: "some data dropped",
@@ -159,7 +159,7 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
-			expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in Log gateway. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=not-all-logs-arrive-at-the-backend",
+			expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in Log gateway. See troubleshooting: " + conditions.LinkNotAllDataArriveAtBackend,
 		},
 		{
 			name: "some data dropped shadows other problems",
@@ -169,7 +169,7 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
-			expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in Log gateway. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=not-all-logs-arrive-at-the-backend",
+			expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in Log gateway. See troubleshooting: " + conditions.LinkNotAllDataArriveAtBackend,
 		},
 		{
 			name: "all data dropped",
@@ -178,7 +178,7 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
-			expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log gateway. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=no-logs-arrive-at-the-backend",
+			expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log gateway. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
 		},
 		{
 			name: "all data dropped shadows other problems",
@@ -188,7 +188,7 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
-			expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log gateway. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=no-logs-arrive-at-the-backend",
+			expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log gateway. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
 		},
 	}
 	for _, tt := range tests {
@@ -246,7 +246,7 @@ func TestAgentFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonAgentSomeDataDropped,
-			expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in Log agent. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=not-all-logs-arrive-at-the-backend",
+			expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in Log agent. See troubleshooting: " + conditions.LinkNotAllDataArriveAtBackend,
 		},
 		{
 			name: "all data dropped",
@@ -255,7 +255,7 @@ func TestAgentFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonAgentAllDataDropped,
-			expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log agent. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=no-logs-arrive-at-the-backend",
+			expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log agent. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
 		},
 		{
 			name: "all data dropped shadows other problems",
@@ -264,7 +264,7 @@ func TestAgentFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonAgentAllDataDropped,
-			expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log agent. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=no-logs-arrive-at-the-backend",
+			expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log agent. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
 		},
 	}
 	for _, tt := range tests {

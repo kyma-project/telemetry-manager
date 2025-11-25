@@ -436,7 +436,7 @@ func TestFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus: metav1.ConditionFalse,
 			expectedReason: conditions.ReasonSelfMonAgentBufferFillingUp,
-			expectedMsg:    "Buffer nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=agent-buffer-filling-up",
+			expectedMsg:    "Buffer nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: " + conditions.LinkFluenBitBufferFillingUp,
 		},
 		{
 			name: "no logs delivered",
@@ -445,7 +445,7 @@ func TestFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus: metav1.ConditionFalse,
 			expectedReason: conditions.ReasonSelfMonAgentNoLogsDelivered,
-			expectedMsg:    "Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
+			expectedMsg:    "Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: " + conditions.LinkFluentBitNoLogsArriveAtBackend,
 		},
 		{
 			name: "no logs delivered shadows other problems",
@@ -455,7 +455,7 @@ func TestFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus: metav1.ConditionFalse,
 			expectedReason: conditions.ReasonSelfMonAgentNoLogsDelivered,
-			expectedMsg:    "Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
+			expectedMsg:    "Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: " + conditions.LinkFluentBitNoLogsArriveAtBackend,
 		},
 		{
 			name: "some data dropped",
@@ -464,7 +464,7 @@ func TestFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus: metav1.ConditionFalse,
 			expectedReason: conditions.ReasonSelfMonAgentSomeDataDropped,
-			expectedMsg:    "Backend is reachable, but rejecting logs. Some logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=not-all-logs-arrive-at-the-backend",
+			expectedMsg:    "Backend is reachable, but rejecting logs. Some logs are dropped. See troubleshooting: " + conditions.LinkFluentBitNotAllLogsArriveAtBackend,
 		},
 		{
 			name: "some data dropped shadows other problems",
@@ -474,7 +474,7 @@ func TestFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus: metav1.ConditionFalse,
 			expectedReason: conditions.ReasonSelfMonAgentSomeDataDropped,
-			expectedMsg:    "Backend is reachable, but rejecting logs. Some logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=not-all-logs-arrive-at-the-backend",
+			expectedMsg:    "Backend is reachable, but rejecting logs. Some logs are dropped. See troubleshooting: " + conditions.LinkFluentBitNotAllLogsArriveAtBackend,
 		},
 		{
 			name: "all data dropped",
@@ -483,7 +483,7 @@ func TestFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus: metav1.ConditionFalse,
 			expectedReason: conditions.ReasonSelfMonAgentAllDataDropped,
-			expectedMsg:    "Backend is not reachable or rejecting logs. All logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
+			expectedMsg:    "Backend is not reachable or rejecting logs. All logs are dropped. See troubleshooting: " + conditions.LinkFluentBitNoLogsArriveAtBackend,
 		},
 		{
 			name: "all data dropped shadows other problems",
@@ -495,7 +495,7 @@ func TestFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus: metav1.ConditionFalse,
 			expectedReason: conditions.ReasonSelfMonAgentAllDataDropped,
-			expectedMsg:    "Backend is not reachable or rejecting logs. All logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
+			expectedMsg:    "Backend is not reachable or rejecting logs. All logs are dropped. See troubleshooting: " + conditions.LinkFluentBitNoLogsArriveAtBackend,
 		},
 	}
 
