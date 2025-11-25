@@ -7,9 +7,9 @@ const (
 	LinkNotAllDataArriveAtBackend = "https://kyma-project.io/external-content/telemetry-manager/docs/user/troubleshooting.html#not-all-data-arrive-at-the-backend"
 	LinkGatewayThrottling         = "https://kyma-project.io/external-content/telemetry-manager/docs/user/troubleshooting.html#gateway-throttling"
 
-	LinkLogsNoDataArriveAtBackend     = "https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend"
-	LinkLogsNotAllDataArriveAtBackend = "https://kyma-project.io/#/telemetry-manager/user/02-logs?id=not-all-logs-arrive-at-the-backend"
-	LinkLogsBufferFillingUp           = "https://kyma-project.io/#/telemetry-manager/user/02-logs?id=agent-buffer-filling-up"
+	LinkFluentBitNoLogsArriveAtBackend     = "https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend"
+	LinkFluentBitNotAllLogsArriveAtBackend = "https://kyma-project.io/#/telemetry-manager/user/02-logs?id=not-all-logs-arrive-at-the-backend"
+	LinkFluenBitBufferFillingUp            = "https://kyma-project.io/#/telemetry-manager/user/02-logs?id=agent-buffer-filling-up"
 )
 
 const (
@@ -96,11 +96,11 @@ var commonLogPipelineMessages = map[string]string{
 var fluentBitLogPipelineMessages = map[string]string{
 	ReasonEndpointInvalid: "HTTP output host invalid: %s",
 
-	ReasonSelfMonAgentAllDataDropped:  "Backend is not reachable or rejecting logs. All logs are dropped. See troubleshooting: " + LinkLogsNoDataArriveAtBackend,
-	ReasonSelfMonAgentBufferFillingUp: "Buffer nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: " + LinkLogsBufferFillingUp,
+	ReasonSelfMonAgentAllDataDropped:  "Backend is not reachable or rejecting logs. All logs are dropped. See troubleshooting: " + LinkFluentBitNoLogsArriveAtBackend,
+	ReasonSelfMonAgentBufferFillingUp: "Buffer nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: " + LinkFluenBitBufferFillingUp,
 	ReasonSelfMonConfigNotGenerated:   "No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details",
-	ReasonSelfMonAgentNoLogsDelivered: "Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: " + LinkLogsNoDataArriveAtBackend,
-	ReasonSelfMonAgentSomeDataDropped: "Backend is reachable, but rejecting logs. Some logs are dropped. See troubleshooting: " + LinkLogsNotAllDataArriveAtBackend,
+	ReasonSelfMonAgentNoLogsDelivered: "Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: " + LinkFluentBitNoLogsArriveAtBackend,
+	ReasonSelfMonAgentSomeDataDropped: "Backend is reachable, but rejecting logs. Some logs are dropped. See troubleshooting: " + LinkFluentBitNotAllLogsArriveAtBackend,
 }
 
 var otelLogPipelineMessages = map[string]string{

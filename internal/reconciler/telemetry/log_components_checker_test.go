@@ -228,7 +228,7 @@ func TestLogComponentsCheck(t *testing.T) {
 				Type:    conditions.TypeLogComponentsHealthy,
 				Status:  "False",
 				Reason:  "AgentNoLogsDelivered",
-				Message: "Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: " + conditions.LinkLogsNoDataArriveAtBackend,
+				Message: "Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: " + conditions.LinkFluentBitNoLogsArriveAtBackend,
 			},
 		},
 		{
