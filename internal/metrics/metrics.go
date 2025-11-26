@@ -38,6 +38,7 @@ var (
 		},
 		[]string{"flag"},
 	)
+
 	// OTTLTransformUsage tracks the number of pipelines using OTTL transform feature
 	OTTLTransformUsage = promauto.With(Registry).NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -46,7 +47,7 @@ var (
 			Name:      "ottl_transform_usage",
 			Help:      "Number of pipelines using OTTL transform feature",
 		},
-		[]string{"pipeline_type"},
+		[]string{"kind"},
 	)
 
 	// OTTLFilterUsage tracks the number of pipelines using OTTL filter feature
@@ -95,11 +96,11 @@ var (
 )
 
 // RecordOTTLTransformUsage updates the transform usage metric for a given pipeline type
-func RecordOTTLTransformUsage(pipelineType string, count int) {
-	OTTLTransformUsage.WithLabelValues(pipelineType).Set(float64(count))
+func RecordOTTLTransformUsage(kind string, count int) {
+	OTTLTransformUsage.WithLabelValues(kind).Set(float64(count))
 }
 
 // RecordOTTLFilterUsage updates the filter usage metric for a given pipeline type
-func RecordOTTLFilterUsage(pipelineType string, count int) {
-	OTTLFilterUsage.WithLabelValues(pipelineType).Set(float64(count))
+func RecordOTTLFilterUsage(kind string, count int) {
+	OTTLFilterUsage.WithLabelValues(kind).Set(float64(count))
 }
