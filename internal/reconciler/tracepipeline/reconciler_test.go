@@ -266,7 +266,7 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonGatewayThrottling,
-			expectedMessage: "Trace gateway is unable to receive spans at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-throttling",
+			expectedMessage: "Trace gateway is unable to receive spans at current rate. See troubleshooting: " + conditions.LinkGatewayThrottling,
 		},
 		{
 			name: "some data dropped",
@@ -275,7 +275,7 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
-			expectedMessage: "Backend is reachable, but rejecting spans. Some spans are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=not-all-spans-arrive-at-the-backend",
+			expectedMessage: "Backend is reachable, but rejecting spans. Some spans are dropped. See troubleshooting: " + conditions.LinkNotAllDataArriveAtBackend,
 		},
 		{
 			name: "some data dropped shadows other problems",
@@ -285,7 +285,7 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
-			expectedMessage: "Backend is reachable, but rejecting spans. Some spans are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=not-all-spans-arrive-at-the-backend",
+			expectedMessage: "Backend is reachable, but rejecting spans. Some spans are dropped. See troubleshooting: " + conditions.LinkNotAllDataArriveAtBackend,
 		},
 		{
 			name: "all data dropped",
@@ -294,7 +294,7 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
-			expectedMessage: "Backend is not reachable or rejecting spans. All spans are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=no-spans-arrive-at-the-backend",
+			expectedMessage: "Backend is not reachable or rejecting spans. All spans are dropped. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
 		},
 		{
 			name: "all data dropped shadows other problems",
@@ -304,7 +304,7 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
-			expectedMessage: "Backend is not reachable or rejecting spans. All spans are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=no-spans-arrive-at-the-backend",
+			expectedMessage: "Backend is not reachable or rejecting spans. All spans are dropped. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
 		},
 	}
 
