@@ -116,9 +116,10 @@ func NewLogAgentApplierDeleter(globals config.Global, collectorImage, priorityCl
 
 func NewMetricAgentApplierDeleter(globals config.Global, image, priorityClassName string) *AgentApplierDeleter {
 	extraLabels := map[string]string{
-		commonresources.LabelKeyTelemetryMetricScrape: "true",
-		commonresources.LabelKeyTelemetryMetricExport: "true",
-		commonresources.LabelKeyIstioInject:           "true", // inject Istio sidecar
+		commonresources.LabelKeyTelemetryMetricScrape:    "true",
+		commonresources.LabelKeyTelemetryMetricExport:    "true",
+		commonresources.LabelKeyIstioInject:              "true", // inject Istio sidecar
+		commonresources.LabelKeyTelemetryMetricsScraping: commonresources.LabelValueTelemetryMetricsScraping,
 	}
 
 	return &AgentApplierDeleter{
