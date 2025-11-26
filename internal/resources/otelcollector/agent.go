@@ -119,7 +119,7 @@ func NewMetricAgentApplierDeleter(globals config.Global, image, priorityClassNam
 		commonresources.LabelKeyTelemetryMetricScrape:    "true",
 		commonresources.LabelKeyTelemetryMetricExport:    "true",
 		commonresources.LabelKeyIstioInject:              "true", // inject Istio sidecar
-		commonresources.LabelKeyTelemetryMetricsScraping: "allowed",
+		commonresources.LabelKeyTelemetryMetricsScraping: commonresources.LabelValueTelemetryMetricsScraping,
 	}
 
 	return &AgentApplierDeleter{
