@@ -1079,12 +1079,13 @@ func TestOTTLMetricsTracking(t *testing.T) {
 			sut, assertAll := newTestReconciler(fakeClient)
 
 			for _, pipeline := range tt.pipelines {
+				pipeline.Kind = "MetricPipeline"
 				result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
 				require.NoError(t, result.err)
 			}
 
-			transformValue := testutil.ToFloat64(metrics.OTTLTransformUsage.WithLabelValues("metric"))
-			filterValue := testutil.ToFloat64(metrics.OTTLFilterUsage.WithLabelValues("metric"))
+			transformValue := testutil.ToFloat64(metrics.OTTLTransformUsage.WithLabelValues("MetricPipeline"))
+			filterValue := testutil.ToFloat64(metrics.OTTLFilterUsage.WithLabelValues("MetricPipeline"))
 
 			require.Equal(t, tt.expectedTransformCount, transformValue, "transform usage metric should match")
 			require.Equal(t, tt.expectedFilterCount, filterValue, "filter usage metric should match")

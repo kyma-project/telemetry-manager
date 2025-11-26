@@ -14,12 +14,12 @@ const (
 	subsystemSelfMonitorProber = "self_monitor_prober_"
 )
 
-// Registry is the prometheus registry for telemetry manager metrics
-var Registry = ctrlmetrics.Registry
+// registry is the prometheus registry for telemetry manager metrics
+var registry = ctrlmetrics.Registry
 
 var (
 	// BuildInfo provides build information of the Telemetry Manager
-	BuildInfo = promauto.With(Registry).NewGauge(
+	BuildInfo = promauto.With(registry).NewGauge(
 		prometheus.GaugeOpts{
 			Namespace:   defaultNamespace,
 			Subsystem:   "",
@@ -30,7 +30,7 @@ var (
 	)
 
 	// FeatureFlagsInfo tracks enabled feature flags in the Telemetry Manager
-	FeatureFlagsInfo = promauto.With(Registry).NewGaugeVec(
+	FeatureFlagsInfo = promauto.With(registry).NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: defaultNamespace,
 			Name:      "feature_flags_info",
@@ -40,7 +40,7 @@ var (
 	)
 
 	// OTTLTransformUsage tracks the number of pipelines using OTTL transform feature
-	OTTLTransformUsage = promauto.With(Registry).NewGaugeVec(
+	OTTLTransformUsage = promauto.With(registry).NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: defaultNamespace,
 			Subsystem: subsystemPipelines,
@@ -51,7 +51,7 @@ var (
 	)
 
 	// OTTLFilterUsage tracks the number of pipelines using OTTL filter feature
-	OTTLFilterUsage = promauto.With(Registry).NewGaugeVec(
+	OTTLFilterUsage = promauto.With(registry).NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: defaultNamespace,
 			Subsystem: subsystemPipelines,
@@ -62,7 +62,7 @@ var (
 	)
 
 	// SelfMonitorProberRequestsInFlight tracks the current number of in-flight requests initiated by the self-monitoring prober
-	SelfMonitorProberRequestsInFlight = promauto.With(Registry).NewGauge(
+	SelfMonitorProberRequestsInFlight = promauto.With(registry).NewGauge(
 		prometheus.GaugeOpts{
 			Namespace: defaultNamespace,
 			Subsystem: subsystemSelfMonitorProber,
@@ -72,7 +72,7 @@ var (
 	)
 
 	// SelfMonitorProberRequestsTotal tracks the total number of requests initiated by the self-monitoring prober
-	SelfMonitorProberRequestsTotal = promauto.With(Registry).NewCounterVec(
+	SelfMonitorProberRequestsTotal = promauto.With(registry).NewCounterVec(
 		prometheus.CounterOpts{
 			Namespace: defaultNamespace,
 			Subsystem: subsystemSelfMonitorProber,
@@ -83,7 +83,7 @@ var (
 	)
 
 	// SelfMonitorProberRequestDuration tracks the latency histogram for requests initiated by the self-monitoring prober
-	SelfMonitorProberRequestDuration = promauto.With(Registry).NewHistogramVec(
+	SelfMonitorProberRequestDuration = promauto.With(registry).NewHistogramVec(
 		prometheus.HistogramOpts{
 			Namespace: defaultNamespace,
 			Subsystem: subsystemSelfMonitorProber,
@@ -94,6 +94,18 @@ var (
 		[]string{},
 	)
 )
+
+func init() {
+	registry.MustRegister(
+		BuildInfo,
+		FeatureFlagsInfo,
+		OTTLTransformUsage,
+		OTTLFilterUsage,
+		SelfMonitorProberRequestsInFlight,
+		SelfMonitorProberRequestsTotal,
+		SelfMonitorProberRequestDuration,
+	)
+}
 
 // RecordOTTLTransformUsage updates the transform usage metric for a given pipeline type
 func RecordOTTLTransformUsage(kind string, count int) {

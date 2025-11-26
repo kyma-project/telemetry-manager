@@ -53,7 +53,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/build"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/featureflags"
-	internalmetrics "github.com/kyma-project/telemetry-manager/internal/metrics"
+	"github.com/kyma-project/telemetry-manager/internal/metrics"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
 	loggerutils "github.com/kyma-project/telemetry-manager/internal/utils/logger"
@@ -290,12 +290,12 @@ func setupManager(globals config.Global) (manager.Manager, error) {
 }
 
 func logBuildAndProcessInfo() {
-	internalmetrics.BuildInfo.Set(1)
+	metrics.BuildInfo.Set(1)
 
 	setupLog.Info("Starting Telemetry Manager", "Build info:", build.InfoMap())
 
 	for _, flg := range featureflags.EnabledFlags() {
-		internalmetrics.FeatureFlagsInfo.WithLabelValues(flg.String()).Set(1)
+		metrics.FeatureFlagsInfo.WithLabelValues(flg.String()).Set(1)
 		setupLog.Info("Enabled feature flag", "flag", flg)
 	}
 }
