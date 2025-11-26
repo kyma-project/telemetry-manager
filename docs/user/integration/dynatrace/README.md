@@ -170,6 +170,30 @@ We recommend direct integration with the Dynatrace server. This approach reduces
     metadata:
         name: dynatrace
     spec:
+      transform:
+        - statements:
+          - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.statefulset.name"]) where IsString(resource.attributes["k8s.statefulset.name"])
+          - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.replicaset.name"]) where IsString(resource.attributes["k8s.replicaset.name"])
+          - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.job.name"]) where IsString(resource.attributes["k8s.job.name"])
+          - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.deployment.name"]) where IsString(resource.attributes["k8s.deployment.name"])
+          - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.daemonset.name"]) where IsString(resource.attributes["k8s.daemonset.name"])
+          - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.cronjob.name"]) where IsString(resource.attributes["k8s.cronjob.name"])
+          - set(resource.attributes["k8s.workload.kind"], "statefulset") where IsString(resource.attributes["k8s.statefulset.name"])
+          - set(resource.attributes["k8s.workload.kind"], "replicaset") where IsString(resource.attributes["k8s.replicaset.name"])
+          - set(resource.attributes["k8s.workload.kind"], "job") where IsString(resource.attributes["k8s.job.name"])
+          - set(resource.attributes["k8s.workload.kind"], "deployment") where IsString(resource.attributes["k8s.deployment.name"])
+          - set(resource.attributes["k8s.workload.kind"], "daemonset") where IsString(resource.attributes["k8s.daemonset.name"])
+          - set(resource.attributes["k8s.workload.kind"], "cronjob") where IsString(resource.attributes["k8s.cronjob.name"])
+          - set(resource.attributes["dt.kubernetes.workload.name"], resource.attributes["k8s.workload.name"])
+          - set(resource.attributes["dt.kubernetes.workload.kind"], resource.attributes["k8s.workload.kind"])
+          - delete_key(resource.attributes, "k8s.statefulset.name")
+          - delete_key(resource.attributes, "k8s.replicaset.name")
+          - delete_key(resource.attributes, "k8s.job.name")
+          - delete_key(resource.attributes, "k8s.deployment.name")
+          - delete_key(resource.attributes, "k8s.daemonset.name")
+          - delete_key(resource.attributes, "k8s.cronjob.name")
+        - statements:
+          - set(resource.attributes["k8s.pod.ip"], resource.attributes["ip"]) where resource.attributes["k8s.pod.ip"] == nil
         output:
             otlp:
                 endpoint:
@@ -261,6 +285,30 @@ Depending on your metrics source and temporality, choose one of the following me
         metadata:
             name: dynatrace
         spec:
+          transform:
+            - statements:
+              - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.statefulset.name"]) where IsString(resource.attributes["k8s.statefulset.name"])
+              - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.replicaset.name"]) where IsString(resource.attributes["k8s.replicaset.name"])
+              - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.job.name"]) where IsString(resource.attributes["k8s.job.name"])
+              - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.deployment.name"]) where IsString(resource.attributes["k8s.deployment.name"])
+              - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.daemonset.name"]) where IsString(resource.attributes["k8s.daemonset.name"])
+              - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.cronjob.name"]) where IsString(resource.attributes["k8s.cronjob.name"])
+              - set(resource.attributes["k8s.workload.kind"], "statefulset") where IsString(resource.attributes["k8s.statefulset.name"])
+              - set(resource.attributes["k8s.workload.kind"], "replicaset") where IsString(resource.attributes["k8s.replicaset.name"])
+              - set(resource.attributes["k8s.workload.kind"], "job") where IsString(resource.attributes["k8s.job.name"])
+              - set(resource.attributes["k8s.workload.kind"], "deployment") where IsString(resource.attributes["k8s.deployment.name"])
+              - set(resource.attributes["k8s.workload.kind"], "daemonset") where IsString(resource.attributes["k8s.daemonset.name"])
+              - set(resource.attributes["k8s.workload.kind"], "cronjob") where IsString(resource.attributes["k8s.cronjob.name"])
+              - set(resource.attributes["dt.kubernetes.workload.name"], resource.attributes["k8s.workload.name"])
+              - set(resource.attributes["dt.kubernetes.workload.kind"], resource.attributes["k8s.workload.kind"])
+              - delete_key(resource.attributes, "k8s.statefulset.name")
+              - delete_key(resource.attributes, "k8s.replicaset.name")
+              - delete_key(resource.attributes, "k8s.job.name")
+              - delete_key(resource.attributes, "k8s.deployment.name")
+              - delete_key(resource.attributes, "k8s.daemonset.name")
+              - delete_key(resource.attributes, "k8s.cronjob.name")
+            - statements:
+              - set(resource.attributes["k8s.pod.ip"], resource.attributes["ip"]) where resource.attributes["k8s.pod.ip"] == nil
             output:
                 otlp:
                     endpoint:
