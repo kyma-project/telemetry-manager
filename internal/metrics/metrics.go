@@ -95,18 +95,6 @@ var (
 	)
 )
 
-func init() {
-	registry.MustRegister(
-		BuildInfo,
-		FeatureFlagsInfo,
-		OTTLTransformUsage,
-		OTTLFilterUsage,
-		SelfMonitorProberRequestsInFlight,
-		SelfMonitorProberRequestsTotal,
-		SelfMonitorProberRequestDuration,
-	)
-}
-
 // RecordOTTLTransformUsage updates the transform usage metric for a given pipeline type
 func RecordOTTLTransformUsage(kind string, count int) {
 	OTTLTransformUsage.WithLabelValues(kind).Set(float64(count))
