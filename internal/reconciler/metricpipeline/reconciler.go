@@ -16,6 +16,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
+	"github.com/kyma-project/telemetry-manager/internal/metrics"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricagent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricgateway"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
@@ -235,6 +236,8 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	if err != nil {
 		return fmt.Errorf("failed to fetch deployable metric pipelines: %w", err)
 	}
+
+	r.trackOTTLFeaturesUsage(reconcilablePipelines)
 
 	var reconcilablePipelinesRequiringAgents = r.getPipelinesRequiringAgents(reconcilablePipelines)
 
@@ -484,4 +487,21 @@ func (r *Reconciler) getK8sClusterUID(ctx context.Context) (string, error) {
 	}
 
 	return string(kubeSystem.UID), nil
+}
+
+func (r *Reconciler) trackOTTLFeaturesUsage(pipelines []telemetryv1alpha1.MetricPipeline) {
+	transformCount := 0
+	filterCount := 0
+
+	for i := range pipelines {
+		if len(pipelines[i].Spec.Transforms) > 0 {
+			transformCount++
+		}
+		if len(pipelines[i].Spec.Filters) > 0 {
+			filterCount++
+		}
+	}
+
+	metrics.RecordOTTLTransformUsage("metric", transformCount)
+	metrics.RecordOTTLFilterUsage("metric", filterCount)
 }

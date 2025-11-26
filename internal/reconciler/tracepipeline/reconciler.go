@@ -32,6 +32,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
+	"github.com/kyma-project/telemetry-manager/internal/metrics"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/tracegateway"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
@@ -223,6 +224,8 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return fmt.Errorf("failed to fetch deployable trace pipelines: %w", err)
 	}
 
+	r.trackOTTLFeaturesUsage(reconcilablePipelines)
+
 	if len(reconcilablePipelines) == 0 {
 		logf.FromContext(ctx).V(1).Info("cleaning up trace pipeline resources: all trace pipelines are non-reconcilable")
 
@@ -388,4 +391,21 @@ func (r *Reconciler) getK8sClusterUID(ctx context.Context) (string, error) {
 	}
 
 	return string(kubeSystem.UID), nil
+}
+
+func (r *Reconciler) trackOTTLFeaturesUsage(pipelines []telemetryv1alpha1.TracePipeline) {
+	transformCount := 0
+	filterCount := 0
+
+	for i := range pipelines {
+		if len(pipelines[i].Spec.Transforms) > 0 {
+			transformCount++
+		}
+		if len(pipelines[i].Spec.Filters) > 0 {
+			filterCount++
+		}
+	}
+
+	metrics.RecordOTTLTransformUsage("trace", transformCount)
+	metrics.RecordOTTLFilterUsage("trace", filterCount)
 }
