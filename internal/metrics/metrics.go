@@ -4,20 +4,45 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	ctrlmetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
+
+	"github.com/kyma-project/telemetry-manager/internal/build"
 )
 
 const (
-	metricNamespace         = "telemetry"
-	metricSubsystem         = "pipelines"
-	selfMonitorMetricPrefix = "telemetry_self_monitor_prober_"
+	defaultNamespace           = "telemetry"
+	subsystemPipelines         = "pipelines"
+	subsystemSelfMonitorProber = "self_monitor_prober_"
 )
 
+// Registry is the prometheus registry for telemetry manager metrics
+var Registry = ctrlmetrics.Registry
+
 var (
+	// BuildInfo provides build information of the Telemetry Manager
+	BuildInfo = promauto.With(Registry).NewGauge(
+		prometheus.GaugeOpts{
+			Namespace:   defaultNamespace,
+			Subsystem:   "",
+			Name:        "build_info",
+			Help:        "Build information of the Telemetry Manager",
+			ConstLabels: build.InfoMap(),
+		},
+	)
+
+	// FeatureFlagsInfo tracks enabled feature flags in the Telemetry Manager
+	FeatureFlagsInfo = promauto.With(Registry).NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: defaultNamespace,
+			Name:      "feature_flags_info",
+			Help:      "Enabled feature flags in the Telemetry Manager",
+		},
+		[]string{"flag"},
+	)
 	// OTTLTransformUsage tracks the number of pipelines using OTTL transform feature
 	OTTLTransformUsage = promauto.With(Registry).NewGaugeVec(
 		prometheus.GaugeOpts{
-			Namespace: metricNamespace,
-			Subsystem: metricSubsystem,
+			Namespace: defaultNamespace,
+			Subsystem: subsystemPipelines,
 			Name:      "ottl_transform_usage",
 			Help:      "Number of pipelines using OTTL transform feature",
 		},
@@ -27,8 +52,8 @@ var (
 	// OTTLFilterUsage tracks the number of pipelines using OTTL filter feature
 	OTTLFilterUsage = promauto.With(Registry).NewGaugeVec(
 		prometheus.GaugeOpts{
-			Namespace: metricNamespace,
-			Subsystem: metricSubsystem,
+			Namespace: defaultNamespace,
+			Subsystem: subsystemPipelines,
 			Name:      "ottl_filter_usage",
 			Help:      "Number of pipelines using OTTL filter feature",
 		},
@@ -38,16 +63,20 @@ var (
 	// SelfMonitorProberRequestsInFlight tracks the current number of in-flight requests initiated by the self-monitoring prober
 	SelfMonitorProberRequestsInFlight = promauto.With(Registry).NewGauge(
 		prometheus.GaugeOpts{
-			Name: selfMonitorMetricPrefix + "in_flight_requests",
-			Help: "The current number of in-flight requests initiated by the self-monitoring prober.",
+			Namespace: defaultNamespace,
+			Subsystem: subsystemSelfMonitorProber,
+			Name:      "in_flight_requests",
+			Help:      "The current number of in-flight requests initiated by the self-monitoring prober.",
 		},
 	)
 
 	// SelfMonitorProberRequestsTotal tracks the total number of requests initiated by the self-monitoring prober
 	SelfMonitorProberRequestsTotal = promauto.With(Registry).NewCounterVec(
 		prometheus.CounterOpts{
-			Name: selfMonitorMetricPrefix + "requests_total",
-			Help: "Total number of requests initiated by the self-monitoring prober.",
+			Namespace: defaultNamespace,
+			Subsystem: subsystemSelfMonitorProber,
+			Name:      "requests_total",
+			Help:      "Total number of requests initiated by the self-monitoring prober.",
 		},
 		[]string{"code"},
 	)
@@ -55,16 +84,15 @@ var (
 	// SelfMonitorProberRequestDuration tracks the latency histogram for requests initiated by the self-monitoring prober
 	SelfMonitorProberRequestDuration = promauto.With(Registry).NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name:    selfMonitorMetricPrefix + "duration_seconds",
-			Help:    "A histogram of latencies for requests initiated by the self-monitoring prober.",
-			Buckets: prometheus.DefBuckets,
+			Namespace: defaultNamespace,
+			Subsystem: subsystemSelfMonitorProber,
+			Name:      "duration_seconds",
+			Help:      "A histogram of latencies for requests initiated by the self-monitoring prober.",
+			Buckets:   prometheus.DefBuckets,
 		},
 		[]string{},
 	)
 )
-
-// Registry is the prometheus registry for telemetry manager metrics
-var Registry = ctrlmetrics.Registry
 
 // RecordOTTLTransformUsage updates the transform usage metric for a given pipeline type
 func RecordOTTLTransformUsage(pipelineType string, count int) {
