@@ -1,6 +1,11 @@
 package common
 
 const (
+	// LabelValueTrue can be used in all labels that require "true" as value
+	LabelValueTrue = "true"
+	// LabelValueFalse can be used in all labels that require "false" as value
+	LabelValueFalse = "false"
+
 	LabelKeyKymaModule   = "kyma-project.io/module"
 	LabelValueKymaModule = "telemetry"
 
