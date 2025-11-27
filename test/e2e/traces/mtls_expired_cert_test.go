@@ -31,7 +31,7 @@ func TestMTLSExpiredCert(t *testing.T) {
 		Build()
 	Expect(err).ToNot(HaveOccurred())
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces, kitbackend.WithTLS(*expiredServerCerts))
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces, kitbackend.WithMTLS(*expiredServerCerts))
 
 	pipeline := testutils.NewTracePipelineBuilder().
 		WithName(pipelineName).

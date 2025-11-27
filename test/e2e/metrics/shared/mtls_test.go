@@ -67,7 +67,7 @@ func TestMTLS(t *testing.T) {
 			serverCerts, clientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
 			Expect(err).ToNot(HaveOccurred())
 
-			backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithTLS(*serverCerts))
+			backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithMTLS(*serverCerts))
 
 			pipeline := testutils.NewMetricPipelineBuilder().
 				WithName(pipelineName).

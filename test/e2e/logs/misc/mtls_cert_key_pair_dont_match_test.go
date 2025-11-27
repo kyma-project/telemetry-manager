@@ -32,7 +32,7 @@ func TestMTLSCertKeyDontMatch_OTel(t *testing.T) {
 	_, clientCertsCreatedAgain, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
 	Expect(err).ToNot(HaveOccurred())
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithTLS(*serverCertsDefault))
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithMTLS(*serverCertsDefault))
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
@@ -90,7 +90,7 @@ func TestMTLSCertKeyDontMatch_FluentBit(t *testing.T) {
 	_, clientCertsCreatedAgain, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
 	Expect(err).ToNot(HaveOccurred())
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithTLS(*serverCertsDefault))
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithMTLS(*serverCertsDefault))
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).

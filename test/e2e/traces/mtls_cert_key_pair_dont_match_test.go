@@ -32,7 +32,7 @@ func TestMTLSCertKeyPairDontMatch(t *testing.T) {
 	_, clientCertsCreatedAgain, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
 	Expect(err).ToNot(HaveOccurred())
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces, kitbackend.WithTLS(*serverCertsDefault))
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces, kitbackend.WithMTLS(*serverCertsDefault))
 
 	pipeline := testutils.NewTracePipelineBuilder().
 		WithName(pipelineName).

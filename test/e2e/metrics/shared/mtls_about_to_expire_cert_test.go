@@ -72,7 +72,7 @@ func TestMTLSAboutToExpireCert(t *testing.T) {
 				Build()
 			Expect(err).ToNot(HaveOccurred())
 
-			backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithTLS(*serverCerts))
+			backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithMTLS(*serverCerts))
 
 			pipeline := testutils.NewMetricPipelineBuilder().
 				WithName(pipelineName).

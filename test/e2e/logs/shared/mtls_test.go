@@ -59,7 +59,7 @@ func TestMTLS_OTel(t *testing.T) {
 			serverCerts, clientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
 			Expect(err).ToNot(HaveOccurred())
 
-			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithTLS(*serverCerts))
+			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithMTLS(*serverCerts))
 
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
@@ -111,7 +111,7 @@ func TestMTLS_FluentBit(t *testing.T) {
 	serverCerts, clientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
 	Expect(err).ToNot(HaveOccurred())
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithTLS(*serverCerts))
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithMTLS(*serverCerts))
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).

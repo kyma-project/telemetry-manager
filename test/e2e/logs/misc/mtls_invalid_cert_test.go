@@ -31,7 +31,7 @@ func TestMTLSInvalidCert_OTel(t *testing.T) {
 		Build()
 	Expect(err).ToNot(HaveOccurred())
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithTLS(*invalidServerCerts))
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithMTLS(*invalidServerCerts))
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
@@ -87,7 +87,7 @@ func TestMTLSInvalidCert_FluentBit(t *testing.T) {
 		Build()
 	Expect(err).ToNot(HaveOccurred())
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithTLS(*invalidServerCerts))
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithMTLS(*invalidServerCerts))
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).

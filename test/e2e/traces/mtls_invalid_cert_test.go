@@ -31,7 +31,7 @@ func TestMTLSInvalidCert(t *testing.T) {
 		Build()
 	Expect(err).ToNot(HaveOccurred())
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces, kitbackend.WithTLS(*invalidServerCerts))
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces, kitbackend.WithMTLS(*invalidServerCerts))
 
 	pipeline := testutils.NewTracePipelineBuilder().
 		WithName(pipelineName).

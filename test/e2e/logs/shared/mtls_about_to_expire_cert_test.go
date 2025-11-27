@@ -64,7 +64,7 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 				Build()
 			Expect(err).ToNot(HaveOccurred())
 
-			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithTLS(*serverCerts))
+			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithMTLS(*serverCerts))
 
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
@@ -132,7 +132,7 @@ func TestMTLSAboutToExpireCert_FluentBit(t *testing.T) {
 		Build()
 	Expect(err).ToNot(HaveOccurred())
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithTLS(*serverCerts))
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithMTLS(*serverCerts))
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
