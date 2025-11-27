@@ -598,14 +598,14 @@ func TestOTTLSpecValidation(t *testing.T) {
 			validatorOption: WithTransformSpecValidator(stubs.NewTransformSpecValidator(
 				&ottl.InvalidOTTLSpecError{Err: fmt.Errorf("invalid TransformSpec: error while parsing statements")},
 			)),
-			expectedMessage: "Invalid TransformSpec: error while parsing statements",
+			expectedMessage: "OTTL specification is invalid, invalid TransformSpec: error while parsing statements. Fix the syntax error indicated by the message or see troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=ottl_spec_invalid_with_unspecific_error_message",
 		},
 		{
 			name: "invalid filter spec",
 			validatorOption: WithFilterSpecValidator(stubs.NewFilterSpecValidator(
-				&ottl.InvalidOTTLSpecError{Err: fmt.Errorf("invalid FilterSpec: error while parsing statements")},
+				&ottl.InvalidOTTLSpecError{Err: fmt.Errorf("invalid FilterSpec: error while parsing conditions")},
 			)),
-			expectedMessage: "Invalid FilterSpec: error while parsing statements",
+			expectedMessage: "OTTL specification is invalid, invalid FilterSpec: error while parsing conditions. Fix the syntax error indicated by the message or see troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=ottl_spec_invalid_with_unspecific_error_message",
 		},
 	}
 
