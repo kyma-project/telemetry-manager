@@ -4,8 +4,12 @@
 /docs/ @kyma-project/technical-writers
 /docs/user/integration/sample-app @kyma-project/observability
 
+
 # All .md files
 *.md @kyma-project/technical-writers
+
+# provide a more specific rule for the /.github directory, to remove @kyma-project/technical-writers ownership
+/.github/**/*.md @kyma-project/observability
 
 # JSON, NDJSON files
 *.ndjson @kyma-project/observability

@@ -12,17 +12,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
-	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	logpipelinefluentbitmocks "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit/mocks"
 	logpipelinemocks "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
@@ -35,7 +30,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
-func TestAppInput(t *testing.T) {
+func TestAppInputDisabled(t *testing.T) {
 	pipeline := testutils.NewLogPipelineBuilder().WithApplicationInput(false).Build()
 	testClient := newTestClient(t, &pipeline)
 	reconciler := newTestReconciler(testClient)
@@ -44,13 +39,20 @@ func TestAppInput(t *testing.T) {
 	require.NoError(t, result.err)
 }
 
-func TestMaxPipelines(t *testing.T) {
+func TestMaxPipelineLimit(t *testing.T) {
 	pipeline := testutils.NewLogPipelineBuilder().
-		WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
 		WithCustomFilter("Name grep").
 		Build()
 	testClient := newTestClient(t, &pipeline)
-	reconciler := newMaxPipelinesReconciler(testClient)
+
+	pipelineLock := &logpipelinefluentbitmocks.PipelineLock{}
+	pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
+	pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
+
+	reconciler := newTestReconciler(testClient,
+		WithPipelineLock(pipelineLock),
+		WithPipelineValidator(newTestValidator(WithValidatorPipelineLock(pipelineLock))),
+	)
 
 	result := reconcileAndGet(t, testClient, reconciler, pipeline.Name)
 	require.NoError(t, result.err)
@@ -68,7 +70,7 @@ func TestMaxPipelines(t *testing.T) {
 		"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details")
 }
 
-func TestTLSConditions(t *testing.T) {
+func TestTLSCertificateValidation(t *testing.T) {
 	tests := []struct {
 		name                  string
 		tlsCertErr            error
@@ -144,7 +146,10 @@ func TestTLSConditions(t *testing.T) {
 				WithHTTPOutput(testutils.HTTPClientTLSFromString("ca", "fooCert", "fooKey")).
 				Build()
 			testClient := newTestClient(t, &pipeline)
-			reconciler := newTLSReconciler(testClient, tt.tlsCertErr)
+
+			reconciler := newTestReconciler(testClient,
+				WithPipelineValidator(newTestValidator(WithTLSCertValidator(stubs.NewTLSCertValidator(tt.tlsCertErr)))),
+			)
 
 			result := reconcileAndGet(t, testClient, reconciler, pipeline.Name)
 			require.NoError(t, result.err)
@@ -167,7 +172,7 @@ func TestTLSConditions(t *testing.T) {
 	}
 }
 
-func TestPodErrorConditions(t *testing.T) {
+func TestPodErrorConditionReporting(t *testing.T) {
 	tests := []struct {
 		name           string
 		probeErr       error
@@ -209,7 +214,10 @@ func TestPodErrorConditions(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
 			testClient := newTestClient(t, &pipeline)
-			reconciler := newPodErrorReconciler(testClient, tt.probeErr)
+
+			reconciler := newTestReconciler(testClient,
+				WithAgentProber(commonStatusStubs.NewDaemonSetProber(tt.probeErr)),
+			)
 
 			result := reconcileAndGet(t, testClient, reconciler, pipeline.Name)
 			require.NoError(t, result.err)
@@ -259,7 +267,7 @@ func TestUnsupportedMode(t *testing.T) {
 	}
 }
 
-func TestReferencedSecret(t *testing.T) {
+func TestSecretReferenceValidation(t *testing.T) {
 	tests := []struct {
 		name       string
 		setupObjs  func() (telemetryv1alpha1.LogPipeline, []client.Object)
@@ -320,7 +328,10 @@ func TestReferencedSecret(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			pipeline, objs := tt.setupObjs()
 			testClient := newTestClientWithObjs(t, objs...)
-			reconciler := newSecretRefReconciler(testClient, tt.secretErr)
+
+			reconciler := newTestReconciler(testClient,
+				WithPipelineValidator(newTestValidator(WithSecretRefValidator(stubs.NewSecretRefValidator(tt.secretErr)))),
+			)
 
 			result := reconcileAndGet(t, testClient, reconciler, pipeline.Name)
 
@@ -337,7 +348,7 @@ func TestReferencedSecret(t *testing.T) {
 	}
 }
 
-func TestLogAgent(t *testing.T) {
+func TestAgentHealthCondition(t *testing.T) {
 	tests := []struct {
 		name            string
 		proberError     error
@@ -376,7 +387,10 @@ func TestLogAgent(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
 			testClient := newTestClient(t, &pipeline)
-			reconciler := newLogAgentReconciler(testClient, tt.proberError, tt.errorConverter)
+
+			reconciler := newTestReconciler(testClient,
+				WithAgentProber(commonStatusStubs.NewDaemonSetProber(tt.proberError)),
+			)
 
 			result := reconcileAndGet(t, testClient, reconciler, pipeline.Name)
 			require.NoError(t, result.err)
@@ -390,7 +404,7 @@ func TestLogAgent(t *testing.T) {
 	}
 }
 
-func TestFlowHealthy(t *testing.T) {
+func TestFlowHealthCondition(t *testing.T) {
 	tests := []struct {
 		name           string
 		probe          prober.FluentBitProbeResult
@@ -422,7 +436,7 @@ func TestFlowHealthy(t *testing.T) {
 			},
 			expectedStatus: metav1.ConditionFalse,
 			expectedReason: conditions.ReasonSelfMonAgentBufferFillingUp,
-			expectedMsg:    "Buffer nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=agent-buffer-filling-up",
+			expectedMsg:    "Buffer nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: " + conditions.LinkFluenBitBufferFillingUp,
 		},
 		{
 			name: "no logs delivered",
@@ -431,7 +445,7 @@ func TestFlowHealthy(t *testing.T) {
 			},
 			expectedStatus: metav1.ConditionFalse,
 			expectedReason: conditions.ReasonSelfMonAgentNoLogsDelivered,
-			expectedMsg:    "Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
+			expectedMsg:    "Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: " + conditions.LinkFluentBitNoLogsArriveAtBackend,
 		},
 		{
 			name: "no logs delivered shadows other problems",
@@ -441,7 +455,7 @@ func TestFlowHealthy(t *testing.T) {
 			},
 			expectedStatus: metav1.ConditionFalse,
 			expectedReason: conditions.ReasonSelfMonAgentNoLogsDelivered,
-			expectedMsg:    "Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
+			expectedMsg:    "Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: " + conditions.LinkFluentBitNoLogsArriveAtBackend,
 		},
 		{
 			name: "some data dropped",
@@ -450,7 +464,7 @@ func TestFlowHealthy(t *testing.T) {
 			},
 			expectedStatus: metav1.ConditionFalse,
 			expectedReason: conditions.ReasonSelfMonAgentSomeDataDropped,
-			expectedMsg:    "Backend is reachable, but rejecting logs. Some logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=not-all-logs-arrive-at-the-backend",
+			expectedMsg:    "Backend is reachable, but rejecting logs. Some logs are dropped. See troubleshooting: " + conditions.LinkFluentBitNotAllLogsArriveAtBackend,
 		},
 		{
 			name: "some data dropped shadows other problems",
@@ -460,7 +474,7 @@ func TestFlowHealthy(t *testing.T) {
 			},
 			expectedStatus: metav1.ConditionFalse,
 			expectedReason: conditions.ReasonSelfMonAgentSomeDataDropped,
-			expectedMsg:    "Backend is reachable, but rejecting logs. Some logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=not-all-logs-arrive-at-the-backend",
+			expectedMsg:    "Backend is reachable, but rejecting logs. Some logs are dropped. See troubleshooting: " + conditions.LinkFluentBitNotAllLogsArriveAtBackend,
 		},
 		{
 			name: "all data dropped",
@@ -469,7 +483,7 @@ func TestFlowHealthy(t *testing.T) {
 			},
 			expectedStatus: metav1.ConditionFalse,
 			expectedReason: conditions.ReasonSelfMonAgentAllDataDropped,
-			expectedMsg:    "Backend is not reachable or rejecting logs. All logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
+			expectedMsg:    "Backend is not reachable or rejecting logs. All logs are dropped. See troubleshooting: " + conditions.LinkFluentBitNoLogsArriveAtBackend,
 		},
 		{
 			name: "all data dropped shadows other problems",
@@ -481,7 +495,7 @@ func TestFlowHealthy(t *testing.T) {
 			},
 			expectedStatus: metav1.ConditionFalse,
 			expectedReason: conditions.ReasonSelfMonAgentAllDataDropped,
-			expectedMsg:    "Backend is not reachable or rejecting logs. All logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
+			expectedMsg:    "Backend is not reachable or rejecting logs. All logs are dropped. See troubleshooting: " + conditions.LinkFluentBitNoLogsArriveAtBackend,
 		},
 	}
 
@@ -489,7 +503,11 @@ func TestFlowHealthy(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
 			testClient := newTestClient(t, &pipeline)
-			reconciler := newFlowHealthReconciler(testClient, pipeline, tt.probe, tt.probeErr)
+
+			flowHealthProber := &logpipelinemocks.FlowHealthProber{}
+			flowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
+
+			reconciler := newTestReconciler(testClient, WithFlowHealthProber(flowHealthProber))
 
 			result := reconcileAndGet(t, testClient, reconciler, pipeline.Name)
 			require.NoError(t, result.err)
@@ -507,41 +525,119 @@ func TestFlowHealthy(t *testing.T) {
 
 func TestFIPSMode(t *testing.T) {
 	tests := []struct {
-		name         string
-		fipsEnabled  bool
-		reconcilable bool
-		conditions   []conditionCheck
+		name               string
+		fipsEnabled        bool
+		pipeline           telemetryv1alpha1.LogPipeline
+		expectReconcilable bool
+		verifyResources    bool
+		conditions         []conditionCheck
 	}{
 		{
-			name:         "FIPS mode enabled",
-			fipsEnabled:  true,
-			reconcilable: false,
+			name:               "FIPS disabled - basic pipeline applies resources",
+			fipsEnabled:        false,
+			pipeline:           testutils.NewLogPipelineBuilder().WithHTTPOutput().Build(),
+			expectReconcilable: true,
+			verifyResources:    true,
+			conditions: []conditionCheck{
+				{conditions.TypeConfigurationGenerated, metav1.ConditionTrue, conditions.ReasonAgentConfigured, "LogPipeline specification is successfully applied to the configuration of Log agent"},
+			},
+		},
+		{
+			name:               "FIPS disabled - HTTP output applies resources",
+			fipsEnabled:        false,
+			pipeline:           testutils.NewLogPipelineBuilder().WithHTTPOutput().Build(),
+			expectReconcilable: true,
+			verifyResources:    true,
+			conditions: []conditionCheck{
+				{conditions.TypeConfigurationGenerated, metav1.ConditionTrue, conditions.ReasonAgentConfigured, "LogPipeline specification is successfully applied to the configuration of Log agent"},
+			},
+		},
+		{
+			name:               "FIPS enabled - basic pipeline deletes resources",
+			fipsEnabled:        true,
+			pipeline:           testutils.NewLogPipelineBuilder().WithHTTPOutput().Build(),
+			expectReconcilable: false,
+			verifyResources:    true,
 			conditions: []conditionCheck{
 				{conditions.TypeConfigurationGenerated, metav1.ConditionFalse, conditions.ReasonNoFluentbitInFipsMode, "HTTP/custom output types are not supported when FIPS mode is enabled"},
 				{conditions.TypeFlowHealthy, metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated, "No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details"},
 			},
 		},
 		{
-			name:         "FIPS mode disabled",
-			fipsEnabled:  false,
-			reconcilable: true,
+			name:               "FIPS enabled - HTTP output deletes resources",
+			fipsEnabled:        true,
+			pipeline:           testutils.NewLogPipelineBuilder().WithHTTPOutput().Build(),
+			expectReconcilable: false,
+			verifyResources:    true,
 			conditions: []conditionCheck{
-				{conditions.TypeConfigurationGenerated, metav1.ConditionTrue, conditions.ReasonAgentConfigured, "LogPipeline specification is successfully applied to the configuration of Log agent"},
+				{conditions.TypeConfigurationGenerated, metav1.ConditionFalse, conditions.ReasonNoFluentbitInFipsMode, "HTTP/custom output types are not supported when FIPS mode is enabled"},
+				{conditions.TypeFlowHealthy, metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated, "No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details"},
+			},
+		},
+		{
+			name:               "FIPS enabled - pipeline with TLS errors",
+			fipsEnabled:        true,
+			pipeline:           testutils.NewLogPipelineBuilder().WithHTTPOutput(testutils.HTTPClientTLSFromString("ca", "invalidCert", "invalidKey")).Build(),
+			expectReconcilable: false,
+			verifyResources:    false,
+			conditions: []conditionCheck{
+				{conditions.TypeConfigurationGenerated, metav1.ConditionFalse, conditions.ReasonNoFluentbitInFipsMode, "HTTP/custom output types are not supported when FIPS mode is enabled"},
+			},
+		},
+		{
+			name:               "FIPS enabled - pipeline with custom filters",
+			fipsEnabled:        true,
+			pipeline:           testutils.NewLogPipelineBuilder().WithCustomFilter("Name grep").Build(),
+			expectReconcilable: false,
+			verifyResources:    false,
+			conditions: []conditionCheck{
+				{conditions.TypeConfigurationGenerated, metav1.ConditionFalse, conditions.ReasonNoFluentbitInFipsMode, "HTTP/custom output types are not supported when FIPS mode is enabled"},
+			},
+		},
+		{
+			name:               "FIPS enabled - pipeline with secret references",
+			fipsEnabled:        true,
+			pipeline:           testutils.NewLogPipelineBuilder().WithHTTPOutput(testutils.HTTPHostFromSecret("some-secret", "some-namespace", "host")).Build(),
+			expectReconcilable: false,
+			verifyResources:    false,
+			conditions: []conditionCheck{
+				{conditions.TypeConfigurationGenerated, metav1.ConditionFalse, conditions.ReasonNoFluentbitInFipsMode, "HTTP/custom output types are not supported when FIPS mode is enabled"},
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
-			testClient := newTestClient(t, &pipeline)
-			reconciler := newFIPSReconciler(testClient, tt.fipsEnabled)
+			testClient := newTestClient(t, &tt.pipeline)
 
-			reconcilable, err := reconciler.IsReconcilable(t.Context(), &pipeline)
+			reconcilerOpts := []Option{
+				WithGlobals(config.NewGlobal(
+					config.WithTargetNamespace("default"),
+					config.WithOperateInFIPSMode(tt.fipsEnabled),
+				)),
+			}
+
+			// Only set up resource verification when explicitly testing apply/delete behavior
+			if tt.verifyResources {
+				agentApplierDeleter := &logpipelinefluentbitmocks.AgentApplierDeleter{}
+				if tt.fipsEnabled {
+					agentApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+				} else {
+					agentApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+				}
+
+				reconcilerOpts = append(reconcilerOpts, WithAgentApplierDeleter(agentApplierDeleter))
+
+				defer agentApplierDeleter.AssertExpectations(t)
+			}
+
+			reconciler := newTestReconciler(testClient, reconcilerOpts...)
+
+			reconcilable, err := reconciler.IsReconcilable(t.Context(), &tt.pipeline)
 			require.NoError(t, err)
-			require.Equal(t, tt.reconcilable, reconcilable)
+			require.Equal(t, tt.expectReconcilable, reconcilable)
 
-			result := reconcileAndGet(t, testClient, reconciler, pipeline.Name)
+			result := reconcileAndGet(t, testClient, reconciler, tt.pipeline.Name)
 			require.NoError(t, result.err)
 
 			for _, check := range tt.conditions {
@@ -549,328 +645,4 @@ func TestFIPSMode(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestFIPSModeWithComplexPipelines(t *testing.T) {
-	tests := []struct {
-		name               string
-		setupPipeline      func() telemetryv1alpha1.LogPipeline
-		expectReconcilable bool
-	}{
-		{
-			name: "FIPS mode ignores pipeline with TLS errors",
-			setupPipeline: func() telemetryv1alpha1.LogPipeline {
-				return testutils.NewLogPipelineBuilder().
-					WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
-					WithHTTPOutput(testutils.HTTPClientTLSFromString("ca", "invalidCert", "invalidKey")).
-					Build()
-			},
-			expectReconcilable: false,
-		},
-		{
-			name: "FIPS mode ignores pipeline with custom filters",
-			setupPipeline: func() telemetryv1alpha1.LogPipeline {
-				return testutils.NewLogPipelineBuilder().
-					WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
-					WithCustomFilter("Name grep").
-					Build()
-			},
-			expectReconcilable: false,
-		},
-		{
-			name: "FIPS mode ignores pipeline with secret references",
-			setupPipeline: func() telemetryv1alpha1.LogPipeline {
-				return testutils.NewLogPipelineBuilder().
-					WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
-					WithHTTPOutput(testutils.HTTPHostFromSecret("some-secret", "some-namespace", "host")).
-					Build()
-			},
-			expectReconcilable: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			pipeline := tt.setupPipeline()
-			testClient := newTestClient(t, &pipeline)
-			reconciler := newFIPSReconciler(testClient, true) // Always FIPS enabled
-
-			reconcilable, err := reconciler.IsReconcilable(t.Context(), &pipeline)
-			require.NoError(t, err)
-			require.Equal(t, tt.expectReconcilable, reconcilable)
-
-			// In FIPS mode, all pipelines should get the same FIPS error condition regardless of other issues
-			result := reconcileAndGet(t, testClient, reconciler, pipeline.Name)
-			require.NoError(t, result.err)
-
-			assertCondition(t, result.pipeline,
-				conditions.TypeConfigurationGenerated,
-				metav1.ConditionFalse,
-				conditions.ReasonNoFluentbitInFipsMode,
-				"HTTP/custom output types are not supported when FIPS mode is enabled")
-		})
-	}
-}
-
-func TestFIPSModeTransition(t *testing.T) {
-	tests := []struct {
-		name         string
-		fipsEnabled  bool
-		reconcilable bool
-		shouldApply  bool
-		shouldDelete bool
-		condStatus   metav1.ConditionStatus
-		condReason   string
-		condMessage  string
-	}{
-		{
-			name:         "FIPS disabled - applies resources",
-			fipsEnabled:  false,
-			reconcilable: true,
-			shouldApply:  true,
-			shouldDelete: false,
-			condStatus:   metav1.ConditionTrue,
-			condReason:   conditions.ReasonAgentConfigured,
-			condMessage:  "LogPipeline specification is successfully applied to the configuration of Log agent",
-		},
-		{
-			name:         "FIPS enabled - deletes resources",
-			fipsEnabled:  true,
-			reconcilable: false,
-			shouldApply:  false,
-			shouldDelete: true,
-			condStatus:   metav1.ConditionFalse,
-			condReason:   conditions.ReasonNoFluentbitInFipsMode,
-			condMessage:  "HTTP/custom output types are not supported when FIPS mode is enabled",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			pipeline := testutils.NewLogPipelineBuilder().
-				WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
-				WithHTTPOutput().
-				Build()
-			testClient := newTestClient(t, &pipeline)
-			agentApplierDeleter := &logpipelinefluentbitmocks.AgentApplierDeleter{}
-
-			reconciler := newReconcilerWithOverrides(testClient, func(m *reconcilerMocks) {
-				if tt.shouldApply {
-					agentApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
-				}
-
-				if tt.shouldDelete {
-					agentApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
-				}
-
-				m.agentApplierDeleter = agentApplierDeleter
-			}, func(globals *config.Global) {
-				*globals = config.NewGlobal(
-					config.WithTargetNamespace("default"),
-					config.WithOperateInFIPSMode(tt.fipsEnabled),
-				)
-			})
-
-			reconcilable, err := reconciler.IsReconcilable(t.Context(), &pipeline)
-			require.NoError(t, err)
-			require.Equal(t, tt.reconcilable, reconcilable)
-
-			result := reconcileAndGet(t, testClient, reconciler, pipeline.Name)
-			require.NoError(t, result.err)
-
-			agentApplierDeleter.AssertExpectations(t)
-
-			assertCondition(t, result.pipeline, conditions.TypeConfigurationGenerated,
-				tt.condStatus, tt.condReason, tt.condMessage)
-		})
-	}
-}
-
-// Helper types and functions
-type reconcileResult struct {
-	pipeline telemetryv1alpha1.LogPipeline
-	err      error
-}
-
-type conditionCheck struct {
-	condType string
-	status   metav1.ConditionStatus
-	reason   string
-	message  string
-}
-
-func newTestClient(t *testing.T, objs ...client.Object) client.Client {
-	scheme := runtime.NewScheme()
-	require.NoError(t, clientgoscheme.AddToScheme(scheme))
-	require.NoError(t, telemetryv1alpha1.AddToScheme(scheme))
-
-	return fake.NewClientBuilder().WithScheme(scheme).WithObjects(objs...).WithStatusSubresource(objs...).Build()
-}
-
-func newTestClientWithObjs(t *testing.T, objs ...client.Object) client.Client {
-	scheme := runtime.NewScheme()
-	require.NoError(t, clientgoscheme.AddToScheme(scheme))
-	require.NoError(t, telemetryv1alpha1.AddToScheme(scheme))
-
-	return fake.NewClientBuilder().WithScheme(scheme).WithObjects(objs...).WithStatusSubresource(objs...).Build()
-}
-
-func reconcileAndGet(t *testing.T, client client.Client, reconciler *Reconciler, pipelineName string) reconcileResult {
-	var pl telemetryv1alpha1.LogPipeline
-	require.NoError(t, client.Get(t.Context(), types.NamespacedName{Name: pipelineName}, &pl))
-
-	err := reconciler.Reconcile(t.Context(), &pl)
-
-	var updatedPipeline telemetryv1alpha1.LogPipeline
-	require.NoError(t, client.Get(t.Context(), types.NamespacedName{Name: pipelineName}, &updatedPipeline))
-
-	return reconcileResult{pipeline: updatedPipeline, err: err}
-}
-
-func assertCondition(t *testing.T, pipeline telemetryv1alpha1.LogPipeline, condType string, status metav1.ConditionStatus, reason, message string) {
-	cond := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
-	require.NotNil(t, cond)
-	require.Equal(t, status, cond.Status)
-	require.Equal(t, reason, cond.Reason)
-	require.Equal(t, message, cond.Message)
-}
-
-func newTestReconciler(client client.Client) *Reconciler {
-	return newReconcilerWithMocks(client, defaultMocks())
-}
-
-func newMaxPipelinesReconciler(client client.Client) *Reconciler {
-	defaultMocks := defaultMocks()
-	// Create a new pipeline lock with different behavior
-	pipelineLock := &logpipelinefluentbitmocks.PipelineLock{}
-	pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
-	pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
-	defaultMocks.pipelineLock = pipelineLock
-	defaultMocks.validator.PipelineLock = pipelineLock
-
-	return newReconcilerWithMocks(client, defaultMocks)
-}
-
-func newTLSReconciler(client client.Client, tlsErr error) *Reconciler {
-	return newReconcilerWithOverrides(client, func(m *reconcilerMocks) {
-		m.validator.TLSCertValidator = stubs.NewTLSCertValidator(tlsErr)
-	})
-}
-
-func newPodErrorReconciler(client client.Client, probeErr error) *Reconciler {
-	return newReconcilerWithOverrides(client, func(m *reconcilerMocks) {
-		m.daemonSetProber = commonStatusStubs.NewDaemonSetProber(probeErr)
-		m.errorConverter = &conditions.ErrorToMessageConverter{}
-	})
-}
-
-func newSecretRefReconciler(client client.Client, secretErr error) *Reconciler {
-	return newReconcilerWithOverrides(client, func(m *reconcilerMocks) {
-		m.validator.SecretRefValidator = stubs.NewSecretRefValidator(secretErr)
-	})
-}
-
-func newLogAgentReconciler(client client.Client, proberError error, errorConverter ErrorToMessageConverter) *Reconciler {
-	return newReconcilerWithOverrides(client, func(m *reconcilerMocks) {
-		m.daemonSetProber = commonStatusStubs.NewDaemonSetProber(proberError)
-		m.errorConverter = errorConverter
-	})
-}
-
-func newFlowHealthReconciler(client client.Client, pipeline telemetryv1alpha1.LogPipeline, probe prober.FluentBitProbeResult, probeErr error) *Reconciler {
-	defaultMocks := defaultMocks()
-	// Override the flow health prober with specific behavior
-	flowHealthProber := &logpipelinemocks.FlowHealthProber{}
-	flowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(probe, probeErr)
-	defaultMocks.flowHealthProber = flowHealthProber
-
-	return newReconcilerWithMocks(client, defaultMocks)
-}
-
-func newFIPSReconciler(client client.Client, fipsEnabled bool) *Reconciler {
-	return newReconcilerWithOverrides(client, func(m *reconcilerMocks) {
-		// No specific overrides needed - just pass FIPS config through globals
-	}, func(globals *config.Global) {
-		*globals = config.NewGlobal(
-			config.WithTargetNamespace("default"),
-			config.WithOperateInFIPSMode(fipsEnabled),
-		)
-	})
-}
-
-type reconcilerMocks struct {
-	agentConfigBuilder  *logpipelinefluentbitmocks.AgentConfigBuilder
-	agentApplierDeleter *logpipelinefluentbitmocks.AgentApplierDeleter
-	daemonSetProber     AgentProber
-	flowHealthProber    *logpipelinemocks.FlowHealthProber
-	pipelineLock        *logpipelinefluentbitmocks.PipelineLock
-	validator           *Validator
-	errorConverter      ErrorToMessageConverter
-}
-
-func defaultMocks() reconcilerMocks {
-	agentConfigBuilder := &logpipelinefluentbitmocks.AgentConfigBuilder{}
-	agentConfigBuilder.On("Build", mock.Anything, mock.Anything, mock.Anything).Return(&builder.FluentBitConfig{}, nil)
-
-	agentApplierDeleter := &logpipelinefluentbitmocks.AgentApplierDeleter{}
-	agentApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	agentApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-	flowHealthProber := &logpipelinemocks.FlowHealthProber{}
-	flowHealthProber.On("Probe", mock.Anything, mock.Anything).Return(prober.FluentBitProbeResult{}, nil)
-
-	pipelineLock := &logpipelinefluentbitmocks.PipelineLock{}
-	pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-	pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
-
-	validator := &Validator{
-		EndpointValidator:  stubs.NewEndpointValidator(nil),
-		TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-		SecretRefValidator: stubs.NewSecretRefValidator(nil),
-		PipelineLock:       pipelineLock,
-	}
-
-	errorConverter := &conditions.ErrorToMessageConverter{}
-
-	return reconcilerMocks{
-		agentConfigBuilder:  agentConfigBuilder,
-		agentApplierDeleter: agentApplierDeleter,
-		daemonSetProber:     commonStatusStubs.NewDaemonSetProber(nil),
-		flowHealthProber:    flowHealthProber,
-		pipelineLock:        pipelineLock,
-		validator:           validator,
-		errorConverter:      errorConverter,
-	}
-}
-
-func newReconcilerWithMocks(client client.Client, mocks reconcilerMocks) *Reconciler {
-	globals := config.NewGlobal(config.WithTargetNamespace("default"))
-	return newReconcilerWithGlobalConfig(client, mocks, globals)
-}
-
-func newReconcilerWithGlobalConfig(client client.Client, mocks reconcilerMocks, globals config.Global) *Reconciler {
-	return New(
-		globals,
-		client,
-		mocks.agentConfigBuilder,
-		mocks.agentApplierDeleter,
-		mocks.daemonSetProber,
-		mocks.flowHealthProber,
-		&stubs.IstioStatusChecker{IsActive: false},
-		mocks.pipelineLock,
-		mocks.validator,
-		mocks.errorConverter,
-	)
-}
-
-func newReconcilerWithOverrides(client client.Client, overrideFn func(*reconcilerMocks), configOverrides ...func(*config.Global)) *Reconciler {
-	mocks := defaultMocks()
-	overrideFn(&mocks)
-
-	globals := config.NewGlobal(config.WithTargetNamespace("default"))
-	for _, override := range configOverrides {
-		override(&globals)
-	}
-
-	return newReconcilerWithGlobalConfig(client, mocks, globals)
 }

@@ -98,7 +98,7 @@ var (
 						Name:      webhookService.Name,
 						Namespace: webhookService.Namespace,
 						Port:      &servicePort,
-						Path:      ptr.To("/validate-logpipeline"),
+						Path:      ptr.To("/validate-telemetry-kyma-project-io-v1alpha1-logpipeline"),
 					},
 				},
 				FailurePolicy:  &failurePolicy,

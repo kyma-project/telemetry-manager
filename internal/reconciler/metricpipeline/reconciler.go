@@ -7,7 +7,6 @@ import (
 
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -17,14 +16,11 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricagent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricgateway"
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
@@ -32,49 +28,6 @@ import (
 )
 
 const defaultReplicaCount int32 = 2
-
-type AgentConfigBuilder interface {
-	Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, options metricagent.BuildOptions) (*common.Config, common.EnvVars, error)
-}
-
-type GatewayConfigBuilder interface {
-	Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, options metricgateway.BuildOptions) (*common.Config, common.EnvVars, error)
-}
-
-type AgentApplierDeleter interface {
-	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.AgentApplyOptions) error
-	DeleteResources(ctx context.Context, c client.Client) error
-}
-
-type GatewayApplierDeleter interface {
-	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.GatewayApplyOptions) error
-	DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error
-}
-
-type PipelineLock interface {
-	TryAcquireLock(ctx context.Context, owner metav1.Object) error
-	IsLockHolder(ctx context.Context, owner metav1.Object) error
-}
-
-type PipelineSyncer interface {
-	TryAcquireLock(ctx context.Context, owner metav1.Object) error
-}
-
-type GatewayFlowHealthProber interface {
-	Probe(ctx context.Context, pipelineName string) (prober.OTelGatewayProbeResult, error)
-}
-
-type AgentFlowHealthProber interface {
-	Probe(ctx context.Context, pipelineName string) (prober.OTelAgentProbeResult, error)
-}
-
-type OverridesHandler interface {
-	LoadOverrides(ctx context.Context) (*overrides.Config, error)
-}
-
-type IstioStatusChecker interface {
-	IsIstioActive(ctx context.Context) bool
-}
 
 type Reconciler struct {
 	client.Client
@@ -97,42 +50,131 @@ type Reconciler struct {
 	errToMsgConverter       commonstatus.ErrorToMessageConverter
 }
 
-func New(
-	globals config.Global,
-	client client.Client,
-	agentApplierDeleter AgentApplierDeleter,
-	agentConfigBuilder AgentConfigBuilder,
-	agentProber commonstatus.Prober,
-	gatewayFlowHealthProber GatewayFlowHealthProber,
-	agentFlowHealthProber AgentFlowHealthProber,
-	gatewayApplierDeleter GatewayApplierDeleter,
-	gatewayConfigBuilder GatewayConfigBuilder,
-	gatewayProber commonstatus.Prober,
-	istioStatusChecker IstioStatusChecker,
-	overridesHandler OverridesHandler,
-	pipelineLock PipelineLock,
-	pipelineSync PipelineSyncer,
-	pipelineValidator *Validator,
-	errToMsgConverter commonstatus.ErrorToMessageConverter,
-) *Reconciler {
-	return &Reconciler{
-		globals:                 globals,
-		Client:                  client,
-		agentApplierDeleter:     agentApplierDeleter,
-		agentConfigBuilder:      agentConfigBuilder,
-		agentProber:             agentProber,
-		gatewayFlowHealthProber: gatewayFlowHealthProber,
-		agentFlowHealthProber:   agentFlowHealthProber,
-		gatewayApplierDeleter:   gatewayApplierDeleter,
-		gatewayConfigBuilder:    gatewayConfigBuilder,
-		gatewayProber:           gatewayProber,
-		istioStatusChecker:      istioStatusChecker,
-		overridesHandler:        overridesHandler,
-		pipelineLock:            pipelineLock,
-		pipelineSync:            pipelineSync,
-		pipelineValidator:       pipelineValidator,
-		errToMsgConverter:       errToMsgConverter,
+// Option is a functional option for configuring a Reconciler.
+type Option func(*Reconciler)
+
+// WithGlobals sets the global configuration.
+func WithGlobals(globals config.Global) Option {
+	return func(r *Reconciler) {
+		r.globals = globals
 	}
+}
+
+// WithAgentApplierDeleter sets the agent applier/deleter.
+func WithAgentApplierDeleter(applierDeleter AgentApplierDeleter) Option {
+	return func(r *Reconciler) {
+		r.agentApplierDeleter = applierDeleter
+	}
+}
+
+// WithAgentConfigBuilder sets the agent config builder.
+func WithAgentConfigBuilder(builder AgentConfigBuilder) Option {
+	return func(r *Reconciler) {
+		r.agentConfigBuilder = builder
+	}
+}
+
+// WithAgentProber sets the agent prober.
+func WithAgentProber(prober commonstatus.Prober) Option {
+	return func(r *Reconciler) {
+		r.agentProber = prober
+	}
+}
+
+// WithGatewayFlowHealthProber sets the gateway flow health prober.
+func WithGatewayFlowHealthProber(prober GatewayFlowHealthProber) Option {
+	return func(r *Reconciler) {
+		r.gatewayFlowHealthProber = prober
+	}
+}
+
+// WithAgentFlowHealthProber sets the agent flow health prober.
+func WithAgentFlowHealthProber(prober AgentFlowHealthProber) Option {
+	return func(r *Reconciler) {
+		r.agentFlowHealthProber = prober
+	}
+}
+
+// WithGatewayApplierDeleter sets the gateway applier/deleter.
+func WithGatewayApplierDeleter(applierDeleter GatewayApplierDeleter) Option {
+	return func(r *Reconciler) {
+		r.gatewayApplierDeleter = applierDeleter
+	}
+}
+
+// WithGatewayConfigBuilder sets the gateway config builder.
+func WithGatewayConfigBuilder(builder GatewayConfigBuilder) Option {
+	return func(r *Reconciler) {
+		r.gatewayConfigBuilder = builder
+	}
+}
+
+// WithGatewayProber sets the gateway prober.
+func WithGatewayProber(prober commonstatus.Prober) Option {
+	return func(r *Reconciler) {
+		r.gatewayProber = prober
+	}
+}
+
+// WithIstioStatusChecker sets the Istio status checker.
+func WithIstioStatusChecker(checker IstioStatusChecker) Option {
+	return func(r *Reconciler) {
+		r.istioStatusChecker = checker
+	}
+}
+
+// WithOverridesHandler sets the overrides handler.
+func WithOverridesHandler(handler OverridesHandler) Option {
+	return func(r *Reconciler) {
+		r.overridesHandler = handler
+	}
+}
+
+// WithPipelineLock sets the pipeline lock.
+func WithPipelineLock(lock PipelineLock) Option {
+	return func(r *Reconciler) {
+		r.pipelineLock = lock
+	}
+}
+
+// WithPipelineSyncer sets the pipeline syncer.
+func WithPipelineSyncer(syncer PipelineSyncer) Option {
+	return func(r *Reconciler) {
+		r.pipelineSync = syncer
+	}
+}
+
+// WithPipelineValidator sets the pipeline validator.
+func WithPipelineValidator(validator *Validator) Option {
+	return func(r *Reconciler) {
+		r.pipelineValidator = validator
+	}
+}
+
+// WithErrorToMessageConverter sets the error to message converter.
+func WithErrorToMessageConverter(converter commonstatus.ErrorToMessageConverter) Option {
+	return func(r *Reconciler) {
+		r.errToMsgConverter = converter
+	}
+}
+
+// WithClient sets the Kubernetes client.
+func WithClient(client client.Client) Option {
+	return func(r *Reconciler) {
+		r.Client = client
+	}
+}
+
+// New creates a new Reconciler with the provided client and functional options.
+// All dependencies must be provided via functional options.
+func New(opts ...Option) *Reconciler {
+	r := &Reconciler{}
+
+	for _, opt := range opts {
+		opt(r)
+	}
+
+	return r
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {

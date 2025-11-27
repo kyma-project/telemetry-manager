@@ -126,10 +126,9 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 
 	reconciler := logpipeline.New(
 		client,
-		overrides.New(config.Global, client),
-		pipelineSyncer,
-		fluentBitReconciler,
-		otelReconciler,
+		logpipeline.WithOverridesHandler(overrides.New(config.Global, client)),
+		logpipeline.WithPipelineSyncer(pipelineSyncer),
+		logpipeline.WithReconcilers(fluentBitReconciler, otelReconciler),
 	)
 
 	return &LogPipelineController{
@@ -195,12 +194,12 @@ func (r *LogPipelineController) mapTelemetryChanges(ctx context.Context, object 
 }
 
 func configureFluentBitReconciler(config LogPipelineControllerConfig, client client.Client, flowHealthProber *prober.FluentBitProber, pipelineLock logpipelinefluentbit.PipelineLock) (*logpipelinefluentbit.Reconciler, error) {
-	pipelineValidator := &logpipelinefluentbit.Validator{
-		EndpointValidator:  &endpoint.Validator{Client: client},
-		TLSCertValidator:   tlscert.New(client),
-		SecretRefValidator: &secretref.Validator{Client: client},
-		PipelineLock:       pipelineLock,
-	}
+	pipelineValidator := logpipelinefluentbit.NewValidator(
+		logpipelinefluentbit.WithEndpointValidator(&endpoint.Validator{Client: client}),
+		logpipelinefluentbit.WithTLSCertValidator(tlscert.New(client)),
+		logpipelinefluentbit.WithSecretRefValidator(&secretref.Validator{Client: client}),
+		logpipelinefluentbit.WithValidatorPipelineLock(pipelineLock),
+	)
 
 	fluentBitApplierDeleter := fluentbit.NewFluentBitApplierDeleter(
 		config.TargetNamespace(),
@@ -218,16 +217,19 @@ func configureFluentBitReconciler(config LogPipelineControllerConfig, client cli
 	}
 
 	fbReconciler := logpipelinefluentbit.New(
-		config.Global,
-		client,
-		fluentBitConfigBuilder,
-		fluentBitApplierDeleter,
-		&workloadstatus.DaemonSetProber{Client: client},
-		flowHealthProber,
-		istiostatus.NewChecker(discoveryClient),
-		pipelineLock,
-		pipelineValidator,
-		&conditions.ErrorToMessageConverter{})
+		logpipelinefluentbit.WithClient(client),
+		logpipelinefluentbit.WithGlobals(config.Global),
+
+		logpipelinefluentbit.WithAgentApplierDeleter(fluentBitApplierDeleter),
+		logpipelinefluentbit.WithAgentConfigBuilder(fluentBitConfigBuilder),
+		logpipelinefluentbit.WithAgentProber(&workloadstatus.DaemonSetProber{Client: client}),
+
+		logpipelinefluentbit.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
+		logpipelinefluentbit.WithFlowHealthProber(flowHealthProber),
+		logpipelinefluentbit.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
+		logpipelinefluentbit.WithPipelineLock(pipelineLock),
+		logpipelinefluentbit.WithPipelineValidator(pipelineValidator),
+	)
 
 	return fbReconciler, nil
 }
@@ -244,14 +246,14 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 		return nil, err
 	}
 
-	pipelineValidator := &logpipelineotel.Validator{
-		PipelineLock:           pipelineLock,
-		EndpointValidator:      &endpoint.Validator{Client: client},
-		TLSCertValidator:       tlscert.New(client),
-		SecretRefValidator:     &secretref.Validator{Client: client},
-		TransformSpecValidator: transformSpecValidator,
-		FilterSpecValidator:    filterSpecValidator,
-	}
+	pipelineValidator := logpipelineotel.NewValidator(
+		logpipelineotel.WithValidatorPipelineLock(pipelineLock),
+		logpipelineotel.WithEndpointValidator(&endpoint.Validator{Client: client}),
+		logpipelineotel.WithTLSCertValidator(tlscert.New(client)),
+		logpipelineotel.WithSecretRefValidator(&secretref.Validator{Client: client}),
+		logpipelineotel.WithTransformSpecValidator(transformSpecValidator),
+		logpipelineotel.WithFilterSpecValidator(filterSpecValidator),
+	)
 
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)
 	if err != nil {
@@ -263,20 +265,25 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 	}
 
 	otelReconciler := logpipelineotel.New(
-		config.Global,
-		client,
-		gatewayFlowHealthProber,
-		agentFlowHealthProber,
-		agentConfigBuilder,
-		otelcollector.NewLogAgentApplierDeleter(config.Global, config.OTelCollectorImage, config.LogAgentPriorityClassName),
-		&workloadstatus.DaemonSetProber{Client: client},
-		otelcollector.NewLogGatewayApplierDeleter(config.Global, config.OTelCollectorImage, config.LogGatewayPriorityClassName),
-		&loggateway.Builder{Reader: client},
-		&workloadstatus.DeploymentProber{Client: client},
-		istiostatus.NewChecker(discoveryClient),
-		pipelineLock,
-		pipelineValidator,
-		&conditions.ErrorToMessageConverter{})
+		logpipelineotel.WithClient(client),
+		logpipelineotel.WithGlobals(config.Global),
+
+		logpipelineotel.WithAgentApplierDeleter(otelcollector.NewLogAgentApplierDeleter(config.Global, config.OTelCollectorImage, config.LogAgentPriorityClassName)),
+		logpipelineotel.WithAgentConfigBuilder(agentConfigBuilder),
+		logpipelineotel.WithAgentFlowHealthProber(agentFlowHealthProber),
+		logpipelineotel.WithAgentProber(&workloadstatus.DaemonSetProber{Client: client}),
+
+		logpipelineotel.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
+
+		logpipelineotel.WithGatewayApplierDeleter(otelcollector.NewLogGatewayApplierDeleter(config.Global, config.OTelCollectorImage, config.LogGatewayPriorityClassName)),
+		logpipelineotel.WithGatewayConfigBuilder(&loggateway.Builder{Reader: client}),
+		logpipelineotel.WithGatewayFlowHealthProber(gatewayFlowHealthProber),
+		logpipelineotel.WithGatewayProber(&workloadstatus.DeploymentProber{Client: client}),
+
+		logpipelineotel.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
+		logpipelineotel.WithPipelineLock(pipelineLock),
+		logpipelineotel.WithPipelineValidator(pipelineValidator),
+	)
 
 	return otelReconciler, nil
 }

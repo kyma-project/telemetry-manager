@@ -176,6 +176,8 @@ linters:
           alias: telemetryutils
         - pkg: github.com/kyma-project/telemetry-manager/internal/fluentbit/ports
           alias: fbports
+        - pkg: github.com/kyma-project/telemetry-manager/webhook/utils
+          alias: webhookutils
       no-unaliased: true
       no-extra-aliases: true
     loggercheck:
