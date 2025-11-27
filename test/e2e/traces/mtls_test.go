@@ -17,7 +17,7 @@ import (
 )
 
 func TestMTLS(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelTraces)
+	suite.RegisterTestCase(t, suite.LabelTraces, suite.LabelMTLS)
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -35,7 +35,7 @@ func TestMTLS(t *testing.T) {
 		WithName(pipelineName).
 		WithOTLPOutput(
 			testutils.OTLPEndpoint(backend.Endpoint()),
-			testutils.OTLPClientTLSFromString(
+			testutils.OTLPClientMTLSFromString(
 				clientCerts.CaCertPem.String(),
 				clientCerts.ClientCertPem.String(),
 				clientCerts.ClientKeyPem.String(),

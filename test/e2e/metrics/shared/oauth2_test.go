@@ -4,12 +4,9 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -17,20 +14,21 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/metrics/runtime"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitoauth2 "github.com/kyma-project/telemetry-manager/test/testkit/mocks/oauth2mock"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestMTLSAboutToExpireCert(t *testing.T) {
+func TestOAUth2(t *testing.T) {
 	tests := []struct {
 		label            string
 		inputBuilder     func(includeNs string) telemetryv1alpha1.MetricPipelineInput
 		generatorBuilder func(ns string) []client.Object
 	}{
 		{
-			label: suite.LabelMetricAgentSetA,
+			label: suite.LabelMetricAgentSetC,
 			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
@@ -44,7 +42,7 @@ func TestMTLSAboutToExpireCert(t *testing.T) {
 			},
 		},
 		{
-			label: suite.LabelMetricGatewaySetA,
+			label: suite.LabelMetricGatewaySetC,
 			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
@@ -58,7 +56,7 @@ func TestMTLSAboutToExpireCert(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label, suite.LabelMTLS)
+			suite.RegisterTestCase(t, tc.label, suite.LabelOAuth2)
 
 			var (
 				uniquePrefix = unique.Prefix(tc.label)
@@ -67,23 +65,28 @@ func TestMTLSAboutToExpireCert(t *testing.T) {
 				genNs        = uniquePrefix("gen")
 			)
 
-			serverCerts, clientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).
-				WithAboutToExpireClientCert().
-				Build()
+			oauth2server := kitoauth2.New(backendNs)
+
+			serverCerts, _, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
 			Expect(err).ToNot(HaveOccurred())
 
-			backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithMTLS(*serverCerts))
+			backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics,
+				kitbackend.WithTLS(*serverCerts),
+				kitbackend.WithOIDCAuth(oauth2server.TokenEndpoint(), oauth2server.Audience()),
+			)
 
 			pipeline := testutils.NewMetricPipelineBuilder().
 				WithName(pipelineName).
 				WithInput(tc.inputBuilder(genNs)).
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backend.Endpoint()),
-					testutils.OTLPClientMTLSFromString(
-						clientCerts.CaCertPem.String(),
-						clientCerts.ClientCertPem.String(),
-						clientCerts.ClientKeyPem.String(),
+					testutils.OTLPOAuth2(
+						testutils.OAuth2ClientID("the-mock-does-not-verify"),
+						testutils.OAuth2ClientSecret("the-mock-does-not-verify"),
+						testutils.OAuth2TokenURL(oauth2server.TokenEndpoint()),
+						testutils.OAuth2Params(map[string]string{"grant_type": "client_credentials"}),
 					),
+					testutils.OTLPClientTLSFromString(serverCerts.CaCertPem.String()),
 				).
 				Build()
 
@@ -93,6 +96,7 @@ func TestMTLSAboutToExpireCert(t *testing.T) {
 				&pipeline,
 			}
 			resources = append(resources, tc.generatorBuilder(genNs)...)
+			resources = append(resources, oauth2server.K8sObjects()...)
 			resources = append(resources, backend.K8sObjects()...)
 
 			t.Cleanup(func() {
@@ -108,19 +112,6 @@ func TestMTLSAboutToExpireCert(t *testing.T) {
 			}
 
 			assert.MetricPipelineHealthy(t, pipelineName)
-
-			assert.MetricPipelineHasCondition(t, pipelineName, metav1.Condition{
-				Type:   conditions.TypeConfigurationGenerated,
-				Status: metav1.ConditionTrue,
-				Reason: conditions.ReasonTLSCertificateAboutToExpire,
-			})
-
-			assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
-			assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
-				Type:   conditions.TypeMetricComponentsHealthy,
-				Status: metav1.ConditionTrue,
-				Reason: conditions.ReasonTLSCertificateAboutToExpire,
-			})
 
 			if suite.ExpectAgent(tc.label) {
 				assert.MetricsFromNamespaceDelivered(t, backend, genNs, runtime.DefaultMetricsNames)

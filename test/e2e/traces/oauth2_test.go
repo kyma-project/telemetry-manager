@@ -6,7 +6,6 @@ import (
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -19,8 +18,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestSinglePipelineWithOAuth2(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelTraces)
+func TestOAuth2(t *testing.T) {
+	suite.RegisterTestCase(t, suite.LabelTraces, suite.LabelOAuth2)
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -43,18 +42,12 @@ func TestSinglePipelineWithOAuth2(t *testing.T) {
 		WithOTLPOutput(
 			testutils.OTLPEndpoint(backend.Endpoint()),
 			testutils.OTLPOAuth2(
-				testutils.WithOAuth2TokenURL(oauth2server.TokenEndpoint()),
-				testutils.WithOAuth2ClientID("the-mock-does-not-verify"),
-				testutils.WithOAuth2ClientSecret("the-mock-does-not-verify"),
-				testutils.WithOAuth2Params(map[string]string{"grant_type": "client_credentials"}),
+				testutils.OAuth2ClientID("the-mock-does-not-verify"),
+				testutils.OAuth2ClientSecret("the-mock-does-not-verify"),
+				testutils.OAuth2TokenURL(oauth2server.TokenEndpoint()),
+				testutils.OAuth2Params(map[string]string{"grant_type": "client_credentials"}),
 			),
-			testutils.OTLPClientTLS(
-				&telemetryv1alpha1.OTLPTLS{
-					CA: &telemetryv1alpha1.ValueType{
-						Value: serverCerts.CaCertPem.String(),
-					},
-				},
-			),
+			testutils.OTLPClientTLSFromString(serverCerts.CaCertPem.String()),
 		).
 		Build()
 
@@ -68,7 +61,7 @@ func TestSinglePipelineWithOAuth2(t *testing.T) {
 	resources = append(resources, oauth2server.K8sObjects()...)
 
 	t.Cleanup(func() {
-		// Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
+		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 

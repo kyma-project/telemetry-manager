@@ -55,7 +55,7 @@ func TestMTLS(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label)
+			suite.RegisterTestCase(t, suite.LabelMTLS, tc.label)
 
 			var (
 				uniquePrefix = unique.Prefix(tc.label)
@@ -74,7 +74,7 @@ func TestMTLS(t *testing.T) {
 				WithInput(tc.inputBuilder(genNs)).
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backend.Endpoint()),
-					testutils.OTLPClientTLSFromString(
+					testutils.OTLPClientMTLSFromString(
 						clientCerts.CaCertPem.String(),
 						clientCerts.ClientCertPem.String(),
 						clientCerts.ClientKeyPem.String(),

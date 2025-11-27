@@ -18,7 +18,7 @@ import (
 )
 
 func TestMTLSInvalidCA(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelTraces)
+	suite.RegisterTestCase(t, suite.LabelTraces, suite.LabelMTLS)
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -37,7 +37,7 @@ func TestMTLSInvalidCA(t *testing.T) {
 		WithName(pipelineName).
 		WithOTLPOutput(
 			testutils.OTLPEndpoint(backend.Endpoint()),
-			testutils.OTLPClientTLSFromString(
+			testutils.OTLPClientMTLSFromString(
 				invalidClientCerts.CaCertPem.String(),
 				invalidClientCerts.ClientCertPem.String(),
 				invalidClientCerts.ClientKeyPem.String(),

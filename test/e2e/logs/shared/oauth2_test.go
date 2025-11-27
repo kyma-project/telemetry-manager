@@ -12,13 +12,14 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitoauth2 "github.com/kyma-project/telemetry-manager/test/testkit/mocks/oauth2mock"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestMTLS_OTel(t *testing.T) {
+func TestOAuth2(t *testing.T) {
 	tests := []struct {
 		label               string
 		inputBuilder        func(includeNs string) telemetryv1alpha1.LogPipelineInput
@@ -45,9 +46,10 @@ func TestMTLS_OTel(t *testing.T) {
 			},
 		},
 	}
+
 	for _, tc := range tests {
 		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label, suite.LabelMTLS)
+			suite.RegisterTestCase(t, tc.label, suite.LabelOAuth2)
 
 			var (
 				uniquePrefix = unique.Prefix(tc.label)
@@ -56,21 +58,30 @@ func TestMTLS_OTel(t *testing.T) {
 				genNs        = uniquePrefix("gen")
 			)
 
-			serverCerts, clientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
+			oauth2server := kitoauth2.New(backendNs)
+
+			serverCerts, _, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
 			Expect(err).ToNot(HaveOccurred())
 
-			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithMTLS(*serverCerts))
+			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel,
+				kitbackend.WithTLS(*serverCerts),
+				kitbackend.WithOIDCAuth(oauth2server.IssuerURL(), oauth2server.Audience()),
+			)
 
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
 				WithInput(tc.inputBuilder(genNs)).
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backend.Endpoint()),
-					testutils.OTLPClientMTLSFromString(
-						clientCerts.CaCertPem.String(),
-						clientCerts.ClientCertPem.String(),
-						clientCerts.ClientKeyPem.String()),
-				).Build()
+					testutils.OTLPOAuth2(
+						testutils.OAuth2ClientID("the-mock-does-not-verify"),
+						testutils.OAuth2ClientSecret("the-mock-does-not-verify"),
+						testutils.OAuth2TokenURL(oauth2server.TokenEndpoint()),
+						testutils.OAuth2Params(map[string]string{"grant_type": "client_credentials"}),
+					),
+					testutils.OTLPClientTLSFromString(serverCerts.CaCertPem.String()),
+				).
+				Build()
 
 			resources := []client.Object{
 				kitk8s.NewNamespace(backendNs).K8sObject(),
@@ -78,6 +89,8 @@ func TestMTLS_OTel(t *testing.T) {
 				&pipeline,
 				tc.logGeneratorBuilder(genNs),
 			}
+		
+			resources = append(resources, oauth2server.K8sObjects()...)
 			resources = append(resources, backend.K8sObjects()...)
 
 			t.Cleanup(func() {
@@ -86,60 +99,14 @@ func TestMTLS_OTel(t *testing.T) {
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.BackendReachable(t, backend)
-			assert.OTelLogPipelineHealthy(t, pipelineName)
 			assert.DeploymentReady(t, kitkyma.LogGatewayName)
 
 			if tc.expectAgent {
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
 			}
 
+			assert.OTelLogPipelineHealthy(t, pipelineName)
 			assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
 		})
 	}
-}
-
-func TestMTLS_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit)
-
-	var (
-		uniquePrefix = unique.Prefix()
-		pipelineName = uniquePrefix()
-		backendNs    = uniquePrefix("backend")
-		genNs        = uniquePrefix("gen")
-	)
-
-	serverCerts, clientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
-	Expect(err).ToNot(HaveOccurred())
-
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithMTLS(*serverCerts))
-
-	pipeline := testutils.NewLogPipelineBuilder().
-		WithName(pipelineName).
-		WithHTTPOutput(
-			testutils.HTTPHost(backend.Host()),
-			testutils.HTTPPort(backend.Port()),
-			testutils.HTTPClientTLSFromString(
-				clientCerts.CaCertPem.String(),
-				clientCerts.ClientCertPem.String(),
-				clientCerts.ClientKeyPem.String()),
-		).
-		Build()
-
-	resources := []client.Object{
-		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(genNs).K8sObject(),
-		&pipeline,
-		stdoutloggen.NewDeployment(genNs).K8sObject(),
-	}
-	resources = append(resources, backend.K8sObjects()...)
-
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
-	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
-
-	assert.BackendReachable(t, backend)
-	assert.FluentBitLogPipelineHealthy(t, pipelineName)
-	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
-	assert.FluentBitLogsFromNamespaceDelivered(t, backend, backendNs)
 }

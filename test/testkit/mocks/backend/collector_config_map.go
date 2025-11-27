@@ -128,7 +128,6 @@ func (cm *collectorConfigMapBuilder) K8sObject() *corev1.ConfigMap {
 		MTLS:        cm.mtls,
 	}
 
-	// If OIDC config provided, populate fields
 	if oidcEnabled {
 		tplData.IssuerURL = cm.oidc.issuerURL
 		tplData.Audience = cm.oidc.audience
@@ -137,7 +136,6 @@ func (cm *collectorConfigMapBuilder) K8sObject() *corev1.ConfigMap {
 
 	data := make(map[string]string)
 
-	// If certs are provided and TLS should be used, prepare PEM content and CA path
 	if useTLS {
 		tplData.CertPem = strings.ReplaceAll(cm.certs.ServerCertPem.String(), "\n", "\\n")
 		tplData.KeyPem = strings.ReplaceAll(cm.certs.ServerKeyPem.String(), "\n", "\\n")
@@ -148,40 +146,15 @@ func (cm *collectorConfigMapBuilder) K8sObject() *corev1.ConfigMap {
 
 	// Render template using text/template
 	tpl, err := template.New("collector").Parse(configTemplate)
-	var config string
 	if err != nil {
-		// Fallback to naive replacement for FILEPATH and SIGNAL_TYPE to be extra safe
-		config = strings.Replace(configTemplate, "{{ .FilePath }}", cm.exportedFilePath, -1)
-		if cm.signalType == SignalTypeLogsOTel {
-			config = strings.Replace(config, "{{ .SignalType }}", "logs", -1)
-		} else {
-			config = strings.Replace(config, "{{ .SignalType }}", string(cm.signalType), -1)
-		}
-		// If TLS was intended, keep previous behavior of replacing PEM placeholders
-		if useTLS {
-			config = strings.Replace(config, "{{ .CertPem }}", tplData.CertPem, -1)
-			config = strings.Replace(config, "{{ .KeyPem }}", tplData.KeyPem, -1)
-			config = strings.Replace(config, "{{ .CaFilePath }}", tplData.CaFilePath, -1)
-		}
-	} else {
-		var buf bytes.Buffer
-		if execErr := tpl.Execute(&buf, tplData); execErr != nil {
-			// On execution error fall back to naive replacement (avoid exposing raw template markers)
-			config = strings.Replace(configTemplate, "{{ .FilePath }}", cm.exportedFilePath, -1)
-			if cm.signalType == SignalTypeLogsOTel {
-				config = strings.Replace(config, "{{ .SignalType }}", "logs", -1)
-			} else {
-				config = strings.Replace(config, "{{ .SignalType }}", string(cm.signalType), -1)
-			}
-			if useTLS {
-				config = strings.Replace(config, "{{ .CertPem }}", tplData.CertPem, -1)
-				config = strings.Replace(config, "{{ .KeyPem }}", tplData.KeyPem, -1)
-				config = strings.Replace(config, "{{ .CaFilePath }}", tplData.CaFilePath, -1)
-			}
-		} else {
-			config = buf.String()
-		}
+		panic(err) // Template parsing should not fail
 	}
+	var buf bytes.Buffer
+	err = tpl.Execute(&buf, tplData)
+	if err != nil {
+		panic(err) // Template execution should not fail
+	}
+	config := buf.String()
 
 	data["config.yaml"] = config
 

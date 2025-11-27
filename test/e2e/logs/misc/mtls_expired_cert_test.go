@@ -18,7 +18,7 @@ import (
 )
 
 func TestMTLSExpiredCert_OTel(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelLogsMisc)
+	suite.RegisterTestCase(t, suite.LabelLogsMisc, suite.LabelMTLS)
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -37,7 +37,7 @@ func TestMTLSExpiredCert_OTel(t *testing.T) {
 		WithName(pipelineName).
 		WithOTLPOutput(
 			testutils.OTLPEndpoint(backend.Endpoint()),
-			testutils.OTLPClientTLSFromString(
+			testutils.OTLPClientMTLSFromString(
 				expiredClientCerts.CaCertPem.String(),
 				expiredClientCerts.ClientCertPem.String(),
 				expiredClientCerts.ClientKeyPem.String(),
