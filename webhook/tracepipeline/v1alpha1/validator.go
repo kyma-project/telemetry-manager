@@ -28,6 +28,7 @@ func (v *TracePipelineValidator) ValidateCreate(_ context.Context, obj runtime.O
 	}
 
 	filterSpec, transformSpec := webhookutils.ConvertFilterTransformToBeta(tracePipeline.Spec.Filters, tracePipeline.Spec.Transforms)
+
 	return nil, validateFilterTransform(filterSpec, transformSpec)
 }
 
@@ -39,6 +40,7 @@ func (v *TracePipelineValidator) ValidateUpdate(_ context.Context, oldObj, newOb
 	}
 
 	filterSpec, transformSpec := webhookutils.ConvertFilterTransformToBeta(tracePipeline.Spec.Filters, tracePipeline.Spec.Transforms)
+
 	return nil, validateFilterTransform(filterSpec, transformSpec)
 }
 

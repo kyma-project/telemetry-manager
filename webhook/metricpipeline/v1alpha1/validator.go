@@ -49,7 +49,7 @@ func (v *MetricPipelineValidator) ValidateDelete(_ context.Context, obj runtime.
 }
 
 func validateFilterTransform(filterSpec []telemetryv1beta1.FilterSpec, transformSpec []telemetryv1beta1.TransformSpec) error {
-	err := webhookutils.ValidateFilterTransform(ottl.SignalTypeTrace, filterSpec, transformSpec)
+	err := webhookutils.ValidateFilterTransform(ottl.SignalTypeMetric, filterSpec, transformSpec)
 	if err != nil {
 		return fmt.Errorf(conditions.MessageForMetricPipeline(conditions.ReasonOTTLSpecInvalid), err.Error())
 	}
