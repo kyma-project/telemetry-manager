@@ -113,3 +113,34 @@ We conducted the following PoCs:
 ## Conclusion
 
 The original motivation for the gateway concept is no longer relevant. Transitioning to the agent approach resolves many issues while introducing only minor drawbacks. However, inadequate retry handling by OTel SDKs and Istio proxies remains a challenge. Before proceeding, we must ensure this issue is addressed, considering its alignment with the OTLP specification.
+
+### Agent Rollout and Zero-Downtime Updates
+
+To perform a zero-downtime rollout of a `DaemonSet`, use the `RollingUpdate` update strategy with `maxUnavailable: 0` and `maxSurge: 1`. See the following example:
+
+```yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: otel
+  namespace: otel
+spec:
+  selector:
+    matchLabels:
+      app: otel-col
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+...
+```
+
+With this configuration, the `DaemonSet` creates a new Pod on each node before terminating the old one, ensuring that a replacement Pod is fully running before any disruption occurs.
+
+This setup was tested using the OpenTelemetry Demo application to verify that no telemetry data is lost during the rollout. Tests were executed for all three signal types: metrics, traces, and logs. The demo application, which includes services written in various programming languages and uses the OTel SDK, continued sending telemetry to the test collector throughout the rollout without any data loss.
+
+The setup was also tested using `TelemetryGen.` TelemetryGen successfully detected endpoint changes after the rollout and continued sending telemetry to the new endpoints.
+
+The same behavior was confirmed with `Istio access logs`. After the rollout, log data continued flowing to the new endpoints without data loss or duplication.
+
