@@ -1,6 +1,7 @@
 package fluentbit
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/mock"
@@ -84,12 +85,12 @@ func newTestValidator(opts ...ValidatorOption) *Validator {
 	pipelineLock := &logpipelinefluentbitmocks.PipelineLock{}
 	pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 	pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
+	pipelineLock.On("GetLockHolders", mock.Anything, mock.Anything).Return(nil)
 
 	allOpts := []ValidatorOption{
 		WithEndpointValidator(stubs.NewEndpointValidator(nil)),
 		WithTLSCertValidator(stubs.NewTLSCertValidator(nil)),
 		WithSecretRefValidator(stubs.NewSecretRefValidator(nil)),
-		WithValidatorPipelineLock(pipelineLock),
 	}
 
 	allOpts = append(allOpts, opts...)
@@ -116,7 +117,7 @@ func newTestValidator(opts ...ValidatorOption) *Validator {
 //   - IstioStatusChecker: Istio is not active
 //   - PipelineValidator: All validations pass
 //   - ErrorToMessageConverter: Standard converter
-func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
+func newTestReconciler(testClient client.Client, opts ...Option) *Reconciler {
 	// Set up default mocks
 	agentConfigBuilder := &logpipelinefluentbitmocks.AgentConfigBuilder{}
 	agentConfigBuilder.On("Build", mock.Anything, mock.Anything, mock.Anything).Return(&builder.FluentBitConfig{}, nil)
@@ -131,10 +132,19 @@ func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
 	pipelineLock := &logpipelinefluentbitmocks.PipelineLock{}
 	pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 	pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
+	// GetLockHolders mock: populate the list with all pipelines from the test client
+	pipelineLock.On("GetLockHolders", mock.Anything, mock.Anything).
+		Run(func(args mock.Arguments) {
+			ctx := args.Get(0).(context.Context)
+			list := args.Get(1).(client.ObjectList)
+			_ = testClient.List(ctx, list)
+		}).
+		Return(nil)
+	pipelineLock.On("ReleaseLockIfHeld", mock.Anything, mock.Anything).Return(nil)
 
 	// Build default options with mocked dependencies
 	allOpts := []Option{
-		WithClient(client),
+		WithClient(testClient),
 		WithGlobals(config.NewGlobal(config.WithTargetNamespace("default"))),
 		WithAgentConfigBuilder(agentConfigBuilder),
 		WithAgentApplierDeleter(agentApplierDeleter),
