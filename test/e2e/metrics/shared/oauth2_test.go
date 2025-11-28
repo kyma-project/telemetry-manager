@@ -104,6 +104,7 @@ func TestOAUth2(t *testing.T) {
 			})
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
+			assert.DeploymentReady(t, oauth2server.NamespacedName())
 			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 
