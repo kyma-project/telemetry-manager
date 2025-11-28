@@ -6,6 +6,7 @@ const (
 	LinkNoDataArriveAtBackend     = "https://kyma-project.io/external-content/telemetry-manager/docs/user/troubleshooting.html#no-data-arrive-at-the-backend"
 	LinkNotAllDataArriveAtBackend = "https://kyma-project.io/external-content/telemetry-manager/docs/user/troubleshooting.html#not-all-data-arrive-at-the-backend"
 	LinkGatewayThrottling         = "https://kyma-project.io/external-content/telemetry-manager/docs/user/troubleshooting.html#gateway-throttling"
+	LinkOTTLSpecInvalid           = "https://kyma-project.io/external-content/telemetry-manager/docs/user/troubleshooting.html#ottl-spec-invalid-with-unspecific-error-message"
 
 	LinkFluentBitNoLogsArriveAtBackend     = "https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend"
 	LinkFluentBitNotAllLogsArriveAtBackend = "https://kyma-project.io/#/telemetry-manager/user/02-logs?id=not-all-logs-arrive-at-the-backend"
@@ -83,6 +84,7 @@ var commonMessages = map[string]string{
 	ReasonSelfMonAgentProbingFailed:   "Could not determine the health of the telemetry flow because the self monitor probing of agent failed",
 	ReasonTLSConfigurationInvalid:     "TLS configuration invalid: %s",
 	ReasonValidationFailed:            "Pipeline validation failed due to an error from the Kubernetes API server",
+	ReasonOTTLSpecInvalid:             "OTTL specification is invalid, %s. Fix the syntax error indicated by the message or see troubleshooting: " + LinkOTTLSpecInvalid,
 }
 
 var commonLogPipelineMessages = map[string]string{
@@ -105,7 +107,6 @@ var fluentBitLogPipelineMessages = map[string]string{
 
 var otelLogPipelineMessages = map[string]string{
 	ReasonEndpointInvalid: "OTLP output endpoint invalid: %s",
-	ReasonOTTLSpecInvalid: "OTTL specification is invalid, %s. Fix the syntax error indicated by the message or see troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=ottl_spec_invalid_with_unspecific_error_message",
 
 	ReasonGatewayConfigured: "LogPipeline specification is successfully applied to the configuration of Log gateway",
 	ReasonGatewayNotReady:   "Log gateway Deployment is not ready",
@@ -122,7 +123,6 @@ var otelLogPipelineMessages = map[string]string{
 var tracePipelineMessages = map[string]string{
 	ReasonComponentsRunning:             "All trace components are running",
 	ReasonEndpointInvalid:               "OTLP output endpoint invalid: %s",
-	ReasonOTTLSpecInvalid:               "OTTL specification is invalid, %s. Fix the syntax error indicated by the message or see troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=ottl_spec_invalid_with_unspecific_error_message",
 	ReasonGatewayConfigured:             "TracePipeline specification is successfully applied to the configuration of Trace gateway",
 	ReasonGatewayNotReady:               "Trace gateway Deployment is not ready",
 	ReasonGatewayReady:                  "Trace gateway Deployment is ready",
@@ -137,7 +137,6 @@ var metricPipelineMessages = map[string]string{
 	ReasonAgentReady:                    "Metric agent DaemonSet is ready",
 	ReasonComponentsRunning:             "All metric components are running",
 	ReasonEndpointInvalid:               "OTLP output endpoint invalid: %s",
-	ReasonOTTLSpecInvalid:               "OTTL specification is invalid, %s. Fix the syntax error indicated by the message or see troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=ottl_spec_invalid_with_unspecific_error_message",
 	ReasonGatewayConfigured:             "MetricPipeline specification is successfully applied to the configuration of Metric gateway",
 	ReasonGatewayNotReady:               "Metric gateway Deployment is not ready",
 	ReasonGatewayReady:                  "Metric gateway Deployment is ready",

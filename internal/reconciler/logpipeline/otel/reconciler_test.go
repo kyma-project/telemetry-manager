@@ -308,7 +308,7 @@ func TestOTTLSpecValidation(t *testing.T) {
 				))),
 			condStatus:  metav1.ConditionFalse,
 			condReason:  conditions.ReasonOTTLSpecInvalid,
-			condMessage: "OTTL specification is invalid, invalid TransformSpec: error while parsing statements. Fix the syntax error indicated by the message or see troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=ottl_spec_invalid_with_unspecific_error_message",
+			condMessage: "OTTL specification is invalid, invalid TransformSpec: error while parsing statements. Fix the syntax error indicated by the message or see troubleshooting: https://kyma-project.io/external-content/telemetry-manager/docs/user/troubleshooting.html#ottl-spec-invalid-with-unspecific-error-message",
 		},
 		{
 			name: "invalid filter spec",
@@ -320,7 +320,7 @@ func TestOTTLSpecValidation(t *testing.T) {
 				))),
 			condStatus:  metav1.ConditionFalse,
 			condReason:  conditions.ReasonOTTLSpecInvalid,
-			condMessage: "OTTL specification is invalid, invalid FilterSpec: error while parsing conditions. Fix the syntax error indicated by the message or see troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=ottl_spec_invalid_with_unspecific_error_message",
+			condMessage: "OTTL specification is invalid, invalid FilterSpec: error while parsing conditions. Fix the syntax error indicated by the message or see troubleshooting: https://kyma-project.io/external-content/telemetry-manager/docs/user/troubleshooting.html#ottl-spec-invalid-with-unspecific-error-message",
 		},
 	}
 
