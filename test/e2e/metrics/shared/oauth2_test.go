@@ -72,7 +72,7 @@ func TestOAUth2(t *testing.T) {
 
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics,
 				kitbackend.WithTLS(*serverCerts),
-				kitbackend.WithOIDCAuth(oauth2server.TokenEndpoint(), oauth2server.Audience()),
+				kitbackend.WithOIDCAuth(oauth2server.IssuerURL(), oauth2server.Audience()),
 			)
 
 			pipeline := testutils.NewMetricPipelineBuilder().
