@@ -71,7 +71,7 @@ type AgentApplyOptions struct {
 
 func NewLogAgentApplierDeleter(globals config.Global, collectorImage, priorityClassName string) *AgentApplierDeleter {
 	extraLabels := map[string]string{
-		commonresources.LabelKeyIstioInject: "true", // inject Istio sidecar
+		commonresources.LabelKeyIstioInject: commonresources.LabelValueTrue, // inject Istio sidecar
 	}
 
 	volumes := []corev1.Volume{
@@ -116,9 +116,10 @@ func NewLogAgentApplierDeleter(globals config.Global, collectorImage, priorityCl
 
 func NewMetricAgentApplierDeleter(globals config.Global, image, priorityClassName string) *AgentApplierDeleter {
 	extraLabels := map[string]string{
-		commonresources.LabelKeyTelemetryMetricScrape: "true",
-		commonresources.LabelKeyTelemetryMetricExport: "true",
-		commonresources.LabelKeyIstioInject:           "true", // inject Istio sidecar
+		commonresources.LabelKeyTelemetryMetricScrape:    commonresources.LabelValueTrue,
+		commonresources.LabelKeyTelemetryMetricExport:    commonresources.LabelValueTrue,
+		commonresources.LabelKeyIstioInject:              commonresources.LabelValueTrue, // inject Istio sidecar
+		commonresources.LabelKeyTelemetryMetricsScraping: commonresources.LabelValueTelemetryMetricsScraping,
 	}
 
 	return &AgentApplierDeleter{
