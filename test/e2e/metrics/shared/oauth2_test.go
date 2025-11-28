@@ -21,7 +21,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestOAUth2(t *testing.T) {
+func TestOAuth2(t *testing.T) {
 	tests := []struct {
 		label            string
 		inputBuilder     func(includeNs string) telemetryv1alpha1.MetricPipelineInput
