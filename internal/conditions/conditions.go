@@ -6,6 +6,7 @@ const (
 	LinkNoDataArriveAtBackend     = "https://kyma-project.io/external-content/telemetry-manager/docs/user/troubleshooting.html#no-data-arrive-at-the-backend"
 	LinkNotAllDataArriveAtBackend = "https://kyma-project.io/external-content/telemetry-manager/docs/user/troubleshooting.html#not-all-data-arrive-at-the-backend"
 	LinkGatewayThrottling         = "https://kyma-project.io/external-content/telemetry-manager/docs/user/troubleshooting.html#gateway-throttling"
+	LinkOTTLSpecInvalid           = "https://kyma-project.io/external-content/telemetry-manager/docs/user/troubleshooting.html#ottl-spec-invalid-with-unspecific-error-message"
 
 	LinkFluentBitNoLogsArriveAtBackend     = "https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend"
 	LinkFluentBitNotAllLogsArriveAtBackend = "https://kyma-project.io/#/telemetry-manager/user/02-logs?id=not-all-logs-arrive-at-the-backend"
@@ -83,6 +84,7 @@ var commonMessages = map[string]string{
 	ReasonSelfMonAgentProbingFailed:   "Could not determine the health of the telemetry flow because the self monitor probing of agent failed",
 	ReasonTLSConfigurationInvalid:     "TLS configuration invalid: %s",
 	ReasonValidationFailed:            "Pipeline validation failed due to an error from the Kubernetes API server",
+	ReasonOTTLSpecInvalid:             "OTTL specification is invalid, %s. Fix the syntax error indicated by the message or see troubleshooting: " + LinkOTTLSpecInvalid,
 }
 
 var commonLogPipelineMessages = map[string]string{

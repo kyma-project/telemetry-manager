@@ -9,6 +9,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 	webhookutils "github.com/kyma-project/telemetry-manager/webhook/utils"
 )
@@ -27,7 +29,7 @@ func (v *MetricPipelineValidator) ValidateCreate(_ context.Context, obj runtime.
 
 	filterSpec, transformSpec := webhookutils.ConvertFilterTransformToBeta(metricPipeline.Spec.Filters, metricPipeline.Spec.Transforms)
 
-	return nil, webhookutils.ValidateFilterTransform(ottl.SignalTypeMetric, filterSpec, transformSpec)
+	return nil, validateFilterTransform(filterSpec, transformSpec)
 }
 
 func (v *MetricPipelineValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
@@ -39,9 +41,18 @@ func (v *MetricPipelineValidator) ValidateUpdate(_ context.Context, oldObj, newO
 
 	filterSpec, transformSpec := webhookutils.ConvertFilterTransformToBeta(metricPipeline.Spec.Filters, metricPipeline.Spec.Transforms)
 
-	return nil, webhookutils.ValidateFilterTransform(ottl.SignalTypeMetric, filterSpec, transformSpec)
+	return nil, validateFilterTransform(filterSpec, transformSpec)
 }
 
 func (v *MetricPipelineValidator) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
 	return nil, nil
+}
+
+func validateFilterTransform(filterSpec []telemetryv1beta1.FilterSpec, transformSpec []telemetryv1beta1.TransformSpec) error {
+	err := webhookutils.ValidateFilterTransform(ottl.SignalTypeMetric, filterSpec, transformSpec)
+	if err != nil {
+		return fmt.Errorf(conditions.MessageForMetricPipeline(conditions.ReasonOTTLSpecInvalid), err.Error())
+	}
+
+	return nil
 }

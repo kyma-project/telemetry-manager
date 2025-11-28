@@ -9,6 +9,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 	webhookutils "github.com/kyma-project/telemetry-manager/webhook/utils"
 )
@@ -27,7 +28,7 @@ func (v *LogPipelineValidator) ValidateCreate(_ context.Context, obj runtime.Obj
 		return nil, fmt.Errorf("expected a LogPipeline but got %T", obj)
 	}
 
-	if err := webhookutils.ValidateFilterTransform(ottl.SignalTypeLog, logPipeline.Spec.Filters, logPipeline.Spec.Transforms); err != nil {
+	if err := validateFilterTransform(logPipeline.Spec.Filters, logPipeline.Spec.Transforms); err != nil {
 		return nil, err
 	}
 
@@ -51,7 +52,7 @@ func (v *LogPipelineValidator) ValidateUpdate(_ context.Context, oldObj, newObj 
 		return nil, fmt.Errorf("expected a LogPipeline but got %T", newObj)
 	}
 
-	if err := webhookutils.ValidateFilterTransform(ottl.SignalTypeLog, logPipeline.Spec.Filters, logPipeline.Spec.Transforms); err != nil {
+	if err := validateFilterTransform(logPipeline.Spec.Filters, logPipeline.Spec.Transforms); err != nil {
 		return nil, err
 	}
 
@@ -79,4 +80,13 @@ func containsCustomPlugin(lp *telemetryv1beta1.LogPipeline) bool {
 	}
 
 	return lp.Spec.Output.Custom != ""
+}
+
+func validateFilterTransform(filterSpec []telemetryv1beta1.FilterSpec, transformSpec []telemetryv1beta1.TransformSpec) error {
+	err := webhookutils.ValidateFilterTransform(ottl.SignalTypeLog, filterSpec, transformSpec)
+	if err != nil {
+		return fmt.Errorf(conditions.MessageForOtelLogPipeline(conditions.ReasonOTTLSpecInvalid), err.Error())
+	}
+
+	return nil
 }
