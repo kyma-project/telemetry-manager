@@ -3,7 +3,7 @@ package metrics
 import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	ctrlmetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
+	"sigs.k8s.io/controller-runtime/pkg/metrics"
 
 	"github.com/kyma-project/telemetry-manager/internal/build"
 )
@@ -14,8 +14,13 @@ const (
 	subsystemSelfMonitorProber = "self_monitor_prober_"
 )
 
+const (
+	// FeatureOTTL represents the OTTL (OpenTelemetry Transformation Language) feature
+	FeatureOTTL = "ottl"
+)
+
 // registry is the prometheus registry for telemetry manager metrics
-var registry = ctrlmetrics.Registry
+var registry = metrics.Registry
 
 var (
 	// BuildInfo provides build information of the Telemetry Manager
@@ -39,26 +44,37 @@ var (
 		[]string{"flag"},
 	)
 
-	// OTTLTransformUsage tracks the number of pipelines using OTTL transform feature
-	OTTLTransformUsage = promauto.With(registry).NewGaugeVec(
+	// MetricPipelineFeatureUsage tracks the usage of features in MetricPipelines
+	MetricPipelineFeatureUsage = promauto.With(registry).NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: defaultNamespace,
 			Subsystem: subsystemPipelines,
-			Name:      "ottl_transform_usage",
-			Help:      "Number of pipelines using OTTL transform feature",
+			Name:      "metric_pipeline_feature_usage",
+			Help:      "Number of MetricPipelines using specific features",
 		},
-		[]string{"kind"},
+		[]string{"feature", "pipeline_name"},
 	)
 
-	// OTTLFilterUsage tracks the number of pipelines using OTTL filter feature
-	OTTLFilterUsage = promauto.With(registry).NewGaugeVec(
+	// LogPipelineFeatureUsage tracks the usage of features in LogPipelines
+	LogPipelineFeatureUsage = promauto.With(registry).NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: defaultNamespace,
 			Subsystem: subsystemPipelines,
-			Name:      "ottl_filter_usage",
-			Help:      "Number of pipelines using OTTL filter feature",
+			Name:      "log_pipeline_feature_usage",
+			Help:      "Number of LogPipelines using specific features",
 		},
-		[]string{"pipeline_type"},
+		[]string{"feature", "pipeline_name"},
+	)
+
+	// TracePipelineFeatureUsage tracks the usage of features in TracePipelines
+	TracePipelineFeatureUsage = promauto.With(registry).NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: defaultNamespace,
+			Subsystem: subsystemPipelines,
+			Name:      "trace_pipeline_feature_usage",
+			Help:      "Number of TracePipelines using specific features",
+		},
+		[]string{"feature", "pipeline_name"},
 	)
 
 	// SelfMonitorProberRequestsInFlight tracks the current number of in-flight requests initiated by the self-monitoring prober
@@ -95,12 +111,26 @@ var (
 	)
 )
 
-// RecordOTTLTransformUsage updates the transform usage metric for a given pipeline type
-func RecordOTTLTransformUsage(kind string, count int) {
-	OTTLTransformUsage.WithLabelValues(kind).Set(float64(count))
+// RecordMetricPipelineFeatureUsage updates the feature usage metric for MetricPipelines
+func RecordMetricPipelineFeatureUsage(feature, pipelineName string, using bool) {
+	recordFeatureUsage(MetricPipelineFeatureUsage, feature, pipelineName, using)
 }
 
-// RecordOTTLFilterUsage updates the filter usage metric for a given pipeline type
-func RecordOTTLFilterUsage(kind string, count int) {
-	OTTLFilterUsage.WithLabelValues(kind).Set(float64(count))
+// RecordLogPipelineFeatureUsage updates the feature usage metric for LogPipelines
+func RecordLogPipelineFeatureUsage(feature, pipelineName string, using bool) {
+	recordFeatureUsage(LogPipelineFeatureUsage, feature, pipelineName, using)
+}
+
+// RecordTracePipelineFeatureUsage updates the feature usage metric for TracePipelines
+func RecordTracePipelineFeatureUsage(feature, pipelineName string, using bool) {
+	recordFeatureUsage(TracePipelineFeatureUsage, feature, pipelineName, using)
+}
+
+func recordFeatureUsage(metric *prometheus.GaugeVec, feature, pipelineName string, using bool) {
+	value := float64(0)
+	if using {
+		value = float64(1)
+	}
+
+	metric.WithLabelValues(feature, pipelineName).Set(value)
 }

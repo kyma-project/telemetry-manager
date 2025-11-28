@@ -1084,8 +1084,8 @@ func TestOTTLMetricsTracking(t *testing.T) {
 				require.NoError(t, result.err)
 			}
 
-			transformValue := testutil.ToFloat64(metrics.OTTLTransformUsage.WithLabelValues("MetricPipeline"))
-			filterValue := testutil.ToFloat64(metrics.OTTLFilterUsage.WithLabelValues("MetricPipeline"))
+			transformValue := testutil.ToFloat64(metrics.MetricPipelineFeatureUsage.WithLabelValues("MetricPipeline"))
+			filterValue := testutil.ToFloat64(metrics.MetricPipelineFeatureUsage.WithLabelValues("MetricPipeline"))
 
 			require.Equal(t, tt.expectedTransformCount, transformValue, "transform usage metric should match")
 			require.Equal(t, tt.expectedFilterCount, filterValue, "filter usage metric should match")

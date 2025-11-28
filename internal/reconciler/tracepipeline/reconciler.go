@@ -394,21 +394,16 @@ func (r *Reconciler) getK8sClusterUID(ctx context.Context) (string, error) {
 }
 
 func (r *Reconciler) trackOTTLFeaturesUsage(pipelines []telemetryv1alpha1.TracePipeline) {
-	transformCount := 0
-	filterCount := 0
-	var kind string
-
 	for i := range pipelines {
+		usesOTTL := false
 		if len(pipelines[i].Spec.Transforms) > 0 {
-			transformCount++
+			usesOTTL = true
 		}
+
 		if len(pipelines[i].Spec.Filters) > 0 {
-			filterCount++
+			usesOTTL = true
 		}
 
-		kind = pipelines[i].Kind
+		metrics.RecordTracePipelineFeatureUsage(metrics.FeatureOTTL, pipelines[i].Name, usesOTTL)
 	}
-
-	metrics.RecordOTTLTransformUsage(kind, transformCount)
-	metrics.RecordOTTLFilterUsage(kind, filterCount)
 }
