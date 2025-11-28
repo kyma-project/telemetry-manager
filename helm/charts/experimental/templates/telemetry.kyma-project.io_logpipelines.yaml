@@ -1132,8 +1132,8 @@ spec:
                     - message: OAuth2 authentication requires TLS to be configured
                         when using gRPC protocol
                       rule: '(has(self.authentication) && has(self.authentication.oauth2)
-                        && self.protocol == ''grpc'') ? (has(self.tls) && self.tls.insecure
-                        != true) : true'
+                        && self.protocol == ''grpc'') ? (has(self.tls) && !(has(self.tls.insecure)
+                        && self.tls.insecure == true)) : true'
                 type: object
                 x-kubernetes-validations:
                 - message: Switching to or away from OTLP output is not supported.
@@ -2406,8 +2406,8 @@ spec:
                     - message: OAuth2 authentication requires TLS to be configured
                         when using gRPC protocol
                       rule: '(has(self.authentication) && has(self.authentication.oauth2)
-                        && self.protocol == ''grpc'') ? (has(self.tls) && self.tls.insecure
-                        != true) : true'
+                        && self.protocol == ''grpc'') ? (has(self.tls) && !(has(self.tls.insecure)
+                        && self.tls.insecure == true)) : true'
                 type: object
                 x-kubernetes-validations:
                 - message: Switching to or away from OTLP output is not supported.
