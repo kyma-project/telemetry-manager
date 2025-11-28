@@ -62,8 +62,10 @@ func (o *OAuth2Authenticator) IssuerURL() string {
 
 func (o *OAuth2Authenticator) K8sObjects() []client.Object {
 	var objects []client.Object
+
 	objects = append(objects, o.authenticatorDeployment.K8sObject())
 	objects = append(objects, o.authenticatorService.K8sObject(kitk8s.WithLabel("app", o.name)))
+
 	return objects
 }
 
@@ -97,5 +99,4 @@ func (o *OAuth2Authenticator) buildResources() {
 		o.name,
 		o.namespace,
 	).WithPort("http", 8080)
-
 }

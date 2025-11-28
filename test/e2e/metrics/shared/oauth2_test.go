@@ -14,7 +14,7 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/metrics/runtime"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	kitoauth2 "github.com/kyma-project/telemetry-manager/test/testkit/mocks/oauth2mock"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/oauth2mock"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -65,7 +65,7 @@ func TestOAUth2(t *testing.T) {
 				genNs        = uniquePrefix("gen")
 			)
 
-			oauth2server := kitoauth2.New(backendNs)
+			oauth2server := oauth2mock.New(backendNs)
 
 			serverCerts, _, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
 			Expect(err).ToNot(HaveOccurred())

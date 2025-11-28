@@ -149,11 +149,14 @@ func (cm *collectorConfigMapBuilder) K8sObject() *corev1.ConfigMap {
 	if err != nil {
 		panic(err) // Template parsing should not fail
 	}
+
 	var buf bytes.Buffer
+
 	err = tpl.Execute(&buf, tplData)
 	if err != nil {
 		panic(err) // Template execution should not fail
 	}
+
 	config := buf.String()
 
 	data["config.yaml"] = config

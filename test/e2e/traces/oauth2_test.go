@@ -12,7 +12,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	kitoauth2 "github.com/kyma-project/telemetry-manager/test/testkit/mocks/oauth2mock"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/oauth2mock"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
@@ -28,7 +28,7 @@ func TestOAuth2(t *testing.T) {
 		genNs        = uniquePrefix("gen")
 	)
 
-	oauth2server := kitoauth2.New(backendNs)
+	oauth2server := oauth2mock.New(backendNs)
 
 	serverCerts, _, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
 	Expect(err).ToNot(HaveOccurred())
