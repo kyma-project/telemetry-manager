@@ -1,4 +1,4 @@
-package backend
+package oauth2mock
 
 import (
 	"fmt"
