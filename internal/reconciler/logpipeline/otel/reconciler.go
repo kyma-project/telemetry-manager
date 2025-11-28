@@ -15,6 +15,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
+	"github.com/kyma-project/telemetry-manager/internal/metrics"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/logagent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/loggateway"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
@@ -198,6 +199,8 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	if err != nil {
 		return fmt.Errorf("failed to fetch deployable log pipelines: %w", err)
 	}
+
+	r.trackOTTLFeaturesUsage(reconcilablePipelines)
 
 	var reconcilablePipelinesRequiringAgents = r.getPipelinesRequiringAgents(reconcilablePipelines)
 
@@ -439,4 +442,19 @@ func isLogAgentRequired(pipeline *telemetryv1alpha1.LogPipeline) bool {
 	input := pipeline.Spec.Input
 
 	return input.Application != nil && input.Application.Enabled != nil && *input.Application.Enabled
+}
+
+func (r *Reconciler) trackOTTLFeaturesUsage(pipelines []telemetryv1alpha1.LogPipeline) {
+	for i := range pipelines {
+		usesOTTL := false
+		if len(pipelines[i].Spec.Transforms) > 0 {
+			usesOTTL = true
+		}
+
+		if len(pipelines[i].Spec.Filters) > 0 {
+			usesOTTL = true
+		}
+
+		metrics.RecordLogPipelineFeatureUsage(metrics.FeatureOTTL, pipelines[i].Name, usesOTTL)
+	}
 }

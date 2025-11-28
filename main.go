@@ -25,8 +25,6 @@ import (
 
 	"github.com/caarlos0/env/v11"
 	"github.com/go-logr/zapr"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.uber.org/zap/zapcore"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -44,7 +42,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/metrics"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
@@ -56,6 +53,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/build"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/featureflags"
+	"github.com/kyma-project/telemetry-manager/internal/metrics"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
 	loggerutils "github.com/kyma-project/telemetry-manager/internal/utils/logger"
@@ -292,25 +290,12 @@ func setupManager(globals config.Global) (manager.Manager, error) {
 }
 
 func logBuildAndProcessInfo() {
-	buildInfoGauge := promauto.With(metrics.Registry).NewGauge(prometheus.GaugeOpts{
-		Namespace:   "telemetry",
-		Subsystem:   "",
-		Name:        "build_info",
-		Help:        "Build information of the Telemetry Manager",
-		ConstLabels: build.InfoMap(),
-	})
-	buildInfoGauge.Set(1)
+	metrics.BuildInfo.Set(1)
 
 	setupLog.Info("Starting Telemetry Manager", "Build info:", build.InfoMap())
 
-	featureFlagsGaugeVec := promauto.With(metrics.Registry).NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "telemetry",
-		Name:      "feature_flags_info",
-		Help:      "Enabled feature flags in the Telemetry Manager",
-	}, []string{"flag"})
-
 	for _, flg := range featureflags.EnabledFlags() {
-		featureFlagsGaugeVec.WithLabelValues(flg.String()).Set(1)
+		metrics.FeatureFlagsInfo.WithLabelValues(flg.String()).Set(1)
 		setupLog.Info("Enabled feature flag", "flag", flg)
 	}
 }
