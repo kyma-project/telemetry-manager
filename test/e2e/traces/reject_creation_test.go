@@ -223,6 +223,39 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 			errorMsg: "Can define either both 'cert' and 'key', or neither",
 			field:    "spec.output.otlp.tls",
 		},
+		{
+			pipeline: testutils.NewTracePipelineBuilder().
+				WithName("otlp-output-oauth2-insecure").
+				WithOTLPOutput(
+					testutils.OTLPEndpoint(backenEndpoint),
+					testutils.OTLPOAuth2(
+						testutils.OAuth2ClientID("clientid"),
+						testutils.OAuth2ClientSecret("clientsecret"),
+						testutils.OAuth2TokenURL("https://auth.example.com/token"),
+					),
+					testutils.OTLPClientTLS(&telemetryv1alpha1.OTLPTLS{
+						Insecure: true,
+					}),
+				).
+				Build(),
+			errorMsg: "OAuth2 authentication requires TLS to be configured when using gRPC protocol",
+			field:    "spec.output.otlp",
+		},
+		{
+			pipeline: testutils.NewTracePipelineBuilder().
+				WithName("otlp-output-oauth2-no-tls").
+				WithOTLPOutput(
+					testutils.OTLPEndpoint(backenEndpoint),
+					testutils.OTLPOAuth2(
+						testutils.OAuth2ClientID("clientid"),
+						testutils.OAuth2ClientSecret("clientsecret"),
+						testutils.OAuth2TokenURL("https://auth.example.com/token"),
+					),
+				).
+				Build(),
+			errorMsg: "OAuth2 authentication requires TLS to be configured when using gRPC protocol",
+			field:    "spec.output.otlp",
+		},
 	}
 	for _, tc := range tests {
 		t.Run(suite.LabelMisc, func(t *testing.T) {
