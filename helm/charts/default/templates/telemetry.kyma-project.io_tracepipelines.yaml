@@ -626,6 +626,11 @@ spec:
                     - message: Path is only available with HTTP protocol
                       rule: '(has(self.path) && size(self.path) > 0) ? self.protocol
                         == ''http'' : true'
+                    - message: OAuth2 authentication requires TLS to be configured
+                        when using gRPC protocol
+                      rule: '(has(self.authentication) && has(self.authentication.oauth2)
+                        && self.protocol == ''grpc'') ? (has(self.tls) && self.tls.insecure
+                        != true) : true'
                 required:
                 - otlp
                 type: object
