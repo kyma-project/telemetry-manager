@@ -59,7 +59,7 @@ func TestOAuth2(t *testing.T) {
 			suite.RegisterTestCase(t, tc.label, suite.LabelOAuth2)
 
 			var (
-				uniquePrefix = unique.Prefix(tc.label)
+				uniquePrefix = unique.Prefix(tc.label, suite.LabelOAuth2)
 				pipelineName = uniquePrefix()
 				backendNs    = uniquePrefix("backend")
 				genNs        = uniquePrefix("gen")
