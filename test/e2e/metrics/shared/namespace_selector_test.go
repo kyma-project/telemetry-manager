@@ -27,7 +27,7 @@ func TestNamespaceSelector(t *testing.T) {
 		generatorBuilder func(ns1, ns2 string) []client.Object
 	}{
 		{
-			label: suite.LabelMetricAgentSetB,
+			label: suite.LabelMetricAgentSetC,
 			inputBuilder: func(includeNss, excludeNss []string) telemetryv1alpha1.MetricPipelineInput {
 				var opts []testutils.NamespaceSelectorOptions
 				if len(includeNss) > 0 {
