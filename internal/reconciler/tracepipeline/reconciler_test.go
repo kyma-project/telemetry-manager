@@ -412,7 +412,7 @@ func TestTLSCertificateValidation(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			pipeline := testutils.NewTracePipelineBuilder().WithOTLPOutput(testutils.OTLPClientTLSFromString("ca", "fooCert", "fooKey")).Build()
+			pipeline := testutils.NewTracePipelineBuilder().WithOTLPOutput(testutils.OTLPClientMTLSFromString("ca", "fooCert", "fooKey")).Build()
 			fakeClient := newTestClient(t, &pipeline)
 
 			gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}

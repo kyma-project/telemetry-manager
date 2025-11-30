@@ -28,7 +28,7 @@ import (
 )
 
 func TestRuntimeInput(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelGardener, suite.LabelMetricAgentSetC)
+	suite.RegisterTestCase(t, suite.LabelGardener, suite.LabelMetricAgentSetB)
 
 	const (
 		podNetworkErrorsMetric  = "k8s.pod.network.errors"
@@ -142,10 +142,15 @@ func TestRuntimeInput(t *testing.T) {
 	assert.EmitsOTelCollectorMetrics(t, agentMetricsURL)
 
 	t.Log("Pipeline A should deliver pod, container, volume and node metrics")
+	t.Log("0")
 	backendContainsMetricsDeliveredForResource(t, backendA, runtime.PodMetricsNames)
+	t.Log("1")
 	backendContainsMetricsDeliveredForResource(t, backendA, runtime.ContainerMetricsNames)
+	t.Log("2")
 	backendContainsMetricsDeliveredForResource(t, backendA, runtime.VolumeMetricsNames)
+	t.Log("3")
 	backendContainsMetricsDeliveredForResource(t, backendA, runtime.NodeMetricsNames)
+	t.Log("4")
 	backendContainsDesiredResourceAttributes(t, backendA, "k8s.pod.cpu.time", runtime.PodMetricsResourceAttributes)
 	backendContainsDesiredResourceAttributes(t, backendA, "container.cpu.time", runtime.ContainerMetricsResourceAttributes)
 	backendContainsDesiredResourceAttributes(t, backendA, "k8s.volume.capacity", runtime.VolumeMetricsResourceAttributes)
@@ -301,6 +306,7 @@ func createPodsWithVolume(pvName, pvcName, podMountingPVCName, podMountingEmptyD
 func backendContainsMetricsDeliveredForResource(t *testing.T, backend *kitbackend.Backend, resourceMetrics []string) {
 	t.Helper()
 
+	t.Log("backendContainsMetricsDeliveredForResource: checking for metrics", resourceMetrics)
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatMetrics(HaveUniqueNamesForRuntimeScope(ContainElements(resourceMetrics))),
 		assert.WithOptionalDescription("Failed to find metrics using ContainElements %v", resourceMetrics),

@@ -62,7 +62,14 @@ func TestTelemetry(t *testing.T) {
 	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-	Eventually(func(g Gomega) {
+	assertTelemtryCRExistsAndHasCorrectEndpointsInStatus(logGRPCEndpoint, logHTTPEndpoint, traceGRPCEndpoint, traceHTTPEndpoint, metricGRPCEndpoint, metricHTTPEndpoint)
+	assertValidatingWebhookConfiguration()
+	assertWebhookCA()
+	assertWebhookSecretReconcilation()
+}
+
+func assertTelemtryCRExistsAndHasCorrectEndpointsInStatus(logGRPCEndpoint string, logHTTPEndpoint string, traceGRPCEndpoint string, traceHTTPEndpoint string, metricGRPCEndpoint string, metricHTTPEndpoint string) bool {
+	return Eventually(func(g Gomega) {
 		var telemetry operatorv1alpha1.Telemetry
 		g.Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
 
@@ -78,10 +85,6 @@ func TestTelemetry(t *testing.T) {
 		g.Expect(telemetry.Status.Endpoints.Metrics.GRPC).Should(Equal(metricGRPCEndpoint))
 		g.Expect(telemetry.Status.Endpoints.Metrics.HTTP).Should(Equal(metricHTTPEndpoint))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
-
-	assertValidatingWebhookConfiguration()
-	assertWebhookCA()
-	assertWebhookSecretReconcilation()
 }
 
 func TestTelemetryWarning(t *testing.T) {

@@ -24,7 +24,7 @@ import (
 )
 
 func TestMultiPipelineFanout_Agent(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelMetricAgentSetB)
+	suite.RegisterTestCase(t, suite.LabelMetricAgentSetC)
 
 	var (
 		uniquePrefix           = unique.Prefix()
