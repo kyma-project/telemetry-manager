@@ -4,10 +4,6 @@
 
 | Metric                                                          | Description                                                                                   |
 |-----------------------------------------------------------------|:----------------------------------------------------------------------------------------------|
-| **logs_generated_total** | Total number of logs generated |
-| **logs_generated_rate** | Actual rate of logs generated per second |
-| **loadgenerator_data_items_sent** | Number of data items sent by the load generator |
-| **mockbackend_data_items_received** | Number of data items received by the mock backend |
 | **telemetry_build_info** | Build information of the Telemetry Manager |
 | **telemetry_feature_flags_info** | Enabled feature flags in the Telemetry Manager |
 | **telemetry_pipelines_metric_pipeline_feature_usage** | Number of MetricPipelines using specific features |

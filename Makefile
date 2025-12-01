@@ -336,4 +336,4 @@ undeploy-experimental: $(HELM) ## Undeploy telemetry manager with experimental f
 
 .PHONY: update-metrics-docs
 update-metrics-docs: $(PROMLINTER) $(GOMPLATE) ## Update internal metrics documentation
-	@metrics=$$(mktemp).json; echo $${metrics}; $(PROMLINTER) list -ojson . > $${metrics}; $(GOMPLATE) -d telemetry=$${metrics} -f hack/telemetry-internal-metrics.md.tpl > docs/contributor/telemetry-internal-metrics.md
+	@metrics=$$(mktemp).json; echo $${metrics}; $(PROMLINTER) list -ojson internal > $${metrics}; $(GOMPLATE) -d telemetry=$${metrics} -f hack/telemetry-internal-metrics.md.tpl > docs/contributor/telemetry-internal-metrics.md
