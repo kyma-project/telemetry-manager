@@ -35,7 +35,8 @@ func CreateObjects(t *testing.T, resources ...client.Object) error {
 	sortedResources := sortObjects(resources)
 
 	t.Cleanup(func() {
-		gomega.Expect(DeleteObjects(resources...)).To(gomega.Succeed())
+		// Delete created objects after test completion. We dont care for not found errors here.
+		gomega.Expect(DeleteObjectsIgnoringNotFound(resources...)).To(gomega.Succeed())
 	})
 
 	for _, resource := range sortedResources {
@@ -127,6 +128,21 @@ func DeleteObjects(resources ...client.Object) error {
 		}
 
 		if err := suite.K8sClient.Delete(context.Background(), r); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func DeleteObjectsIgnoringNotFound(resources ...client.Object) error {
+	for _, r := range resources {
+		// Skip object deletion for persistent ones.
+		if labelMatches(r.GetLabels(), kitk8sobjects.PersistentLabelName, "true") {
+			continue
+		}
+
+		if err := client.IgnoreNotFound(suite.K8sClient.Delete(context.Background(), r)); err != nil {
 			return err
 		}
 	}
