@@ -15,15 +15,13 @@ const (
 )
 
 const (
-	// FeatureOTTL represents the OTTL (OpenTelemetry Transformation Language) feature
+	// FeatureOTTL represents the OTTL (OpenTelemetry Transformation Language) features: transform and filter
 	FeatureOTTL = "ottl"
 )
 
-// registry is the prometheus registry for telemetry manager metrics
 var registry = metrics.Registry
 
 var (
-	// BuildInfo provides build information of the Telemetry Manager
 	BuildInfo = promauto.With(registry).NewGauge(
 		prometheus.GaugeOpts{
 			Namespace:   defaultNamespace,
@@ -34,7 +32,6 @@ var (
 		},
 	)
 
-	// FeatureFlagsInfo tracks enabled feature flags in the Telemetry Manager
 	FeatureFlagsInfo = promauto.With(registry).NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: defaultNamespace,
@@ -44,7 +41,6 @@ var (
 		[]string{"flag"},
 	)
 
-	// MetricPipelineFeatureUsage tracks the usage of features in MetricPipelines
 	MetricPipelineFeatureUsage = promauto.With(registry).NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: defaultNamespace,
@@ -55,7 +51,6 @@ var (
 		[]string{"feature", "pipeline_name"},
 	)
 
-	// LogPipelineFeatureUsage tracks the usage of features in LogPipelines
 	LogPipelineFeatureUsage = promauto.With(registry).NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: defaultNamespace,
@@ -66,7 +61,6 @@ var (
 		[]string{"feature", "pipeline_name"},
 	)
 
-	// TracePipelineFeatureUsage tracks the usage of features in TracePipelines
 	TracePipelineFeatureUsage = promauto.With(registry).NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: defaultNamespace,
@@ -77,7 +71,6 @@ var (
 		[]string{"feature", "pipeline_name"},
 	)
 
-	// SelfMonitorProberRequestsInFlight tracks the current number of in-flight requests initiated by the self-monitoring prober
 	SelfMonitorProberRequestsInFlight = promauto.With(registry).NewGauge(
 		prometheus.GaugeOpts{
 			Namespace: defaultNamespace,
@@ -87,7 +80,6 @@ var (
 		},
 	)
 
-	// SelfMonitorProberRequestsTotal tracks the total number of requests initiated by the self-monitoring prober
 	SelfMonitorProberRequestsTotal = promauto.With(registry).NewCounterVec(
 		prometheus.CounterOpts{
 			Namespace: defaultNamespace,
@@ -98,7 +90,6 @@ var (
 		[]string{"code"},
 	)
 
-	// SelfMonitorProberRequestDuration tracks the latency histogram for requests initiated by the self-monitoring prober
 	SelfMonitorProberRequestDuration = promauto.With(registry).NewHistogramVec(
 		prometheus.HistogramOpts{
 			Namespace: defaultNamespace,
@@ -111,17 +102,14 @@ var (
 	)
 )
 
-// RecordMetricPipelineFeatureUsage updates the feature usage metric for MetricPipelines
 func RecordMetricPipelineFeatureUsage(feature, pipelineName string, using bool) {
 	recordFeatureUsage(MetricPipelineFeatureUsage, feature, pipelineName, using)
 }
 
-// RecordLogPipelineFeatureUsage updates the feature usage metric for LogPipelines
 func RecordLogPipelineFeatureUsage(feature, pipelineName string, using bool) {
 	recordFeatureUsage(LogPipelineFeatureUsage, feature, pipelineName, using)
 }
 
-// RecordTracePipelineFeatureUsage updates the feature usage metric for TracePipelines
 func RecordTracePipelineFeatureUsage(feature, pipelineName string, using bool) {
 	recordFeatureUsage(TracePipelineFeatureUsage, feature, pipelineName, using)
 }
