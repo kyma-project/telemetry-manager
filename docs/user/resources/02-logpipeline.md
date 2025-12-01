@@ -16,11 +16,11 @@ kind: LogPipeline
 metadata:
   name: backend
 spec:
-  otlp:
-    namespaces:
-      exclude:
-      - namespaceA
   input:
+    otlp:
+      namespaces:
+        exclude:
+        - namespaceA
     application:
       namespaces:
         include:
