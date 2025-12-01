@@ -11,7 +11,7 @@ import (
 const (
 	defaultNamespace           = "telemetry"
 	subsystemPipelines         = "pipelines"
-	subsystemSelfMonitorProber = "self_monitor_prober_"
+	subsystemSelfMonitorProber = "self_monitor_prober"
 )
 
 const (
