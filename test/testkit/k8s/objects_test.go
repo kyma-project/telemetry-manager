@@ -1,0 +1,121 @@
+package k8s
+
+import (
+	"reflect"
+	"testing"
+
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+)
+
+func newNamespace(name string) *corev1.Namespace {
+	return &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: name}}
+}
+
+func newMetricPipelineAlpha(name string) *telemetryv1alpha1.MetricPipeline {
+	return &telemetryv1alpha1.MetricPipeline{ObjectMeta: metav1.ObjectMeta{Name: name}}
+}
+
+func newTracePipelineAlpha(name string) *telemetryv1alpha1.TracePipeline {
+	return &telemetryv1alpha1.TracePipeline{ObjectMeta: metav1.ObjectMeta{Name: name}}
+}
+
+func newLogPipelineAlpha(name string) *telemetryv1alpha1.LogPipeline {
+	return &telemetryv1alpha1.LogPipeline{ObjectMeta: metav1.ObjectMeta{Name: name}}
+}
+
+func newMetricPipelineBeta(name string) *telemetryv1beta1.MetricPipeline {
+	return &telemetryv1beta1.MetricPipeline{ObjectMeta: metav1.ObjectMeta{Name: name}}
+}
+
+func newTracePipelineBeta(name string) *telemetryv1beta1.TracePipeline {
+	return &telemetryv1beta1.TracePipeline{ObjectMeta: metav1.ObjectMeta{Name: name}}
+}
+
+func newLogPipelineBeta(name string) *telemetryv1beta1.LogPipeline {
+	return &telemetryv1beta1.LogPipeline{ObjectMeta: metav1.ObjectMeta{Name: name}}
+}
+
+func newConfigMap(name string) *corev1.ConfigMap {
+	return &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: name}}
+}
+
+func Test_sortObjects(t *testing.T) {
+	tests := []struct {
+		name  string
+		input []client.Object
+		want  []client.Object
+	}{
+		{
+			name: "namespaces first, pipelines last, mixed types",
+			input: []client.Object{
+				newMetricPipelineAlpha("mpa"),
+				newConfigMap("cfg"),
+				newNamespace("ns"),
+				newMetricPipelineBeta("mpb"),
+				newTracePipelineAlpha("tpa"),
+				newLogPipelineBeta("lpb"),
+			},
+			want: []client.Object{
+				newNamespace("ns"),
+				newConfigMap("cfg"),
+				newMetricPipelineAlpha("mpa"),
+				newMetricPipelineBeta("mpb"),
+				newTracePipelineAlpha("tpa"),
+				newLogPipelineBeta("lpb"),
+			},
+		},
+		{
+			name: "only namespaces",
+			input: []client.Object{
+				newNamespace("ns1"),
+				newNamespace("ns2"),
+			},
+			want: []client.Object{
+				newNamespace("ns1"),
+				newNamespace("ns2"),
+			},
+		},
+		{
+			name: "only pipelines",
+			input: []client.Object{
+				newMetricPipelineAlpha("mpa"),
+				newLogPipelineAlpha("lpa"),
+				newTracePipelineBeta("tpb"),
+			},
+			want: []client.Object{
+				newMetricPipelineAlpha("mpa"),
+				newLogPipelineAlpha("lpa"),
+				newTracePipelineBeta("tpb"),
+			},
+		},
+		{
+			name: "only other types",
+			input: []client.Object{
+				newConfigMap("cfg1"),
+				newConfigMap("cfg2"),
+			},
+			want: []client.Object{
+				newConfigMap("cfg1"),
+				newConfigMap("cfg2"),
+			},
+		},
+		{
+			name:  "empty input returns empty",
+			input: nil,
+			want:  nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := sortObjects(tt.input)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("sortObjects() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

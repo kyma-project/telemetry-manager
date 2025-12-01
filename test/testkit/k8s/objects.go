@@ -5,14 +5,18 @@ import (
 	"context"
 	"os"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 
 	"gopkg.in/yaml.v3"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/test/testkit"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
@@ -21,7 +25,13 @@ import (
 func CreateObjects(t testkit.T, resources ...client.Object) error {
 	t.Helper()
 
-	for _, resource := range resources {
+	// Sort resources:
+	// 1. namespaces
+	// 2. other resources
+	// 3. pipelines
+	sortedResources := sortObjects(resources)
+
+	for _, resource := range sortedResources {
 		// Skip object creation if it already exists.
 		if labelMatches(resource.GetLabels(), PersistentLabelName, "true") {
 			//nolint:errcheck // The value is guaranteed to be of type client.Object.
@@ -41,6 +51,51 @@ func CreateObjects(t testkit.T, resources ...client.Object) error {
 	}
 
 	return nil
+}
+
+func sortObjects(resources []client.Object) []client.Object {
+	return slices.SortedFunc(slices.Values(resources), func(a, b client.Object) int {
+		var (
+			isNamespaceA, isNamespaceB, isPipelineA, isPipelineB bool
+		)
+
+		switch a.(type) {
+		case *telemetryv1alpha1.MetricPipeline, *telemetryv1alpha1.TracePipeline, *telemetryv1alpha1.LogPipeline:
+			isPipelineA = true
+		case *telemetryv1beta1.MetricPipeline, *telemetryv1beta1.TracePipeline, *telemetryv1beta1.LogPipeline:
+			isPipelineA = true
+		case *corev1.Namespace:
+			isNamespaceA = true
+		}
+
+		switch b.(type) {
+		case *telemetryv1alpha1.MetricPipeline, *telemetryv1alpha1.TracePipeline, *telemetryv1alpha1.LogPipeline:
+			isPipelineB = true
+		case *telemetryv1beta1.MetricPipeline, *telemetryv1beta1.TracePipeline, *telemetryv1beta1.LogPipeline:
+			isPipelineB = true
+		case *corev1.Namespace:
+			isNamespaceB = true
+		}
+
+		if isNamespaceA && !isNamespaceB {
+			return -1
+		}
+
+		if !isNamespaceA && isNamespaceB {
+			return 1
+		}
+
+		if isPipelineA && !isPipelineB {
+			return 1
+		}
+
+		if !isPipelineA && isPipelineB {
+			return -1
+		}
+
+		return 0
+	},
+	)
 }
 
 // DeleteObjects deletes k8s objects passed as a slice.
