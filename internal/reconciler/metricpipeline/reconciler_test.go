@@ -984,7 +984,7 @@ func TestGetPipelinesRequiringAgents(t *testing.T) {
 	})
 }
 
-func TestOTTLMetricsTracking(t *testing.T) {
+func TestOTTLUsageTracking(t *testing.T) {
 	tests := []struct {
 		name              string
 		pipelines         []telemetryv1alpha1.MetricPipeline
@@ -1098,7 +1098,6 @@ func TestOTTLMetricsTracking(t *testing.T) {
 			sut, assertAll := newTestReconciler(fakeClient)
 
 			for _, pipeline := range tt.pipelines {
-				pipeline.Kind = "MetricPipeline"
 				result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
 				require.NoError(t, result.err)
 			}
