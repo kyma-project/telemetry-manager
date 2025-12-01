@@ -10,6 +10,7 @@ import (
 	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
@@ -43,8 +44,8 @@ func TestTelemetryV1Beta1(t *testing.T) {
 	logPipeline := testutils.NewLogPipelineBuilder().WithName(pipelineName).WithOTLPInput(true).WithOTLPOutput().Build()
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(genNs).K8sObject(),
+		objects.NewNamespace(backendNs).K8sObject(),
+		objects.NewNamespace(genNs).K8sObject(),
 		&tracePipeline,
 		&metricPipeline,
 		&logPipeline,

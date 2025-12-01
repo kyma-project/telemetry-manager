@@ -9,6 +9,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -46,8 +47,8 @@ func TestPrometheusInputDiagnosticMetric(t *testing.T) {
 		Build()
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(genNs).K8sObject(),
+		objects.NewNamespace(backendNs).K8sObject(),
+		objects.NewNamespace(genNs).K8sObject(),
 		&pipeline,
 		metricProducer.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
 		metricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),

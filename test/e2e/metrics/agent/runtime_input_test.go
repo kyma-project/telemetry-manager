@@ -16,6 +16,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/metrics/runtime"
@@ -101,17 +102,17 @@ func TestRuntimeInput(t *testing.T) {
 	telemetryMetricGen := telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics)
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(genNs).K8sObject(),
+		objects.NewNamespace(backendNs).K8sObject(),
+		objects.NewNamespace(genNs).K8sObject(),
 		&pipelineA,
 		&pipelineB,
 		&pipelineC,
 		prometheusMetricGen.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
 		prometheusMetricGen.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
-		kitk8s.NewDeployment(deploymentName, genNs).WithPodSpec(telemetryMetricGen).WithLabel("name", deploymentName).K8sObject(),
-		kitk8s.NewStatefulSet(statefulSetName, genNs).WithPodSpec(telemetryMetricGen).WithLabel("name", statefulSetName).K8sObject(),
-		kitk8s.NewDaemonSet(daemonSetName, genNs).WithPodSpec(telemetryMetricGen).WithLabel("name", daemonSetName).K8sObject(),
-		kitk8s.NewJob(jobName, genNs).WithPodSpec(telemetryMetricGen).WithLabel("name", jobName).K8sObject(),
+		objects.NewDeployment(deploymentName, genNs).WithPodSpec(telemetryMetricGen).WithLabel("name", deploymentName).K8sObject(),
+		objects.NewStatefulSet(statefulSetName, genNs).WithPodSpec(telemetryMetricGen).WithLabel("name", statefulSetName).K8sObject(),
+		objects.NewDaemonSet(daemonSetName, genNs).WithPodSpec(telemetryMetricGen).WithLabel("name", daemonSetName).K8sObject(),
+		objects.NewJob(jobName, genNs).WithPodSpec(telemetryMetricGen).WithLabel("name", jobName).K8sObject(),
 	}
 	resources = append(resources, backendA.K8sObjects()...)
 	resources = append(resources, backendB.K8sObjects()...)

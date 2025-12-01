@@ -15,6 +15,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -48,7 +49,7 @@ func TestOverrides(t *testing.T) {
 	tracePipeline := testutils.NewTracePipelineBuilder().WithName(pipelineName).Build()
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(backendNs).K8sObject(),
+		objects.NewNamespace(backendNs).K8sObject(),
 		&logPipeline,
 		&metricPipeline,
 		&tracePipeline,
@@ -81,7 +82,7 @@ func TestOverrides(t *testing.T) {
 		assert.WithOptionalDescription("should NOT have logs from the telemetry-manager pod with DEBUG level"))
 
 	// Verify that after overrides config we have DEBUG logs
-	overrides = kitk8s.NewOverrides().WithLogLevel(kitk8s.DEBUG).K8sObject()
+	overrides = objects.NewOverrides().WithLogLevel(objects.DEBUG).K8sObject()
 	Expect(kitk8s.CreateObjects(t, overrides)).Should(Succeed())
 
 	triggerLogPipelineReconcilation(pipelineName)

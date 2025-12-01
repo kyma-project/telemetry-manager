@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"gopkg.in/yaml.v3"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -17,12 +18,13 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
-	"github.com/kyma-project/telemetry-manager/test/testkit"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
+	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
 // CreateObjects creates k8s objects passed as a slice.
-func CreateObjects(t testkit.T, resources ...client.Object) error {
+func CreateObjects(t *testing.T, resources ...client.Object) error {
 	t.Helper()
 
 	// Sort resources:
@@ -31,9 +33,13 @@ func CreateObjects(t testkit.T, resources ...client.Object) error {
 	// 3. pipelines
 	sortedResources := sortObjects(resources)
 
+	t.Cleanup(func() {
+		_ = DeleteObjects(resources...)
+	})
+
 	for _, resource := range sortedResources {
 		// Skip object creation if it already exists.
-		if labelMatches(resource.GetLabels(), PersistentLabelName, "true") {
+		if labelMatches(resource.GetLabels(), objects.PersistentLabelName, "true") {
 			//nolint:errcheck // The value is guaranteed to be of type client.Object.
 			existingResource := reflect.New(reflect.ValueOf(resource).Elem().Type()).Interface().(client.Object)
 			if err := suite.K8sClient.Get(
@@ -47,6 +53,18 @@ func CreateObjects(t testkit.T, resources ...client.Object) error {
 
 		if err := suite.K8sClient.Create(t.Context(), resource); err != nil {
 			return err
+		}
+
+		// assert object readiness
+		switch r := resource.(type) {
+		case *appsv1.Deployment:
+			assert.DeploymentReady(t, types.NamespacedName{Name: r.Name, Namespace: r.Namespace})
+		case *appsv1.DaemonSet:
+			assert.DaemonSetReady(t, types.NamespacedName{Name: r.Name, Namespace: r.Namespace})
+		case *appsv1.StatefulSet:
+			assert.StatefulSetReady(t, types.NamespacedName{Name: r.Name, Namespace: r.Namespace})
+		case *corev1.Pod:
+			assert.PodReady(t, types.NamespacedName{Name: r.Name, Namespace: r.Namespace})
 		}
 	}
 
@@ -103,7 +121,7 @@ func sortObjects(resources []client.Object) []client.Object {
 func DeleteObjects(resources ...client.Object) error {
 	for _, r := range resources {
 		// Skip object deletion for persistent ones.
-		if labelMatches(r.GetLabels(), PersistentLabelName, "true") {
+		if labelMatches(r.GetLabels(), objects.PersistentLabelName, "true") {
 			continue
 		}
 
@@ -116,7 +134,7 @@ func DeleteObjects(resources ...client.Object) error {
 }
 
 // ForceDeleteObjects deletes k8s objects including persistent ones.
-func ForceDeleteObjects(t testkit.T, resources ...client.Object) error {
+func ForceDeleteObjects(t *testing.T, resources ...client.Object) error {
 	for _, r := range resources {
 		if err := suite.K8sClient.Delete(t.Context(), r); err != nil {
 			return err
@@ -127,7 +145,7 @@ func ForceDeleteObjects(t testkit.T, resources ...client.Object) error {
 }
 
 // UpdateObjects updates k8s objects passed as a slice.
-func UpdateObjects(t testkit.T, resources ...client.Object) error {
+func UpdateObjects(t *testing.T, resources ...client.Object) error {
 	for _, resource := range resources {
 		if err := suite.K8sClient.Update(t.Context(), resource); err != nil {
 			return err
@@ -172,7 +190,7 @@ func ObjectsToFile(t *testing.T, resources ...client.Object) error {
 	return os.WriteFile(strings.ReplaceAll(t.Name(), "/", "_")+".yaml", buf.Bytes(), 0600)
 }
 
-func labelMatches(labels Labels, label, value string) bool {
+func labelMatches(labels objects.Labels, label, value string) bool {
 	l, ok := labels[label]
 	if !ok {
 		return false

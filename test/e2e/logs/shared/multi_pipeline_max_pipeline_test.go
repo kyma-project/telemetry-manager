@@ -14,6 +14,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
@@ -76,8 +77,8 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 		Build()
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(genNs).K8sObject(),
+		objects.NewNamespace(backendNs).K8sObject(),
+		objects.NewNamespace(genNs).K8sObject(),
 		stdoutloggen.NewDeployment(genNs).K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
@@ -178,8 +179,8 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 		Build()
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(genNs).K8sObject(),
+		objects.NewNamespace(backendNs).K8sObject(),
+		objects.NewNamespace(genNs).K8sObject(),
 		telemetrygen.NewDeployment(genNs, telemetrygen.SignalTypeLogs).K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
@@ -256,8 +257,8 @@ func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
 		Build()
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(genNs).K8sObject(),
+		objects.NewNamespace(backendNs).K8sObject(),
+		objects.NewNamespace(genNs).K8sObject(),
 		stdoutloggen.NewDeployment(genNs).K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)

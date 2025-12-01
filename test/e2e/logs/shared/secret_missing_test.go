@@ -13,6 +13,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
@@ -48,7 +49,7 @@ func TestSecretMissing_OTel(t *testing.T) {
 				secretName   = uniquePrefix()
 			)
 
-			secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, endpointValue))
+			secret := objects.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, objects.WithStringData(endpointKey, endpointValue))
 
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
@@ -110,7 +111,7 @@ func TestSecretMissing_FluentBit(t *testing.T) {
 		secretName   = uniquePrefix()
 	)
 
-	secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(hostKey, hostValue))
+	secret := objects.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, objects.WithStringData(hostKey, hostValue))
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).

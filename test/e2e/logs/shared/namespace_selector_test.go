@@ -11,6 +11,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
@@ -110,9 +111,9 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 				Build()
 
 			resources := []client.Object{
-				kitk8s.NewNamespace(backendNs).K8sObject(),
-				kitk8s.NewNamespace(gen1Ns).K8sObject(),
-				kitk8s.NewNamespace(gen2Ns).K8sObject(),
+				objects.NewNamespace(backendNs).K8sObject(),
+				objects.NewNamespace(gen1Ns).K8sObject(),
+				objects.NewNamespace(gen2Ns).K8sObject(),
 				&includePipeline,
 				&excludePipeline,
 				tc.logGeneratorBuilder(gen1Ns),
@@ -171,9 +172,9 @@ func TestNamespaceSelector_FluentBit(t *testing.T) {
 		Build()
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(gen1Ns).K8sObject(),
-		kitk8s.NewNamespace(gen2Ns).K8sObject(),
+		objects.NewNamespace(backendNs).K8sObject(),
+		objects.NewNamespace(gen1Ns).K8sObject(),
+		objects.NewNamespace(gen2Ns).K8sObject(),
 		&includePipeline,
 		&excludeGen2Pipeline,
 		stdoutloggen.NewDeployment(gen1Ns).K8sObject(),

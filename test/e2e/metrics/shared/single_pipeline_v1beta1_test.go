@@ -12,6 +12,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/metrics/runtime"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -85,8 +86,8 @@ func TestSinglePipelineV1Beta1(t *testing.T) {
 			}
 
 			resources := []client.Object{
-				kitk8s.NewNamespace(backendNs).K8sObject(),
-				kitk8s.NewNamespace(genNs).K8sObject(),
+				objects.NewNamespace(backendNs).K8sObject(),
+				objects.NewNamespace(genNs).K8sObject(),
 				&pipeline,
 			}
 			resources = append(resources, backend.K8sObjects()...)

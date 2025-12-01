@@ -7,7 +7,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit"
-	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 )
 
 const (

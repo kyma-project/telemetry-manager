@@ -11,6 +11,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
@@ -36,7 +37,7 @@ func TestEndpointInvalid_OTel(t *testing.T) {
 		WithOTLPOutput(testutils.OTLPEndpoint(invalidEndpoint)).
 		Build()
 
-	secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, invalidEndpoint))
+	secret := objects.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, objects.WithStringData(endpointKey, invalidEndpoint))
 	pipelineInvalidEndpointValueFrom := testutils.NewLogPipelineBuilder().
 		WithName(pipelineNameValueFromSecret).
 		WithOTLPOutput(testutils.OTLPEndpointFromSecret(secret.Name(), secret.Namespace(), endpointKey)).
@@ -87,7 +88,7 @@ func TestEndpointInvalid_FluentBit(t *testing.T) {
 		WithHTTPOutput(testutils.HTTPHost(invalidHost)).
 		Build()
 
-	secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(hostKey, invalidHost))
+	secret := objects.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, objects.WithStringData(hostKey, invalidHost))
 	pipelineInvalidEndpointValueFrom := testutils.NewLogPipelineBuilder().
 		WithName(pipelineNameValueFromSecret).
 		WithHTTPOutput(testutils.HTTPHostFromSecret(secret.Name(), secret.Namespace(), hostKey)).

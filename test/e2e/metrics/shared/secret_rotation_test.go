@@ -11,6 +11,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/metrics/runtime"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -73,7 +74,7 @@ func TestSecretRotation(t *testing.T) {
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)
 
 			// Initially, create a secret with an incorrect endpoint
-			secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, endpointValue))
+			secret := objects.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, objects.WithStringData(endpointKey, endpointValue))
 
 			pipeline := testutils.NewMetricPipelineBuilder().
 				WithName(pipelineName).
@@ -86,8 +87,8 @@ func TestSecretRotation(t *testing.T) {
 				Build()
 
 			resources := []client.Object{
-				kitk8s.NewNamespace(backendNs).K8sObject(),
-				kitk8s.NewNamespace(genNs).K8sObject(),
+				objects.NewNamespace(backendNs).K8sObject(),
+				objects.NewNamespace(genNs).K8sObject(),
 				&pipeline,
 				secret.K8sObject(),
 			}
@@ -110,7 +111,7 @@ func TestSecretRotation(t *testing.T) {
 			assert.MetricsFromNamespaceNotDelivered(t, backend, genNs)
 
 			// Update the secret to have the correct backend endpoint
-			secret.UpdateSecret(kitk8s.WithStringData(endpointKey, backend.Endpoint()))
+			secret.UpdateSecret(objects.WithStringData(endpointKey, backend.Endpoint()))
 			Expect(kitk8s.UpdateObjects(t, secret.K8sObject())).To(Succeed())
 
 			assert.DeploymentReady(t, kitkyma.MetricGatewayName)

@@ -10,6 +10,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
@@ -42,18 +43,18 @@ func TestMetricsOTLPInput(t *testing.T) {
 		WithOTLPOutput(testutils.OTLPEndpoint(istiofiedBackend.Endpoint())).
 		Build()
 
-	peerAuth := kitk8s.NewPeerAuthentication(kitbackend.DefaultName, istiofiedBackendNs)
+	peerAuth := objects.NewPeerAuthentication(kitbackend.DefaultName, istiofiedBackendNs)
 
 	podSpec := telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics)
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(istiofiedBackendNs, kitk8s.WithIstioInjection()).K8sObject(),
+		objects.NewNamespace(backendNs).K8sObject(),
+		objects.NewNamespace(istiofiedBackendNs, objects.WithIstioInjection()).K8sObject(),
 		&metricPipeline,
 		&metricPipelineIstiofiedBackend,
-		peerAuth.K8sObject(kitk8s.WithLabel("app", kitbackend.DefaultName)),
-		kitk8s.NewDeployment("metric-producer-1", backendNs).WithPodSpec(podSpec).K8sObject(),
-		kitk8s.NewDeployment("metric-producer-2", istiofiedBackendNs).WithPodSpec(podSpec).K8sObject(),
+		peerAuth.K8sObject(objects.WithLabel("app", kitbackend.DefaultName)),
+		objects.NewDeployment("metric-producer-1", backendNs).WithPodSpec(podSpec).K8sObject(),
+		objects.NewDeployment("metric-producer-2", istiofiedBackendNs).WithPodSpec(podSpec).K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
 	resources = append(resources, istiofiedBackend.K8sObjects()...)

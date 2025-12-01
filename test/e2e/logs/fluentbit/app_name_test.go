@@ -9,6 +9,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -44,11 +45,11 @@ func TestAppName(t *testing.T) {
 		Build()
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(nsNone).K8sObject(),
-		kitk8s.NewNamespace(nsAppOnly).K8sObject(),
-		kitk8s.NewNamespace(nsNameOnly).K8sObject(),
-		kitk8s.NewNamespace(nsMixed).K8sObject(),
+		objects.NewNamespace(backendNs).K8sObject(),
+		objects.NewNamespace(nsNone).K8sObject(),
+		objects.NewNamespace(nsAppOnly).K8sObject(),
+		objects.NewNamespace(nsNameOnly).K8sObject(),
+		objects.NewNamespace(nsMixed).K8sObject(),
 		logProducerNone.K8sObject(),
 		logProducerAppOnly.K8sObject(),
 		logProducerNameOnly.K8sObject(),

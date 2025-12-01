@@ -9,6 +9,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
@@ -112,23 +113,23 @@ func TestNoisyFilters(t *testing.T) {
 	).K8sObject()
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(backendNs).K8sObject(),
+		objects.NewNamespace(backendNs).K8sObject(),
 		&pipeline,
 	}
 	resources = append(resources, backend.K8sObjects()...)
 
 	resources = append(resources,
-		kitk8s.NewNamespace(regularSpansNs).K8sObject(),
-		kitk8s.NewNamespace(vmaScrapeSpansNs).K8sObject(),
-		kitk8s.NewNamespace(healthzSpansNs).K8sObject(),
-		kitk8s.NewNamespace(fluentBitSpansNs).K8sObject(),
-		kitk8s.NewNamespace(metricAgentScrapeSpansNs).K8sObject(),
-		kitk8s.NewNamespace(metricAgentSpansNs).K8sObject(),
-		kitk8s.NewNamespace(metricGatewaySpansNs).K8sObject(),
-		kitk8s.NewNamespace(metricServiceSpansNs).K8sObject(),
-		kitk8s.NewNamespace(traceGatewaySpansNs).K8sObject(),
-		kitk8s.NewNamespace(traceServiceSpansNs).K8sObject(),
-		kitk8s.NewNamespace(traceServiceInternalSpansNs).K8sObject(),
+		objects.NewNamespace(regularSpansNs).K8sObject(),
+		objects.NewNamespace(vmaScrapeSpansNs).K8sObject(),
+		objects.NewNamespace(healthzSpansNs).K8sObject(),
+		objects.NewNamespace(fluentBitSpansNs).K8sObject(),
+		objects.NewNamespace(metricAgentScrapeSpansNs).K8sObject(),
+		objects.NewNamespace(metricAgentSpansNs).K8sObject(),
+		objects.NewNamespace(metricGatewaySpansNs).K8sObject(),
+		objects.NewNamespace(metricServiceSpansNs).K8sObject(),
+		objects.NewNamespace(traceGatewaySpansNs).K8sObject(),
+		objects.NewNamespace(traceServiceSpansNs).K8sObject(),
+		objects.NewNamespace(traceServiceInternalSpansNs).K8sObject(),
 	)
 
 	resources = append(resources,
