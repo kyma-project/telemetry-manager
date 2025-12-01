@@ -3,7 +3,7 @@ apiVersion: k3d.io/v1alpha5
 kind: Simple
 metadata:
   name: kyma
-image: europe-docker.pkg.dev/kyma-project/prod/external/rancher/k3s:v1.32.8-k3s1 # refers to the image used by k3d
+image: europe-docker.pkg.dev/kyma-project/prod/external/rancher/k3s:v1.33.4-k3s1 # refers to the image used by k3d
 
 servers: 1
 agents: 0
