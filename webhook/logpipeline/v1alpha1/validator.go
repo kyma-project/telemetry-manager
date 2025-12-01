@@ -9,6 +9,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 	webhookutils "github.com/kyma-project/telemetry-manager/webhook/utils"
@@ -30,7 +32,7 @@ func (v *LogPipelineValidator) ValidateCreate(_ context.Context, obj runtime.Obj
 
 	filterSpec, transformSpec := webhookutils.ConvertFilterTransformToBeta(logPipeline.Spec.Filters, logPipeline.Spec.Transforms)
 
-	if err := webhookutils.ValidateFilterTransform(ottl.SignalTypeLog, filterSpec, transformSpec); err != nil {
+	if err := validateFilterTransform(filterSpec, transformSpec); err != nil {
 		return nil, err
 	}
 
@@ -56,7 +58,7 @@ func (v *LogPipelineValidator) ValidateUpdate(_ context.Context, oldObj, newObj 
 
 	filterSpec, transformSpec := webhookutils.ConvertFilterTransformToBeta(logPipeline.Spec.Filters, logPipeline.Spec.Transforms)
 
-	if err := webhookutils.ValidateFilterTransform(ottl.SignalTypeLog, filterSpec, transformSpec); err != nil {
+	if err := validateFilterTransform(filterSpec, transformSpec); err != nil {
 		return nil, err
 	}
 
@@ -73,4 +75,13 @@ func (v *LogPipelineValidator) ValidateUpdate(_ context.Context, oldObj, newObj 
 
 func (v *LogPipelineValidator) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
 	return nil, nil
+}
+
+func validateFilterTransform(filterSpec []telemetryv1beta1.FilterSpec, transformSpec []telemetryv1beta1.TransformSpec) error {
+	err := webhookutils.ValidateFilterTransform(ottl.SignalTypeLog, filterSpec, transformSpec)
+	if err != nil {
+		return fmt.Errorf(conditions.MessageForOtelLogPipeline(conditions.ReasonOTTLSpecInvalid), err.Error())
+	}
+
+	return nil
 }
