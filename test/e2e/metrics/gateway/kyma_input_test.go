@@ -12,7 +12,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	objects2 "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -51,8 +51,8 @@ func TestKymaInput(t *testing.T) {
 		Build()
 
 	resources := []client.Object{
-		objects2.NewNamespace(backendNs).K8sObject(),
-		objects2.NewNamespace(generatorNs).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+		kitk8sobjects.NewNamespace(generatorNs).K8sObject(),
 		&pipelineWithKymaOnly,
 		&pipelineWithKymaAndOtlp,
 		telemetrygen.NewPod(generatorNs, telemetrygen.SignalTypeMetrics).K8sObject(),
@@ -72,7 +72,7 @@ func TestKymaInput(t *testing.T) {
 	if suite.DebugObjectsEnabled() {
 		objects := []client.Object{
 			&pipelineWithKymaOnly,
-			objects2.NewConfigMap(kitkyma.MetricGatewayBaseName, kitkyma.SystemNamespaceName).K8sObject(),
+			kitk8sobjects.NewConfigMap(kitkyma.MetricGatewayBaseName, kitkyma.SystemNamespaceName).K8sObject(),
 		}
 		Expect(kitk8s.ObjectsToFile(t, objects...)).To(Succeed())
 	}

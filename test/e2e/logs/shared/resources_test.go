@@ -13,7 +13,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
@@ -70,16 +70,13 @@ func TestResources_OTel(t *testing.T) {
 				secretName   = uniquePrefix()
 			)
 
-			secret := objects.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, objects.WithStringData(endpointKey, endpointValue))
+			secret := kitk8sobjects.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8sobjects.WithStringData(endpointKey, endpointValue))
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithInput(tc.input).
 				WithName(pipelineName).
 				WithOTLPOutput(testutils.OTLPEndpointFromSecret(secret.Name(), kitkyma.DefaultNamespaceName, endpointKey)).
 				Build()
 
-			t.Cleanup(func() {
-				Expect(kitk8s.DeleteObjects(&pipeline)).To(Succeed())
-			})
 			Expect(kitk8s.CreateObjects(t, &pipeline, secret.K8sObject())).To(Succeed())
 
 			assert.ResourcesExist(t, tc.resources...)
@@ -115,9 +112,9 @@ func TestResources_FluentBit(t *testing.T) {
 		}
 	)
 
-	secret := objects.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, objects.WithStringData(hostKey, "localhost"))
+	secret := kitk8sobjects.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8sobjects.WithStringData(hostKey, "localhost"))
 	// TODO: remove parser configmap creation after logparser removal is rolled out
-	parserConfigMap := objects.NewConfigMap(
+	parserConfigMap := kitk8sobjects.NewConfigMap(
 		kitkyma.FluentBitParserConfigMap.Name,
 		kitkyma.FluentBitParserConfigMap.Namespace,
 	)

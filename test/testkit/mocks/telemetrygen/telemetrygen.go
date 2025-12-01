@@ -8,7 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit"
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 )
 
 type SignalType string
@@ -100,12 +100,12 @@ func WithInterval(duration string) Option {
 		spec.Containers[0].Args = append(spec.Containers[0].Args, fmt.Sprintf("%v", duration))
 	}
 }
-func NewPod(namespace string, signalType SignalType, opts ...Option) *objects.Pod {
-	return objects.NewPod(DefaultName, namespace).WithPodSpec(PodSpec(signalType, opts...)).WithLabel("app.kubernetes.io/name", DefaultName)
+func NewPod(namespace string, signalType SignalType, opts ...Option) *kitk8sobjects.Pod {
+	return kitk8sobjects.NewPod(DefaultName, namespace).WithPodSpec(PodSpec(signalType, opts...)).WithLabel("app.kubernetes.io/name", DefaultName)
 }
 
-func NewDeployment(namespace string, signalType SignalType, opts ...Option) *objects.Deployment {
-	return objects.NewDeployment(DefaultName, namespace).WithPodSpec(PodSpec(signalType, opts...)).WithLabel("app.kubernetes.io/name", DefaultName)
+func NewDeployment(namespace string, signalType SignalType, opts ...Option) *kitk8sobjects.Deployment {
+	return kitk8sobjects.NewDeployment(DefaultName, namespace).WithPodSpec(PodSpec(signalType, opts...)).WithLabel("app.kubernetes.io/name", DefaultName)
 }
 
 func PodSpec(signalType SignalType, opts ...Option) corev1.PodSpec {

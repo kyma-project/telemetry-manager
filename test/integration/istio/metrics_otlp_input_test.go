@@ -10,7 +10,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
@@ -43,18 +43,18 @@ func TestMetricsOTLPInput(t *testing.T) {
 		WithOTLPOutput(testutils.OTLPEndpoint(istiofiedBackend.Endpoint())).
 		Build()
 
-	peerAuth := objects.NewPeerAuthentication(kitbackend.DefaultName, istiofiedBackendNs)
+	peerAuth := kitk8sobjects.NewPeerAuthentication(kitbackend.DefaultName, istiofiedBackendNs)
 
 	podSpec := telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics)
 
 	resources := []client.Object{
-		objects.NewNamespace(backendNs).K8sObject(),
-		objects.NewNamespace(istiofiedBackendNs, objects.WithIstioInjection()).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+		kitk8sobjects.NewNamespace(istiofiedBackendNs, kitk8sobjects.WithIstioInjection()).K8sObject(),
 		&metricPipeline,
 		&metricPipelineIstiofiedBackend,
-		peerAuth.K8sObject(objects.WithLabel("app", kitbackend.DefaultName)),
-		objects.NewDeployment("metric-producer-1", backendNs).WithPodSpec(podSpec).K8sObject(),
-		objects.NewDeployment("metric-producer-2", istiofiedBackendNs).WithPodSpec(podSpec).K8sObject(),
+		peerAuth.K8sObject(kitk8sobjects.WithLabel("app", kitbackend.DefaultName)),
+		kitk8sobjects.NewDeployment("metric-producer-1", backendNs).WithPodSpec(podSpec).K8sObject(),
+		kitk8sobjects.NewDeployment("metric-producer-2", istiofiedBackendNs).WithPodSpec(podSpec).K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
 	resources = append(resources, istiofiedBackend.K8sObjects()...)

@@ -9,7 +9,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
@@ -36,7 +36,7 @@ func TestSecretRotation(t *testing.T) {
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces)
 
 	// Initially, create a secret with an incorrect endpoint
-	secret := objects.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, objects.WithStringData(endpointKey, endpointValue))
+	secret := kitk8sobjects.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8sobjects.WithStringData(endpointKey, endpointValue))
 
 	pipeline := testutils.NewTracePipelineBuilder().
 		WithName(pipelineName).
@@ -48,8 +48,8 @@ func TestSecretRotation(t *testing.T) {
 		Build()
 
 	resources := []client.Object{
-		objects.NewNamespace(backendNs).K8sObject(),
-		objects.NewNamespace(genNs).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+		kitk8sobjects.NewNamespace(genNs).K8sObject(),
 		&pipeline,
 		telemetrygen.NewPod(genNs, telemetrygen.SignalTypeTraces).K8sObject(),
 		secret.K8sObject(),
@@ -67,7 +67,7 @@ func TestSecretRotation(t *testing.T) {
 	assert.TracesFromNamespacesNotDelivered(t, backend, []string{genNs})
 
 	// Update the secret to have the correct backend endpoint
-	secret.UpdateSecret(objects.WithStringData(endpointKey, backend.Endpoint()))
+	secret.UpdateSecret(kitk8sobjects.WithStringData(endpointKey, backend.Endpoint()))
 	Expect(kitk8s.UpdateObjects(t, secret.K8sObject())).To(Succeed())
 
 	assert.DeploymentReady(t, kitkyma.TraceGatewayName)

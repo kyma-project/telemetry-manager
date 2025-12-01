@@ -12,7 +12,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -56,7 +56,7 @@ func TestTracesRouting(t *testing.T) {
 		WithOTLPOutput(testutils.OTLPEndpoint(istiofiedBackend.Endpoint())).
 		Build()
 
-	traceGatewayExternalService := objects.NewService("telemetry-otlp-traces-external", kitkyma.SystemNamespaceName).
+	traceGatewayExternalService := kitk8sobjects.NewService("telemetry-otlp-traces-external", kitkyma.SystemNamespaceName).
 		WithPort("grpc-otlp", ports.OTLPGRPC).
 		WithPort("http-metrics", ports.Metrics)
 	metricServiceURL := suite.ProxyClient.ProxyURLForService(kitkyma.SystemNamespaceName, "telemetry-otlp-traces-external", "metrics", ports.Metrics)
@@ -68,21 +68,18 @@ func TestTracesRouting(t *testing.T) {
 	istiofiedAppURL := istiofiedApp.PodURL(suite.ProxyClient)
 
 	resources := []client.Object{
-		objects.NewNamespace(backendNs).K8sObject(),
-		objects.NewNamespace(istiofiedBackendNs, objects.WithIstioInjection()).K8sObject(),
-		objects.NewNamespace(appNs).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+		kitk8sobjects.NewNamespace(istiofiedBackendNs, kitk8sobjects.WithIstioInjection()).K8sObject(),
+		kitk8sobjects.NewNamespace(appNs).K8sObject(),
 		&istioTracePipeline,
 		&tracePipeline,
-		traceGatewayExternalService.K8sObject(objects.WithLabel("app.kubernetes.io/name", "telemetry-trace-gateway")),
+		traceGatewayExternalService.K8sObject(kitk8sobjects.WithLabel("app.kubernetes.io/name", "telemetry-trace-gateway")),
 		app.Pod().K8sObject(),
 		istiofiedApp.Pod().K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
 	resources = append(resources, istiofiedBackend.K8sObjects()...)
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)

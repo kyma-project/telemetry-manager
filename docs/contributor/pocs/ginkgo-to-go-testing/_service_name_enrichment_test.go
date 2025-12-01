@@ -1,7 +1,6 @@
 package migrated
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,8 +10,6 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/require"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -118,17 +115,11 @@ func TestOTelLogPipeline_ServiceNameEnrichment(t *testing.T) {
 			}
 			resources = append(resources, backend.K8sObjects()...)
 
-			t.Cleanup(func() {
-				// Cannot use t.Context() here because it is already canceled at this point
-				err := kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)
-				require.NoError(t, err)
-			})
 			Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
 			t.Log("Waiting for resources to be ready")
 
 			assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
-			assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Name: backend.Name(), Namespace: mockNs})
 			assert.LogPipelineOtelHealthy(t.Context(), suite.K8sClient, pipelineName)
 			assert.OtelLogsFromNamespaceDelivered(suite.ProxyClient, backend.ExportURL(suite.ProxyClient), mockNs)
 

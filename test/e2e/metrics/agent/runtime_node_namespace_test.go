@@ -9,7 +9,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/metrics/runtime"
@@ -59,9 +59,9 @@ func TestRuntimeNodeNamespace(t *testing.T) {
 	excludeMetricProducer := prommetricgen.New(excludeNs)
 
 	resources := []client.Object{
-		objects.NewNamespace(includeNs).K8sObject(),
-		objects.NewNamespace(excludeNs).K8sObject(),
-		objects.NewNamespace(backendNs).K8sObject(),
+		kitk8sobjects.NewNamespace(includeNs).K8sObject(),
+		kitk8sobjects.NewNamespace(excludeNs).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNs).K8sObject(),
 		&includePipeline,
 		&excludePipeline,
 		includeMetricProducer.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),

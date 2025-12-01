@@ -11,7 +11,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/metrics/runtime"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -74,7 +74,7 @@ func TestSecretRotation(t *testing.T) {
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)
 
 			// Initially, create a secret with an incorrect endpoint
-			secret := objects.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, objects.WithStringData(endpointKey, endpointValue))
+			secret := kitk8sobjects.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8sobjects.WithStringData(endpointKey, endpointValue))
 
 			pipeline := testutils.NewMetricPipelineBuilder().
 				WithName(pipelineName).
@@ -87,17 +87,14 @@ func TestSecretRotation(t *testing.T) {
 				Build()
 
 			resources := []client.Object{
-				objects.NewNamespace(backendNs).K8sObject(),
-				objects.NewNamespace(genNs).K8sObject(),
+				kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+				kitk8sobjects.NewNamespace(genNs).K8sObject(),
 				&pipeline,
 				secret.K8sObject(),
 			}
 			resources = append(resources, tc.generatorBuilder(genNs)...)
 			resources = append(resources, backend.K8sObjects()...)
 
-			t.Cleanup(func() {
-				Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-			})
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.BackendReachable(t, backend)
@@ -111,7 +108,7 @@ func TestSecretRotation(t *testing.T) {
 			assert.MetricsFromNamespaceNotDelivered(t, backend, genNs)
 
 			// Update the secret to have the correct backend endpoint
-			secret.UpdateSecret(objects.WithStringData(endpointKey, backend.Endpoint()))
+			secret.UpdateSecret(kitk8sobjects.WithStringData(endpointKey, backend.Endpoint()))
 			Expect(kitk8s.UpdateObjects(t, secret.K8sObject())).To(Succeed())
 
 			assert.DeploymentReady(t, kitkyma.MetricGatewayName)

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/onsi/gomega"
 	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -19,7 +20,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
@@ -34,12 +35,12 @@ func CreateObjects(t *testing.T, resources ...client.Object) error {
 	sortedResources := sortObjects(resources)
 
 	t.Cleanup(func() {
-		_ = DeleteObjects(resources...)
+		gomega.Expect(DeleteObjects(resources...)).To(gomega.Succeed())
 	})
 
 	for _, resource := range sortedResources {
 		// Skip object creation if it already exists.
-		if labelMatches(resource.GetLabels(), objects.PersistentLabelName, "true") {
+		if labelMatches(resource.GetLabels(), kitk8sobjects.PersistentLabelName, "true") {
 			//nolint:errcheck // The value is guaranteed to be of type client.Object.
 			existingResource := reflect.New(reflect.ValueOf(resource).Elem().Type()).Interface().(client.Object)
 			if err := suite.K8sClient.Get(
@@ -121,7 +122,7 @@ func sortObjects(resources []client.Object) []client.Object {
 func DeleteObjects(resources ...client.Object) error {
 	for _, r := range resources {
 		// Skip object deletion for persistent ones.
-		if labelMatches(r.GetLabels(), objects.PersistentLabelName, "true") {
+		if labelMatches(r.GetLabels(), kitk8sobjects.PersistentLabelName, "true") {
 			continue
 		}
 
@@ -190,7 +191,7 @@ func ObjectsToFile(t *testing.T, resources ...client.Object) error {
 	return os.WriteFile(strings.ReplaceAll(t.Name(), "/", "_")+".yaml", buf.Bytes(), 0600)
 }
 
-func labelMatches(labels objects.Labels, label, value string) bool {
+func labelMatches(labels kitk8sobjects.Labels, label, value string) bool {
 	l, ok := labels[label]
 	if !ok {
 		return false

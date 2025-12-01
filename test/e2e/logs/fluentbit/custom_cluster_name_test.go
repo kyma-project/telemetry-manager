@@ -11,7 +11,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -55,8 +55,8 @@ func TestCustomClusterName(t *testing.T) {
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 
 	resources := []client.Object{
-		objects.NewNamespace(backendNs).K8sObject(),
-		objects.NewNamespace(genNs).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+		kitk8sobjects.NewNamespace(genNs).K8sObject(),
 		&pipeline,
 		logProducer.K8sObject(),
 		telemetrygen.NewPod(genNs, telemetrygen.SignalTypeMetrics).K8sObject(),
@@ -64,8 +64,6 @@ func TestCustomClusterName(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-
 		Eventually(func(g Gomega) {
 			g.Expect(suite.K8sClient.Get(context.Background(), kitkyma.TelemetryName, &telemetry)).Should(Succeed()) //nolint:usetesting // Remove ctx from Get
 			telemetry.Spec.Enrichments.Cluster = &operatorv1alpha1.Cluster{}
@@ -76,7 +74,6 @@ func TestCustomClusterName(t *testing.T) {
 
 	assert.BackendReachable(t, backend)
 	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
-	assert.DeploymentReady(t, logProducer.NamespacedName())
 	assert.FluentBitLogPipelineHealthy(t, pipelineName)
 
 	assert.BackendDataEventuallyMatches(t, backend,

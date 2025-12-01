@@ -10,7 +10,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
@@ -50,8 +50,8 @@ func TestMetricsIstioSamePort(t *testing.T) {
 	istiofiedGenerator := prommetricgen.New(istiofiedBackendNs, prommetricgen.WithMetricsPort(istiofiedBackend.Port()))
 
 	resources := []client.Object{
-		objects.NewNamespace(backendNs).K8sObject(),
-		objects.NewNamespace(istiofiedBackendNs, objects.WithIstioInjection()).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+		kitk8sobjects.NewNamespace(istiofiedBackendNs, kitk8sobjects.WithIstioInjection()).K8sObject(),
 		&metricPipeline,
 		&istiofiedMetricPipeline,
 		generator.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).WithAvalancheLowLoad().K8sObject(),

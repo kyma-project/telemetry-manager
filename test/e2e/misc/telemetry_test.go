@@ -15,7 +15,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
@@ -49,8 +49,8 @@ func TestTelemetry(t *testing.T) {
 	logPipeline := testutils.NewLogPipelineBuilder().WithName(pipelineName).WithOTLPInput(true).WithOTLPOutput().Build()
 
 	resources := []client.Object{
-		objects.NewNamespace(backendNs).K8sObject(),
-		objects.NewNamespace(genNs).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+		kitk8sobjects.NewNamespace(genNs).K8sObject(),
 		&tracePipeline,
 		&metricPipeline,
 		&logPipeline,
@@ -100,7 +100,7 @@ func TestTelemetryWarning(t *testing.T) {
 		Build()
 
 	resources := []client.Object{
-		objects.NewNamespace(backendNs).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNs).K8sObject(),
 		&misconfiguredTracePipeline,
 	}
 	t.Logf("pipeline: %s", misconfiguredTracePipeline.Name)
@@ -134,7 +134,7 @@ func TestTelemetryDeletionBlocking(t *testing.T) {
 	logPipeline := testutils.NewLogPipelineBuilder().WithName(pipelineName).Build()
 
 	resources := []client.Object{
-		objects.NewNamespace(backendNs).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNs).K8sObject(),
 		&logPipeline,
 	}
 	resources = append(resources, logBackend.K8sObjects()...)

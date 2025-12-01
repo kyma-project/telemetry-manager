@@ -6,7 +6,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 )
 
 const (
@@ -53,8 +53,8 @@ func destinationPodSpec() corev1.PodSpec {
 
 func K8sObjects(namespace string) []client.Object {
 	return []client.Object{
-		objects.NewPod(sourceName, namespace).WithPodSpec(sourcePodSpec()).K8sObject(),
-		objects.NewPod(destinationName, namespace).WithPodSpec(destinationPodSpec()).WithLabel(appLabelKey, destinationName).K8sObject(),
-		objects.NewService(destinationName, namespace).WithPort("http", destinationPort).K8sObject(objects.WithLabel(appLabelKey, destinationName)),
+		kitk8sobjects.NewPod(sourceName, namespace).WithPodSpec(sourcePodSpec()).K8sObject(),
+		kitk8sobjects.NewPod(destinationName, namespace).WithPodSpec(destinationPodSpec()).WithLabel(appLabelKey, destinationName).K8sObject(),
+		kitk8sobjects.NewService(destinationName, namespace).WithPort("http", destinationPort).K8sObject(kitk8sobjects.WithLabel(appLabelKey, destinationName)),
 	}
 }

@@ -12,7 +12,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
@@ -106,15 +106,14 @@ func TestExtractLabels_OTel(t *testing.T) {
 			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 
 			resources := []client.Object{
-				objects.NewNamespace(backendNs).K8sObject(),
-				objects.NewNamespace(genNs).K8sObject(),
+				kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+				kitk8sobjects.NewNamespace(genNs).K8sObject(),
 				&pipeline,
 				tc.logGeneratorBuilder(genNs, genLabels),
 			}
 			resources = append(resources, backend.K8sObjects()...)
 
 			t.Cleanup(func() {
-				Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
 				Eventually(func(g Gomega) {
 					g.Expect(suite.K8sClient.Get(context.Background(), kitkyma.TelemetryName, &telemetry)).To(Succeed()) //nolint:usetesting // Remove ctx from Get
 					telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{}
@@ -185,9 +184,9 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 		Build()
 
 	resources := []client.Object{
-		objects.NewNamespace(notDroppedNs).K8sObject(),
-		objects.NewNamespace(droppedNs).K8sObject(),
-		objects.NewNamespace(genNs).K8sObject(),
+		kitk8sobjects.NewNamespace(notDroppedNs).K8sObject(),
+		kitk8sobjects.NewNamespace(droppedNs).K8sObject(),
+		kitk8sobjects.NewNamespace(genNs).K8sObject(),
 		logProducer.K8sObject(),
 		&pipelineNotDropped,
 		&pipelineDropped,

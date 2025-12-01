@@ -13,7 +13,7 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
-	objects2 "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 )
 
 const (
@@ -54,11 +54,11 @@ type Backend struct {
 	signalType           SignalType
 
 	fluentDConfigMap    *fluentdConfigMapBuilder
-	hostSecret          *objects2.Secret
+	hostSecret          *kitk8sobjects.Secret
 	collectorConfigMap  *collectorConfigMapBuilder
 	collectorDeployment *collectorDeploymentBuilder
-	collectorService    *objects2.Service
-	virtualService      *objects2.VirtualService
+	collectorService    *kitk8sobjects.Service
+	virtualService      *kitk8sobjects.VirtualService
 }
 
 func New(namespace string, signalType SignalType, opts ...Option) *Backend {
@@ -133,8 +133,8 @@ func (b *Backend) K8sObjects() []client.Object {
 	}
 
 	objects = append(objects, b.collectorConfigMap.K8sObject())
-	objects = append(objects, b.collectorDeployment.K8sObject(objects2.WithLabel("app", b.name)))
-	objects = append(objects, b.collectorService.K8sObject(objects2.WithLabel("app", b.name)))
+	objects = append(objects, b.collectorDeployment.K8sObject(kitk8sobjects.WithLabel("app", b.name)))
+	objects = append(objects, b.collectorService.K8sObject(kitk8sobjects.WithLabel("app", b.name)))
 	objects = append(objects, b.hostSecret.K8sObject())
 
 	return objects
@@ -162,7 +162,7 @@ func (b *Backend) buildResources() {
 		"traffic.sidecar.istio.io/excludeInboundPorts": strconv.Itoa(int(QueryPort)),
 	})
 
-	b.collectorService = objects2.NewService(b.name, b.namespace).
+	b.collectorService = kitk8sobjects.NewService(b.name, b.namespace).
 		WithPort(otlpGRPCPortName, otlpGRPCPort).
 		WithPort(otlpHTTPPortName, otlpHTTPPort).
 		WithPort(queryPortName, QueryPort)
@@ -183,15 +183,15 @@ func (b *Backend) buildResources() {
 		host = b.Host()
 	}
 
-	b.hostSecret = objects2.NewOpaqueSecret(
+	b.hostSecret = kitk8sobjects.NewOpaqueSecret(
 		fmt.Sprintf("%s-receiver-hostname", b.name),
 		b.namespace,
-		objects2.WithStringData("host", host),
+		kitk8sobjects.WithStringData("host", host),
 	)
 
 	if b.abortFaultPercentage > 0 {
 		// Configure fault injection for self-monitoring negative tests.
-		b.virtualService = objects2.NewVirtualService(
+		b.virtualService = kitk8sobjects.NewVirtualService(
 			"fault-injection",
 			b.namespace,
 			b.name,
