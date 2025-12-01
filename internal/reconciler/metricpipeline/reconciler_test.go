@@ -986,48 +986,59 @@ func TestGetPipelinesRequiringAgents(t *testing.T) {
 
 func TestOTTLMetricsTracking(t *testing.T) {
 	tests := []struct {
-		name                   string
-		pipelines              []telemetryv1alpha1.MetricPipeline
-		expectedTransformCount float64
-		expectedFilterCount    float64
+		name              string
+		pipelines         []telemetryv1alpha1.MetricPipeline
+		expectedOTTLUsage map[string]float64 // map[pipelineName]expectedValue
 	}{
 		{
-			name:      "no pipelines",
-			pipelines: []telemetryv1alpha1.MetricPipeline{},
+			name:              "no pipelines",
+			pipelines:         []telemetryv1alpha1.MetricPipeline{},
+			expectedOTTLUsage: map[string]float64{},
 		},
 		{
 			name: "pipelines without transforms or filters",
 			pipelines: []telemetryv1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().Build(),
-				testutils.NewMetricPipelineBuilder().Build(),
+				testutils.NewMetricPipelineBuilder().WithName("pipeline-1").Build(),
+				testutils.NewMetricPipelineBuilder().WithName("pipeline-2").Build(),
+			},
+			expectedOTTLUsage: map[string]float64{
+				"pipeline-1": 0,
+				"pipeline-2": 0,
 			},
 		},
 		{
 			name: "pipeline with transform only",
 			pipelines: []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
+					WithName("pipeline-1").
 					WithTransform(telemetryv1alpha1.TransformSpec{
 						Statements: []string{"set(attributes[\"test\"], \"value\")"},
 					}).
 					Build(),
 			},
-			expectedTransformCount: 1,
+			expectedOTTLUsage: map[string]float64{
+				"pipeline-1": 1,
+			},
 		},
 		{
 			name: "pipeline with filter only",
 			pipelines: []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
+					WithName("pipeline-1").
 					WithFilter(telemetryv1alpha1.FilterSpec{
 						Conditions: []string{"attributes[\"test\"] == \"value\""},
 					}).
 					Build(),
 			},
-			expectedFilterCount: 1,
+			expectedOTTLUsage: map[string]float64{
+				"pipeline-1": 1,
+			},
 		},
 		{
 			name: "pipeline with both transform and filter",
 			pipelines: []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
+					WithName("pipeline-1").
 					WithTransform(telemetryv1alpha1.TransformSpec{
 						Statements: []string{"set(attributes[\"test\"], \"value\")"},
 					}).
@@ -1036,23 +1047,27 @@ func TestOTTLMetricsTracking(t *testing.T) {
 					}).
 					Build(),
 			},
-			expectedTransformCount: 1,
-			expectedFilterCount:    1,
+			expectedOTTLUsage: map[string]float64{
+				"pipeline-1": 1,
+			},
 		},
 		{
 			name: "multiple pipelines with mixed transforms and filters",
 			pipelines: []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
+					WithName("pipeline-1").
 					WithTransform(telemetryv1alpha1.TransformSpec{
 						Statements: []string{"set(attributes[\"test\"], \"value\")"},
 					}).
 					Build(),
 				testutils.NewMetricPipelineBuilder().
+					WithName("pipeline-2").
 					WithFilter(telemetryv1alpha1.FilterSpec{
 						Conditions: []string{"attributes[\"test\"] == \"value\""},
 					}).
 					Build(),
 				testutils.NewMetricPipelineBuilder().
+					WithName("pipeline-3").
 					WithTransform(telemetryv1alpha1.TransformSpec{
 						Statements: []string{"set(attributes[\"test2\"], \"value2\")"},
 					}).
@@ -1060,10 +1075,14 @@ func TestOTTLMetricsTracking(t *testing.T) {
 						Conditions: []string{"attributes[\"test2\"] == \"value2\""},
 					}).
 					Build(),
-				testutils.NewMetricPipelineBuilder().Build(),
+				testutils.NewMetricPipelineBuilder().WithName("pipeline-4").Build(),
 			},
-			expectedTransformCount: 2,
-			expectedFilterCount:    2,
+			expectedOTTLUsage: map[string]float64{
+				"pipeline-1": 1,
+				"pipeline-2": 1,
+				"pipeline-3": 1,
+				"pipeline-4": 0,
+			},
 		},
 	}
 
@@ -1084,11 +1103,11 @@ func TestOTTLMetricsTracking(t *testing.T) {
 				require.NoError(t, result.err)
 			}
 
-			transformValue := testutil.ToFloat64(metrics.MetricPipelineFeatureUsage.WithLabelValues("MetricPipeline"))
-			filterValue := testutil.ToFloat64(metrics.MetricPipelineFeatureUsage.WithLabelValues("MetricPipeline"))
-
-			require.Equal(t, tt.expectedTransformCount, transformValue, "transform usage metric should match")
-			require.Equal(t, tt.expectedFilterCount, filterValue, "filter usage metric should match")
+			// Verify OTTL feature usage metrics for each pipeline
+			for pipelineName, expectedValue := range tt.expectedOTTLUsage {
+				metricValue := testutil.ToFloat64(metrics.MetricPipelineFeatureUsage.WithLabelValues(metrics.FeatureOTTL, pipelineName))
+				require.Equal(t, expectedValue, metricValue, "OTTL feature usage metric should match for pipeline %s", pipelineName)
+			}
 
 			assertAll(t)
 		})
