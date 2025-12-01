@@ -96,9 +96,9 @@ type GatewayApplyOptions struct {
 //nolint:dupl // repeating the code as we have three different signals
 func NewLogGatewayApplierDeleter(globals config.Global, image, priorityClassName string) *GatewayApplierDeleter {
 	extraLabels := map[string]string{
-		commonresources.LabelKeyTelemetryLogIngest: "true",
-		commonresources.LabelKeyTelemetryLogExport: "true",
-		commonresources.LabelKeyIstioInject:        "true", // inject istio sidecar
+		commonresources.LabelKeyTelemetryLogIngest: commonresources.LabelValueTrue,
+		commonresources.LabelKeyTelemetryLogExport: commonresources.LabelValueTrue,
+		commonresources.LabelKeyIstioInject:        commonresources.LabelValueTrue, // inject istio sidecar
 	}
 
 	return &GatewayApplierDeleter{
@@ -129,9 +129,9 @@ func NewLogGatewayApplierDeleter(globals config.Global, image, priorityClassName
 //nolint:dupl // repeating the code as we have three different signals
 func NewMetricGatewayApplierDeleter(globals config.Global, image, priorityClassName string) *GatewayApplierDeleter {
 	extraLabels := map[string]string{
-		commonresources.LabelKeyTelemetryMetricIngest: "true",
-		commonresources.LabelKeyTelemetryMetricExport: "true",
-		commonresources.LabelKeyIstioInject:           "true", // inject istio sidecar
+		commonresources.LabelKeyTelemetryMetricIngest: commonresources.LabelValueTrue,
+		commonresources.LabelKeyTelemetryMetricExport: commonresources.LabelValueTrue,
+		commonresources.LabelKeyIstioInject:           commonresources.LabelValueTrue, // inject istio sidecar
 	}
 
 	return &GatewayApplierDeleter{
@@ -162,9 +162,9 @@ func NewMetricGatewayApplierDeleter(globals config.Global, image, priorityClassN
 //nolint:dupl // repeating the code as we have three different signals
 func NewTraceGatewayApplierDeleter(globals config.Global, image, priorityClassName string) *GatewayApplierDeleter {
 	extraLabels := map[string]string{
-		commonresources.LabelKeyTelemetryTraceIngest: "true",
-		commonresources.LabelKeyTelemetryTraceExport: "true",
-		commonresources.LabelKeyIstioInject:          "true", // inject istio sidecar
+		commonresources.LabelKeyTelemetryTraceIngest: commonresources.LabelValueTrue,
+		commonresources.LabelKeyTelemetryTraceExport: commonresources.LabelValueTrue,
+		commonresources.LabelKeyIstioInject:          commonresources.LabelValueTrue, // inject istio sidecar
 	}
 
 	return &GatewayApplierDeleter{
