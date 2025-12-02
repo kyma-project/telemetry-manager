@@ -63,8 +63,6 @@ func TestMetricsIstioSamePort(t *testing.T) {
 	resources = append(resources, istiofiedBackend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-
 		for _, resource := range resources {
 			Eventually(func(g Gomega) {
 				key := types.NamespacedName{Name: resource.GetName(), Namespace: resource.GetNamespace()}

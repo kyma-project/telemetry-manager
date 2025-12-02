@@ -62,7 +62,6 @@ func TestAccessLogsOTLP(t *testing.T) {
 	resources = append(resources, traceBackend.K8sObjects()...)
 
 	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(resources...))
 		resetAccessLogsProvider(t) // TODO: Remove this once the bug https://github.com/kyma-project/istio/issues/1481 fixed
 	})
 	require.NoError(t, kitk8s.CreateObjects(t, resources...))

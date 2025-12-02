@@ -13,7 +13,7 @@ import (
 	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -22,6 +22,7 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
@@ -38,12 +39,12 @@ func CreateObjects(t *testing.T, resources ...client.Object) error {
 	t.Cleanup(func() {
 		// Delete created objects after test completion. We dont care for not found errors here.
 		gomega.Expect(DeleteObjectsIgnoringNotFound(resources...)).To(gomega.Succeed())
-		gomega.Eventually(AllObjectsDeleted(resources...)).Should(gomega.Succeed())
+		gomega.Eventually(AllObjectsDeleted(resources...), periodic.EventuallyTimeout).Should(gomega.Succeed())
 	})
 
 	for _, resource := range sortedResources {
 		// Skip object creation if it already exists.
-		if labelMatches(resource.GetLabels(), kitk8sobjects.PersistentLabelName, "true") {
+		if hasPersistentLabel(resource.GetLabels()) {
 			//nolint:errcheck // The value is guaranteed to be of type client.Object.
 			existingResource := reflect.New(reflect.ValueOf(resource).Elem().Type()).Interface().(client.Object)
 			if err := suite.K8sClient.Get(
@@ -77,14 +78,16 @@ func CreateObjects(t *testing.T, resources ...client.Object) error {
 
 func AllObjectsDeleted(resources ...client.Object) error {
 	for _, r := range resources {
-		if labelMatches(r.GetLabels(), kitk8sobjects.PersistentLabelName, "true") {
+		if hasPersistentLabel(r.GetLabels()) {
 			continue
 		}
+
 		err := suite.K8sClient.Get(context.Background(), types.NamespacedName{Name: r.GetName(), Namespace: r.GetNamespace()}, r)
-		if !errors.IsNotFound(err) {
+		if !apierrors.IsNotFound(err) {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -138,7 +141,7 @@ func sortObjects(resources []client.Object) []client.Object {
 func DeleteObjects(resources ...client.Object) error {
 	for _, r := range resources {
 		// Skip object deletion for persistent ones.
-		if labelMatches(r.GetLabels(), kitk8sobjects.PersistentLabelName, "true") {
+		if hasPersistentLabel(r.GetLabels()) {
 			continue
 		}
 
@@ -153,7 +156,7 @@ func DeleteObjects(resources ...client.Object) error {
 func DeleteObjectsIgnoringNotFound(resources ...client.Object) error {
 	for _, r := range resources {
 		// Skip object deletion for persistent ones.
-		if labelMatches(r.GetLabels(), kitk8sobjects.PersistentLabelName, "true") {
+		if hasPersistentLabel(r.GetLabels()) {
 			continue
 		}
 
@@ -229,4 +232,8 @@ func labelMatches(labels kitk8sobjects.Labels, label, value string) bool {
 	}
 
 	return l == value
+}
+
+func hasPersistentLabel(labels kitk8sobjects.Labels) bool {
+	return labelMatches(labels, kitk8sobjects.PersistentLabelName, "true")
 }

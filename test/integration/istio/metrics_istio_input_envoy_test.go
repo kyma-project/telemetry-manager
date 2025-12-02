@@ -50,9 +50,6 @@ func TestMetricsIstioInputEnvoy(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 	resources = append(resources, trafficgen.K8sObjects(app1Ns)...)
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)

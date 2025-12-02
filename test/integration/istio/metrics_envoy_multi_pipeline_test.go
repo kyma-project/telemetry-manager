@@ -58,9 +58,6 @@ func TestMetricsEnvoyMultiPipeline(t *testing.T) {
 	resources = append(resources, trafficgen.K8sObjects(app1Ns)...)
 	resources = append(resources, trafficgen.K8sObjects(app2Ns)...)
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
