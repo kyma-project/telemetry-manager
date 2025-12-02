@@ -81,7 +81,6 @@ func TestExtractLabels(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Cleanup(func() {
-
 		Eventually(func(g Gomega) {
 			g.Expect(suite.K8sClient.Get(context.Background(), kitkyma.TelemetryName, &telemetry)).To(Succeed()) //nolint:usetesting // Remove ctx from Get
 			telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{}

@@ -16,27 +16,29 @@ func newNamespace(name string) *corev1.Namespace {
 	return &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: name}}
 }
 
-func newMetricPipelineAlpha(name string) *telemetryv1alpha1.MetricPipeline {
+const name = "name"
+
+func newMetricPipelineAlpha() *telemetryv1alpha1.MetricPipeline {
 	return &telemetryv1alpha1.MetricPipeline{ObjectMeta: metav1.ObjectMeta{Name: name}}
 }
 
-func newTracePipelineAlpha(name string) *telemetryv1alpha1.TracePipeline {
+func newTracePipelineAlpha() *telemetryv1alpha1.TracePipeline {
 	return &telemetryv1alpha1.TracePipeline{ObjectMeta: metav1.ObjectMeta{Name: name}}
 }
 
-func newLogPipelineAlpha(name string) *telemetryv1alpha1.LogPipeline {
+func newLogPipelineAlpha() *telemetryv1alpha1.LogPipeline {
 	return &telemetryv1alpha1.LogPipeline{ObjectMeta: metav1.ObjectMeta{Name: name}}
 }
 
-func newMetricPipelineBeta(name string) *telemetryv1beta1.MetricPipeline {
+func newMetricPipelineBeta() *telemetryv1beta1.MetricPipeline {
 	return &telemetryv1beta1.MetricPipeline{ObjectMeta: metav1.ObjectMeta{Name: name}}
 }
 
-func newTracePipelineBeta(name string) *telemetryv1beta1.TracePipeline {
+func newTracePipelineBeta() *telemetryv1beta1.TracePipeline {
 	return &telemetryv1beta1.TracePipeline{ObjectMeta: metav1.ObjectMeta{Name: name}}
 }
 
-func newLogPipelineBeta(name string) *telemetryv1beta1.LogPipeline {
+func newLogPipelineBeta() *telemetryv1beta1.LogPipeline {
 	return &telemetryv1beta1.LogPipeline{ObjectMeta: metav1.ObjectMeta{Name: name}}
 }
 
@@ -53,20 +55,20 @@ func Test_sortObjects(t *testing.T) {
 		{
 			name: "namespaces first, pipelines last, mixed types",
 			input: []client.Object{
-				newMetricPipelineAlpha("mpa"),
+				newMetricPipelineAlpha(),
 				newConfigMap("cfg"),
 				newNamespace("ns"),
-				newMetricPipelineBeta("mpb"),
-				newTracePipelineAlpha("tpa"),
-				newLogPipelineBeta("lpb"),
+				newMetricPipelineBeta(),
+				newTracePipelineAlpha(),
+				newLogPipelineBeta(),
 			},
 			want: []client.Object{
 				newNamespace("ns"),
 				newConfigMap("cfg"),
-				newMetricPipelineAlpha("mpa"),
-				newMetricPipelineBeta("mpb"),
-				newTracePipelineAlpha("tpa"),
-				newLogPipelineBeta("lpb"),
+				newMetricPipelineAlpha(),
+				newMetricPipelineBeta(),
+				newTracePipelineAlpha(),
+				newLogPipelineBeta(),
 			},
 		},
 		{
@@ -83,14 +85,14 @@ func Test_sortObjects(t *testing.T) {
 		{
 			name: "only pipelines",
 			input: []client.Object{
-				newMetricPipelineAlpha("mpa"),
-				newLogPipelineAlpha("lpa"),
-				newTracePipelineBeta("tpb"),
+				newMetricPipelineAlpha(),
+				newLogPipelineAlpha(),
+				newTracePipelineBeta(),
 			},
 			want: []client.Object{
-				newMetricPipelineAlpha("mpa"),
-				newLogPipelineAlpha("lpa"),
-				newTracePipelineBeta("tpb"),
+				newMetricPipelineAlpha(),
+				newLogPipelineAlpha(),
+				newTracePipelineBeta(),
 			},
 		},
 		{
