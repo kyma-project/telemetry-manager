@@ -1,7 +1,6 @@
 package fluentbit
 
 import (
-	"context"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -44,6 +43,8 @@ func TestCustomClusterName(t *testing.T) {
 		WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 		Build()
 
+	kitk8s.PreserveAndScheduleRestoreOfTelemetryResource(t, kitkyma.TelemetryName)
+
 	Eventually(func(g Gomega) {
 		g.Expect(suite.K8sClient.Get(t.Context(), kitkyma.TelemetryName, &telemetry)).NotTo(HaveOccurred())
 		telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{
@@ -63,13 +64,6 @@ func TestCustomClusterName(t *testing.T) {
 	}
 	resources = append(resources, backend.K8sObjects()...)
 
-	t.Cleanup(func() {
-		Eventually(func(g Gomega) {
-			g.Expect(suite.K8sClient.Get(context.Background(), kitkyma.TelemetryName, &telemetry)).Should(Succeed()) //nolint:usetesting // Remove ctx from Get
-			telemetry.Spec.Enrichments.Cluster = &operatorv1alpha1.Cluster{}
-			g.Expect(suite.K8sClient.Update(context.Background(), &telemetry)).To(Succeed()) //nolint:usetesting // Remove ctx from Update
-		}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
 	assert.BackendReachable(t, backend)

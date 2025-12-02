@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -14,7 +13,6 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -59,15 +57,6 @@ func TestMetricsOTLPInput(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 	resources = append(resources, istiofiedBackend.K8sObjects()...)
 
-	t.Cleanup(func() {
-		for _, resource := range resources {
-			Eventually(func(g Gomega) {
-				key := types.NamespacedName{Name: resource.GetName(), Namespace: resource.GetNamespace()}
-				err := suite.K8sClient.Get(suite.Ctx, key, resource)
-				g.Expect(err == nil).To(BeFalse())
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
-		}
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.DeploymentReady(t, kitkyma.MetricGatewayName)

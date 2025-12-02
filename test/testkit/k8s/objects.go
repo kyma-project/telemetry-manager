@@ -18,6 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -236,4 +237,26 @@ func labelMatches(labels kitk8sobjects.Labels, label, value string) bool {
 
 func hasPersistentLabel(labels kitk8sobjects.Labels) bool {
 	return labelMatches(labels, kitk8sobjects.PersistentLabelName, "true")
+}
+
+func ResetTelemetryResource(t *testing.T, previous operatorv1alpha1.Telemetry) {
+	t.Helper()
+	gomega.Eventually(func(g gomega.Gomega) {
+		var current operatorv1alpha1.Telemetry
+		g.Expect(suite.K8sClient.Get(t.Context(), types.NamespacedName{Namespace: previous.Namespace, Name: previous.Name}, &current)).NotTo(gomega.HaveOccurred())
+		current.Spec = previous.Spec
+		current.Labels = previous.Labels
+		current.Annotations = previous.Annotations
+		g.Expect(suite.K8sClient.Update(t.Context(), &current)).NotTo(gomega.HaveOccurred(), "should reset Telemetry resource to previous state")
+	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(gomega.Succeed())
+}
+
+func PreserveAndScheduleRestoreOfTelemetryResource(t *testing.T, key types.NamespacedName) {
+	t.Helper()
+
+	var previous operatorv1alpha1.Telemetry
+	gomega.Expect(suite.K8sClient.Get(t.Context(), key, &previous)).NotTo(gomega.HaveOccurred())
+	t.Cleanup(func() {
+		ResetTelemetryResource(t, previous)
+	})
 }

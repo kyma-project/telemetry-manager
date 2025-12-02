@@ -1,7 +1,6 @@
 package traces
 
 import (
-	"context"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -61,6 +60,8 @@ func TestExtractLabels(t *testing.T) {
 		labelKeyShouldNotMatch: labelValueShouldNotMatch,
 	}
 
+	kitk8s.PreserveAndScheduleRestoreOfTelemetryResource(t, kitkyma.TelemetryName)
+
 	Eventually(func(g Gomega) {
 		g.Expect(suite.K8sClient.Get(t.Context(), kitkyma.TelemetryName, &telemetry)).NotTo(HaveOccurred())
 		telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{
@@ -80,13 +81,6 @@ func TestExtractLabels(t *testing.T) {
 	}
 	resources = append(resources, backend.K8sObjects()...)
 
-	t.Cleanup(func() {
-		Eventually(func(g Gomega) {
-			g.Expect(suite.K8sClient.Get(context.Background(), kitkyma.TelemetryName, &telemetry)).To(Succeed()) //nolint:usetesting // Remove ctx from Get
-			telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{}
-			g.Expect(suite.K8sClient.Update(context.Background(), &telemetry)).To(Succeed()) //nolint:usetesting // Remove ctx from Update
-		}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
