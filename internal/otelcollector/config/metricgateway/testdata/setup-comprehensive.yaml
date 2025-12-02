@@ -13,7 +13,7 @@ service:
                 - forward/enrichment
             processors:
                 - filter/cls-filter-by-namespace-otlp-input
-                - resource/drop-kyma-attributes
+                - transform/drop-kyma-attributes
                 - transform/user-defined-cls
                 - filter/user-defined-cls
                 - batch
@@ -24,7 +24,7 @@ service:
                 - forward/enrichment
             processors:
                 - filter/dynatrace-filter-by-namespace-otlp-input
-                - resource/drop-kyma-attributes
+                - transform/drop-kyma-attributes
                 - transform/user-defined-dynatrace
                 - filter/user-defined-dynatrace
                 - batch
@@ -164,10 +164,6 @@ processors:
         check_interval: 1s
         limit_percentage: 75
         spike_limit_percentage: 15
-    resource/drop-kyma-attributes:
-        attributes:
-            - action: delete
-              pattern: kyma.*
     resource/set-kyma-input-name-kyma:
         attributes:
             - action: insert
@@ -182,6 +178,11 @@ processors:
         resource_attributes:
             - kyma.kubernetes_io_app_name
             - kyma.app_name
+    transform/drop-kyma-attributes:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - delete_matching_keys(resource.attributes, "kyma.*")
     transform/insert-cluster-attributes:
         error_mode: ignore
         metric_statements:

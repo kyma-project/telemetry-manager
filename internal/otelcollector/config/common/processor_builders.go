@@ -108,18 +108,6 @@ func extractPodLabels(enrichments *operatorv1alpha1.EnrichmentSpec) []ExtractLab
 // RESOURCE PROCESSOR BUILDERS
 // =============================================================================
 
-// DropKymaAttributesProcessorConfig creates a resource processor that drops Kyma attributes
-func DropKymaAttributesProcessorConfig() *ResourceProcessor {
-	return &ResourceProcessor{
-		Attributes: []AttributeAction{
-			{
-				Action:       AttributeActionDelete,
-				RegexPattern: "kyma.*",
-			},
-		},
-	}
-}
-
 // ResolveServiceNameConfig creates a service enrichment processor configuration
 func ResolveServiceNameConfig() *ServiceEnrichmentProcessor {
 	return &ServiceEnrichmentProcessor{
@@ -259,6 +247,15 @@ func InsertClusterAttributesProcessorStatements(clusterName, clusterUID, cloudPr
 
 	return []TransformProcessorStatements{{
 		Statements: statements,
+	}}
+}
+
+// DropKymaAttributesProcessorStatements creates processor statements for the transform processor that drops Kyma attributes
+func DropKymaAttributesProcessorStatements() []TransformProcessorStatements {
+	return []TransformProcessorStatements{{
+		Statements: []string{
+			"delete_matching_keys(resource.attributes, \"kyma.*\")",
+		},
 	}}
 }
 

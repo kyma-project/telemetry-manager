@@ -118,7 +118,7 @@ const (
 	ComponentIDSetInstrumentationScopeRuntimeProcessor = "transform/set-instrumentation-scope-runtime"
 	ComponentIDUserDefinedTransformProcessor           = "transform/user-defined-%s" // dynamically filled with pipeline name
 	ComponentIDInsertClusterAttributesProcessor        = "transform/insert-cluster-attributes"
-	ComponentIDDropKymaAttributesProcessor             = "resource/drop-kyma-attributes"
+	ComponentIDDropKymaAttributesProcessor             = "transform/drop-kyma-attributes"
 
 	ComponentIDSetKymaInputNameRuntimeProcessor    ComponentID = "resource/set-kyma-input-name-runtime"
 	ComponentIDSetKymaInputNameIstioProcessor      ComponentID = "resource/set-kyma-input-name-istio"

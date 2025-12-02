@@ -17,7 +17,7 @@ service:
                 - k8sattributes
                 - transform/insert-cluster-attributes
                 - service_enrichment
-                - resource/drop-kyma-attributes
+                - transform/drop-kyma-attributes
             exporters:
                 - otlphttp/test
     telemetry:
@@ -200,14 +200,15 @@ processors:
         check_interval: 5s
         limit_percentage: 80
         spike_limit_percentage: 25
-    resource/drop-kyma-attributes:
-        attributes:
-            - action: delete
-              pattern: kyma.*
     service_enrichment:
         resource_attributes:
             - kyma.kubernetes_io_app_name
             - kyma.app_name
+    transform/drop-kyma-attributes:
+        error_mode: ignore
+        log_statements:
+            - statements:
+                - delete_matching_keys(resource.attributes, "kyma.*")
     transform/insert-cluster-attributes:
         error_mode: ignore
         log_statements:

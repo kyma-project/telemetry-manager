@@ -133,7 +133,8 @@ func (b *Builder) addDropKymaAttributesProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDDropKymaAttributesProcessor),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
-			return common.DropKymaAttributesProcessorConfig()
+			transformStatements := common.DropKymaAttributesProcessorStatements()
+			return common.LogTransformProcessorConfig(transformStatements)
 		},
 	)
 }

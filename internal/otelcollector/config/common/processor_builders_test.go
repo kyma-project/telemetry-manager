@@ -9,7 +9,7 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 )
 
-func TestInsertClusterAttributesProcessorConfig(t *testing.T) {
+func TestInsertClusterAttributesProcessorStatements(t *testing.T) {
 	require := require.New(t)
 
 	expectedProcessorStatements := []TransformProcessorStatements{{
@@ -25,7 +25,7 @@ func TestInsertClusterAttributesProcessorConfig(t *testing.T) {
 	require.ElementsMatch(expectedProcessorStatements, processorStatements, "Attributes should match")
 }
 
-func TestInsertClusterAttributesProcessorConfigWithEmptyValues(t *testing.T) {
+func TestInsertClusterAttributesProcessorStatementsWithEmptyValues(t *testing.T) {
 	require := require.New(t)
 
 	expectedProcessorStatements := []TransformProcessorStatements{{
@@ -40,19 +40,18 @@ func TestInsertClusterAttributesProcessorConfigWithEmptyValues(t *testing.T) {
 	require.ElementsMatch(expectedProcessorStatements, processorStatements, "Attributes should match")
 }
 
-func TestDropKymaAttributesProcessorConfig(t *testing.T) {
+func TestDropKymaAttributesProcessorStatements(t *testing.T) {
 	require := require.New(t)
 
-	expectedAttributeActions := []AttributeAction{
-		{
-			Action:       AttributeActionDelete,
-			RegexPattern: "kyma.*",
+	expectedProcessorStatements := []TransformProcessorStatements{{
+		Statements: []string{
+			"delete_matching_keys(resource.attributes, \"kyma.*\")",
 		},
-	}
+	}}
 
-	config := DropKymaAttributesProcessorConfig()
+	processorStatements := DropKymaAttributesProcessorStatements()
 
-	require.ElementsMatch(expectedAttributeActions, config.Attributes, "Attributes should match")
+	require.ElementsMatch(expectedProcessorStatements, processorStatements, "Attributes should match")
 }
 
 func TestTransformedInstrumentationScope(t *testing.T) {

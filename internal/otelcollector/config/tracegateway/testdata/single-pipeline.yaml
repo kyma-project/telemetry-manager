@@ -14,7 +14,7 @@ service:
                 - istio_noise_filter
                 - transform/insert-cluster-attributes
                 - service_enrichment
-                - resource/drop-kyma-attributes
+                - transform/drop-kyma-attributes
                 - batch
             exporters:
                 - otlp/test
@@ -90,14 +90,15 @@ processors:
         check_interval: 1s
         limit_percentage: 75
         spike_limit_percentage: 15
-    resource/drop-kyma-attributes:
-        attributes:
-            - action: delete
-              pattern: kyma.*
     service_enrichment:
         resource_attributes:
             - kyma.kubernetes_io_app_name
             - kyma.app_name
+    transform/drop-kyma-attributes:
+        error_mode: ignore
+        trace_statements:
+            - statements:
+                - delete_matching_keys(resource.attributes, "kyma.*")
     transform/insert-cluster-attributes:
         error_mode: ignore
         trace_statements:
