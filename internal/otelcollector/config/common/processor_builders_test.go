@@ -9,30 +9,35 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 )
 
-func TestInsertClusterNameProcessorConfig(t *testing.T) {
+func TestInsertClusterAttributesProcessorConfig(t *testing.T) {
 	require := require.New(t)
 
-	expectedAttributeActions := []AttributeAction{
-		{
-			Action: AttributeActionInsert,
-			Key:    "k8s.cluster.name",
-			Value:  "test-cluster",
+	expectedProcessorStatements := []TransformProcessorStatements{{
+		Statements: []string{
+			"set(resource.attributes[\"k8s.cluster.name\"], \"test-cluster\")",
+			"set(resource.attributes[\"k8s.cluster.uid\"], \"test-cluster-uid\")",
+			"set(resource.attributes[\"cloud.provider\"], \"test-cloud-provider\")",
 		},
-		{
-			Action: AttributeActionInsert,
-			Key:    "k8s.cluster.uid",
-			Value:  "test-cluster-uid",
-		},
-		{
-			Action: AttributeActionInsert,
-			Key:    "cloud.provider",
-			Value:  "test-cloud-provider",
-		},
-	}
+	}}
 
-	config := InsertClusterAttributesProcessorConfig("test-cluster", "test-cluster-uid", "test-cloud-provider")
+	processorStatements := InsertClusterAttributesProcessorStatements("test-cluster", "test-cluster-uid", "test-cloud-provider")
 
-	require.ElementsMatch(expectedAttributeActions, config.Attributes, "Attributes should match")
+	require.ElementsMatch(expectedProcessorStatements, processorStatements, "Attributes should match")
+}
+
+func TestInsertClusterAttributesProcessorConfigWithEmptyValues(t *testing.T) {
+	require := require.New(t)
+
+	expectedProcessorStatements := []TransformProcessorStatements{{
+		Statements: []string{
+			"set(resource.attributes[\"k8s.cluster.name\"], \"\")",
+			"set(resource.attributes[\"k8s.cluster.uid\"], \"\")",
+		},
+	}}
+
+	processorStatements := InsertClusterAttributesProcessorStatements("", "", "")
+
+	require.ElementsMatch(expectedProcessorStatements, processorStatements, "Attributes should match")
 }
 
 func TestDropKymaAttributesProcessorConfig(t *testing.T) {

@@ -112,9 +112,8 @@ func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildCo
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDInsertClusterAttributesProcessor),
 		func(tp *telemetryv1alpha1.TracePipeline) any {
-			return common.InsertClusterAttributesProcessorConfig(
-				opts.ClusterName, opts.ClusterUID, opts.CloudProvider,
-			)
+			transformStatements := common.InsertClusterAttributesProcessorStatements(opts.ClusterName, opts.ClusterUID, opts.CloudProvider)
+			return common.TraceTransformProcessorConfig(transformStatements)
 		},
 	)
 }
@@ -147,9 +146,7 @@ func (b *Builder) addUserDefinedTransformProcessor() buildComponentFunc {
 			}
 
 			transformStatements := common.TransformSpecsToProcessorStatements(tp.Spec.Transforms)
-			transformProcessor := common.TraceTransformProcessorConfig(transformStatements)
-
-			return transformProcessor
+			return common.TraceTransformProcessorConfig(transformStatements)
 		},
 	)
 }

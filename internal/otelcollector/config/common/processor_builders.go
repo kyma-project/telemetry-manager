@@ -108,46 +108,6 @@ func extractPodLabels(enrichments *operatorv1alpha1.EnrichmentSpec) []ExtractLab
 // RESOURCE PROCESSOR BUILDERS
 // =============================================================================
 
-// InsertClusterAttributesProcessorConfig creates a resource processor that inserts cluster attributes
-func InsertClusterAttributesProcessorConfig(clusterName, clusterUID, cloudProvider string) *ResourceProcessor {
-	if cloudProvider != "" {
-		return &ResourceProcessor{
-			Attributes: []AttributeAction{
-				{
-					Action: AttributeActionInsert,
-					Key:    "k8s.cluster.name",
-					Value:  clusterName,
-				},
-				{
-					Action: AttributeActionInsert,
-					Key:    "k8s.cluster.uid",
-					Value:  clusterUID,
-				},
-				{
-					Action: AttributeActionInsert,
-					Key:    "cloud.provider",
-					Value:  cloudProvider,
-				},
-			},
-		}
-	}
-
-	return &ResourceProcessor{
-		Attributes: []AttributeAction{
-			{
-				Action: AttributeActionInsert,
-				Key:    "k8s.cluster.name",
-				Value:  clusterName,
-			},
-			{
-				Action: AttributeActionInsert,
-				Key:    "k8s.cluster.uid",
-				Value:  clusterUID,
-			},
-		},
-	}
-}
-
 // DropKymaAttributesProcessorConfig creates a resource processor that drops Kyma attributes
 func DropKymaAttributesProcessorConfig() *ResourceProcessor {
 	return &ResourceProcessor{
@@ -283,6 +243,23 @@ func TransformSpecsToProcessorStatements(specs []telemetryv1alpha1.TransformSpec
 	}
 
 	return result
+}
+
+// InsertClusterAttributesProcessorStatements creates processor statements for the transform processor that inserts cluster attributes
+func InsertClusterAttributesProcessorStatements(clusterName, clusterUID, cloudProvider string) []TransformProcessorStatements {
+	statements := []string{
+		fmt.Sprintf("set(resource.attributes[\"k8s.cluster.name\"], \"%s\")", clusterName),
+		fmt.Sprintf("set(resource.attributes[\"k8s.cluster.uid\"], \"%s\")", clusterUID),
+	}
+
+	if cloudProvider != "" {
+		statements = append(statements,
+			fmt.Sprintf("set(resource.attributes[\"cloud.provider\"], \"%s\")", cloudProvider))
+	}
+
+	return []TransformProcessorStatements{{
+		Statements: statements,
+	}}
 }
 
 // InstrumentationScopeProcessorConfig creates a transform processor for instrumentation scope
