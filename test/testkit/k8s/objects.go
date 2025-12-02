@@ -243,11 +243,11 @@ func ResetTelemetryResource(t *testing.T, previous operatorv1alpha1.Telemetry) {
 	t.Helper()
 	gomega.Eventually(func(g gomega.Gomega) {
 		var current operatorv1alpha1.Telemetry
-		g.Expect(suite.K8sClient.Get(t.Context(), types.NamespacedName{Namespace: previous.Namespace, Name: previous.Name}, &current)).NotTo(gomega.HaveOccurred())
+		g.Expect(suite.K8sClient.Get(context.Background(), types.NamespacedName{Namespace: previous.Namespace, Name: previous.Name}, &current)).NotTo(gomega.HaveOccurred())
 		current.Spec = previous.Spec
 		current.Labels = previous.Labels
 		current.Annotations = previous.Annotations
-		g.Expect(suite.K8sClient.Update(t.Context(), &current)).NotTo(gomega.HaveOccurred(), "should reset Telemetry resource to previous state")
+		g.Expect(suite.K8sClient.Update(context.Background(), &current)).NotTo(gomega.HaveOccurred(), "should reset Telemetry resource to previous state")
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(gomega.Succeed())
 }
 
