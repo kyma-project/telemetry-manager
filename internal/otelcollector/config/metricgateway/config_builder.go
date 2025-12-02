@@ -294,6 +294,7 @@ func (b *Builder) addUserDefinedTransformProcessor() buildComponentFunc {
 			}
 
 			transformStatements := common.TransformSpecsToProcessorStatements(mp.Spec.Transforms)
+
 			return common.MetricTransformProcessorConfig(transformStatements)
 		},
 	)

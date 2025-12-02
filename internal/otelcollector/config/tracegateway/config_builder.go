@@ -146,6 +146,7 @@ func (b *Builder) addUserDefinedTransformProcessor() buildComponentFunc {
 			}
 
 			transformStatements := common.TransformSpecsToProcessorStatements(tp.Spec.Transforms)
+
 			return common.TraceTransformProcessorConfig(transformStatements)
 		},
 	)

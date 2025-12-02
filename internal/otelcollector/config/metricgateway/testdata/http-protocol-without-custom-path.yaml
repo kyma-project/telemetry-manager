@@ -16,7 +16,7 @@ service:
                 - transform/set-instrumentation-scope-kyma
                 - k8sattributes
                 - service_enrichment
-                - resource/insert-cluster-attributes
+                - transform/insert-cluster-attributes
             exporters:
                 - forward/enrichment
         metrics/input-kyma-stats:
@@ -134,16 +134,6 @@ processors:
         attributes:
             - action: delete
               pattern: kyma.*
-    resource/insert-cluster-attributes:
-        attributes:
-            - action: insert
-              key: k8s.cluster.name
-              value: ${KUBERNETES_SERVICE_HOST}
-            - action: insert
-              key: k8s.cluster.uid
-            - action: insert
-              key: cloud.provider
-              value: test-cloud-provider
     resource/set-kyma-input-name-kyma:
         attributes:
             - action: insert
@@ -158,6 +148,13 @@ processors:
         resource_attributes:
             - kyma.kubernetes_io_app_name
             - kyma.app_name
+    transform/insert-cluster-attributes:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(resource.attributes["k8s.cluster.name"], "${KUBERNETES_SERVICE_HOST}")
+                - set(resource.attributes["k8s.cluster.uid"], "")
+                - set(resource.attributes["cloud.provider"], "test-cloud-provider")
     transform/set-instrumentation-scope-kyma:
         error_mode: ignore
         metric_statements:

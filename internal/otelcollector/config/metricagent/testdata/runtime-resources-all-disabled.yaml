@@ -43,7 +43,7 @@ service:
                 - filter/drop-runtime-statefulset-metrics
                 - filter/drop-runtime-job-metrics
                 - filter/drop-envoy-metrics-if-disabled
-                - resource/insert-cluster-attributes
+                - transform/insert-cluster-attributes
                 - resource/drop-skip-enrichment-attribute
                 - resource/drop-kyma-attributes
                 - batch
@@ -282,12 +282,6 @@ processors:
         attributes:
             - action: delete
               key: io.kyma-project.telemetry.skip_enrichment
-    resource/insert-cluster-attributes:
-        attributes:
-            - action: insert
-              key: k8s.cluster.name
-            - action: insert
-              key: k8s.cluster.uid
     resource/set-kyma-input-name-runtime:
         attributes:
             - action: insert
@@ -297,6 +291,12 @@ processors:
         resource_attributes:
             - kyma.kubernetes_io_app_name
             - kyma.app_name
+    transform/insert-cluster-attributes:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(resource.attributes["k8s.cluster.name"], "")
+                - set(resource.attributes["k8s.cluster.uid"], "")
     transform/insert-skip-enrichment-attribute:
         error_mode: ignore
         metric_statements:

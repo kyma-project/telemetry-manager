@@ -13,7 +13,7 @@ service:
                 - transform/set-observed-time-if-zero
                 - k8sattributes
                 - istio_noise_filter
-                - resource/insert-cluster-attributes
+                - transform/insert-cluster-attributes
                 - service_enrichment
                 - resource/drop-kyma-attributes
                 - istio_enrichment
@@ -29,7 +29,7 @@ service:
                 - transform/set-observed-time-if-zero
                 - k8sattributes
                 - istio_noise_filter
-                - resource/insert-cluster-attributes
+                - transform/insert-cluster-attributes
                 - service_enrichment
                 - resource/drop-kyma-attributes
                 - istio_enrichment
@@ -125,20 +125,17 @@ processors:
         attributes:
             - action: delete
               pattern: kyma.*
-    resource/insert-cluster-attributes:
-        attributes:
-            - action: insert
-              key: k8s.cluster.name
-              value: ${KUBERNETES_SERVICE_HOST}
-            - action: insert
-              key: k8s.cluster.uid
-            - action: insert
-              key: cloud.provider
-              value: test-cloud-provider
     service_enrichment:
         resource_attributes:
             - kyma.kubernetes_io_app_name
             - kyma.app_name
+    transform/insert-cluster-attributes:
+        error_mode: ignore
+        log_statements:
+            - statements:
+                - set(resource.attributes["k8s.cluster.name"], "${KUBERNETES_SERVICE_HOST}")
+                - set(resource.attributes["k8s.cluster.uid"], "")
+                - set(resource.attributes["cloud.provider"], "test-cloud-provider")
     transform/set-observed-time-if-zero:
         error_mode: ignore
         log_statements:

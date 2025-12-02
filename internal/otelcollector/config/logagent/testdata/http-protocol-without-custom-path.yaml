@@ -15,7 +15,7 @@ service:
                 - memory_limiter
                 - transform/set-instrumentation-scope-runtime
                 - k8sattributes
-                - resource/insert-cluster-attributes
+                - transform/insert-cluster-attributes
                 - service_enrichment
                 - resource/drop-kyma-attributes
             exporters:
@@ -204,20 +204,17 @@ processors:
         attributes:
             - action: delete
               pattern: kyma.*
-    resource/insert-cluster-attributes:
-        attributes:
-            - action: insert
-              key: k8s.cluster.name
-              value: test-cluster
-            - action: insert
-              key: k8s.cluster.uid
-            - action: insert
-              key: cloud.provider
-              value: azure
     service_enrichment:
         resource_attributes:
             - kyma.kubernetes_io_app_name
             - kyma.app_name
+    transform/insert-cluster-attributes:
+        error_mode: ignore
+        log_statements:
+            - statements:
+                - set(resource.attributes["k8s.cluster.name"], "test-cluster")
+                - set(resource.attributes["k8s.cluster.uid"], "")
+                - set(resource.attributes["cloud.provider"], "azure")
     transform/set-instrumentation-scope-runtime:
         error_mode: ignore
         log_statements:
