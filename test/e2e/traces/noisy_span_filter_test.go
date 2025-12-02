@@ -146,9 +146,6 @@ func TestNoisyFilters(t *testing.T) {
 		traceServiceInternalSpansGen,
 	)
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)

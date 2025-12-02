@@ -119,9 +119,6 @@ func TestRuntimeInput(t *testing.T) {
 	resources = append(resources, backendC.K8sObjects()...)
 	resources = append(resources, createPodsWithVolume(pvName, pvcName, podMountingPVCName, podMountingEmptyDirName, genNs)...)
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	t.Log("Resources should exist and be operational")

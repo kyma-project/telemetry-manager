@@ -49,10 +49,6 @@ func TestEndpointInvalid_OTel(t *testing.T) {
 		&pipelineInvalidEndpointValue,
 	}
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resourcesToSucceedCreation...)).To(Succeed())
-	})
-
 	Expect(kitk8s.CreateObjects(t, resourcesToSucceedCreation...)).To(Succeed())
 
 	assert.LogPipelineHasCondition(t, pipelineNameValueFromSecret, metav1.Condition{

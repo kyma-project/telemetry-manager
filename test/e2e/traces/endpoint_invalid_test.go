@@ -73,9 +73,6 @@ func TestEndpointInvalid(t *testing.T) {
 		&pipelineInvalidPortHTTP,
 	}
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	for _, pipelineName := range []string{

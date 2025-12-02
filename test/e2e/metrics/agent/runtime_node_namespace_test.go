@@ -72,9 +72,6 @@ func TestRuntimeNodeNamespace(t *testing.T) {
 	resources = append(resources, includeBacked.K8sObjects()...)
 	resources = append(resources, excludeBackend.K8sObjects()...)
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, includeBacked)

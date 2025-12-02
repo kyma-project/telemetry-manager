@@ -58,9 +58,6 @@ func TestTelemetry(t *testing.T) {
 
 	resources = append(resources, backend.K8sObjects()...)
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	Eventually(func(g Gomega) {
@@ -104,9 +101,7 @@ func TestTelemetryWarning(t *testing.T) {
 		&misconfiguredTracePipeline,
 	}
 	t.Logf("pipeline: %s", misconfiguredTracePipeline.Name)
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
+
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	// assert for misconfigured trace pipeline we have correct telemetry state and condition

@@ -50,9 +50,6 @@ func TestResources(t *testing.T) {
 		WithOTLPOutput(testutils.OTLPEndpointFromSecret(secret.Name(), secret.Namespace(), endpointKey)).
 		Build()
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(&pipeline)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, &pipeline, secret.K8sObject())).To(Succeed())
 
 	assert.ResourcesExist(t, gatewayResources...)

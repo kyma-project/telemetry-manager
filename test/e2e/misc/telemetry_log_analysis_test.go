@@ -99,11 +99,6 @@ func TestTelemetryLogs(t *testing.T) {
 	resources = append(resources, fluentBitLogBackend.K8sObjects()...)
 	resources = append(resources, logBackend.K8sObjects()...)
 
-	t.Cleanup(func() {
-		if !t.Failed() {
-			Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-		}
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.DeploymentReady(t, kitkyma.MetricGatewayName)

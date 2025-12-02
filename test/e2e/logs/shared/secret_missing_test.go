@@ -123,9 +123,6 @@ func TestSecretMissing_FluentBit(t *testing.T) {
 		&pipeline,
 	}
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
