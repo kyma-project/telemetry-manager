@@ -308,7 +308,7 @@ func TestOTTLSpecValidation(t *testing.T) {
 				))),
 			condStatus:  metav1.ConditionFalse,
 			condReason:  conditions.ReasonOTTLSpecInvalid,
-			condMessage: "Invalid TransformSpec: error while parsing statements",
+			condMessage: "OTTL specification is invalid, invalid TransformSpec: error while parsing statements. Fix the syntax error indicated by the message or see troubleshooting: " + conditions.LinkOTTLSpecInvalid,
 		},
 		{
 			name: "invalid filter spec",
@@ -320,7 +320,7 @@ func TestOTTLSpecValidation(t *testing.T) {
 				))),
 			condStatus:  metav1.ConditionFalse,
 			condReason:  conditions.ReasonOTTLSpecInvalid,
-			condMessage: "Invalid FilterSpec: error while parsing conditions",
+			condMessage: "OTTL specification is invalid, invalid FilterSpec: error while parsing conditions. Fix the syntax error indicated by the message or see troubleshooting: " + conditions.LinkOTTLSpecInvalid,
 		},
 	}
 
