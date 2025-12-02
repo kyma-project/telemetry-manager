@@ -230,10 +230,6 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 
 			resources := []client.Object{&tc.pipeline}
 
-			t.Cleanup(func() {
-				Expect(kitk8s.DeleteObjects(resources...)).Should(MatchError(ContainSubstring("not found")))
-			})
-
 			err := kitk8s.CreateObjects(t, resources...)
 
 			Expect(err).ShouldNot(Succeed(), "unexpected success for pipeline '%s', this test expects an error", tc.pipeline.Name)

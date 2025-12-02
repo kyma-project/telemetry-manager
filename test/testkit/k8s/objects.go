@@ -13,6 +13,7 @@ import (
 	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -37,6 +38,7 @@ func CreateObjects(t *testing.T, resources ...client.Object) error {
 	t.Cleanup(func() {
 		// Delete created objects after test completion. We dont care for not found errors here.
 		gomega.Expect(DeleteObjectsIgnoringNotFound(resources...)).To(gomega.Succeed())
+		gomega.Eventually(AllObjectsDeleted(resources...)).Should(gomega.Succeed())
 	})
 
 	for _, resource := range sortedResources {
@@ -70,6 +72,19 @@ func CreateObjects(t *testing.T, resources ...client.Object) error {
 		}
 	}
 
+	return nil
+}
+
+func AllObjectsDeleted(resources ...client.Object) error {
+	for _, r := range resources {
+		if labelMatches(r.GetLabels(), kitk8sobjects.PersistentLabelName, "true") {
+			continue
+		}
+		err := suite.K8sClient.Get(context.Background(), types.NamespacedName{Name: r.GetName(), Namespace: r.GetNamespace()}, r)
+		if !errors.IsNotFound(err) {
+			return err
+		}
+	}
 	return nil
 }
 

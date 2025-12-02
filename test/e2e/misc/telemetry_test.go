@@ -134,9 +134,6 @@ func TestTelemetryDeletionBlocking(t *testing.T) {
 	}
 	resources = append(resources, logBackend.K8sObjects()...)
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).Should(MatchError(ContainSubstring("not found")))
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	var telemetry operatorv1alpha1.Telemetry
