@@ -83,11 +83,6 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	}
 	resources = append(resources, backend.K8sObjects()...)
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(pipelines[2:]...)).To(Succeed())
-		Expect(kitk8s.DeleteObjects(&additionalFBPipeline)).To(Succeed())
-		Expect(kitk8s.DeleteObjects(&additionalOTelPipeline)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 	Expect(kitk8s.CreateObjects(t, pipelines...)).To(Succeed())
 

@@ -99,10 +99,6 @@ func TestEndpointInvalid_FluentBit(t *testing.T) {
 		&pipelineInvalidEndpointValue,
 	}
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resourcesInvalidEndpointValueFrom...)).To(Succeed())
-		Expect(kitk8s.DeleteObjects(resourcesInvalidEndpointValue...)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resourcesInvalidEndpointValueFrom...)).To(Succeed())
 	Expect(kitk8s.CreateObjects(t, resourcesInvalidEndpointValue...)).To(Succeed())
 
