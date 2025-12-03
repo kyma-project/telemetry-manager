@@ -7,12 +7,14 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	slicesutils "github.com/kyma-project/telemetry-manager/internal/utils/slices"
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func ValidateFilterTransform(signalType ottl.SignalType, filterSpec []telemetryv1beta1.FilterSpec, transformSpec []telemetryv1beta1.TransformSpec) error {
 	filterValidator, err := ottl.NewFilterSpecValidator(signalType)
 	if err != nil {
-		return fmt.Errorf("failed to instantiate FilterSpecValidator %w", err)
+		logf.Log.V(1).Error(err, "Failed to instantiate FilterSpec validator")
+		return fmt.Errorf("failed to create pipeline")
 	}
 
 	for _, filter := range filterSpec {
@@ -24,7 +26,8 @@ func ValidateFilterTransform(signalType ottl.SignalType, filterSpec []telemetryv
 
 	transformValidator, err := ottl.NewTransformSpecValidator(signalType)
 	if err != nil {
-		return fmt.Errorf("failed to instantiate TransformSpecValidator %w", err)
+		logf.Log.V(1).Error(err, "Failed to instantiate TransformSpec validator")
+		return fmt.Errorf("failed to create pipeline")
 	}
 
 	for _, transform := range transformSpec {
