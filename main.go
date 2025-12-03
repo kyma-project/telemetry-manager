@@ -20,11 +20,13 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"time"
 
 	"github.com/caarlos0/env/v11"
 	"github.com/go-logr/zapr"
+	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -125,10 +127,18 @@ func init() {
 }
 
 func main() {
+	zapLogger, err := setupSetupLog()
+	if err != nil {
+		log.Panicf("failed to setup zap logger: %v", err)
+	}
+
 	if err := run(); err != nil {
 		setupLog.Error(err, "Manager exited with error")
+		zapLogger.Sync() //nolint:errcheck // if flusing logs fails there is nothing else	we can do
 		os.Exit(1)
 	}
+
+	zapLogger.Sync() //nolint:errcheck // if flusing logs fails there is nothing else	we can do
 }
 
 func run() error {
@@ -140,16 +150,6 @@ func run() error {
 		return fmt.Errorf("failed to parse environment variables: %w", err)
 	}
 
-	overrides.AtomicLevel().SetLevel(zapcore.InfoLevel)
-
-	zapLogger, err := loggerutils.New(overrides.AtomicLevel())
-	if err != nil {
-		return fmt.Errorf("failed to create logger: %w", err)
-	}
-	defer zapLogger.Sync() //nolint:errcheck // if flusing logs fails there is nothing else	we can do
-
-	ctrl.SetLogger(zapr.NewLogger(zapLogger))
-
 	logBuildAndProcessInfo()
 
 	globals := config.NewGlobal(
@@ -159,7 +159,7 @@ func run() error {
 		config.WithVersion(build.GitTag()),
 	)
 
-	if err = globals.Validate(); err != nil {
+	if err := globals.Validate(); err != nil {
 		return fmt.Errorf("global configuration validation failed: %w", err)
 	}
 
@@ -187,6 +187,19 @@ func run() error {
 	}
 
 	return nil
+}
+
+func setupSetupLog() (*zap.Logger, error) {
+	overrides.AtomicLevel().SetLevel(zapcore.InfoLevel)
+
+	zapLogger, err := loggerutils.New(overrides.AtomicLevel())
+	if err != nil {
+		return nil, err
+	}
+
+	ctrl.SetLogger(zapr.NewLogger(zapLogger))
+
+	return zapLogger, nil
 }
 
 func setupControllersAndWebhooks(mgr manager.Manager, globals config.Global, envCfg envConfig) error {
