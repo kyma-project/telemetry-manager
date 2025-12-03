@@ -258,7 +258,7 @@ func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile 
 	selectorLabels := commonresources.MakeDefaultSelectorLabels(baseName)
 	podLabels := make(map[string]string)
 	maps.Copy(podLabels, labels)
-	podLabels[commonresources.LabelKeyIstioInject] = "false"
+	podLabels[commonresources.LabelKeyIstioInject] = commonresources.LabelValueFalse
 
 	annotations := map[string]string{commonresources.AnnotationKeyChecksumConfig: configChecksum}
 	podSpec := ad.makePodSpec(baseName, ad.Config.Image, configPath, configFile)

@@ -101,8 +101,8 @@ func NewFluentBitApplierDeleter(namespace, fbImage, exporterImage, chownInitCont
 	return &AgentApplierDeleter{
 		namespace: namespace,
 		extraPodLabels: map[string]string{
-			commonresources.LabelKeyIstioInject:        "true",
-			commonresources.LabelKeyTelemetryLogExport: "true",
+			commonresources.LabelKeyIstioInject:        commonresources.LabelValueTrue,
+			commonresources.LabelKeyTelemetryLogExport: commonresources.LabelValueTrue,
 		},
 		fluentBitImage:          fbImage,
 		exporterImage:           exporterImage,

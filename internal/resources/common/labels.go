@@ -1,6 +1,11 @@
 package common
 
 const (
+	// LabelValueTrue can be used in all labels that require "true" as value
+	LabelValueTrue = "true"
+	// LabelValueFalse can be used in all labels that require "false" as value
+	LabelValueFalse = "false"
+
 	LabelKeyKymaModule   = "kyma-project.io/module"
 	LabelValueKymaModule = "telemetry"
 
@@ -21,15 +26,26 @@ const (
 
 	LabelKeyIstioInject = "sidecar.istio.io/inject"
 
-	LabelKeyTelemetryLogIngest     = "telemetry.kyma-project.io/log-ingest"
-	LabelKeyTelemetryLogExport     = "telemetry.kyma-project.io/log-export"
-	LabelKeyTelemetryTraceIngest   = "telemetry.kyma-project.io/trace-ingest"
-	LabelKeyTelemetryTraceExport   = "telemetry.kyma-project.io/trace-export"
-	LabelKeyTelemetryMetricIngest  = "telemetry.kyma-project.io/metric-ingest"
-	LabelKeyTelemetryMetricExport  = "telemetry.kyma-project.io/metric-export"
-	LabelKeyTelemetryMetricScrape  = "telemetry.kyma-project.io/metric-scrape"
 	LabelKeyTelemetrySelfMonitor   = "telemetry.kyma-project.io/self-monitor"
 	LabelValueTelemetrySelfMonitor = "enabled"
+
+	// The labels below can be used by a NetworkPolicy to allow traffic to/from components of the telemetry module in a deny-all traffic setup
+
+	LabelKeyTelemetryLogIngest    = "telemetry.kyma-project.io/log-ingest"
+	LabelKeyTelemetryLogExport    = "telemetry.kyma-project.io/log-export"
+	LabelKeyTelemetryTraceIngest  = "telemetry.kyma-project.io/trace-ingest"
+	LabelKeyTelemetryTraceExport  = "telemetry.kyma-project.io/trace-export"
+	LabelKeyTelemetryMetricIngest = "telemetry.kyma-project.io/metric-ingest"
+	LabelKeyTelemetryMetricExport = "telemetry.kyma-project.io/metric-export"
+	// NOTE: The labels "telemetry.kyma-project.io/metric-scrape" and "networking.kyma-project.io/metrics-scraping" have similar names, but different purposes as described below:
+
+	// LabelKeyTelemetryMetricScrape can be used by a NetworkPolicy to allow the metric agent to scrape metrics from user workloads in a deny-all ingress traffic setup
+	// Check https://kyma-project.io/external-content/telemetry-manager/docs/user/troubleshooting.html#metricpipeline-failed-to-scrape-prometheus-endpoint for the troubleshooting guide using this label
+	LabelKeyTelemetryMetricScrape = "telemetry.kyma-project.io/metric-scrape"
+	// LabelKeyTelemetryMetricsScraping is required to allow the metric agent to scrape metrics from Kyma modules
+	// Check https://github.com/kyma-project/kyma/issues/18818 for more details
+	LabelKeyTelemetryMetricsScraping   = "networking.kyma-project.io/metrics-scraping"
+	LabelValueTelemetryMetricsScraping = "allowed"
 )
 
 func MakeDefaultLabels(baseName string, componentLabelValue string) map[string]string {
