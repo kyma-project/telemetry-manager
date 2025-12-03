@@ -50,9 +50,6 @@ Learn how to use [Jaeger](https://github.com/jaegertracing/helm-charts/tree/main
 
 ### Install Jaeger
 
-> [!NOTE]
-> It is officially recommended to install Jaeger with the [Jaeger operator](https://github.com/jaegertracing/helm-charts/tree/main/charts/jaeger-operator). Because the operator requires a cert-manager to be installed, the following instructions use a plain Jaeger installation. However, the described installation is not meant to be used for production setups.
-
 Run the Helm upgrade command, which installs the chart if not present yet.
 
 ```bash
