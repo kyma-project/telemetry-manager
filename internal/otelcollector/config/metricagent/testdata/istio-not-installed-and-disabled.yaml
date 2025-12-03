@@ -312,9 +312,10 @@ processors:
             - action: delete
               key: service.name
     resource/drop-skip-enrichment-attribute:
-        attributes:
-            - action: delete
-              key: io.kyma-project.telemetry.skip_enrichment
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - delete_key(resource.attributes, "io.kyma-project.telemetry.skip_enrichment")
     resource/set-kyma-input-name-prometheus:
         attributes:
             - action: insert

@@ -402,14 +402,13 @@ func (b *Builder) addDropSkipEnrichmentAttributeProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDDropSkipEnrichmentAttributeProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			return &common.ResourceProcessor{
-				Attributes: []common.AttributeAction{
-					{
-						Action: common.AttributeActionDelete,
-						Key:    common.SkipEnrichmentAttribute,
-					},
+			transformStatements := []common.TransformProcessorStatements{{
+				Statements: []string{
+					"delete_key(resource.attributes, \"io.kyma-project.telemetry.skip_enrichment\")",
 				},
-			}
+			}}
+
+			return common.MetricTransformProcessorConfig(transformStatements)
 		},
 	)
 }
