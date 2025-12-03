@@ -142,7 +142,8 @@ func (b *Builder) addSetKymaInputNameProcessor(inputSource common.InputSourceTyp
 	return b.AddProcessor(
 		b.StaticComponentID(common.InputName[inputSource]),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			return common.KymaInputNameProcessorConfig(inputSource)
+			transformStatements := common.KymaInputNameProcessorStatements(inputSource)
+			return common.MetricTransformProcessorConfig(transformStatements)
 		},
 	)
 }

@@ -120,11 +120,11 @@ const (
 	ComponentIDInsertClusterAttributesProcessor        = "transform/insert-cluster-attributes"
 	ComponentIDDropKymaAttributesProcessor             = "transform/drop-kyma-attributes"
 
-	ComponentIDSetKymaInputNameRuntimeProcessor    ComponentID = "resource/set-kyma-input-name-runtime"
-	ComponentIDSetKymaInputNameIstioProcessor      ComponentID = "resource/set-kyma-input-name-istio"
-	ComponentIDSetKymaInputNamePrometheusProcessor ComponentID = "resource/set-kyma-input-name-prometheus"
-	ComponentIDSetKymaInputNameKymaProcessor       ComponentID = "resource/set-kyma-input-name-kyma"
-	ComponentIDSetKymaInputNameOTLPProcessor       ComponentID = "resource/set-kyma-input-name-otlp"
+	ComponentIDSetKymaInputNameRuntimeProcessor    ComponentID = "transform/set-kyma-input-name-runtime"
+	ComponentIDSetKymaInputNameIstioProcessor      ComponentID = "transform/set-kyma-input-name-istio"
+	ComponentIDSetKymaInputNamePrometheusProcessor ComponentID = "transform/set-kyma-input-name-prometheus"
+	ComponentIDSetKymaInputNameKymaProcessor       ComponentID = "transform/set-kyma-input-name-kyma"
+	ComponentIDSetKymaInputNameOTLPProcessor       ComponentID = "transform/set-kyma-input-name-otlp"
 
 	// Log-Specific Processors
 

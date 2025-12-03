@@ -275,20 +275,14 @@ func InstrumentationScopeProcessorConfig(instrumentationScopeVersion string, inp
 	return MetricTransformProcessorConfig(transformProcessorStatements)
 }
 
-// KymaInputNameProcessorConfig creates a transform processor that sets the custom `kyma.input.name` attribute
+// KymaInputNameProcessorStatements creates processor statements for the transform processor that sets the custom `kyma.input.name` attribute
 // the attribute is mainly used for routing purpose in the metric agent configuration
-func KymaInputNameProcessorConfig(inputSource InputSourceType) *ResourceProcessor {
-	resourceProcessor := ResourceProcessor{
-		Attributes: []AttributeAction{
-			{
-				Action: AttributeActionInsert,
-				Key:    KymaInputNameAttribute,
-				Value:  string(inputSource),
-			},
+func KymaInputNameProcessorStatements(inputSource InputSourceType) []TransformProcessorStatements {
+	return []TransformProcessorStatements{{
+		Statements: []string{
+			fmt.Sprintf("set(resource.attributes[\"%s\"], \"%s\")", KymaInputNameAttribute, string(inputSource)),
 		},
-	}
-
-	return &resourceProcessor
+	}}
 }
 
 func instrumentationStatement(inputSource InputSourceType, instrumentationScopeVersion string) []string {

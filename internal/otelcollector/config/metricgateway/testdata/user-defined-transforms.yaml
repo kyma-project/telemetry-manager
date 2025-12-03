@@ -41,14 +41,14 @@ service:
             receivers:
                 - kymastats
             processors:
-                - resource/set-kyma-input-name-kyma
+                - transform/set-kyma-input-name-kyma
             exporters:
                 - forward/input
         metrics/input-otlp:
             receivers:
                 - otlp
             processors:
-                - resource/set-kyma-input-name-otlp
+                - transform/set-kyma-input-name-otlp
             exporters:
                 - forward/input
     telemetry:
@@ -140,16 +140,6 @@ processors:
         check_interval: 1s
         limit_percentage: 75
         spike_limit_percentage: 15
-    resource/set-kyma-input-name-kyma:
-        attributes:
-            - action: insert
-              key: kyma.input.name
-              value: kyma
-    resource/set-kyma-input-name-otlp:
-        attributes:
-            - action: insert
-              key: kyma.input.name
-              value: otlp
     service_enrichment:
         resource_attributes:
             - kyma.kubernetes_io_app_name
@@ -172,6 +162,16 @@ processors:
             - statements:
                 - set(scope.version, "") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
                 - set(scope.name, "io.kyma-project.telemetry/kyma") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
+    transform/set-kyma-input-name-kyma:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(resource.attributes["kyma.input.name"], "kyma")
+    transform/set-kyma-input-name-otlp:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(resource.attributes["kyma.input.name"], "otlp")
     transform/user-defined-cls:
         error_mode: ignore
         metric_statements:
