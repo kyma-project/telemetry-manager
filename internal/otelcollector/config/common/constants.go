@@ -153,7 +153,7 @@ const (
 	ComponentIDFilterDropNonPVCVolumesMetricsProcessor     = "filter/drop-non-pvc-volumes-metrics"
 	ComponentIDFilterDropVirtualNetworkInterfacesProcessor = "filter/drop-virtual-network-interfaces"
 	ComponentIDResourceDropServiceNameProcessor            = "resource/drop-service-name"
-	ComponentIDDropSkipEnrichmentAttributeProcessor        = "resource/drop-skip-enrichment-attribute"
+	ComponentIDDropSkipEnrichmentAttributeProcessor        = "transform/drop-skip-enrichment-attribute"
 	ComponentIDSetInstrumentationScopePrometheusProcessor  = "transform/set-instrumentation-scope-prometheus"
 	ComponentIDSetInstrumentationScopeIstioProcessor       = "transform/set-instrumentation-scope-istio"
 	ComponentIDInsertSkipEnrichmentAttributeProcessor      = "transform/insert-skip-enrichment-attribute"
