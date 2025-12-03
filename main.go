@@ -131,12 +131,14 @@ func main() {
 	if err != nil {
 		log.Panicf("failed to setup zap logger: %v", err)
 	}
-	defer zapLogger.Sync() //nolint:errcheck // if flusing logs fails there is nothing else	we can do
 
 	if err := run(); err != nil {
 		setupLog.Error(err, "Manager exited with error")
+		zapLogger.Sync() //nolint:errcheck // if flusing logs fails there is nothing else	we can do
 		os.Exit(1)
 	}
+
+	zapLogger.Sync() //nolint:errcheck // if flusing logs fails there is nothing else	we can do
 }
 
 func run() error {
@@ -194,7 +196,9 @@ func setupSetupLog() (*zap.Logger, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	ctrl.SetLogger(zapr.NewLogger(zapLogger))
+
 	return zapLogger, nil
 }
 
