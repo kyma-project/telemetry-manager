@@ -23,7 +23,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 )
 
-func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) error {
+func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, reconcileResult ReconcileResult) error {
 	var pipeline telemetryv1alpha1.LogPipeline
 	if err := r.Get(ctx, types.NamespacedName{Name: pipelineName}, &pipeline); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -34,7 +34,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 		return fmt.Errorf("failed to get LogPipeline: %w", err)
 	}
 
-	if pipeline.DeletionTimestamp != nil {
+	if !pipeline.DeletionTimestamp.IsZero() {
 		logf.FromContext(ctx).V(1).Info("Skipping status update for LogPipeline - marked for deletion")
 		return nil
 	}
@@ -44,8 +44,8 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 	}
 
 	r.setAgentHealthyCondition(ctx, &pipeline)
-	r.setFluentBitConfigGeneratedCondition(ctx, &pipeline)
-	r.setFlowHealthCondition(ctx, &pipeline)
+	r.setFluentBitConfigGeneratedCondition(&pipeline, reconcileResult)
+	r.setFlowHealthCondition(ctx, &pipeline, reconcileResult)
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
 		return fmt.Errorf("failed to update LogPipeline status: %w", err)
@@ -75,8 +75,8 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 	meta.SetStatusCondition(&pipeline.Status.Conditions, *condition)
 }
 
-func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
-	status, reason, message := r.evaluateConfigGeneratedCondition(ctx, pipeline)
+func (r *Reconciler) setFluentBitConfigGeneratedCondition(pipeline *telemetryv1alpha1.LogPipeline, reconcileResult ReconcileResult) {
+	status, reason, message := r.evaluateConfigGeneratedCondition(reconcileResult)
 
 	condition := metav1.Condition{
 		Type:               conditions.TypeConfigurationGenerated,
@@ -89,20 +89,24 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
 }
 
-func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (status metav1.ConditionStatus, reason string, message string) {
+func (r *Reconciler) evaluateConfigGeneratedCondition(reconcileResult ReconcileResult) (status metav1.ConditionStatus, reason string, message string) {
 	if r.globals.OperateInFIPSMode() {
 		return metav1.ConditionFalse, conditions.ReasonNoFluentbitInFipsMode, conditions.MessageForFluentBitLogPipeline(conditions.ReasonNoFluentbitInFipsMode)
 	}
 
-	err := r.pipelineValidator.Validate(ctx, pipeline)
+	// Use cached validation result from reconciliation
+	// Check validation error first, as it's more specific than lock status
+	err := reconcileResult.ValidationError
 	if err == nil {
+		// Validation passed - check if we hold the lock
+		if !reconcileResult.IsLockHolder {
+			return metav1.ConditionFalse, conditions.ReasonMaxPipelinesExceeded, conditions.ConvertErrToMsg(resourcelock.ErrMaxPipelinesExceeded)
+		}
+
 		return metav1.ConditionTrue, conditions.ReasonAgentConfigured, conditions.MessageForFluentBitLogPipeline(conditions.ReasonAgentConfigured)
 	}
 
-	if errors.Is(err, resourcelock.ErrMaxPipelinesExceeded) {
-		return metav1.ConditionFalse, conditions.ReasonMaxPipelinesExceeded, conditions.ConvertErrToMsg(err)
-	}
-
+	// Validation failed - report the specific validation error
 	if errors.Is(err, secretref.ErrSecretRefNotFound) || errors.Is(err, secretref.ErrSecretKeyNotFound) || errors.Is(err, secretref.ErrSecretRefMissingFields) {
 		return metav1.ConditionFalse, conditions.ReasonReferencedSecretMissing, conditions.ConvertErrToMsg(err)
 	}
@@ -121,8 +125,8 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 	return conditions.EvaluateTLSCertCondition(err)
 }
 
-func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
-	status, reason := r.evaluateFlowHealthCondition(ctx, pipeline)
+func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, reconcileResult ReconcileResult) {
+	status, reason := r.evaluateFlowHealthCondition(ctx, pipeline, reconcileResult)
 
 	condition := metav1.Condition{
 		Type:               conditions.TypeFlowHealthy,
@@ -135,8 +139,8 @@ func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telem
 	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
 }
 
-func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (metav1.ConditionStatus, string) {
-	configGeneratedStatus, _, _ := r.evaluateConfigGeneratedCondition(ctx, pipeline)
+func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, reconcileResult ReconcileResult) (metav1.ConditionStatus, string) {
+	configGeneratedStatus, _, _ := r.evaluateConfigGeneratedCondition(reconcileResult)
 	if configGeneratedStatus == metav1.ConditionFalse {
 		return metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated
 	}

@@ -9,6 +9,7 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // NewPipelineLock creates a new instance of PipelineLock. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
@@ -36,6 +37,63 @@ type PipelineLock_Expecter struct {
 
 func (_m *PipelineLock) EXPECT() *PipelineLock_Expecter {
 	return &PipelineLock_Expecter{mock: &_m.Mock}
+}
+
+// GetLockHolders provides a mock function for the type PipelineLock
+func (_mock *PipelineLock) GetLockHolders(ctx context.Context, list client.ObjectList) error {
+	ret := _mock.Called(ctx, list)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetLockHolders")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, client.ObjectList) error); ok {
+		r0 = returnFunc(ctx, list)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// PipelineLock_GetLockHolders_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetLockHolders'
+type PipelineLock_GetLockHolders_Call struct {
+	*mock.Call
+}
+
+// GetLockHolders is a helper method to define mock.On call
+//   - ctx context.Context
+//   - list client.ObjectList
+func (_e *PipelineLock_Expecter) GetLockHolders(ctx interface{}, list interface{}) *PipelineLock_GetLockHolders_Call {
+	return &PipelineLock_GetLockHolders_Call{Call: _e.mock.On("GetLockHolders", ctx, list)}
+}
+
+func (_c *PipelineLock_GetLockHolders_Call) Run(run func(ctx context.Context, list client.ObjectList)) *PipelineLock_GetLockHolders_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 client.ObjectList
+		if args[1] != nil {
+			arg1 = args[1].(client.ObjectList)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *PipelineLock_GetLockHolders_Call) Return(err error) *PipelineLock_GetLockHolders_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *PipelineLock_GetLockHolders_Call) RunAndReturn(run func(ctx context.Context, list client.ObjectList) error) *PipelineLock_GetLockHolders_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // IsLockHolder provides a mock function for the type PipelineLock
@@ -91,6 +149,63 @@ func (_c *PipelineLock_IsLockHolder_Call) Return(err error) *PipelineLock_IsLock
 }
 
 func (_c *PipelineLock_IsLockHolder_Call) RunAndReturn(run func(ctx context.Context, owner v1.Object) error) *PipelineLock_IsLockHolder_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ReleaseLockIfHeld provides a mock function for the type PipelineLock
+func (_mock *PipelineLock) ReleaseLockIfHeld(ctx context.Context, owner v1.Object) error {
+	ret := _mock.Called(ctx, owner)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ReleaseLockIfHeld")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, v1.Object) error); ok {
+		r0 = returnFunc(ctx, owner)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// PipelineLock_ReleaseLockIfHeld_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ReleaseLockIfHeld'
+type PipelineLock_ReleaseLockIfHeld_Call struct {
+	*mock.Call
+}
+
+// ReleaseLockIfHeld is a helper method to define mock.On call
+//   - ctx context.Context
+//   - owner v1.Object
+func (_e *PipelineLock_Expecter) ReleaseLockIfHeld(ctx interface{}, owner interface{}) *PipelineLock_ReleaseLockIfHeld_Call {
+	return &PipelineLock_ReleaseLockIfHeld_Call{Call: _e.mock.On("ReleaseLockIfHeld", ctx, owner)}
+}
+
+func (_c *PipelineLock_ReleaseLockIfHeld_Call) Run(run func(ctx context.Context, owner v1.Object)) *PipelineLock_ReleaseLockIfHeld_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 v1.Object
+		if args[1] != nil {
+			arg1 = args[1].(v1.Object)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *PipelineLock_ReleaseLockIfHeld_Call) Return(err error) *PipelineLock_ReleaseLockIfHeld_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *PipelineLock_ReleaseLockIfHeld_Call) RunAndReturn(run func(ctx context.Context, owner v1.Object) error) *PipelineLock_ReleaseLockIfHeld_Call {
 	_c.Call.Return(run)
 	return _c
 }
