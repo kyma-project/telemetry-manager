@@ -178,10 +178,6 @@ type PodAssociation struct {
 	Name string `yaml:"name,omitempty"`
 }
 
-type ResourceProcessor struct {
-	Attributes []AttributeAction `yaml:"attributes"`
-}
-
 type AttributeAction struct {
 	Action       string `yaml:"action,omitempty"`
 	Key          string `yaml:"key,omitempty"`
