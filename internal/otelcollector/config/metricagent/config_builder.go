@@ -303,9 +303,10 @@ func (b *Builder) addFilterDropVirtualNetworkInterfacesProcessor() buildComponen
 // The Prometheus receiver sets the service.name attribute by default to the scrape job name,
 // which prevents it from being enriched by the service name processor. We currently remove it here,
 // but we should investigate configuring the receiver to not set this attribute in the first place.
+// (4 Dec. 2025, TeodorSAP): No solution found yet.
 func (b *Builder) addDropServiceNameProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		b.StaticComponentID(common.ComponentIDResourceDropServiceNameProcessor),
+		b.StaticComponentID(common.ComponentIDDropServiceNameProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return dropServiceNameProcessorConfig()
 		},
@@ -1077,15 +1078,14 @@ func shouldFilterByNamespace(namespaceSelector *telemetryv1alpha1.NamespaceSelec
 
 // Processor configuration functions (merged from processors.go)
 
-func dropServiceNameProcessorConfig() *common.ResourceProcessor {
-	return &common.ResourceProcessor{
-		Attributes: []common.AttributeAction{
-			{
-				Action: "delete",
-				Key:    "service.name",
+func dropServiceNameProcessorConfig() *common.TransformProcessor {
+	return common.MetricTransformProcessorConfig(
+		[]common.TransformProcessorStatements{{
+			Statements: []string{
+				"delete_key(resource.attributes, \"service.name\")",
 			},
-		},
-	}
+		}},
+	)
 }
 
 func insertSkipEnrichmentAttributeProcessorConfig() *common.TransformProcessor {
