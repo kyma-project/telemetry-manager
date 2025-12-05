@@ -3,6 +3,8 @@ package utils
 import (
 	"fmt"
 
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	slicesutils "github.com/kyma-project/telemetry-manager/internal/utils/slices"
