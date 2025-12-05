@@ -43,7 +43,7 @@ const (
 
 // OTLPOutput OTLP output configuration
 // +kubebuilder:validation:XValidation:rule="(has(self.path) && size(self.path) > 0) ? self.protocol == 'http' : true",message="Path is only available with HTTP protocol"
-// +kubebuilder:validation:XValidation:rule="(has(self.authentication) && has(self.authentication.oauth2) && self.protocol == 'grpc') ? (has(self.tls) && !(has(self.tls.insecure) && self.tls.insecure == true)) : true",message="OAuth2 authentication requires TLS to be configured when using gRPC protocol"
+// +kubebuilder:validation:XValidation:rule="(has(self.authentication) && has(self.authentication.oauth2) && self.protocol == 'grpc' && has(self.tls)) ? !(has(self.tls.insecure) && self.tls.insecure == true) : true",message="OAuth2 authentication requires TLS when using gRPC protocol"
 type OTLPOutput struct {
 	// Protocol defines the OTLP protocol (`http` or `grpc`). Default is `grpc`.
 	// +kubebuilder:validation:Optional

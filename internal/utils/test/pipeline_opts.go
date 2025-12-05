@@ -117,6 +117,26 @@ func OTLPClientTLSFromString(ca string) OTLPOutputOption {
 	}
 }
 
+func OTLPInsecure(insecure bool) OTLPOutputOption {
+	return func(output *telemetryv1alpha1.OTLPOutput) {
+		if output.TLS == nil {
+			output.TLS = &telemetryv1alpha1.OTLPTLS{}
+		}
+
+		output.TLS.Insecure = insecure
+	}
+}
+
+func OTLPInsecureSkipVerify(insecure bool) OTLPOutputOption {
+	return func(output *telemetryv1alpha1.OTLPOutput) {
+		if output.TLS == nil {
+			output.TLS = &telemetryv1alpha1.OTLPTLS{}
+		}
+
+		output.TLS.InsecureSkipVerify = insecure
+	}
+}
+
 func OTLPProtocol(protocol string) OTLPOutputOption {
 	return func(output *telemetryv1alpha1.OTLPOutput) {
 		output.Protocol = protocol

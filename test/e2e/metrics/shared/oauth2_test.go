@@ -1,6 +1,7 @@
 package shared
 
 import (
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -79,7 +80,7 @@ func TestOAuth2(t *testing.T) {
 				WithName(pipelineName).
 				WithInput(tc.inputBuilder(genNs)).
 				WithOTLPOutput(
-					testutils.OTLPEndpoint(backend.Endpoint()),
+					testutils.OTLPEndpoint(fmt.Sprintf("%s:%d", backend.Host(), backend.Port())),
 					testutils.OTLPOAuth2(
 						testutils.OAuth2ClientID("the-mock-does-not-verify"),
 						testutils.OAuth2ClientSecret("the-mock-does-not-verify"),

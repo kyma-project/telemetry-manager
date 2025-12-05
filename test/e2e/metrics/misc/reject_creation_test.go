@@ -239,22 +239,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 					}),
 				).
 				Build(),
-			errorMsg: "OAuth2 authentication requires TLS to be configured when using gRPC protocol",
-			field:    "spec.output.otlp",
-		},
-		{
-			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("otlp-output-oauth2-no-tls").
-				WithOTLPOutput(
-					testutils.OTLPEndpoint(backenEndpoint),
-					testutils.OTLPOAuth2(
-						testutils.OAuth2ClientID("clientid"),
-						testutils.OAuth2ClientSecret("clientsecret"),
-						testutils.OAuth2TokenURL("https://auth.example.com/token"),
-					),
-				).
-				Build(),
-			errorMsg: "OAuth2 authentication requires TLS to be configured when using gRPC protocol",
+			errorMsg: "OAuth2 authentication requires TLS when using gRPC protocol",
 			field:    "spec.output.otlp",
 		},
 		// otlp input
