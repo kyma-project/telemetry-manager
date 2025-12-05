@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -13,6 +14,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/metrics"
 	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/stubs"
@@ -308,7 +310,7 @@ func TestOTTLSpecValidation(t *testing.T) {
 				))),
 			condStatus:  metav1.ConditionFalse,
 			condReason:  conditions.ReasonOTTLSpecInvalid,
-			condMessage: "Invalid TransformSpec: error while parsing statements",
+			condMessage: "OTTL specification is invalid, invalid TransformSpec: error while parsing statements. Fix the syntax error indicated by the message or see troubleshooting: " + conditions.LinkOTTLSpecInvalid,
 		},
 		{
 			name: "invalid filter spec",
@@ -320,7 +322,7 @@ func TestOTTLSpecValidation(t *testing.T) {
 				))),
 			condStatus:  metav1.ConditionFalse,
 			condReason:  conditions.ReasonOTTLSpecInvalid,
-			condMessage: "Invalid FilterSpec: error while parsing conditions",
+			condMessage: "OTTL specification is invalid, invalid FilterSpec: error while parsing conditions. Fix the syntax error indicated by the message or see troubleshooting: " + conditions.LinkOTTLSpecInvalid,
 		},
 	}
 
@@ -473,4 +475,137 @@ func TestGetPipelinesRequiringAgents(t *testing.T) {
 		pipelines := []telemetryv1alpha1.LogPipeline{pipeline1, pipeline2}
 		require.ElementsMatch(t, []telemetryv1alpha1.LogPipeline{pipeline1, pipeline2}, r.getPipelinesRequiringAgents(pipelines))
 	})
+}
+
+func TestOTTLUsageTracking(t *testing.T) {
+	tests := []struct {
+		name              string
+		pipelines         []telemetryv1alpha1.LogPipeline
+		expectedOTTLUsage map[string]float64 // map[pipelineName]expectedValue
+	}{
+		{
+			name:              "no pipelines",
+			pipelines:         []telemetryv1alpha1.LogPipeline{},
+			expectedOTTLUsage: map[string]float64{},
+		},
+		{
+			name: "pipelines without transforms or filters",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().WithName("pipeline-1").WithOTLPOutput().Build(),
+				testutils.NewLogPipelineBuilder().WithName("pipeline-2").WithOTLPOutput().Build(),
+			},
+			expectedOTTLUsage: map[string]float64{
+				"pipeline-1": 0,
+				"pipeline-2": 0,
+			},
+		},
+		{
+			name: "pipeline with transform only",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithName("pipeline-1").
+					WithOTLPOutput().
+					WithTransform(telemetryv1alpha1.TransformSpec{
+						Statements: []string{"set(attributes[\"test\"], \"value\")"},
+					}).
+					Build(),
+			},
+			expectedOTTLUsage: map[string]float64{
+				"pipeline-1": 1,
+			},
+		},
+		{
+			name: "pipeline with filter only",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithName("pipeline-1").
+					WithOTLPOutput().
+					WithFilter(telemetryv1alpha1.FilterSpec{
+						Conditions: []string{"attributes[\"test\"] == \"value\""},
+					}).
+					Build(),
+			},
+			expectedOTTLUsage: map[string]float64{
+				"pipeline-1": 1,
+			},
+		},
+		{
+			name: "pipeline with both transform and filter",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithName("pipeline-1").
+					WithOTLPOutput().
+					WithTransform(telemetryv1alpha1.TransformSpec{
+						Statements: []string{"set(attributes[\"test\"], \"value\")"},
+					}).
+					WithFilter(telemetryv1alpha1.FilterSpec{
+						Conditions: []string{"attributes[\"test\"] == \"value\""},
+					}).
+					Build(),
+			},
+			expectedOTTLUsage: map[string]float64{
+				"pipeline-1": 1,
+			},
+		},
+		{
+			name: "multiple pipelines with mixed transforms and filters",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithName("pipeline-1").
+					WithOTLPOutput().
+					WithTransform(telemetryv1alpha1.TransformSpec{
+						Statements: []string{"set(attributes[\"test\"], \"value\")"},
+					}).
+					Build(),
+				testutils.NewLogPipelineBuilder().
+					WithName("pipeline-2").
+					WithOTLPOutput().
+					WithFilter(telemetryv1alpha1.FilterSpec{
+						Conditions: []string{"attributes[\"test\"] == \"value\""},
+					}).
+					Build(),
+				testutils.NewLogPipelineBuilder().
+					WithName("pipeline-3").
+					WithOTLPOutput().
+					WithTransform(telemetryv1alpha1.TransformSpec{
+						Statements: []string{"set(attributes[\"test2\"], \"value2\")"},
+					}).
+					WithFilter(telemetryv1alpha1.FilterSpec{
+						Conditions: []string{"attributes[\"test2\"] == \"value2\""},
+					}).
+					Build(),
+				testutils.NewLogPipelineBuilder().WithName("pipeline-4").WithOTLPOutput().Build(),
+			},
+			expectedOTTLUsage: map[string]float64{
+				"pipeline-1": 1,
+				"pipeline-2": 1,
+				"pipeline-3": 1,
+				"pipeline-4": 0,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var clientObjs []client.Object
+			for i := range tt.pipelines {
+				clientObjs = append(clientObjs, &tt.pipelines[i])
+			}
+
+			fakeClient := newTestClient(t, clientObjs...)
+
+			sut := newTestReconciler(fakeClient)
+
+			for _, pipeline := range tt.pipelines {
+				result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
+				require.NoError(t, result.err)
+			}
+
+			// Verify OTTL feature usage metrics for each pipeline
+			for pipelineName, expectedValue := range tt.expectedOTTLUsage {
+				metricValue := testutil.ToFloat64(metrics.LogPipelineFeatureUsage.WithLabelValues(metrics.FeatureOTTL, pipelineName))
+				require.Equal(t, expectedValue, metricValue, "OTTL feature usage metric should match for pipeline %s", pipelineName)
+			}
+		})
+	}
 }

@@ -68,7 +68,7 @@ jobs:
 
       - name: Deploy module release
         shell: bash
-        run: make --debug deploy
+        run: make --debug deploy-no-fips
 
       - name: Wait for manager deployment rollout
         shell: bash
