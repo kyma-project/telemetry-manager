@@ -13,8 +13,7 @@ Filter logs from the OTLP, application, and Istio input to control which data yo
 | Application    | Namespace, Container\*                                              | **excludes** system namespaces      | Set the **system** attribute to `true`         | Use the `include` or `exclude` filter                       |
 | Istio          | Namespace, Workload (`selector`), Log content (`filter.expression`) | n/a                                 | Apply the Istio `Telemetry` resource mesh-wide | Apply the Istio `Telemetry` resource to specific namespaces |
 
-\* The **application** input provides an additional **containers** selector that behaves the same way as the *
-*namespaces** selector.
+\* The **application** input provides an additional **containers** selector that behaves the same way as the **namespaces** selector.
 
 ## Filter OTLP Logs by Namespaces
 
