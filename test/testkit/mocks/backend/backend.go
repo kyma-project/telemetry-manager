@@ -44,6 +44,11 @@ const (
 	SignalTypeMetricsAgent  = "metrics"
 )
 
+type OIDCConfig struct {
+	issuerURL string
+	audience  string
+}
+
 type Backend struct {
 	abortFaultPercentage float64
 	dropFromSourceLabel  map[string]string
@@ -52,6 +57,8 @@ type Backend struct {
 	namespace            string
 	replicas             int32
 	signalType           SignalType
+	oidc                 *OIDCConfig
+	mtls                 bool
 
 	fluentDConfigMap    *fluentdConfigMapBuilder
 	hostSecret          *kitk8s.Secret
@@ -149,6 +156,8 @@ func (b *Backend) buildResources() {
 		exportedFilePath,
 		b.signalType,
 		b.certs,
+		b.oidc,
+		b.mtls,
 	)
 
 	b.collectorDeployment = newCollectorDeployment(

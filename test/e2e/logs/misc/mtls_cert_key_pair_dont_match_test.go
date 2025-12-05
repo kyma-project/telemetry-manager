@@ -18,7 +18,7 @@ import (
 )
 
 func TestMTLSCertKeyDontMatch_OTel(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelLogsMisc)
+	suite.RegisterTestCase(t, suite.LabelLogsMisc, suite.LabelMTLS)
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -32,13 +32,13 @@ func TestMTLSCertKeyDontMatch_OTel(t *testing.T) {
 	_, clientCertsCreatedAgain, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
 	Expect(err).ToNot(HaveOccurred())
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithTLS(*serverCertsDefault))
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithMTLS(*serverCertsDefault))
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithOTLPOutput(
 			testutils.OTLPEndpoint(backend.Endpoint()),
-			testutils.OTLPClientTLSFromString(
+			testutils.OTLPClientMTLSFromString(
 				clientCertsDefault.CaCertPem.String(),
 				clientCertsDefault.ClientCertPem.String(),
 				clientCertsCreatedAgain.ClientKeyPem.String(), // Use different key
@@ -90,7 +90,7 @@ func TestMTLSCertKeyDontMatch_FluentBit(t *testing.T) {
 	_, clientCertsCreatedAgain, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
 	Expect(err).ToNot(HaveOccurred())
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithTLS(*serverCertsDefault))
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithMTLS(*serverCertsDefault))
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).

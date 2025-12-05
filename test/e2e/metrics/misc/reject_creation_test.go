@@ -7,7 +7,6 @@ import (
 
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -27,6 +26,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 	var backenEndpoint = backendHost + ":" + strconv.Itoa(backendPort)
 
 	tests := []struct {
+		name     string
 		pipeline telemetryv1alpha1.MetricPipeline
 		errorMsg string
 		field    string
@@ -34,10 +34,8 @@ func TestRejectPipelineCreation(t *testing.T) {
 	}{
 		// output general
 		{
+			name: "no-output",
 			pipeline: telemetryv1alpha1.MetricPipeline{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "no-output",
-				},
 				Spec: telemetryv1alpha1.MetricPipelineSpec{},
 			},
 			errorMsg: "must be of type object",
@@ -45,10 +43,8 @@ func TestRejectPipelineCreation(t *testing.T) {
 			causes:   2,
 		},
 		{
+			name: "valuefrom-accepts-only-one-option",
 			pipeline: telemetryv1alpha1.MetricPipeline{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "valuefrom-accepts-only-one-option",
-				},
 				Spec: telemetryv1alpha1.MetricPipelineSpec{
 					Output: telemetryv1alpha1.MetricPipelineOutput{
 						OTLP: &telemetryv1alpha1.OTLPOutput{
@@ -70,10 +66,8 @@ func TestRejectPipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp.endpoint",
 		},
 		{
+			name: "secretkeyref-requires-key",
 			pipeline: telemetryv1alpha1.MetricPipeline{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "secretkeyref-requires-key",
-				},
 				Spec: telemetryv1alpha1.MetricPipelineSpec{
 					Output: telemetryv1alpha1.MetricPipelineOutput{
 						OTLP: &telemetryv1alpha1.OTLPOutput{
@@ -93,10 +87,8 @@ func TestRejectPipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp.endpoint.valueFrom.secretKeyRef.key",
 		},
 		{
+			name: "secretkeyref-requires-namespace",
 			pipeline: telemetryv1alpha1.MetricPipeline{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "secretkeyref-requires-namespace",
-				},
 				Spec: telemetryv1alpha1.MetricPipelineSpec{
 					Output: telemetryv1alpha1.MetricPipelineOutput{
 						OTLP: &telemetryv1alpha1.OTLPOutput{
@@ -116,10 +108,8 @@ func TestRejectPipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp.endpoint.valueFrom.secretKeyRef.namespace",
 		},
 		{
+			name: "secretkeyref-requires-name",
 			pipeline: telemetryv1alpha1.MetricPipeline{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "secretkeyref-requires-name",
-				},
 				Spec: telemetryv1alpha1.MetricPipelineSpec{
 					Output: telemetryv1alpha1.MetricPipelineOutput{
 						OTLP: &telemetryv1alpha1.OTLPOutput{
@@ -140,8 +130,8 @@ func TestRejectPipelineCreation(t *testing.T) {
 		},
 		// otlp output
 		{
+			name: "otlp-output-with-default-proto-and-path",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("otlp-output-with-default-proto-and-path").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
 					testutils.OTLPEndpointPath("/v1/dummy"),
@@ -151,8 +141,8 @@ func TestRejectPipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp",
 		},
 		{
+			name: "otlp-output-with-grpc-proto-and-path",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("otlp-output-with-grpc-proto-and-path").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
 					testutils.OTLPEndpointPath("/v1/dummy"),
@@ -163,8 +153,8 @@ func TestRejectPipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp",
 		},
 		{
+			name: "otlp-output-with-non-valid-proto",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("otlp-output-with-non-valid-proto").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
 					testutils.OTLPProtocol("icke"),
@@ -175,8 +165,8 @@ func TestRejectPipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp.protocol",
 		},
 		{
+			name: "otlp-output-basic-auth-secretref-missing-password-key",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("otlp-output-basic-auth-secretref-missing-password-key").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
 					testutils.OTLPBasicAuthFromSecret("name", "namespace", "user", ""),
@@ -186,8 +176,8 @@ func TestRejectPipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp.authentication.basic.password.valueFrom.secretKeyRef.key",
 		},
 		{
+			name: "otlp-output-basic-auth-secretref-missing-user-key",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("otlp-output-basic-auth-secretref-missing-user-key").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
 					testutils.OTLPBasicAuthFromSecret("name", "namespace", "", "password"),
@@ -197,8 +187,8 @@ func TestRejectPipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp.authentication.basic.user.valueFrom.secretKeyRef.key",
 		},
 		{
+			name: "otlp-output-tls-missing-key",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("otlp-output-tls-missing-key").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
 					testutils.OTLPClientTLS(&telemetryv1alpha1.OTLPTLS{
@@ -211,8 +201,8 @@ func TestRejectPipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp.tls",
 		},
 		{
+			name: "otlp-output-tls-missing-cert",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("otlp-output-tls-missing-cert").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
 					testutils.OTLPClientTLS(&telemetryv1alpha1.OTLPTLS{
@@ -224,10 +214,57 @@ func TestRejectPipelineCreation(t *testing.T) {
 			errorMsg: "Can define either both 'cert' and 'key', or neither",
 			field:    "spec.output.otlp.tls",
 		},
+		{
+			name: "otlp-output-oauth2-invalid-token-url",
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithOTLPOutput(
+					testutils.OTLPEndpoint(backenEndpoint),
+					testutils.OTLPOAuth2(
+						testutils.OAuth2ClientSecret("clientsecret"),
+						testutils.OAuth2ClientID("clientid"),
+						testutils.OAuth2TokenURL("../not-a-url"),
+					),
+				).
+				Build(),
+			errorMsg: "Invalid value: \"object\": 'tokenURL' must be a valid URL",
+			field:    "spec.output.otlp.authentication.oauth2.tokenURL",
+		},
+		{
+			name: "otlp-output-oauth2-missing-client-id",
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithOTLPOutput(
+					testutils.OTLPEndpoint(backenEndpoint),
+					testutils.OTLPOAuth2(
+						testutils.OAuth2ClientSecret("clientsecret"),
+						testutils.OAuth2TokenURL("https://auth.example.com/token"),
+					),
+				).
+				Build(),
+			errorMsg: "Invalid value: \"object\": no such key: value evaluating rule: 'clientID' missing",
+			field:    "spec.output.otlp.authentication.oauth2.clientID",
+		},
+		{
+			name: "otlp-output-oauth2-insecure",
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithOTLPOutput(
+					testutils.OTLPEndpoint(backenEndpoint),
+					testutils.OTLPOAuth2(
+						testutils.OAuth2ClientID("clientid"),
+						testutils.OAuth2ClientSecret("clientsecret"),
+						testutils.OAuth2TokenURL("https://auth.example.com/token"),
+					),
+					testutils.OTLPClientTLS(&telemetryv1alpha1.OTLPTLS{
+						Insecure: true,
+					}),
+				).
+				Build(),
+			errorMsg: "OAuth2 authentication requires TLS when using gRPC protocol",
+			field:    "spec.output.otlp",
+		},
 		// otlp input
 		{
+			name: "otlp-input-namespaces-not-exclusive",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("otlp-input-namespaces-not-exclusive").
 				WithOTLPInput(true,
 					testutils.ExcludeNamespaces("ns1"),
 					testutils.IncludeNamespaces("ns2"),
@@ -238,8 +275,8 @@ func TestRejectPipelineCreation(t *testing.T) {
 			field:    "spec.input.otlp.namespaces",
 		},
 		{
+			name: "otlp-input-namespaces-include-invalid",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("otlp-input-namespaces-include-invalid").
 				WithOTLPInput(true,
 					testutils.IncludeNamespaces("aa!"),
 				).
@@ -249,8 +286,8 @@ func TestRejectPipelineCreation(t *testing.T) {
 			field:    "spec.input.otlp.namespaces.include[0]",
 		},
 		{
+			name: "otlp-input-namespaces-exclude-invalid",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("otlp-input-namespaces-exclude-invalid").
 				WithOTLPInput(true,
 					testutils.ExcludeNamespaces("aa!"),
 				).
@@ -261,8 +298,8 @@ func TestRejectPipelineCreation(t *testing.T) {
 		},
 		// prometheus input
 		{
+			name: "prometheus-input-namespaces-include-invalid",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("prometheus-input-namespaces-include-invalid").
 				WithPrometheusInput(true,
 					testutils.IncludeNamespaces("aa-"),
 				).
@@ -272,8 +309,8 @@ func TestRejectPipelineCreation(t *testing.T) {
 			field:    "spec.input.prometheus.namespaces.include[0]",
 		},
 		{
+			name: "prometheus-input-namespaces-exclude-invalid",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("prometheus-input-namespaces-exclude-invalid").
 				WithPrometheusInput(true,
 					testutils.ExcludeNamespaces("-aa"),
 				).
@@ -284,8 +321,8 @@ func TestRejectPipelineCreation(t *testing.T) {
 		},
 		// istio input
 		{
+			name: "istio-input-namespaces-include-invalid",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("istio-input-namespaces-include-invalid").
 				WithIstioInput(true,
 					testutils.IncludeNamespaces("#"),
 				).
@@ -295,8 +332,8 @@ func TestRejectPipelineCreation(t *testing.T) {
 			field:    "spec.input.istio.namespaces.include[0]",
 		},
 		{
+			name: "istio-input-namespaces-exclude-invalid",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("istio-input-namespaces-exclude-invalid").
 				WithIstioInput(true,
 					testutils.ExcludeNamespaces("/"),
 				).
@@ -307,8 +344,8 @@ func TestRejectPipelineCreation(t *testing.T) {
 		},
 		// runtime input
 		{
+			name: "istio-input-namespaces-include-invalid",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("istio-input-namespaces-include-invalid").
 				WithRuntimeInput(true,
 					testutils.IncludeNamespaces("aa", "bb", "??"),
 				).
@@ -318,8 +355,8 @@ func TestRejectPipelineCreation(t *testing.T) {
 			field:    "spec.input.runtime.namespaces.include[2]",
 		},
 		{
+			name: "istio-input-namespaces-exclude-invalid",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("istio-input-namespaces-exclude-invalid").
 				WithRuntimeInput(true,
 					testutils.ExcludeNamespaces("öö", "aa", "bb"),
 				).
@@ -330,8 +367,10 @@ func TestRejectPipelineCreation(t *testing.T) {
 		},
 	}
 	for _, tc := range tests {
-		t.Run(suite.LabelMisc, func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			suite.RegisterTestCase(t, suite.LabelMisc)
+
+			tc.pipeline.Name = tc.name
 
 			resources := []client.Object{&tc.pipeline}
 
