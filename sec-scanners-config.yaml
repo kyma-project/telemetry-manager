@@ -16,8 +16,9 @@ mend:
     - '**/*_test.go'
     - docs/**
     - dependencies/populateimages/**
-    - dependencies/telemetry-sample-app/**
+    - dependencies/sample-app/**
     - dependencies/stdout-log-generator/**
+    - internal/tools/**
 checkmarx-one:
   preset: go-default
   exclude:
