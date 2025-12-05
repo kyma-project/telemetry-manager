@@ -11,6 +11,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/metrics/runtime"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -119,9 +120,9 @@ func TestNamespaceSelector(t *testing.T) {
 				Build()
 
 			resources := []client.Object{
-				kitk8s.NewNamespace(backendNs).K8sObject(),
-				kitk8s.NewNamespace(gen1Ns).K8sObject(),
-				kitk8s.NewNamespace(gen2Ns).K8sObject(),
+				kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+				kitk8sobjects.NewNamespace(gen1Ns).K8sObject(),
+				kitk8sobjects.NewNamespace(gen2Ns).K8sObject(),
 				&includePipeline,
 				&excludePipeline,
 			}
@@ -129,9 +130,6 @@ func TestNamespaceSelector(t *testing.T) {
 			resources = append(resources, backend1.K8sObjects()...)
 			resources = append(resources, backend2.K8sObjects()...)
 
-			t.Cleanup(func() {
-				Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-			})
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.BackendReachable(t, backend1)
@@ -143,7 +141,7 @@ func TestNamespaceSelector(t *testing.T) {
 				objects := []client.Object{
 					&includePipeline,
 					&excludePipeline,
-					kitk8s.NewConfigMap(kitkyma.MetricGatewayBaseName, kitkyma.SystemNamespaceName).K8sObject(),
+					kitk8sobjects.NewConfigMap(kitkyma.MetricGatewayBaseName, kitkyma.SystemNamespaceName).K8sObject(),
 				}
 				Expect(kitk8s.ObjectsToFile(t, objects...)).To(Succeed())
 			}

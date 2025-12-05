@@ -9,6 +9,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
@@ -112,23 +113,23 @@ func TestNoisyFilters(t *testing.T) {
 	).K8sObject()
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(backendNs).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNs).K8sObject(),
 		&pipeline,
 	}
 	resources = append(resources, backend.K8sObjects()...)
 
 	resources = append(resources,
-		kitk8s.NewNamespace(regularSpansNs).K8sObject(),
-		kitk8s.NewNamespace(vmaScrapeSpansNs).K8sObject(),
-		kitk8s.NewNamespace(healthzSpansNs).K8sObject(),
-		kitk8s.NewNamespace(fluentBitSpansNs).K8sObject(),
-		kitk8s.NewNamespace(metricAgentScrapeSpansNs).K8sObject(),
-		kitk8s.NewNamespace(metricAgentSpansNs).K8sObject(),
-		kitk8s.NewNamespace(metricGatewaySpansNs).K8sObject(),
-		kitk8s.NewNamespace(metricServiceSpansNs).K8sObject(),
-		kitk8s.NewNamespace(traceGatewaySpansNs).K8sObject(),
-		kitk8s.NewNamespace(traceServiceSpansNs).K8sObject(),
-		kitk8s.NewNamespace(traceServiceInternalSpansNs).K8sObject(),
+		kitk8sobjects.NewNamespace(regularSpansNs).K8sObject(),
+		kitk8sobjects.NewNamespace(vmaScrapeSpansNs).K8sObject(),
+		kitk8sobjects.NewNamespace(healthzSpansNs).K8sObject(),
+		kitk8sobjects.NewNamespace(fluentBitSpansNs).K8sObject(),
+		kitk8sobjects.NewNamespace(metricAgentScrapeSpansNs).K8sObject(),
+		kitk8sobjects.NewNamespace(metricAgentSpansNs).K8sObject(),
+		kitk8sobjects.NewNamespace(metricGatewaySpansNs).K8sObject(),
+		kitk8sobjects.NewNamespace(metricServiceSpansNs).K8sObject(),
+		kitk8sobjects.NewNamespace(traceGatewaySpansNs).K8sObject(),
+		kitk8sobjects.NewNamespace(traceServiceSpansNs).K8sObject(),
+		kitk8sobjects.NewNamespace(traceServiceInternalSpansNs).K8sObject(),
 	)
 
 	resources = append(resources,
@@ -145,9 +146,6 @@ func TestNoisyFilters(t *testing.T) {
 		traceServiceInternalSpansGen,
 	)
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)

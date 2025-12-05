@@ -9,6 +9,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
@@ -77,10 +78,10 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 		Build()
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(sourceNsKeepOriginal).K8sObject(),
-		kitk8s.NewNamespace(sourceNsDropOriginal).K8sObject(),
-		kitk8s.NewNamespace(backendNsKeepOriginal).K8sObject(),
-		kitk8s.NewNamespace(backendNsDropOriginal).K8sObject(),
+		kitk8sobjects.NewNamespace(sourceNsKeepOriginal).K8sObject(),
+		kitk8sobjects.NewNamespace(sourceNsDropOriginal).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNsKeepOriginal).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNsDropOriginal).K8sObject(),
 		&pipelineDropOriginal,
 		&pipelineKeepOriginal,
 		// stdout log generators in the "keep-original-body" namespace
@@ -97,9 +98,6 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 	resources = append(resources, backendKeepOriginal.K8sObjects()...)
 	resources = append(resources, backendDropOriginal.K8sObjects()...)
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backendKeepOriginal)
@@ -226,10 +224,10 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 		Build()
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(sourceNsKeepOriginal).K8sObject(),
-		kitk8s.NewNamespace(sourceNsDropOriginal).K8sObject(),
-		kitk8s.NewNamespace(backendNsKeepOriginal).K8sObject(),
-		kitk8s.NewNamespace(backendNsDropOriginal).K8sObject(),
+		kitk8sobjects.NewNamespace(sourceNsKeepOriginal).K8sObject(),
+		kitk8sobjects.NewNamespace(sourceNsDropOriginal).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNsKeepOriginal).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNsDropOriginal).K8sObject(),
 		&pipelineDropOriginal,
 		&pipelineKeepOriginal,
 		// stdout log generators in the "keep-original-body" namespace
@@ -246,9 +244,6 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 	resources = append(resources, backendKeepOriginal.K8sObjects()...)
 	resources = append(resources, backendDropOriginal.K8sObjects()...)
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backendKeepOriginal)

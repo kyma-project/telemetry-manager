@@ -1,4 +1,4 @@
-package k8s
+package objects
 
 import (
 	istiosecurityv1 "istio.io/api/security/v1"

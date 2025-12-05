@@ -2,18 +2,18 @@ package assert
 
 import (
 	"fmt"
+	"testing"
 
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kyma-project/telemetry-manager/test/testkit"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-func SecretHasKeyValue(t testkit.T, name types.NamespacedName, dataKey, dataValue string) {
+func SecretHasKeyValue(t *testing.T, name types.NamespacedName, dataKey, dataValue string) {
 	t.Helper()
 
 	Eventually(func(g Gomega) {
@@ -27,7 +27,7 @@ func SecretHasKeyValue(t testkit.T, name types.NamespacedName, dataKey, dataValu
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func secretExists(t testkit.T, k8sClient client.Client, name types.NamespacedName) (*corev1.Secret, error) {
+func secretExists(t *testing.T, k8sClient client.Client, name types.NamespacedName) (*corev1.Secret, error) {
 	t.Helper()
 
 	var secret corev1.Secret

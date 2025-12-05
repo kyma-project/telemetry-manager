@@ -2,6 +2,7 @@ package assert
 
 import (
 	"fmt"
+	"testing"
 
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
@@ -12,22 +13,21 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kyma-project/telemetry-manager/test/testkit"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-func DeploymentReady(t testkit.T, name types.NamespacedName) {
+func DeploymentReady(t *testing.T, name types.NamespacedName) {
 	t.Helper()
 	isReady(t, isDeploymentReady, name, "Deployment")
 }
 
-func DaemonSetReady(t testkit.T, name types.NamespacedName) {
+func DaemonSetReady(t *testing.T, name types.NamespacedName) {
 	t.Helper()
 	isReady(t, isDaemonSetReady, name, "DaemonSet")
 }
 
-func DaemonSetNotFound(t testkit.T, name types.NamespacedName) {
+func DaemonSetNotFound(t *testing.T, name types.NamespacedName) {
 	t.Helper()
 	Eventually(func(g Gomega) {
 		_, err := isDaemonSetReady(t, name)
@@ -36,22 +36,22 @@ func DaemonSetNotFound(t testkit.T, name types.NamespacedName) {
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func StatefulSetReady(t testkit.T, name types.NamespacedName) {
+func StatefulSetReady(t *testing.T, name types.NamespacedName) {
 	t.Helper()
 	isReady(t, isStatefulSetReady, name, "StatefulSet")
 }
 
-func JobReady(t testkit.T, name types.NamespacedName) {
+func JobReady(t *testing.T, name types.NamespacedName) {
 	t.Helper()
 	isReady(t, isJobSuccessful, name, "Job")
 }
 
-func PodReady(t testkit.T, name types.NamespacedName) {
+func PodReady(t *testing.T, name types.NamespacedName) {
 	t.Helper()
 	isReady(t, isPodReady, name, "Pod")
 }
 
-func PodsReady(t testkit.T, listOptions client.ListOptions) {
+func PodsReady(t *testing.T, listOptions client.ListOptions) {
 	t.Helper()
 	Eventually(func(g Gomega) {
 		ready, err := arePodsReady(t, listOptions)
@@ -60,7 +60,7 @@ func PodsReady(t testkit.T, listOptions client.ListOptions) {
 	}, 2*periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func PodsHaveContainer(t testkit.T, listOptions client.ListOptions, containerName string) (bool, error) {
+func PodsHaveContainer(t *testing.T, listOptions client.ListOptions, containerName string) (bool, error) {
 	t.Helper()
 
 	var pods corev1.PodList
@@ -87,12 +87,9 @@ func PodsHaveContainer(t testkit.T, listOptions client.ListOptions, containerNam
 	return false, nil
 }
 
-func isReady(
-	t testkit.T,
-	readinessCheck func(t testkit.T, name types.NamespacedName) (bool, error),
-	name types.NamespacedName,
-	resourceName string,
-) {
+type ReadinessCheckFunc func(t *testing.T, name types.NamespacedName) (bool, error)
+
+func isReady(t *testing.T, readinessCheck ReadinessCheckFunc, name types.NamespacedName, resourceName string) {
 	t.Helper()
 	Eventually(func(g Gomega) {
 		ready, err := readinessCheck(t, name)
@@ -101,7 +98,7 @@ func isReady(
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func isDeploymentReady(t testkit.T, name types.NamespacedName) (bool, error) {
+func isDeploymentReady(t *testing.T, name types.NamespacedName) (bool, error) {
 	t.Helper()
 
 	var deployment appsv1.Deployment
@@ -119,7 +116,7 @@ func isDeploymentReady(t testkit.T, name types.NamespacedName) (bool, error) {
 	return arePodsReady(t, listOptions)
 }
 
-func isDaemonSetReady(t testkit.T, name types.NamespacedName) (bool, error) {
+func isDaemonSetReady(t *testing.T, name types.NamespacedName) (bool, error) {
 	t.Helper()
 
 	var daemonSet appsv1.DaemonSet
@@ -137,7 +134,7 @@ func isDaemonSetReady(t testkit.T, name types.NamespacedName) (bool, error) {
 	return arePodsReady(t, listOptions)
 }
 
-func isStatefulSetReady(t testkit.T, name types.NamespacedName) (bool, error) {
+func isStatefulSetReady(t *testing.T, name types.NamespacedName) (bool, error) {
 	t.Helper()
 
 	var statefulSet appsv1.StatefulSet
@@ -155,7 +152,7 @@ func isStatefulSetReady(t testkit.T, name types.NamespacedName) (bool, error) {
 	return arePodsReady(t, listOptions)
 }
 
-func isJobSuccessful(t testkit.T, name types.NamespacedName) (bool, error) {
+func isJobSuccessful(t *testing.T, name types.NamespacedName) (bool, error) {
 	t.Helper()
 
 	var job batchv1.Job
@@ -168,7 +165,7 @@ func isJobSuccessful(t testkit.T, name types.NamespacedName) (bool, error) {
 	return job.Status.Active > 0, nil
 }
 
-func isPodReady(t testkit.T, name types.NamespacedName) (bool, error) {
+func isPodReady(t *testing.T, name types.NamespacedName) (bool, error) {
 	t.Helper()
 
 	var pod corev1.Pod
@@ -187,7 +184,7 @@ func isPodReady(t testkit.T, name types.NamespacedName) (bool, error) {
 	return true, nil
 }
 
-func arePodsReady(t testkit.T, listOptions client.ListOptions) (bool, error) {
+func arePodsReady(t *testing.T, listOptions client.ListOptions) (bool, error) {
 	t.Helper()
 
 	var pods corev1.PodList

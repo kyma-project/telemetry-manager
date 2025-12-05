@@ -2,19 +2,19 @@ package assert
 
 import (
 	"net/http"
+	"testing"
 	"time"
 
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 
-	"github.com/kyma-project/telemetry-manager/test/testkit"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/prometheus"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-func EmitsFluentBitMetrics(t testkit.T, metricsURL string) {
+func EmitsFluentBitMetrics(t *testing.T, metricsURL string) {
 	t.Helper()
 
 	HTTPResponseEventuallyMatches(t, metricsURL, HaveFlatMetricFamilies(
@@ -22,7 +22,7 @@ func EmitsFluentBitMetrics(t testkit.T, metricsURL string) {
 	))
 }
 
-func EmitsOTelCollectorMetrics(t testkit.T, metricsURL string) {
+func EmitsOTelCollectorMetrics(t *testing.T, metricsURL string) {
 	t.Helper()
 
 	HTTPResponseEventuallyMatches(t, metricsURL, HaveFlatMetricFamilies(
@@ -30,7 +30,7 @@ func EmitsOTelCollectorMetrics(t testkit.T, metricsURL string) {
 	))
 }
 
-func EmitsManagerMetrics(t testkit.T, matchers ...types.GomegaMatcher) {
+func EmitsManagerMetrics(t *testing.T, matchers ...types.GomegaMatcher) {
 	t.Helper()
 
 	Eventually(func(g Gomega) {

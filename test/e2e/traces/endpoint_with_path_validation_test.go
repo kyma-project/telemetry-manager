@@ -45,10 +45,6 @@ func TestEndpointWithPathValidation(t *testing.T) {
 		&tracePipelineWithHTTPAndWithoutPath,
 	}
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
-
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	Expect(kitk8s.CreateObjects(t, &tracePipelineWithGRPCAndPath)).ShouldNot(Succeed())

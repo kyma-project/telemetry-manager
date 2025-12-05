@@ -1,4 +1,4 @@
-package k8s
+package objects
 
 import (
 	"github.com/kyma-project/telemetry-manager/test/testkit"

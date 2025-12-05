@@ -1,7 +1,6 @@
 package traces
 
 import (
-	"context"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -11,6 +10,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -60,6 +60,8 @@ func TestExtractLabels(t *testing.T) {
 		labelKeyShouldNotMatch: labelValueShouldNotMatch,
 	}
 
+	kitk8s.PreserveAndScheduleRestoreOfTelemetryResource(t, kitkyma.TelemetryName)
+
 	Eventually(func(g Gomega) {
 		g.Expect(suite.K8sClient.Get(t.Context(), kitkyma.TelemetryName, &telemetry)).NotTo(HaveOccurred())
 		telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{
@@ -72,22 +74,13 @@ func TestExtractLabels(t *testing.T) {
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(genNs).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+		kitk8sobjects.NewNamespace(genNs).K8sObject(),
 		&pipeline,
 		telemetrygen.NewPod(genNs, telemetrygen.SignalTypeTraces).WithLabels(genLabels).K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-
-		Eventually(func(g Gomega) {
-			g.Expect(suite.K8sClient.Get(context.Background(), kitkyma.TelemetryName, &telemetry)).To(Succeed()) //nolint:usetesting // Remove ctx from Get
-			telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{}
-			g.Expect(suite.K8sClient.Update(context.Background(), &telemetry)).To(Succeed()) //nolint:usetesting // Remove ctx from Update
-		}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
