@@ -1,0 +1,95 @@
+package gateway
+
+import (
+	"testing"
+
+	. "github.com/onsi/gomega"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
+	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
+)
+
+func TestEmptyEnrichmentValues(t *testing.T) {
+	suite.RegisterTestCase(t, suite.LabelLogGateway)
+
+	var (
+		uniquePrefix = unique.Prefix()
+		pipelineName = uniquePrefix()
+		backendNs    = uniquePrefix("backend")
+		genNs        = uniquePrefix("gen")
+	)
+
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
+	pipeline := testutils.NewLogPipelineBuilder().
+		WithName(pipelineName).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+		Build()
+
+	pod := telemetrygen.NewPod(
+		genNs,
+		telemetrygen.SignalTypeLogs,
+		telemetrygen.WithEmptyEnrichmentValues(), // Data is  already generated with empty values for enrichment attributes
+	)
+
+	resources := []client.Object{
+		kitk8s.NewNamespace(backendNs).K8sObject(),
+		kitk8s.NewNamespace(genNs).K8sObject(),
+		&pipeline,
+		pod.K8sObject(),
+	}
+	for _, obj := range backend.K8sObjects() {
+		if obj != nil {
+			resources = append(resources, obj)
+		}
+	}
+
+	t.Cleanup(func() {
+		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
+	})
+	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
+
+	assert.BackendReachable(t, backend)
+	assert.DeploymentReady(t, kitkyma.LogGatewayName)
+	assert.OTelLogPipelineHealthy(t, pipelineName)
+	assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
+
+	// These attributes are expected to be enriched by the processors
+	assert.BackendDataEventuallyMatches(t, backend,
+		HaveFlatLogs(ContainElement(SatisfyAll(
+			HaveResourceAttributes(HaveKeyWithValue("k8s.cluster.name", Not(BeEmpty()))),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.cluster.uid", Not(BeEmpty()))),
+			HaveResourceAttributes(HaveKeyWithValue("cloud.provider", Not(BeEmpty()))),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", Not(BeEmpty()))),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.node.name", Not(BeEmpty()))),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", Not(BeEmpty()))),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.deployment.name", Not(BeEmpty()))),
+			// TODO: Default k8sattributes processor behavior is to leave it as set (empty value). Is this desired?
+			// HaveResourceAttributes(HaveKeyWithValue("k8s.statefulset.name", Not(BeEmpty()))),
+			// HaveResourceAttributes(HaveKeyWithValue("k8s.daemonset.name", Not(BeEmpty()))),
+			// HaveResourceAttributes(HaveKeyWithValue("k8s.cronjob.name", Not(BeEmpty()))),
+			// HaveResourceAttributes(HaveKeyWithValue("k8s.job.name", Not(BeEmpty()))),
+			HaveResourceAttributes(HaveKeyWithValue("cloud.region", Not(BeEmpty()))),
+			HaveResourceAttributes(HaveKeyWithValue("cloud.availability_zone", Not(BeEmpty()))),
+			HaveResourceAttributes(HaveKeyWithValue("host.type", Not(BeEmpty()))),
+			HaveResourceAttributes(HaveKeyWithValue("host.arch", Not(BeEmpty()))),
+			// HaveResourceAttributes(HaveKeyWithValue("service.name", Not(BeEmpty()))), # TODO: How should empty value be handled?
+		))),
+	)
+
+	// These attributes are expected to be dropped by the processors
+	assert.BackendDataConsistentlyMatches(t, backend,
+		Not(HaveFlatLogs(ContainElement(SatisfyAny(
+			HaveResourceAttributes(HaveKey("kyma.kubernetes_io_app_name")),
+			HaveResourceAttributes(HaveKey("kyma.app_name")),
+			HaveResourceAttributes(HaveKey("kyma.input.name")),
+		)))),
+	)
+}

@@ -100,6 +100,51 @@ func WithInterval(duration string) Option {
 		spec.Containers[0].Args = append(spec.Containers[0].Args, fmt.Sprintf("%v", duration))
 	}
 }
+
+// WithEmptyEnrichmentValues sets empty values for all enrichment attributes
+func WithEmptyEnrichmentValues() Option {
+	return func(spec *corev1.PodSpec) {
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "--otlp-attributes")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "k8s.cluster.name=\"\"")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "--otlp-attributes")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "k8s.cluster.uid=\"\"")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "--otlp-attributes")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "cloud.provider=\"\"")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "--otlp-attributes")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "k8s.pod.name=\"\"")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "--otlp-attributes")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "k8s.node.name=\"\"")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "--otlp-attributes")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "k8s.namespace.name=\"\"")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "--otlp-attributes")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "k8s.deployment.name=\"\"")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "--otlp-attributes")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "k8s.statefulset.name=\"\"")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "--otlp-attributes")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "k8s.daemonset.name=\"\"")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "--otlp-attributes")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "k8s.cronjob.name=\"\"")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "--otlp-attributes")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "k8s.job.name=\"\"")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "--otlp-attributes")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "kyma.kubernetes_io_app_name=\"\"")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "--otlp-attributes")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "kyma.app_name=\"\"")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "--otlp-attributes")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "cloud.region=\"\"")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "--otlp-attributes")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "cloud.availability_zone=\"\"")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "--otlp-attributes")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "host.type=\"\"")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "--otlp-attributes")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "host.arch=\"\"")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "--otlp-attributes")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "service.name=\"\"")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "--otlp-attributes")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "kyma.input.name=\"\"")
+	}
+}
+
 func NewPod(namespace string, signalType SignalType, opts ...Option) *kitk8s.Pod {
 	return kitk8s.NewPod(DefaultName, namespace).WithPodSpec(PodSpec(signalType, opts...)).WithLabel("app.kubernetes.io/name", DefaultName)
 }
