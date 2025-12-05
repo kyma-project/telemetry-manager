@@ -259,6 +259,9 @@ func findLabelFilterExpression() string {
 func toSet(labels []string) map[string]struct{} {
 	set := make(map[string]struct{}, len(labels))
 	for _, label := range labels {
+		if label == "" {
+			continue
+		}
 		set[label] = struct{}{}
 	}
 

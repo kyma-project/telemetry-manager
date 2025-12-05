@@ -7,7 +7,6 @@ import (
 
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -25,18 +24,16 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 	var backenEndpoint = backendHost + ":" + strconv.Itoa(backendPort)
 
 	tests := []struct {
+		name     string
 		pipeline telemetryv1alpha1.TracePipeline
 		errorMsg string
 		field    string
 		causes   int
-		label    string
 	}{
 		// output general
 		{
+			name: "no-output",
 			pipeline: telemetryv1alpha1.TracePipeline{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "no-output",
-				},
 				Spec: telemetryv1alpha1.TracePipelineSpec{},
 			},
 			errorMsg: "must be of type object",
@@ -44,10 +41,8 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 			causes:   2,
 		},
 		{
+			name: "valuefrom-accepts-only-one-option",
 			pipeline: telemetryv1alpha1.TracePipeline{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "valuefrom-accepts-only-one-option",
-				},
 				Spec: telemetryv1alpha1.TracePipelineSpec{
 					Output: telemetryv1alpha1.TracePipelineOutput{
 						OTLP: &telemetryv1alpha1.OTLPOutput{
@@ -69,10 +64,8 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp.endpoint",
 		},
 		{
+			name: "secretkeyref-requires-key",
 			pipeline: telemetryv1alpha1.TracePipeline{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "secretkeyref-requires-key",
-				},
 				Spec: telemetryv1alpha1.TracePipelineSpec{
 					Output: telemetryv1alpha1.TracePipelineOutput{
 						OTLP: &telemetryv1alpha1.OTLPOutput{
@@ -92,10 +85,8 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp.endpoint.valueFrom.secretKeyRef.key",
 		},
 		{
+			name: "secretkeyref-requires-namespace",
 			pipeline: telemetryv1alpha1.TracePipeline{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "secretkeyref-requires-namespace",
-				},
 				Spec: telemetryv1alpha1.TracePipelineSpec{
 					Output: telemetryv1alpha1.TracePipelineOutput{
 						OTLP: &telemetryv1alpha1.OTLPOutput{
@@ -115,10 +106,8 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp.endpoint.valueFrom.secretKeyRef.namespace",
 		},
 		{
+			name: "secretkeyref-requires-name",
 			pipeline: telemetryv1alpha1.TracePipeline{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "secretkeyref-requires-name",
-				},
 				Spec: telemetryv1alpha1.TracePipelineSpec{
 					Output: telemetryv1alpha1.TracePipelineOutput{
 						OTLP: &telemetryv1alpha1.OTLPOutput{
@@ -139,8 +128,8 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 		},
 		// otlp output
 		{
+			name: "otlp-output-with-default-proto-and-path",
 			pipeline: testutils.NewTracePipelineBuilder().
-				WithName("otlp-output-with-default-proto-and-path").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
 					testutils.OTLPEndpointPath("/v1/dummy"),
@@ -150,8 +139,8 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp",
 		},
 		{
+			name: "otlp-output-with-grpc-proto-and-path",
 			pipeline: testutils.NewTracePipelineBuilder().
-				WithName("otlp-output-with-grpc-proto-and-path").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
 					testutils.OTLPEndpointPath("/v1/dummy"),
@@ -162,8 +151,8 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp",
 		},
 		{
+			name: "otlp-output-with-non-valid-proto",
 			pipeline: testutils.NewTracePipelineBuilder().
-				WithName("otlp-output-with-non-valid-proto").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
 					testutils.OTLPProtocol("icke"),
@@ -174,8 +163,8 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp.protocol",
 		},
 		{
+			name: "otlp-output-basic-auth-secretref-missing-password-key",
 			pipeline: testutils.NewTracePipelineBuilder().
-				WithName("otlp-output-basic-auth-secretref-missing-password-key").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
 					testutils.OTLPBasicAuthFromSecret("name", "namespace", "user", ""),
@@ -185,8 +174,8 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp.authentication.basic.password.valueFrom.secretKeyRef.key",
 		},
 		{
+			name: "otlp-output-basic-auth-secretref-missing-user-key",
 			pipeline: testutils.NewTracePipelineBuilder().
-				WithName("otlp-output-basic-auth-secretref-missing-user-key").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
 					testutils.OTLPBasicAuthFromSecret("name", "namespace", "", "password"),
@@ -196,8 +185,8 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp.authentication.basic.user.valueFrom.secretKeyRef.key",
 		},
 		{
+			name: "otlp-output-tls-missing-key",
 			pipeline: testutils.NewTracePipelineBuilder().
-				WithName("otlp-output-tls-missing-key").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
 					testutils.OTLPClientTLS(&telemetryv1alpha1.OTLPTLS{
@@ -210,8 +199,8 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp.tls",
 		},
 		{
+			name: "otlp-output-tls-missing-cert",
 			pipeline: testutils.NewTracePipelineBuilder().
-				WithName("otlp-output-tls-missing-cert").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
 					testutils.OTLPClientTLS(&telemetryv1alpha1.OTLPTLS{
@@ -224,8 +213,37 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp.tls",
 		},
 		{
+			name: "otlp-output-oauth2-invalid-token-url",
 			pipeline: testutils.NewTracePipelineBuilder().
-				WithName("otlp-output-oauth2-insecure").
+				WithOTLPOutput(
+					testutils.OTLPEndpoint(backenEndpoint),
+					testutils.OTLPOAuth2(
+						testutils.OAuth2ClientSecret("clientsecret"),
+						testutils.OAuth2ClientID("clientid"),
+						testutils.OAuth2TokenURL("../not-a-url"),
+					),
+				).
+				Build(),
+			errorMsg: "Invalid value: \"object\": 'tokenURL' must be a valid URL",
+			field:    "spec.output.otlp.authentication.oauth2.tokenURL",
+		},
+		{
+			name: "otlp-output-oauth2-missing-client-id",
+			pipeline: testutils.NewTracePipelineBuilder().
+				WithOTLPOutput(
+					testutils.OTLPEndpoint(backenEndpoint),
+					testutils.OTLPOAuth2(
+						testutils.OAuth2ClientSecret("clientsecret"),
+						testutils.OAuth2TokenURL("https://auth.example.com/token"),
+					),
+				).
+				Build(),
+			errorMsg: "Invalid value: \"object\": no such key: value evaluating rule: 'clientID' missing",
+			field:    "spec.output.otlp.authentication.oauth2.clientID",
+		},
+		{
+			name: "otlp-output-oauth2-insecure",
+			pipeline: testutils.NewTracePipelineBuilder().
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
 					testutils.OTLPOAuth2(
@@ -243,8 +261,10 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 		},
 	}
 	for _, tc := range tests {
-		t.Run(suite.LabelMisc, func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			suite.RegisterTestCase(t, suite.LabelMisc)
+
+			tc.pipeline.Name = tc.name
 
 			resources := []client.Object{&tc.pipeline}
 

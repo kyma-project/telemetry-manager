@@ -84,15 +84,17 @@ type BasicAuthOptions struct {
 	Password ValueType `json:"password"`
 }
 
+// OAuth2Options contains OAuth2 authentication options.
 type OAuth2Options struct {
 	// TokenURL contains the OAuth2 token endpoint URL or a Secret reference.
-	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:XValidation:rule="(self.value != '' ) || (has(self.valueFrom))", message="tokenURL' missing"
+	// +kubebuilder:validation:XValidation:rule="(self.value != '' ) ? (isURL(self.value)) : true", message="'tokenURL' must be a valid URL"
 	TokenURL ValueType `json:"tokenURL"`
 	// ClientID contains the OAuth2 client ID or a Secret reference.
-	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:XValidation:rule="(self.value != '' ) || (has(self.valueFrom))", message="'clientID' missing"
 	ClientID ValueType `json:"clientID"`
 	// ClientSecret contains the OAuth2 client secret or a Secret reference.
-	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:XValidation:rule="(self.value != '' ) || (has(self.valueFrom))", message="clientSecret' missing"
 	ClientSecret ValueType `json:"clientSecret"`
 	// Scopes contains optional OAuth2 scopes.
 	// +kubebuilder:validation:Optional
