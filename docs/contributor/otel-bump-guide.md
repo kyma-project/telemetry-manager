@@ -4,14 +4,16 @@ As a maintainer or contributor, follow these steps to update the `opentelemetry-
 
 ## Table of Content
 
+- [OpenTelemetry Dependency Bump Guide](#opentelemetry-dependency-bump-guide)
+  - [Table of Content](#table-of-content)
   - [Preparation](#preparation)
-    - [Review Changed Components](#1-review-changed-components)
-    - [Detect OTTL Changes](#2-detect-ottl-changes)
-    - [Review Processor Updates](#3-review-processor-updates)
-    - [Check Internal Metrics](#4-check-internal-metrics)
-    - [Identify and Plan for Breaking Changes](#5-identify-and-plan-for-breaking-changes)
+    - [1. Review Changed Components](#1-review-changed-components)
+    - [2. Detect OTTL Changes](#2-detect-ottl-changes)
+    - [3. Review Processor Updates](#3-review-processor-updates)
+    - [4. Check Internal Metrics](#4-check-internal-metrics)
+    - [5. Identify and Plan for Breaking Changes](#5-identify-and-plan-for-breaking-changes)
   - [Implementation](#implementation)
-  - [Post Bump Verification](#post-bump-verification)
+  - [Post-Bump Verification](#post-bump-verification)
 
 ## Preparation
 
@@ -36,7 +38,6 @@ Identify breaking changes, bug fixes, and enhancements for the following compone
     - `filterprocessor` (contrib)
     - `k8sattributesprocessor` (contrib)
     - `memorylimiterprocessor`
-    - `resourceprocessor` (contrib)
     - `transformprocessor` (contrib)
   - Exporters
     - `otlpexporter`

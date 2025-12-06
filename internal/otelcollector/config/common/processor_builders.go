@@ -108,58 +108,6 @@ func extractPodLabels(enrichments *operatorv1alpha1.EnrichmentSpec) []ExtractLab
 // RESOURCE PROCESSOR BUILDERS
 // =============================================================================
 
-// InsertClusterAttributesProcessorConfig creates a resource processor that inserts cluster attributes
-func InsertClusterAttributesProcessorConfig(clusterName, clusterUID, cloudProvider string) *ResourceProcessor {
-	if cloudProvider != "" {
-		return &ResourceProcessor{
-			Attributes: []AttributeAction{
-				{
-					Action: AttributeActionInsert,
-					Key:    "k8s.cluster.name",
-					Value:  clusterName,
-				},
-				{
-					Action: AttributeActionInsert,
-					Key:    "k8s.cluster.uid",
-					Value:  clusterUID,
-				},
-				{
-					Action: AttributeActionInsert,
-					Key:    "cloud.provider",
-					Value:  cloudProvider,
-				},
-			},
-		}
-	}
-
-	return &ResourceProcessor{
-		Attributes: []AttributeAction{
-			{
-				Action: AttributeActionInsert,
-				Key:    "k8s.cluster.name",
-				Value:  clusterName,
-			},
-			{
-				Action: AttributeActionInsert,
-				Key:    "k8s.cluster.uid",
-				Value:  clusterUID,
-			},
-		},
-	}
-}
-
-// DropKymaAttributesProcessorConfig creates a resource processor that drops Kyma attributes
-func DropKymaAttributesProcessorConfig() *ResourceProcessor {
-	return &ResourceProcessor{
-		Attributes: []AttributeAction{
-			{
-				Action:       AttributeActionDelete,
-				RegexPattern: "kyma.*",
-			},
-		},
-	}
-}
-
 // ResolveServiceNameConfig creates a service enrichment processor configuration
 func ResolveServiceNameConfig() *ServiceEnrichmentProcessor {
 	return &ServiceEnrichmentProcessor{
@@ -285,6 +233,32 @@ func TransformSpecsToProcessorStatements(specs []telemetryv1alpha1.TransformSpec
 	return result
 }
 
+// InsertClusterAttributesProcessorStatements creates processor statements for the transform processor that inserts cluster attributes
+func InsertClusterAttributesProcessorStatements(clusterName, clusterUID, cloudProvider string) []TransformProcessorStatements {
+	statements := []string{
+		fmt.Sprintf("set(resource.attributes[\"k8s.cluster.name\"], \"%s\")", clusterName),
+		fmt.Sprintf("set(resource.attributes[\"k8s.cluster.uid\"], \"%s\")", clusterUID),
+	}
+
+	if cloudProvider != "" {
+		statements = append(statements,
+			fmt.Sprintf("set(resource.attributes[\"cloud.provider\"], \"%s\")", cloudProvider))
+	}
+
+	return []TransformProcessorStatements{{
+		Statements: statements,
+	}}
+}
+
+// DropKymaAttributesProcessorStatements creates processor statements for the transform processor that drops Kyma attributes
+func DropKymaAttributesProcessorStatements() []TransformProcessorStatements {
+	return []TransformProcessorStatements{{
+		Statements: []string{
+			"delete_matching_keys(resource.attributes, \"kyma.*\")",
+		},
+	}}
+}
+
 // InstrumentationScopeProcessorConfig creates a transform processor for instrumentation scope
 func InstrumentationScopeProcessorConfig(instrumentationScopeVersion string, inputSource ...InputSourceType) *TransformProcessor {
 	statements := []string{}
@@ -301,20 +275,14 @@ func InstrumentationScopeProcessorConfig(instrumentationScopeVersion string, inp
 	return MetricTransformProcessorConfig(transformProcessorStatements)
 }
 
-// KymaInputNameProcessorConfig creates a transform processor that sets the custom `kyma.input.name` attribute
+// KymaInputNameProcessorStatements creates processor statements for the transform processor that sets the custom `kyma.input.name` attribute
 // the attribute is mainly used for routing purpose in the metric agent configuration
-func KymaInputNameProcessorConfig(inputSource InputSourceType) *ResourceProcessor {
-	resourceProcessor := ResourceProcessor{
-		Attributes: []AttributeAction{
-			{
-				Action: AttributeActionInsert,
-				Key:    KymaInputNameAttribute,
-				Value:  string(inputSource),
-			},
+func KymaInputNameProcessorStatements(inputSource InputSourceType) []TransformProcessorStatements {
+	return []TransformProcessorStatements{{
+		Statements: []string{
+			fmt.Sprintf("set(resource.attributes[\"%s\"], \"%s\")", KymaInputNameAttribute, string(inputSource)),
 		},
-	}
-
-	return &resourceProcessor
+	}}
 }
 
 func instrumentationStatement(inputSource InputSourceType, instrumentationScopeVersion string) []string {

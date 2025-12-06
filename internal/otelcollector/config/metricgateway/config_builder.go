@@ -142,7 +142,8 @@ func (b *Builder) addSetKymaInputNameProcessor(inputSource common.InputSourceTyp
 	return b.AddProcessor(
 		b.StaticComponentID(common.InputName[inputSource]),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			return common.KymaInputNameProcessorConfig(inputSource)
+			transformStatements := common.KymaInputNameProcessorStatements(inputSource)
+			return common.MetricTransformProcessorConfig(transformStatements)
 		},
 	)
 }
@@ -194,7 +195,8 @@ func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildCo
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDInsertClusterAttributesProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			return common.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.ClusterUID, opts.CloudProvider)
+			transformStatements := common.InsertClusterAttributesProcessorStatements(opts.ClusterName, opts.ClusterUID, opts.CloudProvider)
+			return common.MetricTransformProcessorConfig(transformStatements)
 		},
 	)
 }
@@ -279,7 +281,8 @@ func (b *Builder) addDropKymaAttributesProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDDropKymaAttributesProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			return common.DropKymaAttributesProcessorConfig()
+			transformStatements := common.DropKymaAttributesProcessorStatements()
+			return common.MetricTransformProcessorConfig(transformStatements)
 		},
 	)
 }
@@ -293,9 +296,8 @@ func (b *Builder) addUserDefinedTransformProcessor() buildComponentFunc {
 			}
 
 			transformStatements := common.TransformSpecsToProcessorStatements(mp.Spec.Transforms)
-			transformProcessor := common.MetricTransformProcessorConfig(transformStatements)
 
-			return transformProcessor
+			return common.MetricTransformProcessorConfig(transformStatements)
 		},
 	)
 }

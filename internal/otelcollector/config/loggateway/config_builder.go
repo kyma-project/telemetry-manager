@@ -157,7 +157,8 @@ func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildCo
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDInsertClusterAttributesProcessor),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
-			return common.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.ClusterUID, opts.CloudProvider)
+			transformStatements := common.InsertClusterAttributesProcessorStatements(opts.ClusterName, opts.ClusterUID, opts.CloudProvider)
+			return common.LogTransformProcessorConfig(transformStatements)
 		},
 	)
 }
@@ -175,7 +176,8 @@ func (b *Builder) addDropKymaAttributesProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDDropKymaAttributesProcessor),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
-			return common.DropKymaAttributesProcessorConfig()
+			transformStatements := common.DropKymaAttributesProcessorStatements()
+			return common.LogTransformProcessorConfig(transformStatements)
 		},
 	)
 }
@@ -200,9 +202,8 @@ func (b *Builder) addUserDefinedTransformProcessor() buildComponentFunc {
 			}
 
 			transformStatements := common.TransformSpecsToProcessorStatements(lp.Spec.Transforms)
-			transformProcessor := common.LogTransformProcessorConfig(transformStatements)
 
-			return transformProcessor
+			return common.LogTransformProcessorConfig(transformStatements)
 		},
 	)
 }
