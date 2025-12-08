@@ -47,7 +47,9 @@ runs:
           mode="$mode-no-fips"
         fi
 
-        export MANAGER_IMAGE="${{ inputs.manager-image }}"
+        if [[ -n "${{ inputs.manager-image }}" ]]; then
+          export MANAGER_IMAGE="${{ inputs.manager-image }}"
+        fi
 
         echo "::notice title=Manager Image::Manager Image to be used: $MANAGER_IMAGE"
 
