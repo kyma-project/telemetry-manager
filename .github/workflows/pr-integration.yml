@@ -43,7 +43,7 @@ jobs:
   setup:
     runs-on: ubuntu-latest
     outputs:
-      manager-image: "${{ steps.set-env.outputs.IMAGE_REPO }}:${{ steps.set-env.outputs.IMAGE_TAG }}"
+      manager-image: ${{ steps.set-env.outputs.IMAGE_REPO }}:${{ steps.set-env.outputs.IMAGE_TAG }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -55,19 +55,24 @@ jobs:
         id: set-env
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "IMAGE_REPO=europe-docker.pkg.dev/kyma-project/dev/telemetry-manager" >> $GITHUB_ENV
-            echo "IMAGE_TAG=${{ github.event.pull_request.head.sha }}" >> $GITHUB_ENV
+            IMAGE_REPO="europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
+            IMAGE_TAG="${{ github.event.pull_request.head.sha }}"
           elif [[ "${{ github.event_name }}" == "merge_group" ]]; then
-            echo "IMAGE_REPO=europe-docker.pkg.dev/kyma-project/dev/telemetry-manager" >> $GITHUB_ENV
-            echo "IMAGE_TAG=${{ github.event.merge_group.head_sha }}" >> $GITHUB_ENV
+            IMAGE_REPO="europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
+            IMAGE_TAG="${{ github.event.merge_group.head_sha }}"
           else
-            echo "IMAGE_REPO=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager" >> $GITHUB_ENV
+            IMAGE_REPO="europe-docker.pkg.dev/kyma-project/prod/telemetry-manager"
 
             GIT_COMMIT_SHA=$(git rev-parse --short=8 HEAD)
             GIT_COMMIT_DATE=$(git show -s --format=%cd --date=format:'v%Y%m%d' $GIT_COMMIT_SHA)
-            TAG="$GIT_COMMIT_DATE-$GIT_COMMIT_SHA"
-            echo "IMAGE_TAG=$TAG" >> $GITHUB_ENV
+            IMAGE_TAG="$GIT_COMMIT_DATE-$GIT_COMMIT_SHA"
           fi
+
+          # Write to both GITHUB_ENV (for use in this job) and GITHUB_OUTPUT (for dependent jobs)
+          echo "IMAGE_REPO=$IMAGE_REPO" >> $GITHUB_ENV
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+          echo "IMAGE_REPO=$IMAGE_REPO" >> $GITHUB_OUTPUT
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_OUTPUT
 
       - name: Wait for image to be built
         shell: bash
