@@ -9,7 +9,6 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	slicesutils "github.com/kyma-project/telemetry-manager/internal/utils/slices"
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func ValidateFilterTransform(signalType ottl.SignalType, filterSpec []telemetryv1beta1.FilterSpec, transformSpec []telemetryv1beta1.TransformSpec) error {
