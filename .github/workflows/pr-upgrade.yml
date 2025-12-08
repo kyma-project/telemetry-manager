@@ -59,11 +59,10 @@ jobs:
 
       - name: Setup test environment
         uses: "./.github/template/test-setup"
-        env:
-          MANAGER_IMAGE: ${{ steps.latest-tag.outputs.manager-image }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           experimental: true
+          manager-image: ${{ steps.latest-tag.outputs.manager-image }}
 
       - name: Run tests on latest tag
         shell: bash

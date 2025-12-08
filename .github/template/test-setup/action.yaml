@@ -12,6 +12,9 @@ inputs:
     description: Whether to install the Istio module
     required: true
     default: "false"
+  manager-image:
+    description: Telemetry Manager image to be used in tests
+    required: true
   operate-in-fips-mode:
     description: Whether components should be deployed in FIPS 140-2 compliant way.
     required: true
@@ -41,11 +44,11 @@ runs:
           mode="$mode-no-fips"
         fi
 
-        echo "::notice title=Manager Image::Mananger Image to be used: $MANAGER_IMAGE"
+        export MANAGER_IMAGE="${{ inputs.manager-image }}"
+
+        echo "::notice title=Manager Image::Manager Image to be used: $MANAGER_IMAGE"
 
         make setup-e2e$mode
-      env:
-        MANAGER_IMAGE: ${{ env.MANAGER_IMAGE }}
 
     - name: Wait for manager deployment rollout
       shell: bash

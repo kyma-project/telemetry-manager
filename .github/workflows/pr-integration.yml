@@ -80,8 +80,6 @@ jobs:
 
   e2e-selfmonitor:
     needs: setup
-    env:
-      MANAGER_IMAGE: ${{ needs.setup.outputs.manager-image }}
     strategy:
       fail-fast: false
       matrix:
@@ -107,6 +105,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           install-istio: ${{ matrix.scenario != 'healthy' }}
+          manager-image: ${{ needs.setup.outputs.manager-image }}
           operate-in-fips-mode: ${{ matrix.kind != 'fluent-bit' && 'true' || 'false' }}
 
       - name: Execute tests
@@ -300,6 +299,7 @@ jobs:
           experimental: ${{ matrix.testcase.mode == 'experimental' }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           install-istio: ${{ matrix.testcase.install-istio }}
+          manager-image: ${{ needs.setup.outputs.manager-image }}
           operate-in-fips-mode: ${{ matrix.testcase.use-fips }}
 
       - name: Execute tests
