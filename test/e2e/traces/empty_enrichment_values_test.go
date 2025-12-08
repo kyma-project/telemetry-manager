@@ -65,16 +65,22 @@ func TestEmptyEnrichmentValues(t *testing.T) {
 			HaveResourceAttributes(HaveKeyWithValue("k8s.node.name", Not(BeEmpty()))),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", Not(BeEmpty()))),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.deployment.name", Not(BeEmpty()))),
-			// TODO: Default k8sattributes processor behavior is to leave it as set (empty value). Is this desired?
-			// HaveResourceAttributes(HaveKeyWithValue("k8s.statefulset.name", Not(BeEmpty()))),
-			// HaveResourceAttributes(HaveKeyWithValue("k8s.daemonset.name", Not(BeEmpty()))),
-			// HaveResourceAttributes(HaveKeyWithValue("k8s.cronjob.name", Not(BeEmpty()))),
-			// HaveResourceAttributes(HaveKeyWithValue("k8s.job.name", Not(BeEmpty()))),
 			HaveResourceAttributes(HaveKeyWithValue("cloud.region", Not(BeEmpty()))),
 			HaveResourceAttributes(HaveKeyWithValue("cloud.availability_zone", Not(BeEmpty()))),
 			HaveResourceAttributes(HaveKeyWithValue("host.type", Not(BeEmpty()))),
 			HaveResourceAttributes(HaveKeyWithValue("host.arch", Not(BeEmpty()))),
-			// HaveResourceAttributes(HaveKeyWithValue("service.name", Not(BeEmpty()))), # TODO: How should empty value be handled?
+		))),
+	)
+
+	// These attributes are currently not enriched by the processors (if set to empty value)
+	// TODO (TeodorSAP): Find a consistent way to handle empty values - should they be dropped or enriched?
+	assert.BackendDataEventuallyMatches(t, backend,
+		HaveFlatTraces(ContainElement(SatisfyAll(
+			HaveResourceAttributes(HaveKeyWithValue("k8s.statefulset.name", BeEmpty())),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.daemonset.name", BeEmpty())),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.cronjob.name", BeEmpty())),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.job.name", BeEmpty())),
+			HaveResourceAttributes(HaveKeyWithValue("service.name", BeEmpty())),
 		))),
 	)
 
