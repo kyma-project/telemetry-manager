@@ -29,7 +29,7 @@ func TestMultiPipelineBroken(t *testing.T) {
 		generatorBuilder func(ns string) []client.Object
 	}{
 		{
-			label: suite.LabelMetricAgentSetB,
+			label: suite.LabelMetricAgentSetC,
 			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},

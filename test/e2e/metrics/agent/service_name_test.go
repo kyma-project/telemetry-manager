@@ -18,7 +18,7 @@ import (
 )
 
 func TestServiceName(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelMetricAgentSetC)
+	suite.RegisterTestCase(t, suite.LabelMetricAgentSetB)
 
 	const (
 		jobName                                           = "job"
