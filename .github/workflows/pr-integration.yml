@@ -3,10 +3,6 @@ name: PR Integration
 permissions:
   contents: read
 
-env:
-  # add the tag PR-<number> to the image if it is a PR, if the trigger is merge_group, then add the sha as the tag
-  MANAGER_IMAGE: europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:${{ github.event_name == 'pull_request' && 'PR-' || '' }}${{ github.event.number || github.event.merge_group.head_sha }}
-
 on:
   schedule:
     # Run every hour on main branch
@@ -46,6 +42,8 @@ on:
 jobs:
   setup:
     runs-on: ubuntu-latest
+    outputs:
+      manager-image: "${{ steps.set-env.outputs.IMAGE_REPO }}:${{ steps.set-env.outputs.IMAGE_TAG }}"
     steps:
       - name: Checkout repo
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -54,17 +52,21 @@ jobs:
         uses: ./.github/template/setup-golang
 
       - name: Prepare environment variables
+        id: set-env
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "MANAGER_IMAGE=europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:${{ github.event_name == 'pull_request' && 'PR-' || '' }}${{ github.event.number || github.event.merge_group.head_sha }} >> $GITHUB_ENV"
+            echo "IMAGE_REPO=europe-docker.pkg.dev/kyma-project/dev/telemetry-manager" >> $GITHUB_ENV
+            echo "IMAGE_TAG=PR-${{ github.event.number }}" >> $GITHUB_ENV
+          else if [[ "${{ github.event_name }}" == "merge_group" ]]; then
+            echo "IMAGE_REPO=europe-docker.pkg.dev/kyma-project/dev/telemetry-manager" >> $GITHUB_ENV
+            echo "IMAGE_TAG=${{ github.event.merge_group.head_sha }}" >> $GITHUB_ENV
           else
+            echo "IMAGE_REPO=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager" >> $GITHUB_ENV
+
             GIT_COMMIT_SHA=$(git rev-parse --short=8 HEAD)
             GIT_COMMIT_DATE=$(git show -s --format=%cd --date=format:'v%Y%m%d' $(GIT_COMMIT_SHA))
             TAG="$GIT_COMMIT_DATE-$GIT_COMMIT_SHA"
-            MANAGER_IMAGE="europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:$TAG"
-
-            echo "TAG=$TAG" >> $GITHUB_ENV
-            echo "MANAGER_IMAGE=$MANAGER_IMAGE" >> $GITHUB_ENV
+            echo "IMAGE_TAG=$TAG" >> $GITHUB_ENV
           fi
 
       - name: Wait for image to be built
@@ -72,12 +74,14 @@ jobs:
         run: |
           make wait-for-image
         env:
-          IMAGE_TAG: "${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}"
+          IMAGE_TAG: "${{ env.IMAGE_TAG }}"
           QUERY_INTERVAL: 30
-          IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
+          IMAGE_REPO: "${{ env.IMAGE_REPO }}"
 
   e2e-selfmonitor:
     needs: setup
+    env:
+      MANAGER_IMAGE: ${{ needs.setup.outputs.manager-image }}
     strategy:
       fail-fast: false
       matrix:
@@ -121,6 +125,8 @@ jobs:
 
   e2e:
     needs: setup
+    env:
+      MANAGER_IMAGE: ${{ needs.setup.outputs.manager-image }}
     strategy:
       fail-fast: false
       matrix:
