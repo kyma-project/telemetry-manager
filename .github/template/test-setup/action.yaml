@@ -11,11 +11,14 @@ inputs:
   install-istio:
     description: Whether to install the Istio module
     required: true
-    default: 'false'
+    default: "false"
+  manager-image:
+    description: Telemetry Manager image to be used in tests
+    required: true
   operate-in-fips-mode:
     description: Whether components should be deployed in FIPS 140-2 compliant way.
     required: true
-    default: 'false'
+    default: "false"
 
 runs:
   using: "composite"
@@ -26,9 +29,12 @@ runs:
 
     - name: Provision K3D${{ inputs.experimental == 'true' && 'in Experimental Mode' || '' }} ${{inputs.install-istio == 'true' && ' with Istio' || '' }}
       shell: bash
+      env:
+        #TODO: Remove after 1.54.0 release
+        MANAGER_IMAGE: ${{ env.MANAGER_IMAGE}}
       run: |
         echo "::notice title=K3D Cluster::Provisioning K3D Cluster (Experimental: ${{ inputs.experimental }}, Install Istio: ${{ inputs.install-istio }}, FIPS Mode: ${{ inputs.operate-in-fips-mode }})"
-        
+
         mode=""
         if [[ "${{ inputs.experimental }}" == "true" ]]; then
           mode="$mode-experimental"
@@ -36,19 +42,18 @@ runs:
         if [[ "${{ inputs.install-istio }}" == "true" ]]; then
           mode="$mode-istio"
         fi
-        
+
         if [[ "${{ inputs.operate-in-fips-mode }}" == "false" ]]; then
           mode="$mode-no-fips"
         fi
-        
-        echo "::notice title=Manager Image::Mananger Image to be used: $MANAGER_IMAGE"
-    
+
+        if [[ -n "${{ inputs.manager-image }}" ]]; then
+          export MANAGER_IMAGE="${{ inputs.manager-image }}"
+        fi
+
+        echo "::notice title=Manager Image::Manager Image to be used: $MANAGER_IMAGE"
+
         make setup-e2e$mode
-      env:
-        # sets trigger depending on event being either pull_request or merge_group
-        IMAGE_TAG: "${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}"
-        IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
-        MANAGER_IMAGE: ${{ env.MANAGER_IMAGE }}
 
     - name: Wait for manager deployment rollout
       shell: bash

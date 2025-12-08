@@ -3,11 +3,10 @@ name: PR Integration
 permissions:
   contents: read
 
-env:
-  # add the tag PR-<number> to the image if it is a PR, if the trigger is merge_group, then add the sha as the tag
-  MANAGER_IMAGE: europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:${{ github.event_name == 'pull_request' && 'PR-' || '' }}${{ github.event.number || github.event.merge_group.head_sha }}
-
 on:
+  schedule:
+    # Run every hour on main branch
+    - cron: "0 * * * *"
   merge_group:
   pull_request:
     branches:
@@ -43,6 +42,8 @@ on:
 jobs:
   setup:
     runs-on: ubuntu-latest
+    outputs:
+      manager-image: ${{ steps.set-env.outputs.image-repo }}:${{ steps.set-env.outputs.image-tag }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -50,14 +51,37 @@ jobs:
       - name: Setup Golang
         uses: ./.github/template/setup-golang
 
+      - name: Prepare environment variables
+        id: set-env
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            IMAGE_REPO="europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
+            IMAGE_TAG="${{ github.event.pull_request.head.sha }}"
+          elif [[ "${{ github.event_name }}" == "merge_group" ]]; then
+            IMAGE_REPO="europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
+            IMAGE_TAG="${{ github.event.merge_group.head_sha }}"
+          else
+            IMAGE_REPO="europe-docker.pkg.dev/kyma-project/prod/telemetry-manager"
+
+            GIT_COMMIT_SHA=$(git rev-parse --short=8 HEAD)
+            GIT_COMMIT_DATE=$(git show -s --format=%cd --date=format:'v%Y%m%d' $GIT_COMMIT_SHA)
+            IMAGE_TAG="$GIT_COMMIT_DATE-$GIT_COMMIT_SHA"
+          fi
+
+          # Write to both GITHUB_ENV (for use in this job) and GITHUB_OUTPUT (for dependent jobs)
+          echo "IMAGE_REPO=$IMAGE_REPO" >> $GITHUB_ENV
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+          echo "image-repo=$IMAGE_REPO" >> $GITHUB_OUTPUT
+          echo "image-tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+
       - name: Wait for image to be built
         shell: bash
         run: |
           make wait-for-image
         env:
-          IMAGE_TAG: "${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}"
+          IMAGE_TAG: "${{ env.IMAGE_TAG }}"
+          IMAGE_REPO: "${{ env.IMAGE_REPO }}"
           QUERY_INTERVAL: 30
-          IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
 
   e2e-selfmonitor:
     needs: setup
@@ -86,6 +110,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           install-istio: ${{ matrix.scenario != 'healthy' }}
+          manager-image: ${{ needs.setup.outputs.manager-image }}
           operate-in-fips-mode: ${{ matrix.kind != 'fluent-bit' && 'true' || 'false' }}
 
       - name: Execute tests
@@ -104,6 +129,8 @@ jobs:
 
   e2e:
     needs: setup
+    env:
+      MANAGER_IMAGE: ${{ needs.setup.outputs.manager-image }}
     strategy:
       fail-fast: false
       matrix:
@@ -277,6 +304,7 @@ jobs:
           experimental: ${{ matrix.testcase.mode == 'experimental' }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           install-istio: ${{ matrix.testcase.install-istio }}
+          manager-image: ${{ needs.setup.outputs.manager-image }}
           operate-in-fips-mode: ${{ matrix.testcase.use-fips }}
 
       - name: Execute tests
