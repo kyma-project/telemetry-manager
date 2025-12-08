@@ -105,10 +105,6 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      - name: Print setup output
-        run: |
-          echo "Using Manager Image: ${{ needs.setup.outputs.manager-image }}"
-
       - name: Setup test environment
         uses: "./.github/template/test-setup"
         with:
