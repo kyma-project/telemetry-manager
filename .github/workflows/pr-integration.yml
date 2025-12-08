@@ -43,7 +43,7 @@ jobs:
   setup:
     runs-on: ubuntu-latest
     outputs:
-      manager-image: ${{ steps.set-env.outputs.IMAGE_REPO }}:${{ steps.set-env.outputs.IMAGE_TAG }}
+      manager-image: ${{ steps.set-env.outputs.image-repo }}:${{ steps.set-env.outputs.image-tag }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -71,8 +71,8 @@ jobs:
           # Write to both GITHUB_ENV (for use in this job) and GITHUB_OUTPUT (for dependent jobs)
           echo "IMAGE_REPO=$IMAGE_REPO" >> $GITHUB_ENV
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
-          echo "IMAGE_REPO=$IMAGE_REPO" >> $GITHUB_OUTPUT
-          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "image-repo=$IMAGE_REPO" >> $GITHUB_OUTPUT
+          echo "image-tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
 
       - name: Wait for image to be built
         shell: bash
@@ -80,8 +80,8 @@ jobs:
           make wait-for-image
         env:
           IMAGE_TAG: "${{ env.IMAGE_TAG }}"
-          QUERY_INTERVAL: 30
           IMAGE_REPO: "${{ env.IMAGE_REPO }}"
+          QUERY_INTERVAL: 30
 
   e2e-selfmonitor:
     needs: setup
