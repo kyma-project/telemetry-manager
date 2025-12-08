@@ -76,7 +76,7 @@ func TestEmptyEnrichmentValues(t *testing.T) {
 	// TODO (TeodorSAP): Find a consistent way to handle empty values - should they be dropped or enriched?
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatMetrics(ContainElement(SatisfyAll(
-			HaveResourceAttributes(HaveKeyWithValue("k8s.deployment.name", Not(BeEmpty()))),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.deployment.name", BeEmpty())),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.statefulset.name", BeEmpty())),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.daemonset.name", BeEmpty())),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.cronjob.name", BeEmpty())),
