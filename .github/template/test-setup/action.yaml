@@ -27,7 +27,7 @@ runs:
     - name: Setup Golang
       uses: "./.github/template/setup-golang"
 
-    - name: Provision K3D${{ inputs.experimental == 'true' && 'in Experimental Mode' || '' }} ${{inputs.install-istio == 'true' && ' with Istio' || '' }}
+    - name: Provision K3D cluster${{ inputs.experimental == 'true' && ' in experimental mode' || '' }}${{ inputs.install-istio == 'true' && ' with Istio' || '' }}
       shell: bash
       env:
         #TODO: Remove after 1.54.0 release
@@ -55,11 +55,11 @@ runs:
 
         make setup-e2e$mode
 
-    - name: Wait for manager deployment rollout
+    - name: Wait for manager deployment to roll out
       shell: bash
       run: kubectl -n kyma-system rollout status deployment telemetry-manager --timeout=90s
 
-    - name: Wait for manager readiness
+    - name: Wait for manager to be ready
       shell: bash
       run: kubectl -n kyma-system wait pods -l app.kubernetes.io/instance=telemetry,app.kubernetes.io/name=manager --for=condition=Ready=true --timeout=90s
 
