@@ -87,9 +87,9 @@ func PodsHaveContainer(t *testing.T, listOptions client.ListOptions, containerNa
 	return false, nil
 }
 
-type ReadinessCheckFunc func(t *testing.T, name types.NamespacedName) (bool, error)
+type readinessCheckFunc func(t *testing.T, name types.NamespacedName) (bool, error)
 
-func isReady(t *testing.T, readinessCheck ReadinessCheckFunc, name types.NamespacedName, resourceName string) {
+func isReady(t *testing.T, readinessCheck readinessCheckFunc, name types.NamespacedName, resourceName string) {
 	t.Helper()
 	Eventually(func(g Gomega) {
 		ready, err := readinessCheck(t, name)
