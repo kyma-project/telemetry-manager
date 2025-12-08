@@ -39,8 +39,8 @@ func CreateObjects(t *testing.T, resources ...client.Object) error {
 
 	t.Cleanup(func() {
 		// Delete created objects after test completion. We dont care for not found errors here.
-		gomega.Expect(DeleteObjectsIgnoringNotFound(resources...)).To(gomega.Succeed())
-		gomega.Eventually(AllObjectsDeleted(resources...), periodic.EventuallyTimeout).Should(gomega.Succeed())
+		gomega.Expect(deleteObjectsIgnoringNotFound(resources...)).To(gomega.Succeed())
+		gomega.Eventually(allObjectsDeleted(resources...), periodic.EventuallyTimeout).Should(gomega.Succeed())
 	})
 
 	for _, resource := range sortedResources {
@@ -77,7 +77,7 @@ func CreateObjects(t *testing.T, resources ...client.Object) error {
 	return nil
 }
 
-func AllObjectsDeleted(resources ...client.Object) error {
+func allObjectsDeleted(resources ...client.Object) error {
 	for _, r := range resources {
 		if hasPersistentLabel(r.GetLabels()) {
 			continue
@@ -154,7 +154,7 @@ func DeleteObjects(resources ...client.Object) error {
 	return nil
 }
 
-func DeleteObjectsIgnoringNotFound(resources ...client.Object) error {
+func deleteObjectsIgnoringNotFound(resources ...client.Object) error {
 	for _, r := range resources {
 		// Skip object deletion for persistent ones.
 		if hasPersistentLabel(r.GetLabels()) {
@@ -239,7 +239,7 @@ func hasPersistentLabel(labels kitk8sobjects.Labels) bool {
 	return labelMatches(labels, kitk8sobjects.PersistentLabelName, "true")
 }
 
-func ResetTelemetryResource(t *testing.T, previous operatorv1alpha1.Telemetry) {
+func resetTelemetryResource(t *testing.T, previous operatorv1alpha1.Telemetry) {
 	t.Helper()
 	gomega.Eventually(func(g gomega.Gomega) {
 		var current operatorv1alpha1.Telemetry
@@ -257,6 +257,6 @@ func PreserveAndScheduleRestoreOfTelemetryResource(t *testing.T, key types.Names
 	var previous operatorv1alpha1.Telemetry
 	gomega.Expect(suite.K8sClient.Get(t.Context(), key, &previous)).NotTo(gomega.HaveOccurred())
 	t.Cleanup(func() {
-		ResetTelemetryResource(t, previous)
+		resetTelemetryResource(t, previous)
 	})
 }

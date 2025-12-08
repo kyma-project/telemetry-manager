@@ -19,7 +19,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -58,7 +58,7 @@ func TestOTelLogPipeline_ServiceNameEnrichment(t *testing.T) {
 			},
 			logProducerFunc: func(deploymentName, namespace string) client.Object {
 				podSpecWithUndefinedService := telemetrygen.PodSpec(telemetrygen.SignalTypeLogs, telemetrygen.WithServiceName(""))
-				return objects.NewDeployment(deploymentName, namespace).
+				return kitk8sobjects.NewDeployment(deploymentName, namespace).
 					WithLabel(appLabelName, appLabelValue).
 					WithPodSpec(podSpecWithUndefinedService).
 					K8sObject()
@@ -109,7 +109,7 @@ func TestOTelLogPipeline_ServiceNameEnrichment(t *testing.T) {
 				Build()
 
 			resources := []client.Object{
-				objects.NewNamespace(mockNs).K8sObject(),
+				kitk8sobjects.NewNamespace(mockNs).K8sObject(),
 				&pipeline,
 				tc.logProducerFunc(genName, mockNs),
 			}
