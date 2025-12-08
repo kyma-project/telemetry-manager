@@ -57,14 +57,14 @@ jobs:
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             echo "IMAGE_REPO=europe-docker.pkg.dev/kyma-project/dev/telemetry-manager" >> $GITHUB_ENV
             echo "IMAGE_TAG=PR-${{ github.event.number }}" >> $GITHUB_ENV
-          else if [[ "${{ github.event_name }}" == "merge_group" ]]; then
+          elif [[ "${{ github.event_name }}" == "merge_group" ]]; then
             echo "IMAGE_REPO=europe-docker.pkg.dev/kyma-project/dev/telemetry-manager" >> $GITHUB_ENV
             echo "IMAGE_TAG=${{ github.event.merge_group.head_sha }}" >> $GITHUB_ENV
           else
             echo "IMAGE_REPO=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager" >> $GITHUB_ENV
 
             GIT_COMMIT_SHA=$(git rev-parse --short=8 HEAD)
-            GIT_COMMIT_DATE=$(git show -s --format=%cd --date=format:'v%Y%m%d' $(GIT_COMMIT_SHA))
+            GIT_COMMIT_DATE=$(git show -s --format=%cd --date=format:'v%Y%m%d' $GIT_COMMIT_SHA)
             TAG="$GIT_COMMIT_DATE-$GIT_COMMIT_SHA"
             echo "IMAGE_TAG=$TAG" >> $GITHUB_ENV
           fi
