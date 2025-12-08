@@ -68,6 +68,7 @@ func TestEmptyEnrichmentValues(t *testing.T) {
 			HaveResourceAttributes(HaveKeyWithValue("cloud.availability_zone", Not(BeEmpty()))),
 			HaveResourceAttributes(HaveKeyWithValue("host.type", Not(BeEmpty()))),
 			HaveResourceAttributes(HaveKeyWithValue("host.arch", Not(BeEmpty()))),
+			HaveResourceAttributes(HaveKeyWithValue("service.name", Not(BeEmpty()))),
 		))),
 	)
 
@@ -80,7 +81,6 @@ func TestEmptyEnrichmentValues(t *testing.T) {
 			HaveResourceAttributes(HaveKeyWithValue("k8s.daemonset.name", BeEmpty())),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.cronjob.name", BeEmpty())),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.job.name", BeEmpty())),
-			HaveResourceAttributes(HaveKeyWithValue("service.name", BeEmpty())),
 		))),
 	)
 

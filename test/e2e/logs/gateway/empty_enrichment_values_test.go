@@ -76,19 +76,19 @@ func TestEmptyEnrichmentValues(t *testing.T) {
 			HaveResourceAttributes(HaveKeyWithValue("cloud.availability_zone", Not(BeEmpty()))),
 			HaveResourceAttributes(HaveKeyWithValue("host.type", Not(BeEmpty()))),
 			HaveResourceAttributes(HaveKeyWithValue("host.arch", Not(BeEmpty()))),
-			))),
-		)
-		
-		// These attributes are currently not enriched by the processors (if set to empty value)
-		// TODO (TeodorSAP): Find a consistent way to handle empty values - should they be dropped or enriched?
-		assert.BackendDataEventuallyMatches(t, backend,
-			HaveFlatLogs(ContainElement(SatisfyAll(
+			HaveResourceAttributes(HaveKeyWithValue("service.name", Not(BeEmpty()))),
+		))),
+	)
+
+	// These attributes are currently not enriched by the processors (if set to empty value)
+	// TODO (TeodorSAP): Find a consistent way to handle empty values - should they be dropped or enriched?
+	assert.BackendDataEventuallyMatches(t, backend,
+		HaveFlatLogs(ContainElement(SatisfyAll(
 			HaveResourceAttributes(HaveKeyWithValue("k8s.deployment.name", BeEmpty())),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.statefulset.name", BeEmpty())),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.daemonset.name", BeEmpty())),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.cronjob.name", BeEmpty())),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.job.name", BeEmpty())),
-			HaveResourceAttributes(HaveKeyWithValue("service.name", BeEmpty())),
 		))),
 	)
 
