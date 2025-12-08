@@ -262,6 +262,7 @@ func toSet(labels []string) map[string]struct{} {
 		if label == "" {
 			continue
 		}
+
 		set[label] = struct{}{}
 	}
 
