@@ -172,14 +172,18 @@ Keep current fanout behavior without modification.
 
 ## Next Steps
 
-1. Investigate behavior and requirements for pull-based receivers in this architecture
+1. Investigate behavior for pull-based receivers when backpressure is propageted from the exporter:
+    - `filelogreceiver` - has a `retry_on_failure` configuration
+    - `prometheusreceiver`
+    - `k8sclusterreceiver`
+    - `kubeletstatsreceiver`
 2. Get in touch with CLS maintainer to explore how CLS handles deduplication
-2. Get in touch with OpenTelemetry community member to validate approach and gather feedback
-3. Design and implement the primary/secondary fanout processor or connector
-4. Design and implement the UUIDv5-based deduplication processor
-5. Determine optimal configurations for batching, queueing, and retry parameters based on queue_size constraints
-6. Create phased rollout plan with rollback procedures
-7. Update operational runbooks and configuration guides
+3. Get in touch with OpenTelemetry community member to validate approach and gather feedback
+4. Design and implement the primary/secondary fanout processor or connector
+5. Design and implement the UUIDv5-based deduplication processor
+6. Determine optimal configurations for batching, queueing, and retry parameters based on queue_size constraints
+7. Create phased rollout plan with rollback procedures
+8. Update operational runbooks and configuration guides
 
 ## References
 
