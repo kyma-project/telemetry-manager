@@ -1,4 +1,4 @@
 apiVersion: v2
 name: experimental
 description: Telemetry Manager Experimental CRDs
-version: 0.0.1-main
+version: 1.54.0
