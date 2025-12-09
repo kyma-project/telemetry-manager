@@ -13,7 +13,7 @@ runs:
   using: "composite"
 
   steps:
-    - name: Upload JUnit report
+    - name: Upload test report
       uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
       with:
         name: ${{ inputs.id }}-report
@@ -31,7 +31,7 @@ runs:
       run: |
         kubectl -n kyma-system logs -l "app.kubernetes.io/instance=telemetry, app.kubernetes.io/name=manager"
 
-    - name: List Namespaces
+    - name: List namespaces
       shell: bash
       if: ${{ inputs.failure }}
       run: |

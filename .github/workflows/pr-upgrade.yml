@@ -37,13 +37,13 @@ jobs:
   upgrade:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
+      - name: Checkout code
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Setup Golang
         uses: "./.github/template/setup-golang"
 
-      - name: Check out latest tag
+      - name: Checkout latest tag
         id: latest-tag
         shell: bash
         run: |
@@ -72,11 +72,11 @@ jobs:
         run: |
           go test -v -count=1 -timeout=10m -run="^(TestLogsFluentBitUpgrade|TestLogsUpgrade|TestMetricsUpgrade|TestTracesUpgrade)/before_upgrade$" ./test/e2e/upgrade/...
 
-      - name: Switch back to current revision
+      - name: Checkout current revision
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       # wait for the build to complete so that the manager image is available
-      - name: Wait for the Build Image workflow to complete
+      - name: Wait for build image workflow to complete
         run: "./hack/await_image.sh"
         env:
           # sets trigger depending on event being either pull_request or merge_group
@@ -100,7 +100,7 @@ jobs:
         run: |
           go test -v -count=1 -timeout=10m -run="^(TestLogsFluentBitUpgrade|TestLogsUpgrade|TestMetricsUpgrade|TestTracesUpgrade)/after_upgrade$" ./test/e2e/upgrade/...
 
-      - name: Clean-up test environment
+      - name: Cleanup test environment
         uses: "./.github/template/test-cleanup"
         if: ${{ !cancelled()  }}
         with:

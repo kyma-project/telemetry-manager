@@ -1,25 +1,26 @@
-name: 'Periodic Github Checks'
+name: Periodic GitHub Checks
 
 permissions:
   contents: read
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # Runs daily at midnight
+    - cron: "0 0 * * *" # Runs daily at midnight
   workflow_dispatch: # Allows manual triggering of the workflow
 
 jobs:
   stale-issues:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/stale@5f858e3efba33a5ca4407a664cc011ad407f2008 # v10.1.0
+      - name: Mark stale issues and PRs
+        uses: actions/stale@5f858e3efba33a5ca4407a664cc011ad407f2008 # v10.1.0
         with:
           days-before-stale: 60
           days-before-close: 7
-          stale-issue-label: 'lifecycle/stale'
-          stale-pr-label: 'lifecycle/stale'
-          exempt-issue-labels: 'lifecycle/frozen'
-          exempt-pr-labels: 'lifecycle/frozen'
+          stale-issue-label: "lifecycle/stale"
+          stale-pr-label: "lifecycle/stale"
+          exempt-issue-labels: "lifecycle/frozen"
+          exempt-pr-labels: "lifecycle/frozen"
           stale-issue-message: |
             This issue has been automatically marked as stale due to the lack of recent activity. It will soon be closed if no further activity occurs.
             Thank you for your contributions.
