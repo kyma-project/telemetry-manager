@@ -45,7 +45,7 @@ jobs:
     outputs:
       manager-image: ${{ steps.set-env.outputs.image-repo }}:${{ steps.set-env.outputs.image-tag }}
     steps:
-      - name: Checkout repo
+      - name: Checkout code
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Setup Golang
@@ -102,7 +102,7 @@ jobs:
     name: "selfmon: ${{ matrix.kind }}-${{ matrix.scenario }}"
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
+      - name: Checkout code
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Setup test environment
@@ -120,7 +120,7 @@ jobs:
           path: ./test/selfmonitor/...
           labels: "selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}"
 
-      - name: Clean-up test environment
+      - name: Cleanup test environment
         uses: "./.github/template/test-cleanup"
         if: ${{ !cancelled()  }}
         with:
@@ -295,7 +295,7 @@ jobs:
     name: "${{ matrix.testcase.name }}"
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
+      - name: Checkout code
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Setup test environment
@@ -314,7 +314,7 @@ jobs:
           path: ./test/${{ matrix.testcase.type }}/...
           labels: ${{ matrix.testcase.labels }}
 
-      - name: Clean-up test environment
+      - name: Cleanup test environment
         uses: "./.github/template/test-cleanup"
         if: ${{ !cancelled()  }}
         with:
@@ -331,7 +331,7 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     steps:
-      - name: Checkout repo
+      - name: Checkout code
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Generate test summary

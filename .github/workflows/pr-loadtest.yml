@@ -36,7 +36,7 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - name: Checkout repo
+      - name: Checkout code
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           ref: "refs/pull/${{ github.event.inputs.pr_number }}/head"
@@ -56,10 +56,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Test
+      - name: Test matrix configuration
         run: echo "input = ${{ github.event.inputs.image }}, matrix = ${{ matrix.image }}"
 
-      - name: Checkout repo
+      - name: Checkout code
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           ref: "refs/pull/${{ github.event.inputs.pr_number }}/head"
@@ -75,15 +75,13 @@ jobs:
           GARDENER_CLUSTER_NAME=$(echo lt-${SHORT_NAME}-${ID} | cut -c 1-14)
           echo "GARDENER_CLUSTER_NAME=$GARDENER_CLUSTER_NAME" >> $GITHUB_ENV
 
-      # save gardener kubeconfig to a temp file in order to pass it to the command
       - name: Save service account to file
         shell: bash
         run: 'echo "$GARDENER_SA" > /tmp/gardener-sa.yaml'
         env:
           GARDENER_SA: ${{ secrets.GARDENER_SA }}
 
-      # provision cluster
-      - name: Provision Gardener
+      - name: Provision gardener cluster
         run: make provision-gardener
         env:
           GARDENER_SECRET_NAME: ${{ secrets.GARDENER_SECRET_NAME }}
@@ -92,24 +90,23 @@ jobs:
           GARDENER_MIN_NODES: 2
           GARDENER_MAX_NODES: 2
 
-      - name: Deploy Telemetry
+      - name: Deploy telemetry
         run: hack/deploy-telemetry.sh
 
-      - name: Deploy Istio Module
+      - name: Deploy Istio module
         run: hack/deploy-istio.sh
 
-      # Run the load test
-      - name: Run Load test
+      - name: Run load test
         run: hack/load-tests/run-load-test.sh -n ${{ matrix.name }} -t ${{ matrix.type }} -m ${{ matrix.multi }} -b ${{ matrix.backpressure }} -d ${{ github.event.inputs.duration }} -o "${{ matrix.overlay }}"
 
-      - name: Upload Results
+      - name: Upload results
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         if: always()
         with:
           name: Results-${{ matrix.name }}
           path: tests/*.json
 
-      - name: Deprovision Gardener
+      - name: Deprovision gardener cluster
         run: make deprovision-gardener
         # always run the deprovision step, even if the previous steps failed
         if: always()
@@ -121,19 +118,19 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     steps:
-      - name: Checkout repo
+      - name: Checkout code
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           ref: "refs/pull/${{ github.event.inputs.pr_number }}/head"
           repository: ${{ github.repository }}
-      - name: Download Results
+      - name: Download results
         uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
         with:
           path: perf-results
           merge-multiple: true
-      - name: Print Results
+      - name: Print results
         run: |
           ls -la perf-results
           python3 hack/load-tests/convert-results.py perf-results
-      - name: Send to GitHub Summary
+      - name: Send results to GitHub summary
         run: python3 hack/load-tests/convert-results.py -m perf-results >> $GITHUB_STEP_SUMMARY
