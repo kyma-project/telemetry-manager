@@ -173,6 +173,7 @@ Keep current fanout behavior without modification.
 ## Next Steps
 
 1. Investigate behavior and requirements for pull-based receivers in this architecture
+2. Get in touch with CLS maintainer to explore how CLS handles deduplication
 2. Get in touch with OpenTelemetry community member to validate approach and gather feedback
 3. Design and implement the primary/secondary fanout processor or connector
 4. Design and implement the UUIDv5-based deduplication processor
