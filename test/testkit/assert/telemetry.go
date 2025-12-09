@@ -1,6 +1,8 @@
 package assert
 
 import (
+	"testing"
+
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -8,13 +10,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/test/testkit"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-func TelemetryCRExists(t testkit.T) {
+func TelemetryCRExists(t *testing.T) {
 	t.Helper()
 
 	Eventually(func(g Gomega) {
@@ -23,7 +24,7 @@ func TelemetryCRExists(t testkit.T) {
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func TelemetryHasState(t testkit.T, expectedState operatorv1alpha1.State) {
+func TelemetryHasState(t *testing.T, expectedState operatorv1alpha1.State) {
 	t.Helper()
 
 	Eventually(func(g Gomega) {
@@ -33,7 +34,7 @@ func TelemetryHasState(t testkit.T, expectedState operatorv1alpha1.State) {
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func TelemetryHasCondition(t testkit.T, k8sClient client.Client, expectedCond metav1.Condition) {
+func TelemetryHasCondition(t *testing.T, k8sClient client.Client, expectedCond metav1.Condition) {
 	t.Helper()
 
 	Eventually(func(g Gomega) {

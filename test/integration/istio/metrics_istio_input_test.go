@@ -11,6 +11,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -92,10 +93,10 @@ func TestMetricsIstioInput(t *testing.T) {
 		Build()
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(genNs).K8sObject(),
-		kitk8s.NewNamespace(app1Ns, kitk8s.WithIstioInjection()).K8sObject(),
-		kitk8s.NewNamespace(app2Ns, kitk8s.WithIstioInjection()).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+		kitk8sobjects.NewNamespace(genNs).K8sObject(),
+		kitk8sobjects.NewNamespace(app1Ns, kitk8sobjects.WithIstioInjection()).K8sObject(),
+		kitk8sobjects.NewNamespace(app2Ns, kitk8sobjects.WithIstioInjection()).K8sObject(),
 		&metricPipeline,
 		&logPipeline,
 	}
@@ -105,9 +106,6 @@ func TestMetricsIstioInput(t *testing.T) {
 	resources = append(resources, trafficgen.K8sObjects(app2Ns)...)
 	resources = append(resources, telemetrygen.NewDeployment(genNs, telemetrygen.SignalTypeLogs).K8sObject())
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
