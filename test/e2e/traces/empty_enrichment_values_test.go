@@ -33,15 +33,35 @@ func TestEmptyEnrichmentValues(t *testing.T) {
 		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 		Build()
 
+	generator := telemetrygen.NewPod(
+		genNs,
+		telemetrygen.SignalTypeTraces,
+		telemetrygen.WithResourceAttribute("cloud.availability_zone", ""),
+		telemetrygen.WithResourceAttribute("cloud.provider", ""),
+		telemetrygen.WithResourceAttribute("cloud.region", ""),
+		telemetrygen.WithResourceAttribute("host.arch", ""),
+		telemetrygen.WithResourceAttribute("host.type", ""),
+		telemetrygen.WithResourceAttribute("k8s.cluster.name", ""),
+		telemetrygen.WithResourceAttribute("k8s.cluster.uid", ""),
+		telemetrygen.WithResourceAttribute("k8s.cronjob.name", ""),
+		telemetrygen.WithResourceAttribute("k8s.daemonset.name", ""),
+		telemetrygen.WithResourceAttribute("k8s.deployment.name", ""),
+		telemetrygen.WithResourceAttribute("k8s.job.name", ""),
+		telemetrygen.WithResourceAttribute("k8s.namespace.name", ""),
+		telemetrygen.WithResourceAttribute("k8s.node.name", ""),
+		telemetrygen.WithResourceAttribute("k8s.pod.name", ""),
+		telemetrygen.WithResourceAttribute("k8s.statefulset.name", ""),
+		telemetrygen.WithResourceAttribute("kyma.app_name", ""),
+		telemetrygen.WithResourceAttribute("kyma.input.name", ""),
+		telemetrygen.WithResourceAttribute("kyma.kubernetes_io_app_name", ""),
+		telemetrygen.WithResourceAttribute("service.name", ""),
+	)
+
 	resources := []client.Object{
 		kitk8s.NewNamespace(backendNs).K8sObject(),
 		kitk8s.NewNamespace(genNs).K8sObject(),
 		&pipeline,
-		telemetrygen.NewPod(
-			genNs,
-			telemetrygen.SignalTypeTraces,
-			telemetrygen.WithEmptyEnrichmentValues(), // Data is  already generated with empty values for enrichment attributes
-		).K8sObject(),
+		generator.K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
 
