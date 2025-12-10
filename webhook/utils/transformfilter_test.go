@@ -12,6 +12,7 @@ import (
 
 func TestValidateFilterTransform(t *testing.T) {
 	err := ValidateFilterTransform(
+		t.Context(),
 		ottl.SignalTypeLog,
 		[]telemetryv1beta1.FilterSpec{},
 		[]telemetryv1beta1.TransformSpec{},
@@ -21,6 +22,7 @@ func TestValidateFilterTransform(t *testing.T) {
 
 func TestInvalidSignalType(t *testing.T) {
 	err := ValidateFilterTransform(
+		t.Context(),
 		"invalid",
 		[]telemetryv1beta1.FilterSpec{},
 		[]telemetryv1beta1.TransformSpec{},
@@ -30,6 +32,7 @@ func TestInvalidSignalType(t *testing.T) {
 
 func TestWithValidFilterTransform(t *testing.T) {
 	err := ValidateFilterTransform(
+		t.Context(),
 		ottl.SignalTypeLog,
 		[]telemetryv1beta1.FilterSpec{
 			{Conditions: []string{`log.severity_number < SEVERITY_NUMBER_WARN`}},
@@ -44,6 +47,7 @@ func TestWithValidFilterTransform(t *testing.T) {
 
 func TestWithInvalidFilter(t *testing.T) {
 	err := ValidateFilterTransform(
+		t.Context(),
 		ottl.SignalTypeLog,
 		[]telemetryv1beta1.FilterSpec{
 			{Conditions: []string{`invalid condition`}},
@@ -58,6 +62,7 @@ func TestWithInvalidFilter(t *testing.T) {
 
 func TestWithInvalidTransform(t *testing.T) {
 	err := ValidateFilterTransform(
+		t.Context(),
 		ottl.SignalTypeLog,
 		[]telemetryv1beta1.FilterSpec{
 			{Conditions: []string{`log.severity_number < SEVERITY_NUMBER_WARN`}},
