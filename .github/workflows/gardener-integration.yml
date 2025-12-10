@@ -67,10 +67,20 @@ jobs:
 
       - name: Prepare environment variables
         run: |
-          GIT_COMMIT_SHA=$(git rev-parse --short=8 HEAD)
-          GIT_COMMIT_DATE=$(git show -s --format=%cd --date=format:'v%Y%m%d' $(GIT_COMMIT_SHA))
-          TAG="$GIT_COMMIT_DATE-$GIT_COMMIT_SHA"
-          MANAGER_IMAGE="europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:$TAG"
+          if [[ "${{ github.event_name }}" == "pull_request_target" ]]; then
+            # For PR events, use dev image with PR number
+            PR_NUMBER="${{ github.event.number }}"
+            TAG="PR-${PR_NUMBER}"
+            MANAGER_IMAGE="europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:${TAG}"
+            echo "Using dev image for PR: $MANAGER_IMAGE"
+          else
+            # For push events, use prod image with commit-based tag
+            GIT_COMMIT_SHA=$(git rev-parse --short=8 HEAD)
+            GIT_COMMIT_DATE=$(git show -s --format=%cd --date=format:'v%Y%m%d' $GIT_COMMIT_SHA)
+            TAG="$GIT_COMMIT_DATE-$GIT_COMMIT_SHA"
+            MANAGER_IMAGE="europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:$TAG"
+            echo "Using prod image: $MANAGER_IMAGE"
+          fi
 
           echo "TAG=$TAG" >> $GITHUB_ENV
           echo "MANAGER_IMAGE=$MANAGER_IMAGE" >> $GITHUB_ENV
@@ -79,10 +89,8 @@ jobs:
       - name: Wait for the image to be available in the registry
         run: "./hack/await_image.sh"
         env:
-          IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/prod/telemetry-manager"
-          # sets trigger to SHA if used in merge_group, but to env.TAG if used in push
-          # even if env.TAG is available in merge_group event, it will be neglected
-          IMAGE_TAG: "${{ github.event.merge_group.head_sha || env.TAG }}"
+          IMAGE_REPO: "${{ github.event_name == 'pull_request_target' && 'europe-docker.pkg.dev/kyma-project/dev/telemetry-manager' || 'europe-docker.pkg.dev/kyma-project/prod/telemetry-manager' }}"
+          IMAGE_TAG: "${{ env.TAG }}"
           QUERY_INTERVAL: 30
 
       # save gardener kubeconfig to a temp file in order to pass it to the command
