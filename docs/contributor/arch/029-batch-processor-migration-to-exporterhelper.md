@@ -8,14 +8,9 @@ date: 2025-12-09
 
 ## Context
 
-The OpenTelemetry Collector's `batchprocessor` has known limitations and is planned for
-deprecation ([opentelemetry-collector#13582](https://github.com/open-telemetry/opentelemetry-collector/issues/13582)).
-The most significant limitation is its inability to propagate backpressure to clients due to its asynchronous behavior,
-forcing operators to choose between supporting batching or backpressure, but not both simultaneously.
+The OpenTelemetry Collector's `batchprocessor` has known limitations and is planned for deprecation ([opentelemetry-collector#13582](https://github.com/open-telemetry/opentelemetry-collector/issues/13582)). The most significant limitation is its inability to propagate backpressure to clients due to its asynchronous behavior, forcing operators to choose between supporting batching or backpressure, but not both simultaneously.
 
-A new batching solution has been integrated into exporters through the `exporterhelper` package, tracked
 The `exporterhelper` package integrates a new batching solution into exporters [see issue #8122](https://github.com/open-telemetry/opentelemetry-collector/issues/8122). This solution provides both batching capabilities and proper backpressure propagation.
-provide both batching capabilities and proper backpressure propagation.
 
 ### Current Situation
 
@@ -26,7 +21,7 @@ The testing setup consists of:
 - A fanout configuration where telemetry is sent to multiple backends simultaneously
 
 Backpressure is simulated by configuring the primary OTel Collector to send to the healthy OTel Collector and an
-additional non-existing endpoint (e.g., unreachable endpoint).
+additional unreachable endpoint.
 
 ### Results
 
@@ -40,7 +35,7 @@ otelcol_exporter_queue_size = 4
 otelcol_receiver_refused_metric_points_total = 333
 ```
 
-**With Batch Processor (Current Approach):**
+With Batch Processor (Current Approach):
 
 ```
 otelcol_exporter_enqueue_failed_metric_points_total = 126
@@ -119,12 +114,12 @@ service:
 To handle potential duplicate telemetry in secondary backends resulting from client retries, we will implement a custom
 processor that generates UUIDv5 identifiers for each telemetry item based on the following fields:
 
-- Timestamp
-- Pod Name
-- Node Name
-- Log Body (for logs)
-- Span ID (for traces)
-- Metric Name (for metrics)
+- `timestamp`
+- `k8s.pod.name`
+- `k8s.node.name`
+- `log.body` (for logs)
+- `spanID` (for traces)
+- `metric.name` (for metrics)
 
 This processor ensures idempotent delivery so that backends can recognize and discard duplicates.
 
