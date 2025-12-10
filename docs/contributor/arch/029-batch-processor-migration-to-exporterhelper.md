@@ -148,6 +148,21 @@ Our self monitor component monitors the following metrics:
 | Secondary backends receive incomplete data | Accept as trade-off for isolation                                       |
 | Performance overhead from custom component | Performance testing as part of next steps, optimize based on benchmarks |
 
+## Next Steps
+
+1. Investigate behavior for pull-based receivers when backpressure is propagated from the exporter:
+    - `filelogreceiver` - has a `retry_on_failure` configuration
+    - `prometheusreceiver`
+    - `k8sclusterreceiver`
+    - `kubeletstatsreceiver`
+2. Contact the CLS maintainer to explore how CLS handles deduplication.
+3. Contact an OpenTelemetry community member to validate the approach and gather feedback.
+4. Design and implement the primary/secondary fanout processor or connector.
+5. Design and implement the UUIDv5-based deduplication processor.
+6. Determine optimal configurations for batching, queueing, and retry parameters based on queue_size constraints.
+7. Create a phased rollout plan with rollback procedures.
+8. Update operational runbooks and configuration guides.
+
 ## Alternatives Considered
 
 ### 1. Use `block_on_overflow` for Secondary Pipelines
@@ -180,20 +195,7 @@ Keep the current fanout behavior without modification.
 - High risk of data loss and service degradation
 - Poor user experience during common failure scenarios
 
-## Next Steps
 
-1. Investigate behavior for pull-based receivers when backpressure is propagated from the exporter:
-    - `filelogreceiver` - has a `retry_on_failure` configuration
-    - `prometheusreceiver`
-    - `k8sclusterreceiver`
-    - `kubeletstatsreceiver`
-2. Contact the CLS maintainer to explore how CLS handles deduplication.
-3. Contact an OpenTelemetry community member to validate the approach and gather feedback.
-4. Design and implement the primary/secondary fanout processor or connector.
-5. Design and implement the UUIDv5-based deduplication processor.
-6. Determine optimal configurations for batching, queueing, and retry parameters based on queue_size constraints.
-7. Create a phased rollout plan with rollback procedures.
-8. Update operational runbooks and configuration guides.
 
 ## References
 
