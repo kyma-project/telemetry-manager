@@ -44,7 +44,7 @@ func TestLogsFluentBitUpgrade(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 
 	t.Run("before upgrade", func(t *testing.T) {
-		Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
+		Expect(kitk8s.CreateObjectsWithoutAutomaticCleanup(t, resources...)).To(Succeed())
 
 		assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 		assert.FluentBitLogPipelineHealthy(t, pipelineName)
