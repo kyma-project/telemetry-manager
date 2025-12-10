@@ -7,7 +7,7 @@ images:
     tag: "v1.33.4-k3s1" # used by k3d - future k3s version
   - source: "library/registry@sha256:3725021071ec9383eb3d87ddbdff9ed602439b3f7c958c9c2fb941049ea6531d"
     tag: "3" # used by k3d
-  - source: "library/alpine@sha256:4b7ce07002c69e8f3d704a9c5d6fd3053be500b7f1c69fc0d80990c2ad8dd412"
-    tag: "3.22.2" # used for init containers in log agent and fluentbit
+  - source: "library/alpine@sha256:51183f2cfa6320055da30872f211093f9ff1d3cf06f39a0bdb212314c5dc7375"
+    tag: "3.23.0" # used for init containers in log agent and fluentbit
   - source: quay.io/prometheuscommunity/avalanche
     tag: "v0.7.0" # used by the metrics agent test in backpressure scenario to generate metric load
