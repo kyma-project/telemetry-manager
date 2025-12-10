@@ -8,9 +8,9 @@ date: 2025-12-09
 
 ## Context
 
-The OpenTelemetry Collector's `batchprocessor` has known limitations and is planned for deprecation ([opentelemetry-collector#13582](https://github.com/open-telemetry/opentelemetry-collector/issues/13582)). The most significant limitation is its inability to propagate backpressure to clients due to its asynchronous behavior, forcing operators to choose between supporting batching or backpressure, but not both simultaneously.
+The OpenTelemetry Collector's batchprocessor has known limitations and is planned for deprecation ([opentelemetry-collector#13582](https://github.com/open-telemetry/opentelemetry-collector/issues/13582)). The most significant limitation is its inability to propagate backpressure to clients due to its asynchronous behavior, forcing operators to choose between supporting batching or backpressure, but not both simultaneously.
 
-The `exporterhelper` package integrates a new batching solution into exporters [see issue #8122](https://github.com/open-telemetry/opentelemetry-collector/issues/8122). This solution provides both batching capabilities and proper backpressure propagation.
+The exporterhelper package integrates a new batching solution into exporters [see issue #8122](https://github.com/open-telemetry/opentelemetry-collector/issues/8122). This solution provides both batching capabilities and proper backpressure propagation.
 
 ### Current Situation
 
