@@ -31,17 +31,25 @@ import (
 func CreateObjects(t *testing.T, resources ...client.Object) error {
 	t.Helper()
 
-	// Sort resources:
-	// 1. namespaces
-	// 2. other resources
-	// 3. pipelines
-	sortedResources := sortObjects(resources)
-
 	t.Cleanup(func() {
 		// Delete created objects after test completion. We dont care for not found errors here.
 		gomega.Expect(deleteObjectsIgnoringNotFound(resources...)).To(gomega.Succeed())
 		gomega.Eventually(allObjectsDeleted(resources...), periodic.EventuallyTimeout).Should(gomega.Succeed())
 	})
+	return createObjects(t, resources...)
+}
+
+// CreateObjectsWithoutAutomaticCleanup creates k8s objects passed as a slice but does not delete them automatically after the test.
+func CreateObjectsWithoutAutomaticCleanup(t *testing.T, resources ...client.Object) error {
+	t.Helper()
+
+	return createObjects(t, resources...)
+}
+
+func createObjects(t *testing.T, resources ...client.Object) error {
+	t.Helper()
+
+	sortedResources := sortObjects(resources)
 
 	for _, resource := range sortedResources {
 		// Skip object creation if it already exists.
@@ -75,6 +83,7 @@ func CreateObjects(t *testing.T, resources ...client.Object) error {
 	}
 
 	return nil
+
 }
 
 func allObjectsDeleted(resources ...client.Object) error {
