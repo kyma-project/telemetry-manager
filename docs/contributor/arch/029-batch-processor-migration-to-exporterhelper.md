@@ -74,7 +74,7 @@ An example configuration for the custom processor may look like this:
 processors:
   fanout:
     primary_exporters: [ otlp/backend ]
-    secondary_exporters: [ otlp/backend-2, file/backend ]
+    secondary_exporters: [ otlp/backend-2]
 
 exporters:
   otlp/backend:
@@ -98,7 +98,7 @@ service:
     traces:
       receivers: [ otlp ]
       processors: [ fanout ]
-      exporters: [ otlp/backend, otlp/backend-2, file/backend ]
+      exporters: [ otlp/backend, otlp/backend-2]
 ```
 
 ### 2. Deduplication: Custom Processor for UUIDv5-based Deduplication
