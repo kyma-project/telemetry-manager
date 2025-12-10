@@ -198,7 +198,6 @@ func configureFluentBitReconciler(config LogPipelineControllerConfig, client cli
 		logpipelinefluentbit.WithEndpointValidator(&endpoint.Validator{Client: client}),
 		logpipelinefluentbit.WithTLSCertValidator(tlscert.New(client)),
 		logpipelinefluentbit.WithSecretRefValidator(&secretref.Validator{Client: client}),
-		logpipelinefluentbit.WithValidatorPipelineLock(pipelineLock),
 	)
 
 	fluentBitApplierDeleter := fluentbit.NewFluentBitApplierDeleter(
