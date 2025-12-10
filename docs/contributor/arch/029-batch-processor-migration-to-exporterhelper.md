@@ -20,8 +20,7 @@ The testing setup consists of:
 - One healthy backend OTel Collector receiving forwarded telemetry
 - A fanout configuration where telemetry is sent to multiple backends simultaneously
 
-Backpressure is simulated by configuring the primary OTel Collector to send to the healthy OTel Collector and an
-additional unreachable endpoint.
+Backpressure is simulated by configuring the primary OTel Collector to send to the healthy OTel Collector and an additional unreachable endpoint.
 
 ### Results
 
@@ -44,12 +43,10 @@ otelcol_receiver_refused_metric_points_total = 0
 ```
 
 The `receiver_refused_*` metric demonstrates that exporterhelper successfully propagates backpressure to the receiver, so clients can receive retryable errors and implement proper retry logic.
-enabling clients to receive retryable errors and implement proper retry logic.
 
 ### Identified Challenge: Fanout Backpressure
 
-When using a fanout configuration with multiple exporters, backpressure from any single unhealthy backend affects data
-delivery to all backends, causing:
+When using a fanout configuration with multiple exporters, backpressure from any single unhealthy backend affects data delivery to all backends, causing:
 
 - Significantly slower telemetry delivery to healthy backends
 - Potential data loss when client queues fill up
@@ -58,13 +55,8 @@ delivery to all backends, causing:
 
 ## Decision
 
-We will migrate from `batchprocessor` to the exporterhelper's built-in batching capabilities for all exporter
-configurations. During this migration, we will contact the OpenTelemetry community to discuss
-and potentially contribute a solution.
-The [design document](https://docs.google.com/document/d/1uxnn5rMHhCBLP1s8K0Pg_1mAs4gCeny8OWaYvWcuibs) proposed a
-`drop_on_error` configuration in the exporter helper package so users can select which pipelines should not propagate backpressure. However, there are currently no updates on this proposal's progress. We will contact an OpenTelemetry maintainer to discuss this further.
-propagate backpressure. However, there are currently no updates on the progress of this proposal. We will try to
-personally contact one of the OpenTelemetry maintainers to discuss this further.
+We will migrate from `batchprocessor` to the exporterhelper's built-in batching capabilities for all exporter configurations. During this migration, we will contact the OpenTelemetry community to discuss and potentially contribute a solution.
+The [design document](https://docs.google.com/document/d/1uxnn5rMHhCBLP1s8K0Pg_1mAs4gCeny8OWaYvWcuibs) proposed a `drop_on_error` configuration in the exporter helper package so users can select which pipelines should not propagate backpressure. However, there are currently no updates on this proposal's progress. We will contact an OpenTelemetry maintainer to discuss this further.
 
 Currently, the migration plan includes the following steps to mitigate the fanout backpressure issue:
 
@@ -111,8 +103,7 @@ service:
 
 ### 2. Deduplication: Custom Processor for UUIDv5-based Deduplication
 
-To handle potential duplicate telemetry in secondary backends resulting from client retries, we will implement a custom
-processor that generates UUIDv5 identifiers for each telemetry item based on the following fields:
+To handle potential duplicate telemetry in secondary backends resulting from client retries, we will implement a custom processor that generates UUIDv5 identifiers for each telemetry item based on the following fields:
 
 - `timestamp`
 - `k8s.pod.name`
@@ -148,7 +139,6 @@ Our self monitor component monitors the following metrics:
 2. If the primary backend fails, all backends experience degraded performance
 3. Secondary backends may lose data during extended primary backend outages
 4. If multiple primary backends are needed to deliver different telemetry to different backends, backpressure in one primary backend affects all other primary backends.
-   backpressure in one primary backend will affect all other primary backends.
 
 ### Risks and Mitigations
 
