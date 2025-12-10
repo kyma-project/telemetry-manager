@@ -36,6 +36,7 @@ func CreateObjects(t *testing.T, resources ...client.Object) error {
 		gomega.Expect(deleteObjectsIgnoringNotFound(resources...)).To(gomega.Succeed())
 		gomega.Eventually(allObjectsDeleted(resources...), periodic.EventuallyTimeout).Should(gomega.Succeed())
 	})
+
 	return createObjects(t, resources...)
 }
 
@@ -83,7 +84,6 @@ func createObjects(t *testing.T, resources ...client.Object) error {
 	}
 
 	return nil
-
 }
 
 func allObjectsDeleted(resources ...client.Object) error {
