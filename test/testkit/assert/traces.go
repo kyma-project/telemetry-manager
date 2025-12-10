@@ -1,6 +1,7 @@
 package assert
 
 import (
+	"testing"
 	"time"
 
 	. "github.com/onsi/gomega"
@@ -11,14 +12,13 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	"github.com/kyma-project/telemetry-manager/test/testkit"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-func TracesFromNamespaceDelivered(t testkit.T, backend *kitbackend.Backend, namespace string) {
+func TracesFromNamespaceDelivered(t *testing.T, backend *kitbackend.Backend, namespace string) {
 	t.Helper()
 
 	BackendDataEventuallyMatches(
@@ -30,7 +30,7 @@ func TracesFromNamespaceDelivered(t testkit.T, backend *kitbackend.Backend, name
 	)
 }
 
-func TracesFromNamespacesNotDelivered(t testkit.T, backend *kitbackend.Backend, namespaces []string) {
+func TracesFromNamespacesNotDelivered(t *testing.T, backend *kitbackend.Backend, namespaces []string) {
 	t.Helper()
 
 	BackendDataConsistentlyMatches(
@@ -42,7 +42,7 @@ func TracesFromNamespacesNotDelivered(t testkit.T, backend *kitbackend.Backend, 
 	)
 }
 
-func TracePipelineHealthy(t testkit.T, pipelineName string) {
+func TracePipelineHealthy(t *testing.T, pipelineName string) {
 	t.Helper()
 
 	Eventually(func(g Gomega) {
@@ -61,7 +61,7 @@ func TracePipelineHealthy(t testkit.T, pipelineName string) {
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func TracePipelineHasCondition(t testkit.T, pipelineName string, expectedCond metav1.Condition) {
+func TracePipelineHasCondition(t *testing.T, pipelineName string, expectedCond metav1.Condition) {
 	t.Helper()
 
 	Eventually(func(g Gomega) {
@@ -77,7 +77,7 @@ func TracePipelineHasCondition(t testkit.T, pipelineName string, expectedCond me
 }
 
 //nolint:dupl //LogPipelineConditionReasonsTransition,TracePipelineConditionReasonsTransition, MetricPipelineConditionReasonsTransition have similarities, but they are not the same
-func TracePipelineConditionReasonsTransition(t testkit.T, pipelineName, condType string, expected []ReasonStatus) {
+func TracePipelineConditionReasonsTransition(t *testing.T, pipelineName, condType string, expected []ReasonStatus) {
 	t.Helper()
 
 	var currCond *metav1.Condition
@@ -104,7 +104,7 @@ func TracePipelineConditionReasonsTransition(t testkit.T, pipelineName, condType
 }
 
 //nolint:dupl // TODO: Find a generic approach to merge this helper function with the other ones for the other telemetry types
-func TracePipelineSelfMonitorIsHealthy(t testkit.T, k8sClient client.Client, pipelineName string) {
+func TracePipelineSelfMonitorIsHealthy(t *testing.T, k8sClient client.Client, pipelineName string) {
 	t.Helper()
 
 	Eventually(func(g Gomega) {

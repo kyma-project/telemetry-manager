@@ -1,4 +1,4 @@
-name: PR Github Checks
+name: PR GitHub Checks
 
 permissions:
   contents: read
@@ -33,7 +33,7 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
-      - name: Set milestone
+      - name: Set milestone to latest open milestone
         if: github.event.pull_request.milestone == null
         run: |
           # set milestone to the latest open milestone
@@ -54,7 +54,7 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Add kind label based on PR title prefix
@@ -81,7 +81,7 @@ jobs:
             gh pr edit "$NUMBER" --add-label $correct_kind_label
           fi
 
-      - name: Check for area label
+      - name: Check for area label presence
         if: always()
         run: |
           gh api --jq '.labels.[].name' /repos/${REPO}/pulls/${NUMBER} | \
@@ -91,7 +91,7 @@ jobs:
           REPO: ${{ github.repository }}
           NUMBER: ${{ github.event.number }}
 
-      - name: Check that there is no do-not-merge label
+      - name: Check for absence of do-not-merge label
         if: always()
         run: |
           labels=$(gh api --jq '.labels.[]' /repos/${REPO}/pulls/${NUMBER} )
@@ -130,11 +130,11 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event.pull_request.base.ref == 'main' }}
     steps:
-      - name: Check-out code
+      - name: Checkout code
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           fetch-depth: 0
           repository: ${{ github.event.pull_request.head.repo.full_name }}
-      - name: Check kustomization.yaml changes
+      - name: Verify kustomization.yaml has no changes
         run: |
           git diff origin/main --exit-code -- config/manager/kustomization.yaml || (echo "config/manager/kustomization.yaml has changes compared to main branch. Please, revert them" && exit 1)

@@ -22,7 +22,7 @@ jobs:
       tags: ${{ steps.create-tags.outputs.tags }}
 
     steps:
-      - name: create tags
+      - name: Create tags
         id: create-tags
         run: |
           if [[ $GITHUB_EVENT_NAME == 'push' || $GITHUB_EVENT_NAME == 'merge_group' ]]; then
