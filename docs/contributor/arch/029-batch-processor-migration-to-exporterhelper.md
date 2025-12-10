@@ -14,7 +14,7 @@ The most significant limitation is its inability to propagate backpressure to cl
 forcing operators to choose between supporting batching or backpressure, but not both simultaneously.
 
 A new batching solution has been integrated into exporters through the `exporterhelper` package, tracked
-under [issue #8122](https://github.com/open-telemetry/opentelemetry-collector/issues/8122). This solution aims to
+The `exporterhelper` package integrates a new batching solution into exporters [see issue #8122](https://github.com/open-telemetry/opentelemetry-collector/issues/8122). This solution provides both batching capabilities and proper backpressure propagation.
 provide both batching capabilities and proper backpressure propagation.
 
 ### Current Situation
@@ -32,7 +32,7 @@ additional non-existing endpoint (e.g., unreachable endpoint).
 
 Testing confirmed that the exporterhelper approach properly handles backpressure:
 
-**With Exporter Helper (New Approach):**
+With exporter helper (new approach):
 
 ```
 otelcol_exporter_enqueue_failed_metric_points_total = 333
@@ -48,7 +48,7 @@ otelcol_exporter_queue_size = 4
 otelcol_receiver_refused_metric_points_total = 0
 ```
 
-The `receiver_refused_*` metric demonstrates that exporterhelper successfully propagates backpressure to the receiver,
+The `receiver_refused_*` metric demonstrates that exporterhelper successfully propagates backpressure to the receiver, so clients can receive retryable errors and implement proper retry logic.
 enabling clients to receive retryable errors and implement proper retry logic.
 
 ### Identified Challenge: Fanout Backpressure
@@ -58,16 +58,16 @@ delivery to all backends, causing:
 
 - Significantly slower telemetry delivery to healthy backends
 - Potential data loss when client queues fill up
-- Duplicated telemetry showing up in the healthy backend due to client retries
+- Duplicated telemetry appearing in the healthy backend due to client retries
 - Overall system degradation despite having healthy backends available
 
 ## Decision
 
 We will migrate from `batchprocessor` to the exporterhelper's built-in batching capabilities for all exporter
-configurations. During this migration period, we will try to get in touch with the OpenTelemetry community to discuss
+configurations. During this migration, we will contact the OpenTelemetry community to discuss
 and potentially contribute a solution.
 The [design document](https://docs.google.com/document/d/1uxnn5rMHhCBLP1s8K0Pg_1mAs4gCeny8OWaYvWcuibs) proposed a
-`drop_on_error` configuration in the exporter helper package to enable users to select which pipelines should not
+`drop_on_error` configuration in the exporter helper package so users can select which pipelines should not propagate backpressure. However, there are currently no updates on this proposal's progress. We will contact an OpenTelemetry maintainer to discuss this further.
 propagate backpressure. However, there are currently no updates on the progress of this proposal. We will try to
 personally contact one of the OpenTelemetry maintainers to discuss this further.
 
@@ -75,11 +75,11 @@ Currently, the migration plan includes the following steps to mitigate the fanou
 
 ### Backpressure Isolation: Custom Processor/Connector for Primary/Secondary Backend Designation
 
-We will implement a custom processor or connector that allows designation of primary and secondary backends:
+We will implement a custom processor or connector that designates primary and secondary backends:
 
-- **Primary backends**: Backpressure propagates normally when these backends are unhealthy
-- **Secondary backends**: Operate asynchronously without propagating backpressure to the main pipeline
-- **API exposure**: Users can configure primary backends through the Telemetry CR
+- **Primary backends**: Backpressure propagates normally when these backends are unhealthy.
+- **Secondary backends**: Operate asynchronously without propagating backpressure to the main pipeline.
+- **API exposure**: Users can configure primary backends through the Telemetry CR.
 
 An example configuration for the custom processor may look like this:
 
@@ -117,7 +117,7 @@ service:
 ### Deduplication : Custom Processor for UUIDv5-based Deduplication
 
 To handle potential duplicate telemetry in secondary backends resulting from client retries, we will implement a custom
-processor that generates UUIDv5 identifiers for each telemetry item based on its:
+processor that generates UUIDv5 identifiers for each telemetry item based on the following fields:
 
 - Timestamp
 - Pod Name
@@ -126,11 +126,11 @@ processor that generates UUIDv5 identifiers for each telemetry item based on its
 - Span ID (for traces)
 - Metric Name (for metrics)
 
-This processor will ensure idempotent delivery by allowing backends to recognize and discard duplicates.
+This processor ensures idempotent delivery so that backends can recognize and discard duplicates.
 
 ### Monitoring Implementation
 
-The following metrics will be monitored via self-monitoring:
+Our self monitor component monitors the following metrics:
 
 1. **Queue Health**: `otelcol_exporter_queue_size / otelcol_exporter_queue_capacity` - Alert when threshold indicates
    backend unavailability
@@ -143,16 +143,16 @@ The following metrics will be monitored via self-monitoring:
 
 ### Positive
 
-1. Clients can implement retry logic when receivers return unavailable status
-2. Aligns with OpenTelemetry's strategic direction before batchprocessor deprecation
-3. Secondary backend failures won't impact primary backend telemetry delivery
+1. Clients can implement retry logic when receivers return unavailable status.
+2. Aligns with OpenTelemetry's strategic direction before batchprocessor deprecation.
+3. Secondary backend failures won't impact primary backend telemetry delivery.
 
 ### Negative
 
 1. Custom processor/connector requires development and ongoing maintenance
 2. If the primary backend fails, all backends experience degraded performance
 3. Secondary backends may lose data during extended primary backend outages
-4. If a scenario where multiple primary backends are needed to deliver different telemetry to different backends,
+4. If multiple primary backends are needed to deliver different telemetry to different backends, backpressure in one primary backend affects all other primary backends.
    backpressure in one primary backend will affect all other primary backends.
 
 ### Risks and Mitigations
@@ -177,17 +177,17 @@ Configure secondary pipelines with `block_on_overflow` to block threads instead 
 
 ### 2. Route Secondary Pipelines Through Batch Processor for Asynchronous Behavior
 
-Use routing connector to send secondary pipelines through the deprecated batchprocessor.
+Use the routing connector to send secondary pipelines through the deprecated batchprocessor.
 
 **Rejected because:**
 
 - Only a temporary solution until batchprocessor removal
-- Doesn't align with long-term OpenTelemetry direction
+- Doesn't align with the long-term OpenTelemetry direction
 - Would require another migration in the future
 
 ### 3. Accept Fanout Backpressure
 
-Keep current fanout behavior without modification.
+Keep the current fanout behavior without modification.
 
 **Rejected because:**
 
@@ -202,13 +202,13 @@ Keep current fanout behavior without modification.
     - `prometheusreceiver`
     - `k8sclusterreceiver`
     - `kubeletstatsreceiver`
-2. Get in touch with CLS maintainer to explore how CLS handles deduplication
-3. Get in touch with OpenTelemetry community member to validate approach and gather feedback
-4. Design and implement the primary/secondary fanout processor or connector
-5. Design and implement the UUIDv5-based deduplication processor
-6. Determine optimal configurations for batching, queueing, and retry parameters based on queue_size constraints
-7. Create phased rollout plan with rollback procedures
-8. Update operational runbooks and configuration guides
+2. Contact the CLS maintainer to explore how CLS handles deduplication.
+3. Contact an OpenTelemetry community member to validate the approach and gather feedback.
+4. Design and implement the primary/secondary fanout processor or connector.
+5. Design and implement the UUIDv5-based deduplication processor.
+6. Determine optimal configurations for batching, queueing, and retry parameters based on queue_size constraints.
+7. Create a phased rollout plan with rollback procedures.
+8. Update operational runbooks and configuration guides.
 
 ## References
 
