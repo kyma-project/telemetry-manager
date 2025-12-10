@@ -25,7 +25,7 @@ Backpressure is simulated by configuring a fanout pipeline with the primary OTel
 
 Testing confirmed that the exporterhelper approach properly handles backpressure:
 
-With exporter helper (new approach):
+With exporterhelper (new approach):
 
 ```
 otelcol_exporter_enqueue_failed_metric_points_total = 333
@@ -33,7 +33,7 @@ otelcol_exporter_queue_size = 4
 otelcol_receiver_refused_metric_points_total = 333
 ```
 
-With Batch Processor (Current Approach):
+With batchprocessor (current approach):
 
 ```
 otelcol_exporter_enqueue_failed_metric_points_total = 126
