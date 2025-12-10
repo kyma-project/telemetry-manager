@@ -51,11 +51,7 @@ jobs:
           LATEST_TAG=$(curl -s https://api.github.com/repos/kyma-project/telemetry-manager/releases/latest | jq -r '.tag_name')
           echo "Latest release tag: ${LATEST_TAG}"
           
-          # Derive the image name from the tag
-          git fetch --tags
-          GIT_COMMIT_SHA=$(git rev-list -n 1 ${LATEST_TAG} | cut -c1-8)
-          GIT_COMMIT_DATE=$(git show -s --format=%cd --date=format:'v%Y%m%d' ${LATEST_TAG})
-          MANAGER_IMAGE=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA}
+          MANAGER_IMAGE=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${LATEST_TAG}
           echo "Deploying Manager using image ${MANAGER_IMAGE}"
           echo "manager-image=${MANAGER_IMAGE}" >> $GITHUB_OUTPUT
           
