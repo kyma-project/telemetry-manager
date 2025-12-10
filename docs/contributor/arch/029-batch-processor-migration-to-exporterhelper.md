@@ -151,10 +151,10 @@ Our self monitor component monitors the following metrics:
 ## Next Steps
 
 1. Investigate behavior for pull-based receivers when backpressure is propagated from the exporter:
-    - `filelogreceiver` - has a `retry_on_failure` configuration
-    - `prometheusreceiver`
-    - `k8sclusterreceiver`
-    - `kubeletstatsreceiver`
+    - filelogreceiver - has a `retry_on_failure` configuration
+    - prometheusreceiver
+    - k8sclusterreceiver
+    - kubeletstatsreceiver
 2. Contact the CLS maintainer to explore how CLS handles deduplication.
 3. Contact an OpenTelemetry community member to validate the approach and gather feedback.
 4. Design and implement the primary/secondary fanout processor or connector.
