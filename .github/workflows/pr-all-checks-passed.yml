@@ -1,4 +1,4 @@
-name: All Checks passed
+name: All Checks Passed
 
 permissions:
   contents: read
@@ -17,6 +17,8 @@ on:
         milestoned,
       ]
   workflow_run:
+    branches-ignore:
+      - main
     workflows: ["PR Integration"]
     types:
       - completed
