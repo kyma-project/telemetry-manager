@@ -5,7 +5,6 @@ import (
 	"context"
 	"os"
 	"reflect"
-	"slices"
 	"strings"
 	"testing"
 
@@ -31,11 +30,7 @@ import (
 func CreateObjects(t *testing.T, resources ...client.Object) error {
 	t.Helper()
 
-	// Sort resources:
-	// 1. namespaces
-	// 2. other resources
-	// 3. pipelines
-	sortedResources := sortObjects(resources)
+	mixed, pipelines := sortObjects(resources)
 
 	t.Cleanup(func() {
 		// Delete created objects after test completion. We dont care for not found errors here.
@@ -43,24 +38,16 @@ func CreateObjects(t *testing.T, resources ...client.Object) error {
 		gomega.Eventually(allObjectsDeleted(resources...), periodic.EventuallyTimeout).Should(gomega.Succeed())
 	})
 
-	for _, resource := range sortedResources {
-		// Skip object creation if it already exists.
-		if hasPersistentLabel(resource.GetLabels()) {
-			//nolint:errcheck // The value is guaranteed to be of type client.Object.
-			existingResource := reflect.New(reflect.ValueOf(resource).Elem().Type()).Interface().(client.Object)
-			if err := suite.K8sClient.Get(
-				t.Context(),
-				types.NamespacedName{Name: resource.GetName(), Namespace: resource.GetNamespace()},
-				existingResource,
-			); err == nil {
-				continue
-			}
-		}
-
-		if err := suite.K8sClient.Create(t.Context(), resource); err != nil {
+	// apply all non-pipeline objects first
+	for _, resource := range mixed {
+		err := createObject(t, resource)
+		if err != nil {
 			return err
 		}
+	}
 
+	// wait for all deployments, daemonsets, statefulsets, pods to be ready before applying pipelines
+	for _, resource := range mixed {
 		// assert object readiness
 		switch r := resource.(type) {
 		case *appsv1.Deployment:
@@ -72,6 +59,34 @@ func CreateObjects(t *testing.T, resources ...client.Object) error {
 		case *corev1.Pod:
 			assert.PodReady(t, types.NamespacedName{Name: r.Name, Namespace: r.Namespace})
 		}
+	}
+
+	// apply pipeline objects
+	for _, resource := range pipelines {
+		err := createObject(t, resource)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func createObject(t *testing.T, resource client.Object) error {
+	if hasPersistentLabel(resource.GetLabels()) {
+		//nolint:errcheck // The value is guaranteed to be of type client.Object.
+		existingResource := reflect.New(reflect.ValueOf(resource).Elem().Type()).Interface().(client.Object)
+		if err := suite.K8sClient.Get(
+			t.Context(),
+			types.NamespacedName{Name: resource.GetName(), Namespace: resource.GetNamespace()},
+			existingResource,
+		); err == nil {
+			return nil
+		}
+	}
+
+	if err := suite.K8sClient.Create(t.Context(), resource); err != nil {
+		return err
 	}
 
 	return nil
@@ -92,49 +107,27 @@ func allObjectsDeleted(resources ...client.Object) error {
 	return nil
 }
 
-func sortObjects(resources []client.Object) []client.Object {
-	return slices.SortedFunc(slices.Values(resources), func(a, b client.Object) int {
-		var (
-			isNamespaceA, isNamespaceB, isPipelineA, isPipelineB bool
-		)
-
-		switch a.(type) {
-		case *telemetryv1alpha1.MetricPipeline, *telemetryv1alpha1.TracePipeline, *telemetryv1alpha1.LogPipeline:
-			isPipelineA = true
-		case *telemetryv1beta1.MetricPipeline, *telemetryv1beta1.TracePipeline, *telemetryv1beta1.LogPipeline:
-			isPipelineA = true
-		case *corev1.Namespace:
-			isNamespaceA = true
-		}
-
-		switch b.(type) {
-		case *telemetryv1alpha1.MetricPipeline, *telemetryv1alpha1.TracePipeline, *telemetryv1alpha1.LogPipeline:
-			isPipelineB = true
-		case *telemetryv1beta1.MetricPipeline, *telemetryv1beta1.TracePipeline, *telemetryv1beta1.LogPipeline:
-			isPipelineB = true
-		case *corev1.Namespace:
-			isNamespaceB = true
-		}
-
-		if isNamespaceA && !isNamespaceB {
-			return -1
-		}
-
-		if !isNamespaceA && isNamespaceB {
-			return 1
-		}
-
-		if isPipelineA && !isPipelineB {
-			return 1
-		}
-
-		if !isPipelineA && isPipelineB {
-			return -1
-		}
-
-		return 0
-	},
+func sortObjects(resources []client.Object) ([]client.Object, []client.Object) {
+	// Split sorted resources into three slices: namespaces, pipelines, others
+	var (
+		namespaces []client.Object
+		pipelines  []client.Object
+		others     []client.Object
 	)
+
+	for _, r := range resources {
+		switch r.(type) {
+		case *corev1.Namespace:
+			namespaces = append(namespaces, r)
+		case *telemetryv1alpha1.MetricPipeline, *telemetryv1alpha1.TracePipeline, *telemetryv1alpha1.LogPipeline,
+			*telemetryv1beta1.MetricPipeline, *telemetryv1beta1.TracePipeline, *telemetryv1beta1.LogPipeline:
+			pipelines = append(pipelines, r)
+		default:
+			others = append(others, r)
+		}
+	}
+
+	return append(namespaces, others...), pipelines
 }
 
 // DeleteObjects deletes k8s objects passed as a slice.
