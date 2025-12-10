@@ -68,7 +68,7 @@ personally contact one of the OpenTelemetry maintainers to discuss this further.
 
 Currently, the migration plan includes the following steps to mitigate the fanout backpressure issue:
 
-### Backpressure Isolation: Custom Processor/Connector for Primary/Secondary Backend Designation
+### 1. Backpressure Isolation: Custom Processor/Connector for Primary/Secondary Backend Designation
 
 We will implement a custom processor or connector that designates primary and secondary backends:
 
@@ -109,7 +109,7 @@ service:
       exporters: [ otlp/backend, otlp/backend-2, file/backend ]
 ```
 
-### Deduplication : Custom Processor for UUIDv5-based Deduplication
+### 2. Deduplication: Custom Processor for UUIDv5-based Deduplication
 
 To handle potential duplicate telemetry in secondary backends resulting from client retries, we will implement a custom
 processor that generates UUIDv5 identifiers for each telemetry item based on the following fields:
@@ -123,7 +123,7 @@ processor that generates UUIDv5 identifiers for each telemetry item based on the
 
 This processor ensures idempotent delivery so that backends can recognize and discard duplicates.
 
-### Monitoring Implementation
+### 3. Monitoring Implementation
 
 Our self monitor component monitors the following metrics:
 
