@@ -18,9 +18,8 @@ The testing setup consists of:
 
 - One primary OTel Collector that receives telemetry from clients
 - One healthy backend OTel Collector receiving forwarded telemetry
-- A fanout configuration where telemetry is sent to multiple backends simultaneously
 
-Backpressure is simulated by configuring the primary OTel Collector to send to the healthy OTel Collector and an additional unreachable endpoint.
+Backpressure is simulated by configuring a fanout pipeline with the primary OTel Collector sending to the healthy OTel Collector and an additional unreachable endpoint.
 
 ### Results
 
