@@ -30,15 +30,27 @@ import (
 func CreateObjects(t *testing.T, resources ...client.Object) error {
 	t.Helper()
 
-	mixed, pipelines := sortObjects(resources)
-
 	t.Cleanup(func() {
 		// Delete created objects after test completion. We dont care for not found errors here.
 		gomega.Expect(deleteObjectsIgnoringNotFound(resources...)).To(gomega.Succeed())
 		gomega.Eventually(allObjectsDeleted(resources...), periodic.EventuallyTimeout).Should(gomega.Succeed())
 	})
 
-	// apply all non-pipeline objects first
+	return createObjects(t, resources...)
+}
+
+// CreateObjectsWithoutAutomaticCleanup creates k8s objects passed as a slice but does not delete them automatically after the test.
+func CreateObjectsWithoutAutomaticCleanup(t *testing.T, resources ...client.Object) error {
+	t.Helper()
+
+	return createObjects(t, resources...)
+}
+
+func createObjects(t *testing.T, resources ...client.Object) error {
+	t.Helper()
+
+	mixed, pipelines := sortObjects(resources)
+
 	for _, resource := range mixed {
 		err := createObject(t, resource)
 		if err != nil {
@@ -72,24 +84,29 @@ func CreateObjects(t *testing.T, resources ...client.Object) error {
 	return nil
 }
 
+// createObject creates a single k8s object.
+// If the object has the persistent label, it checks if the object already exists and skips creation if it does.
 func createObject(t *testing.T, resource client.Object) error {
+	// Skip creation for persistent objects if they already exist.
 	if hasPersistentLabel(resource.GetLabels()) {
 		//nolint:errcheck // The value is guaranteed to be of type client.Object.
 		existingResource := reflect.New(reflect.ValueOf(resource).Elem().Type()).Interface().(client.Object)
-		if err := suite.K8sClient.Get(
+		err := suite.K8sClient.Get(
 			t.Context(),
 			types.NamespacedName{Name: resource.GetName(), Namespace: resource.GetNamespace()},
 			existingResource,
-		); err == nil {
+		)
+		// If the object is not found, proceed to create it.
+		if err == nil {
 			return nil
+		}
+
+		if !apierrors.IsNotFound(err) {
+			return err
 		}
 	}
 
-	if err := suite.K8sClient.Create(t.Context(), resource); err != nil {
-		return err
-	}
-
-	return nil
+	return suite.K8sClient.Create(t.Context(), resource)
 }
 
 func allObjectsDeleted(resources ...client.Object) error {

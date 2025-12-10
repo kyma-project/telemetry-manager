@@ -19,32 +19,32 @@ type TracePipelineValidator struct {
 
 var _ webhook.CustomValidator = &TracePipelineValidator{}
 
-func (v *TracePipelineValidator) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *TracePipelineValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	tracePipeline, ok := obj.(*telemetryv1beta1.TracePipeline)
 
 	if !ok {
 		return nil, fmt.Errorf("expected a TracePipeline but got %T", obj)
 	}
 
-	return nil, validateFilterTransform(tracePipeline.Spec.Filters, tracePipeline.Spec.Transforms)
+	return nil, validateFilterTransform(ctx, tracePipeline.Spec.Filters, tracePipeline.Spec.Transforms)
 }
 
-func (v *TracePipelineValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+func (v *TracePipelineValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	tracePipeline, ok := newObj.(*telemetryv1beta1.TracePipeline)
 
 	if !ok {
 		return nil, fmt.Errorf("expected a TracePipeline but got %T", newObj)
 	}
 
-	return nil, validateFilterTransform(tracePipeline.Spec.Filters, tracePipeline.Spec.Transforms)
+	return nil, validateFilterTransform(ctx, tracePipeline.Spec.Filters, tracePipeline.Spec.Transforms)
 }
 
 func (v *TracePipelineValidator) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
 	return nil, nil
 }
 
-func validateFilterTransform(filterSpec []telemetryv1beta1.FilterSpec, transformSpec []telemetryv1beta1.TransformSpec) error {
-	err := webhookutils.ValidateFilterTransform(ottl.SignalTypeTrace, filterSpec, transformSpec)
+func validateFilterTransform(ctx context.Context, filterSpec []telemetryv1beta1.FilterSpec, transformSpec []telemetryv1beta1.TransformSpec) error {
+	err := webhookutils.ValidateFilterTransform(ctx, ottl.SignalTypeTrace, filterSpec, transformSpec)
 	if err != nil {
 		return fmt.Errorf(conditions.MessageForTracePipeline(conditions.ReasonOTTLSpecInvalid), err.Error())
 	}
