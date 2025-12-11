@@ -21,7 +21,7 @@ type LogPipelineValidator struct {
 
 var _ webhook.CustomValidator = &LogPipelineValidator{}
 
-func (v *LogPipelineValidator) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *LogPipelineValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	logPipeline, ok := obj.(*telemetryv1alpha1.LogPipeline)
 
 	var warnings admission.Warnings
@@ -32,7 +32,7 @@ func (v *LogPipelineValidator) ValidateCreate(_ context.Context, obj runtime.Obj
 
 	filterSpec, transformSpec := webhookutils.ConvertFilterTransformToBeta(logPipeline.Spec.Filters, logPipeline.Spec.Transforms)
 
-	if err := validateFilterTransform(filterSpec, transformSpec); err != nil {
+	if err := validateFilterTransform(ctx, filterSpec, transformSpec); err != nil {
 		return nil, err
 	}
 
@@ -47,7 +47,7 @@ func (v *LogPipelineValidator) ValidateCreate(_ context.Context, obj runtime.Obj
 	return nil, nil
 }
 
-func (v *LogPipelineValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+func (v *LogPipelineValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	logPipeline, ok := newObj.(*telemetryv1alpha1.LogPipeline)
 
 	var warnings admission.Warnings
@@ -58,7 +58,7 @@ func (v *LogPipelineValidator) ValidateUpdate(_ context.Context, oldObj, newObj 
 
 	filterSpec, transformSpec := webhookutils.ConvertFilterTransformToBeta(logPipeline.Spec.Filters, logPipeline.Spec.Transforms)
 
-	if err := validateFilterTransform(filterSpec, transformSpec); err != nil {
+	if err := validateFilterTransform(ctx, filterSpec, transformSpec); err != nil {
 		return nil, err
 	}
 
@@ -77,8 +77,8 @@ func (v *LogPipelineValidator) ValidateDelete(_ context.Context, obj runtime.Obj
 	return nil, nil
 }
 
-func validateFilterTransform(filterSpec []telemetryv1beta1.FilterSpec, transformSpec []telemetryv1beta1.TransformSpec) error {
-	err := webhookutils.ValidateFilterTransform(ottl.SignalTypeLog, filterSpec, transformSpec)
+func validateFilterTransform(ctx context.Context, filterSpec []telemetryv1beta1.FilterSpec, transformSpec []telemetryv1beta1.TransformSpec) error {
+	err := webhookutils.ValidateFilterTransform(ctx, ottl.SignalTypeLog, filterSpec, transformSpec)
 	if err != nil {
 		return fmt.Errorf(conditions.MessageForOtelLogPipeline(conditions.ReasonOTTLSpecInvalid), err.Error())
 	}
