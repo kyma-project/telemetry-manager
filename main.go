@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/caarlos0/env/v11"
@@ -114,6 +115,32 @@ type envConfig struct {
 	// OperateInFIPSMode defines whether components should be deployed in FIPS 140-2 compliant way.
 	OperateInFIPSMode bool `env:"KYMA_FIPS_MODE_ENABLED" envDefault:"false"`
 }
+
+type labelsSliceFlag []string
+
+func (l *labelsSliceFlag) String() string {
+	return strings.Join(*l, ",")
+}
+
+func (l *labelsSliceFlag) Set(value string) error {
+	*l = append(*l, value)
+	return nil
+}
+
+// Convert to map when needed
+func (l labelsSliceFlag) ToMap() (map[string]string, error) {
+	result := make(map[string]string, len(l))
+	for _, item := range l {
+		parts := strings.SplitN(item, "=", 2)
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("invalid label format: %s", item)
+		}
+		result[parts[0]] = parts[1]
+	}
+	return result, nil
+}
+
+var labels labelsSliceFlag
 
 //nolint:gochecknoinits // Runtime's scheme addition is required.
 func init() {
@@ -323,6 +350,7 @@ func parseFlags() {
 
 	flag.StringVar(&highPriorityClassName, "high-priority-class-name", "", "High priority class name used by managed DaemonSets")
 	flag.StringVar(&normalPriorityClassName, "normal-priority-class-name", "", "Normal priority class name used by managed Deployments")
+	flag.Var(&labels, "labels", "Labels to add to all managed resources in the format key1=value1,key2=value2")
 
 	flag.Parse()
 }
