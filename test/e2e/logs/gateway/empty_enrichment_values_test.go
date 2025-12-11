@@ -65,16 +65,8 @@ func TestEmptyEnrichmentValues(t *testing.T) {
 		&pipeline,
 		generator.K8sObject(),
 	}
+	resources = append(resources, backend.K8sObjects()...)
 
-	for _, obj := range backend.K8sObjects() {
-		if obj != nil {
-			resources = append(resources, obj)
-		}
-	}
-
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
