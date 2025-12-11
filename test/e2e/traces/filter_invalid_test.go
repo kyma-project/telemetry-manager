@@ -31,8 +31,5 @@ func TestFilterInvalid(t *testing.T) {
 		WithOTLPOutput(testutils.OTLPEndpoint("https://backend.example.com:4317")).
 		Build()
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(&pipeline)).Should(MatchError(ContainSubstring("not found")))
-	})
 	Expect(kitk8s.CreateObjects(t, &pipeline)).ToNot(Succeed())
 }

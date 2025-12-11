@@ -4,16 +4,15 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
@@ -49,8 +48,8 @@ func TestMetricsIstioSamePort(t *testing.T) {
 	istiofiedGenerator := prommetricgen.New(istiofiedBackendNs, prommetricgen.WithMetricsPort(istiofiedBackend.Port()))
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(istiofiedBackendNs, kitk8s.WithIstioInjection()).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+		kitk8sobjects.NewNamespace(istiofiedBackendNs, kitk8sobjects.WithIstioInjection()).K8sObject(),
 		&metricPipeline,
 		&istiofiedMetricPipeline,
 		generator.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).WithAvalancheLowLoad().K8sObject(),
@@ -61,17 +60,6 @@ func TestMetricsIstioSamePort(t *testing.T) {
 	resources = append(resources, backend.K8sObjects()...)
 	resources = append(resources, istiofiedBackend.K8sObjects()...)
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-
-		for _, resource := range resources {
-			Eventually(func(g Gomega) {
-				key := types.NamespacedName{Name: resource.GetName(), Namespace: resource.GetNamespace()}
-				err := suite.K8sClient.Get(suite.Ctx, key, resource)
-				g.Expect(err == nil).To(BeFalse())
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
-		}
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.DeploymentReady(t, kitkyma.MetricGatewayName)

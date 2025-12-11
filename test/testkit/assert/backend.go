@@ -3,12 +3,12 @@ package assert
 import (
 	"fmt"
 	"net/http"
+	"testing"
 	"time"
 
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 
-	"github.com/kyma-project/telemetry-manager/test/testkit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -63,7 +63,7 @@ func WithCustomQueryInterval(interval time.Duration) BackendAssertionOption {
 
 // BackendReachable asserts that the given backend is reachable via the proxy client.
 // TODO(TeodorSAP): Refactor this function to directly call BackendDataEventuallyMatches with custom query interval.
-func BackendReachable(t testkit.T, backend *kitbackend.Backend) {
+func BackendReachable(t *testing.T, backend *kitbackend.Backend) {
 	t.Helper()
 
 	const queryInterval = time.Second * 5
@@ -79,7 +79,7 @@ func BackendReachable(t testkit.T, backend *kitbackend.Backend) {
 	}, periodic.EventuallyTimeout, queryInterval).Should(Succeed(), "Backend should be reachable at %s", queryURL)
 }
 
-func BackendDataEventuallyMatches(t testkit.T, backend *kitbackend.Backend, httpBodyMatcher types.GomegaMatcher, assertionOptions ...BackendAssertionOption) {
+func BackendDataEventuallyMatches(t *testing.T, backend *kitbackend.Backend, httpBodyMatcher types.GomegaMatcher, assertionOptions ...BackendAssertionOption) {
 	t.Helper()
 
 	assertionOptions = append(assertionOptions, WithOptionalDescription(fmt.Sprintf("Backend data did not match the expected condition. Backend: %s/%s", backend.Namespace(), backend.Name())))
@@ -88,7 +88,7 @@ func BackendDataEventuallyMatches(t testkit.T, backend *kitbackend.Backend, http
 	HTTPResponseEventuallyMatches(t, queryURL, httpBodyMatcher, assertionOptions...)
 }
 
-func BackendDataConsistentlyMatches(t testkit.T, backend *kitbackend.Backend, httpBodyMatcher types.GomegaMatcher, assertionOptions ...BackendAssertionOption) {
+func BackendDataConsistentlyMatches(t *testing.T, backend *kitbackend.Backend, httpBodyMatcher types.GomegaMatcher, assertionOptions ...BackendAssertionOption) {
 	t.Helper()
 
 	assertionOptions = append(assertionOptions, WithOptionalDescription(fmt.Sprintf("Backend data did not match the expected condition. Backend: %s/%s", backend.Namespace(), backend.Name())))
@@ -98,7 +98,7 @@ func BackendDataConsistentlyMatches(t testkit.T, backend *kitbackend.Backend, ht
 }
 
 //nolint:dupl // This function is similar to BackendDataEventuallyMatches but uses Eventually instead of Consistently.
-func HTTPResponseEventuallyMatches(t testkit.T, queryURL string, httpBodyMatcher types.GomegaMatcher, assertionOptions ...BackendAssertionOption) {
+func HTTPResponseEventuallyMatches(t *testing.T, queryURL string, httpBodyMatcher types.GomegaMatcher, assertionOptions ...BackendAssertionOption) {
 	t.Helper()
 
 	backendAssertion := newBackendAssertion(false, assertionOptions...)
@@ -115,7 +115,7 @@ func HTTPResponseEventuallyMatches(t testkit.T, queryURL string, httpBodyMatcher
 }
 
 //nolint:dupl // This function is similar to HTTPResponseEventuallyMatches but uses Consistently instead of Eventually.
-func HTTPResponseConsistentlyMatches(t testkit.T, queryURL string, httpBodyMatcher types.GomegaMatcher, assertionOptions ...BackendAssertionOption) {
+func HTTPResponseConsistentlyMatches(t *testing.T, queryURL string, httpBodyMatcher types.GomegaMatcher, assertionOptions ...BackendAssertionOption) {
 	t.Helper()
 
 	backendAssertion := newBackendAssertion(true, assertionOptions...)

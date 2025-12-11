@@ -70,9 +70,6 @@ func TestVersionConversion(t *testing.T) {
 	}
 
 	kitk8s.CreateObjects(t, resources...)
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
 
 	var v1Alpha1AsV1Beta1 telemetryv1beta1.LogPipeline
 
