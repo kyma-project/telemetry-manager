@@ -18,6 +18,7 @@ on:
       - "external-images.yaml"
   # in the pr trigger we need to check if a certain label is present to run the gardener tests: `test-on-gardener`
   pull_request_target:
+    types: [labeled, opened, synchronize, reopened]
   workflow_dispatch:
 
 jobs:
@@ -70,7 +71,7 @@ jobs:
           if [[ "${{ github.event_name }}" == "pull_request_target" ]]; then
             # For PR events, use dev image with PR number
             PR_NUMBER="${{ github.event.number }}"
-            TAG="PR-${PR_NUMBER}"
+            TAG="${{ github.event.pull_request.head.ref }}"
             MANAGER_IMAGE="europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:${TAG}"
             echo "Using dev image for PR: $MANAGER_IMAGE"
           else

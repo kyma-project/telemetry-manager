@@ -48,9 +48,10 @@ func newConfigMap(name string) *corev1.ConfigMap {
 
 func Test_sortObjects(t *testing.T) {
 	tests := []struct {
-		name  string
-		input []client.Object
-		want  []client.Object
+		name          string
+		input         []client.Object
+		wantMixed     []client.Object
+		wantPipelines []client.Object
 	}{
 		{
 			name: "namespaces first, pipelines last, mixed types",
@@ -62,9 +63,11 @@ func Test_sortObjects(t *testing.T) {
 				newTracePipelineAlpha(),
 				newLogPipelineBeta(),
 			},
-			want: []client.Object{
+			wantMixed: []client.Object{
 				newNamespace("ns"),
 				newConfigMap("cfg"),
+			},
+			wantPipelines: []client.Object{
 				newMetricPipelineAlpha(),
 				newMetricPipelineBeta(),
 				newTracePipelineAlpha(),
@@ -77,7 +80,7 @@ func Test_sortObjects(t *testing.T) {
 				newNamespace("ns1"),
 				newNamespace("ns2"),
 			},
-			want: []client.Object{
+			wantMixed: []client.Object{
 				newNamespace("ns1"),
 				newNamespace("ns2"),
 			},
@@ -89,7 +92,7 @@ func Test_sortObjects(t *testing.T) {
 				newLogPipelineAlpha(),
 				newTracePipelineBeta(),
 			},
-			want: []client.Object{
+			wantPipelines: []client.Object{
 				newMetricPipelineAlpha(),
 				newLogPipelineAlpha(),
 				newTracePipelineBeta(),
@@ -101,7 +104,7 @@ func Test_sortObjects(t *testing.T) {
 				newConfigMap("cfg1"),
 				newConfigMap("cfg2"),
 			},
-			want: []client.Object{
+			wantMixed: []client.Object{
 				newConfigMap("cfg1"),
 				newConfigMap("cfg2"),
 			},
@@ -109,14 +112,17 @@ func Test_sortObjects(t *testing.T) {
 		{
 			name:  "empty input returns empty",
 			input: nil,
-			want:  nil,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := sortObjects(tt.input)
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("sortObjects() = %v, want %v", got, tt.want)
+			mixed, pipelines := sortObjects(tt.input)
+			if !reflect.DeepEqual(mixed, tt.wantMixed) {
+				t.Errorf("sortObjects() = %v, want %v", mixed, tt.wantMixed)
+			}
+
+			if !reflect.DeepEqual(pipelines, tt.wantPipelines) {
+				t.Errorf("sortObjects() = %v, want %v", pipelines, tt.wantPipelines)
 			}
 		})
 	}
