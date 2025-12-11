@@ -123,7 +123,13 @@ func (l *labelsSliceFlag) String() string {
 }
 
 func (l *labelsSliceFlag) Set(value string) error {
-	*l = append(*l, value)
+	parts := strings.Split(value, ",")
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part != "" {
+			*l = append(*l, part)
+		}
+	}
 	return nil
 }
 
@@ -413,6 +419,7 @@ func setupTelemetryController(globals config.Global, cfg envConfig, webhookCertC
 
 func setupLogPipelineController(globals config.Global, cfg envConfig, mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
 	setupLog.Info("Setting up logpipeline controller")
+	setupLog.Info("printing labels for logpipeline controller", "labels", labels)
 
 	logPipelineController, err := telemetrycontrollers.NewLogPipelineController(
 		telemetrycontrollers.LogPipelineControllerConfig{
