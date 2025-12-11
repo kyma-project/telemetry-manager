@@ -20,7 +20,13 @@ func TestInsertClusterAttributesProcessorStatements(t *testing.T) {
 		},
 	}}
 
-	processorStatements := InsertClusterAttributesProcessorStatements("test-cluster", "test-cluster-uid", "test-cloud-provider")
+	processorStatements := InsertClusterAttributesProcessorStatements(
+		ClusterOptions{
+			Name:          "test-cluster",
+			UID:           "test-cluster-uid",
+			CloudProvider: "test-cloud-provider",
+		},
+	)
 
 	require.ElementsMatch(expectedProcessorStatements, processorStatements, "Attributes should match")
 }
@@ -35,7 +41,13 @@ func TestInsertClusterAttributesProcessorStatementsWithEmptyValues(t *testing.T)
 		},
 	}}
 
-	processorStatements := InsertClusterAttributesProcessorStatements("", "", "")
+	processorStatements := InsertClusterAttributesProcessorStatements(
+		ClusterOptions{
+			Name:          "",
+			UID:           "",
+			CloudProvider: "",
+		},
+	)
 
 	require.ElementsMatch(expectedProcessorStatements, processorStatements, "Attributes should match")
 }

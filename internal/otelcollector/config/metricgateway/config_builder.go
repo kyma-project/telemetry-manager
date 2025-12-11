@@ -22,11 +22,9 @@ type Builder struct {
 }
 
 type BuildOptions struct {
+	Cluster                     common.ClusterOptions
 	GatewayNamespace            string
 	InstrumentationScopeVersion string
-	ClusterName                 string
-	ClusterUID                  string
-	CloudProvider               string
 	Enrichments                 *operatorv1alpha1.EnrichmentSpec
 }
 
@@ -195,7 +193,7 @@ func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildCo
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDInsertClusterAttributesProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			transformStatements := common.InsertClusterAttributesProcessorStatements(opts.ClusterName, opts.ClusterUID, opts.CloudProvider)
+			transformStatements := common.InsertClusterAttributesProcessorStatements(opts.Cluster)
 			return common.MetricTransformProcessorConfig(transformStatements)
 		},
 	)

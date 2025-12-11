@@ -234,15 +234,15 @@ func TransformSpecsToProcessorStatements(specs []telemetryv1alpha1.TransformSpec
 }
 
 // InsertClusterAttributesProcessorStatements creates processor statements for the transform processor that inserts cluster attributes
-func InsertClusterAttributesProcessorStatements(clusterName, clusterUID, cloudProvider string) []TransformProcessorStatements {
+func InsertClusterAttributesProcessorStatements(cluster ClusterOptions) []TransformProcessorStatements {
 	statements := []string{
-		fmt.Sprintf("set(resource.attributes[\"k8s.cluster.name\"], \"%s\")", clusterName),
-		fmt.Sprintf("set(resource.attributes[\"k8s.cluster.uid\"], \"%s\")", clusterUID),
+		fmt.Sprintf("set(resource.attributes[\"k8s.cluster.name\"], \"%s\")", cluster.Name),
+		fmt.Sprintf("set(resource.attributes[\"k8s.cluster.uid\"], \"%s\")", cluster.UID),
 	}
 
-	if cloudProvider != "" {
+	if cluster.CloudProvider != "" {
 		statements = append(statements,
-			fmt.Sprintf("set(resource.attributes[\"cloud.provider\"], \"%s\")", cloudProvider))
+			fmt.Sprintf("set(resource.attributes[\"cloud.provider\"], \"%s\")", cluster.CloudProvider))
 	}
 
 	return []TransformProcessorStatements{{

@@ -27,14 +27,13 @@ type Builder struct {
 }
 
 type BuildOptions struct {
+	Cluster common.ClusterOptions
+
 	// IstioActive indicates whether Istio is installed in the cluster.
 	IstioActive                 bool
 	IstioCertPath               string
 	InstrumentationScopeVersion string
 	AgentNamespace              string
-	ClusterName                 string
-	ClusterUID                  string
-	CloudProvider               string
 	Enrichments                 *operatorv1alpha1.EnrichmentSpec
 }
 
@@ -394,7 +393,7 @@ func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildCo
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDInsertClusterAttributesProcessor),
 		func(tp *telemetryv1alpha1.MetricPipeline) any {
-			transformStatements := common.InsertClusterAttributesProcessorStatements(opts.ClusterName, opts.ClusterUID, opts.CloudProvider)
+			transformStatements := common.InsertClusterAttributesProcessorStatements(opts.Cluster)
 			return common.MetricTransformProcessorConfig(transformStatements)
 		},
 	)

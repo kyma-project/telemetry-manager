@@ -9,6 +9,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -145,10 +146,12 @@ func TestBuildConfig(t *testing.T) {
 	}
 
 	buildOptions := BuildOptions{
+		Cluster: common.ClusterOptions{
+			Name:          "test-cluster",
+			CloudProvider: "azure",
+		},
 		InstrumentationScopeVersion: "main",
 		AgentNamespace:              "kyma-system",
-		CloudProvider:               "azure",
-		ClusterName:                 "test-cluster",
 	}
 
 	for _, tt := range tests {

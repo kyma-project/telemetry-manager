@@ -33,6 +33,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/tracegateway"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
@@ -305,10 +306,12 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 	}
 
 	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, tracegateway.BuildOptions{
-		ClusterName:   clusterName,
-		ClusterUID:    clusterUID,
-		CloudProvider: shootInfo.CloudProvider,
-		Enrichments:   enrichments,
+		Cluster: common.ClusterOptions{
+			Name:          clusterName,
+			UID:           clusterUID,
+			CloudProvider: shootInfo.CloudProvider,
+		},
+		Enrichments: enrichments,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)

@@ -16,6 +16,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/logagent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/loggateway"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
@@ -293,9 +294,11 @@ func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetr
 	}
 
 	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, loggateway.BuildOptions{
-		ClusterName:   clusterName,
-		ClusterUID:    clusterUID,
-		CloudProvider: shootInfo.CloudProvider,
+		Cluster: common.ClusterOptions{
+			Name:          clusterName,
+			UID:           clusterUID,
+			CloudProvider: shootInfo.CloudProvider,
+		},
 		Enrichments:   enrichments,
 		ModuleVersion: r.globals.Version(),
 	})
@@ -348,10 +351,12 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 	agentConfig, envVars, err := r.agentConfigBuilder.Build(ctx, allPipelines, logagent.BuildOptions{
 		InstrumentationScopeVersion: r.globals.Version(),
 		AgentNamespace:              r.globals.TargetNamespace(),
-		ClusterName:                 clusterName,
-		ClusterUID:                  clusterUID,
-		CloudProvider:               shootInfo.CloudProvider,
-		Enrichments:                 enrichments,
+		Cluster: common.ClusterOptions{
+			Name:          clusterName,
+			UID:           clusterUID,
+			CloudProvider: shootInfo.CloudProvider,
+		},
+		Enrichments: enrichments,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to build agent config: %w", err)

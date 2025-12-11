@@ -6,6 +6,12 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
+type ClusterOptions struct {
+	Name          string
+	UID           string
+	CloudProvider string
+}
+
 func NewConfig() *Config {
 	config := &Config{
 		Receivers:  make(map[string]any),

@@ -10,6 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -148,8 +149,10 @@ func TestBuildConfig(t *testing.T) {
 	}
 
 	buildOptions := BuildOptions{
-		ClusterName:   "${KUBERNETES_SERVICE_HOST}",
-		CloudProvider: "test-cloud-provider",
+		Cluster: common.ClusterOptions{
+			Name:          "${KUBERNETES_SERVICE_HOST}",
+			CloudProvider: "test-cloud-provider",
+		},
 		ModuleVersion: "1.0.0",
 	}
 

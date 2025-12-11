@@ -178,13 +178,6 @@ type PodAssociation struct {
 	Name string `yaml:"name,omitempty"`
 }
 
-type AttributeAction struct {
-	Action       string `yaml:"action,omitempty"`
-	Key          string `yaml:"key,omitempty"`
-	Value        string `yaml:"value,omitempty"`
-	RegexPattern string `yaml:"pattern,omitempty"`
-}
-
 type TransformProcessor struct {
 	ErrorMode        string                         `yaml:"error_mode"`
 	LogStatements    []TransformProcessorStatements `yaml:"log_statements,omitempty"`
