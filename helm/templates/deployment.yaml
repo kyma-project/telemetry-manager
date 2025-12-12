@@ -29,6 +29,7 @@ spec:
         kubectl.kubernetes.io/default-container: manager
         sidecar.istio.io/inject: "false"
     spec:
+      imagePullSecrets: {{ toYaml .Values.manager.container.imagePullSecrets | toYaml | nindent 6 }}
       containers:
       - args:
         {{- range $key, $value := .Values.manager.container.args }}
