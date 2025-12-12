@@ -22,8 +22,8 @@ func TestInsertClusterAttributesProcessorStatements(t *testing.T) {
 
 	processorStatements := InsertClusterAttributesProcessorStatements(
 		ClusterOptions{
-			Name:          "test-cluster",
-			UID:           "test-cluster-uid",
+			ClusterName:   "test-cluster",
+			ClusterUID:    "test-cluster-uid",
 			CloudProvider: "test-cloud-provider",
 		},
 	)
@@ -43,8 +43,8 @@ func TestInsertClusterAttributesProcessorStatementsWithEmptyValues(t *testing.T)
 
 	processorStatements := InsertClusterAttributesProcessorStatements(
 		ClusterOptions{
-			Name:          "",
-			UID:           "",
+			ClusterName:   "",
+			ClusterUID:    "",
 			CloudProvider: "",
 		},
 	)

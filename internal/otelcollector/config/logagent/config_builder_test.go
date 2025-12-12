@@ -147,7 +147,7 @@ func TestBuildConfig(t *testing.T) {
 
 	buildOptions := BuildOptions{
 		Cluster: common.ClusterOptions{
-			Name:          "test-cluster",
+			ClusterName:   "test-cluster",
 			CloudProvider: "azure",
 		},
 		InstrumentationScopeVersion: "main",

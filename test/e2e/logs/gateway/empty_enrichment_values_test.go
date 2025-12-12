@@ -35,6 +35,7 @@ func TestEmptyEnrichmentValues(t *testing.T) {
 		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 		Build()
 
+	// All attributes in the enrichment flow are set to empty values
 	generator := telemetrygen.NewPod(
 		genNs,
 		telemetrygen.SignalTypeLogs,
@@ -74,7 +75,7 @@ func TestEmptyEnrichmentValues(t *testing.T) {
 	assert.OTelLogPipelineHealthy(t, pipelineName)
 	assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
 
-	// These attributes are expected to be enriched by the processors
+	// These attributes should be enriched by the processors
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatLogs(ContainElement(SatisfyAll(
 			HaveResourceAttributes(HaveKeyWithValue("k8s.cluster.name", Not(BeEmpty()))),
@@ -91,8 +92,7 @@ func TestEmptyEnrichmentValues(t *testing.T) {
 		))),
 	)
 
-	// These attributes are currently not enriched by the processors (if set to empty value)
-	// TODO (TeodorSAP): Find a consistent way to handle empty values - should they be dropped or enriched?
+	// These attributes can't be so they shouldn't be enriched by the processors (if set to empty value)
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatLogs(ContainElement(SatisfyAll(
 			HaveResourceAttributes(HaveKeyWithValue("k8s.deployment.name", BeEmpty())),
@@ -103,7 +103,7 @@ func TestEmptyEnrichmentValues(t *testing.T) {
 		))),
 	)
 
-	// These attributes are expected to be dropped by the processors
+	// These attributes should be dropped by the processors
 	assert.BackendDataConsistentlyMatches(t, backend,
 		Not(HaveFlatLogs(ContainElement(SatisfyAny(
 			HaveResourceAttributes(HaveKey("kyma.kubernetes_io_app_name")),

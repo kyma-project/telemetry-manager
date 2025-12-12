@@ -295,8 +295,8 @@ func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetr
 
 	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, loggateway.BuildOptions{
 		Cluster: common.ClusterOptions{
-			Name:          clusterName,
-			UID:           clusterUID,
+			ClusterName:   clusterName,
+			ClusterUID:    clusterUID,
 			CloudProvider: shootInfo.CloudProvider,
 		},
 		Enrichments:   enrichments,
@@ -352,8 +352,8 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 		InstrumentationScopeVersion: r.globals.Version(),
 		AgentNamespace:              r.globals.TargetNamespace(),
 		Cluster: common.ClusterOptions{
-			Name:          clusterName,
-			UID:           clusterUID,
+			ClusterName:   clusterName,
+			ClusterUID:    clusterUID,
 			CloudProvider: shootInfo.CloudProvider,
 		},
 		Enrichments: enrichments,

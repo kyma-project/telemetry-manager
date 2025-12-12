@@ -351,8 +351,8 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 		GatewayNamespace:            r.globals.TargetNamespace(),
 		InstrumentationScopeVersion: r.globals.Version(),
 		Cluster: common.ClusterOptions{
-			Name:          clusterName,
-			UID:           clusterUID,
+			ClusterName:   clusterName,
+			ClusterUID:    clusterUID,
 			CloudProvider: shootInfo.CloudProvider,
 		},
 		Enrichments: enrichments,
@@ -410,8 +410,8 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		InstrumentationScopeVersion: r.globals.Version(),
 		AgentNamespace:              r.globals.TargetNamespace(),
 		Cluster: common.ClusterOptions{
-			Name:          clusterName,
-			UID:           clusterUID,
+			ClusterName:   clusterName,
+			ClusterUID:    clusterUID,
 			CloudProvider: shootInfo.CloudProvider,
 		},
 		Enrichments: enrichments,

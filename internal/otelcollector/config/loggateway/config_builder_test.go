@@ -150,7 +150,7 @@ func TestBuildConfig(t *testing.T) {
 
 	buildOptions := BuildOptions{
 		Cluster: common.ClusterOptions{
-			Name:          "${KUBERNETES_SERVICE_HOST}",
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 			CloudProvider: "test-cloud-provider",
 		},
 		ModuleVersion: "1.0.0",

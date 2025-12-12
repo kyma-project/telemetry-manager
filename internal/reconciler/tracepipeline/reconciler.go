@@ -307,8 +307,8 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 
 	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, tracegateway.BuildOptions{
 		Cluster: common.ClusterOptions{
-			Name:          clusterName,
-			UID:           clusterUID,
+			ClusterName:   clusterName,
+			ClusterUID:    clusterUID,
 			CloudProvider: shootInfo.CloudProvider,
 		},
 		Enrichments: enrichments,
