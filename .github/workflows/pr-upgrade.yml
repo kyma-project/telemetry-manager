@@ -95,8 +95,9 @@ jobs:
         shell: bash
         run: |
           # add the tag PR-<number> to the image if it is a PR, if the trigger is merge_group, then add the sha as the tag
+          # it is important to use deploy-experimental-no-fips to match the setup done before
           TAG="${{ github.event_name == 'pull_request' && 'PR-' || '' }}${{ github.event.number || github.event.merge_group.head_sha }}"
-          MANAGER_IMAGE=europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:${TAG} make deploy-experimental
+          MANAGER_IMAGE=europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:${TAG} make deploy-experimental-no-fips
 
       - name: Wait for manager readiness
         shell: bash
