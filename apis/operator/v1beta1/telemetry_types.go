@@ -98,6 +98,22 @@ type GatewaySpec struct {
 	// Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
 	// +kubebuilder:validation:Optional
 	Scaling Scaling `json:"scaling"`
+
+	// Annotations to be added to the gateway Deployment or DaemonSet.
+	// +kubebuilder:validation:Optional
+	Annotations map[string]string `json:"annotations,omitempty"`
+
+	// Labels to be added to the gateway Deployment or DaemonSet.
+	// +kubebuilder:validation:Optional
+	Labels map[string]string `json:"labels,omitempty"`
+
+	// PodAnnotations to be added to the gateway Pod template.
+	// +kubebuilder:validation:Optional
+	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
+
+	// PodLabels to be added to the gateway Pod template.
+	// +kubebuilder:validation:Optional
+	PodLabels map[string]string `json:"podLabels,omitempty"`
 }
 
 // Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.

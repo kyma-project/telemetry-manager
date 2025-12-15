@@ -319,6 +319,10 @@ func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetr
 		IstioEnabled:                   isIstioActive,
 		Replicas:                       r.getReplicaCountFromTelemetry(ctx),
 		ResourceRequirementsMultiplier: len(allPipelines),
+		Annotations:                    r.getGatewayAnnotationsFromTelemetry(ctx),
+		Labels:                         r.getGatewayLabelsFromTelemetry(ctx),
+		PodAnnotations:                 r.getGatewayPodAnnotationsFromTelemetry(ctx),
+		PodLabels:                      r.getGatewayPodLabelsFromTelemetry(ctx),
 	}
 
 	if err := r.gatewayApplierDeleter.ApplyResources(
@@ -398,6 +402,62 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 	}
 
 	return defaultReplicaCount
+}
+
+// getGatewayAnnotationsFromTelemetry retrieves custom annotations for the log gateway Deployment from the Telemetry CR.
+func (r *Reconciler) getGatewayAnnotationsFromTelemetry(ctx context.Context) map[string]string {
+	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
+	if err != nil {
+		return nil
+	}
+
+	if telemetry.Spec.Log != nil {
+		return telemetry.Spec.Log.Gateway.Annotations
+	}
+
+	return nil
+}
+
+// getGatewayLabelsFromTelemetry retrieves custom labels for the log gateway Deployment from the Telemetry CR.
+func (r *Reconciler) getGatewayLabelsFromTelemetry(ctx context.Context) map[string]string {
+	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
+	if err != nil {
+		return nil
+	}
+
+	if telemetry.Spec.Log != nil {
+		return telemetry.Spec.Log.Gateway.Labels
+	}
+
+	return nil
+}
+
+// getGatewayPodAnnotationsFromTelemetry retrieves custom pod annotations for the log gateway from the Telemetry CR.
+func (r *Reconciler) getGatewayPodAnnotationsFromTelemetry(ctx context.Context) map[string]string {
+	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
+	if err != nil {
+		return nil
+	}
+
+	if telemetry.Spec.Log != nil {
+		return telemetry.Spec.Log.Gateway.PodAnnotations
+	}
+
+	return nil
+}
+
+// getGatewayPodLabelsFromTelemetry retrieves custom pod labels for the log gateway from the Telemetry CR.
+func (r *Reconciler) getGatewayPodLabelsFromTelemetry(ctx context.Context) map[string]string {
+	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
+	if err != nil {
+		return nil
+	}
+
+	if telemetry.Spec.Log != nil {
+		return telemetry.Spec.Log.Gateway.PodLabels
+	}
+
+	return nil
 }
 
 func (r *Reconciler) getClusterNameFromTelemetry(ctx context.Context, defaultName string) string {
