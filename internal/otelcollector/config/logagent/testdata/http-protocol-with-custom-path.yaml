@@ -213,9 +213,9 @@ processors:
         error_mode: ignore
         log_statements:
             - statements:
-                - set(resource.attributes["k8s.cluster.name"], "test-cluster")
-                - set(resource.attributes["k8s.cluster.uid"], "")
-                - set(resource.attributes["cloud.provider"], "azure")
+                - set(resource.attributes["k8s.cluster.name"], "test-cluster") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
+                - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
+                - set(resource.attributes["cloud.provider"], "azure") where resource.attributes["cloud.provider"] == nil or resource.attributes["cloud.provider"] == ""
     transform/set-instrumentation-scope-runtime:
         error_mode: ignore
         log_statements:
