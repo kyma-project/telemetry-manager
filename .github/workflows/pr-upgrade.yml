@@ -107,6 +107,7 @@ jobs:
         shell: bash
         run: |
           kubectl get ds -A
+          kubectl get ds -n kyma-system telemetry-fluent-bit -o yaml
           go test -v -count=1 -timeout=10m -run="^(TestLogsFluentBitUpgrade|TestLogsUpgrade|TestMetricsUpgrade|TestTracesUpgrade)/after_upgrade$" ./test/e2e/upgrade/...
 
       - name: Cleanup test environment
