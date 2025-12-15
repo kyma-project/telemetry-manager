@@ -27,6 +27,7 @@ func TestMakeConfigMarshalling(t *testing.T) {
 		require.NoError(t, err, "failed to overwrite golden file")
 
 		t.Fatalf("Golden file %s has been saved, please verify it and set the overwriteGoldenFile flag to false", goldenFilePath)
+
 		return
 	}
 

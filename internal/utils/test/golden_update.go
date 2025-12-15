@@ -1,5 +1,4 @@
 //go:build updateGolden
-// +build updateGolden
 
 package test
 
