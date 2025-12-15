@@ -83,14 +83,14 @@ jobs:
       - name: Setup Golang
         uses: "./.github/template/setup-golang"
 
-      # wait for the build to complete so that the manager image is available
-      - name: Wait for build image workflow to complete
-        run: "./hack/await_image.sh"
-        env:
-          # sets trigger depending on event being either pull_request or merge_group
-          IMAGE_TAG: "${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}"
-          IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
-          QUERY_INTERVAL: 30
+#      # wait for the build to complete so that the manager image is available
+#      - name: Wait for build image workflow to complete
+#        run: "./hack/await_image.sh"
+#        env:
+#          # sets trigger depending on event being either pull_request or merge_group
+#          IMAGE_TAG: "${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}"
+#          IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
+#          QUERY_INTERVAL: 30
 
       - name: Deploy with current version
         shell: bash
