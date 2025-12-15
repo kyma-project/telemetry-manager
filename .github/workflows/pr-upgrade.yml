@@ -75,7 +75,6 @@ jobs:
         shell: bash
         run: |
           go test -v -count=1 -timeout=10m -run="^(TestLogsFluentBitUpgrade|TestLogsUpgrade|TestMetricsUpgrade|TestTracesUpgrade)/before_upgrade$" ./test/e2e/upgrade/...
-          kubectl get ds -A
 
       - name: Checkout current revision
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -83,19 +82,20 @@ jobs:
       - name: Setup Golang
         uses: "./.github/template/setup-golang"
 
-#      # wait for the build to complete so that the manager image is available
-#      - name: Wait for build image workflow to complete
-#        run: "./hack/await_image.sh"
-#        env:
-#          # sets trigger depending on event being either pull_request or merge_group
-#          IMAGE_TAG: "${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}"
-#          IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
-#          QUERY_INTERVAL: 30
+      # wait for the build to complete so that the manager image is available
+      - name: Wait for build image workflow to complete
+        run: "./hack/await_image.sh"
+        env:
+          # sets trigger depending on event being either pull_request or merge_group
+          IMAGE_TAG: "${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}"
+          IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
+          QUERY_INTERVAL: 30
 
       - name: Deploy with current version
         shell: bash
         run: |
           # add the tag PR-<number> to the image if it is a PR, if the trigger is merge_group, then add the sha as the tag
+          # it is important to use deploy-experimental-no-fips to match the setup done before
           TAG="${{ github.event_name == 'pull_request' && 'PR-' || '' }}${{ github.event.number || github.event.merge_group.head_sha }}"
           MANAGER_IMAGE=europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:${TAG} make deploy-experimental-no-fips
 
@@ -106,8 +106,6 @@ jobs:
       - name: Run tests on current revision
         shell: bash
         run: |
-          kubectl get ds -A
-          kubectl get ds -n kyma-system telemetry-fluent-bit -o yaml
           go test -v -count=1 -timeout=10m -run="^(TestLogsFluentBitUpgrade|TestLogsUpgrade|TestMetricsUpgrade|TestTracesUpgrade)/after_upgrade$" ./test/e2e/upgrade/...
 
       - name: Cleanup test environment
