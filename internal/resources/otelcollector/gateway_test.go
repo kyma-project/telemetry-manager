@@ -33,7 +33,6 @@ func TestGateway_ApplyResources(t *testing.T) {
 		sut            *GatewayApplierDeleter
 		istioEnabled   bool
 		goldenFilePath string
-		saveGoldenFile bool
 	}{
 		{
 			name:           "metric gateway",
@@ -111,7 +110,7 @@ func TestGateway_ApplyResources(t *testing.T) {
 			})
 			require.NoError(t, err)
 
-			if tt.saveGoldenFile {
+			if testutils.ShouldUpdateGoldenFiles() {
 				testutils.SaveAsYAML(t, scheme, objects, tt.goldenFilePath)
 			}
 

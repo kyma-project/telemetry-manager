@@ -57,8 +57,9 @@ func TestApplySelfMonitorResources(t *testing.T) {
 	err := sut.ApplyResources(ctx, client, opts)
 	require.NoError(t, err)
 
-	// uncomment to re-generate golden file
-	// testutils.SaveAsYAML(t, scheme, objects, "testdata/self-monitor.yaml")
+	if testutils.ShouldUpdateGoldenFiles() {
+		testutils.SaveAsYAML(t, scheme, objects, "testdata/self-monitor.yaml")
+	}
 
 	bytes, err := testutils.MarshalYAML(scheme, objects)
 	require.NoError(t, err)

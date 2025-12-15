@@ -19,10 +19,9 @@ func TestMakeConfig(t *testing.T) {
 	sut := Builder{Reader: fakeClient}
 
 	tests := []struct {
-		name                string
-		pipelines           []telemetryv1alpha1.MetricPipeline
-		goldenFileName      string
-		overwriteGoldenFile bool
+		name           string
+		pipelines      []telemetryv1alpha1.MetricPipeline
+		goldenFileName string
 	}{
 		{
 			name:           "simple single pipeline setup",
@@ -205,7 +204,7 @@ func TestMakeConfig(t *testing.T) {
 			require.NoError(t, err, "failed to marshal config")
 
 			goldenFilePath := filepath.Join("testdata", tt.goldenFileName)
-			if tt.overwriteGoldenFile {
+			if testutils.ShouldUpdateGoldenFiles() {
 				err = os.WriteFile(goldenFilePath, configYAML, 0600)
 				require.NoError(t, err, "failed to overwrite golden file")
 

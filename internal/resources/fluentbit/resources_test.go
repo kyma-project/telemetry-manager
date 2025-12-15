@@ -31,7 +31,6 @@ func TestAgent_ApplyResources(t *testing.T) {
 		name           string
 		sut            *AgentApplierDeleter
 		goldenFilePath string
-		saveGoldenFile bool
 	}{
 		{
 			name:           "fluentbit",
@@ -68,7 +67,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 			})
 			require.NoError(t, err)
 
-			if tt.saveGoldenFile {
+			if testutils.ShouldUpdateGoldenFiles() {
 				testutils.SaveAsYAML(t, scheme, objects, tt.goldenFilePath)
 			}
 
