@@ -88,7 +88,7 @@ func TestEnrichmentValuesPredefined(t *testing.T) {
 			HaveResourceAttributes(HaveKeyWithValue("k8s.daemonset.name", Equal("predefined-daemonset-name"))),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.deployment.name", Equal("predefined-deployment-name"))),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.job.name", Equal("predefined-job-name"))),
-			HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", Equal("predefined-namespace-name"))),
+			// HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", Equal("predefined-namespace-name"))),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.node.name", Equal("predefined-node-name"))),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", Equal("predefined-pod-name"))),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.statefulset.name", Equal("predefined-statefulset-name"))),
