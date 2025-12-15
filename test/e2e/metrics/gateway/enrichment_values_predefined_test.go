@@ -49,7 +49,7 @@ func TestEnrichmentValuesPredefined(t *testing.T) {
 		telemetrygen.WithResourceAttribute("k8s.daemonset.name", "predefined-daemonset-name"),
 		telemetrygen.WithResourceAttribute("k8s.deployment.name", "predefined-deployment-name"),
 		telemetrygen.WithResourceAttribute("k8s.job.name", "predefined-job-name"),
-		telemetrygen.WithResourceAttribute("k8s.namespace.name", "predefined-namespace-name"),
+		// telemetrygen.WithResourceAttribute("k8s.namespace.name", "predefined-namespace-name"), // this one can't be set as it affects the test's namespace isolation itself
 		telemetrygen.WithResourceAttribute("k8s.node.name", "predefined-node-name"),
 		telemetrygen.WithResourceAttribute("k8s.pod.name", "predefined-pod-name"),
 		telemetrygen.WithResourceAttribute("k8s.statefulset.name", "predefined-statefulset-name"),
