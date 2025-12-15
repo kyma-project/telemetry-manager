@@ -142,6 +142,19 @@ func makeConfigMap(name types.NamespacedName, componentType string, collectorCon
 	}
 }
 
+func makeCABundleConfigMap(name types.NamespacedName, componentType string, caBundle string) *corev1.ConfigMap {
+	return &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name + "-cabundle",
+			Namespace: name.Namespace,
+			Labels:    commonresources.MakeDefaultLabels(name.Name, componentType),
+		},
+		Data: map[string]string{
+			"ca-bundle.crt": caBundle,
+		},
+	}
+}
+
 func makeSecret(name types.NamespacedName, componentType string, secretData map[string][]byte) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
