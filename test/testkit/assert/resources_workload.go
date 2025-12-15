@@ -92,6 +92,7 @@ type readinessCheckFunc func(t *testing.T, name types.NamespacedName) (bool, err
 func isReady(t *testing.T, readinessCheck readinessCheckFunc, name types.NamespacedName, resourceName string) {
 	t.Helper()
 	Eventually(func(g Gomega) {
+		t.Helper()
 		ready, err := readinessCheck(t, name)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(ready).To(BeTrueBecause("%s not ready: %s", resourceName, name.String()))
