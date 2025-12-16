@@ -298,17 +298,17 @@ func MakeResourceRequirements(memoryLimit, memoryRequest, cpuRequest resource.Qu
 func OverridePodSpecWithTemplate(override, original *corev1.PodTemplateSpec) (*corev1.PodTemplateSpec, error) {
 	var err error
 
-	podSpecJson, err := json.Marshal(override)
+	overrideJson, err := json.Marshal(override)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal pod spec: %w", err)
 	}
 
-	templateJson, err := json.Marshal(original)
+	originalJson, err := json.Marshal(original)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal pod template spec: %w", err)
 	}
 
-	podSpecByte, err := strategicpatch.StrategicMergePatch(podSpecJson, templateJson, corev1.PodTemplateSpec{})
+	podSpecByte, err := strategicpatch.StrategicMergePatch(overrideJson, originalJson, corev1.PodTemplateSpec{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to merge pod spec with template: %w", err)
 	}

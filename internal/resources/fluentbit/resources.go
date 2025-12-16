@@ -18,6 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
@@ -100,7 +101,7 @@ type AgentApplierDeleter struct {
 	envConfigSecretName     types.NamespacedName
 	tlsFileConfigSecretName types.NamespacedName
 
-	specTemplate SpecTemplate
+	specTemplate *SpecTemplate
 }
 
 func NewFluentBitApplierDeleter(namespace, fbImage, exporterImage, chownInitContainerImage, priorityClassName string, specTemplate *SpecTemplate) *AgentApplierDeleter {
@@ -114,7 +115,7 @@ func NewFluentBitApplierDeleter(namespace, fbImage, exporterImage, chownInitCont
 		exporterImage:           exporterImage,
 		chownInitContainerImage: chownInitContainerImage,
 		priorityClassName:       priorityClassName,
-		specTemplate:            *specTemplate,
+		specTemplate:            specTemplate,
 
 		daemonSetName:           types.NamespacedName{Name: fbDaemonSetName, Namespace: namespace},
 		luaConfigMapName:        types.NamespacedName{Name: fbLuaConfigMapName, Namespace: namespace},
@@ -184,7 +185,7 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 
 	checksum := configchecksum.Calculate([]corev1.ConfigMap{*cm, *luaCm, *sectionsCm, *filesCm}, []corev1.Secret{*envConfigSecret, *tlsFileConfigSecret})
 
-	daemonSet := aad.makeDaemonSet(aad.daemonSetName.Namespace, checksum)
+	daemonSet := aad.makeDaemonSet(ctx, aad.daemonSetName.Namespace, checksum)
 	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, daemonSet); err != nil {
 		return err
 	}
@@ -298,7 +299,7 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 	return allErrors
 }
 
-func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string) *appsv1.DaemonSet {
+func (aad *AgentApplierDeleter) makeDaemonSet(ctx context.Context, namespace string, checksum string) *appsv1.DaemonSet {
 	annotations := make(map[string]string)
 	annotations[commonresources.AnnotationKeyChecksumConfig] = checksum
 	annotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = fmt.Sprintf("%v,%v", fbports.HTTP, fbports.ExporterMetrics)
@@ -318,6 +319,52 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 		exporterContainerCPURequest,
 	)
 
+	podTemplateSpec := corev1.PodTemplateSpec{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: annotations,
+			Labels:      podLabels,
+		},
+		Spec: commonresources.MakePodSpec(LogAgentName,
+			commonresources.WithPriorityClass(aad.priorityClassName),
+			commonresources.WithTolerations(commonresources.CriticalDaemonSetTolerations),
+			commonresources.WithVolumes(aad.fluentBitVolumes()),
+			commonresources.WithContainer("fluent-bit", aad.fluentBitImage,
+				commonresources.WithEnvVarsFromSecret(fmt.Sprintf("%s-env", LogAgentName)),
+				commonresources.WithRunAsGroup(commonresources.GroupRoot),
+				commonresources.WithRunAsUser(commonresources.UserDefault),
+				commonresources.WithPort("http", fbports.HTTP),
+				commonresources.WithProbes(aad.fluentBitLivenessProbe(), aad.fluentBitReadinessProbe()),
+				commonresources.WithResources(fluentBitResources),
+				commonresources.WithVolumeMounts(aad.fluentBitVolumeMounts()),
+			),
+			commonresources.WithContainer(exporterContainerName, aad.exporterImage,
+				commonresources.WithArgs([]string{
+					"--storage-path=/data/flb-storage/",
+					"--metric-name=telemetry_fsbuffer_usage_bytes",
+				}),
+				commonresources.WithPort("http-metrics", fbports.ExporterMetrics),
+				commonresources.WithResources(exporterResources),
+				commonresources.WithVolumeMounts(aad.exporterVolumeMounts()),
+			),
+			// init container for changing the owner of the storage volume to be fluentbit
+			commonresources.WithInitContainer(chownInitContainerName, aad.chownInitContainerImage,
+				commonresources.WithChownInitContainerOpts(varFluentBitVolumeMountPath, aad.chownInitContainerVolumeMounts())...,
+			),
+		),
+	}
+
+	// Override Podspec with user provided template if available
+	if aad.specTemplate != nil && aad.specTemplate.Pod != nil && len(aad.specTemplate.Pod.Spec.Containers) > 0 {
+		aad.specTemplate.Pod.Spec.Containers[0].Name = "fluent-bit"
+
+		updatedPodTemplateSpec, err := commonresources.OverridePodSpecWithTemplate(&podTemplateSpec, aad.specTemplate.Pod)
+		if err != nil {
+			logf.FromContext(ctx).Error(err, "Failed to override agent pod spec with template, proceeding with base pod spec", "agent", "fluent-bit")
+		} else {
+			podTemplateSpec = *updatedPodTemplateSpec
+		}
+	}
+
 	ds := &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
@@ -329,39 +376,7 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 			Selector: &metav1.LabelSelector{
 				MatchLabels: selectorLabels(),
 			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: annotations,
-					Labels:      podLabels,
-				},
-				Spec: commonresources.MakePodSpec(LogAgentName,
-					commonresources.WithPriorityClass(aad.priorityClassName),
-					commonresources.WithTolerations(commonresources.CriticalDaemonSetTolerations),
-					commonresources.WithVolumes(aad.fluentBitVolumes()),
-					commonresources.WithContainer("fluent-bit", aad.fluentBitImage,
-						commonresources.WithEnvVarsFromSecret(fmt.Sprintf("%s-env", LogAgentName)),
-						commonresources.WithRunAsGroup(commonresources.GroupRoot),
-						commonresources.WithRunAsUser(commonresources.UserDefault),
-						commonresources.WithPort("http", fbports.HTTP),
-						commonresources.WithProbes(aad.fluentBitLivenessProbe(), aad.fluentBitReadinessProbe()),
-						commonresources.WithResources(fluentBitResources),
-						commonresources.WithVolumeMounts(aad.fluentBitVolumeMounts()),
-					),
-					commonresources.WithContainer(exporterContainerName, aad.exporterImage,
-						commonresources.WithArgs([]string{
-							"--storage-path=/data/flb-storage/",
-							"--metric-name=telemetry_fsbuffer_usage_bytes",
-						}),
-						commonresources.WithPort("http-metrics", fbports.ExporterMetrics),
-						commonresources.WithResources(exporterResources),
-						commonresources.WithVolumeMounts(aad.exporterVolumeMounts()),
-					),
-					// init container for changing the owner of the storage volume to be fluentbit
-					commonresources.WithInitContainer(chownInitContainerName, aad.chownInitContainerImage,
-						commonresources.WithChownInitContainerOpts(varFluentBitVolumeMountPath, aad.chownInitContainerVolumeMounts())...,
-					),
-				),
-			},
+			Template: podTemplateSpec,
 		},
 	}
 

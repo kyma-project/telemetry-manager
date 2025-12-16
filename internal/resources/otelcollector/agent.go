@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
@@ -60,7 +61,7 @@ type AgentApplierDeleter struct {
 	podOpts       []commonresources.PodSpecOption
 	containerOpts []commonresources.ContainerOption
 
-	specTemplate SpecTemplate
+	specTemplate *SpecTemplate
 }
 
 type AgentApplyOptions struct {
@@ -113,7 +114,7 @@ func NewLogAgentApplierDeleter(globals config.Global, collectorImage, priorityCl
 			commonresources.WithRunAsGroup(commonresources.GroupRoot),
 			commonresources.WithRunAsUser(commonresources.UserDefault),
 		},
-		specTemplate: *specTemplate,
+		specTemplate: specTemplate,
 	}
 }
 
@@ -148,7 +149,7 @@ func NewMetricAgentApplierDeleter(globals config.Global, image, priorityClassNam
 			)),
 			commonresources.WithVolumeMounts([]corev1.VolumeMount{makeIstioCertVolumeMount()}),
 		},
-		specTemplate: *specTemplate,
+		specTemplate: specTemplate,
 	}
 }
 
@@ -181,7 +182,7 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 	}
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, secretsInChecksum)
-	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, aad.makeAgentDaemonSet(configChecksum, opts)); err != nil {
+	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, aad.makeAgentDaemonSet(ctx, configChecksum, opts)); err != nil {
 		return fmt.Errorf("failed to create daemonset: %w", err)
 	}
 
@@ -215,7 +216,7 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 	return allErrors
 }
 
-func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string, opts AgentApplyOptions) *appsv1.DaemonSet {
+func (aad *AgentApplierDeleter) makeAgentDaemonSet(ctx context.Context, configChecksum string, opts AgentApplyOptions) *appsv1.DaemonSet {
 	annotations := aad.makeAnnotationsFunc(configChecksum, opts)
 
 	// Add pod options shared between all agents
@@ -230,6 +231,26 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string, opts A
 	maps.Copy(podLabels, labels)
 	maps.Copy(podLabels, aad.extraPodLabel)
 
+	podSpecTemplate := corev1.PodTemplateSpec{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels:      podLabels,
+			Annotations: annotations,
+		},
+		Spec: podSpec,
+	}
+
+	// Override Podspec with user provided template if available
+	if aad.specTemplate != nil && aad.specTemplate.Pod != nil && len(aad.specTemplate.Pod.Spec.Containers) > 0 {
+		aad.specTemplate.Pod.Spec.Containers[0].Name = containerName
+
+		updatedPodTemplateSpec, err := commonresources.OverridePodSpecWithTemplate(&podSpecTemplate, aad.specTemplate.Pod)
+		if err != nil {
+			logf.FromContext(ctx).Error(err, "Failed to override agent pod spec with template, proceeding with base pod spec", "agent", aad.baseName)
+		} else {
+			podSpecTemplate = *updatedPodTemplateSpec
+		}
+	}
+
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      aad.baseName,
@@ -240,13 +261,7 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string, opts A
 			Selector: &metav1.LabelSelector{
 				MatchLabels: selectorLabels,
 			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels:      podLabels,
-					Annotations: annotations,
-				},
-				Spec: podSpec,
-			},
+			Template: podSpecTemplate,
 		},
 	}
 }

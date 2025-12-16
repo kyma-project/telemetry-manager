@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -33,8 +34,16 @@ func TestAgent_ApplyResources(t *testing.T) {
 		goldenFilePath string
 	}{
 		{
-			name:           "fluentbit",
-			sut:            NewFluentBitApplierDeleter(namespace, image, exporterImage, initContainerImage, priorityClassName, &SpecTemplate{}),
+			name: "fluentbit",
+			sut: NewFluentBitApplierDeleter(namespace, image, exporterImage, initContainerImage, priorityClassName, &SpecTemplate{
+				Pod: &corev1.PodTemplateSpec{
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{
+							{},
+						},
+					},
+				},
+			}),
 			goldenFilePath: "testdata/fluentbit.yaml",
 		},
 	}
@@ -108,7 +117,14 @@ func TestAgent_DeleteResources(t *testing.T) {
 	}{
 		{
 			name: "fluentbit",
-			sut:  NewFluentBitApplierDeleter(namespace, image, exporterImage, initContainerImage, priorityClassName, &SpecTemplate{}),
+			sut: NewFluentBitApplierDeleter(namespace, image, exporterImage, initContainerImage, priorityClassName, &SpecTemplate{
+				Pod: &corev1.PodTemplateSpec{
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{
+							{},
+						},
+					},
+				}}),
 		},
 	}
 

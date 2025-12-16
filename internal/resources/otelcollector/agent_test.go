@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -28,6 +29,16 @@ func TestAgent_ApplyResources(t *testing.T) {
 	collectorImage := "opentelemetry/collector:dummy"
 	priorityClassName := "normal"
 
+	specTemplate := &SpecTemplate{
+		Pod: &corev1.PodTemplateSpec{
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{},
+				},
+			},
+		},
+	}
+
 	tests := []struct {
 		name             string
 		sut              *AgentApplierDeleter
@@ -38,24 +49,24 @@ func TestAgent_ApplyResources(t *testing.T) {
 	}{
 		{
 			name:           "metric agent",
-			sut:            NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName, &SpecTemplate{}),
+			sut:            NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName, specTemplate),
 			goldenFilePath: "testdata/metric-agent.yaml",
 		},
 		{
 			name:           "metric agent with istio",
-			sut:            NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName, &SpecTemplate{}),
+			sut:            NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName, specTemplate),
 			istioEnabled:   true,
 			backendPorts:   []string{"4317", "9090"},
 			goldenFilePath: "testdata/metric-agent-istio.yaml",
 		},
 		{
 			name:           "metric agent with FIPS mode enabled",
-			sut:            NewMetricAgentApplierDeleter(globalsWithFIPS, collectorImage, priorityClassName, &SpecTemplate{}),
+			sut:            NewMetricAgentApplierDeleter(globalsWithFIPS, collectorImage, priorityClassName, specTemplate),
 			goldenFilePath: "testdata/metric-agent-fips-enabled.yaml",
 		},
 		{
 			name: "log agent",
-			sut:  NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName, &SpecTemplate{}),
+			sut:  NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName, specTemplate),
 			collectorEnvVars: map[string][]byte{
 				"DUMMY_ENV_VAR": []byte("foo"),
 			},
@@ -63,7 +74,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 		},
 		{
 			name: "log agent with istio",
-			sut:  NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName, &SpecTemplate{}),
+			sut:  NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName, specTemplate),
 			collectorEnvVars: map[string][]byte{
 				"DUMMY_ENV_VAR": []byte("foo"),
 			},
@@ -72,7 +83,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 		},
 		{
 			name: "log agent with FIPS mode enabled",
-			sut:  NewLogAgentApplierDeleter(globalsWithFIPS, collectorImage, priorityClassName, &SpecTemplate{}),
+			sut:  NewLogAgentApplierDeleter(globalsWithFIPS, collectorImage, priorityClassName, specTemplate),
 			collectorEnvVars: map[string][]byte{
 				"DUMMY_ENV_VAR": []byte("foo"),
 			},
@@ -125,6 +136,16 @@ func TestAgent_DeleteResources(t *testing.T) {
 	image := "opentelemetry/collector:dummy"
 	priorityClassName := "normal"
 
+	specTemplate := &SpecTemplate{
+		Pod: &corev1.PodTemplateSpec{
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{},
+				},
+			},
+		},
+	}
+
 	var created []client.Object
 
 	fakeClient := fake.NewClientBuilder().WithInterceptorFuncs(interceptor.Funcs{
@@ -140,11 +161,11 @@ func TestAgent_DeleteResources(t *testing.T) {
 	}{
 		{
 			name: "metric agent",
-			sut:  NewMetricAgentApplierDeleter(globals, image, priorityClassName, &SpecTemplate{}),
+			sut:  NewMetricAgentApplierDeleter(globals, image, priorityClassName, specTemplate),
 		},
 		{
 			name: "log agent",
-			sut:  NewLogAgentApplierDeleter(globals, image, priorityClassName, &SpecTemplate{}),
+			sut:  NewLogAgentApplierDeleter(globals, image, priorityClassName, specTemplate),
 		},
 	}
 
