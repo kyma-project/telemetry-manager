@@ -22,6 +22,27 @@ type LogPipelineValidator struct {
 var _ webhook.CustomValidator = &LogPipelineValidator{}
 
 func (v *LogPipelineValidator) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
+	return validateLogPipeline(obj)
+}
+
+func (v *LogPipelineValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	return validateLogPipeline(newObj)
+}
+
+func (v *LogPipelineValidator) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
+	return nil, nil
+}
+
+func validateFilterTransform(filterSpec []telemetryv1beta1.FilterSpec, transformSpec []telemetryv1beta1.TransformSpec) error {
+	err := webhookutils.ValidateFilterTransform(ottl.SignalTypeLog, filterSpec, transformSpec)
+	if err != nil {
+		return fmt.Errorf(conditions.MessageForOtelLogPipeline(conditions.ReasonOTTLSpecInvalid), err.Error())
+	}
+
+	return nil
+}
+
+func validateLogPipeline(obj runtime.Object) (admission.Warnings, error) {
 	logPipeline, ok := obj.(*telemetryv1alpha1.LogPipeline)
 
 	var warnings admission.Warnings
@@ -46,48 +67,5 @@ func (v *LogPipelineValidator) ValidateCreate(_ context.Context, obj runtime.Obj
 
 		return warnings, nil
 	}
-
 	return nil, nil
-}
-
-func (v *LogPipelineValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	logPipeline, ok := newObj.(*telemetryv1alpha1.LogPipeline)
-
-	var warnings admission.Warnings
-
-	if !ok {
-		return nil, fmt.Errorf("expected a LogPipeline but got %T", newObj)
-	}
-
-	filterSpec, transformSpec, err := webhookutils.ConvertFilterTransformToBeta(logPipeline.Spec.Filters, logPipeline.Spec.Transforms)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := validateFilterTransform(filterSpec, transformSpec); err != nil {
-		return nil, err
-	}
-
-	if logpipelineutils.ContainsCustomPlugin(logPipeline) {
-		helpText := "https://kyma-project.io/#/telemetry-manager/user/02-logs"
-		msg := fmt.Sprintf("Logpipeline '%s' uses unsupported custom filters or outputs. We recommend changing the pipeline to use supported filters or output. See the documentation: %s", logPipeline.Name, helpText)
-		warnings = append(warnings, msg)
-
-		return warnings, nil
-	}
-
-	return nil, nil
-}
-
-func (v *LogPipelineValidator) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
-	return nil, nil
-}
-
-func validateFilterTransform(filterSpec []telemetryv1beta1.FilterSpec, transformSpec []telemetryv1beta1.TransformSpec) error {
-	err := webhookutils.ValidateFilterTransform(ottl.SignalTypeLog, filterSpec, transformSpec)
-	if err != nil {
-		return fmt.Errorf(conditions.MessageForOtelLogPipeline(conditions.ReasonOTTLSpecInvalid), err.Error())
-	}
-
-	return nil
 }
