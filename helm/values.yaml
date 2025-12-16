@@ -7,7 +7,6 @@ global:
   imagePullSecret:
     enabled: false
     name: "oci-registry-pullsecret"
-
 experimental:
   enabled: true
 default:
@@ -63,12 +62,12 @@ resources:
   # Custom labels and annotations for resource metadata
   metadata:
     labels:
-      # custom-resource-label: my-value
+    # custom-resource-label: my-value
     annotations:
-      # custom-resource-annotation: my-value
+    # custom-resource-annotation: my-value
   # Custom labels and annotations for resource pod template
   pod:
     labels:
-      # custome-label: my-value
+    # custome-label: my-value
     annotations:
-      # custom-annotation: my-value
+# custom-annotation: my-value
