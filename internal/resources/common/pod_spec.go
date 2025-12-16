@@ -322,8 +322,3 @@ func OverridePodSpecWithTemplate(override, original *corev1.PodTemplateSpec) (*c
 
 	return &mergedPodSpec, nil
 }
-
-// func OverrideMetadataWithTemplate(, templateMetadata corev1.ObjectMeta) *corev1.ObjectMeta {
-//if metadata.Labels == nil {
-//metadata.Labels = make(map[string]string)
-//}
