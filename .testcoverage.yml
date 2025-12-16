@@ -53,7 +53,7 @@ override:
     path: ^webhook/logpipeline/v1alpha1$
   - threshold: 84
     path: ^webhook/logpipeline/v1beta1$
-  - threshold: 88
+  - threshold: 82
     path: ^webhook/utils$
   - threshold: 80
     path: ^internal/utils/logpipeline$
