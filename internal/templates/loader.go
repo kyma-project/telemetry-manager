@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"gopkg.in/yaml.v3"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -28,17 +28,19 @@ func NewSpecTemplatesLoader(reader FileReader) *Loader {
 		fileReader: reader,
 	}
 }
-func (l *Loader) LoadPodSpecTemplate(fileName string) (*v1.PodTemplateSpec, error) {
+func (l *Loader) LoadPodSpecTemplate(fileName string) (*corev1.PodTemplateSpec, error) {
 	podTemplate, err := l.fileReader.ReadFile(fileName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read pod template file: %w", err)
 	}
 
-	var tpl v1.PodTemplateSpec
+	var tpl corev1.PodTemplateSpec
+
 	err = yaml.Unmarshal(podTemplate, &tpl)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal pod template: %w", err)
 	}
+
 	return &tpl, nil
 }
 
@@ -49,9 +51,11 @@ func (l *Loader) LoadMetadataTemplate(fileName string) (*metav1.ObjectMeta, erro
 	}
 
 	var tpl metav1.ObjectMeta
+
 	err = yaml.Unmarshal(metadataTemplate, &tpl)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal metadata template: %w", err)
 	}
+
 	return &tpl, nil
 }

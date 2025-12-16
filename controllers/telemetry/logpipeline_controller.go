@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kyma-project/telemetry-manager/internal/templates"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -53,6 +52,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
+	"github.com/kyma-project/telemetry-manager/internal/templates"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
@@ -203,6 +203,7 @@ func configureFluentBitReconciler(config LogPipelineControllerConfig, client cli
 	)
 
 	loader := templates.NewSpecTemplatesLoader(&templates.OSFileReader{})
+
 	podSpecTemplate, err := loader.LoadPodSpecTemplate(config.PodSpecTemplateFileName())
 	if err != nil {
 		return nil, err
@@ -282,6 +283,7 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 
 	// Load templates from file
 	loader := templates.NewSpecTemplatesLoader(&templates.OSFileReader{})
+
 	podSpecTemplate, err := loader.LoadPodSpecTemplate(config.PodSpecTemplateFileName())
 	if err != nil {
 		return nil, err

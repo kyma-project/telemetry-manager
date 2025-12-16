@@ -18,7 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
@@ -315,9 +315,10 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(ctx context.Context, con
 	// Override Podspec with user provided template if available
 	if gad.specTemplate != nil && gad.specTemplate.Pod != nil {
 		gad.specTemplate.Pod.Spec.Containers[0].Name = containerName
+
 		updatedPodTemplateSpec, err := commonresources.OverridePodSpecWithTemplate(&podTemplateSpec, gad.specTemplate.Pod)
 		if err != nil {
-			log.FromContext(ctx).Error(err, "Failed to override gateway pod spec with template, proceeding with base pod spec", "gateway", gad.baseName)
+			logf.FromContext(ctx).Error(err, "Failed to override gateway pod spec with template, proceeding with base pod spec", "gateway", gad.baseName)
 		} else {
 			podTemplateSpec = *updatedPodTemplateSpec
 		}

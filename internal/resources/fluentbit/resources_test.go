@@ -34,7 +34,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 	}{
 		{
 			name:           "fluentbit",
-			sut:            NewFluentBitApplierDeleter(namespace, image, exporterImage, initContainerImage, priorityClassName),
+			sut:            NewFluentBitApplierDeleter(namespace, image, exporterImage, initContainerImage, priorityClassName, &SpecTemplate{}),
 			goldenFilePath: "testdata/fluentbit.yaml",
 		},
 	}
@@ -108,7 +108,7 @@ func TestAgent_DeleteResources(t *testing.T) {
 	}{
 		{
 			name: "fluentbit",
-			sut:  NewFluentBitApplierDeleter(namespace, image, exporterImage, initContainerImage, priorityClassName),
+			sut:  NewFluentBitApplierDeleter(namespace, image, exporterImage, initContainerImage, priorityClassName, &SpecTemplate{}),
 		},
 	}
 

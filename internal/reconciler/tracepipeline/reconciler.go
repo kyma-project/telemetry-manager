@@ -23,7 +23,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -117,15 +117,17 @@ func WithPodSpecTemplate(podTemplate *corev1.PodTemplateSpec) Option {
 		if r.specTemplate == nil {
 			r.specTemplate = &otelcollector.SpecTemplate{}
 		}
+
 		r.specTemplate.Pod = podTemplate
 	}
 }
 
-func WithMetadataTemplate(metadataTemplate *v1.ObjectMeta) Option {
+func WithMetadataTemplate(metadataTemplate *metav1.ObjectMeta) Option {
 	return func(r *Reconciler) {
 		if r.specTemplate == nil {
 			r.specTemplate = &otelcollector.SpecTemplate{}
 		}
+
 		r.specTemplate.Metadata = metadataTemplate
 	}
 }

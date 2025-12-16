@@ -314,6 +314,7 @@ func OverridePodSpecWithTemplate(override, original *corev1.PodTemplateSpec) (*c
 	}
 
 	var mergedPodSpec corev1.PodTemplateSpec
+
 	err = json.Unmarshal(podSpecByte, &mergedPodSpec)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal merged pod spec: %w", err)
@@ -322,7 +323,7 @@ func OverridePodSpecWithTemplate(override, original *corev1.PodTemplateSpec) (*c
 	return &mergedPodSpec, nil
 }
 
-//func OverrideMetadataWithTemplate(, templateMetadata corev1.ObjectMeta) *corev1.ObjectMeta {
+// func OverrideMetadataWithTemplate(, templateMetadata corev1.ObjectMeta) *corev1.ObjectMeta {
 //if metadata.Labels == nil {
 //metadata.Labels = make(map[string]string)
 //}
