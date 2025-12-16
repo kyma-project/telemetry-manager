@@ -129,11 +129,7 @@ func TestBuildConfig(t *testing.T) {
 
 			goldenFilePath := filepath.Join("testdata", tt.goldenFileName)
 			if testutils.ShouldUpdateGoldenFiles() {
-				err = os.WriteFile(goldenFilePath, configYAML, 0600)
-				require.NoError(t, err, "failed to overwrite golden file")
-
-				t.Fatalf("Golden file %s has been saved, please verify it and set the overwriteGoldenFile flag to false", goldenFilePath)
-
+				testutils.UpdateGoldenFile(t, goldenFilePath, configYAML)
 				return
 			}
 

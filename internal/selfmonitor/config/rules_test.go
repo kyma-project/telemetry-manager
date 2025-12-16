@@ -18,12 +18,7 @@ func TestMakeRules(t *testing.T) {
 
 	goldenFilePath := filepath.Join("testdata", "rules.yaml")
 	if testutils.ShouldUpdateGoldenFiles() {
-		err = os.WriteFile(goldenFilePath, rulesYAML, 0600)
-		require.NoError(t, err, "failed to overwrite golden file")
-
-		t.Fatalf("Golden file %s has been saved, please verify it and set the overwriteGoldenFile flag to false", goldenFilePath)
-
-		return
+		testutils.UpdateGoldenFile(t, goldenFilePath, rulesYAML)
 	}
 
 	goldenFile, err := os.ReadFile(goldenFilePath)

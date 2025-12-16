@@ -59,6 +59,7 @@ func TestApplySelfMonitorResources(t *testing.T) {
 
 	if testutils.ShouldUpdateGoldenFiles() {
 		testutils.SaveAsYAML(t, scheme, objects, "testdata/self-monitor.yaml")
+		return
 	}
 
 	bytes, err := testutils.MarshalYAML(scheme, objects)

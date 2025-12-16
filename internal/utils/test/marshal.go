@@ -54,8 +54,6 @@ func SaveAsYAML(t *testing.T, scheme *runtime.Scheme, objects []client.Object, p
 
 	err = os.WriteFile(path, objectsYAML, 0600)
 	require.NoError(t, err)
-
-	t.Fatalf("Golden file %s has been saved, please verify it and remove this line", path)
 }
 
 func compareObjects(a, b client.Object) int {

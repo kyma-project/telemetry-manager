@@ -23,11 +23,7 @@ func TestMakeConfigMarshalling(t *testing.T) {
 
 	goldenFilePath := filepath.Join("testdata", "config.yaml")
 	if testutils.ShouldUpdateGoldenFiles() {
-		err = os.WriteFile(goldenFilePath, configYaml, 0600)
-		require.NoError(t, err, "failed to overwrite golden file")
-
-		t.Fatalf("Golden file %s has been saved, please verify it and set the overwriteGoldenFile flag to false", goldenFilePath)
-
+		testutils.UpdateGoldenFile(t, goldenFilePath, configYaml)
 		return
 	}
 

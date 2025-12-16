@@ -69,6 +69,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 
 			if testutils.ShouldUpdateGoldenFiles() {
 				testutils.SaveAsYAML(t, scheme, objects, tt.goldenFilePath)
+				return
 			}
 
 			bytes, err := testutils.MarshalYAML(scheme, objects)

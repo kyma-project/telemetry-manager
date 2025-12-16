@@ -209,19 +209,19 @@ check-coverage: $(GO_TEST_COVERAGE) ## Check test coverage against thresholds
 .PHONY: update-golden-files
 update-golden-files: ## Update all golden files for config builder tests
 	@echo "Updating golden files for otelcollector config builder tests..."
-	@go test ./internal/otelcollector/config/tracegateway -tags=updateGolden -v -run TestBuildConfig || true
-	@go test ./internal/otelcollector/config/metricgateway -tags=updateGolden -v -run TestBuildConfig || true
-	@go test ./internal/otelcollector/config/loggateway -tags=updateGolden -v -run TestBuildConfig || true
-	@go test ./internal/otelcollector/config/logagent -tags=updateGolden -v -run TestBuildConfig || true
-	@go test ./internal/otelcollector/config/metricagent -tags=updateGolden -v -run TestBuildConfig || true
+	@go test ./internal/otelcollector/config/tracegateway -v -run TestBuildConfig -- -update-golden-files || true
+	@go test ./internal/otelcollector/config/metricgateway -v -run TestBuildConfig -- -update-golden-files || true
+	@go test ./internal/otelcollector/config/loggateway -v -run TestBuildConfig -- -update-golden-files || true
+	@go test ./internal/otelcollector/config/logagent -v -run TestBuildConfig -- -update-golden-files || true
+	@go test ./internal/otelcollector/config/metricagent -v -run TestBuildConfig -- -update-golden-files || true
 	@echo "Updating golden files for selfmonitor tests..."
-	@go test ./internal/selfmonitor/config -tags=updateGolden -v -run TestMakeConfigMarshalling || true
-	@go test ./internal/selfmonitor/config -tags=updateGolden -v -run TestMakeRules || true
+	@go test ./internal/selfmonitor/config -v -run TestMakeConfigMarshalling -- -update-golden-files || true
+	@go test ./internal/selfmonitor/config -v -run TestMakeRules -- -update-golden-files || true
 	@echo "Updating golden files for resource tests..."
-	@go test ./internal/resources/fluentbit -tags=updateGolden -v -run TestAgent_ApplyResources || true
-	@go test ./internal/resources/otelcollector -tags=updateGolden -v -run TestAgent_ApplyResources || true
-	@go test ./internal/resources/otelcollector -tags=updateGolden -v -run TestGateway_ApplyResources || true
-	@go test ./internal/resources/selfmonitor -tags=updateGolden -v -run TestApplySelfMonitorResources || true
+	@go test ./internal/resources/fluentbit -v -run TestAgent_ApplyResources -- -update-golden-files || true
+	@go test ./internal/resources/otelcollector -v -run TestAgent_ApplyResources -- -update-golden-files || true
+	@go test ./internal/resources/otelcollector -v -run TestGateway_ApplyResources -- -update-golden-files || true
+	@go test ./internal/resources/selfmonitor -v -run TestApplySelfMonitorResources -- -update-golden-files || true
 	@echo "All golden files updated successfully"
 
 ##@ Build
