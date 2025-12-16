@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
+	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -28,6 +29,16 @@ func TestGateway_ApplyResources(t *testing.T) {
 	image := "opentelemetry/collector:dummy"
 	priorityClassName := "normal"
 
+	specTemplate := &SpecTemplate{
+		Pod: &v1.PodTemplateSpec{
+			Spec: v1.PodSpec{
+				Containers: []v1.Container{
+					{},
+				},
+			},
+		},
+	}
+
 	tests := []struct {
 		name           string
 		sut            *GatewayApplierDeleter
@@ -36,50 +47,50 @@ func TestGateway_ApplyResources(t *testing.T) {
 	}{
 		{
 			name:           "metric gateway",
-			sut:            NewMetricGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{}),
+			sut:            NewMetricGatewayApplierDeleter(globals, image, priorityClassName, specTemplate),
 			goldenFilePath: "testdata/metric-gateway.yaml",
 		},
 		{
 			name:           "metric gateway with istio",
-			sut:            NewMetricGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{}),
+			sut:            NewMetricGatewayApplierDeleter(globals, image, priorityClassName, specTemplate),
 			istioEnabled:   true,
 			goldenFilePath: "testdata/metric-gateway-istio.yaml",
 		},
 		{
 			name:           "metric gateway with FIPS mode enabled",
-			sut:            NewMetricGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName, &SpecTemplate{}),
+			sut:            NewMetricGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName, specTemplate),
 			goldenFilePath: "testdata/metric-gateway-fips-enabled.yaml",
 		},
 		{
 			name:           "trace gateway",
-			sut:            NewTraceGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{}),
+			sut:            NewTraceGatewayApplierDeleter(globals, image, priorityClassName, specTemplate),
 			goldenFilePath: "testdata/trace-gateway.yaml",
 		},
 		{
 			name:           "trace gateway with istio",
-			sut:            NewTraceGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{}),
+			sut:            NewTraceGatewayApplierDeleter(globals, image, priorityClassName, specTemplate),
 			istioEnabled:   true,
 			goldenFilePath: "testdata/trace-gateway-istio.yaml",
 		},
 		{
 			name:           "trace gateway with FIPS mode enabled",
-			sut:            NewTraceGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName, &SpecTemplate{}),
+			sut:            NewTraceGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName, specTemplate),
 			goldenFilePath: "testdata/trace-gateway-fips-enabled.yaml",
 		},
 		{
 			name:           "log gateway",
-			sut:            NewLogGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{}),
+			sut:            NewLogGatewayApplierDeleter(globals, image, priorityClassName, specTemplate),
 			goldenFilePath: "testdata/log-gateway.yaml",
 		},
 		{
 			name:           "log gateway with istio",
-			sut:            NewLogGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{}),
+			sut:            NewLogGatewayApplierDeleter(globals, image, priorityClassName, specTemplate),
 			istioEnabled:   true,
 			goldenFilePath: "testdata/log-gateway-istio.yaml",
 		},
 		{
 			name:           "log gateway with FIPS mode enabled",
-			sut:            NewLogGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName, &SpecTemplate{}),
+			sut:            NewLogGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName, specTemplate),
 			goldenFilePath: "testdata/log-gateway-fips-enabled.yaml",
 		},
 	}
@@ -131,6 +142,16 @@ func TestGateway_DeleteResources(t *testing.T) {
 	image := "opentelemetry/collector:dummy"
 	priorityClassName := "normal"
 
+	specTemplate := &SpecTemplate{
+		Pod: &v1.PodTemplateSpec{
+			Spec: v1.PodSpec{
+				Containers: []v1.Container{
+					{},
+				},
+			},
+		},
+	}
+
 	tests := []struct {
 		name         string
 		sut          *GatewayApplierDeleter
@@ -138,29 +159,29 @@ func TestGateway_DeleteResources(t *testing.T) {
 	}{
 		{
 			name: "metric gateway",
-			sut:  NewMetricGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{}),
+			sut:  NewMetricGatewayApplierDeleter(globals, image, priorityClassName, specTemplate),
 		},
 		{
 			name:         "metric gateway with istio",
-			sut:          NewMetricGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{}),
+			sut:          NewMetricGatewayApplierDeleter(globals, image, priorityClassName, specTemplate),
 			istioEnabled: true,
 		},
 		{
 			name: "trace gateway",
-			sut:  NewTraceGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{}),
+			sut:  NewTraceGatewayApplierDeleter(globals, image, priorityClassName, specTemplate),
 		},
 		{
 			name:         "trace gateway with istio",
-			sut:          NewTraceGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{}),
+			sut:          NewTraceGatewayApplierDeleter(globals, image, priorityClassName, specTemplate),
 			istioEnabled: true,
 		},
 		{
 			name: "log gateway",
-			sut:  NewLogGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{}),
+			sut:  NewLogGatewayApplierDeleter(globals, image, priorityClassName, specTemplate),
 		},
 		{
 			name:         "log gateway with istio",
-			sut:          NewLogGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{}),
+			sut:          NewLogGatewayApplierDeleter(globals, image, priorityClassName, specTemplate),
 			istioEnabled: true,
 		},
 	}

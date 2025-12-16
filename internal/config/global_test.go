@@ -315,3 +315,13 @@ func TestValidateSuccess(t *testing.T) {
 	err := g.Validate()
 	require.NoError(t, err)
 }
+
+func TestTemplateFileNamesOptions(t *testing.T) {
+	g := NewGlobal(
+		WithPodSpecTemplateFileName("pod.yaml"),
+		WithResourceMetaTemplateFileName("meta.yaml"),
+	)
+
+	require.Equal(t, "pod.yaml", g.PodSpecTemplateFileName())
+	require.Equal(t, "meta.yaml", g.ResourceMetaTemplateFileName())
+}
