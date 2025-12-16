@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/kyma-project/telemetry-manager/internal/templates"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -62,6 +63,9 @@ type Reconciler struct {
 	pipelineSync          PipelineSyncer
 	pipelineValidator     *Validator
 	errToMsgConverter     commonstatus.ErrorToMessageConverter
+
+	podSpecTemplate  *templates.PodSpecTemplate
+	metadataTemplate *templates.MetadataTemplate
 }
 
 // Option configures the Reconciler during initialization.
@@ -106,6 +110,18 @@ func WithGatewayProber(prober commonstatus.Prober) Option {
 func WithIstioStatusChecker(checker IstioStatusChecker) Option {
 	return func(r *Reconciler) {
 		r.istioStatusChecker = checker
+	}
+}
+
+func WithPodSpecTemplate(podTemplate *templates.PodSpecTemplate) Option {
+	return func(r *Reconciler) {
+		r.podSpecTemplate = podTemplate
+	}
+}
+
+func WithMetadataTemplate(metadataTemplate *templates.MetadataTemplate) Option {
+	return func(r *Reconciler) {
+		r.metadataTemplate = metadataTemplate
 	}
 }
 

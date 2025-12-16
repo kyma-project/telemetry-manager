@@ -40,6 +40,7 @@ type Global struct {
 	targetNamespace   string
 	operateInFIPSMode bool
 	version           string
+	templateFileName  string
 }
 
 type Option func(*Global)
@@ -119,4 +120,8 @@ func (g *Global) OperateInFIPSMode() bool {
 // Version returns the version of the Telemetry Manager.
 func (g *Global) Version() string {
 	return g.version
+}
+
+func (g *Global) TemplateFileName() string {
+	return g.templateFileName
 }

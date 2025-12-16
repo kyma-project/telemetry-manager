@@ -59,6 +59,8 @@ type AgentApplierDeleter struct {
 
 	podOpts       []commonresources.PodSpecOption
 	containerOpts []commonresources.ContainerOption
+
+	specTemplate SpecTemplate
 }
 
 type AgentApplyOptions struct {
@@ -69,7 +71,7 @@ type AgentApplyOptions struct {
 	BackendPorts []string
 }
 
-func NewLogAgentApplierDeleter(globals config.Global, collectorImage, priorityClassName string) *AgentApplierDeleter {
+func NewLogAgentApplierDeleter(globals config.Global, collectorImage, priorityClassName string, specTemplate *SpecTemplate) *AgentApplierDeleter {
 	extraLabels := map[string]string{
 		commonresources.LabelKeyIstioInject: commonresources.LabelValueTrue, // inject Istio sidecar
 	}
@@ -111,10 +113,11 @@ func NewLogAgentApplierDeleter(globals config.Global, collectorImage, priorityCl
 			commonresources.WithRunAsGroup(commonresources.GroupRoot),
 			commonresources.WithRunAsUser(commonresources.UserDefault),
 		},
+		specTemplate: *specTemplate,
 	}
 }
 
-func NewMetricAgentApplierDeleter(globals config.Global, image, priorityClassName string) *AgentApplierDeleter {
+func NewMetricAgentApplierDeleter(globals config.Global, image, priorityClassName string, specTemplate *SpecTemplate) *AgentApplierDeleter {
 	extraLabels := map[string]string{
 		commonresources.LabelKeyTelemetryMetricScrape:    commonresources.LabelValueTrue,
 		commonresources.LabelKeyTelemetryMetricExport:    commonresources.LabelValueTrue,
@@ -145,6 +148,7 @@ func NewMetricAgentApplierDeleter(globals config.Global, image, priorityClassNam
 			)),
 			commonresources.WithVolumeMounts([]corev1.VolumeMount{makeIstioCertVolumeMount()}),
 		},
+		specTemplate: *specTemplate,
 	}
 }
 

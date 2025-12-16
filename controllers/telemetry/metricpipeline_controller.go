@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-project/telemetry-manager/internal/templates"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -129,6 +130,16 @@ func NewMetricPipelineController(config MetricPipelineControllerConfig, client c
 	agentConfigBuilder := &metricagent.Builder{Reader: client}
 	gatewayConfigBuilder := &metricgateway.Builder{Reader: client}
 
+	loader := templates.NewSpecTemplatesLoader(&templates.OSFileReader{})
+	podSpecTemplate, err := loader.LoadPodSpecTemplate(config.TemplateFileName())
+	if err != nil {
+		return nil, err
+	}
+	metadataTemplate, err := loader.LoadMetadataTemplate(config.TemplateFileName())
+	if err != nil {
+		return nil, err
+	}
+
 	reconciler := metricpipeline.New(
 		metricpipeline.WithClient(client),
 		metricpipeline.WithGlobals(config.Global),
@@ -150,6 +161,9 @@ func NewMetricPipelineController(config MetricPipelineControllerConfig, client c
 
 		metricpipeline.WithPipelineLock(pipelineLock),
 		metricpipeline.WithPipelineSyncer(pipelineSync),
+
+		metricpipeline.WithPodSpecTemplate(podSpecTemplate),
+		metricpipeline.WithMetadataTemplate(metadataTemplate),
 	)
 
 	return &MetricPipelineController{

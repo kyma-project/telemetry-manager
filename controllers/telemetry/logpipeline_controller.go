@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-project/telemetry-manager/internal/templates"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -201,12 +202,27 @@ func configureFluentBitReconciler(config LogPipelineControllerConfig, client cli
 		logpipelinefluentbit.WithValidatorPipelineLock(pipelineLock),
 	)
 
+	loader := templates.NewSpecTemplatesLoader(&templates.OSFileReader{})
+	podSpecTemplate, err := loader.LoadPodSpecTemplate(config.TemplateFileName())
+	if err != nil {
+		return nil, err
+	}
+
+	metadataTemplate, err := loader.LoadMetadataTemplate(config.TemplateFileName())
+	if err != nil {
+		return nil, err
+	}
+
 	fluentBitApplierDeleter := fluentbit.NewFluentBitApplierDeleter(
 		config.TargetNamespace(),
 		config.FluentBitImage,
 		config.ExporterImage,
 		config.ChownInitContainerImage,
 		config.FluentBitPriorityClassName,
+		&fluentbit.SpecTemplate{
+			Pod:      podSpecTemplate,
+			Metadata: metadataTemplate,
+		},
 	)
 
 	fluentBitConfigBuilder := builder.NewFluentBitConfigBuilder(client)
@@ -264,18 +280,42 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 		Reader: client,
 	}
 
+	// Load templates from file
+	loader := templates.NewSpecTemplatesLoader(&templates.OSFileReader{})
+	podSpecTemplate, err := loader.LoadPodSpecTemplate(config.TemplateFileName())
+	if err != nil {
+		return nil, err
+	}
+
+	metadataTemplate, err := loader.LoadMetadataTemplate(config.TemplateFileName())
+	if err != nil {
+		return nil, err
+	}
+
+	agentApplierDeleter := otelcollector.NewLogAgentApplierDeleter(
+		config.Global,
+		config.OTelCollectorImage,
+		config.LogAgentPriorityClassName,
+		&otelcollector.SpecTemplate{Pod: podSpecTemplate, Metadata: metadataTemplate})
+
+	gatewayAppliedDeleter := otelcollector.NewLogGatewayApplierDeleter(
+		config.Global,
+		config.OTelCollectorImage,
+		config.LogGatewayPriorityClassName,
+		&otelcollector.SpecTemplate{Pod: podSpecTemplate, Metadata: metadataTemplate})
+
 	otelReconciler := logpipelineotel.New(
 		logpipelineotel.WithClient(client),
 		logpipelineotel.WithGlobals(config.Global),
 
-		logpipelineotel.WithAgentApplierDeleter(otelcollector.NewLogAgentApplierDeleter(config.Global, config.OTelCollectorImage, config.LogAgentPriorityClassName)),
+		logpipelineotel.WithAgentApplierDeleter(agentApplierDeleter),
 		logpipelineotel.WithAgentConfigBuilder(agentConfigBuilder),
 		logpipelineotel.WithAgentFlowHealthProber(agentFlowHealthProber),
 		logpipelineotel.WithAgentProber(&workloadstatus.DaemonSetProber{Client: client}),
 
 		logpipelineotel.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
 
-		logpipelineotel.WithGatewayApplierDeleter(otelcollector.NewLogGatewayApplierDeleter(config.Global, config.OTelCollectorImage, config.LogGatewayPriorityClassName)),
+		logpipelineotel.WithGatewayApplierDeleter(gatewayAppliedDeleter),
 		logpipelineotel.WithGatewayConfigBuilder(&loggateway.Builder{Reader: client}),
 		logpipelineotel.WithGatewayFlowHealthProber(gatewayFlowHealthProber),
 		logpipelineotel.WithGatewayProber(&workloadstatus.DeploymentProber{Client: client}),

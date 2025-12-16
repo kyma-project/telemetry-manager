@@ -1,11 +1,13 @@
 package common
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/utils/ptr"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
@@ -292,3 +294,35 @@ func MakeResourceRequirements(memoryLimit, memoryRequest, cpuRequest resource.Qu
 		},
 	}
 }
+
+func OverridePodSpecWithTemplate(override, original *corev1.PodTemplateSpec) (*corev1.PodTemplateSpec, error) {
+	var err error
+
+	podSpecJson, err := json.Marshal(override)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal pod spec: %w", err)
+	}
+
+	templateJson, err := json.Marshal(original)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal pod template spec: %w", err)
+	}
+
+	podSpecByte, err := strategicpatch.StrategicMergePatch(podSpecJson, templateJson, corev1.PodTemplateSpec{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to merge pod spec with template: %w", err)
+	}
+
+	var mergedPodSpec corev1.PodTemplateSpec
+	err = json.Unmarshal(podSpecByte, &mergedPodSpec)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal merged pod spec: %w", err)
+	}
+
+	return &mergedPodSpec, nil
+}
+
+//func OverrideMetadataWithTemplate(, templateMetadata corev1.ObjectMeta) *corev1.ObjectMeta {
+//if metadata.Labels == nil {
+//metadata.Labels = make(map[string]string)
+//}

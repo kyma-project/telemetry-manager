@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-project/telemetry-manager/internal/templates"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -119,6 +120,17 @@ func NewTracePipelineController(config TracePipelineControllerConfig, client cli
 		return nil, err
 	}
 
+	loader := templates.NewSpecTemplatesLoader(&templates.OSFileReader{})
+	podSpecTemplate, err := loader.LoadPodSpecTemplate(config.TemplateFileName())
+	if err != nil {
+		return nil, err
+	}
+
+	metadataTemplate, err := loader.LoadMetadataTemplate(config.TargetNamespace())
+	if err != nil {
+		return nil, err
+	}
+
 	reconciler := tracepipeline.New(
 		tracepipeline.WithClient(client),
 		tracepipeline.WithGlobal(config.Global),
@@ -135,6 +147,9 @@ func NewTracePipelineController(config TracePipelineControllerConfig, client cli
 		tracepipeline.WithPipelineLock(pipelineLock),
 		tracepipeline.WithPipelineSyncer(pipelineSync),
 		tracepipeline.WithPipelineValidator(pipelineValidator),
+
+		tracepipeline.WithPodSpecTemplate(podSpecTemplate),
+		tracepipeline.WithMetadataTemplate(metadataTemplate),
 	)
 
 	return &TracePipelineController{

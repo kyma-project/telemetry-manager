@@ -80,6 +80,10 @@ type AgentApplyOptions struct {
 	FluentBitConfig *builder.FluentBitConfig
 }
 
+type SpecTemplate struct {
+	Pod      *corev1.PodTemplateSpec
+	Metadata *metav1.ObjectMeta
+}
 type AgentApplierDeleter struct {
 	extraPodLabels          map[string]string
 	fluentBitImage          string
@@ -95,9 +99,11 @@ type AgentApplierDeleter struct {
 	sectionsConfigMapName   types.NamespacedName
 	envConfigSecretName     types.NamespacedName
 	tlsFileConfigSecretName types.NamespacedName
+
+	specTemplate SpecTemplate
 }
 
-func NewFluentBitApplierDeleter(namespace, fbImage, exporterImage, chownInitContainerImage, priorityClassName string) *AgentApplierDeleter {
+func NewFluentBitApplierDeleter(namespace, fbImage, exporterImage, chownInitContainerImage, priorityClassName string, specTemplate *SpecTemplate) *AgentApplierDeleter {
 	return &AgentApplierDeleter{
 		namespace: namespace,
 		extraPodLabels: map[string]string{
@@ -108,6 +114,7 @@ func NewFluentBitApplierDeleter(namespace, fbImage, exporterImage, chownInitCont
 		exporterImage:           exporterImage,
 		chownInitContainerImage: chownInitContainerImage,
 		priorityClassName:       priorityClassName,
+		specTemplate:            *specTemplate,
 
 		daemonSetName:           types.NamespacedName{Name: fbDaemonSetName, Namespace: namespace},
 		luaConfigMapName:        types.NamespacedName{Name: fbLuaConfigMapName, Namespace: namespace},
