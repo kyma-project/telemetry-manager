@@ -1,4 +1,4 @@
-package gateway
+package traces
 
 import (
 	"testing"
@@ -11,15 +11,15 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestEmptyEnrichmentValues(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelLogGateway)
+func TestEnrichmentValuesEmpty(t *testing.T) {
+	suite.RegisterTestCase(t, suite.LabelTraces)
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -28,17 +28,16 @@ func TestEmptyEnrichmentValues(t *testing.T) {
 		genNs        = uniquePrefix("gen")
 	)
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
-	pipeline := testutils.NewLogPipelineBuilder().
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces)
+	pipeline := testutils.NewTracePipelineBuilder().
 		WithName(pipelineName).
-		WithIncludeNamespaces(genNs).
 		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 		Build()
 
 	// All attributes in the enrichment flow are set to empty values
 	generator := telemetrygen.NewPod(
 		genNs,
-		telemetrygen.SignalTypeLogs,
+		telemetrygen.SignalTypeTraces,
 		telemetrygen.WithResourceAttribute("cloud.availability_zone", ""),
 		telemetrygen.WithResourceAttribute("cloud.provider", ""),
 		telemetrygen.WithResourceAttribute("cloud.region", ""),
@@ -71,44 +70,44 @@ func TestEmptyEnrichmentValues(t *testing.T) {
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
-	assert.DeploymentReady(t, kitkyma.LogGatewayName)
-	assert.OTelLogPipelineHealthy(t, pipelineName)
-	assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
+	assert.DeploymentReady(t, kitkyma.TraceGatewayName)
+	assert.TracePipelineHealthy(t, pipelineName)
+	assert.TracesFromNamespaceDelivered(t, backend, genNs)
 
 	// These attributes should be enriched by the processors
 	assert.BackendDataEventuallyMatches(t, backend,
-		HaveFlatLogs(ContainElement(SatisfyAll(
+		HaveFlatTraces(ContainElement(SatisfyAll(
+			HaveResourceAttributes(HaveKeyWithValue("cloud.availability_zone", Not(BeEmpty()))),
+			HaveResourceAttributes(HaveKeyWithValue("cloud.provider", Not(BeEmpty()))),
+			HaveResourceAttributes(HaveKeyWithValue("cloud.region", Not(BeEmpty()))),
+			HaveResourceAttributes(HaveKeyWithValue("host.arch", Not(BeEmpty()))),
+			HaveResourceAttributes(HaveKeyWithValue("host.type", Not(BeEmpty()))),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.cluster.name", Not(BeEmpty()))),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.cluster.uid", Not(BeEmpty()))),
-			HaveResourceAttributes(HaveKeyWithValue("cloud.provider", Not(BeEmpty()))),
-			HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", Not(BeEmpty()))),
-			HaveResourceAttributes(HaveKeyWithValue("k8s.node.name", Not(BeEmpty()))),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", Not(BeEmpty()))),
-			HaveResourceAttributes(HaveKeyWithValue("cloud.region", Not(BeEmpty()))),
-			HaveResourceAttributes(HaveKeyWithValue("cloud.availability_zone", Not(BeEmpty()))),
-			HaveResourceAttributes(HaveKeyWithValue("host.type", Not(BeEmpty()))),
-			HaveResourceAttributes(HaveKeyWithValue("host.arch", Not(BeEmpty()))),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.node.name", Not(BeEmpty()))),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", Not(BeEmpty()))),
 			HaveResourceAttributes(HaveKeyWithValue("service.name", Not(BeEmpty()))),
 		))),
 	)
 
 	// These attributes can't be so they shouldn't be enriched by the processors (if set to empty value)
 	assert.BackendDataEventuallyMatches(t, backend,
-		HaveFlatLogs(ContainElement(SatisfyAll(
-			HaveResourceAttributes(HaveKeyWithValue("k8s.deployment.name", BeEmpty())),
-			HaveResourceAttributes(HaveKeyWithValue("k8s.statefulset.name", BeEmpty())),
-			HaveResourceAttributes(HaveKeyWithValue("k8s.daemonset.name", BeEmpty())),
+		HaveFlatTraces(ContainElement(SatisfyAll(
 			HaveResourceAttributes(HaveKeyWithValue("k8s.cronjob.name", BeEmpty())),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.daemonset.name", BeEmpty())),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.deployment.name", BeEmpty())),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.job.name", BeEmpty())),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.statefulset.name", BeEmpty())),
 		))),
 	)
 
 	// These attributes should be dropped by the processors
 	assert.BackendDataConsistentlyMatches(t, backend,
-		Not(HaveFlatLogs(ContainElement(SatisfyAny(
-			HaveResourceAttributes(HaveKey("kyma.kubernetes_io_app_name")),
+		Not(HaveFlatTraces(ContainElement(SatisfyAny(
 			HaveResourceAttributes(HaveKey("kyma.app_name")),
 			HaveResourceAttributes(HaveKey("kyma.input.name")),
+			HaveResourceAttributes(HaveKey("kyma.kubernetes_io_app_name")),
 		)))),
 	)
 }
