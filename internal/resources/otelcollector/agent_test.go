@@ -35,7 +35,6 @@ func TestAgent_ApplyResources(t *testing.T) {
 		istioEnabled     bool
 		backendPorts     []string
 		goldenFilePath   string
-		saveGoldenFile   bool
 	}{
 		{
 			name:           "metric agent",
@@ -105,12 +104,13 @@ func TestAgent_ApplyResources(t *testing.T) {
 			})
 			require.NoError(t, err)
 
-			if tt.saveGoldenFile {
-				testutils.SaveAsYAML(t, scheme, objects, tt.goldenFilePath)
-			}
-
 			bytes, err := testutils.MarshalYAML(scheme, objects)
 			require.NoError(t, err)
+
+			if testutils.ShouldUpdateGoldenFiles() {
+				testutils.UpdateGoldenFileYAML(t, tt.goldenFilePath, bytes)
+				return
+			}
 
 			goldenFileBytes, err := os.ReadFile(tt.goldenFilePath)
 			require.NoError(t, err)
