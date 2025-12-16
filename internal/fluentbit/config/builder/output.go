@@ -16,7 +16,7 @@ var retryLimit = "300"
 
 func createOutputSection(pipeline *telemetryv1alpha1.LogPipeline, defaults pipelineDefaults) string {
 	output := &pipeline.Spec.Output
-	if logpipelineutils.IsCustomDefined(output) {
+	if logpipelineutils.IsCustomOutputDefined(output) {
 		return generateCustomOutput(output, defaults.FsBufferLimit, pipeline.Name)
 	}
 

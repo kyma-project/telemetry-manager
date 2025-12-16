@@ -5,13 +5,19 @@ import (
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 	webhookutils "github.com/kyma-project/telemetry-manager/webhook/utils"
+)
+
+const (
+	migrationGuideLink = "https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html"
 )
 
 type LogPipelineValidator struct {
@@ -22,64 +28,95 @@ var _ webhook.CustomValidator = &LogPipelineValidator{}
 func (v *LogPipelineValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	logPipeline, ok := obj.(*telemetryv1beta1.LogPipeline)
 
-	var warnings admission.Warnings
-
 	if !ok {
 		return nil, fmt.Errorf("expected a LogPipeline but got %T", obj)
 	}
 
-	if err := validateFilterTransform(ctx, logPipeline.Spec.Filters, logPipeline.Spec.Transforms); err != nil {
-		return nil, err
-	}
-
-	if containsCustomPlugin(logPipeline) {
-		helpText := "https://kyma-project.io/#/telemetry-manager/user/02-logs"
-		msg := fmt.Sprintf("Logpipeline '%s' uses unsupported custom filters or outputs. We recommend changing the pipeline to use supported filters or output. See the documentation: %s", logPipeline.Name, helpText)
-		warnings = append(warnings, msg)
-
-		return warnings, nil
-	}
-
-	return nil, nil
+	return v.validateLogPipeline(ctx, logPipeline)
 }
 
 func (v *LogPipelineValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	logPipeline, ok := newObj.(*telemetryv1beta1.LogPipeline)
 
-	var warnings admission.Warnings
-
 	if !ok {
 		return nil, fmt.Errorf("expected a LogPipeline but got %T", newObj)
 	}
 
-	if err := validateFilterTransform(ctx, logPipeline.Spec.Filters, logPipeline.Spec.Transforms); err != nil {
+	return v.validateLogPipeline(ctx, logPipeline)
+}
+
+func (v *LogPipelineValidator) validateLogPipeline(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) (admission.Warnings, error) {
+	var warnings admission.Warnings
+
+	if err := validateFilterTransform(ctx, pipeline.Spec.Filters, pipeline.Spec.Transforms); err != nil {
 		return nil, err
 	}
 
-	if containsCustomPlugin(logPipeline) {
-		helpText := "https://kyma-project.io/#/telemetry-manager/user/02-logs"
-		msg := fmt.Sprintf("Logpipeline '%s' uses unsupported custom filters or outputs. We recommend changing the pipeline to use supported filters or output. See the documentation: %s", logPipeline.Name, helpText)
-		warnings = append(warnings, msg)
-
-		return warnings, nil
+	if isCustomFilterDefined(pipeline.Spec.FluentBitFilters) {
+		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "filters"))
 	}
 
-	return nil, nil
+	if isCustomOutputDefined(&pipeline.Spec.Output) {
+		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "output.custom"))
+	}
+
+	if isHTTPDefined(&pipeline.Spec.Output) {
+		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "output.http"))
+	}
+
+	if isVariablesDefined(pipeline.Spec.Variables) {
+		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "variables"))
+	}
+
+	if isFilesDefined(pipeline.Spec.Files) {
+		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "files"))
+	}
+
+	if isRuntimeInputEnabled(&pipeline.Spec.Input) && pipeline.Spec.Input.Runtime.DropLabels != nil {
+		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "input.runtime.dropLabels"))
+	}
+	if isRuntimeInputEnabled(&pipeline.Spec.Input) && pipeline.Spec.Input.Runtime.KeepAnnotations != nil {
+		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "input.runtime.keepAnnotations"))
+	}
+
+	return warnings, nil
 }
 
 func (v *LogPipelineValidator) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
 	return nil, nil
 }
 
-// ContainsCustomPlugin returns true if the pipeline contains any custom filters or outputs
-func containsCustomPlugin(lp *telemetryv1beta1.LogPipeline) bool {
-	for _, filter := range lp.Spec.FluentBitFilters {
+func renderDeprecationWarning(pipelineName string, attribute string) string {
+	return fmt.Sprintf("LogPipeline '%s' uses the attribute '%s' which is based on the deprecated FluentBit technology stack. Please migrate to an Open Telemetry based pipeline instead. See the documentation: %s", pipelineName, attribute, migrationGuideLink)
+}
+
+func isCustomFilterDefined(filters []telemetryv1beta1.LogPipelineFilter) bool {
+	for _, filter := range filters {
 		if filter.Custom != "" {
 			return true
 		}
 	}
+	return false
+}
 
-	return lp.Spec.Output.Custom != ""
+func isCustomOutputDefined(o *telemetryv1beta1.LogPipelineOutput) bool {
+	return o.Custom != ""
+}
+
+func isHTTPDefined(o *telemetryv1beta1.LogPipelineOutput) bool {
+	return o.HTTP != nil && sharedtypesutils.IsValidBeta(&o.HTTP.Host)
+}
+
+func isVariablesDefined(v []telemetryv1beta1.LogPipelineVariableRef) bool {
+	return len(v) > 0
+}
+
+func isFilesDefined(v []telemetryv1beta1.LogPipelineFileMount) bool {
+	return len(v) > 0
+}
+
+func isRuntimeInputEnabled(i *telemetryv1beta1.LogPipelineInput) bool {
+	return i.Runtime != nil && ptr.Deref(i.Runtime.Enabled, false)
 }
 
 func validateFilterTransform(ctx context.Context, filterSpec []telemetryv1beta1.FilterSpec, transformSpec []telemetryv1beta1.TransformSpec) error {

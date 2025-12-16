@@ -42,9 +42,9 @@ func TestLogPipelineOutput(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			require.Equal(t, test.expectedCustom, IsCustomDefined(&test.given))
+			require.Equal(t, test.expectedCustom, IsCustomOutputDefined(&test.given))
 			require.Equal(t, test.expectedHTTP, IsHTTPDefined(&test.given))
-			require.Equal(t, test.expectedAny, IsCustomDefined(&test.given) || IsHTTPDefined(&test.given) || test.given.OTLP != nil)
+			require.Equal(t, test.expectedAny, IsCustomOutputDefined(&test.given) || IsHTTPDefined(&test.given) || test.given.OTLP != nil)
 		})
 	}
 }

@@ -17,6 +17,38 @@ You can't modify an existing LogPipeline to change its output type. You must cre
 
 ## Procedure
 
+1. Identify your LogPipeline which needs a migration
+
+    A LogPipeline based on the deprecated FluentBit technology must use an output of type `http` or `custom`. All other elements outlined in the following example are optional elements of the deprecated stack and must be migrated as well if used.
+
+    ```yaml
+    apiVersion: telemetry.kyma-project.io/v1alpha1
+    kind: LogPipeline
+    metadata:
+      name: my-http-pipeline
+    spec:
+      input:
+        application:             # Only the dropLabels and keepAnnotation flags are deprecated, the application input itself is supported with OTLP
+          dropLabels: true       # Label enrichement can be configured centrally, see Step 3.
+          keepAnnotations: true  # Annotation enrichment is not supported anymore
+      filters:
+        custom: |                # most likely can be replaced by a transform or filter expression, see  Step 2
+          ...
+      variables:                 # used in filters, see the related instructions of filters in Step 2
+        - name: myVar
+          value: myValue
+      files:                     # used in filters, see the related instructions of filters in Step 2
+        - name: myFile
+          value: |
+            ...
+      output:
+        http:                    # switch to the OTLP endpoint of your backend, see Step 1
+          endpoint:
+            value: "my-backend:4317"
+        custom: |                # switch to the OTLP endpoint of your backend, see Step 1
+          ...
+    ```
+
 1. Create a new LogPipeline that uses the `otlp` output.
 
     Pay special attention to the following settings (for details, see [Integrate With Your OTLP Backend](migration-to-otlp-logs.md)):
@@ -37,7 +69,7 @@ You can't modify an existing LogPipeline to change its output type. You must cre
             value: "my-backend:4317"
     ```
 
-2. (Optional) If your old pipeline uses `custom` filters, rewrite them using the [OpenTelemetry Transformation Language (OTTL)](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/README.md) and add them to your new LogPipeline.
+1. (Optional) If your old pipeline uses `custom` filters, rewrite them using the [OpenTelemetry Transformation Language (OTTL)](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/README.md) and add them to your new LogPipeline using [Transform and Filter with OTTL](./../filter-and-process/ottl-transform-and-filter/README.md).
   
    Example: You want to replace a legacy Fluent Bit filter that dropped health checks and added a **tenant** attribute:
 
@@ -80,28 +112,28 @@ You can't modify an existing LogPipeline to change its output type. You must cre
          ...
    ```
 
-3. (Optional) To enrich logs with Pod labels, configure the central Telemetry resource ([Telemetry CRD](https://kyma-project.io/#/telemetry-manager/user/resources/01-telemetry)).
+1. (Optional) To enrich logs with Pod labels, configure the central Telemetry resource ([Telemetry CRD](https://kyma-project.io/#/telemetry-manager/user/resources/01-telemetry)).
 
    In contrast to a Fluent Bit LogPipeline, the `otlp` output doesn't automatically add all Pod labels. To continue enriching logs with specific labels, you must explicitly enable it in the spec.enrichments.extractPodLabels field.
 
    > [!NOTE]
    > Enrichment with Pod annotations is no longer supported.
 
-4. Deploy the new LogPipeline:
+1. Deploy the new LogPipeline:
 
    ```shell
    kubectl apply -f logpipeline.yaml
    ```
 
-5. Check that the new LogPipeline is healthy:
+1. Check that the new LogPipeline is healthy:
 
    ```shell
    kubectl get logpipeline my-otlp-pipeline
    ```
 
-6. Check your observability backend to confirm that log data is arriving.
+1. Check your observability backend to confirm that log data is arriving.
 
-7. Delete the old LogPipeline:
+1. Delete the old LogPipeline:
 
    ```shell
    kubectl delete logpipeline my-old-pipeline

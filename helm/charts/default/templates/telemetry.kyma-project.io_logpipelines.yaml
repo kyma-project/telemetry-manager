@@ -68,10 +68,9 @@ spec:
             description: Defines the desired state of LogPipeline
             properties:
               files:
-                description: Files is a list of content snippets that are mounted
-                  as files in the Fluent Bit configuration, which can be linked in
-                  the `custom` filters and a `custom` output. Only available when
-                  using an output of type `http` and `custom`.
+                description: |-
+                  Deprecated: The field is based on the FluentBit based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                  Files is a list of content snippets that are mounted as files in the Fluent Bit configuration, which can be linked in the `custom` filters and a `custom` output. Only available when using an output of type `http` and `custom`.
                 items:
                   description: LogPipelineFileMount provides file content to be consumed
                     by a LogPipeline configuration
@@ -107,9 +106,9 @@ spec:
                   type: object
                 type: array
               filters:
-                description: FluentBitFilters configures custom Fluent Bit `filters`
-                  to transform logs. Only available when using an output of type `http`
-                  and `custom`.
+                description: |-
+                  Deprecated: The field is based on the FluentBit based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                  FluentBitFilters configures custom Fluent Bit `filters` to transform logs. Only available when using an output of type `http` and `custom`.
                 items:
                   description: LogPipelineFilter configures custom Fluent Bit `filters`
                     to transform logs. Only available when using an output of type
@@ -154,11 +153,9 @@ spec:
                         - message: Only one of 'include' or 'exclude' can be defined
                           rule: '!(has(self.include) && has(self.exclude))'
                       dropLabels:
-                        description: DropLabels defines whether to drop all Kubernetes
-                          labels. The default is `false`. Only available when using
-                          an output of type `http` and `custom`. For an `otlp` output,
-                          use the label enrichement feature in the Telemetry resource
-                          instead.
+                        description: |-
+                          Deprecated: The field is based on the FluentBit based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                          DropLabels defines whether to drop all Kubernetes labels. The default is `false`. Only available when using an output of type `http` and `custom`. For an `otlp` output, use the label enrichement feature in the Telemetry resource instead.
                         type: boolean
                       enabled:
                         description: Enabled specifies if the 'application' input
@@ -166,9 +163,9 @@ spec:
                           containers stdout/stderr. The default is `true`.
                         type: boolean
                       keepAnnotations:
-                        description: KeepAnnotations defines whether to keep all Kubernetes
-                          annotations. The default is `false`.  Only available when
-                          using an output of type `http` and `custom`.
+                        description: |-
+                          Deprecated: The field is based on the FluentBit based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                          KeepAnnotations defines whether to keep all Kubernetes annotations. The default is `false`.  Only available when using an output of type `http` and `custom`.
                         type: boolean
                       keepOriginalBody:
                         description: KeepOriginalBody retains the original log data
@@ -266,15 +263,14 @@ spec:
                   You must specify exactly one output per pipeline.
                 properties:
                   custom:
-                    description: Custom defines a custom output in the [Fluent Bit
-                      syntax](https://docs.fluentbit.io/manual/pipeline/outputs) where
-                      you want to push the logs. If you use a `custom` output, you
-                      put the LogPipeline in unsupported mode. Only available when
-                      using an output of type `http` and `custom`.
+                    description: |-
+                      Deprecated: The field is based on the FluentBit based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                      Custom defines a custom output in the [Fluent Bit syntax](https://docs.fluentbit.io/manual/pipeline/outputs) where you want to push the logs. If you use a `custom` output, you put the LogPipeline in unsupported mode. Only available when using an output of type `http` and `custom`.
                     type: string
                   http:
-                    description: HTTP configures an HTTP-based output compatible with
-                      the Fluent Bit HTTP output plugin.
+                    description: |-
+                      Deprecated: The field is based on the FluentBit based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                      HTTP configures an HTTP-based output compatible with the Fluent Bit HTTP output plugin.
                     properties:
                       compress:
                         description: Compress defines the compression algorithm to
@@ -1000,11 +996,9 @@ spec:
                   type: object
                 type: array
               variables:
-                description: Variables is a list of mappings from Kubernetes Secret
-                  keys to environment variables. Mapped keys are mounted as environment
-                  variables, so that they are available as [Variables](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/variables)
-                  in the `custom` filters and a `custom` output. Only available when
-                  using an output of type `http` and `custom`.
+                description: |-
+                  Deprecated: The field is based on the FluentBit based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                  Variables is a list of mappings from Kubernetes Secret keys to environment variables. Mapped keys are mounted as environment variables, so that they are available as [Variables](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/variables) in the `custom` filters and a `custom` output. Only available when using an output of type `http` and `custom`.
                 items:
                   description: LogPipelineVariableRef references a Kubernetes secret
                     that should be provided as environment variable to Fluent Bit
@@ -1133,7 +1127,7 @@ spec:
                 type: array
               unsupportedMode:
                 description: Is active when the LogPipeline uses a `custom` output
-                  or filter; see [unsupported mode](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/02-logs.md#unsupported-mode).
+                  or filter; see [unsupported mode](https://kyma-project.io/#/telemetry-manager/docs/user/02-logs.md#unsupported-mode).
                 type: boolean
             type: object
         type: object
