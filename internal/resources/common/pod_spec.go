@@ -308,7 +308,7 @@ func OverridePodSpecWithTemplate(override, original *corev1.PodTemplateSpec) (*c
 		return nil, fmt.Errorf("failed to marshal pod template spec: %w", err)
 	}
 
-	podSpecByte, err := strategicpatch.StrategicMergePatch(overrideJson, originalJson, corev1.PodTemplateSpec{})
+	podSpecByte, err := strategicpatch.StrategicMergePatch(originalJson, overrideJson, corev1.PodTemplateSpec{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to merge pod spec with template: %w", err)
 	}
