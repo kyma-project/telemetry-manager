@@ -39,24 +39,24 @@ func TestAgent_ApplyResources(t *testing.T) {
 	}{
 		{
 			name:           "metric agent",
-			sut:            NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName),
+			sut:            NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName, &SpecTemplate{}),
 			goldenFilePath: "testdata/metric-agent.yaml",
 		},
 		{
 			name:           "metric agent with istio",
-			sut:            NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName),
+			sut:            NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName, &SpecTemplate{}),
 			istioEnabled:   true,
 			backendPorts:   []string{"4317", "9090"},
 			goldenFilePath: "testdata/metric-agent-istio.yaml",
 		},
 		{
 			name:           "metric agent with FIPS mode enabled",
-			sut:            NewMetricAgentApplierDeleter(globalsWithFIPS, collectorImage, priorityClassName),
+			sut:            NewMetricAgentApplierDeleter(globalsWithFIPS, collectorImage, priorityClassName, &SpecTemplate{}),
 			goldenFilePath: "testdata/metric-agent-fips-enabled.yaml",
 		},
 		{
 			name: "log agent",
-			sut:  NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName),
+			sut:  NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName, &SpecTemplate{}),
 			collectorEnvVars: map[string][]byte{
 				"DUMMY_ENV_VAR": []byte("foo"),
 			},
@@ -64,7 +64,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 		},
 		{
 			name: "log agent with istio",
-			sut:  NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName),
+			sut:  NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName, &SpecTemplate{}),
 			collectorEnvVars: map[string][]byte{
 				"DUMMY_ENV_VAR": []byte("foo"),
 			},
@@ -73,7 +73,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 		},
 		{
 			name: "log agent with FIPS mode enabled",
-			sut:  NewLogAgentApplierDeleter(globalsWithFIPS, collectorImage, priorityClassName),
+			sut:  NewLogAgentApplierDeleter(globalsWithFIPS, collectorImage, priorityClassName, &SpecTemplate{}),
 			collectorEnvVars: map[string][]byte{
 				"DUMMY_ENV_VAR": []byte("foo"),
 			},
@@ -140,11 +140,11 @@ func TestAgent_DeleteResources(t *testing.T) {
 	}{
 		{
 			name: "metric agent",
-			sut:  NewMetricAgentApplierDeleter(globals, image, priorityClassName),
+			sut:  NewMetricAgentApplierDeleter(globals, image, priorityClassName, &SpecTemplate{}),
 		},
 		{
 			name: "log agent",
-			sut:  NewLogAgentApplierDeleter(globals, image, priorityClassName),
+			sut:  NewLogAgentApplierDeleter(globals, image, priorityClassName, &SpecTemplate{}),
 		},
 	}
 
