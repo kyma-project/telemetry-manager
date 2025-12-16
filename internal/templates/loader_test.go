@@ -14,6 +14,7 @@ func (m *mockReader) ReadFile(filename string) ([]byte, error) {
 	if m.err != nil {
 		return nil, m.err
 	}
+
 	return m.data, nil
 }
 
@@ -45,19 +46,24 @@ func TestLoadPodSpecTemplate(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			loader := NewSpecTemplatesLoader(tc.reader)
+
 			tpl, err := loader.LoadPodSpecTemplate("file.yaml")
 			if tc.wantErr {
 				if err == nil {
 					t.Fatalf("expected error, got nil")
 				}
+
 				return
 			}
+
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
+
 			if len(tpl.Spec.Containers) == 0 {
 				t.Fatalf("expected at least one container")
 			}
+
 			if tpl.Spec.Containers[0].Image != tc.wantImage {
 				t.Fatalf("image mismatch: want %q got %q", tc.wantImage, tpl.Spec.Containers[0].Image)
 			}
@@ -95,19 +101,24 @@ func TestLoadMetadataTemplate(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			loader := NewSpecTemplatesLoader(tc.reader)
+
 			meta, err := loader.LoadMetadataTemplate("file.yaml")
 			if tc.wantErr {
 				if err == nil {
 					t.Fatalf("expected error, got nil")
 				}
+
 				return
 			}
+
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
+
 			if meta.Name != tc.wantName {
 				t.Fatalf("name mismatch: want %q got %q", tc.wantName, meta.Name)
 			}
+
 			if got := meta.Labels["test/label"]; got != tc.wantLabel {
 				t.Fatalf("label mismatch: want %q got %q", tc.wantLabel, got)
 			}

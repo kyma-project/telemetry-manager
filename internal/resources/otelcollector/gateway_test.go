@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -30,9 +30,9 @@ func TestGateway_ApplyResources(t *testing.T) {
 	priorityClassName := "normal"
 
 	specTemplate := &SpecTemplate{
-		Pod: &v1.PodTemplateSpec{
-			Spec: v1.PodSpec{
-				Containers: []v1.Container{
+		Pod: &corev1.PodTemplateSpec{
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
 					{},
 				},
 			},
@@ -143,9 +143,9 @@ func TestGateway_DeleteResources(t *testing.T) {
 	priorityClassName := "normal"
 
 	specTemplate := &SpecTemplate{
-		Pod: &v1.PodTemplateSpec{
-			Spec: v1.PodSpec{
-				Containers: []v1.Container{
+		Pod: &corev1.PodTemplateSpec{
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
 					{},
 				},
 			},
