@@ -14,7 +14,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
-func TestMakeConfig(t *testing.T) {
+func TestBuildConfig(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 	sut := Builder{Reader: fakeClient}
 
