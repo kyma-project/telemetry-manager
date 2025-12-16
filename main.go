@@ -77,12 +77,12 @@ var (
 	setupLog = ctrl.Log.WithName("setup")
 
 	// Operator flags
-	certDir                   string
-	enableV1Beta1LogPipelines bool
-	highPriorityClassName     string
-	normalPriorityClassName   string
-	resourceMetaTemplate      string
-	podTemplate               string
+	certDir                      string
+	enableV1Beta1LogPipelines    bool
+	highPriorityClassName        string
+	normalPriorityClassName      string
+	resourceMetadataTemplateFile string
+	podSpecTemplateFile          string
 )
 
 const (
@@ -159,8 +159,8 @@ func run() error {
 		config.WithTargetNamespace(envCfg.TargetNamespace),
 		config.WithOperateInFIPSMode(envCfg.OperateInFIPSMode),
 		config.WithVersion(build.GitTag()),
-		config.WithPodSpecTemplateFileName(podTemplate),
-		config.WithResourceMetaTemplateFileName(resourceMetaTemplate),
+		config.WithPodSpecTemplateFileName(podSpecTemplateFile),
+		config.WithResourceMetaTemplateFileName(resourceMetadataTemplateFile),
 	)
 
 	if err := globals.Validate(); err != nil {
@@ -327,8 +327,8 @@ func parseFlags() {
 
 	flag.StringVar(&highPriorityClassName, "high-priority-class-name", "", "High priority class name used by managed DaemonSets")
 	flag.StringVar(&normalPriorityClassName, "normal-priority-class-name", "", "Normal priority class name used by managed Deployments")
-	flag.StringVar(&resourceMetaTemplate, "resource-meta-template-file", "", "YAML file containing k8s resource metadata used to add additional metadata to created resources")
-	flag.StringVar(&podTemplate, "pod-template-file", "", "YAML file containing PodTemplateSpec used to customize created Pods")
+	flag.StringVar(&resourceMetadataTemplateFile, "resource-metadata-template-file", "", "YAML file containing k8s resource metadata used to add additional metadata to created resources")
+	flag.StringVar(&podSpecTemplateFile, "podspec-template-file", "", "YAML file containing PodTemplateSpec used to customize created Pods")
 
 	flag.Parse()
 }

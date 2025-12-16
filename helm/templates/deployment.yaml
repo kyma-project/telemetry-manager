@@ -40,8 +40,8 @@ spec:
         {{- if .Values.experimental.enabled }}
         - --enable-v1beta1-log-pipelines=true
         {{- end }}
-        - --resource-meta-template-file=/resource-templates/metadata.yaml
-        - --pod-template-file=/resource-templates/pod-template.yaml
+        - --resource-metadata-template-file=/resource-templates/metadata.yaml
+        - --podspec-template-file=/resource-templates/podspec-template.yaml
         command:
         - /manager
         env:
@@ -102,10 +102,10 @@ spec:
         name: crt-volume
       - name: resource-templates
         configMap:
-          name: {{ include "telemetry-manager.fullname" . }}-resource-template
+          name: {{ include "telemetry-manager.fullname" . }}-resource-templates
           items:
-          - key: pod-template.yaml
-            path: pod-template.yaml
+          - key: podspec-template.yaml
+            path: podspec-template.yaml
           - key: metadata.yaml
             path: metadata.yaml
 
