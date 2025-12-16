@@ -25,11 +25,11 @@ func (v *LogPipelineValidator) ValidateCreate(ctx context.Context, obj runtime.O
 	return validateLogPipeline(ctx, obj)
 }
 
-func (v *LogPipelineValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+func (v *LogPipelineValidator) ValidateUpdate(ctx context.Context, _, newObj runtime.Object) (admission.Warnings, error) {
 	return validateLogPipeline(ctx, newObj)
 }
 
-func (v *LogPipelineValidator) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *LogPipelineValidator) ValidateDelete(_ context.Context, _ runtime.Object) (admission.Warnings, error) {
 	return nil, nil
 }
 
@@ -67,5 +67,6 @@ func validateLogPipeline(ctx context.Context, obj runtime.Object) (admission.War
 
 		return warnings, nil
 	}
+
 	return nil, nil
 }

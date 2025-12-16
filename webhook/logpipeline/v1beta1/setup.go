@@ -1,10 +1,10 @@
 package v1beta1
 
 import (
-	"github.com/kyma-project/telemetry-manager/internal/namespaces"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/namespaces"
 )
 
 func SetupWithManager(mgr ctrl.Manager) error {
