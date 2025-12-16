@@ -35,7 +35,8 @@ data:
       {{- end }}
     spec:
       {{- if .Values.global.imagePullSecret.enabled }}
-      imagePullSecrets: {{ .Values.manager.container.imagePullSecrets | toYaml | nindent 10 }}
+      imagePullSecrets:
+        - name: {{ .Values.global.imagePullSecret.name }}
       {{- end }}
   {{- if and .Values.global.caBundle.enabled .Values.global.caBundle.name (ne .Values.global.caBundle.name "") }}
       containers:

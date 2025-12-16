@@ -13,7 +13,6 @@ default:
   enabled: false
 manager:
   container:
-    imagePullSecrets: []
     args:
       cert-dir: "/tmp"
       high-priority-class-name: "telemetry-priority-class-high"
