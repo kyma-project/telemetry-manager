@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	"github.com/kyma-project/telemetry-manager/internal/namespaces"
 	"k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/utils/ptr"
 
@@ -13,13 +14,29 @@ import (
 // - output.otlp.protocol is now of type enum in v1beta1 instead of string in v1alpha1.
 // - output.otlp.TLS struct got renamed
 
+// Remove invalid namespace names from NamespaceSelector slices (include/exclude)
+func sanitizeNamespaceNames(names []string) []string {
+	var valid []string
+	// Kubernetes namespace regex
+	for _, n := range names {
+		if len(n) <= 63 && namespaces.ValidNameRegexp.MatchString(n) {
+			valid = append(valid, n)
+		}
+	}
+
+	return valid
+}
+
 func Convert_v1alpha1_OTLPInput_To_v1beta1_OTLPInput(in *OTLPInput, out *telemetryv1beta1.OTLPInput, s conversion.Scope) error {
 	if err := autoConvert_v1alpha1_OTLPInput_To_v1beta1_OTLPInput(in, out, s); err != nil {
 		return err
 	}
 
 	out.Enabled = ptr.To(!in.Disabled)
-	out.Namespaces = (*telemetryv1beta1.NamespaceSelector)(in.Namespaces)
+	out.Namespaces = &telemetryv1beta1.NamespaceSelector{
+		Include: sanitizeNamespaceNames(in.Namespaces.Include),
+		Exclude: sanitizeNamespaceNames(in.Namespaces.Exclude),
+	}
 
 	return nil
 }
@@ -30,7 +47,10 @@ func Convert_v1beta1_OTLPInput_To_v1alpha1_OTLPInput(in *telemetryv1beta1.OTLPIn
 	}
 
 	out.Disabled = in.Enabled != nil && !ptr.Deref(in.Enabled, false)
-	out.Namespaces = (*NamespaceSelector)(in.Namespaces)
+	out.Namespaces = &NamespaceSelector{
+		Include: sanitizeNamespaceNames(in.Namespaces.Include),
+		Exclude: sanitizeNamespaceNames(in.Namespaces.Exclude),
+	}
 
 	return nil
 }

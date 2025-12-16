@@ -98,11 +98,11 @@ func Convert_v1alpha1_LogPipelineInput_To_v1beta1_LogPipelineInput(in *LogPipeli
 	if len(in.Application.Namespaces.Include) == 0 && len(in.Application.Namespaces.Exclude) == 0 && !in.Application.Namespaces.System {
 		excludes = namespaces.System()
 	} else {
-		excludes = in.Application.Namespaces.Exclude
+		excludes = sanitizeNamespaceNames(in.Application.Namespaces.Exclude)
 	}
 
 	out.Runtime.Namespaces = &telemetryv1beta1.NamespaceSelector{
-		Include: in.Application.Namespaces.Include,
+		Include: sanitizeNamespaceNames(in.Application.Namespaces.Include),
 		Exclude: excludes,
 	}
 
