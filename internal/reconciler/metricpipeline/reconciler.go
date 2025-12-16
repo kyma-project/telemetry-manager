@@ -17,6 +17,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricagent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricgateway"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
@@ -349,10 +350,12 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, metricgateway.BuildOptions{
 		GatewayNamespace:            r.globals.TargetNamespace(),
 		InstrumentationScopeVersion: r.globals.Version(),
-		ClusterName:                 clusterName,
-		ClusterUID:                  clusterUID,
-		CloudProvider:               shootInfo.CloudProvider,
-		Enrichments:                 enrichments,
+		Cluster: common.ClusterOptions{
+			ClusterName:   clusterName,
+			ClusterUID:    clusterUID,
+			CloudProvider: shootInfo.CloudProvider,
+		},
+		Enrichments: enrichments,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)
@@ -406,10 +409,12 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		IstioCertPath:               otelcollector.IstioCertPath,
 		InstrumentationScopeVersion: r.globals.Version(),
 		AgentNamespace:              r.globals.TargetNamespace(),
-		ClusterName:                 clusterName,
-		ClusterUID:                  clusterUID,
-		CloudProvider:               shootInfo.CloudProvider,
-		Enrichments:                 enrichments,
+		Cluster: common.ClusterOptions{
+			ClusterName:   clusterName,
+			ClusterUID:    clusterUID,
+			CloudProvider: shootInfo.CloudProvider,
+		},
+		Enrichments: enrichments,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)

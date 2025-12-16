@@ -20,7 +20,7 @@ type TracePipelineValidator struct {
 
 var _ webhook.CustomValidator = &TracePipelineValidator{}
 
-func (v *TracePipelineValidator) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *TracePipelineValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	tracePipeline, ok := obj.(*telemetryv1alpha1.TracePipeline)
 
 	if !ok {
@@ -32,10 +32,10 @@ func (v *TracePipelineValidator) ValidateCreate(_ context.Context, obj runtime.O
 		return nil, err
 	}
 
-	return nil, validateFilterTransform(filterSpec, transformSpec)
+	return nil, validateFilterTransform(ctx, filterSpec, transformSpec)
 }
 
-func (v *TracePipelineValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+func (v *TracePipelineValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	tracePipeline, ok := newObj.(*telemetryv1alpha1.TracePipeline)
 
 	if !ok {
@@ -47,15 +47,15 @@ func (v *TracePipelineValidator) ValidateUpdate(_ context.Context, oldObj, newOb
 		return nil, err
 	}
 
-	return nil, validateFilterTransform(filterSpec, transformSpec)
+	return nil, validateFilterTransform(ctx, filterSpec, transformSpec)
 }
 
 func (v *TracePipelineValidator) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
 	return nil, nil
 }
 
-func validateFilterTransform(filterSpec []telemetryv1beta1.FilterSpec, transformSpec []telemetryv1beta1.TransformSpec) error {
-	err := webhookutils.ValidateFilterTransform(ottl.SignalTypeTrace, filterSpec, transformSpec)
+func validateFilterTransform(ctx context.Context, filterSpec []telemetryv1beta1.FilterSpec, transformSpec []telemetryv1beta1.TransformSpec) error {
+	err := webhookutils.ValidateFilterTransform(ctx, ottl.SignalTypeTrace, filterSpec, transformSpec)
 	if err != nil {
 		return fmt.Errorf(conditions.MessageForTracePipeline(conditions.ReasonOTTLSpecInvalid), err.Error())
 	}

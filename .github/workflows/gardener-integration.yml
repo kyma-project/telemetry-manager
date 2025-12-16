@@ -2,6 +2,7 @@ name: Gardener Integration
 
 permissions:
   contents: read
+  pull-requests: read
 
 on:
   push:
@@ -15,10 +16,44 @@ on:
       - "OWNERS"
       - "CODEOWNERS"
       - "external-images.yaml"
+  # in the pr trigger we need to check if a certain label is present to run the gardener tests: `test-on-gardener`
+  pull_request_target:
+    types: [labeled, opened, synchronize, reopened]
   workflow_dispatch:
 
 jobs:
+  check-trigger:
+    runs-on: ubuntu-latest
+    outputs:
+      run-gardener-tests: ${{ steps.check-label.outputs.run-gardener-tests }}
+    steps:
+      - name: Check if gardener tests should run
+        id: check-label
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TRIGGER_LABEL="test-on-gardener"
+          
+          echo "Trigger label: $TRIGGER_LABEL"
+          
+          if [[ "${{ github.event_name }}" == "pull_request_target" ]]; then
+            echo "PR event detected"
+            LABELS=$(gh pr view ${{ github.event.number }} --repo ${{ github.repository }} --json labels --template '{{range .labels}}{{.name}} {{end}}')
+            echo "Labels on PR: $LABELS"
+            if [[ "$LABELS" == *"$TRIGGER_LABEL"* ]]; then
+              echo "Label '$TRIGGER_LABEL' found. Gardener tests will run."
+              echo "run-gardener-tests=true" >> $GITHUB_OUTPUT
+            else
+              echo "Label '$TRIGGER_LABEL' not found. Skipping gardener tests."
+              echo "run-gardener-tests=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "Not a PR event. Gardener tests will run."
+            echo "run-gardener-tests=true" >> $GITHUB_OUTPUT
+          fi
   gardener-integration-test:
+    needs: check-trigger
+    if: needs.check-trigger.outputs.run-gardener-tests == 'true'
     strategy:
       fail-fast: false # if one version is not working, continue tests on other versions
       matrix:
@@ -33,10 +68,20 @@ jobs:
 
       - name: Prepare environment variables
         run: |
-          GIT_COMMIT_SHA=$(git rev-parse --short=8 HEAD)
-          GIT_COMMIT_DATE=$(git show -s --format=%cd --date=format:'v%Y%m%d' $(GIT_COMMIT_SHA))
-          TAG="$GIT_COMMIT_DATE-$GIT_COMMIT_SHA"
-          MANAGER_IMAGE="europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:$TAG"
+          if [[ "${{ github.event_name }}" == "pull_request_target" ]]; then
+            # For PR events, use dev image with PR number
+            PR_NUMBER="${{ github.event.number }}"
+            TAG="${{ github.event.pull_request.head.ref }}"
+            MANAGER_IMAGE="europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:${TAG}"
+            echo "Using dev image for PR: $MANAGER_IMAGE"
+          else
+            # For push events, use prod image with commit-based tag
+            GIT_COMMIT_SHA=$(git rev-parse --short=8 HEAD)
+            GIT_COMMIT_DATE=$(git show -s --format=%cd --date=format:'v%Y%m%d' $GIT_COMMIT_SHA)
+            TAG="$GIT_COMMIT_DATE-$GIT_COMMIT_SHA"
+            MANAGER_IMAGE="europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:$TAG"
+            echo "Using prod image: $MANAGER_IMAGE"
+          fi
 
           echo "TAG=$TAG" >> $GITHUB_ENV
           echo "MANAGER_IMAGE=$MANAGER_IMAGE" >> $GITHUB_ENV
@@ -45,10 +90,8 @@ jobs:
       - name: Wait for the image to be available in the registry
         run: "./hack/await_image.sh"
         env:
-          IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/prod/telemetry-manager"
-          # sets trigger to SHA if used in merge_group, but to env.TAG if used in push
-          # even if env.TAG is available in merge_group event, it will be neglected
-          IMAGE_TAG: "${{ github.event.merge_group.head_sha || env.TAG }}"
+          IMAGE_REPO: "${{ github.event_name == 'pull_request_target' && 'europe-docker.pkg.dev/kyma-project/dev/telemetry-manager' || 'europe-docker.pkg.dev/kyma-project/prod/telemetry-manager' }}"
+          IMAGE_TAG: "${{ env.TAG }}"
           QUERY_INTERVAL: 30
 
       # save gardener kubeconfig to a temp file in order to pass it to the command
@@ -145,11 +188,31 @@ jobs:
                   text: "See related <${{ github.event.pull_request.html_url || github.event.head_commit.url }}|commit>"
 
   summary:
-    needs: [gardener-integration-test]
+    needs: [check-trigger, gardener-integration-test]
+    if: always()
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
+        if: needs.check-trigger.outputs.run-gardener-tests == 'true'
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Generate test summary
+        if: needs.check-trigger.outputs.run-gardener-tests == 'true'
         uses: "./.github/template/test-summary"
+
+      - name: Check workflow status
+        run: |
+          if [[ "${{ needs.check-trigger.outputs.run-gardener-tests }}" == "false" ]]; then
+            echo "✓ Gardener tests were skipped (no 'test-gardener' label found)"
+            exit 0
+          elif [[ "${{ needs.gardener-integration-test.result }}" == "success" ]]; then
+            echo "✓ Gardener tests passed successfully"
+            exit 0
+          elif [[ "${{ needs.gardener-integration-test.result }}" == "skipped" ]]; then
+            echo "✓ Gardener tests were skipped"
+            exit 0
+          else
+            echo "✗ Gardener tests failed"
+            exit 1
+          fi
+

@@ -21,20 +21,20 @@ type LogPipelineValidator struct {
 
 var _ webhook.CustomValidator = &LogPipelineValidator{}
 
-func (v *LogPipelineValidator) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
-	return validateLogPipeline(obj)
+func (v *LogPipelineValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	return validateLogPipeline(ctx, obj)
 }
 
-func (v *LogPipelineValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	return validateLogPipeline(newObj)
+func (v *LogPipelineValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	return validateLogPipeline(ctx, newObj)
 }
 
 func (v *LogPipelineValidator) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
 	return nil, nil
 }
 
-func validateFilterTransform(filterSpec []telemetryv1beta1.FilterSpec, transformSpec []telemetryv1beta1.TransformSpec) error {
-	err := webhookutils.ValidateFilterTransform(ottl.SignalTypeLog, filterSpec, transformSpec)
+func validateFilterTransform(ctx context.Context, filterSpec []telemetryv1beta1.FilterSpec, transformSpec []telemetryv1beta1.TransformSpec) error {
+	err := webhookutils.ValidateFilterTransform(ctx, ottl.SignalTypeLog, filterSpec, transformSpec)
 	if err != nil {
 		return fmt.Errorf(conditions.MessageForOtelLogPipeline(conditions.ReasonOTTLSpecInvalid), err.Error())
 	}
@@ -42,7 +42,7 @@ func validateFilterTransform(filterSpec []telemetryv1beta1.FilterSpec, transform
 	return nil
 }
 
-func validateLogPipeline(obj runtime.Object) (admission.Warnings, error) {
+func validateLogPipeline(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	logPipeline, ok := obj.(*telemetryv1alpha1.LogPipeline)
 
 	var warnings admission.Warnings
@@ -56,7 +56,7 @@ func validateLogPipeline(obj runtime.Object) (admission.Warnings, error) {
 		return nil, err
 	}
 
-	if err := validateFilterTransform(filterSpec, transformSpec); err != nil {
+	if err := validateFilterTransform(ctx, filterSpec, transformSpec); err != nil {
 		return nil, err
 	}
 
