@@ -17,7 +17,9 @@ func ShouldUpdateGoldenFiles() bool {
 	return false
 }
 
-func UpdateGoldenFile(t *testing.T, filePath string, configYAML []byte) {
+// UpdateGoldenFileYAML updates the golden file YAML config.
+// Commit changes to golden files only if they are intentional and have been carefully reviewed.
+func UpdateGoldenFileYAML(t *testing.T, filePath string, configYAML []byte) {
 	err := os.WriteFile(filePath, configYAML, 0600)
-	require.NoError(t, err, "failed to update golden file")
+	require.NoError(t, err, "failed to save YAML file")
 }

@@ -205,7 +205,7 @@ func TestBuildConfig(t *testing.T) {
 
 			goldenFilePath := filepath.Join("testdata", tt.goldenFileName)
 			if testutils.ShouldUpdateGoldenFiles() {
-				testutils.UpdateGoldenFile(t, goldenFilePath, configYAML)
+				testutils.UpdateGoldenFileYAML(t, goldenFilePath, configYAML)
 				return
 			}
 

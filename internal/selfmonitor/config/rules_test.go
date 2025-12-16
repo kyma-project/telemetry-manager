@@ -18,7 +18,7 @@ func TestMakeRules(t *testing.T) {
 
 	goldenFilePath := filepath.Join("testdata", "rules.yaml")
 	if testutils.ShouldUpdateGoldenFiles() {
-		testutils.UpdateGoldenFile(t, goldenFilePath, rulesYAML)
+		testutils.UpdateGoldenFileYAML(t, goldenFilePath, rulesYAML)
 	}
 
 	goldenFile, err := os.ReadFile(goldenFilePath)

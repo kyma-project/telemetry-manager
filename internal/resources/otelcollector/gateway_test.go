@@ -110,13 +110,13 @@ func TestGateway_ApplyResources(t *testing.T) {
 			})
 			require.NoError(t, err)
 
-			if testutils.ShouldUpdateGoldenFiles() {
-				testutils.SaveAsYAML(t, scheme, objects, tt.goldenFilePath)
-				return
-			}
-
 			bytes, err := testutils.MarshalYAML(scheme, objects)
 			require.NoError(t, err)
+
+			if testutils.ShouldUpdateGoldenFiles() {
+				testutils.UpdateGoldenFileYAML(t, tt.goldenFilePath, bytes)
+				return
+			}
 
 			goldenFileBytes, err := os.ReadFile(tt.goldenFilePath)
 			require.NoError(t, err)
