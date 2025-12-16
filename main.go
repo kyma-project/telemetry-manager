@@ -81,12 +81,8 @@ var (
 	enableV1Beta1LogPipelines bool
 	highPriorityClassName     string
 	normalPriorityClassName   string
-<<<<<<< HEAD
 	resourceMetaTemplate      string
 	podTemplate               string
-=======
-	templateConfigName        string
->>>>>>> d43f9efe (initial code changes)
 )
 
 const (
@@ -329,14 +325,9 @@ func parseFlags() {
 
 	flag.StringVar(&highPriorityClassName, "high-priority-class-name", "", "High priority class name used by managed DaemonSets")
 	flag.StringVar(&normalPriorityClassName, "normal-priority-class-name", "", "Normal priority class name used by managed Deployments")
-<<<<<<< HEAD
 	flag.StringVar(&resourceMetaTemplate, "resource-meta-template-file", "", "YAML file containing k8s resource metadata used to add additional metadata to created resources")
 	flag.StringVar(&podTemplate, "pod-template-file", "", "YAML file containing PodTemplateSpec used to customize created Pods")
-=======
 
-	flag.StringVar(&templateConfigName, "template-config-name", "template-config-name", "Name of the ConfigMap containing the telemetry operator templates")
-
->>>>>>> d43f9efe (initial code changes)
 	flag.Parse()
 }
 
