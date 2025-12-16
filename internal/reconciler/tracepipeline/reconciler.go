@@ -21,9 +21,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/kyma-project/telemetry-manager/internal/templates"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -64,8 +64,7 @@ type Reconciler struct {
 	pipelineValidator     *Validator
 	errToMsgConverter     commonstatus.ErrorToMessageConverter
 
-	podSpecTemplate  *templates.PodSpecTemplate
-	metadataTemplate *templates.MetadataTemplate
+	specTemplate *otelcollector.SpecTemplate
 }
 
 // Option configures the Reconciler during initialization.
@@ -113,15 +112,21 @@ func WithIstioStatusChecker(checker IstioStatusChecker) Option {
 	}
 }
 
-func WithPodSpecTemplate(podTemplate *templates.PodSpecTemplate) Option {
+func WithPodSpecTemplate(podTemplate *corev1.PodTemplateSpec) Option {
 	return func(r *Reconciler) {
-		r.podSpecTemplate = podTemplate
+		if r.specTemplate == nil {
+			r.specTemplate = &otelcollector.SpecTemplate{}
+		}
+		r.specTemplate.Pod = podTemplate
 	}
 }
 
-func WithMetadataTemplate(metadataTemplate *templates.MetadataTemplate) Option {
+func WithMetadataTemplate(metadataTemplate *v1.ObjectMeta) Option {
 	return func(r *Reconciler) {
-		r.metadataTemplate = metadataTemplate
+		if r.specTemplate == nil {
+			r.specTemplate = &otelcollector.SpecTemplate{}
+		}
+		r.specTemplate.Metadata = metadataTemplate
 	}
 }
 

@@ -129,12 +129,18 @@ func WithIstioStatusChecker(checker IstioStatusChecker) Option {
 
 func WithPodSpecTemplate(template *corev1.PodTemplateSpec) Option {
 	return func(r *Reconciler) {
+		if r.specTemplate == nil {
+			r.specTemplate = &otelcollector.SpecTemplate{}
+		}
 		r.specTemplate.Pod = template
 	}
 }
 
 func WithMetadataTemplate(template *v1.ObjectMeta) Option {
 	return func(r *Reconciler) {
+		if r.specTemplate == nil {
+			r.specTemplate = &otelcollector.SpecTemplate{}
+		}
 		r.specTemplate.Metadata = template
 	}
 }
