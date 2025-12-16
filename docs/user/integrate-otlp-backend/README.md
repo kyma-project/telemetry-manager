@@ -122,6 +122,9 @@ While you can choose to add your authentication details from plain text, it’s 
                   key: tokenUrl
   ```
 
+> [!NOTE]
+> If you want to use OAuth2 with gRPC, you must configure TLS for your backend connection as well.
+
 - To use a username and password for authentication, configure the `authentication.basic` section.
 
   ```yaml
