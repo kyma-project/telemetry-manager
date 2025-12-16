@@ -298,5 +298,8 @@ func instrumentationStatement(inputSource InputSourceType, instrumentationScopeV
 }
 
 func setIfNilOrEmptyStatement(attributeKey, attributeValue string) string {
-	return fmt.Sprintf("set(resource.attributes[\"%s\"], \"%s\") where resource.attributes[\"%s\"] == nil or resource.attributes[\"%s\"] == \"\"", attributeKey, attributeValue, attributeKey, attributeKey)
+	return JoinWithWhere(
+		fmt.Sprintf("set(resource.attributes[\"%s\"], \"%s\")", attributeKey, attributeValue),
+		ResourceAttributeIsNilOrEmpty(attributeKey),
+	)
 }
