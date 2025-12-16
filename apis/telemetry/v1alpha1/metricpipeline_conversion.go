@@ -13,7 +13,6 @@ var errSrcTypeUnsupportedMetricPipeline = errors.New("source type is not MetricP
 var errDstTypeUnsupportedMetricPipeline = errors.New("destination type is not MetricPipeline v1beta1")
 
 func Convert_v1alpha1_MetricPipelineRuntimeInput_To_v1beta1_MetricPipelineRuntimeInput(in *MetricPipelineRuntimeInput, out *telemetryv1beta1.MetricPipelineRuntimeInput, s apiconversion.Scope) error {
-
 	if err := autoConvert_v1alpha1_MetricPipelineRuntimeInput_To_v1beta1_MetricPipelineRuntimeInput(in, out, s); err != nil {
 		return err
 	}

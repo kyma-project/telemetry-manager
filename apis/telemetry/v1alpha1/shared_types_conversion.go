@@ -1,11 +1,11 @@
 package v1alpha1
 
 import (
-	"github.com/kyma-project/telemetry-manager/internal/namespaces"
-	"k8s.io/apimachinery/pkg/conversion"
+	apiconversion "k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/utils/ptr"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/namespaces"
 )
 
 // Converts shared structs between v1alpha1 and v1beta1 CRDs.
@@ -27,7 +27,7 @@ func sanitizeNamespaceNames(names []string) []string {
 	return valid
 }
 
-func Convert_v1alpha1_OTLPInput_To_v1beta1_OTLPInput(in *OTLPInput, out *telemetryv1beta1.OTLPInput, s conversion.Scope) error {
+func Convert_v1alpha1_OTLPInput_To_v1beta1_OTLPInput(in *OTLPInput, out *telemetryv1beta1.OTLPInput, s apiconversion.Scope) error {
 	if err := autoConvert_v1alpha1_OTLPInput_To_v1beta1_OTLPInput(in, out, s); err != nil {
 		return err
 	}
@@ -41,7 +41,7 @@ func Convert_v1alpha1_OTLPInput_To_v1beta1_OTLPInput(in *OTLPInput, out *telemet
 	return nil
 }
 
-func Convert_v1beta1_OTLPInput_To_v1alpha1_OTLPInput(in *telemetryv1beta1.OTLPInput, out *OTLPInput, s conversion.Scope) error {
+func Convert_v1beta1_OTLPInput_To_v1alpha1_OTLPInput(in *telemetryv1beta1.OTLPInput, out *OTLPInput, s apiconversion.Scope) error {
 	if err := autoConvert_v1beta1_OTLPInput_To_v1alpha1_OTLPInput(in, out, s); err != nil {
 		return err
 	}
