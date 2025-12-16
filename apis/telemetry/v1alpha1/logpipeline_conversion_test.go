@@ -455,7 +455,7 @@ func TestLogPipelineConvertTo(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			dst := &telemetryv1beta1.LogPipeline{}
-			err := tt.input.ConvertTo(dst)
+			err := Convert_v1alpha1_LogPipeline_To_v1beta1_LogPipeline(tt.input, dst, nil)
 			require.NoError(t, err)
 			require.Equal(t, tt.expected, dst)
 		})
@@ -505,7 +505,7 @@ func TestLogPipelineConvertFrom(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			dst := &LogPipeline{}
-			err := dst.ConvertFrom(tt.input)
+			err := Convert_v1beta1_LogPipeline_To_v1alpha1_LogPipeline(tt.input, dst, nil)
 			require.NoError(t, err)
 			require.Equal(t, tt.expected, dst)
 		})

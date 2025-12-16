@@ -37,6 +37,16 @@ func ValidateFilterTransform(signalType ottl.SignalType, filterSpec []telemetryv
 	return nil
 }
 
-func ConvertFilterTransformToBeta(filters []telemetryv1alpha1.FilterSpec, transforms []telemetryv1alpha1.TransformSpec) ([]telemetryv1beta1.FilterSpec, []telemetryv1beta1.TransformSpec) {
-	return slicesutils.TransformFunc(filters, telemetryv1alpha1.ConvertFilterSpecToBeta), slicesutils.TransformFunc(transforms, telemetryv1alpha1.ConvertTransformSpecToBeta)
+func ConvertFilterTransformToBeta(filters []telemetryv1alpha1.FilterSpec, transforms []telemetryv1alpha1.TransformSpec) ([]telemetryv1beta1.FilterSpec, []telemetryv1beta1.TransformSpec, error) {
+	filterSpecs, err := slicesutils.TransformWithConversion(filters, telemetryv1alpha1.Convert_v1alpha1_FilterSpec_To_v1beta1_FilterSpec)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	transformSpecs, err := slicesutils.TransformWithConversion(transforms, telemetryv1alpha1.Convert_v1alpha1_TransformSpec_To_v1beta1_TransformSpec)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return filterSpecs, transformSpecs, nil
 }

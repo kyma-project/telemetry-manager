@@ -30,7 +30,10 @@ func (v *LogPipelineValidator) ValidateCreate(_ context.Context, obj runtime.Obj
 		return nil, fmt.Errorf("expected a LogPipeline but got %T", obj)
 	}
 
-	filterSpec, transformSpec := webhookutils.ConvertFilterTransformToBeta(logPipeline.Spec.Filters, logPipeline.Spec.Transforms)
+	filterSpec, transformSpec, err := webhookutils.ConvertFilterTransformToBeta(logPipeline.Spec.Filters, logPipeline.Spec.Transforms)
+	if err != nil {
+		return nil, err
+	}
 
 	if err := validateFilterTransform(filterSpec, transformSpec); err != nil {
 		return nil, err
@@ -56,7 +59,10 @@ func (v *LogPipelineValidator) ValidateUpdate(_ context.Context, oldObj, newObj 
 		return nil, fmt.Errorf("expected a LogPipeline but got %T", newObj)
 	}
 
-	filterSpec, transformSpec := webhookutils.ConvertFilterTransformToBeta(logPipeline.Spec.Filters, logPipeline.Spec.Transforms)
+	filterSpec, transformSpec, err := webhookutils.ConvertFilterTransformToBeta(logPipeline.Spec.Filters, logPipeline.Spec.Transforms)
+	if err != nil {
+		return nil, err
+	}
 
 	if err := validateFilterTransform(filterSpec, transformSpec); err != nil {
 		return nil, err

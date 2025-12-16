@@ -76,7 +76,8 @@ func TestConvertFilterTransformToBeta(t *testing.T) {
 		transformSpec []telemetryv1alpha1.TransformSpec
 	)
 
-	filterSpecBeta, transformSpecBeta := ConvertFilterTransformToBeta(filterSpec, transformSpec)
+	filterSpecBeta, transformSpecBeta, err := ConvertFilterTransformToBeta(filterSpec, transformSpec)
+	assert.NoError(t, err)
 
 	assert.IsType(t, filterSpecBeta, []telemetryv1beta1.FilterSpec{})
 	assert.IsType(t, transformSpecBeta, []telemetryv1beta1.TransformSpec{})
