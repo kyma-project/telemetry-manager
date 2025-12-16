@@ -37,7 +37,7 @@ func TestOverridePodSpecWithTemplate_MergesCorrectly(t *testing.T) {
 		},
 	}
 
-	merged, err := OverridePodSpecWithTemplate(original, patch)
+	merged, err := OverridePodSpecWithTemplate(patch, original)
 	require.NoError(t, err)
 	require.NotNil(t, merged)
 	require.Equal(t, "patched-sa", merged.Spec.ServiceAccountName)
