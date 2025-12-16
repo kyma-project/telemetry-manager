@@ -3,12 +3,9 @@ package test
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"slices"
 	"strings"
-	"testing"
 
-	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -45,17 +42,6 @@ func MarshalYAML(scheme *runtime.Scheme, objects []client.Object) ([]byte, error
 	}
 
 	return buffer.Bytes(), nil
-}
-
-// SaveAsYAML dumps the list of objects as a YAML file. Used to generate golden files, never should be committed.
-func SaveAsYAML(t *testing.T, scheme *runtime.Scheme, objects []client.Object, path string) {
-	objectsYAML, err := MarshalYAML(scheme, objects)
-	require.NoError(t, err)
-
-	err = os.WriteFile(path, objectsYAML, 0600)
-	require.NoError(t, err)
-
-	t.Fatalf("Golden file %s has been saved, please verify it and remove this line", path)
 }
 
 func compareObjects(a, b client.Object) int {
