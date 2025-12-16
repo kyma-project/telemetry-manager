@@ -315,13 +315,13 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(ctx context.Context, con
 	// Override Podspec with user provided template if available
 	if gad.specTemplate != nil && gad.specTemplate.Pod != nil && len(gad.specTemplate.Pod.Spec.Containers) > 0 {
 		gad.specTemplate.Pod.Spec.Containers[0].Name = containerName
+	}
 
-		updatedPodTemplateSpec, err := commonresources.OverridePodSpecWithTemplate(&podTemplateSpec, gad.specTemplate.Pod)
-		if err != nil {
-			logf.FromContext(ctx).Error(err, "Failed to override gateway pod spec with template, proceeding with base pod spec", "gateway", gad.baseName)
-		} else {
-			podTemplateSpec = *updatedPodTemplateSpec
-		}
+	updatedPodTemplateSpec, err := commonresources.OverridePodSpecWithTemplate(&podTemplateSpec, gad.specTemplate.Pod)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Failed to override gateway pod spec with template, proceeding with base pod spec", "gateway", gad.baseName)
+	} else {
+		podTemplateSpec = *updatedPodTemplateSpec
 	}
 
 	return &appsv1.Deployment{

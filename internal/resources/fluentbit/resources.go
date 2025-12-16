@@ -356,13 +356,13 @@ func (aad *AgentApplierDeleter) makeDaemonSet(ctx context.Context, namespace str
 	// Override Podspec with user provided template if available
 	if aad.specTemplate != nil && aad.specTemplate.Pod != nil && len(aad.specTemplate.Pod.Spec.Containers) > 0 {
 		aad.specTemplate.Pod.Spec.Containers[0].Name = "fluent-bit"
+	}
 
-		updatedPodTemplateSpec, err := commonresources.OverridePodSpecWithTemplate(&podTemplateSpec, aad.specTemplate.Pod)
-		if err != nil {
-			logf.FromContext(ctx).Error(err, "Failed to override agent pod spec with template, proceeding with base pod spec", "agent", "fluent-bit")
-		} else {
-			podTemplateSpec = *updatedPodTemplateSpec
-		}
+	updatedPodTemplateSpec, err := commonresources.OverridePodSpecWithTemplate(&podTemplateSpec, aad.specTemplate.Pod)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Failed to override agent pod spec with template, proceeding with base pod spec", "agent", "fluent-bit")
+	} else {
+		podTemplateSpec = *updatedPodTemplateSpec
 	}
 
 	ds := &appsv1.DaemonSet{

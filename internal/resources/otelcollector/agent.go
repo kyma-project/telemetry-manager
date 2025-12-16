@@ -242,13 +242,13 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(ctx context.Context, configCh
 	// Override Podspec with user provided template if available
 	if aad.specTemplate != nil && aad.specTemplate.Pod != nil && len(aad.specTemplate.Pod.Spec.Containers) > 0 {
 		aad.specTemplate.Pod.Spec.Containers[0].Name = containerName
+	}
 
-		updatedPodTemplateSpec, err := commonresources.OverridePodSpecWithTemplate(&podSpecTemplate, aad.specTemplate.Pod)
-		if err != nil {
-			logf.FromContext(ctx).Error(err, "Failed to override agent pod spec with template, proceeding with base pod spec", "agent", aad.baseName)
-		} else {
-			podSpecTemplate = *updatedPodTemplateSpec
-		}
+	updatedPodTemplateSpec, err := commonresources.OverridePodSpecWithTemplate(&podSpecTemplate, aad.specTemplate.Pod)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Failed to override agent pod spec with template, proceeding with base pod spec", "agent", aad.baseName)
+	} else {
+		podSpecTemplate = *updatedPodTemplateSpec
 	}
 
 	return &appsv1.DaemonSet{
