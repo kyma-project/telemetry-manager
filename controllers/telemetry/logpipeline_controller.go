@@ -203,12 +203,12 @@ func configureFluentBitReconciler(config LogPipelineControllerConfig, client cli
 	)
 
 	loader := templates.NewSpecTemplatesLoader(&templates.OSFileReader{})
-	podSpecTemplate, err := loader.LoadPodSpecTemplate(config.TemplateFileName())
+	podSpecTemplate, err := loader.LoadPodSpecTemplate(config.PodSpecTemplateFileName())
 	if err != nil {
 		return nil, err
 	}
 
-	metadataTemplate, err := loader.LoadMetadataTemplate(config.TemplateFileName())
+	metadataTemplate, err := loader.LoadMetadataTemplate(config.ResourceMetaTemplateFileName())
 	if err != nil {
 		return nil, err
 	}
@@ -282,12 +282,12 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 
 	// Load templates from file
 	loader := templates.NewSpecTemplatesLoader(&templates.OSFileReader{})
-	podSpecTemplate, err := loader.LoadPodSpecTemplate(config.TemplateFileName())
+	podSpecTemplate, err := loader.LoadPodSpecTemplate(config.PodSpecTemplateFileName())
 	if err != nil {
 		return nil, err
 	}
 
-	metadataTemplate, err := loader.LoadMetadataTemplate(config.TemplateFileName())
+	metadataTemplate, err := loader.LoadMetadataTemplate(config.ResourceMetaTemplateFileName())
 	if err != nil {
 		return nil, err
 	}

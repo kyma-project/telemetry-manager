@@ -159,6 +159,8 @@ func run() error {
 		config.WithTargetNamespace(envCfg.TargetNamespace),
 		config.WithOperateInFIPSMode(envCfg.OperateInFIPSMode),
 		config.WithVersion(build.GitTag()),
+		config.WithPodSpecTemplateFileName(podTemplate),
+		config.WithResourceMetaTemplateFileName(resourceMetaTemplate),
 	)
 
 	if err := globals.Validate(); err != nil {

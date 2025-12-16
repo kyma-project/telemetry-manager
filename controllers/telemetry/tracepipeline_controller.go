@@ -121,12 +121,12 @@ func NewTracePipelineController(config TracePipelineControllerConfig, client cli
 	}
 
 	loader := templates.NewSpecTemplatesLoader(&templates.OSFileReader{})
-	podSpecTemplate, err := loader.LoadPodSpecTemplate(config.TemplateFileName())
+	podSpecTemplate, err := loader.LoadPodSpecTemplate(config.PodSpecTemplateFileName())
 	if err != nil {
 		return nil, err
 	}
 
-	metadataTemplate, err := loader.LoadMetadataTemplate(config.TargetNamespace())
+	metadataTemplate, err := loader.LoadMetadataTemplate(config.ResourceMetaTemplateFileName())
 	if err != nil {
 		return nil, err
 	}

@@ -36,11 +36,12 @@ func IsValidationError(err error) bool {
 }
 
 type Global struct {
-	managerNamespace  string
-	targetNamespace   string
-	operateInFIPSMode bool
-	version           string
-	templateFileName  string
+	managerNamespace             string
+	targetNamespace              string
+	operateInFIPSMode            bool
+	version                      string
+	resourceMetaTemplateFileName string
+	podSpecTemplateFileName      string
 }
 
 type Option func(*Global)
@@ -66,6 +67,18 @@ func WithOperateInFIPSMode(enable bool) Option {
 func WithVersion(version string) Option {
 	return func(g *Global) {
 		g.version = version
+	}
+}
+
+func WithResourceMetaTemplateFileName(fileName string) Option {
+	return func(g *Global) {
+		g.resourceMetaTemplateFileName = fileName
+	}
+}
+
+func WithPodSpecTemplateFileName(fileName string) Option {
+	return func(g *Global) {
+		g.podSpecTemplateFileName = fileName
 	}
 }
 
@@ -122,6 +135,10 @@ func (g *Global) Version() string {
 	return g.version
 }
 
-func (g *Global) TemplateFileName() string {
-	return g.templateFileName
+func (g *Global) PodSpecTemplateFileName() string {
+	return g.podSpecTemplateFileName
+}
+
+func (g *Global) ResourceMetaTemplateFileName() string {
+	return g.resourceMetaTemplateFileName
 }

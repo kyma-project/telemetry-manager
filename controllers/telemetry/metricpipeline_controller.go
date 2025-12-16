@@ -131,11 +131,11 @@ func NewMetricPipelineController(config MetricPipelineControllerConfig, client c
 	gatewayConfigBuilder := &metricgateway.Builder{Reader: client}
 
 	loader := templates.NewSpecTemplatesLoader(&templates.OSFileReader{})
-	podSpecTemplate, err := loader.LoadPodSpecTemplate(config.TemplateFileName())
+	podSpecTemplate, err := loader.LoadPodSpecTemplate(config.PodSpecTemplateFileName())
 	if err != nil {
 		return nil, err
 	}
-	metadataTemplate, err := loader.LoadMetadataTemplate(config.TemplateFileName())
+	metadataTemplate, err := loader.LoadMetadataTemplate(config.ResourceMetaTemplateFileName())
 	if err != nil {
 		return nil, err
 	}
