@@ -64,18 +64,18 @@ func (v *LogPipelineValidator) validateLogPipeline(ctx context.Context, pipeline
 		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "output.http"))
 	}
 
-	if isVariablesDefined(pipeline.Spec.Variables) {
+	if isVariablesDefined(pipeline.Spec.FluentBitVariables) {
 		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "variables"))
 	}
 
-	if isFilesDefined(pipeline.Spec.Files) {
+	if isFilesDefined(pipeline.Spec.FluentBitFiles) {
 		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "files"))
 	}
 
-	if isRuntimeInputEnabled(&pipeline.Spec.Input) && pipeline.Spec.Input.Runtime.DropLabels != nil {
+	if isRuntimeInputEnabled(&pipeline.Spec.Input) && pipeline.Spec.Input.Runtime.FluentBitDropLabels != nil {
 		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "input.runtime.dropLabels"))
 	}
-	if isRuntimeInputEnabled(&pipeline.Spec.Input) && pipeline.Spec.Input.Runtime.KeepAnnotations != nil {
+	if isRuntimeInputEnabled(&pipeline.Spec.Input) && pipeline.Spec.Input.Runtime.FluentBitKeepAnnotations != nil {
 		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "input.runtime.keepAnnotations"))
 	}
 
@@ -90,7 +90,7 @@ func renderDeprecationWarning(pipelineName string, attribute string) string {
 	return fmt.Sprintf("LogPipeline '%s' uses the attribute '%s' which is based on the deprecated FluentBit technology stack. Please migrate to an Open Telemetry based pipeline instead. See the documentation: %s", pipelineName, attribute, migrationGuideLink)
 }
 
-func isCustomFilterDefined(filters []telemetryv1beta1.LogPipelineFilter) bool {
+func isCustomFilterDefined(filters []telemetryv1beta1.FluentBitFilter) bool {
 	for _, filter := range filters {
 		if filter.Custom != "" {
 			return true
@@ -100,18 +100,18 @@ func isCustomFilterDefined(filters []telemetryv1beta1.LogPipelineFilter) bool {
 }
 
 func isCustomOutputDefined(o *telemetryv1beta1.LogPipelineOutput) bool {
-	return o.Custom != ""
+	return o.FluentBitCustom != ""
 }
 
 func isHTTPDefined(o *telemetryv1beta1.LogPipelineOutput) bool {
-	return o.HTTP != nil && sharedtypesutils.IsValidBeta(&o.HTTP.Host)
+	return o.FluentBitHTTP != nil && sharedtypesutils.IsValidBeta(&o.FluentBitHTTP.Host)
 }
 
-func isVariablesDefined(v []telemetryv1beta1.LogPipelineVariableRef) bool {
+func isVariablesDefined(v []telemetryv1beta1.FluentBitVariable) bool {
 	return len(v) > 0
 }
 
-func isFilesDefined(v []telemetryv1beta1.LogPipelineFileMount) bool {
+func isFilesDefined(v []telemetryv1beta1.FluentBitFile) bool {
 	return len(v) > 0
 }
 

@@ -10,7 +10,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
-	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
+	"github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 )
 
 type buildComponentFunc = common.BuildComponentFunc[*telemetryv1alpha1.MetricPipeline]
@@ -246,7 +246,7 @@ func (b *Builder) addDropOTLPIfInputDisabledProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDDropIfInputSourceOTLPProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			if metricpipelineutils.IsOTLPInputEnabled(mp.Spec.Input) {
+			if sharedtypes.IsOTLPInputEnabled(mp.Spec.Input.OTLP) {
 				return nil
 			}
 
@@ -266,7 +266,7 @@ func (b *Builder) addOTLPNamespaceFilterProcessor() buildComponentFunc {
 		},
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			input := mp.Spec.Input
-			if !metricpipelineutils.IsOTLPInputEnabled(input) || input.OTLP == nil || !shouldFilterByNamespace(input.OTLP.Namespaces) {
+			if !sharedtypes.IsOTLPInputEnabled(input.OTLP) || input.OTLP == nil || !shouldFilterByNamespace(input.OTLP.Namespaces) {
 				return nil
 			}
 

@@ -37,7 +37,7 @@ func TestCreateLuaFilterWithDefinedHostAndDedot(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: "foo"},
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Output: telemetryv1alpha1.LogPipelineOutput{
-				HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
+				FluentBitHTTP: &telemetryv1alpha1.FluentBitHTTPOutput{
 					Dedot: true,
 					Host:  telemetryv1alpha1.ValueType{Value: "localhost"},
 				},
@@ -53,7 +53,7 @@ func TestCreateLuaFilterWithUndefinedHostAndDedot(t *testing.T) {
 	logPipeline := &telemetryv1alpha1.LogPipeline{
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Output: telemetryv1alpha1.LogPipelineOutput{
-				HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{Dedot: true},
+				FluentBitHTTP: &telemetryv1alpha1.FluentBitHTTPOutput{Dedot: true},
 			},
 		},
 	}
@@ -74,7 +74,7 @@ func TestCreateLuaFilterWithDedotFalse(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: "foo"},
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Output: telemetryv1alpha1.LogPipelineOutput{
-				HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
+				FluentBitHTTP: &telemetryv1alpha1.FluentBitHTTPOutput{
 					Dedot: false,
 					Host:  telemetryv1alpha1.ValueType{Value: "localhost"},
 				},
@@ -97,7 +97,7 @@ func TestCreateTimestampModifyFilter(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: "foo"},
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Output: telemetryv1alpha1.LogPipelineOutput{
-				HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
+				FluentBitHTTP: &telemetryv1alpha1.FluentBitHTTPOutput{
 					Host: telemetryv1alpha1.ValueType{Value: "localhost"},
 				},
 			},
@@ -193,12 +193,12 @@ func TestMergeSectionsConfig(t *testing.T) {
 					Namespaces: telemetryv1alpha1.LogPipelineNamespaceSelector{
 						System: true,
 					},
-					KeepAnnotations:  ptr.To(true),
-					DropLabels:       ptr.To(false),
-					KeepOriginalBody: ptr.To(true),
+					FluentBitKeepAnnotations: ptr.To(true),
+					FluentBitDropLabels:      ptr.To(false),
+					KeepOriginalBody:         ptr.To(true),
 				},
 			},
-			FluentBitFilters: []telemetryv1alpha1.LogPipelineFilter{
+			FluentBitFilters: []telemetryv1alpha1.FluentBitFilter{
 				{
 					Custom: `
 						name grep
@@ -213,7 +213,7 @@ func TestMergeSectionsConfig(t *testing.T) {
 				},
 			},
 			Output: telemetryv1alpha1.LogPipelineOutput{
-				HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
+				FluentBitHTTP: &telemetryv1alpha1.FluentBitHTTPOutput{
 					Dedot: true,
 					Host: telemetryv1alpha1.ValueType{
 						Value: "localhost",
@@ -283,16 +283,16 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Input: telemetryv1alpha1.LogPipelineInput{
 				Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-					KeepAnnotations:  ptr.To(true),
-					DropLabels:       ptr.To(false),
-					KeepOriginalBody: ptr.To(true),
+					FluentBitKeepAnnotations: ptr.To(true),
+					FluentBitDropLabels:      ptr.To(false),
+					KeepOriginalBody:         ptr.To(true),
 					Namespaces: telemetryv1alpha1.LogPipelineNamespaceSelector{
 						System: true,
 					},
 				},
 			},
 			Output: telemetryv1alpha1.LogPipelineOutput{
-				Custom: `
+				FluentBitCustom: `
     name stdout`,
 			},
 		},

@@ -31,18 +31,18 @@ func IsInputValid(i *telemetryv1alpha1.LogPipelineInput) bool {
 }
 
 func IsCustomOutputDefined(o *telemetryv1alpha1.LogPipelineOutput) bool {
-	return o.Custom != ""
+	return o.FluentBitCustom != ""
 }
 
-func IsHTTPDefined(o *telemetryv1alpha1.LogPipelineOutput) bool {
-	return o.HTTP != nil && sharedtypesutils.IsValid(&o.HTTP.Host)
+func IsHTTPOutoutDefined(o *telemetryv1alpha1.LogPipelineOutput) bool {
+	return o.FluentBitHTTP != nil && sharedtypesutils.IsValid(&o.FluentBitHTTP.Host)
 }
 
-func IsVariablesDefined(v []telemetryv1alpha1.LogPipelineVariableRef) bool {
+func IsVariablesDefined(v []telemetryv1alpha1.FluentBitVariable) bool {
 	return len(v) > 0
 }
 
-func IsFilesDefined(v []telemetryv1alpha1.LogPipelineFileMount) bool {
+func IsFilesDefined(v []telemetryv1alpha1.FluentBitFile) bool {
 	return len(v) > 0
 }
 
@@ -59,7 +59,7 @@ func ContainsCustomPlugin(lp *telemetryv1alpha1.LogPipeline) bool {
 	return IsCustomOutputDefined(&lp.Spec.Output) || IsCustomFilterDefined(lp.Spec.FluentBitFilters)
 }
 
-func IsCustomFilterDefined(filters []telemetryv1alpha1.LogPipelineFilter) bool {
+func IsCustomFilterDefined(filters []telemetryv1alpha1.FluentBitFilter) bool {
 	for _, filter := range filters {
 		if filter.Custom != "" {
 			return true
@@ -91,8 +91,4 @@ func GetOutputType(t *telemetryv1alpha1.LogPipeline) Mode {
 	}
 
 	return FluentBit
-}
-
-func IsOTLPInputEnabled(input telemetryv1alpha1.LogPipelineInput) bool {
-	return input.OTLP == nil || !input.OTLP.Disabled
 }

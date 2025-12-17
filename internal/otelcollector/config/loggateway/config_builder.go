@@ -10,7 +10,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
-	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
+	"github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 )
 
 type buildComponentFunc = common.BuildComponentFunc[*telemetryv1alpha1.LogPipeline]
@@ -128,7 +128,7 @@ func (b *Builder) addDropIfInputSourceOTLPProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDDropIfInputSourceOTLPProcessor),
 		func(lp *telemetryv1alpha1.LogPipeline) any {
-			if logpipelineutils.IsOTLPInputEnabled(lp.Spec.Input) {
+			if sharedtypes.IsOTLPInputEnabled(lp.Spec.Input.OTLP) {
 				return nil // Skip this processor if OTLP input is enabled
 			}
 

@@ -62,22 +62,22 @@ func (v *LogPipelineValidator) validateLogPipeline(ctx context.Context, pipeline
 		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "output.custom"))
 	}
 
-	if logpipelineutils.IsHTTPDefined(&pipeline.Spec.Output) {
+	if logpipelineutils.IsHTTPOutoutDefined(&pipeline.Spec.Output) {
 		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "output.http"))
 	}
 
-	if logpipelineutils.IsVariablesDefined(pipeline.Spec.Variables) {
+	if logpipelineutils.IsVariablesDefined(pipeline.Spec.FluentBitVariables) {
 		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "variables"))
 	}
 
-	if logpipelineutils.IsFilesDefined(pipeline.Spec.Files) {
+	if logpipelineutils.IsFilesDefined(pipeline.Spec.FluentBitFiles) {
 		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "files"))
 	}
 
-	if logpipelineutils.IsApplicationInputEnabled(&pipeline.Spec.Input) && pipeline.Spec.Input.Application.DropLabels != nil {
+	if logpipelineutils.IsApplicationInputEnabled(&pipeline.Spec.Input) && pipeline.Spec.Input.Application.FluentBitDropLabels != nil {
 		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "input.application.dropLabels"))
 	}
-	if logpipelineutils.IsApplicationInputEnabled(&pipeline.Spec.Input) && pipeline.Spec.Input.Application.KeepAnnotations != nil {
+	if logpipelineutils.IsApplicationInputEnabled(&pipeline.Spec.Input) && pipeline.Spec.Input.Application.FluentBitKeepAnnotations != nil {
 		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "input.application.keepAnnotations"))
 	}
 

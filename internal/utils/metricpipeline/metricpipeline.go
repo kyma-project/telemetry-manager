@@ -31,10 +31,6 @@ func IsRuntimeInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
 	return input.Runtime != nil && input.Runtime.Enabled != nil && *input.Runtime.Enabled
 }
 
-func IsOTLPInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.OTLP == nil || !input.OTLP.Disabled
-}
-
 func IsPrometheusDiagnosticInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
 	return input.Prometheus.DiagnosticMetrics != nil && input.Prometheus.DiagnosticMetrics.Enabled != nil && *input.Prometheus.DiagnosticMetrics.Enabled
 }

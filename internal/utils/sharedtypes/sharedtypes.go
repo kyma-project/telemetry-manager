@@ -36,3 +36,15 @@ func IsValidBeta(v *telemetryv1beta1.ValueType) bool {
 		v.ValueFrom.SecretKeyRef.Key != "" &&
 		v.ValueFrom.SecretKeyRef.Namespace != ""
 }
+
+func IsFilterDefined(filters []telemetryv1alpha1.FilterSpec) bool {
+	return len(filters) > 0
+}
+
+func IsTransformDefined(transforms []telemetryv1alpha1.TransformSpec) bool {
+	return len(transforms) > 0
+}
+
+func IsOTLPInputEnabled(input *telemetryv1alpha1.OTLPInput) bool {
+	return input == nil || !input.Disabled
+}

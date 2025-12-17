@@ -25,6 +25,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
+	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
@@ -496,15 +497,31 @@ func (r *Reconciler) getK8sClusterUID(ctx context.Context) (string, error) {
 
 func (r *Reconciler) trackOTTLFeaturesUsage(pipelines []telemetryv1alpha1.MetricPipeline) {
 	for i := range pipelines {
-		usesOTTL := false
-		if len(pipelines[i].Spec.Transforms) > 0 {
-			usesOTTL = true
+		// General features
+		if sharedtypesutils.IsOTLPInputEnabled(pipelines[i].Spec.Input.OTLP) {
+			metrics.RecordMetricPipelineFeatureUsage(metrics.FeatureInputOTLP, pipelines[i].Name)
 		}
 
-		if len(pipelines[i].Spec.Filters) > 0 {
-			usesOTTL = true
+		if sharedtypesutils.IsTransformDefined(pipelines[i].Spec.Transforms) {
+			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureTransform, pipelines[i].Name)
 		}
 
-		metrics.RecordMetricPipelineFeatureUsage(metrics.FeatureOTTL, pipelines[i].Name, usesOTTL)
+		if sharedtypesutils.IsFilterDefined(pipelines[i].Spec.Filters) {
+			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureFilter, pipelines[i].Name)
+		}
+
+		// MetricPipeline features
+
+		if metricpipelineutils.IsRuntimeInputEnabled(pipelines[i].Spec.Input) {
+			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureInputRuntime, pipelines[i].Name)
+		}
+
+		if metricpipelineutils.IsPrometheusInputEnabled(pipelines[i].Spec.Input) {
+			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureInputPrometheus, pipelines[i].Name)
+		}
+
+		if metricpipelineutils.IsIstioInputEnabled(pipelines[i].Spec.Input) {
+			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureInputIstio, pipelines[i].Name)
+		}
 	}
 }

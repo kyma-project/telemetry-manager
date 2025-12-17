@@ -986,14 +986,16 @@ func TestGetPipelinesRequiringAgents(t *testing.T) {
 
 func TestOTTLUsageTracking(t *testing.T) {
 	tests := []struct {
-		name              string
-		pipelines         []telemetryv1alpha1.MetricPipeline
-		expectedOTTLUsage map[string]float64 // map[pipelineName]expectedValue
+		name                          string
+		pipelines                     []telemetryv1alpha1.MetricPipeline
+		expectedTransformFeatureUsage map[string]float64 // map[pipelineName]expectedValue
+		expectedFilterFeatureUsage    map[string]float64 // map[pipelineName]expectedValue
 	}{
 		{
-			name:              "no pipelines",
-			pipelines:         []telemetryv1alpha1.MetricPipeline{},
-			expectedOTTLUsage: map[string]float64{},
+			name:                          "no pipelines",
+			pipelines:                     []telemetryv1alpha1.MetricPipeline{},
+			expectedTransformFeatureUsage: map[string]float64{},
+			expectedFilterFeatureUsage:    map[string]float64{},
 		},
 		{
 			name: "pipelines without transforms or filters",
@@ -1001,7 +1003,11 @@ func TestOTTLUsageTracking(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().WithName("pipeline-1").Build(),
 				testutils.NewMetricPipelineBuilder().WithName("pipeline-2").Build(),
 			},
-			expectedOTTLUsage: map[string]float64{
+			expectedTransformFeatureUsage: map[string]float64{
+				"pipeline-1": 0,
+				"pipeline-2": 0,
+			},
+			expectedFilterFeatureUsage: map[string]float64{
 				"pipeline-1": 0,
 				"pipeline-2": 0,
 			},
@@ -1016,8 +1022,11 @@ func TestOTTLUsageTracking(t *testing.T) {
 					}).
 					Build(),
 			},
-			expectedOTTLUsage: map[string]float64{
+			expectedTransformFeatureUsage: map[string]float64{
 				"pipeline-1": 1,
+			},
+			expectedFilterFeatureUsage: map[string]float64{
+				"pipeline-1": 0,
 			},
 		},
 		{
@@ -1030,7 +1039,10 @@ func TestOTTLUsageTracking(t *testing.T) {
 					}).
 					Build(),
 			},
-			expectedOTTLUsage: map[string]float64{
+			expectedTransformFeatureUsage: map[string]float64{
+				"pipeline-1": 0,
+			},
+			expectedFilterFeatureUsage: map[string]float64{
 				"pipeline-1": 1,
 			},
 		},
@@ -1047,7 +1059,10 @@ func TestOTTLUsageTracking(t *testing.T) {
 					}).
 					Build(),
 			},
-			expectedOTTLUsage: map[string]float64{
+			expectedTransformFeatureUsage: map[string]float64{
+				"pipeline-1": 1,
+			},
+			expectedFilterFeatureUsage: map[string]float64{
 				"pipeline-1": 1,
 			},
 		},
@@ -1077,8 +1092,14 @@ func TestOTTLUsageTracking(t *testing.T) {
 					Build(),
 				testutils.NewMetricPipelineBuilder().WithName("pipeline-4").Build(),
 			},
-			expectedOTTLUsage: map[string]float64{
+			expectedTransformFeatureUsage: map[string]float64{
 				"pipeline-1": 1,
+				"pipeline-2": 0,
+				"pipeline-3": 1,
+				"pipeline-4": 0,
+			},
+			expectedFilterFeatureUsage: map[string]float64{
+				"pipeline-1": 0,
 				"pipeline-2": 1,
 				"pipeline-3": 1,
 				"pipeline-4": 0,
@@ -1102,10 +1123,16 @@ func TestOTTLUsageTracking(t *testing.T) {
 				require.NoError(t, result.err)
 			}
 
-			// Verify OTTL feature usage metrics for each pipeline
-			for pipelineName, expectedValue := range tt.expectedOTTLUsage {
-				metricValue := testutil.ToFloat64(metrics.MetricPipelineFeatureUsage.WithLabelValues(metrics.FeatureOTTL, pipelineName))
-				require.Equal(t, expectedValue, metricValue, "OTTL feature usage metric should match for pipeline %s", pipelineName)
+			// Verify transform feature usage metrics for each pipeline
+			for pipelineName, expectedValue := range tt.expectedTransformFeatureUsage {
+				metricValue := testutil.ToFloat64(metrics.LogPipelineFeatureUsage.WithLabelValues(metrics.FeatureTransform, pipelineName))
+				require.Equal(t, expectedValue, metricValue, "transform feature usage metric should match for pipeline %s", pipelineName)
+			}
+
+			// Verify filter feature usage metrics for each pipeline
+			for pipelineName, expectedValue := range tt.expectedFilterFeatureUsage {
+				metricValue := testutil.ToFloat64(metrics.LogPipelineFeatureUsage.WithLabelValues(metrics.FeatureFilter, pipelineName))
+				require.Equal(t, expectedValue, metricValue, "filter feature usage metric should match for pipeline %s", pipelineName)
 			}
 
 			assertAll(t)

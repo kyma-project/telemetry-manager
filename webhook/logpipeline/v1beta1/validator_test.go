@@ -25,7 +25,7 @@ func TestLogPipelineValidator_ValidateCreate(t *testing.T) {
 				},
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Output: telemetryv1beta1.LogPipelineOutput{
-						Custom: "custom-fluentbit-output",
+						FluentBitCustom: "custom-fluentbit-output",
 					},
 				},
 			},
@@ -39,7 +39,7 @@ func TestLogPipelineValidator_ValidateCreate(t *testing.T) {
 					Name: "custom-filter",
 				},
 				Spec: telemetryv1beta1.LogPipelineSpec{
-					FluentBitFilters: []telemetryv1beta1.LogPipelineFilter{
+					FluentBitFilters: []telemetryv1beta1.FluentBitFilter{
 						{Custom: "custom-filter"},
 					},
 				},
@@ -127,7 +127,7 @@ func TestLogPipelineValidator_ValidateUpdate(t *testing.T) {
 				},
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Output: telemetryv1beta1.LogPipelineOutput{
-						Custom: "custom-fluentbit-output",
+						FluentBitCustom: "custom-fluentbit-output",
 					},
 				},
 			},

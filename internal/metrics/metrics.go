@@ -15,8 +15,28 @@ const (
 )
 
 const (
-	// FeatureOTTL represents the OTTL (OpenTelemetry Transformation Language) features: transform and filter
-	FeatureOTTL = "ottl"
+	// General features
+
+	FeatureTransform = "transform"
+	FeatureFilter    = "filter"
+	FeatureInputOTLP = "input-otlp"
+
+	// LogPipeline & MetricPipeline features
+
+	FeatureInputRuntime = "input-runtime"
+
+	// MetricPipeline features
+
+	FeatureInputPrometheus = "input-prometheus"
+	FeatureInputIstio      = "input-istio"
+
+	// FluentBit features
+
+	FeatureOutputHTTP   = "output-http"
+	FeatureOutputCustom = "output-custom"
+	FeatureFiles        = "files"
+	FeatureVariables    = "variables"
+	FeatureFilters      = "filters-custom"
 )
 
 var registry = metrics.Registry
@@ -102,23 +122,18 @@ var (
 	)
 )
 
-func RecordMetricPipelineFeatureUsage(feature, pipelineName string, using bool) {
-	recordFeatureUsage(MetricPipelineFeatureUsage, feature, pipelineName, using)
+func RecordMetricPipelineFeatureUsage(feature, pipelineName string) {
+	recordFeatureUsage(MetricPipelineFeatureUsage, feature, pipelineName)
 }
 
-func RecordLogPipelineFeatureUsage(feature, pipelineName string, using bool) {
-	recordFeatureUsage(LogPipelineFeatureUsage, feature, pipelineName, using)
+func RecordLogPipelineFeatureUsage(feature, pipelineName string) {
+	recordFeatureUsage(LogPipelineFeatureUsage, feature, pipelineName)
 }
 
-func RecordTracePipelineFeatureUsage(feature, pipelineName string, using bool) {
-	recordFeatureUsage(TracePipelineFeatureUsage, feature, pipelineName, using)
+func RecordTracePipelineFeatureUsage(feature, pipelineName string) {
+	recordFeatureUsage(TracePipelineFeatureUsage, feature, pipelineName)
 }
 
-func recordFeatureUsage(metric *prometheus.GaugeVec, feature, pipelineName string, using bool) {
-	value := float64(0)
-	if using {
-		value = float64(1)
-	}
-
-	metric.WithLabelValues(feature, pipelineName).Set(value)
+func recordFeatureUsage(metric *prometheus.GaugeVec, feature, pipelineName string) {
+	metric.WithLabelValues(feature, pipelineName).Set(float64(1))
 }

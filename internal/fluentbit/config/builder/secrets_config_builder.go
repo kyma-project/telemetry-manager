@@ -40,11 +40,11 @@ func (b *ConfigBuilder) buildTLSFileConfigSecret(ctx context.Context, logPipelin
 
 	for i := range logPipelines {
 		output := logPipelines[i].Spec.Output
-		if !logpipelineutils.IsHTTPDefined(&output) {
+		if !logpipelineutils.IsHTTPOutoutDefined(&output) {
 			continue
 		}
 
-		tlsConfig := output.HTTP.TLS
+		tlsConfig := output.FluentBitHTTP.TLS
 		if sharedtypesutils.IsValid(tlsConfig.CA) {
 			targetKey := fmt.Sprintf("%s-ca.crt", logPipelines[i].Name)
 
@@ -85,7 +85,7 @@ func (b *ConfigBuilder) buildTLSFileConfigSecret(ctx context.Context, logPipelin
 
 // extractHTTPSecrets handles the extraction of secrets from HTTP output
 func (b *ConfigBuilder) extractHTTPSecrets(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, envSecretConfig map[string][]byte) error {
-	httpOutput := pipeline.Spec.Output.HTTP
+	httpOutput := pipeline.Spec.Output.FluentBitHTTP
 	if httpOutput == nil {
 		return nil
 	}
@@ -125,7 +125,7 @@ func (b *ConfigBuilder) extractHTTPSecrets(ctx context.Context, pipeline *teleme
 
 // extractVariableSecrets handles the extraction of secrets from variables
 func (b *ConfigBuilder) extractVariableSecrets(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, envConfigSecret map[string][]byte) error {
-	for _, ref := range pipeline.Spec.Variables {
+	for _, ref := range pipeline.Spec.FluentBitVariables {
 		if ref.ValueFrom.SecretKeyRef == nil {
 			continue
 		}
