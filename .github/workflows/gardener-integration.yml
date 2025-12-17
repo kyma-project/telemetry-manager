@@ -67,11 +67,13 @@ jobs:
         uses: "./.github/template/setup-golang"
 
       - name: Prepare environment variables
+        env:
+          GITHUB_PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
           if [[ "${{ github.event_name }}" == "pull_request_target" ]]; then
             # For PR events, use dev image with PR number
             PR_NUMBER="${{ github.event.number }}"
-            TAG="${{ github.event.pull_request.head.ref }}"
+            TAG="$GITHUB_PR_HEAD_REF"
             MANAGER_IMAGE="europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:${TAG}"
             echo "Using dev image for PR: $MANAGER_IMAGE"
           else
