@@ -11,36 +11,34 @@ metadata:
 data:
   metadata.yaml: |
     labels:
-      app.kubernetes.io/component: controller
-      app.kubernetes.io/part-of: telemetry
-      {{- if .Values.resources.metadata.labels}}
-{{ toYaml .Values.resources.metadata.labels | indent 6 }}
+      {{- if .Values.additionalMetadata.metadata.labels}}
+{{ toYaml .Values.additionalMetadata.metadata.labels | indent 6 }}
     {{- end }}
-    {{- if .Values.resources.metadata.annotations}}
     annotations:
-{{ toYaml .Values.resources.metadata.annotations | indent 6 }}
+    {{- if .Values.additionalMetadata.metadata.annotations}}
+{{ toYaml .Values.additionalMetadata.metadata.annotations | indent 6 }}
     {{- end }}
 
   podspec-template.yaml: |
     metadata:
       labels:
-        app.kubernetes.io/part-of: telemetry
-        kyma-project.io/module: telemetry
-        {{- if .Values.resources.pod.labels}}
-{{ toYaml .Values.resources.pod.labels | indent 8 }}
+        {{- if .Values.additionalMetadata.pod.labels}}
+{{ toYaml .Values.additionalMetadata.pod.labels | indent 8 }}
     {{- end }}
-      {{- if .Values.resources.pod.annotations}}
       annotations:
-  {{ toYaml .Values.resources.pod.annotations | indent 8 }}
+      {{- if .Values.additionalMetadata.pod.annotations}}
+  {{ toYaml .Values.additionalMetadata.pod.annotations | indent 8 }}
       {{- end }}
     spec:
       {{- if .Values.global.imagePullSecret.enabled }}
       imagePullSecrets:
         - name: {{ .Values.global.imagePullSecret.name }}
       {{- end }}
-  {{- if and .Values.global.caBundle.enabled .Values.global.caBundle.name (ne .Values.global.caBundle.name "") }}
+
       containers:
-      - volumeMounts:
+      - name: template-container
+  {{- if and .Values.global.caBundle.enabled .Values.global.caBundle.name (ne .Values.global.caBundle.name "") }}
+        volumeMounts:
           - name: custom-ca-bundle
             mountPath: {{ .Values.global.caBundle.mountPath }}/{{ .Values.global.caBundle.file }}
             subPath: {{ .Values.global.caBundle.file }}
