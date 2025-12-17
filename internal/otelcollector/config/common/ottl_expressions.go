@@ -26,6 +26,11 @@ func ResourceAttributeIsNotNil(key string) string {
 	return fmt.Sprintf("%s != nil", ResourceAttribute(key))
 }
 
+// ResourceAttributeIsNilOrEmpty returns an OTel expression that checks if the resource attribute is nil or an empty string
+func ResourceAttributeIsNilOrEmpty(key string) string {
+	return fmt.Sprintf("%s == nil or %s == \"\"", ResourceAttribute(key), ResourceAttribute(key))
+}
+
 func ResourceAttribute(key string) string {
 	return fmt.Sprintf("resource.attributes[\"%s\"]", key)
 }
@@ -64,6 +69,10 @@ func JoinWithRegExpOr(parts ...string) string {
 
 func JoinWithAnd(parts ...string) string {
 	return strings.Join(parts, " and ")
+}
+
+func JoinWithWhere(statement string, condition string) string {
+	return fmt.Sprintf("%s where %s", statement, condition)
 }
 
 func IsMatch(key, regexPattern string) string {

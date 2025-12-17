@@ -1,4 +1,4 @@
-package k8s
+package objects
 
 import (
 	networkingv1 "k8s.io/api/networking/v1"

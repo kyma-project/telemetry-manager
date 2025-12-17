@@ -21,10 +21,8 @@ type Builder struct {
 }
 
 type BuildOptions struct {
-	ClusterName   string
-	ClusterUID    string
-	CloudProvider string
-	Enrichments   *operatorv1alpha1.EnrichmentSpec
+	Cluster     common.ClusterOptions
+	Enrichments *operatorv1alpha1.EnrichmentSpec
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.TracePipeline, opts BuildOptions) (*common.Config, common.EnvVars, error) {
@@ -119,9 +117,8 @@ func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildCo
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDInsertClusterAttributesProcessor),
 		func(tp *telemetryv1alpha1.TracePipeline) any {
-			return common.InsertClusterAttributesProcessorConfig(
-				opts.ClusterName, opts.ClusterUID, opts.CloudProvider,
-			)
+			transformStatements := common.InsertClusterAttributesProcessorStatements(opts.Cluster)
+			return common.TraceTransformProcessorConfig(transformStatements)
 		},
 	)
 }
@@ -139,7 +136,8 @@ func (b *Builder) addDropKymaAttributesProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDDropKymaAttributesProcessor),
 		func(tp *telemetryv1alpha1.TracePipeline) any {
-			return common.DropKymaAttributesProcessorConfig()
+			transformStatements := common.DropKymaAttributesProcessorStatements()
+			return common.TraceTransformProcessorConfig(transformStatements)
 		},
 	)
 }
@@ -154,9 +152,8 @@ func (b *Builder) addUserDefinedTransformProcessor() buildComponentFunc {
 			}
 
 			transformStatements := common.TransformSpecsToProcessorStatements(tp.Spec.Transforms)
-			transformProcessor := common.TraceTransformProcessorConfig(transformStatements)
 
-			return transformProcessor
+			return common.TraceTransformProcessorConfig(transformStatements)
 		},
 	)
 }

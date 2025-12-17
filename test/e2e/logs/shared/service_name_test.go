@@ -10,6 +10,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -84,8 +85,8 @@ func TestServiceName_OTel(t *testing.T) {
 				Build()
 
 			resources := []client.Object{
-				kitk8s.NewNamespace(backendNs).K8sObject(),
-				kitk8s.NewNamespace(genNs).K8sObject(),
+				kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+				kitk8sobjects.NewNamespace(genNs).K8sObject(),
 				&pipeline,
 			}
 			resources = append(resources, backend.K8sObjects()...)
@@ -93,29 +94,26 @@ func TestServiceName_OTel(t *testing.T) {
 			if tc.expectAgent {
 				podSpecLogs := stdoutloggen.PodSpec()
 				resources = append(resources,
-					kitk8s.NewPod(podWithBothLabelsName, genNs).
+					kitk8sobjects.NewPod(podWithBothLabelsName, genNs).
 						WithLabel(kubeAppLabelKey, kubeAppLabelValue).
 						WithLabel(appLabelKey, appLabelValue).
 						WithPodSpec(podSpecLogs).
 						K8sObject(),
-					kitk8s.NewJob(jobName, genNs).WithPodSpec(podSpecLogs).K8sObject(),
-					kitk8s.NewPod(podWithNoLabelsName, genNs).WithPodSpec(podSpecLogs).K8sObject(),
+					kitk8sobjects.NewJob(jobName, genNs).WithPodSpec(podSpecLogs).K8sObject(),
+					kitk8sobjects.NewPod(podWithNoLabelsName, genNs).WithPodSpec(podSpecLogs).K8sObject(),
 				)
 			} else {
 				podSpecWithUndefinedService := telemetrygen.PodSpec(telemetrygen.SignalTypeLogs, telemetrygen.WithServiceName(""))
 				resources = append(resources,
-					kitk8s.NewPod(podWithAppLabelName, genNs).
+					kitk8sobjects.NewPod(podWithAppLabelName, genNs).
 						WithLabel(appLabelKey, appLabelValue).
 						WithPodSpec(podSpecWithUndefinedService).
 						K8sObject(),
-					kitk8s.NewDeployment(deploymentName, genNs).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
-					kitk8s.NewStatefulSet(statefulSetName, genNs).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
+					kitk8sobjects.NewDeployment(deploymentName, genNs).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
+					kitk8sobjects.NewStatefulSet(statefulSetName, genNs).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
 				)
 			}
 
-			t.Cleanup(func() {
-				Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-			})
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.DeploymentReady(t, kitkyma.LogGatewayName)

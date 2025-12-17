@@ -9,17 +9,17 @@ on:
       - "main"
       - "release-*"
     paths-ignore:
-      - 'dependencies/**'
-      - 'OWNERS'
-      - 'CODEOWNERS'
-      - 'external-images.yaml'
+      - "dependencies/**"
+      - "OWNERS"
+      - "CODEOWNERS"
+      - "external-images.yaml"
   workflow_dispatch:
 
 jobs:
   verify-manifests:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
+      - name: Checkout code
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Setup Golang
@@ -31,13 +31,13 @@ jobs:
   markdown-link-check:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
+      - name: Checkout code
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - name: Install node.js
+      - name: Install Node.js
         uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6
         with:
           node-version: "24.x"
-      - name: Install md-check-link
+      - name: Install markdown link checker
         run: npm install -g md-check-link
       - name: Verify links
         run: |

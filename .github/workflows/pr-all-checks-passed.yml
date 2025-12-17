@@ -1,4 +1,4 @@
-name: All Checks passed
+name: All Checks Passed
 
 permissions:
   contents: read
@@ -17,6 +17,8 @@ on:
         milestoned,
       ]
   workflow_run:
+    branches-ignore:
+      - main
     workflows: ["PR Integration"]
     types:
       - completed
@@ -29,8 +31,9 @@ jobs:
       checks: read # Required for checking the status of actions
       contents: read
     steps:
-      - uses: wechuli/allcheckspassed@f423b273f5fdf73582e41f8f6f0f204d69c27379 # v2.1.0
+      - name: Check if all checks passed
+        uses: wechuli/allcheckspassed@f423b273f5fdf73582e41f8f6f0f204d69c27379 # v2.1.0
         with:
-          delay: '0'
-          retries: '30'
-          polling_interval: '1'
+          delay: "0"
+          retries: "30"
+          polling_interval: "1"

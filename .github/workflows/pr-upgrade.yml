@@ -37,57 +37,67 @@ jobs:
   upgrade:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
+      - name: Checkout code
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      - name: Setup Golang
-        uses: "./.github/template/setup-golang"
-
-      - name: Check out latest tag
+      - name: Checkout latest release
         id: latest-tag
         shell: bash
         run: |
-          git fetch --tags
-          LATEST_TAG=$(git tag --sort=-creatordate | sed -n 1p)
-          echo "Using tag ${LATEST_TAG}"
-          git checkout ${LATEST_TAG}
-          GIT_COMMIT_SHA=$(git rev-parse --short=8 HEAD)
-          GIT_COMMIT_DATE=$(git show -s --format=%cd --date=format:'v%Y%m%d' ${GIT_COMMIT_SHA})
-          echo "Deploying Manager using image europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA}"
-          MANAGER_IMAGE=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA} >> $GITHUB_OUTPUT
+          # Get the latest release tag from GitHub
+          LATEST_TAG=$(curl -s https://api.github.com/repos/kyma-project/telemetry-manager/releases/latest | jq -r '.tag_name')
+          echo "Latest release tag: ${LATEST_TAG}"
+          
+          MANAGER_IMAGE=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${LATEST_TAG}
+          echo "Deploying Manager using image ${MANAGER_IMAGE}"
           echo "manager-image=${MANAGER_IMAGE}" >> $GITHUB_OUTPUT
+          
+          # Extract major.minor version from tag (e.g., 1.54.0 -> 1.54)
+          RELEASE_BRANCH=$(echo ${LATEST_TAG} | sed -E 's/^v?([0-9]+\.[0-9]+)\.[0-9]+$/release-\1/')
+          echo "Checking out release branch: ${RELEASE_BRANCH}"
+          
+          # Checkout the corresponding release branch for tests
+          git fetch origin ${RELEASE_BRANCH}
+          git checkout ${RELEASE_BRANCH}
+          echo "release-branch=${RELEASE_BRANCH}" >> $GITHUB_OUTPUT
 
       - name: Setup test environment
         uses: "./.github/template/test-setup"
-        env:
-          MANAGER_IMAGE: ${{ steps.latest-tag.outputs.manager-image }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           experimental: true
+          manager-image: ${{ steps.latest-tag.outputs.manager-image }}
+        env:
+          #TODO: Remove after 1.54.0 release
+          MANAGER_IMAGE: ${{ steps.latest-tag.outputs.manager-image }}
 
       - name: Run tests on latest tag
         shell: bash
         run: |
           go test -v -count=1 -timeout=10m -run="^(TestLogsFluentBitUpgrade|TestLogsUpgrade|TestMetricsUpgrade|TestTracesUpgrade)/before_upgrade$" ./test/e2e/upgrade/...
 
-      - name: Switch back to current revision
+      - name: Checkout current revision
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
+      - name: Setup Golang
+        uses: "./.github/template/setup-golang"
+
       # wait for the build to complete so that the manager image is available
-      - name: Wait for the Build Image workflow to complete
+      - name: Wait for build image workflow to complete
         run: "./hack/await_image.sh"
         env:
           # sets trigger depending on event being either pull_request or merge_group
           IMAGE_TAG: "${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}"
-          QUERY_INTERVAL: 30
           IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
+          QUERY_INTERVAL: 30
 
       - name: Deploy with current version
         shell: bash
         run: |
           # add the tag PR-<number> to the image if it is a PR, if the trigger is merge_group, then add the sha as the tag
+          # it is important to use deploy-experimental-no-fips to match the setup done before
           TAG="${{ github.event_name == 'pull_request' && 'PR-' || '' }}${{ github.event.number || github.event.merge_group.head_sha }}"
-          MANAGER_IMAGE=europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:${TAG} make deploy-experimental
+          MANAGER_IMAGE=europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:${TAG} make deploy-experimental-no-fips
 
       - name: Wait for manager readiness
         shell: bash
@@ -98,7 +108,7 @@ jobs:
         run: |
           go test -v -count=1 -timeout=10m -run="^(TestLogsFluentBitUpgrade|TestLogsUpgrade|TestMetricsUpgrade|TestTracesUpgrade)/after_upgrade$" ./test/e2e/upgrade/...
 
-      - name: Clean-up test environment
+      - name: Cleanup test environment
         uses: "./.github/template/test-cleanup"
         if: ${{ !cancelled()  }}
         with:

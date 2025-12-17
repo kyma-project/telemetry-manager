@@ -7,6 +7,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
+
+	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
 func TestMakeConfigMarshalling(t *testing.T) {
@@ -16,11 +18,16 @@ func TestMakeConfigMarshalling(t *testing.T) {
 		ConfigPath:             "/dummy-configpath/",
 		AlertRuleFileName:      "dymma-alerts.yml",
 	})
-	configYaml, err := yaml.Marshal(config)
+	configYAML, err := yaml.Marshal(config)
 	require.NoError(t, err)
 
 	goldenFilePath := filepath.Join("testdata", "config.yaml")
+	if testutils.ShouldUpdateGoldenFiles() {
+		testutils.UpdateGoldenFileYAML(t, goldenFilePath, configYAML)
+		return
+	}
+
 	goldenFile, err := os.ReadFile(goldenFilePath)
 	require.NoError(t, err, "failed to load golden file")
-	require.Equal(t, string(goldenFile), string(configYaml))
+	require.Equal(t, string(goldenFile), string(configYAML))
 }

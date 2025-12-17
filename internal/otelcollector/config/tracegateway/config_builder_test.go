@@ -10,6 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -18,10 +19,9 @@ func TestBuildConfig(t *testing.T) {
 	sut := Builder{Reader: fakeClient}
 
 	tests := []struct {
-		name                string
-		pipelines           []telemetryv1alpha1.TracePipeline
-		goldenFileName      string
-		overwriteGoldenFile bool
+		name           string
+		pipelines      []telemetryv1alpha1.TracePipeline
+		goldenFileName string
 	}{
 		{
 			name: "single pipeline",
@@ -131,8 +131,10 @@ func TestBuildConfig(t *testing.T) {
 	}
 
 	buildOptions := BuildOptions{
-		ClusterName:   "${KUBERNETES_SERVICE_HOST}",
-		CloudProvider: "test-cloud-provider",
+		Cluster: common.ClusterOptions{
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
+			CloudProvider: "test-cloud-provider",
+		},
 	}
 
 	for _, tt := range tests {
@@ -143,12 +145,8 @@ func TestBuildConfig(t *testing.T) {
 			require.NoError(t, err, "failed to marshal config")
 
 			goldenFilePath := filepath.Join("testdata", tt.goldenFileName)
-			if tt.overwriteGoldenFile {
-				err = os.WriteFile(goldenFilePath, configYAML, 0600)
-				require.NoError(t, err, "failed to overwrite golden file")
-
-				t.Fatalf("Golden file %s has been saved, please verify it and set the overwriteGoldenFile flag to false", goldenFilePath)
-
+			if testutils.ShouldUpdateGoldenFiles() {
+				testutils.UpdateGoldenFileYAML(t, goldenFilePath, configYAML)
 				return
 			}
 

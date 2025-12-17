@@ -49,11 +49,11 @@ jobs:
         run: |
           cat dependencies/telemetry-self-monitor/envs >> "$GITHUB_OUTPUT"
 
-      - name: get commit short sha
+      - name: Get commit short SHA
         id: get-short-sha
         run: echo "short-sha=$(git rev-parse --short $GITHUB_SHA)" >> $GITHUB_OUTPUT
 
-      - name: build image tag
+      - name: Build image tag
         if: github.event_name == 'push'
         id: build-tag
         run: echo "build-tag=${{ steps.load-envs.outputs.PROMETHEUS_VERSION }}-${{ steps.get-short-sha.outputs.short-sha }}" >> $GITHUB_OUTPUT

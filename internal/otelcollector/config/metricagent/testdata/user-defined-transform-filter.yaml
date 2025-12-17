@@ -24,10 +24,10 @@ service:
                 - memory_limiter
                 - filter/drop-non-pvc-volumes-metrics
                 - filter/drop-virtual-network-interfaces
-                - resource/drop-service-name
+                - transform/drop-service-name
                 - transform/insert-skip-enrichment-attribute
                 - transform/set-instrumentation-scope-runtime
-                - resource/set-kyma-input-name-runtime
+                - transform/set-kyma-input-name-runtime
             exporters:
                 - routing/runtime-input
         metrics/output-test1:
@@ -36,9 +36,9 @@ service:
                 - routing/runtime-input
             processors:
                 - filter/drop-envoy-metrics-if-disabled
-                - resource/insert-cluster-attributes
-                - resource/drop-skip-enrichment-attribute
-                - resource/drop-kyma-attributes
+                - transform/insert-cluster-attributes
+                - transform/drop-skip-enrichment-attribute
+                - transform/drop-kyma-attributes
                 - transform/user-defined-test1
                 - filter/user-defined-test1
                 - batch
@@ -197,33 +197,31 @@ processors:
         check_interval: 1s
         limit_percentage: 75
         spike_limit_percentage: 15
-    resource/drop-kyma-attributes:
-        attributes:
-            - action: delete
-              pattern: kyma.*
-    resource/drop-service-name:
-        attributes:
-            - action: delete
-              key: service.name
-    resource/drop-skip-enrichment-attribute:
-        attributes:
-            - action: delete
-              key: io.kyma-project.telemetry.skip_enrichment
-    resource/insert-cluster-attributes:
-        attributes:
-            - action: insert
-              key: k8s.cluster.name
-            - action: insert
-              key: k8s.cluster.uid
-    resource/set-kyma-input-name-runtime:
-        attributes:
-            - action: insert
-              key: kyma.input.name
-              value: runtime
     service_enrichment:
         resource_attributes:
             - kyma.kubernetes_io_app_name
             - kyma.app_name
+    transform/drop-kyma-attributes:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - delete_matching_keys(resource.attributes, "kyma.*")
+    transform/drop-service-name:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - delete_key(resource.attributes, "service.name")
+    transform/drop-skip-enrichment-attribute:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - delete_key(resource.attributes, "io.kyma-project.telemetry.skip_enrichment")
+    transform/insert-cluster-attributes:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(resource.attributes["k8s.cluster.name"], "") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
+                - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
     transform/insert-skip-enrichment-attribute:
         error_mode: ignore
         metric_statements:
@@ -243,6 +241,11 @@ processors:
                 - set(scope.name, "io.kyma-project.telemetry/runtime") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
                 - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
                 - set(scope.name, "io.kyma-project.telemetry/runtime") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
+    transform/set-kyma-input-name-runtime:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(resource.attributes["kyma.input.name"], "runtime")
     transform/user-defined-test1:
         error_mode: ignore
         metric_statements:

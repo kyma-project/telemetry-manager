@@ -27,14 +27,13 @@ type Builder struct {
 }
 
 type BuildOptions struct {
+	Cluster common.ClusterOptions
+
 	// IstioActive indicates whether Istio is installed in the cluster.
 	IstioActive                 bool
 	IstioCertPath               string
 	InstrumentationScopeVersion string
 	AgentNamespace              string
-	ClusterName                 string
-	ClusterUID                  string
-	CloudProvider               string
 	Enrichments                 *operatorv1alpha1.EnrichmentSpec
 }
 
@@ -310,9 +309,10 @@ func (b *Builder) addFilterDropVirtualNetworkInterfacesProcessor() buildComponen
 // The Prometheus receiver sets the service.name attribute by default to the scrape job name,
 // which prevents it from being enriched by the service name processor. We currently remove it here,
 // but we should investigate configuring the receiver to not set this attribute in the first place.
+// (4 Dec. 2025, TeodorSAP): No solution found yet.
 func (b *Builder) addDropServiceNameProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		b.StaticComponentID(common.ComponentIDResourceDropServiceNameProcessor),
+		b.StaticComponentID(common.ComponentIDDropServiceNameProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
 			return dropServiceNameProcessorConfig()
 		},
@@ -350,7 +350,8 @@ func (b *Builder) addSetKymaInputNameProcessor(inputSource common.InputSourceTyp
 	return b.AddProcessor(
 		b.StaticComponentID(common.InputName[inputSource]),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			return common.KymaInputNameProcessorConfig(inputSource)
+			transformStatements := common.KymaInputNameProcessorStatements(inputSource)
+			return common.MetricTransformProcessorConfig(transformStatements)
 		},
 	)
 }
@@ -399,9 +400,8 @@ func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildCo
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDInsertClusterAttributesProcessor),
 		func(tp *telemetryv1alpha1.MetricPipeline) any {
-			return common.InsertClusterAttributesProcessorConfig(
-				opts.ClusterName, opts.ClusterUID, opts.CloudProvider,
-			)
+			transformStatements := common.InsertClusterAttributesProcessorStatements(opts.Cluster)
+			return common.MetricTransformProcessorConfig(transformStatements)
 		},
 	)
 }
@@ -410,14 +410,13 @@ func (b *Builder) addDropSkipEnrichmentAttributeProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDDropSkipEnrichmentAttributeProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			return &common.ResourceProcessor{
-				Attributes: []common.AttributeAction{
-					{
-						Action: common.AttributeActionDelete,
-						Key:    common.SkipEnrichmentAttribute,
-					},
+			transformStatements := []common.TransformProcessorStatements{{
+				Statements: []string{
+					"delete_key(resource.attributes, \"io.kyma-project.telemetry.skip_enrichment\")",
 				},
-			}
+			}}
+
+			return common.MetricTransformProcessorConfig(transformStatements)
 		},
 	)
 }
@@ -426,7 +425,8 @@ func (b *Builder) addDropKymaAttributesProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDDropKymaAttributesProcessor),
 		func(mp *telemetryv1alpha1.MetricPipeline) any {
-			return common.DropKymaAttributesProcessorConfig()
+			transformStatements := common.DropKymaAttributesProcessorStatements()
+			return common.MetricTransformProcessorConfig(transformStatements)
 		},
 	)
 }
@@ -440,9 +440,8 @@ func (b *Builder) addUserDefinedTransformProcessor() buildComponentFunc {
 			}
 
 			transformStatements := common.TransformSpecsToProcessorStatements(mp.Spec.Transforms)
-			transformProcessor := common.MetricTransformProcessorConfig(transformStatements)
 
-			return transformProcessor
+			return common.MetricTransformProcessorConfig(transformStatements)
 		},
 	)
 }
@@ -1109,15 +1108,14 @@ func shouldEnableOAuth2(tp *telemetryv1alpha1.MetricPipeline) bool {
 
 // Processor configuration functions (merged from processors.go)
 
-func dropServiceNameProcessorConfig() *common.ResourceProcessor {
-	return &common.ResourceProcessor{
-		Attributes: []common.AttributeAction{
-			{
-				Action: "delete",
-				Key:    "service.name",
+func dropServiceNameProcessorConfig() *common.TransformProcessor {
+	return common.MetricTransformProcessorConfig(
+		[]common.TransformProcessorStatements{{
+			Statements: []string{
+				"delete_key(resource.attributes, \"service.name\")",
 			},
-		},
-	}
+		}},
+	)
 }
 
 func insertSkipEnrichmentAttributeProcessorConfig() *common.TransformProcessor {

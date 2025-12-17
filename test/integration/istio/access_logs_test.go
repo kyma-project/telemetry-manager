@@ -13,6 +13,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	"github.com/kyma-project/telemetry-manager/test/testkit/istio"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -43,15 +44,12 @@ func TestAccessLogsFluentBit(t *testing.T) {
 	metricPodURL := suite.ProxyClient.ProxyURLForPod(permissiveNs, sampleApp.Name(), sampleApp.MetricsEndpoint(), sampleApp.MetricsPort())
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(backendNs).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNs).K8sObject(),
 		&logPipeline,
 		sampleApp.Pod().K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
 
-	t.Cleanup(func() {
-		require.NoError(t, kitk8s.DeleteObjects(resources...))
-	})
 	require.NoError(t, kitk8s.CreateObjects(t, resources...))
 
 	assert.BackendReachable(t, backend)
