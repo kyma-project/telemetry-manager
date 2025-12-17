@@ -65,6 +65,7 @@ func IsCustomFilterDefined(filters []telemetryv1alpha1.FluentBitFilter) bool {
 			return true
 		}
 	}
+
 	return false
 }
 

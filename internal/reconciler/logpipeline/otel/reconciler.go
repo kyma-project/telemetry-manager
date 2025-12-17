@@ -452,7 +452,6 @@ func isLogAgentRequired(pipeline *telemetryv1alpha1.LogPipeline) bool {
 
 func (r *Reconciler) trackFeaturesUsage(pipelines []telemetryv1alpha1.LogPipeline) {
 	for i := range pipelines {
-
 		// General features
 		if sharedtypesutils.IsOTLPInputEnabled(pipelines[i].Spec.Input.OTLP) {
 			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureInputOTLP, pipelines[i].Name)

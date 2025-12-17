@@ -399,7 +399,6 @@ func (r *Reconciler) getK8sClusterUID(ctx context.Context) (string, error) {
 
 func (r *Reconciler) trackOTTLFeaturesUsage(pipelines []telemetryv1alpha1.TracePipeline) {
 	for i := range pipelines {
-
 		// General features
 		if sharedtypesutils.IsTransformDefined(pipelines[i].Spec.Transforms) {
 			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureTransform, pipelines[i].Name)

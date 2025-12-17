@@ -45,6 +45,19 @@ func (v *LogPipelineValidator) ValidateUpdate(ctx context.Context, oldObj, newOb
 	return v.validateLogPipeline(ctx, logPipeline)
 }
 
+func (v *LogPipelineValidator) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
+	return nil, nil
+}
+
+func validateFilterTransform(ctx context.Context, filterSpec []telemetryv1beta1.FilterSpec, transformSpec []telemetryv1beta1.TransformSpec) error {
+	err := webhookutils.ValidateFilterTransform(ctx, ottl.SignalTypeLog, filterSpec, transformSpec)
+	if err != nil {
+		return fmt.Errorf(conditions.MessageForOtelLogPipeline(conditions.ReasonOTTLSpecInvalid), err.Error())
+	}
+
+	return nil
+}
+
 func (v *LogPipelineValidator) validateLogPipeline(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (admission.Warnings, error) {
 	var warnings admission.Warnings
 
@@ -77,6 +90,7 @@ func (v *LogPipelineValidator) validateLogPipeline(ctx context.Context, pipeline
 	if logpipelineutils.IsApplicationInputEnabled(&pipeline.Spec.Input) && pipeline.Spec.Input.Application.FluentBitDropLabels != nil {
 		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "input.application.dropLabels"))
 	}
+
 	if logpipelineutils.IsApplicationInputEnabled(&pipeline.Spec.Input) && pipeline.Spec.Input.Application.FluentBitKeepAnnotations != nil {
 		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "input.application.keepAnnotations"))
 	}
@@ -86,17 +100,4 @@ func (v *LogPipelineValidator) validateLogPipeline(ctx context.Context, pipeline
 
 func renderDeprecationWarning(pipelineName string, attribute string) string {
 	return fmt.Sprintf("LogPipeline '%s' uses the attribute '%s' which is based on the deprecated FluentBit technology stack. Please migrate to an Open Telemetry based pipeline instead. See the documentation: %s", pipelineName, attribute, migrationGuideLink)
-}
-
-func (v *LogPipelineValidator) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
-	return nil, nil
-}
-
-func validateFilterTransform(ctx context.Context, filterSpec []telemetryv1beta1.FilterSpec, transformSpec []telemetryv1beta1.TransformSpec) error {
-	err := webhookutils.ValidateFilterTransform(ctx, ottl.SignalTypeLog, filterSpec, transformSpec)
-	if err != nil {
-		return fmt.Errorf(conditions.MessageForOtelLogPipeline(conditions.ReasonOTTLSpecInvalid), err.Error())
-	}
-
-	return nil
 }

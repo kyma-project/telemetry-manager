@@ -45,6 +45,10 @@ func (v *LogPipelineValidator) ValidateUpdate(ctx context.Context, oldObj, newOb
 	return v.validateLogPipeline(ctx, logPipeline)
 }
 
+func (v *LogPipelineValidator) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
+	return nil, nil
+}
+
 func (v *LogPipelineValidator) validateLogPipeline(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) (admission.Warnings, error) {
 	var warnings admission.Warnings
 
@@ -75,15 +79,12 @@ func (v *LogPipelineValidator) validateLogPipeline(ctx context.Context, pipeline
 	if isRuntimeInputEnabled(&pipeline.Spec.Input) && pipeline.Spec.Input.Runtime.FluentBitDropLabels != nil {
 		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "input.runtime.dropLabels"))
 	}
+
 	if isRuntimeInputEnabled(&pipeline.Spec.Input) && pipeline.Spec.Input.Runtime.FluentBitKeepAnnotations != nil {
 		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "input.runtime.keepAnnotations"))
 	}
 
 	return warnings, nil
-}
-
-func (v *LogPipelineValidator) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
-	return nil, nil
 }
 
 func renderDeprecationWarning(pipelineName string, attribute string) string {
@@ -96,6 +97,7 @@ func isCustomFilterDefined(filters []telemetryv1beta1.FluentBitFilter) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
