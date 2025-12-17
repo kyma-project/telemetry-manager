@@ -286,7 +286,7 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(ctx context.Context, con
 	podLabels := make(map[string]string)
 	labels := make(map[string]string)
 
-	//fetch labels defined by operator from template spec and append them to podLabels and labels
+	// fetch labels defined by operator from template spec and append them to podLabels and labels
 	// Apply the user defied labels before applying ours
 	if gad.specTemplate != nil && gad.specTemplate.Metadata != nil && len(gad.specTemplate.Metadata.Labels) > 0 {
 		maps.Copy(podLabels, gad.specTemplate.Metadata.Labels)

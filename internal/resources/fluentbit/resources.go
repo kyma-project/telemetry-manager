@@ -316,7 +316,7 @@ func (aad *AgentApplierDeleter) makeDaemonSet(ctx context.Context, namespace str
 	labels := make(map[string]string)
 	podLabels := make(map[string]string)
 
-	//fetch labels defined by operator from template spec and append them to podLabels and labels
+	// fetch labels defined by operator from template spec and append them to podLabels and labels
 	// Apply the user defied labels before applying ours
 	if aad.specTemplate != nil && aad.specTemplate.Metadata != nil && len(aad.specTemplate.Metadata.Labels) > 0 {
 		maps.Copy(labels, aad.specTemplate.Metadata.Labels)

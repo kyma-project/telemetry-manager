@@ -16,8 +16,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
@@ -226,6 +226,7 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(ctx context.Context, configCh
 		maps.Copy(annotations, aad.specTemplate.Metadata.Annotations)
 		maps.Copy(podAnnotations, aad.specTemplate.Metadata.Annotations)
 	}
+
 	maps.Copy(podAnnotations, aad.makeAnnotationsFunc(configChecksum, opts))
 
 	// Add pod options shared between all agents
@@ -237,7 +238,7 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(ctx context.Context, configCh
 	podLabels := make(map[string]string)
 	labels := make(map[string]string)
 
-	//fetch labels defined by operator from template spec and append them to podLabels and labels
+	// fetch labels defined by operator from template spec and append them to podLabels and labels
 	// Apply the user defied labels before applying ours
 	if aad.specTemplate != nil && aad.specTemplate.Metadata != nil && len(aad.specTemplate.Metadata.Labels) > 0 {
 		maps.Copy(podLabels, aad.specTemplate.Metadata.Labels)
