@@ -69,4 +69,4 @@ additionalMetadata:
     labels:
     # custom-label: my-value
     annotations:
-    # custom-annotation: my-value
+# custom-annotation: my-value
