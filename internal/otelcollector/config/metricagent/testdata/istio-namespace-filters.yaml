@@ -176,8 +176,8 @@ processors:
         error_mode: ignore
         metric_statements:
             - statements:
-                - set(resource.attributes["k8s.cluster.name"], "")
-                - set(resource.attributes["k8s.cluster.uid"], "")
+                - set(resource.attributes["k8s.cluster.name"], "") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
+                - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
     transform/set-instrumentation-scope-istio:
         error_mode: ignore
         metric_statements:

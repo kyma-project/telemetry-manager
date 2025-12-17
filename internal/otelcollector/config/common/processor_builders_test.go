@@ -14,9 +14,9 @@ func TestInsertClusterAttributesProcessorStatements(t *testing.T) {
 
 	expectedProcessorStatements := []TransformProcessorStatements{{
 		Statements: []string{
-			"set(resource.attributes[\"k8s.cluster.name\"], \"test-cluster\")",
-			"set(resource.attributes[\"k8s.cluster.uid\"], \"test-cluster-uid\")",
-			"set(resource.attributes[\"cloud.provider\"], \"test-cloud-provider\")",
+			"set(resource.attributes[\"k8s.cluster.name\"], \"test-cluster\") where resource.attributes[\"k8s.cluster.name\"] == nil or resource.attributes[\"k8s.cluster.name\"] == \"\"",
+			"set(resource.attributes[\"k8s.cluster.uid\"], \"test-cluster-uid\") where resource.attributes[\"k8s.cluster.uid\"] == nil or resource.attributes[\"k8s.cluster.uid\"] == \"\"",
+			"set(resource.attributes[\"cloud.provider\"], \"test-cloud-provider\") where resource.attributes[\"cloud.provider\"] == nil or resource.attributes[\"cloud.provider\"] == \"\"",
 		},
 	}}
 
@@ -36,8 +36,8 @@ func TestInsertClusterAttributesProcessorStatementsWithEmptyValues(t *testing.T)
 
 	expectedProcessorStatements := []TransformProcessorStatements{{
 		Statements: []string{
-			"set(resource.attributes[\"k8s.cluster.name\"], \"\")",
-			"set(resource.attributes[\"k8s.cluster.uid\"], \"\")",
+			"set(resource.attributes[\"k8s.cluster.name\"], \"\") where resource.attributes[\"k8s.cluster.name\"] == nil or resource.attributes[\"k8s.cluster.name\"] == \"\"",
+			"set(resource.attributes[\"k8s.cluster.uid\"], \"\") where resource.attributes[\"k8s.cluster.uid\"] == nil or resource.attributes[\"k8s.cluster.uid\"] == \"\"",
 		},
 	}}
 

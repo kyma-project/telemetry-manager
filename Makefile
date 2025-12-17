@@ -195,6 +195,7 @@ check-clean: generate manifests manifests-experimental crd-docs-gen generate-e2e
 	@git diff --name-only --exit-code || (echo "Generated files are not up-to-date. Please run 'make generate manifests manifests-experimental crd-docs-gen generate-e2e-targets' to update them." && exit 1)
 
 ##@ Testing
+
 .PHONY: test
 test: manifests generate fmt vet tidy ## Run all unit tests
 	go test ./test/testkit/matchers/...
@@ -206,6 +207,24 @@ test: manifests generate fmt vet tidy ## Run all unit tests
 check-coverage: $(GO_TEST_COVERAGE) ## Check test coverage against thresholds
 	go test $$(go list ./... | grep -v /test/) -short -coverprofile=cover.out -covermode=atomic -coverpkg=./...
 	$(GO_TEST_COVERAGE) --config=./.testcoverage.yml
+
+.PHONY: update-golden-files
+update-golden-files: ## Update all golden files for config builder tests
+	@echo "Updating golden files for otelcollector config builder tests..."
+	@go test ./internal/otelcollector/config/tracegateway -v -run TestBuildConfig -- -update-golden-files || true
+	@go test ./internal/otelcollector/config/metricgateway -v -run TestBuildConfig -- -update-golden-files || true
+	@go test ./internal/otelcollector/config/loggateway -v -run TestBuildConfig -- -update-golden-files || true
+	@go test ./internal/otelcollector/config/logagent -v -run TestBuildConfig -- -update-golden-files || true
+	@go test ./internal/otelcollector/config/metricagent -v -run TestBuildConfig -- -update-golden-files || true
+	@echo "Updating golden files for selfmonitor tests..."
+	@go test ./internal/selfmonitor/config -v -run TestMakeConfigMarshalling -- -update-golden-files || true
+	@go test ./internal/selfmonitor/config -v -run TestMakeRules -- -update-golden-files || true
+	@echo "Updating golden files for resource tests..."
+	@go test ./internal/resources/fluentbit -v -run TestAgent_ApplyResources -- -update-golden-files || true
+	@go test ./internal/resources/otelcollector -v -run TestAgent_ApplyResources -- -update-golden-files || true
+	@go test ./internal/resources/otelcollector -v -run TestGateway_ApplyResources -- -update-golden-files || true
+	@go test ./internal/resources/selfmonitor -v -run TestApplySelfMonitorResources -- -update-golden-files || true
+	@echo "All golden files updated successfully"
 
 ##@ Build
 
@@ -252,6 +271,7 @@ tls.crt: tls.key
 gen-webhook-cert: tls.key tls.crt ## Generate TLS certificates for webhook development
 
 ##@ Deployment
+
 ifndef ignore-not-found
   ignore-not-found = false
 endif
@@ -334,6 +354,7 @@ undeploy-experimental: $(HELM) ## Undeploy telemetry manager with experimental f
 		--set nameOverride=telemetry \
 		--namespace kyma-system \
 	| kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+
 ##@ Documentation
 
 .PHONY: update-metrics-docs
