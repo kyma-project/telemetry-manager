@@ -25,9 +25,9 @@ service:
             receivers: []
             processors:
                 - filter/drop-envoy-metrics-if-disabled
-                - resource/insert-cluster-attributes
-                - resource/drop-skip-enrichment-attribute
-                - resource/drop-kyma-attributes
+                - transform/insert-cluster-attributes
+                - transform/drop-skip-enrichment-attribute
+                - transform/drop-kyma-attributes
                 - batch
             exporters:
                 - otlphttp/test
@@ -99,24 +99,26 @@ processors:
                   name: k8s.pod.uid
             - sources:
                 - from: connection
-    resource/drop-kyma-attributes:
-        attributes:
-            - action: delete
-              pattern: kyma.*
-    resource/drop-skip-enrichment-attribute:
-        attributes:
-            - action: delete
-              key: io.kyma-project.telemetry.skip_enrichment
-    resource/insert-cluster-attributes:
-        attributes:
-            - action: insert
-              key: k8s.cluster.name
-            - action: insert
-              key: k8s.cluster.uid
     service_enrichment:
         resource_attributes:
             - kyma.kubernetes_io_app_name
             - kyma.app_name
+    transform/drop-kyma-attributes:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - delete_matching_keys(resource.attributes, "kyma.*")
+    transform/drop-skip-enrichment-attribute:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - delete_key(resource.attributes, "io.kyma-project.telemetry.skip_enrichment")
+    transform/insert-cluster-attributes:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(resource.attributes["k8s.cluster.name"], "") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
+                - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
 exporters:
     otlphttp/test:
         endpoint: ${OTLP_ENDPOINT_TEST}
