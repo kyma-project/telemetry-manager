@@ -389,9 +389,10 @@ func (aad *AgentApplierDeleter) makeDaemonSet(ctx context.Context, namespace str
 	ds := &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      LogAgentName,
-			Namespace: namespace,
-			Labels:    makeLabels(),
+			Name:        LogAgentName,
+			Namespace:   namespace,
+			Labels:      labels,
+			Annotations: annotations,
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
