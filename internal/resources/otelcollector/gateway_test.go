@@ -9,6 +9,7 @@ import (
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -29,16 +30,6 @@ func TestGateway_ApplyResources(t *testing.T) {
 	image := "opentelemetry/collector:dummy"
 	priorityClassName := "normal"
 
-	specTemplate := &SpecTemplate{
-		Pod: &corev1.PodTemplateSpec{
-			Spec: corev1.PodSpec{
-				Containers: []corev1.Container{
-					{},
-				},
-			},
-		},
-	}
-
 	tests := []struct {
 		name           string
 		sut            *GatewayApplierDeleter
@@ -47,51 +38,117 @@ func TestGateway_ApplyResources(t *testing.T) {
 	}{
 		{
 			name:           "metric gateway",
-			sut:            NewMetricGatewayApplierDeleter(globals, image, priorityClassName, specTemplate),
+			sut:            NewMetricGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{}),
 			goldenFilePath: "testdata/metric-gateway.yaml",
 		},
 		{
 			name:           "metric gateway with istio",
-			sut:            NewMetricGatewayApplierDeleter(globals, image, priorityClassName, specTemplate),
+			sut:            NewMetricGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{}),
 			istioEnabled:   true,
 			goldenFilePath: "testdata/metric-gateway-istio.yaml",
 		},
 		{
 			name:           "metric gateway with FIPS mode enabled",
-			sut:            NewMetricGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName, specTemplate),
+			sut:            NewMetricGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName, &SpecTemplate{}),
 			goldenFilePath: "testdata/metric-gateway-fips-enabled.yaml",
 		},
 		{
+			name: "metric gateway with user defined labels",
+			sut: NewMetricGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{
+				Metadata: &metav1.ObjectMeta{
+					Labels: map[string]string{
+						"foo": "bar",
+					},
+				},
+			}),
+			goldenFilePath: "testdata/metric-gateway-with-user-labels.yaml",
+		},
+		{
+			name: "metric gateway with user defined annotations",
+			sut: NewMetricGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{
+				Metadata: &metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"foo.io/foo": "bar",
+					},
+				},
+			}),
+			goldenFilePath: "testdata/metric-gateway-with-user-annotations.yaml",
+		},
+		{
 			name:           "trace gateway",
-			sut:            NewTraceGatewayApplierDeleter(globals, image, priorityClassName, specTemplate),
+			sut:            NewTraceGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{}),
 			goldenFilePath: "testdata/trace-gateway.yaml",
 		},
 		{
 			name:           "trace gateway with istio",
-			sut:            NewTraceGatewayApplierDeleter(globals, image, priorityClassName, specTemplate),
+			sut:            NewTraceGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{}),
 			istioEnabled:   true,
 			goldenFilePath: "testdata/trace-gateway-istio.yaml",
 		},
 		{
 			name:           "trace gateway with FIPS mode enabled",
-			sut:            NewTraceGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName, specTemplate),
+			sut:            NewTraceGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName, &SpecTemplate{}),
 			goldenFilePath: "testdata/trace-gateway-fips-enabled.yaml",
 		},
 		{
+			name: "trace gateway with user defined labels",
+			sut: NewTraceGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{
+				Metadata: &metav1.ObjectMeta{
+					Labels: map[string]string{
+						"foo": "bar",
+					},
+				},
+			}),
+			goldenFilePath: "testdata/trace-gateway-with-user-labels.yaml",
+		},
+		{
+			name: "trace gateway with user defined annotations",
+			sut: NewTraceGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{
+				Metadata: &metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"foo.io/foo": "bar",
+					},
+				},
+			}),
+			goldenFilePath: "testdata/trace-gateway-with-user-annotations.yaml",
+		},
+		{
 			name:           "log gateway",
-			sut:            NewLogGatewayApplierDeleter(globals, image, priorityClassName, specTemplate),
+			sut:            NewLogGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{}),
 			goldenFilePath: "testdata/log-gateway.yaml",
 		},
 		{
 			name:           "log gateway with istio",
-			sut:            NewLogGatewayApplierDeleter(globals, image, priorityClassName, specTemplate),
+			sut:            NewLogGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{}),
 			istioEnabled:   true,
 			goldenFilePath: "testdata/log-gateway-istio.yaml",
 		},
 		{
 			name:           "log gateway with FIPS mode enabled",
-			sut:            NewLogGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName, specTemplate),
+			sut:            NewLogGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName, &SpecTemplate{}),
 			goldenFilePath: "testdata/log-gateway-fips-enabled.yaml",
+		},
+		{
+			name: "log gateway with user defined labels",
+			sut: NewLogGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{
+				Metadata: &metav1.ObjectMeta{
+					Labels: map[string]string{
+						"foo": "bar",
+					},
+				},
+			}),
+			goldenFilePath: "testdata/log-gateway-with-user-labels.yaml",
+		},
+		{
+			name: "log gateway with user defined annotations",
+			sut: NewLogGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{
+				Metadata: &metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"foo.io/foo": "bar",
+					},
+				},
+			}),
+			goldenFilePath: "testdata/log-gateway-with-user-annotations.yaml",
 		},
 	}
 

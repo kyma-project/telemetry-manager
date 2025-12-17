@@ -9,6 +9,7 @@ import (
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -45,6 +46,28 @@ func TestAgent_ApplyResources(t *testing.T) {
 				},
 			}),
 			goldenFilePath: "testdata/fluentbit.yaml",
+		},
+		{
+			name: "fluentbit with user defined labels",
+			sut: NewFluentBitApplierDeleter(namespace, image, exporterImage, initContainerImage, priorityClassName, &SpecTemplate{
+				Metadata: &metav1.ObjectMeta{
+					Labels: map[string]string{
+						"foo": "bar",
+					},
+				},
+			}),
+			goldenFilePath: "testdata/fluentbit_with_user_labels.yaml",
+		},
+		{
+			name: "fluentbit with user defined annotations",
+			sut: NewFluentBitApplierDeleter(namespace, image, exporterImage, initContainerImage, priorityClassName, &SpecTemplate{
+				Metadata: &metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"foo.io/foo": "bar",
+					},
+				},
+			}),
+			goldenFilePath: "testdata/fluentbit_with_user_annotations.yaml",
 		},
 	}
 

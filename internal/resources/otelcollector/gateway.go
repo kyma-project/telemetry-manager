@@ -283,13 +283,33 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 }
 
 func (gad *GatewayApplierDeleter) makeGatewayDeployment(ctx context.Context, configChecksum string, opts GatewayApplyOptions) *appsv1.Deployment {
-	labels := commonresources.MakeDefaultLabels(gad.baseName, commonresources.LabelValueK8sComponentGateway)
-	selectorLabels := commonresources.MakeDefaultSelectorLabels(gad.baseName)
 	podLabels := make(map[string]string)
+	labels := make(map[string]string)
+
+	//fetch labels defined by operator from template spec and append them to podLabels and labels
+	// Apply the user defied labels before applying ours
+	if gad.specTemplate != nil && gad.specTemplate.Metadata != nil && len(gad.specTemplate.Metadata.Labels) > 0 {
+		maps.Copy(podLabels, gad.specTemplate.Metadata.Labels)
+		maps.Copy(labels, gad.specTemplate.Metadata.Labels)
+	}
+
+	maps.Copy(labels, commonresources.MakeDefaultLabels(gad.baseName, commonresources.LabelValueK8sComponentGateway))
+	selectorLabels := commonresources.MakeDefaultSelectorLabels(gad.baseName)
+
 	maps.Copy(podLabels, labels)
 	maps.Copy(podLabels, gad.extraPodLabels)
 
-	annotations := gad.makeAnnotations(configChecksum, opts)
+	podAnnotations := make(map[string]string)
+	annotations := make(map[string]string)
+
+	// fetch annotations defined from template spec.
+	// Apply the user defied annotations before applying ours
+	if gad.specTemplate != nil && gad.specTemplate.Metadata != nil && len(gad.specTemplate.Metadata.Annotations) > 0 {
+		maps.Copy(podAnnotations, gad.specTemplate.Metadata.Annotations)
+		maps.Copy(annotations, gad.specTemplate.Metadata.Annotations)
+	}
+
+	maps.Copy(podAnnotations, gad.makeAnnotations(configChecksum, opts))
 
 	resources := gad.makeGatewayResourceRequirements(opts)
 
@@ -302,7 +322,7 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(ctx context.Context, con
 	podTemplateSpec := corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:      podLabels,
-			Annotations: annotations,
+			Annotations: podAnnotations,
 		},
 		Spec: makePodSpec(
 			gad.baseName,
@@ -326,9 +346,10 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(ctx context.Context, con
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      gad.baseName,
-			Namespace: gad.globals.TargetNamespace(),
-			Labels:    labels,
+			Name:        gad.baseName,
+			Namespace:   gad.globals.TargetNamespace(),
+			Labels:      labels,
+			Annotations: annotations,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptr.To(opts.Replicas),

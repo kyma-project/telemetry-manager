@@ -9,6 +9,7 @@ import (
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -65,6 +66,28 @@ func TestAgent_ApplyResources(t *testing.T) {
 			goldenFilePath: "testdata/metric-agent-fips-enabled.yaml",
 		},
 		{
+			name: "metric agent with user labels",
+			sut: NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName, &SpecTemplate{
+				Metadata: &metav1.ObjectMeta{
+					Labels: map[string]string{
+						"foo": "bar",
+					},
+				},
+			}),
+			goldenFilePath: "testdata/metric-agent-user-labels.yaml",
+		},
+		{
+			name: "metric agent with user annotations",
+			sut: NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName, &SpecTemplate{
+				Metadata: &metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"foo.io/foo": "bar",
+					},
+				},
+			}),
+			goldenFilePath: "testdata/metric-agent-user-annotations.yaml",
+		},
+		{
 			name: "log agent",
 			sut:  NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName, specTemplate),
 			collectorEnvVars: map[string][]byte{
@@ -88,6 +111,34 @@ func TestAgent_ApplyResources(t *testing.T) {
 				"DUMMY_ENV_VAR": []byte("foo"),
 			},
 			goldenFilePath: "testdata/log-agent-fips-enabled.yaml",
+		},
+		{
+			name: "log agent with user labels",
+			sut: NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName, &SpecTemplate{
+				Metadata: &metav1.ObjectMeta{
+					Labels: map[string]string{
+						"foo": "bar",
+					},
+				},
+			}),
+			collectorEnvVars: map[string][]byte{
+				"DUMMY_ENV_VAR": []byte("foo"),
+			},
+			goldenFilePath: "testdata/log-agent-user-labels.yaml",
+		},
+		{
+			name: "log agent with user annotations",
+			sut: NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName, &SpecTemplate{
+				Metadata: &metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"foo.io/foo": "bar",
+					},
+				},
+			}),
+			collectorEnvVars: map[string][]byte{
+				"DUMMY_ENV_VAR": []byte("foo"),
+			},
+			goldenFilePath: "testdata/log-agent-user-annotations.yaml",
 		},
 	}
 
