@@ -523,6 +523,8 @@ spec:
                                     type: object
                                 type: object
                                 x-kubernetes-validations:
+                                - message: '''clientID'' missing'
+                                  rule: (self.value != '' ) || (has(self.valueFrom))
                                 - message: Only one of 'value' or 'valueFrom' can
                                     be set
                                   rule: '!(has(self.value) && size(self.value) > 0
@@ -570,6 +572,8 @@ spec:
                                     type: object
                                 type: object
                                 x-kubernetes-validations:
+                                - message: clientSecret' missing
+                                  rule: (self.value != '' ) || (has(self.valueFrom))
                                 - message: Only one of 'value' or 'valueFrom' can
                                     be set
                                   rule: '!(has(self.value) && size(self.value) > 0
@@ -628,6 +632,11 @@ spec:
                                     type: object
                                 type: object
                                 x-kubernetes-validations:
+                                - message: tokenURL' missing
+                                  rule: (self.value != '' ) || (has(self.valueFrom))
+                                - message: '''tokenURL'' must be a valid URL'
+                                  rule: '(self.value != '''' ) ? (isURL(self.value))
+                                    : true'
                                 - message: Only one of 'value' or 'valueFrom' can
                                     be set
                                   rule: '!(has(self.value) && size(self.value) > 0
@@ -912,11 +921,11 @@ spec:
                     - message: Path is only available with HTTP protocol
                       rule: '(has(self.path) && size(self.path) > 0) ? self.protocol
                         == ''http'' : true'
-                    - message: OAuth2 authentication requires TLS to be configured
-                        when using gRPC protocol
+                    - message: OAuth2 authentication requires TLS when using gRPC
+                        protocol
                       rule: '(has(self.authentication) && has(self.authentication.oauth2)
-                        && self.protocol == ''grpc'') ? (has(self.tls) && !(has(self.tls.insecure)
-                        && self.tls.insecure == true)) : true'
+                        && self.protocol == ''grpc'' && has(self.tls)) ? !(has(self.tls.insecure)
+                        && self.tls.insecure == true) : true'
                 required:
                 - otlp
                 type: object
@@ -1900,11 +1909,11 @@ spec:
                     - message: Path is only available with HTTP protocol
                       rule: '(has(self.path) && size(self.path) > 0) ? self.protocol
                         == ''http'' : true'
-                    - message: OAuth2 authentication requires TLS to be configured
-                        when using gRPC protocol
+                    - message: OAuth2 authentication requires TLS when using gRPC
+                        protocol
                       rule: '(has(self.authentication) && has(self.authentication.oauth2)
-                        && self.protocol == ''grpc'') ? (has(self.tls) && !(has(self.tls.insecure)
-                        && self.tls.insecure == true)) : true'
+                        && self.protocol == ''grpc'' && has(self.tls)) ? !(has(self.tls.insecure)
+                        && self.tls.insecure == true) : true'
                 required:
                 - otlp
                 type: object

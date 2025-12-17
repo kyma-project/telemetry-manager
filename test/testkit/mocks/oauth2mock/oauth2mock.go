@@ -7,7 +7,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 )
 
 const (
@@ -21,8 +21,8 @@ const (
 type OAuth2Authenticator struct {
 	name                    string
 	namespace               string
-	authenticatorDeployment *kitk8s.Deployment
-	authenticatorService    *kitk8s.Service
+	authenticatorDeployment *kitk8sobjects.Deployment
+	authenticatorService    *kitk8sobjects.Service
 }
 
 func New(namespace string) *OAuth2Authenticator {
@@ -64,7 +64,7 @@ func (o *OAuth2Authenticator) K8sObjects() []client.Object {
 	var objects []client.Object
 
 	objects = append(objects, o.authenticatorDeployment.K8sObject())
-	objects = append(objects, o.authenticatorService.K8sObject(kitk8s.WithLabel("app", o.name)))
+	objects = append(objects, o.authenticatorService.K8sObject(kitk8sobjects.WithLabel("app", o.name)))
 
 	return objects
 }
@@ -90,12 +90,12 @@ func (o *OAuth2Authenticator) buildResources() {
 			},
 		},
 	}
-	o.authenticatorDeployment = kitk8s.NewDeployment(
+	o.authenticatorDeployment = kitk8sobjects.NewDeployment(
 		o.name,
 		o.namespace,
 	).WithReplicas(1).WithPodSpec(podSpec).WithLabel("app", o.name)
 
-	o.authenticatorService = kitk8s.NewService(
+	o.authenticatorService = kitk8sobjects.NewService(
 		o.name,
 		o.namespace,
 	).WithPort("http", 8080)

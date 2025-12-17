@@ -36,7 +36,7 @@ var (
 	ErrCertIsNotCA = errors.New("not a CA certificate")
 )
 
-type TLSBundle struct {
+type TLSValidationParams struct {
 	Cert *telemetryv1alpha1.ValueType
 	Key  *telemetryv1alpha1.ValueType
 	CA   *telemetryv1alpha1.ValueType
@@ -99,7 +99,7 @@ func New(client client.Client) *Validator {
 	}
 }
 
-func (v *Validator) Validate(ctx context.Context, tls TLSBundle) error {
+func (v *Validator) Validate(ctx context.Context, tls TLSValidationParams) error {
 	// 1. Values Resolution
 	if (tls.Cert == nil) != (tls.Key == nil) {
 		return ErrMissingCertKeyPair
@@ -245,7 +245,7 @@ func validateCA(ca *x509.Certificate, now time.Time) error {
 	return nil
 }
 
-func resolveValues(ctx context.Context, c client.Reader, tls TLSBundle) ([]byte, []byte, []byte, error) {
+func resolveValues(ctx context.Context, c client.Reader, tls TLSValidationParams) ([]byte, []byte, []byte, error) {
 	var certPEM, keyPEM, caPEM []byte
 
 	var err error
