@@ -264,6 +264,9 @@ linters:
       - linters:
           - importas
         text: has alias "" which is not part of config
+      - linters:
+          - staticcheck
+        text: 'SA1019: .+\.FluentBit.+ is deprecated'
       - path: (.+)\.go$
         text: Using the variable on range scope `tc` in function literal
       - path: (.+)\.go$
