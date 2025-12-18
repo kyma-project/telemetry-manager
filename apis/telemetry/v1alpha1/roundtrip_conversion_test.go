@@ -5,7 +5,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/apitesting/fuzzer"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 	"sigs.k8s.io/randfill"
 
@@ -86,16 +85,6 @@ func TestLogPipelineConversion(t *testing.T) {
 						*nsSelector = telemetryv1beta1.NamespaceSelector{
 							Include: generateValidNamespaceNames(c),
 							Exclude: generateValidNamespaceNames(c),
-						}
-					},
-				}
-			},
-			// Custom fuzzer for bool pointer field to ensure it's never set to nil
-			func(_ serializer.CodecFactory) []any {
-				return []any{
-					func(input *telemetryv1beta1.OTLPInput, c randfill.Continue) {
-						if input.Enabled == nil {
-							input.Enabled = ptr.To(c.Bool())
 						}
 					},
 				}

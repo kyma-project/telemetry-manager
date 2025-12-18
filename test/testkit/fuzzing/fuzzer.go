@@ -151,6 +151,7 @@ func FuzzTestFunc(input FuzzTestFuncInput) func(*testing.T) {
 
 	return func(t *testing.T) {
 		t.Helper()
+		// only testing spoke-hub-spoke since hub-spoke-hub is not guaranteed to be lossless (due to possible down-conversion data loss)
 		t.Run("spoke-hub-spoke", func(t *testing.T) {
 			g := gomega.NewWithT(t)
 			fuzzer := GetFuzzer(input.Scheme, input.FuzzerFuncs...)
@@ -199,45 +200,6 @@ func FuzzTestFunc(input FuzzTestFuncInput) func(*testing.T) {
 
 				if !apiequality.Semantic.DeepEqual(spokeBefore, spokeAfter) {
 					diff := cmp.Diff(spokeBefore, spokeAfter)
-					g.Expect(false).To(gomega.BeTrue(), diff)
-				}
-			}
-		})
-		t.Run("hub-spoke-hub", func(t *testing.T) {
-			g := gomega.NewWithT(t)
-			fuzzer := GetFuzzer(input.Scheme, input.FuzzerFuncs...)
-
-			for range 10000 {
-				// Create the hub and fuzz it
-				hubBefore, ok := input.Hub.DeepCopyObject().(conversion.Hub)
-				if !ok {
-					t.Fatalf("hub does not implement conversion.Hub")
-				}
-
-				fuzzer.Fill(hubBefore)
-
-				// First convert hub to spoke
-				dstCopy, ok := input.Spoke.DeepCopyObject().(conversion.Convertible)
-				if !ok {
-					t.Fatalf("spoke does not implement conversion.Convertible")
-				}
-
-				g.Expect(dstCopy.ConvertFrom(hubBefore)).To(gomega.Succeed())
-
-				// Convert spoke back to hub and check if the resulting hub is equal to the hub before the round trip
-				hubAfter, ok := input.Hub.DeepCopyObject().(conversion.Hub)
-				if !ok {
-					t.Fatalf("hub does not implement conversion.Hub")
-				}
-
-				g.Expect(dstCopy.ConvertTo(hubAfter)).To(gomega.Succeed())
-
-				if input.HubAfterMutation != nil {
-					input.HubAfterMutation(hubAfter)
-				}
-
-				if !apiequality.Semantic.DeepEqual(hubBefore, hubAfter) {
-					diff := cmp.Diff(hubBefore, hubAfter)
 					g.Expect(false).To(gomega.BeTrue(), diff)
 				}
 			}

@@ -106,12 +106,9 @@ func Convert_v1alpha1_LogPipelineInput_To_v1beta1_LogPipelineInput(in *LogPipeli
 		Exclude: excludes,
 	}
 
-	if len(in.Application.Containers.Include) > 0 || len(in.Application.Containers.Exclude) > 0 {
-		out.Runtime.Containers =
-			&telemetryv1beta1.LogPipelineContainerSelector{
-				Include: append([]string{}, in.Application.Containers.Include...),
-				Exclude: append([]string{}, in.Application.Containers.Exclude...),
-			}
+	out.Runtime.Containers = &telemetryv1beta1.LogPipelineContainerSelector{
+		Include: in.Application.Containers.Include,
+		Exclude: in.Application.Containers.Exclude,
 	}
 
 	return nil
@@ -133,18 +130,18 @@ func Convert_v1beta1_LogPipelineInput_To_v1alpha1_LogPipelineInput(in *telemetry
 		KeepOriginalBody: in.Runtime.KeepOriginalBody,
 	}
 
-	if in.Runtime.Namespaces != nil && (len(in.Runtime.Namespaces.Include) > 0 || len(in.Runtime.Namespaces.Exclude) > 0) {
+	if in.Runtime.Namespaces != nil {
 		out.Application.Namespaces = LogPipelineNamespaceSelector{
-			Include: append([]string{}, in.Runtime.Namespaces.Include...),
-			Exclude: append([]string{}, in.Runtime.Namespaces.Exclude...),
+			Include: in.Runtime.Namespaces.Include,
+			Exclude: in.Runtime.Namespaces.Exclude,
 			System:  false,
 		}
 	}
 
-	if in.Runtime.Containers != nil && (len(in.Runtime.Containers.Include) > 0 || len(in.Runtime.Containers.Exclude) > 0) {
+	if in.Runtime.Containers != nil {
 		out.Application.Containers = LogPipelineContainerSelector{
-			Include: append([]string{}, in.Runtime.Containers.Include...),
-			Exclude: append([]string{}, in.Runtime.Containers.Exclude...),
+			Include: in.Runtime.Containers.Include,
+			Exclude: in.Runtime.Containers.Exclude,
 		}
 	}
 
