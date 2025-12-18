@@ -22,6 +22,30 @@ func DeploymentReady(t *testing.T, name types.NamespacedName) {
 	isReady(t, isDeploymentReady, name, "Deployment")
 }
 
+func DeploymentHasAnnotation(t *testing.T, name types.NamespacedName, annotation map[string]string) {
+	t.Helper()
+	var deployment appsv1.Deployment
+	err := suite.K8sClient.Get(t.Context(), name, &deployment)
+	Expect(err).NotTo(HaveOccurred())
+	for key, value := range annotation {
+		val, exists := deployment.Annotations[key]
+		Expect(exists).To(BeTrueBecause("Annotation %s not found on Deployment %s", key, name.String()))
+		Expect(val).To(Equal(value), "Annotation %s value mismatch on Deployment %s", key, name.String())
+	}
+}
+
+func DeploymentHasLabel(t *testing.T, name types.NamespacedName, label map[string]string) {
+	t.Helper()
+	var deployment appsv1.Deployment
+	err := suite.K8sClient.Get(t.Context(), name, &deployment)
+	Expect(err).NotTo(HaveOccurred())
+	for key, value := range label {
+		val, exists := deployment.Labels[key]
+		Expect(exists).To(BeTrueBecause("Label %s not found on Deployment %s", key, name.String()))
+		Expect(val).To(Equal(value), "Label %s value mismatch on Deployment %s", key, name.String())
+	}
+}
+
 func DaemonSetReady(t *testing.T, name types.NamespacedName) {
 	t.Helper()
 	isReady(t, isDaemonSetReady, name, "DaemonSet")
@@ -34,6 +58,31 @@ func DaemonSetNotFound(t *testing.T, name types.NamespacedName) {
 		g.Expect(err).To(HaveOccurred())
 		g.Expect(apierrors.IsNotFound(err)).To(BeTrue())
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+}
+
+func DaemonSetHasAnnotation(t *testing.T, name types.NamespacedName, annotation map[string]string) {
+	t.Helper()
+	var daemonSet appsv1.DaemonSet
+	err := suite.K8sClient.Get(t.Context(), name, &daemonSet)
+	Expect(err).NotTo(HaveOccurred())
+	for key, value := range annotation {
+		val, exists := daemonSet.Annotations[key]
+		Expect(exists).To(BeTrueBecause("Annotation %s not found on DaemonSet %s", key, name.String()))
+		Expect(val).To(Equal(value), "Annotation %s value mismatch on DaemonSet %s", key, name.String())
+	}
+}
+
+func DaemonSetHasLabel(t *testing.T, name types.NamespacedName, label map[string]string) {
+	t.Helper()
+	var daemonSet appsv1.DaemonSet
+	err := suite.K8sClient.Get(t.Context(), name, &daemonSet)
+	Expect(err).NotTo(HaveOccurred())
+	for key, value := range label {
+		val, exists := daemonSet.Labels[key]
+		Expect(exists).To(BeTrueBecause("Label %s not found on DaemonSet %s", key, name.String()))
+		Expect(val).To(Equal(value), "Label %s value mismatch on DaemonSet %s", key, name.String())
+	}
+
 }
 
 func StatefulSetReady(t *testing.T, name types.NamespacedName) {
@@ -58,6 +107,44 @@ func PodsReady(t *testing.T, listOptions client.ListOptions) {
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(ready).To(BeTrueBecause("Pods are not ready"))
 	}, 2*periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+}
+
+func PodsHaveAnnotation(t *testing.T, listOptions client.ListOptions, annotation map[string]string) {
+	t.Helper()
+
+	var pods corev1.PodList
+	var annotationExists bool
+	err := suite.K8sClient.List(t.Context(), &pods, &listOptions)
+	Expect(err).NotTo(HaveOccurred())
+
+	for annotationKey, annotationValue := range annotation {
+		for _, pod := range pods.Items {
+			if val, exists := pod.Annotations[annotationKey]; exists && val == annotationValue {
+				annotationExists = true
+				break
+			}
+		}
+	}
+	Expect(annotationExists).To(BeTrue())
+}
+
+func PodsHaveLabel(t *testing.T, listOptions client.ListOptions, label map[string]string) {
+	t.Helper()
+	var pods corev1.PodList
+	var labelExists bool
+
+	err := suite.K8sClient.List(t.Context(), &pods, &listOptions)
+	Expect(err).NotTo(HaveOccurred())
+
+	for labelKey, labelValue := range label {
+		for _, pod := range pods.Items {
+			if val, exists := pod.Labels[labelKey]; exists && val == labelValue {
+				labelExists = true
+				break
+			}
+		}
+	}
+	Expect(labelExists).To(BeTrue())
 }
 
 func PodsHaveContainer(t *testing.T, listOptions client.ListOptions, containerName string) (bool, error) {
