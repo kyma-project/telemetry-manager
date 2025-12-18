@@ -55,18 +55,18 @@ type LogPipelineSpec struct {
 	// Input configures additional inputs for log collection.
 	// +kubebuilder:validation:Optional
 	Input LogPipelineInput `json:"input"`
-	// Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+	// Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/external-content/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
 	// FluentBitFilters configures custom Fluent Bit `filters` to transform logs. Only available when using an output of type `http` and `custom`.
 	// +kubebuilder:validation:Optional
 	FluentBitFilters []FluentBitFilter `json:"filters,omitempty"`
 	// Output configures the backend to which logs are sent. You must specify exactly one output per pipeline.
 	// +kubebuilder:validation:Required
 	Output LogPipelineOutput `json:"output"`
-	// Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+	// Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/external-content/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
 	// FluentBitFiles is a list of content snippets that are mounted as files in the Fluent Bit configuration, which can be linked in the `custom` filters and a `custom` output. Only available when using an output of type `http` and `custom`.
 	// +kubebuilder:validation:Optional
 	FluentBitFiles []FluentBitFile `json:"files,omitempty"`
-	// Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+	// Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/external-content/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
 	// FluentBitVariables is a list of mappings from Kubernetes Secret keys to environment variables. Mapped keys are mounted as environment variables, so that they are available as [FluentBitVariables](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/variables) in the `custom` filters and a `custom` output. Only available when using an output of type `http` and `custom`.
 	// +kubebuilder:validation:Optional
 	FluentBitVariables []FluentBitVariable `json:"variables,omitempty"`
@@ -99,11 +99,11 @@ type LogPipelineApplicationInput struct {
 	// Containers describes whether application logs from specific containers are selected. The options are mutually exclusive.
 	// +kubebuilder:validation:Optional
 	Containers LogPipelineContainerSelector `json:"containers"`
-	// Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+	// Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/external-content/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
 	// FluentBitKeepAnnotations defines whether to keep all Kubernetes annotations. The default is `false`.  Only available when using an output of type `http` and `custom`.
 	// +kubebuilder:validation:Optional
 	FluentBitKeepAnnotations *bool `json:"keepAnnotations,omitempty"`
-	// Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+	// Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/external-content/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
 	// FluentBitDropLabels defines whether to drop all Kubernetes labels. The default is `false`. Only available when using an output of type `http` and `custom`. For an `otlp` output, use the label enrichement feature in the Telemetry resource instead.
 	// +kubebuilder:validation:Optional
 	FluentBitDropLabels *bool `json:"dropLabels,omitempty"`
@@ -145,11 +145,11 @@ type LogPipelineContainerSelector struct {
 // +kubebuilder:validation:XValidation:rule="has(self.otlp) == has(oldSelf.otlp)", message="Switching to or away from OTLP output is not supported. Please re-create the LogPipeline instead"
 // +kubebuilder:validation:XValidation:rule="(has(self.custom) == true ? 1 : 0) + (has(self.http) == true ? 1 : 0) + (has(self.otlp) == true ? 1 : 0) == 1",message="Exactly one output out of 'custom', 'http' or 'otlp' must be defined"
 type LogPipelineOutput struct {
-	// Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+	// Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/external-content/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
 	// FluentBitCustom defines a custom output in the [Fluent Bit syntax](https://docs.fluentbit.io/manual/pipeline/outputs) where you want to push the logs. If you use a `custom` output, you put the LogPipeline in unsupported mode. Only available when using an output of type `http` and `custom`.
 	// +kubebuilder:validation:Optional
 	FluentBitCustom string `json:"custom,omitempty"`
-	// Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+	// Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/external-content/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
 	// FluentBitHTTP configures an FluentBitHTTP-based output compatible with the Fluent Bit FluentBitHTTP output plugin.
 	// +kubebuilder:validation:Optional
 	FluentBitHTTP *FluentBitHTTPOutput `json:"http,omitempty"`
@@ -245,7 +245,7 @@ type LogPipelineStatus struct {
 	// An array of conditions describing the status of the pipeline.
 	// +kubebuilder:validation:Optional
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
-	// Is active when the LogPipeline uses a `custom` output or filter; see [unsupported mode](https://kyma-project.io/#/telemetry-manager/docs/user/02-logs.md#unsupported-mode).
+	// Is active when the LogPipeline uses a `custom` output or filter; see [unsupported mode](https://kyma-project.io/external-content/telemetry-manager/docs/user/02-logs.html#unsupported-mode).
 	// +kubebuilder:validation:Optional
 	UnsupportedMode *bool `json:"unsupportedMode,omitempty"`
 }
