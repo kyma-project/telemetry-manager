@@ -106,9 +106,11 @@ func Convert_v1alpha1_LogPipelineInput_To_v1beta1_LogPipelineInput(in *LogPipeli
 		Exclude: excludes,
 	}
 
-	out.Runtime.Containers = &telemetryv1beta1.LogPipelineContainerSelector{
-		Include: in.Application.Containers.Include,
-		Exclude: in.Application.Containers.Exclude,
+	if in.Application.Containers.Include != nil || in.Application.Containers.Exclude != nil {
+		out.Runtime.Containers = &telemetryv1beta1.LogPipelineContainerSelector{
+			Include: in.Application.Containers.Include,
+			Exclude: in.Application.Containers.Exclude,
+		}
 	}
 
 	return nil
