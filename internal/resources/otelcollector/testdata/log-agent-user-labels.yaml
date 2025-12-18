@@ -91,7 +91,6 @@ spec:
         app.kubernetes.io/managed-by: telemetry-manager
         app.kubernetes.io/name: telemetry-log-agent
         app.kubernetes.io/part-of: telemetry
-        foo: bar
         kyma-project.io/module: telemetry
         sidecar.istio.io/inject: "true"
     spec:

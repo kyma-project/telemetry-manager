@@ -77,7 +77,6 @@ spec:
         app.kubernetes.io/managed-by: telemetry-manager
         app.kubernetes.io/name: telemetry-metric-agent
         app.kubernetes.io/part-of: telemetry
-        foo: bar
         kyma-project.io/module: telemetry
         networking.kyma-project.io/metrics-scraping: allowed
         sidecar.istio.io/inject: "true"

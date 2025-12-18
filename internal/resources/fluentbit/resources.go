@@ -305,7 +305,8 @@ func (aad *AgentApplierDeleter) makeDaemonSet(ctx context.Context, namespace str
 	podAnnotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = fmt.Sprintf("%v,%v", fbports.HTTP, fbports.ExporterMetrics)
 
 	defaultLabels := makeLabels()
-	maps.Copy(defaultLabels, aad.extraPodLabels)
+	defaultPodLabels := makeLabels()
+	maps.Copy(defaultPodLabels, aad.extraPodLabels)
 
 	resourceLabels := make(map[string]string)
 	resourceAnnotations := make(map[string]string)
@@ -339,7 +340,7 @@ func (aad *AgentApplierDeleter) makeDaemonSet(ctx context.Context, namespace str
 	podTemplateSpec := corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Annotations: podAnnotations,
-			Labels:      defaultLabels,
+			Labels:      defaultPodLabels,
 		},
 		Spec: commonresources.MakePodSpec(LogAgentName,
 			commonresources.WithPriorityClass(aad.priorityClassName),

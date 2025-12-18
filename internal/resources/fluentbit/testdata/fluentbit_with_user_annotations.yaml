@@ -232,7 +232,6 @@ spec:
     metadata:
       annotations:
         checksum/config: 91ba0ed4b08d1118be17c56fb8debd2751c946b444b77ae142a9483b119834e2
-        foo.io/foo: bar
         traffic.sidecar.istio.io/excludeInboundPorts: 2020,2021
       labels:
         app.kubernetes.io/component: agent

@@ -238,7 +238,6 @@ spec:
         app.kubernetes.io/managed-by: telemetry-manager
         app.kubernetes.io/name: fluent-bit
         app.kubernetes.io/part-of: telemetry
-        foo: bar
         kyma-project.io/module: telemetry
         sidecar.istio.io/inject: "true"
         telemetry.kyma-project.io/log-export: "true"

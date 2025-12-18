@@ -87,7 +87,6 @@ spec:
     metadata:
       annotations:
         checksum/config: 1d8e9f768e6b24485bbdd6b9aa417d37fec897a7dafc8321355abc0d45259c9e
-        foo.io/foo: bar
       labels:
         app.kubernetes.io/component: agent
         app.kubernetes.io/managed-by: telemetry-manager

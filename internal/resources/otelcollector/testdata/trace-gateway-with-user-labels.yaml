@@ -120,7 +120,6 @@ spec:
         app.kubernetes.io/managed-by: telemetry-manager
         app.kubernetes.io/name: telemetry-trace-gateway
         app.kubernetes.io/part-of: telemetry
-        foo: bar
         kyma-project.io/module: telemetry
         sidecar.istio.io/inject: "true"
         telemetry.kyma-project.io/trace-export: "true"
