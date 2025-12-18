@@ -48,6 +48,7 @@ import (
 	logpipelinefluentbit "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit"
 	logpipelineotel "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
@@ -220,7 +221,7 @@ func configureFluentBitReconciler(config LogPipelineControllerConfig, client cli
 		config.ExporterImage,
 		config.ChownInitContainerImage,
 		config.FluentBitPriorityClassName,
-		&fluentbit.SpecTemplate{
+		&commonresources.SpecTemplate{
 			Pod:      podSpecTemplate,
 			Metadata: metadataTemplate,
 		},
@@ -298,13 +299,13 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 		config.Global,
 		config.OTelCollectorImage,
 		config.LogAgentPriorityClassName,
-		&otelcollector.SpecTemplate{Pod: podSpecTemplate, Metadata: metadataTemplate})
+		&commonresources.SpecTemplate{Pod: podSpecTemplate, Metadata: metadataTemplate})
 
 	gatewayAppliedDeleter := otelcollector.NewLogGatewayApplierDeleter(
 		config.Global,
 		config.OTelCollectorImage,
 		config.LogGatewayPriorityClassName,
-		&otelcollector.SpecTemplate{Pod: podSpecTemplate, Metadata: metadataTemplate})
+		&commonresources.SpecTemplate{Pod: podSpecTemplate, Metadata: metadataTemplate})
 
 	otelReconciler := logpipelineotel.New(
 		logpipelineotel.WithClient(client),

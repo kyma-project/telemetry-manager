@@ -1,6 +1,8 @@
 package common
 
 import (
+	"maps"
+
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -100,4 +102,26 @@ func makeNetworkPolicyPorts(ports []int32) []networkingv1.NetworkPolicyPort {
 	}
 
 	return networkPolicyPorts
+}
+
+func MergeLabels(template *SpecTemplate, labels map[string]string) map[string]string {
+	resourceLabels := make(map[string]string)
+	if template != nil && template.Metadata != nil {
+		maps.Copy(resourceLabels, template.Metadata.Labels)
+	}
+
+	maps.Copy(resourceLabels, labels)
+
+	return resourceLabels
+}
+
+func MergeAnnotations(template *SpecTemplate, annotations map[string]string) map[string]string {
+	resourceAnnotations := make(map[string]string)
+	if template != nil && template.Metadata != nil {
+		maps.Copy(resourceAnnotations, template.Metadata.Annotations)
+	}
+
+	maps.Copy(resourceAnnotations, annotations)
+
+	return resourceAnnotations
 }

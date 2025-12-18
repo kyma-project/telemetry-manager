@@ -18,6 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
 	"github.com/kyma-project/telemetry-manager/internal/config"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -38,23 +39,23 @@ func TestGateway_ApplyResources(t *testing.T) {
 	}{
 		{
 			name:           "metric gateway",
-			sut:            NewMetricGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{}),
+			sut:            NewMetricGatewayApplierDeleter(globals, image, priorityClassName, &commonresources.SpecTemplate{}),
 			goldenFilePath: "testdata/metric-gateway.yaml",
 		},
 		{
 			name:           "metric gateway with istio",
-			sut:            NewMetricGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{}),
+			sut:            NewMetricGatewayApplierDeleter(globals, image, priorityClassName, &commonresources.SpecTemplate{}),
 			istioEnabled:   true,
 			goldenFilePath: "testdata/metric-gateway-istio.yaml",
 		},
 		{
 			name:           "metric gateway with FIPS mode enabled",
-			sut:            NewMetricGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName, &SpecTemplate{}),
+			sut:            NewMetricGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName, &commonresources.SpecTemplate{}),
 			goldenFilePath: "testdata/metric-gateway-fips-enabled.yaml",
 		},
 		{
 			name: "metric gateway with user defined labels",
-			sut: NewMetricGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{
+			sut: NewMetricGatewayApplierDeleter(globals, image, priorityClassName, &commonresources.SpecTemplate{
 				Metadata: &metav1.ObjectMeta{
 					Labels: map[string]string{
 						"foo": "bar",
@@ -65,7 +66,7 @@ func TestGateway_ApplyResources(t *testing.T) {
 		},
 		{
 			name: "metric gateway with user defined annotations",
-			sut: NewMetricGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{
+			sut: NewMetricGatewayApplierDeleter(globals, image, priorityClassName, &commonresources.SpecTemplate{
 				Metadata: &metav1.ObjectMeta{
 					Annotations: map[string]string{
 						"foo.io/foo": "bar",
@@ -76,7 +77,7 @@ func TestGateway_ApplyResources(t *testing.T) {
 		},
 		{
 			name: "metric gateway user cannot override labels defined by us",
-			sut: NewMetricGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{
+			sut: NewMetricGatewayApplierDeleter(globals, image, priorityClassName, &commonresources.SpecTemplate{
 				Metadata: &metav1.ObjectMeta{
 					Labels: map[string]string{
 						"app.kubernetes.io/name": "foo",
@@ -87,23 +88,23 @@ func TestGateway_ApplyResources(t *testing.T) {
 		},
 		{
 			name:           "trace gateway",
-			sut:            NewTraceGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{}),
+			sut:            NewTraceGatewayApplierDeleter(globals, image, priorityClassName, &commonresources.SpecTemplate{}),
 			goldenFilePath: "testdata/trace-gateway.yaml",
 		},
 		{
 			name:           "trace gateway with istio",
-			sut:            NewTraceGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{}),
+			sut:            NewTraceGatewayApplierDeleter(globals, image, priorityClassName, &commonresources.SpecTemplate{}),
 			istioEnabled:   true,
 			goldenFilePath: "testdata/trace-gateway-istio.yaml",
 		},
 		{
 			name:           "trace gateway with FIPS mode enabled",
-			sut:            NewTraceGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName, &SpecTemplate{}),
+			sut:            NewTraceGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName, &commonresources.SpecTemplate{}),
 			goldenFilePath: "testdata/trace-gateway-fips-enabled.yaml",
 		},
 		{
 			name: "trace gateway with user defined labels",
-			sut: NewTraceGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{
+			sut: NewTraceGatewayApplierDeleter(globals, image, priorityClassName, &commonresources.SpecTemplate{
 				Metadata: &metav1.ObjectMeta{
 					Labels: map[string]string{
 						"foo": "bar",
@@ -114,7 +115,7 @@ func TestGateway_ApplyResources(t *testing.T) {
 		},
 		{
 			name: "trace gateway with user defined annotations",
-			sut: NewTraceGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{
+			sut: NewTraceGatewayApplierDeleter(globals, image, priorityClassName, &commonresources.SpecTemplate{
 				Metadata: &metav1.ObjectMeta{
 					Annotations: map[string]string{
 						"foo.io/foo": "bar",
@@ -125,7 +126,7 @@ func TestGateway_ApplyResources(t *testing.T) {
 		},
 		{
 			name: "trace gateway user cannot override labels defined by us",
-			sut: NewTraceGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{
+			sut: NewTraceGatewayApplierDeleter(globals, image, priorityClassName, &commonresources.SpecTemplate{
 				Metadata: &metav1.ObjectMeta{
 					Labels: map[string]string{
 						"app.kubernetes.io/name": "foo",
@@ -136,23 +137,23 @@ func TestGateway_ApplyResources(t *testing.T) {
 		},
 		{
 			name:           "log gateway",
-			sut:            NewLogGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{}),
+			sut:            NewLogGatewayApplierDeleter(globals, image, priorityClassName, &commonresources.SpecTemplate{}),
 			goldenFilePath: "testdata/log-gateway.yaml",
 		},
 		{
 			name:           "log gateway with istio",
-			sut:            NewLogGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{}),
+			sut:            NewLogGatewayApplierDeleter(globals, image, priorityClassName, &commonresources.SpecTemplate{}),
 			istioEnabled:   true,
 			goldenFilePath: "testdata/log-gateway-istio.yaml",
 		},
 		{
 			name:           "log gateway with FIPS mode enabled",
-			sut:            NewLogGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName, &SpecTemplate{}),
+			sut:            NewLogGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName, &commonresources.SpecTemplate{}),
 			goldenFilePath: "testdata/log-gateway-fips-enabled.yaml",
 		},
 		{
 			name: "log gateway with user defined labels",
-			sut: NewLogGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{
+			sut: NewLogGatewayApplierDeleter(globals, image, priorityClassName, &commonresources.SpecTemplate{
 				Metadata: &metav1.ObjectMeta{
 					Labels: map[string]string{
 						"foo": "bar",
@@ -163,7 +164,7 @@ func TestGateway_ApplyResources(t *testing.T) {
 		},
 		{
 			name: "log gateway with user defined annotations",
-			sut: NewLogGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{
+			sut: NewLogGatewayApplierDeleter(globals, image, priorityClassName, &commonresources.SpecTemplate{
 				Metadata: &metav1.ObjectMeta{
 					Annotations: map[string]string{
 						"foo.io/foo": "bar",
@@ -174,7 +175,7 @@ func TestGateway_ApplyResources(t *testing.T) {
 		},
 		{
 			name: "log gateway user cannot override labels defined by us",
-			sut: NewLogGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{
+			sut: NewLogGatewayApplierDeleter(globals, image, priorityClassName, &commonresources.SpecTemplate{
 				Metadata: &metav1.ObjectMeta{
 					Labels: map[string]string{
 						"app.kubernetes.io/name": "foo",
@@ -232,7 +233,7 @@ func TestGateway_DeleteResources(t *testing.T) {
 	image := "opentelemetry/collector:dummy"
 	priorityClassName := "normal"
 
-	specTemplate := &SpecTemplate{
+	specTemplate := &commonresources.SpecTemplate{
 		Pod: &corev1.PodTemplateSpec{
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{

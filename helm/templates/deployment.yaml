@@ -30,7 +30,8 @@ spec:
         sidecar.istio.io/inject: "false"
     spec:
       {{- if .Values.global.imagePullSecret.enabled }}
-      imagePullSecrets: {{ toYaml .Values.manager.container.imagePullSecrets | toYaml | nindent 6 }}
+      imagePullSecrets:
+        - name: {{ .Values.global.imagePullSecret.name }}
       {{- end }}
       containers:
       - args:
@@ -91,8 +92,9 @@ spec:
         volumeMounts:
         - mountPath: /tmp
           name: crt-volume
-        - name: resource-templates
-          mountPath: /resource-templates
+        - mountPath: /resource-templates
+          name: resource-templates
+
       priorityClassName: telemetry-priority-class
       securityContext: {{- toYaml .Values.manager.securityContext | nindent 8 }}
       serviceAccountName: {{ include "telemetry-manager.fullname" . }}-manager

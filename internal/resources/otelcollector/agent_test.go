@@ -18,6 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
 	"github.com/kyma-project/telemetry-manager/internal/config"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -30,7 +31,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 	collectorImage := "opentelemetry/collector:dummy"
 	priorityClassName := "normal"
 
-	specTemplate := &SpecTemplate{
+	specTemplate := &commonresources.SpecTemplate{
 		Pod: &corev1.PodTemplateSpec{
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
@@ -67,7 +68,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 		},
 		{
 			name: "metric agent with user labels",
-			sut: NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName, &SpecTemplate{
+			sut: NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName, &commonresources.SpecTemplate{
 				Metadata: &metav1.ObjectMeta{
 					Labels: map[string]string{
 						"foo": "bar",
@@ -78,7 +79,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 		},
 		{
 			name: "metric agent with user annotations",
-			sut: NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName, &SpecTemplate{
+			sut: NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName, &commonresources.SpecTemplate{
 				Metadata: &metav1.ObjectMeta{
 					Annotations: map[string]string{
 						"foo.io/foo": "bar",
@@ -89,7 +90,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 		},
 		{
 			name: "metric agent user cannot override labels defined by us",
-			sut: NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName, &SpecTemplate{
+			sut: NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName, &commonresources.SpecTemplate{
 				Metadata: &metav1.ObjectMeta{
 					Labels: map[string]string{
 						"app.kubernetes.io/name": "bar",
@@ -125,7 +126,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 		},
 		{
 			name: "log agent with user labels",
-			sut: NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName, &SpecTemplate{
+			sut: NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName, &commonresources.SpecTemplate{
 				Metadata: &metav1.ObjectMeta{
 					Labels: map[string]string{
 						"foo": "bar",
@@ -139,7 +140,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 		},
 		{
 			name: "log agent with user annotations",
-			sut: NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName, &SpecTemplate{
+			sut: NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName, &commonresources.SpecTemplate{
 				Metadata: &metav1.ObjectMeta{
 					Annotations: map[string]string{
 						"foo.io/foo": "bar",
@@ -153,7 +154,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 		},
 		{
 			name: "log agent user cannot override labels defined by us",
-			sut: NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName, &SpecTemplate{
+			sut: NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName, &commonresources.SpecTemplate{
 				Metadata: &metav1.ObjectMeta{
 					Labels: map[string]string{
 						"app.kubernetes.io/name": "bar",
@@ -212,7 +213,7 @@ func TestAgent_DeleteResources(t *testing.T) {
 	image := "opentelemetry/collector:dummy"
 	priorityClassName := "normal"
 
-	specTemplate := &SpecTemplate{
+	specTemplate := &commonresources.SpecTemplate{
 		Pod: &corev1.PodTemplateSpec{
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{

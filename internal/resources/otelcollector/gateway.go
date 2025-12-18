@@ -81,7 +81,7 @@ type GatewayApplierDeleter struct {
 	podOpts       []commonresources.PodSpecOption
 	containerOpts []commonresources.ContainerOption
 
-	specTemplate *SpecTemplate
+	specTemplate *commonresources.SpecTemplate
 }
 
 type GatewayApplyOptions struct {
@@ -97,7 +97,7 @@ type GatewayApplyOptions struct {
 }
 
 //nolint:dupl // repeating the code as we have three different signals
-func NewLogGatewayApplierDeleter(globals config.Global, image, priorityClassName string, specTemplate *SpecTemplate) *GatewayApplierDeleter {
+func NewLogGatewayApplierDeleter(globals config.Global, image, priorityClassName string, specTemplate *commonresources.SpecTemplate) *GatewayApplierDeleter {
 	extraLabels := map[string]string{
 		commonresources.LabelKeyTelemetryLogIngest: commonresources.LabelValueTrue,
 		commonresources.LabelKeyTelemetryLogExport: commonresources.LabelValueTrue,
@@ -131,7 +131,7 @@ func NewLogGatewayApplierDeleter(globals config.Global, image, priorityClassName
 }
 
 //nolint:dupl // repeating the code as we have three different signals
-func NewMetricGatewayApplierDeleter(globals config.Global, image, priorityClassName string, specTemplate *SpecTemplate) *GatewayApplierDeleter {
+func NewMetricGatewayApplierDeleter(globals config.Global, image, priorityClassName string, specTemplate *commonresources.SpecTemplate) *GatewayApplierDeleter {
 	extraLabels := map[string]string{
 		commonresources.LabelKeyTelemetryMetricIngest: commonresources.LabelValueTrue,
 		commonresources.LabelKeyTelemetryMetricExport: commonresources.LabelValueTrue,
@@ -165,7 +165,7 @@ func NewMetricGatewayApplierDeleter(globals config.Global, image, priorityClassN
 }
 
 //nolint:dupl // repeating the code as we have three different signals
-func NewTraceGatewayApplierDeleter(globals config.Global, image, priorityClassName string, specTemplate *SpecTemplate) *GatewayApplierDeleter {
+func NewTraceGatewayApplierDeleter(globals config.Global, image, priorityClassName string, specTemplate *commonresources.SpecTemplate) *GatewayApplierDeleter {
 	extraLabels := map[string]string{
 		commonresources.LabelKeyTelemetryTraceIngest: commonresources.LabelValueTrue,
 		commonresources.LabelKeyTelemetryTraceExport: commonresources.LabelValueTrue,
@@ -312,25 +312,8 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(ctx context.Context, con
 		),
 	}
 
-	resourceLabels := make(map[string]string)
-	resourceAnnotations := make(map[string]string)
-
-	// fetch defaultLabels defined by operator from template spec and append them to defaultPodLabels and defaultLabels
-	// Apply the user defied defaultLabels before applying ours
-	if gad.specTemplate != nil && gad.specTemplate.Metadata != nil && len(gad.specTemplate.Metadata.Labels) > 0 {
-		maps.Copy(resourceLabels, gad.specTemplate.Metadata.Labels)
-	}
-
-	maps.Copy(resourceLabels, defaultLabels)
-
-	// fetch podAnnotations defined from template spec.
-	// Apply the user defied podAnnotations before applying ours
-	if gad.specTemplate != nil && gad.specTemplate.Metadata != nil && len(gad.specTemplate.Metadata.Annotations) > 0 {
-		maps.Copy(resourceAnnotations, gad.specTemplate.Metadata.Annotations)
-	}
-	
 	// Override Podspec with user provided template if available
-	if gad.specTemplate != nil && gad.specTemplate.Pod != nil && len(gad.specTemplate.Pod.Spec.Containers) > 0 {
+	if gad.specTemplate != nil && gad.specTemplate.Pod != nil {
 		gad.specTemplate.Pod.Spec.Containers[0].Name = containerName
 	}
 
@@ -345,8 +328,8 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(ctx context.Context, con
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        gad.baseName,
 			Namespace:   gad.globals.TargetNamespace(),
-			Labels:      resourceLabels,
-			Annotations: resourceAnnotations,
+			Labels:      commonresources.MergeLabels(gad.specTemplate, defaultLabels),
+			Annotations: commonresources.MergeAnnotations(gad.specTemplate, map[string]string{}),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptr.To(opts.Replicas),

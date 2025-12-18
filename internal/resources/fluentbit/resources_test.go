@@ -19,6 +19,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -36,7 +37,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 	}{
 		{
 			name: "fluentbit",
-			sut: NewFluentBitApplierDeleter(namespace, image, exporterImage, initContainerImage, priorityClassName, &SpecTemplate{
+			sut: NewFluentBitApplierDeleter(namespace, image, exporterImage, initContainerImage, priorityClassName, &commonresources.SpecTemplate{
 				Pod: &corev1.PodTemplateSpec{
 					Spec: corev1.PodSpec{
 						Containers: []corev1.Container{
@@ -49,7 +50,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 		},
 		{
 			name: "fluentbit with user defined labels",
-			sut: NewFluentBitApplierDeleter(namespace, image, exporterImage, initContainerImage, priorityClassName, &SpecTemplate{
+			sut: NewFluentBitApplierDeleter(namespace, image, exporterImage, initContainerImage, priorityClassName, &commonresources.SpecTemplate{
 				Metadata: &metav1.ObjectMeta{
 					Labels: map[string]string{
 						"foo": "bar",
@@ -60,7 +61,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 		},
 		{
 			name: "fluentbit with user defined annotations",
-			sut: NewFluentBitApplierDeleter(namespace, image, exporterImage, initContainerImage, priorityClassName, &SpecTemplate{
+			sut: NewFluentBitApplierDeleter(namespace, image, exporterImage, initContainerImage, priorityClassName, &commonresources.SpecTemplate{
 				Metadata: &metav1.ObjectMeta{
 					Annotations: map[string]string{
 						"foo.io/foo": "bar",
@@ -140,7 +141,7 @@ func TestAgent_DeleteResources(t *testing.T) {
 	}{
 		{
 			name: "fluentbit",
-			sut: NewFluentBitApplierDeleter(namespace, image, exporterImage, initContainerImage, priorityClassName, &SpecTemplate{
+			sut: NewFluentBitApplierDeleter(namespace, image, exporterImage, initContainerImage, priorityClassName, &commonresources.SpecTemplate{
 				Pod: &corev1.PodTemplateSpec{
 					Spec: corev1.PodSpec{
 						Containers: []corev1.Container{

@@ -38,6 +38,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/tracegateway"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
@@ -64,7 +65,7 @@ type Reconciler struct {
 	pipelineValidator     *Validator
 	errToMsgConverter     commonstatus.ErrorToMessageConverter
 
-	specTemplate *otelcollector.SpecTemplate
+	specTemplate *commonresources.SpecTemplate
 }
 
 // Option configures the Reconciler during initialization.
@@ -115,7 +116,7 @@ func WithIstioStatusChecker(checker IstioStatusChecker) Option {
 func WithPodSpecTemplate(podTemplate *corev1.PodTemplateSpec) Option {
 	return func(r *Reconciler) {
 		if r.specTemplate == nil {
-			r.specTemplate = &otelcollector.SpecTemplate{}
+			r.specTemplate = &commonresources.SpecTemplate{}
 		}
 
 		r.specTemplate.Pod = podTemplate
@@ -125,7 +126,7 @@ func WithPodSpecTemplate(podTemplate *corev1.PodTemplateSpec) Option {
 func WithMetadataTemplate(metadataTemplate *metav1.ObjectMeta) Option {
 	return func(r *Reconciler) {
 		if r.specTemplate == nil {
-			r.specTemplate = &otelcollector.SpecTemplate{}
+			r.specTemplate = &commonresources.SpecTemplate{}
 		}
 
 		r.specTemplate.Metadata = metadataTemplate

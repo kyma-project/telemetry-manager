@@ -81,10 +81,6 @@ type AgentApplyOptions struct {
 	FluentBitConfig *builder.FluentBitConfig
 }
 
-type SpecTemplate struct {
-	Pod      *corev1.PodTemplateSpec
-	Metadata *metav1.ObjectMeta
-}
 type AgentApplierDeleter struct {
 	extraPodLabels          map[string]string
 	fluentBitImage          string
@@ -101,10 +97,10 @@ type AgentApplierDeleter struct {
 	envConfigSecretName     types.NamespacedName
 	tlsFileConfigSecretName types.NamespacedName
 
-	specTemplate *SpecTemplate
+	specTemplate *commonresources.SpecTemplate
 }
 
-func NewFluentBitApplierDeleter(namespace, fbImage, exporterImage, chownInitContainerImage, priorityClassName string, specTemplate *SpecTemplate) *AgentApplierDeleter {
+func NewFluentBitApplierDeleter(namespace, fbImage, exporterImage, chownInitContainerImage, priorityClassName string, specTemplate *commonresources.SpecTemplate) *AgentApplierDeleter {
 	return &AgentApplierDeleter{
 		namespace: namespace,
 		extraPodLabels: map[string]string{
@@ -308,23 +304,6 @@ func (aad *AgentApplierDeleter) makeDaemonSet(ctx context.Context, namespace str
 	defaultPodLabels := makeLabels()
 	maps.Copy(defaultPodLabels, aad.extraPodLabels)
 
-	resourceLabels := make(map[string]string)
-	resourceAnnotations := make(map[string]string)
-
-	// fetch podAnnotations defined operator from template spec and append them to podAnnotations and podAnnotations.
-	// Apply the user defied podAnnotations before applying ours
-	if aad.specTemplate != nil && aad.specTemplate.Metadata != nil && len(aad.specTemplate.Metadata.Annotations) > 0 {
-		maps.Copy(resourceAnnotations, aad.specTemplate.Metadata.Annotations)
-	}
-
-	// fetch labels defined by operator from template spec and append them to defaultLabels and labels
-	// Apply the user defied labels before applying ours
-	if aad.specTemplate != nil && aad.specTemplate.Metadata != nil && len(aad.specTemplate.Metadata.Labels) > 0 {
-		maps.Copy(resourceLabels, aad.specTemplate.Metadata.Labels)
-	}
-
-	maps.Copy(resourceLabels, defaultLabels)
-
 	fluentBitResources := commonresources.MakeResourceRequirements(
 		fbContainerMemoryLimit,
 		fbContainerMemoryRequest,
@@ -372,7 +351,7 @@ func (aad *AgentApplierDeleter) makeDaemonSet(ctx context.Context, namespace str
 	}
 
 	// Override Podspec with user provided template if available
-	if aad.specTemplate != nil && aad.specTemplate.Pod != nil && len(aad.specTemplate.Pod.Spec.Containers) > 0 {
+	if aad.specTemplate != nil && aad.specTemplate.Pod != nil {
 		aad.specTemplate.Pod.Spec.Containers[0].Name = "fluent-bit"
 	}
 
@@ -388,8 +367,8 @@ func (aad *AgentApplierDeleter) makeDaemonSet(ctx context.Context, namespace str
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        LogAgentName,
 			Namespace:   namespace,
-			Labels:      resourceLabels,
-			Annotations: resourceAnnotations,
+			Labels:      commonresources.MergeLabels(aad.specTemplate, defaultLabels),
+			Annotations: commonresources.MergeAnnotations(aad.specTemplate, map[string]string{}),
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
