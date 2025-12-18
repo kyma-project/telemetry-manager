@@ -97,7 +97,7 @@ You can't modify an existing LogPipeline to change its output type. You must cre
    apiVersion: telemetry.kyma-project.io/v1alpha1
    kind: LogPipeline
    metadata:
-     name: my-http-pipeline
+     name: my-otlp-pipeline
    spec:
      transform:
        - conditions:
@@ -136,7 +136,7 @@ You can't modify an existing LogPipeline to change its output type. You must cre
 1. Delete the old LogPipeline:
 
    ```shell
-   kubectl delete logpipeline my-old-pipeline
+   kubectl delete logpipeline my-http-pipeline
    ```
 
 ## Result
