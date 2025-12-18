@@ -298,7 +298,6 @@ func getFluentBitPorts() []int32 {
 func (r *Reconciler) trackFeaturesUsage(pipelines []telemetryv1alpha1.LogPipeline) {
 	for i := range pipelines {
 		// General features
-
 		if logpipelineutils.IsApplicationInputEnabled(&pipelines[i].Spec.Input) {
 			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureInputRuntime, pipelines[i].Name)
 		}
