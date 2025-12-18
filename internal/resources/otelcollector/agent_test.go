@@ -88,6 +88,17 @@ func TestAgent_ApplyResources(t *testing.T) {
 			goldenFilePath: "testdata/metric-agent-user-annotations.yaml",
 		},
 		{
+			name: "metric agent user cannot override labels defined by us",
+			sut: NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName, &SpecTemplate{
+				Metadata: &metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app.kubernetes.io/name": "bar",
+					},
+				},
+			}),
+			goldenFilePath: "testdata/metric-agent.yaml",
+		},
+		{
 			name: "log agent",
 			sut:  NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName, specTemplate),
 			collectorEnvVars: map[string][]byte{
@@ -139,6 +150,20 @@ func TestAgent_ApplyResources(t *testing.T) {
 				"DUMMY_ENV_VAR": []byte("foo"),
 			},
 			goldenFilePath: "testdata/log-agent-user-annotations.yaml",
+		},
+		{
+			name: "log agent user cannot override labels defined by us",
+			sut: NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName, &SpecTemplate{
+				Metadata: &metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app.kubernetes.io/name": "bar",
+					},
+				},
+			}),
+			collectorEnvVars: map[string][]byte{
+				"DUMMY_ENV_VAR": []byte("foo"),
+			},
+			goldenFilePath: "testdata/log-agent.yaml",
 		},
 	}
 

@@ -75,6 +75,17 @@ func TestGateway_ApplyResources(t *testing.T) {
 			goldenFilePath: "testdata/metric-gateway-with-user-annotations.yaml",
 		},
 		{
+			name: "metric gateway user cannot override labels defined by us",
+			sut: NewMetricGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{
+				Metadata: &metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app.kubernetes.io/name": "foo",
+					},
+				},
+			}),
+			goldenFilePath: "testdata/metric-gateway.yaml",
+		},
+		{
 			name:           "trace gateway",
 			sut:            NewTraceGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{}),
 			goldenFilePath: "testdata/trace-gateway.yaml",
@@ -113,6 +124,17 @@ func TestGateway_ApplyResources(t *testing.T) {
 			goldenFilePath: "testdata/trace-gateway-with-user-annotations.yaml",
 		},
 		{
+			name: "trace gateway user cannot override labels defined by us",
+			sut: NewTraceGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{
+				Metadata: &metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app.kubernetes.io/name": "foo",
+					},
+				},
+			}),
+			goldenFilePath: "testdata/trace-gateway.yaml",
+		},
+		{
 			name:           "log gateway",
 			sut:            NewLogGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{}),
 			goldenFilePath: "testdata/log-gateway.yaml",
@@ -149,6 +171,17 @@ func TestGateway_ApplyResources(t *testing.T) {
 				},
 			}),
 			goldenFilePath: "testdata/log-gateway-with-user-annotations.yaml",
+		},
+		{
+			name: "log gateway user cannot override labels defined by us",
+			sut: NewLogGatewayApplierDeleter(globals, image, priorityClassName, &SpecTemplate{
+				Metadata: &metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app.kubernetes.io/name": "foo",
+					},
+				},
+			}),
+			goldenFilePath: "testdata/log-gateway.yaml",
 		},
 	}
 
