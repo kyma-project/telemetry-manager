@@ -132,6 +132,8 @@ linters:
           alias: apiconversion
         - pkg: k8s.io/apimachinery/pkg/util/runtime
           alias: utilruntime
+        - pkg: "k8s.io/apimachinery/pkg/apis/meta/fuzzer"
+          alias: metafuzzer
         - pkg: k8s.io/client-go/kubernetes/scheme
           alias: clientgoscheme
         - pkg: sigs.k8s.io/controller-runtime
