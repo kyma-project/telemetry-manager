@@ -74,7 +74,7 @@ func TestMTLS(t *testing.T) {
 				WithName(pipelineName).
 				WithInput(tc.inputBuilder(genNs)).
 				WithOTLPOutput(
-					testutils.OTLPEndpoint(backend.EndpointHTTP()),
+					testutils.OTLPEndpoint(backend.EndpointHTTPS()),
 					testutils.OTLPClientMTLSFromString(
 						clientCerts.CaCertPem.String(),
 						clientCerts.ClientCertPem.String(),
