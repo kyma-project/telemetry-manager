@@ -50,6 +50,6 @@ data:
           projected:
             sources:
             - clustertrustbundle:
-              name: {{ .Values.global.caBundle.name }}
-              path: {{ .Values.global.caBundle.file }}
+                name: {{ .Values.global.caBundle.name }}
+                path: {{ .Values.global.caBundle.file }}
       {{- end }}
