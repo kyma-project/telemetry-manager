@@ -33,9 +33,12 @@ func Convert_v1alpha1_OTLPInput_To_v1beta1_OTLPInput(in *OTLPInput, out *telemet
 	}
 
 	out.Enabled = ptr.To(!in.Disabled)
-	out.Namespaces = &telemetryv1beta1.NamespaceSelector{
-		Include: sanitizeNamespaceNames(in.Namespaces.Include),
-		Exclude: sanitizeNamespaceNames(in.Namespaces.Exclude),
+
+	if in.Namespaces != nil {
+		out.Namespaces = &telemetryv1beta1.NamespaceSelector{
+			Include: sanitizeNamespaceNames(in.Namespaces.Include),
+			Exclude: sanitizeNamespaceNames(in.Namespaces.Exclude),
+		}
 	}
 
 	return nil
@@ -47,9 +50,11 @@ func Convert_v1beta1_OTLPInput_To_v1alpha1_OTLPInput(in *telemetryv1beta1.OTLPIn
 	}
 
 	out.Disabled = in.Enabled != nil && !ptr.Deref(in.Enabled, false)
-	out.Namespaces = &NamespaceSelector{
-		Include: sanitizeNamespaceNames(in.Namespaces.Include),
-		Exclude: sanitizeNamespaceNames(in.Namespaces.Exclude),
+	if in.Namespaces != nil {
+		out.Namespaces = &NamespaceSelector{
+			Include: sanitizeNamespaceNames(in.Namespaces.Include),
+			Exclude: sanitizeNamespaceNames(in.Namespaces.Exclude),
+		}
 	}
 
 	return nil

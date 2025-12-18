@@ -17,9 +17,9 @@ func Convert_v1alpha1_MetricPipelineRuntimeInput_To_v1beta1_MetricPipelineRuntim
 		return err
 	}
 
-	if out.Namespaces != nil {
-		out.Namespaces.Include = sanitizeNamespaceNames(out.Namespaces.Include)
-		out.Namespaces.Exclude = sanitizeNamespaceNames(out.Namespaces.Exclude)
+	if in.Namespaces != nil {
+		out.Namespaces.Include = sanitizeNamespaceNames(in.Namespaces.Include)
+		out.Namespaces.Exclude = sanitizeNamespaceNames(in.Namespaces.Exclude)
 	}
 
 	return nil
