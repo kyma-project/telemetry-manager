@@ -69,7 +69,7 @@ spec:
             properties:
               files:
                 description: |-
-                  Deprecated: The field is based on the FluentBit based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                  Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
                   FluentBitFiles is a list of content snippets that are mounted as files in the Fluent Bit configuration, which can be linked in the `custom` filters and a `custom` output. Only available when using an output of type `http` and `custom`.
                 items:
                   description: FluentBitFile provides file content to be consumed
@@ -107,7 +107,7 @@ spec:
                 type: array
               filters:
                 description: |-
-                  Deprecated: The field is based on the FluentBit based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                  Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
                   FluentBitFilters configures custom Fluent Bit `filters` to transform logs. Only available when using an output of type `http` and `custom`.
                 items:
                   description: FluentBitFilter configures custom Fluent Bit `filters`
@@ -154,7 +154,7 @@ spec:
                           rule: '!(has(self.include) && has(self.exclude))'
                       dropLabels:
                         description: |-
-                          Deprecated: The field is based on the FluentBit based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                          Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
                           FluentBitDropLabels defines whether to drop all Kubernetes labels. The default is `false`. Only available when using an output of type `http` and `custom`. For an `otlp` output, use the label enrichement feature in the Telemetry resource instead.
                         type: boolean
                       enabled:
@@ -164,7 +164,7 @@ spec:
                         type: boolean
                       keepAnnotations:
                         description: |-
-                          Deprecated: The field is based on the FluentBit based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                          Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
                           FluentBitKeepAnnotations defines whether to keep all Kubernetes annotations. The default is `false`.  Only available when using an output of type `http` and `custom`.
                         type: boolean
                       keepOriginalBody:
@@ -264,12 +264,12 @@ spec:
                 properties:
                   custom:
                     description: |-
-                      Deprecated: The field is based on the FluentBit based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                      Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
                       FluentBitCustom defines a custom output in the [Fluent Bit syntax](https://docs.fluentbit.io/manual/pipeline/outputs) where you want to push the logs. If you use a `custom` output, you put the LogPipeline in unsupported mode. Only available when using an output of type `http` and `custom`.
                     type: string
                   http:
                     description: |-
-                      Deprecated: The field is based on the FluentBit based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                      Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
                       FluentBitHTTP configures an FluentBitHTTP-based output compatible with the Fluent Bit FluentBitHTTP output plugin.
                     properties:
                       compress:
@@ -997,7 +997,7 @@ spec:
                 type: array
               variables:
                 description: |-
-                  Deprecated: The field is based on the FluentBit based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                  Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
                   FluentBitVariables is a list of mappings from Kubernetes Secret keys to environment variables. Mapped keys are mounted as environment variables, so that they are available as [FluentBitVariables](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/variables) in the `custom` filters and a `custom` output. Only available when using an output of type `http` and `custom`.
                 items:
                   description: FluentBitVariable references a Kubernetes secret that
@@ -1178,7 +1178,7 @@ spec:
             properties:
               files:
                 description: |-
-                  Deprecated: The field is based on the FluentBit based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                  Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
                   FluentBitFiles is a list of content snippets that are mounted as files in the Fluent Bit configuration, which can be linked in the `custom` filters and a `custom` output. Only available when using an output of type `http` and `custom`.
                 items:
                   description: FluentBitFile provides file content to be consumed
@@ -1216,7 +1216,7 @@ spec:
                 type: array
               filters:
                 description: |-
-                  Deprecated: The field is based on the FluentBit based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                  Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
                   FluentBitFilters configures custom Fluent Bit `filters` to transform logs. Only available when using an output of type `http` and `custom`.
                 items:
                   description: FluentBitFilter configures custom Fluent Bit `filters`
@@ -1305,7 +1305,7 @@ spec:
                           rule: '!(has(self.include) && has(self.exclude))'
                       dropLabels:
                         description: |-
-                          Deprecated: The field is based on the FluentBit based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                          Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
                           FluentBitDropLabels defines whether to drop all Kubernetes labels. The default is `false`. Only available when using an output of type `http` and `custom`. For an `otlp` output, use the label enrichement feature in the Telemetry resource instead.
                         type: boolean
                       enabled:
@@ -1315,7 +1315,7 @@ spec:
                         type: boolean
                       keepAnnotations:
                         description: |-
-                          Deprecated: The field is based on the FluentBit based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                          Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
                           FluentBitKeepAnnotations defines whether to keep all Kubernetes annotations. The default is `false`.  Only available when using an output of type `http` and `custom`.
                         type: boolean
                       keepOriginalBody:
@@ -1365,12 +1365,12 @@ spec:
                 properties:
                   custom:
                     description: |-
-                      Deprecated: The field is based on the FluentBit based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                      Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
                       FluentBitCustom defines a custom output in the [Fluent Bit syntax](https://docs.fluentbit.io/manual/pipeline/outputs) where you want to push the logs. If you use a `custom` output, you put the LogPipeline in unsupported mode. Only available when using an output of type `http` and `custom`.
                     type: string
                   http:
                     description: |-
-                      Deprecated: The field is based on the FluentBit based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                      Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
                       FluentBitHTTP configures an FluentBitHTTP-based output compatible with the Fluent Bit FluentBitHTTP output plugin.
                     properties:
                       compress:
@@ -2096,7 +2096,7 @@ spec:
                 type: array
               variables:
                 description: |-
-                  Deprecated: The field is based on the FluentBit based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                  Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry based stack instead, see https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
                   FluentBitVariables is a list of mappings from Kubernetes Secret keys to environment variables. Mapped keys are mounted as environment variables, so that they are available as [FluentBitVariables](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/variables) in the `custom` filters and a `custom` output. Only available when using an output of type `http` and `custom`.
                 items:
                   description: FluentBitVariable references a Kubernetes secret that
