@@ -301,32 +301,28 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 
 func (aad *AgentApplierDeleter) makeDaemonSet(ctx context.Context, namespace string, checksum string) *appsv1.DaemonSet {
 	podAnnotations := make(map[string]string)
-	annotations := make(map[string]string)
-
-	// fetch annotations defined operator from template spec and append them to annotations and podAnnotations.
-	// Apply the user defied annotations before applying ours
-	if aad.specTemplate != nil && aad.specTemplate.Metadata != nil && len(aad.specTemplate.Metadata.Annotations) > 0 {
-		maps.Copy(annotations, aad.specTemplate.Metadata.Annotations)
-		maps.Copy(podAnnotations, aad.specTemplate.Metadata.Annotations)
-	}
-
 	podAnnotations[commonresources.AnnotationKeyChecksumConfig] = checksum
 	podAnnotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = fmt.Sprintf("%v,%v", fbports.HTTP, fbports.ExporterMetrics)
 
-	labels := make(map[string]string)
-	podLabels := make(map[string]string)
+	defaultLabels := makeLabels()
+	maps.Copy(defaultLabels, aad.extraPodLabels)
 
-	// fetch labels defined by operator from template spec and append them to podLabels and labels
-	// Apply the user defied labels before applying ours
-	if aad.specTemplate != nil && aad.specTemplate.Metadata != nil && len(aad.specTemplate.Metadata.Labels) > 0 {
-		maps.Copy(labels, aad.specTemplate.Metadata.Labels)
-		maps.Copy(podLabels, aad.specTemplate.Metadata.Labels)
+	resourceLabels := make(map[string]string)
+	resourceAnnotations := make(map[string]string)
+
+	// fetch podAnnotations defined operator from template spec and append them to podAnnotations and podAnnotations.
+	// Apply the user defied podAnnotations before applying ours
+	if aad.specTemplate != nil && aad.specTemplate.Metadata != nil && len(aad.specTemplate.Metadata.Annotations) > 0 {
+		maps.Copy(resourceAnnotations, aad.specTemplate.Metadata.Annotations)
 	}
 
-	maps.Copy(labels, makeLabels())
+	// fetch labels defined by operator from template spec and append them to defaultLabels and labels
+	// Apply the user defied labels before applying ours
+	if aad.specTemplate != nil && aad.specTemplate.Metadata != nil && len(aad.specTemplate.Metadata.Labels) > 0 {
+		maps.Copy(resourceLabels, aad.specTemplate.Metadata.Labels)
+	}
 
-	maps.Copy(podLabels, makeLabels())
-	maps.Copy(podLabels, aad.extraPodLabels)
+	maps.Copy(resourceLabels, defaultLabels)
 
 	fluentBitResources := commonresources.MakeResourceRequirements(
 		fbContainerMemoryLimit,
@@ -343,7 +339,7 @@ func (aad *AgentApplierDeleter) makeDaemonSet(ctx context.Context, namespace str
 	podTemplateSpec := corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Annotations: podAnnotations,
-			Labels:      podLabels,
+			Labels:      defaultLabels,
 		},
 		Spec: commonresources.MakePodSpec(LogAgentName,
 			commonresources.WithPriorityClass(aad.priorityClassName),
@@ -391,8 +387,8 @@ func (aad *AgentApplierDeleter) makeDaemonSet(ctx context.Context, namespace str
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        LogAgentName,
 			Namespace:   namespace,
-			Labels:      labels,
-			Annotations: annotations,
+			Labels:      resourceLabels,
+			Annotations: resourceAnnotations,
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{

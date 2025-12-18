@@ -217,17 +217,7 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 }
 
 func (aad *AgentApplierDeleter) makeAgentDaemonSet(ctx context.Context, configChecksum string, opts AgentApplyOptions) *appsv1.DaemonSet {
-	podAnnotations := make(map[string]string)
-	annotations := make(map[string]string)
-
-	// fetch annotations defined from template spec.
-	// Apply the user defied annotations before applying ours
-	if aad.specTemplate != nil && aad.specTemplate.Metadata != nil && len(aad.specTemplate.Metadata.Annotations) > 0 {
-		maps.Copy(annotations, aad.specTemplate.Metadata.Annotations)
-		maps.Copy(podAnnotations, aad.specTemplate.Metadata.Annotations)
-	}
-
-	maps.Copy(podAnnotations, aad.makeAnnotationsFunc(configChecksum, opts))
+	podAnnotations := aad.makeAnnotationsFunc(configChecksum, opts)
 
 	// Add pod options shared between all agents
 	podOpts := slices.Clone(aad.podOpts)
@@ -235,20 +225,10 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(ctx context.Context, configCh
 
 	podSpec := makePodSpec(aad.baseName, aad.image, podOpts, aad.containerOpts)
 
-	podLabels := make(map[string]string)
-	labels := make(map[string]string)
-
-	// fetch labels defined by operator from template spec and append them to podLabels and labels
-	// Apply the user defied labels before applying ours
-	if aad.specTemplate != nil && aad.specTemplate.Metadata != nil && len(aad.specTemplate.Metadata.Labels) > 0 {
-		maps.Copy(podLabels, aad.specTemplate.Metadata.Labels)
-		maps.Copy(labels, aad.specTemplate.Metadata.Labels)
-	}
-
-	maps.Copy(labels, commonresources.MakeDefaultLabels(aad.baseName, commonresources.LabelValueK8sComponentAgent))
 	selectorLabels := commonresources.MakeDefaultSelectorLabels(aad.baseName)
-
-	maps.Copy(podLabels, labels)
+	defaultLabels := commonresources.MakeDefaultLabels(aad.baseName, commonresources.LabelValueK8sComponentAgent)
+	podLabels := make(map[string]string)
+	maps.Copy(podLabels, defaultLabels)
 	maps.Copy(podLabels, aad.extraPodLabel)
 
 	podSpecTemplate := corev1.PodTemplateSpec{
@@ -257,6 +237,23 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(ctx context.Context, configCh
 			Annotations: podAnnotations,
 		},
 		Spec: podSpec,
+	}
+
+	resourceLabels := make(map[string]string)
+	resourceAnnotations := make(map[string]string)
+
+	// fetch defaultLabels defined by operator from template spec and append them to podLabels and defaultLabels
+	// Apply the user defied defaultLabels before applying ours
+	if aad.specTemplate != nil && aad.specTemplate.Metadata != nil && len(aad.specTemplate.Metadata.Labels) > 0 {
+		maps.Copy(resourceLabels, aad.specTemplate.Metadata.Labels)
+	}
+
+	maps.Copy(resourceLabels, defaultLabels)
+
+	// fetch podAnnotations defined from template spec.
+	// Apply the user defied podAnnotations before applying ours
+	if aad.specTemplate != nil && aad.specTemplate.Metadata != nil && len(aad.specTemplate.Metadata.Annotations) > 0 {
+		maps.Copy(resourceAnnotations, aad.specTemplate.Metadata.Annotations)
 	}
 
 	// Override Podspec with user provided template if available
@@ -275,8 +272,8 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(ctx context.Context, configCh
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        aad.baseName,
 			Namespace:   aad.globals.TargetNamespace(),
-			Labels:      labels,
-			Annotations: annotations,
+			Labels:      resourceLabels,
+			Annotations: resourceAnnotations,
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
