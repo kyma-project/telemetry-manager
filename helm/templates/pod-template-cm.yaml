@@ -31,25 +31,25 @@ data:
       {{- end }}
     spec:
       {{- if .Values.global.imagePullSecret.enabled }}
-      imagePullSecrets:
-        - name: {{ .Values.global.imagePullSecret.name }}
+      imagepullsecrets:
+      - name: {{ .Values.global.imagePullSecret.name }}
       {{- end }}
 
       containers:
       - name: template-container
   {{- if and .Values.global.caBundle.enabled .Values.global.caBundle.name (ne .Values.global.caBundle.name "") }}
-        volumeMounts:
-          - name: custom-ca-bundle
-            mountPath: {{ .Values.global.caBundle.mountPath }}/{{ .Values.global.caBundle.file }}
-            subPath: {{ .Values.global.caBundle.file }}
-            readOnly: true
+        volumemounts:
+        - name: custom-ca-bundle
+          mountpath: {{ .Values.global.caBundle.mountPath }}/{{ .Values.global.caBundle.file }}
+          subpath: {{ .Values.global.caBundle.file }}
+          readonly: true
 
       volumes:
       - name: custom-ca-bundle
-        projected:
-          defaultMode: 0444
-          sources:
-            - clusterTrustBundle:
-                name: {{ .Values.global.caBundle.name }}
-                path: {{ .Values.global.caBundle.file }}
+        volumesource:
+          projected:
+            sources:
+            - clustertrustbundle:
+              name: {{ .Values.global.caBundle.name }}
+              path: {{ .Values.global.caBundle.file }}
       {{- end }}
