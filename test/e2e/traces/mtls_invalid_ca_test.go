@@ -36,7 +36,7 @@ func TestMTLSInvalidCA(t *testing.T) {
 	pipeline := testutils.NewTracePipelineBuilder().
 		WithName(pipelineName).
 		WithOTLPOutput(
-			testutils.OTLPEndpoint(backend.Endpoint()),
+			testutils.OTLPEndpoint(backend.EndpointHTTP()),
 			testutils.OTLPClientMTLSFromString(
 				invalidClientCerts.CaCertPem.String(),
 				invalidClientCerts.ClientCertPem.String(),

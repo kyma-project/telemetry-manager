@@ -71,7 +71,7 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 				WithName(pipelineName).
 				WithInput(tc.inputBuilder(genNs)).
 				WithOTLPOutput(
-					testutils.OTLPEndpoint(backend.Endpoint()),
+					testutils.OTLPEndpoint(backend.EndpointHTTP()),
 					testutils.OTLPClientMTLSFromString(
 						clientCerts.CaCertPem.String(),
 						clientCerts.ClientCertPem.String(),

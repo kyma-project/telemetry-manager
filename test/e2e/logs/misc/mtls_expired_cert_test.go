@@ -36,7 +36,7 @@ func TestMTLSExpiredCert_OTel(t *testing.T) {
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithOTLPOutput(
-			testutils.OTLPEndpoint(backend.Endpoint()),
+			testutils.OTLPEndpoint(backend.EndpointHTTP()),
 			testutils.OTLPClientMTLSFromString(
 				expiredClientCerts.CaCertPem.String(),
 				expiredClientCerts.ClientCertPem.String(),

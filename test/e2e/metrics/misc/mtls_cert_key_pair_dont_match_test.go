@@ -37,7 +37,7 @@ func TestMTLSCertKeyPairDontMatch(t *testing.T) {
 	pipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineName).
 		WithOTLPOutput(
-			testutils.OTLPEndpoint(backend.Endpoint()),
+			testutils.OTLPEndpoint(backend.EndpointHTTP()),
 			testutils.OTLPClientMTLSFromString(
 				clientCertsDefault.CaCertPem.String(),
 				clientCertsDefault.ClientCertPem.String(),

@@ -77,7 +77,7 @@ func TestRuntimeInput(t *testing.T) {
 		WithRuntimeInputStatefulSetMetrics(false).
 		WithRuntimeInputDaemonSetMetrics(false).
 		WithRuntimeInputJobMetrics(false).
-		WithOTLPOutput(testutils.OTLPEndpoint(backendA.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backendA.EndpointHTTP())).
 		Build()
 	pipelineB := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineNameB).
@@ -90,12 +90,12 @@ func TestRuntimeInput(t *testing.T) {
 		WithRuntimeInputStatefulSetMetrics(true).
 		WithRuntimeInputDaemonSetMetrics(true).
 		WithRuntimeInputJobMetrics(true).
-		WithOTLPOutput(testutils.OTLPEndpoint(backendB.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backendB.EndpointHTTP())).
 		Build()
 	pipelineC := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineNameC).
 		WithRuntimeInput(true, testutils.IncludeNamespaces(genNs)).
-		WithOTLPOutput(testutils.OTLPEndpoint(backendC.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backendC.EndpointHTTP())).
 		Build()
 
 	prometheusMetricGen := prommetricgen.New(genNs)

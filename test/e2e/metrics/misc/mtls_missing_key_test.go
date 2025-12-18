@@ -36,7 +36,7 @@ func TestMTLSMissingKey(t *testing.T) {
 	pipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineName).
 		WithOTLPOutput(
-			testutils.OTLPEndpoint(backend.Endpoint()),
+			testutils.OTLPEndpoint(backend.EndpointHTTP()),
 			testutils.OTLPClientTLS(&telemetryv1alpha1.OTLPTLS{
 				CA:   &telemetryv1alpha1.ValueType{Value: clientCerts.CaCertPem.String()},
 				Cert: &telemetryv1alpha1.ValueType{Value: clientCerts.ClientCertPem.String()},

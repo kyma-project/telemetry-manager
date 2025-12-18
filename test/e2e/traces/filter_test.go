@@ -32,7 +32,7 @@ func TestFilter(t *testing.T) {
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces)
 	pipeline := testutils.NewTracePipelineBuilder().
 		WithName(pipelineName).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		WithTransform(telemetryv1alpha1.TransformSpec{
 			Statements: []string{"set(span.attributes[\"test\"], \"passed\")"},
 		}).

@@ -64,13 +64,13 @@ func TestMultiPipelineFanout_OTel(t *testing.T) {
 			pipeline1 := testutils.NewLogPipelineBuilder().
 				WithName(pipeline1Name).
 				WithInput(tc.inputBuilder(genNs)).
-				WithOTLPOutput(testutils.OTLPEndpoint(backend1.Endpoint())).
+				WithOTLPOutput(testutils.OTLPEndpoint(backend1.EndpointHTTP())).
 				Build()
 
 			pipeline2 := testutils.NewLogPipelineBuilder().
 				WithName(pipeline2Name).
 				WithInput(tc.inputBuilder(genNs)).
-				WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
+				WithOTLPOutput(testutils.OTLPEndpoint(backend2.EndpointHTTP())).
 				Build()
 
 			resources := []client.Object{

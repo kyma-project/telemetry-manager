@@ -31,7 +31,7 @@ func TestSinglePipeline(t *testing.T) {
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces)
 	pipeline := testutils.NewTracePipelineBuilder().
 		WithName(pipelineName).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
 	resources := []client.Object{

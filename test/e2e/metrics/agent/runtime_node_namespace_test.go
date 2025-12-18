@@ -43,7 +43,7 @@ func TestRuntimeNodeNamespace(t *testing.T) {
 		WithRuntimeInputPodMetrics(false).
 		WithRuntimeInputContainerMetrics(false).
 		WithRuntimeInputVolumeMetrics(false).
-		WithOTLPOutput(testutils.OTLPEndpoint(includeBacked.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(includeBacked.EndpointHTTP())).
 		Build()
 	excludePipeline := testutils.NewMetricPipelineBuilder().
 		WithName(excludePipelineName).
@@ -52,7 +52,7 @@ func TestRuntimeNodeNamespace(t *testing.T) {
 		WithRuntimeInputPodMetrics(false).
 		WithRuntimeInputContainerMetrics(false).
 		WithRuntimeInputVolumeMetrics(false).
-		WithOTLPOutput(testutils.OTLPEndpoint(excludeBackend.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(excludeBackend.EndpointHTTP())).
 		Build()
 
 	includeMetricProducer := prommetricgen.New(includeNs)

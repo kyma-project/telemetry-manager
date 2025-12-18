@@ -176,7 +176,7 @@ func TestTransform(t *testing.T) {
 				WithName(pipelineName).
 				WithInput(tc.inputBuilder(genNs)).
 				WithTransform(tc.transformSpec).
-				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+				WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 				Build()
 
 			resources := []client.Object{

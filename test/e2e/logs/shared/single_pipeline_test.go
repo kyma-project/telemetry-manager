@@ -63,7 +63,7 @@ func TestSinglePipeline_OTel(t *testing.T) {
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
 				WithInput(tc.inputBuilder(genNs)).
-				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+				WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 				Build()
 
 			resources := []client.Object{

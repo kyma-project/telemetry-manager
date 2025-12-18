@@ -31,7 +31,7 @@ func TestEnrichmentValuesPredefined(t *testing.T) {
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)
 	pipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineName).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
 	// All attributes in the enrichment flow are set to predefined values

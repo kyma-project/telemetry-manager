@@ -36,7 +36,7 @@ func TestMTLSInvalidCert(t *testing.T) {
 	pipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineName).
 		WithOTLPOutput(
-			testutils.OTLPEndpoint(backend.Endpoint()),
+			testutils.OTLPEndpoint(backend.EndpointHTTP()),
 			testutils.OTLPClientMTLSFromString(
 				invalidClientCerts.CaCertPem.String(),
 				invalidClientCerts.ClientCertPem.String(),

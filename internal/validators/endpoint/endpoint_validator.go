@@ -181,22 +181,5 @@ func validateGRPCWithOAuth2(scheme string, tls *telemetryv1alpha1.OTLPTLS) error
 		return &EndpointInvalidError{Err: errors.New(ErrGRPCOAuth2NoTLS.Error() + ": HTTP scheme not allowed")}
 	}
 
-	// No scheme or HTTPS scheme: TLS must be properly configured
-	if (scheme == "" || scheme == "https") && !isTLSProperlyConfigured(tls) {
-		return &EndpointInvalidError{Err: ErrGRPCOAuth2NoTLS}
-	}
-
 	return nil
-}
-
-func isTLSProperlyConfigured(tls *telemetryv1alpha1.OTLPTLS) bool {
-	if tls == nil {
-		return false
-	}
-
-	if tls.InsecureSkipVerify {
-		return true
-	}
-
-	return tls.CA != nil || tls.Cert != nil || tls.Key != nil
 }

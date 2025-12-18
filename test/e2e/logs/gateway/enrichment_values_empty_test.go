@@ -32,7 +32,7 @@ func TestEnrichmentValuesEmpty(t *testing.T) {
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithIncludeNamespaces(genNs).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
 	// All attributes in the enrichment flow are set to empty values

@@ -38,7 +38,7 @@ func TestSinglePipelineV1Beta1(t *testing.T) {
 			Output: telemetryv1beta1.TracePipelineOutput{
 				OTLP: &telemetryv1beta1.OTLPOutput{
 					Endpoint: telemetryv1beta1.ValueType{
-						Value: backend.Endpoint(),
+						Value: backend.EndpointHTTP(),
 					},
 				},
 			},

@@ -47,7 +47,7 @@ func TestNoisyFilters(t *testing.T) {
 
 	pipeline := testutils.NewTracePipelineBuilder().
 		WithName(pipelineName).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
 	regularSpansGen := telemetrygen.NewPod(regularSpansNs, telemetrygen.SignalTypeTraces).K8sObject()

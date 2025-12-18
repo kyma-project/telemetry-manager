@@ -590,7 +590,7 @@ var testScenariosWithOAuth2 = []struct {
 
 	errMsgOTLPGRPC string
 }{
-	// without TLS
+	// without TLS configuration
 	{
 		name:           "http scheme without TLS",
 		endpoint:       "http://example.com:8080",
@@ -601,16 +601,16 @@ var testScenariosWithOAuth2 = []struct {
 		name:           "https scheme without TLS",
 		endpoint:       "https://example.com:8080",
 		tls:            nil,
-		errMsgOTLPGRPC: errMsgGRPCOAuth2NoTLS,
+		errMsgOTLPGRPC: "",
 	},
 	{
 		name:           "no scheme without TLS",
 		endpoint:       "example.com:8080",
 		tls:            nil,
-		errMsgOTLPGRPC: errMsgGRPCOAuth2NoTLS,
+		errMsgOTLPGRPC: "",
 	},
 
-	// with TLS
+	// with TLS configuration
 	{
 		name:     "http scheme with TLS",
 		endpoint: "http://example.com:8080",
