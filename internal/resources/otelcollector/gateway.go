@@ -329,7 +329,7 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(ctx context.Context, con
 		maps.Copy(resourceAnnotations, gad.specTemplate.Metadata.Annotations)
 	}
 
-	logf.FromContext(ctx).Info("Creating a new Deployment: %v", gad.specTemplate)
+	logf.FromContext(ctx).Info(fmt.Sprintf("Creating a new Deployment: %+v", gad.specTemplate))
 
 	// Override Podspec with user provided template if available
 	if gad.specTemplate != nil && gad.specTemplate.Pod != nil && len(gad.specTemplate.Pod.Spec.Containers) > 0 {
