@@ -39,7 +39,21 @@ const (
 	FeatureFilters      = "filters-custom"
 )
 
-var registry = metrics.Registry
+var (
+	AllFeatures = []string{
+		FeatureTransform,
+		FeatureFilter,
+		FeatureInputOTLP,
+		FeatureInputRuntime,
+		FeatureFilters,
+		FeatureOutputCustom,
+		FeatureOutputHTTP,
+		FeatureVariables,
+		FeatureFiles,
+	}
+
+	registry = metrics.Registry
+)
 
 var (
 	BuildInfo = promauto.With(registry).NewGauge(

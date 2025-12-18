@@ -401,11 +401,11 @@ func (r *Reconciler) trackOTTLFeaturesUsage(pipelines []telemetryv1alpha1.TraceP
 	for i := range pipelines {
 		// General features
 		if sharedtypesutils.IsTransformDefined(pipelines[i].Spec.Transforms) {
-			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureTransform, pipelines[i].Name)
+			metrics.RecordTracePipelineFeatureUsage(metrics.FeatureTransform, pipelines[i].Name)
 		}
 
 		if sharedtypesutils.IsFilterDefined(pipelines[i].Spec.Filters) {
-			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureFilter, pipelines[i].Name)
+			metrics.RecordTracePipelineFeatureUsage(metrics.FeatureFilter, pipelines[i].Name)
 		}
 	}
 }

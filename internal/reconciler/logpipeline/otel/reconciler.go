@@ -468,27 +468,5 @@ func (r *Reconciler) trackFeaturesUsage(pipelines []telemetryv1alpha1.LogPipelin
 		if logpipelineutils.IsApplicationInputEnabled(&pipelines[i].Spec.Input) {
 			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureInputRuntime, pipelines[i].Name)
 		}
-
-		// FluentBit features
-
-		if logpipelineutils.IsCustomFilterDefined(pipelines[i].Spec.FluentBitFilters) {
-			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureFilters, pipelines[i].Name)
-		}
-
-		if logpipelineutils.IsCustomOutputDefined(&pipelines[i].Spec.Output) {
-			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureOutputCustom, pipelines[i].Name)
-		}
-
-		if logpipelineutils.IsHTTPOutputDefined(&pipelines[i].Spec.Output) {
-			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureOutputHTTP, pipelines[i].Name)
-		}
-
-		if logpipelineutils.IsVariablesDefined(pipelines[i].Spec.FluentBitVariables) {
-			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureVariables, pipelines[i].Name)
-		}
-
-		if logpipelineutils.IsFilesDefined(pipelines[i].Spec.FluentBitFiles) {
-			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureFiles, pipelines[i].Name)
-		}
 	}
 }

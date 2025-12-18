@@ -503,25 +503,25 @@ func (r *Reconciler) trackOTTLFeaturesUsage(pipelines []telemetryv1alpha1.Metric
 		}
 
 		if sharedtypesutils.IsTransformDefined(pipelines[i].Spec.Transforms) {
-			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureTransform, pipelines[i].Name)
+			metrics.RecordMetricPipelineFeatureUsage(metrics.FeatureTransform, pipelines[i].Name)
 		}
 
 		if sharedtypesutils.IsFilterDefined(pipelines[i].Spec.Filters) {
-			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureFilter, pipelines[i].Name)
+			metrics.RecordMetricPipelineFeatureUsage(metrics.FeatureFilter, pipelines[i].Name)
 		}
 
 		// MetricPipeline features
 
 		if metricpipelineutils.IsRuntimeInputEnabled(pipelines[i].Spec.Input) {
-			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureInputRuntime, pipelines[i].Name)
+			metrics.RecordMetricPipelineFeatureUsage(metrics.FeatureInputRuntime, pipelines[i].Name)
 		}
 
 		if metricpipelineutils.IsPrometheusInputEnabled(pipelines[i].Spec.Input) {
-			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureInputPrometheus, pipelines[i].Name)
+			metrics.RecordMetricPipelineFeatureUsage(metrics.FeatureInputPrometheus, pipelines[i].Name)
 		}
 
 		if metricpipelineutils.IsIstioInputEnabled(pipelines[i].Spec.Input) {
-			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureInputIstio, pipelines[i].Name)
+			metrics.RecordMetricPipelineFeatureUsage(metrics.FeatureInputIstio, pipelines[i].Name)
 		}
 	}
 }

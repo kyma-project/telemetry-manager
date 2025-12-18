@@ -477,161 +477,130 @@ func TestGetPipelinesRequiringAgents(t *testing.T) {
 	})
 }
 
-func TestTransformFeatureUsageTracking(t *testing.T) {
+func TestFeatureUsageTracking(t *testing.T) {
 	tests := []struct {
-		name                          string
-		pipelines                     []telemetryv1alpha1.LogPipeline
-		expectedTransformFeatureUsage map[string]float64 // map[pipelineName]expectedValue
-		expectedFilterFeatureUsage    map[string]float64 // map[pipelineName]expectedValue
+		name                 string
+		pipeline             telemetryv1alpha1.LogPipeline
+		expectedFeatureUsage map[string]float64
 	}{
 		{
-			name:                          "no pipelines",
-			pipelines:                     []telemetryv1alpha1.LogPipeline{},
-			expectedTransformFeatureUsage: map[string]float64{},
-			expectedFilterFeatureUsage:    map[string]float64{},
+			name: "pipeline without features",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-1").
+				WithOTLPInput(false).
+				WithOTLPOutput().
+				Build(),
+			expectedFeatureUsage: map[string]float64{},
 		},
 		{
-			name: "pipelines without transforms",
-			pipelines: []telemetryv1alpha1.LogPipeline{
-				testutils.NewLogPipelineBuilder().WithName("pipeline-1").WithOTLPOutput().Build(),
-				testutils.NewLogPipelineBuilder().WithName("pipeline-2").WithOTLPOutput().Build(),
-			},
-			expectedTransformFeatureUsage: map[string]float64{
-				"pipeline-1": 0,
-				"pipeline-2": 0,
-			},
-			expectedFilterFeatureUsage: map[string]float64{
-				"pipeline-1": 0,
-				"pipeline-2": 0,
-			},
-		},
-		{
-			name: "pipeline with transform only",
-			pipelines: []telemetryv1alpha1.LogPipeline{
-				testutils.NewLogPipelineBuilder().
-					WithName("pipeline-1").
-					WithOTLPOutput().
-					WithTransform(telemetryv1alpha1.TransformSpec{
-						Statements: []string{"set(attributes[\"test\"], \"value\")"},
-					}).
-					Build(),
-			},
-			expectedTransformFeatureUsage: map[string]float64{
-				"pipeline-1": 1,
-			},
-			expectedFilterFeatureUsage: map[string]float64{
-				"pipeline-1": 0,
+			name: "pipeline with transform",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-2").
+				WithOTLPInput(false).
+				WithOTLPOutput().
+				WithTransform(telemetryv1alpha1.TransformSpec{
+					Statements: []string{"set(attributes[\"test\"], \"value\")"},
+				}).
+				Build(),
+			expectedFeatureUsage: map[string]float64{
+				metrics.FeatureTransform: 1,
 			},
 		},
 		{
-			name: "pipeline with filter only",
-			pipelines: []telemetryv1alpha1.LogPipeline{
-				testutils.NewLogPipelineBuilder().
-					WithName("pipeline-1").
-					WithOTLPOutput().
-					WithFilter(telemetryv1alpha1.FilterSpec{
-						Conditions: []string{"attributes[\"test\"] == \"value\""},
-					}).
-					Build(),
-			},
-			expectedTransformFeatureUsage: map[string]float64{
-				"pipeline-1": 0,
-			},
-			expectedFilterFeatureUsage: map[string]float64{
-				"pipeline-1": 1,
+			name: "pipeline with filter",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-3").
+				WithOTLPInput(false).
+				WithOTLPOutput().
+				WithFilter(telemetryv1alpha1.FilterSpec{
+					Conditions: []string{"attributes[\"test\"] == \"value\""},
+				}).
+				Build(),
+			expectedFeatureUsage: map[string]float64{
+				metrics.FeatureFilter: 1,
 			},
 		},
 		{
-			name: "pipeline with both transform and filter",
-			pipelines: []telemetryv1alpha1.LogPipeline{
-				testutils.NewLogPipelineBuilder().
-					WithName("pipeline-1").
-					WithOTLPOutput().
-					WithTransform(telemetryv1alpha1.TransformSpec{
-						Statements: []string{"set(attributes[\"test\"], \"value\")"},
-					}).
-					WithFilter(telemetryv1alpha1.FilterSpec{
-						Conditions: []string{"attributes[\"test\"] == \"value\""},
-					}).
-					Build(),
-			},
-			expectedTransformFeatureUsage: map[string]float64{
-				"pipeline-1": 1,
-			},
-			expectedFilterFeatureUsage: map[string]float64{
-				"pipeline-1": 1,
+			name: "pipeline with transform and filter",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-4").
+				WithOTLPInput(false).
+				WithOTLPOutput().
+				WithTransform(telemetryv1alpha1.TransformSpec{
+					Statements: []string{"set(attributes[\"test\"], \"value\")"},
+				}).
+				WithFilter(telemetryv1alpha1.FilterSpec{
+					Conditions: []string{"attributes[\"test\"] == \"value\""},
+				}).
+				Build(),
+			expectedFeatureUsage: map[string]float64{
+				metrics.FeatureTransform: 1,
+				metrics.FeatureFilter:    1,
 			},
 		},
 		{
-			name: "multiple pipelines with mixed transforms and filters",
-			pipelines: []telemetryv1alpha1.LogPipeline{
-				testutils.NewLogPipelineBuilder().
-					WithName("pipeline-1").
-					WithOTLPOutput().
-					WithTransform(telemetryv1alpha1.TransformSpec{
-						Statements: []string{"set(attributes[\"test\"], \"value\")"},
-					}).
-					Build(),
-				testutils.NewLogPipelineBuilder().
-					WithName("pipeline-2").
-					WithOTLPOutput().
-					WithFilter(telemetryv1alpha1.FilterSpec{
-						Conditions: []string{"attributes[\"test\"] == \"value\""},
-					}).
-					Build(),
-				testutils.NewLogPipelineBuilder().
-					WithName("pipeline-3").
-					WithOTLPOutput().
-					WithTransform(telemetryv1alpha1.TransformSpec{
-						Statements: []string{"set(attributes[\"test2\"], \"value2\")"},
-					}).
-					WithFilter(telemetryv1alpha1.FilterSpec{
-						Conditions: []string{"attributes[\"test2\"] == \"value2\""},
-					}).
-					Build(),
-				testutils.NewLogPipelineBuilder().WithName("pipeline-4").WithOTLPOutput().Build(),
+			name: "pipeline with OTLP input",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-5").
+				WithOTLPOutput().
+				WithOTLPInput(true).
+				Build(),
+			expectedFeatureUsage: map[string]float64{
+				metrics.FeatureInputOTLP: 1,
 			},
-			expectedTransformFeatureUsage: map[string]float64{
-				"pipeline-1": 1,
-				"pipeline-2": 0,
-				"pipeline-3": 1,
-				"pipeline-4": 0,
+		},
+		{
+			name: "pipeline with runtime and otlp input",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-6").
+				WithOTLPInput(true).
+				WithApplicationInput(true).
+				WithOTLPOutput().
+				WithApplicationInput(true).
+				Build(),
+			expectedFeatureUsage: map[string]float64{
+				metrics.FeatureInputRuntime: 1,
+				metrics.FeatureInputOTLP:    1,
 			},
-			expectedFilterFeatureUsage: map[string]float64{
-				"pipeline-1": 0,
-				"pipeline-2": 1,
-				"pipeline-3": 1,
-				"pipeline-4": 0,
+		},
+		{
+			name: "pipeline with all OTLP features",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-12").
+				WithOTLPOutput().
+				WithOTLPInput(true).
+				WithApplicationInput(true).
+				WithTransform(telemetryv1alpha1.TransformSpec{
+					Statements: []string{"set(attributes[\"test\"], \"value\")"},
+				}).
+				WithFilter(telemetryv1alpha1.FilterSpec{
+					Conditions: []string{"attributes[\"test\"] == \"value\""},
+				}).
+				Build(),
+			expectedFeatureUsage: map[string]float64{
+				metrics.FeatureTransform:    1,
+				metrics.FeatureFilter:       1,
+				metrics.FeatureInputOTLP:    1,
+				metrics.FeatureInputRuntime: 1,
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var clientObjs []client.Object
-			for i := range tt.pipelines {
-				clientObjs = append(clientObjs, &tt.pipelines[i])
-			}
 
-			fakeClient := newTestClient(t, clientObjs...)
+			fakeClient := newTestClient(t, &tt.pipeline)
 
 			sut := newTestReconciler(fakeClient)
 
-			for _, pipeline := range tt.pipelines {
-				result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
-				require.NoError(t, result.err)
-			}
+			result := reconcileAndGet(t, fakeClient, sut, tt.pipeline.Name)
+			require.NoError(t, result.err)
 
-			// Verify transform feature usage metrics for each pipeline
-			for pipelineName, expectedValue := range tt.expectedTransformFeatureUsage {
-				metricValue := testutil.ToFloat64(metrics.LogPipelineFeatureUsage.WithLabelValues(metrics.FeatureTransform, pipelineName))
-				require.Equal(t, expectedValue, metricValue, "transform feature usage metric should match for pipeline %s", pipelineName)
-			}
-
-			// Verify filter feature usage metrics for each pipeline
-			for pipelineName, expectedValue := range tt.expectedFilterFeatureUsage {
-				metricValue := testutil.ToFloat64(metrics.LogPipelineFeatureUsage.WithLabelValues(metrics.FeatureFilter, pipelineName))
-				require.Equal(t, expectedValue, metricValue, "filter feature usage metric should match for pipeline %s", pipelineName)
+			// Verify feature usage metrics for all features (default expected value is 0)
+			for _, feature := range metrics.AllFeatures {
+				expectedValue := tt.expectedFeatureUsage[feature] // defaults to 0 if not in map
+				metricValue := testutil.ToFloat64(metrics.LogPipelineFeatureUsage.WithLabelValues(feature, tt.pipeline.Name))
+				require.Equal(t, expectedValue, metricValue, "feature usage metric should match for pipeline `%s` and feature `%s`", tt.pipeline.Name, feature)
 			}
 		})
 	}
