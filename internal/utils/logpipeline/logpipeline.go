@@ -34,7 +34,7 @@ func IsCustomOutputDefined(o *telemetryv1alpha1.LogPipelineOutput) bool {
 	return o.FluentBitCustom != ""
 }
 
-func IsHTTPOutoutDefined(o *telemetryv1alpha1.LogPipelineOutput) bool {
+func IsHTTPOutputDefined(o *telemetryv1alpha1.LogPipelineOutput) bool {
 	return o.FluentBitHTTP != nil && sharedtypesutils.IsValid(&o.FluentBitHTTP.Host)
 }
 

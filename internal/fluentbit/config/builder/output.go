@@ -20,7 +20,7 @@ func createOutputSection(pipeline *telemetryv1alpha1.LogPipeline, defaults pipel
 		return generateCustomOutput(output, defaults.FsBufferLimit, pipeline.Name)
 	}
 
-	if logpipelineutils.IsHTTPOutoutDefined(output) {
+	if logpipelineutils.IsHTTPOutputDefined(output) {
 		return generateHTTPOutput(output.FluentBitHTTP, defaults.FsBufferLimit, pipeline.Name)
 	}
 

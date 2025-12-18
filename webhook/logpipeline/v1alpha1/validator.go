@@ -75,7 +75,7 @@ func (v *LogPipelineValidator) validateLogPipeline(ctx context.Context, pipeline
 		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "output.custom"))
 	}
 
-	if logpipelineutils.IsHTTPOutoutDefined(&pipeline.Spec.Output) {
+	if logpipelineutils.IsHTTPOutputDefined(&pipeline.Spec.Output) {
 		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "output.http"))
 	}
 

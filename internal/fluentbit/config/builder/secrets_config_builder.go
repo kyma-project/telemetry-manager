@@ -40,7 +40,7 @@ func (b *ConfigBuilder) buildTLSFileConfigSecret(ctx context.Context, logPipelin
 
 	for i := range logPipelines {
 		output := logPipelines[i].Spec.Output
-		if !logpipelineutils.IsHTTPOutoutDefined(&output) {
+		if !logpipelineutils.IsHTTPOutputDefined(&output) {
 			continue
 		}
 

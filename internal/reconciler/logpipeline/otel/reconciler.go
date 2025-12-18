@@ -479,7 +479,7 @@ func (r *Reconciler) trackFeaturesUsage(pipelines []telemetryv1alpha1.LogPipelin
 			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureOutputCustom, pipelines[i].Name)
 		}
 
-		if logpipelineutils.IsHTTPOutoutDefined(&pipelines[i].Spec.Output) {
+		if logpipelineutils.IsHTTPOutputDefined(&pipelines[i].Spec.Output) {
 			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureOutputHTTP, pipelines[i].Name)
 		}
 

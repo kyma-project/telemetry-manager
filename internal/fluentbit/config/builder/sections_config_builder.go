@@ -55,7 +55,7 @@ func createRecordModifierFilter(pipeline *telemetryv1alpha1.LogPipeline, cluster
 
 func createLuaFilter(logPipeline *telemetryv1alpha1.LogPipeline) string {
 	output := logPipeline.Spec.Output
-	if !logpipelineutils.IsHTTPOutoutDefined(&output) {
+	if !logpipelineutils.IsHTTPOutputDefined(&output) {
 		return ""
 	}
 
@@ -93,7 +93,7 @@ func validateCustomSections(pipeline *telemetryv1alpha1.LogPipeline) error {
 
 func createTimestampModifyFilter(pipeline *telemetryv1alpha1.LogPipeline) string {
 	output := pipeline.Spec.Output
-	if !logpipelineutils.IsHTTPOutoutDefined(&output) {
+	if !logpipelineutils.IsHTTPOutputDefined(&output) {
 		return ""
 	}
 
