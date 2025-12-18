@@ -1,0 +1,8 @@
+| Test # | Signal Type | Telemetrygen Replicas | Trace Agent | Trace Sink | Throughput | Istio     | Node size CPU                | Node CPU Usage | Avg Load Generator CPU | Telemetry Agent CPU |
+|--------|-------------|-----------------------|-------------|------------|------------|-----------|------------------------------|----------------|------------------------|---------------------|
+| 1      | Traces      | 6                     | 1           | 1          | 62k        | No        | 16                           | 13110m         | 1112m                  | 4400m               |
+| 2      | Traces      | 6                     | 1           | 1          | 101k       | No        | 32                           | 3889m          | 419m                   | 1004m               |
+| 3      | Logs        | 6                     | 1           | 1          | 21k        | No        | 16                           | 13336m         | 802m                   | 6590m               |
+| 4      | Logs        | 6                     | 1           | 1          | 30k/34k    | No        | 32//increased to 10 replicas | 23947m         | 1925m                  | 12804m              |
+| 5      | Logs        | 6                     | 1           | 1          | 4.5k       | Yes       | 16                           | 5820m          | 433m                   | 2025m               |
+| 6      | Logs        | 6                     | 1           | 1          | 14k        | Yes (tcp) | 16                           | -              | -                      | -                   |

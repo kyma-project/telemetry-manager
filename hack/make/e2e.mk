@@ -25,6 +25,9 @@ setup-e2e-experimental-no-fips: provision-k3d deploy-experimental-no-fips deploy
 .PHONY: setup-e2e-experimental-no-istio-fips
 setup-e2e-experimental-istio-no-fips: provision-k3d-istio deploy-experimental-no-fips deploy-test-prerequisites ## Set up E2E test environment with experimental features and Istio (no FIPS)
 
+.PHONY: setup-e2e-custom-labels-annotations-no-fips
+setup-e2e-custom-labels-annotations-no-fips: provision-k3d deploy-custom-labels-annotations-no-fips deploy-test-prerequisites ## Set up E2E test environment with custom labels and annotations (no FIPS)
+
 .PHONY: deploy-test-prerequisites
 deploy-test-prerequisites: ## Deploy common test prerequisites (telemetry config, network policy, shoot info)
 	kubectl apply -f test/fixtures/operator_v1alpha1_telemetry.yaml -n kyma-system; \

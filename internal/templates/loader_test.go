@@ -26,9 +26,8 @@ func TestLoadPodSpecTemplate(t *testing.T) {
 		wantErr   bool
 	}{
 		{
-			name: "success",
-			//reader:    &mockReader{data: []byte("metadata:\n  name: test\n  labels:\n    foo: bar\nspec:\n  containers:\n  - name: c1\n    image: nginx\n")},
-			reader: &mockReader{data: []byte("objectmeta:\n  labels:\n    foo: bar\nspec:\n  containers:\n  - name: c1\n    image: nginx\n")},
+			name:   "success",
+			reader: &mockReader{data: []byte("objectmeta:\n  labels:\n    foo: bar\n  annotations:\n    anno-foo: bar\nspec:\n  containers:\n  - name: c1\n    image: nginx\n")},
 
 			wantImage: "nginx",
 			wantErr:   false,
@@ -60,6 +59,14 @@ func TestLoadPodSpecTemplate(t *testing.T) {
 
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if tpl.ObjectMeta.Labels["foo"] != "bar" {
+				t.Fatalf("label mismatch: want %q got %q", "bar", tpl.ObjectMeta.Labels["foo"])
+			}
+
+			if tpl.ObjectMeta.Annotations["anno-foo"] != "bar" {
+				t.Fatalf("annotation mismatch: want %q got %q", "bar", tpl.ObjectMeta.Annotations["anno-foo"])
 			}
 
 			if len(tpl.Spec.Containers) == 0 {

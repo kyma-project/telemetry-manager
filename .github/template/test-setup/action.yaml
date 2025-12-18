@@ -19,6 +19,10 @@ inputs:
     description: Whether components should be deployed in FIPS 140-2 compliant way.
     required: true
     default: "false"
+  custom-labels-annotations-no-fips:
+    description: Whether to add custom labels and annotations to the components using helm in non-FIPS mode.
+    required: false
+    default: "false"
 
 runs:
   using: "composite"
@@ -46,10 +50,15 @@ runs:
         if [[ "${{ inputs.operate-in-fips-mode }}" == "false" ]]; then
           mode="$mode-no-fips"
         fi
+        
+        if [[ -n "${{ inputs.custom-labels-annotations-no-fips }}" == "true" ]]; then
+          mode="$mode-custom-labels-annotations-no-fips"
+        fi
 
         if [[ -n "${{ inputs.manager-image }}" ]]; then
           export MANAGER_IMAGE="${{ inputs.manager-image }}"
         fi
+        
 
         echo "::notice title=Manager Image::Manager Image to be used: $MANAGER_IMAGE"
 
