@@ -26,8 +26,10 @@ func TestLoadPodSpecTemplate(t *testing.T) {
 		wantErr   bool
 	}{
 		{
-			name:      "success",
-			reader:    &mockReader{data: []byte("metadata:\n  name: test\nspec:\n  containers:\n  - name: c1\n    image: nginx\n")},
+			name: "success",
+			//reader:    &mockReader{data: []byte("metadata:\n  name: test\n  labels:\n    foo: bar\nspec:\n  containers:\n  - name: c1\n    image: nginx\n")},
+			reader: &mockReader{data: []byte("objectmeta:\n  labels:\n    foo: bar\nspec:\n  containers:\n  - name: c1\n    image: nginx\n")},
+
 			wantImage: "nginx",
 			wantErr:   false,
 		},

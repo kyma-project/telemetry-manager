@@ -20,14 +20,14 @@ data:
     {{- end }}
 
   podspec-template.yaml: |
-    metadata:
+    objectmeta:
       labels:
         {{- if .Values.additionalMetadata.pod.labels}}
 {{ toYaml .Values.additionalMetadata.pod.labels | indent 8 }}
     {{- end }}
       annotations:
       {{- if .Values.additionalMetadata.pod.annotations}}
-  {{ toYaml .Values.additionalMetadata.pod.annotations | indent 8 }}
+{{ toYaml .Values.additionalMetadata.pod.annotations | indent 8 }}
       {{- end }}
     spec:
       {{- if .Values.global.imagePullSecret.enabled }}

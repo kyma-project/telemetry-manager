@@ -256,7 +256,6 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(ctx context.Context, configCh
 		maps.Copy(resourceAnnotations, aad.specTemplate.Metadata.Annotations)
 	}
 
-	logf.FromContext(ctx).Info(fmt.Sprintf("Creating a new DaemonSet: %+v", aad.specTemplate))
 	// Override Podspec with user provided template if available
 	if aad.specTemplate != nil && aad.specTemplate.Pod != nil && len(aad.specTemplate.Pod.Spec.Containers) > 0 {
 		aad.specTemplate.Pod.Spec.Containers[0].Name = containerName
