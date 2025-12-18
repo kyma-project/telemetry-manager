@@ -61,12 +61,12 @@ func TestLoadPodSpecTemplate(t *testing.T) {
 				t.Fatalf("unexpected error: %v", err)
 			}
 
-			if tpl.ObjectMeta.Labels["foo"] != "bar" {
-				t.Fatalf("label mismatch: want %q got %q", "bar", tpl.ObjectMeta.Labels["foo"])
+			if tpl.Labels["foo"] != "bar" {
+				t.Fatalf("label mismatch: want %q got %q", "bar", tpl.Labels["foo"])
 			}
 
-			if tpl.ObjectMeta.Annotations["anno-foo"] != "bar" {
-				t.Fatalf("annotation mismatch: want %q got %q", "bar", tpl.ObjectMeta.Annotations["anno-foo"])
+			if tpl.Annotations["anno-foo"] != "bar" {
+				t.Fatalf("annotation mismatch: want %q got %q", "bar", tpl.Annotations["anno-foo"])
 			}
 
 			if len(tpl.Spec.Containers) == 0 {

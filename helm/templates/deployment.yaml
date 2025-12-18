@@ -31,7 +31,7 @@ spec:
     spec:
       {{- if .Values.global.imagePullSecret.enabled }}
       imagePullSecrets:
-        - name: {{ .Values.global.imagePullSecret.name }}
+      - name: {{ .Values.global.imagePullSecret.name }}
       {{- end }}
       containers:
       - args:

@@ -3,6 +3,10 @@ package customlabelannotations
 import (
 	"testing"
 
+	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/labels"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -14,9 +18,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
-	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/labels"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var label = map[string]string{"my-meta-label": "foo"}
@@ -49,13 +50,13 @@ func TestLabelAnnotation(t *testing.T) {
 				}
 			},
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string) {
-
 				assert.DeploymentReady(t, kitkyma.LogGatewayName)
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
 				assert.OTelLogPipelineHealthy(t, pipelineName)
 				assert.OTelLogsFromNamespaceDelivered(t, backend, ns)
 				assert.DeploymentHasLabel(t, kitkyma.LogGatewayName, label)
 				assert.DeploymentHasAnnotation(t, kitkyma.LogGatewayName, annotation)
+
 				var gwSelector = client.ListOptions{
 					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-log-gateway"}),
 					Namespace:     kitkyma.SystemNamespaceName,
@@ -65,6 +66,7 @@ func TestLabelAnnotation(t *testing.T) {
 
 				assert.DaemonSetHasLabel(t, kitkyma.LogAgentName, label)
 				assert.DaemonSetHasAnnotation(t, kitkyma.LogAgentName, annotation)
+
 				var agentSelector = client.ListOptions{
 					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-log-agent"}),
 					Namespace:     kitkyma.SystemNamespaceName,
@@ -95,6 +97,7 @@ func TestLabelAnnotation(t *testing.T) {
 				assert.FluentBitLogsFromNamespaceDelivered(t, backend, ns)
 				assert.DaemonSetHasLabel(t, kitkyma.FluentBitDaemonSetName, label)
 				assert.DaemonSetHasAnnotation(t, kitkyma.FluentBitDaemonSetName, annotation)
+
 				var selector = client.ListOptions{
 					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "fluent-bit"}),
 					Namespace:     kitkyma.SystemNamespaceName,
@@ -131,6 +134,7 @@ func TestLabelAnnotation(t *testing.T) {
 
 				assert.DeploymentHasLabel(t, kitkyma.MetricGatewayName, label)
 				assert.DeploymentHasAnnotation(t, kitkyma.MetricGatewayName, annotation)
+
 				var gwSelector = client.ListOptions{
 					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-metric-gateway"}),
 					Namespace:     kitkyma.SystemNamespaceName,
@@ -140,13 +144,13 @@ func TestLabelAnnotation(t *testing.T) {
 
 				assert.DaemonSetHasLabel(t, kitkyma.MetricAgentName, label)
 				assert.DaemonSetHasAnnotation(t, kitkyma.MetricAgentName, annotation)
+
 				var agentSelector = client.ListOptions{
 					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"}),
 					Namespace:     kitkyma.SystemNamespaceName,
 				}
 				assert.PodsHaveAnnotation(t, agentSelector, podAnnotation)
 				assert.PodsHaveLabel(t, agentSelector, podLabel)
-
 			},
 		},
 		{
@@ -168,9 +172,10 @@ func TestLabelAnnotation(t *testing.T) {
 				assert.DeploymentReady(t, kitkyma.TraceGatewayName)
 				assert.TracePipelineHealthy(t, pipelineName)
 				assert.TracesFromNamespaceDelivered(t, backend, ns)
-				
+
 				assert.DeploymentHasLabel(t, kitkyma.TraceGatewayName, label)
 				assert.DeploymentHasAnnotation(t, kitkyma.TraceGatewayName, annotation)
+
 				var selector = client.ListOptions{
 					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-trace-gateway"}),
 					Namespace:     kitkyma.SystemNamespaceName,

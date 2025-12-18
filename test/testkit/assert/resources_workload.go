@@ -24,26 +24,49 @@ func DeploymentReady(t *testing.T, name types.NamespacedName) {
 
 func DeploymentHasAnnotation(t *testing.T, name types.NamespacedName, annotation map[string]string) {
 	t.Helper()
+
 	var deployment appsv1.Deployment
+
 	err := suite.K8sClient.Get(t.Context(), name, &deployment)
 	Expect(err).NotTo(HaveOccurred())
-	for key, value := range annotation {
-		val, exists := deployment.Annotations[key]
-		Expect(exists).To(BeTrueBecause("Annotation %s not found on Deployment %s", key, name.String()))
-		Expect(val).To(Equal(value), "Annotation %s value mismatch on Deployment %s", key, name.String())
-	}
+
+	checkAnnotations(t, deployment.Annotations, annotation, "Deployment", name)
 }
 
 func DeploymentHasLabel(t *testing.T, name types.NamespacedName, label map[string]string) {
 	t.Helper()
+
 	var deployment appsv1.Deployment
+
 	err := suite.K8sClient.Get(t.Context(), name, &deployment)
 	Expect(err).NotTo(HaveOccurred())
-	for key, value := range label {
-		val, exists := deployment.Labels[key]
-		Expect(exists).To(BeTrueBecause("Label %s not found on Deployment %s", key, name.String()))
-		Expect(val).To(Equal(value), "Label %s value mismatch on Deployment %s", key, name.String())
+
+	checkLabels(t, deployment.Labels, label, "Deployment", name)
+}
+
+func checkAnnotations(t *testing.T, resourceAnnotations map[string]string, expected map[string]string, resourceType string, name types.NamespacedName) {
+	t.Helper()
+
+	for key, value := range expected {
+		val, exists := resourceAnnotations[key]
+		Expect(exists).To(BeTrueBecause("Annotation %s not found on %s %s", key, resourceType, name.String()))
+		Expect(val).To(Equal(value), "Annotation %s value mismatch on %s %s", key, resourceType, name.String())
 	}
+}
+
+func checkLabels(t *testing.T, resourceLabels map[string]string, expected map[string]string, resourceType string, name types.NamespacedName) {
+	t.Helper()
+
+	for key, value := range expected {
+		val, exists := resourceLabels[key]
+		Expect(exists).To(BeTrueBecause("Label %s not found on %s %s", key, resourceType, name.String()))
+		Expect(val).To(Equal(value), "Label %s value mismatch on %s %s", key, resourceType, name.String())
+	}
+}
+
+func StatefulSetReady(t *testing.T, name types.NamespacedName) {
+	t.Helper()
+	isReady(t, isStatefulSetReady, name, "StatefulSet")
 }
 
 func DaemonSetReady(t *testing.T, name types.NamespacedName) {
@@ -62,32 +85,24 @@ func DaemonSetNotFound(t *testing.T, name types.NamespacedName) {
 
 func DaemonSetHasAnnotation(t *testing.T, name types.NamespacedName, annotation map[string]string) {
 	t.Helper()
+
 	var daemonSet appsv1.DaemonSet
+
 	err := suite.K8sClient.Get(t.Context(), name, &daemonSet)
 	Expect(err).NotTo(HaveOccurred())
-	for key, value := range annotation {
-		val, exists := daemonSet.Annotations[key]
-		Expect(exists).To(BeTrueBecause("Annotation %s not found on DaemonSet %s", key, name.String()))
-		Expect(val).To(Equal(value), "Annotation %s value mismatch on DaemonSet %s", key, name.String())
-	}
+
+	checkAnnotations(t, daemonSet.Annotations, annotation, "DaemonSet", name)
 }
 
 func DaemonSetHasLabel(t *testing.T, name types.NamespacedName, label map[string]string) {
 	t.Helper()
+
 	var daemonSet appsv1.DaemonSet
+
 	err := suite.K8sClient.Get(t.Context(), name, &daemonSet)
 	Expect(err).NotTo(HaveOccurred())
-	for key, value := range label {
-		val, exists := daemonSet.Labels[key]
-		Expect(exists).To(BeTrueBecause("Label %s not found on DaemonSet %s", key, name.String()))
-		Expect(val).To(Equal(value), "Label %s value mismatch on DaemonSet %s", key, name.String())
-	}
 
-}
-
-func StatefulSetReady(t *testing.T, name types.NamespacedName) {
-	t.Helper()
-	isReady(t, isStatefulSetReady, name, "StatefulSet")
+	checkLabels(t, daemonSet.Labels, label, "DaemonSet", name)
 }
 
 func JobReady(t *testing.T, name types.NamespacedName) {
@@ -111,40 +126,36 @@ func PodsReady(t *testing.T, listOptions client.ListOptions) {
 
 func PodsHaveAnnotation(t *testing.T, listOptions client.ListOptions, annotation map[string]string) {
 	t.Helper()
-
-	var pods corev1.PodList
-	var annotationExists bool
-	err := suite.K8sClient.List(t.Context(), &pods, &listOptions)
-	Expect(err).NotTo(HaveOccurred())
-
-	for annotationKey, annotationValue := range annotation {
-		for _, pod := range pods.Items {
-			if val, exists := pod.Annotations[annotationKey]; exists && val == annotationValue {
-				annotationExists = true
-				break
-			}
-		}
-	}
-	Expect(annotationExists).To(BeTrue())
+	podsHaveKeyValue(t, listOptions, annotation, func(p corev1.Pod) map[string]string { return p.Annotations }, "annotation")
 }
 
 func PodsHaveLabel(t *testing.T, listOptions client.ListOptions, label map[string]string) {
 	t.Helper()
+	podsHaveKeyValue(t, listOptions, label, func(p corev1.Pod) map[string]string { return p.Labels }, "label")
+}
+
+func podsHaveKeyValue(t *testing.T, listOptions client.ListOptions, expected map[string]string, extractor func(corev1.Pod) map[string]string, kind string) {
+	t.Helper()
+
 	var pods corev1.PodList
-	var labelExists bool
 
 	err := suite.K8sClient.List(t.Context(), &pods, &listOptions)
 	Expect(err).NotTo(HaveOccurred())
 
-	for labelKey, labelValue := range label {
+	for key, want := range expected {
+		found := false
+
 		for _, pod := range pods.Items {
-			if val, exists := pod.Labels[labelKey]; exists && val == labelValue {
-				labelExists = true
-				break
+			if m := extractor(pod); m != nil {
+				if got, ok := m[key]; ok && got == want {
+					found = true
+					break
+				}
 			}
 		}
+
+		Expect(found).To(BeTrue(), fmt.Sprintf("%s %s=%s not found on any Pod", kind, key, want))
 	}
-	Expect(labelExists).To(BeTrue())
 }
 
 func PodsHaveContainer(t *testing.T, listOptions client.ListOptions, containerName string) (bool, error) {

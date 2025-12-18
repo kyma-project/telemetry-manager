@@ -40,8 +40,7 @@ data:
   {{- if and .Values.global.caBundle.enabled .Values.global.caBundle.name (ne .Values.global.caBundle.name "") }}
         volumemounts:
         - name: custom-ca-bundle
-          mountpath: {{ .Values.global.caBundle.mountPath }}/{{ .Values.global.caBundle.file }}
-          subpath: {{ .Values.global.caBundle.file }}
+          mountpath: {{ .Values.global.caBundle.mountPath }}
           readonly: true
 
       volumes:
