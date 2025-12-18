@@ -17,9 +17,9 @@ You can't modify an existing LogPipeline to change its output type. You must cre
 
 ## Procedure
 
-1. Identify your LogPipeline which needs a migration
+1. Identify deprecated fields in your LogPipeline.
 
-    A LogPipeline based on the deprecated FluentBit technology must use an output of type `http` or `custom`. All other elements outlined in the following example are optional elements of the deprecated stack and must be migrated as well if used.
+   If your LogPipeline uses the `http` or `custom` output, you must migrate it to the OTLP stack and replace the deprecated fields:
 
     ```yaml
     apiVersion: telemetry.kyma-project.io/v1alpha1
