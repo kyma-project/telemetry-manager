@@ -186,4 +186,5 @@ const (
 	ComponentIDFileStorageExtension      = "file_storage"
 	ComponentIDHealthCheckExtension      = "health_check"
 	ComponentIDPprofExtension            = "pprof"
+	ComponentIDOAuth2Extension           = "oauth2client/%s" // dynamically filled with pipeline name
 )

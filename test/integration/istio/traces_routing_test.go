@@ -48,12 +48,12 @@ func TestTracesRouting(t *testing.T) {
 
 	tracePipeline := testutils.NewTracePipelineBuilder().
 		WithName(pipeline1Name).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
 	istioTracePipeline := testutils.NewTracePipelineBuilder().
 		WithName(pipeline2Name).
-		WithOTLPOutput(testutils.OTLPEndpoint(istiofiedBackend.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(istiofiedBackend.EndpointHTTP())).
 		Build()
 
 	traceGatewayExternalService := kitk8sobjects.NewService("telemetry-otlp-traces-external", kitkyma.SystemNamespaceName).

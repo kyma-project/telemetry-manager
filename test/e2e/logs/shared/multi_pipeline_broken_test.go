@@ -66,7 +66,7 @@ func TestMultiPipelineBroken_OTel(t *testing.T) {
 			healthyPipeline := testutils.NewLogPipelineBuilder().
 				WithName(healthyPipelineName).
 				WithInput(tc.inputBuilder(genNs)).
-				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+				WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 				Build()
 
 			brokenPipeline := testutils.NewLogPipelineBuilder().

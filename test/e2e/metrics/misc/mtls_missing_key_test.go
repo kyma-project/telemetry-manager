@@ -31,12 +31,12 @@ func TestMTLSMissingKey(t *testing.T) {
 	serverCerts, clientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).Build()
 	Expect(err).ToNot(HaveOccurred())
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithTLS(*serverCerts))
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithMTLS(*serverCerts))
 
 	pipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineName).
 		WithOTLPOutput(
-			testutils.OTLPEndpoint(backend.Endpoint()),
+			testutils.OTLPEndpoint(backend.EndpointHTTP()),
 			testutils.OTLPClientTLS(&telemetryv1alpha1.OTLPTLS{
 				CA:   &telemetryv1alpha1.ValueType{Value: clientCerts.CaCertPem.String()},
 				Cert: &telemetryv1alpha1.ValueType{Value: clientCerts.ClientCertPem.String()},

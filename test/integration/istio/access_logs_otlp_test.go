@@ -41,7 +41,7 @@ func TestAccessLogsOTLP(t *testing.T) {
 	logPipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithApplicationInput(false).
-		WithOTLPOutput(testutils.OTLPEndpoint(logBackend.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(logBackend.EndpointHTTP())).
 		Build()
 
 	sampleApp := prommetricgen.New(permissiveNs, prommetricgen.WithName(uniquePrefix("otlp-access-log-emitter")))
@@ -49,7 +49,7 @@ func TestAccessLogsOTLP(t *testing.T) {
 
 	tracePipeline := testutils.NewTracePipelineBuilder().
 		WithName(pipelineName).
-		WithOTLPOutput(testutils.OTLPEndpoint(traceBackend.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(traceBackend.EndpointHTTP())).
 		Build()
 
 	resources := []client.Object{

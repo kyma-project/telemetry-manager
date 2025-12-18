@@ -42,7 +42,7 @@ func TestMetricsPrometheusInput(t *testing.T) {
 	metricPipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineName).
 		WithPrometheusInput(true, testutils.IncludeNamespaces(genNs)).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
 	resources := []client.Object{

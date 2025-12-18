@@ -149,7 +149,7 @@ func TestTransform_OTel(t *testing.T) {
 			pipelineTransform := testutils.NewLogPipelineBuilder().
 				WithName(pipelineNameValue).
 				WithInput(tc.input).
-				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+				WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 				WithTransform(tc.transformSpec).
 				Build()
 

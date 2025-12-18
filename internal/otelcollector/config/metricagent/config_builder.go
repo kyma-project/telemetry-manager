@@ -66,11 +66,12 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 
 	b.Config = common.NewConfig()
 	b.AddExtension(common.ComponentIDK8sLeaderElectorExtension,
-		common.K8sLeaderElector{
+		common.K8sLeaderElectorExtension{
 			AuthType:       "serviceAccount",
 			LeaseName:      common.K8sLeaderElectorK8sCluster,
 			LeaseNamespace: opts.AgentNamespace,
 		},
+		nil,
 	)
 	b.EnvVars = make(common.EnvVars)
 
@@ -167,6 +168,12 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 		prometheusInputEnabled := metricpipelineutils.IsPrometheusInputEnabled(pipeline.Spec.Input)
 		istioInputEnabled := metricpipelineutils.IsIstioInputEnabled(pipeline.Spec.Input)
 		queueSize := common.BatchingMaxQueueSize / len(pipelines)
+
+		if shouldEnableOAuth2(&pipeline) {
+			if err := b.addOAuth2Extension(ctx, &pipeline); err != nil {
+				return nil, nil, err
+			}
+		}
 
 		if err := b.AddServicePipeline(ctx, &pipeline, outputPipelineID,
 			// Receivers
@@ -873,6 +880,26 @@ func inputRoutingConnectorConfig(outputPipelineIDs []string) common.RoutingConne
 	}
 }
 
+// Authentication extensions
+
+func (b *Builder) addOAuth2Extension(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) error {
+	oauth2ExtensionID := common.OAuth2ExtensionID(pipeline.Name)
+
+	oauth2ExtensionConfig, oauth2ExtensionEnvVars, err := common.NewOAuth2ExtensionConfigBuilder(
+		b.Reader,
+		pipeline.Spec.Output.OTLP.Authentication.OAuth2,
+		pipeline.Name,
+		common.SignalTypeTrace,
+	).OAuth2ExtensionConfig(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to build OAuth2 extension for pipeline %s: %w", pipeline.Name, err)
+	}
+
+	b.AddExtension(oauth2ExtensionID, oauth2ExtensionConfig, oauth2ExtensionEnvVars)
+
+	return nil
+}
+
 // Helper functions for formatting IDs
 
 func formatOutputPipelineIDs(pipelines []telemetryv1alpha1.MetricPipeline) []string {
@@ -1073,6 +1100,10 @@ func shouldEnableEnvoyMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeli
 
 func shouldFilterByNamespace(namespaceSelector *telemetryv1alpha1.NamespaceSelector) bool {
 	return namespaceSelector != nil && (len(namespaceSelector.Include) > 0 || len(namespaceSelector.Exclude) > 0)
+}
+
+func shouldEnableOAuth2(tp *telemetryv1alpha1.MetricPipeline) bool {
+	return tp.Spec.Output.OTLP.Authentication != nil && tp.Spec.Output.OTLP.Authentication.OAuth2 != nil
 }
 
 // Processor configuration functions (merged from processors.go)

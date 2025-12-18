@@ -38,7 +38,7 @@ func TestDisabledInput_OTel(t *testing.T) {
 		WithApplicationInput(false).
 		WithOTLPInput(false).
 		WithOTLPOutput(
-			testutils.OTLPEndpoint(backend.Endpoint()),
+			testutils.OTLPEndpoint(backend.EndpointHTTP()),
 		).
 		Build()
 

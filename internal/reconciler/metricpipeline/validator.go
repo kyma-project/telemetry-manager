@@ -4,6 +4,7 @@ import (
 	"context"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
@@ -79,13 +80,23 @@ func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.Me
 	}
 
 	if pipeline.Spec.Output.OTLP != nil {
-		if err := v.EndpointValidator.Validate(ctx, &pipeline.Spec.Output.OTLP.Endpoint, pipeline.Spec.Output.OTLP.Protocol); err != nil {
+		var oauth2 *telemetryv1alpha1.OAuth2Options = nil
+		if pipeline.Spec.Output.OTLP.Authentication != nil {
+			oauth2 = pipeline.Spec.Output.OTLP.Authentication.OAuth2
+		}
+
+		if err := v.EndpointValidator.Validate(ctx, endpoint.EndpointValidationParams{
+			Endpoint:   &pipeline.Spec.Output.OTLP.Endpoint,
+			Protocol:   pipeline.Spec.Output.OTLP.Protocol,
+			OTLPOAuth2: oauth2,
+			OTLPTLS:    pipeline.Spec.Output.OTLP.TLS,
+		}); err != nil {
 			return err
 		}
 	}
 
 	if tlsValidationRequired(pipeline) {
-		tlsConfig := tlscert.TLSBundle{
+		tlsConfig := tlscert.TLSValidationParams{
 			Cert: pipeline.Spec.Output.OTLP.TLS.Cert,
 			Key:  pipeline.Spec.Output.OTLP.TLS.Key,
 			CA:   pipeline.Spec.Output.OTLP.TLS.CA,

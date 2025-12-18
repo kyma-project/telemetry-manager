@@ -33,12 +33,12 @@ func TestMultiPipelineFanout(t *testing.T) {
 
 	pipeline1 := testutils.NewTracePipelineBuilder().
 		WithName(pipeline1Name).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend1.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend1.EndpointHTTP())).
 		Build()
 
 	pipeline2 := testutils.NewTracePipelineBuilder().
 		WithName(pipeline2Name).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend2.EndpointHTTP())).
 		Build()
 
 	resources := []client.Object{

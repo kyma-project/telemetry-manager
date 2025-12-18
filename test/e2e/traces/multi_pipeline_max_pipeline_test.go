@@ -42,14 +42,14 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 		pipelineName := fmt.Sprintf("%s-%d", pipelineBase, i)
 		pipeline := testutils.NewTracePipelineBuilder().
 			WithName(pipelineName).
-			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 			Build()
 		pipelines = append(pipelines, &pipeline)
 	}
 
 	additionalPipeline := testutils.NewTracePipelineBuilder().
 		WithName(additionalPipelineName).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
 	resources := []client.Object{

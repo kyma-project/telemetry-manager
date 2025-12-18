@@ -18,7 +18,7 @@ import (
 )
 
 func TestMTLSExpiredCert(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelTraces)
+	suite.RegisterTestCase(t, suite.LabelTraces, suite.LabelMTLS)
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -31,13 +31,13 @@ func TestMTLSExpiredCert(t *testing.T) {
 		Build()
 	Expect(err).ToNot(HaveOccurred())
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces, kitbackend.WithTLS(*expiredServerCerts))
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces, kitbackend.WithMTLS(*expiredServerCerts))
 
 	pipeline := testutils.NewTracePipelineBuilder().
 		WithName(pipelineName).
 		WithOTLPOutput(
-			testutils.OTLPEndpoint(backend.Endpoint()),
-			testutils.OTLPClientTLSFromString(
+			testutils.OTLPEndpoint(backend.EndpointHTTPS()),
+			testutils.OTLPClientMTLSFromString(
 				expiredClientCerts.CaCertPem.String(),
 				expiredClientCerts.ClientCertPem.String(),
 				expiredClientCerts.ClientKeyPem.String(),

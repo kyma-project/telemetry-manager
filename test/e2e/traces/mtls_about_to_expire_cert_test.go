@@ -21,7 +21,7 @@ import (
 )
 
 func TestMTLSAboutToExpireCert(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelTraces)
+	suite.RegisterTestCase(t, suite.LabelTraces, suite.LabelMTLS)
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -35,13 +35,13 @@ func TestMTLSAboutToExpireCert(t *testing.T) {
 		Build()
 	Expect(err).ToNot(HaveOccurred())
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces, kitbackend.WithTLS(*serverCerts))
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces, kitbackend.WithMTLS(*serverCerts))
 
 	pipeline := testutils.NewTracePipelineBuilder().
 		WithName(pipelineName).
 		WithOTLPOutput(
-			testutils.OTLPEndpoint(backend.Endpoint()),
-			testutils.OTLPClientTLSFromString(
+			testutils.OTLPEndpoint(backend.EndpointHTTPS()),
+			testutils.OTLPClientMTLSFromString(
 				clientCerts.CaCertPem.String(),
 				clientCerts.ClientCertPem.String(),
 				clientCerts.ClientKeyPem.String(),

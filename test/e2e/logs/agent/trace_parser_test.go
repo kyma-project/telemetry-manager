@@ -56,7 +56,7 @@ func TestTraceParser(t *testing.T) {
 		WithName(pipelineName).
 		WithApplicationInput(true,
 			[]testutils.ExtendedNamespaceSelectorOptions{testutils.ExtIncludeNamespaces(genNs)}...).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
 	resources := []client.Object{

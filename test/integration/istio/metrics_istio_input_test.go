@@ -83,13 +83,13 @@ func TestMetricsIstioInput(t *testing.T) {
 		WithName(pipelineName).
 		WithOTLPInput(false).
 		WithIstioInput(true, testutils.IncludeNamespaces(app1Ns)).
-		WithOTLPOutput(testutils.OTLPEndpoint(metricBackend.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(metricBackend.EndpointHTTP())).
 		Build()
 
 	logPipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithApplicationInput(false).
-		WithOTLPOutput(testutils.OTLPEndpoint(logBackend.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(logBackend.EndpointHTTP())).
 		Build()
 
 	resources := []client.Object{

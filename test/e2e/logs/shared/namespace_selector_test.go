@@ -86,7 +86,7 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 			includePipeline := testutils.NewLogPipelineBuilder().
 				WithName(includePipelineName).
 				WithInput(tc.inputBuilder([]string{gen1Ns}, nil)).
-				WithOTLPOutput(testutils.OTLPEndpoint(backend1.Endpoint())).
+				WithOTLPOutput(testutils.OTLPEndpoint(backend1.EndpointHTTP())).
 				Build()
 
 			// Exclude all namespaces except gen1Ns (gen2Ns and other unrelated namespaces)
@@ -107,7 +107,7 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 			excludePipeline := testutils.NewLogPipelineBuilder().
 				WithName(excludePipelineName).
 				WithInput(tc.inputBuilder(nil, excludeNss)).
-				WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
+				WithOTLPOutput(testutils.OTLPEndpoint(backend2.EndpointHTTP())).
 				Build()
 
 			resources := []client.Object{

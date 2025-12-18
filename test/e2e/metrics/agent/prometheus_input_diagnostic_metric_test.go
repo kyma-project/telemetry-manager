@@ -43,7 +43,7 @@ func TestPrometheusInputDiagnosticMetric(t *testing.T) {
 		WithName(pipelineName).
 		WithPrometheusInput(true).
 		WithPrometheusInputDiagnosticMetrics(true).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
 	resources := []client.Object{

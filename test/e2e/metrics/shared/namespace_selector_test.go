@@ -28,7 +28,7 @@ func TestNamespaceSelector(t *testing.T) {
 		generatorBuilder func(ns1, ns2 string) []client.Object
 	}{
 		{
-			label: suite.LabelMetricAgentSetB,
+			label: suite.LabelMetricAgentSetC,
 			inputBuilder: func(includeNss, excludeNss []string) telemetryv1alpha1.MetricPipelineInput {
 				var opts []testutils.NamespaceSelectorOptions
 				if len(includeNss) > 0 {
@@ -95,7 +95,7 @@ func TestNamespaceSelector(t *testing.T) {
 			includePipeline := testutils.NewMetricPipelineBuilder().
 				WithName(includePipelineName).
 				WithInput(tc.inputBuilder([]string{gen1Ns}, nil)).
-				WithOTLPOutput(testutils.OTLPEndpoint(backend1.Endpoint())).
+				WithOTLPOutput(testutils.OTLPEndpoint(backend1.EndpointHTTP())).
 				Build()
 
 			// Exclude all namespaces except gen2Ns (gen1Ns and other unrelated namespaces)
@@ -116,7 +116,7 @@ func TestNamespaceSelector(t *testing.T) {
 			excludePipeline := testutils.NewMetricPipelineBuilder().
 				WithName(excludePipelineName).
 				WithInput(tc.inputBuilder(nil, excludeNss)).
-				WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
+				WithOTLPOutput(testutils.OTLPEndpoint(backend2.EndpointHTTP())).
 				Build()
 
 			resources := []client.Object{

@@ -108,7 +108,7 @@ func TestSecretRotation(t *testing.T) {
 			assert.MetricsFromNamespaceNotDelivered(t, backend, genNs)
 
 			// Update the secret to have the correct backend endpoint
-			secret.UpdateSecret(kitk8sobjects.WithStringData(endpointKey, backend.Endpoint()))
+			secret.UpdateSecret(kitk8sobjects.WithStringData(endpointKey, backend.EndpointHTTP()))
 			Expect(kitk8s.UpdateObjects(t, secret.K8sObject())).To(Succeed())
 
 			assert.DeploymentReady(t, kitkyma.MetricGatewayName)

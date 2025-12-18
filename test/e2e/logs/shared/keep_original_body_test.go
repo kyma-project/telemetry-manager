@@ -66,7 +66,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 		WithApplicationInput(true,
 			[]testutils.ExtendedNamespaceSelectorOptions{testutils.ExtIncludeNamespaces(sourceNsKeepOriginal)}...).
 		WithKeepOriginalBody(true).
-		WithOTLPOutput(testutils.OTLPEndpoint(backendKeepOriginal.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backendKeepOriginal.EndpointHTTP())).
 		Build()
 
 	pipelineDropOriginal := testutils.NewLogPipelineBuilder().
@@ -74,7 +74,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 		WithApplicationInput(true,
 			[]testutils.ExtendedNamespaceSelectorOptions{testutils.ExtIncludeNamespaces(sourceNsDropOriginal)}...).
 		WithKeepOriginalBody(false).
-		WithOTLPOutput(testutils.OTLPEndpoint(backendDropOriginal.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backendDropOriginal.EndpointHTTP())).
 		Build()
 
 	resources := []client.Object{

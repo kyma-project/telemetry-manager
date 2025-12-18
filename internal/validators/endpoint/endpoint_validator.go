@@ -20,6 +20,13 @@ const (
 	OTLPProtocolHTTP    = telemetryv1alpha1.OTLPProtocolHTTP
 )
 
+type EndpointValidationParams struct {
+	Endpoint   *telemetryv1alpha1.ValueType
+	Protocol   string
+	OTLPTLS    *telemetryv1alpha1.OTLPTLS
+	OTLPOAuth2 *telemetryv1alpha1.OAuth2Options
+}
+
 type Validator struct {
 	Client client.Reader
 }
@@ -28,6 +35,7 @@ var (
 	ErrValueResolveFailed = errors.New("failed to resolve value")
 	ErrPortMissing        = errors.New("missing port")
 	ErrUnsupportedScheme  = errors.New("missing or unsupported protocol scheme")
+	ErrGRPCOAuth2NoTLS    = errors.New("OAuth2 requires TLS when using gRPC protocol")
 )
 
 type EndpointInvalidError struct {
@@ -47,12 +55,12 @@ func IsEndpointInvalidError(err error) bool {
 	return errors.As(err, &errEndpointInvalid)
 }
 
-func (v *Validator) Validate(ctx context.Context, endpoint *telemetryv1alpha1.ValueType, protocol string) error {
-	if endpoint == nil {
+func (v *Validator) Validate(ctx context.Context, params EndpointValidationParams) error {
+	if params.Endpoint == nil {
 		return &EndpointInvalidError{Err: ErrValueResolveFailed}
 	}
 
-	endpointValue, err := resolveValue(ctx, v.Client, *endpoint)
+	endpointValue, err := resolveValue(ctx, v.Client, *params.Endpoint)
 	if err != nil {
 		return err
 	}
@@ -63,17 +71,28 @@ func (v *Validator) Validate(ctx context.Context, endpoint *telemetryv1alpha1.Va
 		return err
 	}
 
-	if protocol == FluentdProtocolHTTP {
+	// early return if protocol is Fluentd => further validation is OTLP-exclusive
+	if params.Protocol == FluentdProtocolHTTP {
 		return nil
 	}
 
 	var hostport = u.Host + u.Path
-	if err := validatePort(hostport, protocol == OTLPProtocolHTTP); err != nil {
+
+	// port validation
+	if err := validatePort(hostport, params.Protocol == OTLPProtocolHTTP); err != nil {
 		return err
 	}
 
-	if protocol == OTLPProtocolHTTP {
+	// scheme validation
+	if params.Protocol == OTLPProtocolHTTP {
 		if err := validateSchemeHTTP(u.Scheme); err != nil {
+			return err
+		}
+	}
+
+	// gRPC with OAuth2 validation
+	if params.Protocol == OTLPProtocolGRPC && params.OTLPOAuth2 != nil {
+		if err := validateGRPCWithOAuth2(u.Scheme, params.OTLPTLS); err != nil {
 			return err
 		}
 	}
@@ -146,6 +165,20 @@ func validatePort(hostport string, allowMissing bool) error {
 func validateSchemeHTTP(scheme string) error {
 	if scheme != "http" && scheme != "https" {
 		return &EndpointInvalidError{Err: ErrUnsupportedScheme}
+	}
+
+	return nil
+}
+
+func validateGRPCWithOAuth2(scheme string, tls *telemetryv1alpha1.OTLPTLS) error {
+	// Insecure TLS config
+	if tls != nil && tls.Insecure {
+		return &EndpointInvalidError{Err: ErrGRPCOAuth2NoTLS}
+	}
+
+	// HTTP scheme: invalid in all cases
+	if scheme == "http" {
+		return &EndpointInvalidError{Err: errors.New(ErrGRPCOAuth2NoTLS.Error() + ": HTTP scheme not allowed")}
 	}
 
 	return nil

@@ -82,7 +82,7 @@ func (d *collectorDeploymentBuilder) containers() []corev1.Container {
 	containers := []corev1.Container{
 		{
 			Name:  "otel-collector",
-			Image: testkit.DefaultOTelCollectorImage,
+			Image: testkit.DefaultOTelCollectorContribImage,
 			Args:  []string{"--config=/etc/collector/config.yaml"},
 			SecurityContext: &corev1.SecurityContext{
 				RunAsUser: ptr.To[int64](101),

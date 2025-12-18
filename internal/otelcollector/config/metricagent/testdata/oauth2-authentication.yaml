@@ -1,0 +1,141 @@
+extensions:
+    health_check:
+        endpoint: ${MY_POD_IP}:13133
+    k8s_leader_elector:
+        auth_type: serviceAccount
+        lease_name: telemetry-metric-agent-k8scluster
+    oauth2client/test:
+        token_url: ${OAUTH2_TOKEN_URL_TEST}
+        client_id: ${OAUTH2_CLIENT_ID_TEST}
+        client_secret: ${OAUTH2_CLIENT_SECRET_TEST}
+        scopes:
+            - metrics
+    pprof:
+        endpoint: 127.0.0.1:1777
+service:
+    pipelines:
+        metrics/enrichment-conditional:
+            receivers: []
+            processors:
+                - k8sattributes
+                - service_enrichment
+            exporters:
+                - routing/enrichment
+        metrics/output-test:
+            receivers: []
+            processors:
+                - filter/drop-envoy-metrics-if-disabled
+                - transform/insert-cluster-attributes
+                - transform/drop-skip-enrichment-attribute
+                - transform/drop-kyma-attributes
+                - batch
+            exporters:
+                - otlphttp/test
+    telemetry:
+        metrics:
+            readers:
+                - pull:
+                    exporter:
+                        prometheus:
+                            host: ${MY_POD_IP}
+                            port: 8888
+        logs:
+            level: info
+            encoding: json
+    extensions:
+        - health_check
+        - pprof
+        - k8s_leader_elector
+        - oauth2client/test
+receivers: {}
+processors:
+    batch:
+        send_batch_size: 1024
+        timeout: 10s
+        send_batch_max_size: 1024
+    filter/drop-envoy-metrics-if-disabled:
+        error_mode: ignore
+        metrics:
+            metric:
+                - IsMatch(name, "^envoy_.*") and resource.attributes["kyma.input.name"] == "istio"
+    k8sattributes:
+        auth_type: serviceAccount
+        passthrough: false
+        extract:
+            metadata:
+                - k8s.pod.name
+                - k8s.node.name
+                - k8s.namespace.name
+                - k8s.deployment.name
+                - k8s.statefulset.name
+                - k8s.daemonset.name
+                - k8s.cronjob.name
+                - k8s.job.name
+            labels:
+                - from: pod
+                  key: app.kubernetes.io/name
+                  tag_name: kyma.kubernetes_io_app_name
+                - from: pod
+                  key: app
+                  tag_name: kyma.app_name
+                - from: node
+                  key: topology.kubernetes.io/region
+                  tag_name: cloud.region
+                - from: node
+                  key: topology.kubernetes.io/zone
+                  tag_name: cloud.availability_zone
+                - from: node
+                  key: node.kubernetes.io/instance-type
+                  tag_name: host.type
+                - from: node
+                  key: kubernetes.io/arch
+                  tag_name: host.arch
+        pod_association:
+            - sources:
+                - from: resource_attribute
+                  name: k8s.pod.ip
+            - sources:
+                - from: resource_attribute
+                  name: k8s.pod.uid
+            - sources:
+                - from: connection
+    service_enrichment:
+        resource_attributes:
+            - kyma.kubernetes_io_app_name
+            - kyma.app_name
+    transform/drop-kyma-attributes:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - delete_matching_keys(resource.attributes, "kyma.*")
+    transform/drop-skip-enrichment-attribute:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - delete_key(resource.attributes, "io.kyma-project.telemetry.skip_enrichment")
+    transform/insert-cluster-attributes:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(resource.attributes["k8s.cluster.name"], "") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
+                - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
+exporters:
+    otlphttp/test:
+        endpoint: ${OTLP_ENDPOINT_TEST}
+        tls:
+            insecure: true
+        sending_queue:
+            enabled: true
+            queue_size: 256
+        retry_on_failure:
+            enabled: true
+            initial_interval: 5s
+            max_interval: 30s
+            max_elapsed_time: 300s
+        auth:
+            authenticator: oauth2client/test
+connectors:
+    routing/enrichment:
+        default_pipelines: []
+        error_mode: ignore
+        table: []
