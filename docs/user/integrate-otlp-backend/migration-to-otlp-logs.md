@@ -69,7 +69,7 @@ You can't modify an existing LogPipeline to change its output type. You must cre
             value: "my-backend:4317"
     ```
 
-1. (Optional) If your old pipeline uses `custom` filters, rewrite them using the [OpenTelemetry Transformation Language (OTTL)](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/README.md) and add them to your new LogPipeline using [Transform and Filter with OTTL](./../filter-and-process/ottl-transform-and-filter/README.md).
+1. (Optional) If your old pipeline uses `custom` filters, rewrite them using the [OpenTelemetry Transformation Language (OTTL)](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/README.md) and add them to your new LogPipeline (see [Transform and Filter with OTTL](./../filter-and-process/ottl-transform-and-filter/README.md)).
   
    Example: You want to replace a legacy Fluent Bit filter that dropped health checks and added a **tenant** attribute:
 
