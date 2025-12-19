@@ -1,4 +1,4 @@
-package customlabelannotations
+package customlabelsannotations
 
 import (
 	"log"
