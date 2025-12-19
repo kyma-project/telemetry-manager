@@ -39,12 +39,12 @@ See the following mapping of deprecated fields to their new OTLP-based counterpa
     spec:
       input:
         application:             # OTLP supports the application input, but you must replace the dropLabels and keepAnnotation flags
-          dropLabels: true       # Label enrichement can be configured centrally, see Step 3.
+          dropLabels: true       # Configure label enrichment centrally
           keepAnnotations: true  # no longer supported
       filters:
         custom: |                # Replace with a transform or filter expression
           ...
-      variables:                 # used in filters, see the related instructions of filters in Step 2
+      variables:                 # Used for custom filters, replace with a transform or filter expression
         - name: myVar
           value: myValue
       files:                     # used in filters, see the related instructions of filters in Step 2
