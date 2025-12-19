@@ -61,7 +61,7 @@ See the following mapping of deprecated fields to their new OTLP-based counterpa
 
 1. Create a new LogPipeline that uses the `otlp` output.
 
-    Pay special attention to the following settings (for details, see [Integrate With Your OTLP Backend](migration-to-otlp-logs.md)):
+    Pay special attention to the following settings (for details, see [Integrate With Your OTLP Backend](./README.md)):
 
     * Endpoint URL: Use the OTLP-specific ingestion endpoint from your observability backend. This URL is different from the one used for the legacy `http` output.
     * Protocol: The `otlp` output defaults to the gRPC protocol. If your backend uses HTTP, you must include the protocol in the endpoint URL (for example, https://my-otlp-http-endpoint:4318).
