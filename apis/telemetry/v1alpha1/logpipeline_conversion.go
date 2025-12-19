@@ -39,20 +39,20 @@ func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 
 	// Copy Output fields
 	dst.Spec.Output = telemetryv1beta1.LogPipelineOutput{}
-	dst.Spec.Output.HTTP = convertHTTPOutputToBeta(src.Spec.Output.HTTP)
+	dst.Spec.Output.FluentBitHTTP = convertHTTPOutputToBeta(src.Spec.Output.FluentBitHTTP)
 
 	dst.Spec.Output.OTLP = convertOTLPOutputToBeta(src.Spec.Output.OTLP)
-	if src.Spec.Output.Custom != "" {
-		dst.Spec.Output.Custom = src.Spec.Output.Custom
+	if src.Spec.Output.FluentBitCustom != "" {
+		dst.Spec.Output.FluentBitCustom = src.Spec.Output.FluentBitCustom
 	}
 
 	// Copy everything else
-	for _, f := range src.Spec.Files {
-		dst.Spec.Files = append(dst.Spec.Files, telemetryv1beta1.LogPipelineFileMount(f))
+	for _, f := range src.Spec.FluentBitFiles {
+		dst.Spec.FluentBitFiles = append(dst.Spec.FluentBitFiles, telemetryv1beta1.FluentBitFile(f))
 	}
 
 	for _, f := range src.Spec.FluentBitFilters {
-		dst.Spec.FluentBitFilters = append(dst.Spec.FluentBitFilters, telemetryv1beta1.LogPipelineFilter(f))
+		dst.Spec.FluentBitFilters = append(dst.Spec.FluentBitFilters, telemetryv1beta1.FluentBitFilter(f))
 	}
 
 	if src.Spec.Transforms != nil {
@@ -72,12 +72,12 @@ func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 	return nil
 }
 
-func convertHTTPOutputToBeta(output *LogPipelineHTTPOutput) *telemetryv1beta1.LogPipelineHTTPOutput {
+func convertHTTPOutputToBeta(output *FluentBitHTTPOutput) *telemetryv1beta1.FluentBitHTTPOutput {
 	if output == nil {
 		return nil
 	}
 
-	result := &telemetryv1beta1.LogPipelineHTTPOutput{
+	result := &telemetryv1beta1.FluentBitHTTPOutput{
 		Host:      convertValueTypeToBeta(output.Host),
 		URI:       output.URI,
 		Port:      output.Port,
@@ -106,10 +106,10 @@ func convertApplicationToBeta(application *LogPipelineApplicationInput) *telemet
 	}
 
 	runtime := &telemetryv1beta1.LogPipelineRuntimeInput{
-		Enabled:          application.Enabled,
-		KeepAnnotations:  application.KeepAnnotations,
-		DropLabels:       application.DropLabels,
-		KeepOriginalBody: application.KeepOriginalBody,
+		Enabled:                  application.Enabled,
+		FluentBitKeepAnnotations: application.FluentBitKeepAnnotations,
+		FluentBitDropLabels:      application.FluentBitDropLabels,
+		KeepOriginalBody:         application.KeepOriginalBody,
 	}
 
 	var excludes []string
@@ -135,7 +135,7 @@ func convertApplicationToBeta(application *LogPipelineApplicationInput) *telemet
 	return runtime
 }
 
-func convertOutputTLSToBeta(src LogPipelineOutputTLS) telemetryv1beta1.OutputTLS {
+func convertOutputTLSToBeta(src FluentBitHTTPOutputTLS) telemetryv1beta1.OutputTLS {
 	var dst telemetryv1beta1.OutputTLS
 
 	dst.CA = convertValueTypeToBetaPtr(src.CA)
@@ -166,20 +166,20 @@ func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 
 	// Copy output fields
 	dst.Spec.Output = LogPipelineOutput{}
-	dst.Spec.Output.HTTP = convertHTTPOutputToAlpha(src.Spec.Output.HTTP)
+	dst.Spec.Output.FluentBitHTTP = convertHTTPOutputToAlpha(src.Spec.Output.FluentBitHTTP)
 
 	dst.Spec.Output.OTLP = convertOTLPOutputToAlpha(src.Spec.Output.OTLP)
-	if src.Spec.Output.Custom != "" {
-		dst.Spec.Output.Custom = src.Spec.Output.Custom
+	if src.Spec.Output.FluentBitCustom != "" {
+		dst.Spec.Output.FluentBitCustom = src.Spec.Output.FluentBitCustom
 	}
 
 	// Copy everything else
-	for _, f := range src.Spec.Files {
-		dst.Spec.Files = append(dst.Spec.Files, LogPipelineFileMount(f))
+	for _, f := range src.Spec.FluentBitFiles {
+		dst.Spec.FluentBitFiles = append(dst.Spec.FluentBitFiles, FluentBitFile(f))
 	}
 
 	for _, f := range src.Spec.FluentBitFilters {
-		dst.Spec.FluentBitFilters = append(dst.Spec.FluentBitFilters, LogPipelineFilter(f))
+		dst.Spec.FluentBitFilters = append(dst.Spec.FluentBitFilters, FluentBitFilter(f))
 	}
 
 	if src.Spec.Transforms != nil {
@@ -199,12 +199,12 @@ func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 	return nil
 }
 
-func convertHTTPOutputToAlpha(output *telemetryv1beta1.LogPipelineHTTPOutput) *LogPipelineHTTPOutput {
+func convertHTTPOutputToAlpha(output *telemetryv1beta1.FluentBitHTTPOutput) *FluentBitHTTPOutput {
 	if output == nil {
 		return nil
 	}
 
-	result := &LogPipelineHTTPOutput{
+	result := &FluentBitHTTPOutput{
 		Host:     convertValueTypeToAlpha(output.Host),
 		URI:      output.URI,
 		Port:     output.Port,
@@ -233,10 +233,10 @@ func convertRuntimeToAlpha(runtime *telemetryv1beta1.LogPipelineRuntimeInput) *L
 	}
 
 	application := &LogPipelineApplicationInput{
-		Enabled:          runtime.Enabled,
-		KeepAnnotations:  runtime.KeepAnnotations,
-		DropLabels:       runtime.DropLabels,
-		KeepOriginalBody: runtime.KeepOriginalBody,
+		Enabled:                  runtime.Enabled,
+		FluentBitKeepAnnotations: runtime.FluentBitKeepAnnotations,
+		FluentBitDropLabels:      runtime.FluentBitDropLabels,
+		KeepOriginalBody:         runtime.KeepOriginalBody,
 	}
 
 	if runtime.Namespaces != nil && (len(runtime.Namespaces.Include) > 0 || len(runtime.Namespaces.Exclude) > 0) {
@@ -257,8 +257,8 @@ func convertRuntimeToAlpha(runtime *telemetryv1beta1.LogPipelineRuntimeInput) *L
 	return application
 }
 
-func convertOutputTLSToAlpha(src telemetryv1beta1.OutputTLS) LogPipelineOutputTLS {
-	var dst LogPipelineOutputTLS
+func convertOutputTLSToAlpha(src telemetryv1beta1.OutputTLS) FluentBitHTTPOutputTLS {
+	var dst FluentBitHTTPOutputTLS
 
 	dst.CA = convertValueTypeToAlphaPtr(src.CA)
 	dst.Cert = convertValueTypeToAlphaPtr(src.Cert)

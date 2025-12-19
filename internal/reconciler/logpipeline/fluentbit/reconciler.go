@@ -12,6 +12,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	fbports "github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
+	"github.com/kyma-project/telemetry-manager/internal/metrics"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
@@ -219,6 +220,8 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return nil
 	}
 
+	r.trackFeaturesUsage(reconcilablePipelines)
+
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
 	clusterName := r.getClusterNameFromTelemetry(ctx, shootInfo.ClusterName)
 
@@ -289,5 +292,36 @@ func getFluentBitPorts() []int32 {
 	return []int32{
 		fbports.ExporterMetrics,
 		fbports.HTTP,
+	}
+}
+
+func (r *Reconciler) trackFeaturesUsage(pipelines []telemetryv1alpha1.LogPipeline) {
+	for i := range pipelines {
+		// General features
+		if logpipelineutils.IsApplicationInputEnabled(&pipelines[i].Spec.Input) {
+			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureInputRuntime, pipelines[i].Name)
+		}
+
+		// FluentBit features
+
+		if logpipelineutils.IsCustomFilterDefined(pipelines[i].Spec.FluentBitFilters) {
+			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureFilters, pipelines[i].Name)
+		}
+
+		if logpipelineutils.IsCustomOutputDefined(&pipelines[i].Spec.Output) {
+			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureOutputCustom, pipelines[i].Name)
+		}
+
+		if logpipelineutils.IsHTTPOutputDefined(&pipelines[i].Spec.Output) {
+			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureOutputHTTP, pipelines[i].Name)
+		}
+
+		if logpipelineutils.IsVariablesDefined(pipelines[i].Spec.FluentBitVariables) {
+			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureVariables, pipelines[i].Name)
+		}
+
+		if logpipelineutils.IsFilesDefined(pipelines[i].Spec.FluentBitFiles) {
+			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureFiles, pipelines[i].Name)
+		}
 	}
 }
