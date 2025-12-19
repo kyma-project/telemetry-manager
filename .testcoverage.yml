@@ -77,6 +77,7 @@ exclude:
     - internal/utils/logger
     - ^test # e2e and integration tests
     - ^internal/utils/test # some functions in testutils are being used in e2e tests only
+    - ^internal/utils/fuzzing # only used for fuzz tests
 
 # NOTES:
 # - symbol `/` in all path regexps will be replaced by
