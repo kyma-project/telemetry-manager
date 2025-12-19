@@ -353,10 +353,8 @@ deploy-custom-labels-annotations-no-fips: manifests-experimental $(HELM) ## Depl
 		--set manager.container.image.repository=${MANAGER_IMAGE} \
 		--set manager.container.image.pullPolicy="Always" \
 		--set manager.container.env.operateInFipsMode=false \
-		--set additionalMetadata.metadata.labels.my-meta-label="foo" \
-		--set additionalMetadata.metadata.annotations.my-meta-annotation="bar" \
-		--set additionalMetadata.pod.labels.my-pod-label="foo" \
-		--set additionalMetadata.pod.annotations.my-pod-annotation="bar" \
+		--set additionalMetadata.labels.my-meta-label="foo" \
+		--set additionalMetadata.annotations.my-meta-annotation="bar" \
 		--namespace kyma-system \
 	| kubectl apply -f -
 
