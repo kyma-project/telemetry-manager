@@ -28,11 +28,11 @@ You can't modify an existing LogPipeline to change its output type. You must cre
       name: my-http-pipeline
     spec:
       input:
-        application:             # Only the dropLabels and keepAnnotation flags are deprecated, the application input itself is supported with OTLP
+        application:             # OTLP supports the application input, but you must replace the dropLabels and keepAnnotation flags
           dropLabels: true       # Label enrichement can be configured centrally, see Step 3.
-          keepAnnotations: true  # Annotation enrichment is not supported anymore
+          keepAnnotations: true  # no longer supported
       filters:
-        custom: |                # most likely can be replaced by a transform or filter expression, see  Step 2
+        custom: |                # Replace with a transform or filter expression
           ...
       variables:                 # used in filters, see the related instructions of filters in Step 2
         - name: myVar
@@ -42,10 +42,10 @@ You can't modify an existing LogPipeline to change its output type. You must cre
           value: |
             ...
       output:
-        http:                    # switch to the OTLP endpoint of your backend, see Step 1
+        http:                    # Switch to OTLP
           endpoint:
             value: "my-backend:4317"
-        custom: |                # switch to the OTLP endpoint of your backend, see Step 1
+        custom: |                # Switch to OTLP
           ...
     ```
 
