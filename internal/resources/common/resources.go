@@ -10,8 +10,11 @@ import (
 )
 
 const (
-	SystemLogCollectorName = "system-logs-collector"
-	SystemLogAgentName     = "system-logs-agent"
+	SystemLogCollectorName       = "system-logs-collector"
+	SystemLogAgentName           = "system-logs-agent"
+	ClusterTrustBundleVolumeName = "custom-ca-bundle"
+	ClusterTrustBundFileName     = "ca-certificates.crt"
+	ClusterTrustBundVolumePath   = "/etc/ssl/certs"
 )
 
 func MakeServiceAccount(name types.NamespacedName) *corev1.ServiceAccount {

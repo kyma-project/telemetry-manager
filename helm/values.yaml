@@ -1,3 +1,10 @@
+global:
+  caBundle:
+    enabled: false
+    name: "custom-ca-certificates"
+  imagePullSecret:
+    enabled: false
+    name: "oci-registry-pullsecret"
 experimental:
   enabled: true
 default:
@@ -48,3 +55,8 @@ managerWebhook:
     - port: 443
       protocol: TCP
       targetPort: 9443
+additionalMetadata:
+  labels:
+  # custom-label: my-value
+  annotations:
+# custom-resource-annotation: my-value

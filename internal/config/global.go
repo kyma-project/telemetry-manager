@@ -36,10 +36,14 @@ func IsValidationError(err error) bool {
 }
 
 type Global struct {
-	managerNamespace  string
-	targetNamespace   string
-	operateInFIPSMode bool
-	version           string
+	managerNamespace       string
+	targetNamespace        string
+	operateInFIPSMode      bool
+	version                string
+	imagePullSecretName    string
+	clusterTrustBundleName string
+	additionalLabels       map[string]string
+	additionalAnnotations  map[string]string
 }
 
 type Option func(*Global)
@@ -65,6 +69,30 @@ func WithOperateInFIPSMode(enable bool) Option {
 func WithVersion(version string) Option {
 	return func(g *Global) {
 		g.version = version
+	}
+}
+
+func WithImagePullSecretName(secretName string) Option {
+	return func(g *Global) {
+		g.imagePullSecretName = secretName
+	}
+}
+
+func WithClusterTrustBundleName(name string) Option {
+	return func(g *Global) {
+		g.clusterTrustBundleName = name
+	}
+}
+
+func WithAdditionalLabels(labels map[string]string) Option {
+	return func(g *Global) {
+		g.additionalLabels = labels
+	}
+}
+
+func WithAdditionalAnnotations(annotations map[string]string) Option {
+	return func(g *Global) {
+		g.additionalAnnotations = annotations
 	}
 }
 
@@ -119,4 +147,20 @@ func (g *Global) OperateInFIPSMode() bool {
 // Version returns the version of the Telemetry Manager.
 func (g *Global) Version() string {
 	return g.version
+}
+
+func (g *Global) ImagePullSecretName() string {
+	return g.imagePullSecretName
+}
+
+func (g *Global) ClusterTrustBundleName() string {
+	return g.clusterTrustBundleName
+}
+
+func (g *Global) AdditionalLabels() map[string]string {
+	return g.additionalLabels
+}
+
+func (g *Global) AdditionalAnnotations() map[string]string {
+	return g.additionalAnnotations
 }

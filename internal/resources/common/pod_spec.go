@@ -125,6 +125,14 @@ func WithTolerations(tolerations []corev1.Toleration) PodSpecOption {
 	}
 }
 
+func WithImagePullSecretName(ipsn string) PodSpecOption {
+	return func(pod *corev1.PodSpec) {
+		if len(ipsn) > 0 {
+			pod.ImagePullSecrets = append(pod.ImagePullSecrets, corev1.LocalObjectReference{Name: ipsn})
+		}
+	}
+}
+
 func WithArgs(args []string) ContainerOption {
 	return func(c *corev1.Container) {
 		c.Args = args
@@ -290,5 +298,39 @@ func MakeResourceRequirements(memoryLimit, memoryRequest, cpuRequest resource.Qu
 			corev1.ResourceCPU:    cpuRequest,
 			corev1.ResourceMemory: memoryRequest,
 		},
+	}
+}
+
+func WithClusterTrustBundVolume(clusterTrustBundleName string) PodSpecOption {
+	return func(pod *corev1.PodSpec) {
+		if clusterTrustBundleName != "" {
+			pod.Volumes = append(pod.Volumes, corev1.Volume{
+				Name: ClusterTrustBundleVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Projected: &corev1.ProjectedVolumeSource{
+						Sources: []corev1.VolumeProjection{
+							{
+								ClusterTrustBundle: &corev1.ClusterTrustBundleProjection{
+									Name: ptr.To(clusterTrustBundleName),
+									Path: ClusterTrustBundFileName,
+								},
+							},
+						},
+					},
+				},
+			})
+		}
+	}
+}
+
+func WithClusterTrustBundVolumeMount(clusterTrustBundleName string) ContainerOption {
+	return func(c *corev1.Container) {
+		if clusterTrustBundleName != "" {
+			c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{
+				Name:      ClusterTrustBundleVolumeName,
+				MountPath: ClusterTrustBundVolumePath,
+				ReadOnly:  true,
+			})
+		}
 	}
 }
