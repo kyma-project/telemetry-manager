@@ -47,7 +47,7 @@ See the following mapping of deprecated fields to their new OTLP-based counterpa
       variables:                 # Used for custom filters, replace with a transform or filter expression
         - name: myVar
           value: myValue
-      files:                     # used in filters, see the related instructions of filters in Step 2
+      files:                     # Used for custom filters, replace with transform or filter expressions
         - name: myFile
           value: |
             ...
