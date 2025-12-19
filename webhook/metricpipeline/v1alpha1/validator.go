@@ -27,7 +27,10 @@ func (v *MetricPipelineValidator) ValidateCreate(ctx context.Context, obj runtim
 		return nil, fmt.Errorf("expected a MetricPipeline but got %T", obj)
 	}
 
-	filterSpec, transformSpec := webhookutils.ConvertFilterTransformToBeta(metricPipeline.Spec.Filters, metricPipeline.Spec.Transforms)
+	filterSpec, transformSpec, err := webhookutils.ConvertFilterTransformToBeta(metricPipeline.Spec.Filters, metricPipeline.Spec.Transforms)
+	if err != nil {
+		return nil, err
+	}
 
 	return nil, validateFilterTransform(ctx, filterSpec, transformSpec)
 }
@@ -39,7 +42,10 @@ func (v *MetricPipelineValidator) ValidateUpdate(ctx context.Context, oldObj, ne
 		return nil, fmt.Errorf("expected a MetricPipeline but got %T", newObj)
 	}
 
-	filterSpec, transformSpec := webhookutils.ConvertFilterTransformToBeta(metricPipeline.Spec.Filters, metricPipeline.Spec.Transforms)
+	filterSpec, transformSpec, err := webhookutils.ConvertFilterTransformToBeta(metricPipeline.Spec.Filters, metricPipeline.Spec.Transforms)
+	if err != nil {
+		return nil, err
+	}
 
 	return nil, validateFilterTransform(ctx, filterSpec, transformSpec)
 }

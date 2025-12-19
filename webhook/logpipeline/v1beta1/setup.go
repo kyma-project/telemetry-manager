@@ -9,6 +9,7 @@ import (
 
 func SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).For(&telemetryv1beta1.LogPipeline{}).
+		WithValidator(&LogPipelineValidator{}).
 		WithDefaulter(&defaulter{
 			ExcludeNamespaces:            namespaces.System(),
 			RuntimeInputEnabled:          true,
@@ -16,6 +17,5 @@ func SetupWithManager(mgr ctrl.Manager) error {
 			DefaultOTLPOutputProtocol:    telemetryv1beta1.OTLPProtocolGRPC,
 			OTLPInputEnabled:             true,
 		}).
-		WithValidator(&LogPipelineValidator{}).
 		Complete()
 }

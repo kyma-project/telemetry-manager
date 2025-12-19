@@ -49,6 +49,7 @@ $(TOOLS_BIN_NAMES): $(TOOLS_BIN_DIR) $(TOOLS_MOD_DIR)/go.mod
 	cd $(TOOLS_MOD_DIR) && go build -o $@ -trimpath $(filter $(filter %/$(notdir $@),$(TOOLS_PKG_NAMES_CLEAN))%,$(TOOLS_PKG_NAMES))
 
 CONTROLLER_GEN   := $(TOOLS_BIN_DIR)/controller-gen
+CONVERSION_GEN   := $(TOOLS_BIN_DIR)/conversion-gen
 GOLANGCI_LINT    := $(TOOLS_BIN_DIR)/golangci-lint
 GO_TEST_COVERAGE := $(TOOLS_BIN_DIR)/go-test-coverage
 GOTESTSUM        := $(TOOLS_BIN_DIR)/gotestsum
@@ -149,8 +150,9 @@ lint-fix: lint-fix-manager $(LINT_FIX_TARGETS) ## Run linting checks with automa
 ##@ Code Generation
 
 .PHONY: generate
-generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) $(YQ) $(YAMLFMT) $(POPULATE_IMAGES) ## Generate code including DeepCopy, DeepCopyInto, DeepCopyObject methods and update helm values
+generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) $(YQ) $(YAMLFMT) $(POPULATE_IMAGES) $(CONVERSION_GEN) ## Generate code including DeepCopy, DeepCopyInto, DeepCopyObject methods and update helm values
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+	$(CONVERSION_GEN) --go-header-file ./hack/boilerplate.go.txt --output-file zz_generated.conversion.go ./apis/telemetry/v1alpha1 ./apis/telemetry/v1beta1
 	$(MOCKERY)
 	$(STRINGER) --type Mode internal/utils/logpipeline/logpipeline.go
 	$(STRINGER) --type FeatureFlag internal/featureflags/featureflags.go
