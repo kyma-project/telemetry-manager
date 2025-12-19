@@ -35,7 +35,7 @@ func TestEnsureFinalizers(t *testing.T) {
 		pipeline := &telemetryv1alpha1.LogPipeline{
 			ObjectMeta: metav1.ObjectMeta{Name: "pipeline"},
 			Spec: telemetryv1alpha1.LogPipelineSpec{
-				Files: []telemetryv1alpha1.LogPipelineFileMount{
+				FluentBitFiles: []telemetryv1alpha1.FluentBitFile{
 					{
 						Name:    "script.js",
 						Content: "",

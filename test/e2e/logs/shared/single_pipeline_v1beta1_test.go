@@ -121,7 +121,7 @@ func TestSinglePipelineV1Beta1_FluentBit(t *testing.T) {
 		},
 		Spec: telemetryv1beta1.LogPipelineSpec{
 			Output: telemetryv1beta1.LogPipelineOutput{
-				HTTP: &telemetryv1beta1.LogPipelineHTTPOutput{
+				FluentBitHTTP: &telemetryv1beta1.FluentBitHTTPOutput{
 					Host: telemetryv1beta1.ValueType{
 						Value: backend.Host(),
 					},
