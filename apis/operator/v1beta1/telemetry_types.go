@@ -17,6 +17,7 @@ limitations under the License.
 package v1beta1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -98,6 +99,15 @@ type GatewaySpec struct {
 	// Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
 	// +kubebuilder:validation:Optional
 	Scaling Scaling `json:"scaling"`
+
+	// ImagePullSecrets specifies the list of secret names to use for pulling images from private registries.
+	// +kubebuilder:validation:Optional
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+
+	// CABundle specifies a custom CA bundle in PEM format to be used for TLS verification.
+	// If provided, the bundle will be mounted into the gateway pods.
+	// +kubebuilder:validation:Optional
+	CABundle string `json:"caBundle,omitempty"`
 }
 
 // Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.

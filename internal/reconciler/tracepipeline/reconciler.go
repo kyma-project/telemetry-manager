@@ -331,6 +331,8 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 		IstioEnabled:                   isIstioActive,
 		Replicas:                       r.getReplicaCountFromTelemetry(ctx),
 		ResourceRequirementsMultiplier: len(allPipelines),
+		ImagePullSecrets:               r.getImagePullSecretsFromTelemetry(ctx),
+		CABundle:                       r.getCABundleFromTelemetry(ctx),
 	}
 
 	if err := r.gatewayApplierDeleter.ApplyResources(
@@ -361,6 +363,34 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 	}
 
 	return defaultReplicaCount
+}
+
+// getImagePullSecretsFromTelemetry retrieves the image pull secrets from the Telemetry CR.
+func (r *Reconciler) getImagePullSecretsFromTelemetry(ctx context.Context) []corev1.LocalObjectReference {
+	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.config.DefaultTelemetryNamespace())
+	if err != nil {
+		return nil
+	}
+
+	if telemetry.Spec.Trace != nil {
+		return telemetry.Spec.Trace.Gateway.ImagePullSecrets
+	}
+
+	return nil
+}
+
+// getCABundleFromTelemetry retrieves the custom CA bundle from the Telemetry CR.
+func (r *Reconciler) getCABundleFromTelemetry(ctx context.Context) string {
+	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.config.DefaultTelemetryNamespace())
+	if err != nil {
+		return ""
+	}
+
+	if telemetry.Spec.Trace != nil {
+		return telemetry.Spec.Trace.Gateway.CABundle
+	}
+
+	return ""
 }
 
 // getClusterNameFromTelemetry retrieves the cluster name from the Telemetry CR enrichment configuration.

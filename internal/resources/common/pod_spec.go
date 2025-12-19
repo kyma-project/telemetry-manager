@@ -125,6 +125,53 @@ func WithTolerations(tolerations []corev1.Toleration) PodSpecOption {
 	}
 }
 
+func WithImagePullSecrets(secrets []corev1.LocalObjectReference) PodSpecOption {
+	return func(pod *corev1.PodSpec) {
+		pod.ImagePullSecrets = append(pod.ImagePullSecrets, secrets...)
+	}
+}
+
+// WithCABundle configures a custom CA bundle for TLS verification.
+// It creates a ConfigMap-backed volume and mounts it to all containers,
+// and sets the SSL_CERT_FILE environment variable to point to the bundle.
+func WithCABundle(baseName, caBundle string) PodSpecOption {
+	return func(pod *corev1.PodSpec) {
+		if caBundle == "" {
+			return
+		}
+
+		caBundleConfigMapName := baseName + "-cabundle"
+		caBundleMountPath := "/etc/ssl/certs/ca-bundle.crt"
+
+		// Add volume for CA bundle
+		pod.Volumes = append(pod.Volumes, corev1.Volume{
+			Name: "ca-bundle",
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: caBundleConfigMapName,
+					},
+				},
+			},
+		})
+
+		// Add volume mount and env var to all existing containers
+		for i := range pod.Containers {
+			pod.Containers[i].VolumeMounts = append(pod.Containers[i].VolumeMounts, corev1.VolumeMount{
+				Name:      "ca-bundle",
+				MountPath: caBundleMountPath,
+				SubPath:   "ca-bundle.crt",
+				ReadOnly:  true,
+			})
+
+			pod.Containers[i].Env = append(pod.Containers[i].Env, corev1.EnvVar{
+				Name:  "SSL_CERT_FILE",
+				Value: caBundleMountPath,
+			})
+		}
+	}
+}
+
 func WithArgs(args []string) ContainerOption {
 	return func(c *corev1.Container) {
 		c.Args = args

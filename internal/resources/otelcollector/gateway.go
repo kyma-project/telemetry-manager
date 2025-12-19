@@ -91,6 +91,10 @@ type GatewayApplyOptions struct {
 	// This value is multiplied with a base resource requirement to calculate the actual CPU and memory limits.
 	// A value of 1 applies the base limits; values greater than 1 increase those limits proportionally.
 	ResourceRequirementsMultiplier int
+	// ImagePullSecrets specifies the list of secret names to use for pulling images from private registries.
+	ImagePullSecrets []corev1.LocalObjectReference
+	// CABundle specifies a custom CA bundle in PEM format to be used for TLS verification.
+	CABundle string
 }
 
 //nolint:dupl // repeating the code as we have three different signals
@@ -214,6 +218,14 @@ func (gad *GatewayApplierDeleter) ApplyResources(ctx context.Context, c client.C
 		return fmt.Errorf("failed to create configmap: %w", err)
 	}
 
+	// Create CA bundle ConfigMap if CABundle is provided
+	if opts.CABundle != "" {
+		caBundleConfigMap := makeCABundleConfigMap(name, commonresources.LabelValueK8sComponentGateway, opts.CABundle)
+		if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, caBundleConfigMap); err != nil {
+			return fmt.Errorf("failed to create ca-bundle configmap: %w", err)
+		}
+	}
+
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
 	if err := k8sutils.CreateOrUpdateDeployment(ctx, c, gad.makeGatewayDeployment(configChecksum, opts)); err != nil {
 		return fmt.Errorf("failed to create deployment: %w", err)
@@ -256,6 +268,17 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete configmap: %w", err))
 	}
 
+	// Delete CA bundle ConfigMap if it exists
+	caBundleConfigMap := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      gad.baseName + "-cabundle",
+			Namespace: gad.globals.TargetNamespace(),
+		},
+	}
+	if err := k8sutils.DeleteObject(ctx, c, &caBundleConfigMap); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete ca-bundle configmap: %w", err))
+	}
+
 	deployment := appsv1.Deployment{ObjectMeta: objectMeta}
 	if err := k8sutils.DeleteObject(ctx, c, &deployment); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete deployment: %w", err))
@@ -293,10 +316,24 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, o
 		commonresources.WithGoMemLimitEnvVar(resources.Limits[corev1.ResourceMemory]),
 	)
 
+	// Prepare additional pod options
+	additionalPodOpts := []commonresources.PodSpecOption{}
+
+	if len(opts.ImagePullSecrets) > 0 {
+		additionalPodOpts = append(additionalPodOpts, commonresources.WithImagePullSecrets(opts.ImagePullSecrets))
+	}
+
+	if opts.CABundle != "" {
+		additionalPodOpts = append(additionalPodOpts, commonresources.WithCABundle(gad.baseName, opts.CABundle))
+	}
+
+	// Combine base pod options with additional ones
+	allPodOpts := append(gad.podOpts, additionalPodOpts...)
+
 	podSpec := makePodSpec(
 		gad.baseName,
 		gad.image,
-		gad.podOpts,
+		allPodOpts,
 		containerOpts,
 	)
 
