@@ -15,6 +15,16 @@ When you want to migrate to the `otlp` output, create a new LogPipeline. To prev
 
 You can't modify an existing LogPipeline to change its output type. You must create a new resource.
 
+See the following mapping of deprecated fields to their new OTLP-based counterparts:
+
+| Deprecated Field | Migration Action |
+|:--:|:--:|
+| spec.output.http or spec.output.custom | Required. Replace with spec.output.otlp. |
+| spec.filters                           | Rewrite the custom Fluent Bit filters using transform or filter expressions.|
+| spec.variables and spec.files          | These fields were used by custom filters. This functionality is now handled by transform or filter expressions.|
+| spec.input.application.dropLabels      | This field is no longer used. Configure label enrichment in the central Telemetry resource.|
+| spec.input.application.keepAnnotations | This functionality is not supported with the OTLP output and cannot be migrated.|
+
 ## Procedure
 
 1. Identify deprecated fields in your LogPipeline.
