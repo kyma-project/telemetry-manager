@@ -12,9 +12,7 @@ func (m *CLIMapFlag) String() string {
 }
 
 func (m *CLIMapFlag) Set(s string) error {
-	if m == nil {
-		*m = make(CLIMapFlag)
-	}
+	*m = make(CLIMapFlag)
 
 	if s == "" {
 		return fmt.Errorf("empty flag value")
