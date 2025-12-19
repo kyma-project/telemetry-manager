@@ -114,9 +114,6 @@ spec:
         volumeMounts:
         - mountPath: /tmp
           name: crt-volume
-        - mountPath: /resource-templates
-          name: resource-templates
-
       priorityClassName: telemetry-priority-class
       securityContext: {{- toYaml .Values.manager.securityContext | nindent 8 }}
       serviceAccountName: {{ include "telemetry-manager.fullname" . }}-manager
@@ -124,13 +121,5 @@ spec:
       volumes:
       - emptyDir: {}
         name: crt-volume
-      - name: resource-templates
-        configMap:
-          name: {{ include "telemetry-manager.fullname" . }}-resource-templates
-          items:
-          - key: podspec-template.yaml
-            path: podspec-template.yaml
-          - key: metadata.yaml
-            path: metadata.yaml
 
 
