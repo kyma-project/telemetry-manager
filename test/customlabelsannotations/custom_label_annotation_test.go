@@ -23,9 +23,6 @@ import (
 var label = map[string]string{"my-meta-label": "foo"}
 var annotation = map[string]string{"my-meta-annotation": "bar"}
 
-var podLabel = map[string]string{"my-pod-label": "foo"}
-var podAnnotation = map[string]string{"my-pod-annotation": "bar"}
-
 func TestLabelAnnotation(t *testing.T) {
 	tests := []struct {
 		labelPrefix kitbackend.SignalType
@@ -61,8 +58,8 @@ func TestLabelAnnotation(t *testing.T) {
 					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-log-gateway"}),
 					Namespace:     kitkyma.SystemNamespaceName,
 				}
-				assert.PodsHaveAnnotation(t, gwSelector, podAnnotation)
-				assert.PodsHaveLabel(t, gwSelector, podLabel)
+				assert.PodsHaveAnnotation(t, gwSelector, annotation)
+				assert.PodsHaveLabel(t, gwSelector, label)
 
 				assert.DaemonSetHasLabel(t, kitkyma.LogAgentName, label)
 				assert.DaemonSetHasAnnotation(t, kitkyma.LogAgentName, annotation)
@@ -71,8 +68,8 @@ func TestLabelAnnotation(t *testing.T) {
 					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-log-agent"}),
 					Namespace:     kitkyma.SystemNamespaceName,
 				}
-				assert.PodsHaveAnnotation(t, agentSelector, podAnnotation)
-				assert.PodsHaveLabel(t, agentSelector, podLabel)
+				assert.PodsHaveAnnotation(t, agentSelector, annotation)
+				assert.PodsHaveLabel(t, agentSelector, label)
 			},
 		},
 		{
@@ -102,8 +99,8 @@ func TestLabelAnnotation(t *testing.T) {
 					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "fluent-bit"}),
 					Namespace:     kitkyma.SystemNamespaceName,
 				}
-				assert.PodsHaveAnnotation(t, selector, podAnnotation)
-				assert.PodsHaveLabel(t, selector, podLabel)
+				assert.PodsHaveAnnotation(t, selector, annotation)
+				assert.PodsHaveLabel(t, selector, label)
 			},
 		},
 
@@ -139,8 +136,8 @@ func TestLabelAnnotation(t *testing.T) {
 					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-metric-gateway"}),
 					Namespace:     kitkyma.SystemNamespaceName,
 				}
-				assert.PodsHaveAnnotation(t, gwSelector, podAnnotation)
-				assert.PodsHaveLabel(t, gwSelector, podLabel)
+				assert.PodsHaveAnnotation(t, gwSelector, annotation)
+				assert.PodsHaveLabel(t, gwSelector, label)
 
 				assert.DaemonSetHasLabel(t, kitkyma.MetricAgentName, label)
 				assert.DaemonSetHasAnnotation(t, kitkyma.MetricAgentName, annotation)
@@ -149,8 +146,8 @@ func TestLabelAnnotation(t *testing.T) {
 					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"}),
 					Namespace:     kitkyma.SystemNamespaceName,
 				}
-				assert.PodsHaveAnnotation(t, agentSelector, podAnnotation)
-				assert.PodsHaveLabel(t, agentSelector, podLabel)
+				assert.PodsHaveAnnotation(t, agentSelector, annotation)
+				assert.PodsHaveLabel(t, agentSelector, label)
 			},
 		},
 		{
@@ -180,8 +177,8 @@ func TestLabelAnnotation(t *testing.T) {
 					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-trace-gateway"}),
 					Namespace:     kitkyma.SystemNamespaceName,
 				}
-				assert.PodsHaveAnnotation(t, selector, podAnnotation)
-				assert.PodsHaveLabel(t, selector, podLabel)
+				assert.PodsHaveAnnotation(t, selector, annotation)
+				assert.PodsHaveLabel(t, selector, label)
 			},
 		},
 	}
