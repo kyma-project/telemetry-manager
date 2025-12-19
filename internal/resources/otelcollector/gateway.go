@@ -91,6 +91,14 @@ type GatewayApplyOptions struct {
 	// This value is multiplied with a base resource requirement to calculate the actual CPU and memory limits.
 	// A value of 1 applies the base limits; values greater than 1 increase those limits proportionally.
 	ResourceRequirementsMultiplier int
+	// Annotations to be added to the gateway Deployment.
+	Annotations map[string]string
+	// Labels to be added to the gateway Deployment.
+	Labels map[string]string
+	// PodAnnotations to be added to the gateway Pod template.
+	PodAnnotations map[string]string
+	// PodLabels to be added to the gateway Pod template.
+	PodLabels map[string]string
 }
 
 //nolint:dupl // repeating the code as we have three different signals
@@ -283,6 +291,16 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, o
 	maps.Copy(podLabels, labels)
 	maps.Copy(podLabels, gad.extraPodLabels)
 
+	// Add custom labels to deployment
+	if opts.Labels != nil {
+		maps.Copy(labels, opts.Labels)
+	}
+
+	// Add custom pod labels
+	if opts.PodLabels != nil {
+		maps.Copy(podLabels, opts.PodLabels)
+	}
+
 	annotations := gad.makeAnnotations(configChecksum, opts)
 
 	resources := gad.makeGatewayResourceRequirements(opts)
@@ -300,11 +318,17 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, o
 		containerOpts,
 	)
 
+	deploymentAnnotations := make(map[string]string)
+	if opts.Annotations != nil {
+		maps.Copy(deploymentAnnotations, opts.Annotations)
+	}
+
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      gad.baseName,
-			Namespace: gad.globals.TargetNamespace(),
-			Labels:    labels,
+			Name:        gad.baseName,
+			Namespace:   gad.globals.TargetNamespace(),
+			Labels:      labels,
+			Annotations: deploymentAnnotations,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptr.To(opts.Replicas),
@@ -430,6 +454,11 @@ func (gad *GatewayApplierDeleter) makeAnnotations(configChecksum string, opts Ga
 		// preserve the source IP and destination IP. To preserve source/destination IP we need TPROXY interception mode.
 		// More info: https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#ProxyConfig-InboundInterceptionMode
 		annotations[commonresources.AnnotationKeyIstioInterceptionMode] = commonresources.AnnotationValueIstioInterceptionModeTProxy
+	}
+
+	// Add custom pod annotations
+	if opts.PodAnnotations != nil {
+		maps.Copy(annotations, opts.PodAnnotations)
 	}
 
 	return annotations

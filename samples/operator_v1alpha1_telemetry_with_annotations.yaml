@@ -1,0 +1,54 @@
+apiVersion: operator.kyma-project.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: default
+  namespace: kyma-system
+spec:
+  trace:
+    gateway:
+      scaling:
+        type: Static
+        static:
+          replicas: 2
+      # Custom annotations for the trace gateway Deployment
+      annotations:
+        example.com/policy: "skip"
+        example.com/team: "telemetry"
+      # Custom labels for the trace gateway Deployment
+      labels:
+        app.kubernetes.io/component: "trace-gateway"
+        custom-label: "custom-value"
+      # Custom annotations for the trace gateway Pods
+      podAnnotations:
+        sidecar.istio.io/inject: "false"
+        prometheus.io/scrape: "true"
+      # Custom labels for the trace gateway Pods
+      podLabels:
+        version: "v1"
+        environment: "production"
+  
+  metric:
+    gateway:
+      scaling:
+        type: Static
+        static:
+          replicas: 2
+      # Custom annotations for the metric gateway Deployment
+      annotations:
+        example.com/policy: "skip"
+      # Custom pod annotations for the metric gateway
+      podAnnotations:
+        prometheus.io/port: "8888"
+  
+  log:
+    gateway:
+      scaling:
+        type: Static
+        static:
+          replicas: 2
+      # Custom annotations for the log gateway Deployment
+      annotations:
+        kyverno.io/ignore: "true"
+      # Custom pod labels for the log gateway
+      podLabels:
+        log-type: "application"
