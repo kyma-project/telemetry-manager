@@ -46,13 +46,13 @@ runs:
         if [[ "${{ inputs.install-istio }}" == "true" ]]; then
           mode="$mode-istio"
         fi
+        
+          if [[ "${{ inputs.custom-labels-annotations-no-fips }}" == "true" ]]; then
+          mode="$mode-custom-labels-annotations"
+        fi
 
         if [[ "${{ inputs.operate-in-fips-mode }}" == "false" ]]; then
           mode="$mode-no-fips"
-        fi
-        
-        if [[ -n "${{ inputs.custom-labels-annotations-no-fips }}" == "true" ]]; then
-          mode="$mode-custom-labels-annotations-no-fips"
         fi
 
         if [[ -n "${{ inputs.manager-image }}" ]]; then
