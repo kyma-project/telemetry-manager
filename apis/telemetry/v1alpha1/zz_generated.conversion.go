@@ -76,6 +76,36 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
+	if err := s.AddGeneratedConversionFunc((*FluentBitFile)(nil), (*v1beta1.FluentBitFile)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_FluentBitFile_To_v1beta1_FluentBitFile(a.(*FluentBitFile), b.(*v1beta1.FluentBitFile), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*v1beta1.FluentBitFile)(nil), (*FluentBitFile)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_FluentBitFile_To_v1alpha1_FluentBitFile(a.(*v1beta1.FluentBitFile), b.(*FluentBitFile), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*FluentBitFilter)(nil), (*v1beta1.FluentBitFilter)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_FluentBitFilter_To_v1beta1_FluentBitFilter(a.(*FluentBitFilter), b.(*v1beta1.FluentBitFilter), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*v1beta1.FluentBitFilter)(nil), (*FluentBitFilter)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_FluentBitFilter_To_v1alpha1_FluentBitFilter(a.(*v1beta1.FluentBitFilter), b.(*FluentBitFilter), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*FluentBitVariable)(nil), (*v1beta1.FluentBitVariable)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_FluentBitVariable_To_v1beta1_FluentBitVariable(a.(*FluentBitVariable), b.(*v1beta1.FluentBitVariable), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*v1beta1.FluentBitVariable)(nil), (*FluentBitVariable)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_FluentBitVariable_To_v1alpha1_FluentBitVariable(a.(*v1beta1.FluentBitVariable), b.(*FluentBitVariable), scope)
+	}); err != nil {
+		return err
+	}
 	if err := s.AddGeneratedConversionFunc((*Header)(nil), (*v1beta1.Header)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_Header_To_v1beta1_Header(a.(*Header), b.(*v1beta1.Header), scope)
 	}); err != nil {
@@ -103,26 +133,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}
 	if err := s.AddGeneratedConversionFunc((*v1beta1.LogPipelineContainerSelector)(nil), (*LogPipelineContainerSelector)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1beta1_LogPipelineContainerSelector_To_v1alpha1_LogPipelineContainerSelector(a.(*v1beta1.LogPipelineContainerSelector), b.(*LogPipelineContainerSelector), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*LogPipelineFileMount)(nil), (*v1beta1.LogPipelineFileMount)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_LogPipelineFileMount_To_v1beta1_LogPipelineFileMount(a.(*LogPipelineFileMount), b.(*v1beta1.LogPipelineFileMount), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*v1beta1.LogPipelineFileMount)(nil), (*LogPipelineFileMount)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1beta1_LogPipelineFileMount_To_v1alpha1_LogPipelineFileMount(a.(*v1beta1.LogPipelineFileMount), b.(*LogPipelineFileMount), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*LogPipelineFilter)(nil), (*v1beta1.LogPipelineFilter)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_LogPipelineFilter_To_v1beta1_LogPipelineFilter(a.(*LogPipelineFilter), b.(*v1beta1.LogPipelineFilter), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*v1beta1.LogPipelineFilter)(nil), (*LogPipelineFilter)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1beta1_LogPipelineFilter_To_v1alpha1_LogPipelineFilter(a.(*v1beta1.LogPipelineFilter), b.(*LogPipelineFilter), scope)
 	}); err != nil {
 		return err
 	}
@@ -163,16 +173,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}
 	if err := s.AddGeneratedConversionFunc((*v1beta1.LogPipelineStatus)(nil), (*LogPipelineStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1beta1_LogPipelineStatus_To_v1alpha1_LogPipelineStatus(a.(*v1beta1.LogPipelineStatus), b.(*LogPipelineStatus), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*LogPipelineVariableRef)(nil), (*v1beta1.LogPipelineVariableRef)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_LogPipelineVariableRef_To_v1beta1_LogPipelineVariableRef(a.(*LogPipelineVariableRef), b.(*v1beta1.LogPipelineVariableRef), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*v1beta1.LogPipelineVariableRef)(nil), (*LogPipelineVariableRef)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1beta1_LogPipelineVariableRef_To_v1alpha1_LogPipelineVariableRef(a.(*v1beta1.LogPipelineVariableRef), b.(*LogPipelineVariableRef), scope)
 	}); err != nil {
 		return err
 	}
@@ -401,8 +401,8 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddConversionFunc((*LogPipelineHTTPOutput)(nil), (*v1beta1.LogPipelineHTTPOutput)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_LogPipelineHTTPOutput_To_v1beta1_LogPipelineHTTPOutput(a.(*LogPipelineHTTPOutput), b.(*v1beta1.LogPipelineHTTPOutput), scope)
+	if err := s.AddConversionFunc((*FluentBitHTTPOutput)(nil), (*v1beta1.FluentBitHTTPOutput)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_FluentBitHTTPOutput_To_v1beta1_FluentBitHTTPOutput(a.(*FluentBitHTTPOutput), b.(*v1beta1.FluentBitHTTPOutput), scope)
 	}); err != nil {
 		return err
 	}
@@ -421,8 +421,8 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddConversionFunc((*v1beta1.LogPipelineHTTPOutput)(nil), (*LogPipelineHTTPOutput)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1beta1_LogPipelineHTTPOutput_To_v1alpha1_LogPipelineHTTPOutput(a.(*v1beta1.LogPipelineHTTPOutput), b.(*LogPipelineHTTPOutput), scope)
+	if err := s.AddConversionFunc((*v1beta1.FluentBitHTTPOutput)(nil), (*FluentBitHTTPOutput)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_FluentBitHTTPOutput_To_v1alpha1_FluentBitHTTPOutput(a.(*v1beta1.FluentBitHTTPOutput), b.(*FluentBitHTTPOutput), scope)
 	}); err != nil {
 		return err
 	}
@@ -529,6 +529,104 @@ func Convert_v1beta1_FilterSpec_To_v1alpha1_FilterSpec(in *v1beta1.FilterSpec, o
 	return autoConvert_v1beta1_FilterSpec_To_v1alpha1_FilterSpec(in, out, s)
 }
 
+func autoConvert_v1alpha1_FluentBitFile_To_v1beta1_FluentBitFile(in *FluentBitFile, out *v1beta1.FluentBitFile, s conversion.Scope) error {
+	out.Name = in.Name
+	out.Content = in.Content
+	return nil
+}
+
+// Convert_v1alpha1_FluentBitFile_To_v1beta1_FluentBitFile is an autogenerated conversion function.
+func Convert_v1alpha1_FluentBitFile_To_v1beta1_FluentBitFile(in *FluentBitFile, out *v1beta1.FluentBitFile, s conversion.Scope) error {
+	return autoConvert_v1alpha1_FluentBitFile_To_v1beta1_FluentBitFile(in, out, s)
+}
+
+func autoConvert_v1beta1_FluentBitFile_To_v1alpha1_FluentBitFile(in *v1beta1.FluentBitFile, out *FluentBitFile, s conversion.Scope) error {
+	out.Name = in.Name
+	out.Content = in.Content
+	return nil
+}
+
+// Convert_v1beta1_FluentBitFile_To_v1alpha1_FluentBitFile is an autogenerated conversion function.
+func Convert_v1beta1_FluentBitFile_To_v1alpha1_FluentBitFile(in *v1beta1.FluentBitFile, out *FluentBitFile, s conversion.Scope) error {
+	return autoConvert_v1beta1_FluentBitFile_To_v1alpha1_FluentBitFile(in, out, s)
+}
+
+func autoConvert_v1alpha1_FluentBitFilter_To_v1beta1_FluentBitFilter(in *FluentBitFilter, out *v1beta1.FluentBitFilter, s conversion.Scope) error {
+	out.Custom = in.Custom
+	return nil
+}
+
+// Convert_v1alpha1_FluentBitFilter_To_v1beta1_FluentBitFilter is an autogenerated conversion function.
+func Convert_v1alpha1_FluentBitFilter_To_v1beta1_FluentBitFilter(in *FluentBitFilter, out *v1beta1.FluentBitFilter, s conversion.Scope) error {
+	return autoConvert_v1alpha1_FluentBitFilter_To_v1beta1_FluentBitFilter(in, out, s)
+}
+
+func autoConvert_v1beta1_FluentBitFilter_To_v1alpha1_FluentBitFilter(in *v1beta1.FluentBitFilter, out *FluentBitFilter, s conversion.Scope) error {
+	out.Custom = in.Custom
+	return nil
+}
+
+// Convert_v1beta1_FluentBitFilter_To_v1alpha1_FluentBitFilter is an autogenerated conversion function.
+func Convert_v1beta1_FluentBitFilter_To_v1alpha1_FluentBitFilter(in *v1beta1.FluentBitFilter, out *FluentBitFilter, s conversion.Scope) error {
+	return autoConvert_v1beta1_FluentBitFilter_To_v1alpha1_FluentBitFilter(in, out, s)
+}
+
+func autoConvert_v1alpha1_FluentBitHTTPOutput_To_v1beta1_FluentBitHTTPOutput(in *FluentBitHTTPOutput, out *v1beta1.FluentBitHTTPOutput, s conversion.Scope) error {
+	if err := Convert_v1alpha1_ValueType_To_v1beta1_ValueType(&in.Host, &out.Host, s); err != nil {
+		return err
+	}
+	out.User = (*v1beta1.ValueType)(unsafe.Pointer(in.User))
+	out.Password = (*v1beta1.ValueType)(unsafe.Pointer(in.Password))
+	out.URI = in.URI
+	out.Port = in.Port
+	out.Compress = in.Compress
+	out.Format = in.Format
+	// WARNING: in.TLS requires manual conversion: does not exist in peer-type
+	out.Dedot = in.Dedot
+	return nil
+}
+
+func autoConvert_v1beta1_FluentBitHTTPOutput_To_v1alpha1_FluentBitHTTPOutput(in *v1beta1.FluentBitHTTPOutput, out *FluentBitHTTPOutput, s conversion.Scope) error {
+	if err := Convert_v1beta1_ValueType_To_v1alpha1_ValueType(&in.Host, &out.Host, s); err != nil {
+		return err
+	}
+	out.User = (*ValueType)(unsafe.Pointer(in.User))
+	out.Password = (*ValueType)(unsafe.Pointer(in.Password))
+	out.URI = in.URI
+	out.Port = in.Port
+	out.Compress = in.Compress
+	out.Format = in.Format
+	// WARNING: in.TLSConfig requires manual conversion: does not exist in peer-type
+	out.Dedot = in.Dedot
+	return nil
+}
+
+func autoConvert_v1alpha1_FluentBitVariable_To_v1beta1_FluentBitVariable(in *FluentBitVariable, out *v1beta1.FluentBitVariable, s conversion.Scope) error {
+	out.Name = in.Name
+	if err := Convert_v1alpha1_ValueFromSource_To_v1beta1_ValueFromSource(&in.ValueFrom, &out.ValueFrom, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_v1alpha1_FluentBitVariable_To_v1beta1_FluentBitVariable is an autogenerated conversion function.
+func Convert_v1alpha1_FluentBitVariable_To_v1beta1_FluentBitVariable(in *FluentBitVariable, out *v1beta1.FluentBitVariable, s conversion.Scope) error {
+	return autoConvert_v1alpha1_FluentBitVariable_To_v1beta1_FluentBitVariable(in, out, s)
+}
+
+func autoConvert_v1beta1_FluentBitVariable_To_v1alpha1_FluentBitVariable(in *v1beta1.FluentBitVariable, out *FluentBitVariable, s conversion.Scope) error {
+	out.Name = in.Name
+	if err := Convert_v1beta1_ValueFromSource_To_v1alpha1_ValueFromSource(&in.ValueFrom, &out.ValueFrom, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_v1beta1_FluentBitVariable_To_v1alpha1_FluentBitVariable is an autogenerated conversion function.
+func Convert_v1beta1_FluentBitVariable_To_v1alpha1_FluentBitVariable(in *v1beta1.FluentBitVariable, out *FluentBitVariable, s conversion.Scope) error {
+	return autoConvert_v1beta1_FluentBitVariable_To_v1alpha1_FluentBitVariable(in, out, s)
+}
+
 func autoConvert_v1alpha1_Header_To_v1beta1_Header(in *Header, out *v1beta1.Header, s conversion.Scope) error {
 	if err := Convert_v1alpha1_ValueType_To_v1beta1_ValueType(&in.ValueType, &out.ValueType, s); err != nil {
 		return err
@@ -611,78 +709,6 @@ func Convert_v1beta1_LogPipelineContainerSelector_To_v1alpha1_LogPipelineContain
 	return autoConvert_v1beta1_LogPipelineContainerSelector_To_v1alpha1_LogPipelineContainerSelector(in, out, s)
 }
 
-func autoConvert_v1alpha1_LogPipelineFileMount_To_v1beta1_LogPipelineFileMount(in *LogPipelineFileMount, out *v1beta1.LogPipelineFileMount, s conversion.Scope) error {
-	out.Name = in.Name
-	out.Content = in.Content
-	return nil
-}
-
-// Convert_v1alpha1_LogPipelineFileMount_To_v1beta1_LogPipelineFileMount is an autogenerated conversion function.
-func Convert_v1alpha1_LogPipelineFileMount_To_v1beta1_LogPipelineFileMount(in *LogPipelineFileMount, out *v1beta1.LogPipelineFileMount, s conversion.Scope) error {
-	return autoConvert_v1alpha1_LogPipelineFileMount_To_v1beta1_LogPipelineFileMount(in, out, s)
-}
-
-func autoConvert_v1beta1_LogPipelineFileMount_To_v1alpha1_LogPipelineFileMount(in *v1beta1.LogPipelineFileMount, out *LogPipelineFileMount, s conversion.Scope) error {
-	out.Name = in.Name
-	out.Content = in.Content
-	return nil
-}
-
-// Convert_v1beta1_LogPipelineFileMount_To_v1alpha1_LogPipelineFileMount is an autogenerated conversion function.
-func Convert_v1beta1_LogPipelineFileMount_To_v1alpha1_LogPipelineFileMount(in *v1beta1.LogPipelineFileMount, out *LogPipelineFileMount, s conversion.Scope) error {
-	return autoConvert_v1beta1_LogPipelineFileMount_To_v1alpha1_LogPipelineFileMount(in, out, s)
-}
-
-func autoConvert_v1alpha1_LogPipelineFilter_To_v1beta1_LogPipelineFilter(in *LogPipelineFilter, out *v1beta1.LogPipelineFilter, s conversion.Scope) error {
-	out.Custom = in.Custom
-	return nil
-}
-
-// Convert_v1alpha1_LogPipelineFilter_To_v1beta1_LogPipelineFilter is an autogenerated conversion function.
-func Convert_v1alpha1_LogPipelineFilter_To_v1beta1_LogPipelineFilter(in *LogPipelineFilter, out *v1beta1.LogPipelineFilter, s conversion.Scope) error {
-	return autoConvert_v1alpha1_LogPipelineFilter_To_v1beta1_LogPipelineFilter(in, out, s)
-}
-
-func autoConvert_v1beta1_LogPipelineFilter_To_v1alpha1_LogPipelineFilter(in *v1beta1.LogPipelineFilter, out *LogPipelineFilter, s conversion.Scope) error {
-	out.Custom = in.Custom
-	return nil
-}
-
-// Convert_v1beta1_LogPipelineFilter_To_v1alpha1_LogPipelineFilter is an autogenerated conversion function.
-func Convert_v1beta1_LogPipelineFilter_To_v1alpha1_LogPipelineFilter(in *v1beta1.LogPipelineFilter, out *LogPipelineFilter, s conversion.Scope) error {
-	return autoConvert_v1beta1_LogPipelineFilter_To_v1alpha1_LogPipelineFilter(in, out, s)
-}
-
-func autoConvert_v1alpha1_LogPipelineHTTPOutput_To_v1beta1_LogPipelineHTTPOutput(in *LogPipelineHTTPOutput, out *v1beta1.LogPipelineHTTPOutput, s conversion.Scope) error {
-	if err := Convert_v1alpha1_ValueType_To_v1beta1_ValueType(&in.Host, &out.Host, s); err != nil {
-		return err
-	}
-	out.User = (*v1beta1.ValueType)(unsafe.Pointer(in.User))
-	out.Password = (*v1beta1.ValueType)(unsafe.Pointer(in.Password))
-	out.URI = in.URI
-	out.Port = in.Port
-	out.Compress = in.Compress
-	out.Format = in.Format
-	// WARNING: in.TLS requires manual conversion: does not exist in peer-type
-	out.Dedot = in.Dedot
-	return nil
-}
-
-func autoConvert_v1beta1_LogPipelineHTTPOutput_To_v1alpha1_LogPipelineHTTPOutput(in *v1beta1.LogPipelineHTTPOutput, out *LogPipelineHTTPOutput, s conversion.Scope) error {
-	if err := Convert_v1beta1_ValueType_To_v1alpha1_ValueType(&in.Host, &out.Host, s); err != nil {
-		return err
-	}
-	out.User = (*ValueType)(unsafe.Pointer(in.User))
-	out.Password = (*ValueType)(unsafe.Pointer(in.Password))
-	out.URI = in.URI
-	out.Port = in.Port
-	out.Compress = in.Compress
-	out.Format = in.Format
-	// WARNING: in.TLSConfig requires manual conversion: does not exist in peer-type
-	out.Dedot = in.Dedot
-	return nil
-}
-
 func autoConvert_v1alpha1_LogPipelineInput_To_v1beta1_LogPipelineInput(in *LogPipelineInput, out *v1beta1.LogPipelineInput, s conversion.Scope) error {
 	// WARNING: in.Application requires manual conversion: does not exist in peer-type
 	if in.OTLP != nil {
@@ -754,15 +780,15 @@ func Convert_v1beta1_LogPipelineList_To_v1alpha1_LogPipelineList(in *v1beta1.Log
 }
 
 func autoConvert_v1alpha1_LogPipelineOutput_To_v1beta1_LogPipelineOutput(in *LogPipelineOutput, out *v1beta1.LogPipelineOutput, s conversion.Scope) error {
-	out.Custom = in.Custom
-	if in.HTTP != nil {
-		in, out := &in.HTTP, &out.HTTP
-		*out = new(v1beta1.LogPipelineHTTPOutput)
-		if err := Convert_v1alpha1_LogPipelineHTTPOutput_To_v1beta1_LogPipelineHTTPOutput(*in, *out, s); err != nil {
+	out.FluentBitCustom = in.FluentBitCustom
+	if in.FluentBitHTTP != nil {
+		in, out := &in.FluentBitHTTP, &out.FluentBitHTTP
+		*out = new(v1beta1.FluentBitHTTPOutput)
+		if err := Convert_v1alpha1_FluentBitHTTPOutput_To_v1beta1_FluentBitHTTPOutput(*in, *out, s); err != nil {
 			return err
 		}
 	} else {
-		out.HTTP = nil
+		out.FluentBitHTTP = nil
 	}
 	out.OTLP = (*v1beta1.OTLPOutput)(unsafe.Pointer(in.OTLP))
 	return nil
@@ -774,15 +800,15 @@ func Convert_v1alpha1_LogPipelineOutput_To_v1beta1_LogPipelineOutput(in *LogPipe
 }
 
 func autoConvert_v1beta1_LogPipelineOutput_To_v1alpha1_LogPipelineOutput(in *v1beta1.LogPipelineOutput, out *LogPipelineOutput, s conversion.Scope) error {
-	out.Custom = in.Custom
-	if in.HTTP != nil {
-		in, out := &in.HTTP, &out.HTTP
-		*out = new(LogPipelineHTTPOutput)
-		if err := Convert_v1beta1_LogPipelineHTTPOutput_To_v1alpha1_LogPipelineHTTPOutput(*in, *out, s); err != nil {
+	out.FluentBitCustom = in.FluentBitCustom
+	if in.FluentBitHTTP != nil {
+		in, out := &in.FluentBitHTTP, &out.FluentBitHTTP
+		*out = new(FluentBitHTTPOutput)
+		if err := Convert_v1beta1_FluentBitHTTPOutput_To_v1alpha1_FluentBitHTTPOutput(*in, *out, s); err != nil {
 			return err
 		}
 	} else {
-		out.HTTP = nil
+		out.FluentBitHTTP = nil
 	}
 	out.OTLP = (*OTLPOutput)(unsafe.Pointer(in.OTLP))
 	return nil
@@ -797,12 +823,12 @@ func autoConvert_v1alpha1_LogPipelineSpec_To_v1beta1_LogPipelineSpec(in *LogPipe
 	if err := Convert_v1alpha1_LogPipelineInput_To_v1beta1_LogPipelineInput(&in.Input, &out.Input, s); err != nil {
 		return err
 	}
-	out.FluentBitFilters = *(*[]v1beta1.LogPipelineFilter)(unsafe.Pointer(&in.FluentBitFilters))
+	out.FluentBitFilters = *(*[]v1beta1.FluentBitFilter)(unsafe.Pointer(&in.FluentBitFilters))
 	if err := Convert_v1alpha1_LogPipelineOutput_To_v1beta1_LogPipelineOutput(&in.Output, &out.Output, s); err != nil {
 		return err
 	}
-	out.Files = *(*[]v1beta1.LogPipelineFileMount)(unsafe.Pointer(&in.Files))
-	out.Variables = *(*[]v1beta1.LogPipelineVariableRef)(unsafe.Pointer(&in.Variables))
+	out.FluentBitFiles = *(*[]v1beta1.FluentBitFile)(unsafe.Pointer(&in.FluentBitFiles))
+	out.FluentBitVariables = *(*[]v1beta1.FluentBitVariable)(unsafe.Pointer(&in.FluentBitVariables))
 	out.Transforms = *(*[]v1beta1.TransformSpec)(unsafe.Pointer(&in.Transforms))
 	out.Filters = *(*[]v1beta1.FilterSpec)(unsafe.Pointer(&in.Filters))
 	return nil
@@ -817,12 +843,12 @@ func autoConvert_v1beta1_LogPipelineSpec_To_v1alpha1_LogPipelineSpec(in *v1beta1
 	if err := Convert_v1beta1_LogPipelineInput_To_v1alpha1_LogPipelineInput(&in.Input, &out.Input, s); err != nil {
 		return err
 	}
-	out.FluentBitFilters = *(*[]LogPipelineFilter)(unsafe.Pointer(&in.FluentBitFilters))
+	out.FluentBitFilters = *(*[]FluentBitFilter)(unsafe.Pointer(&in.FluentBitFilters))
 	if err := Convert_v1beta1_LogPipelineOutput_To_v1alpha1_LogPipelineOutput(&in.Output, &out.Output, s); err != nil {
 		return err
 	}
-	out.Files = *(*[]LogPipelineFileMount)(unsafe.Pointer(&in.Files))
-	out.Variables = *(*[]LogPipelineVariableRef)(unsafe.Pointer(&in.Variables))
+	out.FluentBitFiles = *(*[]FluentBitFile)(unsafe.Pointer(&in.FluentBitFiles))
+	out.FluentBitVariables = *(*[]FluentBitVariable)(unsafe.Pointer(&in.FluentBitVariables))
 	out.Transforms = *(*[]TransformSpec)(unsafe.Pointer(&in.Transforms))
 	out.Filters = *(*[]FilterSpec)(unsafe.Pointer(&in.Filters))
 	return nil
@@ -853,32 +879,6 @@ func autoConvert_v1beta1_LogPipelineStatus_To_v1alpha1_LogPipelineStatus(in *v1b
 // Convert_v1beta1_LogPipelineStatus_To_v1alpha1_LogPipelineStatus is an autogenerated conversion function.
 func Convert_v1beta1_LogPipelineStatus_To_v1alpha1_LogPipelineStatus(in *v1beta1.LogPipelineStatus, out *LogPipelineStatus, s conversion.Scope) error {
 	return autoConvert_v1beta1_LogPipelineStatus_To_v1alpha1_LogPipelineStatus(in, out, s)
-}
-
-func autoConvert_v1alpha1_LogPipelineVariableRef_To_v1beta1_LogPipelineVariableRef(in *LogPipelineVariableRef, out *v1beta1.LogPipelineVariableRef, s conversion.Scope) error {
-	out.Name = in.Name
-	if err := Convert_v1alpha1_ValueFromSource_To_v1beta1_ValueFromSource(&in.ValueFrom, &out.ValueFrom, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_v1alpha1_LogPipelineVariableRef_To_v1beta1_LogPipelineVariableRef is an autogenerated conversion function.
-func Convert_v1alpha1_LogPipelineVariableRef_To_v1beta1_LogPipelineVariableRef(in *LogPipelineVariableRef, out *v1beta1.LogPipelineVariableRef, s conversion.Scope) error {
-	return autoConvert_v1alpha1_LogPipelineVariableRef_To_v1beta1_LogPipelineVariableRef(in, out, s)
-}
-
-func autoConvert_v1beta1_LogPipelineVariableRef_To_v1alpha1_LogPipelineVariableRef(in *v1beta1.LogPipelineVariableRef, out *LogPipelineVariableRef, s conversion.Scope) error {
-	out.Name = in.Name
-	if err := Convert_v1beta1_ValueFromSource_To_v1alpha1_ValueFromSource(&in.ValueFrom, &out.ValueFrom, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_v1beta1_LogPipelineVariableRef_To_v1alpha1_LogPipelineVariableRef is an autogenerated conversion function.
-func Convert_v1beta1_LogPipelineVariableRef_To_v1alpha1_LogPipelineVariableRef(in *v1beta1.LogPipelineVariableRef, out *LogPipelineVariableRef, s conversion.Scope) error {
-	return autoConvert_v1beta1_LogPipelineVariableRef_To_v1alpha1_LogPipelineVariableRef(in, out, s)
 }
 
 func autoConvert_v1alpha1_MetricPipeline_To_v1beta1_MetricPipeline(in *MetricPipeline, out *v1beta1.MetricPipeline, s conversion.Scope) error {
