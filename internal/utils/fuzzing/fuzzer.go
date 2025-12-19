@@ -1,4 +1,4 @@
-package test
+package fuzzing
 
 import (
 	"math/rand"
@@ -112,7 +112,7 @@ func GetFuzzer(scheme *runtime.Scheme, funcs ...fuzzer.FuzzerFuncs) *randfill.Fi
 						return
 					}
 
-					*in = ptr.To(intstr.FromInt32(c.Int31n(50)))
+					*in = ptr.To(intstr.FromInt32(c.Int31n(50))) //nolint:mnd // fuzzing value
 				},
 			}
 		},

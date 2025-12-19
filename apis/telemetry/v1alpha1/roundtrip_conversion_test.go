@@ -3,17 +3,17 @@ package v1alpha1
 import (
 	"testing"
 
-	"github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"k8s.io/apimachinery/pkg/api/apitesting/fuzzer"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 	"sigs.k8s.io/randfill"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/utils/fuzzing"
 )
 
 func TestLogPipelineConversion(t *testing.T) {
-	t.Run("spoke-hub-spoke", test.FuzzTestFunc(test.FuzzTestFuncInput{
+	t.Run("spoke-hub-spoke", fuzzing.FuzzTestFunc(fuzzing.FuzzTestFuncInput{
 		Hub:   &telemetryv1beta1.LogPipeline{},
 		Spoke: &LogPipeline{},
 		SpokeAfterMutation: func(spoke conversion.Convertible) {
