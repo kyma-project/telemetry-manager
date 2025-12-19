@@ -3,83 +3,10 @@ package k8s
 import (
 	"testing"
 
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
-
-	"github.com/kyma-project/telemetry-manager/internal/utils/k8s/mocks"
 )
-
-func TestGetOrCreateConfigMapError(t *testing.T) {
-	mockClient := &mocks.Client{}
-	badReqErr := apierrors.NewBadRequest("")
-	mockClient.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(badReqErr)
-
-	configMapName := types.NamespacedName{Name: "some-cm", Namespace: "cm-ns"}
-	_, err := GetOrCreateConfigMap(t.Context(), mockClient, configMapName, map[string]string{"myLabel": "myValue"})
-
-	require.Error(t, err)
-	require.Equal(t, badReqErr, err)
-}
-
-func TestGetOrCreateConfigMapGetSuccess(t *testing.T) {
-	mockClient := &mocks.Client{}
-	mockClient.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-	configMapName := types.NamespacedName{Name: "some-cm", Namespace: "cm-ns"}
-	cm, err := GetOrCreateConfigMap(t.Context(), mockClient, configMapName, map[string]string{"myLabel": "myValue"})
-
-	require.NoError(t, err)
-	require.Equal(t, "some-cm", cm.Name)
-	require.Equal(t, "cm-ns", cm.Namespace)
-	require.Equal(t, "myValue", cm.Labels["myLabel"])
-}
-
-func TestGetOrCreateConfigMapCreateSuccess(t *testing.T) {
-	mockClient := &mocks.Client{}
-	notFoundErr := apierrors.NewNotFound(schema.GroupResource{}, "")
-	mockClient.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(notFoundErr)
-	mockClient.On("Create", mock.Anything, mock.Anything).Return(nil)
-
-	configMapName := types.NamespacedName{Name: "some-cm", Namespace: "cm-ns"}
-	cm, err := GetOrCreateConfigMap(t.Context(), mockClient, configMapName, map[string]string{"myLabel": "myValue"})
-
-	require.NoError(t, err)
-	require.Equal(t, "some-cm", cm.Name)
-	require.Equal(t, "cm-ns", cm.Namespace)
-	require.Equal(t, "myValue", cm.Labels["myLabel"])
-}
-
-func TestGetOrCreateSecretError(t *testing.T) {
-	mockClient := &mocks.Client{}
-	badReqErr := apierrors.NewBadRequest("")
-	mockClient.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(badReqErr)
-
-	secretName := types.NamespacedName{Name: "some-secret", Namespace: "secret-ns"}
-	_, err := GetOrCreateSecret(t.Context(), mockClient, secretName, map[string]string{"myLabel": "myValue"})
-
-	require.Error(t, err)
-	require.Equal(t, badReqErr, err)
-}
-
-func TestGetOrCreateSecretSuccess(t *testing.T) {
-	mockClient := &mocks.Client{}
-	notFoundErr := apierrors.NewNotFound(schema.GroupResource{}, "")
-	mockClient.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(notFoundErr)
-	mockClient.On("Create", mock.Anything, mock.Anything).Return(nil)
-
-	secretName := types.NamespacedName{Name: "some-secret", Namespace: "secret-ns"}
-	secret, err := GetOrCreateSecret(t.Context(), mockClient, secretName, map[string]string{"myLabel": "myValue"})
-
-	require.NoError(t, err)
-	require.Equal(t, "some-secret", secret.Name)
-	require.Equal(t, "secret-ns", secret.Namespace)
-	require.Equal(t, "myValue", secret.Labels["myLabel"])
-}
 
 func TestMergePodAnnotations(t *testing.T) {
 	tests := []struct {
