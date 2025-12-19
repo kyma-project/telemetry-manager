@@ -92,7 +92,7 @@ func validateLogPipeline(ctx context.Context, obj runtime.Object) (admission.War
 		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "input.application.keepAnnotations"))
 	}
 
-	return nil, nil
+	return warnings, nil
 }
 
 func renderDeprecationWarning(pipelineName string, attribute string) string {
