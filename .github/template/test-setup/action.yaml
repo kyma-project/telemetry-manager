@@ -48,7 +48,7 @@ runs:
         fi
         
           if [[ "${{ inputs.custom-labels-annotations-no-fips }}" == "true" ]]; then
-          mode="$mode-custom-labels-annotations-no-fips"
+          mode="$mode-custom-labels-annotations"
         fi
 
         if [[ "${{ inputs.operate-in-fips-mode }}" == "false" ]]; then
