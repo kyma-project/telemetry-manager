@@ -16,6 +16,10 @@ import (
 	webhookutils "github.com/kyma-project/telemetry-manager/webhook/utils"
 )
 
+const (
+	migrationGuideLink = "https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html"
+)
+
 type LogPipelineValidator struct {
 }
 
@@ -43,7 +47,7 @@ func validateFilterTransform(ctx context.Context, filterSpec []telemetryv1beta1.
 }
 
 func validateLogPipeline(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	logPipeline, ok := obj.(*telemetryv1alpha1.LogPipeline)
+	pipeline, ok := obj.(*telemetryv1alpha1.LogPipeline)
 
 	var warnings admission.Warnings
 
@@ -51,7 +55,7 @@ func validateLogPipeline(ctx context.Context, obj runtime.Object) (admission.War
 		return nil, fmt.Errorf("expected a LogPipeline but got %T", obj)
 	}
 
-	filterSpec, transformSpec, err := webhookutils.ConvertFilterTransformToBeta(logPipeline.Spec.Filters, logPipeline.Spec.Transforms)
+	filterSpec, transformSpec, err := webhookutils.ConvertFilterTransformToBeta(pipeline.Spec.Filters, pipeline.Spec.Transforms)
 	if err != nil {
 		return nil, err
 	}
@@ -60,13 +64,37 @@ func validateLogPipeline(ctx context.Context, obj runtime.Object) (admission.War
 		return nil, err
 	}
 
-	if logpipelineutils.ContainsCustomPlugin(logPipeline) {
-		helpText := "https://kyma-project.io/#/telemetry-manager/user/02-logs"
-		msg := fmt.Sprintf("Logpipeline '%s' uses unsupported custom filters or outputs. We recommend changing the pipeline to use supported filters or output. See the documentation: %s", logPipeline.Name, helpText)
-		warnings = append(warnings, msg)
+	if logpipelineutils.IsCustomFilterDefined(pipeline.Spec.FluentBitFilters) {
+		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "filters"))
+	}
 
-		return warnings, nil
+	if logpipelineutils.IsCustomOutputDefined(&pipeline.Spec.Output) {
+		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "output.custom"))
+	}
+
+	if logpipelineutils.IsHTTPOutputDefined(&pipeline.Spec.Output) {
+		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "output.http"))
+	}
+
+	if logpipelineutils.IsVariablesDefined(pipeline.Spec.FluentBitVariables) {
+		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "variables"))
+	}
+
+	if logpipelineutils.IsFilesDefined(pipeline.Spec.FluentBitFiles) {
+		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "files"))
+	}
+
+	if logpipelineutils.IsApplicationInputEnabled(&pipeline.Spec.Input) && pipeline.Spec.Input.Application.FluentBitDropLabels != nil {
+		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "input.application.dropLabels"))
+	}
+
+	if logpipelineutils.IsApplicationInputEnabled(&pipeline.Spec.Input) && pipeline.Spec.Input.Application.FluentBitKeepAnnotations != nil {
+		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "input.application.keepAnnotations"))
 	}
 
 	return nil, nil
+}
+
+func renderDeprecationWarning(pipelineName string, attribute string) string {
+	return fmt.Sprintf("LogPipeline '%s' uses the attribute '%s' which is based on the deprecated FluentBit technology stack. Please migrate to an Open Telemetry based pipeline instead. See the documentation: %s", pipelineName, attribute, migrationGuideLink)
 }

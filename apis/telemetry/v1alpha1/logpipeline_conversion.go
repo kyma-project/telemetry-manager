@@ -46,8 +46,8 @@ func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 	return Convert_v1beta1_LogPipeline_To_v1alpha1_LogPipeline(src, dst, nil)
 }
 
-func Convert_v1alpha1_LogPipelineHTTPOutput_To_v1beta1_LogPipelineHTTPOutput(in *LogPipelineHTTPOutput, out *telemetryv1beta1.LogPipelineHTTPOutput, s apiconversion.Scope) error {
-	if err := autoConvert_v1alpha1_LogPipelineHTTPOutput_To_v1beta1_LogPipelineHTTPOutput(in, out, s); err != nil {
+func Convert_v1alpha1_FluentBitHTTPOutput_To_v1beta1_FluentBitHTTPOutput(in *FluentBitHTTPOutput, out *telemetryv1beta1.FluentBitHTTPOutput, s apiconversion.Scope) error {
+	if err := autoConvert_v1alpha1_FluentBitHTTPOutput_To_v1beta1_FluentBitHTTPOutput(in, out, s); err != nil {
 		return err
 	}
 
@@ -62,12 +62,12 @@ func Convert_v1alpha1_LogPipelineHTTPOutput_To_v1beta1_LogPipelineHTTPOutput(in 
 	return nil
 }
 
-func Convert_v1beta1_LogPipelineHTTPOutput_To_v1alpha1_LogPipelineHTTPOutput(in *telemetryv1beta1.LogPipelineHTTPOutput, out *LogPipelineHTTPOutput, s apiconversion.Scope) error {
-	if err := autoConvert_v1beta1_LogPipelineHTTPOutput_To_v1alpha1_LogPipelineHTTPOutput(in, out, s); err != nil {
+func Convert_v1beta1_FluentBitHTTPOutput_To_v1alpha1_FluentBitHTTPOutput(in *telemetryv1beta1.FluentBitHTTPOutput, out *FluentBitHTTPOutput, s apiconversion.Scope) error {
+	if err := autoConvert_v1beta1_FluentBitHTTPOutput_To_v1alpha1_FluentBitHTTPOutput(in, out, s); err != nil {
 		return err
 	}
 
-	out.TLS = LogPipelineOutputTLS{
+	out.TLS = FluentBitHTTPOutputTLS{
 		CA:                        (*ValueType)(unsafe.Pointer(in.TLSConfig.CA)),
 		Cert:                      (*ValueType)(unsafe.Pointer(in.TLSConfig.Cert)),
 		Key:                       (*ValueType)(unsafe.Pointer(in.TLSConfig.Key)),
@@ -89,8 +89,8 @@ func Convert_v1alpha1_LogPipelineInput_To_v1beta1_LogPipelineInput(in *LogPipeli
 
 	out.Runtime = &telemetryv1beta1.LogPipelineRuntimeInput{
 		Enabled:          in.Application.Enabled,
-		KeepAnnotations:  in.Application.KeepAnnotations,
-		DropLabels:       in.Application.DropLabels,
+		FluentBitKeepAnnotations:  in.Application.FluentBitKeepAnnotations,
+		FluentBitDropLabels:       in.Application.FluentBitDropLabels,
 		KeepOriginalBody: in.Application.KeepOriginalBody,
 	}
 
@@ -127,8 +127,8 @@ func Convert_v1beta1_LogPipelineInput_To_v1alpha1_LogPipelineInput(in *telemetry
 
 	out.Application = &LogPipelineApplicationInput{
 		Enabled:          in.Runtime.Enabled,
-		KeepAnnotations:  in.Runtime.KeepAnnotations,
-		DropLabels:       in.Runtime.DropLabels,
+		FluentBitKeepAnnotations:  in.Runtime.FluentBitKeepAnnotations,
+		FluentBitDropLabels:       in.Runtime.FluentBitDropLabels,
 		KeepOriginalBody: in.Runtime.KeepOriginalBody,
 	}
 

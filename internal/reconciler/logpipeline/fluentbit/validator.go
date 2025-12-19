@@ -73,17 +73,17 @@ func (v *Validator) Validate(ctx context.Context, pipeline *telemetryv1alpha1.Lo
 		return err
 	}
 
-	if pipeline.Spec.Output.HTTP != nil {
-		if err := v.EndpointValidator.Validate(ctx, &pipeline.Spec.Output.HTTP.Host, endpoint.FluentdProtocolHTTP); err != nil {
+	if pipeline.Spec.Output.FluentBitHTTP != nil {
+		if err := v.EndpointValidator.Validate(ctx, &pipeline.Spec.Output.FluentBitHTTP.Host, endpoint.FluentdProtocolHTTP); err != nil {
 			return err
 		}
 	}
 
 	if tlsValidationRequired(pipeline) {
 		tlsConfig := tlscert.TLSBundle{
-			Cert: pipeline.Spec.Output.HTTP.TLS.Cert,
-			Key:  pipeline.Spec.Output.HTTP.TLS.Key,
-			CA:   pipeline.Spec.Output.HTTP.TLS.CA,
+			Cert: pipeline.Spec.Output.FluentBitHTTP.TLS.Cert,
+			Key:  pipeline.Spec.Output.FluentBitHTTP.TLS.Key,
+			CA:   pipeline.Spec.Output.FluentBitHTTP.TLS.CA,
 		}
 
 		if err := v.TLSCertValidator.Validate(ctx, tlsConfig); err != nil {
@@ -99,11 +99,11 @@ func (v *Validator) Validate(ctx context.Context, pipeline *telemetryv1alpha1.Lo
 		return err
 	}
 
-	if err := validateCustomOutput(pipeline.Spec.Output.Custom); err != nil {
+	if err := validateCustomOutput(pipeline.Spec.Output.FluentBitCustom); err != nil {
 		return err
 	}
 
-	httpOutput := pipeline.Spec.Output.HTTP
+	httpOutput := pipeline.Spec.Output.FluentBitHTTP
 	if httpOutput != nil && httpOutput.Host.Value != "" && !isValidHostname(httpOutput.Host.Value) {
 		return fmt.Errorf("invalid hostname '%s'", httpOutput.Host.Value)
 	}
@@ -112,7 +112,7 @@ func (v *Validator) Validate(ctx context.Context, pipeline *telemetryv1alpha1.Lo
 }
 
 func tlsValidationRequired(pipeline *telemetryv1alpha1.LogPipeline) bool {
-	http := pipeline.Spec.Output.HTTP
+	http := pipeline.Spec.Output.FluentBitHTTP
 	if http == nil {
 		return false
 	}
@@ -126,7 +126,7 @@ func isValidHostname(host string) bool {
 }
 
 func validateFileNames(logpipeline *telemetryv1alpha1.LogPipeline) error {
-	files := logpipeline.Spec.Files
+	files := logpipeline.Spec.FluentBitFiles
 	uniqFileMap := make(map[string]bool)
 
 	for _, f := range files {

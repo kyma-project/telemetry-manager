@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -29,27 +30,43 @@ func IsInputValid(i *telemetryv1alpha1.LogPipelineInput) bool {
 	return i != nil
 }
 
-func IsCustomDefined(o *telemetryv1alpha1.LogPipelineOutput) bool {
-	return o.Custom != ""
+func IsCustomOutputDefined(o *telemetryv1alpha1.LogPipelineOutput) bool {
+	return o.FluentBitCustom != ""
 }
 
-func IsHTTPDefined(o *telemetryv1alpha1.LogPipelineOutput) bool {
-	return o.HTTP != nil && sharedtypesutils.IsValid(&o.HTTP.Host)
+func IsHTTPOutputDefined(o *telemetryv1alpha1.LogPipelineOutput) bool {
+	return o.FluentBitHTTP != nil && sharedtypesutils.IsValid(&o.FluentBitHTTP.Host)
+}
+
+func IsVariablesDefined(v []telemetryv1alpha1.FluentBitVariable) bool {
+	return len(v) > 0
+}
+
+func IsFilesDefined(v []telemetryv1alpha1.FluentBitFile) bool {
+	return len(v) > 0
 }
 
 func IsOTLPDefined(o *telemetryv1alpha1.LogPipelineOutput) bool {
 	return o.OTLP != nil
 }
 
+func IsApplicationInputEnabled(i *telemetryv1alpha1.LogPipelineInput) bool {
+	return i.Application != nil && ptr.Deref(i.Application.Enabled, false)
+}
+
 // ContainsCustomPlugin returns true if the pipeline contains any custom filters or outputs
 func ContainsCustomPlugin(lp *telemetryv1alpha1.LogPipeline) bool {
-	for _, filter := range lp.Spec.FluentBitFilters {
+	return IsCustomOutputDefined(&lp.Spec.Output) || IsCustomFilterDefined(lp.Spec.FluentBitFilters)
+}
+
+func IsCustomFilterDefined(filters []telemetryv1alpha1.FluentBitFilter) bool {
+	for _, filter := range filters {
 		if filter.Custom != "" {
 			return true
 		}
 	}
 
-	return IsCustomDefined(&lp.Spec.Output)
+	return false
 }
 
 func GetPipelinesForType(ctx context.Context, client client.Client, mode Mode) ([]telemetryv1alpha1.LogPipeline, error) {
@@ -75,8 +92,4 @@ func GetOutputType(t *telemetryv1alpha1.LogPipeline) Mode {
 	}
 
 	return FluentBit
-}
-
-func IsOTLPInputEnabled(input telemetryv1alpha1.LogPipelineInput) bool {
-	return input.OTLP == nil || !input.OTLP.Disabled
 }
