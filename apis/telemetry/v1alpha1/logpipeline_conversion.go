@@ -88,10 +88,10 @@ func Convert_v1alpha1_LogPipelineInput_To_v1beta1_LogPipelineInput(in *LogPipeli
 	}
 
 	out.Runtime = &telemetryv1beta1.LogPipelineRuntimeInput{
-		Enabled:          in.Application.Enabled,
-		FluentBitKeepAnnotations:  in.Application.FluentBitKeepAnnotations,
-		FluentBitDropLabels:       in.Application.FluentBitDropLabels,
-		KeepOriginalBody: in.Application.KeepOriginalBody,
+		Enabled:                  in.Application.Enabled,
+		FluentBitKeepAnnotations: in.Application.FluentBitKeepAnnotations,
+		FluentBitDropLabels:      in.Application.FluentBitDropLabels,
+		KeepOriginalBody:         in.Application.KeepOriginalBody,
 	}
 
 	var excludes []string
@@ -126,10 +126,10 @@ func Convert_v1beta1_LogPipelineInput_To_v1alpha1_LogPipelineInput(in *telemetry
 	}
 
 	out.Application = &LogPipelineApplicationInput{
-		Enabled:          in.Runtime.Enabled,
-		FluentBitKeepAnnotations:  in.Runtime.FluentBitKeepAnnotations,
-		FluentBitDropLabels:       in.Runtime.FluentBitDropLabels,
-		KeepOriginalBody: in.Runtime.KeepOriginalBody,
+		Enabled:                  in.Runtime.Enabled,
+		FluentBitKeepAnnotations: in.Runtime.FluentBitKeepAnnotations,
+		FluentBitDropLabels:      in.Runtime.FluentBitDropLabels,
+		KeepOriginalBody:         in.Runtime.KeepOriginalBody,
 	}
 
 	if in.Runtime.Namespaces != nil {
