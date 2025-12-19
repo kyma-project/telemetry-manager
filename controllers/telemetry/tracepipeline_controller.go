@@ -45,11 +45,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
-	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
-	"github.com/kyma-project/telemetry-manager/internal/templates"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
@@ -121,26 +119,11 @@ func NewTracePipelineController(config TracePipelineControllerConfig, client cli
 		return nil, err
 	}
 
-	loader := templates.NewSpecTemplatesLoader(&templates.OSFileReader{})
-
-	podSpecTemplate, err := loader.LoadPodSpecTemplate(config.PodSpecTemplateFileName())
-	if err != nil {
-		return nil, err
-	}
-
-	metadataTemplate, err := loader.LoadMetadataTemplate(config.ResourceMetaTemplateFileName())
-	if err != nil {
-		return nil, err
-	}
-
 	reconciler := tracepipeline.New(
 		tracepipeline.WithClient(client),
 		tracepipeline.WithGlobal(config.Global),
 
-		tracepipeline.WithGatewayApplierDeleter(otelcollector.NewTraceGatewayApplierDeleter(config.Global, config.OTelCollectorImage, config.TraceGatewayPriorityClassName, &commonresources.SpecTemplate{
-			Pod:      podSpecTemplate,
-			Metadata: metadataTemplate,
-		})),
+		tracepipeline.WithGatewayApplierDeleter(otelcollector.NewTraceGatewayApplierDeleter(config.Global, config.OTelCollectorImage, config.TraceGatewayPriorityClassName)),
 		tracepipeline.WithGatewayConfigBuilder(&tracegateway.Builder{Reader: client}),
 		tracepipeline.WithGatewayProber(&workloadstatus.DeploymentProber{Client: client}),
 
@@ -152,9 +135,6 @@ func NewTracePipelineController(config TracePipelineControllerConfig, client cli
 		tracepipeline.WithPipelineLock(pipelineLock),
 		tracepipeline.WithPipelineSyncer(pipelineSync),
 		tracepipeline.WithPipelineValidator(pipelineValidator),
-
-		tracepipeline.WithPodSpecTemplate(podSpecTemplate),
-		tracepipeline.WithMetadataTemplate(metadataTemplate),
 	)
 
 	return &TracePipelineController{

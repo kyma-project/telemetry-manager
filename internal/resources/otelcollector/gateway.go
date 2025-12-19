@@ -18,7 +18,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
@@ -80,8 +79,6 @@ type GatewayApplierDeleter struct {
 
 	podOpts       []commonresources.PodSpecOption
 	containerOpts []commonresources.ContainerOption
-
-	specTemplate *commonresources.SpecTemplate
 }
 
 type GatewayApplyOptions struct {
@@ -97,7 +94,7 @@ type GatewayApplyOptions struct {
 }
 
 //nolint:dupl // repeating the code as we have three different signals
-func NewLogGatewayApplierDeleter(globals config.Global, image, priorityClassName string, specTemplate *commonresources.SpecTemplate) *GatewayApplierDeleter {
+func NewLogGatewayApplierDeleter(globals config.Global, image, priorityClassName string) *GatewayApplierDeleter {
 	extraLabels := map[string]string{
 		commonresources.LabelKeyTelemetryLogIngest: commonresources.LabelValueTrue,
 		commonresources.LabelKeyTelemetryLogExport: commonresources.LabelValueTrue,
@@ -126,12 +123,11 @@ func NewLogGatewayApplierDeleter(globals config.Global, image, priorityClassName
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
 			commonresources.WithFIPSGoDebugEnvVar(globals.OperateInFIPSMode()),
 		},
-		specTemplate: specTemplate,
 	}
 }
 
 //nolint:dupl // repeating the code as we have three different signals
-func NewMetricGatewayApplierDeleter(globals config.Global, image, priorityClassName string, specTemplate *commonresources.SpecTemplate) *GatewayApplierDeleter {
+func NewMetricGatewayApplierDeleter(globals config.Global, image, priorityClassName string) *GatewayApplierDeleter {
 	extraLabels := map[string]string{
 		commonresources.LabelKeyTelemetryMetricIngest: commonresources.LabelValueTrue,
 		commonresources.LabelKeyTelemetryMetricExport: commonresources.LabelValueTrue,
@@ -160,12 +156,11 @@ func NewMetricGatewayApplierDeleter(globals config.Global, image, priorityClassN
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
 			commonresources.WithFIPSGoDebugEnvVar(globals.OperateInFIPSMode()),
 		},
-		specTemplate: specTemplate,
 	}
 }
 
 //nolint:dupl // repeating the code as we have three different signals
-func NewTraceGatewayApplierDeleter(globals config.Global, image, priorityClassName string, specTemplate *commonresources.SpecTemplate) *GatewayApplierDeleter {
+func NewTraceGatewayApplierDeleter(globals config.Global, image, priorityClassName string) *GatewayApplierDeleter {
 	extraLabels := map[string]string{
 		commonresources.LabelKeyTelemetryTraceIngest: commonresources.LabelValueTrue,
 		commonresources.LabelKeyTelemetryTraceExport: commonresources.LabelValueTrue,
@@ -194,7 +189,6 @@ func NewTraceGatewayApplierDeleter(globals config.Global, image, priorityClassNa
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
 			commonresources.WithFIPSGoDebugEnvVar(globals.OperateInFIPSMode()),
 		},
-		specTemplate: specTemplate,
 	}
 }
 
@@ -221,7 +215,7 @@ func (gad *GatewayApplierDeleter) ApplyResources(ctx context.Context, c client.C
 	}
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
-	if err := k8sutils.CreateOrUpdateDeployment(ctx, c, gad.makeGatewayDeployment(ctx, configChecksum, opts)); err != nil {
+	if err := k8sutils.CreateOrUpdateDeployment(ctx, c, gad.makeGatewayDeployment(configChecksum, opts)); err != nil {
 		return fmt.Errorf("failed to create deployment: %w", err)
 	}
 
@@ -282,14 +276,31 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 	return allErrors
 }
 
-func (gad *GatewayApplierDeleter) makeGatewayDeployment(ctx context.Context, configChecksum string, opts GatewayApplyOptions) *appsv1.Deployment {
-	defaultLabels := commonresources.MakeDefaultLabels(gad.baseName, commonresources.LabelValueK8sComponentGateway)
+func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, opts GatewayApplyOptions) *appsv1.Deployment {
+	labels := commonresources.MakeDefaultLabels(gad.baseName, commonresources.LabelValueK8sComponentGateway)
 	selectorLabels := commonresources.MakeDefaultSelectorLabels(gad.baseName)
+	annotations := gad.makeAnnotations(configChecksum, opts)
+
+	// Create final annotations for the DaemonSet and Pods with additional annotations
+	podAnnotations := make(map[string]string)
+	resourceAnnotations := make(map[string]string)
+
+	maps.Copy(resourceAnnotations, gad.globals.AdditionalAnnotations())
+	maps.Copy(podAnnotations, gad.globals.AdditionalAnnotations())
+	maps.Copy(podAnnotations, annotations)
+
 	defaultPodLabels := make(map[string]string)
-	maps.Copy(defaultPodLabels, defaultLabels)
+	maps.Copy(defaultPodLabels, labels)
 	maps.Copy(defaultPodLabels, gad.extraPodLabels)
 
-	podAnnotations := gad.makeAnnotations(configChecksum, opts)
+	// Create final labels for the DaemonSet and Pods with additional labels
+	resourceLabels := make(map[string]string)
+	podLabels := make(map[string]string)
+
+	maps.Copy(resourceLabels, gad.globals.AdditionalLabels())
+	maps.Copy(podLabels, gad.globals.AdditionalLabels())
+	maps.Copy(resourceLabels, labels)
+	maps.Copy(podLabels, defaultPodLabels)
 
 	resources := gad.makeGatewayResourceRequirements(opts)
 
@@ -297,46 +308,41 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(ctx context.Context, con
 	containerOpts = append(containerOpts,
 		commonresources.WithResources(resources),
 		commonresources.WithGoMemLimitEnvVar(resources.Limits[corev1.ResourceMemory]),
+		commonresources.WithClusterTrustBundVolumeMount(gad.globals.ClusterTrustBundleName()),
 	)
 
-	podTemplateSpec := corev1.PodTemplateSpec{
-		ObjectMeta: metav1.ObjectMeta{
-			Labels:      defaultPodLabels,
-			Annotations: podAnnotations,
-		},
-		Spec: makePodSpec(
-			gad.baseName,
-			gad.image,
-			gad.podOpts,
-			containerOpts,
-		),
-	}
+	podOptions := make([]commonresources.PodSpecOption, 0)
+	podOptions = append(podOptions, gad.podOpts...)
+	podOptions = append(podOptions, commonresources.WithImagePullSecretName(gad.globals.ImagePullSecretName()),
+		commonresources.WithClusterTrustBundVolume(gad.globals.ClusterTrustBundleName()),
+	)
 
-	// Override Podspec with user provided template if available
-	if gad.specTemplate != nil && gad.specTemplate.Pod != nil {
-		gad.specTemplate.Pod.Spec.Containers[0].Name = containerName
-	}
-
-	updatedPodTemplateSpec, err := commonresources.OverridePodSpecWithTemplate(&podTemplateSpec, gad.specTemplate.Pod)
-	if err != nil {
-		logf.FromContext(ctx).Error(err, "Failed to override gateway pod spec with template, proceeding with base pod spec", "gateway", gad.baseName)
-	} else {
-		podTemplateSpec = *updatedPodTemplateSpec
-	}
+	podSpec := makePodSpec(
+		gad.baseName,
+		gad.image,
+		podOptions,
+		containerOpts,
+	)
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        gad.baseName,
 			Namespace:   gad.globals.TargetNamespace(),
-			Labels:      commonresources.MergeLabels(gad.specTemplate, defaultLabels),
-			Annotations: commonresources.MergeAnnotations(gad.specTemplate, map[string]string{}),
+			Labels:      resourceLabels,
+			Annotations: resourceAnnotations,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptr.To(opts.Replicas),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: selectorLabels,
 			},
-			Template: podTemplateSpec,
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels:      podLabels,
+					Annotations: podAnnotations,
+				},
+				Spec: podSpec,
+			},
 		},
 	}
 }

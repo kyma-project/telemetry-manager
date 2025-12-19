@@ -7,7 +7,6 @@ import (
 
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -23,7 +22,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricgateway"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
-	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
@@ -52,7 +50,6 @@ type Reconciler struct {
 	pipelineSync            PipelineSyncer
 	pipelineValidator       *Validator
 	errToMsgConverter       commonstatus.ErrorToMessageConverter
-	specTemplate            *commonresources.SpecTemplate
 }
 
 // Option is a functional option for configuring a Reconciler.
@@ -125,26 +122,6 @@ func WithGatewayProber(prober commonstatus.Prober) Option {
 func WithIstioStatusChecker(checker IstioStatusChecker) Option {
 	return func(r *Reconciler) {
 		r.istioStatusChecker = checker
-	}
-}
-
-func WithPodSpecTemplate(template *corev1.PodTemplateSpec) Option {
-	return func(r *Reconciler) {
-		if r.specTemplate == nil {
-			r.specTemplate = &commonresources.SpecTemplate{}
-		}
-
-		r.specTemplate.Pod = template
-	}
-}
-
-func WithMetadataTemplate(template *metav1.ObjectMeta) Option {
-	return func(r *Reconciler) {
-		if r.specTemplate == nil {
-			r.specTemplate = &commonresources.SpecTemplate{}
-		}
-
-		r.specTemplate.Metadata = template
 	}
 }
 

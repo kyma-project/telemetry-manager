@@ -36,12 +36,14 @@ func IsValidationError(err error) bool {
 }
 
 type Global struct {
-	managerNamespace             string
-	targetNamespace              string
-	operateInFIPSMode            bool
-	version                      string
-	resourceMetaTemplateFileName string
-	podSpecTemplateFileName      string
+	managerNamespace       string
+	targetNamespace        string
+	operateInFIPSMode      bool
+	version                string
+	imagePullSecretName    string
+	clusterTrustBundleName string
+	additionalLabels       map[string]string
+	additionalAnnotations  map[string]string
 }
 
 type Option func(*Global)
@@ -70,15 +72,27 @@ func WithVersion(version string) Option {
 	}
 }
 
-func WithResourceMetaTemplateFileName(fileName string) Option {
+func WithImagePullSecretName(secretName string) Option {
 	return func(g *Global) {
-		g.resourceMetaTemplateFileName = fileName
+		g.imagePullSecretName = secretName
 	}
 }
 
-func WithPodSpecTemplateFileName(fileName string) Option {
+func WithClusterTrustBundleName(name string) Option {
 	return func(g *Global) {
-		g.podSpecTemplateFileName = fileName
+		g.clusterTrustBundleName = name
+	}
+}
+
+func WithAdditionalLabels(labels map[string]string) Option {
+	return func(g *Global) {
+		g.additionalLabels = labels
+	}
+}
+
+func WithAdditionalAnnotations(annotations map[string]string) Option {
+	return func(g *Global) {
+		g.additionalAnnotations = annotations
 	}
 }
 
@@ -135,10 +149,18 @@ func (g *Global) Version() string {
 	return g.version
 }
 
-func (g *Global) PodSpecTemplateFileName() string {
-	return g.podSpecTemplateFileName
+func (g *Global) ImagePullSecretName() string {
+	return g.imagePullSecretName
 }
 
-func (g *Global) ResourceMetaTemplateFileName() string {
-	return g.resourceMetaTemplateFileName
+func (g *Global) ClusterTrustBundleName() string {
+	return g.clusterTrustBundleName
+}
+
+func (g *Global) AdditionalLabels() map[string]string {
+	return g.additionalLabels
+}
+
+func (g *Global) AdditionalAnnotations() map[string]string {
+	return g.additionalAnnotations
 }

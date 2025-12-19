@@ -1,13 +1,11 @@
 package common
 
 import (
-	"encoding/json"
 	"fmt"
 	"strconv"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/utils/ptr"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
@@ -124,6 +122,14 @@ func WithTerminationGracePeriodSeconds(seconds int64) PodSpecOption {
 func WithTolerations(tolerations []corev1.Toleration) PodSpecOption {
 	return func(pod *corev1.PodSpec) {
 		pod.Tolerations = append(pod.Tolerations, tolerations...)
+	}
+}
+
+func WithImagePullSecretName(ipsn string) PodSpecOption {
+	return func(pod *corev1.PodSpec) {
+		if len(ipsn) > 0 {
+			pod.ImagePullSecrets = append(pod.ImagePullSecrets, corev1.LocalObjectReference{Name: ipsn})
+		}
 	}
 }
 
@@ -295,30 +301,36 @@ func MakeResourceRequirements(memoryLimit, memoryRequest, cpuRequest resource.Qu
 	}
 }
 
-func OverridePodSpecWithTemplate(override, original *corev1.PodTemplateSpec) (*corev1.PodTemplateSpec, error) {
-	var err error
-
-	overrideJson, err := json.Marshal(override)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal pod spec: %w", err)
+func WithClusterTrustBundVolume(clusterTrustBundleName string) PodSpecOption {
+	return func(pod *corev1.PodSpec) {
+		if clusterTrustBundleName != "" {
+			pod.Volumes = append(pod.Volumes, corev1.Volume{
+				Name: ClusterTrustBundleVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Projected: &corev1.ProjectedVolumeSource{
+						Sources: []corev1.VolumeProjection{
+							{
+								ClusterTrustBundle: &corev1.ClusterTrustBundleProjection{
+									Name: ptr.To(clusterTrustBundleName),
+									Path: ClusterTrustBundFileName,
+								},
+							},
+						},
+					},
+				},
+			})
+		}
 	}
+}
 
-	originalJson, err := json.Marshal(original)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal pod template spec: %w", err)
+func WithClusterTrustBundVolumeMount(clusterTrustBundleName string) ContainerOption {
+	return func(c *corev1.Container) {
+		if clusterTrustBundleName != "" {
+			c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{
+				Name:      ClusterTrustBundleVolumeName,
+				MountPath: ClusterTrustBundVolumePath,
+				ReadOnly:  true,
+			})
+		}
 	}
-
-	podSpecByte, err := strategicpatch.StrategicMergePatch(originalJson, overrideJson, corev1.PodTemplateSpec{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to merge pod spec with template: %w", err)
-	}
-
-	var mergedPodSpec corev1.PodTemplateSpec
-
-	err = json.Unmarshal(podSpecByte, &mergedPodSpec)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal merged pod spec: %w", err)
-	}
-
-	return &mergedPodSpec, nil
 }

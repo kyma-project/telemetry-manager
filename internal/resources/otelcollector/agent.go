@@ -16,7 +16,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
@@ -60,8 +59,6 @@ type AgentApplierDeleter struct {
 
 	podOpts       []commonresources.PodSpecOption
 	containerOpts []commonresources.ContainerOption
-
-	specTemplate *commonresources.SpecTemplate
 }
 
 type AgentApplyOptions struct {
@@ -72,7 +69,7 @@ type AgentApplyOptions struct {
 	BackendPorts []string
 }
 
-func NewLogAgentApplierDeleter(globals config.Global, collectorImage, priorityClassName string, specTemplate *commonresources.SpecTemplate) *AgentApplierDeleter {
+func NewLogAgentApplierDeleter(globals config.Global, collectorImage, priorityClassName string) *AgentApplierDeleter {
 	extraLabels := map[string]string{
 		commonresources.LabelKeyIstioInject: commonresources.LabelValueTrue, // inject Istio sidecar
 	}
@@ -114,11 +111,10 @@ func NewLogAgentApplierDeleter(globals config.Global, collectorImage, priorityCl
 			commonresources.WithRunAsGroup(commonresources.GroupRoot),
 			commonresources.WithRunAsUser(commonresources.UserDefault),
 		},
-		specTemplate: specTemplate,
 	}
 }
 
-func NewMetricAgentApplierDeleter(globals config.Global, image, priorityClassName string, specTemplate *commonresources.SpecTemplate) *AgentApplierDeleter {
+func NewMetricAgentApplierDeleter(globals config.Global, image, priorityClassName string) *AgentApplierDeleter {
 	extraLabels := map[string]string{
 		commonresources.LabelKeyTelemetryMetricScrape:    commonresources.LabelValueTrue,
 		commonresources.LabelKeyTelemetryMetricExport:    commonresources.LabelValueTrue,
@@ -149,7 +145,6 @@ func NewMetricAgentApplierDeleter(globals config.Global, image, priorityClassNam
 			)),
 			commonresources.WithVolumeMounts([]corev1.VolumeMount{makeIstioCertVolumeMount()}),
 		},
-		specTemplate: specTemplate,
 	}
 }
 
@@ -182,7 +177,7 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 	}
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, secretsInChecksum)
-	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, aad.makeAgentDaemonSet(ctx, configChecksum, opts)); err != nil {
+	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, aad.makeAgentDaemonSet(configChecksum, opts)); err != nil {
 		return fmt.Errorf("failed to create daemonset: %w", err)
 	}
 
@@ -216,53 +211,62 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 	return allErrors
 }
 
-func (aad *AgentApplierDeleter) makeAgentDaemonSet(ctx context.Context, configChecksum string, opts AgentApplyOptions) *appsv1.DaemonSet {
-	podAnnotations := aad.makeAnnotationsFunc(configChecksum, opts)
+func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string, opts AgentApplyOptions) *appsv1.DaemonSet {
+	annotations := aad.makeAnnotationsFunc(configChecksum, opts)
+
+	// Create final annotations for the DaemonSet and Pods with additional annotations
+	podAnnotations := make(map[string]string)
+	resourceAnnotations := make(map[string]string)
+
+	maps.Copy(resourceAnnotations, aad.globals.AdditionalAnnotations())
+	maps.Copy(podAnnotations, aad.globals.AdditionalAnnotations())
+	maps.Copy(podAnnotations, annotations)
 
 	// Add pod options shared between all agents
 	podOpts := slices.Clone(aad.podOpts)
 	podOpts = append(podOpts, commonresources.WithTolerations(commonresources.CriticalDaemonSetTolerations))
+	// Add image pull secret if defined
+	podOpts = append(podOpts, commonresources.WithImagePullSecretName(aad.globals.ImagePullSecretName()))
+	podOpts = append(podOpts, commonresources.WithClusterTrustBundVolume(aad.globals.ClusterTrustBundleName()))
 
-	podSpec := makePodSpec(aad.baseName, aad.image, podOpts, aad.containerOpts)
+	containerOpts := slices.Clone(aad.containerOpts)
+	containerOpts = append(containerOpts, commonresources.WithClusterTrustBundVolumeMount(aad.globals.ClusterTrustBundleName()))
+
+	podSpec := makePodSpec(aad.baseName, aad.image, podOpts, containerOpts)
 
 	selectorLabels := commonresources.MakeDefaultSelectorLabels(aad.baseName)
-	defaultLabels := commonresources.MakeDefaultLabels(aad.baseName, commonresources.LabelValueK8sComponentAgent)
+	labels := commonresources.MakeDefaultLabels(aad.baseName, commonresources.LabelValueK8sComponentAgent)
+	defaultPodLabels := make(map[string]string)
+	maps.Copy(defaultPodLabels, labels)
+	maps.Copy(defaultPodLabels, aad.extraPodLabel)
+
+	// Create final labels for the DaemonSet and Pods with additional labels
+	resourceLabels := make(map[string]string)
 	podLabels := make(map[string]string)
-	maps.Copy(podLabels, defaultLabels)
-	maps.Copy(podLabels, aad.extraPodLabel)
 
-	podSpecTemplate := corev1.PodTemplateSpec{
-		ObjectMeta: metav1.ObjectMeta{
-			Labels:      podLabels,
-			Annotations: podAnnotations,
-		},
-		Spec: podSpec,
-	}
-
-	// Override Podspec with user provided template if available
-	if aad.specTemplate != nil && aad.specTemplate.Pod != nil {
-		aad.specTemplate.Pod.Spec.Containers[0].Name = containerName
-	}
-
-	updatedPodTemplateSpec, err := commonresources.OverridePodSpecWithTemplate(&podSpecTemplate, aad.specTemplate.Pod)
-	if err != nil {
-		logf.FromContext(ctx).Error(err, "Failed to override agent pod spec with template, proceeding with base pod spec", "agent", aad.baseName)
-	} else {
-		podSpecTemplate = *updatedPodTemplateSpec
-	}
+	maps.Copy(resourceLabels, aad.globals.AdditionalLabels())
+	maps.Copy(podLabels, aad.globals.AdditionalLabels())
+	maps.Copy(resourceLabels, labels)
+	maps.Copy(podLabels, defaultPodLabels)
 
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        aad.baseName,
 			Namespace:   aad.globals.TargetNamespace(),
-			Labels:      commonresources.MergeLabels(aad.specTemplate, defaultLabels),
-			Annotations: commonresources.MergeAnnotations(aad.specTemplate, map[string]string{}),
+			Labels:      resourceLabels,
+			Annotations: resourceAnnotations,
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: selectorLabels,
 			},
-			Template: podSpecTemplate,
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels:      podLabels,
+					Annotations: podAnnotations,
+				},
+				Spec: podSpec,
+			},
 		},
 	}
 }

@@ -48,12 +48,10 @@ import (
 	logpipelinefluentbit "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit"
 	logpipelineotel "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
-	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
-	"github.com/kyma-project/telemetry-manager/internal/templates"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
@@ -203,28 +201,13 @@ func configureFluentBitReconciler(config LogPipelineControllerConfig, client cli
 		logpipelinefluentbit.WithValidatorPipelineLock(pipelineLock),
 	)
 
-	loader := templates.NewSpecTemplatesLoader(&templates.OSFileReader{})
-
-	podSpecTemplate, err := loader.LoadPodSpecTemplate(config.PodSpecTemplateFileName())
-	if err != nil {
-		return nil, err
-	}
-
-	metadataTemplate, err := loader.LoadMetadataTemplate(config.ResourceMetaTemplateFileName())
-	if err != nil {
-		return nil, err
-	}
-
 	fluentBitApplierDeleter := fluentbit.NewFluentBitApplierDeleter(
+		config.Global,
 		config.TargetNamespace(),
 		config.FluentBitImage,
 		config.ExporterImage,
 		config.ChownInitContainerImage,
 		config.FluentBitPriorityClassName,
-		&commonresources.SpecTemplate{
-			Pod:      podSpecTemplate,
-			Metadata: metadataTemplate,
-		},
 	)
 
 	fluentBitConfigBuilder := builder.NewFluentBitConfigBuilder(client)
@@ -282,30 +265,15 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 		Reader: client,
 	}
 
-	// Load templates from file
-	loader := templates.NewSpecTemplatesLoader(&templates.OSFileReader{})
-
-	podSpecTemplate, err := loader.LoadPodSpecTemplate(config.PodSpecTemplateFileName())
-	if err != nil {
-		return nil, err
-	}
-
-	metadataTemplate, err := loader.LoadMetadataTemplate(config.ResourceMetaTemplateFileName())
-	if err != nil {
-		return nil, err
-	}
-
 	agentApplierDeleter := otelcollector.NewLogAgentApplierDeleter(
 		config.Global,
 		config.OTelCollectorImage,
-		config.LogAgentPriorityClassName,
-		&commonresources.SpecTemplate{Pod: podSpecTemplate, Metadata: metadataTemplate})
+		config.LogAgentPriorityClassName)
 
 	gatewayAppliedDeleter := otelcollector.NewLogGatewayApplierDeleter(
 		config.Global,
 		config.OTelCollectorImage,
-		config.LogGatewayPriorityClassName,
-		&commonresources.SpecTemplate{Pod: podSpecTemplate, Metadata: metadataTemplate})
+		config.LogGatewayPriorityClassName)
 
 	otelReconciler := logpipelineotel.New(
 		logpipelineotel.WithClient(client),

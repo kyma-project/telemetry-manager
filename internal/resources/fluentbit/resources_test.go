@@ -7,9 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
-	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -18,12 +16,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
-	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
 func TestAgent_ApplyResources(t *testing.T) {
+	globals := config.NewGlobal(config.WithTargetNamespace("kyma-system"))
 	image := "foo-fluentbit"
 	exporterImage := "foo-exporter"
 	initContainerImage := "alpine"
@@ -36,39 +35,9 @@ func TestAgent_ApplyResources(t *testing.T) {
 		goldenFilePath string
 	}{
 		{
-			name: "fluentbit",
-			sut: NewFluentBitApplierDeleter(namespace, image, exporterImage, initContainerImage, priorityClassName, &commonresources.SpecTemplate{
-				Pod: &corev1.PodTemplateSpec{
-					Spec: corev1.PodSpec{
-						Containers: []corev1.Container{
-							{},
-						},
-					},
-				},
-			}),
+			name:           "fluentbit",
+			sut:            NewFluentBitApplierDeleter(globals, namespace, image, exporterImage, initContainerImage, priorityClassName),
 			goldenFilePath: "testdata/fluentbit.yaml",
-		},
-		{
-			name: "fluentbit with user defined labels",
-			sut: NewFluentBitApplierDeleter(namespace, image, exporterImage, initContainerImage, priorityClassName, &commonresources.SpecTemplate{
-				Metadata: &metav1.ObjectMeta{
-					Labels: map[string]string{
-						"foo": "bar",
-					},
-				},
-			}),
-			goldenFilePath: "testdata/fluentbit_with_user_labels.yaml",
-		},
-		{
-			name: "fluentbit with user defined annotations",
-			sut: NewFluentBitApplierDeleter(namespace, image, exporterImage, initContainerImage, priorityClassName, &commonresources.SpecTemplate{
-				Metadata: &metav1.ObjectMeta{
-					Annotations: map[string]string{
-						"foo.io/foo": "bar",
-					},
-				},
-			}),
-			goldenFilePath: "testdata/fluentbit_with_user_annotations.yaml",
 		},
 	}
 
@@ -117,6 +86,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 }
 
 func TestAgent_DeleteResources(t *testing.T) {
+	globals := config.NewGlobal(config.WithTargetNamespace("kyma-system"))
 	image := "foo-fluentbit"
 	exporterImage := "foo-exporter"
 	initContainerImage := "alpine"
@@ -141,14 +111,7 @@ func TestAgent_DeleteResources(t *testing.T) {
 	}{
 		{
 			name: "fluentbit",
-			sut: NewFluentBitApplierDeleter(namespace, image, exporterImage, initContainerImage, priorityClassName, &commonresources.SpecTemplate{
-				Pod: &corev1.PodTemplateSpec{
-					Spec: corev1.PodSpec{
-						Containers: []corev1.Container{
-							{},
-						},
-					},
-				}}),
+			sut:  NewFluentBitApplierDeleter(globals, namespace, image, exporterImage, initContainerImage, priorityClassName),
 		},
 	}
 

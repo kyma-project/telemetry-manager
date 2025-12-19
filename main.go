@@ -77,12 +77,14 @@ var (
 	setupLog = ctrl.Log.WithName("setup")
 
 	// Operator flags
-	certDir                      string
-	enableV1Beta1LogPipelines    bool
-	highPriorityClassName        string
-	normalPriorityClassName      string
-	resourceMetadataTemplateFile string
-	podSpecTemplateFile          string
+	certDir                   string
+	enableV1Beta1LogPipelines bool
+	highPriorityClassName     string
+	normalPriorityClassName   string
+	clusterTrustBundleName    string
+	imagePullSecretName       string
+	additionalLabels          config.CLIMapFlag
+	additionalAnnotations     config.CLIMapFlag
 )
 
 const (
@@ -159,8 +161,10 @@ func run() error {
 		config.WithTargetNamespace(envCfg.TargetNamespace),
 		config.WithOperateInFIPSMode(envCfg.OperateInFIPSMode),
 		config.WithVersion(build.GitTag()),
-		config.WithPodSpecTemplateFileName(podSpecTemplateFile),
-		config.WithResourceMetaTemplateFileName(resourceMetadataTemplateFile),
+		config.WithImagePullSecretName(imagePullSecretName),
+		config.WithClusterTrustBundleName(clusterTrustBundleName),
+		config.WithAdditionalLabels(additionalLabels),
+		config.WithAdditionalAnnotations(additionalAnnotations),
 	)
 
 	if err := globals.Validate(); err != nil {
@@ -327,8 +331,10 @@ func parseFlags() {
 
 	flag.StringVar(&highPriorityClassName, "high-priority-class-name", "", "High priority class name used by managed DaemonSets")
 	flag.StringVar(&normalPriorityClassName, "normal-priority-class-name", "", "Normal priority class name used by managed Deployments")
-	flag.StringVar(&resourceMetadataTemplateFile, "resource-metadata-template-file", "", "YAML file containing k8s resource metadata used to add additional metadata to created resources")
-	flag.StringVar(&podSpecTemplateFile, "podspec-template-file", "", "YAML file containing PodTemplateSpec used to customize created Pods")
+	flag.StringVar(&clusterTrustBundleName, "cluster-trust-bundle-name", "", "The name ClusterTrustBundle resource")
+	flag.StringVar(&imagePullSecretName, "image-pull-secret-name", "", "The image pull secret name to use for pulling images of all created workloads (agents, gateways, self-monitor)")
+	flag.Var(&additionalLabels, "additional-labels", "Additional labels to add to all created resources in key=value format")
+	flag.Var(&additionalAnnotations, "additional-annotations", "Additional annotations to add to all created resources in key=value format")
 
 	flag.Parse()
 }

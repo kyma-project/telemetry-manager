@@ -1,3 +1,15 @@
+{{- $labelpairs := list -}}
+{{- range $k, $v := .Values.additionalMetadata.labels }}
+  {{- $labelpairs = append $labelpairs (printf "%s=%s" $k $v) -}}
+{{- end }}
+{{- $labelresult := join "," $labelpairs -}}
+
+{{- $annotationpairs := list -}}
+{{- range $k, $v := .Values.additionalMetadata.annotations }}
+  {{- $annotationpairs = append $annotationpairs (printf "%s=%s" $k $v) -}}
+{{- end }}
+{{- $annotationresult := join "," $annotationpairs -}}
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -41,8 +53,18 @@ spec:
         {{- if .Values.experimental.enabled }}
         - --enable-v1beta1-log-pipelines=true
         {{- end }}
-        - --resource-metadata-template-file=/resource-templates/metadata.yaml
-        - --podspec-template-file=/resource-templates/podspec-template.yaml
+        {{- if not (empty .Values.additionalMetadata.labels) }}
+        - --additional-labels={{ $labelresult | quote }}
+        {{- end }}
+        {{- if not (empty .Values.additionalMetadata.annotations) }}
+        - --additional-annotations={{ $annotationresult | quote}}
+        {{- end }}
+        {{- if .Values.global.imagePullSecret.enabled }}
+        - --image-pull-secret-name={{ .Values.global.imagePullSecret.name }}
+        {{- end }}
+        {{- if .Values.global.caBundle.enabled }}
+        - --cluster-trust-bundle-name={{ .Values.global.caBundle.name }}
+        {{- end }}
         command:
         - /manager
         env:

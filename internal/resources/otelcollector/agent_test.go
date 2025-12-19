@@ -7,9 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
-	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -18,7 +16,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
 	"github.com/kyma-project/telemetry-manager/internal/config"
-	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -31,16 +28,6 @@ func TestAgent_ApplyResources(t *testing.T) {
 	collectorImage := "opentelemetry/collector:dummy"
 	priorityClassName := "normal"
 
-	specTemplate := &commonresources.SpecTemplate{
-		Pod: &corev1.PodTemplateSpec{
-			Spec: corev1.PodSpec{
-				Containers: []corev1.Container{
-					{},
-				},
-			},
-		},
-	}
-
 	tests := []struct {
 		name             string
 		sut              *AgentApplierDeleter
@@ -51,57 +38,29 @@ func TestAgent_ApplyResources(t *testing.T) {
 	}{
 		{
 			name:           "metric agent",
-			sut:            NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName, specTemplate),
+			sut:            NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName),
 			goldenFilePath: "testdata/metric-agent.yaml",
 		},
 		{
 			name:           "metric agent with istio",
-			sut:            NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName, specTemplate),
+			sut:            NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName),
 			istioEnabled:   true,
 			backendPorts:   []string{"4317", "9090"},
 			goldenFilePath: "testdata/metric-agent-istio.yaml",
 		},
 		{
 			name:           "metric agent with FIPS mode enabled",
-			sut:            NewMetricAgentApplierDeleter(globalsWithFIPS, collectorImage, priorityClassName, specTemplate),
+			sut:            NewMetricAgentApplierDeleter(globalsWithFIPS, collectorImage, priorityClassName),
 			goldenFilePath: "testdata/metric-agent-fips-enabled.yaml",
 		},
 		{
-			name: "metric agent with user labels",
-			sut: NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName, &commonresources.SpecTemplate{
-				Metadata: &metav1.ObjectMeta{
-					Labels: map[string]string{
-						"foo": "bar",
-					},
-				},
-			}),
-			goldenFilePath: "testdata/metric-agent-user-labels.yaml",
-		},
-		{
-			name: "metric agent with user annotations",
-			sut: NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName, &commonresources.SpecTemplate{
-				Metadata: &metav1.ObjectMeta{
-					Annotations: map[string]string{
-						"foo.io/foo": "bar",
-					},
-				},
-			}),
-			goldenFilePath: "testdata/metric-agent-user-annotations.yaml",
-		},
-		{
-			name: "metric agent user cannot override labels defined by us",
-			sut: NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName, &commonresources.SpecTemplate{
-				Metadata: &metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app.kubernetes.io/name": "bar",
-					},
-				},
-			}),
+			name:           "metric agent user cannot override labels defined by us",
+			sut:            NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName),
 			goldenFilePath: "testdata/metric-agent.yaml",
 		},
 		{
 			name: "log agent",
-			sut:  NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName, specTemplate),
+			sut:  NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName),
 			collectorEnvVars: map[string][]byte{
 				"DUMMY_ENV_VAR": []byte("foo"),
 			},
@@ -109,7 +68,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 		},
 		{
 			name: "log agent with istio",
-			sut:  NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName, specTemplate),
+			sut:  NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName),
 			collectorEnvVars: map[string][]byte{
 				"DUMMY_ENV_VAR": []byte("foo"),
 			},
@@ -118,49 +77,15 @@ func TestAgent_ApplyResources(t *testing.T) {
 		},
 		{
 			name: "log agent with FIPS mode enabled",
-			sut:  NewLogAgentApplierDeleter(globalsWithFIPS, collectorImage, priorityClassName, specTemplate),
+			sut:  NewLogAgentApplierDeleter(globalsWithFIPS, collectorImage, priorityClassName),
 			collectorEnvVars: map[string][]byte{
 				"DUMMY_ENV_VAR": []byte("foo"),
 			},
 			goldenFilePath: "testdata/log-agent-fips-enabled.yaml",
 		},
 		{
-			name: "log agent with user labels",
-			sut: NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName, &commonresources.SpecTemplate{
-				Metadata: &metav1.ObjectMeta{
-					Labels: map[string]string{
-						"foo": "bar",
-					},
-				},
-			}),
-			collectorEnvVars: map[string][]byte{
-				"DUMMY_ENV_VAR": []byte("foo"),
-			},
-			goldenFilePath: "testdata/log-agent-user-labels.yaml",
-		},
-		{
-			name: "log agent with user annotations",
-			sut: NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName, &commonresources.SpecTemplate{
-				Metadata: &metav1.ObjectMeta{
-					Annotations: map[string]string{
-						"foo.io/foo": "bar",
-					},
-				},
-			}),
-			collectorEnvVars: map[string][]byte{
-				"DUMMY_ENV_VAR": []byte("foo"),
-			},
-			goldenFilePath: "testdata/log-agent-user-annotations.yaml",
-		},
-		{
 			name: "log agent user cannot override labels defined by us",
-			sut: NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName, &commonresources.SpecTemplate{
-				Metadata: &metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app.kubernetes.io/name": "bar",
-					},
-				},
-			}),
+			sut:  NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName),
 			collectorEnvVars: map[string][]byte{
 				"DUMMY_ENV_VAR": []byte("foo"),
 			},
@@ -213,16 +138,6 @@ func TestAgent_DeleteResources(t *testing.T) {
 	image := "opentelemetry/collector:dummy"
 	priorityClassName := "normal"
 
-	specTemplate := &commonresources.SpecTemplate{
-		Pod: &corev1.PodTemplateSpec{
-			Spec: corev1.PodSpec{
-				Containers: []corev1.Container{
-					{},
-				},
-			},
-		},
-	}
-
 	var created []client.Object
 
 	fakeClient := fake.NewClientBuilder().WithInterceptorFuncs(interceptor.Funcs{
@@ -238,11 +153,11 @@ func TestAgent_DeleteResources(t *testing.T) {
 	}{
 		{
 			name: "metric agent",
-			sut:  NewMetricAgentApplierDeleter(globals, image, priorityClassName, specTemplate),
+			sut:  NewMetricAgentApplierDeleter(globals, image, priorityClassName),
 		},
 		{
 			name: "log agent",
-			sut:  NewLogAgentApplierDeleter(globals, image, priorityClassName, specTemplate),
+			sut:  NewLogAgentApplierDeleter(globals, image, priorityClassName),
 		},
 	}
 

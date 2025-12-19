@@ -1,11 +1,11 @@
 global:
   caBundle:
-    enabled: false
+    enabled: true
     name: "custom-ca-certificates"
     mountPath: "/etc/ssl/certs"
     file: "ca-certificates.crt"
   imagePullSecret:
-    enabled: false
+    enabled: true
     name: "oci-registry-pullsecret"
 experimental:
   enabled: true
@@ -58,15 +58,9 @@ managerWebhook:
       protocol: TCP
       targetPort: 9443
 additionalMetadata:
-  # Custom labels and annotations for resource metadata
-  metadata:
     labels:
-    # custom-label: my-value
+      custom-resource-label: my-value
+      custom-resource-owner: telemetry
     annotations:
-    # custom-resource-annotation: my-value
-  # Custom labels and annotations for resource pod template
-  pod:
-    labels:
-    # custom-label: my-value
-    annotations:
-# custom-annotation: my-value
+      custom-resource-annotation: my-annotation-value
+      custom-resource-team: telemetry-team

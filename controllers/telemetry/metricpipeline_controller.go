@@ -46,11 +46,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
-	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
-	"github.com/kyma-project/telemetry-manager/internal/templates"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
@@ -131,34 +129,16 @@ func NewMetricPipelineController(config MetricPipelineControllerConfig, client c
 	agentConfigBuilder := &metricagent.Builder{Reader: client}
 	gatewayConfigBuilder := &metricgateway.Builder{Reader: client}
 
-	loader := templates.NewSpecTemplatesLoader(&templates.OSFileReader{})
-
-	podSpecTemplate, err := loader.LoadPodSpecTemplate(config.PodSpecTemplateFileName())
-	if err != nil {
-		return nil, err
-	}
-
-	metadataTemplate, err := loader.LoadMetadataTemplate(config.ResourceMetaTemplateFileName())
-	if err != nil {
-		return nil, err
-	}
-
 	reconciler := metricpipeline.New(
 		metricpipeline.WithClient(client),
 		metricpipeline.WithGlobals(config.Global),
 
-		metricpipeline.WithAgentApplierDeleter(otelcollector.NewMetricAgentApplierDeleter(config.Global, config.OTelCollectorImage, config.MetricAgentPriorityClassName, &commonresources.SpecTemplate{
-			Pod:      podSpecTemplate,
-			Metadata: metadataTemplate,
-		})),
+		metricpipeline.WithAgentApplierDeleter(otelcollector.NewMetricAgentApplierDeleter(config.Global, config.OTelCollectorImage, config.MetricAgentPriorityClassName)),
 		metricpipeline.WithAgentConfigBuilder(agentConfigBuilder),
 		metricpipeline.WithAgentFlowHealthProber(agentFlowHealthProber),
 		metricpipeline.WithAgentProber(&workloadstatus.DaemonSetProber{Client: client}),
 
-		metricpipeline.WithGatewayApplierDeleter(otelcollector.NewMetricGatewayApplierDeleter(config.Global, config.OTelCollectorImage, config.MetricGatewayPriorityClassName, &commonresources.SpecTemplate{
-			Pod:      podSpecTemplate,
-			Metadata: metadataTemplate,
-		})),
+		metricpipeline.WithGatewayApplierDeleter(otelcollector.NewMetricGatewayApplierDeleter(config.Global, config.OTelCollectorImage, config.MetricGatewayPriorityClassName)),
 		metricpipeline.WithGatewayConfigBuilder(gatewayConfigBuilder),
 		metricpipeline.WithGatewayFlowHealthProber(gatewayFlowHealthProber),
 		metricpipeline.WithGatewayProber(&workloadstatus.DeploymentProber{Client: client}),
@@ -170,9 +150,6 @@ func NewMetricPipelineController(config MetricPipelineControllerConfig, client c
 
 		metricpipeline.WithPipelineLock(pipelineLock),
 		metricpipeline.WithPipelineSyncer(pipelineSync),
-
-		metricpipeline.WithPodSpecTemplate(podSpecTemplate),
-		metricpipeline.WithMetadataTemplate(metadataTemplate),
 	)
 
 	return &MetricPipelineController{
