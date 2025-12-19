@@ -27,7 +27,7 @@ func ensureFinalizers(ctx context.Context, client client.Client, pipeline *telem
 		changed = true
 	}
 
-	if len(pipeline.Spec.Files) > 0 && !controllerutil.ContainsFinalizer(pipeline, filesFinalizer) {
+	if len(pipeline.Spec.FluentBitFiles) > 0 && !controllerutil.ContainsFinalizer(pipeline, filesFinalizer) {
 		controllerutil.AddFinalizer(pipeline, filesFinalizer)
 
 		changed = true
