@@ -51,7 +51,7 @@ runs:
           mode="$mode-no-fips"
         fi
         
-        if [[ -n "${{ inputs.custom-labels-annotations-no-fips }}" == "true" ]]; then
+        if [[ "${{ inputs.custom-labels-annotations-no-fips }}" == "true" ]]; then
           mode="$mode-custom-labels-annotations-no-fips"
         fi
 
