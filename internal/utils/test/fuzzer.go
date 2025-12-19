@@ -1,4 +1,4 @@
-package fuzzing
+package test
 
 import (
 	"math/rand"
