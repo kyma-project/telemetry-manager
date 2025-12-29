@@ -1,11 +1,17 @@
 package v1alpha1
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"unsafe"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiconversion "k8s.io/apimachinery/pkg/conversion"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/namespaces"
@@ -19,10 +25,15 @@ import (
 // - input.runtime namespaces and containers are now pointers in v1beta1, requiring nil checks during conversion.
 // Additionally, changes were done in shared types which are documented in the related file.
 
+// dataAnnotation is the annotation that conversion webhook can use to retain the data in case of down-conversion from the hub
+const dataAnnotation = "telemetry.kyma-project.io/conversion-data"
+
 var errSrcTypeUnsupportedLogPipeline = errors.New("source type is not LogPipeline v1alpha1")
 var errDstTypeUnsupportedLogPipeline = errors.New("destination type is not LogPipeline v1beta1")
 
 func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
+	logf.FromContext(context.Background()).V(0).Info("converting from v1alpha1 to v1beta1")
+
 	src := lp
 
 	dst, ok := dstRaw.(*telemetryv1beta1.LogPipeline)
@@ -31,10 +42,16 @@ func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 	}
 
 	// Call the conversion-gen generated function
-	return Convert_v1alpha1_LogPipeline_To_v1beta1_LogPipeline(src, dst, nil)
+	if err := Convert_v1alpha1_LogPipeline_To_v1beta1_LogPipeline(src, dst, nil); err != nil {
+		return err
+	}
+
+	return marshalData(src, dst)
 }
 
 func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
+	logf.FromContext(context.Background()).V(0).Info("converting from v1beta1 to v1alpha1")
+
 	dst := lp
 
 	src, ok := srcRaw.(*telemetryv1beta1.LogPipeline)
@@ -43,7 +60,22 @@ func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 	}
 
 	// Call the conversion-gen generated function
-	return Convert_v1beta1_LogPipeline_To_v1alpha1_LogPipeline(src, dst, nil)
+	if err := Convert_v1beta1_LogPipeline_To_v1alpha1_LogPipeline(src, dst, nil); err != nil {
+		return err
+	}
+
+	restoredV1alpha1LogPipeline := &LogPipeline{}
+
+	ok, err := unmarshalData(src, restoredV1alpha1LogPipeline)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal data from annotation: %w", err)
+	}
+
+	if ok && restoredV1alpha1LogPipeline.Generation == src.Generation {
+		dst.Spec = restoredV1alpha1LogPipeline.Spec
+	}
+
+	return nil
 }
 
 func Convert_v1alpha1_FluentBitHTTPOutput_To_v1beta1_FluentBitHTTPOutput(in *FluentBitHTTPOutput, out *telemetryv1beta1.FluentBitHTTPOutput, s apiconversion.Scope) error {
@@ -133,10 +165,16 @@ func Convert_v1beta1_LogPipelineInput_To_v1alpha1_LogPipelineInput(in *telemetry
 	}
 
 	if in.Runtime.Namespaces != nil {
-		out.Application.Namespaces = LogPipelineNamespaceSelector{
-			Include: in.Runtime.Namespaces.Include,
-			Exclude: in.Runtime.Namespaces.Exclude,
-			System:  false,
+		if len(in.Runtime.Namespaces.Include) == 0 && len(in.Runtime.Namespaces.Exclude) == 0 {
+			out.Application.Namespaces = LogPipelineNamespaceSelector{
+				System: true,
+			}
+		} else {
+			out.Application.Namespaces = LogPipelineNamespaceSelector{
+				Include: in.Runtime.Namespaces.Include,
+				Exclude: in.Runtime.Namespaces.Exclude,
+				System:  false,
+			}
 		}
 	}
 
@@ -148,4 +186,49 @@ func Convert_v1beta1_LogPipelineInput_To_v1alpha1_LogPipelineInput(in *telemetry
 	}
 
 	return nil
+}
+
+// marshalData stores the source object as json data in the destination object annotations map.
+// It ignores the metadata of the source object.
+func marshalData(src metav1.Object, dst metav1.Object) error {
+	u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(src)
+	if err != nil {
+		return err
+	}
+
+	delete(u, "status")
+
+	data, err := json.Marshal(u)
+	if err != nil {
+		return err
+	}
+
+	annotations := dst.GetAnnotations()
+	if annotations == nil {
+		annotations = map[string]string{}
+	}
+
+	annotations[dataAnnotation] = string(data)
+	dst.SetAnnotations(annotations)
+
+	return nil
+}
+
+// unmarshalData tries to retrieve the data from the annotation and unmarshals it into the object passed as input.
+func unmarshalData(from metav1.Object, to any) (bool, error) {
+	annotations := from.GetAnnotations()
+
+	data, ok := annotations[dataAnnotation]
+	if !ok {
+		return false, nil
+	}
+
+	if err := json.Unmarshal([]byte(data), to); err != nil {
+		return false, err
+	}
+
+	delete(annotations, dataAnnotation)
+	from.SetAnnotations(annotations)
+
+	return true, nil
 }
