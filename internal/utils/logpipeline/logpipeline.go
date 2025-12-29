@@ -26,10 +26,6 @@ func PipelineMode(lp *telemetryv1alpha1.LogPipeline) Mode {
 	return FluentBit
 }
 
-func IsInputValid(i *telemetryv1alpha1.LogPipelineInput) bool {
-	return i != nil
-}
-
 func IsCustomOutputDefined(o *telemetryv1alpha1.LogPipelineOutput) bool {
 	return o.FluentBitCustom != ""
 }
@@ -44,10 +40,6 @@ func IsVariablesDefined(v []telemetryv1alpha1.FluentBitVariable) bool {
 
 func IsFilesDefined(v []telemetryv1alpha1.FluentBitFile) bool {
 	return len(v) > 0
-}
-
-func IsOTLPDefined(o *telemetryv1alpha1.LogPipelineOutput) bool {
-	return o.OTLP != nil
 }
 
 func IsApplicationInputEnabled(i *telemetryv1alpha1.LogPipelineInput) bool {

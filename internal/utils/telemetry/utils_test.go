@@ -18,14 +18,14 @@ func TestDefaultTelemetryInstanceFound(t *testing.T) {
 	_ = operatorv1alpha1.AddToScheme(scheme)
 	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&operatorv1alpha1.Telemetry{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      DefaultTelemetryInstanceName,
+			Name:      "default",
 			Namespace: "default",
 		},
 	}).Build()
 
 	telemetry, err := GetDefaultTelemetryInstance(ctx, client, "default")
 	require.NoError(t, err)
-	assert.Equal(t, DefaultTelemetryInstanceName, telemetry.Name)
+	assert.Equal(t, "default", telemetry.Name)
 }
 
 func TestDefaultTelemetryInstanceNotFound(t *testing.T) {
