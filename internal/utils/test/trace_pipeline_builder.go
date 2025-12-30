@@ -7,7 +7,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 type TracePipelineBuilder struct {
@@ -16,18 +16,18 @@ type TracePipelineBuilder struct {
 	name   string
 	labels map[string]string
 
-	transforms       []telemetryv1alpha1.TransformSpec
-	filters          []telemetryv1alpha1.FilterSpec
+	transforms       []telemetryv1beta1.TransformSpec
+	filters          []telemetryv1beta1.FilterSpec
 	statusConditions []metav1.Condition
-	outOTLP          *telemetryv1alpha1.OTLPOutput
+	outOTLP          *telemetryv1beta1.OTLPOutput
 	oauth2           *telemetryv1alpha1.OAuth2Options
 }
 
 func NewTracePipelineBuilder() *TracePipelineBuilder {
 	return &TracePipelineBuilder{
 		randSource: rand.NewSource(time.Now().UnixNano()),
-		outOTLP: &telemetryv1alpha1.OTLPOutput{
-			Endpoint: telemetryv1alpha1.ValueType{Value: "https://localhost:4317"},
+		outOTLP: &telemetryv1beta1.OTLPOutput{
+			Endpoint: telemetryv1beta1.ValueType{Value: "https://localhost:4317"},
 		},
 	}
 }
@@ -79,36 +79,36 @@ func (b *TracePipelineBuilder) WithOAuth2(opts ...OAuth2Option) *TracePipelineBu
 	return b
 }
 
-func (b *TracePipelineBuilder) WithTransform(transform telemetryv1alpha1.TransformSpec) *TracePipelineBuilder {
+func (b *TracePipelineBuilder) WithTransform(transform telemetryv1beta1.TransformSpec) *TracePipelineBuilder {
 	b.transforms = append(b.transforms, transform)
 	return b
 }
 
-func (b *TracePipelineBuilder) WithFilter(filter telemetryv1alpha1.FilterSpec) *TracePipelineBuilder {
+func (b *TracePipelineBuilder) WithFilter(filter telemetryv1beta1.FilterSpec) *TracePipelineBuilder {
 	b.filters = append(b.filters, filter)
 	return b
 }
 
-func (b *TracePipelineBuilder) Build() telemetryv1alpha1.TracePipeline {
+func (b *TracePipelineBuilder) Build() telemetryv1beta1.TracePipeline {
 	name := b.name
 	if name == "" {
 		name = fmt.Sprintf("test-%d", b.randSource.Int63())
 	}
 
-	pipeline := telemetryv1alpha1.TracePipeline{
+	pipeline := telemetryv1beta1.TracePipeline{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:       name,
 			Generation: 1,
 			Labels:     b.labels,
 		},
-		Spec: telemetryv1alpha1.TracePipelineSpec{
-			Output: telemetryv1alpha1.TracePipelineOutput{
+		Spec: telemetryv1beta1.TracePipelineSpec{
+			Output: telemetryv1beta1.TracePipelineOutput{
 				OTLP: b.outOTLP,
 			},
 			Transforms: b.transforms,
 			Filters:    b.filters,
 		},
-		Status: telemetryv1alpha1.TracePipelineStatus{
+		Status: telemetryv1beta1.TracePipelineStatus{
 			Conditions: b.statusConditions,
 		},
 	}

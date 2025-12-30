@@ -15,23 +15,7 @@ var (
 	ErrValueOrSecretRefUndefined = errors.New("either value or secret key reference must be defined")
 )
 
-func IsValid(v *telemetryv1alpha1.ValueType) bool {
-	if v == nil {
-		return false
-	}
-
-	if v.Value != "" {
-		return true
-	}
-
-	return v.ValueFrom != nil &&
-		v.ValueFrom.SecretKeyRef != nil &&
-		v.ValueFrom.SecretKeyRef.Name != "" &&
-		v.ValueFrom.SecretKeyRef.Key != "" &&
-		v.ValueFrom.SecretKeyRef.Namespace != ""
-}
-
-func IsValidBeta(v *telemetryv1beta1.ValueType) bool {
+func IsValid(v *telemetryv1beta1.ValueType) bool {
 	if v == nil {
 		return false
 	}
@@ -59,14 +43,14 @@ func ResolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.
 	return nil, ErrValueOrSecretRefUndefined
 }
 
-func IsFilterDefined(filters []telemetryv1alpha1.FilterSpec) bool {
+func IsFilterDefined(filters []telemetryv1beta1.FilterSpec) bool {
 	return len(filters) > 0
 }
 
-func IsTransformDefined(transforms []telemetryv1alpha1.TransformSpec) bool {
+func IsTransformDefined(transforms []telemetryv1beta1.TransformSpec) bool {
 	return len(transforms) > 0
 }
 
-func IsOTLPInputEnabled(input *telemetryv1alpha1.OTLPInput) bool {
-	return input == nil || !input.Disabled
+func IsOTLPInputEnabled(input *telemetryv1beta1.OTLPInput) bool {
+	return input == nil || input.Enabled == nil || *input.Enabled
 }
