@@ -1,7 +1,6 @@
 package v1alpha1
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,7 +10,6 @@ import (
 	apiconversion "k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/namespaces"
@@ -32,8 +30,6 @@ var errSrcTypeUnsupportedLogPipeline = errors.New("source type is not LogPipelin
 var errDstTypeUnsupportedLogPipeline = errors.New("destination type is not LogPipeline v1beta1")
 
 func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
-	logf.FromContext(context.Background()).V(0).Info("converting from v1alpha1 to v1beta1")
-
 	src := lp
 
 	dst, ok := dstRaw.(*telemetryv1beta1.LogPipeline)
@@ -50,8 +46,6 @@ func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 }
 
 func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
-	logf.FromContext(context.Background()).V(0).Info("converting from v1beta1 to v1alpha1")
-
 	dst := lp
 
 	src, ok := srcRaw.(*telemetryv1beta1.LogPipeline)
