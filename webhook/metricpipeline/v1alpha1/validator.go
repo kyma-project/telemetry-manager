@@ -47,6 +47,7 @@ func validate(ctx context.Context, obj runtime.Object) (admission.Warnings, erro
 	if !ok {
 		return nil, fmt.Errorf("expected a MetricPipeline but got %T", obj)
 	}
+
 	filterSpec, transformSpec, err := webhookutils.ConvertFilterTransformToBeta(metricPipeline.Spec.Filters, metricPipeline.Spec.Transforms)
 	if err != nil {
 		return nil, err

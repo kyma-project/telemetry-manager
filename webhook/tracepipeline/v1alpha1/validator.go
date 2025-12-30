@@ -22,12 +22,10 @@ var _ webhook.CustomValidator = &TracePipelineValidator{}
 
 func (v *TracePipelineValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	return validate(ctx, obj)
-
 }
 
 func (v *TracePipelineValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	return validate(ctx, newObj)
-
 }
 
 func (v *TracePipelineValidator) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
@@ -49,6 +47,7 @@ func validate(ctx context.Context, obj runtime.Object) (admission.Warnings, erro
 	if !ok {
 		return nil, fmt.Errorf("expected a TracePipeline but got %T", obj)
 	}
+
 	filterSpec, transformSpec, err := webhookutils.ConvertFilterTransformToBeta(tracePipeline.Spec.Filters, tracePipeline.Spec.Transforms)
 	if err != nil {
 		return nil, err
