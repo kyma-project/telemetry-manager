@@ -26,11 +26,11 @@ type LogPipelineValidator struct {
 var _ webhook.CustomValidator = &LogPipelineValidator{}
 
 func (v *LogPipelineValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	return validateLogPipeline(ctx, obj)
+	return validate(ctx, obj)
 }
 
 func (v *LogPipelineValidator) ValidateUpdate(ctx context.Context, _, newObj runtime.Object) (admission.Warnings, error) {
-	return validateLogPipeline(ctx, newObj)
+	return validate(ctx, newObj)
 }
 
 func (v *LogPipelineValidator) ValidateDelete(_ context.Context, _ runtime.Object) (admission.Warnings, error) {
@@ -46,7 +46,7 @@ func validateFilterTransform(ctx context.Context, filterSpec []telemetryv1beta1.
 	return nil
 }
 
-func validateLogPipeline(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func validate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	pipeline, ok := obj.(*telemetryv1alpha1.LogPipeline)
 
 	var warnings admission.Warnings
