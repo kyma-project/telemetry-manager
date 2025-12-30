@@ -19,8 +19,8 @@ import (
 	"sigs.k8s.io/randfill"
 )
 
-// GetFuzzer returns a new fuzzer to be used for testing.
-func GetFuzzer(scheme *runtime.Scheme, funcs ...fuzzer.FuzzerFuncs) *randfill.Filler {
+// getFuzzer returns a new fuzzer to be used for testing.
+func getFuzzer(scheme *runtime.Scheme, funcs ...fuzzer.FuzzerFuncs) *randfill.Filler {
 	funcs = append([]fuzzer.FuzzerFuncs{
 		metafuzzer.Funcs,
 		func(_ serializer.CodecFactory) []any {
@@ -102,7 +102,7 @@ func FuzzTestFunc(input FuzzTestFuncInput) func(*testing.T) {
 		// only testing spoke-hub-spoke since hub-spoke-hub is not guaranteed to be lossless (due to possible down-conversion data loss)
 		t.Run("spoke-hub-spoke", func(t *testing.T) {
 			g := gomega.NewWithT(t)
-			fuzzer := GetFuzzer(input.Scheme, input.FuzzerFuncs...)
+			fuzzer := getFuzzer(input.Scheme, input.FuzzerFuncs...)
 
 			for range 10000 {
 				// Create the spoke and fuzz it
