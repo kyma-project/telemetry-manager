@@ -10,19 +10,19 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 )
 
 const (
 	FluentdProtocolHTTP = "fluentd-http"
-	OTLPProtocolGRPC    = telemetryv1alpha1.OTLPProtocolGRPC
-	OTLPProtocolHTTP    = telemetryv1alpha1.OTLPProtocolHTTP
+	OTLPProtocolGRPC    = telemetryv1beta1.OTLPProtocolGRPC
+	OTLPProtocolHTTP    = telemetryv1beta1.OTLPProtocolHTTP
 )
 
 type EndpointValidationParams struct {
 	Endpoint   *telemetryv1alpha1.ValueType
-	Protocol   string
+	Protocol   telemetryv1beta1.OTLPProtocol
 	OTLPTLS    *telemetryv1alpha1.OTLPTLS
 	OTLPOAuth2 *telemetryv1alpha1.OAuth2Options
 }
@@ -110,7 +110,7 @@ func (v *Validator) Validate(ctx context.Context, params EndpointValidationParam
 	return nil
 }
 
-func resolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.ValueType) (string, error) {
+func resolveValue(ctx context.Context, c client.Reader, value telemetryv1beta1.ValueType) (string, error) {
 	if value.Value != "" {
 		return value.Value, nil
 	}

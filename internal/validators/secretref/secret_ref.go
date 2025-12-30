@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 )
 
@@ -27,19 +27,19 @@ var (
 
 // ValidateTracePipeline validates the secret references in a TracePipeline, ensuring that the references are valid,
 // and the referenced Secrets exist and contain the required keys. It returns an error otherwise.
-func (v *Validator) ValidateTracePipeline(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) error {
+func (v *Validator) ValidateTracePipeline(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) error {
 	return v.validate(ctx, getSecretRefsTracePipeline(pipeline))
 }
 
 // ValidateMetricPipeline validates the secret references in a MetricPipeline, ensuring that the references are valid,
 // and the referenced Secrets exist and contain the required keys. It returns an error otherwise.
-func (v *Validator) ValidateMetricPipeline(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) error {
+func (v *Validator) ValidateMetricPipeline(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline) error {
 	return v.validate(ctx, getSecretRefsMetricPipeline(pipeline))
 }
 
 // ValidateLogPipeline validates the secret references in a LogPipeline, ensuring that the references are valid,
 // and the referenced Secrets exist and contain the required keys. It returns an error otherwise.
-func (v *Validator) ValidateLogPipeline(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
+func (v *Validator) ValidateLogPipeline(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error {
 	if pipeline.Spec.Output.OTLP != nil {
 		return v.validate(ctx, getSecretRefsInOTLPOutput(pipeline.Spec.Output.OTLP))
 	}
@@ -47,7 +47,7 @@ func (v *Validator) ValidateLogPipeline(ctx context.Context, pipeline *telemetry
 	return v.validate(ctx, getSecretRefsLogPipeline(pipeline))
 }
 
-func (v *Validator) validate(ctx context.Context, refs []telemetryv1alpha1.SecretKeyRef) error {
+func (v *Validator) validate(ctx context.Context, refs []telemetryv1beta1.SecretKeyRef) error {
 	for _, ref := range refs {
 		if _, err := GetValue(ctx, v.Client, ref); err != nil {
 			return err
@@ -57,7 +57,7 @@ func (v *Validator) validate(ctx context.Context, refs []telemetryv1alpha1.Secre
 	return nil
 }
 
-func GetValue(ctx context.Context, client client.Reader, ref telemetryv1alpha1.SecretKeyRef) ([]byte, error) {
+func GetValue(ctx context.Context, client client.Reader, ref telemetryv1beta1.SecretKeyRef) ([]byte, error) {
 	if err := checkForMissingFields(ref); err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func GetValue(ctx context.Context, client client.Reader, ref telemetryv1alpha1.S
 	return nil, fmt.Errorf("%w: Key '%s' in Secret '%s' of Namespace '%s'", ErrSecretKeyNotFound, ref.Key, ref.Name, ref.Namespace)
 }
 
-func checkForMissingFields(ref telemetryv1alpha1.SecretKeyRef) error {
+func checkForMissingFields(ref telemetryv1beta1.SecretKeyRef) error {
 	var missingAttributes []string
 
 	if ref.Name == "" {
@@ -102,16 +102,16 @@ func checkForMissingFields(ref telemetryv1alpha1.SecretKeyRef) error {
 	return nil
 }
 
-func getSecretRefsTracePipeline(tp *telemetryv1alpha1.TracePipeline) []telemetryv1alpha1.SecretKeyRef {
+func getSecretRefsTracePipeline(tp *telemetryv1beta1.TracePipeline) []telemetryv1beta1.SecretKeyRef {
 	return getSecretRefsInOTLPOutput(tp.Spec.Output.OTLP)
 }
 
-func getSecretRefsMetricPipeline(mp *telemetryv1alpha1.MetricPipeline) []telemetryv1alpha1.SecretKeyRef {
+func getSecretRefsMetricPipeline(mp *telemetryv1beta1.MetricPipeline) []telemetryv1beta1.SecretKeyRef {
 	return getSecretRefsInOTLPOutput(mp.Spec.Output.OTLP)
 }
 
-func getSecretRefsLogPipeline(lp *telemetryv1alpha1.LogPipeline) []telemetryv1alpha1.SecretKeyRef {
-	var refs []telemetryv1alpha1.SecretKeyRef
+func getSecretRefsLogPipeline(lp *telemetryv1beta1.LogPipeline) []telemetryv1beta1.SecretKeyRef {
+	var refs []telemetryv1beta1.SecretKeyRef
 
 	for _, v := range lp.Spec.FluentBitVariables {
 		if v.ValueFrom.SecretKeyRef != nil {
@@ -124,15 +124,15 @@ func getSecretRefsLogPipeline(lp *telemetryv1alpha1.LogPipeline) []telemetryv1al
 	return refs
 }
 
-func getSecretRefsInHTTPOutput(httpOutput *telemetryv1alpha1.FluentBitHTTPOutput) []telemetryv1alpha1.SecretKeyRef {
-	var refs []telemetryv1alpha1.SecretKeyRef
+func getSecretRefsInHTTPOutput(httpOutput *telemetryv1beta1.FluentBitHTTPOutput) []telemetryv1beta1.SecretKeyRef {
+	var refs []telemetryv1beta1.SecretKeyRef
 
 	if httpOutput != nil {
 		refs = appendIfSecretRef(refs, &httpOutput.Host)
 		refs = appendIfSecretRef(refs, httpOutput.User)
 		refs = appendIfSecretRef(refs, httpOutput.Password)
 
-		tlsConfig := httpOutput.TLS
+		tlsConfig := httpOutput.TLSConfig
 		refs = appendIfSecretRef(refs, tlsConfig.CA)
 
 		refs = appendIfSecretRef(refs, tlsConfig.Cert)
@@ -143,8 +143,8 @@ func getSecretRefsInHTTPOutput(httpOutput *telemetryv1alpha1.FluentBitHTTPOutput
 	return refs
 }
 
-func getSecretRefsInOTLPOutput(otlpOut *telemetryv1alpha1.OTLPOutput) []telemetryv1alpha1.SecretKeyRef {
-	var refs []telemetryv1alpha1.SecretKeyRef
+func getSecretRefsInOTLPOutput(otlpOut *telemetryv1beta1.OTLPOutput) []telemetryv1beta1.SecretKeyRef {
+	var refs []telemetryv1beta1.SecretKeyRef
 
 	refs = appendIfSecretRef(refs, &otlpOut.Endpoint)
 
@@ -172,7 +172,7 @@ func getSecretRefsInOTLPOutput(otlpOut *telemetryv1alpha1.OTLPOutput) []telemetr
 	return refs
 }
 
-func appendIfSecretRef(secretKeyRefs []telemetryv1alpha1.SecretKeyRef, valueType *telemetryv1alpha1.ValueType) []telemetryv1alpha1.SecretKeyRef {
+func appendIfSecretRef(secretKeyRefs []telemetryv1beta1.SecretKeyRef, valueType *telemetryv1beta1.ValueType) []telemetryv1beta1.SecretKeyRef {
 	if valueType != nil && valueType.Value == "" && valueType.ValueFrom != nil && valueType.ValueFrom.SecretKeyRef != nil {
 		secretKeyRefs = append(secretKeyRefs, *valueType.ValueFrom.SecretKeyRef)
 	}
