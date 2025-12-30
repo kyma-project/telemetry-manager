@@ -42,6 +42,7 @@ func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 		return err
 	}
 
+    // It is necessary to store the v1alpha1 LogPipeline object as an annotation in the v1beta1 LogPipeline object, because the "system" field in the NamespaceSelector in v1alpha1 doesn't have a corresponding field in v1beta1
 	return marshalData(src, dst)
 }
 
@@ -65,6 +66,7 @@ func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 		return fmt.Errorf("failed to unmarshal data from annotation: %w", err)
 	}
 
+    // restore the old LogPipeline spec only if the dataAnnotation exists and there were no changes applied to the LogPipeline (same generation)
 	if ok && restoredV1alpha1LogPipeline.Generation == src.Generation {
 		dst.Spec = restoredV1alpha1LogPipeline.Spec
 	}
@@ -183,7 +185,7 @@ func Convert_v1beta1_LogPipelineInput_To_v1alpha1_LogPipelineInput(in *telemetry
 }
 
 // marshalData stores the source object as json data in the destination object annotations map.
-// It ignores the metadata of the source object.
+// It ignores the status of the source object, since there is no need to store the current status
 func marshalData(src metav1.Object, dst metav1.Object) error {
 	u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(src)
 	if err != nil {
