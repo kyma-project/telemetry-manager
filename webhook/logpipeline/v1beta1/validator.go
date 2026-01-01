@@ -26,69 +26,63 @@ type LogPipelineValidator struct {
 var _ webhook.CustomValidator = &LogPipelineValidator{}
 
 func (v *LogPipelineValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	logPipeline, ok := obj.(*telemetryv1beta1.LogPipeline)
-
-	if !ok {
-		return nil, fmt.Errorf("expected a LogPipeline but got %T", obj)
-	}
-
-	return v.validateLogPipeline(ctx, logPipeline)
+	return validate(ctx, obj)
 }
 
 func (v *LogPipelineValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	logPipeline, ok := newObj.(*telemetryv1beta1.LogPipeline)
-
-	if !ok {
-		return nil, fmt.Errorf("expected a LogPipeline but got %T", newObj)
-	}
-
-	return v.validateLogPipeline(ctx, logPipeline)
+	return validate(ctx, newObj)
 }
 
 func (v *LogPipelineValidator) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
 	return nil, nil
 }
 
-func (v *LogPipelineValidator) validateLogPipeline(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) (admission.Warnings, error) {
+func validate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	var warnings admission.Warnings
 
-	if err := validateFilterTransform(ctx, pipeline.Spec.Filters, pipeline.Spec.Transforms); err != nil {
+	logPipeline, ok := obj.(*telemetryv1beta1.LogPipeline)
+
+	if !ok {
+		return nil, fmt.Errorf("expected a LogPipeline but got %T", obj)
+	}
+
+	if err := validateFilterTransform(ctx, logPipeline.Spec.Filters, logPipeline.Spec.Transforms); err != nil {
 		return nil, err
 	}
 
-	if isCustomFilterDefined(pipeline.Spec.FluentBitFilters) {
-		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "filters"))
+	if isCustomFilterDefined(logPipeline.Spec.FluentBitFilters) {
+		warnings = append(warnings, renderDeprecationWarning(logPipeline.Name, "filters"))
 	}
 
-	if isCustomOutputDefined(&pipeline.Spec.Output) {
-		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "output.custom"))
+	if isCustomOutputDefined(&logPipeline.Spec.Output) {
+		warnings = append(warnings, renderDeprecationWarning(logPipeline.Name, "output.custom"))
 	}
 
-	if isHTTPDefined(&pipeline.Spec.Output) {
-		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "output.http"))
+	if isHTTPDefined(&logPipeline.Spec.Output) {
+		warnings = append(warnings, renderDeprecationWarning(logPipeline.Name, "output.http"))
 	}
 
-	if isVariablesDefined(pipeline.Spec.FluentBitVariables) {
-		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "variables"))
+	if isVariablesDefined(logPipeline.Spec.FluentBitVariables) {
+		warnings = append(warnings, renderDeprecationWarning(logPipeline.Name, "variables"))
 	}
 
-	if isFilesDefined(pipeline.Spec.FluentBitFiles) {
-		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "files"))
+	if isFilesDefined(logPipeline.Spec.FluentBitFiles) {
+		warnings = append(warnings, renderDeprecationWarning(logPipeline.Name, "files"))
 	}
 
-	if isRuntimeInputEnabled(&pipeline.Spec.Input) && pipeline.Spec.Input.Runtime.FluentBitDropLabels != nil {
-		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "input.runtime.dropLabels"))
+	if isRuntimeInputEnabled(&logPipeline.Spec.Input) && logPipeline.Spec.Input.Runtime.FluentBitDropLabels != nil {
+		warnings = append(warnings, renderDeprecationWarning(logPipeline.Name, "input.runtime.dropLabels"))
 	}
 
-	if isRuntimeInputEnabled(&pipeline.Spec.Input) && pipeline.Spec.Input.Runtime.FluentBitKeepAnnotations != nil {
-		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "input.runtime.keepAnnotations"))
+	if isRuntimeInputEnabled(&logPipeline.Spec.Input) && logPipeline.Spec.Input.Runtime.FluentBitKeepAnnotations != nil {
+		warnings = append(warnings, renderDeprecationWarning(logPipeline.Name, "input.runtime.keepAnnotations"))
 	}
 
 	return warnings, nil
 }
 
 func renderDeprecationWarning(pipelineName string, attribute string) string {
-	return fmt.Sprintf("LogPipeline '%s' uses the attribute '%s' which is based on the deprecated FluentBit technology stack. Please migrate to an Open Telemetry based pipeline instead. See the documentation: %s", pipelineName, attribute, migrationGuideLink)
+	return fmt.Sprintf("LogPipeline '%s' uses the attribute '%s' which is based on the deprecated FluentBit technology stack. Please migrate to an Open Telemetry based logPipeline instead. See the documentation: %s", pipelineName, attribute, migrationGuideLink)
 }
 
 func isCustomFilterDefined(filters []telemetryv1beta1.FluentBitFilter) bool {

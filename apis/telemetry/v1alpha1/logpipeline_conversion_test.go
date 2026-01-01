@@ -447,16 +447,21 @@ func TestLogPipelineConvertTo(t *testing.T) {
 		},
 		{
 			name:     "should convert all fields",
-			input:    v1alpha1LogPipeline,
-			expected: v1beta1LogPipeline,
+			input:    v1alpha1LogPipeline.DeepCopy(),
+			expected: v1beta1LogPipeline.DeepCopy(),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			dst := &telemetryv1beta1.LogPipeline{}
+
 			err := tt.input.ConvertTo(dst)
 			require.NoError(t, err)
+
+			err = marshalData(tt.input, tt.expected)
+			require.NoError(t, err)
+
 			require.Equal(t, tt.expected, dst)
 		})
 	}
@@ -497,8 +502,8 @@ func TestLogPipelineConvertFrom(t *testing.T) {
 		},
 		{
 			name:     "should convert all fields",
-			input:    v1beta1LogPipeline,
-			expected: v1alpha1LogPipeline,
+			input:    v1beta1LogPipeline.DeepCopy(),
+			expected: v1alpha1LogPipeline.DeepCopy(),
 		},
 	}
 

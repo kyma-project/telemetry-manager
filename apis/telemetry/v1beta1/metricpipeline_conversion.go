@@ -1,5 +1,4 @@
 package v1beta1
 
 // Hub marks this type as a conversion hub.
-func (lp *MetricPipeline) Hub() {
-}
+func (mp *MetricPipeline) Hub() {}

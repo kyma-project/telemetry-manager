@@ -20,23 +20,11 @@ type TracePipelineValidator struct {
 var _ webhook.CustomValidator = &TracePipelineValidator{}
 
 func (v *TracePipelineValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	tracePipeline, ok := obj.(*telemetryv1beta1.TracePipeline)
-
-	if !ok {
-		return nil, fmt.Errorf("expected a TracePipeline but got %T", obj)
-	}
-
-	return nil, validateFilterTransform(ctx, tracePipeline.Spec.Filters, tracePipeline.Spec.Transforms)
+	return validate(ctx, obj)
 }
 
 func (v *TracePipelineValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	tracePipeline, ok := newObj.(*telemetryv1beta1.TracePipeline)
-
-	if !ok {
-		return nil, fmt.Errorf("expected a TracePipeline but got %T", newObj)
-	}
-
-	return nil, validateFilterTransform(ctx, tracePipeline.Spec.Filters, tracePipeline.Spec.Transforms)
+	return validate(ctx, newObj)
 }
 
 func (v *TracePipelineValidator) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
@@ -50,4 +38,14 @@ func validateFilterTransform(ctx context.Context, filterSpec []telemetryv1beta1.
 	}
 
 	return nil
+}
+
+func validate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	tracePipeline, ok := obj.(*telemetryv1beta1.TracePipeline)
+
+	if !ok {
+		return nil, fmt.Errorf("expected a TracePipeline but got %T", obj)
+	}
+
+	return nil, validateFilterTransform(ctx, tracePipeline.Spec.Filters, tracePipeline.Spec.Transforms)
 }

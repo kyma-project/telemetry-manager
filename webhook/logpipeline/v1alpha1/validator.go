@@ -26,26 +26,14 @@ type LogPipelineValidator struct {
 var _ webhook.CustomValidator = &LogPipelineValidator{}
 
 func (v *LogPipelineValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	logPipeline, ok := obj.(*telemetryv1alpha1.LogPipeline)
-
-	if !ok {
-		return nil, fmt.Errorf("expected a LogPipeline but got %T", obj)
-	}
-
-	return v.validateLogPipeline(ctx, logPipeline)
+	return validate(ctx, obj)
 }
 
-func (v *LogPipelineValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	logPipeline, ok := newObj.(*telemetryv1alpha1.LogPipeline)
-
-	if !ok {
-		return nil, fmt.Errorf("expected a LogPipeline but got %T", newObj)
-	}
-
-	return v.validateLogPipeline(ctx, logPipeline)
+func (v *LogPipelineValidator) ValidateUpdate(ctx context.Context, _, newObj runtime.Object) (admission.Warnings, error) {
+	return validate(ctx, newObj)
 }
 
-func (v *LogPipelineValidator) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *LogPipelineValidator) ValidateDelete(_ context.Context, _ runtime.Object) (admission.Warnings, error) {
 	return nil, nil
 }
 
@@ -58,10 +46,19 @@ func validateFilterTransform(ctx context.Context, filterSpec []telemetryv1beta1.
 	return nil
 }
 
-func (v *LogPipelineValidator) validateLogPipeline(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (admission.Warnings, error) {
+func validate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	pipeline, ok := obj.(*telemetryv1alpha1.LogPipeline)
+
 	var warnings admission.Warnings
 
-	filterSpec, transformSpec := webhookutils.ConvertFilterTransformToBeta(pipeline.Spec.Filters, pipeline.Spec.Transforms)
+	if !ok {
+		return nil, fmt.Errorf("expected a LogPipeline but got %T", obj)
+	}
+
+	filterSpec, transformSpec, err := webhookutils.ConvertFilterTransformToBeta(pipeline.Spec.Filters, pipeline.Spec.Transforms)
+	if err != nil {
+		return nil, err
+	}
 
 	if err := validateFilterTransform(ctx, filterSpec, transformSpec); err != nil {
 		return nil, err
