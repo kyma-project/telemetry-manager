@@ -16,11 +16,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
 func TestAgent_ApplyResources(t *testing.T) {
+	globals := config.NewGlobal(config.WithTargetNamespace("kyma-system"))
 	image := "foo-fluentbit"
 	exporterImage := "foo-exporter"
 	initContainerImage := "alpine"
@@ -34,7 +36,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 	}{
 		{
 			name:           "fluentbit",
-			sut:            NewFluentBitApplierDeleter(namespace, image, exporterImage, initContainerImage, priorityClassName),
+			sut:            NewFluentBitApplierDeleter(globals, namespace, image, exporterImage, initContainerImage, priorityClassName),
 			goldenFilePath: "testdata/fluentbit.yaml",
 		},
 	}
@@ -84,6 +86,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 }
 
 func TestAgent_DeleteResources(t *testing.T) {
+	globals := config.NewGlobal(config.WithTargetNamespace("kyma-system"))
 	image := "foo-fluentbit"
 	exporterImage := "foo-exporter"
 	initContainerImage := "alpine"
@@ -108,7 +111,7 @@ func TestAgent_DeleteResources(t *testing.T) {
 	}{
 		{
 			name: "fluentbit",
-			sut:  NewFluentBitApplierDeleter(namespace, image, exporterImage, initContainerImage, priorityClassName),
+			sut:  NewFluentBitApplierDeleter(globals, namespace, image, exporterImage, initContainerImage, priorityClassName),
 		},
 	}
 

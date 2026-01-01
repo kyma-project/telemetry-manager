@@ -43,8 +43,8 @@ func TestWithVersion(t *testing.T) {
 func TestMultipleOptions(t *testing.T) {
 	g := NewGlobal(
 		WithTargetNamespace("kyma-system"),
-		WithOperateInFIPSMode(true),
 		WithVersion("2.0.0"),
+		WithOperateInFIPSMode(true),
 	)
 
 	require.Equal(t, "kyma-system", g.TargetNamespace())
@@ -314,4 +314,20 @@ func TestValidateSuccess(t *testing.T) {
 
 	err := g.Validate()
 	require.NoError(t, err)
+}
+
+func TestGettersForOptionalFields(t *testing.T) {
+	labels := map[string]string{"l1": "v1"}
+	annotations := map[string]string{"a1": "v1"}
+	g := NewGlobal(
+		WithImagePullSecretName("my-secret"),
+		WithClusterTrustBundleName("trust-bundle"),
+		WithAdditionalLabels(labels),
+		WithAdditionalAnnotations(annotations),
+	)
+
+	require.Equal(t, "my-secret", g.ImagePullSecretName())
+	require.Equal(t, "trust-bundle", g.ClusterTrustBundleName())
+	require.Equal(t, labels, g.AdditionalLabels())
+	require.Equal(t, annotations, g.AdditionalAnnotations())
 }

@@ -1,3 +1,15 @@
+{{- $labelpairs := list -}}
+{{- range $k, $v := .Values.additionalMetadata.labels }}
+  {{- $labelpairs = append $labelpairs (printf "%s=%s" $k $v) -}}
+{{- end }}
+{{- $labelresult := join "," $labelpairs -}}
+
+{{- $annotationpairs := list -}}
+{{- range $k, $v := .Values.additionalMetadata.annotations }}
+  {{- $annotationpairs = append $annotationpairs (printf "%s=%s" $k $v) -}}
+{{- end }}
+{{- $annotationresult := join "," $annotationpairs -}}
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -29,6 +41,10 @@ spec:
         kubectl.kubernetes.io/default-container: manager
         sidecar.istio.io/inject: "false"
     spec:
+      {{- if .Values.global.imagePullSecret.enabled }}
+      imagePullSecrets:
+      - name: {{ .Values.global.imagePullSecret.name }}
+      {{- end }}
       containers:
       - args:
         {{- range $key, $value := .Values.manager.container.args }}
@@ -36,6 +52,18 @@ spec:
         {{- end }}
         {{- if .Values.experimental.enabled }}
         - --enable-v1beta1-log-pipelines=true
+        {{- end }}
+        {{- if not (empty .Values.additionalMetadata.labels) }}
+        - --additional-labels={{ $labelresult }}
+        {{- end }}
+        {{- if not (empty .Values.additionalMetadata.annotations) }}
+        - --additional-annotations={{ $annotationresult}}
+        {{- end }}
+        {{- if .Values.global.imagePullSecret.enabled }}
+        - --image-pull-secret-name={{ .Values.global.imagePullSecret.name }}
+        {{- end }}
+        {{- if .Values.global.caBundle.enabled }}
+        - --cluster-trust-bundle-name={{ .Values.global.caBundle.name }}
         {{- end }}
         command:
         - /manager
@@ -93,3 +121,5 @@ spec:
       volumes:
       - emptyDir: {}
         name: crt-volume
+
+
