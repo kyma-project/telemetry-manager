@@ -3,7 +3,7 @@ package builder
 import (
 	"fmt"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 )
@@ -14,7 +14,7 @@ import (
 // that malformed logs stay in the buffer forever.
 var retryLimit = "300"
 
-func createOutputSection(pipeline *telemetryv1alpha1.LogPipeline, defaults pipelineDefaults) string {
+func createOutputSection(pipeline *telemetryv1beta1.LogPipeline, defaults pipelineDefaults) string {
 	output := &pipeline.Spec.Output
 	if logpipelineutils.IsCustomOutputDefined(output) {
 		return generateCustomOutput(output, defaults.FsBufferLimit, pipeline.Name)
@@ -27,7 +27,7 @@ func createOutputSection(pipeline *telemetryv1alpha1.LogPipeline, defaults pipel
 	return ""
 }
 
-func generateCustomOutput(output *telemetryv1alpha1.LogPipelineOutput, fsBufferLimit string, name string) string {
+func generateCustomOutput(output *telemetryv1beta1.LogPipelineOutput, fsBufferLimit string, name string) string {
 	sb := NewOutputSectionBuilder()
 	customOutputParams := parseMultiline(output.FluentBitCustom)
 	aliasPresent := customOutputParams.ContainsKey("alias")
@@ -47,7 +47,7 @@ func generateCustomOutput(output *telemetryv1alpha1.LogPipelineOutput, fsBufferL
 	return sb.Build()
 }
 
-func generateHTTPOutput(httpOutput *telemetryv1alpha1.FluentBitHTTPOutput, fsBufferLimit string, name string) string {
+func generateHTTPOutput(httpOutput *telemetryv1beta1.FluentBitHTTPOutput, fsBufferLimit string, name string) string {
 	sb := NewOutputSectionBuilder()
 	sb.AddConfigParam("name", "http")
 	sb.AddConfigParam("allow_duplicated_headers", "true")
@@ -77,35 +77,35 @@ func generateHTTPOutput(httpOutput *telemetryv1alpha1.FluentBitHTTPOutput, fsBuf
 	}
 
 	tlsEnabled := "on"
-	if httpOutput.TLS.Disabled {
+	if httpOutput.TLSConfig.Insecure {
 		tlsEnabled = "off"
 	}
 
 	sb.AddConfigParam("tls", tlsEnabled)
 
 	tlsVerify := "on"
-	if httpOutput.TLS.SkipCertificateValidation {
+	if httpOutput.TLSConfig.InsecureSkipVerify {
 		tlsVerify = "off"
 	}
 
 	sb.AddConfigParam("tls.verify", tlsVerify)
 
-	if sharedtypesutils.IsValid(httpOutput.TLS.CA) {
+	if sharedtypesutils.IsValid(httpOutput.TLSConfig.CA) {
 		sb.AddConfigParam("tls.ca_file", fmt.Sprintf("/fluent-bit/etc/output-tls-config/%s-ca.crt", name))
 	}
 
-	if sharedtypesutils.IsValid(httpOutput.TLS.Cert) {
+	if sharedtypesutils.IsValid(httpOutput.TLSConfig.Cert) {
 		sb.AddConfigParam("tls.crt_file", fmt.Sprintf("/fluent-bit/etc/output-tls-config/%s-cert.crt", name))
 	}
 
-	if sharedtypesutils.IsValid(httpOutput.TLS.Key) {
+	if sharedtypesutils.IsValid(httpOutput.TLSConfig.Key) {
 		sb.AddConfigParam("tls.key_file", fmt.Sprintf("/fluent-bit/etc/output-tls-config/%s-key.key", name))
 	}
 
 	return sb.Build()
 }
 
-func resolveValue(value telemetryv1alpha1.ValueType, logPipeline string) string {
+func resolveValue(value telemetryv1beta1.ValueType, logPipeline string) string {
 	if value.Value != "" {
 		return value.Value
 	}
