@@ -27,7 +27,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Input: telemetryv1alpha1.LogPipelineInput{},
 					Output: telemetryv1alpha1.LogPipelineOutput{
-						HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
+						FluentBitHTTP: &telemetryv1alpha1.FluentBitHTTPOutput{
 							Host: telemetryv1alpha1.ValueType{Value: "example.com"},
 						},
 					},
@@ -42,7 +42,7 @@ func TestDefault(t *testing.T) {
 						},
 					},
 					Output: telemetryv1alpha1.LogPipelineOutput{
-						HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
+						FluentBitHTTP: &telemetryv1alpha1.FluentBitHTTPOutput{
 							Host: telemetryv1alpha1.ValueType{Value: "example.com"},
 						},
 					},

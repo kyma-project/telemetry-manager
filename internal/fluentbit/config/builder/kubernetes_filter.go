@@ -13,13 +13,13 @@ func createKubernetesFilter(pipeline *telemetryv1alpha1.LogPipeline) string {
 	}
 
 	keepAnnotations := false
-	if appInput.KeepAnnotations != nil {
-		keepAnnotations = *appInput.KeepAnnotations
+	if appInput.FluentBitKeepAnnotations != nil {
+		keepAnnotations = *appInput.FluentBitKeepAnnotations
 	}
 
 	keepLabels := true
-	if appInput.DropLabels != nil {
-		keepLabels = !*appInput.DropLabels
+	if appInput.FluentBitDropLabels != nil {
+		keepLabels = !*appInput.FluentBitDropLabels
 	}
 
 	keepOriginalBody := true

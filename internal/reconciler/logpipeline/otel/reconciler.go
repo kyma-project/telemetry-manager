@@ -23,6 +23,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
+	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
@@ -201,7 +202,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return fmt.Errorf("failed to fetch deployable log pipelines: %w", err)
 	}
 
-	r.trackOTTLFeaturesUsage(reconcilablePipelines)
+	r.trackFeaturesUsage(reconcilablePipelines)
 
 	var reconcilablePipelinesRequiringAgents = r.getPipelinesRequiringAgents(reconcilablePipelines)
 
@@ -479,17 +480,23 @@ func isLogAgentRequired(pipeline *telemetryv1alpha1.LogPipeline) bool {
 	return input.Application != nil && input.Application.Enabled != nil && *input.Application.Enabled
 }
 
-func (r *Reconciler) trackOTTLFeaturesUsage(pipelines []telemetryv1alpha1.LogPipeline) {
+func (r *Reconciler) trackFeaturesUsage(pipelines []telemetryv1alpha1.LogPipeline) {
 	for i := range pipelines {
-		usesOTTL := false
-		if len(pipelines[i].Spec.Transforms) > 0 {
-			usesOTTL = true
+		// General features
+		if sharedtypesutils.IsOTLPInputEnabled(pipelines[i].Spec.Input.OTLP) {
+			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureInputOTLP, pipelines[i].Name)
 		}
 
-		if len(pipelines[i].Spec.Filters) > 0 {
-			usesOTTL = true
+		if sharedtypesutils.IsTransformDefined(pipelines[i].Spec.Transforms) {
+			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureTransform, pipelines[i].Name)
 		}
 
-		metrics.RecordLogPipelineFeatureUsage(metrics.FeatureOTTL, pipelines[i].Name, usesOTTL)
+		if sharedtypesutils.IsFilterDefined(pipelines[i].Spec.Filters) {
+			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureFilter, pipelines[i].Name)
+		}
+
+		if logpipelineutils.IsApplicationInputEnabled(&pipelines[i].Spec.Input) {
+			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureInputRuntime, pipelines[i].Name)
+		}
 	}
 }

@@ -20,14 +20,14 @@ func TestLogPipelineOutput(t *testing.T) {
 	}{
 		{
 			name:           "custom",
-			given:          telemetryv1alpha1.LogPipelineOutput{Custom: "name: null"},
+			given:          telemetryv1alpha1.LogPipelineOutput{FluentBitCustom: "name: null"},
 			expectedCustom: true,
 			expectedAny:    true,
 			expectedSingle: true,
 		},
 		{
 			name:           "http",
-			given:          telemetryv1alpha1.LogPipelineOutput{HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{Host: telemetryv1alpha1.ValueType{Value: "localhost"}}},
+			given:          telemetryv1alpha1.LogPipelineOutput{FluentBitHTTP: &telemetryv1alpha1.FluentBitHTTPOutput{Host: telemetryv1alpha1.ValueType{Value: "localhost"}}},
 			expectedHTTP:   true,
 			expectedAny:    true,
 			expectedSingle: true,
@@ -42,9 +42,9 @@ func TestLogPipelineOutput(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			require.Equal(t, test.expectedCustom, IsCustomDefined(&test.given))
-			require.Equal(t, test.expectedHTTP, IsHTTPDefined(&test.given))
-			require.Equal(t, test.expectedAny, IsCustomDefined(&test.given) || IsHTTPDefined(&test.given) || test.given.OTLP != nil)
+			require.Equal(t, test.expectedCustom, IsCustomOutputDefined(&test.given))
+			require.Equal(t, test.expectedHTTP, IsHTTPOutputDefined(&test.given))
+			require.Equal(t, test.expectedAny, IsCustomOutputDefined(&test.given) || IsHTTPOutputDefined(&test.given) || test.given.OTLP != nil)
 		})
 	}
 }
@@ -52,7 +52,7 @@ func TestLogPipelineOutput(t *testing.T) {
 func TestLogPipelineContainsCustomPluginWithCustomFilter(t *testing.T) {
 	logPipeline := &telemetryv1alpha1.LogPipeline{
 		Spec: telemetryv1alpha1.LogPipelineSpec{
-			FluentBitFilters: []telemetryv1alpha1.LogPipelineFilter{
+			FluentBitFilters: []telemetryv1alpha1.FluentBitFilter{
 				{Custom: `
     Name    some-filter`,
 				},
@@ -68,7 +68,7 @@ func TestLogPipelineContainsCustomPluginWithCustomOutput(t *testing.T) {
 	logPipeline := &telemetryv1alpha1.LogPipeline{
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Output: telemetryv1alpha1.LogPipelineOutput{
-				Custom: `
+				FluentBitCustom: `
     Name    some-output`,
 			},
 		},

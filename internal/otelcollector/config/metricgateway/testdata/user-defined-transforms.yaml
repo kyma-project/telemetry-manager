@@ -153,9 +153,9 @@ processors:
         error_mode: ignore
         metric_statements:
             - statements:
-                - set(resource.attributes["k8s.cluster.name"], "${KUBERNETES_SERVICE_HOST}")
-                - set(resource.attributes["k8s.cluster.uid"], "")
-                - set(resource.attributes["cloud.provider"], "test-cloud-provider")
+                - set(resource.attributes["k8s.cluster.name"], "${KUBERNETES_SERVICE_HOST}") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
+                - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
+                - set(resource.attributes["cloud.provider"], "test-cloud-provider") where resource.attributes["cloud.provider"] == nil or resource.attributes["cloud.provider"] == ""
     transform/set-instrumentation-scope-kyma:
         error_mode: ignore
         metric_statements:

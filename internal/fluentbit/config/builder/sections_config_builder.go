@@ -55,12 +55,12 @@ func createRecordModifierFilter(pipeline *telemetryv1alpha1.LogPipeline, cluster
 
 func createLuaFilter(logPipeline *telemetryv1alpha1.LogPipeline) string {
 	output := logPipeline.Spec.Output
-	if !logpipelineutils.IsHTTPDefined(&output) {
+	if !logpipelineutils.IsHTTPOutputDefined(&output) {
 		return ""
 	}
 
 	call := "enrich_app_name"
-	if output.HTTP.Dedot {
+	if output.FluentBitHTTP.Dedot {
 		call = "dedot_and_enrich_app_name"
 	}
 
@@ -73,7 +73,7 @@ func createLuaFilter(logPipeline *telemetryv1alpha1.LogPipeline) string {
 }
 
 func validateCustomSections(pipeline *telemetryv1alpha1.LogPipeline) error {
-	customOutput := pipeline.Spec.Output.Custom
+	customOutput := pipeline.Spec.Output.FluentBitCustom
 	if customOutput != "" {
 		_, err := config.ParseCustomSection(customOutput)
 		if err != nil {
@@ -93,7 +93,7 @@ func validateCustomSections(pipeline *telemetryv1alpha1.LogPipeline) error {
 
 func createTimestampModifyFilter(pipeline *telemetryv1alpha1.LogPipeline) string {
 	output := pipeline.Spec.Output
-	if !logpipelineutils.IsHTTPDefined(&output) {
+	if !logpipelineutils.IsHTTPOutputDefined(&output) {
 		return ""
 	}
 

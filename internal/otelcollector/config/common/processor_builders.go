@@ -242,13 +242,12 @@ type ClusterOptions struct {
 // InsertClusterAttributesProcessorStatements creates processor statements for the transform processor that inserts cluster attributes
 func InsertClusterAttributesProcessorStatements(cluster ClusterOptions) []TransformProcessorStatements {
 	statements := []string{
-		fmt.Sprintf("set(resource.attributes[\"k8s.cluster.name\"], \"%s\")", cluster.ClusterName),
-		fmt.Sprintf("set(resource.attributes[\"k8s.cluster.uid\"], \"%s\")", cluster.ClusterUID),
+		setIfNilOrEmptyStatement("k8s.cluster.name", cluster.ClusterName),
+		setIfNilOrEmptyStatement("k8s.cluster.uid", cluster.ClusterUID),
 	}
 
 	if cluster.CloudProvider != "" {
-		statements = append(statements,
-			fmt.Sprintf("set(resource.attributes[\"cloud.provider\"], \"%s\")", cluster.CloudProvider))
+		statements = append(statements, setIfNilOrEmptyStatement("cloud.provider", cluster.CloudProvider))
 	}
 
 	return []TransformProcessorStatements{{
@@ -296,4 +295,11 @@ func instrumentationStatement(inputSource InputSourceType, instrumentationScopeV
 		fmt.Sprintf("set(scope.version, \"%s\") where scope.name == \"%s\"", instrumentationScopeVersion, upstreamInstrumentationScopeName[inputSource]),
 		fmt.Sprintf("set(scope.name, \"%s\") where scope.name == \"%s\"", InstrumentationScope[inputSource], upstreamInstrumentationScopeName[inputSource]),
 	}
+}
+
+func setIfNilOrEmptyStatement(attributeKey, attributeValue string) string {
+	return JoinWithWhere(
+		fmt.Sprintf("set(resource.attributes[\"%s\"], \"%s\")", attributeKey, attributeValue),
+		ResourceAttributeIsNilOrEmpty(attributeKey),
+	)
 }

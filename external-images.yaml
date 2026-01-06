@@ -1,13 +1,13 @@
 images:
-  - source: "fluent/fluent-bit@sha256:aff743e1a5e61d036d10a4472d67cdd7a6b408c92218eb86e3f301e2bac7817a"
-    tag: "4.2.0" # used by the kyma telemetry module
+  - source: "fluent/fluent-bit@sha256:d0ba6ceea4ed1a7cecb15a9184c29cc23159240d8d19b32885268b62dd54155b"
+    tag: "4.2.1" # used by the kyma telemetry module
   - source: "rancher/k3s@sha256:f9f125ef9c662a231a98c507afdd3ba9a94d5f02631f946d1d34000ef67f7263"
     tag: "v1.32.8-k3s1" # used by k3d - current k8s version
   - source: "rancher/k3s@sha256:f9f125ef9c662a231a98c507afdd3ba9a94d5f02631f946d1d34000ef67f7263"
     tag: "v1.33.4-k3s1" # used by k3d - future k3s version
   - source: "library/registry@sha256:3725021071ec9383eb3d87ddbdff9ed602439b3f7c958c9c2fb941049ea6531d"
     tag: "3" # used by k3d
-  - source: "library/alpine@sha256:51183f2cfa6320055da30872f211093f9ff1d3cf06f39a0bdb212314c5dc7375"
-    tag: "3.23.0" # used for init containers in log agent and fluentbit
+  - source: "library/alpine@sha256:865b95f46d98cf867a156fe4a135ad3fe50d2056aa3f25ed31662dff6da4eb62"
+    tag: "3.23.2" # used for init containers in log agent and fluentbit
   - source: quay.io/prometheuscommunity/avalanche
     tag: "v0.7.0" # used by the metrics agent test in backpressure scenario to generate metric load
