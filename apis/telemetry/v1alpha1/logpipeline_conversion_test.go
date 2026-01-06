@@ -28,9 +28,9 @@ var v1alpha1LogPipeline = &LogPipeline{
 					Include: []string{"nginx", "app"},
 					Exclude: []string{"sidecar"},
 				},
-				KeepAnnotations:  ptr.To(true),
-				DropLabels:       ptr.To(true),
-				KeepOriginalBody: ptr.To(true),
+				FluentBitKeepAnnotations: ptr.To(true),
+				FluentBitDropLabels:      ptr.To(true),
+				KeepOriginalBody:         ptr.To(true),
 			},
 			OTLP: &OTLPInput{
 				Disabled: true,
@@ -40,10 +40,10 @@ var v1alpha1LogPipeline = &LogPipeline{
 				},
 			},
 		},
-		Files: []LogPipelineFileMount{
+		FluentBitFiles: []FluentBitFile{
 			{Name: "file1", Content: "file1-content"},
 		},
-		FluentBitFilters: []LogPipelineFilter{
+		FluentBitFilters: []FluentBitFilter{
 			{Custom: "name stdout"},
 		},
 		Transforms: []TransformSpec{
@@ -58,8 +58,8 @@ var v1alpha1LogPipeline = &LogPipeline{
 			},
 		},
 		Output: LogPipelineOutput{
-			Custom: "custom-output",
-			HTTP: &LogPipelineHTTPOutput{
+			FluentBitCustom: "custom-output",
+			FluentBitHTTP: &FluentBitHTTPOutput{
 				Host: ValueType{
 					Value: "http://localhost",
 				},
@@ -79,7 +79,7 @@ var v1alpha1LogPipeline = &LogPipeline{
 				Port:     "8080",
 				Compress: "on",
 				Format:   "json",
-				TLS: LogPipelineOutputTLS{
+				TLS: FluentBitHTTPOutputTLS{
 					Disabled:                  true,
 					SkipCertificateValidation: true,
 					CA: &ValueType{
@@ -171,9 +171,9 @@ var v1beta1LogPipeline = &telemetryv1beta1.LogPipeline{
 					Include: []string{"nginx", "app"},
 					Exclude: []string{"sidecar"},
 				},
-				KeepAnnotations:  ptr.To(true),
-				DropLabels:       ptr.To(true),
-				KeepOriginalBody: ptr.To(true),
+				FluentBitKeepAnnotations: ptr.To(true),
+				FluentBitDropLabels:      ptr.To(true),
+				KeepOriginalBody:         ptr.To(true),
 			},
 			OTLP: &telemetryv1beta1.OTLPInput{
 				Enabled: ptr.To(false),
@@ -183,10 +183,10 @@ var v1beta1LogPipeline = &telemetryv1beta1.LogPipeline{
 				},
 			},
 		},
-		Files: []telemetryv1beta1.LogPipelineFileMount{
+		FluentBitFiles: []telemetryv1beta1.FluentBitFile{
 			{Name: "file1", Content: "file1-content"},
 		},
-		FluentBitFilters: []telemetryv1beta1.LogPipelineFilter{
+		FluentBitFilters: []telemetryv1beta1.FluentBitFilter{
 			{Custom: "name stdout"},
 		},
 		Transforms: []telemetryv1beta1.TransformSpec{
@@ -201,8 +201,8 @@ var v1beta1LogPipeline = &telemetryv1beta1.LogPipeline{
 			},
 		},
 		Output: telemetryv1beta1.LogPipelineOutput{
-			Custom: "custom-output",
-			HTTP: &telemetryv1beta1.LogPipelineHTTPOutput{
+			FluentBitCustom: "custom-output",
+			FluentBitHTTP: &telemetryv1beta1.FluentBitHTTPOutput{
 				Host: telemetryv1beta1.ValueType{
 					Value: "http://localhost",
 				},
@@ -447,16 +447,21 @@ func TestLogPipelineConvertTo(t *testing.T) {
 		},
 		{
 			name:     "should convert all fields",
-			input:    v1alpha1LogPipeline,
-			expected: v1beta1LogPipeline,
+			input:    v1alpha1LogPipeline.DeepCopy(),
+			expected: v1beta1LogPipeline.DeepCopy(),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			dst := &telemetryv1beta1.LogPipeline{}
+
 			err := tt.input.ConvertTo(dst)
 			require.NoError(t, err)
+
+			err = marshalData(tt.input, tt.expected)
+			require.NoError(t, err)
+
 			require.Equal(t, tt.expected, dst)
 		})
 	}
@@ -497,8 +502,8 @@ func TestLogPipelineConvertFrom(t *testing.T) {
 		},
 		{
 			name:     "should convert all fields",
-			input:    v1beta1LogPipeline,
-			expected: v1alpha1LogPipeline,
+			input:    v1beta1LogPipeline.DeepCopy(),
+			expected: v1alpha1LogPipeline.DeepCopy(),
 		},
 	}
 

@@ -39,6 +39,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
+	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
@@ -458,15 +459,13 @@ func (r *Reconciler) getK8sClusterUID(ctx context.Context) (string, error) {
 
 func (r *Reconciler) trackOTTLFeaturesUsage(pipelines []telemetryv1alpha1.TracePipeline) {
 	for i := range pipelines {
-		usesOTTL := false
-		if len(pipelines[i].Spec.Transforms) > 0 {
-			usesOTTL = true
+		// General features
+		if sharedtypesutils.IsTransformDefined(pipelines[i].Spec.Transforms) {
+			metrics.RecordTracePipelineFeatureUsage(metrics.FeatureTransform, pipelines[i].Name)
 		}
 
-		if len(pipelines[i].Spec.Filters) > 0 {
-			usesOTTL = true
+		if sharedtypesutils.IsFilterDefined(pipelines[i].Spec.Filters) {
+			metrics.RecordTracePipelineFeatureUsage(metrics.FeatureFilter, pipelines[i].Name)
 		}
-
-		metrics.RecordTracePipelineFeatureUsage(metrics.FeatureOTTL, pipelines[i].Name, usesOTTL)
 	}
 }

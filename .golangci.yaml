@@ -128,8 +128,12 @@ linters:
           alias: apierrors
         - pkg: k8s.io/apimachinery/pkg/apis/meta/v1
           alias: metav1
+        - pkg: k8s.io/apimachinery/pkg/conversion
+          alias: apiconversion
         - pkg: k8s.io/apimachinery/pkg/util/runtime
           alias: utilruntime
+        - pkg: "k8s.io/apimachinery/pkg/apis/meta/fuzzer"
+          alias: metafuzzer
         - pkg: k8s.io/client-go/kubernetes/scheme
           alias: clientgoscheme
         - pkg: sigs.k8s.io/controller-runtime
@@ -264,6 +268,9 @@ linters:
       - linters:
           - importas
         text: has alias "" which is not part of config
+      - linters:
+          - staticcheck
+        text: 'SA1019: .+\.FluentBit.+ is deprecated'
       - path: (.+)\.go$
         text: Using the variable on range scope `tc` in function literal
       - path: (.+)\.go$

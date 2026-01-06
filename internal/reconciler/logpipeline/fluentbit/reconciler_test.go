@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -18,6 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
+	"github.com/kyma-project/telemetry-manager/internal/metrics"
 	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	logpipelinefluentbitmocks "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit/mocks"
 	logpipelinemocks "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
@@ -642,6 +644,141 @@ func TestFIPSMode(t *testing.T) {
 
 			for _, check := range tt.conditions {
 				assertCondition(t, result.pipeline, check.condType, check.status, check.reason, check.message)
+			}
+		})
+	}
+}
+
+func TestFeatureUsageTracking(t *testing.T) {
+	tests := []struct {
+		name                 string
+		pipeline             telemetryv1alpha1.LogPipeline
+		expectedFeatureUsage map[string]float64
+	}{
+		{
+			name: "pipeline without features",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-1").
+				WithHTTPOutput().
+				WithApplicationInput(true).
+				Build(),
+			expectedFeatureUsage: map[string]float64{
+				metrics.FeatureInputRuntime: 1,
+				metrics.FeatureOutputHTTP:   1,
+			},
+		},
+		{
+			name: "pipeline with runtime input",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-6").
+				WithHTTPOutput().
+				WithApplicationInput(true).
+				Build(),
+			expectedFeatureUsage: map[string]float64{
+				metrics.FeatureInputRuntime: 1,
+				metrics.FeatureOutputHTTP:   1,
+			},
+		},
+		{
+			name: "pipeline with HTTP output",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-7").
+				WithHTTPOutput().
+				WithApplicationInput(true).
+				Build(),
+			expectedFeatureUsage: map[string]float64{
+				metrics.FeatureOutputHTTP:   1,
+				metrics.FeatureInputRuntime: 1,
+			},
+		},
+		{
+			name: "pipeline with custom output",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-8").
+				WithCustomOutput("Name stdout").
+				WithApplicationInput(true).
+				Build(),
+			expectedFeatureUsage: map[string]float64{
+				metrics.FeatureOutputCustom: 1,
+				metrics.FeatureInputRuntime: 1,
+			},
+		},
+		{
+			name: "pipeline with custom filters",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-9").
+				WithHTTPOutput().
+				WithCustomFilter("Name grep").
+				WithApplicationInput(true).
+				Build(),
+			expectedFeatureUsage: map[string]float64{
+				metrics.FeatureFilters:      1,
+				metrics.FeatureOutputHTTP:   1,
+				metrics.FeatureInputRuntime: 1,
+			},
+		},
+		{
+			name: "pipeline with variables",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-10").
+				WithHTTPOutput().
+				WithVariable("var1", "secret1", "default", "key1").
+				WithApplicationInput(true).
+				Build(),
+			expectedFeatureUsage: map[string]float64{
+				metrics.FeatureVariables:    1,
+				metrics.FeatureOutputHTTP:   1,
+				metrics.FeatureInputRuntime: 1,
+			},
+		},
+		{
+			name: "pipeline with files",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-11").
+				WithHTTPOutput().
+				WithFile("file1", "content1").
+				WithApplicationInput(true).
+				Build(),
+			expectedFeatureUsage: map[string]float64{
+				metrics.FeatureFiles:        1,
+				metrics.FeatureOutputHTTP:   1,
+				metrics.FeatureInputRuntime: 1,
+			},
+		},
+		{
+			name: "pipeline with all FluentBit features",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-13").
+				WithHTTPOutput().
+				WithCustomFilter("Name grep").
+				WithVariable("var1", "secret1", "default", "key1").
+				WithFile("file1", "content1").
+				WithApplicationInput(true).
+				Build(),
+			expectedFeatureUsage: map[string]float64{
+				metrics.FeatureOutputHTTP:   1,
+				metrics.FeatureFilters:      1,
+				metrics.FeatureVariables:    1,
+				metrics.FeatureFiles:        1,
+				metrics.FeatureInputRuntime: 1,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fakeClient := newTestClient(t, &tt.pipeline)
+
+			sut := newTestReconciler(fakeClient)
+
+			result := reconcileAndGet(t, fakeClient, sut, tt.pipeline.Name)
+			require.NoError(t, result.err)
+
+			// Verify feature usage metrics for all features (default expected value is 0)
+			for _, feature := range metrics.AllFeatures {
+				expectedValue := tt.expectedFeatureUsage[feature] // defaults to 0 if not in map
+				metricValue := testutil.ToFloat64(metrics.LogPipelineFeatureUsage.WithLabelValues(feature, tt.pipeline.Name))
+				require.Equal(t, expectedValue, metricValue, "feature usage metric should match for pipeline `%s` and feature `%s`", tt.pipeline.Name, feature)
 			}
 		})
 	}

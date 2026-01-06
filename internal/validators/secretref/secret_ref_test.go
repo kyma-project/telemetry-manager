@@ -438,7 +438,7 @@ func TestLogPipeline_GetSecretRefs(t *testing.T) {
 			name: "only variables",
 			given: telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Variables: []telemetryv1alpha1.LogPipelineVariableRef{
+					FluentBitVariables: []telemetryv1alpha1.FluentBitVariable{
 						{
 							Name: "password-1",
 							ValueFrom: telemetryv1alpha1.ValueFromSource{
@@ -468,7 +468,7 @@ func TestLogPipeline_GetSecretRefs(t *testing.T) {
 				},
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Output: telemetryv1alpha1.LogPipelineOutput{
-						HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
+						FluentBitHTTP: &telemetryv1alpha1.FluentBitHTTPOutput{
 							Host: telemetryv1alpha1.ValueType{
 								ValueFrom: &telemetryv1alpha1.ValueFromSource{
 									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
@@ -508,7 +508,7 @@ func TestLogPipeline_GetSecretRefs(t *testing.T) {
 				},
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Output: telemetryv1alpha1.LogPipelineOutput{
-						HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
+						FluentBitHTTP: &telemetryv1alpha1.FluentBitHTTPOutput{
 							Host: telemetryv1alpha1.ValueType{
 								ValueFrom: &telemetryv1alpha1.ValueFromSource{
 									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
@@ -560,9 +560,9 @@ func TestGetValue_SecretNotFound(t *testing.T) {
 }
 
 func TestGetSecretRefsInHTTPOutput_TLSFields(t *testing.T) {
-	httpOutput := &telemetryv1alpha1.LogPipelineHTTPOutput{
+	httpOutput := &telemetryv1alpha1.FluentBitHTTPOutput{
 
-		TLS: telemetryv1alpha1.LogPipelineOutputTLS{
+		TLS: telemetryv1alpha1.FluentBitHTTPOutputTLS{
 			CA:   &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{Name: "ca", Key: "ca"}}},
 			Cert: &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{Name: "cert", Key: "cert"}}},
 			Key:  &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{Name: "key", Key: "key"}}},

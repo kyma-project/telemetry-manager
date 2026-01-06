@@ -21,7 +21,7 @@ func TestCreateOutputSectionWithCustomOutput(t *testing.T) {
 	logPipeline := &telemetryv1alpha1.LogPipeline{
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Output: telemetryv1alpha1.LogPipelineOutput{
-				Custom: `
+				FluentBitCustom: `
     name null`,
 			},
 		},
@@ -56,7 +56,7 @@ func TestCreateOutputSectionWithHTTPOutput(t *testing.T) {
 	logPipeline := &telemetryv1alpha1.LogPipeline{
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Output: telemetryv1alpha1.LogPipelineOutput{
-				HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
+				FluentBitHTTP: &telemetryv1alpha1.FluentBitHTTPOutput{
 					Dedot:    true,
 					Port:     "1234",
 					Host:     telemetryv1alpha1.ValueType{Value: "localhost"},
@@ -98,7 +98,7 @@ func TestCreateOutputSectionWithHTTPOutputWithSecretReference(t *testing.T) {
 	logPipeline := &telemetryv1alpha1.LogPipeline{
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Output: telemetryv1alpha1.LogPipelineOutput{
-				HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
+				FluentBitHTTP: &telemetryv1alpha1.FluentBitHTTPOutput{
 					Dedot: true,
 					URI:   "/my-uri",
 					Host:  telemetryv1alpha1.ValueType{Value: "localhost"},
@@ -148,11 +148,11 @@ func TestCreateOutputSectionWithHTTPOutputWithTLS(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: "foo"},
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Output: telemetryv1alpha1.LogPipelineOutput{
-				HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
+				FluentBitHTTP: &telemetryv1alpha1.FluentBitHTTPOutput{
 					Dedot: true,
 					URI:   "/my-uri",
 					Host:  telemetryv1alpha1.ValueType{Value: "localhost"},
-					TLS: telemetryv1alpha1.LogPipelineOutputTLS{
+					TLS: telemetryv1alpha1.FluentBitHTTPOutputTLS{
 						Disabled:                  false,
 						SkipCertificateValidation: false,
 						CA:                        &telemetryv1alpha1.ValueType{Value: "fake-ca-value"},
