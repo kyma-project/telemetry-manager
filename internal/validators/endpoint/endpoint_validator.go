@@ -36,6 +36,7 @@ var (
 	ErrPortMissing        = errors.New("missing port")
 	ErrUnsupportedScheme  = errors.New("missing or unsupported protocol scheme")
 	ErrGRPCOAuth2NoTLS    = errors.New("OAuth2 requires TLS when using gRPC protocol")
+	ErrHTTPWithTLS        = errors.New("HTTP scheme with TLS not allowed")
 )
 
 type EndpointInvalidError struct {
@@ -90,9 +91,18 @@ func (v *Validator) Validate(ctx context.Context, params EndpointValidationParam
 		}
 	}
 
-	// gRPC with OAuth2 validation
-	if params.Protocol == OTLPProtocolGRPC && params.OTLPOAuth2 != nil {
-		if err := validateGRPCWithOAuth2(u.Scheme, params.OTLPTLS); err != nil {
+	// OAuth2 validation
+	if params.OTLPOAuth2 != nil {
+		var validationFunc func(string, *telemetryv1alpha1.OTLPTLS) error
+
+		switch params.Protocol {
+		case OTLPProtocolGRPC:
+			validationFunc = validateGRPCWithOAuth2
+		case OTLPProtocolHTTP:
+			validationFunc = validateHTTPWithOAuth2
+		}
+
+		if err := validationFunc(u.Scheme, params.OTLPTLS); err != nil {
 			return err
 		}
 	}
@@ -182,4 +192,21 @@ func validateGRPCWithOAuth2(scheme string, tls *telemetryv1alpha1.OTLPTLS) error
 	}
 
 	return nil
+}
+
+func validateHTTPWithOAuth2(scheme string, tls *telemetryv1alpha1.OTLPTLS) error {
+	// HTTP scheme with TLS
+	if scheme == "http" && isTLSConfigured(tls) {
+		return &EndpointInvalidError{Err: ErrHTTPWithTLS}
+	}
+
+	return nil
+}
+
+func isTLSConfigured(tls *telemetryv1alpha1.OTLPTLS) bool {
+	if tls == nil || tls.Insecure {
+		return false
+	}
+
+	return tls.CA != nil || tls.Cert != nil || tls.Key != nil
 }

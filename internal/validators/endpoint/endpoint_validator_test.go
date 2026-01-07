@@ -21,6 +21,7 @@ const (
 	errMsgPortMissing             = "missing port"
 	errMsgUnsupportedScheme       = "missing or unsupported protocol scheme"
 	errMsgGRPCOAuth2NoTLS         = "OAuth2 requires TLS when using gRPC protocol"
+	errMsgHTTPWithTLS             = "HTTP scheme with TLS not allowed"
 )
 
 var testScenarios = []struct {
@@ -589,6 +590,7 @@ var testScenariosWithOAuth2 = []struct {
 	tls      *telemetryv1alpha1.OTLPTLS
 
 	errMsgOTLPGRPC string
+	errMsgOTLPHTTP string
 }{
 	// without TLS configuration
 	{
@@ -596,18 +598,21 @@ var testScenariosWithOAuth2 = []struct {
 		endpoint:       "http://example.com:8080",
 		tls:            nil,
 		errMsgOTLPGRPC: errMsgGRPCOAuth2NoTLS + ": HTTP scheme not allowed",
+		errMsgOTLPHTTP: "",
 	},
 	{
 		name:           "https scheme without TLS",
 		endpoint:       "https://example.com:8080",
 		tls:            nil,
 		errMsgOTLPGRPC: "",
+		errMsgOTLPHTTP: "",
 	},
 	{
 		name:           "no scheme without TLS",
 		endpoint:       "example.com:8080",
 		tls:            nil,
 		errMsgOTLPGRPC: "",
+		errMsgOTLPHTTP: errMsgUnsupportedScheme,
 	},
 
 	// with TLS configuration
@@ -618,6 +623,7 @@ var testScenariosWithOAuth2 = []struct {
 			CA: &telemetryv1alpha1.ValueType{Value: "ca-data"},
 		},
 		errMsgOTLPGRPC: errMsgGRPCOAuth2NoTLS + ": HTTP scheme not allowed",
+		errMsgOTLPHTTP: errMsgHTTPWithTLS,
 	},
 	{
 		name:     "https scheme with TLS",
@@ -626,6 +632,7 @@ var testScenariosWithOAuth2 = []struct {
 			CA: &telemetryv1alpha1.ValueType{Value: "ca-data"},
 		},
 		errMsgOTLPGRPC: "",
+		errMsgOTLPHTTP: "",
 	},
 	{
 		name:     "no scheme with TLS",
@@ -634,6 +641,7 @@ var testScenariosWithOAuth2 = []struct {
 			CA: &telemetryv1alpha1.ValueType{Value: "ca-data"},
 		},
 		errMsgOTLPGRPC: "",
+		errMsgOTLPHTTP: errMsgUnsupportedScheme,
 	},
 
 	// with insecureSkipVerify
@@ -644,6 +652,7 @@ var testScenariosWithOAuth2 = []struct {
 			InsecureSkipVerify: true,
 		},
 		errMsgOTLPGRPC: errMsgGRPCOAuth2NoTLS + ": HTTP scheme not allowed",
+		errMsgOTLPHTTP: "",
 	},
 	{
 		name:     "https scheme with TLS insecureSkipVerify",
@@ -652,6 +661,7 @@ var testScenariosWithOAuth2 = []struct {
 			InsecureSkipVerify: true,
 		},
 		errMsgOTLPGRPC: "",
+		errMsgOTLPHTTP: "",
 	},
 	{
 		name:     "no scheme with TLS insecureSkipVerify",
@@ -660,6 +670,7 @@ var testScenariosWithOAuth2 = []struct {
 			InsecureSkipVerify: true,
 		},
 		errMsgOTLPGRPC: "",
+		errMsgOTLPHTTP: errMsgUnsupportedScheme,
 	},
 
 	// with insecure
@@ -670,6 +681,7 @@ var testScenariosWithOAuth2 = []struct {
 			Insecure: true,
 		},
 		errMsgOTLPGRPC: errMsgGRPCOAuth2NoTLS,
+		errMsgOTLPHTTP: "",
 	},
 	{
 		name:     "https scheme with TLS insecure",
@@ -678,6 +690,7 @@ var testScenariosWithOAuth2 = []struct {
 			Insecure: true,
 		},
 		errMsgOTLPGRPC: errMsgGRPCOAuth2NoTLS,
+		errMsgOTLPHTTP: "",
 	},
 	{
 		name:     "no scheme with TLS insecure",
@@ -686,6 +699,7 @@ var testScenariosWithOAuth2 = []struct {
 			Insecure: true,
 		},
 		errMsgOTLPGRPC: errMsgGRPCOAuth2NoTLS,
+		errMsgOTLPHTTP: errMsgUnsupportedScheme,
 	},
 }
 
@@ -709,6 +723,33 @@ func TestOTLPGRPCEndpointsWithOAuth2(t *testing.T) {
 			if test.errMsgOTLPGRPC != "" {
 				require.True(t, IsEndpointInvalidError(err))
 				require.EqualError(t, err, test.errMsgOTLPGRPC)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestOTLPHTTPEndpointsWithOAuth2(t *testing.T) {
+	for _, test := range testScenariosWithOAuth2 {
+		t.Run(test.name, func(t *testing.T) {
+			fakeClient := fake.NewClientBuilder().Build()
+			validator := Validator{
+				Client: fakeClient,
+			}
+
+			err := validator.Validate(
+				t.Context(),
+				EndpointValidationParams{
+					Endpoint:   &telemetryv1alpha1.ValueType{Value: test.endpoint},
+					Protocol:   OTLPProtocolHTTP,
+					OTLPOAuth2: &telemetryv1alpha1.OAuth2Options{},
+					OTLPTLS:    test.tls,
+				})
+
+			if test.errMsgOTLPHTTP != "" {
+				require.True(t, IsEndpointInvalidError(err))
+				require.EqualError(t, err, test.errMsgOTLPHTTP)
 			} else {
 				require.NoError(t, err)
 			}
