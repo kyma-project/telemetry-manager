@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -33,10 +33,10 @@ func TestFilter(t *testing.T) {
 	pipeline := testutils.NewTracePipelineBuilder().
 		WithName(pipelineName).
 		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
-		WithTransform(telemetryv1alpha1.TransformSpec{
+		WithTransform(telemetryv1beta1.TransformSpec{
 			Statements: []string{"set(span.attributes[\"test\"], \"passed\")"},
 		}).
-		WithFilter(telemetryv1alpha1.FilterSpec{
+		WithFilter(telemetryv1beta1.FilterSpec{
 			Conditions: []string{"span.attributes[\"test\"] == \"passed\""},
 		}).
 		Build()

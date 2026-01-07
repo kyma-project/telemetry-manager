@@ -9,7 +9,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -21,11 +21,11 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 		backendPort = 4317
 	)
 
-	var backenEndpoint = backendHost + ":" + strconv.Itoa(backendPort)
+	var backendEndpoint = backendHost + ":" + strconv.Itoa(backendPort)
 
 	tests := []struct {
 		name     string
-		pipeline telemetryv1alpha1.TracePipeline
+		pipeline telemetryv1beta1.TracePipeline
 		errorMsg string
 		field    string
 		causes   int
@@ -33,8 +33,8 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 		// output general
 		{
 			name: "no-output",
-			pipeline: telemetryv1alpha1.TracePipeline{
-				Spec: telemetryv1alpha1.TracePipelineSpec{},
+			pipeline: telemetryv1beta1.TracePipeline{
+				Spec: telemetryv1beta1.TracePipelineSpec{},
 			},
 			errorMsg: "must be of type object",
 			field:    "spec.output.otlp",
@@ -42,14 +42,14 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 		},
 		{
 			name: "valuefrom-accepts-only-one-option",
-			pipeline: telemetryv1alpha1.TracePipeline{
-				Spec: telemetryv1alpha1.TracePipelineSpec{
-					Output: telemetryv1alpha1.TracePipelineOutput{
-						OTLP: &telemetryv1alpha1.OTLPOutput{
-							Endpoint: telemetryv1alpha1.ValueType{
+			pipeline: telemetryv1beta1.TracePipeline{
+				Spec: telemetryv1beta1.TracePipelineSpec{
+					Output: telemetryv1beta1.TracePipelineOutput{
+						OTLP: &telemetryv1beta1.OTLPOutput{
+							Endpoint: telemetryv1beta1.ValueType{
 								Value: "example.com",
-								ValueFrom: &telemetryv1alpha1.ValueFromSource{
-									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+								ValueFrom: &telemetryv1beta1.ValueFromSource{
+									SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 										Name:      "name",
 										Namespace: "namespace",
 										Key:       "key",
@@ -65,13 +65,13 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 		},
 		{
 			name: "secretkeyref-requires-key",
-			pipeline: telemetryv1alpha1.TracePipeline{
-				Spec: telemetryv1alpha1.TracePipelineSpec{
-					Output: telemetryv1alpha1.TracePipelineOutput{
-						OTLP: &telemetryv1alpha1.OTLPOutput{
-							Endpoint: telemetryv1alpha1.ValueType{
-								ValueFrom: &telemetryv1alpha1.ValueFromSource{
-									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+			pipeline: telemetryv1beta1.TracePipeline{
+				Spec: telemetryv1beta1.TracePipelineSpec{
+					Output: telemetryv1beta1.TracePipelineOutput{
+						OTLP: &telemetryv1beta1.OTLPOutput{
+							Endpoint: telemetryv1beta1.ValueType{
+								ValueFrom: &telemetryv1beta1.ValueFromSource{
+									SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 										Name:      "name",
 										Namespace: "namespace",
 									},
@@ -86,13 +86,13 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 		},
 		{
 			name: "secretkeyref-requires-namespace",
-			pipeline: telemetryv1alpha1.TracePipeline{
-				Spec: telemetryv1alpha1.TracePipelineSpec{
-					Output: telemetryv1alpha1.TracePipelineOutput{
-						OTLP: &telemetryv1alpha1.OTLPOutput{
-							Endpoint: telemetryv1alpha1.ValueType{
-								ValueFrom: &telemetryv1alpha1.ValueFromSource{
-									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+			pipeline: telemetryv1beta1.TracePipeline{
+				Spec: telemetryv1beta1.TracePipelineSpec{
+					Output: telemetryv1beta1.TracePipelineOutput{
+						OTLP: &telemetryv1beta1.OTLPOutput{
+							Endpoint: telemetryv1beta1.ValueType{
+								ValueFrom: &telemetryv1beta1.ValueFromSource{
+									SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 										Name: "name",
 										Key:  "key",
 									},
@@ -107,13 +107,13 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 		},
 		{
 			name: "secretkeyref-requires-name",
-			pipeline: telemetryv1alpha1.TracePipeline{
-				Spec: telemetryv1alpha1.TracePipelineSpec{
-					Output: telemetryv1alpha1.TracePipelineOutput{
-						OTLP: &telemetryv1alpha1.OTLPOutput{
-							Endpoint: telemetryv1alpha1.ValueType{
-								ValueFrom: &telemetryv1alpha1.ValueFromSource{
-									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+			pipeline: telemetryv1beta1.TracePipeline{
+				Spec: telemetryv1beta1.TracePipelineSpec{
+					Output: telemetryv1beta1.TracePipelineOutput{
+						OTLP: &telemetryv1beta1.OTLPOutput{
+							Endpoint: telemetryv1beta1.ValueType{
+								ValueFrom: &telemetryv1beta1.ValueFromSource{
+									SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 										Namespace: "namespace",
 										Key:       "key",
 									},
@@ -131,7 +131,7 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 			name: "otlp-output-with-default-proto-and-path",
 			pipeline: testutils.NewTracePipelineBuilder().
 				WithOTLPOutput(
-					testutils.OTLPEndpoint(backenEndpoint),
+					testutils.OTLPEndpoint(backendEndpoint),
 					testutils.OTLPEndpointPath("/v1/dummy"),
 				).
 				Build(),
@@ -142,7 +142,7 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 			name: "otlp-output-with-grpc-proto-and-path",
 			pipeline: testutils.NewTracePipelineBuilder().
 				WithOTLPOutput(
-					testutils.OTLPEndpoint(backenEndpoint),
+					testutils.OTLPEndpoint(backendEndpoint),
 					testutils.OTLPEndpointPath("/v1/dummy"),
 					testutils.OTLPProtocol("grpc"),
 				).
@@ -154,7 +154,7 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 			name: "otlp-output-with-non-valid-proto",
 			pipeline: testutils.NewTracePipelineBuilder().
 				WithOTLPOutput(
-					testutils.OTLPEndpoint(backenEndpoint),
+					testutils.OTLPEndpoint(backendEndpoint),
 					testutils.OTLPProtocol("icke"),
 				).
 				Build(),
@@ -166,7 +166,7 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 			name: "otlp-output-basic-auth-secretref-missing-password-key",
 			pipeline: testutils.NewTracePipelineBuilder().
 				WithOTLPOutput(
-					testutils.OTLPEndpoint(backenEndpoint),
+					testutils.OTLPEndpoint(backendEndpoint),
 					testutils.OTLPBasicAuthFromSecret("name", "namespace", "user", ""),
 				).
 				Build(),
@@ -177,7 +177,7 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 			name: "otlp-output-basic-auth-secretref-missing-user-key",
 			pipeline: testutils.NewTracePipelineBuilder().
 				WithOTLPOutput(
-					testutils.OTLPEndpoint(backenEndpoint),
+					testutils.OTLPEndpoint(backendEndpoint),
 					testutils.OTLPBasicAuthFromSecret("name", "namespace", "", "password"),
 				).
 				Build(),
@@ -188,10 +188,10 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 			name: "otlp-output-tls-missing-key",
 			pipeline: testutils.NewTracePipelineBuilder().
 				WithOTLPOutput(
-					testutils.OTLPEndpoint(backenEndpoint),
-					testutils.OTLPClientTLS(&telemetryv1alpha1.OTLPTLS{
-						CA:   &telemetryv1alpha1.ValueType{Value: "myCACert"},
-						Cert: &telemetryv1alpha1.ValueType{Value: "myClientCert"},
+					testutils.OTLPEndpoint(backendEndpoint),
+					testutils.OTLPClientTLS(&telemetryv1beta1.OutputTLS{
+						CA:   &telemetryv1beta1.ValueType{Value: "myCACert"},
+						Cert: &telemetryv1beta1.ValueType{Value: "myClientCert"},
 					}),
 				).
 				Build(),
@@ -202,10 +202,10 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 			name: "otlp-output-tls-missing-cert",
 			pipeline: testutils.NewTracePipelineBuilder().
 				WithOTLPOutput(
-					testutils.OTLPEndpoint(backenEndpoint),
-					testutils.OTLPClientTLS(&telemetryv1alpha1.OTLPTLS{
-						CA:  &telemetryv1alpha1.ValueType{Value: "myCACert"},
-						Key: &telemetryv1alpha1.ValueType{Value: "myKey"},
+					testutils.OTLPEndpoint(backendEndpoint),
+					testutils.OTLPClientTLS(&telemetryv1beta1.OutputTLS{
+						CA:  &telemetryv1beta1.ValueType{Value: "myCACert"},
+						Key: &telemetryv1beta1.ValueType{Value: "myKey"},
 					}),
 				).
 				Build(),

@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -21,17 +21,17 @@ import (
 func TestFilter_OTel(t *testing.T) {
 	tests := []struct {
 		label        string
-		inputBuilder func(includeNs string) telemetryv1alpha1.LogPipelineInput
+		inputBuilder func(includeNs string) telemetryv1beta1.LogPipelineInput
 	}{
 		{
 			label: suite.LabelLogAgent,
-			inputBuilder: func(includeNs string) telemetryv1alpha1.LogPipelineInput {
-				return testutils.BuildLogPipelineApplicationInput(testutils.ExtIncludeNamespaces(includeNs))
+			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
+				return testutils.BuildLogPipelineRuntimeInput(testutils.ExtIncludeNamespaces(includeNs))
 			},
 		},
 		{
 			label: suite.LabelLogGateway,
-			inputBuilder: func(includeNs string) telemetryv1alpha1.LogPipelineInput {
+			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
 				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
 		},
@@ -54,10 +54,10 @@ func TestFilter_OTel(t *testing.T) {
 				WithName(pipelineName).
 				WithInput(tc.inputBuilder(genNs)).
 				WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
-				WithTransform(telemetryv1alpha1.TransformSpec{
+				WithTransform(telemetryv1beta1.TransformSpec{
 					Statements: []string{"set(log.attributes[\"test\"], \"passed\")"},
 				}).
-				WithFilter(telemetryv1alpha1.FilterSpec{
+				WithFilter(telemetryv1beta1.FilterSpec{
 					Conditions: []string{"log.attributes[\"test\"] == \"passed\""},
 				}).
 				Build()

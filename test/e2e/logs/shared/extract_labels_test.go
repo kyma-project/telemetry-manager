@@ -6,8 +6,8 @@ import (
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -26,14 +26,14 @@ import (
 func TestExtractLabels_OTel(t *testing.T) {
 	tests := []struct {
 		label               string
-		inputBuilder        func(includeNs string) telemetryv1alpha1.LogPipelineInput
+		inputBuilder        func(includeNs string) telemetryv1beta1.LogPipelineInput
 		logGeneratorBuilder func(ns string, labels map[string]string) client.Object
 		expectAgent         bool
 	}{
 		{
 			label: suite.LabelLogAgent,
-			inputBuilder: func(includeNs string) telemetryv1alpha1.LogPipelineInput {
-				return testutils.BuildLogPipelineApplicationInput(testutils.ExtIncludeNamespaces(includeNs))
+			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
+				return testutils.BuildLogPipelineRuntimeInput(testutils.ExtIncludeNamespaces(includeNs))
 			},
 			logGeneratorBuilder: func(ns string, labels map[string]string) client.Object {
 				return stdoutloggen.NewDeployment(ns).WithLabels(labels).K8sObject()
@@ -42,7 +42,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 		},
 		{
 			label: suite.LabelLogGateway,
-			inputBuilder: func(includeNs string) telemetryv1alpha1.LogPipelineInput {
+			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
 				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
 			logGeneratorBuilder: func(ns string, labels map[string]string) client.Object {
@@ -75,7 +75,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 				pipelineName = uniquePrefix()
 				backendNs    = uniquePrefix("backend")
 				genNs        = uniquePrefix("gen")
-				telemetry    operatorv1alpha1.Telemetry
+				telemetry    operatorv1beta1.Telemetry
 			)
 
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
@@ -97,8 +97,8 @@ func TestExtractLabels_OTel(t *testing.T) {
 
 			Eventually(func(g Gomega) {
 				g.Expect(suite.K8sClient.Get(t.Context(), kitkyma.TelemetryName, &telemetry)).NotTo(HaveOccurred())
-				telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{
-					ExtractPodLabels: []operatorv1alpha1.PodLabel{
+				telemetry.Spec.Enrichments = &operatorv1beta1.EnrichmentSpec{
+					ExtractPodLabels: []operatorv1beta1.PodLabel{
 						{Key: "log.test.exact.should.match"},
 						{KeyPrefix: "log.test.prefix"},
 					},
@@ -164,7 +164,7 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 	pipelineNotDropped := testutils.NewLogPipelineBuilder().
 		WithName(pipelineNameNotDropped).
 		WithKeepAnnotations(false).
-		WithApplicationInput(true, testutils.ExtIncludeNamespaces(genNs)).
+		WithRuntimeInput(true, testutils.ExtIncludeNamespaces(genNs)).
 		WithDropLabels(false).
 		WithHTTPOutput(testutils.HTTPHost(backendNotDropped.Host()), testutils.HTTPPort(backendNotDropped.Port())).
 		Build()
@@ -172,7 +172,7 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 	pipelineDropped := testutils.NewLogPipelineBuilder().
 		WithName(pipelineNameDropped).
 		WithKeepAnnotations(false).
-		WithApplicationInput(true, testutils.ExtIncludeNamespaces(genNs)).
+		WithRuntimeInput(true, testutils.ExtIncludeNamespaces(genNs)).
 		WithDropLabels(true).
 		WithHTTPOutput(testutils.HTTPHost(backendDropped.Host()), testutils.HTTPPort(backendDropped.Port())).
 		Build()

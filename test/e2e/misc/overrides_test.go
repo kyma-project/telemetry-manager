@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -41,7 +41,6 @@ func TestOverrides(t *testing.T) {
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
 	logPipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
-		WithSystemNamespaces(true).
 		WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 		Build()
 
@@ -139,7 +138,7 @@ func triggerLogPipelineReconcilation(pipelineName string) {
 		Name: pipelineName,
 	}
 
-	var logPipeline telemetryv1alpha1.LogPipeline
+	var logPipeline telemetryv1beta1.LogPipeline
 
 	err := suite.K8sClient.Get(suite.Ctx, lookupKey, &logPipeline)
 	Expect(err).ToNot(HaveOccurred())

@@ -10,7 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -28,7 +28,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		pipeline telemetryv1alpha1.LogPipeline
+		pipeline telemetryv1beta1.LogPipeline
 		errorMsg string
 		field    string
 		causes   int
@@ -37,22 +37,22 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 		// output general
 		{
 			name: "no-output",
-			pipeline: telemetryv1alpha1.LogPipeline{
-				Spec: telemetryv1alpha1.LogPipelineSpec{},
+			pipeline: telemetryv1beta1.LogPipeline{
+				Spec: telemetryv1beta1.LogPipelineSpec{},
 			},
 			errorMsg: "Exactly one output out of 'custom', 'http' or 'otlp' must be defined",
 			field:    "spec.output",
 		},
 		{
 			name: "valuefrom-accepts-only-one-option",
-			pipeline: telemetryv1alpha1.LogPipeline{
-				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Output: telemetryv1alpha1.LogPipelineOutput{
-						OTLP: &telemetryv1alpha1.OTLPOutput{
-							Endpoint: telemetryv1alpha1.ValueType{
+			pipeline: telemetryv1beta1.LogPipeline{
+				Spec: telemetryv1beta1.LogPipelineSpec{
+					Output: telemetryv1beta1.LogPipelineOutput{
+						OTLP: &telemetryv1beta1.OTLPOutput{
+							Endpoint: telemetryv1beta1.ValueType{
 								Value: "example.com",
-								ValueFrom: &telemetryv1alpha1.ValueFromSource{
-									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+								ValueFrom: &telemetryv1beta1.ValueFromSource{
+									SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 										Name:      "name",
 										Namespace: "namespace",
 										Key:       "key",
@@ -68,13 +68,13 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 		},
 		{
 			name: "secretkeyref-requires-key",
-			pipeline: telemetryv1alpha1.LogPipeline{
-				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Output: telemetryv1alpha1.LogPipelineOutput{
-						OTLP: &telemetryv1alpha1.OTLPOutput{
-							Endpoint: telemetryv1alpha1.ValueType{
-								ValueFrom: &telemetryv1alpha1.ValueFromSource{
-									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+			pipeline: telemetryv1beta1.LogPipeline{
+				Spec: telemetryv1beta1.LogPipelineSpec{
+					Output: telemetryv1beta1.LogPipelineOutput{
+						OTLP: &telemetryv1beta1.OTLPOutput{
+							Endpoint: telemetryv1beta1.ValueType{
+								ValueFrom: &telemetryv1beta1.ValueFromSource{
+									SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 										Name:      "name",
 										Namespace: "namespace",
 									},
@@ -89,13 +89,13 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 		},
 		{
 			name: "secretkeyref-requires-namespace",
-			pipeline: telemetryv1alpha1.LogPipeline{
-				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Output: telemetryv1alpha1.LogPipelineOutput{
-						OTLP: &telemetryv1alpha1.OTLPOutput{
-							Endpoint: telemetryv1alpha1.ValueType{
-								ValueFrom: &telemetryv1alpha1.ValueFromSource{
-									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+			pipeline: telemetryv1beta1.LogPipeline{
+				Spec: telemetryv1beta1.LogPipelineSpec{
+					Output: telemetryv1beta1.LogPipelineOutput{
+						OTLP: &telemetryv1beta1.OTLPOutput{
+							Endpoint: telemetryv1beta1.ValueType{
+								ValueFrom: &telemetryv1beta1.ValueFromSource{
+									SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 										Name: "name",
 										Key:  "key",
 									},
@@ -110,13 +110,13 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 		},
 		{
 			name: "secretkeyref-requires-name",
-			pipeline: telemetryv1alpha1.LogPipeline{
-				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Output: telemetryv1alpha1.LogPipelineOutput{
-						OTLP: &telemetryv1alpha1.OTLPOutput{
-							Endpoint: telemetryv1alpha1.ValueType{
-								ValueFrom: &telemetryv1alpha1.ValueFromSource{
-									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+			pipeline: telemetryv1beta1.LogPipeline{
+				Spec: telemetryv1beta1.LogPipelineSpec{
+					Output: telemetryv1beta1.LogPipelineOutput{
+						OTLP: &telemetryv1beta1.OTLPOutput{
+							Endpoint: telemetryv1beta1.ValueType{
+								ValueFrom: &telemetryv1beta1.ValueFromSource{
+									SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 										Namespace: "namespace",
 										Key:       "key",
 									},
@@ -192,9 +192,9 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
-					testutils.OTLPClientTLS(&telemetryv1alpha1.OTLPTLS{
-						CA:   &telemetryv1alpha1.ValueType{Value: "myCACert"},
-						Cert: &telemetryv1alpha1.ValueType{Value: "myClientCert"},
+					testutils.OTLPClientTLS(&telemetryv1beta1.OutputTLS{
+						CA:   &telemetryv1beta1.ValueType{Value: "myCACert"},
+						Cert: &telemetryv1beta1.ValueType{Value: "myClientCert"},
 					}),
 				).
 				Build(),
@@ -206,9 +206,9 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
-					testutils.OTLPClientTLS(&telemetryv1alpha1.OTLPTLS{
-						CA:  &telemetryv1alpha1.ValueType{Value: "myCACert"},
-						Key: &telemetryv1alpha1.ValueType{Value: "myKey"},
+					testutils.OTLPClientTLS(&telemetryv1beta1.OutputTLS{
+						CA:  &telemetryv1beta1.ValueType{Value: "myCACert"},
+						Key: &telemetryv1beta1.ValueType{Value: "myKey"},
 					}),
 				).
 				Build(),
@@ -327,8 +327,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithHTTPOutput(
 					testutils.HTTPHost(backendHost),
 					testutils.HTTPPort(backendPort),
-					testutils.HTTPClientTLS(telemetryv1alpha1.FluentBitHTTPOutputTLS{
-						Cert: &telemetryv1alpha1.ValueType{Value: "myClientCert"},
+					testutils.HTTPClientTLS(telemetryv1beta1.OutputTLS{
+						Cert: &telemetryv1beta1.ValueType{Value: "myClientCert"},
 					}),
 				).
 				Build(),
@@ -341,8 +341,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithHTTPOutput(
 					testutils.HTTPHost(backendHost),
 					testutils.HTTPPort(backendPort),
-					testutils.HTTPClientTLS(telemetryv1alpha1.FluentBitHTTPOutputTLS{
-						Key: &telemetryv1alpha1.ValueType{Value: "key"},
+					testutils.HTTPClientTLS(telemetryv1beta1.OutputTLS{
+						Key: &telemetryv1beta1.ValueType{Value: "key"},
 					}),
 				).
 				Build(),
@@ -351,14 +351,14 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 		},
 		{
 			name: "http-output-uri-wrong-pattern",
-			pipeline: telemetryv1alpha1.LogPipeline{
+			pipeline: telemetryv1beta1.LogPipeline{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "http-output-uri-wrong-pattern",
 				},
-				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Output: telemetryv1alpha1.LogPipelineOutput{
-						FluentBitHTTP: &telemetryv1alpha1.FluentBitHTTPOutput{
-							Host: telemetryv1alpha1.ValueType{Value: "example.com"},
+				Spec: telemetryv1beta1.LogPipelineSpec{
+					Output: telemetryv1beta1.LogPipelineOutput{
+						FluentBitHTTP: &telemetryv1beta1.FluentBitHTTPOutput{
+							Host: telemetryv1beta1.ValueType{Value: "example.com"},
 							URI:  "without-leading-slash",
 						},
 					},
@@ -367,80 +367,69 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			errorMsg: "should match '^/.*$'",
 			field:    "spec.output.http.uri",
 		},
-		// application input
+		// Runtime input
 		{
-			name: "application-input-namespaces-exclude-system-not-exclusive",
+			name: "runtime-input-namespaces-exclude-system-not-exclusive",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithApplicationInput(true).
+				WithRuntimeInput(true).
 				WithIncludeNamespaces("ns1").
 				WithExcludeNamespaces("ns2").
 				WithOTLPOutput().
 				Build(),
-			errorMsg: "Only one of 'include', 'exclude' or 'system' can be defined",
-			field:    "spec.input.application.namespaces",
+			errorMsg: "Only one of 'include', 'exclude' can be defined",
+			field:    "spec.input.Runtime.namespaces",
 		},
 		{
-			name: "application-input-namespaces-include-exclude-not-exclusive",
+			name: "runtime-input-containers-not-exclusive",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithApplicationInput(true).
-				WithIncludeNamespaces("ns1").
-				WithSystemNamespaces(true).
-				WithOTLPOutput().
-				Build(),
-			errorMsg: "Only one of 'include', 'exclude' or 'system' can be defined",
-			field:    "spec.input.application.namespaces",
-		},
-		{
-			name: "application-input-containers-not-exclusive",
-			pipeline: testutils.NewLogPipelineBuilder().
-				WithApplicationInput(true).
+				WithRuntimeInput(true).
 				WithIncludeContainers("c1").
 				WithExcludeContainers("c2").
 				WithOTLPOutput().
 				Build(),
 			errorMsg: "Only one of 'include' or 'exclude' can be defined",
-			field:    "spec.input.application.containers",
+			field:    "spec.input.Runtime.containers",
 		},
 		{
-			name: "application-input-namespaces-include-invalid",
+			name: "runtime-input-namespaces-include-invalid",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithApplicationInput(true).
+				WithRuntimeInput(true).
 				WithIncludeNamespaces("*").
 				WithOTLPOutput().
 				Build(),
 			errorMsg: "should match",
-			field:    "spec.input.application.namespaces.include[0]",
+			field:    "spec.input.Runtime.namespaces.include[0]",
 		},
 		{
-			name: "application-input-namespaces-include-too-long",
+			name: "runtime-input-namespaces-include-too-long",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithApplicationInput(true).
+				WithRuntimeInput(true).
 				WithIncludeNamespaces(veryLongString).
 				WithOTLPOutput().
 				Build(),
 			errorMsg: "Too long:",
-			field:    "spec.input.application.namespaces.include[0]",
+			field:    "spec.input.Runtime.namespaces.include[0]",
 			causes:   2,
 		},
 		{
-			name: "application-input-namespaces-exclude-invalid",
+			name: "runtime-input-namespaces-exclude-invalid",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithApplicationInput(true).
+				WithRuntimeInput(true).
 				WithExcludeNamespaces("a*a").
 				WithOTLPOutput().
 				Build(),
 			errorMsg: "should match",
-			field:    "spec.input.application.namespaces.exclude[0]",
+			field:    "spec.input.Runtime.namespaces.exclude[0]",
 		},
 		{
-			name: "application-input-namespaces-exclude-too-long",
+			name: "runtime-input-namespaces-exclude-too-long",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithApplicationInput(true).
+				WithRuntimeInput(true).
 				WithExcludeNamespaces(veryLongString).
 				WithOTLPOutput().
 				Build(),
 			errorMsg: "Too long:",
-			field:    "spec.input.application.namespaces.exclude[0]",
+			field:    "spec.input.Runtime.namespaces.exclude[0]",
 			causes:   2,
 		},
 		// files validation
@@ -474,18 +463,18 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 		},
 		{
 			name: "variables-valuefrom-required",
-			pipeline: telemetryv1alpha1.LogPipeline{
+			pipeline: telemetryv1beta1.LogPipeline{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "variables-valuefrom-required",
 				},
-				Spec: telemetryv1alpha1.LogPipelineSpec{
-					FluentBitVariables: []telemetryv1alpha1.FluentBitVariable{
+				Spec: telemetryv1beta1.LogPipelineSpec{
+					FluentBitVariables: []telemetryv1beta1.FluentBitVariable{
 						{
 							Name: "var1",
 						},
 					},
-					Output: telemetryv1alpha1.LogPipelineOutput{
-						FluentBitHTTP: &telemetryv1alpha1.FluentBitHTTPOutput{},
+					Output: telemetryv1beta1.LogPipelineOutput{
+						FluentBitHTTP: &telemetryv1beta1.FluentBitHTTPOutput{},
 					},
 				},
 			},
@@ -526,31 +515,31 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 		{
 			name: "legacy-drop-labels-with-otlp-output",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithApplicationInput(true).
+				WithRuntimeInput(true).
 				WithDropLabels(false).
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
 				).
 				Build(),
-			errorMsg: "input.application.dropLabels is not supported with otlp output",
+			errorMsg: "input.Runtime.dropLabels is not supported with otlp output",
 			field:    "spec",
 		},
 		{
 			name: "legacy-keep-annotations-with-otlp-output",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithApplicationInput(true).
+				WithRuntimeInput(true).
 				WithKeepAnnotations(false).
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
 				).
 				Build(),
-			errorMsg: "input.application.keepAnnotations is not supported with otlp output",
+			errorMsg: "input.Runtime.keepAnnotations is not supported with otlp output",
 			field:    "spec",
 		},
 		{
 			name: "legacy-files-with-otlp-output",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithApplicationInput(false).
+				WithRuntimeInput(false).
 				WithFile("file1.json", "icke").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
@@ -562,7 +551,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 		{
 			name: "legacy-filters-with-otlp-output",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithApplicationInput(false).
+				WithRuntimeInput(false).
 				WithCustomFilter("name grep").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
@@ -574,7 +563,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 		{
 			name: "legacy-variables-with-otlp-output",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithApplicationInput(false).
+				WithRuntimeInput(false).
 				WithVariable("var1", "secName", "secNs", "secKey").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
@@ -586,8 +575,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 		{
 			name: "legacy-transform-with-http-output",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithApplicationInput(false).
-				WithTransform(telemetryv1alpha1.TransformSpec{
+				WithRuntimeInput(false).
+				WithTransform(telemetryv1beta1.TransformSpec{
 					Statements: []string{"set(attributes[\"log.level\"], \"error\")", "set(body, \"transformed1\")"},
 				}).
 				WithHTTPOutput().
@@ -598,8 +587,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 		{
 			name: "legacy-filter-with-http-output",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithApplicationInput(false).
-				WithFilter(telemetryv1alpha1.FilterSpec{
+				WithRuntimeInput(false).
+				WithFilter(telemetryv1beta1.FilterSpec{
 					Conditions: []string{"isMatch(log.attributes[\"log.level\"], \"error\"))"},
 				}).
 				WithHTTPOutput().

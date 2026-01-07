@@ -7,8 +7,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -25,14 +25,14 @@ import (
 func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 	tests := []struct {
 		label               string
-		inputBuilder        func(includeNs string) telemetryv1alpha1.LogPipelineInput
+		inputBuilder        func(includeNs string) telemetryv1beta1.LogPipelineInput
 		logGeneratorBuilder func(ns string) client.Object
 		expectAgent         bool
 	}{
 		{
 			label: suite.LabelLogAgent,
-			inputBuilder: func(includeNs string) telemetryv1alpha1.LogPipelineInput {
-				return testutils.BuildLogPipelineApplicationInput(testutils.ExtIncludeNamespaces(includeNs))
+			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
+				return testutils.BuildLogPipelineRuntimeInput(testutils.ExtIncludeNamespaces(includeNs))
 			},
 			logGeneratorBuilder: func(ns string) client.Object {
 				return stdoutloggen.NewDeployment(ns).K8sObject()
@@ -41,7 +41,7 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 		},
 		{
 			label: suite.LabelLogGateway,
-			inputBuilder: func(includeNs string) telemetryv1alpha1.LogPipelineInput {
+			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
 				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
 			logGeneratorBuilder: func(ns string) client.Object {
@@ -103,7 +103,7 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 				Reason: conditions.ReasonTLSCertificateAboutToExpire,
 			})
 
-			assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+			assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
 			assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeLogComponentsHealthy,
 				Status: metav1.ConditionTrue,
@@ -164,7 +164,7 @@ func TestMTLSAboutToExpireCert_FluentBit(t *testing.T) {
 		Reason: conditions.ReasonTLSCertificateAboutToExpire,
 	})
 
-	assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+	assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
 	assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
 		Type:   conditions.TypeLogComponentsHealthy,
 		Status: metav1.ConditionTrue,

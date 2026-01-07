@@ -69,7 +69,7 @@ func TestTelemetryLogs(t *testing.T) {
 	logPipeline := testutils.NewLogPipelineBuilder().
 		WithName(logPipelineName).
 		WithOTLPInput(true).
-		WithApplicationInput(true).
+		WithRuntimeInput(true).
 		WithOTLPOutput(testutils.OTLPEndpoint(logBackend.EndpointHTTP())).
 		Build()
 

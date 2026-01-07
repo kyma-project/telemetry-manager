@@ -9,7 +9,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -22,12 +22,12 @@ import (
 func TestResources_OTel(t *testing.T) {
 	tests := []struct {
 		label     string
-		input     telemetryv1alpha1.LogPipelineInput
+		input     telemetryv1beta1.LogPipelineInput
 		resources []assert.Resource
 	}{
 		{
 			label: suite.LabelLogAgent,
-			input: testutils.BuildLogPipelineApplicationInput(),
+			input: testutils.BuildLogPipelineRuntimeInput(),
 			resources: []assert.Resource{
 				assert.NewResource(&appsv1.DaemonSet{}, kitkyma.LogAgentName),
 				assert.NewResource(&corev1.ServiceAccount{}, kitkyma.LogAgentServiceAccount),

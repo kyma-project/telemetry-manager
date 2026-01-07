@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -44,19 +44,19 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	for i := range maxNumberOfLogPipelines {
 		pipelineName := fmt.Sprintf("%s-%d", pipelineBase, i)
 		// every other pipeline will have an HTTP output
-		var pipeline telemetryv1alpha1.LogPipeline
+		var pipeline telemetryv1beta1.LogPipeline
 		if i%2 == 0 {
 			// FluentBit pipeline
 			pipeline = testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
-				WithApplicationInput(true).
+				WithRuntimeInput(true).
 				WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 				Build()
 		} else {
 			// OTel pipeline
 			pipeline = testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
-				WithInput(testutils.BuildLogPipelineApplicationInput()).
+				WithInput(testutils.BuildLogPipelineRuntimeInput()).
 				WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 				Build()
 		}
@@ -66,13 +66,13 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 
 	additionalFBPipeline := testutils.NewLogPipelineBuilder().
 		WithName(additionalFBPipelineName).
-		WithApplicationInput(true).
+		WithRuntimeInput(true).
 		WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 		Build()
 
 	additionalOTelPipeline := testutils.NewLogPipelineBuilder().
 		WithName(additionalOTelPipelineName).
-		WithInput(testutils.BuildLogPipelineApplicationInput()).
+		WithInput(testutils.BuildLogPipelineRuntimeInput()).
 		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
@@ -233,7 +233,7 @@ func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
 		pipelineName := fmt.Sprintf("%s-%d", pipelineBase, i)
 		pipeline := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
-			WithApplicationInput(true).
+			WithRuntimeInput(true).
 			WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 			Build()
 		pipelines = append(pipelines, &pipeline)
@@ -241,7 +241,7 @@ func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
 
 	additionalPipeline := testutils.NewLogPipelineBuilder().
 		WithName(additionalPipelineName).
-		WithApplicationInput(true).
+		WithRuntimeInput(true).
 		WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 		Build()
 
