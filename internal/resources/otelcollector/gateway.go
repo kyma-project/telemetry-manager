@@ -308,13 +308,13 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, o
 	containerOpts = append(containerOpts,
 		commonresources.WithResources(resources),
 		commonresources.WithGoMemLimitEnvVar(resources.Limits[corev1.ResourceMemory]),
-		commonresources.WithClusterTrustBundVolumeMount(gad.globals.ClusterTrustBundleName()),
+		commonresources.WithClusterTrustBundleVolumeMount(gad.globals.ClusterTrustBundleName()),
 	)
 
 	podOptions := make([]commonresources.PodSpecOption, 0)
 	podOptions = append(podOptions, gad.podOpts...)
 	podOptions = append(podOptions, commonresources.WithImagePullSecretName(gad.globals.ImagePullSecretName()),
-		commonresources.WithClusterTrustBundVolume(gad.globals.ClusterTrustBundleName()),
+		commonresources.WithClusterTrustBundleVolume(gad.globals.ClusterTrustBundleName()),
 	)
 
 	podSpec := makePodSpec(

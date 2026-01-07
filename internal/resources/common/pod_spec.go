@@ -301,7 +301,7 @@ func MakeResourceRequirements(memoryLimit, memoryRequest, cpuRequest resource.Qu
 	}
 }
 
-func WithClusterTrustBundVolume(clusterTrustBundleName string) PodSpecOption {
+func WithClusterTrustBundleVolume(clusterTrustBundleName string) PodSpecOption {
 	return func(pod *corev1.PodSpec) {
 		if clusterTrustBundleName != "" {
 			pod.Volumes = append(pod.Volumes, corev1.Volume{
@@ -312,7 +312,7 @@ func WithClusterTrustBundVolume(clusterTrustBundleName string) PodSpecOption {
 							{
 								ClusterTrustBundle: &corev1.ClusterTrustBundleProjection{
 									Name: ptr.To(clusterTrustBundleName),
-									Path: ClusterTrustBundFileName,
+									Path: ClusterTrustBundleFileName,
 								},
 							},
 						},
@@ -323,12 +323,12 @@ func WithClusterTrustBundVolume(clusterTrustBundleName string) PodSpecOption {
 	}
 }
 
-func WithClusterTrustBundVolumeMount(clusterTrustBundleName string) ContainerOption {
+func WithClusterTrustBundleVolumeMount(clusterTrustBundleName string) ContainerOption {
 	return func(c *corev1.Container) {
 		if clusterTrustBundleName != "" {
 			c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{
 				Name:      ClusterTrustBundleVolumeName,
-				MountPath: ClusterTrustBundVolumePath,
+				MountPath: ClusterTrustBundleVolumePath,
 				ReadOnly:  true,
 			})
 		}

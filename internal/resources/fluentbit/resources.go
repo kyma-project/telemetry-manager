@@ -353,7 +353,7 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 					commonresources.WithPriorityClass(aad.priorityClassName),
 					commonresources.WithTolerations(commonresources.CriticalDaemonSetTolerations),
 					commonresources.WithVolumes(aad.fluentBitVolumes()),
-					commonresources.WithClusterTrustBundVolume(aad.globals.ClusterTrustBundleName()),
+					commonresources.WithClusterTrustBundleVolume(aad.globals.ClusterTrustBundleName()),
 					commonresources.WithImagePullSecretName(aad.globals.ImagePullSecretName()),
 					commonresources.WithContainer("fluent-bit", aad.fluentBitImage,
 						commonresources.WithEnvVarsFromSecret(fmt.Sprintf("%s-env", LogAgentName)),
@@ -363,7 +363,7 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 						commonresources.WithProbes(aad.fluentBitLivenessProbe(), aad.fluentBitReadinessProbe()),
 						commonresources.WithResources(fluentBitResources),
 						commonresources.WithVolumeMounts(aad.fluentBitVolumeMounts()),
-						commonresources.WithClusterTrustBundVolumeMount(aad.globals.ClusterTrustBundleName()),
+						commonresources.WithClusterTrustBundleVolumeMount(aad.globals.ClusterTrustBundleName()),
 					),
 					commonresources.WithContainer(exporterContainerName, aad.exporterImage,
 						commonresources.WithArgs([]string{
