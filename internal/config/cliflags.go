@@ -12,8 +12,10 @@ func (m *CLIMapFlag) String() string {
 }
 
 func (m *CLIMapFlag) Set(s string) error {
-	parts := strings.SplitN(s, "=", 2)
-	if len(parts) != 2 {
+	const sliceCount = 2
+
+	parts := strings.SplitN(s, "=", sliceCount)
+	if len(parts) != sliceCount {
 		return fmt.Errorf("invalid format %q, expected key=value", s)
 	}
 
@@ -29,5 +31,6 @@ func (m *CLIMapFlag) Set(s string) error {
 	}
 
 	(*m)[strings.TrimSpace(key)] = strings.TrimSpace(val)
+
 	return nil
 }

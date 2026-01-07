@@ -47,7 +47,10 @@ func TestWhitespaceAroundEntriesIsTrimmed(t *testing.T) {
 
 	err := m.Set(" key1 = value1  ")
 	require.NoError(t, err)
+
 	err = m.Set(" key2 = value2 ")
+	require.NoError(t, err)
+
 	require.Equal(t, "value1", m["key1"])
 	require.Equal(t, "value2", m["key2"])
 }
