@@ -87,7 +87,6 @@ webhooks:
     scope: '*'
   sideEffects: None
   timeoutSeconds: 15
-  {{- if .Values.experimental.enabled }}
 - admissionReviewVersions:
     - v1beta1
     - v1
@@ -165,4 +164,3 @@ webhooks:
     scope: '*'
   sideEffects: None
   timeoutSeconds: 15
-  {{- end }}
