@@ -59,4 +59,4 @@ additionalMetadata:
   labels:
   # custom-label: my-value
   annotations:
-  # custom-resource-annotation: my-value
+# custom-resource-annotation: my-value
