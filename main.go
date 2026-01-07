@@ -53,6 +53,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/controllers/operator"
 	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/build"
+	"github.com/kyma-project/telemetry-manager/internal/cliflags"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/featureflags"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
@@ -83,8 +84,8 @@ var (
 	normalPriorityClassName   string
 	clusterTrustBundleName    string
 	imagePullSecretName       string
-	additionalLabels          config.CLIMapFlag
-	additionalAnnotations     config.CLIMapFlag
+	additionalLabels          cliflags.CLIMapFlag
+	additionalAnnotations     cliflags.CLIMapFlag
 )
 
 const (
