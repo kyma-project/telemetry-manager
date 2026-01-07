@@ -376,7 +376,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithExcludeNamespaces("ns2").
 				WithOTLPOutput().
 				Build(),
-			errorMsg: "Only one of 'include', 'exclude' can be defined",
+			errorMsg: "Only one of 'include' or 'exclude' can be defined",
 			field:    "spec.input.runtime.namespaces",
 		},
 		{
@@ -388,7 +388,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithOTLPOutput().
 				Build(),
 			errorMsg: "Only one of 'include' or 'exclude' can be defined",
-			field:    "spec.input.Runtime.containers",
+			field:    "spec.input.runtime.containers",
 		},
 		{
 			name: "runtime-input-namespaces-include-invalid",
