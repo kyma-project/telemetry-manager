@@ -7,7 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -34,7 +34,7 @@ func TestOutage(t *testing.T) {
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
 					WithName(suite.LabelSelfMonitorLogAgentPrefix).
-					WithInput(testutils.BuildLogPipelineApplicationInput(testutils.ExtIncludeNamespaces(includeNs))).
+					WithInput(testutils.BuildLogPipelineRuntimeInput(testutils.ExtIncludeNamespaces(includeNs))).
 					WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 					Build()
 
@@ -52,7 +52,7 @@ func TestOutage(t *testing.T) {
 					{Reason: conditions.ReasonSelfMonAgentAllDataDropped, Status: metav1.ConditionFalse},
 				})
 
-				assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+				assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
 				assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
 					Type:   conditions.TypeLogComponentsHealthy,
 					Status: metav1.ConditionFalse,
@@ -87,7 +87,7 @@ func TestOutage(t *testing.T) {
 					{Reason: conditions.ReasonSelfMonGatewayAllDataDropped, Status: metav1.ConditionFalse},
 				})
 
-				assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+				assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
 				assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
 					Type:   conditions.TypeLogComponentsHealthy,
 					Status: metav1.ConditionFalse,
@@ -100,7 +100,7 @@ func TestOutage(t *testing.T) {
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
 					WithName(suite.LabelSelfMonitorFluentBitPrefix).
-					WithApplicationInput(true, testutils.ExtIncludeNamespaces(includeNs)).
+					WithRuntimeInput(true, testutils.ExtIncludeNamespaces(includeNs)).
 					WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 					Build()
 
@@ -118,7 +118,7 @@ func TestOutage(t *testing.T) {
 					{Reason: conditions.ReasonSelfMonAgentAllDataDropped, Status: metav1.ConditionFalse},
 				})
 
-				assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+				assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
 				assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
 					Type:   conditions.TypeLogComponentsHealthy,
 					Status: metav1.ConditionFalse,
@@ -155,7 +155,7 @@ func TestOutage(t *testing.T) {
 					{Reason: conditions.ReasonSelfMonGatewayAllDataDropped, Status: metav1.ConditionFalse},
 				})
 
-				assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+				assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
 				assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
 					Type:   conditions.TypeMetricComponentsHealthy,
 					Status: metav1.ConditionFalse,
@@ -191,7 +191,7 @@ func TestOutage(t *testing.T) {
 					{Reason: conditions.ReasonSelfMonAgentAllDataDropped, Status: metav1.ConditionFalse},
 				})
 
-				assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+				assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
 				assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
 					Type:   conditions.TypeMetricComponentsHealthy,
 					Status: metav1.ConditionFalse,
@@ -226,7 +226,7 @@ func TestOutage(t *testing.T) {
 					{Reason: conditions.ReasonSelfMonGatewayAllDataDropped, Status: metav1.ConditionFalse},
 				})
 
-				assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+				assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
 				assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
 					Type:   conditions.TypeTraceComponentsHealthy,
 					Status: metav1.ConditionFalse,
