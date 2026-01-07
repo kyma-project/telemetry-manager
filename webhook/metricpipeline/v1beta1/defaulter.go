@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -46,7 +47,7 @@ func (md defaulter) Default(ctx context.Context, obj runtime.Object) error {
 }
 
 func (md defaulter) applyDefaults(pipeline *telemetryv1beta1.MetricPipeline) {
-	if prometheusInputEnabled(pipeline) {
+	if metricpipelineutils.IsPrometheusInputEnabled(pipeline.Spec.Input) {
 		if pipeline.Spec.Input.Prometheus.Namespaces == nil {
 			pipeline.Spec.Input.Prometheus.Namespaces = &telemetryv1beta1.NamespaceSelector{
 				Exclude: md.ExcludeNamespaces,
@@ -60,7 +61,7 @@ func (md defaulter) applyDefaults(pipeline *telemetryv1beta1.MetricPipeline) {
 		}
 	}
 
-	if istioInputEnabled(pipeline) {
+	if metricpipelineutils.IsIstioInputEnabled(pipeline.Spec.Input) {
 		if pipeline.Spec.Input.Istio.Namespaces == nil {
 			pipeline.Spec.Input.Istio.Namespaces = &telemetryv1beta1.NamespaceSelector{
 				Exclude: md.ExcludeNamespaces,
@@ -80,7 +81,7 @@ func (md defaulter) applyDefaults(pipeline *telemetryv1beta1.MetricPipeline) {
 		}
 	}
 
-	if runtimeInputEnabled(pipeline) {
+	if metricpipelineutils.IsRuntimeInputEnabled(pipeline.Spec.Input) {
 		md.applyRuntimeInputResourceDefaults(pipeline)
 
 		if pipeline.Spec.Input.Runtime.Namespaces == nil {
