@@ -62,7 +62,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 					},
 				},
 			},
-			errorMsg: "Only one of 'value' or 'valueFrom' can be set",
+			errorMsg: "Exactly one of 'value' or 'valueFrom' must be set",
 			field:    "spec.output.otlp.endpoint",
 		},
 		{
