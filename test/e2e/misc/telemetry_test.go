@@ -163,7 +163,7 @@ func assertValidatingWebhookConfiguration() {
 		var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
 		g.Expect(suite.K8sClient.Get(suite.Ctx, client.ObjectKey{Name: kitkyma.ValidatingWebhookName}, &validatingWebhookConfiguration)).Should(Succeed())
 
-		g.Expect(validatingWebhookConfiguration.Webhooks).Should(HaveLen(3))
+		g.Expect(validatingWebhookConfiguration.Webhooks).Should(HaveLen(6))
 
 		assertWebhook(g,
 			findWebhook(validatingWebhookConfiguration.Webhooks, "validating-logpipelines.kyma-project.io"),
