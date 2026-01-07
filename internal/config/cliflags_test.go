@@ -12,24 +12,18 @@ func TestEmptyFlagValueReturnsError(t *testing.T) {
 
 	err := m.Set("")
 	require.Error(t, err)
-	require.Equal(t, "empty flag value", err.Error())
+	require.Equal(t, "invalid format \"\", expected key=value", err.Error())
 }
 
 func TestValidFlagParsesCorrectly(t *testing.T) {
 	var m CLIMapFlag
 
-	err := m.Set("key1=value1,key2=value2")
+	err := m.Set("key1=value1")
 	require.NoError(t, err)
 	require.Equal(t, "value1", m["key1"])
+	err = m.Set("key2=value2")
+	require.NoError(t, err)
 	require.Equal(t, "value2", m["key2"])
-}
-
-func TestInvalidEntryWithoutEqualsReturnsError(t *testing.T) {
-	var m CLIMapFlag
-
-	err := m.Set("key1=value1,key2")
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "invalid entry")
 }
 
 func TestEmptyKeyReturnsError(t *testing.T) {
@@ -51,8 +45,9 @@ func TestEmptyValueIsAllowed(t *testing.T) {
 func TestWhitespaceAroundEntriesIsTrimmed(t *testing.T) {
 	var m CLIMapFlag
 
-	err := m.Set(" key1 = value1 , key2 = value2 ")
+	err := m.Set(" key1 = value1  ")
 	require.NoError(t, err)
+	err = m.Set(" key2 = value2 ")
 	require.Equal(t, "value1", m["key1"])
 	require.Equal(t, "value2", m["key2"])
 }
@@ -70,28 +65,4 @@ func TestCLIMapFlagStringReturnsContents(t *testing.T) {
 	s := m.String()
 	require.True(t, strings.Contains(s, "a:1"))
 	require.True(t, strings.Contains(s, "b:2"))
-}
-
-func TestSetIgnoresEmptyEntries(t *testing.T) {
-	var m CLIMapFlag
-
-	err := m.Set("key1=value1,,key2=value2,")
-	require.NoError(t, err)
-	require.Equal(t, "value1", m["key1"])
-	require.Equal(t, "value2", m["key2"])
-}
-
-func TestSetReinitializesMap(t *testing.T) {
-	m := CLIMapFlag{"old": "x"}
-	err := m.Set("new=1")
-	require.NoError(t, err)
-	require.Equal(t, "1", m["new"])
-	require.Nil(t, func() any {
-		_, ok := m["old"]
-		if ok {
-			return "exists"
-		}
-
-		return nil
-	}())
 }

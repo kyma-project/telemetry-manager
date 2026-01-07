@@ -333,8 +333,8 @@ func parseFlags() {
 	flag.StringVar(&normalPriorityClassName, "normal-priority-class-name", "", "Normal priority class name used by managed Deployments")
 	flag.StringVar(&clusterTrustBundleName, "cluster-trust-bundle-name", "", "The name ClusterTrustBundle resource")
 	flag.StringVar(&imagePullSecretName, "image-pull-secret-name", "", "The image pull secret name to use for pulling images of all created workloads (agents, gateways, self-monitor)")
-	flag.Var(&additionalLabels, "additional-labels", "Additional labels to add to all created resources in key=value format")
-	flag.Var(&additionalAnnotations, "additional-annotations", "Additional annotations to add to all created resources in key=value format")
+	flag.Var(&additionalLabels, "additional-label", "Additional label to add to all created resources in key=value format")
+	flag.Var(&additionalAnnotations, "additional-annotation", "Additional annotation to add to all created resources in key=value format")
 
 	flag.Parse()
 }

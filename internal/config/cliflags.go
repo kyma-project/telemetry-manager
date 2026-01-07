@@ -12,34 +12,22 @@ func (m *CLIMapFlag) String() string {
 }
 
 func (m *CLIMapFlag) Set(s string) error {
-	*m = make(CLIMapFlag)
-
-	if s == "" {
-		return fmt.Errorf("empty flag value")
+	parts := strings.SplitN(s, "=", 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("invalid format %q, expected key=value", s)
 	}
 
-	entries := strings.SplitSeq(s, ",")
-	for e := range entries {
-		e = strings.TrimSpace(e)
-		if e == "" {
-			continue
-		}
+	key := parts[0]
+	val := parts[1]
 
-		sliceCount := 2
-
-		parts := strings.SplitN(e, "=", sliceCount)
-		if len(parts) != sliceCount {
-			return fmt.Errorf("invalid entry %q, expected key=value", e)
-		}
-
-		key := strings.TrimSpace(parts[0])
-		if key == "" {
-			return fmt.Errorf("empty key in %q", e)
-		}
-
-		value := strings.TrimSpace(parts[1])
-		(*m)[key] = value
+	if strings.TrimSpace(key) == "" {
+		return fmt.Errorf("empty key in %q", s)
 	}
 
+	if *m == nil {
+		*m = make(map[string]string)
+	}
+
+	(*m)[strings.TrimSpace(key)] = strings.TrimSpace(val)
 	return nil
 }

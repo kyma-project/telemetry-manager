@@ -54,10 +54,14 @@ spec:
         - --enable-v1beta1-log-pipelines=true
         {{- end }}
         {{- if not (empty .Values.additionalMetadata.labels) }}
-        - --additional-labels={{ $labelresult }}
+        {{- range $k, $v := .Values.additionalMetadata.labels }}
+        - --additional-label={{ (printf "%s=%s" $k $v) }}
+        {{- end }}
         {{- end }}
         {{- if not (empty .Values.additionalMetadata.annotations) }}
-        - --additional-annotations={{ $annotationresult}}
+        {{- range $k, $v := .Values.additionalMetadata.annotations }}
+        - --additional-annotation={{ (printf "%s=%s" $k $v) }}
+        {{- end }}
         {{- end }}
         {{- if .Values.global.imagePullSecret.enabled }}
         - --image-pull-secret-name={{ .Values.global.imagePullSecret.name }}
