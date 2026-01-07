@@ -6,17 +6,17 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 )
 
-type buildComponentFunc = common.BuildComponentFunc[*telemetryv1alpha1.MetricPipeline]
+type buildComponentFunc = common.BuildComponentFunc[*telemetryv1beta1.MetricPipeline]
 
 type Builder struct {
-	common.ComponentBuilder[*telemetryv1alpha1.MetricPipeline]
+	common.ComponentBuilder[*telemetryv1beta1.MetricPipeline]
 
 	Reader client.Reader
 }
@@ -25,10 +25,10 @@ type BuildOptions struct {
 	Cluster                     common.ClusterOptions
 	GatewayNamespace            string
 	InstrumentationScopeVersion string
-	Enrichments                 *operatorv1alpha1.EnrichmentSpec
+	Enrichments                 *operatorv1beta1.EnrichmentSpec
 }
 
-func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) (*common.Config, common.EnvVars, error) {
+func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.MetricPipeline, opts BuildOptions) (*common.Config, common.EnvVars, error) {
 	b.Config = common.NewConfig()
 	b.AddExtension(common.ComponentIDK8sLeaderElectorExtension,
 		common.K8sLeaderElectorExtension{
@@ -110,7 +110,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 func (b *Builder) addOTLPReceiver() buildComponentFunc {
 	return b.AddReceiver(
 		b.StaticComponentID(common.ComponentIDOTLPReceiver),
-		func(mp *telemetryv1alpha1.MetricPipeline) any {
+		func(mp *telemetryv1beta1.MetricPipeline) any {
 			return &common.OTLPReceiver{
 				Protocols: common.ReceiverProtocols{
 					HTTP: common.Endpoint{
@@ -128,7 +128,7 @@ func (b *Builder) addOTLPReceiver() buildComponentFunc {
 func (b *Builder) addKymaStatsReceiver() buildComponentFunc {
 	return b.AddReceiver(
 		b.StaticComponentID(common.ComponentIDKymaStatsReceiver),
-		func(mp *telemetryv1alpha1.MetricPipeline) any {
+		func(mp *telemetryv1beta1.MetricPipeline) any {
 			return &KymaStatsReceiver{
 				AuthType:           "serviceAccount",
 				K8sLeaderElector:   "k8s_leader_elector",
@@ -147,7 +147,7 @@ func (b *Builder) addKymaStatsReceiver() buildComponentFunc {
 func (b *Builder) addSetKymaInputNameProcessor(inputSource common.InputSourceType) buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.InputName[inputSource]),
-		func(mp *telemetryv1alpha1.MetricPipeline) any {
+		func(mp *telemetryv1beta1.MetricPipeline) any {
 			transformStatements := common.KymaInputNameProcessorStatements(inputSource)
 			return common.MetricTransformProcessorConfig(transformStatements)
 		},
@@ -158,7 +158,7 @@ func (b *Builder) addSetKymaInputNameProcessor(inputSource common.InputSourceTyp
 func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDMemoryLimiterProcessor),
-		func(lp *telemetryv1alpha1.MetricPipeline) any {
+		func(lp *telemetryv1beta1.MetricPipeline) any {
 			return &common.MemoryLimiter{
 				CheckInterval:        "1s",
 				LimitPercentage:      75,
@@ -171,7 +171,7 @@ func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
 func (b *Builder) addSetInstrumentationScopeToKymaProcessor(opts BuildOptions) buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDSetInstrumentationScopeKymaProcessor),
-		func(mp *telemetryv1alpha1.MetricPipeline) any {
+		func(mp *telemetryv1beta1.MetricPipeline) any {
 			return common.InstrumentationScopeProcessorConfig(opts.InstrumentationScopeVersion, common.InputSourceKyma)
 		},
 	)
@@ -180,7 +180,7 @@ func (b *Builder) addSetInstrumentationScopeToKymaProcessor(opts BuildOptions) b
 func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDK8sAttributesProcessor),
-		func(mp *telemetryv1alpha1.MetricPipeline) any {
+		func(mp *telemetryv1beta1.MetricPipeline) any {
 			return common.K8sAttributesProcessorConfig(opts.Enrichments)
 		},
 	)
@@ -189,7 +189,7 @@ func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFun
 func (b *Builder) addServiceEnrichmentProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDServiceEnrichmentProcessor),
-		func(mp *telemetryv1alpha1.MetricPipeline) any {
+		func(mp *telemetryv1beta1.MetricPipeline) any {
 			return common.ResolveServiceNameConfig()
 		},
 	)
@@ -200,7 +200,7 @@ func (b *Builder) addServiceEnrichmentProcessor() buildComponentFunc {
 func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDInsertClusterAttributesProcessor),
-		func(mp *telemetryv1alpha1.MetricPipeline) any {
+		func(mp *telemetryv1beta1.MetricPipeline) any {
 			transformStatements := common.InsertClusterAttributesProcessorStatements(opts.Cluster)
 			return common.MetricTransformProcessorConfig(transformStatements)
 		},
@@ -210,7 +210,7 @@ func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildCo
 func (b *Builder) addExporterForEnrichmentForwarder() buildComponentFunc {
 	return b.AddExporter(
 		b.StaticComponentID(common.ComponentIDEnrichmentConnector),
-		func(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline) (any, common.EnvVars, error) {
+		func(ctx context.Context, mp *telemetryv1beta1.MetricPipeline) (any, common.EnvVars, error) {
 			return &common.ForwardConnector{}, nil, nil
 		},
 	)
@@ -219,7 +219,7 @@ func (b *Builder) addExporterForEnrichmentForwarder() buildComponentFunc {
 func (b *Builder) addExporterForInputForwarder() buildComponentFunc {
 	return b.AddExporter(
 		b.StaticComponentID(common.ComponentIDInputConnector),
-		func(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline) (any, common.EnvVars, error) {
+		func(ctx context.Context, mp *telemetryv1beta1.MetricPipeline) (any, common.EnvVars, error) {
 			return &common.ForwardConnector{}, nil, nil
 		},
 	)
@@ -232,7 +232,7 @@ func (b *Builder) addExporterForInputForwarder() buildComponentFunc {
 func (b *Builder) addReceiverForEnrichmentForwarder() buildComponentFunc {
 	return b.AddReceiver(
 		b.StaticComponentID(common.ComponentIDEnrichmentConnector),
-		func(mp *telemetryv1alpha1.MetricPipeline) any {
+		func(mp *telemetryv1beta1.MetricPipeline) any {
 			return &common.ForwardConnector{}
 		},
 	)
@@ -241,7 +241,7 @@ func (b *Builder) addReceiverForEnrichmentForwarder() buildComponentFunc {
 func (b *Builder) addReceiverForInputForwarder() buildComponentFunc {
 	return b.AddReceiver(
 		b.StaticComponentID(common.ComponentIDInputConnector),
-		func(mp *telemetryv1alpha1.MetricPipeline) any {
+		func(mp *telemetryv1beta1.MetricPipeline) any {
 			return &common.ForwardConnector{}
 		},
 	)
@@ -253,7 +253,7 @@ func (b *Builder) addReceiverForInputForwarder() buildComponentFunc {
 func (b *Builder) addDropOTLPIfInputDisabledProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDDropIfInputSourceOTLPProcessor),
-		func(mp *telemetryv1alpha1.MetricPipeline) any {
+		func(mp *telemetryv1beta1.MetricPipeline) any {
 			if sharedtypesutils.IsOTLPInputEnabled(mp.Spec.Input.OTLP) {
 				return nil
 			}
@@ -269,10 +269,10 @@ func (b *Builder) addDropOTLPIfInputDisabledProcessor() buildComponentFunc {
 
 func (b *Builder) addOTLPNamespaceFilterProcessor() buildComponentFunc {
 	return b.AddProcessor(
-		func(mp *telemetryv1alpha1.MetricPipeline) string {
+		func(mp *telemetryv1beta1.MetricPipeline) string {
 			return formatOTLPNamespaceFilterID(mp.Name)
 		},
-		func(mp *telemetryv1alpha1.MetricPipeline) any {
+		func(mp *telemetryv1beta1.MetricPipeline) any {
 			input := mp.Spec.Input
 			if !sharedtypesutils.IsOTLPInputEnabled(input.OTLP) || input.OTLP == nil || !shouldFilterByNamespace(input.OTLP.Namespaces) {
 				return nil
@@ -286,7 +286,7 @@ func (b *Builder) addOTLPNamespaceFilterProcessor() buildComponentFunc {
 func (b *Builder) addDropKymaAttributesProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDDropKymaAttributesProcessor),
-		func(mp *telemetryv1alpha1.MetricPipeline) any {
+		func(mp *telemetryv1beta1.MetricPipeline) any {
 			transformStatements := common.DropKymaAttributesProcessorStatements()
 			return common.MetricTransformProcessorConfig(transformStatements)
 		},
@@ -296,7 +296,7 @@ func (b *Builder) addDropKymaAttributesProcessor() buildComponentFunc {
 func (b *Builder) addUserDefinedTransformProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		formatUserDefinedTransformProcessorID,
-		func(mp *telemetryv1alpha1.MetricPipeline) any {
+		func(mp *telemetryv1beta1.MetricPipeline) any {
 			if len(mp.Spec.Transforms) == 0 {
 				return nil // No transforms, no processor needed
 			}
@@ -311,7 +311,7 @@ func (b *Builder) addUserDefinedTransformProcessor() buildComponentFunc {
 func (b *Builder) addUserDefinedFilterProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		formatUserDefinedFilterProcessorID,
-		func(mp *telemetryv1alpha1.MetricPipeline) any {
+		func(mp *telemetryv1beta1.MetricPipeline) any {
 			if mp.Spec.Filters == nil {
 				return nil // No filters, no processor needed
 			}
@@ -327,7 +327,7 @@ func (b *Builder) addUserDefinedFilterProcessor() buildComponentFunc {
 func (b *Builder) addBatchProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDBatchProcessor),
-		func(mp *telemetryv1alpha1.MetricPipeline) any {
+		func(mp *telemetryv1beta1.MetricPipeline) any {
 			return &common.BatchProcessor{
 				SendBatchSize:    1024,
 				Timeout:          "10s",
@@ -340,7 +340,7 @@ func (b *Builder) addBatchProcessor() buildComponentFunc {
 func (b *Builder) addOTLPExporter(queueSize int) buildComponentFunc {
 	return b.AddExporter(
 		formatOTLPExporterID,
-		func(ctx context.Context, mp *telemetryv1alpha1.MetricPipeline) (any, common.EnvVars, error) {
+		func(ctx context.Context, mp *telemetryv1beta1.MetricPipeline) (any, common.EnvVars, error) {
 			otlpExporterBuilder := common.NewOTLPExporterConfigBuilder(
 				b.Reader,
 				mp.Spec.Output.OTLP,
@@ -376,11 +376,11 @@ func (b *Builder) addOAuth2Extension(ctx context.Context, pipeline *telemetryv1a
 
 // Helper functions
 
-func shouldFilterByNamespace(namespaceSelector *telemetryv1alpha1.NamespaceSelector) bool {
+func shouldFilterByNamespace(namespaceSelector *telemetryv1beta1.NamespaceSelector) bool {
 	return namespaceSelector != nil && (len(namespaceSelector.Include) > 0 || len(namespaceSelector.Exclude) > 0)
 }
 
-func filterByNamespaceProcessorConfig(namespaceSelector *telemetryv1alpha1.NamespaceSelector) *common.FilterProcessor {
+func filterByNamespaceProcessorConfig(namespaceSelector *telemetryv1beta1.NamespaceSelector) *common.FilterProcessor {
 	var filterExpressions []string
 
 	notFromKymaStatsReceiver := common.Not(common.KymaInputNameEquals(common.InputSourceKyma))
@@ -419,19 +419,19 @@ func formatOTLPNamespaceFilterID(pipelineName string) string {
 	return fmt.Sprintf(common.ComponentIDNamespacePerInputFilterProcessor, pipelineName, common.InputSourceOTLP)
 }
 
-func formatOTLPExporterID(pipeline *telemetryv1alpha1.MetricPipeline) string {
+func formatOTLPExporterID(pipeline *telemetryv1beta1.MetricPipeline) string {
 	return common.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)
 }
 
-func formatUserDefinedTransformProcessorID(mp *telemetryv1alpha1.MetricPipeline) string {
+func formatUserDefinedTransformProcessorID(mp *telemetryv1beta1.MetricPipeline) string {
 	return fmt.Sprintf(common.ComponentIDUserDefinedTransformProcessor, mp.Name)
 }
 
-func formatUserDefinedFilterProcessorID(mp *telemetryv1alpha1.MetricPipeline) string {
+func formatUserDefinedFilterProcessorID(mp *telemetryv1beta1.MetricPipeline) string {
 	return fmt.Sprintf(common.ComponentIDUserDefinedFilterProcessor, mp.Name)
 }
 
-func formatOutputServicePipelineID(mp *telemetryv1alpha1.MetricPipeline) string {
+func formatOutputServicePipelineID(mp *telemetryv1beta1.MetricPipeline) string {
 	return fmt.Sprintf("metrics/%s-output", mp.Name)
 }
 

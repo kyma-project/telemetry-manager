@@ -7,7 +7,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 )
 
@@ -17,7 +17,7 @@ import (
 
 type OTLPExporterConfigBuilder struct {
 	reader       client.Reader
-	otlpOutput   *telemetryv1alpha1.OTLPOutput
+	otlpOutput   *telemetryv1beta1.OTLPOutput
 	pipelineName string
 	queueSize    int
 	signalType   string
@@ -25,7 +25,7 @@ type OTLPExporterConfigBuilder struct {
 
 type EnvVars map[string][]byte
 
-func NewOTLPExporterConfigBuilder(reader client.Reader, otlpOutput *telemetryv1alpha1.OTLPOutput, pipelineName string, queueSize int, signalType string) *OTLPExporterConfigBuilder {
+func NewOTLPExporterConfigBuilder(reader client.Reader, otlpOutput *telemetryv1beta1.OTLPOutput, pipelineName string, queueSize int, signalType string) *OTLPExporterConfigBuilder {
 	return &OTLPExporterConfigBuilder{
 		reader:       reader,
 		otlpOutput:   otlpOutput,
@@ -46,7 +46,7 @@ func (cb *OTLPExporterConfigBuilder) OTLPExporterConfig(ctx context.Context) (*O
 	return exportersConfig, envVars, nil
 }
 
-func makeExporterConfig(otlpOutput *telemetryv1alpha1.OTLPOutput, pipelineName string, envVars map[string][]byte, queueSize int, signalType string) *OTLPExporter {
+func makeExporterConfig(otlpOutput *telemetryv1beta1.OTLPOutput, pipelineName string, envVars map[string][]byte, queueSize int, signalType string) *OTLPExporter {
 	headers := makeHeaders(otlpOutput, pipelineName)
 	otlpEndpointVariable := formatEnvVarKey(otlpEndpointVariablePrefix, pipelineName)
 	otlpEndpointValue := string(envVars[otlpEndpointVariable])
@@ -97,15 +97,15 @@ func makeExporterConfig(otlpOutput *telemetryv1alpha1.OTLPOutput, pipelineName s
 	return &otlpExporterConfig
 }
 
-func ExporterID(protocol string, pipelineName string) string {
-	if protocol == telemetryv1alpha1.OTLPProtocolHTTP {
+func ExporterID(protocol telemetryv1beta1.OTLPProtocol, pipelineName string) string {
+	if protocol == telemetryv1beta1.OTLPProtocolHTTP {
 		return fmt.Sprintf(ComponentIDOTLPHTTPExporter, pipelineName)
 	}
 
 	return fmt.Sprintf(ComponentIDOTLPGRPCExporter, pipelineName)
 }
 
-func makeTLSConfig(output *telemetryv1alpha1.OTLPOutput, otlpEndpointValue, pipelineName string) TLS {
+func makeTLSConfig(output *telemetryv1beta1.OTLPOutput, otlpEndpointValue, pipelineName string) TLS {
 	var cfg TLS
 
 	cfg.Insecure = isInsecureOutput(otlpEndpointValue)
@@ -134,7 +134,7 @@ func makeTLSConfig(output *telemetryv1alpha1.OTLPOutput, otlpEndpointValue, pipe
 	return cfg
 }
 
-func makeHeaders(output *telemetryv1alpha1.OTLPOutput, pipelineName string) map[string]string {
+func makeHeaders(output *telemetryv1beta1.OTLPOutput, pipelineName string) map[string]string {
 	headers := make(map[string]string)
 
 	if isBasicAuthEnabled(output.Authentication) {

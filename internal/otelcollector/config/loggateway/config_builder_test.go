@@ -9,7 +9,7 @@ import (
 	"gopkg.in/yaml.v3"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
@@ -21,12 +21,12 @@ func TestBuildConfig(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		pipelines      []telemetryv1alpha1.LogPipeline
+		pipelines      []telemetryv1beta1.LogPipeline
 		goldenFileName string
 	}{
 		{
 			name: "single pipeline",
-			pipelines: []telemetryv1alpha1.LogPipeline{
+			pipelines: []telemetryv1beta1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithName("test").
 					WithOTLPOutput().
@@ -37,7 +37,7 @@ func TestBuildConfig(t *testing.T) {
 		{
 			name:           "pipeline using http protocol WITH custom 'Path' field",
 			goldenFileName: "http-protocol-with-custom-path.yaml",
-			pipelines: []telemetryv1alpha1.LogPipeline{
+			pipelines: []telemetryv1beta1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithName("test").
 					WithOTLPOutput(
@@ -49,7 +49,7 @@ func TestBuildConfig(t *testing.T) {
 		{
 			name:           "pipeline using http protocol WITHOUT custom 'Path' field",
 			goldenFileName: "http-protocol-without-custom-path.yaml",
-			pipelines: []telemetryv1alpha1.LogPipeline{
+			pipelines: []telemetryv1beta1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithName("test").
 					WithOTLPOutput(
@@ -59,7 +59,7 @@ func TestBuildConfig(t *testing.T) {
 		},
 		{
 			name: "single pipeline with OTLP disabled",
-			pipelines: []telemetryv1alpha1.LogPipeline{
+			pipelines: []telemetryv1beta1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithName("test").
 					WithOTLPInput(false).
@@ -69,7 +69,7 @@ func TestBuildConfig(t *testing.T) {
 		},
 		{
 			name: "single pipeline with namespace included",
-			pipelines: []telemetryv1alpha1.LogPipeline{
+			pipelines: []telemetryv1beta1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithName("test").
 					WithOTLPInput(true, testutils.IncludeNamespaces("kyma-system", "default")).
@@ -79,7 +79,7 @@ func TestBuildConfig(t *testing.T) {
 		},
 		{
 			name: "single pipeline with namespace excluded",
-			pipelines: []telemetryv1alpha1.LogPipeline{
+			pipelines: []telemetryv1beta1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithName("test").
 					WithOTLPInput(true, testutils.ExcludeNamespaces("kyma-system", "default")).
@@ -89,11 +89,11 @@ func TestBuildConfig(t *testing.T) {
 		},
 		{
 			name: "two pipelines with user-defined transforms",
-			pipelines: []telemetryv1alpha1.LogPipeline{
+			pipelines: []telemetryv1beta1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithName("test1").
 					WithOTLPOutput().
-					WithTransform(telemetryv1alpha1.TransformSpec{
+					WithTransform(telemetryv1beta1.TransformSpec{
 						Conditions: []string{"IsMatch(body, \".*error.*\")"},
 						Statements: []string{"set(attributes[\"log.level\"], \"error\")", "set(body, \"transformed1\")"},
 					}).
@@ -101,7 +101,7 @@ func TestBuildConfig(t *testing.T) {
 				testutils.NewLogPipelineBuilder().
 					WithName("test2").
 					WithOTLPOutput().
-					WithTransform(telemetryv1alpha1.TransformSpec{
+					WithTransform(telemetryv1beta1.TransformSpec{
 						Conditions: []string{"IsMatch(body, \".*error.*\")"},
 						Statements: []string{"set(attributes[\"log.level\"], \"error\")", "set(body, \"transformed2\")"},
 					}).
@@ -111,18 +111,18 @@ func TestBuildConfig(t *testing.T) {
 		},
 		{
 			name: "two pipelines with user-defined filter",
-			pipelines: []telemetryv1alpha1.LogPipeline{
+			pipelines: []telemetryv1beta1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithName("test1").
 					WithOTLPOutput().
-					WithFilter(telemetryv1alpha1.FilterSpec{
+					WithFilter(telemetryv1beta1.FilterSpec{
 						Conditions: []string{"IsMatch(log.attributes[\"foo\"], \".*bar.*\")"},
 					}).
 					Build(),
 				testutils.NewLogPipelineBuilder().
 					WithName("test2").
 					WithOTLPOutput().
-					WithFilter(telemetryv1alpha1.FilterSpec{
+					WithFilter(telemetryv1beta1.FilterSpec{
 						Conditions: []string{"IsMatch(log.body, \".*error.*\")"},
 					}).
 					Build(),
@@ -131,15 +131,15 @@ func TestBuildConfig(t *testing.T) {
 		},
 		{
 			name: "pipeline with user-defined transform and filter",
-			pipelines: []telemetryv1alpha1.LogPipeline{
+			pipelines: []telemetryv1beta1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithName("test1").
 					WithOTLPOutput().
-					WithTransform(telemetryv1alpha1.TransformSpec{
+					WithTransform(telemetryv1beta1.TransformSpec{
 						Conditions: []string{"IsMatch(body, \".*error.*\")"},
 						Statements: []string{"set(attributes[\"log.level\"], \"error\")", "set(body, \"transformed2\")"},
 					}).
-					WithFilter(telemetryv1alpha1.FilterSpec{
+					WithFilter(telemetryv1beta1.FilterSpec{
 						Conditions: []string{"IsMatch(log.attributes[\"foo\"], \".*bar.*\")"},
 					}).Build(),
 			},
