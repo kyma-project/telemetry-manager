@@ -227,10 +227,10 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string, opts A
 	podOpts = append(podOpts, commonresources.WithTolerations(commonresources.CriticalDaemonSetTolerations))
 	// Add image pull secret if defined
 	podOpts = append(podOpts, commonresources.WithImagePullSecretName(aad.globals.ImagePullSecretName()))
-	podOpts = append(podOpts, commonresources.WithClusterTrustBundVolume(aad.globals.ClusterTrustBundleName()))
+	podOpts = append(podOpts, commonresources.WithClusterTrustBundleVolume(aad.globals.ClusterTrustBundleName()))
 
 	containerOpts := slices.Clone(aad.containerOpts)
-	containerOpts = append(containerOpts, commonresources.WithClusterTrustBundVolumeMount(aad.globals.ClusterTrustBundleName()))
+	containerOpts = append(containerOpts, commonresources.WithClusterTrustBundleVolumeMount(aad.globals.ClusterTrustBundleName()))
 
 	podSpec := makePodSpec(aad.baseName, aad.image, podOpts, containerOpts)
 
