@@ -55,19 +55,19 @@ func fileLogReceiverConfig(lp *telemetryv1beta1.LogPipeline, collectAgentLogs bo
 	}
 }
 
-func createIncludePath(Runtime *telemetryv1beta1.LogPipelineRuntimeInput) []string {
+func createIncludePath(runtime *telemetryv1beta1.LogPipelineRuntimeInput) []string {
 	var includePath []string
 
 	includeNamespaces := []string{"*"}
 	includeContainers := []string{"*"}
 
-	if Runtime != nil {
-		if Runtime.Namespaces != nil && len(Runtime.Namespaces.Include) > 0 {
-			includeNamespaces = Runtime.Namespaces.Include
+	if runtime != nil {
+		if runtime.Namespaces != nil && len(runtime.Namespaces.Include) > 0 {
+			includeNamespaces = runtime.Namespaces.Include
 		}
 
-		if Runtime.Containers != nil && len(Runtime.Containers.Include) > 0 {
-			includeContainers = Runtime.Containers.Include
+		if runtime.Containers != nil && len(runtime.Containers.Include) > 0 {
+			includeContainers = runtime.Containers.Include
 		}
 	}
 
@@ -80,7 +80,7 @@ func createIncludePath(Runtime *telemetryv1beta1.LogPipelineRuntimeInput) []stri
 	return includePath
 }
 
-func createExcludePath(Runtime *telemetryv1beta1.LogPipelineRuntimeInput, collectAgentLogs bool) []string {
+func createExcludePath(runtime *telemetryv1beta1.LogPipelineRuntimeInput, collectAgentLogs bool) []string {
 	var excludePath, excludeContainers []string
 
 	if !collectAgentLogs {
@@ -95,16 +95,17 @@ func createExcludePath(Runtime *telemetryv1beta1.LogPipelineRuntimeInput, collec
 
 	var excludeNamespaces []string
 
-	if Runtime != nil {
-		if Runtime.Namespaces != nil {
-			excludeNamespaces = append(excludeNamespaces, Runtime.Namespaces.Exclude...)
+	if runtime != nil {
+		if runtime.Namespaces != nil {
+			excludeNamespaces = append(excludeNamespaces, runtime.Namespaces.Exclude...)
 		}
-		if Runtime.Containers != nil {
-			excludeContainers = append(excludeContainers, Runtime.Containers.Exclude...)
+
+		if runtime.Containers != nil {
+			excludeContainers = append(excludeContainers, runtime.Containers.Exclude...)
 		}
 	}
 
-	if Runtime == nil || Runtime.Namespaces == nil || (len(Runtime.Namespaces.Include) == 0 && len(Runtime.Namespaces.Exclude) == 0) {
+	if runtime == nil || runtime.Namespaces == nil || (len(runtime.Namespaces.Include) == 0 && len(runtime.Namespaces.Exclude) == 0) {
 		excludeNamespaces = namespaces.System()
 	}
 

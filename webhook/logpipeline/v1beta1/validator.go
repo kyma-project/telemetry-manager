@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 	webhookutils "github.com/kyma-project/telemetry-manager/webhook/utils"
 )

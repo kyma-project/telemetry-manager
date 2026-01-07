@@ -443,7 +443,7 @@ func TestAgentRequiredScenarios(t *testing.T) {
 }
 
 type pipelineConfig struct {
-	name             string
+	name         string
 	RuntimeInput bool
 }
 

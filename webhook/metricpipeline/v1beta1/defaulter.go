@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 )
 
 // +kubebuilder:object:generate=false
@@ -162,19 +162,4 @@ func (md defaulter) applyRuntimeInputResourceDefaults(pipeline *telemetryv1beta1
 			Enabled: &md.RuntimeInputResources.Job,
 		}
 	}
-}
-
-// TODO: use metricpipelineutils package once the MetricPipeline migrated from version v1alpha1 to v1beta1
-func prometheusInputEnabled(pipeline *telemetryv1beta1.MetricPipeline) bool {
-	return pipeline.Spec.Input.Prometheus != nil && pipeline.Spec.Input.Prometheus.Enabled != nil && *pipeline.Spec.Input.Prometheus.Enabled
-}
-
-// TODO: use metricpipelineutils package once the MetricPipeline migrated from version v1alpha1 to v1beta1
-func istioInputEnabled(pipeline *telemetryv1beta1.MetricPipeline) bool {
-	return pipeline.Spec.Input.Istio != nil && pipeline.Spec.Input.Istio.Enabled != nil && *pipeline.Spec.Input.Istio.Enabled
-}
-
-// TODO: use metricpipelineutils package once the MetricPipeline migrated from version v1alpha1 to v1beta1
-func runtimeInputEnabled(pipeline *telemetryv1beta1.MetricPipeline) bool {
-	return pipeline.Spec.Input.Runtime != nil && pipeline.Spec.Input.Runtime.Enabled != nil && *pipeline.Spec.Input.Runtime.Enabled
 }

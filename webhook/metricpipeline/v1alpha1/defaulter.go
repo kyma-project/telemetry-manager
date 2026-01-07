@@ -155,17 +155,14 @@ func (md defaulter) applyRuntimeInputResourceDefaults(pipeline *telemetryv1alpha
 	}
 }
 
-// TODO: use metricpipelineutils package once the MetricPipeline migrated from version v1alpha1 to v1beta1
 func prometheusInputEnabled(input *telemetryv1alpha1.MetricPipelineInput) bool {
 	return input.Prometheus != nil && input.Prometheus.Enabled != nil && *input.Prometheus.Enabled
 }
 
-// TODO: use metricpipelineutils package once the MetricPipeline migrated from version v1alpha1 to v1beta1
 func istioInputEnabled(input *telemetryv1alpha1.MetricPipelineInput) bool {
 	return input.Istio != nil && input.Istio.Enabled != nil && *input.Istio.Enabled
 }
 
-// TODO: use metricpipelineutils package once the MetricPipeline migrated from version v1alpha1 to v1beta1
 func runtimeInputEnabled(input *telemetryv1alpha1.MetricPipelineInput) bool {
 	return input.Runtime != nil && input.Runtime.Enabled != nil && *input.Runtime.Enabled
 }
