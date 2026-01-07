@@ -41,6 +41,7 @@ func TestOverrides(t *testing.T) {
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
 	logPipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
+		WithExcludeNamespaces("").
 		WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 		Build()
 
