@@ -140,6 +140,10 @@ func (b *LogPipelineBuilder) WithExcludeContainers(containers ...string) *LogPip
 		b.input.Runtime = &telemetryv1beta1.LogPipelineRuntimeInput{}
 	}
 
+	if b.input.Runtime.Containers == nil {
+		b.input.Runtime.Containers = &telemetryv1beta1.LogPipelineContainerSelector{}
+	}
+
 	b.input.Runtime.Containers.Exclude = containers
 
 	return b

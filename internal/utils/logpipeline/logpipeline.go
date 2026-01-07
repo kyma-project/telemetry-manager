@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -41,10 +40,6 @@ func IsVariablesDefined(v []telemetryv1beta1.FluentBitVariable) bool {
 
 func IsFilesDefined(v []telemetryv1beta1.FluentBitFile) bool {
 	return len(v) > 0
-}
-
-func IsApplicationInputEnabled(i *telemetryv1alpha1.LogPipelineInput) bool {
-	return i.Application != nil && ptr.Deref(i.Application.Enabled, false)
 }
 
 func IsRuntimeInputEnabled(i *telemetryv1beta1.LogPipelineInput) bool {
