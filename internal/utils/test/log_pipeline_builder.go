@@ -130,6 +130,10 @@ func (b *LogPipelineBuilder) WithIncludeContainers(containers ...string) *LogPip
 		b.input.Runtime = &telemetryv1beta1.LogPipelineRuntimeInput{}
 	}
 
+	if b.input.Runtime.Containers == nil {
+		b.input.Runtime.Containers = &telemetryv1beta1.LogPipelineContainerSelector{}
+	}
+
 	b.input.Runtime.Containers.Include = containers
 
 	return b
@@ -154,6 +158,10 @@ func (b *LogPipelineBuilder) WithIncludeNamespaces(namespaces ...string) *LogPip
 		b.input.Runtime = &telemetryv1beta1.LogPipelineRuntimeInput{}
 	}
 
+	if b.input.Runtime.Namespaces == nil {
+		b.input.Runtime.Namespaces = &telemetryv1beta1.NamespaceSelector{}
+	}
+
 	b.input.Runtime.Namespaces.Include = namespaces
 
 	return b
@@ -162,6 +170,10 @@ func (b *LogPipelineBuilder) WithIncludeNamespaces(namespaces ...string) *LogPip
 func (b *LogPipelineBuilder) WithExcludeNamespaces(namespaces ...string) *LogPipelineBuilder {
 	if b.input.Runtime == nil {
 		b.input.Runtime = &telemetryv1beta1.LogPipelineRuntimeInput{}
+	}
+
+	if b.input.Runtime.Namespaces == nil {
+		b.input.Runtime.Namespaces = &telemetryv1beta1.NamespaceSelector{}
 	}
 
 	b.input.Runtime.Namespaces.Exclude = namespaces
