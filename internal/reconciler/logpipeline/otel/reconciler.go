@@ -11,8 +11,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
@@ -163,7 +163,7 @@ func New(opts ...Option) *Reconciler {
 	return r
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
+func (r *Reconciler) Reconcile(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error {
 	logf.FromContext(ctx).V(1).Info("Reconciling LogPipeline")
 
 	err := r.doReconcile(ctx, pipeline)
@@ -182,7 +182,7 @@ func (r *Reconciler) SupportedOutput() logpipelineutils.Mode {
 	return logpipelineutils.OTel
 }
 
-func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
+func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error {
 	if err := r.pipelineLock.TryAcquireLock(ctx, pipeline); err != nil {
 		if errors.Is(err, resourcelock.ErrMaxPipelinesExceeded) {
 			logf.FromContext(ctx).V(1).Info("Skipping reconciliation: maximum pipeline count limit exceeded")
@@ -239,8 +239,8 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 
 // getReconcilablePipelines returns the list of log pipelines that are ready to be rendered into the otel collector configuration.
 // A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
-func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline) ([]telemetryv1alpha1.LogPipeline, error) {
-	var reconcilablePipelines []telemetryv1alpha1.LogPipeline
+func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines []telemetryv1beta1.LogPipeline) ([]telemetryv1beta1.LogPipeline, error) {
+	var reconcilablePipelines []telemetryv1beta1.LogPipeline
 
 	for i := range allPipelines {
 		isReconcilable, err := r.isReconcilable(ctx, &allPipelines[i])
@@ -256,7 +256,7 @@ func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines 
 	return reconcilablePipelines, nil
 }
 
-func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (bool, error) {
+func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) (bool, error) {
 	if !pipeline.GetDeletionTimestamp().IsZero() {
 		return false, nil
 	}
@@ -278,7 +278,7 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 	return false, nil
 }
 
-func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, allPipelines []telemetryv1alpha1.LogPipeline) error {
+func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline, allPipelines []telemetryv1beta1.LogPipeline) error {
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
 	clusterName := r.getClusterNameFromTelemetry(ctx, shootInfo.ClusterName)
 
@@ -287,7 +287,7 @@ func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetr
 		return fmt.Errorf("failed to get kube-system namespace for cluster UID: %w", err)
 	}
 
-	var enrichments *operatorv1alpha1.EnrichmentSpec
+	var enrichments *operatorv1beta1.EnrichmentSpec
 
 	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 	if err == nil {
@@ -333,8 +333,8 @@ func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetr
 	return nil
 }
 
-func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, allPipelines []telemetryv1alpha1.LogPipeline) error {
-	var enrichments *operatorv1alpha1.EnrichmentSpec
+func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline, allPipelines []telemetryv1beta1.LogPipeline) error {
+	var enrichments *operatorv1beta1.EnrichmentSpec
 
 	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 	if err == nil {
@@ -393,7 +393,7 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 	}
 
 	if telemetry.Spec.Log != nil &&
-		telemetry.Spec.Log.Gateway.Scaling.Type == operatorv1alpha1.StaticScalingStrategyType &&
+		telemetry.Spec.Log.Gateway.Scaling.Type == operatorv1beta1.StaticScalingStrategyType &&
 		telemetry.Spec.Log.Gateway.Scaling.Static != nil && telemetry.Spec.Log.Gateway.Scaling.Static.Replicas > 0 {
 		return telemetry.Spec.Log.Gateway.Scaling.Static.Replicas
 	}
@@ -432,8 +432,8 @@ func (r *Reconciler) getK8sClusterUID(ctx context.Context) (string, error) {
 	return string(kubeSystem.UID), nil
 }
 
-func (r *Reconciler) getPipelinesRequiringAgents(allPipelines []telemetryv1alpha1.LogPipeline) []telemetryv1alpha1.LogPipeline {
-	var pipelinesRequiringAgents = make([]telemetryv1alpha1.LogPipeline, 0)
+func (r *Reconciler) getPipelinesRequiringAgents(allPipelines []telemetryv1beta1.LogPipeline) []telemetryv1beta1.LogPipeline {
+	var pipelinesRequiringAgents = make([]telemetryv1beta1.LogPipeline, 0)
 
 	for i := range allPipelines {
 		if isLogAgentRequired(&allPipelines[i]) {
@@ -444,13 +444,13 @@ func (r *Reconciler) getPipelinesRequiringAgents(allPipelines []telemetryv1alpha
 	return pipelinesRequiringAgents
 }
 
-func isLogAgentRequired(pipeline *telemetryv1alpha1.LogPipeline) bool {
+func isLogAgentRequired(pipeline *telemetryv1beta1.LogPipeline) bool {
 	input := pipeline.Spec.Input
 
-	return input.Application != nil && input.Application.Enabled != nil && *input.Application.Enabled
+	return input.Runtime != nil && input.Runtime.Enabled != nil && *input.Runtime.Enabled
 }
 
-func (r *Reconciler) trackFeaturesUsage(pipelines []telemetryv1alpha1.LogPipeline) {
+func (r *Reconciler) trackFeaturesUsage(pipelines []telemetryv1beta1.LogPipeline) {
 	for i := range pipelines {
 		// General features
 		if sharedtypesutils.IsOTLPInputEnabled(pipelines[i].Spec.Input.OTLP) {
@@ -465,7 +465,7 @@ func (r *Reconciler) trackFeaturesUsage(pipelines []telemetryv1alpha1.LogPipelin
 			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureFilter, pipelines[i].Name)
 		}
 
-		if logpipelineutils.IsApplicationInputEnabled(&pipelines[i].Spec.Input) {
+		if logpipelineutils.IsRuntimeInputEnabled(&pipelines[i].Spec.Input) {
 			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureInputRuntime, pipelines[i].Name)
 		}
 	}

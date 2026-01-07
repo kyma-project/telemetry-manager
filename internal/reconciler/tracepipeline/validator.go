@@ -3,7 +3,7 @@ package tracepipeline
 import (
 	"context"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
@@ -74,7 +74,7 @@ func NewValidator(opts ...ValidatorOption) *Validator {
 	return v
 }
 
-func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) error {
+func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) error {
 	if err := v.SecretRefValidator.ValidateTracePipeline(ctx, pipeline); err != nil {
 		return err
 	}
@@ -122,7 +122,7 @@ func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.Tr
 	return nil
 }
 
-func tlsValidationRequired(pipeline *telemetryv1alpha1.TracePipeline) bool {
+func tlsValidationRequired(pipeline *telemetryv1beta1.TracePipeline) bool {
 	otlp := pipeline.Spec.Output.OTLP
 	if otlp == nil {
 		return false

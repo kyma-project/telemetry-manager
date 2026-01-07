@@ -3,7 +3,7 @@ package otel
 import (
 	"context"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
@@ -75,7 +75,7 @@ func NewValidator(opts ...ValidatorOption) *Validator {
 }
 
 // Validate validates the LogPipeline resource by checking secret references, endpoint configuration, TLS certificates, and pipeline lock status.
-func (v *Validator) Validate(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
+func (v *Validator) Validate(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error {
 	if err := v.SecretRefValidator.ValidateLogPipeline(ctx, pipeline); err != nil {
 		return err
 	}
@@ -125,7 +125,7 @@ func (v *Validator) Validate(ctx context.Context, pipeline *telemetryv1alpha1.Lo
 
 // tlsValidationRequired checks if TLS validation is required for the pipeline.
 // Returns true if the pipeline has OTLP output with TLS configuration containing cert, key, or CA.
-func tlsValidationRequired(pipeline *telemetryv1alpha1.LogPipeline) bool {
+func tlsValidationRequired(pipeline *telemetryv1beta1.LogPipeline) bool {
 	otlp := pipeline.Spec.Output.OTLP
 	if otlp == nil {
 		return false

@@ -14,7 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
@@ -644,7 +644,7 @@ func TestOTTLSpecValidation(t *testing.T) {
 func TestAPIServerFailureHandling(t *testing.T) {
 	tests := []struct {
 		name             string
-		pipeline         telemetryv1alpha1.MetricPipeline
+		pipeline         telemetryv1beta1.MetricPipeline
 		setupValidator   func(error) *Validator
 		needsGatewayMock bool
 	}{
@@ -786,8 +786,8 @@ func TestAgentRequirementDetermination(t *testing.T) { //nolint: gocognit // Com
 			// Build pipelines and collect client objects
 			var (
 				clientObjs     []client.Object
-				allPipelines   []telemetryv1alpha1.MetricPipeline
-				agentPipelines []telemetryv1alpha1.MetricPipeline
+				allPipelines   []telemetryv1beta1.MetricPipeline
+				agentPipelines []telemetryv1beta1.MetricPipeline
 			)
 
 			for _, needsAgent := range tt.requireAgent {
@@ -955,14 +955,14 @@ func TestGetPipelinesRequiringAgents(t *testing.T) {
 	r := Reconciler{}
 
 	t.Run("no pipelines", func(t *testing.T) {
-		pipelines := []telemetryv1alpha1.MetricPipeline{}
+		pipelines := []telemetryv1beta1.MetricPipeline{}
 		require.Empty(t, r.getPipelinesRequiringAgents(pipelines))
 	})
 
 	t.Run("no pipeline requires an agent", func(t *testing.T) {
 		pipeline1 := testutils.NewMetricPipelineBuilder().WithRuntimeInput(false).WithPrometheusInput(false).WithIstioInput(false).Build()
 		pipeline2 := testutils.NewMetricPipelineBuilder().WithRuntimeInput(false).WithPrometheusInput(false).WithIstioInput(false).Build()
-		pipelines := []telemetryv1alpha1.MetricPipeline{pipeline1, pipeline2}
+		pipelines := []telemetryv1beta1.MetricPipeline{pipeline1, pipeline2}
 		require.Empty(t, r.getPipelinesRequiringAgents(pipelines))
 	})
 
@@ -971,23 +971,23 @@ func TestGetPipelinesRequiringAgents(t *testing.T) {
 		pipeline2 := testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).WithIstioInput(true).Build()
 		pipeline3 := testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).WithIstioInput(true).Build()
 		pipeline4 := testutils.NewMetricPipelineBuilder().WithRuntimeInput(false).WithPrometheusInput(false).WithIstioInput(false).Build()
-		pipelines := []telemetryv1alpha1.MetricPipeline{pipeline1, pipeline2, pipeline3, pipeline4}
-		require.ElementsMatch(t, []telemetryv1alpha1.MetricPipeline{pipeline1, pipeline2, pipeline3}, r.getPipelinesRequiringAgents(pipelines))
+		pipelines := []telemetryv1beta1.MetricPipeline{pipeline1, pipeline2, pipeline3, pipeline4}
+		require.ElementsMatch(t, []telemetryv1beta1.MetricPipeline{pipeline1, pipeline2, pipeline3}, r.getPipelinesRequiringAgents(pipelines))
 	})
 
 	t.Run("all pipelines require an agent", func(t *testing.T) {
 		pipeline1 := testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build()
 		pipeline2 := testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build()
 		pipeline3 := testutils.NewMetricPipelineBuilder().WithIstioInput(true).Build()
-		pipelines := []telemetryv1alpha1.MetricPipeline{pipeline1, pipeline2, pipeline3}
-		require.ElementsMatch(t, []telemetryv1alpha1.MetricPipeline{pipeline1, pipeline2, pipeline3}, r.getPipelinesRequiringAgents(pipelines))
+		pipelines := []telemetryv1beta1.MetricPipeline{pipeline1, pipeline2, pipeline3}
+		require.ElementsMatch(t, []telemetryv1beta1.MetricPipeline{pipeline1, pipeline2, pipeline3}, r.getPipelinesRequiringAgents(pipelines))
 	})
 }
 
 func TestUsageTracking(t *testing.T) {
 	tests := []struct {
 		name                 string
-		pipeline             telemetryv1alpha1.MetricPipeline
+		pipeline             telemetryv1beta1.MetricPipeline
 		expectedFeatureUsage map[string]float64
 	}{
 		{
@@ -1003,7 +1003,7 @@ func TestUsageTracking(t *testing.T) {
 			pipeline: testutils.NewMetricPipelineBuilder().
 				WithName("pipeline-2").
 				WithOTLPInput(false).
-				WithTransform(telemetryv1alpha1.TransformSpec{
+				WithTransform(telemetryv1beta1.TransformSpec{
 					Statements: []string{"set(attributes[\"test\"], \"value\")"},
 				}).
 				Build(),
@@ -1016,7 +1016,7 @@ func TestUsageTracking(t *testing.T) {
 			pipeline: testutils.NewMetricPipelineBuilder().
 				WithName("pipeline-3").
 				WithOTLPInput(false).
-				WithFilter(telemetryv1alpha1.FilterSpec{
+				WithFilter(telemetryv1beta1.FilterSpec{
 					Conditions: []string{"resource.attributes[\"test\"] == \"value\""},
 				}).
 				Build(),
@@ -1029,10 +1029,10 @@ func TestUsageTracking(t *testing.T) {
 			pipeline: testutils.NewMetricPipelineBuilder().
 				WithName("pipeline-4").
 				WithOTLPInput(false).
-				WithTransform(telemetryv1alpha1.TransformSpec{
+				WithTransform(telemetryv1beta1.TransformSpec{
 					Statements: []string{"set(attributes[\"test\"], \"value\")"},
 				}).
-				WithFilter(telemetryv1alpha1.FilterSpec{
+				WithFilter(telemetryv1beta1.FilterSpec{
 					Conditions: []string{"resource.attributes[\"test\"] == \"value\""},
 				}).
 				Build(),
@@ -1104,10 +1104,10 @@ func TestUsageTracking(t *testing.T) {
 			name: "pipeline with all features",
 			pipeline: testutils.NewMetricPipelineBuilder().
 				WithName("pipeline-10").
-				WithTransform(telemetryv1alpha1.TransformSpec{
+				WithTransform(telemetryv1beta1.TransformSpec{
 					Statements: []string{"set(attributes[\"test\"], \"value\")"},
 				}).
-				WithFilter(telemetryv1alpha1.FilterSpec{
+				WithFilter(telemetryv1beta1.FilterSpec{
 					Conditions: []string{"resource.attributes[\"test\"] == \"value\""},
 				}).
 				WithRuntimeInput(true).

@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	slicesutils "github.com/kyma-project/telemetry-manager/internal/utils/slices"
 )
@@ -18,7 +18,7 @@ type logComponentsChecker struct {
 }
 
 func (l *logComponentsChecker) Check(ctx context.Context, telemetryInDeletion bool) (*metav1.Condition, error) {
-	var logPipelines telemetryv1alpha1.LogPipelineList
+	var logPipelines telemetryv1beta1.LogPipelineList
 
 	err := l.client.List(ctx, &logPipelines)
 	if err != nil {
@@ -49,7 +49,7 @@ func (l *logComponentsChecker) Check(ctx context.Context, telemetryInDeletion bo
 	}, nil
 }
 
-func (l *logComponentsChecker) checkForFirstAboutToExpirePipelineCondition(pipelines []telemetryv1alpha1.LogPipeline) *metav1.Condition {
+func (l *logComponentsChecker) checkForFirstAboutToExpirePipelineCondition(pipelines []telemetryv1beta1.LogPipeline) *metav1.Condition {
 	for _, pipeline := range pipelines {
 		cond := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
 		if cond != nil && cond.Reason == conditions.ReasonTLSCertificateAboutToExpire {
@@ -65,7 +65,7 @@ func (l *logComponentsChecker) checkForFirstAboutToExpirePipelineCondition(pipel
 	return nil
 }
 
-func (l *logComponentsChecker) checkForFirstUnhealthyPipelineCondition(pipelines []telemetryv1alpha1.LogPipeline) *metav1.Condition {
+func (l *logComponentsChecker) checkForFirstUnhealthyPipelineCondition(pipelines []telemetryv1beta1.LogPipeline) *metav1.Condition {
 	// condTypes order defines the priority of negative conditions
 	condTypes := []string{
 		conditions.TypeConfigurationGenerated,
@@ -91,7 +91,7 @@ func (l *logComponentsChecker) checkForFirstUnhealthyPipelineCondition(pipelines
 	return nil
 }
 
-func (l *logComponentsChecker) checkForNoPipelineDeployedCondition(pipelines []telemetryv1alpha1.LogPipeline) *metav1.Condition {
+func (l *logComponentsChecker) checkForNoPipelineDeployedCondition(pipelines []telemetryv1beta1.LogPipeline) *metav1.Condition {
 	if len(pipelines) == 0 {
 		return &metav1.Condition{
 			Type:    conditions.TypeLogComponentsHealthy,
@@ -104,7 +104,7 @@ func (l *logComponentsChecker) checkForNoPipelineDeployedCondition(pipelines []t
 	return nil
 }
 
-func (l *logComponentsChecker) checkForResourceBlocksDeletionCondition(pipelines []telemetryv1alpha1.LogPipeline, telemetryInDeletion bool) *metav1.Condition {
+func (l *logComponentsChecker) checkForResourceBlocksDeletionCondition(pipelines []telemetryv1beta1.LogPipeline, telemetryInDeletion bool) *metav1.Condition {
 	if telemetryInDeletion && (len(pipelines) != 0) {
 		return &metav1.Condition{
 			Type:   conditions.TypeLogComponentsHealthy,
@@ -112,7 +112,7 @@ func (l *logComponentsChecker) checkForResourceBlocksDeletionCondition(pipelines
 			Reason: conditions.ReasonResourceBlocksDeletion,
 			Message: generateDeletionBlockedMessage(blockingResources{
 				resourceType: "LogPipelines",
-				resourceNames: slicesutils.TransformFunc(pipelines, func(p telemetryv1alpha1.LogPipeline) string {
+				resourceNames: slicesutils.TransformFunc(pipelines, func(p telemetryv1beta1.LogPipeline) string {
 					return p.Name
 				}),
 			}),

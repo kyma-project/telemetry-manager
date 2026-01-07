@@ -9,7 +9,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
@@ -21,9 +21,9 @@ func TestMetricComponentsCheck(t *testing.T) {
 
 	tests := []struct {
 		name                string
-		pipelines           []telemetryv1alpha1.MetricPipeline
-		tracePipelines      []telemetryv1alpha1.TracePipeline
-		logPipelines        []telemetryv1alpha1.LogPipeline
+		pipelines           []telemetryv1beta1.MetricPipeline
+		tracePipelines      []telemetryv1beta1.TracePipeline
+		logPipelines        []telemetryv1beta1.LogPipeline
 		telemetryInDeletion bool
 		expectedCondition   *metav1.Condition
 	}{
@@ -39,7 +39,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 		},
 		{
 			name: "should be healthy if all pipelines running",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
 					WithStatusCondition(healthyAgentCond).
@@ -61,7 +61,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 		},
 		{
 			name: "should not be healthy if one pipeline refs missing secret",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
 					WithStatusCondition(healthyAgentCond).
@@ -88,7 +88,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 		},
 		{
 			name: "should not be healthy if one pipeline waiting for gateway",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
 					WithStatusCondition(healthyAgentCond).
@@ -115,7 +115,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 		},
 		{
 			name: "should not be healthy if one pipeline waiting for agent",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
 					WithStatusCondition(healthyAgentCond).
@@ -142,7 +142,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 		},
 		{
 			name: "should not be healthy if max pipelines exceeded",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
 					WithStatusCondition(healthyAgentCond).
@@ -169,7 +169,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 		},
 		{
 			name: "should prioritize unhealthy gateway reason over unhealthy agent",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithStatusCondition(metav1.Condition{
 						Type:    conditions.TypeGatewayHealthy,
@@ -211,7 +211,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 		},
 		{
 			name: "should block deletion if there are existing metric pipelines",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithName("foo").Build(),
 				testutils.NewMetricPipelineBuilder().WithName("bar").Build(),
 			},
@@ -225,7 +225,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 		},
 		{
 			name: "should not block deletion if there are existing trace pipelines",
-			tracePipelines: []telemetryv1alpha1.TracePipeline{
+			tracePipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().WithName("foo").Build(),
 			},
 			telemetryInDeletion: true,
@@ -238,7 +238,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 		},
 		{
 			name: "should not block deletion if there are existing log pipelines",
-			logPipelines: []telemetryv1alpha1.LogPipeline{
+			logPipelines: []telemetryv1beta1.LogPipeline{
 				testutils.NewLogPipelineBuilder().WithName("foo").Build(),
 			},
 			telemetryInDeletion: true,
@@ -251,7 +251,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 		},
 		{
 			name: "should be healthy if telemetry flow probing enabled and not healthy",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
 					WithStatusCondition(healthyAgentCond).
@@ -272,7 +272,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 		},
 		{
 			name: "should not be healthy if telemetry flow probing enabled and healthy",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
 					WithStatusCondition(healthyAgentCond).
@@ -293,7 +293,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 		},
 		{
 			name: "should not be healthy if telemetry flow probing enabled and metric agent flow is not healthy",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
 					WithStatusCondition(healthyAgentCond).
@@ -314,7 +314,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 		},
 		{
 			name: "should show tlsCertExpert if one pipeline has invalid tls cert and the other pipeline has an about to expire cert",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
 					WithStatusCondition(healthyAgentCond).
@@ -347,7 +347,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 		},
 		{
 			name: "should show tlsCert is about to expire if one of the pipelines has tls cert which is about to expire",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
 					WithStatusCondition(healthyAgentCond).
@@ -372,7 +372,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 		},
 		{
 			name: "should not be healthy of one pipeline has a failed request to the Kubernetes API server during validation",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
 					WithStatusCondition(healthyAgentCond).
@@ -402,7 +402,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			scheme := runtime.NewScheme()
 			_ = clientgoscheme.AddToScheme(scheme)
-			_ = telemetryv1alpha1.AddToScheme(scheme)
+			_ = telemetryv1beta1.AddToScheme(scheme)
 
 			b := fake.NewClientBuilder().WithScheme(scheme)
 			for i := range test.pipelines {

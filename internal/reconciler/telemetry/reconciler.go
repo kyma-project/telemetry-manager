@@ -13,8 +13,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
@@ -95,7 +95,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, nil
 	}
 
-	var telemetry operatorv1alpha1.Telemetry
+	var telemetry operatorv1beta1.Telemetry
 	if err := r.Get(ctx, req.NamespacedName, &telemetry); err != nil {
 		logf.FromContext(ctx).Info(req.String() + " got deleted!")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -110,12 +110,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 	}
 
-	requeue := telemetry.Status.State == operatorv1alpha1.StateWarning
+	requeue := telemetry.Status.State == operatorv1beta1.StateWarning
 
 	return ctrl.Result{Requeue: requeue}, err
 }
 
-func (r *Reconciler) doReconcile(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
+func (r *Reconciler) doReconcile(ctx context.Context, telemetry *operatorv1beta1.Telemetry) error {
 	if err := r.handleFinalizer(ctx, telemetry); err != nil {
 		return fmt.Errorf("failed to manage finalizer: %w", err)
 	}
@@ -131,7 +131,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, telemetry *operatorv1alpha
 	return nil
 }
 
-func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
+func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operatorv1beta1.Telemetry) error {
 	pipelinesPresent, err := r.checkPipelineExist(ctx)
 	if err != nil {
 		return err
@@ -182,7 +182,7 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operat
 }
 
 func (r *Reconciler) checkPipelineExist(ctx context.Context) (bool, error) {
-	var allLogPipelines telemetryv1alpha1.LogPipelineList
+	var allLogPipelines telemetryv1beta1.LogPipelineList
 	if err := r.List(ctx, &allLogPipelines); err != nil {
 		return false, fmt.Errorf("failed to get all log pipelines: %w", err)
 	}
@@ -191,7 +191,7 @@ func (r *Reconciler) checkPipelineExist(ctx context.Context) (bool, error) {
 		return true, nil
 	}
 
-	var allTracePipelines telemetryv1alpha1.TracePipelineList
+	var allTracePipelines telemetryv1beta1.TracePipelineList
 	if err := r.List(ctx, &allTracePipelines); err != nil {
 		return false, fmt.Errorf("failed to get all trace pipelines: %w", err)
 	}
@@ -200,7 +200,7 @@ func (r *Reconciler) checkPipelineExist(ctx context.Context) (bool, error) {
 		return true, nil
 	}
 
-	var allMetricPipelines telemetryv1alpha1.MetricPipelineList
+	var allMetricPipelines telemetryv1beta1.MetricPipelineList
 	if err := r.List(ctx, &allMetricPipelines); err != nil {
 		return false, fmt.Errorf("failed to get all metric pipelines: %w", err)
 	}
@@ -212,7 +212,7 @@ func (r *Reconciler) checkPipelineExist(ctx context.Context) (bool, error) {
 	return false, nil
 }
 
-func (r *Reconciler) handleFinalizer(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
+func (r *Reconciler) handleFinalizer(ctx context.Context, telemetry *operatorv1beta1.Telemetry) error {
 	if telemetry.DeletionTimestamp.IsZero() {
 		if !controllerutil.ContainsFinalizer(telemetry, finalizer) {
 			controllerutil.AddFinalizer(telemetry, finalizer)
@@ -242,7 +242,7 @@ func (r *Reconciler) handleFinalizer(ctx context.Context, telemetry *operatorv1a
 	return nil
 }
 
-func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
+func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1beta1.Telemetry) error {
 	// We skip webhook reconciliation only if no pipelines are remaining. This avoids the risk of certificate expiration while waiting for deletion.
 	if !telemetry.DeletionTimestamp.IsZero() && !r.dependentCRsFound(ctx) {
 		return nil

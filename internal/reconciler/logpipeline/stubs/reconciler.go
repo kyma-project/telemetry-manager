@@ -3,7 +3,7 @@ package stubs
 import (
 	"context"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 )
 
@@ -13,7 +13,7 @@ type ReconcilerStub struct {
 	Result     error
 }
 
-func (r *ReconcilerStub) Reconcile(_ context.Context, _ *telemetryv1alpha1.LogPipeline) error {
+func (r *ReconcilerStub) Reconcile(_ context.Context, _ *telemetryv1beta1.LogPipeline) error {
 	return r.Result
 }
 
