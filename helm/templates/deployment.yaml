@@ -1,15 +1,3 @@
-{{- $labelpairs := list -}}
-{{- range $k, $v := .Values.additionalMetadata.labels }}
-  {{- $labelpairs = append $labelpairs (printf "%s=%s" $k $v) -}}
-{{- end }}
-{{- $labelresult := join "," $labelpairs -}}
-
-{{- $annotationpairs := list -}}
-{{- range $k, $v := .Values.additionalMetadata.annotations }}
-  {{- $annotationpairs = append $annotationpairs (printf "%s=%s" $k $v) -}}
-{{- end }}
-{{- $annotationresult := join "," $annotationpairs -}}
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
