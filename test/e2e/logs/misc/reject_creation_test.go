@@ -367,7 +367,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			errorMsg: "should match '^/.*$'",
 			field:    "spec.output.http.uri",
 		},
-		// Runtime input
+		// runtime input
 		{
 			name: "runtime-input-namespaces-exclude-system-not-exclusive",
 			pipeline: testutils.NewLogPipelineBuilder().
@@ -377,7 +377,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithOTLPOutput().
 				Build(),
 			errorMsg: "Only one of 'include', 'exclude' can be defined",
-			field:    "spec.input.Runtime.namespaces",
+			field:    "spec.input.runtime.namespaces",
 		},
 		{
 			name: "runtime-input-containers-not-exclusive",
@@ -398,7 +398,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithOTLPOutput().
 				Build(),
 			errorMsg: "should match",
-			field:    "spec.input.Runtime.namespaces.include[0]",
+			field:    "spec.input.runtime.namespaces.include[0]",
 		},
 		{
 			name: "runtime-input-namespaces-include-too-long",
@@ -408,7 +408,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithOTLPOutput().
 				Build(),
 			errorMsg: "Too long:",
-			field:    "spec.input.Runtime.namespaces.include[0]",
+			field:    "spec.input.runtime.namespaces.include[0]",
 			causes:   2,
 		},
 		{
@@ -419,7 +419,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithOTLPOutput().
 				Build(),
 			errorMsg: "should match",
-			field:    "spec.input.Runtime.namespaces.exclude[0]",
+			field:    "spec.input.runtime.namespaces.exclude[0]",
 		},
 		{
 			name: "runtime-input-namespaces-exclude-too-long",
@@ -429,7 +429,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithOTLPOutput().
 				Build(),
 			errorMsg: "Too long:",
-			field:    "spec.input.Runtime.namespaces.exclude[0]",
+			field:    "spec.input.runtime.namespaces.exclude[0]",
 			causes:   2,
 		},
 		// files validation
@@ -521,7 +521,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					testutils.OTLPEndpoint(backenEndpoint),
 				).
 				Build(),
-			errorMsg: "input.Runtime.dropLabels is not supported with otlp output",
+			errorMsg: "input.runtime.dropLabels is not supported with otlp output",
 			field:    "spec",
 		},
 		{
@@ -533,7 +533,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					testutils.OTLPEndpoint(backenEndpoint),
 				).
 				Build(),
-			errorMsg: "input.Runtime.keepAnnotations is not supported with otlp output",
+			errorMsg: "input.runtime.keepAnnotations is not supported with otlp output",
 			field:    "spec",
 		},
 		{
