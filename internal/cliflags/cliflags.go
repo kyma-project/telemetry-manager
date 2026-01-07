@@ -5,13 +5,13 @@ import (
 	"strings"
 )
 
-type CLIMapFlag map[string]string
+type Map map[string]string
 
-func (m *CLIMapFlag) String() string {
+func (m *Map) String() string {
 	return fmt.Sprintf("%v", *m)
 }
 
-func (m *CLIMapFlag) Set(s string) error {
+func (m *Map) Set(s string) error {
 	const sliceCount = 2
 
 	parts := strings.SplitN(s, "=", sliceCount)

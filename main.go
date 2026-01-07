@@ -84,8 +84,8 @@ var (
 	normalPriorityClassName   string
 	clusterTrustBundleName    string
 	imagePullSecretName       string
-	additionalLabels          cliflags.CLIMapFlag
-	additionalAnnotations     cliflags.CLIMapFlag
+	additionalLabels          cliflags.Map
+	additionalAnnotations     cliflags.Map
 )
 
 const (

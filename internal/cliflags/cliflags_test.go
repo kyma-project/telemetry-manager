@@ -8,7 +8,7 @@ import (
 )
 
 func TestEmptyFlagValueReturnsError(t *testing.T) {
-	var m CLIMapFlag
+	var m Map
 
 	err := m.Set("")
 	require.Error(t, err)
@@ -16,7 +16,7 @@ func TestEmptyFlagValueReturnsError(t *testing.T) {
 }
 
 func TestValidFlagParsesCorrectly(t *testing.T) {
-	var m CLIMapFlag
+	var m Map
 
 	err := m.Set("key1=value1")
 	require.NoError(t, err)
@@ -27,7 +27,7 @@ func TestValidFlagParsesCorrectly(t *testing.T) {
 }
 
 func TestEmptyKeyReturnsError(t *testing.T) {
-	var m CLIMapFlag
+	var m Map
 
 	err := m.Set("=value1")
 	require.Error(t, err)
@@ -35,7 +35,7 @@ func TestEmptyKeyReturnsError(t *testing.T) {
 }
 
 func TestEmptyValueIsAllowed(t *testing.T) {
-	var m CLIMapFlag
+	var m Map
 
 	err := m.Set("key1=")
 	require.NoError(t, err)
@@ -43,7 +43,7 @@ func TestEmptyValueIsAllowed(t *testing.T) {
 }
 
 func TestWhitespaceAroundEntriesIsTrimmed(t *testing.T) {
-	var m CLIMapFlag
+	var m Map
 
 	err := m.Set(" key1 = value1  ")
 	require.NoError(t, err)
@@ -56,7 +56,7 @@ func TestWhitespaceAroundEntriesIsTrimmed(t *testing.T) {
 }
 
 func TestNilMapIsInitialized(t *testing.T) {
-	var m CLIMapFlag
+	var m Map
 
 	err := m.Set("key1=value1")
 	require.NoError(t, err)
@@ -64,7 +64,7 @@ func TestNilMapIsInitialized(t *testing.T) {
 }
 
 func TestCLIMapFlagStringReturnsContents(t *testing.T) {
-	m := CLIMapFlag{"a": "1", "b": "2"}
+	m := Map{"a": "1", "b": "2"}
 	s := m.String()
 	require.True(t, strings.Contains(s, "a:1"))
 	require.True(t, strings.Contains(s, "b:2"))
