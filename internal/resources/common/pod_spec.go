@@ -127,8 +127,8 @@ func WithTolerations(tolerations []corev1.Toleration) PodSpecOption {
 
 func WithImagePullSecretName(name string) PodSpecOption {
 	return func(pod *corev1.PodSpec) {
-		if len(ipsn) > 0 {
-			pod.ImagePullSecrets = append(pod.ImagePullSecrets, corev1.LocalObjectReference{Name: ipsn})
+		if len(name) > 0 {
+			pod.ImagePullSecrets = append(pod.ImagePullSecrets, corev1.LocalObjectReference{Name: name})
 		}
 	}
 }

@@ -54,11 +54,6 @@ func TestAgent_ApplyResources(t *testing.T) {
 			goldenFilePath: "testdata/metric-agent-fips-enabled.yaml",
 		},
 		{
-			name:           "metric agent user cannot override labels defined by us",
-			sut:            NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName),
-			goldenFilePath: "testdata/metric-agent.yaml",
-		},
-		{
 			name: "log agent",
 			sut:  NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName),
 			collectorEnvVars: map[string][]byte{
@@ -82,14 +77,6 @@ func TestAgent_ApplyResources(t *testing.T) {
 				"DUMMY_ENV_VAR": []byte("foo"),
 			},
 			goldenFilePath: "testdata/log-agent-fips-enabled.yaml",
-		},
-		{
-			name: "log agent user cannot override labels defined by us",
-			sut:  NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName),
-			collectorEnvVars: map[string][]byte{
-				"DUMMY_ENV_VAR": []byte("foo"),
-			},
-			goldenFilePath: "testdata/log-agent.yaml",
 		},
 	}
 
