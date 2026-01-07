@@ -22,14 +22,14 @@ type LogPipelineBuilder struct {
 
 	input telemetryv1alpha1.LogPipelineInput
 
-	httpOutput   *telemetryv1alpha1.LogPipelineHTTPOutput
+	httpOutput   *telemetryv1alpha1.FluentBitHTTPOutput
 	otlpOutput   *telemetryv1alpha1.OTLPOutput
 	oauth2       *telemetryv1alpha1.OAuth2Options
 	customOutput string
 
-	fluentBitFilters []telemetryv1alpha1.LogPipelineFilter
-	files            []telemetryv1alpha1.LogPipelineFileMount
-	variables        []telemetryv1alpha1.LogPipelineVariableRef
+	fluentBitFilters []telemetryv1alpha1.FluentBitFilter
+	files            []telemetryv1alpha1.FluentBitFile
+	variables        []telemetryv1alpha1.FluentBitVariable
 	transforms       []telemetryv1alpha1.TransformSpec
 	filters          []telemetryv1alpha1.FilterSpec
 
@@ -129,8 +129,8 @@ func (b *LogPipelineBuilder) WithInput(input telemetryv1alpha1.LogPipelineInput)
 }
 
 func (b *LogPipelineBuilder) WithOutput(output telemetryv1alpha1.LogPipelineOutput) *LogPipelineBuilder {
-	b.httpOutput = output.HTTP
-	b.customOutput = output.Custom
+	b.httpOutput = output.FluentBitHTTP
+	b.customOutput = output.FluentBitCustom
 	b.otlpOutput = output.OTLP
 
 	return b
@@ -206,7 +206,7 @@ func (b *LogPipelineBuilder) WithKeepAnnotations(keep bool) *LogPipelineBuilder 
 		b.input.Application = &telemetryv1alpha1.LogPipelineApplicationInput{}
 	}
 
-	b.input.Application.KeepAnnotations = &keep
+	b.input.Application.FluentBitKeepAnnotations = &keep
 
 	return b
 }
@@ -216,7 +216,7 @@ func (b *LogPipelineBuilder) WithDropLabels(drop bool) *LogPipelineBuilder {
 		b.input.Application = &telemetryv1alpha1.LogPipelineApplicationInput{}
 	}
 
-	b.input.Application.DropLabels = &drop
+	b.input.Application.FluentBitDropLabels = &drop
 
 	return b
 }
@@ -232,12 +232,12 @@ func (b *LogPipelineBuilder) WithKeepOriginalBody(keep bool) *LogPipelineBuilder
 }
 
 func (b *LogPipelineBuilder) WithCustomFilter(filter string) *LogPipelineBuilder {
-	b.fluentBitFilters = append(b.fluentBitFilters, telemetryv1alpha1.LogPipelineFilter{Custom: filter})
+	b.fluentBitFilters = append(b.fluentBitFilters, telemetryv1alpha1.FluentBitFilter{Custom: filter})
 	return b
 }
 
 func (b *LogPipelineBuilder) WithFile(name, content string) *LogPipelineBuilder {
-	b.files = append(b.files, telemetryv1alpha1.LogPipelineFileMount{
+	b.files = append(b.files, telemetryv1alpha1.FluentBitFile{
 		Name:    name,
 		Content: content,
 	})
@@ -246,7 +246,7 @@ func (b *LogPipelineBuilder) WithFile(name, content string) *LogPipelineBuilder 
 }
 
 func (b *LogPipelineBuilder) WithVariable(name, secretName, secretNamespace, secretKey string) *LogPipelineBuilder {
-	b.variables = append(b.variables, telemetryv1alpha1.LogPipelineVariableRef{
+	b.variables = append(b.variables, telemetryv1alpha1.FluentBitVariable{
 		Name: name,
 		ValueFrom: telemetryv1alpha1.ValueFromSource{
 			SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
@@ -350,14 +350,14 @@ func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 			Input:            b.input,
 			FluentBitFilters: b.fluentBitFilters,
 			Output: telemetryv1alpha1.LogPipelineOutput{
-				HTTP:   b.httpOutput,
-				Custom: b.customOutput,
-				OTLP:   b.otlpOutput,
+				FluentBitHTTP:   b.httpOutput,
+				FluentBitCustom: b.customOutput,
+				OTLP:            b.otlpOutput,
 			},
-			Files:      b.files,
-			Variables:  b.variables,
-			Transforms: b.transforms,
-			Filters:    b.filters,
+			FluentBitFiles:     b.files,
+			FluentBitVariables: b.variables,
+			Transforms:         b.transforms,
+			Filters:            b.filters,
 		},
 		Status: telemetryv1alpha1.LogPipelineStatus{
 			Conditions: b.statusConditions,
@@ -370,13 +370,13 @@ func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 	return logPipeline
 }
 
-func defaultHTTPOutput() *telemetryv1alpha1.LogPipelineHTTPOutput {
-	return &telemetryv1alpha1.LogPipelineHTTPOutput{
+func defaultHTTPOutput() *telemetryv1alpha1.FluentBitHTTPOutput {
+	return &telemetryv1alpha1.FluentBitHTTPOutput{
 		Host:   telemetryv1alpha1.ValueType{Value: "127.0.0.1"},
 		Port:   "8080",
 		URI:    "/",
 		Format: "json",
-		TLS: telemetryv1alpha1.LogPipelineOutputTLS{
+		TLS: telemetryv1alpha1.FluentBitHTTPOutputTLS{
 			Disabled:                  true,
 			SkipCertificateValidation: true,
 		},

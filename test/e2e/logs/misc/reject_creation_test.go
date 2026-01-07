@@ -327,7 +327,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithHTTPOutput(
 					testutils.HTTPHost(backendHost),
 					testutils.HTTPPort(backendPort),
-					testutils.HTTPClientTLS(telemetryv1alpha1.LogPipelineOutputTLS{
+					testutils.HTTPClientTLS(telemetryv1alpha1.FluentBitHTTPOutputTLS{
 						Cert: &telemetryv1alpha1.ValueType{Value: "myClientCert"},
 					}),
 				).
@@ -341,7 +341,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				WithHTTPOutput(
 					testutils.HTTPHost(backendHost),
 					testutils.HTTPPort(backendPort),
-					testutils.HTTPClientTLS(telemetryv1alpha1.LogPipelineOutputTLS{
+					testutils.HTTPClientTLS(telemetryv1alpha1.FluentBitHTTPOutputTLS{
 						Key: &telemetryv1alpha1.ValueType{Value: "key"},
 					}),
 				).
@@ -357,7 +357,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				},
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Output: telemetryv1alpha1.LogPipelineOutput{
-						HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
+						FluentBitHTTP: &telemetryv1alpha1.FluentBitHTTPOutput{
 							Host: telemetryv1alpha1.ValueType{Value: "example.com"},
 							URI:  "without-leading-slash",
 						},
@@ -479,13 +479,13 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					Name: "variables-valuefrom-required",
 				},
 				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Variables: []telemetryv1alpha1.LogPipelineVariableRef{
+					FluentBitVariables: []telemetryv1alpha1.FluentBitVariable{
 						{
 							Name: "var1",
 						},
 					},
 					Output: telemetryv1alpha1.LogPipelineOutput{
-						HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{},
+						FluentBitHTTP: &telemetryv1alpha1.FluentBitHTTPOutput{},
 					},
 				},
 			},

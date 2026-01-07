@@ -113,18 +113,18 @@ func getSecretRefsMetricPipeline(mp *telemetryv1alpha1.MetricPipeline) []telemet
 func getSecretRefsLogPipeline(lp *telemetryv1alpha1.LogPipeline) []telemetryv1alpha1.SecretKeyRef {
 	var refs []telemetryv1alpha1.SecretKeyRef
 
-	for _, v := range lp.Spec.Variables {
+	for _, v := range lp.Spec.FluentBitVariables {
 		if v.ValueFrom.SecretKeyRef != nil {
 			refs = append(refs, *v.ValueFrom.SecretKeyRef)
 		}
 	}
 
-	refs = append(refs, getSecretRefsInHTTPOutput(lp.Spec.Output.HTTP)...)
+	refs = append(refs, getSecretRefsInHTTPOutput(lp.Spec.Output.FluentBitHTTP)...)
 
 	return refs
 }
 
-func getSecretRefsInHTTPOutput(httpOutput *telemetryv1alpha1.LogPipelineHTTPOutput) []telemetryv1alpha1.SecretKeyRef {
+func getSecretRefsInHTTPOutput(httpOutput *telemetryv1alpha1.FluentBitHTTPOutput) []telemetryv1alpha1.SecretKeyRef {
 	var refs []telemetryv1alpha1.SecretKeyRef
 
 	if httpOutput != nil {

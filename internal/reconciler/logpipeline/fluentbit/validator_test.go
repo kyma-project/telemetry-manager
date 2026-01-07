@@ -28,7 +28,7 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 			name: "valid custom output",
 			logPipeline: &telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Output: telemetryv1alpha1.LogPipelineOutput{Custom: "name http"},
+					Output: telemetryv1alpha1.LogPipelineOutput{FluentBitCustom: "name http"},
 				},
 			},
 			expectError: false,
@@ -38,7 +38,7 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 			logPipeline: &telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Output: telemetryv1alpha1.LogPipelineOutput{
-						Custom: `
+						FluentBitCustom: `
     name    http
     storage.total_limit_size 10G`,
 					},
@@ -51,7 +51,7 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 			name: "custom output missing name",
 			logPipeline: &telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Output: telemetryv1alpha1.LogPipelineOutput{Custom: "Regex .*"},
+					Output: telemetryv1alpha1.LogPipelineOutput{FluentBitCustom: "Regex .*"},
 				},
 			},
 			expectError:  true,
@@ -62,10 +62,10 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 			name: "valid custom filter",
 			logPipeline: &telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
-					FluentBitFilters: []telemetryv1alpha1.LogPipelineFilter{
+					FluentBitFilters: []telemetryv1alpha1.FluentBitFilter{
 						{Custom: "Name grep"},
 					},
-					Output: telemetryv1alpha1.LogPipelineOutput{Custom: "Name http"},
+					Output: telemetryv1alpha1.LogPipelineOutput{FluentBitCustom: "Name http"},
 				},
 			},
 			expectError: false,
@@ -74,10 +74,10 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 			name: "custom filter without name",
 			logPipeline: &telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
-					FluentBitFilters: []telemetryv1alpha1.LogPipelineFilter{
+					FluentBitFilters: []telemetryv1alpha1.FluentBitFilter{
 						{Custom: "foo bar"},
 					},
-					Output: telemetryv1alpha1.LogPipelineOutput{Custom: "Name http"},
+					Output: telemetryv1alpha1.LogPipelineOutput{FluentBitCustom: "Name http"},
 				},
 			},
 			expectError:  true,
@@ -87,10 +87,10 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 			name: "custom filter with forbidden match condition",
 			logPipeline: &telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
-					FluentBitFilters: []telemetryv1alpha1.LogPipelineFilter{
+					FluentBitFilters: []telemetryv1alpha1.FluentBitFilter{
 						{Custom: "Name grep\nMatch *"},
 					},
-					Output: telemetryv1alpha1.LogPipelineOutput{Custom: "Name http"},
+					Output: telemetryv1alpha1.LogPipelineOutput{FluentBitCustom: "Name http"},
 				},
 			},
 			expectError:  true,
@@ -100,10 +100,10 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 			name: "denied filter plugin",
 			logPipeline: &telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
-					FluentBitFilters: []telemetryv1alpha1.LogPipelineFilter{
+					FluentBitFilters: []telemetryv1alpha1.FluentBitFilter{
 						{Custom: "Name kubernetes"},
 					},
-					Output: telemetryv1alpha1.LogPipelineOutput{Custom: "Name http"},
+					Output: telemetryv1alpha1.LogPipelineOutput{FluentBitCustom: "Name http"},
 				},
 			},
 			expectError:  true,
@@ -114,11 +114,11 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 			name: "valid files",
 			logPipeline: &telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Files: []telemetryv1alpha1.LogPipelineFileMount{
+					FluentBitFiles: []telemetryv1alpha1.FluentBitFile{
 						{Name: "f1.json", Content: ""},
 						{Name: "f2.json", Content: ""},
 					},
-					Output: telemetryv1alpha1.LogPipelineOutput{Custom: "Name http"},
+					Output: telemetryv1alpha1.LogPipelineOutput{FluentBitCustom: "Name http"},
 				},
 			},
 			expectError: false,
@@ -127,11 +127,11 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 			name: "duplicate file name",
 			logPipeline: &telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Files: []telemetryv1alpha1.LogPipelineFileMount{
+					FluentBitFiles: []telemetryv1alpha1.FluentBitFile{
 						{Name: "f1.json", Content: ""},
 						{Name: "f1.json", Content: ""},
 					},
-					Output: telemetryv1alpha1.LogPipelineOutput{Custom: "Name http"},
+					Output: telemetryv1alpha1.LogPipelineOutput{FluentBitCustom: "Name http"},
 				},
 			},
 			expectError:  true,

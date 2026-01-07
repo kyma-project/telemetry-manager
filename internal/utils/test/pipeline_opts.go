@@ -223,11 +223,11 @@ func OAuth2Params(params map[string]string) OAuth2Option {
 	}
 }
 
-type HTTPOutputOption func(output *telemetryv1alpha1.LogPipelineHTTPOutput)
+type HTTPOutputOption func(output *telemetryv1alpha1.FluentBitHTTPOutput)
 
 func HTTPClientTLSFromString(ca, cert, key string) HTTPOutputOption {
-	return func(output *telemetryv1alpha1.LogPipelineHTTPOutput) {
-		output.TLS = telemetryv1alpha1.LogPipelineOutputTLS{
+	return func(output *telemetryv1alpha1.FluentBitHTTPOutput) {
+		output.TLS = telemetryv1alpha1.FluentBitHTTPOutputTLS{
 			CA:   &telemetryv1alpha1.ValueType{Value: ca},
 			Cert: &telemetryv1alpha1.ValueType{Value: cert},
 			Key:  &telemetryv1alpha1.ValueType{Value: key},
@@ -235,20 +235,20 @@ func HTTPClientTLSFromString(ca, cert, key string) HTTPOutputOption {
 	}
 }
 
-func HTTPClientTLS(tls telemetryv1alpha1.LogPipelineOutputTLS) HTTPOutputOption {
-	return func(output *telemetryv1alpha1.LogPipelineHTTPOutput) {
+func HTTPClientTLS(tls telemetryv1alpha1.FluentBitHTTPOutputTLS) HTTPOutputOption {
+	return func(output *telemetryv1alpha1.FluentBitHTTPOutput) {
 		output.TLS = tls
 	}
 }
 
 func HTTPHost(host string) HTTPOutputOption {
-	return func(output *telemetryv1alpha1.LogPipelineHTTPOutput) {
+	return func(output *telemetryv1alpha1.FluentBitHTTPOutput) {
 		output.Host = telemetryv1alpha1.ValueType{Value: host}
 	}
 }
 
 func HTTPHostFromSecret(secretName, secretNamespace, key string) HTTPOutputOption {
-	return func(output *telemetryv1alpha1.LogPipelineHTTPOutput) {
+	return func(output *telemetryv1alpha1.FluentBitHTTPOutput) {
 		output.Host = telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 			Name:      secretName,
 			Namespace: secretNamespace,
@@ -258,19 +258,19 @@ func HTTPHostFromSecret(secretName, secretNamespace, key string) HTTPOutputOptio
 }
 
 func HTTPPort(port int32) HTTPOutputOption {
-	return func(output *telemetryv1alpha1.LogPipelineHTTPOutput) {
+	return func(output *telemetryv1alpha1.FluentBitHTTPOutput) {
 		output.Port = strconv.Itoa(int(port))
 	}
 }
 
 func HTTPDedot(dedot bool) HTTPOutputOption {
-	return func(output *telemetryv1alpha1.LogPipelineHTTPOutput) {
+	return func(output *telemetryv1alpha1.FluentBitHTTPOutput) {
 		output.Dedot = dedot
 	}
 }
 
 func HTTPBasicAuthFromSecret(secretName, secretNamespace, userKey, passwordKey string) HTTPOutputOption {
-	return func(output *telemetryv1alpha1.LogPipelineHTTPOutput) {
+	return func(output *telemetryv1alpha1.FluentBitHTTPOutput) {
 		output.User = &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 			Name:      secretName,
 			Namespace: secretNamespace,

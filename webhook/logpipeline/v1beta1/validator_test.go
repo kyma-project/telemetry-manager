@@ -25,12 +25,12 @@ func TestLogPipelineValidator_ValidateCreate(t *testing.T) {
 				},
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Output: telemetryv1beta1.LogPipelineOutput{
-						Custom: "custom-fluentbit-output",
+						FluentBitCustom: "custom-fluentbit-output",
 					},
 				},
 			},
 			expectWarnings:    1,
-			expectWarningsMsg: "Logpipeline 'custom-output' uses unsupported custom filters or outputs. We recommend changing the pipeline to use supported filters or output. See the documentation: https://kyma-project.io/#/telemetry-manager/user/02-logs",
+			expectWarningsMsg: renderDeprecationWarning("custom-output", "output.custom"),
 		},
 		{
 			name: "custom filter",
@@ -39,13 +39,13 @@ func TestLogPipelineValidator_ValidateCreate(t *testing.T) {
 					Name: "custom-filter",
 				},
 				Spec: telemetryv1beta1.LogPipelineSpec{
-					FluentBitFilters: []telemetryv1beta1.LogPipelineFilter{
+					FluentBitFilters: []telemetryv1beta1.FluentBitFilter{
 						{Custom: "custom-filter"},
 					},
 				},
 			},
 			expectWarnings:    1,
-			expectWarningsMsg: "Logpipeline 'custom-filter' uses unsupported custom filters or outputs. We recommend changing the pipeline to use supported filters or output. See the documentation: https://kyma-project.io/#/telemetry-manager/user/02-logs",
+			expectWarningsMsg: renderDeprecationWarning("custom-filter", "filters"),
 		},
 		{
 			name: "valid filter",
@@ -102,7 +102,7 @@ func TestLogPipelineValidator_ValidateCreate(t *testing.T) {
 				assert.Len(t, warnings, tt.expectWarnings)
 
 				if tt.expectWarningsMsg != "" {
-					assert.Contains(t, warnings, tt.expectWarningsMsg)
+					assert.Contains(t, warnings, tt.expectWarningsMsg, "Warnings %s do not contain expected message: '%s'", warnings, tt.expectWarningsMsg)
 				}
 			}
 		})
@@ -127,12 +127,12 @@ func TestLogPipelineValidator_ValidateUpdate(t *testing.T) {
 				},
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Output: telemetryv1beta1.LogPipelineOutput{
-						Custom: "custom-fluentbit-output",
+						FluentBitCustom: "custom-fluentbit-output",
 					},
 				},
 			},
 			expectWarnings:    1,
-			expectWarningsMsg: "Logpipeline 'custom-output' uses unsupported custom filters or outputs. We recommend changing the pipeline to use supported filters or output. See the documentation: https://kyma-project.io/#/telemetry-manager/user/02-logs",
+			expectWarningsMsg: renderDeprecationWarning("custom-output", "output.custom"),
 		},
 		{
 			name: "valid update",
@@ -188,7 +188,7 @@ func TestLogPipelineValidator_ValidateUpdate(t *testing.T) {
 				assert.Len(t, warnings, tt.expectWarnings)
 
 				if tt.expectWarningsMsg != "" {
-					assert.Contains(t, warnings, tt.expectWarningsMsg)
+					assert.Contains(t, warnings, tt.expectWarningsMsg, "Warnings %s do not contain expected message: '%s'", warnings, tt.expectWarningsMsg)
 				}
 			}
 		})

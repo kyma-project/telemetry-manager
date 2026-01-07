@@ -308,7 +308,7 @@ func TestBuildTLSConfigSecret(t *testing.T) {
 			testutils.NewLogPipelineBuilder().
 				WithName("test-pipeline").
 				WithHTTPOutput(
-					testutils.HTTPClientTLS(telemetryv1alpha1.LogPipelineOutputTLS{
+					testutils.HTTPClientTLS(telemetryv1alpha1.FluentBitHTTPOutputTLS{
 						CA: &telemetryv1alpha1.ValueType{
 							ValueFrom: &telemetryv1alpha1.ValueFromSource{
 								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
@@ -359,7 +359,7 @@ func TestBuildTLSConfigSecret(t *testing.T) {
 			testutils.NewLogPipelineBuilder().
 				WithName("test-pipeline").
 				WithHTTPOutput(
-					testutils.HTTPClientTLS(telemetryv1alpha1.LogPipelineOutputTLS{
+					testutils.HTTPClientTLS(telemetryv1alpha1.FluentBitHTTPOutputTLS{
 						CA: &telemetryv1alpha1.ValueType{
 							ValueFrom: &telemetryv1alpha1.ValueFromSource{
 								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
