@@ -26,7 +26,6 @@ import (
 
 	"github.com/caarlos0/env/v11"
 	"github.com/go-logr/zapr"
-	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
@@ -49,6 +48,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/controllers/operator"
@@ -295,7 +295,7 @@ func setupManager(globals config.Global) (manager.Manager, error) {
 				&corev1.Service{}:             {Field: setNamespaceFieldSelector(globals)},
 				&networkingv1.NetworkPolicy{}: {Field: setNamespaceFieldSelector(globals)},
 				&corev1.Secret{}:              {Field: setNamespaceFieldSelector(globals)},
-				&operatorv1beta1.Telemetry{}: {Field: setNamespaceFieldSelector(globals)},
+				&operatorv1beta1.Telemetry{}:  {Field: setNamespaceFieldSelector(globals)},
 			},
 		},
 		Client: client.Options{
