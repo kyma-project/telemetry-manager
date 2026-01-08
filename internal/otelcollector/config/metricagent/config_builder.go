@@ -882,7 +882,7 @@ func inputRoutingConnectorConfig(outputPipelineIDs []string) common.RoutingConne
 
 // Authentication extensions
 
-func (b *Builder) addOAuth2Extension(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) error {
+func (b *Builder) addOAuth2Extension(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline) error {
 	oauth2ExtensionID := common.OAuth2ExtensionID(pipeline.Name)
 
 	oauth2ExtensionConfig, oauth2ExtensionEnvVars, err := common.NewOAuth2ExtensionConfigBuilder(
@@ -1102,7 +1102,7 @@ func shouldFilterByNamespace(namespaceSelector *telemetryv1beta1.NamespaceSelect
 	return namespaceSelector != nil && (len(namespaceSelector.Include) > 0 || len(namespaceSelector.Exclude) > 0)
 }
 
-func shouldEnableOAuth2(tp *telemetryv1alpha1.MetricPipeline) bool {
+func shouldEnableOAuth2(tp *telemetryv1beta1.MetricPipeline) bool {
 	return tp.Spec.Output.OTLP.Authentication != nil && tp.Spec.Output.OTLP.Authentication.OAuth2 != nil
 }
 

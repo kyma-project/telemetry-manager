@@ -81,7 +81,7 @@ func (v *Validator) Validate(ctx context.Context, pipeline *telemetryv1beta1.Log
 	}
 
 	if pipeline.Spec.Output.OTLP != nil {
-		var oauth2 *telemetryv1alpha1.OAuth2Options = nil
+		var oauth2 *telemetryv1beta1.OAuth2Options = nil
 		if pipeline.Spec.Output.OTLP.Authentication != nil {
 			oauth2 = pipeline.Spec.Output.OTLP.Authentication.OAuth2
 		}
@@ -89,7 +89,7 @@ func (v *Validator) Validate(ctx context.Context, pipeline *telemetryv1beta1.Log
 		if err := v.EndpointValidator.Validate(ctx, endpoint.EndpointValidationParams{
 			Endpoint:   &pipeline.Spec.Output.OTLP.Endpoint,
 			Protocol:   pipeline.Spec.Output.OTLP.Protocol,
-			OTLPTLS:    pipeline.Spec.Output.OTLP.TLS,
+			OutputTLS:  pipeline.Spec.Output.OTLP.TLS,
 			OTLPOAuth2: oauth2,
 		}); err != nil {
 			return err

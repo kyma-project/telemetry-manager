@@ -95,7 +95,7 @@ func TestMissingCert(t *testing.T) {
 		now:    func() time.Time { return oneMonthBeforeExpiry },
 	}
 
-	err := validator.Validate(t.Context(),TLSValidationParams{
+	err := validator.Validate(t.Context(), TLSValidationParams{
 		Key: &telemetryv1beta1.ValueType{Value: string(defaultKeyData)},
 		CA:  &telemetryv1beta1.ValueType{Value: string(defaultCaData)},
 	})

@@ -109,13 +109,13 @@ func TestMakeExporterConfigWithBasicAuth(t *testing.T) {
 }
 
 func TestMakeExporterConfigWithOAuth2(t *testing.T) {
-	output := &telemetryv1alpha1.OTLPOutput{
-		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
-		Authentication: &telemetryv1alpha1.AuthenticationOptions{
-			OAuth2: &telemetryv1alpha1.OAuth2Options{
-				TokenURL:     telemetryv1alpha1.ValueType{Value: "token-url"},
-				ClientID:     telemetryv1alpha1.ValueType{Value: "client-id"},
-				ClientSecret: telemetryv1alpha1.ValueType{Value: "client-secret"},
+	output := &telemetryv1beta1.OTLPOutput{
+		Endpoint: telemetryv1beta1.ValueType{Value: "otlp-endpoint"},
+		Authentication: &telemetryv1beta1.AuthenticationOptions{
+			OAuth2: &telemetryv1beta1.OAuth2Options{
+				TokenURL:     telemetryv1beta1.ValueType{Value: "token-url"},
+				ClientID:     telemetryv1beta1.ValueType{Value: "client-id"},
+				ClientSecret: telemetryv1beta1.ValueType{Value: "client-secret"},
 			},
 		},
 	}

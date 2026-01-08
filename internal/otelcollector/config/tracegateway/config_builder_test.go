@@ -113,7 +113,7 @@ func TestBuildConfig(t *testing.T) {
 		},
 		{
 			name: "pipeline using OAuth2 authentication",
-			pipelines: []telemetryv1alpha1.TracePipeline{
+			pipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
 					WithName("test").
 					WithOTLPOutput(

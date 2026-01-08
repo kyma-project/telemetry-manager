@@ -26,7 +26,7 @@ func TestFilter_OTel(t *testing.T) {
 		{
 			label: suite.LabelLogAgent,
 			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
-				return testutils.BuildLogPipelineRuntimeInput(testutils.ExtIncludeNamespaces(includeNs))
+				return testutils.BuildLogPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
 		},
 		{

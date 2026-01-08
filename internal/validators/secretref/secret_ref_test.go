@@ -291,31 +291,31 @@ func TestTracePipeline_GetSecretRefs(t *testing.T) {
 		{
 			name:         "oauth2",
 			pipelineName: "test-pipeline",
-			given: &telemetryv1alpha1.OTLPOutput{
-				Authentication: &telemetryv1alpha1.AuthenticationOptions{
-					OAuth2: &telemetryv1alpha1.OAuth2Options{
-						TokenURL: telemetryv1alpha1.ValueType{
+			given: &telemetryv1beta1.OTLPOutput{
+				Authentication: &telemetryv1beta1.AuthenticationOptions{
+					OAuth2: &telemetryv1beta1.OAuth2Options{
+						TokenURL: telemetryv1beta1.ValueType{
 							Value: "",
-							ValueFrom: &telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+							ValueFrom: &telemetryv1beta1.ValueFromSource{
+								SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 									Name:      "secret-1",
 									Namespace: "default",
 									Key:       "token-url",
 								}},
 						},
-						ClientID: telemetryv1alpha1.ValueType{
+						ClientID: telemetryv1beta1.ValueType{
 							Value: "",
-							ValueFrom: &telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+							ValueFrom: &telemetryv1beta1.ValueFromSource{
+								SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 									Name:      "secret-2",
 									Namespace: "default",
 									Key:       "client-id",
 								}},
 						},
-						ClientSecret: telemetryv1alpha1.ValueType{
+						ClientSecret: telemetryv1beta1.ValueType{
 							Value: "",
-							ValueFrom: &telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+							ValueFrom: &telemetryv1beta1.ValueFromSource{
+								SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 									Name:      "secret-3",
 									Namespace: "default",
 									Key:       "client-secret",
@@ -325,7 +325,7 @@ func TestTracePipeline_GetSecretRefs(t *testing.T) {
 				},
 			},
 
-			expected: []telemetryv1alpha1.SecretKeyRef{
+			expected: []telemetryv1beta1.SecretKeyRef{
 				{Name: "secret-1", Namespace: "default", Key: "token-url"},
 				{Name: "secret-2", Namespace: "default", Key: "client-id"},
 				{Name: "secret-3", Namespace: "default", Key: "client-secret"},

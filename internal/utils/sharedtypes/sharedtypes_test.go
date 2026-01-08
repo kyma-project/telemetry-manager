@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
@@ -137,22 +137,22 @@ func TestResolveValue(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		value       telemetryv1alpha1.ValueType
+		value       telemetryv1beta1.ValueType
 		expected    []byte
 		expectedErr bool
 		errType     error
 	}{
 		{
 			name:        "resolve from direct value",
-			value:       telemetryv1alpha1.ValueType{Value: "direct-value"},
+			value:       telemetryv1beta1.ValueType{Value: "direct-value"},
 			expected:    []byte("direct-value"),
 			expectedErr: false,
 		},
 		{
 			name: "resolve from undefined value",
-			value: telemetryv1alpha1.ValueType{
+			value: telemetryv1beta1.ValueType{
 				Value: "",
-				ValueFrom: &telemetryv1alpha1.ValueFromSource{
+				ValueFrom: &telemetryv1beta1.ValueFromSource{
 					SecretKeyRef: nil,
 				},
 			},
@@ -162,10 +162,10 @@ func TestResolveValue(t *testing.T) {
 		},
 		{
 			name: "resolve from secret",
-			value: telemetryv1alpha1.ValueType{
+			value: telemetryv1beta1.ValueType{
 				Value: "",
-				ValueFrom: &telemetryv1alpha1.ValueFromSource{
-					SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+				ValueFrom: &telemetryv1beta1.ValueFromSource{
+					SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 						Name:      "test-secret",
 						Key:       "test-key",
 						Namespace: "default",
@@ -177,10 +177,10 @@ func TestResolveValue(t *testing.T) {
 		},
 		{
 			name: "direct value takes precedence over secret",
-			value: telemetryv1alpha1.ValueType{
+			value: telemetryv1beta1.ValueType{
 				Value: "direct-value",
-				ValueFrom: &telemetryv1alpha1.ValueFromSource{
-					SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+				ValueFrom: &telemetryv1beta1.ValueFromSource{
+					SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 						Name:      "test-secret",
 						Key:       "test-key",
 						Namespace: "default",

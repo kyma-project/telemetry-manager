@@ -24,7 +24,7 @@ type MetricPipelineBuilder struct {
 	inOTLP       *telemetryv1beta1.OTLPInput
 
 	outOTLP *telemetryv1beta1.OTLPOutput
-	oauth2  *telemetryv1alpha1.OAuth2Options
+	oauth2  *telemetryv1beta1.OAuth2Options
 
 	transforms       []telemetryv1beta1.TransformSpec
 	filter           []telemetryv1beta1.FilterSpec
@@ -391,7 +391,7 @@ func (b *MetricPipelineBuilder) WithOTLPOutput(opts ...OTLPOutputOption) *Metric
 
 func (b *MetricPipelineBuilder) WithOAuth2(opts ...OAuth2Option) *MetricPipelineBuilder {
 	if b.oauth2 == nil {
-		b.oauth2 = &telemetryv1alpha1.OAuth2Options{}
+		b.oauth2 = &telemetryv1beta1.OAuth2Options{}
 	}
 
 	for _, opt := range opts {
@@ -400,7 +400,7 @@ func (b *MetricPipelineBuilder) WithOAuth2(opts ...OAuth2Option) *MetricPipeline
 
 	// Set OAuth2 on the OTLP output authentication
 	if b.outOTLP.Authentication == nil {
-		b.outOTLP.Authentication = &telemetryv1alpha1.AuthenticationOptions{}
+		b.outOTLP.Authentication = &telemetryv1beta1.AuthenticationOptions{}
 	}
 
 	b.outOTLP.Authentication.OAuth2 = b.oauth2

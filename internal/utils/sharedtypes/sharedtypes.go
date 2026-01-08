@@ -6,7 +6,6 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 )
@@ -31,7 +30,7 @@ func IsValid(v *telemetryv1beta1.ValueType) bool {
 		v.ValueFrom.SecretKeyRef.Namespace != ""
 }
 
-func ResolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.ValueType) ([]byte, error) {
+func ResolveValue(ctx context.Context, c client.Reader, value telemetryv1beta1.ValueType) ([]byte, error) {
 	if value.Value != "" {
 		return []byte(value.Value), nil
 	}

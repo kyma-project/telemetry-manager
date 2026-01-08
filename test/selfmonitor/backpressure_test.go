@@ -34,7 +34,7 @@ func TestBackpressure(t *testing.T) {
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
 					WithName(suite.LabelSelfMonitorLogAgentPrefix).
-					WithInput(testutils.BuildLogPipelineRuntimeInput(testutils.ExtIncludeNamespaces(includeNs))).
+					WithInput(testutils.BuildLogPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))).
 					WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 					Build()
 
@@ -100,7 +100,7 @@ func TestBackpressure(t *testing.T) {
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
 					WithName(suite.LabelSelfMonitorFluentBitPrefix).
-					WithRuntimeInput(true, testutils.ExtIncludeNamespaces(includeNs)).
+					WithRuntimeInput(true, testutils.IncludeNamespaces(includeNs)).
 					WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 					Build()
 

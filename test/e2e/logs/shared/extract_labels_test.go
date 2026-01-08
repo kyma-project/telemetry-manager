@@ -33,7 +33,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 		{
 			label: suite.LabelLogAgent,
 			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
-				return testutils.BuildLogPipelineRuntimeInput(testutils.ExtIncludeNamespaces(includeNs))
+				return testutils.BuildLogPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
 			logGeneratorBuilder: func(ns string, labels map[string]string) client.Object {
 				return stdoutloggen.NewDeployment(ns).WithLabels(labels).K8sObject()
@@ -164,7 +164,7 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 	pipelineNotDropped := testutils.NewLogPipelineBuilder().
 		WithName(pipelineNameNotDropped).
 		WithKeepAnnotations(false).
-		WithRuntimeInput(true, testutils.ExtIncludeNamespaces(genNs)).
+		WithRuntimeInput(true, testutils.IncludeNamespaces(genNs)).
 		WithDropLabels(false).
 		WithHTTPOutput(testutils.HTTPHost(backendNotDropped.Host()), testutils.HTTPPort(backendNotDropped.Port())).
 		Build()
@@ -172,7 +172,7 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 	pipelineDropped := testutils.NewLogPipelineBuilder().
 		WithName(pipelineNameDropped).
 		WithKeepAnnotations(false).
-		WithRuntimeInput(true, testutils.ExtIncludeNamespaces(genNs)).
+		WithRuntimeInput(true, testutils.IncludeNamespaces(genNs)).
 		WithDropLabels(true).
 		WithHTTPOutput(testutils.HTTPHost(backendDropped.Host()), testutils.HTTPPort(backendDropped.Port())).
 		Build()

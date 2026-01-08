@@ -34,7 +34,7 @@ func TestInstrumentationScope(t *testing.T) {
 		WithName(pipelineName).
 		WithRuntimeInput(true,
 			[]testutils.NamespaceSelectorOptions{testutils.IncludeNamespaces(genNs)}...).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
 	resources := []client.Object{

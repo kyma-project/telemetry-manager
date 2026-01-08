@@ -391,7 +391,7 @@ func TestBuildConfig(t *testing.T) {
 		},
 		{
 			name: "pipeline using OAuth2 authentication",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
 					WithOTLPInput(true).

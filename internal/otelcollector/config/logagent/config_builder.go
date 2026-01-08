@@ -189,7 +189,7 @@ func (b *Builder) addOTLPExporter() buildComponentFunc {
 	)
 }
 
-func (b *Builder) addOAuth2Extension(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
+func (b *Builder) addOAuth2Extension(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error {
 	oauth2ExtensionID := common.OAuth2ExtensionID(pipeline.Name)
 
 	oauth2ExtensionConfig, oauth2ExtensionEnvVars, err := common.NewOAuth2ExtensionConfigBuilder(
@@ -207,7 +207,7 @@ func (b *Builder) addOAuth2Extension(ctx context.Context, pipeline *telemetryv1a
 	return nil
 }
 
-func shouldEnableOAuth2(tp *telemetryv1alpha1.LogPipeline) bool {
+func shouldEnableOAuth2(tp *telemetryv1beta1.LogPipeline) bool {
 	return tp.Spec.Output.OTLP.Authentication != nil && tp.Spec.Output.OTLP.Authentication.OAuth2 != nil
 }
 

@@ -21,10 +21,10 @@ const (
 )
 
 type EndpointValidationParams struct {
-	Endpoint   *telemetryv1alpha1.ValueType
+	Endpoint   *telemetryv1beta1.ValueType
 	Protocol   telemetryv1beta1.OTLPProtocol
-	OTLPTLS    *telemetryv1alpha1.OTLPTLS
-	OTLPOAuth2 *telemetryv1alpha1.OAuth2Options
+	OutputTLS  *telemetryv1beta1.OutputTLS
+	OTLPOAuth2 *telemetryv1beta1.OAuth2Options
 }
 
 type Validator struct {
@@ -93,7 +93,7 @@ func (v *Validator) Validate(ctx context.Context, params EndpointValidationParam
 
 	// OAuth2 validation
 	if params.OTLPOAuth2 != nil {
-		var validationFunc func(string, *telemetryv1alpha1.OTLPTLS) error
+		var validationFunc func(string, *telemetryv1beta1.OutputTLS) error
 
 		switch params.Protocol {
 		case OTLPProtocolGRPC:
@@ -102,7 +102,7 @@ func (v *Validator) Validate(ctx context.Context, params EndpointValidationParam
 			validationFunc = validateHTTPWithOAuth2
 		}
 
-		if err := validationFunc(u.Scheme, params.OTLPTLS); err != nil {
+		if err := validationFunc(u.Scheme, params.OutputTLS); err != nil {
 			return err
 		}
 	}
@@ -180,7 +180,7 @@ func validateSchemeHTTP(scheme string) error {
 	return nil
 }
 
-func validateGRPCWithOAuth2(scheme string, tls *telemetryv1alpha1.OTLPTLS) error {
+func validateGRPCWithOAuth2(scheme string, tls *telemetryv1beta1.OutputTLS) error {
 	// Insecure TLS config
 	if tls != nil && tls.Insecure {
 		return &EndpointInvalidError{Err: ErrGRPCOAuth2NoTLS}
@@ -194,7 +194,7 @@ func validateGRPCWithOAuth2(scheme string, tls *telemetryv1alpha1.OTLPTLS) error
 	return nil
 }
 
-func validateHTTPWithOAuth2(scheme string, tls *telemetryv1alpha1.OTLPTLS) error {
+func validateHTTPWithOAuth2(scheme string, tls *telemetryv1beta1.OutputTLS) error {
 	// HTTP scheme with TLS
 	if scheme == "http" && isTLSConfigured(tls) {
 		return &EndpointInvalidError{Err: ErrHTTPWithTLS}
@@ -203,7 +203,7 @@ func validateHTTPWithOAuth2(scheme string, tls *telemetryv1alpha1.OTLPTLS) error
 	return nil
 }
 
-func isTLSConfigured(tls *telemetryv1alpha1.OTLPTLS) bool {
+func isTLSConfigured(tls *telemetryv1beta1.OutputTLS) bool {
 	if tls == nil || tls.Insecure {
 		return false
 	}

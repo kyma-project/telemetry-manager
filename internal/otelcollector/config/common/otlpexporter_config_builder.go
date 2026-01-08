@@ -153,7 +153,7 @@ func isInsecureOutput(endpoint string) bool {
 	return len(strings.TrimSpace(endpoint)) > 0 && strings.HasPrefix(endpoint, "http://")
 }
 
-func isBasicAuthEnabled(authOptions *telemetryv1alpha1.AuthenticationOptions) bool {
+func isBasicAuthEnabled(authOptions *telemetryv1beta1.AuthenticationOptions) bool {
 	return authOptions != nil &&
 		authOptions.Basic != nil &&
 		sharedtypesutils.IsValid(&authOptions.Basic.User) &&

@@ -134,10 +134,10 @@ func (b *Builder) addKymaStatsReceiver() buildComponentFunc {
 				K8sLeaderElector:   "k8s_leader_elector",
 				CollectionInterval: "30s",
 				Resources: []ModuleGVR{
-					{Group: "operator.kyma-project.io", Version: "v1alpha1", Resource: "telemetries"},
-					{Group: "telemetry.kyma-project.io", Version: "v1alpha1", Resource: "logpipelines"},
-					{Group: "telemetry.kyma-project.io", Version: "v1alpha1", Resource: "tracepipelines"},
-					{Group: "telemetry.kyma-project.io", Version: "v1alpha1", Resource: "metricpipelines"},
+					{Group: "operator.kyma-project.io", Version: "v1beta1", Resource: "telemetries"},
+					{Group: "telemetry.kyma-project.io", Version: "v1beta1", Resource: "logpipelines"},
+					{Group: "telemetry.kyma-project.io", Version: "v1beta1", Resource: "tracepipelines"},
+					{Group: "telemetry.kyma-project.io", Version: "v1beta1", Resource: "metricpipelines"},
 				},
 			}
 		},
@@ -356,7 +356,7 @@ func (b *Builder) addOTLPExporter(queueSize int) buildComponentFunc {
 
 // Authentication extensions
 
-func (b *Builder) addOAuth2Extension(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) error {
+func (b *Builder) addOAuth2Extension(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline) error {
 	oauth2ExtensionID := common.OAuth2ExtensionID(pipeline.Name)
 
 	oauth2ExtensionConfig, oauth2ExtensionEnvVars, err := common.NewOAuth2ExtensionConfigBuilder(
@@ -435,6 +435,6 @@ func formatOutputServicePipelineID(mp *telemetryv1beta1.MetricPipeline) string {
 	return fmt.Sprintf("metrics/%s-output", mp.Name)
 }
 
-func shouldEnableOAuth2(tp *telemetryv1alpha1.MetricPipeline) bool {
+func shouldEnableOAuth2(tp *telemetryv1beta1.MetricPipeline) bool {
 	return tp.Spec.Output.OTLP.Authentication != nil && tp.Spec.Output.OTLP.Authentication.OAuth2 != nil
 }

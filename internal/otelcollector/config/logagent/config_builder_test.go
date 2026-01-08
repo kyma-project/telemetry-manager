@@ -63,7 +63,7 @@ func TestBuildConfig(t *testing.T) {
 			pipelines: []telemetryv1beta1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithName("test").
-					WithRuntimeInput(true, testutils.ExtIncludeNamespaces("kyma-system", "default")).
+					WithRuntimeInput(true, testutils.IncludeNamespaces("kyma-system", "default")).
 					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 			},
 			goldenFileName: "single-pipeline-namespace-included.yaml",
@@ -73,7 +73,7 @@ func TestBuildConfig(t *testing.T) {
 			pipelines: []telemetryv1beta1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithName("test").
-					WithRuntimeInput(true, testutils.ExtExcludeNamespaces("kyma-system", "default")).
+					WithRuntimeInput(true, testutils.ExcludeNamespaces("kyma-system", "default")).
 					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 			},
 			goldenFileName: "single-pipeline-namespace-excluded.yaml",
@@ -144,10 +144,10 @@ func TestBuildConfig(t *testing.T) {
 		},
 		{
 			name: "pipeline using OAuth2 authentication",
-			pipelines: []telemetryv1alpha1.LogPipeline{
+			pipelines: []telemetryv1beta1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithName("test").
-					WithApplicationInput(true).
+					WithRuntimeInput(true).
 					WithOTLPOutput(
 						testutils.OTLPProtocol("http"),
 					).

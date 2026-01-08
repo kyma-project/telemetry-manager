@@ -158,13 +158,13 @@ func TestNamespaceSelector_FluentBit(t *testing.T) {
 
 	includePipeline := testutils.NewLogPipelineBuilder().
 		WithName(includePipelineName).
-		WithRuntimeInput(true, testutils.ExtIncludeNamespaces(gen1Ns)).
+		WithRuntimeInput(true, testutils.IncludeNamespaces(gen1Ns)).
 		WithHTTPOutput(testutils.HTTPHost(backend1.Host()), testutils.HTTPPort(backend1.Port())).
 		Build()
 
 	excludeGen2Pipeline := testutils.NewLogPipelineBuilder().
 		WithName(excludePipelineName).
-		WithRuntimeInput(true, testutils.ExtExcludeNamespaces(gen2Ns)).
+		WithRuntimeInput(true, testutils.ExcludeNamespaces(gen2Ns)).
 		WithHTTPOutput(testutils.HTTPHost(backend2.Host()), testutils.HTTPPort(backend2.Port())).
 		Build()
 

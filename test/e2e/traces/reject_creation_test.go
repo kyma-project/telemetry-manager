@@ -216,7 +216,7 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 			name: "otlp-output-oauth2-invalid-token-url",
 			pipeline: testutils.NewTracePipelineBuilder().
 				WithOTLPOutput(
-					testutils.OTLPEndpoint(backenEndpoint),
+					testutils.OTLPEndpoint(backendEndpoint),
 					testutils.OTLPOAuth2(
 						testutils.OAuth2ClientSecret("clientsecret"),
 						testutils.OAuth2ClientID("clientid"),
@@ -231,7 +231,7 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 			name: "otlp-output-oauth2-missing-client-id",
 			pipeline: testutils.NewTracePipelineBuilder().
 				WithOTLPOutput(
-					testutils.OTLPEndpoint(backenEndpoint),
+					testutils.OTLPEndpoint(backendEndpoint),
 					testutils.OTLPOAuth2(
 						testutils.OAuth2ClientSecret("clientsecret"),
 						testutils.OAuth2TokenURL("https://auth.example.com/token"),
@@ -245,13 +245,13 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 			name: "otlp-output-oauth2-insecure",
 			pipeline: testutils.NewTracePipelineBuilder().
 				WithOTLPOutput(
-					testutils.OTLPEndpoint(backenEndpoint),
+					testutils.OTLPEndpoint(backendEndpoint),
 					testutils.OTLPOAuth2(
 						testutils.OAuth2ClientID("clientid"),
 						testutils.OAuth2ClientSecret("clientsecret"),
 						testutils.OAuth2TokenURL("https://auth.example.com/token"),
 					),
-					testutils.OTLPClientTLS(&telemetryv1alpha1.OTLPTLS{
+					testutils.OTLPClientTLS(&telemetryv1beta1.OutputTLS{
 						Insecure: true,
 					}),
 				).

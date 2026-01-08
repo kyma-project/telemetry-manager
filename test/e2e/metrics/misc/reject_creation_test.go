@@ -27,7 +27,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		pipeline telemetryv1alpha1.MetricPipeline
+		pipeline telemetryv1beta1.MetricPipeline
 		errorMsg string
 		field    string
 		causes   int
@@ -218,7 +218,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 			name: "otlp-output-oauth2-invalid-token-url",
 			pipeline: testutils.NewMetricPipelineBuilder().
 				WithOTLPOutput(
-					testutils.OTLPEndpoint(backenEndpoint),
+					testutils.OTLPEndpoint(backendEndpoint),
 					testutils.OTLPOAuth2(
 						testutils.OAuth2ClientSecret("clientsecret"),
 						testutils.OAuth2ClientID("clientid"),
@@ -233,7 +233,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 			name: "otlp-output-oauth2-missing-client-id",
 			pipeline: testutils.NewMetricPipelineBuilder().
 				WithOTLPOutput(
-					testutils.OTLPEndpoint(backenEndpoint),
+					testutils.OTLPEndpoint(backendEndpoint),
 					testutils.OTLPOAuth2(
 						testutils.OAuth2ClientSecret("clientsecret"),
 						testutils.OAuth2TokenURL("https://auth.example.com/token"),
@@ -247,13 +247,13 @@ func TestRejectPipelineCreation(t *testing.T) {
 			name: "otlp-output-oauth2-insecure",
 			pipeline: testutils.NewMetricPipelineBuilder().
 				WithOTLPOutput(
-					testutils.OTLPEndpoint(backenEndpoint),
+					testutils.OTLPEndpoint(backendEndpoint),
 					testutils.OTLPOAuth2(
 						testutils.OAuth2ClientID("clientid"),
 						testutils.OAuth2ClientSecret("clientsecret"),
 						testutils.OAuth2TokenURL("https://auth.example.com/token"),
 					),
-					testutils.OTLPClientTLS(&telemetryv1alpha1.OTLPTLS{
+					testutils.OTLPClientTLS(&telemetryv1beta1.OutputTLS{
 						Insecure: true,
 					}),
 				).

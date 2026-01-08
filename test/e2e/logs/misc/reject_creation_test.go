@@ -254,7 +254,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 						testutils.OAuth2ClientSecret("clientsecret"),
 						testutils.OAuth2TokenURL("https://auth.example.com/token"),
 					),
-					testutils.OTLPClientTLS(&telemetryv1alpha1.OTLPTLS{
+					testutils.OTLPClientTLS(&telemetryv1beta1.OutputTLS{
 						Insecure: true,
 					}),
 				).
