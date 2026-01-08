@@ -30,13 +30,13 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 		{
 			label: suite.LabelLogAgent,
 			inputBuilder: func(includeNss, excludeNss []string) telemetryv1beta1.LogPipelineInput {
-				var opts []testutils.ExtendedNamespaceSelectorOptions
+				var opts []testutils.NamespaceSelectorOptions
 				if len(includeNss) > 0 {
-					opts = append(opts, testutils.ExtIncludeNamespaces(includeNss...))
+					opts = append(opts, testutils.IncludeNamespaces(includeNss...))
 				}
 
 				if len(excludeNss) > 0 {
-					opts = append(opts, testutils.ExtExcludeNamespaces(excludeNss...))
+					opts = append(opts, testutils.ExcludeNamespaces(excludeNss...))
 				}
 
 				return testutils.BuildLogPipelineRuntimeInput(opts...)

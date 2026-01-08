@@ -298,19 +298,3 @@ func ExcludeNamespaces(namespaces ...string) NamespaceSelectorOptions {
 		selector.Exclude = namespaces
 	}
 }
-
-// ExtendedNamespaceSelectorOptions unlike NamespaceSelectorOptions, allows to set the System flag
-// Only used in the LogPipeline Application input, and will be deprecated in the future
-type ExtendedNamespaceSelectorOptions func(selector *telemetryv1beta1.NamespaceSelector)
-
-func ExtIncludeNamespaces(namespaces ...string) ExtendedNamespaceSelectorOptions {
-	return func(selector *telemetryv1beta1.NamespaceSelector) {
-		selector.Include = namespaces
-	}
-}
-
-func ExtExcludeNamespaces(namespaces ...string) ExtendedNamespaceSelectorOptions {
-	return func(selector *telemetryv1beta1.NamespaceSelector) {
-		selector.Exclude = namespaces
-	}
-}

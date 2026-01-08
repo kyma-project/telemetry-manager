@@ -35,7 +35,7 @@ type LogPipelineBuilder struct {
 	statusConditions []metav1.Condition
 }
 
-func BuildLogPipelineRuntimeInput(opts ...ExtendedNamespaceSelectorOptions) telemetryv1beta1.LogPipelineInput {
+func BuildLogPipelineRuntimeInput(opts ...NamespaceSelectorOptions) telemetryv1beta1.LogPipelineInput {
 	input := telemetryv1beta1.LogPipelineInput{
 		Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
 			Enabled:    ptr.To(true),
@@ -110,7 +110,7 @@ func (b *LogPipelineBuilder) WithOutput(output telemetryv1beta1.LogPipelineOutpu
 	return b
 }
 
-func (b *LogPipelineBuilder) WithRuntimeInput(enabled bool, opts ...ExtendedNamespaceSelectorOptions) *LogPipelineBuilder {
+func (b *LogPipelineBuilder) WithRuntimeInput(enabled bool, opts ...NamespaceSelectorOptions) *LogPipelineBuilder {
 	b.input = BuildLogPipelineRuntimeInput(opts...)
 	b.input.Runtime.Enabled = ptr.To(enabled)
 	b.input.Runtime.KeepOriginalBody = ptr.To(false)
