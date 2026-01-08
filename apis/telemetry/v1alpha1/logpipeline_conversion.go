@@ -77,16 +77,26 @@ func Convert_v1alpha1_FluentBitHTTPOutputTLS_To_v1beta1_OutputTLS(in *FluentBitH
 	out.Insecure = in.Disabled
 
 	out.InsecureSkipVerify = in.SkipCertificateValidation
-	if err := autoConvert_v1alpha1_ValueType_To_v1beta1_ValueType(in.CA, out.CA, s); err != nil {
-		return err
+
+	if in.CA != nil {
+		out.CA = &telemetryv1beta1.ValueType{}
+		if err := autoConvert_v1alpha1_ValueType_To_v1beta1_ValueType(in.CA, out.CA, s); err != nil {
+			return err
+		}
 	}
 
-	if err := autoConvert_v1alpha1_ValueType_To_v1beta1_ValueType(in.Cert, out.Cert, s); err != nil {
-		return err
+	if in.Cert != nil {
+		out.Cert = &telemetryv1beta1.ValueType{}
+		if err := autoConvert_v1alpha1_ValueType_To_v1beta1_ValueType(in.Cert, out.Cert, s); err != nil {
+			return err
+		}
 	}
 
-	if err := autoConvert_v1alpha1_ValueType_To_v1beta1_ValueType(in.Key, out.Key, s); err != nil {
-		return err
+	if in.Key != nil {
+		out.Key = &telemetryv1beta1.ValueType{}
+		if err := autoConvert_v1alpha1_ValueType_To_v1beta1_ValueType(in.Key, out.Key, s); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -96,16 +106,26 @@ func Convert_v1beta1_OutputTLS_To_v1alpha1_FluentBitHTTPOutputTLS(in *telemetryv
 	out.Disabled = in.Insecure
 
 	out.SkipCertificateValidation = in.InsecureSkipVerify
-	if err := autoConvert_v1beta1_ValueType_To_v1alpha1_ValueType(in.CA, out.CA, s); err != nil {
-		return err
+
+	if in.CA != nil {
+		out.CA = &ValueType{}
+		if err := autoConvert_v1beta1_ValueType_To_v1alpha1_ValueType(in.CA, out.CA, s); err != nil {
+			return err
+		}
 	}
 
-	if err := autoConvert_v1beta1_ValueType_To_v1alpha1_ValueType(in.Cert, out.Cert, s); err != nil {
-		return err
+	if in.Cert != nil {
+		out.Cert = &ValueType{}
+		if err := autoConvert_v1beta1_ValueType_To_v1alpha1_ValueType(in.Cert, out.Cert, s); err != nil {
+			return err
+		}
 	}
 
-	if err := autoConvert_v1beta1_ValueType_To_v1alpha1_ValueType(in.Key, out.Key, s); err != nil {
-		return err
+	if in.Key != nil {
+		out.Key = &ValueType{}
+		if err := autoConvert_v1beta1_ValueType_To_v1alpha1_ValueType(in.Key, out.Key, s); err != nil {
+			return err
+		}
 	}
 
 	return nil
