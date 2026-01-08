@@ -421,6 +421,11 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
+	if err := s.AddConversionFunc((*FluentBitHTTPOutputTLS)(nil), (*v1beta1.OutputTLS)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_FluentBitHTTPOutputTLS_To_v1beta1_OutputTLS(a.(*FluentBitHTTPOutputTLS), b.(*v1beta1.OutputTLS), scope)
+	}); err != nil {
+		return err
+	}
 	if err := s.AddConversionFunc((*LogPipelineInput)(nil), (*v1beta1.LogPipelineInput)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_LogPipelineInput_To_v1beta1_LogPipelineInput(a.(*LogPipelineInput), b.(*v1beta1.LogPipelineInput), scope)
 	}); err != nil {
@@ -443,6 +448,11 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}
 	if err := s.AddConversionFunc((*v1beta1.OTLPInput)(nil), (*OTLPInput)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1beta1_OTLPInput_To_v1alpha1_OTLPInput(a.(*v1beta1.OTLPInput), b.(*OTLPInput), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddConversionFunc((*v1beta1.OutputTLS)(nil), (*FluentBitHTTPOutputTLS)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_OutputTLS_To_v1alpha1_FluentBitHTTPOutputTLS(a.(*v1beta1.OutputTLS), b.(*FluentBitHTTPOutputTLS), scope)
 	}); err != nil {
 		return err
 	}
@@ -807,7 +817,15 @@ func Convert_v1beta1_LogPipelineList_To_v1alpha1_LogPipelineList(in *v1beta1.Log
 
 func autoConvert_v1alpha1_LogPipelineOutput_To_v1beta1_LogPipelineOutput(in *LogPipelineOutput, out *v1beta1.LogPipelineOutput, s conversion.Scope) error {
 	out.FluentBitCustom = in.FluentBitCustom
-	out.FluentBitHTTP = (*v1beta1.FluentBitHTTPOutput)(unsafe.Pointer(in.FluentBitHTTP))
+	if in.FluentBitHTTP != nil {
+		in, out := &in.FluentBitHTTP, &out.FluentBitHTTP
+		*out = new(v1beta1.FluentBitHTTPOutput)
+		if err := Convert_v1alpha1_FluentBitHTTPOutput_To_v1beta1_FluentBitHTTPOutput(*in, *out, s); err != nil {
+			return err
+		}
+	} else {
+		out.FluentBitHTTP = nil
+	}
 	out.OTLP = (*v1beta1.OTLPOutput)(unsafe.Pointer(in.OTLP))
 	return nil
 }
@@ -819,7 +837,15 @@ func Convert_v1alpha1_LogPipelineOutput_To_v1beta1_LogPipelineOutput(in *LogPipe
 
 func autoConvert_v1beta1_LogPipelineOutput_To_v1alpha1_LogPipelineOutput(in *v1beta1.LogPipelineOutput, out *LogPipelineOutput, s conversion.Scope) error {
 	out.FluentBitCustom = in.FluentBitCustom
-	out.FluentBitHTTP = (*FluentBitHTTPOutput)(unsafe.Pointer(in.FluentBitHTTP))
+	if in.FluentBitHTTP != nil {
+		in, out := &in.FluentBitHTTP, &out.FluentBitHTTP
+		*out = new(FluentBitHTTPOutput)
+		if err := Convert_v1beta1_FluentBitHTTPOutput_To_v1alpha1_FluentBitHTTPOutput(*in, *out, s); err != nil {
+			return err
+		}
+	} else {
+		out.FluentBitHTTP = nil
+	}
 	out.OTLP = (*OTLPOutput)(unsafe.Pointer(in.OTLP))
 	return nil
 }
