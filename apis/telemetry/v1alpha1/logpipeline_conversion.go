@@ -75,31 +75,39 @@ func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 
 func Convert_v1alpha1_FluentBitHTTPOutputTLS_To_v1beta1_OutputTLS(in *FluentBitHTTPOutputTLS, out *telemetryv1beta1.OutputTLS, s apiconversion.Scope) error {
 	out.Insecure = in.Disabled
+
 	out.InsecureSkipVerify = in.SkipCertificateValidation
 	if err := autoConvert_v1alpha1_ValueType_To_v1beta1_ValueType(in.CA, out.CA, s); err != nil {
 		return err
 	}
+
 	if err := autoConvert_v1alpha1_ValueType_To_v1beta1_ValueType(in.Cert, out.Cert, s); err != nil {
 		return err
 	}
+
 	if err := autoConvert_v1alpha1_ValueType_To_v1beta1_ValueType(in.Key, out.Key, s); err != nil {
 		return err
 	}
+
 	return nil
 }
 
 func Convert_v1beta1_OutputTLS_To_v1alpha1_FluentBitHTTPOutputTLS(in *telemetryv1beta1.OutputTLS, out *FluentBitHTTPOutputTLS, s apiconversion.Scope) error {
 	out.Disabled = in.Insecure
+
 	out.SkipCertificateValidation = in.InsecureSkipVerify
 	if err := autoConvert_v1beta1_ValueType_To_v1alpha1_ValueType(in.CA, out.CA, s); err != nil {
 		return err
 	}
+
 	if err := autoConvert_v1beta1_ValueType_To_v1alpha1_ValueType(in.Cert, out.Cert, s); err != nil {
 		return err
 	}
+
 	if err := autoConvert_v1beta1_ValueType_To_v1alpha1_ValueType(in.Key, out.Key, s); err != nil {
 		return err
 	}
+
 	return nil
 }
 
