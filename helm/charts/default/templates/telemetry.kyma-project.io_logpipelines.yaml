@@ -1965,7 +1965,168 @@ spec:
                             - password
                             - user
                             type: object
+                          oauth2:
+                            description: OAuth2 activates `OAuth2` authentication
+                              for the destination providing relevant Secrets.
+                            properties:
+                              clientID:
+                                description: ClientID contains the OAuth2 client ID
+                                  or a Secret reference.
+                                properties:
+                                  value:
+                                    description: Value as plain text.
+                                    type: string
+                                  valueFrom:
+                                    description: ValueFrom is the value as a reference
+                                      to a resource.
+                                    properties:
+                                      secretKeyRef:
+                                        description: SecretKeyRef refers to the value
+                                          of a specific key in a Secret. You must
+                                          provide `name` and `namespace` of the Secret,
+                                          as well as the name of the `key`.
+                                        properties:
+                                          key:
+                                            description: Key defines the name of the
+                                              attribute of the Secret holding the
+                                              referenced value.
+                                            minLength: 1
+                                            type: string
+                                          name:
+                                            description: Name of the Secret containing
+                                              the referenced value.
+                                            minLength: 1
+                                            type: string
+                                          namespace:
+                                            description: Namespace containing the
+                                              Secret with the referenced value.
+                                            minLength: 1
+                                            type: string
+                                        required:
+                                        - key
+                                        - name
+                                        - namespace
+                                        type: object
+                                    required:
+                                    - secretKeyRef
+                                    type: object
+                                type: object
+                                x-kubernetes-validations:
+                                - message: Exactly one of 'value' or 'valueFrom' must
+                                    be set
+                                  rule: has(self.value) != has(self.valueFrom)
+                              clientSecret:
+                                description: ClientSecret contains the OAuth2 client
+                                  secret or a Secret reference.
+                                properties:
+                                  value:
+                                    description: Value as plain text.
+                                    type: string
+                                  valueFrom:
+                                    description: ValueFrom is the value as a reference
+                                      to a resource.
+                                    properties:
+                                      secretKeyRef:
+                                        description: SecretKeyRef refers to the value
+                                          of a specific key in a Secret. You must
+                                          provide `name` and `namespace` of the Secret,
+                                          as well as the name of the `key`.
+                                        properties:
+                                          key:
+                                            description: Key defines the name of the
+                                              attribute of the Secret holding the
+                                              referenced value.
+                                            minLength: 1
+                                            type: string
+                                          name:
+                                            description: Name of the Secret containing
+                                              the referenced value.
+                                            minLength: 1
+                                            type: string
+                                          namespace:
+                                            description: Namespace containing the
+                                              Secret with the referenced value.
+                                            minLength: 1
+                                            type: string
+                                        required:
+                                        - key
+                                        - name
+                                        - namespace
+                                        type: object
+                                    required:
+                                    - secretKeyRef
+                                    type: object
+                                type: object
+                                x-kubernetes-validations:
+                                - message: Exactly one of 'value' or 'valueFrom' must
+                                    be set
+                                  rule: has(self.value) != has(self.valueFrom)
+                              params:
+                                additionalProperties:
+                                  type: string
+                                description: Params contains optional additional OAuth2
+                                  parameters that are sent to the token endpoint.
+                                type: object
+                              scopes:
+                                description: Scopes contains optional OAuth2 scopes.
+                                items:
+                                  type: string
+                                type: array
+                              tokenURL:
+                                description: TokenURL contains the OAuth2 token endpoint
+                                  URL or a Secret reference.
+                                properties:
+                                  value:
+                                    description: Value as plain text.
+                                    type: string
+                                  valueFrom:
+                                    description: ValueFrom is the value as a reference
+                                      to a resource.
+                                    properties:
+                                      secretKeyRef:
+                                        description: SecretKeyRef refers to the value
+                                          of a specific key in a Secret. You must
+                                          provide `name` and `namespace` of the Secret,
+                                          as well as the name of the `key`.
+                                        properties:
+                                          key:
+                                            description: Key defines the name of the
+                                              attribute of the Secret holding the
+                                              referenced value.
+                                            minLength: 1
+                                            type: string
+                                          name:
+                                            description: Name of the Secret containing
+                                              the referenced value.
+                                            minLength: 1
+                                            type: string
+                                          namespace:
+                                            description: Namespace containing the
+                                              Secret with the referenced value.
+                                            minLength: 1
+                                            type: string
+                                        required:
+                                        - key
+                                        - name
+                                        - namespace
+                                        type: object
+                                    required:
+                                    - secretKeyRef
+                                    type: object
+                                type: object
+                                x-kubernetes-validations:
+                                - message: Exactly one of 'value' or 'valueFrom' must
+                                    be set
+                                  rule: has(self.value) != has(self.valueFrom)
+                            required:
+                            - clientID
+                            - clientSecret
+                            - tokenURL
+                            type: object
                         type: object
+                        x-kubernetes-validations:
+                        - message: Only one authentication method can be specified
+                          rule: '!(has(self.basic) && has(self.oauth2))'
                       endpoint:
                         description: Endpoint defines the host and port (`<host>:<port>`)
                           of an OTLP endpoint.
@@ -2238,6 +2399,11 @@ spec:
                     - message: Path is only available with HTTP protocol
                       rule: '(has(self.path) && size(self.path) > 0) ? self.protocol
                         == ''http'' : true'
+                    - message: OAuth2 authentication requires TLS when using gRPC
+                        protocol
+                      rule: '(has(self.authentication) && has(self.authentication.oauth2)
+                        && self.protocol == ''grpc'' && has(self.tls)) ? !(has(self.tls.insecure)
+                        && self.tls.insecure == true) : true'
                 type: object
                 x-kubernetes-validations:
                 - message: Switching to or away from OTLP output is not supported.
