@@ -119,8 +119,8 @@ const (
 	LabelSelfMonitorTracesPrefix        = "selfmonitor-traces"
 
 	// Prefix custom label/annotation tests
-
 	LabelCustomLabelAnnotation = "custom-label-annotation"
+	
 	// Suffixes (representing different scenarios) for self-monitor test labels
 
 	LabelSelfMonitorHealthySuffix      = "healthy"
