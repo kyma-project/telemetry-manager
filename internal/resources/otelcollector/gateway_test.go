@@ -51,11 +51,6 @@ func TestGateway_ApplyResources(t *testing.T) {
 			goldenFilePath: "testdata/metric-gateway-fips-enabled.yaml",
 		},
 		{
-			name:           "metric gateway user cannot override labels defined by us",
-			sut:            NewMetricGatewayApplierDeleter(globals, image, priorityClassName),
-			goldenFilePath: "testdata/metric-gateway.yaml",
-		},
-		{
 			name:           "trace gateway",
 			sut:            NewTraceGatewayApplierDeleter(globals, image, priorityClassName),
 			goldenFilePath: "testdata/trace-gateway.yaml",
@@ -72,11 +67,6 @@ func TestGateway_ApplyResources(t *testing.T) {
 			goldenFilePath: "testdata/trace-gateway-fips-enabled.yaml",
 		},
 		{
-			name:           "trace gateway user cannot override labels defined by us",
-			sut:            NewTraceGatewayApplierDeleter(globals, image, priorityClassName),
-			goldenFilePath: "testdata/trace-gateway.yaml",
-		},
-		{
 			name:           "log gateway",
 			sut:            NewLogGatewayApplierDeleter(globals, image, priorityClassName),
 			goldenFilePath: "testdata/log-gateway.yaml",
@@ -91,11 +81,6 @@ func TestGateway_ApplyResources(t *testing.T) {
 			name:           "log gateway with FIPS mode enabled",
 			sut:            NewLogGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName),
 			goldenFilePath: "testdata/log-gateway-fips-enabled.yaml",
-		},
-		{
-			name:           "log gateway user cannot override labels defined by us",
-			sut:            NewLogGatewayApplierDeleter(globals, image, priorityClassName),
-			goldenFilePath: "testdata/log-gateway.yaml",
 		},
 	}
 
