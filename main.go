@@ -79,13 +79,13 @@ var (
 	setupLog = ctrl.Log.WithName("setup")
 
 	// Operator flags
-	certDir                   string
-	highPriorityClassName     string
-	normalPriorityClassName   string
-	clusterTrustBundleName    string
-	imagePullSecretName       string
-	additionalLabels          cliflags.Map
-	additionalAnnotations     cliflags.Map
+	certDir                 string
+	highPriorityClassName   string
+	normalPriorityClassName string
+	clusterTrustBundleName  string
+	imagePullSecretName     string
+	additionalLabels        cliflags.Map
+	additionalAnnotations   cliflags.Map
 )
 
 const (
