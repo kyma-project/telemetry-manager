@@ -77,28 +77,28 @@ func generateHTTPOutput(httpOutput *telemetryv1beta1.FluentBitHTTPOutput, fsBuff
 	}
 
 	tlsEnabled := "on"
-	if httpOutput.TLSConfig.Insecure {
+	if httpOutput.TLS.Insecure {
 		tlsEnabled = "off"
 	}
 
 	sb.AddConfigParam("tls", tlsEnabled)
 
 	tlsVerify := "on"
-	if httpOutput.TLSConfig.InsecureSkipVerify {
+	if httpOutput.TLS.InsecureSkipVerify {
 		tlsVerify = "off"
 	}
 
 	sb.AddConfigParam("tls.verify", tlsVerify)
 
-	if sharedtypesutils.IsValid(httpOutput.TLSConfig.CA) {
+	if sharedtypesutils.IsValid(httpOutput.TLS.CA) {
 		sb.AddConfigParam("tls.ca_file", fmt.Sprintf("/fluent-bit/etc/output-tls-config/%s-ca.crt", name))
 	}
 
-	if sharedtypesutils.IsValid(httpOutput.TLSConfig.Cert) {
+	if sharedtypesutils.IsValid(httpOutput.TLS.Cert) {
 		sb.AddConfigParam("tls.crt_file", fmt.Sprintf("/fluent-bit/etc/output-tls-config/%s-cert.crt", name))
 	}
 
-	if sharedtypesutils.IsValid(httpOutput.TLSConfig.Key) {
+	if sharedtypesutils.IsValid(httpOutput.TLS.Key) {
 		sb.AddConfigParam("tls.key_file", fmt.Sprintf("/fluent-bit/etc/output-tls-config/%s-key.key", name))
 	}
 

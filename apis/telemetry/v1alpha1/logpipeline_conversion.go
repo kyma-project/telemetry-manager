@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"unsafe"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiconversion "k8s.io/apimachinery/pkg/conversion"
@@ -74,35 +73,33 @@ func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 	return nil
 }
 
-func Convert_v1alpha1_FluentBitHTTPOutput_To_v1beta1_FluentBitHTTPOutput(in *FluentBitHTTPOutput, out *telemetryv1beta1.FluentBitHTTPOutput, s apiconversion.Scope) error {
-	if err := autoConvert_v1alpha1_FluentBitHTTPOutput_To_v1beta1_FluentBitHTTPOutput(in, out, s); err != nil {
+func Convert_v1alpha1_FluentBitHTTPOutputTLS_To_v1beta1_OutputTLS(in *FluentBitHTTPOutputTLS, out *telemetryv1beta1.OutputTLS, s apiconversion.Scope) error {
+	out.Insecure = in.Disabled
+	out.InsecureSkipVerify = in.SkipCertificateValidation
+	if err := autoConvert_v1alpha1_ValueType_To_v1beta1_ValueType(in.CA, out.CA, s); err != nil {
 		return err
 	}
-
-	out.TLSConfig = telemetryv1beta1.OutputTLS{
-		CA:                 (*telemetryv1beta1.ValueType)(unsafe.Pointer(in.TLS.CA)),
-		Cert:               (*telemetryv1beta1.ValueType)(unsafe.Pointer(in.TLS.Cert)),
-		Key:                (*telemetryv1beta1.ValueType)(unsafe.Pointer(in.TLS.Key)),
-		Insecure:           in.TLS.Disabled,
-		InsecureSkipVerify: in.TLS.SkipCertificateValidation,
+	if err := autoConvert_v1alpha1_ValueType_To_v1beta1_ValueType(in.Cert, out.Cert, s); err != nil {
+		return err
 	}
-
+	if err := autoConvert_v1alpha1_ValueType_To_v1beta1_ValueType(in.Key, out.Key, s); err != nil {
+		return err
+	}
 	return nil
 }
 
-func Convert_v1beta1_FluentBitHTTPOutput_To_v1alpha1_FluentBitHTTPOutput(in *telemetryv1beta1.FluentBitHTTPOutput, out *FluentBitHTTPOutput, s apiconversion.Scope) error {
-	if err := autoConvert_v1beta1_FluentBitHTTPOutput_To_v1alpha1_FluentBitHTTPOutput(in, out, s); err != nil {
+func Convert_v1beta1_OutputTLS_To_v1alpha1_FluentBitHTTPOutputTLS(in *telemetryv1beta1.OutputTLS, out *FluentBitHTTPOutputTLS, s apiconversion.Scope) error {
+	out.Disabled = in.Insecure
+	out.SkipCertificateValidation = in.InsecureSkipVerify
+	if err := autoConvert_v1beta1_ValueType_To_v1alpha1_ValueType(in.CA, out.CA, s); err != nil {
 		return err
 	}
-
-	out.TLS = FluentBitHTTPOutputTLS{
-		CA:                        (*ValueType)(unsafe.Pointer(in.TLSConfig.CA)),
-		Cert:                      (*ValueType)(unsafe.Pointer(in.TLSConfig.Cert)),
-		Key:                       (*ValueType)(unsafe.Pointer(in.TLSConfig.Key)),
-		Disabled:                  in.TLSConfig.Insecure,
-		SkipCertificateValidation: in.TLSConfig.InsecureSkipVerify,
+	if err := autoConvert_v1beta1_ValueType_To_v1alpha1_ValueType(in.Cert, out.Cert, s); err != nil {
+		return err
 	}
-
+	if err := autoConvert_v1beta1_ValueType_To_v1alpha1_ValueType(in.Key, out.Key, s); err != nil {
+		return err
+	}
 	return nil
 }
 

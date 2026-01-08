@@ -227,7 +227,7 @@ type HTTPOutputOption func(output *telemetryv1beta1.FluentBitHTTPOutput)
 
 func HTTPClientTLSFromString(ca, cert, key string) HTTPOutputOption {
 	return func(output *telemetryv1beta1.FluentBitHTTPOutput) {
-		output.TLSConfig = telemetryv1beta1.OutputTLS{
+		output.TLS = telemetryv1beta1.OutputTLS{
 			CA:   &telemetryv1beta1.ValueType{Value: ca},
 			Cert: &telemetryv1beta1.ValueType{Value: cert},
 			Key:  &telemetryv1beta1.ValueType{Value: key},
@@ -237,7 +237,7 @@ func HTTPClientTLSFromString(ca, cert, key string) HTTPOutputOption {
 
 func HTTPClientTLS(tls telemetryv1beta1.OutputTLS) HTTPOutputOption {
 	return func(output *telemetryv1beta1.FluentBitHTTPOutput) {
-		output.TLSConfig = tls
+		output.TLS = tls
 	}
 }
 

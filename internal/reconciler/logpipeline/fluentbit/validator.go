@@ -120,7 +120,7 @@ func tlsValidationRequired(pipeline *telemetryv1beta1.LogPipeline) bool {
 		return false
 	}
 
-	return http.TLSConfig.Cert != nil || http.TLSConfig.Key != nil || http.TLSConfig.CA != nil
+	return http.TLS.Cert != nil || http.TLS.Key != nil || http.TLS.CA != nil
 }
 
 func isValidHostname(host string) bool {

@@ -132,7 +132,7 @@ func getSecretRefsInHTTPOutput(httpOutput *telemetryv1beta1.FluentBitHTTPOutput)
 		refs = appendIfSecretRef(refs, httpOutput.User)
 		refs = appendIfSecretRef(refs, httpOutput.Password)
 
-		tlsConfig := httpOutput.TLSConfig
+		tlsConfig := httpOutput.TLS
 		refs = appendIfSecretRef(refs, tlsConfig.CA)
 
 		refs = appendIfSecretRef(refs, tlsConfig.Cert)

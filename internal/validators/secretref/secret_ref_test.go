@@ -605,7 +605,7 @@ func TestGetValue_SecretNotFound(t *testing.T) {
 func TestGetSecretRefsInHTTPOutput_TLSFields(t *testing.T) {
 	httpOutput := &telemetryv1beta1.FluentBitHTTPOutput{
 
-		TLSConfig: telemetryv1beta1.OutputTLS{
+		TLS: telemetryv1beta1.OutputTLS{
 			CA:   &telemetryv1beta1.ValueType{ValueFrom: &telemetryv1beta1.ValueFromSource{SecretKeyRef: &telemetryv1beta1.SecretKeyRef{Name: "ca", Key: "ca"}}},
 			Cert: &telemetryv1beta1.ValueType{ValueFrom: &telemetryv1beta1.ValueFromSource{SecretKeyRef: &telemetryv1beta1.SecretKeyRef{Name: "cert", Key: "cert"}}},
 			Key:  &telemetryv1beta1.ValueType{ValueFrom: &telemetryv1beta1.ValueFromSource{SecretKeyRef: &telemetryv1beta1.SecretKeyRef{Name: "key", Key: "key"}}},

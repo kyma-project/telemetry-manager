@@ -44,7 +44,7 @@ func (b *ConfigBuilder) buildTLSFileConfigSecret(ctx context.Context, logPipelin
 			continue
 		}
 
-		tlsConfig := output.FluentBitHTTP.TLSConfig
+		tlsConfig := output.FluentBitHTTP.TLS
 		if sharedtypesutils.IsValid(tlsConfig.CA) {
 			targetKey := fmt.Sprintf("%s-ca.crt", logPipelines[i].Name)
 

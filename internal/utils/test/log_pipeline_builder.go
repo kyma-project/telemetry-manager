@@ -356,7 +356,7 @@ func defaultHTTPOutput() *telemetryv1beta1.FluentBitHTTPOutput {
 		Port:   "8080",
 		URI:    "/",
 		Format: "json",
-		TLSConfig: telemetryv1beta1.OutputTLS{
+		TLS: telemetryv1beta1.OutputTLS{
 			Insecure:           true,
 			InsecureSkipVerify: true,
 		},

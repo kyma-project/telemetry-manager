@@ -152,7 +152,7 @@ func TestCreateOutputSectionWithHTTPOutputWithTLS(t *testing.T) {
 					Dedot: true,
 					URI:   "/my-uri",
 					Host:  telemetryv1beta1.ValueType{Value: "localhost"},
-					TLSConfig: telemetryv1beta1.OutputTLS{
+					TLS: telemetryv1beta1.OutputTLS{
 						Insecure:           false,
 						InsecureSkipVerify: false,
 						CA:                 &telemetryv1beta1.ValueType{Value: "fake-ca-value"},
