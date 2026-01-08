@@ -53,6 +53,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/controllers/operator"
 	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/build"
+	"github.com/kyma-project/telemetry-manager/internal/cliflags"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/featureflags"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
@@ -81,6 +82,10 @@ var (
 	enableV1Beta1LogPipelines bool
 	highPriorityClassName     string
 	normalPriorityClassName   string
+	clusterTrustBundleName    string
+	imagePullSecretName       string
+	additionalLabels          cliflags.Map
+	additionalAnnotations     cliflags.Map
 )
 
 const (
@@ -157,6 +162,10 @@ func run() error {
 		config.WithTargetNamespace(envCfg.TargetNamespace),
 		config.WithOperateInFIPSMode(envCfg.OperateInFIPSMode),
 		config.WithVersion(build.GitTag()),
+		config.WithImagePullSecretName(imagePullSecretName),
+		config.WithClusterTrustBundleName(clusterTrustBundleName),
+		config.WithAdditionalLabels(additionalLabels),
+		config.WithAdditionalAnnotations(additionalAnnotations),
 	)
 
 	if err := globals.Validate(); err != nil {
@@ -323,6 +332,10 @@ func parseFlags() {
 
 	flag.StringVar(&highPriorityClassName, "high-priority-class-name", "", "High priority class name used by managed DaemonSets")
 	flag.StringVar(&normalPriorityClassName, "normal-priority-class-name", "", "Normal priority class name used by managed Deployments")
+	flag.StringVar(&clusterTrustBundleName, "cluster-trust-bundle-name", "", "The name ClusterTrustBundle resource")
+	flag.StringVar(&imagePullSecretName, "image-pull-secret-name", "", "The image pull secret name to use for pulling images of all created workloads (agents, gateways, self-monitor)")
+	flag.Var(&additionalLabels, "additional-label", "Additional label to add to all created resources in key=value format")
+	flag.Var(&additionalAnnotations, "additional-annotation", "Additional annotation to add to all created resources in key=value format")
 
 	flag.Parse()
 }
