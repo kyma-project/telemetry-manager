@@ -44,7 +44,7 @@ func TestTelemetryLogs(t *testing.T) {
 	traceBackend := kitbackend.New(traceBackendNs, kitbackend.SignalTypeTraces)
 	tracePipeline := testutils.NewTracePipelineBuilder().
 		WithName(tracePipelineName).
-		WithOTLPOutput(testutils.OTLPEndpoint(traceBackend.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(traceBackend.EndpointHTTP())).
 		Build()
 
 	metricBackend := kitbackend.New(metricBackendNs, kitbackend.SignalTypeMetrics)
@@ -54,7 +54,7 @@ func TestTelemetryLogs(t *testing.T) {
 		WithRuntimeInput(true, testutils.IncludeNamespaces(genMetricNs)).
 		WithIstioInput(true, testutils.IncludeNamespaces(genMetricNs)).
 		WithOTLPOutput(
-			testutils.OTLPEndpoint(metricBackend.Endpoint()),
+			testutils.OTLPEndpoint(metricBackend.EndpointHTTP()),
 		).Build()
 
 	fluentBitLogBackend := kitbackend.New(fbluentBitLogBackendNs, kitbackend.SignalTypeLogsFluentBit)
@@ -70,7 +70,7 @@ func TestTelemetryLogs(t *testing.T) {
 		WithName(logPipelineName).
 		WithOTLPInput(true).
 		WithApplicationInput(true).
-		WithOTLPOutput(testutils.OTLPEndpoint(logBackend.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(logBackend.EndpointHTTP())).
 		Build()
 
 	resources := []client.Object{

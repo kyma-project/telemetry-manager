@@ -36,7 +36,7 @@ func TestLabelAnnotation(t *testing.T) {
 				p := testutils.NewLogPipelineBuilder().
 					WithName("custom-otel-log-agent").
 					WithInput(testutils.BuildLogPipelineApplicationInput(testutils.ExtIncludeNamespaces(includeNs))).
-					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+					WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 					Build()
 
 				return &p
@@ -110,7 +110,7 @@ func TestLabelAnnotation(t *testing.T) {
 				p := testutils.NewMetricPipelineBuilder().
 					WithName("custom-metric-agent").
 					WithPrometheusInput(true, testutils.IncludeNamespaces(includeNs)).
-					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+					WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 					Build()
 
 				return &p
@@ -155,7 +155,7 @@ func TestLabelAnnotation(t *testing.T) {
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewTracePipelineBuilder().
 					WithName("custom-trace").
-					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+					WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 					Build()
 
 				return &p

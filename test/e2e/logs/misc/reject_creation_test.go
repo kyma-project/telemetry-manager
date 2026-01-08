@@ -27,6 +27,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 	var backenEndpoint = backendHost + ":" + strconv.Itoa(backendPort)
 
 	tests := []struct {
+		name     string
 		pipeline telemetryv1alpha1.LogPipeline
 		errorMsg string
 		field    string
@@ -35,20 +36,16 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 	}{
 		// output general
 		{
+			name: "no-output",
 			pipeline: telemetryv1alpha1.LogPipeline{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "no-output",
-				},
 				Spec: telemetryv1alpha1.LogPipelineSpec{},
 			},
 			errorMsg: "Exactly one output out of 'custom', 'http' or 'otlp' must be defined",
 			field:    "spec.output",
 		},
 		{
+			name: "valuefrom-accepts-only-one-option",
 			pipeline: telemetryv1alpha1.LogPipeline{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "valuefrom-accepts-only-one-option",
-				},
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Output: telemetryv1alpha1.LogPipelineOutput{
 						OTLP: &telemetryv1alpha1.OTLPOutput{
@@ -70,10 +67,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp.endpoint",
 		},
 		{
+			name: "secretkeyref-requires-key",
 			pipeline: telemetryv1alpha1.LogPipeline{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "secretkeyref-requires-key",
-				},
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Output: telemetryv1alpha1.LogPipelineOutput{
 						OTLP: &telemetryv1alpha1.OTLPOutput{
@@ -93,10 +88,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp.endpoint.valueFrom.secretKeyRef.key",
 		},
 		{
+			name: "secretkeyref-requires-namespace",
 			pipeline: telemetryv1alpha1.LogPipeline{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "secretkeyref-requires-namespace",
-				},
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Output: telemetryv1alpha1.LogPipelineOutput{
 						OTLP: &telemetryv1alpha1.OTLPOutput{
@@ -116,10 +109,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp.endpoint.valueFrom.secretKeyRef.namespace",
 		},
 		{
+			name: "secretkeyref-requires-name",
 			pipeline: telemetryv1alpha1.LogPipeline{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "secretkeyref-requires-name",
-				},
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Output: telemetryv1alpha1.LogPipelineOutput{
 						OTLP: &telemetryv1alpha1.OTLPOutput{
@@ -140,8 +131,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 		},
 		// otlp output
 		{
+			name: "otlp-output-with-default-proto-and-path",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("otlp-output-with-default-proto-and-path").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
 					testutils.OTLPEndpointPath("/v1/dummy"),
@@ -151,8 +142,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp",
 		},
 		{
+			name: "otlp-output-with-grpc-proto-and-path",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("otlp-output-with-grpc-proto-and-path").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
 					testutils.OTLPEndpointPath("/v1/dummy"),
@@ -163,8 +154,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp",
 		},
 		{
+			name: "otlp-output-with-non-valid-proto",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("otlp-output-with-non-valid-proto").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
 					testutils.OTLPProtocol("icke"),
@@ -175,8 +166,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp.protocol",
 		},
 		{
+			name: "otlp-output-basic-auth-secretref-missing-password-key",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("otlp-output-basic-auth-secretref-missing-password-key").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
 					testutils.OTLPBasicAuthFromSecret("name", "namespace", "user", ""),
@@ -186,8 +177,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp.authentication.basic.password.valueFrom.secretKeyRef.key",
 		},
 		{
+			name: "otlp-output-basic-auth-secretref-missing-user-key",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("otlp-output-basic-auth-secretref-missing-user-key").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
 					testutils.OTLPBasicAuthFromSecret("name", "namespace", "", "password"),
@@ -197,8 +188,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp.authentication.basic.user.valueFrom.secretKeyRef.key",
 		},
 		{
+			name: "otlp-output-tls-missing-key",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("otlp-output-tls-missing-key").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
 					testutils.OTLPClientTLS(&telemetryv1alpha1.OTLPTLS{
@@ -211,8 +202,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp.tls",
 		},
 		{
+			name: "otlp-output-tls-missing-cert",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("otlp-output-tls-missing-cert").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
 					testutils.OTLPClientTLS(&telemetryv1alpha1.OTLPTLS{
@@ -224,10 +215,56 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			errorMsg: "Can define either both 'cert' and 'key', or neither",
 			field:    "spec.output.otlp.tls",
 		},
-		// otlp input
 		{
+			name: "otlp-output-oauth2-invalid-token-url",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("otlp-input-namespaces-not-exclusive").
+				WithOTLPOutput(
+					testutils.OTLPEndpoint(backenEndpoint),
+					testutils.OTLPOAuth2(
+						testutils.OAuth2ClientSecret("clientsecret"),
+						testutils.OAuth2ClientID("clientid"),
+						testutils.OAuth2TokenURL("../not-a-url"),
+					),
+				).
+				Build(),
+			errorMsg: "Invalid value: \"object\": 'tokenURL' must be a valid URL",
+			field:    "spec.output.otlp.authentication.oauth2.tokenURL",
+		},
+		{
+			name: "otlp-output-oauth2-missing-client-id",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithOTLPOutput(
+					testutils.OTLPEndpoint(backenEndpoint),
+					testutils.OTLPOAuth2(
+						testutils.OAuth2ClientSecret("clientsecret"),
+						testutils.OAuth2TokenURL("https://auth.example.com/token"),
+					),
+				).
+				Build(),
+			errorMsg: "Invalid value: \"object\": no such key: value evaluating rule: 'clientID' missing",
+			field:    "spec.output.otlp.authentication.oauth2.clientID",
+		},
+		{
+			name: "otlp-output-oauth2-insecure",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithOTLPOutput(
+					testutils.OTLPEndpoint(backenEndpoint),
+					testutils.OTLPOAuth2(
+						testutils.OAuth2ClientID("clientid"),
+						testutils.OAuth2ClientSecret("clientsecret"),
+						testutils.OAuth2TokenURL("https://auth.example.com/token"),
+					),
+					testutils.OTLPClientTLS(&telemetryv1alpha1.OTLPTLS{
+						Insecure: true,
+					}),
+				).
+				Build(),
+			errorMsg: "OAuth2 authentication requires TLS when using gRPC protocol",
+			field:    "spec.output.otlp",
+		},
+		{
+			name: "otlp-input-namespaces-not-exclusive",
+			pipeline: testutils.NewLogPipelineBuilder().
 				WithOTLPInput(true,
 					testutils.ExcludeNamespaces("ns1"),
 					testutils.IncludeNamespaces("ns2"),
@@ -238,8 +275,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec.input.otlp.namespaces",
 		},
 		{
+			name: "otlp-input-namespaces-include-invalid",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("otlp-input-namespaces-include-invalid").
 				WithOTLPInput(true,
 					testutils.IncludeNamespaces("Test"),
 				).
@@ -249,8 +286,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec.input.otlp.namespaces.include[0]",
 		},
 		{
+			name: "otlp-input-namespaces-include-too-long",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("otlp-input-namespaces-include-too-long").
 				WithOTLPInput(true,
 					testutils.IncludeNamespaces(veryLongString),
 				).
@@ -261,8 +298,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			causes:   2,
 		},
 		{
+			name: "otlp-input-namespaces-exclude-invalid",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("otlp-input-namespaces-exclude-invalid").
 				WithOTLPInput(true,
 					testutils.ExcludeNamespaces("Test"),
 				).
@@ -272,8 +309,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec.input.otlp.namespaces.exclude[0]",
 		},
 		{
+			name: "otlp-input-namespaces-exclude-too-long",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("otlp-input-namespaces-exclude-too-long").
 				WithOTLPInput(true,
 					testutils.ExcludeNamespaces(veryLongString),
 				).
@@ -285,8 +322,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 		},
 		// http output
 		{
+			name: "http-output-tls-missing-key",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("http-output-tls-missing-key").
 				WithHTTPOutput(
 					testutils.HTTPHost(backendHost),
 					testutils.HTTPPort(backendPort),
@@ -299,8 +336,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec.output.http.tls",
 		},
 		{
+			name: "http-output-tls-missing-cert",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("http-output-tls-missing-cert").
 				WithHTTPOutput(
 					testutils.HTTPHost(backendHost),
 					testutils.HTTPPort(backendPort),
@@ -313,6 +350,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec.output.http.tls",
 		},
 		{
+			name: "http-output-uri-wrong-pattern",
 			pipeline: telemetryv1alpha1.LogPipeline{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "http-output-uri-wrong-pattern",
@@ -331,8 +369,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 		},
 		// application input
 		{
+			name: "application-input-namespaces-exclude-system-not-exclusive",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("application-input-namespaces-include-exclude-not-exclusive").
 				WithApplicationInput(true).
 				WithIncludeNamespaces("ns1").
 				WithExcludeNamespaces("ns2").
@@ -342,8 +380,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec.input.application.namespaces",
 		},
 		{
+			name: "application-input-namespaces-include-exclude-not-exclusive",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("application-input-namespaces-include-system-not-exclusive").
 				WithApplicationInput(true).
 				WithIncludeNamespaces("ns1").
 				WithSystemNamespaces(true).
@@ -353,8 +391,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec.input.application.namespaces",
 		},
 		{
+			name: "application-input-containers-not-exclusive",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("application-input-containers-not-exclusive").
 				WithApplicationInput(true).
 				WithIncludeContainers("c1").
 				WithExcludeContainers("c2").
@@ -364,8 +402,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec.input.application.containers",
 		},
 		{
+			name: "application-input-namespaces-include-invalid",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("application-input-namespaces-include-invalid").
 				WithApplicationInput(true).
 				WithIncludeNamespaces("*").
 				WithOTLPOutput().
@@ -374,8 +412,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec.input.application.namespaces.include[0]",
 		},
 		{
+			name: "application-input-namespaces-include-too-long",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("application-input-namespaces-include-too-long").
 				WithApplicationInput(true).
 				WithIncludeNamespaces(veryLongString).
 				WithOTLPOutput().
@@ -385,8 +423,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			causes:   2,
 		},
 		{
+			name: "application-input-namespaces-exclude-invalid",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("application-input-namespaces-exclude-invalid").
 				WithApplicationInput(true).
 				WithExcludeNamespaces("a*a").
 				WithOTLPOutput().
@@ -395,8 +433,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec.input.application.namespaces.exclude[0]",
 		},
 		{
+			name: "application-input-namespaces-exclude-too-long",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("application-input-namespaces-exclude-too-long").
 				WithApplicationInput(true).
 				WithExcludeNamespaces(veryLongString).
 				WithOTLPOutput().
@@ -407,8 +445,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 		},
 		// files validation
 		{
+			name: "files-name-required",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("files-name-required").
 				WithFile("", "icke").
 				WithHTTPOutput().
 				Build(),
@@ -416,8 +454,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec.files[0].name",
 		},
 		{
+			name: "files-content-required",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("files-content-required").
 				WithFile("file1", "").
 				WithHTTPOutput().
 				Build(),
@@ -426,8 +464,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 		},
 		// variables validation
 		{
+			name: "variables-name-required",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("variables-name-required").
 				WithVariable("", "secName", "secNs", "secKey").
 				WithHTTPOutput().
 				Build(),
@@ -435,6 +473,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec.variables[0].name",
 		},
 		{
+			name: "variables-valuefrom-required",
 			pipeline: telemetryv1alpha1.LogPipeline{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "variables-valuefrom-required",
@@ -456,8 +495,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 		},
 		// legacy validations
 		{
+			name: "multiple-outputs",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("multiple-outputs").
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backenEndpoint),
 				).
@@ -467,8 +506,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec.output",
 		},
 		{
+			name: "legacy-http-output-using-otlp-input",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("legacy-http-output-using-otlp-input").
 				WithHTTPOutput().
 				WithOTLPInput(true).
 				Build(),
@@ -476,8 +515,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec",
 		},
 		{
+			name: "legacy-custom-output-using-otlp-input",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("legacy-custom-output-using-otlp-input").
 				WithCustomOutput("name icke").
 				WithOTLPInput(true).
 				Build(),
@@ -485,8 +524,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec",
 		},
 		{
+			name: "legacy-drop-labels-with-otlp-output",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("legacy-drop-labels-with-otlp-output").
 				WithApplicationInput(true).
 				WithDropLabels(false).
 				WithOTLPOutput(
@@ -497,8 +536,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec",
 		},
 		{
+			name: "legacy-keep-annotations-with-otlp-output",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("legacy-keep-annotations-with-otlp-output").
 				WithApplicationInput(true).
 				WithKeepAnnotations(false).
 				WithOTLPOutput(
@@ -509,8 +548,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec",
 		},
 		{
+			name: "legacy-files-with-otlp-output",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("legacy-files-with-otlp-output").
 				WithApplicationInput(false).
 				WithFile("file1.json", "icke").
 				WithOTLPOutput(
@@ -521,8 +560,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec",
 		},
 		{
+			name: "legacy-filters-with-otlp-output",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("legacy-filters-with-otlp-output").
 				WithApplicationInput(false).
 				WithCustomFilter("name grep").
 				WithOTLPOutput(
@@ -533,8 +572,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec",
 		},
 		{
+			name: "legacy-variables-with-otlp-output",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("legacy-variables-with-otlp-output").
 				WithApplicationInput(false).
 				WithVariable("var1", "secName", "secNs", "secKey").
 				WithOTLPOutput(
@@ -545,8 +584,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec",
 		},
 		{
+			name: "legacy-transform-with-http-output",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("legacy-transform-with-http-output").
 				WithApplicationInput(false).
 				WithTransform(telemetryv1alpha1.TransformSpec{
 					Statements: []string{"set(attributes[\"log.level\"], \"error\")", "set(body, \"transformed1\")"},
@@ -557,8 +596,8 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec",
 		},
 		{
+			name: "legacy-filter-with-http-output",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("legacy-filter-with-http-output").
 				WithApplicationInput(false).
 				WithFilter(telemetryv1alpha1.FilterSpec{
 					Conditions: []string{"isMatch(log.attributes[\"log.level\"], \"error\"))"},
@@ -570,12 +609,10 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 		},
 	}
 	for _, tc := range tests {
-		if tc.label == "" {
-			tc.label = suite.LabelLogsMisc
-		}
+		t.Run(tc.name, func(t *testing.T) {
+			suite.RegisterTestCase(t, tc.label, suite.LabelLogsMisc)
 
-		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label)
+			tc.pipeline.Name = tc.name
 
 			resources := []client.Object{&tc.pipeline}
 

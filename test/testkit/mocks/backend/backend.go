@@ -44,6 +44,11 @@ const (
 	SignalTypeMetricsAgent  = "metrics"
 )
 
+type OIDCConfig struct {
+	issuerURL string
+	audience  string
+}
+
 type Backend struct {
 	abortFaultPercentage float64
 	dropFromSourceLabel  map[string]string
@@ -52,6 +57,8 @@ type Backend struct {
 	namespace            string
 	replicas             int32
 	signalType           SignalType
+	oidc                 *OIDCConfig
+	mtls                 bool
 
 	fluentDConfigMap    *fluentdConfigMapBuilder
 	hostSecret          *kitk8sobjects.Secret
@@ -90,9 +97,18 @@ func (b *Backend) NamespacedName() types.NamespacedName {
 	return types.NamespacedName{Name: b.name, Namespace: b.namespace}
 }
 
-func (b *Backend) Endpoint() string {
+func (b *Backend) EndpointHTTP() string {
 	addr := net.JoinHostPort(b.Host(), strconv.Itoa(int(b.Port())))
 	return fmt.Sprintf("http://%s", addr)
+}
+
+func (b *Backend) EndpointHTTPS() string {
+	addr := net.JoinHostPort(b.Host(), strconv.Itoa(int(b.Port())))
+	return fmt.Sprintf("https://%s", addr)
+}
+
+func (b *Backend) EndpointNoScheme() string {
+	return net.JoinHostPort(b.Host(), strconv.Itoa(int(b.Port())))
 }
 
 func (b *Backend) Host() string {
@@ -149,6 +165,8 @@ func (b *Backend) buildResources() {
 		exportedFilePath,
 		b.signalType,
 		b.certs,
+		b.oidc,
+		b.mtls,
 	)
 
 	b.collectorDeployment = newCollectorDeployment(
@@ -170,7 +188,7 @@ func (b *Backend) buildResources() {
 	// TODO: LogPipelines requires the host and the port to be separated.
 	// TracePipeline/MetricPipeline requires an endpoint in the format of scheme://host:port.
 	// The referencable secret is called host in both cases, but the value is different. It has to be refactored.
-	host := b.Endpoint()
+	host := b.EndpointHTTP()
 
 	if b.signalType == SignalTypeLogsFluentBit {
 		b.fluentDConfigMap = newFluentDConfigMapBuilder(

@@ -34,7 +34,7 @@ func TestMultiPipelineBroken(t *testing.T) {
 
 	healthyPipeline := testutils.NewTracePipelineBuilder().
 		WithName(healthyPipelineName).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
 	brokenPipeline := testutils.NewTracePipelineBuilder().

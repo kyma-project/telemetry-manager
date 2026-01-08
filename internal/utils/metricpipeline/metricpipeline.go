@@ -11,8 +11,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 )
 
 func IsIstioInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
@@ -116,7 +116,7 @@ func OTLPOutputPorts(ctx context.Context, c client.Reader, allPipelines []teleme
 	backendPorts := []string{}
 
 	for _, pipeline := range allPipelines {
-		endpoint, err := common.ResolveValue(ctx, c, pipeline.Spec.Output.OTLP.Endpoint)
+		endpoint, err := sharedtypesutils.ResolveValue(ctx, c, pipeline.Spec.Output.OTLP.Endpoint)
 		if err != nil {
 			return nil, fmt.Errorf("failed to resolve the value of the OTLP output endpoint: %w", err)
 		}

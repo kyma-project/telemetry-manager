@@ -16,6 +16,6 @@ func NewTLSCertValidator(err error) *TLSCertValidator {
 	}
 }
 
-func (t *TLSCertValidator) Validate(ctx context.Context, config tlscert.TLSBundle) error {
+func (t *TLSCertValidator) Validate(ctx context.Context, config tlscert.TLSValidationParams) error {
 	return t.err
 }

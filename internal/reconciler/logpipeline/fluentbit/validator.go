@@ -74,13 +74,16 @@ func (v *Validator) Validate(ctx context.Context, pipeline *telemetryv1alpha1.Lo
 	}
 
 	if pipeline.Spec.Output.FluentBitHTTP != nil {
-		if err := v.EndpointValidator.Validate(ctx, &pipeline.Spec.Output.FluentBitHTTP.Host, endpoint.FluentdProtocolHTTP); err != nil {
+		if err := v.EndpointValidator.Validate(ctx, endpoint.EndpointValidationParams{
+			Endpoint: &pipeline.Spec.Output.FluentBitHTTP.Host,
+			Protocol: endpoint.FluentdProtocolHTTP,
+		}); err != nil {
 			return err
 		}
 	}
 
 	if tlsValidationRequired(pipeline) {
-		tlsConfig := tlscert.TLSBundle{
+		tlsConfig := tlscert.TLSValidationParams{
 			Cert: pipeline.Spec.Output.FluentBitHTTP.TLS.Cert,
 			Key:  pipeline.Spec.Output.FluentBitHTTP.TLS.Key,
 			CA:   pipeline.Spec.Output.FluentBitHTTP.TLS.CA,

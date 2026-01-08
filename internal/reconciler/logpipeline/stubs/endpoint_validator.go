@@ -3,7 +3,7 @@ package stubs
 import (
 	"context"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 )
 
 type EndpointValidator struct {
@@ -16,6 +16,6 @@ func NewEndpointValidator(err error) *EndpointValidator {
 	}
 }
 
-func (e *EndpointValidator) Validate(ctx context.Context, endpoint *telemetryv1alpha1.ValueType, protocol string) error {
+func (e *EndpointValidator) Validate(ctx context.Context, params endpoint.EndpointValidationParams) error {
 	return e.err
 }

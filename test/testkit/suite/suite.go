@@ -140,6 +140,11 @@ const (
 
 	// LabelUpgrade defines the label for Upgrade tests, which preserve K8s objects between test runs.
 	LabelUpgrade = "upgrade"
+
+	// LabelOAuth2 defines the label for OAuth2 related tests.
+	LabelOAuth2 = "oauth2"
+	// LabelMTLS defines the label for mTLS related tests.
+	LabelMTLS = "mtls"
 )
 
 func ExpectAgent(label string) bool { // TODO(TeodorSAP): Use this for log e2e tests as well
@@ -258,6 +263,10 @@ func findLabelFilterExpression() string {
 func toSet(labels []string) map[string]struct{} {
 	set := make(map[string]struct{}, len(labels))
 	for _, label := range labels {
+		if label == "" {
+			continue
+		}
+
 		set[label] = struct{}{}
 	}
 

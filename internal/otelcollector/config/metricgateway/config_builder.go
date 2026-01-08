@@ -31,11 +31,12 @@ type BuildOptions struct {
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) (*common.Config, common.EnvVars, error) {
 	b.Config = common.NewConfig()
 	b.AddExtension(common.ComponentIDK8sLeaderElectorExtension,
-		common.K8sLeaderElector{
+		common.K8sLeaderElectorExtension{
 			AuthType:       "serviceAccount",
 			LeaseName:      common.K8sLeaderElectorKymaStats,
 			LeaseNamespace: opts.GatewayNamespace,
 		},
+		nil,
 	)
 	b.EnvVars = make(common.EnvVars)
 
@@ -72,6 +73,13 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 
 	for _, pipeline := range pipelines {
 		outputPipelineID := formatOutputServicePipelineID(&pipeline)
+
+		if shouldEnableOAuth2(&pipeline) {
+			if err := b.addOAuth2Extension(ctx, &pipeline); err != nil {
+				return nil, nil, err
+			}
+		}
+
 		if err := b.AddServicePipeline(ctx, &pipeline, outputPipelineID,
 			b.addReceiverForEnrichmentForwarder(),
 			// Input source filters if otlp is disabled
@@ -346,6 +354,26 @@ func (b *Builder) addOTLPExporter(queueSize int) buildComponentFunc {
 	)
 }
 
+// Authentication extensions
+
+func (b *Builder) addOAuth2Extension(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) error {
+	oauth2ExtensionID := common.OAuth2ExtensionID(pipeline.Name)
+
+	oauth2ExtensionConfig, oauth2ExtensionEnvVars, err := common.NewOAuth2ExtensionConfigBuilder(
+		b.Reader,
+		pipeline.Spec.Output.OTLP.Authentication.OAuth2,
+		pipeline.Name,
+		common.SignalTypeTrace,
+	).OAuth2ExtensionConfig(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to build OAuth2 extension for pipeline %s: %w", pipeline.Name, err)
+	}
+
+	b.AddExtension(oauth2ExtensionID, oauth2ExtensionConfig, oauth2ExtensionEnvVars)
+
+	return nil
+}
+
 // Helper functions
 
 func shouldFilterByNamespace(namespaceSelector *telemetryv1alpha1.NamespaceSelector) bool {
@@ -402,6 +430,11 @@ func formatUserDefinedTransformProcessorID(mp *telemetryv1alpha1.MetricPipeline)
 func formatUserDefinedFilterProcessorID(mp *telemetryv1alpha1.MetricPipeline) string {
 	return fmt.Sprintf(common.ComponentIDUserDefinedFilterProcessor, mp.Name)
 }
+
 func formatOutputServicePipelineID(mp *telemetryv1alpha1.MetricPipeline) string {
 	return fmt.Sprintf("metrics/%s-output", mp.Name)
+}
+
+func shouldEnableOAuth2(tp *telemetryv1alpha1.MetricPipeline) bool {
+	return tp.Spec.Output.OTLP.Authentication != nil && tp.Spec.Output.OTLP.Authentication.OAuth2 != nil
 }

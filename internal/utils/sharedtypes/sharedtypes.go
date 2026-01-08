@@ -1,8 +1,18 @@
 package sharedtypes
 
 import (
+	"context"
+	"errors"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
+)
+
+var (
+	ErrValueOrSecretRefUndefined = errors.New("either value or secret key reference must be defined")
 )
 
 func IsValid(v *telemetryv1alpha1.ValueType) bool {
@@ -35,6 +45,18 @@ func IsValidBeta(v *telemetryv1beta1.ValueType) bool {
 		v.ValueFrom.SecretKeyRef.Name != "" &&
 		v.ValueFrom.SecretKeyRef.Key != "" &&
 		v.ValueFrom.SecretKeyRef.Namespace != ""
+}
+
+func ResolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.ValueType) ([]byte, error) {
+	if value.Value != "" {
+		return []byte(value.Value), nil
+	}
+
+	if value.ValueFrom.SecretKeyRef != nil {
+		return secretref.GetValue(ctx, c, *value.ValueFrom.SecretKeyRef)
+	}
+
+	return nil, ErrValueOrSecretRefUndefined
 }
 
 func IsFilterDefined(filters []telemetryv1alpha1.FilterSpec) bool {

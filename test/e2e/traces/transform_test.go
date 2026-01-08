@@ -83,7 +83,7 @@ func TestTransform(t *testing.T) {
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces)
 			pipeline := testutils.NewTracePipelineBuilder().
 				WithName(pipelineName).
-				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+				WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 				WithTransform(tt.transformSpec).
 				Build()
 

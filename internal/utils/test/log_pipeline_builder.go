@@ -24,6 +24,7 @@ type LogPipelineBuilder struct {
 
 	httpOutput   *telemetryv1alpha1.FluentBitHTTPOutput
 	otlpOutput   *telemetryv1alpha1.OTLPOutput
+	oauth2       *telemetryv1alpha1.OAuth2Options
 	customOutput string
 
 	fluentBitFilters []telemetryv1alpha1.FluentBitFilter
@@ -273,6 +274,29 @@ func (b *LogPipelineBuilder) WithOTLPOutput(opts ...OTLPOutputOption) *LogPipeli
 	for _, opt := range opts {
 		opt(b.otlpOutput)
 	}
+
+	return b
+}
+
+func (b *LogPipelineBuilder) WithOAuth2(opts ...OAuth2Option) *LogPipelineBuilder {
+	if b.oauth2 == nil {
+		b.oauth2 = &telemetryv1alpha1.OAuth2Options{}
+	}
+
+	for _, opt := range opts {
+		opt(b.oauth2)
+	}
+
+	// Set OAuth2 on the OTLP output authentication
+	if b.otlpOutput == nil {
+		b.otlpOutput = defaultOTLPOutput()
+	}
+
+	if b.otlpOutput.Authentication == nil {
+		b.otlpOutput.Authentication = &telemetryv1alpha1.AuthenticationOptions{}
+	}
+
+	b.otlpOutput.Authentication.OAuth2 = b.oauth2
 
 	return b
 }

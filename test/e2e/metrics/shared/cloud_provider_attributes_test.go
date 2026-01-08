@@ -77,7 +77,7 @@ func TestCloudProviderAttributes(t *testing.T) {
 				WithRuntimeInputStatefulSetMetrics(false).
 				WithRuntimeInputDaemonSetMetrics(false).
 				WithRuntimeInputJobMetrics(false).
-				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+				WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 				Build()
 
 			resources := []client.Object{

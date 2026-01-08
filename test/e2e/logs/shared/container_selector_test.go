@@ -38,7 +38,7 @@ func TestContainerSelector_OTel(t *testing.T) {
 		WithName(includePipelineName).
 		WithIncludeContainers(container1).
 		WithIncludeNamespaces(genNs).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend1.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend1.EndpointHTTP())).
 		Build()
 
 	// Exclude container1 from namespace genNs
@@ -46,7 +46,7 @@ func TestContainerSelector_OTel(t *testing.T) {
 		WithName(excludePipelineName).
 		WithExcludeContainers(container1).
 		WithIncludeNamespaces(genNs).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend2.EndpointHTTP())).
 		Build()
 
 	resources := []client.Object{

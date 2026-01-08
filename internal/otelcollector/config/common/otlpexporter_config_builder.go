@@ -36,19 +36,19 @@ func NewOTLPExporterConfigBuilder(reader client.Reader, otlpOutput *telemetryv1a
 }
 
 func (cb *OTLPExporterConfigBuilder) OTLPExporterConfig(ctx context.Context) (*OTLPExporter, EnvVars, error) {
-	envVars, err := makeEnvVars(ctx, cb.reader, cb.otlpOutput, cb.pipelineName)
+	envVars, err := makeOTLPExporterEnvVars(ctx, cb.reader, cb.otlpOutput, cb.pipelineName)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to make env vars: %w", err)
 	}
 
-	exportersConfig := makeExportersConfig(cb.otlpOutput, cb.pipelineName, envVars, cb.queueSize, cb.signalType)
+	exportersConfig := makeExporterConfig(cb.otlpOutput, cb.pipelineName, envVars, cb.queueSize, cb.signalType)
 
 	return exportersConfig, envVars, nil
 }
 
-func makeExportersConfig(otlpOutput *telemetryv1alpha1.OTLPOutput, pipelineName string, envVars map[string][]byte, queueSize int, signalType string) *OTLPExporter {
+func makeExporterConfig(otlpOutput *telemetryv1alpha1.OTLPOutput, pipelineName string, envVars map[string][]byte, queueSize int, signalType string) *OTLPExporter {
 	headers := makeHeaders(otlpOutput, pipelineName)
-	otlpEndpointVariable := makeOTLPEndpointVariable(pipelineName)
+	otlpEndpointVariable := formatEnvVarKey(otlpEndpointVariablePrefix, pipelineName)
 	otlpEndpointValue := string(envVars[otlpEndpointVariable])
 	tlsConfig := makeTLSConfig(otlpOutput, otlpEndpointValue, pipelineName)
 
@@ -88,6 +88,12 @@ func makeExportersConfig(otlpOutput *telemetryv1alpha1.OTLPOutput, pipelineName 
 		otlpExporterConfig.LogsEndpoint = fmt.Sprintf("${%s}", otlpEndpointVariable)
 	}
 
+	if otlpOutput.Authentication != nil && otlpOutput.Authentication.OAuth2 != nil {
+		otlpExporterConfig.Auth = Auth{
+			Authenticator: fmt.Sprintf(ComponentIDOAuth2Extension, pipelineName),
+		}
+	}
+
 	return &otlpExporterConfig
 }
 
@@ -114,15 +120,15 @@ func makeTLSConfig(output *telemetryv1alpha1.OTLPOutput, otlpEndpointValue, pipe
 
 	cfg.InsecureSkipVerify = output.TLS.InsecureSkipVerify
 	if sharedtypesutils.IsValid(output.TLS.CA) {
-		cfg.CAPem = fmt.Sprintf("${%s}", makeTLSCaVariable(pipelineName))
+		cfg.CAPem = fmt.Sprintf("${%s}", formatEnvVarKey(tlsConfigCaVariablePrefix, pipelineName))
 	}
 
 	if sharedtypesutils.IsValid(output.TLS.Cert) {
-		cfg.CertPem = fmt.Sprintf("${%s}", makeTLSCertVariable(pipelineName))
+		cfg.CertPem = fmt.Sprintf("${%s}", formatEnvVarKey(tlsConfigCertVariablePrefix, pipelineName))
 	}
 
 	if sharedtypesutils.IsValid(output.TLS.Key) {
-		cfg.KeyPem = fmt.Sprintf("${%s}", makeTLSKeyVariable(pipelineName))
+		cfg.KeyPem = fmt.Sprintf("${%s}", formatEnvVarKey(tlsConfigKeyVariablePrefix, pipelineName))
 	}
 
 	return cfg
@@ -131,13 +137,13 @@ func makeTLSConfig(output *telemetryv1alpha1.OTLPOutput, otlpEndpointValue, pipe
 func makeHeaders(output *telemetryv1alpha1.OTLPOutput, pipelineName string) map[string]string {
 	headers := make(map[string]string)
 
-	if output.Authentication != nil && sharedtypesutils.IsValid(&output.Authentication.Basic.User) && sharedtypesutils.IsValid(&output.Authentication.Basic.Password) {
-		basicAuthHeaderVariable := makeBasicAuthHeaderVariable(pipelineName)
+	if isBasicAuthEnabled(output.Authentication) {
+		basicAuthHeaderVariable := formatEnvVarKey(basicAuthHeaderVariablePrefix, pipelineName)
 		headers["Authorization"] = fmt.Sprintf("${%s}", basicAuthHeaderVariable)
 	}
 
 	for _, header := range output.Headers {
-		headers[header.Name] = fmt.Sprintf("${%s}", makeHeaderVariable(header, pipelineName))
+		headers[header.Name] = fmt.Sprintf("${%s}", formatHeaderEnvVarKey(header, pipelineName))
 	}
 
 	return headers
@@ -145,4 +151,11 @@ func makeHeaders(output *telemetryv1alpha1.OTLPOutput, pipelineName string) map[
 
 func isInsecureOutput(endpoint string) bool {
 	return len(strings.TrimSpace(endpoint)) > 0 && strings.HasPrefix(endpoint, "http://")
+}
+
+func isBasicAuthEnabled(authOptions *telemetryv1alpha1.AuthenticationOptions) bool {
+	return authOptions != nil &&
+		authOptions.Basic != nil &&
+		sharedtypesutils.IsValid(&authOptions.Basic.User) &&
+		sharedtypesutils.IsValid(&authOptions.Basic.Password)
 }

@@ -57,7 +57,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 			pipeline = testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
 				WithInput(testutils.BuildLogPipelineApplicationInput()).
-				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+				WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 				Build()
 		}
 
@@ -73,7 +73,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	additionalOTelPipeline := testutils.NewLogPipelineBuilder().
 		WithName(additionalOTelPipelineName).
 		WithInput(testutils.BuildLogPipelineApplicationInput()).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
 	resources := []client.Object{
@@ -161,7 +161,7 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
 			WithInput(testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(genNs))).
-			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 			Build()
 		pipelines = append(pipelines, &pipeline)
 	}
@@ -169,7 +169,7 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 	additionalPipeline := testutils.NewLogPipelineBuilder().
 		WithName(additionalPipelineName).
 		WithInput(testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(genNs))).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
 	resources := []client.Object{

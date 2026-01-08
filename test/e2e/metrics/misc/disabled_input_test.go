@@ -37,7 +37,7 @@ func TestDisabledInput(t *testing.T) {
 		WithRuntimeInput(false).
 		WithIstioInput(false).
 		WithOTLPInput(false).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
 	resources := []client.Object{

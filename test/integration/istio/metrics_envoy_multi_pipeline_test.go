@@ -36,14 +36,14 @@ func TestMetricsEnvoyMultiPipeline(t *testing.T) {
 		WithName("pipeline-envoy").
 		WithIstioInput(true, testutils.IncludeNamespaces(app1Ns)).
 		WithIstioInputEnvoyMetrics(true).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend1.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend1.EndpointHTTP())).
 		Build()
 
 	pipelineExcludeApp1Ns := testutils.NewMetricPipelineBuilder().
 		WithName("pipeline-non-envoy").
 		WithIstioInput(true, testutils.ExcludeNamespaces(app1Ns)).
 		WithIstioInputEnvoyMetrics(false).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend2.EndpointHTTP())).
 		Build()
 
 	resources := []client.Object{

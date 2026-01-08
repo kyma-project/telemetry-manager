@@ -13,6 +13,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/loggateway"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
+	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
@@ -111,7 +112,7 @@ type EndpointValidator interface {
 	// Validate checks if the endpoint configuration is valid for the specified protocol.
 	// It verifies the endpoint format, DNS resolution, and protocol compatibility.
 	// Returns an error if the endpoint is invalid, unreachable, or incompatible with the protocol.
-	Validate(ctx context.Context, endpoint *telemetryv1alpha1.ValueType, protocol string) error
+	Validate(ctx context.Context, params endpoint.EndpointValidationParams) error
 }
 
 // TLSCertValidator validates TLS certificate configurations for secure connections.
@@ -120,7 +121,7 @@ type TLSCertValidator interface {
 	// Validate checks if the TLS certificate bundle is valid and not expired.
 	// It verifies the certificate chain, expiration dates, and proper encoding.
 	// Returns an error if the certificate is invalid, expired, or about to expire.
-	Validate(ctx context.Context, config tlscert.TLSBundle) error
+	Validate(ctx context.Context, config tlscert.TLSValidationParams) error
 }
 
 // SecretRefValidator validates secret references in LogPipeline resources.

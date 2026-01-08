@@ -233,35 +233,96 @@ details: |-
               widget: Panel
               visibility: $exists(spec.output.otlp.authentication)
               children:
-                - name: User
+                - name: Basic
                   widget: Panel
-                  visibility: $exists(spec.output.otlp.authentication.basic.user)
+                  visibility: $exists(spec.output.otlp.authentication.basic)
                   children:
-                    - name: Value
-                      source: spec.output.otlp.authentication.basic.user.value
-                      visibility: $exists(spec.output.otlp.authentication.basic.user.value)
-                    - name: Value From Secret
-                      widget: ResourceRefs
-                      source: >-
-                        spec.output.otlp.authentication.basic.user.valueFrom.secretKeyRef
-                      kind: Secret
-                      visibility: >-
-                        $exists(spec.output.otlp.authentication.basic.user.valueFrom.secretKeyRef.name)
-                - name: Password
+                    - name: User
+                      widget: Panel
+                      visibility: $exists(spec.output.otlp.authentication.basic.user)
+                      children:
+                        - name: Value
+                          source: spec.output.otlp.authentication.basic.user.value
+                          visibility: $exists(spec.output.otlp.authentication.basic.user.value)
+                        - name: Value From Secret
+                          widget: ResourceRefs
+                          source: >-
+                            spec.output.otlp.authentication.basic.user.valueFrom.secretKeyRef
+                          kind: Secret
+                          visibility: >-
+                            $exists(spec.output.otlp.authentication.basic.user.valueFrom.secretKeyRef.name)
+                    - name: Password
+                      widget: Panel
+                      visibility: $exists(spec.output.otlp.authentication.basic.password)
+                      children:
+                        - name: Value
+                          source: spec.output.otlp.authentication.basic.password.value
+                          visibility: >-
+                            $exists(spec.output.otlp.authentication.basic.password.value)
+                        - name: Value From Secret
+                          widget: ResourceRefs
+                          source: >-
+                            spec.output.otlp.authentication.basic.password.valueFrom.secretKeyRef
+                          kind: Secret
+                          visibility: >-
+                            $exists(spec.output.otlp.authentication.basic.password.valueFrom.secretKeyRef.name)
+                - name: OAuth2
                   widget: Panel
-                  visibility: $exists(spec.output.otlp.authentication.basic.password)
+                  visibility: $exists(spec.output.otlp.authentication.oauth2)
                   children:
-                    - name: Value
-                      source: spec.output.otlp.authentication.basic.password.value
-                      visibility: >-
-                        $exists(spec.output.otlp.authentication.basic.password.value)
-                    - name: Value From Secret
-                      widget: ResourceRefs
-                      source: >-
-                        spec.output.otlp.authentication.basic.password.valueFrom.secretKeyRef
-                      kind: Secret
-                      visibility: >-
-                        $exists(spec.output.otlp.authentication.basic.password.valueFrom.secretKeyRef.name)
+                    - name: Token URL
+                      widget: Panel
+                      visibility: $exists(spec.output.otlp.authentication.oauth2.tokenURL)
+                      children:
+                        - name: Value
+                          source: spec.output.otlp.authentication.oauth2.tokenURL.value
+                          visibility: $exists(spec.output.otlp.authentication.oauth2.tokenURL.value)
+                        - name: Value From Secret
+                          widget: ResourceRefs
+                          source: >-
+                            spec.output.otlp.authentication.oauth2.tokenURL.valueFrom.secretKeyRef
+                          kind: Secret
+                          visibility: >-
+                            $exists(spec.output.otlp.authentication.oauth2.tokenURL.valueFrom.secretKeyRef.name)
+                    - name: Client ID
+                      widget: Panel
+                      visibility: $exists(spec.output.otlp.authentication.oauth2.clientID)
+                      children:
+                        - name: Value
+                          source: spec.output.otlp.authentication.oauth2.clientID.value
+                          visibility: $exists(spec.output.otlp.authentication.oauth2.clientID.value)
+                        - name: Value From Secret
+                          widget: ResourceRefs
+                          source: >-
+                            spec.output.otlp.authentication.oauth2.clientID.valueFrom.secretKeyRef
+                          kind: Secret
+                          visibility: >-
+                            $exists(spec.output.otlp.authentication.oauth2.clientID.valueFrom.secretKeyRef.name)
+                    - name: Client Secret
+                      widget: Panel
+                      visibility: $exists(spec.output.otlp.authentication.oauth2.clientSecret)
+                      children:
+                        - name: Value
+                          source: spec.output.otlp.authentication.oauth2.clientSecret.value
+                          visibility: $exists(spec.output.otlp.authentication.oauth2.clientSecret.value)
+                        - name: Value From Secret
+                          widget: ResourceRefs
+                          source: >-
+                            spec.output.otlp.authentication.oauth2.clientSecret.valueFrom.secretKeyRef
+                          kind: Secret
+                          visibility: >-
+                            $exists(spec.output.otlp.authentication.oauth2.clientSecret.valueFrom.secretKeyRef.name)
+                    - name: Scopes
+                      widget: JoinedArray
+                      source: spec.output.otlp.authentication.oauth2.scopes
+                      separator: ', '
+                      visibility: $exists(spec.output.otlp.authentication.oauth2.scopes)
+                    - name: Params
+                      widget: Panel
+                      visibility: $exists(spec.output.otlp.authentication.oauth2.params)
+                      children:
+                        - name: Parameters
+                          source: spec.output.otlp.authentication.oauth2.params
             - name: Headers
               widget: Panel
               visibility: $exists(spec.output.otlp.headers)
@@ -562,46 +623,135 @@ form: |
             widget: FormGroup
             simple: true
             children:
-              - name: User
-                path: basic.user
+              - var: authType
+                type: string
+                simple: true
+                defaultValue: "Basic"
+                name: Authentication Type
+                enum: [Basic, OAuth2]
+                description: Authentication Type defines which authentication method to use for the OTLP endpoint.
+              - name: Basic
+                visibility: '$authType = "Basic"'
+                path: basic
                 widget: FormGroup
                 simple: true
                 children:
-                  - name: Value
-                    path: value
-                    widget: Text
-                    simple: true
-                  - name: Secret Reference
-                    path: valueFrom.secretKeyRef
-                    widget: ResourceRef
-                    resource:
-                      kind: secret
-                      version: v1
+                  - name: User
+                    path: user
+                    widget: FormGroup
                     simple: true
                     children:
-                      - simple: true
-                        path: key
-                        enum: $keys($secret.data)
-              - name: Password
-                path: basic.password
+                      - name: Value
+                        path: value
+                        widget: Text
+                        simple: true
+                      - name: Secret Reference
+                        path: valueFrom.secretKeyRef
+                        widget: ResourceRef
+                        resource:
+                          kind: secret
+                          version: v1
+                        simple: true
+                        children:
+                          - simple: true
+                            path: key
+                            enum: $keys($secret.data)
+                  - name: Password
+                    path: password
+                    widget: FormGroup
+                    simple: true
+                    children:
+                      - name: Value
+                        path: value
+                        widget: Text
+                        simple: true
+                      - name: Secret Reference
+                        path: valueFrom.secretKeyRef
+                        widget: ResourceRef
+                        resource:
+                          kind: secret
+                          version: v1
+                        simple: true
+                        children:
+                          - simple: true
+                            path: key
+                            enum: $keys($secret.data)
+              - name: OAuth2
+                visibility: '$authType = "OAuth2"'
+                path: oauth2
                 widget: FormGroup
                 simple: true
                 children:
-                  - name: Value
-                    path: value
-                    widget: Text
-                    simple: true
-                  - name: Secret Reference
-                    path: valueFrom.secretKeyRef
-                    widget: ResourceRef
-                    resource:
-                      kind: secret
-                      version: v1
+                  - name: Token URL
+                    path: tokenURL
+                    widget: FormGroup
                     simple: true
                     children:
-                      - simple: true
-                        path: key
-                        enum: $keys($secret.data)
+                      - name: Value
+                        path: value
+                        widget: Text
+                        simple: true
+                      - name: Secret Reference
+                        path: valueFrom.secretKeyRef
+                        widget: ResourceRef
+                        resource:
+                          kind: secret
+                          version: v1
+                        simple: true
+                        children:
+                          - simple: true
+                            path: key
+                            enum: $keys($secret.data)
+                  - name: Client ID
+                    path: clientID
+                    widget: FormGroup
+                    simple: true
+                    children:
+                      - name: Value
+                        path: value
+                        widget: Text
+                        simple: true
+                      - name: Secret Reference
+                        path: valueFrom.secretKeyRef
+                        widget: ResourceRef
+                        resource:
+                          kind: secret
+                          version: v1
+                        simple: true
+                        children:
+                          - simple: true
+                            path: key
+                            enum: $keys($secret.data)
+                  - name: Client Secret
+                    path: clientSecret
+                    widget: FormGroup
+                    simple: true
+                    children:
+                      - name: Value
+                        path: value
+                        widget: Text
+                        simple: true
+                      - name: Secret Reference
+                        path: valueFrom.secretKeyRef
+                        widget: ResourceRef
+                        resource:
+                          kind: secret
+                          version: v1
+                        simple: true
+                        children:
+                          - simple: true
+                            path: key
+                            enum: $keys($secret.data)
+                  - name: Scopes
+                    path: scopes
+                    widget: SimpleList
+                    simple: true
+                    children:
+                      - path: '[]'
+                  - name: Params
+                    path: params
+                    widget: KeyValuePair
+                    simple: true
           - name: Headers
             path: headers[]
             widget: FormGroup
@@ -747,8 +897,11 @@ dataSources: |-
       kind: Secret
       version: v1
     filter: |-
-        $item.metadata.name =  $root.spec.output.otlp.authentication.basic.user.valueFrom.secretKeyRef.name or
-        $item.metadata.name =  $root.spec.output.otlp.authentication.basic.password.valueFrom.secretKeyRef.name or
+        $item.metadata.name = $root.spec.output.otlp.authentication.basic.user.valueFrom.secretKeyRef.name or
+        $item.metadata.name = $root.spec.output.otlp.authentication.basic.password.valueFrom.secretKeyRef.name or
+        $item.metadata.name = $root.spec.output.otlp.authentication.oauth2.tokenURL.valueFrom.secretKeyRef.name or
+        $item.metadata.name = $root.spec.output.otlp.authentication.oauth2.clientID.valueFrom.secretKeyRef.name or
+        $item.metadata.name = $root.spec.output.otlp.authentication.oauth2.clientSecret.valueFrom.secretKeyRef.name or
         $item.metadata.name = $root.spec.output.otlp.endpoint.valueFrom.secretKeyRef.name or
         $item.metadata.name = $root.spec.output.otlp.headers.valueFrom.secretKeyRef.name or
         $item.metadata.name = $root.spec.output.otlp.tls.ca.valueFrom.secretKeyRef.name or

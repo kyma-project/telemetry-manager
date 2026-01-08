@@ -1,0 +1,128 @@
+extensions:
+    health_check:
+        endpoint: ${MY_POD_IP}:13133
+    oauth2client/test:
+        token_url: ${OAUTH2_TOKEN_URL_TEST}
+        client_id: ${OAUTH2_CLIENT_ID_TEST}
+        client_secret: ${OAUTH2_CLIENT_SECRET_TEST}
+        scopes:
+            - traces
+    pprof:
+        endpoint: 127.0.0.1:1777
+service:
+    pipelines:
+        traces/test:
+            receivers:
+                - otlp
+            processors:
+                - memory_limiter
+                - k8sattributes
+                - istio_noise_filter
+                - transform/insert-cluster-attributes
+                - service_enrichment
+                - transform/drop-kyma-attributes
+                - batch
+            exporters:
+                - otlphttp/test
+    telemetry:
+        metrics:
+            readers:
+                - pull:
+                    exporter:
+                        prometheus:
+                            host: ${MY_POD_IP}
+                            port: 8888
+        logs:
+            level: info
+            encoding: json
+    extensions:
+        - health_check
+        - pprof
+        - oauth2client/test
+receivers:
+    otlp:
+        protocols:
+            http:
+                endpoint: ${MY_POD_IP}:4318
+            grpc:
+                endpoint: ${MY_POD_IP}:4317
+processors:
+    batch:
+        send_batch_size: 512
+        timeout: 10s
+        send_batch_max_size: 512
+    istio_noise_filter: {}
+    k8sattributes:
+        auth_type: serviceAccount
+        passthrough: false
+        extract:
+            metadata:
+                - k8s.pod.name
+                - k8s.node.name
+                - k8s.namespace.name
+                - k8s.deployment.name
+                - k8s.statefulset.name
+                - k8s.daemonset.name
+                - k8s.cronjob.name
+                - k8s.job.name
+            labels:
+                - from: pod
+                  key: app.kubernetes.io/name
+                  tag_name: kyma.kubernetes_io_app_name
+                - from: pod
+                  key: app
+                  tag_name: kyma.app_name
+                - from: node
+                  key: topology.kubernetes.io/region
+                  tag_name: cloud.region
+                - from: node
+                  key: topology.kubernetes.io/zone
+                  tag_name: cloud.availability_zone
+                - from: node
+                  key: node.kubernetes.io/instance-type
+                  tag_name: host.type
+                - from: node
+                  key: kubernetes.io/arch
+                  tag_name: host.arch
+        pod_association:
+            - sources:
+                - from: resource_attribute
+                  name: k8s.pod.ip
+            - sources:
+                - from: resource_attribute
+                  name: k8s.pod.uid
+            - sources:
+                - from: connection
+    memory_limiter:
+        check_interval: 1s
+        limit_percentage: 75
+        spike_limit_percentage: 15
+    service_enrichment:
+        resource_attributes:
+            - kyma.kubernetes_io_app_name
+            - kyma.app_name
+    transform/drop-kyma-attributes:
+        error_mode: ignore
+        trace_statements:
+            - statements:
+                - delete_matching_keys(resource.attributes, "kyma.*")
+    transform/insert-cluster-attributes:
+        error_mode: ignore
+        trace_statements:
+            - statements:
+                - set(resource.attributes["k8s.cluster.name"], "${KUBERNETES_SERVICE_HOST}") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
+                - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
+                - set(resource.attributes["cloud.provider"], "test-cloud-provider") where resource.attributes["cloud.provider"] == nil or resource.attributes["cloud.provider"] == ""
+exporters:
+    otlphttp/test:
+        endpoint: ${OTLP_ENDPOINT_TEST}
+        sending_queue:
+            enabled: true
+            queue_size: 256
+        retry_on_failure:
+            enabled: true
+            initial_interval: 5s
+            max_interval: 30s
+            max_elapsed_time: 300s
+        auth:
+            authenticator: oauth2client/test

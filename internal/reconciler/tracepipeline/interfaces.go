@@ -12,6 +12,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
+	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
@@ -65,7 +66,7 @@ type IstioStatusChecker interface {
 // EndpointValidator validates trace pipeline endpoint configurations.
 type EndpointValidator interface {
 	// Validate checks if the endpoint configuration is valid for the specified protocol.
-	Validate(ctx context.Context, endpoint *telemetryv1alpha1.ValueType, protocol string) error
+	Validate(ctx context.Context, params endpoint.EndpointValidationParams) error
 }
 
 // SecretRefValidator validates secret references in TracePipeline resources.
@@ -77,7 +78,7 @@ type SecretRefValidator interface {
 // TLSCertValidator validates TLS certificate configurations.
 type TLSCertValidator interface {
 	// Validate checks if the TLS certificate bundle is valid and not expired.
-	Validate(ctx context.Context, config tlscert.TLSBundle) error
+	Validate(ctx context.Context, config tlscert.TLSValidationParams) error
 }
 
 // TransformSpecValidator validates transform specifications in pipeline configurations.
