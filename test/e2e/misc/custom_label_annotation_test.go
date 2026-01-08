@@ -1,4 +1,4 @@
-package customlabelsannotations
+package misc
 
 import (
 	"testing"

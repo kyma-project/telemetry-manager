@@ -148,7 +148,7 @@ jobs:
         uses: "./.github/template/test-execute"
         with:
           id: custom-labels-annotations-no-fips
-          path: ./test/customlabelsannotations/...
+          path: ./test/e2e/misc...
           labels: "custom-label-annotation"
 
   e2e:
