@@ -279,11 +279,28 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, opts GatewayApplyOptions) *appsv1.Deployment {
 	labels := commonresources.MakeDefaultLabels(gad.baseName, commonresources.LabelValueK8sComponentGateway)
 	selectorLabels := commonresources.MakeDefaultSelectorLabels(gad.baseName)
-	podLabels := make(map[string]string)
-	maps.Copy(podLabels, labels)
-	maps.Copy(podLabels, gad.extraPodLabels)
-
 	annotations := gad.makeAnnotations(configChecksum, opts)
+
+	// Create final annotations for the DaemonSet and Pods with additional annotations
+	podAnnotations := make(map[string]string)
+	resourceAnnotations := make(map[string]string)
+
+	maps.Copy(resourceAnnotations, gad.globals.AdditionalAnnotations())
+	maps.Copy(podAnnotations, gad.globals.AdditionalAnnotations())
+	maps.Copy(podAnnotations, annotations)
+
+	defaultPodLabels := make(map[string]string)
+	maps.Copy(defaultPodLabels, labels)
+	maps.Copy(defaultPodLabels, gad.extraPodLabels)
+
+	// Create final labels for the DaemonSet and Pods with additional labels
+	resourceLabels := make(map[string]string)
+	podLabels := make(map[string]string)
+
+	maps.Copy(resourceLabels, gad.globals.AdditionalLabels())
+	maps.Copy(podLabels, gad.globals.AdditionalLabels())
+	maps.Copy(resourceLabels, labels)
+	maps.Copy(podLabels, defaultPodLabels)
 
 	resources := gad.makeGatewayResourceRequirements(opts)
 
@@ -291,20 +308,28 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, o
 	containerOpts = append(containerOpts,
 		commonresources.WithResources(resources),
 		commonresources.WithGoMemLimitEnvVar(resources.Limits[corev1.ResourceMemory]),
+		commonresources.WithClusterTrustBundleVolumeMount(gad.globals.ClusterTrustBundleName()),
+	)
+
+	podOptions := make([]commonresources.PodSpecOption, 0)
+	podOptions = append(podOptions, gad.podOpts...)
+	podOptions = append(podOptions, commonresources.WithImagePullSecretName(gad.globals.ImagePullSecretName()),
+		commonresources.WithClusterTrustBundleVolume(gad.globals.ClusterTrustBundleName()),
 	)
 
 	podSpec := makePodSpec(
 		gad.baseName,
 		gad.image,
-		gad.podOpts,
+		podOptions,
 		containerOpts,
 	)
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      gad.baseName,
-			Namespace: gad.globals.TargetNamespace(),
-			Labels:    labels,
+			Name:        gad.baseName,
+			Namespace:   gad.globals.TargetNamespace(),
+			Labels:      resourceLabels,
+			Annotations: resourceAnnotations,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptr.To(opts.Replicas),
@@ -314,7 +339,7 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, o
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:      podLabels,
-					Annotations: annotations,
+					Annotations: podAnnotations,
 				},
 				Spec: podSpec,
 			},

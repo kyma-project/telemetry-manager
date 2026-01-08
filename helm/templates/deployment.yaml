@@ -29,6 +29,10 @@ spec:
         kubectl.kubernetes.io/default-container: manager
         sidecar.istio.io/inject: "false"
     spec:
+      {{- if .Values.global.imagePullSecret.enabled }}
+      imagePullSecrets:
+      - name: {{ .Values.global.imagePullSecret.name }}
+      {{- end }}
       containers:
       - args:
         {{- range $key, $value := .Values.manager.container.args }}
@@ -36,6 +40,22 @@ spec:
         {{- end }}
         {{- if .Values.experimental.enabled }}
         - --enable-v1beta1-log-pipelines=true
+        {{- end }}
+        {{- if not (empty .Values.additionalMetadata.labels) }}
+        {{- range $k, $v := .Values.additionalMetadata.labels }}
+        - --additional-label={{ (printf "%s=%s" $k $v) }}
+        {{- end }}
+        {{- end }}
+        {{- if not (empty .Values.additionalMetadata.annotations) }}
+        {{- range $k, $v := .Values.additionalMetadata.annotations }}
+        - --additional-annotation={{ (printf "%s=%s" $k $v) }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.global.imagePullSecret.enabled }}
+        - --image-pull-secret-name={{ .Values.global.imagePullSecret.name }}
+        {{- end }}
+        {{- if .Values.global.caBundle.enabled }}
+        - --cluster-trust-bundle-name={{ .Values.global.caBundle.name }}
         {{- end }}
         command:
         - /manager
@@ -93,3 +113,5 @@ spec:
       volumes:
       - emptyDir: {}
         name: crt-volume
+
+

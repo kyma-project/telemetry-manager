@@ -202,6 +202,7 @@ func configureFluentBitReconciler(config LogPipelineControllerConfig, client cli
 	)
 
 	fluentBitApplierDeleter := fluentbit.NewFluentBitApplierDeleter(
+		config.Global,
 		config.TargetNamespace(),
 		config.FluentBitImage,
 		config.ExporterImage,
@@ -264,18 +265,28 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 		Reader: client,
 	}
 
+	agentApplierDeleter := otelcollector.NewLogAgentApplierDeleter(
+		config.Global,
+		config.OTelCollectorImage,
+		config.LogAgentPriorityClassName)
+
+	gatewayAppliedDeleter := otelcollector.NewLogGatewayApplierDeleter(
+		config.Global,
+		config.OTelCollectorImage,
+		config.LogGatewayPriorityClassName)
+
 	otelReconciler := logpipelineotel.New(
 		logpipelineotel.WithClient(client),
 		logpipelineotel.WithGlobals(config.Global),
 
-		logpipelineotel.WithAgentApplierDeleter(otelcollector.NewLogAgentApplierDeleter(config.Global, config.OTelCollectorImage, config.LogAgentPriorityClassName)),
+		logpipelineotel.WithAgentApplierDeleter(agentApplierDeleter),
 		logpipelineotel.WithAgentConfigBuilder(agentConfigBuilder),
 		logpipelineotel.WithAgentFlowHealthProber(agentFlowHealthProber),
 		logpipelineotel.WithAgentProber(&workloadstatus.DaemonSetProber{Client: client}),
 
 		logpipelineotel.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
 
-		logpipelineotel.WithGatewayApplierDeleter(otelcollector.NewLogGatewayApplierDeleter(config.Global, config.OTelCollectorImage, config.LogGatewayPriorityClassName)),
+		logpipelineotel.WithGatewayApplierDeleter(gatewayAppliedDeleter),
 		logpipelineotel.WithGatewayConfigBuilder(&loggateway.Builder{Reader: client}),
 		logpipelineotel.WithGatewayFlowHealthProber(gatewayFlowHealthProber),
 		logpipelineotel.WithGatewayProber(&workloadstatus.DeploymentProber{Client: client}),

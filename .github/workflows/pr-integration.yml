@@ -127,6 +127,30 @@ jobs:
           id: selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}
           failure: failure()
 
+  e2e-custom-labels-annotations-no-fips:
+    needs: setup
+    name: "e2e-custom-labels-annotations-no-fips"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Setup test environment
+        uses: "./.github/template/test-setup"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          install-istio: false
+          manager-image: ${{ needs.setup.outputs.manager-image }}
+          operate-in-fips-mode: false
+          custom-labels-annotations-no-fips: true
+
+      - name: Execute tests
+        uses: "./.github/template/test-execute"
+        with:
+          id: custom-labels-annotations-no-fips
+          path: ./test/e2e/misc...
+          labels: "custom-label-annotation"
+
   e2e:
     needs: setup
     env:

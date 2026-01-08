@@ -346,6 +346,20 @@ deploy-experimental-no-fips: manifests-experimental $(HELM) ## Deploy telemetry 
 		--namespace kyma-system \
 	| kubectl apply -f -
 
+.PHONY: deploy-custom-labels-annotations-no-fips
+deploy-custom-labels-annotations-no-fips: manifests-experimental $(HELM) ## Deploy telemetry manager with experimental features, custom labels and annotations, and FIPS mode disabled
+	$(HELM) template telemetry helm \
+		--set experimental.enabled=true \
+		--set default.enabled=false \
+		--set nameOverride=telemetry \
+		--set manager.container.image.repository=${MANAGER_IMAGE} \
+		--set manager.container.image.pullPolicy="Always" \
+		--set manager.container.env.operateInFipsMode=false \
+		--set additionalMetadata.labels.my-meta-label="foo" \
+		--set additionalMetadata.annotations.my-meta-annotation="bar" \
+		--namespace kyma-system \
+	| kubectl apply -f -
+
 .PHONY: undeploy-experimental
 undeploy-experimental: $(HELM) ## Undeploy telemetry manager with experimental features
 	$(HELM) template telemetry helm \
