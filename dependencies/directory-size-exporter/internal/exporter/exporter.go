@@ -94,6 +94,7 @@ func dirSize(path string) (int64, error) {
 				// Log error but continue processing other directories
 				continue
 			}
+
 			size += subSize
 		} else {
 			// Get file info for regular files
