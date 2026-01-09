@@ -234,12 +234,16 @@ update-golden-files: ## Update all golden files for config builder tests
 .PHONY: build
 build: build-manager fmt vet tidy ## Format, vet and build the manager
 
-.PHONY: build-all
-build-all: build-manager build-dependencies ## Build the manager and the custom tools in dependencies
+.PHONY: build-for-codeql
+build-for-codeql: build-manager-no-generate build-dependencies ## Build the manager and the custom tools in dependencies
 
 .PHONY: build-manager
 build-manager: generate
-	go build -o $(ARTIFACTS)/manager main.go
+	go build -o $(ARTIFACTS)/manager .
+
+.PHONY: build-manager-no-generate
+build-manager-no-generate:
+	go build -o $(ARTIFACTS)/manager .
 
 # Pattern rule for building each dependency module
 $(BUILD_DEPENDENCY_TARGETS):
