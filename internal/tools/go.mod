@@ -6,7 +6,7 @@ require (
 	github.com/bombsimon/wsl/v5 v5.3.0
 	github.com/g4s8/envdoc v1.7.0
 	github.com/golangci/golangci-lint/v2 v2.6.0
-	github.com/google/yamlfmt v0.20.0
+	github.com/google/yamlfmt v0.21.0
 	github.com/hairyhenderson/gomplate/v4 v4.3.3
 	github.com/itchyny/gojq v0.12.17
 	github.com/k3d-io/k3d/v5 v5.8.3
@@ -18,6 +18,7 @@ require (
 	golang.org/x/tools v0.38.0
 	gotest.tools/gotestsum v1.13.0
 	helm.sh/helm/v3 v3.19.0
+	k8s.io/code-generator v0.34.0
 	sigs.k8s.io/controller-tools v0.19.0
 )
 
@@ -500,7 +501,6 @@ require (
 	k8s.io/apiserver v0.34.0 // indirect
 	k8s.io/cli-runtime v0.34.0 // indirect
 	k8s.io/client-go v0.34.0 // indirect
-	k8s.io/code-generator v0.34.0 // indirect
 	k8s.io/component-base v0.34.0 // indirect
 	k8s.io/gengo/v2 v2.0.0-20250604051438-85fd79dbfd9f // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
