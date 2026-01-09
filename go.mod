@@ -9,7 +9,7 @@ require (
 	github.com/go-logr/zapr v1.3.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
-	github.com/onsi/gomega v1.38.2
+	github.com/onsi/gomega v1.39.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl v0.141.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.141.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.141.0
