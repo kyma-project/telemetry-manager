@@ -3,8 +3,9 @@ kind: Shoot
 metadata:
   name: ${GARDENER_CLUSTER_NAME}
 spec:
-  secretBindingName: ${GARDENER_SECRET_NAME}
-  cloudProfileName: gcp
+  credentialsBindingName: ${GARDENER_SECRET_NAME}
+  cloudProfile:
+    name: gcp
   region: europe-west3
   purpose: evaluation
   provider:
