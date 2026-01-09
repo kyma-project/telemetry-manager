@@ -5,7 +5,7 @@ go 1.25.5
 require (
 	github.com/g4s8/envdoc v1.8.1
 	github.com/golangci/golangci-lint/v2 v2.8.0
-	github.com/google/yamlfmt v0.20.0
+	github.com/google/yamlfmt v0.21.0
 	github.com/hairyhenderson/gomplate/v4 v4.3.3
 	github.com/itchyny/gojq v0.12.17
 	github.com/k3d-io/k3d/v5 v5.8.3
