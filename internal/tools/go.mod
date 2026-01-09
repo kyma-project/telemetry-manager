@@ -3,7 +3,7 @@ module github.com/kyma-project/telemetry-manager/internal/tools
 go 1.25.5
 
 require (
-	github.com/g4s8/envdoc v1.7.0
+	github.com/g4s8/envdoc v1.8.1
 	github.com/golangci/golangci-lint/v2 v2.8.0
 	github.com/google/yamlfmt v0.20.0
 	github.com/hairyhenderson/gomplate/v4 v4.3.3
@@ -397,7 +397,7 @@ require (
 	github.com/sashamelentyev/interfacebloat v1.1.0 // indirect
 	github.com/sashamelentyev/usestdlibvars v1.29.0 // indirect
 	github.com/securego/gosec/v2 v2.22.11 // indirect
-	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3 // indirect
+	github.com/sergi/go-diff v1.4.0 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/sivchari/containedctx v1.0.3 // indirect
