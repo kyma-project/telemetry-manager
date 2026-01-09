@@ -1522,6 +1522,8 @@ spec:
                                     type: object
                                 type: object
                                 x-kubernetes-validations:
+                                - message: '''clientID'' missing'
+                                  rule: (self.value != '' ) || (has(self.valueFrom))
                                 - message: Exactly one of 'value' or 'valueFrom' must
                                     be set
                                   rule: has(self.value) != has(self.valueFrom)
@@ -1568,6 +1570,8 @@ spec:
                                     type: object
                                 type: object
                                 x-kubernetes-validations:
+                                - message: clientSecret' missing
+                                  rule: (self.value != '' ) || (has(self.valueFrom))
                                 - message: Exactly one of 'value' or 'valueFrom' must
                                     be set
                                   rule: has(self.value) != has(self.valueFrom)
@@ -1625,6 +1629,11 @@ spec:
                                     type: object
                                 type: object
                                 x-kubernetes-validations:
+                                - message: tokenURL' missing
+                                  rule: (self.value != '' ) || (has(self.valueFrom))
+                                - message: '''tokenURL'' must be a valid URL'
+                                  rule: '(self.value != '''' ) ? (isURL(self.value))
+                                    : true'
                                 - message: Exactly one of 'value' or 'valueFrom' must
                                     be set
                                   rule: has(self.value) != has(self.valueFrom)
