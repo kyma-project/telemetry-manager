@@ -16,7 +16,7 @@ require (
 	github.com/yeya24/promlinter v0.3.0
 	golang.org/x/tools v0.40.0
 	gotest.tools/gotestsum v1.13.0
-	helm.sh/helm/v3 v3.19.4
+	helm.sh/helm/v4 v4.0.4
 	k8s.io/code-generator v0.35.0
 	sigs.k8s.io/controller-tools v0.19.0
 )
@@ -67,7 +67,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/MirrexOne/unqueryvet v1.4.0 // indirect
 	github.com/OpenPeeDeeP/depguard/v2 v2.2.1 // indirect
-	github.com/ProtonMail/go-crypto v1.1.6 // indirect
+	github.com/ProtonMail/go-crypto v1.3.0 // indirect
 	github.com/Shopify/ejson v1.5.4 // indirect
 	github.com/a8m/envsubst v1.4.3 // indirect
 	github.com/agext/levenshtein v1.2.1 // indirect
@@ -186,7 +186,7 @@ require (
 	github.com/fzipp/gocyclo v0.6.0 // indirect
 	github.com/ghostiam/protogetter v0.3.18 // indirect
 	github.com/go-critic/go-critic v0.14.3 // indirect
-	github.com/go-errors/errors v1.4.2 // indirect
+	github.com/go-errors/errors v1.5.1 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.6.2 // indirect
 	github.com/go-git/go-git/v5 v5.16.0 // indirect
@@ -195,9 +195,9 @@ require (
 	github.com/go-jose/go-jose/v4 v4.1.1 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/go-openapi/jsonpointer v0.21.0 // indirect
-	github.com/go-openapi/jsonreference v0.20.2 // indirect
-	github.com/go-openapi/swag v0.23.0 // indirect
+	github.com/go-openapi/jsonpointer v0.21.1 // indirect
+	github.com/go-openapi/jsonreference v0.21.0 // indirect
+	github.com/go-openapi/swag v0.23.1 // indirect
 	github.com/go-test/deep v1.1.0 // indirect
 	github.com/go-toolsmith/astcast v1.1.0 // indirect
 	github.com/go-toolsmith/astcopy v1.1.0 // indirect
@@ -333,7 +333,7 @@ require (
 	github.com/macabu/inamedparam v0.2.0 // indirect
 	github.com/magefile/mage v1.15.0 // indirect
 	github.com/magiconair/properties v1.8.10 // indirect
-	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/mailru/easyjson v0.9.0 // indirect
 	github.com/manuelarte/embeddedstructfieldcheck v0.4.0 // indirect
 	github.com/manuelarte/funcorder v0.5.0 // indirect
 	github.com/maratori/testableexamples v1.0.1 // indirect
@@ -378,9 +378,9 @@ require (
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_golang v1.22.0 // indirect
-	github.com/prometheus/client_model v0.6.1 // indirect
-	github.com/prometheus/common v0.62.0 // indirect
-	github.com/prometheus/procfs v0.15.1 // indirect
+	github.com/prometheus/client_model v0.6.2 // indirect
+	github.com/prometheus/common v0.65.0 // indirect
+	github.com/prometheus/procfs v0.17.0 // indirect
 	github.com/quasilyte/go-ruleguard v0.4.5 // indirect
 	github.com/quasilyte/go-ruleguard/dsl v0.3.23 // indirect
 	github.com/quasilyte/gogrep v0.5.0 // indirect
